@@ -55,7 +55,21 @@ cdef inline double digamma(double z) nogil:
 
 @cython.cdivision(True)
 cdef inline double complex cdigamma(double complex z) nogil:
-    """Compute the digamma function for complex arguments."""
+    """
+    Compute the digamma function for complex arguments. The strategy
+    is:
+
+    - Around the two zeros closest to the origin (posroot and negroot)
+    use a Taylor series with precomputed zero order coefficient.
+    - If close to the origin, use a recurrence relation to step away
+    from the origin.
+    - If close to the negative real axis, use the reflection formula
+    to move to the right halfplane.
+    - If |z| is large (> 16), use the asymptotic series.
+    - If |z| is small, use a recurrence relation to make |z| large
+    enough to use the asymptotic series.
+
+    """
     cdef:
         int n
         double absz = zabs(z)
