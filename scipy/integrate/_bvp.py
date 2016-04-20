@@ -6,13 +6,12 @@ from warnings import warn
 import numpy as np
 from numpy.linalg import norm, pinv
 
-from scipy.linalg import svd, qr
 from scipy.sparse import coo_matrix, csc_matrix
 from scipy.sparse.linalg import splu
 from scipy.optimize import OptimizeResult
-from scipy.optimize._lsq.common import (
-    solve_lsq_trust_region, solve_trust_region_2d, evaluate_quadratic,
-    compute_grad, update_tr_radius, EPS)
+
+
+EPS = np.finfo(float).eps
 
 
 def compute_fun_jac(fun, x, y, p, f0=None):
@@ -239,14 +238,17 @@ def prepare_sys(n, m, k, fun, bc, x, h):
     return sys_fun, sys_jac
 
 
-def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, B,
-                             tol, n_iter, n_trial, tr_solver):
-    """Solve the nonlinear collocation system.
+def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
+    """Solve the nonlinear collocation system by a Newton method.
 
-    Adopted from the optimize.least_squares trust-region solver.
+    This is a simple Newton method with a backtracking line search. As
+    advised in [1]_, an affine-invariant criterion function F = ||J^-1 r||^2
+    is used, where J is the Jacobian matrix at the current iteration and r is
+    the vector or residuals.
 
-    Below "the cost function" is the sum of squares of collocation and boundary
-    condition residuals.
+    There are other tricks proposed in [1]_, but they are not used as they
+    don't seem to improve anything significantly, and even break the
+    convergence on some test problems I tried.
 
     Parameters
     ----------
@@ -273,22 +275,12 @@ def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, B,
         singular term. If None, the singular term is assumed to be absent.
     tol : float
         Iterations are terminated if the uniform norm of the system residuals
-        less than `tol`.
+        less than `tol`. The reasonable value of `tol` should be 1-2 orders
+        less than the tolerance for our BVP solver.
     n_iter : int
         Max number of iterations. A small number should be used when solving a
         boundary value problem, because it's better to refine the mesh and
-        start over then try hard on the current mesh.
-    n_trial : int
-        Number of trials to improves a cost function in the inner trust
-        region iterations. Also should be a small number.
-    tr_solver : 'exact' or 'subspace'
-        Type of the solver to use.
-
-            * 'exact': (near) exact trust-region solver with SVD of
-              Jacobian matrix. It shouldn't be used for large systems.
-            * 'subspace': 2-D subspace trust-region solver, where the Newton
-              direction is computed by SuperLU solver. This solver should be
-              used when the mesh becomes fine (controlled by the outer code).
+        start over than try hard on the current mesh.
 
     Returns
     -------
@@ -296,86 +288,63 @@ def solve_collocation_system(n, m, k, col_fun, bc, jac, y, p, B,
         Final iterate for the function values at the mesh nodes.
     p : ndarray, shape (k,)
         Final iterate for the unknown parameters.
-    success : bool
-        True, if the cost function was decreased by any amount. False means
-        that the whole BVP solver process failed and will be terminated.
+    singular : bool
+        True, if the LU decomposition failed because Jacobian turned out
+        to be singular.
+
+    References
+    ----------
+    .. [1]  U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
+       Boundary Value Problems for Ordinary Differential Equations"
     """
-    n_eq = m * n + k
-
-    res_col, y_middle, f, f_middle = col_fun(y, p)
+    res_col_new, y_middle, f, f_middle = col_fun(y, p)
     res_bc = bc(y[:, 0], y[:, -1], p)
-    res = np.hstack((res_col.ravel(order='F'), res_bc))
+    res = np.hstack((res_col_new.ravel(order='F'), res_bc))
 
-    Delta = 10 * (np.sqrt(np.sum(y**2) + np.sum(p**2)) + 1)
-    alpha = 0
+    sigma = 0.05  # Minimum relative improvement (Armijo constant).
+    tau = 0.5  # Step size decrease factor for backtracking.
 
-    cost = 0.5 * np.dot(res, res)
-    progress = False
+    singular = False
     for iteration in range(n_iter):
         J = jac(y, p, y_middle, f, f_middle, res_bc)
-        g = compute_grad(J, res)
-
-        if tr_solver == 'exact':
-            J = J.toarray()
-            U, s, V = svd(J, full_matrices=False)
-            V = V.T
-            uf = U.T.dot(res)
-        elif tr_solver == 'subspace':
+        try:
             LU = splu(J)
-            gn = LU.solve(res)
-            S = np.vstack((g, gn)).T
-            S, _ = qr(S, mode='economic')
-            JS = J.dot(S)
-            B_S = np.dot(JS.T, JS)
-            g_S = S.T.dot(g)
+        except RuntimeError:
+            singular = True
+            break
 
-        for trial in range(n_trial):
-            if tr_solver == 'exact':
-                step, alpha, _ = solve_lsq_trust_region(
-                    n_eq, n_eq, uf, s, V, Delta, initial_alpha=alpha)
-            elif tr_solver == 'subspace':
-                p_S, _ = solve_trust_region_2d(B_S, g_S, Delta)
-                step = S.dot(p_S)
+        step = -LU.solve(res)
+        y_step = step[:m * n].reshape((n, m), order='F')
+        p_step = step[m * n:]
 
-            predicted_reduction = -evaluate_quadratic(J, g, step)
-            y_step = step[:m*n].reshape((n, m), order='F')
-            p_step = step[m*n:]
-
-            y_new = y + y_step
+        cost = np.dot(step, step)
+        alpha = 1
+        n_trial = 5
+        for i in range(n_trial):
+            y_new = y + alpha * y_step
             if B is not None:
                 y_new[:, 0] = np.dot(B, y_new[:, 0])
+            p_new = p + alpha * p_step
 
-            p_new = p + p_step
             res_col_new, y_middle, f, f_middle = col_fun(y_new, p_new)
             res_bc = bc(y_new[:, 0], y_new[:, -1], p_new)
             res_new = np.hstack((res_col_new.ravel(order='F'), res_bc))
 
-            # Usual trust-region step quality estimation.
-            cost_new = 0.5 * np.dot(res_new, res_new)
-            actual_reduction = cost - cost_new
-
-            step_h_norm = norm(step)
-            Delta_new, ratio = update_tr_radius(
-                Delta, actual_reduction, predicted_reduction,
-                step_h_norm, step_h_norm > 0.95 * Delta)
-            alpha *= Delta / Delta_new
-            Delta = Delta_new
-
-            if actual_reduction > 0:
-                progress = True
+            s = LU.solve(res_new)
+            cost_new = np.dot(s, s)
+            if cost_new <= (1 - 2 * alpha * sigma) * cost:
                 break
-        else:
-            break
+
+            alpha *= tau
 
         y = y_new
         p = p_new
         res = res_new
-        cost = cost_new
 
         if norm(res, ord=np.inf) < tol:
             break
 
-    return y, p, progress
+    return y, p, singular
 
 
 def print_iteration_header():
@@ -383,7 +352,7 @@ def print_iteration_header():
         "Iteration", "Max residual", "Total nodes", "Nodes added"))
 
 
-def print_progress(iteration, residual, total_nodes, inserted_nodes):
+def print_iteration_progress(iteration, residual, total_nodes, inserted_nodes):
     print("{:^15}{:^15.2e}{:^15}{:^15}".format(
         iteration, residual, total_nodes, inserted_nodes))
 
@@ -395,7 +364,7 @@ class BVPResult(OptimizeResult):
 TERMINATION_MESSAGES = {
     0: "The algorithm converged to the desired accuracy.",
     1: "The maximum number of mesh nodes is exceeded.",
-    2: "The algorithm failed to progress in solving the collocation system."
+    2: "A singular Jacobian encountered when solving the collocation system."
 }
 
 
@@ -510,8 +479,8 @@ def modify_mesh(x, insert_1, insert_2):
     return np.insert(x, ind, nodes)
 
 
-def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
-              max_dense_size=500, verbose=0):
+def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=1000,
+              verbose=0):
     """Solve a boundary-value problem for a system of ODEs.
 
     This function numerically solves a first order system of ODEs subject to
@@ -567,12 +536,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
         quadrature formula). Default is 1e-3.
     max_nodes : int, optional
         Maximum allowed number of the mesh nodes. If exceeded, the algorithm
-        terminates. Default is 10000.
-    max_dense_size : int, optional
-        Maximum number of equations to solve with a dense solver. The dense
-        solver is more likely to converge from a far starting point, which
-        makes it preferable for initial iterations on a coarse mesh.
-        Default is 500.
+        terminates. Default is 1000.
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
@@ -604,7 +568,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
 
             * 0: The algorithm converged to the desired accuracy.
             * 1: The maximum number of mesh nodes is exceeded.
-            * 2: The algorithm failed to progress in solving the collocation
+            * 2: A singular Jacobian encountered when solving the collocation
                  system.
 
     message : string
@@ -615,10 +579,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
     Notes
     -----
     This function implements a 4-th order collocation algorithm with the
-    control of residuals similar to [1]_. A collocation system is solved by
-    a trust-region type solver, which can operate in a dense mode for a small
-    system and switch to a sparse mode relying on `scipy.sparse.linalg.splu`
-    as the system gets large.
+    control of residuals similar to [1]_. A collocation system is solved
+    by a damped Newton method with an affine-invariant criterion function as
+    described in [3]_.
 
     Note that in [1]_  integral residuals are defined without normalization
     by interval lengths. So their definition is different by a multiplier of
@@ -633,6 +596,8 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
        Number 3, pp. 299-316, 2001.
     .. [2] L.F. Shampine, P. H. Muir and H. Xu, "A User-Friendly Fortran BVP
            Solver".
+    .. [3]  U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
+            Boundary Value Problems for Ordinary Differential Equations"
 
     Examples
     --------
@@ -785,48 +750,29 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
 
     status = 0
     iteration = 0
-
     if verbose == 2:
         print_iteration_header()
-        col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
-                                                         p, x, h)
-        res_middle = 1.5 * col_res / h
-        sol = create_spline(y, f, x, h)
-        rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p,
-                                         res_middle, f_middle)
-        max_res = np.max(rms_res)
-        print_progress(iteration, max_res, x.shape[0], "")
 
     while True:
         m = x.shape[0]
 
-        if m * n + k < max_dense_size:
-            solver = 'exact'
-        else:
-            solver = 'subspace'
-
         col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped, x, h)
-
-        # Use 5 iterations and 5 sub-iterations to try and solve the system.
-        # See `solve_collocation_system` for details.
-        y, p, progress = solve_collocation_system(
-            n, m, k, col_fun, bc_wrapped, jac_sys, y, p, B,
-            tol * 1e-1, 5, 5, solver)
+        y, p, singular = solve_newton(
+            n, m, k, col_fun, bc_wrapped, jac_sys, y, p, B, tol * 1e-1, 4)
         iteration += 1
-
-        if not progress:
-            status = 2
-            break
 
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
                                                          p, x, h)
-
         # This relation is not trivial, but can be verified.
         res_middle = 1.5 * col_res / h
         sol = create_spline(y, f, x, h)
         rms_res = estimate_rms_residuals(
             fun_wrapped, sol, x, h, p, res_middle, f_middle)
         max_res = np.max(rms_res)
+
+        if singular:
+            status = 2
+            break
 
         insert_1, = np.nonzero((rms_res > tol) &
                                (rms_res < 100 * tol))
@@ -837,11 +783,11 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
             status = 1
             if verbose == 2:
                 inserted = "({})".format(inserted)
-                print_progress(iteration, max_res, m, inserted)
+                print_iteration_progress(iteration, max_res, m, inserted)
             break
 
         if verbose == 2:
-            print_progress(iteration, max_res, m, inserted)
+            print_iteration_progress(iteration, max_res, m, inserted)
 
         if inserted > 0:
             x = modify_mesh(x, insert_1, insert_2)
@@ -861,9 +807,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, tol=1e-3, max_nodes=10000,
                   "maximum relative residual {:.2e}."
                   .format(iteration, max_res))
         elif status == 2:
-            print("The algorithm failed to progress in solving the "
-                  "collocation system on iteration {}, maximum relative "
-                  "residual {:.2e}.".format(iteration, max_res))
+            print("Singular Jacobian encountered when solving the collocation "
+                  "system on iteration {}, maximum relative residual {:.2e}."
+                  .format(iteration, max_res))
 
     if p.size == 0:
         p = None
