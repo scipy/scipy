@@ -2764,8 +2764,10 @@ def pearsonr(x, y):
 
     Returns
     -------
-    (Pearson's correlation coefficient,
-     2-tailed p-value)
+    r : float
+        Pearson's correlation coefficient
+    p-value : float
+        2-tailed p-value
 
     References
     ----------
