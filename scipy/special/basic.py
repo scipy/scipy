@@ -1171,10 +1171,10 @@ def fresnel_zeros(nt):
 
 
 def assoc_laguerre(x, n, k=0.0):
-    """Compute nth-order generalized (associated) Laguerre polynomial.
+    """Compute the generalized (associated) Laguerre polynomial of degree n and order k.
 
-    The polynomial :math:`L^(alpha)_n(x)` is orthogonal over ``[0, inf)``,
-    with weighting function ``exp(-x) * x**alpha`` with ``alpha > -1``.
+    The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
+    with weighting function ``exp(-x) * x**k`` with ``k > -1``.
 
     Notes
     -----
