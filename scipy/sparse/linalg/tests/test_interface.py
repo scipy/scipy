@@ -326,3 +326,18 @@ def test_inheritance():
 
     mm = MatmatOnly(np.random.randn(5, 3))
     assert_equal(mm.matvec(np.random.randn(3)).shape, (5,))
+
+def test_dtypes_of_operator_sum():
+    # gh-6078
+
+    mat_complex = np.random.rand(2,2) + 1j * np.random.rand(2,2)
+    mat_real = np.random.rand(2,2)
+
+    complex_operator = interface.aslinearoperator(mat_complex)
+    real_operator = interface.aslinearoperator(mat_real)
+
+    sum_complex = complex_operator + complex_operator
+    sum_real = real_operator + real_operator
+
+    assert_equal(sum_real.dtype, np.float64)
+    assert_equal(sum_complex.dtype, np.complex128)
