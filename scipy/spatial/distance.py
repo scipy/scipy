@@ -145,15 +145,13 @@ def _convert_to_double(X):
         X = X.copy()
     return X
 
+def _vdot(a, b):
+    """Broadcasting vector dot product"""
+    return np.einsum('...i,...i->...', a, b)
 
 def _validate_vector(u, dtype=None):
     # XXX Is order='c' really necessary?
-    u = np.asarray(u, dtype=dtype, order='c').squeeze()
-    # Ensure values such as u=1 and u=[1] still return 1-D arrays.
-    u = np.atleast_1d(u)
-    if u.ndim > 1:
-        raise ValueError("Input vector should be 1-D.")
-    return u
+    return np.asarray(u, dtype=dtype, order='c')
 
 
 def minkowski(u, v, p):
@@ -169,9 +167,9 @@ def minkowski(u, v, p):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
     p : int
         The order of the norm of the difference :math:`{||u-v||}_p`.
@@ -186,7 +184,7 @@ def minkowski(u, v, p):
     v = _validate_vector(v)
     if p < 1:
         raise ValueError("p must be at least 1")
-    dist = norm(u - v, ord=p)
+    dist = norm(u - v, ord=p, axis=-1)
     return dist
 
 
@@ -202,13 +200,13 @@ def wminkowski(u, v, p, w):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
     p : int
         The order of the norm of the difference :math:`{||u-v||}_p`.
-    w : (N,) array_like
+    w : (...,N) array_like
         The weight vector.
 
     Returns
@@ -222,7 +220,7 @@ def wminkowski(u, v, p, w):
     w = _validate_vector(w)
     if p < 1:
         raise ValueError("p must be at least 1")
-    dist = norm(w * (u - v), ord=p)
+    dist = norm(w * (u - v), ord=p, axis=-1)
     return dist
 
 
@@ -238,9 +236,9 @@ def euclidean(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
 
     Returns
@@ -251,7 +249,7 @@ def euclidean(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    dist = norm(u - v)
+    dist = norm(u - v, axis=-1)
     return dist
 
 
@@ -268,9 +266,9 @@ def sqeuclidean(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
 
     Returns
@@ -291,7 +289,7 @@ def sqeuclidean(u, v):
     v = _validate_vector(v, dtype=vtype)
     u_v = u - v
 
-    return np.dot(u_v, u_v)
+    return _vdot(u_v, u_v)
 
 
 def cosine(u, v):
@@ -310,9 +308,9 @@ def cosine(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
 
     Returns
@@ -323,7 +321,7 @@ def cosine(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    dist = 1.0 - np.dot(u, v) / (norm(u) * norm(v))
+    dist = 1.0 - _vdot(u, v) / (norm(u, axis=-1) * norm(v, axis=-1))
     return dist
 
 
@@ -344,9 +342,9 @@ def correlation(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
 
     Returns
@@ -361,7 +359,7 @@ def correlation(u, v):
     vmu = v.mean()
     um = u - umu
     vm = v - vmu
-    dist = 1.0 - np.dot(um, vm) / (norm(um) * norm(vm))
+    dist = 1.0 - _vdot(um, vm) / (norm(um, axis=-1) * norm(vm, axis=-1))
     return dist
 
 
@@ -383,9 +381,9 @@ def hamming(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
 
     Returns
@@ -398,7 +396,7 @@ def hamming(u, v):
     v = _validate_vector(v)
     if u.shape != v.shape:
         raise ValueError('The 1d arrays must have equal lengths.')
-    return (u != v).mean()
+    return (u != v).mean(axis=-1)
 
 
 def jaccard(u, v):
@@ -419,9 +417,9 @@ def jaccard(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
 
     Returns
@@ -433,8 +431,8 @@ def jaccard(u, v):
     u = _validate_vector(u)
     v = _validate_vector(v)
     dist = (np.double(np.bitwise_and((u != v),
-                                     np.bitwise_or(u != 0, v != 0)).sum())
-            / np.double(np.bitwise_or(u != 0, v != 0).sum()))
+                                     np.bitwise_or(u != 0, v != 0)).sum(axis=-1))
+            / np.double(np.bitwise_or(u != 0, v != 0).sum(axis=-1)))
     return dist
 
 
@@ -456,9 +454,9 @@ def kulsinski(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
 
     Returns
@@ -469,7 +467,7 @@ def kulsinski(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    n = float(len(u))
+    n = float(u.shape[-1])
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
 
     return (ntf + nft - ntt + n) / (ntf + nft + n)
@@ -483,11 +481,11 @@ def seuclidean(u, v, V):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
-    V : (N,) array_like
+    V : (...,N) array_like
         `V` is an 1-D array of component variances. It is usually computed
         among a larger collection vectors.
 
@@ -500,10 +498,10 @@ def seuclidean(u, v, V):
     u = _validate_vector(u)
     v = _validate_vector(v)
     V = _validate_vector(V, dtype=np.float64)
-    if V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
+    if V.shape[-1] != u.shape[-1] or u.shape[-1] != v.shape[-1]:
         raise TypeError('V must be a 1-D array of the same dimension '
                         'as u and v.')
-    return np.sqrt(((u - v) ** 2 / V).sum())
+    return np.sqrt(((u - v) ** 2 / V).sum(axis=-1))
 
 
 def cityblock(u, v):
@@ -519,9 +517,9 @@ def cityblock(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
 
     Returns
@@ -532,7 +530,7 @@ def cityblock(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    return abs(u - v).sum()
+    return abs(u - v).sum(axis=-1)
 
 
 def mahalanobis(u, v, VI):
@@ -550,11 +548,11 @@ def mahalanobis(u, v, VI):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
-    VI : ndarray
+    VI : (...,N,N) ndarray
         The inverse of the covariance matrix.
 
     Returns
@@ -567,7 +565,7 @@ def mahalanobis(u, v, VI):
     v = _validate_vector(v)
     VI = np.atleast_2d(VI)
     delta = u - v
-    m = np.dot(np.dot(delta, VI), delta)
+    m = np.einsum('...i,...ij,...j', delta, VI, delta)
     return np.sqrt(m)
 
 
@@ -584,9 +582,9 @@ def chebyshev(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input vector.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input vector.
 
     Returns
@@ -597,7 +595,7 @@ def chebyshev(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    return max(abs(u - v))
+    return np.max(abs(u - v), axis=-1)
 
 
 def braycurtis(u, v):
@@ -615,9 +613,9 @@ def braycurtis(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
 
     Returns
@@ -628,7 +626,7 @@ def braycurtis(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v, dtype=np.float64)
-    return abs(u - v).sum() / abs(u + v).sum()
+    return abs(u - v).sum(axis=-1) / abs(u + v).sum(axis=-1)
 
 
 def canberra(u, v):
@@ -644,9 +642,9 @@ def canberra(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like
+    u : (...,N) array_like
         Input array.
-    v : (N,) array_like
+    v : (...,N) array_like
         Input array.
 
     Returns
@@ -664,7 +662,7 @@ def canberra(u, v):
     v = _validate_vector(v, dtype=np.float64)
     olderr = np.seterr(invalid='ignore')
     try:
-        d = np.nansum(abs(u - v) / (abs(u) + abs(v)))
+        d = np.nansum(abs(u - v) / (abs(u) + abs(v)), axis=-1)
     finally:
         np.seterr(**olderr)
     return d
@@ -677,17 +675,17 @@ def _nbool_correspond_all(u, v):
     if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double:
         not_u = 1.0 - u
         not_v = 1.0 - v
-        nff = (not_u * not_v).sum()
-        nft = (not_u * v).sum()
-        ntf = (u * not_v).sum()
-        ntt = (u * v).sum()
+        nff = (not_u * not_v).sum(axis=-1)
+        nft = (not_u * v).sum(axis=-1)
+        ntf = (u * not_v).sum(axis=-1)
+        ntt = (u * v).sum(axis=-1)
     elif u.dtype == bool:
         not_u = ~u
         not_v = ~v
-        nff = (not_u & not_v).sum()
-        nft = (not_u & v).sum()
-        ntf = (u & not_v).sum()
-        ntt = (u & v).sum()
+        nff = (not_u & not_v).sum(axis=-1)
+        nft = (not_u & v).sum(axis=-1)
+        ntf = (u & not_v).sum(axis=-1)
+        ntt = (u & v).sum(axis=-1)
     else:
         raise TypeError("Arrays being compared have unknown type.")
 
@@ -724,9 +722,9 @@ def yule(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
 
     Returns
@@ -738,7 +736,7 @@ def yule(u, v):
     u = _validate_vector(u)
     v = _validate_vector(v)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
-    return float(2.0 * ntf * nft) / float(ntt * nff + ntf * nft)
+    return np.double(2.0 * ntf * nft) / np.double(ntt * nff + ntf * nft)
 
 
 def matching(u, v):
@@ -781,11 +779,11 @@ def dice(u, v):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if u.dtype == bool:
-        ntt = (u & v).sum()
+        ntt = (u & v).sum(axis=-1)
     else:
-        ntt = (u * v).sum()
+        ntt = (u * v).sum(axis=-1)
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(ntf + nft) / float(2.0 * ntt + ntf + nft)
+    return np.double(ntf + nft) / np.double(2.0 * ntt + ntf + nft)
 
 
 def rogerstanimoto(u, v):
@@ -805,9 +803,9 @@ def rogerstanimoto(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
 
     Returns
@@ -820,7 +818,7 @@ def rogerstanimoto(u, v):
     u = _validate_vector(u)
     v = _validate_vector(v)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
-    return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
+    return (2.0 * (ntf + nft)) / (ntt + nff + (2.0 * (ntf + nft)))
 
 
 def russellrao(u, v):
@@ -841,9 +839,9 @@ def russellrao(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
 
     Returns
@@ -858,7 +856,7 @@ def russellrao(u, v):
         ntt = (u & v).sum()
     else:
         ntt = (u * v).sum()
-    return float(len(u) - ntt) / float(len(u))
+    return float(u.shape[-1] - ntt) / float(u.shape[-1])
 
 
 def sokalmichener(u, v):
@@ -880,9 +878,9 @@ def sokalmichener(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
 
     Returns
@@ -920,9 +918,9 @@ def sokalsneath(u, v):
 
     Parameters
     ----------
-    u : (N,) array_like, bool
+    u : (...,N) array_like, bool
         Input array.
-    v : (N,) array_like, bool
+    v : (...,N) array_like, bool
         Input array.
 
     Returns
