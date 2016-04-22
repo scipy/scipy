@@ -491,6 +491,44 @@ def test_spence_circle():
 
 
 # ------------------------------------------------------------------------------
+# sinpi and cospi
+# ------------------------------------------------------------------------------
+
+@mpmath_check('0.19')
+def test_sinpi_zeros():
+    eps = np.finfo(float).eps
+    dx = np.r_[-np.logspace(0, -13, 3), 0, np.logspace(-13, 0, 3)]
+    dy = dx.copy()
+    dx, dy = np.meshgrid(dx, dy)
+    dz = dx + 1j*dy
+    zeros = np.arange(-100, 100, 1).reshape(1, 1, -1)
+    z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.sinpi(z0))))
+
+    dataset = np.array(dataset)
+    FuncData(_sinpi, dataset, 0, 1, rtol=2*eps).check()
+
+
+@mpmath_check('0.19')
+def test_cospi_zeros():
+    eps = np.finfo(float).eps
+    dx = np.r_[-np.logspace(0, -13, 3), 0, np.logspace(-13, 0, 3)]
+    dy = dx.copy()
+    dx, dy = np.meshgrid(dx, dy)
+    dz = dx + 1j*dy
+    zeros = (np.arange(-100, 100, 1) + 0.5).reshape(1, 1, -1)
+    z = (zeros + np.dstack((dz,)*zeros.size)).flatten()
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.cospi(z0))))
+
+    dataset = np.array(dataset)
+    FuncData(_cospi, dataset, 0, 1, rtol=2*eps).check()
+
+
+# ------------------------------------------------------------------------------
 # Machinery for systematic tests
 # ------------------------------------------------------------------------------
 
@@ -1112,9 +1150,13 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg(-1e8, 1e8)])
 
     def test_cospi(self):
-        # Bump the tolerance just a bit so that tests don't fail.
+        # Without the extra factor of 2 in the relative tolerance as
+        # compared to sinpi there will be one failure at ~0.318 with
+        # an rdiff of ~6e-16. Neither the Taylor series nor the system
+        # cosine are accurate enough here.
+        eps = np.finfo(float).eps
         assert_mpmath_equal(_cospi, mpmath.cospi,
-                            [Arg()], rtol=2e-13)
+                            [Arg()], rtol=4*eps)
 
     def test_cospi_complex(self):
         assert_mpmath_equal(_cospi, mpmath.cospi,
@@ -1126,7 +1168,8 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg()], rtol=1e-12, dps=50)
 
     def test_digamma_complex(self):
-        # Test on a cut plane because mpmath will hang
+        # Test on a cut plane because mpmath will hang. See
+        # test_digamma_negreal for tests on the negative real axis.
         def param_filter(z):
             return np.where((z.real < 0) & (np.abs(z.imag) < 1.12), False, True)
 
@@ -1800,12 +1843,14 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             dps=400)
 
     def test_sinpi(self):
+        eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], rtol=1e-13)
+                            [Arg()], rtol=2*eps)
 
     def test_sinpi_complex(self):
+        eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [ComplexArg()], rtol=1e-13)
+                            [ComplexArg()], rtol=2e-14)
 
     def test_shi(self):
         def shi(x):
