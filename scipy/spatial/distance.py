@@ -856,7 +856,7 @@ def russellrao(u, v):
         ntt = (u & v).sum()
     else:
         ntt = (u * v).sum()
-    return float(u.shape[-1] - ntt) / float(u.shape[-1])
+    return np.double(u.shape[-1] - ntt) / np.double(u.shape[-1])
 
 
 def sokalmichener(u, v):
@@ -892,13 +892,13 @@ def sokalmichener(u, v):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if u.dtype == bool:
-        ntt = (u & v).sum()
-        nff = (~u & ~v).sum()
+        ntt = (u & v).sum(axis=-1)
+        nff = (~u & ~v).sum(axis=-1)
     else:
-        ntt = (u * v).sum()
-        nff = ((1.0 - u) * (1.0 - v)).sum()
+        ntt = (u * v).sum(axis=-1)
+        nff = ((1.0 - u) * (1.0 - v)).sum(axis=-1)
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(2.0 * (ntf + nft)) / float(ntt + nff + 2.0 * (ntf + nft))
+    return np.double(2.0 * (ntf + nft)) / np.double(ntt + nff + 2.0 * (ntf + nft))
 
 
 def sokalsneath(u, v):
@@ -932,15 +932,15 @@ def sokalsneath(u, v):
     u = _validate_vector(u)
     v = _validate_vector(v)
     if u.dtype == bool:
-        ntt = (u & v).sum()
+        ntt = (u & v).sum(axis=-1)
     else:
-        ntt = (u * v).sum()
+        ntt = (u * v).sum(axis=-1)
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
     denom = ntt + 2.0 * (ntf + nft)
     if denom == 0:
         raise ValueError('Sokal-Sneath dissimilarity is not defined for '
                             'vectors that are entirely false.')
-    return float(2.0 * (ntf + nft)) / denom
+    return (2.0 * (ntf + nft)) / denom
 
 
 # Registry of "simple" distance metrics' pdist and cdist implementations,
