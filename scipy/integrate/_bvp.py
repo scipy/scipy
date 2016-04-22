@@ -30,7 +30,9 @@ def estimate_fun_jac(fun, x, y, p, f0=None):
     if f0 is None:
         f0 = fun(x, y, p)
 
-    df_dy = np.empty((n, n, m))
+    dtype = y.dtype
+
+    df_dy = np.empty((n, n, m), dtype=dtype)
     h = EPS ** 0.5 * (1 + np.abs(y))
     for i in range(n):
         y_new = y.copy()
@@ -43,7 +45,7 @@ def estimate_fun_jac(fun, x, y, p, f0=None):
     if k == 0:
         df_dp = None
     else:
-        df_dp = np.empty((n, k, m))
+        df_dp = np.empty((n, k, m), dtype=dtype)
         h = EPS ** 0.5 * (1 + np.abs(p))
         for i in range(k):
             p_new = p.copy()
@@ -76,7 +78,9 @@ def estimate_bc_jac(bc, ya, yb, p, bc0=None):
     if bc0 is None:
         bc0 = bc(ya, yb, p)
 
-    dbc_dya = np.empty((n, n + k))
+    dtype = ya.dtype
+
+    dbc_dya = np.empty((n, n + k), dtype=dtype)
     h = EPS**0.5 * (1 + np.abs(ya))
     for i in range(n):
         ya_new = ya.copy()
@@ -87,7 +91,7 @@ def estimate_bc_jac(bc, ya, yb, p, bc0=None):
     dbc_dya = dbc_dya.T
 
     h = EPS**0.5 * (1 + np.abs(yb))
-    dbc_dyb = np.empty((n, n + k))
+    dbc_dyb = np.empty((n, n + k), dtype=dtype)
     for i in range(n):
         yb_new = yb.copy()
         yb_new[i] += h[i]
@@ -100,7 +104,7 @@ def estimate_bc_jac(bc, ya, yb, p, bc0=None):
         dbc_dp = None
     else:
         h = EPS ** 0.5 * (1 + np.abs(p))
-        dbc_dp = np.empty((k, n + k))
+        dbc_dp = np.empty((k, n + k), dtype=dtype)
         for i in range(k):
             p_new = p.copy()
             p_new[i] += h[i]
@@ -149,13 +153,15 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
 
     h = h[:, np.newaxis, np.newaxis]
 
-    dPhi_dy_0 = np.empty((m - 1, n, n))
+    dtype = df_dy.dtype
+
+    dPhi_dy_0 = np.empty((m - 1, n, n), dtype=dtype)
     dPhi_dy_0[:] = -np.identity(n)
     dPhi_dy_0 -= h / 6 * (df_dy[:-1] + 2 * df_dy_middle)
     T = np.einsum('...ij,...jk->...ik', df_dy_middle, df_dy[:-1])
     dPhi_dy_0 -= h**2 / 12 * T
 
-    dPhi_dy_1 = np.empty((m - 1, n, n))
+    dPhi_dy_1 = np.empty((m - 1, n, n), dtype=dtype)
     dPhi_dy_1[:] = np.identity(n)
     dPhi_dy_1 -= h / 6 * (df_dy[1:] + 2 * df_dy_middle)
     T = np.einsum('...ij,...jk->...ik', df_dy_middle, df_dy[1:])
@@ -421,9 +427,9 @@ def estimate_rms_residuals(fun, sol, x, h, p, res_middle, f_middle):
     res_1 /= 1 + np.abs(f1)
     res_2 /= 1 + np.abs(f2)
 
-    res_1 = np.sum(res_1**2, axis=0)
-    res_2 = np.sum(res_2**2, axis=0)
-    res_middle = np.sum(res_middle**2, axis=0)
+    res_1 = np.sum(np.real(res_1 * np.conj(res_1)), axis=0)
+    res_2 = np.sum(np.real(res_2 * np.conj(res_2)), axis=0)
+    res_middle = np.sum(np.real(res_middle * np.conj(res_middle)), axis=0)
 
     return (0.5 * (32/45 * res_middle + 49/90 * (res_1 + res_2))) ** 0.5
 
@@ -441,7 +447,7 @@ def create_spline(y, f, x, h):
     from scipy.interpolate import PPoly
 
     n, m = y.shape
-    c = np.empty((4, n, m - 1))
+    c = np.empty((4, n, m - 1), dtype=y.dtype)
     slope = (y[:, 1:] - y[:, :-1]) / h
     t = (f[:, :-1] + f[:, 1:] - 2 * slope) / h
     c[0] = t / h
@@ -488,7 +494,8 @@ def modify_mesh(x, insert_1, insert_2):
     return np.insert(x, ind, nodes)
 
 
-def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D):
+def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
+    """Wrap functions for unified usage in the solver."""
     if fun_jac is None:
         fun_jac_wrapped = None
 
@@ -497,36 +504,37 @@ def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D):
 
     if k == 0:
         def fun_p(x, y, _):
-            return np.asarray(fun(x, y))
+            return np.asarray(fun(x, y), dtype)
 
         def bc_wrapped(ya, yb, _):
-            return np.asarray(bc(ya, yb))
+            return np.asarray(bc(ya, yb), dtype)
 
         if fun_jac is not None:
             def fun_jac_p(x, y, _):
-                return np.asarray(fun_jac(x, y)), None
+                return np.asarray(fun_jac(x, y), dtype), None
 
         if bc_jac is not None:
             def bc_jac_wrapped(ya, yb, _):
                 dbc_dya, dbc_dyb = bc_jac(ya, yb)
-                return np.asarray(dbc_dya), np.asarray(dbc_dyb), None
+                return (np.asarray(dbc_dya, dtype),
+                        np.asarray(dbc_dyb, dtype), None)
     else:
         def fun_p(x, y, p):
-            return np.asarray(fun(x, y, p))
+            return np.asarray(fun(x, y, p), dtype)
 
         def bc_wrapped(x, y, p):
-            return np.asarray(bc(x, y, p))
+            return np.asarray(bc(x, y, p), dtype)
 
         if fun_jac is not None:
             def fun_jac_p(x, y, p):
                 df_dy, df_dp = fun_jac(x, y, p)
-                return np.asarray(df_dy), np.asarray(df_dp)
+                return np.asarray(df_dy, dtype), np.asarray(df_dp, dtype)
 
         if bc_jac is not None:
             def bc_jac_wrapped(ya, yb, p):
                 dbc_dya, dbc_dyb, dbc_dp = bc_jac(ya, yb, p)
-                return (np.asarray(dbc_dya), np.asarray(dbc_dyb),
-                        np.asarray(dbc_dp))
+                return (np.asarray(dbc_dya, dtype), np.asarray(dbc_dyb, dtype),
+                        np.asarray(dbc_dp, dtype))
 
     if S is None:
         fun_wrapped = fun_p
@@ -581,6 +589,14 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     contradict boundary conditions. See [2] for the explanation how this term
     is handled when solving BVPs numerically.
 
+    Problems can be solved in a complex domain as well. In this case y and p
+    are considered to be complex, and f and bc are assumed to be complex-valued
+    functions, but x stays real. Note that f and bc must be complex
+    differentiable (satisfy Cauchy–Riemann conditions) in this case, otherwise
+    you should write your problem for real and imaginary parts separately.
+    To solve a problem in a complex domain, pass an initial guess for y with a
+    complex data type, see below.
+
     Parameters
     ----------
     fun : callable
@@ -595,20 +611,19 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         (n,), ``p`` is optional with shape (k,). The return value must have
         shape (n + k,).
     x : array_like, shape (m,)
-        Initial mesh. Must be a strictly increasing sequence with ``x[0]=a``
-        and ``x[-1]=b``. It is recommended that m * n + k be less than
-        `max_dense_size` such that the initial system can be solved with a
-        robust dense solver.
+        Initial mesh. Must be a strictly increasing sequence of real numbers
+        with ``x[0]=a`` and ``x[-1]=b``.
     y : array_like, shape (n, m)
         Initial guess for the function values at the mesh nodes, i-th column
-        corresponds to ``x[i]``.
+        corresponds to ``x[i]``. For problems in a complex domain pass `y`
+        with a complex data type (even if the initial guess is purely real).
     p : array_like with shape (k,) or None, optional
         Initial guess for the unknown parameters. If None (default), it is
         assumed that the problem doesn't depend on any parameters.
     S : array_like with shape (n, n) or None
         Matrix defining the singular term. If None (default), the problem is
         solved without the singular term.
-    fun_jac : callable or None
+    fun_jac : callable or None, optional
         Function computing derivatives of f with respect to y and p. The
         calling signature is ``fun_jac(x, y, p)``. The return must contain
         1 or 2 elements in the following order:
@@ -624,7 +639,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
         If `fun_jac` is None (default), the derivatives will be estimated
         using forward finite differences.
-    bc_jac : callable or None
+    bc_jac : callable or None, optional
         Function computing derivatives of bc with respect to ya, yb and p.
         The calling signature is ``bc_jac(ya, yb, p)``. The return must
         contain 2 or 3 elements in the following order:
@@ -780,7 +795,13 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         raise ValueError("`x` must be strictly increasing.")
     a = x[0]
 
-    y = np.asarray(y, dtype=float)
+    y = np.asarray(y)
+    if np.issubdtype(y.dtype, np.complexfloating):
+        dtype = complex
+    else:
+        dtype = float
+    y = y.astype(dtype, copy=False)
+
     if y.ndim != 2:
         raise ValueError("`y` must be 2 dimensional.")
     if y.shape[1] != x.shape[0]:
@@ -790,7 +811,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     if p is None:
         p = np.array([])
     else:
-        p = np.asarray(p, dtype=float)
+        p = np.asarray(p, dtype=dtype)
     if p.ndim != 1:
         raise ValueError("`p` must be 1 dimensional.")
 
@@ -802,7 +823,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     k = p.shape[0]
 
     if S is not None:
-        S = np.asarray(S)
+        S = np.asarray(S, dtype=dtype)
         if S.shape != (n, n):
             raise ValueError("`S` is expected to have shape {}, "
                              "but actually has {}".format((n, n), S.shape))
@@ -819,8 +840,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         D = None
 
     fun_wrapped, bc_wrapped, fun_jac_wrapped, bc_jac_wrapped = wrap_functions(
-        fun, bc, fun_jac, bc_jac, k, a, S, D
-    )
+        fun, bc, fun_jac, bc_jac, k, a, S, D, dtype)
 
     f = fun_wrapped(x, y, p)
     if f.shape != y.shape:
