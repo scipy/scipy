@@ -376,22 +376,29 @@ class LinearTimeInvariant(object):
                                       'or `ltid` instead.')
         return super(LinearTimeInvariant, cls).__new__(cls)
 
-    def __init__(self, *system):
+    def __init__(self):
         """
         Initialize the `lti` baseclass.
 
         The heavy lifting is done by the subclasses.
         """
-        super(LinearTimeInvariant, self).__init__(*system)
+        super(LinearTimeInvariant, self).__init__()
 
         self.inputs = None
         self.outputs = None
-        self._sampling_time = None
+        self._dt = None
 
     @property
-    def sampling_time(self):
+    def dt(self):
         """Return the sampling time of the system, `None` for `lti` systems."""
-        return self._sampling_time
+        return self._dt
+
+    @property
+    def _dt_dict(self):
+        if self.dt is None:
+            return {}
+        else:
+            return {'dt': self.dt}
 
     @property
     def num(self):
@@ -605,9 +612,6 @@ class lti(LinearTimeInvariant):
 
         The heavy lifting is done by the subclasses.
         """
-        # Consume unnecessary sampling_time=0 argument
-        if len(system) >= 1 and (system[-1] == 0 or system[-1] is None):
-            system = system[:-1]
         super(lti, self).__init__(*system)
 
     def impulse(self, X0=None, T=None, N=None):
@@ -666,6 +670,18 @@ class lti(LinearTimeInvariant):
         """
         return freqresp(self, w=w, n=n)
 
+    def to_discrete(self, dt, method='zoh', alpha=None):
+        """Return a discretized version of the current system.
+
+        Parameters: See `cont2discrete` for details.
+
+        Returns
+        -------
+        sys: instance of `ltid`
+        """
+        raise NotImplementedError('to_discrete is not implemented for this '
+                                  'system class.')
+
 
 class ltid(LinearTimeInvariant):
     """
@@ -673,16 +689,19 @@ class ltid(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system : arguments
+    *system: arguments
         The `ltid` class can be instantiated with either 3, 4 or 5 arguments.
         The following gives the number of arguments and the corresponding
         subclass that is created:
 
-            * 3: `TransferFunction`:  (numerator, denominator, sampling_time)
-            * 4: `ZerosPolesGain`: (zeros, poles, gain, sampling_time)
-            * 5: `StateSpace`:  (A, B, C, D, sampling_time)
+            * 3: `TransferFunction`:  (numerator, denominator)
+            * 4: `ZerosPolesGain`: (zeros, poles, gain)
+            * 5: `StateSpace`:  (A, B, C, D)
 
         Each argument can be an array or a sequence.
+    dt: float
+        Optional, Sampling time [s] of the discrete-time systems. Defaults to
+        `True` (unspecified sampling time).
 
     See Also
     --------
@@ -704,43 +723,43 @@ class ltid(LinearTimeInvariant):
     5]``).
 
     """
-    def __new__(cls, *system):
+    def __new__(cls, *system, **kwargs):
         """Create an instance of the appropriate subclass."""
         if cls is ltid:
             N = len(system)
-            if N == 3:
+            if N == 2:
                 return TransferFunctionDiscrete.__new__(
-                    TransferFunctionDiscrete, *system)
-            elif N == 4:
+                    TransferFunctionDiscrete, *system, **kwargs)
+            elif N == 3:
                 return ZerosPolesGainDiscrete.__new__(ZerosPolesGainDiscrete,
-                                                      *system)
-            elif N == 5:
-                return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system)
+                                                      *system, **kwargs)
+            elif N == 4:
+                return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system,
+                                                  **kwargs)
             else:
-                raise ValueError('Needs 3, 4 or 5 arguments.')
+                raise ValueError('Needs 2, 3 or 4 arguments.')
         # __new__ was called from a subclass, let it call its own functions
         return super(ltid, cls).__new__(cls)
 
-    def __init__(self, *system):
+    def __init__(self, *system, **kwargs):
         """
         Initialize the `lti` baseclass.
 
         The heavy lifting is done by the subclasses.
         """
-        super(ltid, self).__init__(*system[:-1])
-        self.sampling_time = system[-1]
+        dt = kwargs.pop('dt', True)
+        super(ltid, self).__init__(*system, **kwargs)
+
+        self.dt = dt
 
     @property
-    def sampling_time(self):
+    def dt(self):
         """Return the sampling time of the system."""
-        return self._sampling_time
+        return self._dt
 
-    @sampling_time.setter
-    def sampling_time(self, sampling_time):
-        if sampling_time == 0 or sampling_time is None:
-            raise ValueError('The sampling time has to be greater than zero '
-                             'for a discrete-time system.')
-        self._sampling_time = sampling_time
+    @dt.setter
+    def dt(self, dt):
+        self._dt = dt
 
     def impulse(self, x0=None, t=None, n=None):
         """
@@ -776,7 +795,7 @@ class ltid(LinearTimeInvariant):
         >>> import matplotlib.pyplot as plt
 
         # transfer function: H(z) = 1 / (z^2 + 2z + 3) with sampling time 0.5s
-        >>> sys = signal.TransferFunction([1], [1, 2, 3], 0.5)
+        >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.5)
 
         # equivalent: signal.dbode(sys)
         >>> w, mag, phase = sys.bode()
@@ -817,15 +836,17 @@ class TransferFunction(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system : arguments
-        The `TransferFunction` class can be instantiated with 1, 2 or 3
+    *system: arguments
+        The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
             * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 2: array_like: (numerator, denominator)
-            * 3: array_like, constant: (numerator, denominator, sampling_time)
+    dt: float
+        Optional. Sampling time [s] for discrete-time systems. Can be set to
+        `True` if unspecified. Defaults to None (continuous-time).
 
     See Also
     --------
@@ -857,50 +878,52 @@ class TransferFunction(LinearTimeInvariant):
     TransferFunctionContinuous(
     array([ 1.,  3.,  3.]),
     array([ 1.,  2.,  1.]),
-    sampling_time: None
+    dt: None
     )
 
     """
-    def __new__(cls, *system):
+    def __new__(cls, *system, **kwargs):
         """Handle object conversion if input is an instance of lti."""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
             return system[0].to_tf()
 
         # Choose whether to inherit from `lti` or from `ltid`
         if cls is TransferFunction:
-            if len(system) == 2 or system[2] == 0 or system[2] is None:
+            if kwargs.get('dt') is None:
                 return TransferFunctionContinuous.__new__(
                     TransferFunctionContinuous,
-                    *system)
+                    *system,
+                    **kwargs)
             else:
                 return TransferFunctionDiscrete.__new__(
                     TransferFunctionDiscrete,
-                    *system)
+                    *system,
+                    **kwargs)
 
         # No special conversion needed
         return super(TransferFunction, cls).__new__(cls)
 
-    def __init__(self, *system):
+    def __init__(self, *system, **kwargs):
         """Initialize the state space LTI system."""
         # Conversion of lti instances is handled in __new__
         if isinstance(system[0], LinearTimeInvariant):
             return
 
         # Remove system arguments, not needed by parents anymore
-        super(TransferFunction, self).__init__(*system[2:])
+        super(TransferFunction, self).__init__(**kwargs)
 
         self._num = None
         self._den = None
 
-        self.num, self.den = normalize(*system[:2])
+        self.num, self.den = normalize(*system)
 
     def __repr__(self):
         """Return representation of the system's transfer function"""
-        return '{0}(\n{1},\n{2},\nsampling_time: {3}\n)'.format(
+        return '{0}(\n{1},\n{2},\ndt: {3}\n)'.format(
             self.__class__.__name__,
             repr(self.num),
             repr(self.den),
-            repr(self.sampling_time),
+            repr(self.dt),
             )
 
     @property
@@ -963,8 +986,8 @@ class TransferFunction(LinearTimeInvariant):
             Zeros, poles, gain representation of the current system
 
         """
-        return ZerosPolesGain(*tf2zpk(self.num, self.den) +
-                               (self.sampling_time,))
+        return ZerosPolesGain(*tf2zpk(self.num, self.den),
+                              **self._dt_dict)
 
     def to_ss(self):
         """
@@ -976,20 +999,8 @@ class TransferFunction(LinearTimeInvariant):
             State space model of the current system
 
         """
-        return StateSpace(*tf2ss(self.num, self.den) + (self.sampling_time,))
-
-    def to_discrete(self, dt, method='zoh', alpha=None):
-        """
-        Returns the discretized `TransferFunction` system.
-
-        Parameters: See `cont2discrete` for details.
-
-        Returns
-        -------
-        sys: instance of `ltid` and `StateSpace`
-        """
-        return TransferFunction(*cont2discrete((self.num, self.den),
-                                         dt, method=method, alpha=alpha))
+        return StateSpace(*tf2ss(self.num, self.den),
+                          **self._dt_dict)
 
 
 class TransferFunctionContinuous(TransferFunction, lti):
@@ -1005,12 +1016,12 @@ class TransferFunctionContinuous(TransferFunction, lti):
 
     Parameters
     ----------
-    *system : arguments
+    *system: arguments
         The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+            * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 2: array_like: (numerator, denominator)
 
@@ -1044,11 +1055,25 @@ class TransferFunctionContinuous(TransferFunction, lti):
     TransferFunctionContinuous(
     array([ 1.,  3.,  3.]),
     array([ 1.,  2.,  1.]),
-    sampling_time: None
+    dt: None
     )
 
     """
-    pass
+    def to_discrete(self, dt, method='zoh', alpha=None):
+        """
+        Returns the discretized `TransferFunction` system.
+
+        Parameters: See `cont2discrete` for details.
+
+        Returns
+        -------
+        sys: instance of `ltid` and `StateSpace`
+        """
+        return TransferFunction(*cont2discrete((self.num, self.den),
+                                               dt,
+                                               method=method,
+                                               alpha=alpha)[:-1],
+                                dt=dt)
 
 
 class TransferFunctionDiscrete(TransferFunction, ltid):
@@ -1064,14 +1089,17 @@ class TransferFunctionDiscrete(TransferFunction, ltid):
 
     Parameters
     ----------
-    *system : arguments
-        The `TransferFunction` class can be instantiated with 1 or 3
+    *system: arguments
+        The `TransferFunction` class can be instantiated with 1 or 2
         arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `ltid` system: (`StateSpace`, `TransferFunction` or
+            * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
-            * 3: array_like, constant: (numerator, denominator, sampling_time)
+            * 2: array_like: (numerator, denominator)
+    dt: float
+        Optional, Sampling time [s] of the discrete-time systems. Defaults to
+        `True` (unspecified sampling time).
 
     See Also
     --------
@@ -1103,7 +1131,7 @@ class TransferFunctionDiscrete(TransferFunction, ltid):
     TransferFunctionDiscrete(
     array([ 1.,  3.,  3.]),
     array([ 1.,  2.,  1.]),
-    sampling_time: 0.5
+    dt: 0.5
     )
 
     """
@@ -1124,14 +1152,17 @@ class ZerosPolesGain(LinearTimeInvariant):
     Parameters
     ----------
     *system : arguments
-        The `ZerosPolesGain` class can be instantiated with 1, 3 or 4
+        The `ZerosPolesGain` class can be instantiated with 1 or 3
         arguments. The following gives the number of input arguments and their
         interpretation:
 
             * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 3: array_like: (zeros, poles, gain)
-            * 4: array_like, constant: (zeros, poles, gain, sampling_time)
+    dt: float
+        Optional. Sampling time [s] for discrete-time systems. Can be set to
+        `True` if unspecified. Defaults to None (continuous-time).
+
 
     See Also
     --------
@@ -1146,47 +1177,50 @@ class ZerosPolesGain(LinearTimeInvariant):
     inaccuracies.
 
     """
-    def __new__(cls, *system):
+    def __new__(cls, *system, **kwargs):
         """Handle object conversion if input is an instance of `lti`"""
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
             return system[0].to_zpk()
 
         # Choose whether to inherit from `lti` or from `ltid`
         if cls is ZerosPolesGain:
-            if len(system) == 3 or system[3] == 0 or system[3] is None:
+            if kwargs.get('dt') is None:
                 return ZerosPolesGainContinuous.__new__(
                     ZerosPolesGainContinuous,
-                    *system)
+                    *system,
+                    **kwargs)
             else:
                 return ZerosPolesGainDiscrete.__new__(
                     ZerosPolesGainDiscrete,
-                    *system)
+                    *system,
+                    **kwargs
+                    )
 
         # No special conversion needed
         return super(ZerosPolesGain, cls).__new__(cls)
 
-    def __init__(self, *system):
+    def __init__(self, *system, **kwargs):
         """Initialize the zeros, poles, gain system."""
         # Conversion of lti instances is handled in __new__
         if isinstance(system[0], LinearTimeInvariant):
             return
 
-        super(ZerosPolesGain, self).__init__(*system[3:])
+        super(ZerosPolesGain, self).__init__(**kwargs)
 
         self._zeros = None
         self._poles = None
         self._gain = None
 
-        self.zeros, self.poles, self.gain = system[:3]
+        self.zeros, self.poles, self.gain = system
 
     def __repr__(self):
         """Return representation of the `ZerosPolesGain` system."""
-        return '{0}(\n{1},\n{2},\n{3},\nsampling_time: {4}\n)'.format(
+        return '{0}(\n{1},\n{2},\n{3},\ndt: {4}\n)'.format(
             self.__class__.__name__,
             repr(self.zeros),
             repr(self.poles),
             repr(self.gain),
-            repr(self.sampling_time),
+            repr(self.dt),
             )
 
     @property
@@ -1247,8 +1281,8 @@ class ZerosPolesGain(LinearTimeInvariant):
             Transfer function of the current system
 
         """
-        return TransferFunction(*zpk2tf(self.zeros, self.poles, self.gain)
-                                 + (self.sampling_time,))
+        return TransferFunction(*zpk2tf(self.zeros, self.poles, self.gain),
+                                **self._dt_dict)
 
     def to_zpk(self):
         """
@@ -1272,22 +1306,8 @@ class ZerosPolesGain(LinearTimeInvariant):
             State space model of the current system
 
         """
-        return StateSpace(*zpk2ss(self.zeros, self.poles, self.gain)
-                           + (self.sampling_time,))
-
-    def to_discrete(self, dt, method='zoh', alpha=None):
-        """
-        Returns the discretized `ZerosPolesGain` system.
-
-        Parameters: See `cont2discrete` for details.
-
-        Returns
-        -------
-        sys: instance of `ltid` and `ZerosPolesGain`
-        """
-        return ZerosPolesGain(*cont2discrete((self.zeros, self.poles,
-                                              self.gain),
-                                             dt, method=method, alpha=alpha))
+        return StateSpace(*zpk2ss(self.zeros, self.poles, self.gain),
+                          **self._dt_dict)
 
 
 class ZerosPolesGainContinuous(ZerosPolesGain, lti):
@@ -1303,11 +1323,11 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     Parameters
     ----------
     *system : arguments
-        The `ZerosPolesGain` class can be instantiated with 1 or 3 arguments.
-        The following gives the number of input arguments and their
+        The `ZerosPolesGain` class can be instantiated with 1 or 3
+        arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+            * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 3: array_like: (zeros, poles, gain)
 
@@ -1324,7 +1344,22 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     inaccuracies.
 
     """
-    pass
+    def to_discrete(self, dt, method='zoh', alpha=None):
+        """
+        Returns the discretized `ZerosPolesGain` system.
+
+        Parameters: See `cont2discrete` for details.
+
+        Returns
+        -------
+        sys: instance of `ltid` and `ZerosPolesGain`
+        """
+        return ZerosPolesGain(
+            *cont2discrete((self.zeros, self.poles, self.gain),
+                           dt,
+                           method=method,
+                           alpha=alpha)[:-1],
+            dt=dt)
 
 
 class ZerosPolesGainDiscrete(ZerosPolesGain, ltid):
@@ -1340,13 +1375,16 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, ltid):
     Parameters
     ----------
     *system : arguments
-        The `ZerosPolesGain` class can be instantiated with 1 or 4 arguments.
-        The following gives the number of input arguments and their
+        The `ZerosPolesGain` class can be instantiated with 1 or 3
+        arguments. The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `ltid` system: (`StateSpace`, `TransferFunction` or
+            * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
-            * 4: array_like, constant: (zeros, poles, gain, sampling_time)
+            * 3: array_like: (zeros, poles, gain)
+    dt: float
+        Optional, Sampling time [s] of the discrete-time systems. Defaults to
+        `True` (unspecified sampling time).
 
     See Also
     --------
@@ -1376,15 +1414,17 @@ class StateSpace(LinearTimeInvariant):
 
     Parameters
     ----------
-    *system : arguments
-        The `StateSpace` class can be instantiated with 1, 4 or 5 arguments.
+    *system: arguments
+        The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
             * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 4: array_like: (A, B, C, D)
-            * 5: array_like, constant: (A, B, C, D, sampling_time)
+    dt: float
+        Optional. Sampling time [s] for discrete-time systems. Can be set to
+        `True` if unspecified. Defaults to None (continuous-time).
 
     See Also
     --------
@@ -1398,7 +1438,7 @@ class StateSpace(LinearTimeInvariant):
     inefficient and may lead to numerical inaccuracies.
 
     """
-    def __new__(cls, *system):
+    def __new__(cls, *system, **kwargs):
         """Create new StateSpace object and settle inheritance."""
         # Handle object conversion if input is an instance of `lti`
         if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
@@ -1406,41 +1446,41 @@ class StateSpace(LinearTimeInvariant):
 
         # Choose whether to inherit from `lti` or from `ltid`
         if cls is StateSpace:
-            if len(system) == 4 or system[4] == 0 or system[4] is None:
+            if kwargs.get('dt') is None:
                 return StateSpaceContinuous.__new__(StateSpaceContinuous,
-                                                    *system)
+                                                    *system, **kwargs)
             else:
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete,
-                                                  *system)
+                                                  *system, **kwargs)
 
         # No special conversion needed
         return super(StateSpace, cls).__new__(cls)
 
-    def __init__(self, *system):
+    def __init__(self, *system, **kwargs):
         """Initialize the state space lti/ltid system."""
         # Conversion of lti instances is handled in __new__
         if isinstance(system[0], LinearTimeInvariant):
             return
 
         # Remove system arguments, not needed by parents anymore
-        super(StateSpace, self).__init__(*system[4:])
+        super(StateSpace, self).__init__(**kwargs)
 
         self._A = None
         self._B = None
         self._C = None
         self._D = None
 
-        self.A, self.B, self.C, self.D = abcd_normalize(*system[:4])
+        self.A, self.B, self.C, self.D = abcd_normalize(*system)
 
     def __repr__(self):
         """Return representation of the `StateSpace` system."""
-        return '{0}(\n{1},\n{2},\n{3},\n{4},\nsampling_time: {5}\n)'.format(
+        return '{0}(\n{1},\n{2},\n{3},\n{4},\ndt: {5}\n)'.format(
             self.__class__.__name__,
             repr(self.A),
             repr(self.B),
             repr(self.C),
             repr(self.D),
-            repr(self.sampling_time),
+            repr(self.dt),
             )
 
     @property
@@ -1512,7 +1552,7 @@ class StateSpace(LinearTimeInvariant):
 
         """
         return TransferFunction(*ss2tf(self._A, self._B, self._C, self._D,
-                                       **kwargs) + (self.sampling_time,))
+                                       **kwargs), **self._dt_dict)
 
     def to_zpk(self, **kwargs):
         """
@@ -1530,7 +1570,7 @@ class StateSpace(LinearTimeInvariant):
 
         """
         return ZerosPolesGain(*ss2zpk(self._A, self._B, self._C, self._D,
-                                      **kwargs) + (self.sampling_time,))
+                                      **kwargs), **self._dt_dict)
 
     def to_ss(self):
         """
@@ -1544,19 +1584,6 @@ class StateSpace(LinearTimeInvariant):
         """
         return copy.deepcopy(self)
 
-    def to_discrete(self, dt, method='zoh', alpha=None):
-        """
-        Returns the discretized `StateSpace` system.
-
-        Parameters: See `cont2discrete` for details.
-
-        Returns
-        -------
-        sys: instance of `ltid` and `StateSpace`
-        """
-        return StateSpace(*cont2discrete((self.A, self.B, self.C, self.D),
-                                         dt, method=method, alpha=alpha))
-
 
 class StateSpaceContinuous(StateSpace, lti):
     r"""
@@ -1569,12 +1596,12 @@ class StateSpaceContinuous(StateSpace, lti):
 
     Parameters
     ----------
-    *system : arguments
-        The `StateSpace` class can be instantiated with 1 or 4 arguments.
+    *system: arguments
+        The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `lti` system: (`StateSpace`, `TransferFunction` or
+            * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 4: array_like: (A, B, C, D)
 
@@ -1590,7 +1617,21 @@ class StateSpaceContinuous(StateSpace, lti):
     inefficient and may lead to numerical inaccuracies.
 
     """
-    pass
+    def to_discrete(self, dt, method='zoh', alpha=None):
+        """
+        Returns the discretized `StateSpace` system.
+
+        Parameters: See `cont2discrete` for details.
+
+        Returns
+        -------
+        sys: instance of `ltid` and `StateSpace`
+        """
+        return StateSpace(*cont2discrete((self.A, self.B, self.C, self.D),
+                                         dt,
+                                         method=method,
+                                         alpha=alpha)[:-1],
+                          dt=dt)
 
 
 class StateSpaceDiscrete(StateSpace, ltid):
@@ -1598,20 +1639,23 @@ class StateSpaceDiscrete(StateSpace, ltid):
     Discrete-time Linear Time Invariant system in state-space form.
 
     Represents the system as the discrete-time difference equation
-     :math:`x[k+1] = A x[k] + B u[k]`.
-     `StateSpace` systems inherit additional functionality from the `ltid`
+    :math:`x[k+1] = A x[k] + B u[k]`.
+    `StateSpace` systems inherit additional functionality from the `ltid`
     class.
 
     Parameters
     ----------
-    *system : arguments
-        The `StateSpace` class can be instantiated with 1 or 5 arguments.
+    *system: arguments
+        The `StateSpace` class can be instantiated with 1 or 3 arguments.
         The following gives the number of input arguments and their
         interpretation:
 
-            * 1: `ltid` system: (`StateSpace`, `TransferFunction` or
+            * 1: `lti` or `ltid` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
-            * 5: array_like, constant: (A, B, C, D, sampling_time)
+            * 4: array_like: (A, B, C, D)
+    dt: float
+        Optional, Sampling time [s] of the discrete-time systems. Defaults to
+        `True` (unspecified sampling time).
 
     See Also
     --------
@@ -3166,7 +3210,7 @@ def dlsim(system, u, t=None, x0=None):
         raise AttributeError('dlsim can only be used with discrete-time ltid '
                              'systems.')
     elif not isinstance(system, ltid):
-        system = ltid(*system)
+        system = ltid(*system[:-1], dt=system[-1])
 
     # Condition needed to ensure output remains compatible
     is_ss_input = isinstance(system, StateSpace)
@@ -3179,10 +3223,10 @@ def dlsim(system, u, t=None, x0=None):
 
     if t is None:
         out_samples = len(u)
-        stoptime = (out_samples - 1) * system.sampling_time
+        stoptime = (out_samples - 1) * system.dt
     else:
         stoptime = t[-1]
-        out_samples = int(np.floor(stoptime / system.sampling_time)) + 1
+        out_samples = int(np.floor(stoptime / system.dt)) + 1
 
     # Pre-build output arrays
     xout = np.zeros((out_samples, system.A.shape[0]))
@@ -3265,7 +3309,7 @@ def dimpulse(system, x0=None, t=None, n=None):
         raise AttributeError('dimpulse can only be used with discrete-time '
                              'ltid systems.')
     else:
-        system = ltid(*system)._as_ss()
+        system = ltid(*system[:-1], dt=system[-1])._as_ss()
 
     # Default to 100 samples if unspecified
     if n is None:
@@ -3274,7 +3318,7 @@ def dimpulse(system, x0=None, t=None, n=None):
     # If time is not specified, use the number of samples
     # and system dt
     if t is None:
-        t = np.linspace(0, n * system.sampling_time, n, endpoint=False)
+        t = np.linspace(0, n * system.dt, n, endpoint=False)
     else:
         t = np.asarray(t)
 
@@ -3339,7 +3383,7 @@ def dstep(system, x0=None, t=None, n=None):
         raise AttributeError('dstep can only be used with discrete-time ltid '
                              'systems.')
     else:
-        system = ltid(*system)._as_ss()
+        system = ltid(*system[:-1], dt=system[-1])._as_ss()
 
     # Default to 100 samples if unspecified
     if n is None:
@@ -3348,7 +3392,7 @@ def dstep(system, x0=None, t=None, n=None):
     # If time is not specified, use the number of samples
     # and system dt
     if t is None:
-        t = np.linspace(0, n * system.sampling_time, n, endpoint=False)
+        t = np.linspace(0, n * system.dt, n, endpoint=False)
     else:
         t = np.asarray(t)
 
@@ -3381,9 +3425,9 @@ def dfreqresp(system, w=None, n=10000, whole=False):
         the interpretation:
 
             * 1 (instance of `ltid`)
-            * 2 (numerator, denominator, sampling_time)
-            * 3 (zeros, poles, gain, sampling_time)
-            * 4 (A, B, C, D, sampling_time)
+            * 2 (numerator, denominator, dt)
+            * 3 (zeros, poles, gain, dt)
+            * 4 (A, B, C, D, dt)
 
     w : array_like, optional
         Array of frequencies (in radians/sample). Magnitude and phase data is
@@ -3419,7 +3463,7 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> import matplotlib.pyplot as plt
 
     # transfer function: H(z) = 1 / (z^2 + 2z + 3)
-    >>> sys = signal.TransferFunction([1], [1, 2, 3], [1], 0.05)
+    >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
     >>> w, H = signal.dfreqresp(sys)
 
@@ -3434,7 +3478,7 @@ def dfreqresp(system, w=None, n=10000, whole=False):
         raise AttributeError('dfreqresp can only be used with discrete-time '
                              'systems.')
     else:
-        system = ltid(*system)._as_tf()
+        system = ltid(*system[:-1], dt=system[-1])._as_tf()
 
     if system.inputs != 1 or system.outputs != 1:
         raise ValueError("dfreqresp requires a SISO (single input, single "
@@ -3502,7 +3546,7 @@ def dbode(system, w=None, n=100):
     >>> import matplotlib.pyplot as plt
 
     # transfer function: H(z) = 1 / (z^2 + 2z + 3)
-    >>> sys = signal.TransferFunction([1], [1, 2, 3], [1], 0.05)
+    >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
     # equivalent: sys.bode()
     >>> w, mag, phase = signal.dbode(sys)

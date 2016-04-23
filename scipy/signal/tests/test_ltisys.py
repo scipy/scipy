@@ -731,12 +731,14 @@ class TestLti(object):
         assert_(isinstance(s, TransferFunction))
         assert_(isinstance(s, lti))
         assert_(not isinstance(s, ltid))
+        assert_(s.dt is None)
 
         # ZerosPolesGain
         s = lti(np.array([]), np.array([-1]), 1)
         assert_(isinstance(s, ZerosPolesGain))
         assert_(isinstance(s, lti))
         assert_(not isinstance(s, ltid))
+        assert_(s.dt is None)
 
         # StateSpace
         s = lti([], [-1], 1)
@@ -744,6 +746,7 @@ class TestLti(object):
         assert_(isinstance(s, StateSpace))
         assert_(isinstance(s, lti))
         assert_(not isinstance(s, ltid))
+        assert_(s.dt is None)
 
 
 class TestStateSpace(object):
@@ -792,6 +795,7 @@ class TestStateSpace(object):
 
         # zpk setters
         s2 = StateSpace(2, 2, 2, 2)
+        assert_(s.dt is None)
         s2.poles = 1
         s2.zeros = 0
         s2.gain = 1
