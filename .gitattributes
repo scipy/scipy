@@ -9,6 +9,7 @@ scipy/io/matlab/tests/data/japanese_utf8.txt binary
 scipy/special/_ufuncs_cxx.pyx binary
 scipy/special/_ufuncs_cxx.pxd binary
 scipy/special/_ufuncs.pyx binary
+scipy/special/_ufuncs_defs.h binary
 scipy/linalg/_blas_subroutine_wrappers.f binary
 scipy/linalg/_blas_subroutines.h binary
 scipy/linalg/_lapack_subroutine_wrappers.f binary
