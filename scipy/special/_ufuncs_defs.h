@@ -187,8 +187,6 @@ npy_double prolate_radial1_nocv_wrap(npy_double, npy_double, npy_double, npy_dou
 npy_int prolate_radial1_wrap(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *);
 npy_double prolate_radial2_nocv_wrap(npy_double, npy_double, npy_double, npy_double, npy_double *);
 npy_int prolate_radial2_wrap(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *);
-npy_double psi(npy_double);
-npy_cdouble cpsi_wrap(npy_cdouble);
 npy_double radian(npy_double, npy_double, npy_double);
 npy_double rgamma(npy_double);
 npy_double round(npy_double);

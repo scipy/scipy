@@ -23,10 +23,8 @@
 #endif
 #endif
 
-extern double cephes_psi(double);
 extern double cephes_struve(double, double);
 
-extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
 extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
@@ -74,19 +72,6 @@ npy_cdouble clngamma_wrap( npy_cdouble z) {
   npy_cdouble cy;
 
   F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
-  return cy;
-}
-
-npy_cdouble cpsi_wrap( npy_cdouble z) {
-  npy_cdouble cy;
-  
-  if (IMAG(z)==0.0) {
-    REAL(cy) = cephes_psi(REAL(z));
-    IMAG(cy) = 0.0;
-  }
-  else {
-    F_FUNC(cpsi,CPSI)(CADDR(z), CADDR(cy));
-  }
   return cy;
 }
 

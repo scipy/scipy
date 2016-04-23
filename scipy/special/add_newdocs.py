@@ -4827,12 +4827,48 @@ add_newdoc("scipy.special", "pseudo_huber",
 
 add_newdoc("scipy.special", "psi",
     """
-    psi(z)
+    psi(z, out=None)
 
-    Digamma function
+    The digamma function.
 
-    The derivative of the logarithm of the gamma function evaluated at
-    `z` (also called the digamma function).
+    The logarithmic derivative of the gamma function evaluated at ``z``.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex argument.
+    out : ndarray, optional
+        Array for the computed values of ``psi``.
+
+    Returns
+    -------
+    digamma : ndarray
+        Computed values of ``psi``.
+
+    Notes
+    -----
+    For large values not close to the negative real axis ``psi`` is
+    computed using the asymptotic series (5.11.2) from [1]_. For small
+    arguments not close to the negative real axis the recurrence
+    relation (5.5.2) from [1]_ is used until the argument is large
+    enough to use the asymptotic series. For values close to the
+    negative real axis the reflection formula (5.5.4) from [1]_ is
+    used first.  Note that ``psi`` has a family of zeros on the
+    negative real axis which occur between the poles at nonpositive
+    integers. Around the zeros the reflection formula suffers from
+    cancellation and the implementation loses precision. The sole
+    positive zero and the first negative zero, however, are handled
+    separately by precomputing series expansions using [2]_, so the
+    function should maintain full accuracy around the origin.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/5
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
+
     """)
 
 add_newdoc("scipy.special", "radian",
@@ -5545,4 +5581,14 @@ add_newdoc("scipy.special", "loggamma",
     .. [hare1997] D.E.G. Hare,
       *Computing the Principal Branch of log-Gamma*,
       Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
+    """)
+
+add_newdoc("scipy.special", "_sinpi",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_cospi",
+    """
+    Internal function, do not use.
     """)
