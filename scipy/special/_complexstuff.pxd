@@ -108,8 +108,8 @@ cdef inline number_t zsin(number_t x) nogil:
 cdef inline number_t zcos(number_t x) nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_ccos((<np.npy_cdouble*>&x)[0])
-        return (<double_complex*>&r)[0]
+        r = npy_ccos(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.cos(x)
 

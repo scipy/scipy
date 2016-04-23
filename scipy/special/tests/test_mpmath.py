@@ -1848,7 +1848,6 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             [Arg()], rtol=2*eps)
 
     def test_sinpi_complex(self):
-        eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
                             [ComplexArg()], rtol=2e-14)
 
