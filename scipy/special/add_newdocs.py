@@ -5409,24 +5409,11 @@ add_newdoc("scipy.special", "yve",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "zeta",
+add_newdoc("scipy.special", "_zeta",
     """
-    zeta(x, q)
+    _zeta(x, q)
 
-    Hurwitz zeta function
-
-    The Riemann zeta function of two arguments (also known as the
-    Hurwitz zeta function).
-
-    This function is defined as
-
-    .. math:: \\zeta(x, q) = \\sum_{k=0}^{\\infty} 1 / (k+q)^x,
-
-    where ``x > 1`` and ``q > 0``.
-
-    See also
-    --------
-    zetac
+    Internal function, Hurwitz zeta.
 
     """)
 
