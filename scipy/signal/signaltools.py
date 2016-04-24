@@ -1786,8 +1786,8 @@ def resample(x, num, t=None, axis=0, window=None):
 
     See also
     --------
-    decimate
-    resample_poly
+    decimate : Downsample the signal after applying an FIR or IIR filter.
+    resample_poly : Resample using polyphase filtering and an FIR filter.
 
     Notes
     -----
@@ -1903,8 +1903,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
 
     See also
     --------
-    decimate
-    resample
+    decimate : Downsample the signal after applying an FIR or IIR filter.
+    resample : Resample up or down using the FFT method.
 
     Notes
     -----
@@ -2884,10 +2884,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     """
-    Downsample the signal by using a filter.
+    Downsample the signal after applying an anti-aliasing filter.
 
     By default, an order 8 Chebyshev type I filter is used. A 30 point FIR
-    filter with hamming window is used if `ftype` is 'fir'.
+    filter with Hamming window is used if `ftype` is 'fir'.
 
     Parameters
     ----------
@@ -2922,8 +2922,8 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
 
     See Also
     --------
-    resample
-    resample_poly
+    resample : Resample up or down using the FFT method.
+    resample_poly : Resample using polyphase filtering and an FIR filter.
 
     Notes
     -----
