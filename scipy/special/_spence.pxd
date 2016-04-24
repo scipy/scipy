@@ -92,7 +92,8 @@ cdef inline double complex cspence_series1(double complex z) nogil:
     zz = z**2
     for n in range(1, 500):
         zfac *= z
-        term = zfac/(n*(n + 1)*(n + 2))**2
+        # Do the divisions one at a time to guard against overflow
+        term = ((zfac/n**2)/(n + 1)**2)/(n + 2)**2
         res += term
         if zabs(term) <= TOL*zabs(res):
             break
