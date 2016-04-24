@@ -142,6 +142,22 @@ def compute_jac_indices(n, m, k):
     return i, j
 
 
+def stacked_matmul(a, b):
+    """Stacked matrix multiply: out[i,:,:] = np.dot(a[i,:,:], b[i,:,:]).
+
+    In our case a[i, :, :] and b[i, :, :] are square.
+    """
+    # Empirical optimization. Use outer Python loop and BLAS for large
+    # matrices, otherwise use a single einsum call.
+    if a.shape[1] > 50:
+        out = np.empty_like(a)
+        for i in range(a.shape[0]):
+            out[i] = np.dot(a[i], b[i])
+        return out
+    else:
+        return np.einsum('...ij,...jk->...ik', a, b)
+
+
 def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
                          df_dp_middle, dbc_dya, dbc_dyb, dbc_dp):
     """Construct the Jacobian of the collocation system.
@@ -231,14 +247,14 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
     dPhi_dy_0 = np.empty((m - 1, n, n), dtype=dtype)
     dPhi_dy_0[:] = -np.identity(n)
     dPhi_dy_0 -= h / 6 * (df_dy[:-1] + 2 * df_dy_middle)
-    T = np.einsum('...ij,...jk->...ik', df_dy_middle, df_dy[:-1])
+    T = stacked_matmul(df_dy_middle, df_dy[:-1])
     dPhi_dy_0 -= h**2 / 12 * T
 
     # Computing off-diagonal n x n blocks.
     dPhi_dy_1 = np.empty((m - 1, n, n), dtype=dtype)
     dPhi_dy_1[:] = np.identity(n)
     dPhi_dy_1 -= h / 6 * (df_dy[1:] + 2 * df_dy_middle)
-    T = np.einsum('...ij,...jk->...ik', df_dy_middle, df_dy[1:])
+    T = stacked_matmul(df_dy_middle, df_dy[1:])
     dPhi_dy_1 += h**2 / 12 * T
 
     values = np.hstack((dPhi_dy_0.ravel(), dPhi_dy_1.ravel(), dbc_dya.ravel(),
@@ -247,8 +263,7 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
     if k > 0:
         df_dp = np.transpose(df_dp, (2, 0, 1))
         df_dp_middle = np.transpose(df_dp_middle, (2, 0, 1))
-        T = np.einsum('...ij,...jk->...ik', df_dy_middle,
-                      df_dp[:-1] - df_dp[1:])
+        T = stacked_matmul(df_dy_middle, df_dp[:-1] - df_dp[1:])
         df_dp_middle += 0.125 * h * T
         dPhi_dp = -h/6 * (df_dp[:-1] + df_dp[1:] + 4 * df_dp_middle)
         values = np.hstack((values, dPhi_dp.ravel(), dbc_dp.ravel()))
