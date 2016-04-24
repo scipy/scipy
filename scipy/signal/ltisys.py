@@ -1002,6 +1002,57 @@ class TransferFunction(LinearTimeInvariant):
         return StateSpace(*tf2ss(self.num, self.den),
                           **self._dt_dict)
 
+    @staticmethod
+    def _z_to_zinv(num, den):
+        """Change a transfer function from the variable `z` to `z**-1`.
+
+        Parameters
+        ----------
+        num, den: 1d array_like
+            Sequences representing the coefficients of the numerator and
+            denominator polynomials, in order of descending degree of 'z'.
+            That is, `5z**2 + 3z + 2` is presented as [5, 3, 2].
+
+        Returns
+        -------
+        num, den: 1d array_like
+            Sequences representing the coefficients of the numerator and
+            denominator polynomials, in order of ascending degree of 'z**-1'.
+            That is, `5 + 3 z**-1 + 2 z**-2` is presented as `[5, 3, 2]`.
+        """
+        diff = len(num) - len(den)
+        if diff > 0:
+            den = np.hstack((np.zeros(diff), den))
+        elif diff < 0:
+            num = np.hstack((np.zeros(-diff), num))
+        return num, den
+
+    @staticmethod
+    def _zinv_to_z(num, den):
+        """Change a transfer function from the variable `z` to `z**-1`.
+
+        Parameters
+        ----------
+        num, den: 1d array_like
+            Sequences representing the coefficients of the numerator and
+            denominator polynomials, in order of ascending degree of 'z**-1'.
+            That is, `5 + 3 z**-1 + 2 z**-2` is presented as `[5, 3, 2]`.
+
+        Returns
+        -------
+        num, den: 1d array_like
+            Sequences representing the coefficients of the numerator and
+            denominator polynomials, in order of descending degree of 'z'.
+            That is,
+            `5z**2 + 3z + 2` is presented as [5, 3, 2].
+        """
+        diff = len(num) - len(den)
+        if diff > 0:
+            den = np.hstack((den, np.zeros(diff)))
+        elif diff < 0:
+            num = np.hstack((num, np.zeros(-diff)))
+        return num, den
+
 
 class TransferFunctionContinuous(TransferFunction, lti):
     r"""
@@ -3491,12 +3542,7 @@ def dfreqresp(system, w=None, n=10000, whole=False):
 
     # Convert numerator and denominator from polynomials in the variable 'z'
     # to polynomials in the variable 'z^-1', as freqz expects.
-    num, den = system.num.ravel(), system.den
-    diff = len(num) - len(den)
-    if diff > 0:
-        den = np.hstack((np.zeros(diff), den))
-    elif diff < 0:
-        num = np.hstack((np.zeros(-diff), num))
+    num, den = TransferFunction._z_to_zinv(system.num.ravel(), system.den)
 
     return freqz(num, den, worN=worN, whole=whole)
 

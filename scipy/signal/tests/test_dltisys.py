@@ -600,5 +600,45 @@ class Test_bode(object):
         assert_raises(AttributeError, dbode, system)
 
 
+class TestTransferFunctionZConversion(object):
+    """Test private conversions between 'z' and 'z**-1' polynomials."""
+
+    def test_full(self):
+        # Numerator and denominator same order
+        num = [2, 3, 4]
+        den = [5, 6, 7]
+        num2, den2 = TransferFunction._z_to_zinv(num, den)
+        assert_equal(num, num2)
+        assert_equal(den, den2)
+
+        num2, den2 = TransferFunction._zinv_to_z(num, den)
+        assert_equal(num, num2)
+        assert_equal(den, den2)
+
+    def test_numerator(self):
+        # Numerator lower order than denominator
+        num = [2, 3]
+        den = [5, 6, 7]
+        num2, den2 = TransferFunction._z_to_zinv(num, den)
+        assert_equal([0, 2, 3], num2)
+        assert_equal(den, den2)
+
+        num2, den2 = TransferFunction._zinv_to_z(num, den)
+        assert_equal([2, 3, 0], num2)
+        assert_equal(den, den2)
+
+    def test_denominator(self):
+        # Numerator higher order than denominator
+        num = [2, 3, 4]
+        den = [5, 6]
+        num2, den2 = TransferFunction._z_to_zinv(num, den)
+        assert_equal(num, num2)
+        assert_equal([0, 5, 6], den2)
+
+        num2, den2 = TransferFunction._zinv_to_z(num, den)
+        assert_equal(num, num2)
+        assert_equal([5, 6, 0], den2)
+
+
 if __name__ == "__main__":
     run_module_suite()
