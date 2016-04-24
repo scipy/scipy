@@ -1786,8 +1786,8 @@ def resample(x, num, t=None, axis=0, window=None):
 
     See also
     --------
-    decimate : Downsample the signal after applying an anti-aliasing filter.
-    resample_poly : Resample using polyphase filtering.
+    decimate : Downsample the signal after applying an FIR or IIR filter.
+    resample_poly : Resample using polyphase filtering and an FIR filter.
 
     Notes
     -----
@@ -1903,7 +1903,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
 
     See also
     --------
-    decimate : Downsample the signal after applying an anti-aliasing filter.
+    decimate : Downsample the signal after applying an FIR or IIR filter.
     resample : Resample up or down using the FFT method.
 
     Notes
@@ -2923,7 +2923,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     See Also
     --------
     resample : Resample up or down using the FFT method.
-    resample_poly : Resample using polyphase filtering.
+    resample_poly : Resample using polyphase filtering and an FIR filter.
 
     Notes
     -----
