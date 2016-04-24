@@ -3558,9 +3558,9 @@ def dbode(system, w=None, n=100):
         the interpretation:
 
             * 1 (instance of `ltid`)
-            * 2 (num, den)
-            * 3 (zeros, poles, gain)
-            * 4 (A, B, C, D)
+            * 2 (num, den, dt)
+            * 3 (zeros, poles, gain, dt)
+            * 4 (A, B, C, D, dt)
 
     w : array_like, optional
         Array of frequencies (in radians/sample). Magnitude and phase data is
@@ -3574,7 +3574,7 @@ def dbode(system, w=None, n=100):
     Returns
     -------
     w : 1D ndarray
-        Frequency array [rad/sample]
+        Frequency array [rad/time_unit]
     mag : 1D ndarray
         Magnitude array [dB]
     phase : 1D ndarray
@@ -3606,10 +3606,15 @@ def dbode(system, w=None, n=100):
     """
     w, y = dfreqresp(system, w=w, n=n)
 
-    mag = 20.0 * numpy.log10(abs(y))
-    phase = numpy.rad2deg(numpy.unwrap(numpy.arctan2(y.imag, y.real)))
+    if isinstance(system, ltid):
+        dt = system.dt
+    else:
+        dt = system[-1]
 
-    return w, mag, phase
+    mag = 20.0 * numpy.log10(abs(y))
+    phase = numpy.rad2deg(numpy.unwrap(numpy.angle(y)))
+    
+    return w / dt, mag, phase
 
 
 def cont2discrete(system, dt, method="zoh", alpha=None):

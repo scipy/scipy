@@ -539,9 +539,10 @@ class Test_bode(object):
     def test_manual(self):
         # Test bode() magnitude calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
-        system = TransferFunction(0.3, [1, -0.2], dt=0.1)
+        dt = 0.1
+        system = TransferFunction(0.3, [1, -0.2], dt=dt)
         w = [0.1, 0.5, 1, np.pi]
-        w, mag, phase = dbode(system, w=w)
+        w2, mag, phase = dbode(system, w=w)
 
         # Test mag
         expected_mag = [-8.5329, -8.8396, -9.6162, -12.0412]
@@ -551,12 +552,15 @@ class Test_bode(object):
         expected_phase = [-7.1575, -35.2814, -67.9809, -180.0000]
         assert_almost_equal(phase, expected_phase, decimal=4)
 
+        # Test frequency
+        assert_equal(np.array(w) / dt, w2)
+
     def test_auto(self):
         # Test bode() magnitude calculation.
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
         system = TransferFunction(0.3, [1, -0.2], dt=0.1)
-        w = [0.1, 0.5, 1, np.pi]
-        w, mag, phase = dbode(system, w=w)
+        w = np.array([0.1, 0.5, 1, np.pi])
+        w2, mag, phase = dbode(system, w=w)
         jw = np.exp(w * 1j)
         y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
 
@@ -571,10 +575,11 @@ class Test_bode(object):
     def test_range(self):
         # Test that bode() finds a reasonable frequency range.
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        dt = 0.1
         system = TransferFunction(0.3, [1, -0.2], dt=0.1)
         n = 10
         # Expected range is from 0.01 to 10.
-        expected_w = np.linspace(0, np.pi, n, endpoint=False)
+        expected_w = np.linspace(0, np.pi, n, endpoint=False) / dt
         w, mag, phase = dbode(system, n=n)
         assert_almost_equal(w, expected_w)
 
