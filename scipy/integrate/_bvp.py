@@ -573,14 +573,14 @@ def modify_mesh(x, insert_1, insert_2):
     -----
     `insert_1` and `insert_2` should not have common values.
     """
-    nodes_1 = 0.5 * (x[insert_1] + x[insert_1 + 1])
-    nodes_2 = np.hstack((2 * x[insert_2] + x[insert_2 + 1],
-                         x[insert_2] + 2 * x[insert_2 + 1])) / 3
-
-    ind = np.hstack((insert_1 + 1, np.tile(insert_2, 2) + 1))
-    nodes = np.hstack((nodes_1, nodes_2))
-
-    return np.insert(x, ind, nodes)
+    # Because np.insert implementation apparently varies with a version of
+    # numpy, we use a simple and reliable approach with sorting.
+    return np.sort(np.hstack((
+        x,
+        0.5 * (x[insert_1] + x[insert_1 + 1]),
+        (2 * x[insert_2] + x[insert_2 + 1]) / 3,
+        (x[insert_2] + 2 * x[insert_2 + 1]) / 3
+    )))
 
 
 def wrap_functions(fun, bc, fun_jac, bc_jac, k, a, S, D, dtype):
