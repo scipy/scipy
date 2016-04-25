@@ -681,7 +681,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     Problems can be solved in a complex domain as well. In this case y and p
     are considered to be complex, and f and bc are assumed to be complex-valued
     functions, but x stays real. Note that f and bc must be complex
-    differentiable (satisfy Cauchy–Riemann conditions) in this case, otherwise
+    differentiable (satisfy Cauchy-Riemann conditions) in this case, otherwise
     you should write your problem for real and imaginary parts separately.
     To solve a problem in a complex domain, pass an initial guess for y with a
     complex data type, see below.
@@ -689,15 +689,17 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is
-        ``fun(x, y, p)``, where ``x`` is ndarray of shape (m,) and ``y`` is
-        ndarray of shape (n, m), meaning that ``y[:, i]`` corresponds to
-        ``x[i]``, ``p`` is optional with shape (k,). The return value must
-        have shape (n, m) with the same layout as for ``y``.
+        Right-hand side of the system. The calling signature is ``fun(x, y)``,
+        or ``fun(x, y, p)`` if parameters are present. All arguments are
+        ndarray: ``x`` with shape (m,), ``y`` with shape (n, m), meaning that
+        ``y[:, i]`` corresponds to ``x[i]``, and ``p`` with shape (k,). The
+        return value must be an array with shape (n, m) and the same layout as
+        ``y``.
     bc : callable
         Function evaluating residuals of the boundary conditions. The calling
-        signature is ``bc(ya, yb, p)``, where ``ya`` and ``yb`` have shape
-        (n,), ``p`` is optional with shape (k,). The return value must have
+        signature is ``bc(ya, yb)``, or ``bc(ya, yb, p)`` if parameters are
+        present. All arguments are ndarray: ``ya`` and ``yb`` with shape (n,),
+        and ``p`` with shape (k,). The return value must be an array with
         shape (n + k,).
     x : array_like, shape (m,)
         Initial mesh. Must be a strictly increasing sequence of real numbers
@@ -714,8 +716,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         solved without the singular term.
     fun_jac : callable or None, optional
         Function computing derivatives of f with respect to y and p. The
-        calling signature is ``fun_jac(x, y, p)``. The return must contain
-        1 or 2 elements in the following order:
+        calling signature is ``fun_jac(x, y)``, or ``fun(x, y, p)`` if
+        parameters are present. The return must contain 1 or 2 elements in the
+        following order:
 
             * df_dy : array_like with shape (n, n, m) where an element
               (i, j, k) equals to d f_i(x_k, y_k, p) / d (y_k)_j.
@@ -730,8 +733,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         using forward finite differences.
     bc_jac : callable or None, optional
         Function computing derivatives of bc with respect to ya, yb and p.
-        The calling signature is ``bc_jac(ya, yb, p)``. The return must
-        contain 2 or 3 elements in the following order:
+        The calling signature is ``bc_jac(ya, yb)``, or ``bc_jac(ya, yb, p)``
+        if parameters are present. The return must contain 2 or 3 elements in
+        the following order:
 
             * dbc_dya : array_like with shape (n, n) where an element (i, j)
               equals to d bc_i(ya, yb, p) / d ya_j.
@@ -748,9 +752,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     tol : float, optional
         Desired tolerance of the solution. If we define ``res = y' - f`` where
         ``y'`` is the derivative of the found solution, then the solver tries
-        to achieve on each interval ``norm(res / (1 + abs(f)) < tol``, where
-        ``norm`` is estimated in a root mean squared sense (using a numerical
-        quadrature formula). Default is 1e-3.
+        to achieve on each mesh interval ``norm(res / (1 + abs(f)) < tol``,
+        where ``norm`` is estimated in a root mean squared sense (using a
+        numerical quadrature formula). Default is 1e-3.
     max_nodes : int, optional
         Maximum allowed number of the mesh nodes. If exceeded, the algorithm
         terminates. Default is 1000.
@@ -818,7 +822,63 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
     Examples
     --------
-    We solve a simple Sturm-Liouville problem::
+    In the first example we solve Bratu's problem::
+
+        y'' + k * exp(y) = 0
+        y(0) = y(1) = 0
+
+    for k = 1.
+
+    We rewrite the equation as a first order system and implement its
+    right-hand side evaluation::
+
+        y1' = y2
+        y2' = -exp(y1)
+
+    >>> def fun(x, y):
+    ...     return np.vstack((y[1], -np.exp(y[0])))
+
+    Implement evaluation of the boundary condition residuals:
+
+    >>> def bc(ya, yb):
+    ...     return np.array([ya[0], yb[0]])
+
+    Define the initial mesh with 5 nodes:
+
+    >>> x = np.linspace(0, 1, 5)
+
+    This problem is known to have two solutions. To obtain both of them we
+    use two different initial guesses for y. We denote them by subscripts
+    a and b.
+
+    >>> y_a = np.zeros((2, x.size))
+    >>> y_b = np.zeros((2, x.size))
+    >>> y_b[0] = 3
+
+    Now we are ready to run the solver.
+
+    >>> from scipy.integrate import solve_bvp
+    >>> res_a = solve_bvp(fun, bc, x, y_a)
+    >>> res_b = solve_bvp(fun, bc, x, y_b)
+
+    Let's plot the two found solutions. We take an advantage of having the
+    solution in a spline form to produce a smooth plot.
+
+    >>> x_plot = np.linspace(0, 1, 100)
+    >>> y_plot_a = res_a.sol(x_plot)[0]
+    >>> y_plot_b = res_b.sol(x_plot)[0]
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(x_plot, y_plot_a, label='y_a')
+    >>> plt.plot(x_plot, y_plot_b, label='y_b')
+    >>> plt.legend()
+    >>> plt.xlabel("x")
+    >>> plt.ylabel("y")
+    >>> plt.show()
+
+    We see that the two solutions have similar shape, but differ in scale
+    significantly.
+
+    In the second example we solve a simple Sturm-Liouville problem::
 
         y'' + k**2 * y = 0
         y(0) = y(1) = 0
@@ -829,7 +889,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
         y'(0) = k
 
-    Now we rewrite our equation as a first order system and implement its
+    Again we rewrite our equation as a first order system and implement its
     right-hand side computation::
 
         y1' = y2
@@ -848,29 +908,28 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     ...     k = p[0]
     ...     return np.array([ya[0], yb[0], ya[1] - k])
 
-    We initially setup a coarse mesh with only 5 nodes. To avoid the trivial
-    solution we set all values of y to 1 initially.
+    Setup the initial mesh and guess for y. We aim to find the solution for
+    k = 2 * pi, to achieve that we set values of y to approximately follow
+    sin(2 * pi * x):
 
     >>> x = np.linspace(0, 1, 5)
-    >>> y = np.ones((2, x.shape[0]))
+    >>> y = np.zeros((2, x.size))
+    >>> y[0, 1] = 1
+    >>> y[0, 3] = -1
 
-    Now we are ready to run the solver. We choose 3 as an initial guess for
-    k, aiming to find a solution for k = pi.
+    Run the solver with 6 as an initial guess for k.
 
-    >>> from scipy.integrate import solve_bvp
-    >>> sol = solve_bvp(fun, bc, x, y, p=[3])
+    >>> sol = solve_bvp(fun, bc, x, y, p=[6])
 
-    We see that we found an approximately correct value for k:
+    We see that the found k is approximately correct:
 
     >>> sol.p[0]
-    3.14169442647
+    6.28329460046
 
-    And finally we plot the solution. We take an advantage of having the
-    solution in a spline form to produce a smooth plot.
+    Let's visualize the solution:
 
     >>> x_plot = np.linspace(0, 1, 100)
     >>> y_plot = sol.sol(x_plot)[0]
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(x_plot, y_plot)
     >>> plt.xlabel("x")
     >>> plt.ylabel("y")
