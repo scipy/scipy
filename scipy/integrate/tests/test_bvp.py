@@ -1,5 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
+
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 import numpy as np
 from numpy.testing import (assert_, assert_array_equal, assert_allclose,
                            run_module_suite, assert_raises, assert_equal)
@@ -520,6 +527,27 @@ def test_shock_layer():
     assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
+
+def test_verbose():
+    # Smoke test that checks the printing does something and does not crash
+    x = np.linspace(0, 1, 5)
+    y = np.zeros((2, x.shape[0]))
+    for verbose in [0, 1, 2]:
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        try:
+            sol = solve_bvp(exp_fun, exp_bc, x, y, verbose=verbose)
+            text = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old_stdout
+
+        assert_(sol.success)
+        if verbose == 0:
+            assert_(not text, text)
+        if verbose >= 1:
+            assert_("Solved in" in text, text)
+        if verbose >= 2:
+            assert_("Max residual" in text, text)
 
 if __name__ == '__main__':
     run_module_suite()
