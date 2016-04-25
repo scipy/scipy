@@ -4,6 +4,7 @@ import numpy as np
 from numpy.testing import (assert_, assert_array_equal, assert_allclose,
                            run_module_suite, assert_raises, assert_equal)
 from scipy.sparse import coo_matrix
+from scipy.special import erf
 from scipy.integrate._bvp import (modify_mesh, estimate_fun_jac,
                                   estimate_bc_jac, compute_jac_indices,
                                   construct_global_jac, solve_bvp)
@@ -142,6 +143,25 @@ def big_sol(x, n):
     y = np.ones((2 * n, x.size))
     y[::2] = x
     return x
+
+
+def shock_fun(x, y):
+    eps = 1e-3
+    return np.vstack((
+        y[1],
+        -(x * y[1] + eps * np.pi**2 * np.cos(np.pi * x) +
+          np.pi * x * np.sin(np.pi * x)) / eps
+    ))
+
+
+def shock_bc(ya, yb):
+    return np.array([ya[0] + 2, yb[0]])
+
+
+def shock_sol(x):
+    eps = 1e-3
+    k = np.sqrt(2 * eps)
+    return np.cos(np.pi * x) + erf(x / k) / erf(1 / k)
 
 
 def test_modify_mesh():
@@ -323,6 +343,8 @@ def test_no_params():
             assert_equal(sol.status, 0)
             assert_(sol.success)
 
+            assert_equal(sol.x.size, 5)
+
             sol_test = sol.sol(x_test)
 
             assert_allclose(sol_test[0], exp_sol(x_test), atol=1e-5)
@@ -351,11 +373,14 @@ def test_with_params():
             assert_equal(sol.status, 0)
             assert_(sol.success)
 
-            assert_allclose(sol.p, [1.0], rtol=1e-4)
+            assert_(sol.x.size < 10)
+
+            assert_allclose(sol.p, [1], rtol=1e-4)
 
             sol_test = sol.sol(x_test)
 
-            assert_allclose(sol_test[0], sl_sol(x_test, [1]), rtol=1e-4, atol=1e-4)
+            assert_allclose(sol_test[0], sl_sol(x_test, [1]),
+                            rtol=1e-4, atol=1e-4)
 
             f_test = sl_fun(x_test, sol_test, [1])
             res = sol.sol(x_test, 1) - f_test
@@ -383,6 +408,8 @@ def test_singular_term():
 
             assert_equal(sol.status, 0)
             assert_(sol.success)
+
+            assert_equal(sol.x.size, 10)
 
             sol_test = sol.sol(x_test)
             assert_allclose(sol_test[0], emden_sol(x_test), atol=1e-6)
@@ -462,6 +489,30 @@ def test_big_problem():
     assert_(np.all(norm_res < 1e-3))
 
     assert_(np.all(sol.res < 1e-3))
+    assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
+    assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+
+
+def test_shock_layer():
+    x = np.linspace(-1, 1, 5)
+    x_test = np.linspace(-1, 1, 100)
+    y = np.zeros((2, x.size))
+    sol = solve_bvp(shock_fun, shock_bc, x, y)
+
+    assert_equal(sol.status, 0)
+    assert_(sol.success)
+
+    assert_(sol.x.size < 110)
+
+    sol_test = sol.sol(x_test)
+    assert_allclose(sol_test[0], shock_sol(x_test), rtol=1e-5, atol=1e-5)
+
+    f_test = shock_fun(x_test, sol_test)
+    res = sol.sol(x_test, 1) - f_test
+    rel_res = res / (1 + np.abs(f_test))
+    norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
+
+    assert_(np.all(norm_res < 1e-3))
     assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
     assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
 
