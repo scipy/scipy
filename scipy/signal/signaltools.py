@@ -144,7 +144,17 @@ def correlate(in1, in2, mode='full'):
     The correlation z of two d-dimensional arrays x and y is defined as:
 
       z[...,k,...] = sum[..., i_l, ...]
-                         x[..., i_l,...] * conj(y[..., i_l + k,...])
+                         x[..., i_l,...] * conj(y[..., i_l - k,...])
+                         
+      Such that if x and y are 1-D arrays and z = correlate(x,y,'full') then;
+      
+      z[k] = (x * y)(k - N + 1) for k = 0,1,...,||x|| + ||y|| - 2
+      
+           = z\left[k\right]=\sum_{l=0}^{||x||-1}x_l*(y_{l-k+N-1})^{*}
+           
+      Where ||x|| = length(x), N = max(||x||,||y||), and y_m is 0 when m is outside the range of y.
+      
+      
 
     Examples
     --------
