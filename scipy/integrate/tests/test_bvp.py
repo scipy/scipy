@@ -120,6 +120,30 @@ def emden_sol(x):
     return (1 + x**2/3)**-0.5
 
 
+def undefined_fun(x, y):
+    return np.zeros_like(y)
+
+
+def undefined_bc(ya, yb):
+    return np.array([ya[0], yb[0] - 1])
+
+
+def big_fun(x, y):
+    f = np.zeros_like(y)
+    f[::2] = y[1::2]
+    return f
+
+
+def big_bc(ya, yb):
+    return np.hstack((ya[::2], yb[::2] - 1))
+
+
+def big_sol(x, n):
+    y = np.ones((2 * n, x.size))
+    y[::2] = x
+    return x
+
+
 def test_modify_mesh():
     x = np.array([0, 1, 3, 9], dtype=float)
     x_new = modify_mesh(x, np.array([0]), np.array([2]))
@@ -402,6 +426,44 @@ def test_complex():
             assert_(np.all(sol.res < 1e-3))
             assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
             assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+
+
+def test_failures():
+    x = np.linspace(0, 1, 2)
+    y = np.zeros((2, x.size))
+    res = solve_bvp(exp_fun, exp_bc, x, y, tol=1e-5, max_nodes=5)
+    assert_equal(res.status, 1)
+    assert_(not res.success)
+
+    x = np.linspace(0, 1, 5)
+    y = np.zeros((2, x.size))
+    res = solve_bvp(undefined_fun, undefined_bc, x, y)
+    assert_equal(res.status, 2)
+    assert_(not res.success)
+
+
+def test_big_problem():
+    n = 30
+    x = np.linspace(0, 1, 5)
+    y = np.zeros((2 * n, x.size))
+    sol = solve_bvp(big_fun, big_bc, x, y)
+
+    assert_equal(sol.status, 0)
+    assert_(sol.success)
+
+    sol_test = sol.sol(x)
+
+    assert_allclose(sol_test[0], big_sol(x, n))
+
+    f_test = big_fun(x, sol_test)
+    res = sol.sol(x, 1) - f_test
+    rel_res = res / (1 + np.abs(f_test))
+    norm_res = np.sum(np.real(rel_res * np.conj(rel_res)), axis=0) ** 0.5
+    assert_(np.all(norm_res < 1e-3))
+
+    assert_(np.all(sol.res < 1e-3))
+    assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
+    assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
 
 
 if __name__ == '__main__':
