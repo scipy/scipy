@@ -357,7 +357,7 @@ def test_no_params():
 
             assert_(np.all(sol.res < 1e-3))
             assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-            assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+            assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
 def test_with_params():
@@ -390,7 +390,7 @@ def test_with_params():
 
             assert_(np.all(sol.res < 1e-3))
             assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-            assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+            assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
 def test_singular_term():
@@ -421,7 +421,7 @@ def test_singular_term():
 
             assert_(np.all(norm_res < 1e-3))
             assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-            assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+            assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
 def test_complex():
@@ -452,7 +452,7 @@ def test_complex():
 
             assert_(np.all(sol.res < 1e-3))
             assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-            assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+            assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
 def test_failures():
@@ -490,7 +490,7 @@ def test_big_problem():
 
     assert_(np.all(sol.res < 1e-3))
     assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-    assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+    assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
 def test_shock_layer():
@@ -514,7 +514,7 @@ def test_shock_layer():
 
     assert_(np.all(norm_res < 1e-3))
     assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
-    assert_allclose(sol.sol(sol.x, 1), sol.f, rtol=1e-10, atol=1e-10)
+    assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
 
 if __name__ == '__main__':

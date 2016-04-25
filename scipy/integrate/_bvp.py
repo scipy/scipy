@@ -523,7 +523,7 @@ def estimate_rms_residuals(fun, sol, x, h, p, res_middle, f_middle):
     return (0.5 * (32/45 * res_middle + 49/90 * (res_1 + res_2))) ** 0.5
 
 
-def create_spline(y, f, x, h):
+def create_spline(y, yp, x, h):
     """Create a cubic spline given values and derivatives.
 
     Formulas for the coefficients are taken from interpolate.CubicSpline.
@@ -538,10 +538,10 @@ def create_spline(y, f, x, h):
     n, m = y.shape
     c = np.empty((4, n, m - 1), dtype=y.dtype)
     slope = (y[:, 1:] - y[:, :-1]) / h
-    t = (f[:, :-1] + f[:, 1:] - 2 * slope) / h
+    t = (yp[:, :-1] + yp[:, 1:] - 2 * slope) / h
     c[0] = t / h
-    c[1] = (slope - f[:, :-1]) / h - t
-    c[2] = f[:, :-1]
+    c[1] = (slope - yp[:, :-1]) / h - t
+    c[2] = yp[:, :-1]
     c[3] = y[:, :-1]
     c = np.rollaxis(c, 1)
 
@@ -778,14 +778,14 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         Nodes of the final mesh.
     y : ndarray, shape (n, m)
         Function values evaluated at the mesh nodes.
-    f : ndarray, shape (n, m)
+    yp : ndarray, shape (n, m)
         Function derivatives evaluated at the mesh nodes.
     res : ndarray, shape (m - 1,)
         Relative rms residuals for each mesh interval.
     niter : int
         Number of completed iterations.
     status : int
-        The reason for algorithm termination:
+        Reason for algorithm termination:
 
             * 0: The algorithm converged to the desired accuracy.
             * 1: The maximum number of mesh nodes is exceeded.
@@ -1067,6 +1067,6 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     if p.size == 0:
         p = None
 
-    return BVPResult(sol=sol, p=p, x=x, y=y, f=f, res=rms_res, niter=iteration,
-                     status=status, message=TERMINATION_MESSAGES[status],
-                     success=status == 0)
+    return BVPResult(sol=sol, p=p, x=x, y=y, yp=f, res=rms_res,
+                     niter=iteration, status=status,
+                     message=TERMINATION_MESSAGES[status], success=status == 0)
