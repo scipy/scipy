@@ -4559,7 +4559,7 @@ def ks_2samp(data1, data2):
 
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
-def mannwhitneyu(x, y, use_continuity=True, alternative='two-sided'):
+def mannwhitneyu(x, y, use_continuity=True, alternative=None):
     """
     Computes the Mann-Whitney rank test on samples x and y.
 
@@ -4570,13 +4570,23 @@ def mannwhitneyu(x, y, use_continuity=True, alternative='two-sided'):
     use_continuity : bool, optional
             Whether a continuity correction (1/2.) should be taken into
             account. Default is True.
+    alternative : None (deprecated), 'less', 'two-sided', or 'greater'
+            Whether to get the p-value for the one-sided hypothesis ('less'
+            or 'greater') or for the two-sided hypothesis ('two-sided').
+            Defaults to None, which results in a p-value half the size of
+            the 'two-sided' p-value and a different U statistic. The
+            default behavior is not the same as using 'less' or 'greater':
+            it only exists for backward compatibility and is deprecated.
 
     Returns
     -------
     statistic : float
-        The Mann-Whitney statistics.
+        The Mann-Whitney U statistic, equal to min(U for x, U for y) if
+        `alternative` is equal to None (deprecated; exists for backward
+        compatibility), and U for y otherwise.
     pvalue : float
-        One-sided p-value assuming a asymptotic normal distribution.
+        p-value assuming an asymptotic normal distribution. One-sided or
+        two-sided, depending on the choice of `alternative`.
 
     Notes
     -----
@@ -4590,6 +4600,10 @@ def mannwhitneyu(x, y, use_continuity=True, alternative='two-sided'):
     p-value multiply the returned p-value by 2.
 
     """
+    if alternative is None:
+        warnings.warn("Calling `mannwhitneyu` without specifying "
+                      "`alternative` is deprecated.", DeprecationWarning)
+
     x = np.asarray(x)
     y = np.asarray(y)
     n1 = len(x)
@@ -4600,27 +4614,35 @@ def mannwhitneyu(x, y, use_continuity=True, alternative='two-sided'):
     u2 = n1*n2 - u1  # remainder is U for y
     T = tiecorrect(ranked)
     if T == 0:
-        raise ValueError('All numbers are identical in amannwhitneyu')
+        raise ValueError('All numbers are identical in mannwhitneyu')
     sd = np.sqrt(T * n1 * n2 * (n1+n2+1) / 12.0)
 
-    fact2 = 1
-
     meanrank = n1*n2/2.0 + 0.5 * use_continuity
-    if alternative == 'less':
-        z = u1 - meanrank
-    elif alternative == 'greater':
-        z = u2 - meanrank
-    elif alternative == 'two-sided':
+    if alternative is None or alternative == 'two-sided':
         bigu = max(u1, u2)
-        z = np.abs(bigu - meanrank)
-        fact2 = 2.
+    elif alternative == 'less':
+        bigu = u1
+    elif alternative == 'greater':
+        bigu = u2
     else:
-        raise ValueError("alternative should be 'less', 'greater'"
+        raise ValueError("alternative should be None, 'less', 'greater' "
                          "or 'two-sided'")
 
-    z = z / sd
+    z = (bigu - meanrank) / sd
+    if alternative is None:
+        # This behavior, equal to half the size of the two-sided
+        # p-value, is deprecated.
+        p = distributions.norm.sf(abs(z))
+    elif alternative == 'two-sided':
+        p = 2 * distributions.norm.sf(abs(z))
+    else:
+        p = distributions.norm.sf(z)
 
-    return MannwhitneyuResult(u2, distributions.norm.sf(z) * fact2)
+    u = u2
+    # This behavior is deprecated.
+    if alternative is None:
+        u = min(u1, u2)
+    return MannwhitneyuResult(u, p)
 
 RanksumsResult = namedtuple('RanksumsResult', ('statistic', 'pvalue'))
 

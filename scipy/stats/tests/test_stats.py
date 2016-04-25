@@ -2872,28 +2872,25 @@ class TestMannWhitneyU(TestCase):
 
     significant = 14
 
-    def test_mannwhitneyu_less(self):
+    def test_mannwhitneyu_one_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='less')
         u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='greater')
+        u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative='greater')
+        u4, p4 = stats.mannwhitneyu(self.Y, self.X, alternative='less')
 
         assert_equal(p1, p2)
+        assert_equal(p3, p4)
+        assert_(p1 != p3)
         assert_equal(u1, 498)
         assert_equal(u2, 102)
+        assert_equal(u3, 498)
+        assert_equal(u4, 102)
         assert_approx_equal(p1, 0.999957683256589, significant=self.significant)
-
-    def test_mannwhitneyu_greater(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='greater')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='less')
-
-        assert_equal(p1, p2)
-        assert_equal(u1, 498)
-        assert_equal(u2, 102)
-        assert_approx_equal(p1, 4.5941632666275e-05,
-                            significant=self.significant)
+        assert_approx_equal(p3, 4.5941632666275e-05, significant=self.significant)
 
     def test_mannwhitneyu_two_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X)  # two-sided is default
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='two-sided')
 
         assert_equal(p1, p2)
         assert_equal(u1, 498)
@@ -2901,36 +2898,69 @@ class TestMannWhitneyU(TestCase):
         assert_approx_equal(p1, 9.188326533255e-05,
                             significant=self.significant)
 
-    def test_mannwhitneyu_no_correct_less(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False, alternative='less')
+    def test_mannwhitneyu_default(self):
+        # The default value for alternative is None
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            u1, p1 = stats.mannwhitneyu(self.X, self.Y)
+            u2, p2 = stats.mannwhitneyu(self.Y, self.X)
+            u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative=None)
+
+        assert_equal(p1, p2)
+        assert_equal(p1, p3)
+        assert_equal(u1, 102)
+        assert_equal(u2, 102)
+        assert_equal(u3, 102)
+        assert_approx_equal(p1, 4.5941632666275e-05,
+                            significant=self.significant)
+
+    def test_mannwhitneyu_no_correct_one_sided(self):
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
+                                    alternative='less')
         u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
                                     alternative='greater')
-
-        assert_equal(p1, p2)
-        assert_equal(u1, 498)
-        assert_equal(u2, 102)
-        assert_approx_equal(p1, 0.999955905990004, significant=self.significant)
-
-    def test_mannwhitneyu_no_correct_greater(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
+        u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
                                     alternative='greater')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False, alternative='less')
+        u4, p4 = stats.mannwhitneyu(self.Y, self.X, False,
+                                    alternative='less')
 
         assert_equal(p1, p2)
+        assert_equal(p3, p4)
+        assert_(p1 != p3)
         assert_equal(u1, 498)
         assert_equal(u2, 102)
-        assert_approx_equal(p1, 4.40940099958089e-05,
-                            significant=self.significant)
+        assert_equal(u3, 498)
+        assert_equal(u4, 102)
+        assert_approx_equal(p1, 0.999955905990004, significant=self.significant)
+        assert_approx_equal(p3, 4.40940099958089e-05, significant=self.significant)
 
     def test_mannwhitneyu_no_correct_two_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
                                     alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,)
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
+                                    alternative='two-sided')
 
         assert_equal(p1, p2)
         assert_equal(u1, 498)
         assert_equal(u2, 102)
         assert_approx_equal(p1, 8.81880199916178e-05,
+                            significant=self.significant)
+
+    def test_mannwhitneyu_no_correct_default(self):
+        # The default value for alternative is None
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            u1, p1 = stats.mannwhitneyu(self.X, self.Y, False)
+            u2, p2 = stats.mannwhitneyu(self.Y, self.X, False)
+            u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
+                                        alternative=None)
+
+        assert_equal(p1, p2)
+        assert_equal(p1, p3)
+        assert_equal(u1, 102)
+        assert_equal(u2, 102)
+        assert_equal(u3, 102)
+        assert_approx_equal(p1, 4.40940099958089e-05,
                             significant=self.significant)
 
     def test_mannwhitneyu_ones(self):
@@ -2972,7 +3002,7 @@ class TestMannWhitneyU(TestCase):
                                   (16980.5, 2.8214327656317373e-005),
                                   decimal=12)
 
-    def test_mannwhitneyu_result_attribuets(self):
+    def test_mannwhitneyu_result_attributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
         res = stats.mannwhitneyu(self.X, self.Y)
