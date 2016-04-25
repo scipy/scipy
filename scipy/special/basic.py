@@ -13,7 +13,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
                    where, mgrid, sin, place, issubdtype, extract,
                    less, inexact, nan, zeros, atleast_1d, sinc)
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, zeta, hankel1, hankel2, yv, kv, _gammaln,
+                      psi, _zeta, hankel1, hankel2, yv, kv, _gammaln,
                       ndtri, errprint, poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
@@ -2444,3 +2444,23 @@ def factorialk(n, k, exact=True):
         return val
     else:
         raise NotImplementedError
+
+
+def zeta(x, q=None, out=None):
+    r"""
+    Riemann zeta function.
+
+    The two-argument version is the Hurwitz zeta function:
+
+    .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},
+
+    Riemann zeta function corresponds to ``q = 1``.
+
+    See also
+    --------
+    zetac
+
+    """
+    if q is None:
+        q = 1
+    return _zeta(x, q, out)

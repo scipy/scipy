@@ -36,7 +36,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk
+from scipy.special import ellipk, zeta
 
 from scipy.special._testutils import assert_tol_equal, with_special_errors, \
      assert_func_equal
@@ -899,10 +899,14 @@ class TestCephes(TestCase):
         cephes.yve(1,1)
 
     def test_zeta(self):
-        cephes.zeta(2,2)
+        assert_allclose(zeta(2,2), pi**2/6 - 1, rtol=1e-12)
 
     def test_zetac(self):
         assert_equal(cephes.zetac(0),-1.5)
+
+    def test_zeta_1arg(self):
+        assert_allclose(zeta(2), pi**2/6, rtol=1e-12)
+        assert_allclose(zeta(4), pi**4/90, rtol=1e-12)
 
     def test_wofz(self):
         z = [complex(624.2,-0.26123), complex(-0.4,3.), complex(0.6,2.),

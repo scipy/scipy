@@ -1314,6 +1314,8 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_struve_power_series "struve_power_series"(double, double, int, double *) nogil
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_zeta "zeta"(double, double) nogil
+cdef extern from "_ufuncs_defs.h":
     cdef int _func_airy_wrap "airy_wrap"(double, double *, double *, double *, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_cairy_wrap "cairy_wrap"(double complex, double complex *, double complex *, double complex *, double complex *) nogil
@@ -1959,8 +1961,6 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_cbesy_wrap_e "cbesy_wrap_e"(double, double complex) nogil
 cdef extern from "_ufuncs_defs.h":
-    cdef double _func_zeta "zeta"(double, double) nogil
-cdef extern from "_ufuncs_defs.h":
     cdef double _func_zetac "zetac"(double) nogil
 cdef np.PyUFuncGenericFunction ufunc__cospi_loops[4]
 cdef void *ufunc__cospi_ptr[8]
@@ -2368,6 +2368,30 @@ ufunc__struve_power_series_ptr[2*0] = <void*>_func_struve_power_series
 ufunc__struve_power_series_ptr[2*0+1] = <void*>(<char*>"_struve_power_series")
 ufunc__struve_power_series_data[0] = &ufunc__struve_power_series_ptr[2*0]
 _struve_power_series = np.PyUFunc_FromFuncAndData(ufunc__struve_power_series_loops, ufunc__struve_power_series_data, ufunc__struve_power_series_types, 1, 3, 2, 0, "_struve_power_series", ufunc__struve_power_series_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__zeta_loops[2]
+cdef void *ufunc__zeta_ptr[4]
+cdef void *ufunc__zeta_data[2]
+cdef char ufunc__zeta_types[6]
+cdef char *ufunc__zeta_doc = (
+    "_zeta(x, q)\n"
+    "\n"
+    "Internal function, Hurwitz zeta.")
+ufunc__zeta_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__zeta_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__zeta_types[0] = <char>NPY_FLOAT
+ufunc__zeta_types[1] = <char>NPY_FLOAT
+ufunc__zeta_types[2] = <char>NPY_FLOAT
+ufunc__zeta_types[3] = <char>NPY_DOUBLE
+ufunc__zeta_types[4] = <char>NPY_DOUBLE
+ufunc__zeta_types[5] = <char>NPY_DOUBLE
+ufunc__zeta_ptr[2*0] = <void*>_func_zeta
+ufunc__zeta_ptr[2*0+1] = <void*>(<char*>"_zeta")
+ufunc__zeta_ptr[2*1] = <void*>_func_zeta
+ufunc__zeta_ptr[2*1+1] = <void*>(<char*>"_zeta")
+ufunc__zeta_data[0] = &ufunc__zeta_ptr[2*0]
+ufunc__zeta_data[1] = &ufunc__zeta_ptr[2*1]
+_zeta = np.PyUFunc_FromFuncAndData(ufunc__zeta_loops, ufunc__zeta_data, ufunc__zeta_types, 2, 2, 1, 0, "_zeta", ufunc__zeta_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_airy_loops[4]
 cdef void *ufunc_airy_ptr[8]
@@ -11177,31 +11201,31 @@ cdef char *ufunc_psi_doc = (
     "\n"
     "The digamma function.\n"
     "\n"
-    "The logarithmic derivative of the gamma function evaluated at `z`.\n"
+    "The logarithmic derivative of the gamma function evaluated at ``z``.\n"
     "\n"
     "Parameters\n"
     "----------\n"
     "z : array_like\n"
     "    Real or complex argument.\n"
     "out : ndarray, optional\n"
-    "    Array for the computed values of `psi`.\n"
+    "    Array for the computed values of ``psi``.\n"
     "\n"
     "Returns\n"
     "-------\n"
     "digamma : ndarray\n"
-    "    Computed values of `psi`.\n"
+    "    Computed values of ``psi``.\n"
     "\n"
     "Notes\n"
     "-----\n"
-    "For large values not close to the negative real axis `psi` is\n"
+    "For large values not close to the negative real axis ``psi`` is\n"
     "computed using the asymptotic series (5.11.2) from [1]_. For small\n"
     "arguments not close to the negative real axis the recurrence\n"
     "relation (5.5.2) from [1]_ is used until the argument is large\n"
     "enough to use the asymptotic series. For values close to the\n"
     "negative real axis the reflection formula (5.5.4) from [1]_ is\n"
-    "used first.  Note that `psi` has a family of zeros on the negative\n"
-    "real axis which occur between the poles at :math:`0, -1, -2,\n"
-    "\\ldots`. Around the zeros the reflection formula suffers from\n"
+    "used first.  Note that ``psi`` has a family of zeros on the\n"
+    "negative real axis which occur between the poles at nonpositive\n"
+    "integers. Around the zeros the reflection formula suffers from\n"
     "cancellation and the implementation loses precision. The sole\n"
     "positive zero and the first negative zero, however, are handled\n"
     "separately by precomputing series expansions using [2]_, so the\n"
@@ -12331,43 +12355,6 @@ ufunc_yve_data[1] = &ufunc_yve_ptr[2*1]
 ufunc_yve_data[2] = &ufunc_yve_ptr[2*2]
 ufunc_yve_data[3] = &ufunc_yve_ptr[2*3]
 yve = np.PyUFunc_FromFuncAndData(ufunc_yve_loops, ufunc_yve_data, ufunc_yve_types, 4, 2, 1, 0, "yve", ufunc_yve_doc, 0)
-
-cdef np.PyUFuncGenericFunction ufunc_zeta_loops[2]
-cdef void *ufunc_zeta_ptr[4]
-cdef void *ufunc_zeta_data[2]
-cdef char ufunc_zeta_types[6]
-cdef char *ufunc_zeta_doc = (
-    "zeta(x, q)\n"
-    "\n"
-    "Hurwitz zeta function\n"
-    "\n"
-    "The Riemann zeta function of two arguments (also known as the\n"
-    "Hurwitz zeta function).\n"
-    "\n"
-    "This function is defined as\n"
-    "\n"
-    ".. math:: \\zeta(x, q) = \\sum_{k=0}^{\\infty} 1 / (k+q)^x,\n"
-    "\n"
-    "where ``x > 1`` and ``q > 0``.\n"
-    "\n"
-    "See also\n"
-    "--------\n"
-    "zetac")
-ufunc_zeta_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_zeta_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_zeta_types[0] = <char>NPY_FLOAT
-ufunc_zeta_types[1] = <char>NPY_FLOAT
-ufunc_zeta_types[2] = <char>NPY_FLOAT
-ufunc_zeta_types[3] = <char>NPY_DOUBLE
-ufunc_zeta_types[4] = <char>NPY_DOUBLE
-ufunc_zeta_types[5] = <char>NPY_DOUBLE
-ufunc_zeta_ptr[2*0] = <void*>_func_zeta
-ufunc_zeta_ptr[2*0+1] = <void*>(<char*>"zeta")
-ufunc_zeta_ptr[2*1] = <void*>_func_zeta
-ufunc_zeta_ptr[2*1+1] = <void*>(<char*>"zeta")
-ufunc_zeta_data[0] = &ufunc_zeta_ptr[2*0]
-ufunc_zeta_data[1] = &ufunc_zeta_ptr[2*1]
-zeta = np.PyUFunc_FromFuncAndData(ufunc_zeta_loops, ufunc_zeta_data, ufunc_zeta_types, 2, 2, 1, 0, "zeta", ufunc_zeta_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_zetac_loops[2]
 cdef void *ufunc_zetac_ptr[4]

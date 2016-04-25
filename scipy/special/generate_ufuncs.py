@@ -221,7 +221,7 @@ berp -- berp_wrap: d->d                                    -- specfun_wrappers.h
 beip -- beip_wrap: d->d                                    -- specfun_wrappers.h
 kerp -- kerp_wrap: d->d                                    -- specfun_wrappers.h
 keip -- keip_wrap: d->d                                    -- specfun_wrappers.h
-zeta -- zeta: dd->d                                        -- cephes.h
+_zeta -- zeta: dd->d                                       -- cephes.h
 kolmogorov -- kolmogorov: d->d                             -- cephes.h
 kolmogi -- kolmogi: d->d                                   -- cephes.h
 besselpoly -- besselpoly: ddd->d                           -- c_misc/misc.h

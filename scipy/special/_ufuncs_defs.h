@@ -8,6 +8,7 @@ npy_cdouble clngamma_wrap(npy_cdouble);
 npy_double struve_asymp_large_z(npy_double, npy_double, npy_int, npy_double *);
 npy_double struve_bessel_series(npy_double, npy_double, npy_int, npy_double *);
 npy_double struve_power_series(npy_double, npy_double, npy_int, npy_double *);
+npy_double zeta(npy_double, npy_double);
 #include "amos_wrappers.h"
 npy_int airy_wrap(npy_double, npy_double *, npy_double *, npy_double *, npy_double *);
 npy_int cairy_wrap(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *);
@@ -209,6 +210,5 @@ npy_double cbesy_wrap_real(npy_double, npy_double);
 npy_cdouble cbesy_wrap(npy_double, npy_cdouble);
 npy_double cbesy_wrap_e_real(npy_double, npy_double);
 npy_cdouble cbesy_wrap_e(npy_double, npy_cdouble);
-npy_double zeta(npy_double, npy_double);
 npy_double zetac(npy_double);
 #endif
