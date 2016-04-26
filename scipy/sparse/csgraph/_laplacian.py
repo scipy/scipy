@@ -86,20 +86,26 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed=False, axis=0):
-    if graph.format == 'coo':
-        m = graph.copy()
-    else:
+    if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
+        needs_copy = False
+    else:
+        m = graph
+        needs_copy = True
     w = m.sum(axis=axis).getA1() - m.diagonal()
     if normed:
-        w = np.sqrt(w)
+        m = m.tocoo(copy=needs_copy)
         isolated_node_mask = (w == 0)
-        w[isolated_node_mask] = 1
+        w = np.where(isolated_node_mask, 1, np.sqrt(w))
         m.data /= w[m.row]
         m.data /= w[m.col]
         m.data *= -1
         m.setdiag(1 - isolated_node_mask)
     else:
+        if m.format == 'dia':
+            m = m.copy()
+        else:
+            m = m.tocoo(copy=needs_copy)
         m.data *= -1
         m.setdiag(w)
     return m, w
@@ -110,9 +116,8 @@ def _laplacian_dense(graph, normed=False, axis=0):
     np.fill_diagonal(m, 0)
     w = m.sum(axis=axis)
     if normed:
-        w = np.sqrt(w)
         isolated_node_mask = (w == 0)
-        w[isolated_node_mask] = 1
+        w = np.where(isolated_node_mask, 1, np.sqrt(w))
         m /= w
         m /= w[:, np.newaxis]
         m *= -1
