@@ -437,6 +437,10 @@ class lil_matrix(spmatrix, IndexMixin):
 
     tolil.__doc__ = spmatrix.tolil.__doc__
 
+    def tofastlil(self):
+
+        return self.tocsr().tofastlil()
+
     def tocsr(self, copy=False):
         lst = [len(x) for x in self.rows]
         idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))

@@ -14,7 +14,8 @@ from numpy import ones, array, asarray, empty, random, zeros
 try:
     from scipy import sparse
     from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
-                              dok_matrix, rand, SparseEfficiencyWarning)
+                              dok_matrix, fast_lil_matrix,
+                              rand, SparseEfficiencyWarning)
 except ImportError:
     pass
 
@@ -95,7 +96,7 @@ class Sort(Benchmark):
 class Matvec(Benchmark):
     params = [
         ['Identity', 'Poisson5pt', 'Block2x2', 'Block3x3'],
-        ['dia', 'csr', 'csc', 'dok', 'lil', 'coo', 'bsr']
+        ['dia', 'csr', 'csc', 'dok', 'lil', 'fastlil', 'coo', 'bsr']
     ]
     param_names = ['matrix', 'format']
 
@@ -128,7 +129,7 @@ class Matvec(Benchmark):
 
 
 class Matvecs(Benchmark):
-    params = ['dia', 'coo', 'csr', 'csc', 'bsr']
+    params = ['dia', 'coo', 'csr', 'csc', 'bsr', 'fastlil']
     param_names = ["format"]
 
     def setup(self, format):
@@ -165,7 +166,7 @@ class Matmul(Benchmark):
 class Construction(Benchmark):
     params = [
         ['Empty', 'Identity', 'Poisson5pt'],
-        ['lil', 'dok']
+        ['lil', 'fastlil', 'dok']
     ]
     param_names = ['matrix', 'format']
 
@@ -177,7 +178,9 @@ class Construction(Benchmark):
         else:
             self.A = poisson2d(100, format='coo')
 
-        formats = {'lil': lil_matrix, 'dok': dok_matrix}
+        formats = {'lil': lil_matrix,
+                   'dok': dok_matrix,
+                   'fastlil': fast_lil_matrix}
         self.cls = formats[format]
 
     def time_construction(self, name, format):
@@ -188,8 +191,8 @@ class Construction(Benchmark):
 
 class Conversion(Benchmark):
     params = [
-        ['csr', 'csc', 'coo', 'dia', 'lil', 'dok'],
-        ['csr', 'csc', 'coo', 'dia', 'lil', 'dok'],
+        ['csr', 'csc', 'coo', 'dia', 'lil', 'fastlil', 'dok'],
+        ['csr', 'csc', 'coo', 'dia', 'lil', 'fastlil', 'dok'],
     ]
     param_names = ['from_format', 'to_format']
 
@@ -211,7 +214,7 @@ class Getset(Benchmark):
     params = [
         [1, 10, 100, 1000, 10000],
         ['different', 'same'],
-        ['csr', 'csc', 'lil', 'dok']
+        ['csr', 'csc', 'lil', 'fastlil', 'dok']
     ]
     param_names = ['N', 'sparsity pattern', 'format']
     unit = "seconds"
@@ -282,7 +285,7 @@ class Getset(Benchmark):
 
 
 class NullSlice(Benchmark):
-    params = [[0.05, 0.01], ['csr', 'csc', 'lil']]
+    params = [[0.05, 0.01], ['csr', 'csc', 'lil', 'fastlil']]
     param_names = ['density', 'format']
 
     def setup(self, density, format):
@@ -304,7 +307,7 @@ class NullSlice(Benchmark):
 
 
 class Diagonal(Benchmark):
-    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo', 'lil', 'dok']]
+    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo', 'lil', 'fastlil', 'dok']]
     param_names = ['density', 'format']
 
     def setup(self, density, format):
