@@ -955,28 +955,30 @@ def lfilter(b, a, x, axis=-1, zi=None):
     The filter function is implemented as a direct II transposed structure.
     This means that the filter implements::
 
-       a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
-                               - a[1]*y[n-1] - ... - a[na]*y[n-na]
+       a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[M]*x[n-M]
+                             - a[1]*y[n-1] - ... - a[N]*y[n-N]
 
-    using the following difference equations::
+    where `M` is the degree of the numerator, `N` is the degree of the
+    denominator, and `n` is the sample number.  It is implemented using
+    the following difference equations (assuming M = N)::
 
-         y[m] = b[0]*x[m] + z[0,m-1]
-         z[0,m] = b[1]*x[m] + z[1,m-1] - a[1]*y[m]
+         a[0]*y[n] = b[0] * x[n]               + d[0][n-1]
+           d[0][n] = b[1] * x[n] - a[1] * y[n] + d[1][n-1]
+           d[1][n] = b[2] * x[n] - a[2] * y[n] + d[2][n-1]
          ...
-         z[n-3,m] = b[n-2]*x[m] + z[n-2,m-1] - a[n-2]*y[m]
-         z[n-2,m] = b[n-1]*x[m] - a[n-1]*y[m]
+         d[N-2][n] = b[N-1]*x[n] - a[N-1]*y[n] + d[N-1][n-1]
+         d[N-1][n] = b[N] * x[n] - a[N] * y[n]
 
-    where m is the output sample number and ``n = max(len(a), len(b))`` is the
-    model order.
+    where `d` are the state variables.
 
     The rational transfer function describing this filter in the
     z-transform domain is::
 
-                             -1               -nb
-                 b[0] + b[1]z  + ... + b[nb] z
-         Y(z) = ---------------------------------- X(z)
-                             -1               -na
-                 a[0] + a[1]z  + ... + a[na] z
+                             -1              -M
+                 b[0] + b[1]z  + ... + b[M] z
+         Y(z) = -------------------------------- X(z)
+                             -1              -N
+                 a[0] + a[1]z  + ... + a[N] z
 
     Examples
     --------
@@ -1120,7 +1122,7 @@ def lfiltic(b, a, y, x=None):
     Returns
     -------
     zi : ndarray
-        The state vector ``zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}``, 
+        The state vector ``zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}``,
         where ``K = max(M, N)``.
 
     See Also
@@ -1485,30 +1487,37 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     """
     Compute b(s) and a(s) from partial fraction expansion.
 
-    If ``M = len(b)`` and ``N = len(a)``::
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
 
-                b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
-        H(s) = ------ = ----------------------------------------------
-                a(s)     a[0] x**(N-1) + a[1] x**(N-2) + ... + a[N-1]
+              b(s)     b[0] s**(M) + b[1] s**(M-1) + ... + b[M]
+      H(s) = ------ = ------------------------------------------
+              a(s)     a[0] s**(N) + a[1] s**(N-1) + ... + a[N]
 
-                 r[0]       r[1]             r[-1]
-             = -------- + -------- + ... + --------- + k(s)
-               (s-p[0])   (s-p[1])         (s-p[-1])
+    then the partial-fraction expansion H(s) is defined as::
 
-    If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like::
+               r[0]       r[1]             r[-1]
+           = -------- + -------- + ... + --------- + k(s)
+             (s-p[0])   (s-p[1])         (s-p[-1])
+
+    If there are any repeated roots (closer together than `tol`), then H(s)
+    has terms like::
 
           r[i]      r[i+1]              r[i+n-1]
         -------- + ----------- + ... + -----------
         (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
+    This function is used for polynomials in positive powers of s or z,
+    such as analog filters or digital filters in controls engineering.  For
+    negative powers of z (typical for digital filters in DSP), use `invresz`.
+
     Parameters
     ----------
-    r : ndarray
+    r : array_like
         Residues.
-    p : ndarray
+    p : array_like
         Poles.
-    k : ndarray
+    k : array_like
         Coefficients of the direct polynomial term.
     tol : float, optional
         The tolerance for two roots to be considered equal. Default is 1e-3.
@@ -1516,15 +1525,20 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
         How to determine the returned root if multiple roots are within
         `tol` of each other.
 
-          'max': pick the maximum of those roots.
+          - 'max': pick the maximum of those roots.
+          - 'min': pick the minimum of those roots.
+          - 'avg': take the average of those roots.
 
-          'min': pick the minimum of those roots.
-
-          'avg': take the average of those roots.
+    Returns
+    -------
+    b : ndarray
+        Numerator polynomial coefficients.
+    a : ndarray
+        Denominator polynomial coefficients.
 
     See Also
     --------
-    residue, unique_roots
+    residue, invresz, unique_roots
 
     """
     extra = k
@@ -1560,12 +1574,14 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     """
     Compute partial-fraction expansion of b(s) / a(s).
 
-    If ``M = len(b)`` and ``N = len(a)``, then the partial-fraction
-    expansion H(s) is defined as::
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
 
-              b(s)     b[0] s**(M-1) + b[1] s**(M-2) + ... + b[M-1]
-      H(s) = ------ = ----------------------------------------------
-              a(s)     a[0] s**(N-1) + a[1] s**(N-2) + ... + a[N-1]
+              b(s)     b[0] s**(M) + b[1] s**(M-1) + ... + b[M]
+      H(s) = ------ = ------------------------------------------
+              a(s)     a[0] s**(N) + a[1] s**(N-1) + ... + a[N]
+
+    then the partial-fraction expansion H(s) is defined as::
 
                r[0]       r[1]             r[-1]
            = -------- + -------- + ... + --------- + k(s)
@@ -1574,9 +1590,20 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     If there are any repeated roots (closer together than `tol`), then H(s)
     has terms like::
 
-            r[i]      r[i+1]              r[i+n-1]
-          -------- + ----------- + ... + -----------
-          (s-p[i])  (s-p[i])**2          (s-p[i])**n
+          r[i]      r[i+1]              r[i+n-1]
+        -------- + ----------- + ... + -----------
+        (s-p[i])  (s-p[i])**2          (s-p[i])**n
+
+    This function is used for polynomials in positive powers of s or z,
+    such as analog filters or digital filters in controls engineering.  For
+    negative powers of z (typical for digital filters in DSP), use `residuez`.
+
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
 
     Returns
     -------
@@ -1589,7 +1616,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
     See Also
     --------
-    invres, numpy.poly, unique_roots
+    invres, residuez, numpy.poly, unique_roots
 
     """
 
@@ -1632,11 +1659,14 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     """
     Compute partial-fraction expansion of b(z) / a(z).
 
-    If ``M = len(b)`` and ``N = len(a)``::
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
 
-                b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
-        H(z) = ------ = ----------------------------------------------
-                a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+                b(z)     b[0] + b[1] z**(-1) + ... + b[M] z**(-M)
+        H(z) = ------ = ------------------------------------------
+                a(z)     a[0] + a[1] z**(-1) + ... + a[N] z**(-N)
+
+    then the partial-fraction expansion H(z) is defined as::
 
                  r[0]                   r[-1]
          = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
@@ -1649,9 +1679,28 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
+    This function is used for polynomials in negative powers of z,
+    such as digital filters in DSP.  For positive powers, use `residue`.
+
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
+
+    Returns
+    -------
+    r : ndarray
+        Residues.
+    p : ndarray
+        Poles.
+    k : ndarray
+        Coefficients of the direct polynomial term.
+
     See also
     --------
-    invresz, unique_roots
+    invresz, residue, unique_roots
 
     """
     b, a = map(asarray, (b, a))
@@ -1703,15 +1752,18 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """
     Compute b(z) and a(z) from partial fraction expansion.
 
-    If ``M = len(b)`` and ``N = len(a)``::
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
 
-                b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
-        H(z) = ------ = ----------------------------------------------
-                a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+                b(z)     b[0] + b[1] z**(-1) + ... + b[M] z**(-M)
+        H(z) = ------ = ------------------------------------------
+                a(z)     a[0] + a[1] z**(-1) + ... + a[N] z**(-N)
 
-                     r[0]                   r[-1]
-             = --------------- + ... + ---------------- + k[0] + k[1]z**(-1)...
-               (1-p[0]z**(-1))         (1-p[-1]z**(-1))
+    then the partial-fraction expansion H(z) is defined as::
+
+                 r[0]                   r[-1]
+         = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
+           (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
     If there are any repeated roots (closer than `tol`), then the partial
     fraction expansion has terms like::
@@ -1719,6 +1771,34 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
              r[i]              r[i+1]                    r[i+n-1]
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+
+    This function is used for polynomials in negative powers of z,
+    such as digital filters in DSP.  For positive powers, use `invres`.
+
+    Parameters
+    ----------
+    r : array_like
+        Residues.
+    p : array_like
+        Poles.
+    k : array_like
+        Coefficients of the direct polynomial term.
+    tol : float, optional
+        The tolerance for two roots to be considered equal. Default is 1e-3.
+    rtype : {'max', 'min, 'avg'}, optional
+        How to determine the returned root if multiple roots are within
+        `tol` of each other.
+
+          - 'max': pick the maximum of those roots.
+          - 'min': pick the minimum of those roots.
+          - 'avg': take the average of those roots.
+
+    Returns
+    -------
+    b : ndarray
+        Numerator polynomial coefficients.
+    a : ndarray
+        Denominator polynomial coefficients.
 
     See Also
     --------
