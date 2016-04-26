@@ -930,7 +930,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     zi : array_like, optional
         Initial conditions for the filter delays.  It is a vector
         (or array of vectors for an N-dimensional input) of length
-        ``max(len(a),len(b))-1``.  If `zi` is None or is not given then
+        ``max(len(a), len(b)) - 1``.  If `zi` is None or is not given then
         initial rest is assumed.  See `lfiltic` for more information.
 
     Returns
@@ -966,7 +966,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
          z[n-3,m] = b[n-2]*x[m] + z[n-2,m-1] - a[n-2]*y[m]
          z[n-2,m] = b[n-1]*x[m] - a[n-1]*y[m]
 
-    where m is the output sample number and n=max(len(a),len(b)) is the
+    where m is the output sample number and ``n = max(len(a), len(b))`` is the
     model order.
 
     The rational transfer function describing this filter in the
@@ -1105,13 +1105,13 @@ def lfiltic(b, a, y, x=None):
     y : array_like
         Initial conditions.
 
-        If ``N=len(a) - 1``, then ``y = {y[-1], y[-2], ..., y[-N]}``.
+        If ``N = len(a) - 1``, then ``y = {y[-1], y[-2], ..., y[-N]}``.
 
         If `y` is too short, it is padded with zeros.
     x : array_like, optional
         Initial conditions.
 
-        If ``M=len(b) - 1``, then ``x = {x[-1], x[-2], ..., x[-M]}``.
+        If ``M = len(b) - 1``, then ``x = {x[-1], x[-2], ..., x[-M]}``.
 
         If `x` is not given, its initial conditions are assumed zero.
 
@@ -1120,8 +1120,8 @@ def lfiltic(b, a, y, x=None):
     Returns
     -------
     zi : ndarray
-        The state vector ``zi``.
-        ``zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}``, where ``K = max(M,N)``.
+        The state vector ``zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}``, 
+        where ``K = max(M, N)``.
 
     See Also
     --------
@@ -1642,7 +1642,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
          = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
            (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
-    If there are any repeated roots (closer than tol), then the partial
+    If there are any repeated roots (closer than `tol`), then the partial
     fraction expansion has terms like::
 
              r[i]              r[i+1]                    r[i+n-1]
@@ -1713,7 +1713,7 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
              = --------------- + ... + ---------------- + k[0] + k[1]z**(-1)...
                (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
-    If there are any repeated roots (closer than tol), then the partial
+    If there are any repeated roots (closer than `tol`), then the partial
     fraction expansion has terms like::
 
              r[i]              r[i+1]                    r[i+n-1]
