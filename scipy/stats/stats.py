@@ -866,9 +866,6 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.moment(a, moment, axis)
 
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
-
     if a.size == 0:
         # empty array, return nan(s) with shape matching `moment`
         if np.isscalar(moment):
@@ -971,9 +968,6 @@ def variation(a, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.variation(a, axis)
 
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
-
     return a.std(axis) / a.mean(axis)
 
 
@@ -1023,9 +1017,6 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.skew(a, axis, bias)
-
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
 
     m2 = moment(a, 2, axis)
     m3 = moment(a, 3, axis)
@@ -1097,9 +1088,6 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.kurtosis(a, axis, fisher, bias)
-
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
 
     n = a.shape[axis]
     m2 = moment(a, 2, axis)
@@ -1197,10 +1185,6 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.describe(a, axis, ddof, bias)
 
-    if contains_nan and nan_policy == 'propagate':
-        res = np.zeros(6) * np.nan
-        return DescribeResult(*res)
-
     if a.size == 0:
         raise ValueError("The input must not be empty.")
     n = a.shape[axis]
@@ -1258,9 +1242,6 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.skewtest(a, axis)
-
-    if contains_nan and nan_policy == 'propagate':
-        return SkewtestResult(np.nan, np.nan)
 
     if axis is None:
         a = np.ravel(a)
@@ -1330,9 +1311,6 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.kurtosistest(a, axis)
-
-    if contains_nan and nan_policy == 'propagate':
-        return KurtosistestResult(np.nan, np.nan)
 
     n = float(a.shape[axis])
     if n < 5:
@@ -1412,9 +1390,6 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.normaltest(a, axis)
-
-    if contains_nan and nan_policy == 'propagate':
-        return NormaltestResult(np.nan, np.nan)
 
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
@@ -2190,9 +2165,6 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.sem(a, axis, ddof)
-
-    if contains_nan and nan_policy == 'propagate':
-        return np.nan
 
     n = a.shape[axis]
     s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
@@ -3068,9 +3040,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         b = ma.masked_invalid(b)
         return mstats_basic.spearmanr(a, b, axis)
 
-    if contains_nan and nan_policy == 'propagate':
-        return SpearmanrResult(np.nan, np.nan)
-
     if a.size <= 1:
         return SpearmanrResult(np.nan, np.nan)
     ar = np.apply_along_axis(rankdata, axisout, a)
@@ -3084,9 +3053,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         if contains_nan and nan_policy == 'omit':
             b = ma.masked_invalid(b)
             return mstats_basic.spearmanr(a, b, axis)
-
-        if contains_nan and nan_policy == 'propagate':
-            return SpearmanrResult(np.nan, np.nan)
 
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
