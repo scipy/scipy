@@ -4355,17 +4355,37 @@ add_newdoc("scipy.special", "nctdtrit",
     """)
 
 add_newdoc("scipy.special", "ndtr",
-    """
+    r"""
     ndtr(x)
 
-    Gaussian cumulative distribution function
+    Gaussian cumulative distribution function.
 
     Returns the area under the standard Gaussian probability
-    density function, integrated from minus infinity to `x`::
+    density function, integrated from minus infinity to `x`
 
-        1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x)
+    .. math::
+
+       \frac{1}{\sqrt{2\pi}} \int_{-\infty}^x \exp(-t^2/2) dt
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+
+    Returns
+    -------
+    ndarray
+        The value of the normal CDF evaluated at `x`
+
+    See Also
+    --------
+    erf
+    erfc
+    scipy.stats.norm
+    log_ndtr
 
     """)
+
 
 add_newdoc("scipy.special", "nrdtrimn",
     """
@@ -4423,12 +4443,30 @@ add_newdoc("scipy.special", "log_ndtr",
     """
     log_ndtr(x)
 
-    Logarithm of Gaussian cumulative distribution function
+    Logarithm of Gaussian cumulative distribution function.
 
     Returns the log of the area under the standard Gaussian probability
     density function, integrated from minus infinity to `x`::
 
         log(1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x))
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+
+    Returns
+    -------
+    ndarray
+        The value of the log of the normal CDF evaluated at `x`
+
+    See Also
+    --------
+    erf
+    erfc
+    scipy.stats.norm
+    ndtr
+
     """)
 
 add_newdoc("scipy.special", "ndtri",

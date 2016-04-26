@@ -2188,11 +2188,15 @@ def test_norm_logcdf():
                 -4613.48339520, -5005.52420869, -5413.56342187, -5837.60115548,
                 -6277.63751711, -6733.67260303]
 
-    olderr = np.seterr(divide='ignore')
-    try:
-        assert_allclose(stats.norm().logcdf(x), expected, atol=1e-8)
-    finally:
-        np.seterr(**olderr)
+    assert_allclose(stats.norm().logcdf(x), expected, atol=1e-8)
+
+    # also test the complex-valued code path
+    assert_allclose(stats.norm().logcdf(x + 1e-14j).real, expected, atol=1e-8)
+
+    # test the accuracy: d(logcdf)/dx = pdf / cdf \equiv exp(logpdf - logcdf)
+    deriv = (stats.norm.logcdf(x + 1e-10j)/1e-10).imag
+    deriv_expected = np.exp(stats.norm.logpdf(x) - stats.norm.logcdf(x))
+    assert_allclose(deriv, deriv_expected, atol=1e-10)
 
 
 def test_levy_cdf_ppf():

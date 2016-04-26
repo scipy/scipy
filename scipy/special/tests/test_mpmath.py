@@ -1338,6 +1338,27 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             mpmath.erfi,
                             [ComplexArg()], n=200)
 
+    def test_ndtr(self):
+        assert_mpmath_equal(sc.ndtr,
+                            _exception_to_nan(lambda z: mpmath.ncdf(z)),
+                            [Arg()], n=200)
+
+    def test_ndtr_complex(self):
+        assert_mpmath_equal(sc.ndtr,
+                            lambda z: mpmath.erfc(-z/np.sqrt(2.))/2.,
+                            [ComplexArg(a=complex(-10000, -10000), b=complex(10000, 10000))], n=400)
+
+    def test_log_ndtr(self):
+        assert_mpmath_equal(sc.log_ndtr,
+                            _exception_to_nan(lambda z: mpmath.log(mpmath.ncdf(z))),
+                            [Arg()], n=600, dps=300)
+
+    def test_log_ndtr_complex(self):
+        assert_mpmath_equal(sc.log_ndtr,
+                            _exception_to_nan(lambda z: mpmath.log(mpmath.erfc(-z/np.sqrt(2.))/2.)),
+                            [ComplexArg(a=complex(-10000, -100),
+                                        b=complex(10000, 100))], n=200, dps=300)
+
     def test_eulernum(self):
         assert_mpmath_equal(lambda n: sc.euler(n)[-1],
                             mpmath.eulernum,
