@@ -568,8 +568,9 @@ def binned_statistic_dd(sample, values, statistic='mean',
     elif statistic == 'median':
         result.fill(np.nan)
         for i in np.unique(binnumbers):
-            for vv in xrange(Vdim):
-                result[vv, i] = np.median(values[vv, binnumbers == i])
+            if binnumbers is not None:
+                for vv in xrange(Vdim):
+                    result[vv, i] = np.median(values[vv, binnumbers == i])
     elif callable(statistic):
         with warnings.catch_warnings():
             # Numpy generates a warnings for mean/std/... with empty list
