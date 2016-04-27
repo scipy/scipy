@@ -373,7 +373,7 @@ def face(gray=False):
     Parameters
     ----------
     gray : bool, optional
-        If True then return color image, otherwise return an 8-bit gray-scale
+        If True return 8-bit grey-scale image, otherwise return a color image
 
     Returns
     -------
