@@ -232,8 +232,8 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
 
     Notes
     -----
-    Some amount of care has been taken to return a real number
-    if all of the inputs are real.
+    Care has been taken to return a real number if possible when
+    all of the inputs are real numbers.
 
     References
     ----------
@@ -287,8 +287,8 @@ def _logm_superdiag_entry(l1, l2, t12):
 
     Notes
     -----
-    Some amount of care has been taken to return a real number
-    if all of the inputs are real.
+    Care has been taken to return a real number if possible when
+    all of the inputs are real numbers.
 
     References
     ----------
@@ -303,11 +303,9 @@ def _logm_superdiag_entry(l1, l2, t12):
         f12 = t12 * (np.log(l2) - np.log(l1)) / (l2 - l1)
     else:
         z = (l2 - l1) / (l2 + l1)
-        ua = _unwindk(np.log(l2) - np.log(l1))
-        ub = _unwindk(np.log1p(z) - np.log1p(-z))
-        u = ua + ub
+        u = _unwindk(np.log(l2) - np.log(l1))
         if u:
-            f12 = t12 * (2*np.arctanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
+            f12 = t12 * 2 * (np.arctanh(z) + np.pi*1j*u) / (l2 - l1)
         else:
             f12 = t12 * 2 * np.arctanh(z) / (l2 - l1)
     return f12
