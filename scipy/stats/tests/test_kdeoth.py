@@ -51,7 +51,6 @@ def test_kde_1d_boundaries():
     uniformpdf = stats.beta.pdf(xs, 1, 1)
     intervall = xs[1] - xs[0]
 
-
     assert_(np.sum((kdepdf - uniformpdf)**2)*intervall < 0.01)
     prob1 = gkde.integrate_box_1d(0.5, 1)
     prob2 = gkde.integrate_box_1d(0, 0.5)
@@ -129,6 +128,7 @@ def test_kde_bandwidth_method():
 # to create these kinds of subclasses, or call _compute_covariance() directly.
 
 class _kde_subclass1(stats.gaussian_kde):
+
     def __init__(self, dataset):
         self.dataset = np.atleast_2d(dataset)
         self.d, self.n = self.dataset.shape
@@ -137,12 +137,14 @@ class _kde_subclass1(stats.gaussian_kde):
 
 
 class _kde_subclass2(stats.gaussian_kde):
+
     def __init__(self, dataset):
         self.covariance_factor = self.scotts_factor
         super(_kde_subclass2, self).__init__(dataset)
 
 
 class _kde_subclass3(stats.gaussian_kde):
+
     def __init__(self, dataset, covariance):
         self.covariance = covariance
         stats.gaussian_kde.__init__(self, dataset)
@@ -154,6 +156,7 @@ class _kde_subclass3(stats.gaussian_kde):
 
 
 class _kde_subclass4(stats.gaussian_kde):
+
     def covariance_factor(self):
         return 0.5 * self.silverman_factor()
 
