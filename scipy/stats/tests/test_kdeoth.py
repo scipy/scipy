@@ -36,6 +36,29 @@ def test_kde_1d():
     assert_almost_equal(gkde.integrate_gaussian(xnmean, xnstd**2),
                         (kdepdf*normpdf).sum()*intervall, decimal=2)
 
+def test_kde_1d_boundaries():
+    #some basic tests comparing to beta/uniform distribution
+    np.random.seed(8765678)
+    n_basesample = 1000
+    xn = stats.beta(1., 1.).rvs(n_basesample)
+
+    # get kde for original sample
+    gkde = stats.gaussian_kde(xn)
+
+    # evaluate the density function for the kde for some points using boundaries
+    xs = np.linspace(0, 1, 500)
+    kdepdf = gkde.evaluate(xs, lb=0, ub=1)
+    uniformpdf = stats.beta.pdf(xs, 1, 1)
+    intervall = xs[1] - xs[0]
+
+
+    assert_(np.sum((kdepdf - uniformpdf)**2)*intervall < 0.01)
+    prob1 = gkde.integrate_box_1d(0.5, 1)
+    prob2 = gkde.integrate_box_1d(0, 0.5)
+    assert_almost_equal(prob1, 0.5, decimal=1)
+    assert_almost_equal(prob2, 0.5, decimal=1)
+    assert_almost_equal(gkde.integrate_box(0.5, 1), prob1, decimal=13)
+    assert_almost_equal(gkde.integrate_box(0, 0.5), prob2, decimal=13)
 
 def test_kde_2d():
     #some basic tests comparing to normal distribution

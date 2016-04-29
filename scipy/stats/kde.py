@@ -170,8 +170,8 @@ class gaussian_kde(object):
         self.d, self.n = self.dataset.shape
         self.set_bandwidth(bw_method=bw_method)
 
-    def evaluate(self, points):
-        """Evaluate the estimated pdf on a set of points using a Gaussian 
+    def evaluate(self, points, lb=None, ub=None):
+        """Evaluate the estimated pdf on a set of points using a Gaussian
         Kernel, boundary effects corrected using the reflection method.
 
         Parameters
@@ -208,46 +208,40 @@ class gaussian_kde(object):
         result_l = zeros((m,), dtype=float)
         result_u = zeros((m,), dtype=float)
 
-        # define the boundaries
-        l = np.min((np.min(points), np.min(self.dataset)))
-        u = np.max((np.max(points), np.max(self.dataset)))
-        
         if m >= self.n:
             # there are more points than data, so loop over data
             for i in range(self.n):
                 diff_0 = self.dataset[:, i, newaxis] - points
                 tdiff_0 = dot(self.inv_cov, diff_0)
-                energy_0 = sum(diff_0 * tdiff_0, axis=0) / 2.0
-                result[i] = sum(exp(-energy_0), axis=0)
-                # reflected points, lower boundary
-                diff_l = self.dataset + points[:, i, newaxis] - 2*l                
-                tdiff_l = dot(self.inv_cov, diff_l)
-                energy_l = sum(diff_l * tdiff_l, axis=0) / 2.0
-                result_l[i] = sum(exp(-energy_l), axis=0)
-                # reflected points, upper boundary
-                diff_u = self.dataset + points[:, i, newaxis] - 2*u                
-                tdiff_u = dot(self.inv_cov, diff_u)
-                energy_u = sum(diff_u * tdiff_u, axis=0) / 2.0
-                result_u[i] = sum(exp(-energy_u), axis=0)
+                energy_0 = sum(diff_0 * tdiff_0,axis=0) / 2.0
+                result = result + exp(-energy_0)
+                if lb is not None:
+                    diff_l = self.dataset + points[:, i, newaxis] - 2*lb
+                    tdiff_l = dot(self.inv_cov, diff_l)
+                    energy_l = sum(diff_l * tdiff_l, axis=0) / 2.0
+                    result_l[i] = sum(exp(-energy_l))
+                if ub is not None:
+                    diff_u = self.dataset + points[:, i, newaxis] - 2*ub
+                    tdiff_u = dot(self.inv_cov, diff_u)
+                    energy_u = sum(diff_u * tdiff_u, axis=0) / 2.0
+                    result_u[i] = sum(exp(-energy_u))
         else:
             # loop over points
             for i in range(m):
-                # actual points
                 diff_0 = self.dataset - points[:, i, newaxis]
                 tdiff_0 = dot(self.inv_cov, diff_0)
                 energy_0 = sum(diff_0 * tdiff_0, axis=0) / 2.0
                 result[i] = sum(exp(-energy_0), axis=0)
-                # reflected points, lower boundary
-                diff_l = self.dataset + points[:, i, newaxis] - 2*l                
-                tdiff_l = dot(self.inv_cov, diff_l)
-                energy_l = sum(diff_l * tdiff_l, axis=0) / 2.0
-                result_l[i] = sum(exp(-energy_l), axis=0)
-                # reflected points, upper boundary
-                diff_u = self.dataset + points[:, i, newaxis] - 2*u                
-                tdiff_u = dot(self.inv_cov, diff_u)
-                energy_u = sum(diff_u * tdiff_u, axis=0) / 2.0
-                result_u[i] = sum(exp(-energy_u), axis=0)
-                
+                if lb is not None:
+                    diff_l = self.dataset + points[:, i, newaxis] - 2*lb
+                    tdiff_l = dot(self.inv_cov, diff_l)
+                    energy_l = sum(diff_l * tdiff_l, axis=0) / 2.0
+                    result_l[i] = sum(exp(-energy_l), axis=0)
+                if ub is not None:
+                    diff_u = self.dataset + points[:, i, newaxis] - 2*ub
+                    tdiff_u = dot(self.inv_cov, diff_u)
+                    energy_u = sum(diff_u * tdiff_u, axis=0) / 2.0
+                    result_u[i] = sum(exp(-energy_u), axis=0)
 
         result = (result + result_l + result_u) / self._norm_factor
 
@@ -564,3 +558,4 @@ class gaussian_kde(object):
 
         """
         return np.log(self.evaluate(x))
+
