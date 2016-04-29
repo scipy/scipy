@@ -405,3 +405,768 @@ def nu2lambda(nu):
 
     """
     return c / _np.asanyarray(nu)
+
+# length
+
+def ft_to_meters(ft):
+    """ 
+    Convert foot to meters
+
+    Parameters
+    ----------
+    ft: array_like
+        Foot length to be converted.
+
+    Returns
+    -------
+    meters: float or array of floats
+        Equivalent length in meters.
+
+    Notes 
+    -----
+    Computes ``meters = ft * 0.3048 ` where 0.3048 meter = 1ft 
+    
+    """
+    return _np.asanyarray(ft)*0.3048
+
+def meters_to_ft(meters):
+    """ 
+    Convert meters to foot
+
+    Parameters
+    ----------
+    meters: array_like
+        meters length to be converted.
+
+    Returns
+    -------
+    ft: float or array of floats
+        Equivalent length in foot.
+
+    Notes 
+    -----
+    Computes ``ft = meters/ 0.3048 ` where 0.3048 meter = 1ft 
+    
+    """
+    return _np.asanyarray(meters)/0.3048
+
+def inches_to_ft(in):
+    """ 
+    Convert foot to inches
+
+    Parameters
+    ----------
+    ft: array_like
+        Foot length to be converted.
+
+    Returns
+    -------
+    inches: float or array of floats
+        Equivalent length in inches.
+
+    Notes 
+    -----
+    Computes ``in = ft * 12 ` where 12 inches = 1ft 
+    
+    """
+    return (_npasanyarray(ft))*12
+
+def ft_to_inches(ft):
+    """ 
+    Convert inches to foot
+
+    Parameters
+    ----------
+    in: array_like
+        Inches length to be converted.
+
+    Returns
+    -------
+    foot: float or array of floats
+        Equivalent length in foot.
+
+    Notes 
+    -----
+    Computes ``ft = in / 12 ` where 12 inches = 1ft 
+    
+    """
+    return (_npasanyarray(in))/12
+
+
+def in_to_meters(in):
+    """ 
+    Convert inches to meters
+
+    Parameters
+    ----------
+    in: array_like
+        Inches length to be converted.
+
+    Returns
+    -------
+    meters: float or array of floats
+        Equivalent length in meters.
+
+    Notes 
+    -----
+    Computes ``meters = 0.0254 * in `` where 1 meter = 0.0254 in.
+    
+    """
+    return 0.0254*(_npasanyarray(in))
+
+def meters_to_in(meters):
+    """ 
+    Convert meters to inches
+
+    Parameters
+    ----------
+    meters: array_like
+        Meters length to be converted.
+
+    Returns
+    -------
+    inches: float or array of floats
+        Equivalent length in inches.
+
+    Notes 
+    -----
+    Computes ``inches = meters / 0.0254  `` where 1 meter = 0.0254 in.
+    
+    """
+    return (_npasanyarray(meters))/0.0254
+
+# mass
+
+def lb_to_kg(lb):
+    """ 
+    Convert foot to meters
+
+    Parameters
+    ----------
+    lb: array_like
+        Pounds to be converted.
+
+    Returns
+    -------
+    kilogram: float or array of floats
+        Equivalent mass in kilogram(s).
+
+    Notes 
+    -----
+    Computes ``kg = 0.453592 * lb`` where 1 kg = 0.453592 lb.
+    
+    """
+    return 0.453592*_npasanyarray(lb)
+
+def kg_to_lb(kg):
+    """ 
+    Convert kilograms to pounds 
+
+    Parameters
+    ----------
+    kg: array_like
+        Kilograms to be converted.
+
+    Returns
+    -------
+    pounds: float or array of floats
+        Equivalent mass in pounds.
+
+    Notes 
+    -----
+    Computes ``lb = kg/0.453592 `` where 1 kg = 0.453592 lb.
+    
+    """
+    return _npasanyarray(kg)/0.453592
+
+def oz_to_g(oz):
+    """ 
+    Convert ounces to grams
+
+    Parameters
+    ----------
+    oz: array_like
+        Ounces to be converted.
+
+    Returns
+    -------
+    grams: float or array of floats
+        Equivalent masss in grams.
+
+    Notes 
+    -----
+    Computes ``g = 28.3495 * oz `` where 1 gram = 28.3495 oz.
+    
+    """
+    return 28.3495*_npasanyarray(oz)
+
+def g_to_oz(g):
+    """ 
+    Convert grams to ounces
+
+    Parameters
+    ----------
+    g: array_like
+        Grams to be converted.
+
+    Returns
+    -------
+    Ounces: float or array of floats
+        Equivalent masss in ounces.
+
+    Notes 
+    -----
+    Computes ``oz = g / 28.3495 `` where 1 gram = 28.3495 oz.
+    
+    """
+    return _npasanyarray(g) / 28.3495 
+
+# time
+
+def sec_to_min(sec):
+    """
+    Convert seconds to minutes
+
+    Parameters
+    ----------
+    sec: array_like
+        Seconds to be converted.
+
+    Returns
+    -------
+    minutes: float or array of floats
+        Equivalent time in minutes.
+
+    Notes
+    -----
+    Computes `` min = sec/60`` where 1 minute = 60 seconds.
+
+    """
+    return _npasanyarray(sec)/60
+
+def min_to_sec(min):
+    """
+    Convert minutes to seconds
+
+    Parameters
+    ----------
+    min: array_like
+        Minutes to be converted.
+
+    Returns
+    -------
+    seconds: float or array of floats
+        Equivalent time in seconds.
+
+    Notes
+    -----
+    Computes `` sec = min * 60 `` where 1 minute = 60 seconds .
+
+    """
+    return _npasanyarray(min)*60
+
+def sec_to_h(sec):
+    """
+    Convert seconds to hours
+
+    Parameters
+    ----------
+    seconds: array_like
+        Seconds to be converted.
+
+    Returns
+    -------
+    hours: float or array of floats
+        Equivalent time in hours.
+
+    Notes
+    -----
+    Computes `` h = sec / 3600 `` where 1h = 3600 sec .
+
+    """
+    return _npasanyarray(sec)/3600
+
+def h_to_sec(h):
+    """
+    Convert hours to seconds
+
+    Parameters
+    ----------
+    h: array_like
+        Hours to be converted.
+
+    Returns
+    -------
+    Seconds: float or array of floats
+        Equivalent time in seconds.
+
+    Notes
+    -----
+    Computes `` sec = 3600*h `` where 1h = 3600 sec.
+
+    """
+    return _npasanyarray(h)*3600
+
+def sec_to_day(sec):
+    """
+    Convert seconds to day
+
+    Parameters
+    ----------
+    sec: array_like
+        Seconds to be converted.
+
+    Returns
+    -------
+    day: float or array of floats
+        Equivalent time in days.
+
+    Notes
+    -----
+    Computes `` day = sec / 24*3600 `` where 1 day = 24*3600.
+
+    """
+    return _npasanyarray(sec)/24*3600
+
+def day_to_sec(day):
+    """
+    Convert days to seconds
+
+    Parameters
+    ----------
+    day: array_like
+        Days to be converted.
+
+    Returns
+    -------
+    seconds: float or array of floats
+        Equivalent time in seconds.
+
+    Notes
+    -----
+    Computes `` sec = day*24*3600 `` where 1 day = 24*3600.
+
+    """
+    return _npasanyarray(day)*24*3600
+
+def sec_to_week(sec):
+    """
+    Convert seconds to weeks
+
+    Parameters
+    ----------
+    sec: array_like
+        seconds to be converted.
+
+    Returns
+    -------
+    week: float or array of floats
+        Equivalent time in weeks.
+
+    Notes
+    -----
+    Computes `` week = sec/7*24*3600 `` where 1 week = 7*24*3600.
+
+    """
+    return _npasanyarray(sec)/7*24*3600
+
+def week_to_sec(week):
+    """
+    Convert weeks to seconds
+
+    Parameters
+    ----------
+    week: array_like
+        Weeks to be converted.
+
+    Returns
+    -------
+    Seconds: float or array of floats
+        Equivalent time in weeks.
+
+    Notes
+    -----
+    Computes `` sec = week*7*24*3600 `` where 1 week = 7*24*3600.
+
+    """
+    return _npasanyarray(week)*7*24*3600
+
+def sec_to_year(year):
+    """
+    Convert seconds to years
+
+    Parameters
+    ----------
+    sec: array_like
+        Seconds to be converted.
+
+    Returns
+    -------
+    year: float or array of floats
+        Equivalent time in years.
+
+    Notes
+    -----
+    Computes `` year =  sec / 365*24*3600 `` where 1 year = 365*24*3600 .
+
+    """
+    return _npasanyarray(year)/365*24*3600
+
+def year_to_sec(year):
+    """
+    Convert years to seconds
+
+    Parameters
+    ----------
+    year: array_like
+        years to be converted.
+
+    Returns
+    -------
+    seconds: float or array of floats
+        Equivalent time in seconds.
+
+    Notes
+    -----
+    Computes `` sec = year * 365*24*3600 `` where 1 year = 365*24*3600.
+
+    """
+    return _npasanyarray(sec)*365*24*3600
+
+def min_to_h(min):
+    """
+    Convert minutes to hours
+
+    Parameters
+    ----------
+    min: array_like
+        minutes to be converted.
+
+    Returns
+    -------
+    hours: float or array of floats
+        Equivalent time in hours.
+
+    Notes
+    -----
+    Computes `` h = min/60 `` where 1h = 60min .
+
+    """
+    return _npasanyarray(min)/60
+
+def h_to_min(h):
+    """
+    Convert hours to minutes
+
+    Parameters
+    ----------
+    h: array_like
+        hours to be converted.
+
+    Returns
+    -------
+    min: float or array of floats
+        Equivalent time in minutes.
+
+    Notes
+    -----
+    Computes `` min = h*60 `` where 1X = h = 60min.
+
+    """
+    return _npasanyarray(min)*60
+
+
+def min_to_day(min):
+    """
+    Convert minutes to days
+
+    Parameters
+    ----------
+    min: array_like
+        minutes to be converted.
+
+    Returns
+    -------
+    day: float or array of floats
+        Equivalent time in days.
+
+    Notes
+    -----
+    Computes `` day = min/24*60`` where 1 day = 24*60 min.
+
+    """
+    return _npasanyarray(min)/24*60
+
+def day_to_min(day):
+    """
+    Convert days to minutes
+
+    Parameters
+    ----------
+    day: array_like
+        Days to be converted.
+
+    Returns
+    -------
+    min: float or array of floats
+        Equivalent time in minutes.
+
+    Notes
+    -----
+    Computes `` min = day*24*60 `` where 1X = where 1 day = 24*60 min.
+
+    """
+    return _npasanyarray(day)*24*60
+
+def min_to_week(min):
+    """
+    Convert minutes to weeks
+
+    Parameters
+    ----------
+    min: array_like
+        Minutes to be converted.
+
+    Returns
+    -------
+    week: float or array of floats
+        Equivalent time in weeks.
+
+    Notes
+    -----
+    Computes `` week = min/7*24*60 `` where 1 week = 7*24*60 min.
+
+    """
+    return _npasanyarray(min)/7*24*60
+
+def week_to_min(week):
+    """
+    Convert weeks to minutes
+
+    Parameters
+    ----------
+    week: array_like
+        Weeks to be converted.
+
+    Returns
+    -------
+    min: float or array of floats
+        Equivalent time in minutes.
+
+    Notes
+    -----
+    Computes `` min = week*7*24*60 min `` where 1 week = 7*24*60 min .
+
+    """
+    return _npasanyarray(week)*7*24*60
+
+def min_to_year(min):
+    """
+    Convert minutes to years
+
+    Parameters
+    ----------
+    min: array_like
+        Minutes to be converted.
+
+    Returns
+    -------
+    year: float or array of floats
+        Equivalent time in years.
+
+    Notes
+    -----
+    Computes `` year = min/365*24*60 `` where 1 year = 365*24*60 .
+
+    """
+    return _npasanyarray(min)/365*24*60
+
+def year_to_min(year):
+    """
+    Convert years to minutes
+
+    Parameters
+    ----------
+    year: array_like
+        Years to be converted.
+
+    Returns
+    -------
+    min: float or array of floats
+        Equivalent time in minutes.
+
+    Notes
+    -----
+    Computes `` min = year*365*24*60 `` where 1 year = 365*24*60.
+
+    """
+    return _npasanyarray(year)*365*24*60
+
+def h_to_day(h):
+    """
+    Convert hours to days.
+
+    Parameters
+    ----------
+    h: array_like
+        Hours to be converted.
+
+    Returns
+    -------
+    days: float or array of floats
+        Equivalent time in days.
+
+    Notes
+    -----
+    Computes `` day = h/24`` where 1 day  = 24h .
+
+    """
+    return _npasanyarray(h)/24
+
+def day_to_h(day):
+    """
+    Convert days to hours.
+
+    Parameters
+    ----------
+    day: array_like
+        Days to be converted.
+
+    Returns
+    -------
+    h: float or array of floats
+        Equivalent time in hours.
+
+    Notes
+    -----
+    Computes `` h = 24*day `` where 1 day  = 24h.
+
+    """
+    return _npasanyarray(day)*24
+
+
+def h_to_week(h):
+    """
+    Convert hours to weeks.
+
+    Parameters
+    ----------
+    h: array_like
+        Hours to be converted.
+
+    Returns
+    -------
+    weeks: float or array of floats
+        Equivalent time in weeks.
+
+    Notes
+    -----
+    Computes `` week = h/24*7 `` where 1 week = 24*7h.
+
+    """
+    return _npasanyarray(h)/24*7
+
+def week_to_h(week):
+    """
+    Convert weeks to hours
+
+    Parameters
+    ----------
+    week: array_like
+        Weeks to be converted.
+
+    Returns
+    -------
+    h: float or array of floats
+        Equivalent time in hours.
+
+    Notes
+    -----
+    Computes `` h = week*24*7 `` where 1 week = 24*7h.
+
+    """
+    return _npasanyarray(week)*24*7
+
+def h_to_year(h):
+    """
+    Convert hours to years
+
+    Parameters
+    ----------
+    h: array_like
+        Hours to be converted.
+
+    Returns
+    -------
+    year: float or array of floats
+        Equivalent time in years.
+
+    Notes
+    -----
+    Computes `` year = h/365*24 `` where 1 year = 365*24h .
+
+    """
+    return _npasanyarray(h)/365*24
+
+def year_to_h(h):
+    """
+    Convert years to hours
+
+    Parameters
+    ----------
+    year: array_like
+        Years to be converted.
+
+    Returns
+    -------
+    h: float or array of floats
+        Equivalent time in hours.
+
+    Notes
+    -----
+    Computes `` h = year*365*24 `` where 1 year = 365*24h .
+
+    """
+    return _npasanyarray(h)*365*24
+
+def day_to_week(day):
+    """
+    Convert days to weeks
+
+    Parameters
+    ----------
+    day: array_like
+        Days to be converted.
+
+    Returns
+    -------
+    week: float or array of floats
+        Equivalent time in weeks.
+
+    Notes
+    -----
+    Computes `` week = day/7 `` where 1 week = 7 days .
+
+    """
+    return _npasanyarray(day)/7
+
+def week_to_day(week):
+    """
+    Convert days to weeks
+
+    Parameters
+    ----------
+    week: array_like
+        Weeks to be converted.
+
+    Returns
+    -------
+    day: float or array of floats
+        Equivalent time in days.
+
+    Notes
+    -----
+    Computes `` day = week*7 `` where 1 week = 7 days .
+
+    """
+    return _npasanyarray(day)*7

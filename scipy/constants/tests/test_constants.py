@@ -36,6 +36,114 @@ def test_lambda_to_nu():
 def test_nu_to_lambda():
     assert_equal(sc.nu2lambda(1), sc.speed_of_light)
 
+def test_ft_to_meters():
+    assert_equal(sc.ft_to_meters([1,1]),[0.3048,0.3048])
+
+def test_meters_to_ft():
+    assert_equal(sc.meters_to_ft([1,1]), [1/0.3048, 1/0.30048])
+
+def test_inches_to_ft():
+    assert_equal(sc.inches_to_ft([1,1]),[1/12,1/12])
+
+def test_ft_to_inches():
+    assert_equal(sc.ft_to_inches([1,1]),[12,12])
+
+def test_in_to_meters():
+    assert_equal(sc.in_to_meters([1,1]),[0.0254,0.0254])
+
+def test_meters_to_in():
+    assert_equal(sc.meters_to_in([1,1]),[1/0.0254,1/0.0254])
+
+def test_lb_to_kg():
+    assert_equal(sc.lb_to_kg([1/0.453592, 0.453592]),[1,1])
+
+def test_kg_to_lb():
+    assert_equal(sc.kg_to_lb([1,1]),[0.453592,0.453592])
+
+def test_oz_to_g():
+    assert_equal(sc.oz_to_g([28.3495,28.3495]),[1,1])
+
+def test_g_to_oz():
+    assert_equal(sc.g_to_oz([1,1]),[28.3495,28.3495])
+
+def test_sec_to_min():
+    assert_equal(sc.sec_to_min([1,1]),[1/60,1/60])
+
+def test_min_to_sec():
+    assert_equal(sc.min_to_sec([1,1]),[60,60])
+
+def test_sec_to_h():
+    assert_equal(sc.sec_to_h([1,1]), [1/3600,1/3600])
+
+def test_h_to_sec():
+    assert_equal(sc.h_to_sec([1,1]),[3600,3600])
+
+def test_sec_to_day():
+    assert_equal(sc.sec_to_day([1,1]), [1/24*3600, 1/24*3600])
+
+def test_day_to_sec():
+    assert_equal(sc.day_to_sec([1,1]),[24*3600, 24*3600])
+
+def test_sec_to_week():
+    assert_equal(sc.sec_to_week([1,1]), [1/7*24*3600,1/7*24*3600])
+
+def test_week_to_sec():
+    assert_equal(sc.week_to_sec([1,1]),[7*24*3600,7*24*3600])
+
+def test_sec_to_year():
+    assert_equal(sc.sec_to_year([1,1]),[1/365*24*3600,1/365*24*3600])
+
+def test_year_to_sec():
+    assert_equal(sc.year_to_sec([1,1]),[365*24*3600,365*24*3600])
+
+def test_min_to_h():
+    assert_equal(sc.min_to_h([1,1]),[1/60,1/60])
+
+def test_h_to_min():
+    assert_equal(sc.h_to_min([1,1]).[60,60])
+
+def test_min_to_day():
+    assert_equal(sc.min_to_day([1,1]),[1/24*60,24*60])
+
+def test_day_to_min():
+    assert_equal(sc.day_to_min([1,1]),[24*60,24*60])
+
+def test_min_to_week():
+    assert_equal(sc.min_to_week([1,1]).[1/7*24*60,1/7*24*60])
+
+def test_week_to_min():
+    assert_equal(sc.week_to_min([1,1]),[7*24*60,7*24*60])
+
+def test_min_to_year():
+    assert_equal(sc.min_to_year([1,1]),[1/365*24*60, 1/365*24*60])
+
+def test_year_to_min():
+    assert_equal(sc.year_to_min([1,1]),[365*24*60,365*24*60])
+
+def test_h_to_day():
+    assert_equal(sc.h_to_day([1,1]),[1/24,1/24])
+
+def test_day_to_h():
+    assert_equal(sc.day_to_h([1,1]),[24,24])
+
+def test_h_to_week():
+    assert_equal(sc.h_to_week([1,1]),[1/24*7,1/24*7])
+
+def test_week_to_h():
+    assert_equal(sc.week_to_h([1,1]),[24*7,24*7])
+
+def test_h_to_year():
+    assert_equal(sc.h_to_year([1,1]),[1/365*24,1/365*24])
+
+def test_year_to_h():
+    assert_equal(sc.year_to_h([1,1]),[365*24, 365*24])
+
+def test_day_to_week():
+    assert_equal(sc.day_to_week([1,1]), [1/7,1/7])
+
+def test_week_to_day():
+    assert_equal(sc.week_to_day([1,1]),[7,7])
+
 
 if __name__ == "__main__":
     run_module_suite()
