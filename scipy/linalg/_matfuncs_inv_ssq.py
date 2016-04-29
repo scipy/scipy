@@ -304,7 +304,7 @@ def _logm_superdiag_entry(l1, l2, t12):
     else:
         z = (l2 - l1) / (l2 + l1)
         ua = _unwindk(np.log(l2) - np.log(l1))
-        ub = _unwindk(np.log1p(z) - np.log1p(z))
+        ub = _unwindk(np.log1p(z) - np.log1p(-z))
         u = ua + ub
         if u:
             f12 = t12 * (2*np.arctanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
