@@ -535,7 +535,7 @@ class gaussian_kde(object):
         self.inv_cov = self._data_inv_cov / self.factor**2
         self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
 
-    def pdf(self, x):
+    def pdf(self, x, lb=None, ub=None):
         """
         Evaluate the estimated pdf on a provided set of points.
 
@@ -545,9 +545,9 @@ class gaussian_kde(object):
         docstring for more details.
 
         """
-        return self.evaluate(x)
+        return self.evaluate(x, lb, ub)
 
-    def logpdf(self, x):
+    def logpdf(self, x, lb=None, ub=None):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
 
@@ -557,5 +557,5 @@ class gaussian_kde(object):
         returns ``np.log(gaussian_kde.evaluate(x))``.
 
         """
-        return np.log(self.evaluate(x))
+        return np.log(self.evaluate(x, lb, ub))
 
