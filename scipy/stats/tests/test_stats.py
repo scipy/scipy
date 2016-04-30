@@ -17,7 +17,7 @@ from numpy.testing import (TestCase, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_raises, run_module_suite, assert_allclose,
-                           dec)
+                           dec, assert_raises_regex)
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
@@ -96,10 +96,11 @@ class TestTrimmedStats(TestCase):
         assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
         assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
         assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
-
-        with self.assertRaisesRegexp(ValueError,
-                                     "'propagate', 'raise', 'omit'"):
-            stats.tmin(x, nan_policy='foo')
+        assert_raises_regex(ValueError,
+                            "'propagate', 'raise', 'omit'",
+                            stats.tmin,
+                            x,
+                            nan_policy='foo')
 
     def test_tmax(self):
         assert_equal(stats.tmax(4), 4)
