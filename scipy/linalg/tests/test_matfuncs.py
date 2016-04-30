@@ -208,7 +208,7 @@ class TestLogM(TestCase):
                 A_logm, info = logm(A, disp=False)
                 assert_(np.issubdtype(A_logm.dtype, complex))
 
-    def test_logm_exactly_singular(self):
+    def test_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
         B = np.asarray([[1, 1], [0, 0]])
         for M in A, A.T, B, B.T:
@@ -217,12 +217,27 @@ class TestLogM(TestCase):
             E = expm(L)
             assert_allclose(E, M, atol=1e-14)
 
-    def test_logm_nearly_singular(self):
+    def test_nearly_singular(self):
         M = np.array([[1e-100]])
         expected_warning = _matfuncs_inv_ssq.LogmNearlySingularWarning
         L, info = _assert_warns(expected_warning, logm, M, disp=False)
         E = expm(L)
         assert_allclose(E, M, atol=1e-14)
+
+    def test_opposite_sign_complex_eigenvalues(self):
+        # See gh-6113
+        E = [[0, 1], [-1, 0]]
+        L = [[0, np.pi*0.5], [-np.pi*0.5, 0]]
+        assert_allclose(expm(L), E, atol=1e-14)
+        assert_allclose(logm(E), L, atol=1e-14)
+        E = [[1j, 4], [0, -1j]]
+        L = [[1j*np.pi*0.5, 2*np.pi], [0, -1j*np.pi*0.5]]
+        assert_allclose(expm(L), E, atol=1e-14)
+        assert_allclose(logm(E), L, atol=1e-14)
+        E = [[1j, 0], [0, -1j]]
+        L = [[1j*np.pi*0.5, 0], [0, -1j*np.pi*0.5]]
+        assert_allclose(expm(L), E, atol=1e-14)
+        assert_allclose(logm(E), L, atol=1e-14)
 
 
 class TestSqrtM(TestCase):
@@ -373,6 +388,12 @@ class TestSqrtM(TestCase):
         A = np.random.rand(3, 3)
         B = sqrtm(A, disp=True)
         assert_allclose(B.dot(B), A)
+
+    def test_opposite_sign_complex_eigenvalues(self):
+        M = [[2j, 4], [0, -2j]]
+        R = [[1+1j, 2], [0, 1-1j]]
+        assert_allclose(np.dot(R, R), M, atol=1e-14)
+        assert_allclose(sqrtm(M), R, atol=1e-14)
 
 
 class TestFractionalMatrixPower(TestCase):
@@ -552,6 +573,12 @@ class TestFractionalMatrixPower(TestCase):
                     A_power = fractional_matrix_power(A, p)
                     A_round_trip = fractional_matrix_power(A_power, 1/p)
                     assert_allclose(A_round_trip, A)
+
+    def test_opposite_sign_complex_eigenvalues(self):
+        M = [[2j, 4], [0, -2j]]
+        R = [[1+1j, 2], [0, 1-1j]]
+        assert_allclose(np.dot(R, R), M, atol=1e-14)
+        assert_allclose(fractional_matrix_power(M, 0.5), R, atol=1e-14)
 
 
 class TestExpM(TestCase):
