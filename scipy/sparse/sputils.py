@@ -185,14 +185,10 @@ def isintlike(x):
     """
     if issequence(x):
         return False
-    else:
-        try:
-            if int(x) == x:
-                return True
-            else:
-                return False
-        except TypeError:
-            return False
+    try:
+        return bool(int(x) == x)
+    except (TypeError, ValueError):
+        return False
 
 
 def isshape(x):
