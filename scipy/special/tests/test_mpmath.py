@@ -466,6 +466,27 @@ def test_digamma_boundary():
 
 
 # ------------------------------------------------------------------------------
+# gammainc
+# ------------------------------------------------------------------------------
+
+@mpmath_check('0.19')
+def test_gammainc_boundary():
+    """Test the transition to the asymptotic series."""
+    small = 25
+    a = np.linspace(0.5*0.7*small, 2*1.3*small, 100)
+    x = a.copy()
+    a, x = np.meshgrid(a, x)
+    a, x = a.flatten(), x.flatten()
+    dataset = []
+    with mpmath.workdps(100):
+        for a0, x0 in zip(a, x):
+            dataset.append((a0, x0, float(mpmath.gammainc(a0, b=x0, regularized=True))))
+    dataset = np.array(dataset)
+
+    FuncData(sc.gammainc, dataset, (0, 1), 2, rtol=1e-12).check()
+
+
+# ------------------------------------------------------------------------------
 # spence
 # ------------------------------------------------------------------------------
 
@@ -631,7 +652,7 @@ class IntArg(object):
 class MpmathData(object):
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
                  dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300,
-                 ignore_inf_sign=False, param_filter=None):
+                 ignore_inf_sign=False, nan_ok=True, param_filter=None):
         self.scipy_func = scipy_func
         self.mpmath_func = mpmath_func
         self.arg_spec = arg_spec
@@ -641,6 +662,7 @@ class MpmathData(object):
         self.rtol = rtol
         self.atol = atol
         self.ignore_inf_sign = ignore_inf_sign
+        self.nan_ok = nan_ok
         if isinstance(self.arg_spec, np.ndarray):
             self.is_complex = np.issubdtype(self.arg_spec.dtype, np.complexfloating)
         else:
@@ -710,7 +732,7 @@ class MpmathData(object):
                                       vectorized=False,
                                       rtol=self.rtol, atol=self.atol,
                                       ignore_inf_sign=self.ignore_inf_sign,
-                                      nan_ok=True,
+                                      nan_ok=self.nan_ok,
                                       param_filter=self.param_filter)
                     break
                 except AssertionError:
@@ -1373,12 +1395,25 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
                             _exception_to_nan(mpmath.gamma),
                             [ComplexArg()], rtol=1e-12)
 
-    @dec.knownfailureif(True, "BUG: special.gammainc(1e20, 1e20) never returns")
     def test_gammainc(self):
+        # Mpmath uses hypergeometric functions to evaluate gammainc
+        # and (as of version 0.19) does not provided a keyword to
+        # increase the number of terms used. As a result it raises
+        # exceptions on large arguments due to lack of
+        # convergence. Since the _exception_to_nan wrapper would just
+        # ignore bad values, we first test in the region where there
+        # are no exceptions.
+        assert_mpmath_equal(sc.gammainc,
+                            lambda z, b: mpmath.gammainc(z, b=b, regularized=True),
+                            [Arg(0, 1e4), Arg(0, 1e4)], rtol=1e-11)
+        # Now add _exception_to_nan and go for broke. We still have to
+        # limit the range so that we don't have to use a crazy amount
+        # of precision.
         assert_mpmath_equal(sc.gammainc,
                             _exception_to_nan(
-                                lambda z, b: mpmath.gammainc(z, b=b)/mpmath.gamma(z)),
-                            [Arg(a=0), Arg(a=0)])
+                            lambda z, b: mpmath.gammainc(z, b=b, regularized=True)),
+                            [Arg(1e4, 1e100), Arg(1e4, 1e100)],
+                            dps=100, rtol=1e-11)
 
     def test_gammaln(self):
         # The real part of loggamma is log(|gamma(z)|).
