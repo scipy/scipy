@@ -1,40 +1,45 @@
 from __future__ import division, print_function, absolute_import
-from numpy.testing import dec
-from scipy.special._precompute import utils
+
+from scipy._lib._testutils import xslow
+
+from scipy.special._testutils import mpmath_check, sympy_check
+from scipy.special._precompute.utils import mpf_assert_allclose
 from scipy.special._precompute.gammainc import (compute_g, compute_alpha,
                                                 compute_d)
 
 try:
-    import mpmath as mp
+    import sympy
+    from sympy import mpmath as mp
 except ImportError:
+    sympy = None
     try:
-        import sympy.mpmath as mp
+        import mpmath as mp
     except ImportError:
-        pass
+        mp = None
 
 
-@utils.skip()
+@mpmath_check(mp, '0.19')
 def test_g():
     """Test data for the g_k. See DLMF 5.11.4."""
     with mp.workdps(30):
         g = [mp.mpf(1), mp.mpf(1)/12, mp.mpf(1)/288,
              -mp.mpf(139)/51840, -mp.mpf(571)/2488320,
              mp.mpf(163879)/209018880, mp.mpf(5246819)/75246796800]
-        utils.mpf_assert_allclose(compute_g(7), g)
+        mpf_assert_allclose(compute_g(7), g)
 
 
-@utils.skip()
+@sympy_check(sympy, '1.0')
 def test_alpha():
     """Test data for the alpha_k. See DLMF 8.12.14."""
     with mp.workdps(30):
         alpha = [mp.mpf(0), mp.mpf(1), mp.mpf(1)/3, mp.mpf(1)/36,
                  -mp.mpf(1)/270, mp.mpf(1)/4320, mp.mpf(1)/17010,
                  -mp.mpf(139)/5443200, mp.mpf(1)/204120]
-        utils.mpf_assert_allclose(compute_alpha(9), alpha)
+        mpf_assert_allclose(compute_alpha(9), alpha)
 
 
-@dec.slow
-@utils.skip()
+@xslow
+@sympy_check(sympy, '1.0')
 def test_d():
     """Compare the d_{k, n} to the results in appendix F of [1].
 
@@ -71,4 +76,4 @@ def test_d():
         for k, n, std in dataset:
             res.append(d[k][n])
         std = map(lambda x: x[2], dataset)
-        utils.mpf_assert_allclose(res, std)
+        mpf_assert_allclose(res, std)

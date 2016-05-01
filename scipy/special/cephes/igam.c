@@ -98,7 +98,6 @@
 #define SMALL 25
 #define TOL 2.2204460492503131e-16
 
-extern double erfc(double);
 extern double MACHEP, MAXLOG;
 static double big = 4.503599627370496e15;
 static double biginv = 2.22044604925031308085e-16;

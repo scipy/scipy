@@ -7,8 +7,6 @@ from __future__ import division, print_function, absolute_import
 import sys
 import time
 
-from distutils.version import LooseVersion
-
 import numpy as np
 from numpy.testing import dec, run_module_suite, assert_, assert_allclose
 from numpy import pi
@@ -16,7 +14,7 @@ from numpy import pi
 import scipy.special as sc
 from scipy._lib.six import reraise, with_metaclass
 from scipy._lib._testutils import knownfailure_overridable
-from scipy.special._testutils import FuncData, assert_func_equal
+from scipy.special._testutils import mpmath_check, FuncData, assert_func_equal
 from scipy.special._ufuncs import _sinpi, _cospi
 
 try:
@@ -28,18 +26,11 @@ except ImportError:
         mpmath = None
 
 
-def mpmath_check(min_ver):
-    if mpmath is None:
-        return dec.skipif(True, "mpmath is not installed")
-    return dec.skipif(LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
-                      "mpmath version >= %s required" % min_ver)
-
-
 # ------------------------------------------------------------------------------
 # expi
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.10')
+@mpmath_check(mpmath, '0.10')
 def test_expi_complex():
     dataset = []
     for r in np.logspace(-99, 2, 10):
@@ -55,7 +46,7 @@ def test_expi_complex():
 # ------------------------------------------------------------------------------
 
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_hyp0f1_gh5764():
     # Do a small and somewhat systematic test that runs quickly
     pts = []
@@ -70,7 +61,7 @@ def test_hyp0f1_gh5764():
     assert_allclose(res, std, atol=1e-13, rtol=1e-13)
 
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_hyp0f1_gh_1609():
     # this is a regression test for gh-1609
     vv = np.linspace(150, 180, 21)
@@ -83,7 +74,7 @@ def test_hyp0f1_gh_1609():
 # hyp2f1
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.14')
+@mpmath_check(mpmath, '0.14')
 def test_hyp2f1_strange_points():
     pts = [
         (2, -1, -1, 0.7),
@@ -96,7 +87,7 @@ def test_hyp2f1_strange_points():
     FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
 
-@mpmath_check('0.13')
+@mpmath_check(mpmath, '0.13')
 def test_hyp2f1_real_some_points():
     pts = [
         (1, 2, 3, 0),
@@ -131,7 +122,7 @@ def test_hyp2f1_real_some_points():
         np.seterr(**olderr)
 
 
-@mpmath_check('0.14')
+@mpmath_check(mpmath, '0.14')
 def test_hyp2f1_some_points_2():
     # Taken from mpmath unit tests -- this point failed for mpmath 0.13 but
     # was fixed in their SVN since then
@@ -153,7 +144,7 @@ def test_hyp2f1_some_points_2():
     FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
 
 
-@mpmath_check('0.13')
+@mpmath_check(mpmath, '0.13')
 def test_hyp2f1_real_some():
     dataset = []
     for a in [-10, -5, -1.8, 1.8, 5, 10]:
@@ -175,7 +166,7 @@ def test_hyp2f1_real_some():
         np.seterr(**olderr)
 
 
-@mpmath_check('0.12')
+@mpmath_check(mpmath, '0.12')
 @dec.slow
 def test_hyp2f1_real_random():
     npoints = 500
@@ -204,7 +195,7 @@ def test_hyp2f1_real_random():
 # erf (complex)
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.14')
+@mpmath_check(mpmath, '0.14')
 def test_erf_complex():
     # need to increase mpmath precision for this test
     old_dps, old_prec = mpmath.mp.dps, mpmath.mp.prec
@@ -226,7 +217,7 @@ def test_erf_complex():
 # lpmv
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.15')
+@mpmath_check(mpmath, '0.15')
 def test_lpmv():
     pts = []
     for x in [-0.99, -0.557, 1e-6, 0.132, 1]:
@@ -285,7 +276,7 @@ def test_lpmv():
 # beta
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.15')
+@mpmath_check(mpmath, '0.15')
 def test_beta():
     np.random.seed(1234)
 
@@ -324,7 +315,7 @@ def test_beta():
 # loggamma
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_loggamma_taylor1():
     """
     Make sure there isn't a big jump in accuracy when we move from
@@ -343,7 +334,7 @@ def test_loggamma_taylor1():
     FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
 
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_loggamma_taylor2():
     """
     Test around the zeros at z = 1, 2.
@@ -366,7 +357,7 @@ def test_loggamma_taylor2():
 # rgamma
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_rgamma_zeros():
     """
     Test around the zeros at z = 0, -1, -2, ...,  -169. (After -169 we
@@ -394,7 +385,7 @@ def test_rgamma_zeros():
 # digamma
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_digamma_roots():
     """Test the special-cased roots for digamma."""
     root = mpmath.findroot(mpmath.digamma, 1.5)
@@ -418,7 +409,7 @@ def test_digamma_roots():
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-14).check()
 
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_digamma_negreal():
     """
     Test digamma around the negative real axis. Don't do this in
@@ -443,7 +434,7 @@ def test_digamma_negreal():
     FuncData(sc.digamma, dataset, 0, 1, rtol=1e-13).check()
 
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_digamma_boundary():
     """
     Check that there isn't a jump in accuracy when we switch from
@@ -469,7 +460,7 @@ def test_digamma_boundary():
 # gammainc
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_gammainc_boundary():
     """Test the transition to the asymptotic series."""
     small = 25
@@ -490,7 +481,7 @@ def test_gammainc_boundary():
 # spence
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_spence_circle():
     """
     The trickiest region for spence is around the circle |z - 1| = 1,
@@ -515,7 +506,7 @@ def test_spence_circle():
 # sinpi and cospi
 # ------------------------------------------------------------------------------
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_sinpi_zeros():
     eps = np.finfo(float).eps
     dx = np.r_[-np.logspace(0, -13, 3), 0, np.logspace(-13, 0, 3)]
@@ -532,7 +523,7 @@ def test_sinpi_zeros():
     FuncData(_sinpi, dataset, 0, 1, rtol=2*eps).check()
 
 
-@mpmath_check('0.19')
+@mpmath_check(mpmath, '0.19')
 def test_cospi_zeros():
     eps = np.finfo(float).eps
     dx = np.r_[-np.logspace(0, -13, 3), 0, np.logspace(-13, 0, 3)]
@@ -772,7 +763,7 @@ class _SystematicMeta(type):
         for name, item in list(dct.items()):
             if name.startswith('test_'):
                 item = dec.slow(item)
-                item = mpmath_check(cls.mpmath_min_version)(item)
+                item = mpmath_check(mpmath, cls.mpmath_min_version)(item)
                 dct[name] = item
         return type.__new__(cls, cls_name, bases, dct)
 

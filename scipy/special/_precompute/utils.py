@@ -17,19 +17,6 @@ except ImportError:
     pass
 
 
-def skip():
-    msg = "Set environment variable SCIPY_PRECOMPUTE=1 to run precompute tests."
-
-    def deco(func):
-        try:
-            if bool(os.environ['SCIPY_PRECOMPUTE']):
-                return func
-        except (ValueError, KeyError):
-            pass
-        return dec.skipif(True, msg)(func)
-    return deco
-
-
 def mpf_assert_allclose(res, std, atol=0, rtol=1e-17):
     n = len(std)
     if len(res) != n:

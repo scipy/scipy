@@ -3,14 +3,35 @@ from __future__ import division, print_function, absolute_import
 import os
 import warnings
 
+from distutils.version import LooseVersion
+
 import numpy as np
-from numpy.testing import assert_
+from numpy.testing import dec, assert_
 from numpy.testing.noseclasses import KnownFailureTest
 
 import scipy.special as sc
 
 __all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
            'FuncData']
+
+
+#------------------------------------------------------------------------------
+# Check if mpmath and sympy are present to be used in tests
+#------------------------------------------------------------------------------
+
+
+def mpmath_check(mpmath, min_ver):
+    if mpmath is None:
+        return dec.skipif(True, "mpmath is not installed")
+    return dec.skipif(LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+                      "mpmath version >= {} required".format(min_ver))
+
+
+def sympy_check(sympy, min_ver):
+    if sympy is None:
+        return dec.skipif(True, "sympy is not installed")
+    return dec.skipif(LooseVersion(sympy.__version__) < LooseVersion(min_ver),
+                      "sympy version >= {} required".format(min_ver))
 
 #------------------------------------------------------------------------------
 # Enable convergence and loss of precision warnings -- turn off one by one

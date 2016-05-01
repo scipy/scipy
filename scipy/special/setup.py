@@ -39,14 +39,13 @@ def configuration(parent_package='',top_path=None):
     c_misc_hdr = [join('c_misc','*.h')]
     cephes_src = [join('cephes','*.c')]
     cephes_hdr = [join('cephes', '*.h')]
-    cephes_ccsrc = [join('cephes', '*.cc')]
     config.add_library('sc_c_misc',sources=c_misc_src,
                        include_dirs=[curdir] + inc_dirs,
                        depends=(cephes_hdr + cephes_src
                                 + c_misc_hdr + cephes_hdr
                                 + ['*.h']),
                        macros=define_macros)
-    config.add_library('sc_cephes',sources=cephes_src + cephes_ccsrc,
+    config.add_library('sc_cephes',sources=cephes_src,
                        include_dirs=[curdir] + inc_dirs,
                        depends=(cephes_hdr + ['*.h']),
                        macros=define_macros)
