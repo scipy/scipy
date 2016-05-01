@@ -396,7 +396,7 @@ class TestFFTConvolve(TestCase):
             d = np.convolve(a, b, 'full')
             assert_allclose(c, d, atol=1e-10, err_msg=msg)
 
-    def test_next_regular(self):
+    def test_next_opt_len(self):
         np.random.seed(1234)
 
         def ns():
@@ -405,7 +405,7 @@ class TestFFTConvolve(TestCase):
             yield 2**5 * 3**5 * 4**5 + 1
 
         for n in ns():
-            m = signaltools._next_regular(n)
+            m = signaltools._next_opt_len(n)
             msg = "n=%d, m=%d" % (n, m)
 
             assert_(m >= n, msg)
@@ -421,7 +421,7 @@ class TestFFTConvolve(TestCase):
                         break
             assert_equal(k, 1, err_msg=msg)
 
-    def test_next_regular_strict(self):
+    def test_next_opt_len_strict(self):
         hams = {
             1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 8, 14: 15, 15: 15,
             16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000,
@@ -492,7 +492,7 @@ class TestFFTConvolve(TestCase):
                 30778180617309082445871527002041377406962596539492679680000000,
         }
         for x, y in hams.items():
-            assert_equal(signaltools._next_regular(x), y)
+            assert_equal(signaltools._next_opt_len(x), y)
 
     def test_invalid_shapes(self):
         # By "invalid," we mean that no one

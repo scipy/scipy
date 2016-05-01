@@ -47,14 +47,16 @@ def rfftfreq(n, d=1.0):
     return (arange(1, n + 1, dtype=int) // 2) / float(n * d)
 
 
-def _next_regular(target):
+def _next_opt_len(target):
     """
-    Find the next regular number greater than or equal to target.
-    Regular numbers are composites of the prime factors 2, 3, and 5.
-    Also known as 5-smooth numbers or Hamming numbers, these are the optimal
-    size for inputs to FFTPACK.
+    Find the next optimal size of input data to `fft`, for zero-padding, etc.
 
-    Target must be a positive integer.
+    SciPy's FFTPACK has functions for radix {2, 3, 4, 5}, so this returns the
+    next composite of the prime factors 2, 3, and 5, which is greater than or
+    equal to target. (Also known as 5-smooth numbers, regular numbers, or
+    Hamming numbers.)
+
+    `target` must be a positive integer.
     """
     if target <= 6:
         return target
