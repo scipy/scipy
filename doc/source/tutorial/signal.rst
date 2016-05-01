@@ -696,14 +696,8 @@ The ``ss`` format is a 4-tuple of arrays ``(A, B, C, D)`` representing the
 state-space of an `N`-order digital/discrete-time system of the form:
 
 .. math::
-    \dot{\mathbf{x}} = \mathbf{A}\mathbf{x} + \mathbf{B}\mathbf{u}\\
-    \mathbf{y} = \mathbf{C}\mathbf{x} + \mathbf{D}\mathbf{u}
-
-or??
-
-.. math::
-    \mathbf{x}(k+1) = A \mathbf{x}(k) + B \mathbf{u}(k)\\
-    \mathbf{y}(k) = C \mathbf{x}(k) + D \mathbf{u}(k)
+    \mathbf{x}[k+1] = A \mathbf{x}[k] + B \mathbf{u}[k]\\
+    \mathbf{y}[k] = C \mathbf{x}[k] + D \mathbf{u}[k]
 
 or a continuous/analog system of the form:
 
@@ -761,9 +755,7 @@ Type                          Transformation
 :func:`lp2bs` :math:`s \rightarrow \frac{s \cdot \mathrm{BW}}{s^2 + {\omega_0}^2}`
 ============= ====================================================================
 
-These preserve symmetry on a logarithmic frequency axis:
-
-*images here*
+These preserve symmetry on a logarithmic frequency axis.
 
 Other filters
 ^^^^^^^^^^^^^
