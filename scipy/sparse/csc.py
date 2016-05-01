@@ -109,10 +109,19 @@ class csc_matrix(_cs_matrix, IndexMixin):
     """
     format = 'csc'
 
-    def transpose(self, copy=False):
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
+        M, N = self.shape
+
         from .csr import csr_matrix
-        M,N = self.shape
-        return csr_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
+        return csr_matrix((self.data, self.indices,
+                           self.indptr), (N, M), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def __iter__(self):
         csr = self.tocsr()

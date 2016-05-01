@@ -10,8 +10,8 @@ import numpy as np
 
 from .base import isspmatrix, _formats, spmatrix
 from .data import _data_matrix
-from .sputils import (
-    isshape, upcast_char, getdtype, get_index_dtype, get_sum_dtype)
+from .sputils import (isshape, upcast_char, getdtype, get_index_dtype,
+                      get_sum_dtype, validateaxis)
 from ._sparsetools import dia_matvec
 
 
@@ -183,15 +183,16 @@ class dia_matrix(_data_matrix):
     getnnz.__doc__ = spmatrix.getnnz.__doc__
     count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
 
-    def sum(self, axis=None):
-        if axis is not None:
-            if axis < 0:
-                axis += 2
-            if axis not in (0, 1):
-                raise ValueError("axis out of bounds")
+    def sum(self, axis=None, dtype=None, out=None):
+        validateaxis(axis)
+
+        if axis is not None and axis < 0:
+            axis += 2
 
         res_dtype = get_sum_dtype(self.dtype)
         num_rows, num_cols = self.shape
+        ret = None
+
         if axis == 0:
             mask = self._data_mask()
             x = (self.data * mask).sum(axis=0)
@@ -200,16 +201,28 @@ class dia_matrix(_data_matrix):
             else:
                 res = np.zeros(num_cols, dtype=x.dtype)
                 res[:x.shape[0]] = x
-            return np.matrix(res, dtype=res_dtype)
+            ret = np.matrix(res, dtype=res_dtype)
 
-        row_sums = np.zeros(num_rows, dtype=res_dtype)
-        one = np.ones(num_cols, dtype=res_dtype)
-        dia_matvec(num_rows, num_cols, len(self.offsets),
-                   self.data.shape[1], self.offsets, self.data, one, row_sums)
+        else:
+            row_sums = np.zeros(num_rows, dtype=res_dtype)
+            one = np.ones(num_cols, dtype=res_dtype)
+            dia_matvec(num_rows, num_cols, len(self.offsets),
+                       self.data.shape[1], self.offsets, self.data, one, row_sums)
 
-        if axis is None:
-            return row_sums.sum()
-        return np.matrix(row_sums).T
+            row_sums = np.matrix(row_sums)
+
+            if axis is None:
+                return row_sums.sum(dtype=dtype, out=out)
+
+            if axis is not None:
+                row_sums = row_sums.T
+
+            ret = np.matrix(row_sums.sum(axis=axis))
+
+        if out is not None and out.shape != ret.shape:
+            raise ValueError("dimensions do not match")
+
+        return ret.sum(axis=(), dtype=dtype, out=out)
 
     sum.__doc__ = spmatrix.sum.__doc__
 
@@ -270,19 +283,29 @@ class dia_matrix(_data_matrix):
 
     todia.__doc__ = spmatrix.todia.__doc__
 
-    def transpose(self):
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
         num_rows, num_cols = self.shape
         max_dim = max(self.shape)
+
         # flip diagonal offsets
         offsets = -self.offsets
+
         # re-align the data matrix
-        r = np.arange(len(offsets), dtype=np.intc)[:,None]
-        c = np.arange(num_rows, dtype=np.intc) - (offsets % max_dim)[:,None]
+        r = np.arange(len(offsets), dtype=np.intc)[:, None]
+        c = np.arange(num_rows, dtype=np.intc) - (offsets % max_dim)[:, None]
         pad_amount = max(0, max_dim-self.data.shape[1])
         data = np.hstack((self.data, np.zeros((self.data.shape[0], pad_amount),
                                               dtype=self.data.dtype)))
-        data = data[r,c]
-        return dia_matrix((data, offsets), shape=(num_cols,num_rows))
+        data = data[r, c]
+        return dia_matrix((data, offsets), shape=(
+            num_cols, num_rows), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def diagonal(self):
         idx, = np.where(self.offsets == 0)
