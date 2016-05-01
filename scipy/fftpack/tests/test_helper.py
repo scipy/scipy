@@ -17,8 +17,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 from scipy.fftpack.helper import _next_opt_len
 
-from numpy import pi
-from numpy.random import random
+from numpy import pi, random
 
 
 class TestFFTShift(TestCase):
@@ -35,7 +34,7 @@ class TestFFTShift(TestCase):
 
     def test_inverse(self):
         for n in [1,4,9,100,211]:
-            x = random((n,))
+            x = random.random((n,))
             assert_array_almost_equal(ifftshift(fftshift(x)),x)
 
 
