@@ -889,6 +889,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         x : ndarray
             The independent variable vector which optimizes the linear
             programming problem.
+        fun : float
+            Value of the objective function.
         slack : ndarray
             The values of the slack variables.  Each slack variable corresponds
             to an inequality constraint.  If the slack is zero, then the
