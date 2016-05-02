@@ -1,0 +1,16 @@
+dependencies:
+  override:
+    - sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g-dev texlive-fonts-recommended
+    - pip install -q --install-option="--no-cython-compile" Cython==0.22
+    - pip install -q numpy
+    - pip install -q nose mpmath argparse Pillow codecov matplotlib Sphinx==1.2.3
+    - git submodule init
+    - git submodule update
+
+test:
+  override:
+    - python -u runtests.py -g --shell -- -c 'make -C doc html-scipyorg'
+
+general:
+  artifacts:
+    - "doc/build/html-scipyorg"
