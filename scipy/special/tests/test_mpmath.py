@@ -1396,14 +1396,15 @@ class TestSystematic(with_metaclass(_SystematicMeta, object)):
         # are no exceptions.
         assert_mpmath_equal(sc.gammainc,
                             lambda z, b: mpmath.gammainc(z, b=b, regularized=True),
-                            [Arg(0, 1e4), Arg(0, 1e4)], rtol=1e-11)
+                            [Arg(0, 1e4, inclusive_a=False), Arg(0, 1e4)],
+                            nan_ok=False, rtol=1e-11)
         # Now add _exception_to_nan and go for broke. We still have to
         # limit the range so that we don't have to use a crazy amount
         # of precision.
         assert_mpmath_equal(sc.gammainc,
                             _exception_to_nan(
                             lambda z, b: mpmath.gammainc(z, b=b, regularized=True)),
-                            [Arg(1e4, 1e100), Arg(1e4, 1e100)],
+                            [Arg(1e4, 1e100, inclusive_a=False), Arg(1e4, 1e100)],
                             dps=100, rtol=1e-11)
 
     def test_gammaln(self):

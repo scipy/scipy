@@ -84,7 +84,8 @@
  */
 
 /* Scipy changes:
- * - 04-2016: added asymptotic expansion to improve the a ~ x regime.
+ * - 05-01-2016: added asymptotic expansion for igam to improve the
+ *   a ~ x regime.
  */
 
 #include "mconf.h"
@@ -282,7 +283,7 @@ double a, x;
 	absoldterm = absterm;
 	afac /= a;
     }
-    res -= exp(-0.5*a*eta*eta)*sum/sqrt(2*M_PI*a);
+    res -= exp(-0.5*a*eta*eta)*sum/sqrt(2*NPY_PI*a);
 	    
     return res;
 }
