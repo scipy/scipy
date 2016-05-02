@@ -496,7 +496,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         return result
 
     def _mul_multivector(self, other):
-        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
+        result = np.zeros((other.shape[1], self.shape[0]),
+                          dtype=upcast_char(self.dtype.char, other.dtype.char))
+        for i, col in enumerate(other.T):
+            coo_matvec(self.nnz, self.row, self.col, self.data, col, result[i])
+        return np.matrix(result.T)
 
 
 def isspmatrix_coo(x):
