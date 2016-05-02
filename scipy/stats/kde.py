@@ -162,6 +162,7 @@ class gaussian_kde(object):
     >>> plt.show()
 
     """
+
     def __init__(self, dataset, bw_method=None):
         self.dataset = atleast_2d(dataset)
         if not self.dataset.size > 1:
@@ -179,6 +180,10 @@ class gaussian_kde(object):
         points : (# of dimensions, # of points)-array
             Alternatively, a (# of dimensions,) vector can be passed in and
             treated as a single point.
+        lb : Lower boundary for the estimated pdf, integer for unidimensional
+        distributions, array_like for multivariate ones
+        ub : Upper boundary for the estimated pdf, integer for unidimensional
+        distributions, array_like for multivariate ones
 
         Returns
         -------
@@ -192,6 +197,16 @@ class gaussian_kde(object):
 
         """
         points = atleast_2d(points)
+        if lb is not None:
+            lb = atleast_2d(lb)
+            f, s = lb.shape
+            if s > f:
+                lb = lb.T
+        if ub is not None:
+            ub = atleast_2d(ub)
+            f, s = ub.shape
+            if s > f:
+                ub = ub.T
 
         d, m = points.shape
         if d != self.d:
@@ -213,7 +228,7 @@ class gaussian_kde(object):
             for i in range(self.n):
                 diff_0 = self.dataset[:, i, newaxis] - points
                 tdiff_0 = dot(self.inv_cov, diff_0)
-                energy_0 = sum(diff_0 * tdiff_0,axis=0) / 2.0
+                energy_0 = sum(diff_0 * tdiff_0, axis=0) / 2.0
                 result = result + exp(-energy_0)
                 if lb is not None:
                     diff_l = self.dataset + points[:, i, newaxis] - 2*lb
