@@ -876,7 +876,7 @@ class BaseQRinsert(BaseQRdeltas):
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_Mx1_economic_p_col(self):
-        a, q, r, u = self.generate('Mx1', 'full', 'col', 3)
+        a, q, r, u = self.generate('Mx1', 'economic', 'col', 3)
         for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
