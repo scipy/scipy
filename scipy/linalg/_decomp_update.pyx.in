@@ -49,7 +49,6 @@ cimport libc.limits
 cimport libc.float
 from libc.math cimport sqrt, fabs, hypot
 from libc.string cimport memset
-cimport libc.stdio
 
 cimport numpy as cnp
 
@@ -725,9 +724,15 @@ cdef int qr_block_col_insert(int m, int n, blas_t* q, int* qs,
         # First zero the lower part of the new columns using a qr.
 
         # query the workspace,
+        # set tau to point at something to keep new MKL working.
+        tau = &c
         info = geqrf(m-n+p, p, index2(r, rs, n-p, k), m, tau, &c, -1)
+        if info < 0:
+            return libc.stdlib.abs(info)
         info = ormqr(side, trans, m, m-(n-p), p, index2(r, rs, n-p, k), m,
                      tau, index2(q, qs, 0, n-p), m, &s, -1)
+        if info < 0:
+            return info
 
         # we're only doing one allocation, so use the larger
         lwork = to_lwork(c, s)
@@ -897,6 +902,8 @@ cdef int qr_rank_p_update(int m, int n, int p, blas_t* q, int* qs, blas_t* r,
         # query the workspace
         # below p_subdiag_qr will need workspace of size m, which is the
         # minimum, ormqr will also require.
+        # set tau to point at something, to keep new MKL working.
+        tau = &c
         info = geqrf(m-n, p, index2(u, us, n, 0), m, tau, &c, -1)
         if info < 0:
             return libc.stdlib.abs(info)
