@@ -15,13 +15,13 @@ EPS = np.finfo(float).eps
 
 
 def estimate_fun_jac(fun, x, y, p, f0=None):
-    """Estimate derivatives of and ODE system rhs with forward differences.
+    """Estimate derivatives of an ODE system rhs with forward differences.
 
     Returns
     -------
     df_dy : ndarray, shape (n, n, m)
         Derivatives with respect to y. An element (i, j, k) corresponds to
-        d f_i(x_k, y_k) / d y_j.
+        d f_i(x_k, y_k) / d (y_k)_j.
     df_dp : ndarray with shape (n, k, m) or None
         Derivatives with respect to p. An element (i, j, k) corresponds to
         d f_i(x_k, y_k, p) / d p_j. If `p` is empty, None is returned.
@@ -117,7 +117,7 @@ def estimate_bc_jac(bc, ya, yb, p, bc0=None):
 
 
 def compute_jac_indices(n, m, k):
-    """Compute indices for the global Jacobian construction.
+    """Compute indices for the collocation system Jacobian construction.
 
     See `construct_global_jac` for the explanation.
     """
@@ -145,7 +145,7 @@ def compute_jac_indices(n, m, k):
 def stacked_matmul(a, b):
     """Stacked matrix multiply: out[i,:,:] = np.dot(a[i,:,:], b[i,:,:]).
 
-    In our case a[i, :, :] and b[i, :, :] are square.
+    In our case a[i, :, :] and b[i, :, :] are always square.
     """
     # Empirical optimization. Use outer Python loop and BLAS for large
     # matrices, otherwise use a single einsum call.
@@ -166,7 +166,7 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
     containing n components, followed by n + k boundary condition residuals.
 
     There are n * m + k variables: m vectors of y, each containing n
-    components, followed by k values of p.
+    components, followed by k values of vector p.
 
     For example, let m = 4, n = 2 and k = 1, then the Jacobian will have
     the following sparsity structure:
@@ -228,7 +228,7 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
     Returns
     -------
     J : csc_matrix, shape (n * m + k, n * m + k)
-        Global Jacobian in a sparse form.
+        Jacobian of the collocation system in a sparse form.
 
     References
     ----------
@@ -278,7 +278,7 @@ def collocation_fun(fun, y, p, x, h):
     This function lies in the core of the method. The solution is sought
     as a cubic C^1 continuous spline with derivatives matching the ODE rhs
     at given nodes `x`. Collocation conditions are formed from the equality
-    of our solution derivatives and rhs of the ODE system in the middle points
+    of the spline derivatives and rhs of the ODE system in the middle points
     between nodes.
 
     Such method is classified to Lobbato IIIA family in ODE literature.
@@ -287,14 +287,15 @@ def collocation_fun(fun, y, p, x, h):
     Returns
     -------
     col_res : ndarray, shape (n, m - 1)
-        Collocation residuals at the middle points of mesh intervals.
+        Collocation residuals at the middle points of the mesh intervals.
     y_middle : ndarray, shape (n, m - 1)
-        Values of the cubic interpolant evaluated at the middle points of
-        mesh intervals.
+        Values of the cubic spline evaluated at the middle points of the mesh
+        intervals.
     f : ndarray, shape (n, m)
-        RHS of the ODE system evaluated at mesh nodes.
+        RHS of the ODE system evaluated at the mesh nodes.
     f_middle : ndarray, shape (n, m - 1)
-        RHS of the ODE system evaluated at `y_middle.`
+        RHS of the ODE system evaluated at the middle points of the mesh
+        intervals (and using `y_middle`).
 
     References
     ----------
@@ -361,7 +362,7 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
     m : int
         Number of nodes in the mesh.
     k : int
-        Number of unknown parameters.
+        Number of the unknown parameters.
     col_fun : callable
         Function computing collocation residuals.
     bc : callable
@@ -379,7 +380,7 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
         singular term. If None, the singular term is assumed to be absent.
     tol : float
         Iterations are terminated if the uniform norm of the system residuals
-        less than `tol`. The reasonable value of `tol` should be 1-2 orders
+        is less than `tol`. The reasonable value of `tol` should be 1-2 orders
         less than the tolerance for our BVP solver.
     n_iter : int
         Max number of iterations. A small number should be used when solving a
@@ -467,7 +468,7 @@ class BVPResult(OptimizeResult):
 
 TERMINATION_MESSAGES = {
     0: "The algorithm converged to the desired accuracy.",
-    1: "The maximum number of mesh nodes is exceeded.",
+    1: "The maximum number of the mesh nodes is exceeded.",
     2: "A singular Jacobian encountered when solving the collocation system."
 }
 
@@ -476,9 +477,9 @@ def estimate_rms_residuals(fun, sol, x, h, p, res_middle, f_middle):
     """Estimate rms values of collocation residuals using Lobatto quadrature.
 
     The residuals are defined as the difference between the derivatives of
-    our solution and the rhs of the ODE system. We use relative residuals, i.e.
-    normalized by 1 + np.abs(f). RMS values are computed as sqrt
-    from the integrals of the squared relative residuals over each interval.
+    our solution and rhs of the ODE system. We use relative residuals, i.e.
+    normalized by 1 + np.abs(f). RMS values are computed as sqrt from the
+    normalized integrals of the squared relative residuals over each interval.
     Integrals are estimated using 5-point Lobatto quadrature [1]_, we use the
     fact that residuals at the mesh nodes are identically zero.
 
@@ -675,16 +676,16 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     The last singular term in the right-hand side of the system is optional.
     It is defined by a n-by-n matrix S, such that the solution must satisfy
     S y(a) = 0. This condition will be forced during iterations, so it must not
-    contradict boundary conditions. See [2] for the explanation how this term
+    contradict boundary conditions. See [2]_ for the explanation how this term
     is handled when solving BVPs numerically.
 
-    Problems can be solved in a complex domain as well. In this case y and p
+    Problems in a complex domain can be solved as well. In this case y and p
     are considered to be complex, and f and bc are assumed to be complex-valued
     functions, but x stays real. Note that f and bc must be complex
-    differentiable (satisfy Cauchy-Riemann conditions) in this case, otherwise
-    you should write your problem for real and imaginary parts separately.
-    To solve a problem in a complex domain, pass an initial guess for y with a
-    complex data type, see below.
+    differentiable (satisfy Cauchy-Riemann equations [4]_), otherwise you
+    should rewrite your problem for real and imaginary parts separately. To
+    solve a problem in a complex domain, pass an initial guess for y with a
+    complex data type (see below).
 
     Parameters
     ----------
@@ -693,8 +694,8 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         or ``fun(x, y, p)`` if parameters are present. All arguments are
         ndarray: ``x`` with shape (m,), ``y`` with shape (n, m), meaning that
         ``y[:, i]`` corresponds to ``x[i]``, and ``p`` with shape (k,). The
-        return value must be an array with shape (n, m) and the same layout as
-        ``y``.
+        return value must be an array with shape (n, m) and with the same
+        layout as ``y``.
     bc : callable
         Function evaluating residuals of the boundary conditions. The calling
         signature is ``bc(ya, yb)``, or ``bc(ya, yb, p)`` if parameters are
@@ -777,9 +778,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     x : ndarray, shape (m,)
         Nodes of the final mesh.
     y : ndarray, shape (n, m)
-        Function values evaluated at the mesh nodes.
+        Function values at the mesh nodes.
     yp : ndarray, shape (n, m)
-        Function derivatives evaluated at the mesh nodes.
+        Function derivatives at the mesh nodes.
     res : ndarray, shape (m - 1,)
         Relative rms residuals for each mesh interval.
     niter : int
@@ -788,7 +789,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         Reason for algorithm termination:
 
             * 0: The algorithm converged to the desired accuracy.
-            * 1: The maximum number of mesh nodes is exceeded.
+            * 1: The maximum number of the mesh nodes is exceeded.
             * 2: A singular Jacobian encountered when solving the collocation
                  system.
 
@@ -813,12 +814,15 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     References
     ----------
     .. [1] J. Kierzenka, L. F. Shampine, "A BVP Solver Based on Residual
-       Control and the Maltab PSE", ACM Trans. Math. Softw., Vol. 27,
-       Number 3, pp. 299-316, 2001.
+           Control and the Maltab PSE", ACM Trans. Math. Softw., Vol. 27,
+           Number 3, pp. 299-316, 2001.
     .. [2] L.F. Shampine, P. H. Muir and H. Xu, "A User-Friendly Fortran BVP
            Solver".
-    .. [3]  U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
-            Boundary Value Problems for Ordinary Differential Equations"
+    .. [3] U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
+           Boundary Value Problems for Ordinary Differential Equations"
+    .. [4] `Cauchy-Riemann equations
+            <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
+            Wikipedia.
 
     Examples
     --------
@@ -885,12 +889,12 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
 
     It is known that a non-trivial solution y = A * sin(k * x) is possible for
     k = pi * n, where n is an integer. To establish the normalization constant
-    A = 1 we add one more boundary condition::
+    A = 1 we add a boundary condition::
 
         y'(0) = k
 
     Again we rewrite our equation as a first order system and implement its
-    right-hand side computation::
+    right-hand side evaluation::
 
         y1' = y2
         y2' = -k**2 * y1
@@ -926,7 +930,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     >>> sol.p[0]
     6.28329460046
 
-    Let's visualize the solution:
+    And finally plot the solution to see the anticipated sinusoid:
 
     >>> x_plot = np.linspace(0, 1, 100)
     >>> y_plot = sol.sol(x_plot)[0]
