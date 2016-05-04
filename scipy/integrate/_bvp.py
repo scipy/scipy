@@ -971,6 +971,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         warn("`tol` is too low, setting to {:.2e}".format(100 * EPS))
         tol = 100 * EPS
 
+    if verbose not in [0, 1, 2]:
+        raise ValueError("`verbose` must be in [0, 1, 2].")
+
     n = y.shape[0]
     k = p.shape[0]
 
