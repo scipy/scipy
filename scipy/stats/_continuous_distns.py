@@ -1814,9 +1814,23 @@ class genextreme_gen(rv_continuous):
         loglogcdf = where((c == 0)*(x == x), -x, special.log1p(-c*x)/c)
         return exp(-exp(loglogcdf))
 
+    def _sf(self, x, c):
+        loglogcdf = _lazywhere((c == 0)*(x == x), (x, c),
+                               f=lambda x, c: -x,
+                               f2=lambda x, c: special.log1p(-c*x)/c)
+        p = -special.expm1(-exp(loglogcdf))
+        return p
+
     def _ppf(self, q, c):
         x = -log(-log(q))
         return where((c == 0)*(x == x), x, -special.expm1(-c*x)/c)
+
+    def _isf(self, q, c):
+        x = -log(-special.log1p(-q))
+        result = _lazywhere((c == 0)*(x == x), (x, c),
+                            f=lambda x, c: x,
+                            f2=lambda x, c: -special.expm1(-c*x)/c)
+        return result
 
     def _stats(self, c):
         g = lambda n: gam(n*c+1)
