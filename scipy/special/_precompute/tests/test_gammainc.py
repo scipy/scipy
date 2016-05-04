@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 from scipy._lib._testutils import xslow
 
-from scipy.special._testutils import mpmath_check, sympy_check
+from scipy.special._testutils import MissingModule, check_version
 from scipy.special._precompute.utils import mpf_assert_allclose
 from scipy.special._precompute.gammainc import (compute_g, compute_alpha,
                                                 compute_d)
@@ -11,14 +11,14 @@ try:
     import sympy
     from sympy import mpmath as mp
 except ImportError:
-    sympy = None
+    sympy = MissingModule('sympy')
     try:
         import mpmath as mp
     except ImportError:
-        mp = None
+        mp = MissingModule('mpmath')
 
 
-@mpmath_check(mp, '0.19')
+@check_version(mp, '0.19')
 def test_g():
     """Test data for the g_k. See DLMF 5.11.4."""
     with mp.workdps(30):
@@ -28,7 +28,7 @@ def test_g():
         mpf_assert_allclose(compute_g(7), g)
 
 
-@sympy_check(sympy, '1.0')
+@check_version(sympy, '1.0')
 def test_alpha():
     """Test data for the alpha_k. See DLMF 8.12.14."""
     with mp.workdps(30):
@@ -39,7 +39,7 @@ def test_alpha():
 
 
 @xslow
-@sympy_check(sympy, '1.0')
+@check_version(sympy, '1.0')
 def test_d():
     """Compare the d_{k, n} to the results in appendix F of [1].
 
