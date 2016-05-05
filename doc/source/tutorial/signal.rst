@@ -757,13 +757,17 @@ Type                          Transformation
 :func:`lp2bs` :math:`s \rightarrow \frac{s \cdot \mathrm{BW}}{s^2 + {\omega_0}^2}`
 ============= ====================================================================
 
-These preserve symmetry on a logarithmic frequency axis.
+Here, :math:`\omega_0` is the new cutoff or center frequency, and
+:math:`\mathrm{BW}` is the bandwidth.  These preserve symmetry on a logarithmic
+frequency axis.
 
 To convert the transformed analog filter into a digital filter, the
 :func:`bilinear` transform is used, which makes the following substitution:
 
 .. math::
     s \rightarrow \frac{2}{T} \frac{z - 1}{z + 1}
+
+where T is the sampling time (the inverse of the sampling frequency).
 
 Other filters
 ^^^^^^^^^^^^^
