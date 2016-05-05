@@ -28,18 +28,6 @@ void scal(const I n, const T a, T * x){
     }
 }
 
-
-// dot product
-template <class I, class T>
-void dot(const I n, const T * x, const T * y){
-    T dp = 0;
-    for(I i = 0; i < n; i++){
-        dp += x[i] * y[i];
-    }
-    return dp;
-}
-
-
 // vectorize a binary operation
 template<class I, class T, class binary_operator>
 void vector_binop(const I n, const T * x, const T * y, T * z, 
