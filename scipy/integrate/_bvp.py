@@ -33,7 +33,7 @@ def estimate_fun_jac(fun, x, y, p, f0=None):
     dtype = y.dtype
 
     df_dy = np.empty((n, n, m), dtype=dtype)
-    h = EPS ** 0.5 * (1 + np.abs(y))
+    h = EPS**0.5 * (1 + np.abs(y))
     for i in range(n):
         y_new = y.copy()
         y_new[i] += h[i]
@@ -46,7 +46,7 @@ def estimate_fun_jac(fun, x, y, p, f0=None):
         df_dp = None
     else:
         df_dp = np.empty((n, k, m), dtype=dtype)
-        h = EPS ** 0.5 * (1 + np.abs(p))
+        h = EPS**0.5 * (1 + np.abs(p))
         for i in range(k):
             p_new = p.copy()
             p_new[i] += h[i]
@@ -103,7 +103,7 @@ def estimate_bc_jac(bc, ya, yb, p, bc0=None):
     if k == 0:
         dbc_dp = None
     else:
-        h = EPS ** 0.5 * (1 + np.abs(p))
+        h = EPS**0.5 * (1 + np.abs(p))
         dbc_dp = np.empty((k, n + k), dtype=dtype)
         for i in range(k):
             p_new = p.copy()
@@ -349,7 +349,7 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
     This is a simple Newton method with a backtracking line search. As
     advised in [1]_, an affine-invariant criterion function F = ||J^-1 r||^2
     is used, where J is the Jacobian matrix at the current iteration and r is
-    the vector or residuals.
+    the vector or collocation residuals (values of the system lhs).
 
     There are other tricks proposed in [1]_, but they are not used as they
     don't seem to improve anything significantly, and even break the
@@ -358,7 +358,7 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
     Parameters
     ----------
     n : int
-        Number of equations in the ODE.
+        Number of equations in the ODE system.
     m : int
         Number of nodes in the mesh.
     k : int
@@ -402,12 +402,17 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
     .. [1]  U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
        Boundary Value Problems for Ordinary Differential Equations"
     """
-    res_col_new, y_middle, f, f_middle = col_fun(y, p)
+    res_col, y_middle, f, f_middle = col_fun(y, p)
     res_bc = bc(y[:, 0], y[:, -1], p)
-    res = np.hstack((res_col_new.ravel(order='F'), res_bc))
+    res = np.hstack((res_col.ravel(order='F'), res_bc))
 
-    sigma = 0.2  # Minimum relative improvement (Armijo constant).
-    tau = 0.5  # Step size decrease factor for backtracking.
+    # Minimum relative improvement of the criterion function (Armijo constant).
+    sigma = 0.2
+    # Step size decrease factor for backtracking.
+    tau = 0.5
+    # Maximum number of backtracking steps, the minimum step is then
+    # tau ** n_trial.
+    n_trial = 5
 
     singular = False
     for iteration in range(n_iter):
@@ -424,27 +429,25 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
 
         cost = np.dot(step, step)
         alpha = 1
-        n_trial = 5
         for i in range(n_trial):
             y_new = y + alpha * y_step
             if B is not None:
                 y_new[:, 0] = np.dot(B, y_new[:, 0])
             p_new = p + alpha * p_step
 
-            res_col_new, y_middle, f, f_middle = col_fun(y_new, p_new)
+            res_col, y_middle, f, f_middle = col_fun(y_new, p_new)
             res_bc = bc(y_new[:, 0], y_new[:, -1], p_new)
-            res_new = np.hstack((res_col_new.ravel(order='F'), res_bc))
+            res = np.hstack((res_col.ravel(order='F'), res_bc))
 
-            s = LU.solve(res_new)
+            s = LU.solve(res)
             cost_new = np.dot(s, s)
-            if cost_new <= (1 - 2 * alpha * sigma) * cost:
+            if cost_new < (1 - 2 * alpha * sigma) * cost:
                 break
 
             alpha *= tau
 
         y = y_new
         p = p_new
-        res = res_new
 
         if norm(res, ord=np.inf) < tol:
             break
@@ -457,9 +460,9 @@ def print_iteration_header():
         "Iteration", "Max residual", "Total nodes", "Nodes added"))
 
 
-def print_iteration_progress(iteration, residual, total_nodes, inserted_nodes):
+def print_iteration_progress(iteration, residual, total_nodes, nodes_added):
     print("{:^15}{:^15.2e}{:^15}{:^15}".format(
-        iteration, residual, total_nodes, inserted_nodes))
+        iteration, residual, total_nodes, nodes_added))
 
 
 class BVPResult(OptimizeResult):
@@ -468,7 +471,7 @@ class BVPResult(OptimizeResult):
 
 TERMINATION_MESSAGES = {
     0: "The algorithm converged to the desired accuracy.",
-    1: "The maximum number of the mesh nodes is exceeded.",
+    1: "The maximum number of mesh nodes is exceeded.",
     2: "A singular Jacobian encountered when solving the collocation system."
 }
 
@@ -550,10 +553,10 @@ def create_spline(y, yp, x, h):
 
 
 def modify_mesh(x, insert_1, insert_2):
-    """Insert nodes to a mesh or remove nodes from a mesh.
+    """Insert nodes into a mesh.
 
-    Currently only inserting is implemented. The need of knots deletion is
-    questionable.
+    Nodes removal logic is not established, its impact on the solver is
+    presumably negligible. So only insertion is done in this function.
 
     Parameters
     ----------
@@ -789,7 +792,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         Reason for algorithm termination:
 
             * 0: The algorithm converged to the desired accuracy.
-            * 1: The maximum number of the mesh nodes is exceeded.
+            * 1: The maximum number of mesh nodes is exceeded.
             * 2: A singular Jacobian encountered when solving the collocation
                  system.
 
@@ -1012,13 +1015,18 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     if verbose == 2:
         print_iteration_header()
 
+    # Tolerance and max number of iterations for the Newton system solver.
+    # See `solve_newton`.
+    newton_tol = 1e-1 * tol
+    newton_iter = 4
+
     while True:
         m = x.shape[0]
 
         col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped,
                                        fun_jac_wrapped, bc_jac_wrapped, x, h)
-        y, p, singular = solve_newton(
-            n, m, k, col_fun, bc_wrapped, jac_sys, y, p, B, tol * 1e-1, 4)
+        y, p, singular = solve_newton(n, m, k, col_fun, bc_wrapped, jac_sys,
+                                      y, p, B, newton_tol, newton_iter)
         iteration += 1
 
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
@@ -1037,19 +1045,19 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         insert_1, = np.nonzero((rms_res > tol) &
                                (rms_res < 100 * tol))
         insert_2, = np.nonzero(rms_res >= 100 * tol)
-        inserted = insert_1.shape[0] + 2 * insert_2.shape[0]
+        nodes_added = insert_1.shape[0] + 2 * insert_2.shape[0]
 
-        if m + inserted > max_nodes:
+        if m + nodes_added > max_nodes:
             status = 1
             if verbose == 2:
-                inserted = "({})".format(inserted)
-                print_iteration_progress(iteration, max_res, m, inserted)
+                nodes_added = "({})".format(nodes_added)
+                print_iteration_progress(iteration, max_res, m, nodes_added)
             break
 
         if verbose == 2:
-            print_iteration_progress(iteration, max_res, m, inserted)
+            print_iteration_progress(iteration, max_res, m, nodes_added)
 
-        if inserted > 0:
+        if nodes_added > 0:
             x = modify_mesh(x, insert_1, insert_2)
             h = np.diff(x)
             y = sol(x)
