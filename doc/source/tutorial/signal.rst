@@ -499,8 +499,8 @@ Filter Design
 ^^^^^^^^^^^^^
 
 Time-discrete filters can be classified into finite response (FIR) filters and
-infinite response (IIR) filters. FIR filters provide a linear phase response,
-whereas IIR filters do not exhibit this behaviour. Scipy provides functions
+infinite response (IIR) filters. FIR filters can provide a linear phase
+response, whereas IIR filters cannot. Scipy provides functions
 for designing both types of filters.
 
 FIR Filter
@@ -705,7 +705,7 @@ or a continuous/analog system of the form:
     \dot{\mathbf{x}}(t) = A \mathbf{x}(t) + B \mathbf{u}(t)\\
     \mathbf{y}(t) = C \mathbf{x}(t) + D \mathbf{u}(t)
 
-with `p` inputs, `q` outputs and `N` state variables, where:
+with `P` inputs, `Q` outputs and `N` state variables, where:
 
 - `x` is the state vector
 - `y` is the output vector of length `Q`
@@ -744,7 +744,9 @@ the filter output will be the same regardless.
 Filter transformations
 """"""""""""""""""""""
 
-are transformed using the following substitutions:
+The IIR filter design functions first generate a prototype analog lowpass filter
+with a normalized cutoff frequency of 1 rad/sec.  This is then transformed into
+other frequencies and band types using the following substitutions:
 
 ============= ====================================================================
 Type                          Transformation
@@ -756,6 +758,12 @@ Type                          Transformation
 ============= ====================================================================
 
 These preserve symmetry on a logarithmic frequency axis.
+
+To convert the transformed analog filter into a digital filter, the
+:func:`bilinear` transform is used, which makes the following substitution:
+
+.. math::
+    s \rightarrow \frac{2}{T} \frac{z - 1}{z + 1}
 
 Other filters
 ^^^^^^^^^^^^^
