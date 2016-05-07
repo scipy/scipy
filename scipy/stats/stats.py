@@ -3849,8 +3849,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     a, b, axis = _chk2_asarray(a, b, axis)
 
     # check both a and b
-    contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
-                                _contains_nan(b, nan_policy))
+    cna, npa = _contains_nan(a, nan_policy)
+    cnb, npb = _contains_nan(b, nan_policy)
+    contains_nan = cna or cnb
+    if npa == 'omit' or npb == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
