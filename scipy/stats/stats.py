@@ -3670,13 +3670,19 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     """
     a, b, axis = _chk2_asarray(a, b, axis)
 
-    # check both a and b
-    contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
-                                _contains_nan(b, nan_policy))
+    cna, npa = _contains_nan(a, nan_policy)
+    cnb, npb = _contains_nan(b, nan_policy)
+    contains_nan = cna or cnb
+    if npa == 'omit' or npb == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.ttest_rel(a, b, axis)
+        b = ma.masked_invalid(b)
+        m = ma.mask_or(ma.getmask(a), ma.getmask(b))
+        aa = ma.array(a, mask=m, copy=True)
+        bb = ma.array(b, mask=m, copy=True)
+        return mstats_basic.ttest_rel(aa, bb, axis)
 
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
