@@ -23,7 +23,7 @@ except ImportError:
 
 @check_version(mp, '0.19')
 def test_g():
-    """Test data for the g_k. See DLMF 5.11.4."""
+    # Test data for the g_k. See DLMF 5.11.4.
     with mp.workdps(30):
         g = [mp.mpf(1), mp.mpf(1)/12, mp.mpf(1)/288,
              -mp.mpf(139)/51840, -mp.mpf(571)/2488320,
@@ -33,7 +33,7 @@ def test_g():
 
 @check_version(sympy, '0.7')
 def test_alpha():
-    """Test data for the alpha_k. See DLMF 8.12.14."""
+    # Test data for the alpha_k. See DLMF 8.12.14.
     with mp.workdps(30):
         alpha = [mp.mpf(0), mp.mpf(1), mp.mpf(1)/3, mp.mpf(1)/36,
                  -mp.mpf(1)/270, mp.mpf(1)/4320, mp.mpf(1)/17010,
@@ -44,15 +44,14 @@ def test_alpha():
 @xslow
 @check_version(sympy, '0.7')
 def test_d():
-    """Compare the d_{k, n} to the results in appendix F of [1].
+    # Compare the d_{k, n} to the results in appendix F of [1].
+    # 
+    # Sources
+    # -------
+    # [1] DiDonato and Morris, Computation of the Incomplete Gamma
+    #     Function Ratios and their Inverse, ACM Transactions on
+    #     Mathematical Software, 1986.
 
-    Sources
-    -------
-    [1] DiDonato and Morris, Computation of the Incomplete Gamma
-        Function Ratios and their Inverse, ACM Transactions on
-        Mathematical Software, 1986.
-
-    """
     with mp.workdps(50):
         dataset = [(0, 0, -mp.mpf('0.333333333333333333333333333333')),
                    (0, 12, mp.mpf('0.102618097842403080425739573227e-7')),

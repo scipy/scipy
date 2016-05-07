@@ -318,11 +318,9 @@ def test_beta():
 
 @check_version(mpmath, '0.19')
 def test_loggamma_taylor1():
-    """
-    Make sure there isn't a big jump in accuracy when we move from
-    using the Taylor series to using the recurrence relation.
+    # Make sure there isn't a big jump in accuracy when we move from
+    # using the Taylor series to using the recurrence relation.
 
-    """
     pts = [-0.5, 0.5j, -0.5j, 0.5, 1 + 0.5j, 1 - 0.5j, 1.5, 2 - 0.5j,
            2 + 0.5j, 2.5]
     dataset = []
@@ -337,10 +335,8 @@ def test_loggamma_taylor1():
 
 @check_version(mpmath, '0.19')
 def test_loggamma_taylor2():
-    """
-    Test around the zeros at z = 1, 2.
+    # Test around the zeros at z = 1, 2.
 
-    """
     dx = np.r_[-np.logspace(-1, -16, 10), np.logspace(-16, -1, 10)]
     dy = dx.copy()
     dx, dy = np.meshgrid(dx, dy)
@@ -360,12 +356,10 @@ def test_loggamma_taylor2():
 
 @check_version(mpmath, '0.19')
 def test_rgamma_zeros():
-    """
-    Test around the zeros at z = 0, -1, -2, ...,  -169. (After -169 we
-    get values that are out of floating point range even when we're
-    within 0.1 of the zero.)
+    # Test around the zeros at z = 0, -1, -2, ...,  -169. (After -169 we
+    # get values that are out of floating point range even when we're
+    # within 0.1 of the zero.)
 
-    """
     # Can't use too many points here or the test takes forever.
     dx = np.r_[-np.logspace(-1, -13, 3), 0, np.logspace(-13, -1, 3)]
     dy = dx.copy()
@@ -388,7 +382,7 @@ def test_rgamma_zeros():
 
 @check_version(mpmath, '0.19')
 def test_digamma_roots():
-    """Test the special-cased roots for digamma."""
+    # Test the special-cased roots for digamma.
     root = mpmath.findroot(mpmath.digamma, 1.5)
     roots = [float(root)]
     root = mpmath.findroot(mpmath.digamma, -0.5)
@@ -412,12 +406,10 @@ def test_digamma_roots():
 
 @check_version(mpmath, '0.19')
 def test_digamma_negreal():
-    """
-    Test digamma around the negative real axis. Don't do this in
-    TestSystematic because the points need some jiggering so that
-    mpmath doesn't take forever.
+    # Test digamma around the negative real axis. Don't do this in
+    # TestSystematic because the points need some jiggering so that
+    # mpmath doesn't take forever.
 
-    """
     digamma = _exception_to_nan(mpmath.digamma)
 
     x = -np.logspace(300, -30, 100)
@@ -437,11 +429,9 @@ def test_digamma_negreal():
 
 @check_version(mpmath, '0.19')
 def test_digamma_boundary():
-    """
-    Check that there isn't a jump in accuracy when we switch from
-    using the asymptotic series to the reflection formula.
+    # Check that there isn't a jump in accuracy when we switch from
+    # using the asymptotic series to the reflection formula.
 
-    """
     x = -np.logspace(300, -30, 100)
     y = np.array([-6.1, -5.9, 5.9, 6.1])
     x, y = np.meshgrid(x, y)
@@ -463,7 +453,7 @@ def test_digamma_boundary():
 
 @check_version(mpmath, '0.19')
 def test_gammainc_boundary():
-    """Test the transition to the asymptotic series."""
+    # Test the transition to the asymptotic series.
     small = 25
     a = np.linspace(0.5*0.7*small, 2*1.3*small, 100)
     x = a.copy()
@@ -484,11 +474,9 @@ def test_gammainc_boundary():
 
 @check_version(mpmath, '0.19')
 def test_spence_circle():
-    """
-    The trickiest region for spence is around the circle |z - 1| = 1,
-    so test that region carefully.
+    # The trickiest region for spence is around the circle |z - 1| = 1,
+    # so test that region carefully.
 
-    """
     def spence(z):
         return complex(mpmath.polylog(2, 1 - z))
 

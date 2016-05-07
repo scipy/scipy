@@ -5,11 +5,9 @@ from scipy.special._testutils import FuncData
 
 
 def test_line():
-    """
-    Test on the line a = x where a simpler asymptotic expansion
-    (analog of DLMF 8.12.15) is available.
+    # Test on the line a = x where a simpler asymptotic expansion
+    # (analog of DLMF 8.12.15) is available.
 
-    """
     def gammainc_line(x):
         c = np.array([-1/3, -1/540, 25/6048, 101/155520, 
                       -3184811/3695155200, -2745493/8151736420])

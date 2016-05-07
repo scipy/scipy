@@ -9,11 +9,9 @@ euler = 0.57721566490153286
 
 
 def test_consistency():
-    """
-    Make sure the implementation of digamma for real arguments
-    agrees with the implementation of digamma for complex arguments.
+    # Make sure the implementation of digamma for real arguments
+    # agrees with the implementation of digamma for complex arguments.
 
-    """
     # It's all poles after -1e16
     x = np.r_[-np.logspace(15, -30, 200), np.logspace(-30, 300, 200)]
     dataset = np.vstack((x + 0j, digamma(x))).T
@@ -21,12 +19,10 @@ def test_consistency():
 
 
 def test_special_values():
-    """
-    Test special values from Gauss's digamma theorem. See
+    # Test special values from Gauss's digamma theorem. See
+    #
+    # https://en.wikipedia.org/wiki/Digamma_function
 
-    https://en.wikipedia.org/wiki/Digamma_function
-
-    """
     dataset = [(1, -euler),
                (0.5, -2*log(2) - euler),
                (1/3, -pi/(2*sqrt(3)) - 3*log(3)/2 - euler),
