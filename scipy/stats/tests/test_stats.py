@@ -584,8 +584,10 @@ def test_kendalltau():
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
     # check two different sort methods
-    assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
-                        stats.kendalltau(x1, x2, initial_lexsort=True)[1])
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', UserWarning)
+        assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
+                            stats.kendalltau(x1, x2, initial_lexsort=True)[1])
 
     # and with larger arrays
     np.random.seed(7546)
