@@ -944,7 +944,7 @@ def generate(filename, cxx_fn_prefix, ufuncs):
         toplevel += t + "\n"
 
     # Produce output
-    toplevel = "\n".join(list(all_loops.values()) + defs + [toplevel])
+    toplevel = "\n".join(sorted(all_loops.values()) + defs + [toplevel])
 
     with open(filename, 'w') as f:
         f.write(EXTRA_CODE_COMMON)
