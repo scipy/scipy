@@ -3,14 +3,53 @@ from __future__ import division, print_function, absolute_import
 import os
 import warnings
 
+from distutils.version import LooseVersion
+
 import numpy as np
-from numpy.testing import assert_
+from numpy.testing import dec, assert_
 from numpy.testing.noseclasses import KnownFailureTest
 
 import scipy.special as sc
 
 __all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
            'FuncData']
+
+
+#------------------------------------------------------------------------------
+# Check if a module is present to be used in tests
+#------------------------------------------------------------------------------
+
+class MissingModule(object):
+    def __init__(self, name):
+        self.name = name
+
+
+def check_version(module, min_ver):
+    if type(module) == MissingModule:
+        return dec.skipif(True, "{} is not installed".format(module.name))
+    return dec.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
+                      "{} version >= {} required".format(module.__name__, min_ver))
+
+#------------------------------------------------------------------------------
+# Metaclass for decorating test_* methods
+#------------------------------------------------------------------------------
+
+
+class SystematicMeta(type):
+    """Metaclass which decorates test_* methods given decorators."""
+    def __new__(cls, cls_name, bases, dct):
+        if 'decodict' in dct:
+            decodict = dct['decodict']
+            del dct['decodict']
+        for name, item in list(dct.items()):
+            if name.startswith('test_'):
+                for deco, decoargs in list(decodict.items()):
+                    if decoargs:
+                        item = deco(*decoargs)(item)
+                    else:
+                        item = deco(item)
+                dct[name] = item
+        return type.__new__(cls, cls_name, bases, dct)
 
 #------------------------------------------------------------------------------
 # Enable convergence and loss of precision warnings -- turn off one by one
