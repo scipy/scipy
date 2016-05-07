@@ -15,7 +15,7 @@ import scipy.special as sc
 from scipy._lib.six import reraise, with_metaclass
 from scipy._lib._testutils import knownfailure_overridable
 from scipy.special._testutils import (MissingModule, check_version, FuncData,
-                                      assert_func_equal, SystematicMeta)
+                                      assert_func_equal, DecoratorMeta)
 from scipy.special._ufuncs import _sinpi, _cospi
 
 try:
@@ -851,8 +851,9 @@ def _inf_to_nan(func):
 HYPERKW = dict(maxprec=200, maxterms=200)
 
 
-class TestSystematic(with_metaclass(SystematicMeta, object)):
-    decodict = {dec.slow: (), check_version: (mpmath, '0.17')}
+class TestSystematic(with_metaclass(DecoratorMeta, object)):
+    decorators = [(dec.slow, None),
+                  (check_version, (mpmath, '0.17'))]
 
     def test_airyai(self):
         # oscillating function, limit range

@@ -35,16 +35,14 @@ def check_version(module, min_ver):
 #------------------------------------------------------------------------------
 
 
-class SystematicMeta(type):
+class DecoratorMeta(type):
     """Metaclass which decorates test_* methods given decorators."""
     def __new__(cls, cls_name, bases, dct):
-        if 'decodict' in dct:
-            decodict = dct['decodict']
-            del dct['decodict']
+        decorators = dct.pop('decorators', [])
         for name, item in list(dct.items()):
             if name.startswith('test_'):
-                for deco, decoargs in list(decodict.items()):
-                    if decoargs:
+                for deco, decoargs in decorators:
+                    if decoargs is not None:
                         item = deco(*decoargs)(item)
                     else:
                         item = deco(item)
