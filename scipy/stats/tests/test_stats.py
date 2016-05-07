@@ -617,6 +617,16 @@ def test_kendalltau():
     assert_raises(ValueError, stats.kendalltau, x, y)
 
 
+def test_kendalltau_nan_2nd_arg():
+    # regression test for gh-6134: nans in the second arg were not handled
+    x = [1., 2., 3., 4.]
+    y = [np.nan, 2.4, 3.4, 3.4]
+
+    r1 = stats.kendalltau(x, y, nan_policy='omit')
+    r2 = stats.kendalltau(x[1:], y[1:])
+    assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
+
+
 class TestFindRepeats(TestCase):
 
     def test_basic(self):

@@ -3241,8 +3241,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # check both x and y
-    contains_nan, nan_policy = (_contains_nan(x, nan_policy) or
-                                _contains_nan(y, nan_policy))
+    cnx, npx = _contains_nan(x, nan_policy)
+    cny, npy = _contains_nan(y, nan_policy)
+    contains_nan = cnx or cny
+    if npx == 'omit' or npy == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'propagate':
         return KendalltauResult(np.nan, np.nan)
