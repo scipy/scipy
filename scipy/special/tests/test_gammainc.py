@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.special import gammainc
 from scipy.special._testutils import FuncData

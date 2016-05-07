@@ -7,13 +7,20 @@ from scipy.special._precompute import utils
 
 try:
     import sympy
-    from sympy import mpmath as mp
 except ImportError:
     sympy = MissingModule('sympy')
 
+try:
+    import mpmath as mp
+except ImportError:
+    try:
+        from sympy import mpmath as mp
+    except ImportError:
+        mp = MissingModule('mpmath')
+
 
 class TestInversion(with_metaclass(SystematicMeta, object)):
-    decodict = {dec.slow: (), check_version: (sympy, '1.0')}
+    decodict = {dec.slow: (), check_version: (sympy, '0.7'), check_version: (mp, '0.19')}
 
     def test_log(self):
         with mp.workdps(30):

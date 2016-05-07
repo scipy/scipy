@@ -9,11 +9,14 @@ from scipy.special._precompute.gammainc import (compute_g, compute_alpha,
 
 try:
     import sympy
-    from sympy import mpmath as mp
 except ImportError:
     sympy = MissingModule('sympy')
+
+try:
+    import mpmath as mp
+except ImportError:
     try:
-        import mpmath as mp
+        from sympy import mpmath as mp
     except ImportError:
         mp = MissingModule('mpmath')
 
@@ -28,7 +31,7 @@ def test_g():
         mpf_assert_allclose(compute_g(7), g)
 
 
-@check_version(sympy, '1.0')
+@check_version(sympy, '0.7')
 def test_alpha():
     """Test data for the alpha_k. See DLMF 8.12.14."""
     with mp.workdps(30):
@@ -39,7 +42,7 @@ def test_alpha():
 
 
 @xslow
-@check_version(sympy, '1.0')
+@check_version(sympy, '0.7')
 def test_d():
     """Compare the d_{k, n} to the results in appendix F of [1].
 

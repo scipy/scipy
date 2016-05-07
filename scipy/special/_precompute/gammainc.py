@@ -10,6 +10,8 @@ Sources:
 
 """
 from __future__ import division, print_function, absolute_import
+
+import os
 from scipy.special._precompute.utils import lagrange_inversion
 
 try:
@@ -96,13 +98,14 @@ r"""
 #endif
 """
 
-
-if __name__ == "__main__":
+def main():
+    print(__doc__)
     K = 25
     N = 25
     with mp.workdps(50):
         d = compute_d(K, N)
-    with open('../cephes/igam.h', 'w') as f:
+    fn = os.path.join(os.path.dirname(__file__), '..', 'cephes', 'igam.h')
+    with open(fn + '.new', 'w') as f:
         f.write(header.format(K, N))
         for k, row in enumerate(d):
             row = map(lambda x: mp.nstr(x, 17, min_fixed=0, max_fixed=0), row)
@@ -113,3 +116,8 @@ if __name__ == "__main__":
             else:
                 f.write('}};\n')
         f.write(footer)
+    os.rename(fn + '.new', fn)
+
+
+if __name__ == "__main__":
+    main()

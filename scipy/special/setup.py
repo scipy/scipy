@@ -112,7 +112,11 @@ def configuration(parent_package='',top_path=None):
     config.add_data_files('tests/data/README')
     config.add_data_files('tests/data/*.npz')
 
+    config.add_subpackage('_precompute')
+    config.add_data_files('_precompute/tests/*.py')
+
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
