@@ -2488,6 +2488,26 @@ def test_ttest_ind_with_uneq_var():
     finally:
         np.seterr(**olderr)
 
+def test_ttest_ind_nan_2nd_arg():
+    # regression test for gh-6134: nans in the second arg were not handled
+    x = [np.nan, 2.0, 3.0, 4.0]
+    y = [1.0, 2.0, 1.0, 2.0]
+
+    r1 = stats.ttest_ind(x, y, nan_policy='omit')
+    r2 = stats.ttest_ind(y, x, nan_policy='omit')
+    assert_allclose(r2.statistic, -r1.statistic, atol=1e-15)
+    assert_allclose(r2.pvalue, r1.pvalue, atol=1e-15)
+
+    # NB: arguments are not paired when NaNs are dropped
+    r3 = stats.ttest_ind(y, x[1:])
+    assert_allclose(r2, r3, atol=1e-15) 
+
+    # .. and this is consistent with R. R code: 
+    # x = c(NA, 2.0, 3.0, 4.0)
+    # y = c(1.0, 2.0, 1.0, 2.0)
+    # t.test(x, y, var.equal=TRUE)
+    assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901), atol=1e-15)
+
 
 def test_gh5686():
     mean1, mean2 = np.array([1, 2]), np.array([3, 4])
