@@ -1,8 +1,7 @@
 """
 Precompute coefficients of Temme's asymptotic expansion for gammainc.
 
-Be warned that this takes a long time to run. (About 8 hours on a 2.3
-GHz Macbook Pro with 4GB ram.)
+This takes about 8 hours to run on a 2.3 GHz Macbook Pro with 4GB ram.
 
 Sources:
 [1] NIST, "Digital Library of Mathematical Functions",

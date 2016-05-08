@@ -43,9 +43,11 @@ def data_gsl(func, dataname, *a, **kw):
     kw.setdefault('dataname', dataname)
     return FuncData(func, DATASETS_GSL[dataname], *a, **kw)
 
+
 def data_local(func, dataname, *a, **kw):
     kw.setdefault('dataname', dataname)
     return FuncData(func, DATASETS_LOCAL[dataname], *a, **kw)
+
 
 def ellipk_(k):
     return ellipk(k*k)
@@ -467,6 +469,7 @@ def test_gsl():
     for test in TESTS:
         yield _test_factory, test
 
+
 def test_local():
     TESTS = [
         data_local(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
@@ -474,6 +477,7 @@ def test_local():
         data_local(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
         data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3), rtol=1e-14),
         data_local(cexpm1, 'log1p_expm1_complex', (0,1), (4,5), rtol=1e-14),
+        data_local(gammainc, 'gammainc', (0, 1), 2, rtol=5e-9),
     ]
 
     for test in TESTS:

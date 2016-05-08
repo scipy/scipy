@@ -4,8 +4,10 @@ compressed NPZ files which are also checked in.
 
 To rebuild the npz files, use ../../utils/makenpz.py on the directories.
 
-The data is a copy of data distributed with the boost library and comes
-with the following license:
+The data in gsl is computed using the GNU scientific library, the data
+in local is computed using mpmath, and the data in boost is a copy of
+data distributed with the boost library and comes with the following
+license:
 
 Boost Software License - Version 1.0 - August 17th, 2003
 

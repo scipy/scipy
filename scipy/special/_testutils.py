@@ -30,10 +30,10 @@ def check_version(module, min_ver):
     return dec.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
                       "{} version >= {} required".format(module.__name__, min_ver))
 
+
 #------------------------------------------------------------------------------
 # Metaclass for decorating test_* methods
 #------------------------------------------------------------------------------
-
 
 class DecoratorMeta(type):
     """Metaclass which decorates test_* methods given decorators."""
@@ -49,10 +49,10 @@ class DecoratorMeta(type):
                 dct[name] = item
         return type.__new__(cls, cls_name, bases, dct)
 
+
 #------------------------------------------------------------------------------
 # Enable convergence and loss of precision warnings -- turn off one by one
 #------------------------------------------------------------------------------
-
 
 def with_special_errors(func):
     """
@@ -72,10 +72,10 @@ def with_special_errors(func):
     wrapper.__doc__ = func.__doc__
     return wrapper
 
+
 #------------------------------------------------------------------------------
 # Comparing function values at many data points at once, with helpful
 #------------------------------------------------------------------------------
-
 
 def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
     """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
@@ -86,11 +86,11 @@ def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
     np.testing.utils.assert_array_compare(compare, a, b, err_msg=str(err_msg),
                                           verbose=verbose, header=header)
 
+
 #------------------------------------------------------------------------------
 # Comparing function values at many data points at once, with helpful
 # error reports
 #------------------------------------------------------------------------------
-
 
 def assert_func_equal(func, results, points, rtol=None, atol=None,
                       param_filter=None, knownfailure=None,
