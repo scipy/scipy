@@ -32,6 +32,14 @@ these group manifolds.
 `scipy.stats.random_correlation` provides a generator for random
 correlation matrices, given specified eigenvalues.
 
+`scipy.integrate` improvements
+------------------------------
+
+A solver of two-point boundary value problems for ODE systems has been
+implemented in `scipy.integrate.solve_bvp`. The solver allows for non-separated
+boundary conditions, unknown parameters and certain singular terms. It finds
+a C1 continious solution using a fourth-order collocation algorithm.
+
 `scipy.interpolate` improvements
 --------------------------------
 
