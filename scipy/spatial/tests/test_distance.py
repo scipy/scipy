@@ -1154,14 +1154,17 @@ class TestSomeDistanceFunctions(TestCase):
         # 1D arrays
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([1.0, 1.0, 5.0])
-        # 3x1 arrays
-        x31 = x[:,np.newaxis]
-        y31 = y[:,np.newaxis]
         # 1x3 arrays
-        x13 = x31.T
-        y13 = y31.T
+        x13 = x[np.newaxis]
+        y13 = y[np.newaxis]
+        # 2x3 arrays (pdist)
+        x23 = np.array([x, x])
+        y23 = np.array([x, x])
+        # broadcasting sizes (cdist)
+        x213 = x23[:,np.newaxis]
+        y123 = y23
 
-        self.cases = [(x,y), (x31, y31), (x13, y13)]
+        self.cases = [(x,y), (x13, y13), (x23, y23), (x123, y123)]
 
     def test_minkowski(self):
         for x, y in self.cases:
@@ -1181,21 +1184,25 @@ class TestSomeDistanceFunctions(TestCase):
             assert_almost_equal(dist1p5, (2.0**1.5+1.0)**(2./3))
             dist2 = wminkowski(x, y, p=2, w=w)
             assert_almost_equal(dist2, np.sqrt(5))
+            assert_equal(dist.shape, np.broadcast(x, y).shape)
 
     def test_euclidean(self):
         for x, y in self.cases:
             dist = euclidean(x, y)
             assert_almost_equal(dist, np.sqrt(5))
+            assert_equal(dist.shape, np.broadcast(x, y).shape)
 
     def test_sqeuclidean(self):
         for x, y in self.cases:
             dist = sqeuclidean(x, y)
             assert_almost_equal(dist, 5.0)
+            assert_equal(dist.shape, np.broadcast(x, y).shape)
 
     def test_cosine(self):
         for x, y in self.cases:
             dist = cosine(x, y)
             assert_almost_equal(dist, 1.0 - 18.0/(np.sqrt(14)*np.sqrt(27)))
+            assert_equal(dist.shape, np.broadcast(x, y).shape)
 
     def test_correlation(self):
         xm = np.array([-1.0, 0, 1.0])
