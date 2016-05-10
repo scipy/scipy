@@ -15,7 +15,7 @@ Run tests if fftpack is not installed:
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            run_module_suite, assert_equal, assert_)
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
-from scipy.fftpack.helper import _next_opt_len
+from scipy.fftpack.helper import next_fast_len
 
 from numpy import pi, random
 
@@ -71,7 +71,7 @@ class TestNextOptLen(TestCase):
             yield 2**5 * 3**5 * 4**5 + 1
 
         for n in nums():
-            m = _next_opt_len(n)
+            m = next_fast_len(n)
             msg = "n=%d, m=%d" % (n, m)
 
             assert_(m >= n, msg)
@@ -158,7 +158,7 @@ class TestNextOptLen(TestCase):
                 30778180617309082445871527002041377406962596539492679680000000,
         }
         for x, y in hams.items():
-            assert_equal(_next_opt_len(x), y)
+            assert_equal(next_fast_len(x), y)
 
 
 if __name__ == "__main__":
