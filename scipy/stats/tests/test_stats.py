@@ -539,9 +539,6 @@ class TestCorrSpearmanr(TestCase):
     def test_nan_policy(self):
         x = np.arange(10.)
         x[9] = np.nan
-        assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
-        assert_array_equal(stats.spearmanr(X, x), (np.nan, np.nan))
-        assert_array_equal(stats.spearmanr(x, X), (np.nan, np.nan))
         assert_array_equal(stats.spearmanr(x, x, nan_policy='omit'),
                            (1.0, 0.0))
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
@@ -739,6 +736,16 @@ def test_kendalltau():
     x = np.arange(10.)
     y = np.arange(20.)
     assert_raises(ValueError, stats.kendalltau, x, y)
+
+
+def test_kendalltau_nan_2nd_arg():
+    # regression test for gh-6134: nans in the second arg were not handled
+    x = [1., 2., 3., 4.]
+    y = [np.nan, 2.4, 3.4, 3.4]
+
+    r1 = stats.kendalltau(x, y, nan_policy='omit')
+    r2 = stats.kendalltau(x[1:], y[1:])
+    assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
 
 
 class TestFindRepeats(TestCase):
@@ -1593,10 +1600,18 @@ class TestMoments(TestCase):
 
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.moment(x), np.nan)
+        assert_equal(stats.moment(x, 2), np.nan)
         assert_almost_equal(stats.moment(x, nan_policy='omit'), 0.0)
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
+
+    def test_moment_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
     def test_variation(self):
         # variation = samplestd / mean
@@ -1612,6 +1627,14 @@ class TestMoments(TestCase):
                             0.6454972243679028)
         assert_raises(ValueError, stats.variation, x, nan_policy='raise')
         assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
+
+    def test_variation_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        vv = stats.variation(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
 
     def test_skewness(self):
         # Scalar test case
@@ -1636,6 +1659,14 @@ class TestMoments(TestCase):
     def test_skewness_scalar(self):
         # `skew` must return a scalar for 1-dim input
         assert_equal(stats.skew(arange(10)), 0.0)
+
+    def test_skew_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        s = stats.skew(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
 
     def test_kurtosis(self):
         # Scalar test case
@@ -1666,6 +1697,14 @@ class TestMoments(TestCase):
 
     def test_kurtosis_array_scalar(self):
         assert_equal(type(stats.kurtosis([1,2,3])), float)
+
+    def test_kurtosis_propagate_nan(self):
+        # Check that the shape of the result is the same for inputs
+        # with and without nans, cf gh-5817
+        a = np.arange(8).reshape(2, -1).astype(float)
+        a[1, 0] = np.nan
+        k = stats.kurtosis(a, axis=1, nan_policy="propagate")
+        np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
@@ -2382,6 +2421,27 @@ def test_ttest_rel():
                   x.reshape((2, 3, 4)))
 
 
+def test_ttest_rel_nan_2nd_arg():
+    # regression test for gh-6134: nans in the second arg were not handled
+    x = [np.nan, 2.0, 3.0, 4.0]
+    y = [1.0, 2.0, 1.0, 2.0]
+
+    r1 = stats.ttest_rel(x, y, nan_policy='omit')
+    r2 = stats.ttest_rel(y, x, nan_policy='omit')
+    assert_allclose(r2.statistic, -r1.statistic, atol=1e-15)
+    assert_allclose(r2.pvalue, r1.pvalue, atol=1e-15)
+
+    # NB: arguments are paired when NaNs are dropped
+    r3 = stats.ttest_rel(y[1:], x[1:])
+    assert_allclose(r2, r3, atol=1e-15) 
+
+    # .. and this is consistent with R. R code: 
+    # x = c(NA, 2.0, 3.0, 4.0)
+    # y = c(1.0, 2.0, 1.0, 2.0)
+    # t.test(x, y, paired=TRUE)
+    assert_allclose(r2, (-2, 0.1835), atol=1e-4)
+
+
 def _desc_stats(x1, x2, axis=0):
     def _stats(x, axis=0):
         x = np.asarray(x)
@@ -2580,6 +2640,26 @@ def test_ttest_ind_with_uneq_var():
     finally:
         np.seterr(**olderr)
 
+def test_ttest_ind_nan_2nd_arg():
+    # regression test for gh-6134: nans in the second arg were not handled
+    x = [np.nan, 2.0, 3.0, 4.0]
+    y = [1.0, 2.0, 1.0, 2.0]
+
+    r1 = stats.ttest_ind(x, y, nan_policy='omit')
+    r2 = stats.ttest_ind(y, x, nan_policy='omit')
+    assert_allclose(r2.statistic, -r1.statistic, atol=1e-15)
+    assert_allclose(r2.pvalue, r1.pvalue, atol=1e-15)
+
+    # NB: arguments are not paired when NaNs are dropped
+    r3 = stats.ttest_ind(y, x[1:])
+    assert_allclose(r2, r3, atol=1e-15) 
+
+    # .. and this is consistent with R. R code: 
+    # x = c(NA, 2.0, 3.0, 4.0)
+    # y = c(1.0, 2.0, 1.0, 2.0)
+    # t.test(x, y, var.equal=TRUE)
+    assert_allclose(r2, (-2.5354627641855498, 0.052181400457057901), atol=1e-15)
+
 
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
@@ -2660,8 +2740,6 @@ class TestDescribe(TestCase):
 
         x = np.arange(10.)
         x[9] = np.nan
-        res = stats.describe(x)
-        assert_array_equal(res, np.zeros(6) * np.nan)
 
         nc, mmc = (9, (0.0, 8.0))
         mc = 4.0
@@ -2845,28 +2923,25 @@ class TestMannWhitneyU(TestCase):
 
     significant = 14
 
-    def test_mannwhitneyu_less(self):
+    def test_mannwhitneyu_one_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='less')
         u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='greater')
+        u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative='greater')
+        u4, p4 = stats.mannwhitneyu(self.Y, self.X, alternative='less')
 
         assert_equal(p1, p2)
+        assert_equal(p3, p4)
+        assert_(p1 != p3)
         assert_equal(u1, 498)
         assert_equal(u2, 102)
+        assert_equal(u3, 498)
+        assert_equal(u4, 102)
         assert_approx_equal(p1, 0.999957683256589, significant=self.significant)
-
-    def test_mannwhitneyu_greater(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='greater')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='less')
-
-        assert_equal(p1, p2)
-        assert_equal(u1, 498)
-        assert_equal(u2, 102)
-        assert_approx_equal(p1, 4.5941632666275e-05,
-                            significant=self.significant)
+        assert_approx_equal(p3, 4.5941632666275e-05, significant=self.significant)
 
     def test_mannwhitneyu_two_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X)  # two-sided is default
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, alternative='two-sided')
 
         assert_equal(p1, p2)
         assert_equal(u1, 498)
@@ -2874,36 +2949,69 @@ class TestMannWhitneyU(TestCase):
         assert_approx_equal(p1, 9.188326533255e-05,
                             significant=self.significant)
 
-    def test_mannwhitneyu_no_correct_less(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False, alternative='less')
+    def test_mannwhitneyu_default(self):
+        # The default value for alternative is None
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            u1, p1 = stats.mannwhitneyu(self.X, self.Y)
+            u2, p2 = stats.mannwhitneyu(self.Y, self.X)
+            u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative=None)
+
+        assert_equal(p1, p2)
+        assert_equal(p1, p3)
+        assert_equal(u1, 102)
+        assert_equal(u2, 102)
+        assert_equal(u3, 102)
+        assert_approx_equal(p1, 4.5941632666275e-05,
+                            significant=self.significant)
+
+    def test_mannwhitneyu_no_correct_one_sided(self):
+        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
+                                    alternative='less')
         u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
                                     alternative='greater')
-
-        assert_equal(p1, p2)
-        assert_equal(u1, 498)
-        assert_equal(u2, 102)
-        assert_approx_equal(p1, 0.999955905990004, significant=self.significant)
-
-    def test_mannwhitneyu_no_correct_greater(self):
-        u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
+        u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
                                     alternative='greater')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False, alternative='less')
+        u4, p4 = stats.mannwhitneyu(self.Y, self.X, False,
+                                    alternative='less')
 
         assert_equal(p1, p2)
+        assert_equal(p3, p4)
+        assert_(p1 != p3)
         assert_equal(u1, 498)
         assert_equal(u2, 102)
-        assert_approx_equal(p1, 4.40940099958089e-05,
-                            significant=self.significant)
+        assert_equal(u3, 498)
+        assert_equal(u4, 102)
+        assert_approx_equal(p1, 0.999955905990004, significant=self.significant)
+        assert_approx_equal(p3, 4.40940099958089e-05, significant=self.significant)
 
     def test_mannwhitneyu_no_correct_two_sided(self):
         u1, p1 = stats.mannwhitneyu(self.X, self.Y, False,
                                     alternative='two-sided')
-        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,)
+        u2, p2 = stats.mannwhitneyu(self.Y, self.X, False,
+                                    alternative='two-sided')
 
         assert_equal(p1, p2)
         assert_equal(u1, 498)
         assert_equal(u2, 102)
         assert_approx_equal(p1, 8.81880199916178e-05,
+                            significant=self.significant)
+
+    def test_mannwhitneyu_no_correct_default(self):
+        # The default value for alternative is None
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            u1, p1 = stats.mannwhitneyu(self.X, self.Y, False)
+            u2, p2 = stats.mannwhitneyu(self.Y, self.X, False)
+            u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
+                                        alternative=None)
+
+        assert_equal(p1, p2)
+        assert_equal(p1, p3)
+        assert_equal(u1, 102)
+        assert_equal(u2, 102)
+        assert_equal(u3, 102)
+        assert_approx_equal(p1, 4.40940099958089e-05,
                             significant=self.significant)
 
     def test_mannwhitneyu_ones(self):
@@ -2945,7 +3053,7 @@ class TestMannWhitneyU(TestCase):
                                   (16980.5, 2.8214327656317373e-005),
                                   decimal=12)
 
-    def test_mannwhitneyu_result_attribuets(self):
+    def test_mannwhitneyu_result_attributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
         res = stats.mannwhitneyu(self.X, self.Y)

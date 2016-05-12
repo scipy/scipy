@@ -904,7 +904,7 @@ interface
 
      ! LWORK is obtained by the query call
      integer intent(in),depend(nrhs,m,n,minmn) :: lwork 
-     check(lwork>=MAX(minmn+3*n+1, 2*minmn*nrhs)) :: lwork
+     check(lwork>=MAX(minmn+3*n+1, 2*minmn+nrhs)) :: lwork
      <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
      integer intent(out)::info
 

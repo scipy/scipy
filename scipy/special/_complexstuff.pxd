@@ -24,6 +24,22 @@ ctypedef fused number_t:
     double
     double_complex
 
+ctypedef union _complex_pun:
+    np.npy_cdouble npy
+    double_complex c99
+
+cdef inline np.npy_cdouble npy_cdouble_from_double_complex(
+        double_complex x) nogil:
+    cdef _complex_pun z
+    z.c99 = x
+    return z.npy
+
+cdef inline double_complex double_complex_from_npy_cdouble(
+        np.npy_cdouble x) nogil:
+    cdef _complex_pun z
+    z.npy = x
+    return z.c99
+
 cdef inline bint zisnan(number_t x) nogil:
     if number_t is double_complex:
         return npy_isnan(x.real) or npy_isnan(x.imag)
@@ -44,23 +60,23 @@ cdef inline bint zisinf(number_t x) nogil:
 
 cdef inline double zabs(number_t x) nogil:
     if number_t is double_complex:
-        return npy_cabs((<np.npy_cdouble*>&x)[0])
+        return npy_cabs(npy_cdouble_from_double_complex(x))
     else:
         return libc.math.fabs(x)
 
 cdef inline number_t zlog(number_t x) nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_clog((<np.npy_cdouble*>&x)[0])
-        return (<double_complex*>&r)[0]
+        r = npy_clog(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.log(x)
 
 cdef inline number_t zexp(number_t x) nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_cexp((<np.npy_cdouble*>&x)[0])
-        return (<double_complex*>&r)[0]
+        r = npy_cexp(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.exp(x)
 
