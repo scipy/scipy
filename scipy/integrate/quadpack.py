@@ -85,9 +85,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     infodict : dict
         A dictionary containing additional information.
         Run scipy.integrate.quad_explain() for more information.
-    message :
+    message
         A convergence message.
-    explain :
+    explain
         Appended only with 'cos' or 'sin' weighting and infinite
         integration limits, it contains an explanation of the codes in
         infodict['ierlst']
