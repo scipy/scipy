@@ -389,9 +389,9 @@ def _kmeans(obs, guess, thresh=1e-5):
 
     Returns
     -------
-    code_book :
+    code_book
         the lowest distortion codebook found.
-    avg_dist :
+    avg_dist
         the average distance a observation is from a code in the book.
         Lower means the code_book matches the data better.
 

@@ -376,7 +376,7 @@ class ode(object):
         ----------
         name : str
             Name of the integrator.
-        integrator_params :
+        integrator_params
             Additional parameters for the integrator.
         """
         integrator = find_integrator(name)
@@ -552,7 +552,7 @@ class complex_ode(ode):
         ----------
         name : str
             Name of the integrator
-        integrator_params :
+        integrator_params
             Additional parameters for the integrator.
         """
         if name == 'zvode':
