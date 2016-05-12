@@ -3241,8 +3241,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # check both x and y
-    contains_nan, nan_policy = (_contains_nan(x, nan_policy) or
-                                _contains_nan(y, nan_policy))
+    cnx, npx = _contains_nan(x, nan_policy)
+    cny, npy = _contains_nan(y, nan_policy)
+    contains_nan = cnx or cny
+    if npx == 'omit' or npy == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'propagate':
         return KendalltauResult(np.nan, np.nan)
@@ -3482,7 +3485,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     """
-    Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+    Calculates the T-test for the means of *two independent* samples of scores.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
     have identical average (expected) values. This test assumes that the
@@ -3501,6 +3504,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
+
         .. versionadded:: 0.11.0
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
@@ -3575,8 +3579,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     a, b, axis = _chk2_asarray(a, b, axis)
 
     # check both a and b
-    contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
-                                _contains_nan(b, nan_policy))
+    cna, npa = _contains_nan(a, nan_policy)
+    cnb, npb = _contains_nan(b, nan_policy)
+    contains_nan = cna or cnb
+    if npa == 'omit' or npb == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
@@ -3663,13 +3670,19 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     """
     a, b, axis = _chk2_asarray(a, b, axis)
 
-    # check both a and b
-    contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
-                                _contains_nan(b, nan_policy))
+    cna, npa = _contains_nan(a, nan_policy)
+    cnb, npb = _contains_nan(b, nan_policy)
+    contains_nan = cna or cnb
+    if npa == 'omit' or npb == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.ttest_rel(a, b, axis)
+        b = ma.masked_invalid(b)
+        m = ma.mask_or(ma.getmask(a), ma.getmask(b))
+        aa = ma.array(a, mask=m, copy=True)
+        bb = ma.array(b, mask=m, copy=True)
+        return mstats_basic.ttest_rel(aa, bb, axis)
 
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
