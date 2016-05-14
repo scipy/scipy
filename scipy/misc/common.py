@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import numpy as np
 from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
-                   zeros, eye, poly1d, r_, sum, fromstring, isfinite,
+                   zeros, eye, poly1d, r_, fromstring, isfinite,
                    squeeze, amax, reshape, sign, broadcast_arrays)
 
 
@@ -114,7 +114,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
-        s = sum(tmp, axis=axis, keepdims=keepdims)
+        s = np.sum(tmp, axis=axis, keepdims=keepdims)
         if return_sign:
             sgn = sign(s)
             s *= sgn  # /= makes more sense but we need zero -> zero
