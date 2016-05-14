@@ -172,18 +172,17 @@ class gaussian_kde(object):
         self.set_bandwidth(bw_method=bw_method)
 
     def evaluate(self, points, lb=None, ub=None):
-        """Evaluate the estimated pdf on a set of points using a Gaussian
-        Kernel, boundary effects corrected using the reflection method.
+        """Evaluate the estimated pdf on a set of points.
 
         Parameters
         ----------
         points : (# of dimensions, # of points)-array
             Alternatively, a (# of dimensions,) vector can be passed in and
             treated as a single point.
-        lb : Lower boundary for the estimated pdf, integer for unidimensional
-        distributions, array_like for multivariate ones
-        ub : Upper boundary for the estimated pdf, integer for unidimensional
-        distributions, array_like for multivariate ones
+        lb : float or array_like
+            Lower boundary for the estimated pdf
+        ub : float or array_like
+            Upper boundary for the estimated pdf
 
         Returns
         -------
