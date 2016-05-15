@@ -42,7 +42,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
          'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice']
+         'rice', 'kappa4', 'kappa3']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -730,6 +730,64 @@ class TestPearson3(TestCase):
         vals = stats.pearson3.cdf([-3, -2, -1, 0, 1], 0.1)
         assert_allclose(vals, [8.22563821e-04, 1.99860448e-02, 1.58550710e-01,
                                5.06649130e-01, 8.41442111e-01], atol=1e-6)
+
+
+class TestKappa4(TestCase):
+    def test_cdf_genpareto(self):
+        # h = 1 and k != 0 is generalized Pareto
+        x = [0.0, 0.1, 0.2, 0.5]
+        h = 1.0
+        for k in [-1.9, -1.0, -0.5, -0.2, -0.1, 0.1, 0.2, 0.5, 1.0,
+                  1.9]:
+            vals = stats.kappa4.cdf(x, h, k)
+            # shape parameter is opposite what is expected
+            vals_comp = stats.genpareto.cdf(x, -k)
+            assert_allclose(vals, vals_comp)
+
+    def test_cdf_genextreme(self):
+        # h = 0 and k != 0 is generalized extreme value
+        x = np.linspace(-5, 5, 10)
+        h = 0.0
+        k = np.linspace(-3, 3, 10)
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.genextreme.cdf(x, k)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_expon(self):
+        # h = 1 and k = 0 is exponential
+        x = np.linspace(0, 10, 10)
+        h = 1.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.expon.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_gumbel_r(self):
+        # h = 0 and k = 0 is gumbel_r
+        x = np.linspace(-5, 5, 10)
+        h = 0.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.gumbel_r.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_logistic(self):
+        # h = -1 and k = 0 is logistic
+        x = np.linspace(-5, 5, 10)
+        h = -1.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.logistic.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_uniform(self):
+        # h = 1 and k = 1 is uniform
+        x = np.linspace(-5, 5, 10)
+        h = 1.0
+        k = 1.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.uniform.cdf(x)
+        assert_allclose(vals, vals_comp)
 
 
 class TestPoisson(TestCase):

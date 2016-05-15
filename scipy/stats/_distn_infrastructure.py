@@ -15,7 +15,7 @@ import warnings
 
 from scipy.misc import doccer
 from ._distr_params import distcont, distdiscrete
-from scipy._lib._util import check_random_state, _lazywhere
+from scipy._lib._util import check_random_state, _lazywhere, _lazyselect
 from scipy._lib._util import _valarray as valarray
 
 from scipy.special import (comb, chndtr, entr, kl_div, xlogy, ive)

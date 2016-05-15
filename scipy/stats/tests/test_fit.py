@@ -23,6 +23,7 @@ failing_fits = [
         'gausshyper',
         'genexpon',
         'gengamma',
+        'kappa4',
         'ksone',
         'mielke',
         'ncf',
