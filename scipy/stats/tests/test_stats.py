@@ -1434,7 +1434,7 @@ class TestVariability(TestCase):
         assert_array_almost_equal(z[1], z1_expected)
 
 
-class _numpy_version_warn_context_mgr:
+class _numpy_version_warn_context_mgr(object):
     """
     A simple context maneger class to avoid retyping the same code for
     different versions of numpy when the only difference is that older
@@ -1471,8 +1471,8 @@ def _check_warnings(warn_list, expected_type, expected_len):
     contains expected number of warnings. 
     """
     assert_equal(len(warn_list), expected_len, "number of warnings")
-    for i in range(len(warn_list)):
-        assert_(warn_list[i].category is expected_type)
+    for warn_ in warn_list:
+        assert_(warn_.category is expected_type)
 
 
 class TestIQR(TestCase):
