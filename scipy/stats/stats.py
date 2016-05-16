@@ -2291,29 +2291,14 @@ def zmap(scores, compare, axis=0, ddof=0):
         return (scores - mns) / sstd
 
 
-def _iqr_scale_to_num(scale):
-    """
-    A helper function to convert the 'scale' argument of `iqr` to a
-    number.
-
-    scale: str
-        If scale is one of ['raw', 'normal'], this function will map the
-        string to a value.
-
-    The concept for this function is borrowed heavily from the
-    `numpy.histogram` helper function `_hist_optim_numbins_estimator`.
-    """
-    # See https://en.wikipedia.org/wiki/Robust_measures_of_scale
-    scale_conversions = {'raw': 1.0,
-                         'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
-    try:
-        return scale_conversions[scale.lower()]
-    except KeyError:
-        raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+# Private dictionary initialized only once at module level
+# See https://en.wikipedia.org/wiki/Robust_measures_of_scale
+_scale_conversions = {'raw': 1.0,
+                      'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
 
 
 def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
-           interpolation='linear', keepdims=False):
+        interpolation='linear', keepdims=False):
     """
     Compute the interquartile range of the data along the specified
     axis.
@@ -2441,7 +2426,10 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
     if isinstance(scale, string_types):
-        scale = _iqr_scale_to_num(scale)
+        scale_key = scale.lower()
+        if scale_key not in _scale_conversions:
+            raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+        scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
@@ -2483,6 +2471,12 @@ def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, con
         warnings.warn(msg, RuntimeWarning)
 
     try:
+        # For older versions of numpy, there are two things that can cause a
+        # problem here: missing keywords and non-scalar axis. The former can be
+        # partially handled with a warning, the latter can be handled fully by
+        # hacking in an implementation similar to numpy's function for
+        # providing multi-axis functionality
+        # (`numpy.lib.function_base._ureduce` for the curious).
         result = np.percentile(x, q, axis=axis, keepdims=keepdims,
                                interpolation=interpolation)
     except TypeError:
@@ -2493,6 +2487,10 @@ def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, con
         try:
             # Special processing if axis is an iterable
             original_size = len(axis)
+        except TypeError:
+            # Axis is a scalar at this point
+            pass
+        else:
             axis = np.unique(np.asarray(axis) % x.ndim)
             if original_size > axis.size:
                 # mimic numpy if axes are duplicated
@@ -2510,9 +2508,6 @@ def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, con
                 x = x.reshape(x.shape[:-axis.size] +
                               (np.prod(x.shape[-axis.size:]),))
                 axis = -1
-        except TypeError:
-            # Axis is a scalar at this point
-            pass
         result = np.percentile(x, q, axis=axis)
 
     return result
