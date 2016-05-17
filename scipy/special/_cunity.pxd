@@ -1,14 +1,12 @@
 cimport numpy as np
-from libc.math cimport fabs, sin, cos, exp
+from libc.math cimport fabs
 from _complexstuff cimport (
-    zisfinite, zabs, zpack, npy_cdouble_from_double_complex,
-    double_complex_from_npy_cdouble)
+    zisfinite, zabs, zpack, zexp, zdiv,
+    npy_cdouble_from_double_complex, double_complex_from_npy_cdouble)
 
 cdef extern from "_complexstuff.h":
     double npy_atan2(double y, double x) nogil
     np.npy_cdouble npy_clog(np.npy_cdouble x) nogil
-    np.npy_cdouble npy_cexp(np.npy_cdouble x) nogil
-    
 
 cdef extern from "c_misc/double2.h":
     ctypedef struct double2_t:
@@ -21,8 +19,9 @@ cdef extern from "c_misc/double2.h":
 
 cdef extern from "cephes.h":
     double log1p(double x) nogil
-    double expm1(double x) nogil
-    double cosm1(double x) nogil
+
+DEF tol = 2.220446092504131e-16
+
 
 # log(z + 1) = log(x + 1 + 1j*y)
 #             = log(sqrt((x+1)**2 + y**2)) + 1j*atan2(y, x+1)
@@ -67,6 +66,7 @@ cdef inline double complex clog1p(double complex z) nogil:
     ret = npy_clog(npy_cdouble_from_double_complex(z))
     return double_complex_from_npy_cdouble(ret)
 
+
 cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
     cdef double x, y
     cdef double2_t r, i, two, rsqr, isqr, rtwo, absm1
@@ -84,35 +84,20 @@ cdef inline double complex clog1p_ddouble(double zr, double zi) nogil:
     x = 0.5 * log1p(double2_double(&absm1))
     y = npy_atan2(zi, zr+1.0)
     return zpack(x, y) 
+
  
-# cexpm1(z) = cexp(z) - 1
-# 
-# The imaginary part of this is easily computed via exp(z.real)*sin(z.imag)
-# The real part is difficult to compute when there is cancelation e.g. when
-# z.real = -log(cos(z.imag)).  There isn't a way around this problem  that
-# doesn't involve computing exp(z.real) and/or cos(z.imag) to higher
-# precision.
 cdef inline double complex cexpm1(double complex z) nogil:
-    cdef double zr, zi, ezr, x, y
-    cdef np.npy_cdouble ret
+    # cexpm1(z) = cexp(z) - 1. 
+    cdef int n
+    cdef double complex term = 1
+    cdef double complex res = 0
 
-    if not zisfinite(z):
-        ret = npy_cexp(npy_cdouble_from_double_complex(z))
-        return double_complex_from_npy_cdouble(ret) - 1.0
-
-    zr = z.real
-    zi = z.imag
-
-    if zr <= -40:
-        x = -1.0
+    if zabs(z) < 0.7:
+        for n in range(1, 16):
+            term *= z/n
+            res += term
+            if zabs(term) < tol*zabs(res):
+                break
+        return res
     else:
-        ezr = expm1(zr)
-        x = ezr*cos(zi) + cosm1(zi)
-    # don't compute exp(zr) too, unless necessary
-    if zr > -1.0:
-        y = (ezr + 1.0)*sin(zi)
-    else:
-        y = exp(zr)*sin(zi)
-
-    return zpack(x, y)
-
+        return zexp(z) - 1.0
