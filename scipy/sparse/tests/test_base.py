@@ -620,8 +620,12 @@ class _TestCommon:
         assert_raises(NotImplementedError, self.spmatrix(A).power, A)       
 
     def test_neg(self):
-        A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
-        assert_equal(-A,(-self.spmatrix(A)).todense())
+        A = matrix([[-1, 0, 17], [0, -5, 0], [1, -4, 0], [0, 0, 0]], 'd')
+        assert_equal(-A, (-self.spmatrix(A)).todense())
+
+        # see gh-5843
+        A = matrix([[True, False, False], [False, False, True]])
+        assert_raises(NotImplementedError, self.spmatrix(A).__neg__)
 
     def test_real(self):
         D = matrix([[1 + 3j, 2 - 4j]])

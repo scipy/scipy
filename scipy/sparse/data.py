@@ -44,6 +44,9 @@ class _data_matrix(spmatrix):
         return self._with_data(self.data.imag)
 
     def __neg__(self):
+        if self.dtype.kind == 'b':
+            raise NotImplementedError('negating a sparse boolean '
+                                      'matrix is not supported')
         return self._with_data(-self.data)
 
     def __imul__(self, other):  # self *= other

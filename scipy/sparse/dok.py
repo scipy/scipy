@@ -350,9 +350,13 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return new
 
     def __neg__(self):
+        if self.dtype.kind == 'b':
+            raise NotImplementedError('negating a sparse boolean '
+                                      'matrix is not supported')
         new = dok_matrix(self.shape, dtype=self.dtype)
         for key in self.keys():
             new[key] = -self[key]
+
         return new
 
     def _mul_scalar(self, other):
