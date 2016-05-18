@@ -5,14 +5,15 @@ import warnings
 import numpy as np
 
 from numpy.testing import (
-    assert_almost_equal, assert_array_equal, TestCase, run_module_suite,
-    assert_allclose, assert_equal, assert_, assert_raises)
+    assert_almost_equal, assert_array_equal, assert_array_almost_equal,
+    TestCase, run_module_suite, assert_allclose, assert_equal, assert_,
+    assert_raises)
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
     BarycentricInterpolator, barycentric_interpolate,
     approximate_taylor_polynomial, pchip, PchipInterpolator,
-    Akima1DInterpolator, CubicSpline)
+    pchip_interpolate, Akima1DInterpolator, CubicSpline)
 from scipy._lib.six import xrange
 
 
@@ -415,6 +416,19 @@ class TestPCHIP(TestCase):
 
         xx = np.linspace(0, 9, 101)
         assert_equal(pch(xx), 0.)
+
+    def test_pchip_interpolate(self):
+        assert_array_almost_equal(
+            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=1),
+            [1.])
+
+        assert_array_almost_equal(
+            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=0),
+            [3.5])
+
+        assert_array_almost_equal(
+            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=[0, 1]),
+            [[3.5], [1]])
 
 
 class TestCubicSpline(object):
