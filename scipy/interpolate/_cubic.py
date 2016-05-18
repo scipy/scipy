@@ -186,10 +186,8 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     x : scalar or array_like
         Of length M.
     der : int or list, optional
-        How many derivatives to extract; None for all potentially
-        nonzero derivatives (that is a number equal to the number
-        of points), or a list of derivatives to extract. This number
-        includes the function value as 0th derivative.
+        Derivatives to extract.  The 0-th derivative can be included to
+        return the function value.
     axis : int, optional
         Axis in the yi array corresponding to the x-coordinate values.
 
@@ -204,12 +202,13 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
 
     """
     P = PchipInterpolator(xi, yi, axis=axis)
+
     if der == 0:
         return P(x)
     elif _isscalar(der):
-        return P(x, der=der)
+        return P.derivative(der)(x)
     else:
-        return [P(x, nu) for nu in der]
+        return [P.derivative(nu)(x) for nu in der]
 
 
 # Backwards compatibility
