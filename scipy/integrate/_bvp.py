@@ -20,11 +20,11 @@ def estimate_fun_jac(fun, x, y, p, f0=None):
     Returns
     -------
     df_dy : ndarray, shape (n, n, m)
-        Derivatives with respect to y. An element (i, j, k) corresponds to
-        d f_i(x_k, y_k) / d (y_k)_j.
+        Derivatives with respect to y. An element (i, j, q) corresponds to
+        d f_i(x_q, y_q) / d (y_q)_j.
     df_dp : ndarray with shape (n, k, m) or None
-        Derivatives with respect to p. An element (i, j, k) corresponds to
-        d f_i(x_k, y_k, p) / d p_j. If `p` is empty, None is returned.
+        Derivatives with respect to p. An element (i, j, q) corresponds to
+        d f_i(x_q, y_q, p) / d p_j. If `p` is empty, None is returned.
     """
     n, m = y.shape
     if f0 is None:
@@ -192,8 +192,12 @@ def construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle, df_dp,
 
     Parameters
     ----------
-    n, m, k : int
-        Problem dimensions.
+    n : int
+        Number of equations in the ODE system.
+    m : int
+        Number of nodes in the mesh.
+    k : int
+        Number of the unknown parameters.
     i_jac, j_jac : ndarray
         Row and column indices returned by `compute_jac_indices`. They
         represent different blocks in the Jacobian matrix in the following
@@ -725,11 +729,11 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         following order:
 
             * df_dy : array_like with shape (n, n, m) where an element
-              (i, j, k) equals to d f_i(x_k, y_k, p) / d (y_k)_j.
+              (i, j, q) equals to d f_i(x_q, y_q, p) / d (y_q)_j.
             * df_dp : array_like with shape (n, k, m) where an element
-              (i, j, k) equals to d f_i(x_k, y_k, p) / d p_j.
+              (i, j, q) equals to d f_i(x_q, y_q, p) / d p_j.
 
-        Here k numbers nodes at which x and y are defined, whereas i and j
+        Here q numbers nodes at which x and y are defined, whereas i and j
         number vector components. If the problem is solved without unknown
         parameters df_dp should not be returned.
 
@@ -773,7 +777,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     -------
     Bunch object with the following fields defined:
     sol : PPoly
-        Found solution for y as `scipy.interpolate.PPoly` instance, a C^1
+        Found solution for y as `scipy.interpolate.PPoly` instance, a C1
         continuous cubic spline.
     p : ndarray or None, shape (k,)
         Found parameters. None, if the parameters were not present in the
@@ -781,9 +785,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     x : ndarray, shape (m,)
         Nodes of the final mesh.
     y : ndarray, shape (n, m)
-        Function values at the mesh nodes.
+        Solution values at the mesh nodes.
     yp : ndarray, shape (n, m)
-        Function derivatives at the mesh nodes.
+        Solution derivatives at the mesh nodes.
     res : ndarray, shape (m - 1,)
         Relative rms residuals for each mesh interval.
     niter : int
@@ -794,7 +798,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             * 0: The algorithm converged to the desired accuracy.
             * 1: The maximum number of mesh nodes is exceeded.
             * 2: A singular Jacobian encountered when solving the collocation
-                 system.
+              system.
 
     message : string
         Verbal description of the termination reason.
@@ -822,7 +826,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     .. [2] L.F. Shampine, P. H. Muir and H. Xu, "A User-Friendly Fortran BVP
            Solver".
     .. [3] U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
-           Boundary Value Problems for Ordinary Differential Equations"
+           Boundary Value Problems for Ordinary Differential Equations".
     .. [4] `Cauchy-Riemann equations
             <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
             Wikipedia.
