@@ -2617,6 +2617,9 @@ def test_genextreme_sf_isf():
     # >>> s = mp_genextreme_sf(mpmath.mp.mpf("7.98"), mpmath.mp.mpf("-0.125"))
     # >>> float(s)
     # 1.52587890625e-21
+    # >>> s = mp_genextreme_sf(mpmath.mp.mpf("7.98"), mpmath.mp.mpf("0"))
+    # >>> float(s)
+    # 0.00034218086528426593
 
     x = 1e8
     s = stats.genextreme.sf(x, -0.125)
@@ -2630,6 +2633,11 @@ def test_genextreme_sf_isf():
     x2 = stats.genextreme.isf(s, 0.125)
     assert_allclose(x2, x)
 
+    x = 7.98
+    s = stats.genextreme.sf(x, 0)
+    assert_allclose(s, 0.00034218086528426593)
+    x2 = stats.genextreme.isf(s, 0)
+    assert_allclose(x2, x)
 
 if __name__ == "__main__":
     run_module_suite()
