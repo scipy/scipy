@@ -97,7 +97,7 @@ def test_logsumexp_b():
     assert_almost_equal(logsumexp(a, b=b), desired)
 
     x = np.array([1e-40] * 100000)
-    b = np.linspace(1, 1000, 1e5)
+    b = np.linspace(1, 1000, 100000)
     logx = np.log(x)
 
     X = np.vstack((x, x))
