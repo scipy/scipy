@@ -18,6 +18,11 @@ except ImportError:
 
 
 def mpf_assert_allclose(res, std, atol=0, rtol=1e-17):
+    try:
+        len(res)
+    except TypeError:
+        res = list(res)
+
     n = len(std)
     if len(res) != n:
         raise AssertionError("Lengths of inputs not equal.")
