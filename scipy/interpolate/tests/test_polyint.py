@@ -500,12 +500,16 @@ class TestCubicSpline(object):
     def check_all_bc(self, x, y, axis):
         deriv_shape = list(y.shape)
         del deriv_shape[axis]
+        first_deriv = np.empty(deriv_shape)
+        first_deriv.fill(2)
+        second_deriv = np.empty(deriv_shape)
+        second_deriv.fill(-1)
         bc_all = [
             'not-a-knot',
             'natural',
             'clamped',
-            (1, np.full(deriv_shape, 2.0)),
-            (2, np.full(deriv_shape, -1.0))
+            (1, first_deriv),
+            (2, second_deriv)
         ]
         for bc in bc_all[:3]:
             S = CubicSpline(x, y, axis=axis, bc_type=bc)
