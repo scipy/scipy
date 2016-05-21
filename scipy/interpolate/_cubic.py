@@ -503,8 +503,15 @@ class CubicSpline(PPoly):
     """
     def __init__(self, x, y, axis=0, extrapolate=True, bc_type='not-a-knot'):
         x, y = map(np.asarray, (x, y))
+
         if np.issubdtype(x.dtype, np.complexfloating):
             raise ValueError("`x` must contain real values.")
+
+        if np.issubdtype(y.dtype, np.complexfloating):
+            dtype = complex
+        else:
+            dtype = float
+        y = y.astype(dtype, copy=False)
 
         axis = axis % y.ndim
         if x.ndim != 1:
@@ -593,7 +600,7 @@ class CubicSpline(PPoly):
             if validated_bc[1] == 'not-a-knot':
                 validated_bc[1] = (1, slope[0])
 
-        # This is the very special case, when both conditions are 'not-a-knot'
+        # This is a very special case, when both conditions are 'not-a-knot'
         # and n == 3. In this case 'not-a-knot' can't be handled regularly
         # as the both conditions are identical. We handle this case by
         # constructing a parabola passing through given points.
@@ -631,7 +638,7 @@ class CubicSpline(PPoly):
 
             A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])  # The diagonal
             A[0, 2:] = dx[:-1]                   # The upper diagonal
-            A[-1:, :-2] = dx[1:]                 # The lower diagonal
+            A[-1, :-2] = dx[1:]                 # The lower diagonal
 
             b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
 
