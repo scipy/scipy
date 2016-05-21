@@ -471,6 +471,7 @@ class CubicSpline(PPoly):
     >>> y = np.c_[np.cos(theta), np.sin(theta)]
     >>> cs = CubicSpline(theta, y, bc_type='periodic')
     >>> print("ds/dx={:.1f} ds/dy={:.1f}".format(cs(0, 1)[0], cs(0, 1)[1]))
+    ds/dx=0.0 ds/dy=1.0
     >>> xs = 2 * np.pi * np.linspace(0, 1, 100)
     >>> plt.figure(figsize=(6.5, 4))
     >>> plt.plot(np.cos(xs), np.sin(xs), label='true')
@@ -484,7 +485,7 @@ class CubicSpline(PPoly):
     interval 0 <= x<= 1. A cubic spline can represent this function exactly.
     To achieve that we need to specify values and first derivatives at
     endpoints of the interval. Note that y' = 3 * x**2 and thus y'(0) = 0 and
-     y'(1) = 3.
+    y'(1) = 3.
 
     >>> cs = CubicSpline([0, 1], [0, 1], bc_type=((1, 0), (1, 3)))
     >>> x = np.linspace(0, 1)
