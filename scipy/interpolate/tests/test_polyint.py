@@ -62,7 +62,7 @@ def test_shapes():
                     if ip != CubicSpline:
                         yield check_shape, ip, s1, s2, None, axis
                     else:
-                        for bc in [None, 'natural', 'clamped']:
+                        for bc in ['natural', 'clamped']:
                             extra = {'bc_type': bc}
                             yield check_shape, ip, s1, s2, None, axis, extra
 
@@ -556,9 +556,6 @@ class TestCubicSpline(object):
         assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc2)
         assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc3)
 
-        # 3 values are not enough for a not-a-knot bc:
-        assert_raises(ValueError, CubicSpline, x3, y3, 0, True, 'not-a-knot')
-
         # periodic condition, y[-1] must be equal to y[0]:
         assert_raises(ValueError, CubicSpline, x, y, 0, True, 'periodic')
 
@@ -595,5 +592,7 @@ class TestCubicSpline(object):
         assert_allclose(cs(0, 1), cs(2 * np.pi, 1), rtol=tol, atol=tol)
         assert_allclose(cs(0, 2), cs(2 * np.pi, 2), rtol=tol, atol=tol)
 
+
 if __name__ == '__main__':
     run_module_suite()
+
