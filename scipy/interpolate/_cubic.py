@@ -583,7 +583,7 @@ class CubicSpline(PPoly):
 
             A[1, 1:-1] = 2 * (dx[:-1] + dx[1:])  # The diagonal
             A[0, 2:] = dx[:-1]                   # The upper diagonal
-            A[-1, :-2] = dx[1:]                 # The lower diagonal
+            A[-1, :-2] = dx[1:]                  # The lower diagonal
 
             b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
 
@@ -596,7 +596,7 @@ class CubicSpline(PPoly):
                 A[1, 0] = 2 * (dx[-1] + dx[0])
                 A[0, 1] = dx[-1]
 
-                b = b[0:-1]
+                b = b[:-1]
 
                 # Also, due to the periodicity, the system is not tri-diagonal.
                 # We need to compute a "condensed" matrix of shape (n-2, n-2).
@@ -606,7 +606,7 @@ class CubicSpline(PPoly):
                 # and last row of the (n-1, n-1) system matrix. The removed
                 # values are saved in scalar variables with the (n-1, n-1)
                 # system matrix indices forming their names:
-                a_m1_0 = dx[-2] # lower left corner value: A[-1, 0]
+                a_m1_0 = dx[-2]  # lower left corner value: A[-1, 0]
                 a_m1_m2 = dx[-1]
                 a_m1_m1 = 2 * (dx[-1] + dx[-2])
                 a_m2_m1 = dx[-2]
@@ -615,9 +615,9 @@ class CubicSpline(PPoly):
                 b[0] = 3 * (dxr[0] * slope[-1] + dxr[-1] * slope[0])
                 b[-1] = 3 * (dxr[-1] * slope[-2] + dxr[-2] * slope[-1])
 
-                Ac = A[:, 0:-1]
-                b1 = b[0:-1]
-                b2 = np.zeros(b1.shape, b1.dtype)
+                Ac = A[:, :-1]
+                b1 = b[:-1]
+                b2 = np.zeros_like(b1)
                 b2[0] = -a_0_m1
                 b2[-1] = -a_m2_m1
 
@@ -634,15 +634,13 @@ class CubicSpline(PPoly):
 
                 # s is the solution of the (n, n) system:
                 s = np.empty((n,) + y.shape[1:], dtype=y.dtype)
-                s[0:-2] = s1 + s_m1 * s2
+                s[:-2] = s1 + s_m1 * s2
                 s[-2] = s_m1
                 s[-1] = s[0]
-
             else:
                 if bc_start == 'not-a-knot':
                     A[1, 0] = dx[1]
                     A[0, 1] = x[2] - x[0]
-
                     d = x[2] - x[0]
                     b[0] = ((dxr[0] + 2*d) * dxr[1] * slope[0] +
                             dxr[0]**2 * slope[1]) / d
@@ -653,12 +651,11 @@ class CubicSpline(PPoly):
                 elif bc_start[0] == 2:
                     A[1, 0] = 2 * dx[0]
                     A[0, 1] = dx[0]
-                    b[0] = -bc_start[1]/2 * dx[0]**2 + 3 * (y[1] - y[0])
+                    b[0] = -0.5 * bc_start[1] * dx[0]**2 + 3 * (y[1] - y[0])
 
                 if bc_end == 'not-a-knot':
                     A[1, -1] = dx[-2]
                     A[-1, -2] = x[-1] - x[-3]
-
                     d = x[-1] - x[-3]
                     b[-1] = ((dxr[-1]**2*slope[-2] +
                              (2*d + dxr[-1])*dxr[-2]*slope[-1]) / d)
@@ -669,16 +666,16 @@ class CubicSpline(PPoly):
                 elif bc_end[0] == 2:
                     A[1, -1] = 2 * dx[-1]
                     A[-1, -2] = dx[-1]
-                    b[-1] = bc_end[1]/2 * dx[-1]**2 + 3 * (y[-1] - y[-2])
+                    b[-1] = 0.5 * bc_end[1] * dx[-1]**2 + 3 * (y[-1] - y[-2])
 
                 s = solve_banded((1, 1), A, b, overwrite_ab=True,
                                  overwrite_b=True, check_finite=False)
 
         # Compute coefficients in PPoly form.
-        c0 = (s[:-1] + s[1:] - 2 * slope) / dxr**2
-        c = np.empty((4, n - 1) + y.shape[1:], dtype=c0.dtype)
-        c[0] = c0
-        c[1] = (slope - s[:-1]) / dxr - c0 * dxr
+        t = (s[:-1] + s[1:] - 2 * slope) / dxr
+        c = np.empty((4, n - 1) + y.shape[1:], dtype=t.dtype)
+        c[0] = t / dxr
+        c[1] = (slope - s[:-1]) / dxr - t
         c[2] = s[:-1]
         c[3] = y[:-1]
 
