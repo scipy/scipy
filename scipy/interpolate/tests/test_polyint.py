@@ -528,9 +528,9 @@ class TestCubicSpline(object):
 
             Y = np.empty((2, n, 2))
             Y[0, :, 0] = y[:n]
-            Y[0, :, 1] = y[:n]
-            Y[1, :, 0] = y[:n]
-            Y[1, :, 1] = y[:n]
+            Y[0, :, 1] = y[:n] - 1
+            Y[1, :, 0] = y[:n] + 2
+            Y[1, :, 1] = y[:n] + 3
             self.check_all_bc(x[:n], Y, 1)
 
     def test_periodic(self):
@@ -542,9 +542,9 @@ class TestCubicSpline(object):
 
             Y = np.empty((2, n, 2))
             Y[0, :, 0] = y
-            Y[0, :, 1] = y
-            Y[1, :, 0] = y
-            Y[1, :, 1] = y
+            Y[0, :, 1] = y + 2
+            Y[1, :, 0] = y - 1
+            Y[1, :, 1] = y + 5
             S = CubicSpline(x, Y, axis=1, bc_type='periodic')
             self.check_correctness(S, 'periodic', 'periodic')
 

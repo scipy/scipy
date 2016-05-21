@@ -694,8 +694,7 @@ class CubicSpline(PPoly):
         """
         if isinstance(bc_type, string_types):
             if bc_type == 'periodic':
-                if not np.allclose(np.take(y, 0, axis), np.take(y, -1, axis),
-                                   rtol=1e-15, atol=1e-15):
+                if not np.allclose(y[0], y[-1], rtol=1e-15, atol=1e-15):
                     raise ValueError(
                         "The first and last `y` point along axis {} must "
                         "be identical (within machine precision) when "
