@@ -530,59 +530,8 @@ class CubicSpline(PPoly):
 
         n = x.shape[0]
         y = np.rollaxis(y, axis)
-        expected_deriv_shape = y.shape[1:]
 
-        if isinstance(bc_type, string_types):
-            if bc_type == 'periodic':
-                if not np.allclose(np.take(y, 0, axis), np.take(y, -1, axis),
-                                   rtol=1e-15, atol=1e-15):
-                    raise ValueError(
-                        "The first and last `y` point along axis {} must "
-                        "be identical (within machine precision) when "
-                        "bc_type='periodic'.".format(axis))
-
-            bc_type = (bc_type, bc_type)
-
-        else:
-            if len(bc_type) != 2:
-                raise ValueError("`bc_type` must contain 2 elements to "
-                                 "specify start and end conditions.")
-
-            if 'periodic' in bc_type:
-                raise ValueError("'periodic' `bc_type` is defined for both "
-                                 "curve ends and cannot be used with other "
-                                 "boundary conditions.")
-
-        validated_bc = []
-        for bc in bc_type:
-            if isinstance(bc, string_types):
-                if bc == 'clamped':
-                    validated_bc.append((1, np.zeros(expected_deriv_shape)))
-                elif bc == 'natural':
-                    validated_bc.append((2, np.zeros(expected_deriv_shape)))
-                elif bc in ['not-a-knot', 'periodic']:
-                    validated_bc.append(bc)
-                else:
-                    raise ValueError("bc_type={} is not allowed.".format(bc))
-            else:
-                try:
-                    deriv_order, deriv_value = bc
-                except Exception:
-                    raise ValueError("A specified derivative value must be "
-                                     "given in the form (order, value).")
-
-                deriv_order = int(deriv_order)
-                if deriv_order not in [1, 2]:
-                    raise ValueError("The specified derivative order must "
-                                     "be 1 or 2.")
-
-                deriv_value = np.asarray(deriv_value)
-                if deriv_value.shape != expected_deriv_shape:
-                    raise ValueError(
-                        "`deriv_value` shape {} is not the expected one {}."
-                        .format(deriv_value.shape, expected_deriv_shape))
-
-                validated_bc.append((deriv_order, deriv_value))
+        bc = self._validate_bc(bc_type, y, y.shape[1:], axis)
 
         dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
         slope = np.diff(y, axis=0) / dxr
@@ -592,17 +541,16 @@ class CubicSpline(PPoly):
         # and the spline is just a constant, we handle this case in the same
         # way by setting the first derivatives to slope, which is 0.
         if n == 2:
-            if validated_bc[0] in ['not-a-knot', 'periodic']:
-                validated_bc[0] = (1, slope[0])
-            if validated_bc[1] in ['not-a-knot', 'periodic']:
-                validated_bc[1] = (1, slope[0])
+            if bc[0] in ['not-a-knot', 'periodic']:
+                bc[0] = (1, slope[0])
+            if bc[1] in ['not-a-knot', 'periodic']:
+                bc[1] = (1, slope[0])
 
         # This is a very special case, when both conditions are 'not-a-knot'
         # and n == 3. In this case 'not-a-knot' can't be handled regularly
         # as the both conditions are identical. We handle this case by
         # constructing a parabola passing through given points.
-        if (n == 3 and validated_bc[0] == 'not-a-knot' and
-                validated_bc[1] == 'not-a-knot'):
+        if n == 3 and bc[0] == 'not-a-knot' and bc[1] == 'not-a-knot':
             A = np.zeros((3, 3))  # This is a standard matrix.
             b = np.empty((3,) + y.shape[1:], dtype=y.dtype)
 
@@ -639,7 +587,7 @@ class CubicSpline(PPoly):
 
             b[1:-1] = 3 * (dxr[1:] * slope[:-1] + dxr[:-1] * slope[1:])
 
-            bc_start, bc_end = validated_bc
+            bc_start, bc_end = bc
 
             if bc_start == 'periodic':
                 # Due to the periodicity, and because y[-1] = y[0], the linear
@@ -736,3 +684,66 @@ class CubicSpline(PPoly):
 
         super(CubicSpline, self).__init__(c, x, extrapolate=extrapolate)
         self.axis = axis
+
+    @staticmethod
+    def _validate_bc(bc_type, y, expected_deriv_shape, axis):
+        """Validate and prepare boundary conditions.
+
+        Returns
+        -------
+        validated_bc : 2-tuple
+            Boundary conditions for a curve start and end.
+        """
+        if isinstance(bc_type, string_types):
+            if bc_type == 'periodic':
+                if not np.allclose(np.take(y, 0, axis), np.take(y, -1, axis),
+                                   rtol=1e-15, atol=1e-15):
+                    raise ValueError(
+                        "The first and last `y` point along axis {} must "
+                        "be identical (within machine precision) when "
+                        "bc_type='periodic'.".format(axis))
+
+            bc_type = (bc_type, bc_type)
+
+        else:
+            if len(bc_type) != 2:
+                raise ValueError("`bc_type` must contain 2 elements to "
+                                 "specify start and end conditions.")
+
+            if 'periodic' in bc_type:
+                raise ValueError("'periodic' `bc_type` is defined for both "
+                                 "curve ends and cannot be used with other "
+                                 "boundary conditions.")
+
+        validated_bc = []
+        for bc in bc_type:
+            if isinstance(bc, string_types):
+                if bc == 'clamped':
+                    validated_bc.append((1, np.zeros(expected_deriv_shape)))
+                elif bc == 'natural':
+                    validated_bc.append((2, np.zeros(expected_deriv_shape)))
+                elif bc in ['not-a-knot', 'periodic']:
+                    validated_bc.append(bc)
+                else:
+                    raise ValueError("bc_type={} is not allowed.".format(bc))
+            else:
+                try:
+                    deriv_order, deriv_value = bc
+                except Exception:
+                    raise ValueError("A specified derivative value must be "
+                                     "given in the form (order, value).")
+
+                deriv_order = int(deriv_order)
+                if deriv_order not in [1, 2]:
+                    raise ValueError("The specified derivative order must "
+                                     "be 1 or 2.")
+
+                deriv_value = np.asarray(deriv_value)
+                if deriv_value.shape != expected_deriv_shape:
+                    raise ValueError(
+                        "`deriv_value` shape {} is not the expected one {}."
+                        .format(deriv_value.shape, expected_deriv_shape))
+
+                validated_bc.append((deriv_order, deriv_value))
+
+        return validated_bc
