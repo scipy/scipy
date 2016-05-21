@@ -537,10 +537,6 @@ class CubicSpline(PPoly):
 
         if isinstance(bc_type, string_types):
             if bc_type == 'periodic':
-                if n == 2:
-                    raise ValueError("At least 3 points are required for "
-                                     "bc_type='periodic'.")
-
                 if not np.allclose(np.take(y, 0, axis), np.take(y, -1, axis),
                                    rtol=1e-15, atol=1e-15):
                     raise ValueError(
@@ -594,10 +590,14 @@ class CubicSpline(PPoly):
         dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
         slope = np.diff(y, axis=0) / dxr
 
+        # If bc is 'not-a-knot' this change is just a convention.
+        # If bc is 'periodic' then we already checked that y[0] == y[-1],
+        # and the spline is just a constant, we handle this case in the same
+        # way by setting the first derivatives to slope, which is 0.
         if n == 2:
-            if validated_bc[0] == 'not-a-knot':
+            if validated_bc[0] in ['not-a-knot', 'periodic']:
                 validated_bc[0] = (1, slope[0])
-            if validated_bc[1] == 'not-a-knot':
+            if validated_bc[1] in ['not-a-knot', 'periodic']:
                 validated_bc[1] = (1, slope[0])
 
         # This is a very special case, when both conditions are 'not-a-knot'
