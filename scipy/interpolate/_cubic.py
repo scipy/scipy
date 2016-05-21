@@ -387,14 +387,15 @@ class CubicSpline(PPoly):
         If `bc_type` is a 2-tuple, the first and the second value will be
         applied at the curve start and end respectively. The tuple values can
         be one of the previously mentioned strings (except 'periodic') or a
-        tuple `(order, deriv_value)` allowing to specify arbitrary
-        derivatives at curve ends. In that tuple, `order` is an int (1 or 2)
-        corresponding the derivative order and `deriv_value` is an array_like
-        holding the actual derivative values. `deriv_value` must have one
-        dimension less (the one corresponding to `axis`) than `y`. For
-        example, if `y` is 1D, the derivative value will be a scalar. If `y`
-        is 3D with the shape `(n0, n1, n2)` and `axis`=2, then the
-        `deriv_value` must be 2D and have the shape `(n0, n1)`.
+        tuple `(order, deriv_values)` allowing to specify arbitrary
+        derivatives at curve ends:
+
+        * `order`: the derivative order, 1 or 2.
+        * `deriv_value`: array_like containing derivative values, shape must
+          be the same as y, excluding `axis` dimension. For example, if `y` is
+          1D, then `deriv_value` must be a scalar. If `y` is 3D with the
+          shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2D
+          and have the shape (n0, n1).
 
     Attributes
     ----------
@@ -425,7 +426,7 @@ class CubicSpline(PPoly):
 
     Notes
     -----
-    When a boundary conditions is 'not-a-knot' and n = 2, it is replaced by
+    When a boundary condition is 'not-a-knot' and n = 2, it is replaced by
     a condition that the first derivative is equal to the linear interpolant
     slope. When both boundary conditions are 'not-a-knot' and n = 3, the
     solution is sought as a parabola passing through given points.
@@ -451,6 +452,7 @@ class CubicSpline(PPoly):
     >>> x_s = np.arange(-0.5, 9.6, 0.1)
     >>> plt.figure(figsize=(6.5, 4))
     >>> plt.plot(x, y, 'o', label='data')
+    >>> plt.plot(x_s, np.sin(x_s), label='true')
     >>> plt.plot(x_s, cs(x_s), label="S")
     >>> plt.plot(x_s, cs(x_s, 1), label="S'")
     >>> plt.plot(x_s, cs(x_s, 2), label="S''")
@@ -465,13 +467,10 @@ class CubicSpline(PPoly):
     computed. Note that a circle cannot be exactly represented by a cubic
     spline. To increase precision, more breakpoints would be required.
 
-    >>> import numpy as np
-    >>> from scipy.interpolate import CubicSpline
-    >>> import matplotlib.pyplot as plt
     >>> theta = 2 * np.pi * np.linspace(0, 1, 5)
     >>> y = np.c_[np.cos(theta), np.sin(theta)]
     >>> cs = CubicSpline(theta, y, bc_type='periodic')
-    >>> print("ds/dx=%.1f ds/dy=%.1f" % (cs(0, 1)[0], cs(0, 1)[1]))
+    >>> print("ds/dx={:.1f} ds/dy={:.1f}".format(cs(0, 1)[0], cs(0, 1)[1]))
     >>> xs = 2 * np.pi * np.linspace(0, 1, 100)
     >>> plt.figure(figsize=(6.5, 4))
     >>> plt.plot(np.cos(xs), np.sin(xs), label='true')
@@ -481,14 +480,12 @@ class CubicSpline(PPoly):
     >>> plt.legend(loc='center')
     >>> plt.show()
 
-    The third example is the interpolation of a the polynomial y=x**3 on the
-    interval 0<=x<=1. A cubic spline can represent that function exactly. The
-    minimal set of information is given: start and endpoints as well as start
-    and end slopes (first order derivatives). Note that y'=3*x**2 and thus
-    y'(0)=0 and y'(1)=3.
+    The third example is the interpolation of a polynomial y = x**3 on the
+    interval 0 <= x<= 1. A cubic spline can represent this function exactly.
+    To achieve that we need to specify values and first derivatives at
+    endpoints of the interval. Note that y' = 3 * x**2 and thus y'(0) = 0 and
+     y'(1) = 3.
 
-    >>> import numpy as np
-    >>> from scipy.interpolate import CubicSpline
     >>> cs = CubicSpline([0, 1], [0, 1], bc_type=((1, 0), (1, 3)))
     >>> x = np.linspace(0, 1)
     >>> np.allclose(x**3, cs(x))
