@@ -887,8 +887,8 @@ class PPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of derivative to evaluate. (Default: 1)
-            If negative, the antiderivative is returned.
+            Order of derivative to evaluate. Default is 1, i.e. compute the
+            first derivative. If negative, the antiderivative is returned.
 
         Returns
         -------
@@ -935,8 +935,8 @@ class PPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of antiderivative to evaluate. (Default: 1)
-            If negative, the derivative is returned.
+            Order of antiderivative to evaluate. Default is 1, i.e. compute
+            the first integral. If negative, the derivative is returned.
 
         Returns
         -------
@@ -950,6 +950,10 @@ class PPoly(_PPolyBase):
         continuously differentiable to order n-1, up to floating point
         rounding error.
 
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
+        it will be set to False for the returned instance. This is done because
+        the antiderivative is no longer periodic and its correct evaluation
+        outside of the initially given x interval is difficult.
         """
         if nu <= 0:
             return self.derivative(-nu)
@@ -967,8 +971,13 @@ class PPoly(_PPolyBase):
         _ppoly.fix_continuity(c.reshape(c.shape[0], c.shape[1], -1),
                               self.x, nu - 1)
 
+        if self.extrapolate == 'periodic':
+            extrapolate = False
+        else:
+            extrapolate = self.extrapolate
+
         # construct a compatible polynomial
-        return self.construct_fast(c, self.x, self.extrapolate, self.axis)
+        return self.construct_fast(c, self.x, extrapolate, self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """
@@ -1263,14 +1272,14 @@ class BPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of derivative to evaluate. (Default: 1)
-            If negative, the antiderivative is returned.
+            Order of derivative to evaluate. Default is 1, i.e. compute the
+            first derivative. If negative, the antiderivative is returned.
 
         Returns
         -------
         bp : BPoly
-            Piecewise polynomial of order k2 = k - nu representing the derivative
-            of this polynomial.
+            Piecewise polynomial of order k - nu representing the derivative of
+            this polynomial.
 
         """
         if nu < 0:
@@ -1316,15 +1325,21 @@ class BPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of derivative to evaluate. (Default: 1)
-            If negative, the derivative is returned.
+            Order of antiderivative to evaluate. Default is 1, i.e. compute
+            the first integral. If negative, the derivative is returned.
 
         Returns
         -------
         bp : BPoly
-            Piecewise polynomial of order k2 = k + nu representing the
+            Piecewise polynomial of order k + nu representing the
             antiderivative of this polynomial.
 
+        Notes
+        -----
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
+        it will be set to False for the returned instance. This is done because
+        the antiderivative is no longer periodic and its correct evaluation
+        outside of the initially given x interval is difficult.
         """
         if nu <= 0:
             return self.derivative(-nu)
@@ -1352,7 +1367,12 @@ class BPoly(_PPolyBase):
         # Finally, use the fact that BPs form a partition of unity.
         c2[:,1:] += np.cumsum(c2[k,:], axis=0)[:-1]
 
-        return self.construct_fast(c2, x, self.extrapolate, axis=self.axis)
+        if self.extrapolate == 'periodic':
+            extrapolate = False
+        else:
+            extrapolate = self.extrapolate
+
+        return self.construct_fast(c2, x, extrapolate, axis=self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """
