@@ -876,6 +876,17 @@ class TestPPoly(TestCase):
         assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
 
+    def test_periodic(self):
+        c = np.array([[1, 4], [2, 5], [3, 6]])
+        x = np.array([0, 0.5, 1])
+        p = PPoly(c, x, extrapolate='periodic')
+
+        assert_allclose(p(1.3), 1 * 0.3 ** 2 + 2 * 0.3 + 3)
+        assert_allclose(p(-0.3), 4 * (0.7 - 0.5) ** 2 + 5 * (0.7 - 0.5) + 6)
+
+        assert_allclose(p(1.3, 1), 2 * 0.3 + 2)
+        assert_allclose(p(-0.3, 1), 8 * (0.7 - 0.5) + 5)
+
     def test_multi_shape(self):
         c = np.random.rand(6, 2, 1, 2, 3)
         x = np.array([0, 0.5, 1])
@@ -884,8 +895,7 @@ class TestPPoly(TestCase):
         assert_equal(p.c.shape, c.shape)
         assert_equal(p(0.3).shape, c.shape[2:])
 
-        assert_equal(p(np.random.rand(5,6)).shape,
-                     (5,6) + c.shape[2:])
+        assert_equal(p(np.random.rand(5, 6)).shape, (5, 6) + c.shape[2:])
 
         dp = p.derivative()
         assert_equal(dp.c.shape, (5, 2, 1, 2, 3))
@@ -1272,6 +1282,18 @@ class TestBPoly(TestCase):
                              8 * 6 * 0.7**2 * 0.3**2 +
                              2 * 4 * 0.7 * 0.3**3 +
                                  0.3**4)
+
+    def test_periodic(self):
+        x = [0, 1, 3]
+        c = [[3, 0], [0, 0], [0, 2]]
+        # [3*(1-x)**2, 2*((x-1)/2)**2]
+        bp = BPoly(c, x, extrapolate='periodic')
+
+        assert_allclose(bp(3.4), 3 * 0.6**2)
+        assert_allclose(bp(-1.3), 2 * (0.7/2)**2)
+
+        assert_allclose(bp(3.4, 1), -6 * 0.6)
+        assert_allclose(bp(-1.3, 1), 2 * (0.7/2))
 
     def test_multi_shape(self):
         c = np.random.rand(6, 2, 1, 2, 3)

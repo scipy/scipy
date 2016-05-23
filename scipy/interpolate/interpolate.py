@@ -631,9 +631,12 @@ class _PPolyBase(object):
     def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
+
         if extrapolate is None:
             extrapolate = True
-        self.extrapolate = bool(extrapolate)
+        elif extrapolate != 'periodic':
+            extrapolate = bool(extrapolate)
+        self.extrapolate = extrapolate
 
         if not (0 <= axis < self.c.ndim - 1):
             raise ValueError("%s must be between 0 and %s" % (axis, c.ndim-1))
@@ -718,7 +721,6 @@ class _PPolyBase(object):
         right : bool, optional
             Whether the new intervals are to the right or to the left
             of the current intervals.
-
         """
         c = np.asarray(c)
         x = np.asarray(x)
@@ -760,7 +762,7 @@ class _PPolyBase(object):
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
-        Evaluate the piecewise polynomial or its derivative
+        Evaluate the piecewise polynomial or its derivative.
 
         Parameters
         ----------
@@ -768,9 +770,11 @@ class _PPolyBase(object):
             Points to evaluate the interpolant at.
         nu : int, optional
             Order of derivative to evaluate. Must be non-negative.
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
+        extrapolate : {bool, 'periodic', None}, optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used.
+            If None (default), use `self.extrapolate`.
 
         Returns
         -------
@@ -792,6 +796,13 @@ class _PPolyBase(object):
         x = np.asarray(x)
         x_shape, x_ndim = x.shape, x.ndim
         x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+
+        # With periodic extrapolation we map x to the segment
+        # [self.x[0], self.x[-1]].
+        if extrapolate == 'periodic':
+            x = self.x[0] + (x - self.x[0]) % (self.x[-1] - self.x[0])
+            extrapolate = False
+
         out = np.empty((len(x), prod(self.c.shape[2:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
         self._evaluate(x, nu, extrapolate, out)
@@ -822,9 +833,10 @@ class PPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. These must be sorted in
         increasing order.
-    extrapolate : bool, optional
-        Whether to extrapolate to out-of-bounds points based on first
-        and last intervals, or to return NaNs. Default: True.
+    extrapolate : bool or 'periodic', optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. Default is True.
     axis : int, optional
         Interpolation axis. Default is zero.
 
@@ -1178,8 +1190,9 @@ class BPoly(_PPolyBase):
         Polynomial breakpoints. These must be sorted in
         increasing order.
     extrapolate : bool, optional
-        Whether to extrapolate to out-of-bounds points based on first
-        and last intervals, or to return NaNs. Default: True.
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. Default is True.
     axis : int, optional
         Interpolation axis. Default is zero.
 
