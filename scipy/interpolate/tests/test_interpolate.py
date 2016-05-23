@@ -1481,6 +1481,30 @@ class TestBPolyCalculus(TestCase):
         assert_(np.isnan(b1.integrate(0, 2)))
         assert_allclose(b1.integrate(0, 2, extrapolate=True), 2., atol=1e-14)
 
+    def test_integrate_periodic(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        P = BPoly.from_power_basis(PPoly(c, x), extrapolate='periodic')
+        I = P.antiderivative()
+
+        period_int = I(4) - I(1)
+
+        assert_allclose(P.integrate(1, 4), period_int)
+        assert_allclose(P.integrate(-10, -7), period_int)
+        assert_allclose(P.integrate(-10, -4), 2 * period_int)
+
+        assert_allclose(P.integrate(1.5, 2.5), I(2.5) - I(1.5))
+        assert_allclose(P.integrate(3.5, 5), I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5 + 12, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5) + 4 * period_int)
+
+        assert_allclose(P.integrate(0, -1), I(2) - I(3))
+        assert_allclose(P.integrate(-9, -10), I(2) - I(3))
+        assert_allclose(P.integrate(0, -10), I(2) - I(3) - 3 * period_int)
+
     def test_antider_neg(self):
         # .derivative(-nu) ==> .andiderivative(nu) and vice versa
         c = [[1]]

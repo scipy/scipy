@@ -1426,10 +1426,10 @@ class BPoly(_PPolyBase):
             Lower integration bound
         b : float
             Upper integration bound
-        extrapolate : bool, optional
+        extrapolate : {bool, 'periodic', None}, optional
             Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
-            Defaults to ``self.extrapolate``.
+            and last intervals, or to return NaNs. If 'periodic', periodic
+            extrapolation is used. If None (default), use `self.extrapolate`.
 
         Returns
         -------
@@ -1440,9 +1440,46 @@ class BPoly(_PPolyBase):
         # XXX: can probably use instead the fact that
         # \int_0^{1} B_{j, n}(x) \dx = 1/(n+1)
         ib = self.antiderivative()
-        if extrapolate is not None:
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+
+        # ib.extrapolate shouldn't be 'periodic', it is converted to
+        # False for 'periodic. in antiderivative() call.
+        if extrapolate != 'periodic':
             ib.extrapolate = extrapolate
-        return ib(b) - ib(a)
+
+        if extrapolate == 'periodic':
+            # Split the integral into the part over period (can be several
+            # of them) and the remaining part.
+
+            # For simplicity and clarity convert to a <= b case.
+            if a <= b:
+                sign = 1
+            else:
+                a, b = b, a
+                sign = -1
+
+            xs, xe = self.x[0], self.x[-1]
+            period = xe - xs
+            interval = b - a
+            n_periods = int(interval / period)
+
+            res = n_periods * (ib(xe) - ib(xs))
+
+            # Map a and b to [xs, xe].
+            a = xs + (a - xs) % period
+            b = xs + (b - xs) % period
+
+            # If a <= b, then we need to integrate over [a, b], otherwise
+            # over and [a, xe] and [xs, b].
+            if a <= b:
+                res += ib(b) - ib(a)
+            else:
+                res += ib(xe) - ib(a) + ib(b) - ib(xs)
+
+            return sign * res
+        else:
+            return ib(b) - ib(a)
 
     def extend(self, c, x, right=True):
         k = max(self.c.shape[0], c.shape[0])
