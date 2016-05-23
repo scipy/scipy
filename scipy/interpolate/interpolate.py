@@ -989,15 +989,15 @@ class PPoly(_PPolyBase):
             Lower integration bound
         b : float
             Upper integration bound
-        extrapolate : bool, optional
+        extrapolate : {bool, 'periodic', None}, optional
             Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
+            and last intervals, or to return NaNs. If 'periodic', periodic
+            extrapolation is used. If None (default), use `self.extrapolate`.
 
         Returns
         -------
         ig : array_like
             Definite integral of the piecewise polynomial over [a, b]
-
         """
         if extrapolate is None:
             extrapolate = self.extrapolate
@@ -1008,12 +1008,54 @@ class PPoly(_PPolyBase):
             a, b = b, a
             sign = -1
 
-        # Compute the integral
         range_int = np.empty((prod(self.c.shape[2:]),), dtype=self.c.dtype)
         self._ensure_c_contiguous()
-        _ppoly.integrate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-                         self.x, a, b, bool(extrapolate),
-                         out=range_int)
+
+        # Compute the integral.
+        if extrapolate == 'periodic':
+            # Split the integral into the part over period (can be several
+            # of them) and the remaining part.
+
+            xs, xe = self.x[0], self.x[-1]
+            period = xe - xs
+            interval = b - a
+            n_periods = int(interval / period)
+
+            if n_periods > 0:
+                _ppoly.integrate(
+                    self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                    self.x, xs, xe, False, out=range_int)
+                range_int *= n_periods
+                a += n_periods * period
+            else:
+                range_int.fill(0)
+
+            # Map a and b to [xs, xe].
+            a = xs + (a - xs) % period
+            b = xs + (b - xs) % period
+
+            # If a <= b, then we need to integrate over [a, b], otherwise
+            # over and [a, xe] and [xs, b].
+            remainder_int = np.empty_like(range_int)
+            if a <= b:
+                _ppoly.integrate(
+                    self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                    self.x, a, b, False, out=remainder_int)
+                range_int += remainder_int
+            else:
+                _ppoly.integrate(
+                    self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                    self.x, a, xe, False, out=remainder_int)
+                range_int += remainder_int
+
+                _ppoly.integrate(
+                    self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                    self.x, xs, b, False, out=remainder_int)
+                range_int += remainder_int
+        else:
+            _ppoly.integrate(
+                self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                self.x, a, b, bool(extrapolate), out=range_int)
 
         # Return
         range_int *= sign
