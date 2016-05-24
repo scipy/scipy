@@ -626,11 +626,13 @@ class _PPolyBase(object):
     """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
-    def __init__(self, c, x, extrapolate=True, axis=0):
+    def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
 
-        if extrapolate != 'periodic':
+        if extrapolate is None:
+            extrapolate = True
+        elif extrapolate != 'periodic':
             extrapolate = bool(extrapolate)
         self.extrapolate = extrapolate
 
@@ -1156,7 +1158,7 @@ class PPoly(_PPolyBase):
         return self.solve(0, discontinuity, extrapolate)
 
     @classmethod
-    def from_spline(cls, tck, extrapolate=True):
+    def from_spline(cls, tck, extrapolate=None):
         """
         Construct a piecewise polynomial from a spline
 
@@ -1179,7 +1181,7 @@ class PPoly(_PPolyBase):
         return cls.construct_fast(cvals, t, extrapolate)
 
     @classmethod
-    def from_bernstein_basis(cls, bp, extrapolate=True):
+    def from_bernstein_basis(cls, bp, extrapolate=None):
         """
         Construct a piecewise polynomial in the power basis
         from a polynomial in Bernstein basis.
@@ -1482,7 +1484,7 @@ class BPoly(_PPolyBase):
     extend.__doc__ = _PPolyBase.extend.__doc__
 
     @classmethod
-    def from_power_basis(cls, pp, extrapolate=True):
+    def from_power_basis(cls, pp, extrapolate=None):
         """
         Construct a piecewise polynomial in Bernstein basis
         from a power basis polynomial.
@@ -1513,7 +1515,7 @@ class BPoly(_PPolyBase):
         return cls.construct_fast(c, pp.x, extrapolate, pp.axis)
 
     @classmethod
-    def from_derivatives(cls, xi, yi, orders=None, extrapolate=True):
+    def from_derivatives(cls, xi, yi, orders=None, extrapolate=None):
         """Construct a piecewise polynomial in the Bernstein basis,
         compatible with the specified values and derivatives at breakpoints.
 

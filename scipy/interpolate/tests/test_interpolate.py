@@ -1251,7 +1251,7 @@ class TestPPoly(TestCase):
         c = np.array([[-1, 0, 1]]).T
         x = np.array([0, 1])
 
-        for extrapolate in [True, False]:
+        for extrapolate in [True, False, None]:
             pp = PPoly(c, x, extrapolate=extrapolate)
             pp_d = pp.derivative()
             pp_i = pp.antiderivative()
@@ -1353,7 +1353,7 @@ class TestBPoly(TestCase):
         c = [[3], [1], [4]]
         bp = BPoly(c, x)
 
-        for extrapolate in (True, False):
+        for extrapolate in (True, False, None):
             bp = BPoly(c, x, extrapolate=extrapolate)
             bp_d = bp.derivative()
             if extrapolate is False:
