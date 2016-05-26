@@ -394,26 +394,29 @@ class TestFirls(TestCase):
 
     def test_bad_args(self):
         # even numtaps
-        assert_raises(ValueError, firls, 10, [0.1, 0.2], [0])
+        assert_raises(ValueError, firls, 10, [0.1, 0.2], [0, 0])
         # odd bands
-        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.4], [0])
-        # len(bands) != 2*len(desired)
-        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.3, 0.4], [0])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.4], [0, 0, 0])
+        # len(bands) != len(desired)
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.3, 0.4], [0, 0, 0])
         # non-monotonic bands
-        assert_raises(ValueError, firls, 11, [0.2, 0.1], [0])
+        assert_raises(ValueError, firls, 11, [0.2, 0.1], [0, 0])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.3, 0.3], [0] * 4)
+        assert_raises(ValueError, firls, 11, [0.3, 0.4, 0.1, 0.2], [0] * 4)
+        assert_raises(ValueError, firls, 11, [0.1, 0.3, 0.2, 0.4], [0] * 4)
         # negative desired
-        assert_raises(ValueError, firls, 11, [0.1, 0.2], [-1])
-        # len(weight) != len(desired)
-        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0], [1, 2])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [-1, 1])
+        # len(weight) != len(pairs)
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [1, 2])
         # negative weight
-        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0], [-1])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [-1])
 
     def test_firls(self):
         N = 11  # number of taps in the filter
         a = 0.1  # width of the transition band
 
         # design a halfband symmetric low-pass filter
-        h = firls(11, [0, a, 0.5-a, 0.5], [1, 0], nyq=0.5)
+        h = firls(11, [0, a, 0.5-a, 0.5], [1, 1, 0, 0], nyq=0.5)
 
         # make sure the filter has correct # of taps
         assert_equal(len(h), N)
@@ -445,7 +448,7 @@ class TestFirls(TestCase):
 
     def test_compare(self):
         # compare to OCTAVE output
-        taps = firls(9, [0, 0.5, 0.55, 1], [1, 0], [1, 2])
+        taps = firls(9, [0, 0.5, 0.55, 1], [1, 1, 0, 0], [1, 2])
         # >> taps = firls(8, [0 0.5 0.55 1], [1 1 0 0], [1, 2]);
         known_taps = [-6.26930101730182e-04, -1.03354450635036e-01,
                       -9.81576747564301e-03, 3.17271686090449e-01,
@@ -455,13 +458,22 @@ class TestFirls(TestCase):
         assert_allclose(taps, known_taps)
 
         # compare to MATLAB output
-        taps = firls(11, [0, 0.5, 0.5, 1], [1, 0], [1, 2])
+        taps = firls(11, [0, 0.5, 0.5, 1], [1, 1, 0, 0], [1, 2])
         # >> taps = firls(10, [0 0.5 0.5 1], [1 1 0 0], [1, 2]);
         known_taps = [
             0.058545300496815, -0.014233383714318, -0.104688258464392,
             0.012403323025279, 0.317930861136062, 0.488047220029700,
             0.317930861136062, 0.012403323025279, -0.104688258464392,
             -0.014233383714318, 0.058545300496815]
+        assert_allclose(taps, known_taps)
+
+        # With linear changes:
+        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
+        # >> taps = firls(6, [0, 0.1, 0.2, 0.3, 0.4, 0.5], [1, 0, 0, 1, 1, 0])
+        known_taps = [
+            1.156090832768218, -4.1385894727395849, 7.5288619164321826,
+            -8.5530572592947856, 7.5288619164321826, -4.1385894727395849,
+            1.156090832768218]
         assert_allclose(taps, known_taps)
 
 if __name__ == "__main__":
