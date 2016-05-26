@@ -203,9 +203,9 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 
     See also
     --------
-    scipy.signal.firwin2
-    scipy.signal.firls
-    scipy.signal.remez
+    firwin2
+    firls
+    remez
 
     Examples
     --------
@@ -632,8 +632,8 @@ def firls(numtaps, bands, desired, weight=None, nyq=1.):
         the least squares problem. `weight` has to be half the size of
         `bands`.
     nyq : float, optional
-        Nyquist frequency. Each frequency in freq must be between 0 and
-        `nyq` (inclusive).
+        Nyquist frequency. Each frequency in `bands` must be between 0
+        and `nyq` (inclusive).
 
     Returns
     -------
@@ -642,34 +642,8 @@ def firls(numtaps, bands, desired, weight=None, nyq=1.):
 
     See also
     --------
-    scipy.signal.firwin
-    scipy.signal.firwin2
-
-    Examples
-    --------
-    We want to construct a band-pass filter. Note that the behavior in the
-    frequency ranges between our stop bands and pass bands is unspecified,
-    and thus may overshoot depending on the parameters of our filter:
-
-    >>> from scipy import signal
-    >>> import matplotlib.pyplot as plt
-    >>> fig, axs = plt.subplots(2)
-    >>> nyq = 5.  # Hz
-    >>> desired = (0, 0, 1, 1, 0, 0)
-    >>> for bi, bands in enumerate(((0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 4.45, 5))):
-    ...     fir_firls = signal.firls(73, bands, desired, nyq=nyq)
-    ...     fir_remez = signal.remez(73, bands, desired[::2], Hz=2 * nyq)
-    ...     fir_firwin2 = signal.firwin2(73, bands, desired, nyq=nyq)
-    ...     hs = list()
-    ...     ax = axs[bi]
-    ...     for fir in (fir_firls, fir_remez, fir_firwin2):
-    ...         freq, response = signal.freqz(fir)
-    ...         hs.append(ax.semilogy(nyq*freq/(np.pi), np.abs(response))[0])
-    ...     for band, gains in zip(zip(bands[::2], bands[1::2]), zip(desired[::2], desired[1::2])):
-    ...         ax.semilogy(band, np.maximum(gains, 1e-7), 'k--', linewidth=2)
-    ...     ax.legend(hs, ('firls', 'remez', 'firwin2'), loc='lower center')
-    ...
-    >>> plt.show()
+    firwin
+    firwin2
 
     Notes
     -----
@@ -691,11 +665,46 @@ def firls(numtaps, bands, desired, weight=None, nyq=1.):
     conditions that could otherwise occur at the Nyquist and 0 frequencies
     (e.g., for Type II, III, or IV variants).
 
+    .. versionadded:: 0.18
+
     References
     ----------
-    .. [1] http://cnx.org/contents/6x7LNQOp@7/Linear-Phase-Fir-Filter-Design
+    .. [1] Ivan Selesnick, Linear-Phase Fir Filter Design By Least Squares.
+           OpenStax CNX. Aug 9, 2005.
+           http://cnx.org/contents/eb1ecb35-03a9-4610-ba87-41cd771c95f2@7
 
-    .. versionadded:: 0.18
+    Examples
+    --------
+    We want to construct a band-pass filter. Note that the behavior in the
+    frequency ranges between our stop bands and pass bands is unspecified,
+    and thus may overshoot depending on the parameters of our filter:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> fig, axs = plt.subplots(2)
+    >>> nyq = 5.  # Hz
+    >>> desired = (0, 0, 1, 1, 0, 0)
+    >>> for bi, bands in enumerate(((0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 4.5, 5))):
+    ...     fir_firls = signal.firls(73, bands, desired, nyq=nyq)
+    ...     fir_remez = signal.remez(73, bands, desired[::2], Hz=2 * nyq)
+    ...     fir_firwin2 = signal.firwin2(73, bands, desired, nyq=nyq)
+    ...     hs = list()
+    ...     ax = axs[bi]
+    ...     for fir in (fir_firls, fir_remez, fir_firwin2):
+    ...         freq, response = signal.freqz(fir)
+    ...         hs.append(ax.semilogy(nyq*freq/(np.pi), np.abs(response))[0])
+    ...     for band, gains in zip(zip(bands[::2], bands[1::2]), zip(desired[::2], desired[1::2])):
+    ...         ax.semilogy(band, np.maximum(gains, 1e-7), 'k--', linewidth=2)
+    ...     if bi == 0:
+    ...         ax.legend(hs, ('firls', 'remez', 'firwin2'), loc='lower center', frameon=False)
+    ...     else:
+    ...         ax.set_xlabel('Frequency (Hz)')
+    ...     ax.grid(True)
+    ...     ax.set(title='Band-pass %d-%d Hz' % bands[2:4], ylabel='Magnitude')
+    ...
+    >>> fig.tight_layout()
+    >>> plt.show()
+
     """  # noqa
     numtaps = int(numtaps)
     if numtaps % 2 == 0 or numtaps < 1:
