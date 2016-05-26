@@ -12,6 +12,7 @@ from ._upfirdn import upfirdn, _UpFIRDn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
+sum_builtin = sum
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
@@ -30,6 +31,7 @@ if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
 else:
     from fractions import gcd
+import math
 
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
@@ -414,16 +416,6 @@ def _numeric_arrays(arrays, kinds='buifc'):
         The dtypes of the arrays to be checked. If the dtype.kind of
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
-
-    Examples
-    --------
-
-    >>> x = np.array([1, 2, 3])
-    >>> y = x.copy()
-    >>> assert _numeric_arrays((x, y))
-    >>> obj = np.array(['this', 'is', 'not', 'numeric'])
-    >>> assert not _numeric_arrays(obj)
-
     """
     if type(arrays) == ndarray:
         return arrays.dtype.kind in kinds
@@ -456,28 +448,25 @@ def _fftconv_faster(x, h, mode):
     """
     if mode == 'full':
         out_shape = [n + k - 1 for n, k in zip(x.shape, h.shape)]
+        big_O_constant = 10963.92823819 if x.ndim == 1 else 8899.1104874
     elif mode == 'same':
         out_shape = x.shape
+        oneD_big_O = {True: 7183.41306773, False: 856.78174111}
+        big_O_constant = oneD_big_O[h.size <= x.size] if x.ndim == 1 \
+                                                      else 34519.21021589
     elif mode == 'valid':
+        shape_diff = _prod([n - k for n, k in zip(x.shape, h.shape)])
         out_shape = [n - k + 1 for n, k in zip(x.shape, h.shape)]
+        big_O_constant = 41954.28006344 if x.ndim == 1 else 66453.24316434
     else:
         raise ValueError('mode is invalid')
 
     # see whether the Fourier transform convolution method or the direct
     # convolution method is faster (discussed in scikit-image PR #1792)
-    big_O_constant = 5e-6 if x.ndim > 1 else 4.81e-4
-    direct_time = big_O_constant * (x.size * h.size * _prod(out_shape))
-    fft_time = np.sum([n * np.log(n) for n in (x.shape + h.shape +
-                                               tuple(out_shape))])
-    if mode == 'valid':
-        shape_diff = _prod([n - k for n, k in zip(x.shape, h.shape)])
-        # this decision was calculated with a single dimension
-        shape_diff = np.power(np.abs(shape_diff), 1 / x.ndim)
-        if (x.ndim == 1 and shape_diff < 300) or \
-           (x.ndim < 6 and shape_diff <= 2) or (shape_diff == 0):
-            return False
-
-    return fft_time < direct_time
+    direct_time = (x.size * h.size * _prod(out_shape))
+    fft_time = sum_builtin(n * np.log(n) for n in (x.shape + h.shape +
+                                               tuple(out_shape)))
+    return big_O_constant * fft_time < direct_time
 
 
 def _reverse_and_conj(x):
@@ -498,7 +487,7 @@ def _np_conv_ok(volume, kernel, mode):
     return np_conv_ok and (volume.size >= kernel.size or mode != 'same')
 
 
-def _choose_fft_or_direct(volume, kernel, mode):
+def _choose_conv_method(volume, kernel, mode):
     # fftconvolve doesn't support complex256
     if hasattr(np, "complex256"):
         if volume.dtype == 'complex256' or kernel.dtype == 'complex256':
@@ -513,11 +502,10 @@ def _choose_fft_or_direct(volume, kernel, mode):
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
-    if _numeric_arrays([volume, kernel]):
-        if _fftconv_faster(volume, kernel, mode):
-            return 'fft'
-    else:
-        return 'direct'
+    if _numeric_arrays([volume, kernel]) and _fftconv_faster(volume,
+                                                             kernel, mode):
+        return 'fft'
+    return 'direct'
 
 
 def convolve(in1, in2, mode='full', method='auto'):
@@ -614,16 +602,18 @@ def convolve(in1, in2, mode='full', method='auto'):
         # Convolution is commutative; order doesn't have any effect on output
         volume, kernel = kernel, volume
 
+    if method == 'fft' and volume.dtype.kind not in 'buifc' \
+                       and kernel.dtype.kind not in 'buifc':
+        raise ValueError("fftconvolve only supports numeric dtypes")
+
     if method == 'auto':
-        method = _choose_fft_or_direct(volume, kernel, mode)
+        method = _choose_conv_method(volume, kernel, mode)
 
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
         if volume.dtype.kind in 'ui':
             out = np.around(out)
-            return np.asarray(out, dtype=volume.dtype)
-        else:
-            return out
+        return out.astype(volume.dtype)
 
     # fastpath to faster numpy convolve for 1d inputs
     if _np_conv_ok(volume, kernel, mode):
