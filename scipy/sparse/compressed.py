@@ -614,14 +614,32 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         i, j = self._index_to_arrays(i, j)
 
         if isspmatrix(x):
-            x = x.toarray()
+            broadcast_row = x.shape[0] == 1 and i.shape[0] != 1
+            broadcast_col = x.shape[1] == 1 and i.shape[1] != 1
+            if not ((broadcast_row or x.shape[0] == i.shape[0]) and
+                    (broadcast_col or x.shape[1] == i.shape[1])):
+                raise ValueError("shape mismatch in assignment")
 
-        # Make x and i into the same shape
-        x = np.asarray(x, dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, i)
+            x = x.tocoo()
+            r, c = x.row, x.col
+            x = np.asarray(x.data, dtype=self.dtype)
+            if broadcast_row:
+                r = np.repeat(np.arange(i.shape[0]), len(r))
+                c = np.tile(c, i.shape[0])
+                x = np.tile(x, i.shape[0])
+            if broadcast_col:
+                r = np.repeat(r, i.shape[1])
+                c = np.tile(np.arange(i.shape[1]), len(c))
+                x = np.repeat(x, i.shape[1])
+            i = i[r, c]
+            j = j[r, c]
+        else:
+            # Make x and i into the same shape
+            x = np.asarray(x, dtype=self.dtype)
+            x, _ = np.broadcast_arrays(x, i)
 
-        if x.shape != i.shape:
-            raise ValueError("shape mismatch in assignment")
+            if x.shape != i.shape:
+                raise ValueError("shape mismatch in assignment")
 
         if np.size(x) == 0:
             return

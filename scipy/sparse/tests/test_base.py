@@ -2415,10 +2415,11 @@ class _TestSlicingAssign:
             A = B / 10
             B[0,:] = A[0,:]
             assert_array_equal(A[0,:].A, B[0,:].A)
+            assert_equal(A.nnz, B.nnz)
 
             A = B / 10
             B[:,:] = A[:1,:1]
-            assert_equal(A[0,0], B[3,2])
+            assert_array_equal(np.zeros((4,3)) + A[0,0], B.A)
 
             A = B / 10
             B[:-1,0] = A[0,:].T
