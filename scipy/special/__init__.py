@@ -6,7 +6,13 @@ Special functions (:mod:`scipy.special`)
 .. module:: scipy.special
 
 Nearly all of the functions below are universal functions and follow
-broadcasting and automatic array-looping rules. Exceptions are noted.
+broadcasting and automatic array-looping rules. Exceptions are
+noted.
+
+.. seealso::
+
+   `scipy.special.cython_special` -- Typed Cython versions of special functions
+
 
 Error handling
 ==============

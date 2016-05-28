@@ -208,6 +208,8 @@ scipy/special/_ufuncs.h
 scipy/special/_ufuncs_cxx.cxx
 scipy/special/_ufuncs_cxx.h
 scipy/special/specfunmodule.c
+scipy/special/cython_special.c
+scipy/special/cython_special.h
 scipy/stats/_rank.c
 scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c
