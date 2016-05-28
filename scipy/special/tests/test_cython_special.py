@@ -215,7 +215,7 @@ def test_cython_api():
     def check(param):
         pyfunc, cyfunc, specializations = param
         for typecodes in specializations:
-            if "f" in typecodes or "F" in typecodes                or "g" in typecodes or "G" in typecodes:
+            if "f" in typecodes or "F" in typecodes or "g" in typecodes or "G" in typecodes:
                 # Don't test np.float32, np.complex64, np.longdouble,
                 # or np.longcomplex
                 continue
