@@ -5,14 +5,23 @@ C
 C       Copyrighted but permission granted to use code in programs.
 C       Buy their book "Computation of Special Functions", 1996, John Wiley & Sons, Inc.
 C
+C       Scipy changes:
+C       - Compiled into a single source file and changed REAL To DBLE throughout.
+C       - Changed according to ERRATA.
+C       - Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid potential conflicts.
+C       - Made functions return sf_error codes in ISFER variables instead
+C         of printing warnings. The codes are
+C         - SF_ERROR_OK        = 0: no error
+C         - SF_ERROR_SINGULAR  = 1: singularity encountered
+C         - SF_ERROR_UNDERFLOW = 2: floating point underflow
+C         - SF_ERROR_OVERFLOW  = 3: floating point overflow
+C         - SF_ERROR_SLOW      = 4: too many iterations required
+C         - SF_ERROR_LOSS      = 5: loss of precision
+C         - SF_ERROR_NO_RESULT = 6: no result obtained
+C         - SF_ERROR_DOMAIN    = 7: out of domain
+C         - SF_ERROR_ARG       = 8: invalid input parameter
+C         - SF_ERROR_OTHER     = 9: unclassified error
 C
-C      Compiled into a single source file and changed REAL To DBLE throughout.
-C
-C      Changed according to ERRATA also.
-C
-C      Changed GAMMA to GAMMA2 and PSI to PSI_SPEC to avoid potential conflicts.
-C
-
         FUNCTION DNAN()
         DOUBLE PRECISION DNAN
         DNAN = 0.0D0
@@ -3896,7 +3905,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE INCOG(A,X,GIN,GIM,GIP)
+        SUBROUTINE INCOG(A,X,GIN,GIM,GIP,ISFER)
 C
 C       ===================================================
 C       Purpose: Compute the incomplete gamma function
@@ -3906,14 +3915,16 @@ C                x   --- Argument
 C       Output:  GIN --- r(a,x)
 C                GIM --- Г(a,x)
 C                GIP --- P(a,x)
+C                ISFER --- Error flag
 C       Routine called: GAMMA2 for computing Г(x)
 C       ===================================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+        ISFER=0
         XAM=-X+A*DLOG(X)
         IF (XAM.GT.700.0.OR.A.GT.170.0) THEN
-           WRITE(*,*)'a and/or x too large'
-           STOP
+           ISFER=6
+           RETURN
         ENDIF
         IF (X.EQ.0.0) THEN
            GIN=0.0
@@ -4968,7 +4979,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE CHGU(A,B,X,HU,MD)
+        SUBROUTINE CHGU(A,B,X,HU,MD,ISFER)
 C
 C       =======================================================
 C       Purpose: Compute the confluent hypergeometric function
@@ -4978,6 +4989,7 @@ C                b  --- Parameter
 C                x  --- Argument  ( x > 0 )
 C       Output:  HU --- U(a,b,x)
 C                MD --- Method code
+C                ISFER --- Error flag
 C       Routines called:
 C            (1) CHGUS for small x ( MD=1 )
 C            (2) CHGUL for large x ( MD=2 )
@@ -4988,6 +5000,7 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         LOGICAL IL1,IL2,IL3,BL1,BL2,BL3,BN
         AA=A-B+1.0D0
+        ISFER=0
         IL1=A.EQ.INT(A).AND.A.LE.0.0
         IL2=AA.EQ.INT(AA).AND.AA.LE.0.0
         IL3=ABS(A*(A-B+1.0))/X.LE.2.0
@@ -5037,7 +5050,7 @@ C
               MD=3
            ENDIF
         ENDIF
-        IF (ID.LT.6) WRITE(*,*)'No accurate result obtained'
+        IF (ID.LT.6) ISFER=6
         RETURN
         END
 
@@ -5837,7 +5850,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE HYGFX(A,B,C,X,HF)
+        SUBROUTINE HYGFX(A,B,C,X,HF,ISFER)
 C
 C       ====================================================
 C       Purpose: Compute hypergeometric function F(a,b,c,x)
@@ -5846,6 +5859,7 @@ C                b --- Parameter
 C                c --- Parameter, c <> 0,-1,-2,...
 C                x --- Argument   ( x < 1 )
 C       Output:  HF --- F(a,b,c,x)
+C                ISFER --- Error flag
 C       Routines called:
 C            (1) GAMMA2 for computing gamma function
 C            (2) PSI_SPEC for computing psi function
@@ -5855,6 +5869,7 @@ C
         LOGICAL L0,L1,L2,L3,L4,L5
         PI=3.141592653589793D0
         EL=.5772156649015329D0
+        ISFER=0
         L0=C.EQ.INT(C).AND.C.LT.0.0
         L1=1.0D0-X.LT.1.0D-15.AND.C-A-B.LE.0.0
         L2=A.EQ.INT(A).AND.A.LT.0.0
@@ -5862,7 +5877,7 @@ C
         L4=C-A.EQ.INT(C-A).AND.C-A.LE.0.0
         L5=C-B.EQ.INT(C-B).AND.C-B.LE.0.0
         IF (L0.OR.L1) THEN
-           WRITE(*,*)'The hypergeometric series is divergent'
+           ISFER=3
            RETURN
         ENDIF
         EPS=1.0D-15
@@ -6027,8 +6042,7 @@ C
         ENDIF
         A=AA
         B=BB
-        IF (K.GT.120) WRITE(*,115)
-115     FORMAT(1X,'Warning! You should check the accuracy')
+        IF (K.GT.120) ISFER=5
         RETURN
         END
 
@@ -6159,7 +6173,7 @@ C
 
 C       **********************************
 
-        SUBROUTINE HYGFZ(A,B,C,Z,ZHF)
+        SUBROUTINE HYGFZ(A,B,C,Z,ZHF,ISFER)
 C
 C       ======================================================
 C       Purpose: Compute the hypergeometric function for a
@@ -6169,6 +6183,7 @@ C                b --- Parameter
 C                c --- Parameter,  c <> 0,-1,-2,...
 C                z --- Complex argument
 C       Output:  ZHF --- F(a,b,c,z)
+C                ISFER --- Error flag
 C       Routines called:
 C            (1) GAMMA2 for computing gamma function
 C            (2) PSI_SPEC for computing psi function
@@ -6180,6 +6195,7 @@ C
         X=DBLE(Z)
         Y=DIMAG(Z)
         EPS=1.0D-15
+        ISFER=0
         L0=C.EQ.INT(C).AND.C.LT.0.0D0
         L1=DABS(1.0D0-X).LT.EPS.AND.Y.EQ.0.0D0.AND.C-A-B.LE.0.0D0
         L2=CDABS(Z+1.0D0).LT.EPS.AND.DABS(C-A+B-1.0D0).LT.EPS
@@ -6194,8 +6210,7 @@ C
         PI=3.141592653589793D0
         EL=.5772156649015329D0
         IF (L0.OR.L1) THEN
-C           WRITE(*,*)'The hypergeometric series is divergent'
-           ZHF = 1.0D300
+           ISFER=3
            RETURN
         ENDIF
         NM=0
@@ -6441,8 +6456,7 @@ C           WRITE(*,*)'The hypergeometric series is divergent'
         ENDIF
         A=AA
         B=BB
-        IF (K.GT.150) WRITE(*,160)
-160     FORMAT(1X,'Warning! You should check the accuracy')
+        IF (K.GT.150) ISFER=5
         RETURN
         END
 
