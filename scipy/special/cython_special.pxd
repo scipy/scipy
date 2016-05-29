@@ -10,17 +10,13 @@ ctypedef fused dfg_number_t:
     float
     long double
 
-ctypedef fused di_number_t:
-    double
-    int
-
 ctypedef fused dl_number_t:
     double
     long
 
-cpdef double bdtr(di_number_t x0, di_number_t x1, double x2) nogil
-cpdef double bdtrc(di_number_t x0, di_number_t x1, double x2) nogil
-cpdef double bdtri(di_number_t x0, di_number_t x1, double x2) nogil
+cpdef double bdtr(dl_number_t x0, dl_number_t x1, double x2) nogil
+cpdef double bdtrc(dl_number_t x0, dl_number_t x1, double x2) nogil
+cpdef double bdtri(dl_number_t x0, dl_number_t x1, double x2) nogil
 cpdef double bdtrik(double x0, double x1, double x2) nogil
 cpdef double bdtrin(double x0, double x1, double x2) nogil
 cpdef double bei(double x0) nogil
@@ -82,7 +78,7 @@ cpdef double exp2(double x0) nogil
 cpdef Dd_number_t expi(Dd_number_t x0) nogil
 cpdef dfg_number_t expit(dfg_number_t x0) nogil
 cpdef Dd_number_t expm1(Dd_number_t x0) nogil
-cpdef double expn(di_number_t x0, double x1) nogil
+cpdef double expn(dl_number_t x0, double x1) nogil
 cpdef double exprel(double x0) nogil
 cpdef double fdtr(double x0, double x1, double x2) nogil
 cpdef double fdtrc(double x0, double x1, double x2) nogil
@@ -132,7 +128,7 @@ cpdef double keip(double x0) nogil
 cpdef double ker(double x0) nogil
 cpdef double kerp(double x0) nogil
 cpdef double kl_div(double x0, double x1) nogil
-cpdef double kn(di_number_t x0, double x1) nogil
+cpdef double kn(dl_number_t x0, double x1) nogil
 cpdef double kolmogi(double x0) nogil
 cpdef double kolmogorov(double x0) nogil
 cpdef Dd_number_t kv(double x0, Dd_number_t x1) nogil
@@ -145,9 +141,9 @@ cpdef double lpmv(double x0, double x1, double x2) nogil
 cpdef double mathieu_a(double x0, double x1) nogil
 cpdef double mathieu_b(double x0, double x1) nogil
 cpdef double modstruve(double x0, double x1) nogil
-cpdef double nbdtr(di_number_t x0, di_number_t x1, double x2) nogil
-cpdef double nbdtrc(di_number_t x0, di_number_t x1, double x2) nogil
-cpdef double nbdtri(di_number_t x0, di_number_t x1, double x2) nogil
+cpdef double nbdtr(dl_number_t x0, dl_number_t x1, double x2) nogil
+cpdef double nbdtrc(dl_number_t x0, dl_number_t x1, double x2) nogil
+cpdef double nbdtri(dl_number_t x0, dl_number_t x1, double x2) nogil
 cpdef double nbdtrik(double x0, double x1, double x2) nogil
 cpdef double nbdtrin(double x0, double x1, double x2) nogil
 cpdef double ncfdtr(double x0, double x1, double x2, double x3) nogil
@@ -164,9 +160,9 @@ cpdef double ndtri(double x0) nogil
 cpdef double nrdtrimn(double x0, double x1, double x2) nogil
 cpdef double nrdtrisd(double x0, double x1, double x2) nogil
 cpdef double obl_cv(double x0, double x1, double x2) nogil
-cpdef double pdtr(di_number_t x0, double x1) nogil
-cpdef double pdtrc(di_number_t x0, double x1) nogil
-cpdef double pdtri(di_number_t x0, double x1) nogil
+cpdef double pdtr(dl_number_t x0, double x1) nogil
+cpdef double pdtrc(dl_number_t x0, double x1) nogil
+cpdef double pdtri(dl_number_t x0, double x1) nogil
 cpdef double pdtrik(double x0, double x1) nogil
 cpdef double poch(double x0, double x1) nogil
 cpdef double pro_cv(double x0, double x1, double x2) nogil
@@ -177,10 +173,10 @@ cpdef double rel_entr(double x0, double x1) nogil
 cpdef Dd_number_t rgamma(Dd_number_t x0) nogil
 cpdef double round(double x0) nogil
 cpdef double sindg(double x0) nogil
-cpdef double smirnov(di_number_t x0, double x1) nogil
-cpdef double smirnovi(di_number_t x0, double x1) nogil
+cpdef double smirnov(dl_number_t x0, double x1) nogil
+cpdef double smirnovi(dl_number_t x0, double x1) nogil
 cpdef Dd_number_t spence(Dd_number_t x0) nogil
-cpdef double complex sph_harm(di_number_t x0, di_number_t x1, double x2, double x3) nogil
+cpdef double complex sph_harm(dl_number_t x0, dl_number_t x1, double x2, double x3) nogil
 cpdef double stdtr(double x0, double x1) nogil
 cpdef double stdtridf(double x0, double x1) nogil
 cpdef double stdtrit(double x0, double x1) nogil
@@ -192,7 +188,7 @@ cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) nogil
 cpdef Dd_number_t xlogy(Dd_number_t x0, Dd_number_t x1) nogil
 cpdef double y0(double x0) nogil
 cpdef double y1(double x0) nogil
-cpdef double yn(di_number_t x0, double x1) nogil
+cpdef double yn(dl_number_t x0, double x1) nogil
 cpdef Dd_number_t yv(double x0, Dd_number_t x1) nogil
 cpdef Dd_number_t yve(double x0, Dd_number_t x1) nogil
 cpdef double zetac(double x0) nogil

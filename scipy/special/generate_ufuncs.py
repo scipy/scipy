@@ -506,7 +506,7 @@ TEST_POINTS = {
     'F': list(np.array(complex_points, dtype=np.complex64)),
     'D': list(np.array(complex_points, dtype=np.complex128)),
     'G': list(np.array(complex_points, dtype=np.longcomplex)),
-    'i': list(np.array(real_points, dtype=np.int)),
+    'i': list(np.array(real_points, dtype=np.intc)),
     'l': list(np.array(real_points, dtype=np.long)),
 }
 
@@ -804,7 +804,7 @@ def generate_bench_func(name, pt):
     return py_bench, cy_bench
 
 
-def iter_variants(inputs, outputs, always_long=True):
+def iter_variants(inputs, outputs):
     """
     Generate variants of UFunc signatures, by changing variable types,
     within the limitation that the corresponding C types casts still
@@ -825,15 +825,10 @@ def iter_variants(inputs, outputs, always_long=True):
         Also the original input/output pair is yielded.
 
     """
-    if always_long:
-        maps = [
-            # always use long instead of int (more common type on 64-bit)
-            ('i', 'l'),
-        ]
-    else:
-        maps = [
-            ('i', 'i'),
-        ]
+    maps = [
+        # always use long instead of int (more common type on 64-bit)
+        ('i', 'l'),
+    ]
 
     # float32-preserving signatures
     if not ('i' in inputs or 'l' in inputs):
@@ -1091,7 +1086,7 @@ class FusedFunc(Func):
             if inarg_num is None:
                 inarg_num = len(inarg)
                 outarg_num = len(outp)
-            inp, outp = list(iter_variants(inarg, outp, always_long=False))[0]
+            inp, outp = list(iter_variants(inarg, outp))[0]
             all_inp.append(inp)
             all_outp.append(outp)
 
@@ -1144,6 +1139,10 @@ class FusedFunc(Func):
         specializations = []
         body = []
         for n, (func_name, inargs, outargs, ret, header) in enumerate(self.signatures):
+            # Convert ints to longs. Why? Because that's what iter_variants does...
+            inargs = inargs.replace('i', 'l')
+            outargs = outargs.replace('i', 'l')
+            ret = ret.replace('i', 'l')
             # Generate the if-elif-else statements that select
             # specializations of the fused types.
             clauses = []

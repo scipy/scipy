@@ -41,9 +41,9 @@ The module is usable from Cython via::
 Available Functions
 ===================
 
-- :py:func:`~scipy.special.bdtr`: iid->d, ddd->d
-- :py:func:`~scipy.special.bdtrc`: iid->d, ddd->d
-- :py:func:`~scipy.special.bdtri`: iid->d, ddd->d
+- :py:func:`~scipy.special.bdtr`: lld->d, ddd->d
+- :py:func:`~scipy.special.bdtrc`: lld->d, ddd->d
+- :py:func:`~scipy.special.bdtri`: lld->d, ddd->d
 - :py:func:`~scipy.special.bdtrik`: ddd->d
 - :py:func:`~scipy.special.bdtrin`: ddd->d
 - :py:func:`~scipy.special.bei`: d->d
@@ -105,7 +105,7 @@ Available Functions
 - :py:func:`~scipy.special.expi`: d->d, D->D
 - :py:func:`~scipy.special.expit`: f->f, d->d, g->g
 - :py:func:`~scipy.special.expm1`: d->d, D->D
-- :py:func:`~scipy.special.expn`: id->d, dd->d
+- :py:func:`~scipy.special.expn`: ld->d, dd->d
 - :py:func:`~scipy.special.exprel`: d->d
 - :py:func:`~scipy.special.fdtr`: ddd->d
 - :py:func:`~scipy.special.fdtrc`: ddd->d
@@ -155,7 +155,7 @@ Available Functions
 - :py:func:`~scipy.special.ker`: d->d
 - :py:func:`~scipy.special.kerp`: d->d
 - :py:func:`~scipy.special.kl_div`: dd->d
-- :py:func:`~scipy.special.kn`: id->d, dd->d
+- :py:func:`~scipy.special.kn`: ld->d, dd->d
 - :py:func:`~scipy.special.kolmogi`: d->d
 - :py:func:`~scipy.special.kolmogorov`: d->d
 - :py:func:`~scipy.special.kv`: dd->d, dD->D
@@ -168,9 +168,9 @@ Available Functions
 - :py:func:`~scipy.special.mathieu_a`: dd->d
 - :py:func:`~scipy.special.mathieu_b`: dd->d
 - :py:func:`~scipy.special.modstruve`: dd->d
-- :py:func:`~scipy.special.nbdtr`: iid->d, ddd->d
-- :py:func:`~scipy.special.nbdtrc`: iid->d, ddd->d
-- :py:func:`~scipy.special.nbdtri`: iid->d, ddd->d
+- :py:func:`~scipy.special.nbdtr`: lld->d, ddd->d
+- :py:func:`~scipy.special.nbdtrc`: lld->d, ddd->d
+- :py:func:`~scipy.special.nbdtri`: lld->d, ddd->d
 - :py:func:`~scipy.special.nbdtrik`: ddd->d
 - :py:func:`~scipy.special.nbdtrin`: ddd->d
 - :py:func:`~scipy.special.ncfdtr`: dddd->d
@@ -187,9 +187,9 @@ Available Functions
 - :py:func:`~scipy.special.nrdtrimn`: ddd->d
 - :py:func:`~scipy.special.nrdtrisd`: ddd->d
 - :py:func:`~scipy.special.obl_cv`: ddd->d
-- :py:func:`~scipy.special.pdtr`: id->d, dd->d
-- :py:func:`~scipy.special.pdtrc`: id->d, dd->d
-- :py:func:`~scipy.special.pdtri`: id->d, dd->d
+- :py:func:`~scipy.special.pdtr`: ld->d, dd->d
+- :py:func:`~scipy.special.pdtrc`: ld->d, dd->d
+- :py:func:`~scipy.special.pdtri`: ld->d, dd->d
 - :py:func:`~scipy.special.pdtrik`: dd->d
 - :py:func:`~scipy.special.poch`: dd->d
 - :py:func:`~scipy.special.pro_cv`: ddd->d
@@ -200,10 +200,10 @@ Available Functions
 - :py:func:`~scipy.special.rgamma`: d->d, D->D
 - :py:func:`~scipy.special.round`: d->d
 - :py:func:`~scipy.special.sindg`: d->d
-- :py:func:`~scipy.special.smirnov`: id->d, dd->d
-- :py:func:`~scipy.special.smirnovi`: id->d, dd->d
+- :py:func:`~scipy.special.smirnov`: ld->d, dd->d
+- :py:func:`~scipy.special.smirnovi`: ld->d, dd->d
 - :py:func:`~scipy.special.spence`: d->d, D->D
-- :py:func:`~scipy.special.sph_harm`: iidd->D, dddd->D
+- :py:func:`~scipy.special.sph_harm`: lldd->D, dddd->D
 - :py:func:`~scipy.special.stdtr`: dd->d
 - :py:func:`~scipy.special.stdtridf`: dd->d
 - :py:func:`~scipy.special.stdtrit`: dd->d
@@ -215,7 +215,7 @@ Available Functions
 - :py:func:`~scipy.special.xlogy`: dd->d, DD->D
 - :py:func:`~scipy.special.y0`: d->d
 - :py:func:`~scipy.special.y1`: d->d
-- :py:func:`~scipy.special.yn`: id->d, dd->d
+- :py:func:`~scipy.special.yn`: ld->d, dd->d
 - :py:func:`~scipy.special.yv`: dd->d, dD->D
 - :py:func:`~scipy.special.yve`: dd->d, dD->D
 - :py:func:`~scipy.special.zetac`: d->d
@@ -816,34 +816,34 @@ cdef extern from "_ufuncs_defs.h":
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_zetac "zetac"(npy_double)nogil
 
-cpdef double bdtr(di_number_t x0, di_number_t x1, double x2) nogil:
+cpdef double bdtr(dl_number_t x0, dl_number_t x1, double x2) nogil:
     """See the documentation for scipy.special.bdtr"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_bdtr(x0, x1, x2)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_bdtr_unsafe(x0, x1, x2)
     else:
         res = NPY_NAN
     return res
 
-cpdef double bdtrc(di_number_t x0, di_number_t x1, double x2) nogil:
+cpdef double bdtrc(dl_number_t x0, dl_number_t x1, double x2) nogil:
     """See the documentation for scipy.special.bdtrc"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_bdtrc(x0, x1, x2)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_bdtrc_unsafe(x0, x1, x2)
     else:
         res = NPY_NAN
     return res
 
-cpdef double bdtri(di_number_t x0, di_number_t x1, double x2) nogil:
+cpdef double bdtri(dl_number_t x0, dl_number_t x1, double x2) nogil:
     """See the documentation for scipy.special.bdtri"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_bdtri(x0, x1, x2)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_bdtri_unsafe(x0, x1, x2)
     else:
         res = NPY_NAN
@@ -1421,12 +1421,12 @@ cpdef Dd_number_t expm1(Dd_number_t x0) nogil:
             res = NPY_NAN
     return res
 
-cpdef double expn(di_number_t x0, double x1) nogil:
+cpdef double expn(dl_number_t x0, double x1) nogil:
     """See the documentation for scipy.special.expn"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_expn(x0, x1)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_expn_unsafe(x0, x1)
     else:
         res = NPY_NAN
@@ -1790,12 +1790,12 @@ cpdef double kl_div(double x0, double x1) nogil:
     res = _func_kl_div(x0, x1)
     return res
 
-cpdef double kn(di_number_t x0, double x1) nogil:
+cpdef double kn(dl_number_t x0, double x1) nogil:
     """See the documentation for scipy.special.kn"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_cbesk_wrap_real_int(x0, x1)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_kn_unsafe(x0, x1)
     else:
         res = NPY_NAN
@@ -1917,34 +1917,34 @@ cpdef double modstruve(double x0, double x1) nogil:
     res = _func_struve_l(x0, x1)
     return res
 
-cpdef double nbdtr(di_number_t x0, di_number_t x1, double x2) nogil:
+cpdef double nbdtr(dl_number_t x0, dl_number_t x1, double x2) nogil:
     """See the documentation for scipy.special.nbdtr"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_nbdtr(x0, x1, x2)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_nbdtr_unsafe(x0, x1, x2)
     else:
         res = NPY_NAN
     return res
 
-cpdef double nbdtrc(di_number_t x0, di_number_t x1, double x2) nogil:
+cpdef double nbdtrc(dl_number_t x0, dl_number_t x1, double x2) nogil:
     """See the documentation for scipy.special.nbdtrc"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_nbdtrc(x0, x1, x2)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_nbdtrc_unsafe(x0, x1, x2)
     else:
         res = NPY_NAN
     return res
 
-cpdef double nbdtri(di_number_t x0, di_number_t x1, double x2) nogil:
+cpdef double nbdtri(dl_number_t x0, dl_number_t x1, double x2) nogil:
     """See the documentation for scipy.special.nbdtri"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_nbdtri(x0, x1, x2)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_nbdtri_unsafe(x0, x1, x2)
     else:
         res = NPY_NAN
@@ -2054,34 +2054,34 @@ cpdef double obl_cv(double x0, double x1, double x2) nogil:
     res = _func_oblate_segv_wrap(x0, x1, x2)
     return res
 
-cpdef double pdtr(di_number_t x0, double x1) nogil:
+cpdef double pdtr(dl_number_t x0, double x1) nogil:
     """See the documentation for scipy.special.pdtr"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_pdtr(x0, x1)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_pdtr_unsafe(x0, x1)
     else:
         res = NPY_NAN
     return res
 
-cpdef double pdtrc(di_number_t x0, double x1) nogil:
+cpdef double pdtrc(dl_number_t x0, double x1) nogil:
     """See the documentation for scipy.special.pdtrc"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_pdtrc(x0, x1)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_pdtrc_unsafe(x0, x1)
     else:
         res = NPY_NAN
     return res
 
-cpdef double pdtri(di_number_t x0, double x1) nogil:
+cpdef double pdtri(dl_number_t x0, double x1) nogil:
     """See the documentation for scipy.special.pdtri"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_pdtri(x0, x1)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_pdtri_unsafe(x0, x1)
     else:
         res = NPY_NAN
@@ -2163,23 +2163,23 @@ cpdef double sindg(double x0) nogil:
     res = _func_sindg(x0)
     return res
 
-cpdef double smirnov(di_number_t x0, double x1) nogil:
+cpdef double smirnov(dl_number_t x0, double x1) nogil:
     """See the documentation for scipy.special.smirnov"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_smirnov(x0, x1)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_smirnov_unsafe(x0, x1)
     else:
         res = NPY_NAN
     return res
 
-cpdef double smirnovi(di_number_t x0, double x1) nogil:
+cpdef double smirnovi(dl_number_t x0, double x1) nogil:
     """See the documentation for scipy.special.smirnovi"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_smirnovi(x0, x1)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_smirnovi_unsafe(x0, x1)
     else:
         res = NPY_NAN
@@ -2199,12 +2199,12 @@ cpdef Dd_number_t spence(Dd_number_t x0) nogil:
             res = NPY_NAN
     return res
 
-cpdef double complex sph_harm(di_number_t x0, di_number_t x1, double x2, double x3) nogil:
+cpdef double complex sph_harm(dl_number_t x0, dl_number_t x1, double x2, double x3) nogil:
     """See the documentation for scipy.special.sph_harm"""
     cdef double complex res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_sph_harmonic(x0, x1, x2, x3)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_sph_harmonic_unsafe(x0, x1, x2, x3)
     else:
         res = NPY_NAN
@@ -2292,12 +2292,12 @@ cpdef double y1(double x0) nogil:
     res = _func_y1(x0)
     return res
 
-cpdef double yn(di_number_t x0, double x1) nogil:
+cpdef double yn(dl_number_t x0, double x1) nogil:
     """See the documentation for scipy.special.yn"""
     cdef double res
-    if di_number_t is int:
+    if dl_number_t is long:
         res = _func_yn(x0, x1)
-    elif di_number_t is double:
+    elif dl_number_t is double:
         res = _func_yn_unsafe(x0, x1)
     else:
         res = NPY_NAN
