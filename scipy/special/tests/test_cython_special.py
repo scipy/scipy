@@ -8,19 +8,23 @@ from numpy.testing import assert_allclose
 
 from scipy import special
 from scipy.special import cython_special
+from scipy.special.cython_special import (_float, _double, _long_double,
+                                   _complex, _double_complex,
+                                   _long_double_complex, _int, _long)
+                                   
 
 real_points = [-10, -1, 1, 10]
 complex_points = [complex(*tup) for tup in product(real_points, repeat=2)]
 
 TEST_POINTS = {
-    'f': list(np.array(real_points, dtype=np.float32)),
-    'd': list(np.array(real_points, dtype=np.float64)),
-    'g': list(np.array(real_points, dtype=np.longdouble)),
-    'F': list(np.array(complex_points, dtype=np.complex64)),
-    'D': list(np.array(complex_points, dtype=np.complex128)),
-    'G': list(np.array(complex_points, dtype=np.longcomplex)),
-    'i': list(np.array(real_points, dtype=np.intc)),
-    'l': list(np.array(real_points, dtype=np.long)),
+    'f': map(lambda x: _float(x).val, real_points),
+    'd': map(lambda x: _double(x).val, real_points),
+    'g': map(lambda x: _long_double(x).val, real_points),
+    'F': map(lambda x: _complex(x).val, complex_points),
+    'D': map(lambda x: _double_complex(x).val, complex_points),
+    'G': map(lambda x: _long_double_complex(x).val, complex_points),
+    'i': map(lambda x: _int(x).val, real_points),
+    'l': map(lambda x: _long(x).val, real_points),
 }
 
 
@@ -215,10 +219,6 @@ def test_cython_api():
     def check(param):
         pyfunc, cyfunc, specializations = param
         for typecodes in specializations:
-            if "f" in typecodes or "F" in typecodes or "g" in typecodes or "G" in typecodes:
-                # Don't test np.float32, np.complex64, np.longdouble,
-                # or np.longcomplex
-                continue
             pts = _generate_test_points(typecodes)
             pyres, cyres = [], []
             for pt in pts:

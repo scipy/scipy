@@ -252,6 +252,53 @@ ctypedef float complex float_complex
 ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
+cdef class _float:
+    cdef public float val
+
+    def __init__(self, val):
+        self.val = val
+
+cdef class _double:
+    cdef public double val
+
+    def __init__(self, val):
+        self.val = val
+
+cdef class _long_double:
+    cdef public long double val
+
+    def __init__(self, val):
+        self.val = val
+
+cdef class _complex:
+    cdef public complex val
+
+    def __init__(self, val):
+        self.val = val
+
+cdef class _double_complex:
+    cdef public double complex val
+
+    def __init__(self, val):
+        self.val = val
+
+cdef class _long_double_complex:
+    cdef public long double complex val
+
+    def __init__(self, val):
+        self.val = val
+
+cdef class _int:
+    cdef public int val
+
+    def __init__(self, val):
+        self.val = val
+
+cdef class _long:
+    cdef public long val
+
+    def __init__(self, val):
+        self.val = val
 
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_bdtr "bdtr"(npy_int, npy_int, npy_double)nogil
