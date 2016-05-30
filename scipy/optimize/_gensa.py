@@ -24,7 +24,7 @@ __all__ = ['gensa']
 
 KSPRING = 1.e8
 BIG_VALUE = 1.e13
-MAX_REINIT_COUNT = 20
+MAX_REINIT_COUNT = 100
 
 
 class GenSARunnerException(Exception):
@@ -76,6 +76,7 @@ class GenSARunner(object):
         self._markovlength = self._dim * 2
         self._hasconstraint = False
         self._tempsta = 5230
+        self._temp = self._tempsta
         self._knowreal = False
         self._maxtime = 3600 # Using seconds units
         self._maxfuncall = 1e7
@@ -91,6 +92,8 @@ class GenSARunner(object):
         self._qa = -5.0  # Acceptance parameter
         self.nblocal = 0
         self._step_record = 0
+        self._nbfuncall = 0
+        self._extensive = False
 
     def _judge_constraint(self):
         # Not implemented yet
@@ -119,7 +122,8 @@ class GenSARunner(object):
             if self._etot >= BIG_VALUE:
                 if reinit_counter >= MAX_REINIT_COUNT:
                     initerror = False
-                    self._message = [('Stopping algorithm because function ',
+                    self._message = [(
+                        'Stopping algorithm because function '
                         'create NaN or (+/-) inifinity values even with '
                         'trying new random parameters')]
                     raise GenSARunnerException(self._message)
@@ -141,6 +145,7 @@ class GenSARunner(object):
         index_no_emini_update = 0
         index_tol_emini_update = 1000
         xminimarkov = np.zeros(self._dim)
+        etot_ls_ex = BIG_VALUE
         # Here check that the function is smooth
         self._starttime = time.time()
         self._emini = np.array(self._etot)
@@ -164,13 +169,16 @@ class GenSARunner(object):
                 t2 = np.exp((self._qv - 1) * np.log(s)) - 1.0
                 self._temp = self._tempsta * t1 / t2
                 self._step_record += 1
+                # Maximum number of iterations reached
                 if self._step_record == self._maxsteps:
                     tolowtemp = False
                     break
+                # Need a reannealing process
                 if self._temp < self._temprestart:
                     break
                 temp_qa = self._temp / float(itnew)
                 index_no_emini_update += 1
+                # Starting markov chain loop
                 for j in range(self._markovlength):
                     if j == 0:
                         emini_unchanged = True
@@ -236,7 +244,6 @@ class GenSARunner(object):
                                 self._x = self._xbackup
                             else:
                                 self._etot0 = self._etot
-                        # Add data to tracer
                         if self._check_stopping():
                             self._stop_search()
                             return 0
@@ -250,15 +257,31 @@ class GenSARunner(object):
                                 emini_markov = np.array(self._etot0)
                                 xminimarkov = np.array(self._x)
                 # End of markov chain loop
-                if not emini_unchanged:
-                    temp = np.array(self._xmini)
-                    etemp = self._ls_energy(temp)
-                    temp = self._xbuffer
-                    if etemp < self._emini:
-                        self._xmini = np.array(temp)
-                        self._emini = np.array(etemp)
+                if self._extensive:
+                    if j == 0:
+                        #print("-> First extensive")
+                        temp = np.array(self._x)
+                        etot_ls_ex = self._ls_energy(temp)
                         index_no_emini_update = 0
-                        # Add data to tracer
+                    else:
+                        if np.sum((self._etot - etot_ls_ex)**2) > 1e-10:
+                            #print("->extensive")
+                            temp = np.array(self._x)
+                            etot_ls_ex = self._ls_energy(temp)
+                            index_no_emini_update = 0
+                    if etot_ls_ex < self._emini:
+                        #print("-> better VALUE in extensive")
+                        self._xmini = np.array(temp)
+                        self._emini = np.array(etot_ls_ex)
+                else:
+                    if not emini_unchanged:
+                        temp = np.array(self._xmini)
+                        etemp = self._ls_energy(temp)
+                        temp = self._xbuffer
+                        if etemp < self._emini:
+                            self._xmini = np.array(temp)
+                            self._emini = np.array(etemp)
+                            index_no_emini_update = 0
                 if index_no_emini_update >= index_tol_emini_update - 1:
                     emini_markov = np.array(self._ls_energy(xminimarkov))
                     index_no_emini_update = 0
@@ -266,10 +289,9 @@ class GenSARunner(object):
                     if emini_markov < self._emini:
                         self._xmini = np.array(xminimarkov)
                         self._emini = np.array(emini_markov)
-                        # Add data to tracer
-                        if self._check_stopping():
-                            self._stop_search()
-                            return 0
+                if self._check_stopping():
+                    self._stop_search()
+                    return 0
             # End main loop
             #tolowtemp = False
         self._stop_search()
@@ -290,6 +312,7 @@ class GenSARunner(object):
         if self._nbfuncall >= self._maxfuncall:
             self._message = ["Number of function call reached"]
             return True
+        #TODO:
         # Check if no more improvments from tracer
         # Compare tracer value minernergy with self._emini
         # if lower than 1e-10, return true
@@ -416,8 +439,7 @@ class GenSARunner(object):
 
     def _compute_gradient(self, x):
         """Computation of numerical derivatives for local search"""
-        # The below lines can be vectorized using np.vectorized on fobjective
-        # to prevent doing a loop
+        # Can be done later here:
         # Check here if the expression of the derivatives is provided
         # For that, add an argument for jacobian in the main function
         # and use MemoizeJac from optimize.py
@@ -465,14 +487,14 @@ class GenSARunner(object):
     def result(self):
         """ The OptimizeResult """
         res = OptimizeResult()
-        res.x = self._x
+        res.x = self._xmini
         res.fun = self._fvalue
         res.message = self._message
         res.nit = self._step_record
         return res
 
 def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
-        acceptparam=-5.0, maxtime=3600, maxcall=1e7, args=()):
+        acceptparam=-5.0, maxtime=3600, maxcall=1e7, extensive=False,args=()):
     """
     Find the global minimum of a function using the General Simulated
     Annealing algorithm
@@ -504,6 +526,9 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done.
+    extensive: boolean, optional
+        Experimental option for a more extensive local search strategy.
+        (This a temporary option for testing)
     args: Optional arguments to be passed to the function to be optimized.
 
 
@@ -532,7 +557,7 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
     ----------
     .. [1] Constantino Tsallis, Daniel A. Stariolo, Generalized simulated
         annealing, Physica A: Statistical Mechanics and its Applications,
-        Volume 233, Issues 1–2, 15 November 1996, Pages 395-406,
+        Volume 233, Issue 1-2, 15 Novem 1996, Pages 395-406,
         ISSN 0378-4371, http://dx.doi.org/10.1016/S0378-4371(96)00271-3.
     .. [2] Y. Xiang, S. Gubian. B. Suomela, J. Hoeng (2013). Generalized
         Simulated Annealing for Efficient Global Optimization: the GenSA
@@ -564,33 +589,10 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
     gr._maxtime = maxtime
     gr._maxfuncall = maxcall
     gr._maxsteps = niter
+    gr._extensive = extensive
     gr.initialize()
     gr.start_search()
     return gr.result
-
-def _get_fixture(dim=2):
-    lower = np.array([-5.12] * dim)
-    upper = np.array([5.12] * dim)
-    func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
-            + 10 * np.size(x)
-    return (func, lower, upper)
-
-def test_visita():
-    pass
-
-def test_yygas():
-    pass
-
-def test_gensa_lowdim():
-    func, lower, upper = _get_fixture()
-    ret = gensa(func, None, lower, upper)
-    np.testing.assert_allclose(ret.fun, 0., atol=1e-12)
-
-def test_gensa_highdim():
-    func, lower, upper = _get_fixture(5)
-    ret = gensa(func, None, lower, upper)
-    np.testing.assert_allclose(ret.fun, 0., atol=1e-12)
-
 
 def main():
     func, lower, upper = _get_fixture()
