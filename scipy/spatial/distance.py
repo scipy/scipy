@@ -1857,7 +1857,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        Computes the Mahalanobis distance between the points. The
        Mahalanobis distance between two points ``u`` and ``v`` is
-       :math:`(u-v)(1/V)(u-v)^T` where :math:`(1/V)` (the ``VI``
+       :math:`\\sqrt{(u-v)(1/V)(u-v)^T}` where :math:`(1/V)` (the ``VI``
        variable) is the inverse covariance. If ``VI`` is not None,
        ``VI`` will be used as the inverse covariance matrix.
 
