@@ -6,8 +6,7 @@ from scipy.optimize._gensa import GenSARunner
 from scipy.optimize._gensa import GenSARunnerException
 import numpy as np
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
-                           run_module_suite, assert_almost_equal,
-                           assert_string_equal, assert_raises, assert_)
+                           assert_almost_equal, assert_raises)
 
 
 class TestGenSA(TestCase):
@@ -66,7 +65,6 @@ class TestGenSA(TestCase):
     def test_max_reinit(self):
         assert_raises(GenSARunnerException, _gensa.gensa, *(self.weirdfunc,
             None, self.ld_lowerb, self.ld_upperb))
-
 
     def test__check_stopping_cond(self):
         gr = GenSARunner(self.func, None, self.hd_lowerb, self.hd_upperb)
