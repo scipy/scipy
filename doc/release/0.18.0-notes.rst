@@ -76,7 +76,7 @@ Other changes
 
 Authors
 =======
-* Nikolay Mayorovi
+* Nikolay Mayorov
 * Sylvain Gubian
 
 Issues closed
