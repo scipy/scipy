@@ -12,9 +12,6 @@ gensa: A generalized simulated annealing global optimization algorithm
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_allclose
-from numpy.random import RandomState
-import sys
 import time
 from scipy.optimize import OptimizeResult
 from scipy.optimize import _lbfgsb
@@ -78,7 +75,7 @@ class GenSARunner(object):
         self._tempsta = 5230
         self._temp = self._tempsta
         self._knowreal = False
-        self._maxtime = 3600 # Using seconds units
+        self._maxtime = 3600
         self._maxfuncall = 1e7
         self._maxsteps = 500
         self._temprestart = 0.1
@@ -127,7 +124,6 @@ class GenSARunner(object):
                         'create NaN or (+/-) inifinity values even with '
                         'trying new random parameters')]
                     raise GenSARunnerException(self._message)
-                rd = 0.0
                 for i in range(self._dim):
                     self._x[i] = self._lower[i] + np.random.ranf() * (
                         self._upper[i] - self._lower[i])
@@ -220,7 +216,7 @@ class GenSARunner(object):
                                 index]) < 1.e-10:
                             self._x[index] += 1.e-10
                     if self._hasconstraint:
-                        inconstraint = judge_constraint()
+                        inconstraint = self._judge_constraint()
                     else:
                         inconstraint = True
                     if inconstraint:
@@ -595,9 +591,13 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
     return gr.result
 
 def main():
-    func, lower, upper = _get_fixture()
-    xinit = lower + np.random.rand(dim) * (upper - lower)
-    ret = gensa(func, xinit, lower, upper)
+    func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
+        + 10 * np.size(x)
+    dim = 5
+    lw = np.array([-5.12] * dim)
+    up = np.array([5.12] * dim)
+    xinit = lw + np.random.rand(dim) * (up - lw)
+    ret = gensa(func, xinit, lw, up)
     print("global minimum: xmin = {0}, f(xmin) = {1}".format(
         ret.x, ret.fun))
 
