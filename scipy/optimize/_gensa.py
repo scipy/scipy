@@ -548,6 +548,7 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
     GenSA can process complicated and high dimension non-linear objective
     functions with a large number of local minima as described by Muller
     paper [3]_.
+    .. versionadded:: 0.18.0
 
     References
     ----------
