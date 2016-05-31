@@ -746,7 +746,6 @@ class CubicSpline(PPoly):
                     raise ValueError("A specified derivative value must be "
                                      "given in the form (order, value).")
 
-                deriv_order = int(deriv_order)
                 if deriv_order not in [1, 2]:
                     raise ValueError("The specified derivative order must "
                                      "be 1 or 2.")
