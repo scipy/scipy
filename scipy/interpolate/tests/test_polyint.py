@@ -558,6 +558,13 @@ class TestCubicSpline(object):
         S = CubicSpline(x, y)
         self.check_correctness(S)
 
+        S = CubicSpline(x, x ** 3, bc_type=("natural", (1, 2j)))
+        self.check_correctness(S, "natural", (1, 2j))
+
+        y = np.array([-5, 2, 3, 1])
+        S = CubicSpline(x, y, bc_type=[(1, 2 + 0.5j), (2, 0.5 - 1j)])
+        self.check_correctness(S, (1, 2 + 0.5j), (2, 0.5 - 1j))
+
     def test_small_dx(self):
         rng = np.random.RandomState(0)
         x = np.sort(rng.uniform(size=100))

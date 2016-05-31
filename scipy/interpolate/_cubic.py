@@ -542,7 +542,7 @@ class CubicSpline(PPoly):
         n = x.shape[0]
         y = np.rollaxis(y, axis)
 
-        bc = self._validate_bc(bc_type, y, y.shape[1:], axis)
+        bc, y = self._validate_bc(bc_type, y, y.shape[1:], axis)
 
         if extrapolate is None:
             extrapolate = bc_type[0] != 'periodic'
@@ -704,6 +704,9 @@ class CubicSpline(PPoly):
         -------
         validated_bc : 2-tuple
             Boundary conditions for a curve start and end.
+        y : ndarray
+            y casted to complex dtype if one of the boundary conditions has
+            complex dtype.
         """
         if isinstance(bc_type, string_types):
             if bc_type == 'periodic':
@@ -754,6 +757,9 @@ class CubicSpline(PPoly):
                         "`deriv_value` shape {} is not the expected one {}."
                         .format(deriv_value.shape, expected_deriv_shape))
 
+                if np.issubdtype(deriv_value.dtype, np.complexfloating):
+                    y = y.astype(complex, copy=False)
+
                 validated_bc.append((deriv_order, deriv_value))
 
-        return validated_bc
+        return validated_bc, y
