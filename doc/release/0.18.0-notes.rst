@@ -49,9 +49,9 @@ This method can be faster than FFT-based filtering provided by
 `scipy.optimize` improvements
 -----------------------------
 
-Generalized Simulating annealing method has been implemented in the function
+Generalized Simulated annealing method has been implemented in the function
 `scipy.optimize.gensa`. This method in the generalized version of the
-simulating annealing approach. It is efficient and reliable, especially for high
+simulated annealing approach. It is efficient and reliable, especially for high
 dimension problems with a very large number of optima.
 
 Deprecated features
