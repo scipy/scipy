@@ -528,27 +528,32 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     Notes
     -----
     GenSA is an implementation of the General Simulated Annealing algorithm
-    (GSA [1]_). This stochastic approach generalizes CSA (Classical Simulated
+    (GSA [2]_). This stochastic approach generalizes CSA (Classical Simulated
     Annealing) and FSA (Fast Simulated Annealing) to find the neighborhood of
     minima, then calls a local method (lbfgs) to find their exact value.
     The algorithm was originally implemented in C++/R and is explained in
-    more detail by Yang Xiang and al [2]_.
+    more detail by Yang Xiang and al [5]_.
     GenSA can process complicated and high dimension non-linear objective
     functions with a large number of local minima as described by Muller
-    paper [3]_.
+    paper [6]_.
     .. versionadded:: 0.18.0
 
     References
     ----------
-    .. [1] Constantino Tsallis, Daniel A. Stariolo, Generalized simulated
-        annealing, Physica A: Statistical Mechanics and its Applications,
-        Volume 233, Issue 1-2, 15 Novem 1996, Pages 395-406,
-        ISSN 0378-4371, http://dx.doi.org/10.1016/S0378-4371(96)00271-3.
-    .. [2] Y. Xiang, S. Gubian. B. Suomela, J. Hoeng (2013). Generalized
-        Simulated Annealing for Efficient Global Optimization: the GenSA
-        Package for R. The R Journal, Volume 5/1, June 2013.
-        URL http://journal.r-project.org/.
-    .. [3] Mullen, K. (2014). Continuous Global Optimization in R. Journal of
+    .. [1] Tsallis C (1988). "Possible generalization of Boltzmann-Gibbs
+        statistics." Journal of Statistical Physics, 52, 479-487.
+    .. [2] Tsallis C, Stariolo DA (1996). "Generalized Simulated Annealing."
+        Physica A, 233, 395-406.
+    .. [3] Xiang Y, Sun DY, Fan W, Gong XG (1997). "Generalized Simulated
+        Annealing Algorithm and Its Application to the Thomson Model."
+        Physics Letters A, 233, 216-220.
+    .. [4] Xiang Y, Gong XG (2000a). "Efficiency of Generalized Simulated
+        Annealing." PHYSICAL REVIEW E, 62, 4473.
+    .. [5] Xiang Y, Gubian S, Suomela B, Hoeng (2013). "Generalized Simulated
+        Annealing for Efficient Global Optimization: the GenSA Package for
+        R". The R Journal, Volume 5/1, June 2013.
+        http://journal.r-project.org/.
+    .. [6] Mullen, K. (2014). Continuous Global Optimization in R. Journal of
         Statistical Software, 60(6), 1 - 45.
         http://dx.doi.org/10.18637/jss.v060.i06
 
