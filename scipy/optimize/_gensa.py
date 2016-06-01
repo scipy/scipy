@@ -481,8 +481,8 @@ class GenSARunner(object):
         res.nit = self._step_record
         return res
 
-def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
-        acceptparam=-5.0, maxtime=3600, maxcall=1e7, extensive=False,args=()):
+def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
+        acceptparam=-5.0, maxtime=3600, maxcall=1e7, args=()):
     """
     Find the global minimum of a function using the General Simulated
     Annealing algorithm
@@ -494,11 +494,10 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
         as argument (see below)
     x0 : ndarray
         Optional initial guess. If not given (None), a random one is computed
-        using lower and upper bounds ndarrays
-    lower: ndarray
-        Lower bounds values for the search domain
-    upper: ndarray
-        Upper bounds values for the search domain
+        using bounds sequence
+    bounds: sequence
+        Bounds for variable. (min, max) pairs for each element in x,
+        defining the bounds on that parameter.
     niter: integer, optional
         The number of gensa iterations
     T: float, optional
@@ -514,10 +513,7 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done.
-    extensive: boolean, optional
-        Experimental option for a more extensive local search strategy.
-        (This a temporary option for testing)
-    args: Optional arguments to be passed to the function to be optimized.
+    args: Optional arguments to be passed to the objective function call.
 
 
     Returns
@@ -558,7 +554,7 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
 
     Examples
     --------
-    The following example is a 30-dimensional problem, with many local minima.
+    The following example is a 10-dimensional problem, with many local minima.
     The function involved is called Rastrigin
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 
@@ -567,18 +563,19 @@ def gensa(func, x0, lower, upper, niter=500, T=5230., visitparam=2.62,
             + 10 * np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
-    >>> ret = gensa(func, None, lower=lw, upper=up)
+    >>> ret = gensa(func, None, bounds=(zip(lw, up)))
     >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
     ...    ret.x, ret.fun))
     """
-    gr = GenSARunner(func, x0, lower, upper, fargs=args)
+    lower, upper = zip(*bounds)
+    gr = GenSARunner(func, x0, np.array(lower), np.array(upper), fargs=args)
     gr._tempsta = T
     gr._qv = visitparam
     gr._qa = acceptparam
     gr._maxtime = maxtime
     gr._maxfuncall = maxcall
     gr._maxsteps = niter
-    gr._extensive = extensive
+    gr._extensive = False
     gr.initialize()
     gr.start_search()
     return gr.result
@@ -590,7 +587,7 @@ def main():
     lw = np.array([-5.12] * dim)
     up = np.array([5.12] * dim)
     xinit = lw + np.random.rand(dim) * (up - lw)
-    ret = gensa(func, xinit, lw, up)
+    ret = gensa(func, xinit, (zip(lw, up)))
     print("global minimum: xmin = {0}, f(xmin) = {1}".format(
         ret.x, ret.fun))
 

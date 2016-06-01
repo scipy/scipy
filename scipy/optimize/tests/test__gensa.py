@@ -27,7 +27,8 @@ class TestGenSA(TestCase):
         pass
 
     def test_low_dim(self):
-        ret = _gensa.gensa(self.func, None, self.ld_lowerb, self.ld_upperb)
+        ret = _gensa.gensa(self.func, None, (zip(self.ld_lowerb,
+            self.ld_upperb)))
         assert_allclose(ret.fun, 0., atol=1e-12)
 
     def test__visiting_dist(self):
@@ -43,7 +44,8 @@ class TestGenSA(TestCase):
         assert(np.max(values) > 1e+10)
 
     def test_high_dim(self):
-        ret = _gensa.gensa(self.func, None, self.hd_lowerb, self.hd_upperb)
+        ret = _gensa.gensa(self.func, None, (zip(self.hd_lowerb,
+            self.hd_upperb)))
         assert_allclose(ret.fun, 0., atol=1e-12)
 
     def test__smooth_search(self):
@@ -64,10 +66,11 @@ class TestGenSA(TestCase):
 
     def test_max_reinit(self):
         assert_raises(GenSARunnerException, _gensa.gensa, *(self.weirdfunc,
-            None, self.ld_lowerb, self.ld_upperb))
+            None, (zip(self.ld_lowerb, self.ld_upperb))))
 
     def test__check_stopping_cond(self):
-        gr = GenSARunner(self.func, None, self.hd_lowerb, self.hd_upperb)
+        gr = GenSARunner(self.func, None, self.hd_lowerb,
+            self.hd_upperb)
         gr._maxtime = 0.5
         gr._extensive = True
         gr.initialize()
