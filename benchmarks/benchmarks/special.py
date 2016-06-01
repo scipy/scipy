@@ -18,11 +18,6 @@ try:
 except ImportError:
     pass
 
-try:
-    from scipy.special import cython_special
-except ImportError:
-    pass
-
 from .common import Benchmark, with_attributes
 
 
@@ -69,22 +64,3 @@ class Loggamma(Benchmark):
 
     def time_loggamma_asymptotic(self):
         loggamma(self.large_z)
-
-
-class CythonSpecial(Benchmark):
-    params = [(10, 100, 100), ('python', 'cython')]
-    param_names = ['N', 'api']
-
-    @with_attributes(params=params, param_names=param_names)
-    def time_jv_real(self, N, api):
-        if api == 'python':
-            cython_special._bench_jv_dd_py(N)
-        else:
-            cython_special._bench_jv_dd_cy(N)
-
-    @with_attributes(params=params, param_names=param_names)
-    def time_jv_complex(self, N, api):
-        if api == 'python':
-            cython_special._bench_jv_dD_py(N)
-        else:
-            cython_special._bench_jv_dD_cy(N)

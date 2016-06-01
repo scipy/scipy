@@ -2384,30 +2384,112 @@ cpdef double zetac(double x0) nogil:
     res = _func_zetac(x0)
     return res
 
-def _bench_jv_dd_py(int N):
+def _bench_beta_dd_py(int N, double x0, double x1):
     cdef int n
-    cdef double x0 = 1
-    cdef double x1 = 1
+    for n in range(N):
+        _ufuncs.beta(x0, x1)
+
+def _bench_beta_dd_cy(int N, double x0, double x1):
+    cdef int n
+    for n in range(N):
+        beta(x0, x1)
+
+def _bench_erf_d_py(int N, double x0):
+    cdef int n
+    for n in range(N):
+        _ufuncs.erf(x0)
+
+def _bench_erf_d_cy(int N, double x0):
+    cdef int n
+    for n in range(N):
+        erf(x0)
+
+def _bench_erf_D_py(int N, double complex x0):
+    cdef int n
+    for n in range(N):
+        _ufuncs.erf(x0)
+
+def _bench_erf_D_cy(int N, double complex x0):
+    cdef int n
+    for n in range(N):
+        erf(x0)
+
+def _bench_exprel_d_py(int N, double x0):
+    cdef int n
+    for n in range(N):
+        _ufuncs.exprel(x0)
+
+def _bench_exprel_d_cy(int N, double x0):
+    cdef int n
+    for n in range(N):
+        exprel(x0)
+
+def _bench_gamma_d_py(int N, double x0):
+    cdef int n
+    for n in range(N):
+        _ufuncs.gamma(x0)
+
+def _bench_gamma_d_cy(int N, double x0):
+    cdef int n
+    for n in range(N):
+        gamma(x0)
+
+def _bench_gamma_D_py(int N, double complex x0):
+    cdef int n
+    for n in range(N):
+        _ufuncs.gamma(x0)
+
+def _bench_gamma_D_cy(int N, double complex x0):
+    cdef int n
+    for n in range(N):
+        gamma(x0)
+
+def _bench_jv_dd_py(int N, double x0, double x1):
+    cdef int n
     for n in range(N):
         _ufuncs.jv(x0, x1)
 
-def _bench_jv_dd_cy(int N):
+def _bench_jv_dd_cy(int N, double x0, double x1):
     cdef int n
-    cdef double x0 = 1
-    cdef double x1 = 1
     for n in range(N):
         jv(x0, x1)
 
-def _bench_jv_dD_py(int N):
+def _bench_jv_dD_py(int N, double x0, double complex x1):
     cdef int n
-    cdef double x0 = 1
-    cdef double complex x1 = 1
     for n in range(N):
         _ufuncs.jv(x0, x1)
 
-def _bench_jv_dD_cy(int N):
+def _bench_jv_dD_cy(int N, double x0, double complex x1):
     cdef int n
-    cdef double x0 = 1
-    cdef double complex x1 = 1
     for n in range(N):
         jv(x0, x1)
+
+def _bench_logit_d_py(int N, double x0):
+    cdef int n
+    for n in range(N):
+        _ufuncs.logit(x0)
+
+def _bench_logit_d_cy(int N, double x0):
+    cdef int n
+    for n in range(N):
+        logit(x0)
+
+def _bench_psi_d_py(int N, double x0):
+    cdef int n
+    for n in range(N):
+        _ufuncs.psi(x0)
+
+def _bench_psi_d_cy(int N, double x0):
+    cdef int n
+    for n in range(N):
+        psi(x0)
+
+def _bench_psi_D_py(int N, double complex x0):
+    cdef int n
+    for n in range(N):
+        _ufuncs.psi(x0)
+
+def _bench_psi_D_cy(int N, double complex x0):
+    cdef int n
+    for n in range(N):
+        psi(x0)
