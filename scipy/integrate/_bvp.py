@@ -681,7 +681,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     (n + k)-dimensional function.
 
     The last singular term in the right-hand side of the system is optional.
-    It is defined by a n-by-n matrix S, such that the solution must satisfy
+    It is defined by an n-by-n matrix S, such that the solution must satisfy
     S y(a) = 0. This condition will be forced during iterations, so it must not
     contradict boundary conditions. See [2]_ for the explanation how this term
     is handled when solving BVPs numerically.
@@ -724,7 +724,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         solved without the singular term.
     fun_jac : callable or None, optional
         Function computing derivatives of f with respect to y and p. The
-        calling signature is ``fun_jac(x, y)``, or ``fun(x, y, p)`` if
+        calling signature is ``fun_jac(x, y)``, or ``fun_jac(x, y, p)`` if
         parameters are present. The return must contain 1 or 2 elements in the
         following order:
 
@@ -738,7 +738,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         parameters df_dp should not be returned.
 
         If `fun_jac` is None (default), the derivatives will be estimated
-        using forward finite differences.
+        by the forward finite differences.
     bc_jac : callable or None, optional
         Function computing derivatives of bc with respect to ya, yb and p.
         The calling signature is ``bc_jac(ya, yb)``, or ``bc_jac(ya, yb, p)``
@@ -755,8 +755,8 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         If the problem is solved without unknown parameters dbc_dp should not
         be returned.
 
-        If `bc_jac` is None (default), the derivatives will be estimated using
-        forward finite differences.
+        If `bc_jac` is None (default), the derivatives will be estimated by
+        the forward finite differences.
     tol : float, optional
         Desired tolerance of the solution. If we define ``r = y' - f(x, y)``
         where y is the found solution, then the solver tries to achieve on each
