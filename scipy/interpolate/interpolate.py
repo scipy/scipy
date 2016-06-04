@@ -1014,25 +1014,24 @@ class PPoly(_PPolyBase):
             xs, xe = self.x[0], self.x[-1]
             period = xe - xs
             interval = b - a
-            n_periods = int(interval / period)
+            n_periods, left = divmod(interval, period)
 
             if n_periods > 0:
                 _ppoly.integrate(
                     self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                     self.x, xs, xe, False, out=range_int)
                 range_int *= n_periods
-                a += n_periods * period
             else:
                 range_int.fill(0)
 
-            # Map a and b to [xs, xe].
+            # Map a to [xs, xe], b is always a + left.
             a = xs + (a - xs) % period
-            b = xs + (b - xs) % period
+            b = a + left
 
-            # If a <= b, then we need to integrate over [a, b], otherwise
-            # over and [a, xe] and [xs, b].
+            # If b <= xe then we need to integrate over [a, b], otherwise
+            # over [a, xe] and from xs to what is remained.
             remainder_int = np.empty_like(range_int)
-            if a <= b:
+            if b <= xe:
                 _ppoly.integrate(
                     self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                     self.x, a, b, False, out=remainder_int)
@@ -1045,7 +1044,7 @@ class PPoly(_PPolyBase):
 
                 _ppoly.integrate(
                     self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-                    self.x, xs, b, False, out=remainder_int)
+                    self.x, xs, xs + left + a - xe, False, out=remainder_int)
                 range_int += remainder_int
         else:
             _ppoly.integrate(
@@ -1457,20 +1456,19 @@ class BPoly(_PPolyBase):
             xs, xe = self.x[0], self.x[-1]
             period = xe - xs
             interval = b - a
-            n_periods = int(interval / period)
-
+            n_periods, left = divmod(interval, period)
             res = n_periods * (ib(xe) - ib(xs))
 
             # Map a and b to [xs, xe].
             a = xs + (a - xs) % period
-            b = xs + (b - xs) % period
+            b = a + left
 
-            # If a <= b, then we need to integrate over [a, b], otherwise
-            # over and [a, xe] and [xs, b].
-            if a <= b:
+            # If b <= xe then we need to integrate over [a, b], otherwise
+            # over [a, xe] and from xs to what is remained.
+            if b <= xe:
                 res += ib(b) - ib(a)
             else:
-                res += ib(xe) - ib(a) + ib(b) - ib(xs)
+                res += ib(xe) - ib(a) + ib(xs + left + a - xe) - ib(xs)
 
             return sign * res
         else:
