@@ -788,7 +788,7 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         Solution values at the mesh nodes.
     yp : ndarray, shape (n, m)
         Solution derivatives at the mesh nodes.
-    rms_res : ndarray, shape (m - 1,)
+    rms_residuals : ndarray, shape (m - 1,)
         RMS values of the relative residuals over each mesh interval (see the
         description of `tol` parameter).
     niter : int
@@ -1087,6 +1087,6 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     if p.size == 0:
         p = None
 
-    return BVPResult(sol=sol, p=p, x=x, y=y, yp=f, rms_res=rms_res,
+    return BVPResult(sol=sol, p=p, x=x, y=y, yp=f, rms_residuals=rms_res,
                      niter=iteration, status=status,
                      message=TERMINATION_MESSAGES[status], success=status == 0)
