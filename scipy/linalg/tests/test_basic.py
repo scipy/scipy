@@ -40,17 +40,17 @@ from scipy.linalg._testutils import assert_no_overwrite
 
 from scipy._lib._version import NumpyVersion
 
-REAL_DTYPES = [np.float32, np.float64, np.float128]
-COMPLEX_DTYPES = [np.complex64, np.complex128, np.complex256]
+REAL_DTYPES = [np.float32, np.float64, np.longdouble]
+COMPLEX_DTYPES = [np.complex64, np.complex128, np.clongdouble]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
 def _eps_cast(dtyp):
     """Get the epsilon for dtype, possibly downcast to BLAS types."""
     dt = dtyp
-    if dt == np.float128:
+    if dt == np.longdouble:
         dt = np.float64
-    elif dt == np.complex256:
+    elif dt == np.clongdouble:
         dt = np.complex128
     return np.finfo(dt).eps
 
@@ -1018,7 +1018,7 @@ class TestLstsq(TestCase):
     def test_check_finite(self):
         for dtype in REAL_DTYPES:
             a = np.array(((1, 20), (-30, 4)), dtype=dtype)
-            for bt in (((1, 0), (0, 1 )), (1, 0),
+            for bt in (((1, 0), (0, 1)), (1, 0),
                       ((2, 1), (-30, 4))):
                 for lapack_driver in TestLstsq.lapack_drivers:
                         for overwrite in (True, False):
