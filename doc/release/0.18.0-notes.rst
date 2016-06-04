@@ -65,6 +65,7 @@ The functions `sum`, `max`, `mean`, `min`, `transpose`, and `reshape` in
 and functionality so as to improve compatibility with analogously defined
 functions in `numpy`.
 
+
 Deprecated features
 ===================
 
