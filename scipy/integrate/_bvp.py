@@ -480,7 +480,7 @@ TERMINATION_MESSAGES = {
 }
 
 
-def estimate_rms_residuals(fun, sol, x, h, p, res_middle, f_middle):
+def estimate_rms_residuals(fun, sol, x, h, p, r_middle, f_middle):
     """Estimate rms values of collocation residuals using Lobatto quadrature.
 
     The residuals are defined as the difference between the derivatives of
@@ -517,18 +517,18 @@ def estimate_rms_residuals(fun, sol, x, h, p, res_middle, f_middle):
     y2_prime = sol(x2, 1)
     f1 = fun(x1, y1, p)
     f2 = fun(x2, y2, p)
-    res_1 = y1_prime - f1
-    res_2 = y2_prime - f2
+    r1 = y1_prime - f1
+    r2 = y2_prime - f2
 
-    res_middle /= 1 + np.abs(f_middle)
-    res_1 /= 1 + np.abs(f1)
-    res_2 /= 1 + np.abs(f2)
+    r_middle /= 1 + np.abs(f_middle)
+    r1 /= 1 + np.abs(f1)
+    r2 /= 1 + np.abs(f2)
 
-    res_1 = np.sum(np.real(res_1 * np.conj(res_1)), axis=0)
-    res_2 = np.sum(np.real(res_2 * np.conj(res_2)), axis=0)
-    res_middle = np.sum(np.real(res_middle * np.conj(res_middle)), axis=0)
+    r1 = np.sum(np.real(r1 * np.conj(r1)), axis=0)
+    r2 = np.sum(np.real(r2 * np.conj(r2)), axis=0)
+    r_middle = np.sum(np.real(r_middle * np.conj(r_middle)), axis=0)
 
-    return (0.5 * (32/45 * res_middle + 49/90 * (res_1 + res_2))) ** 0.5
+    return (0.5 * (32 / 45 * r_middle + 49 / 90 * (r1 + r2))) ** 0.5
 
 
 def create_spline(y, yp, x, h):
@@ -758,11 +758,11 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         If `bc_jac` is None (default), the derivatives will be estimated using
         forward finite differences.
     tol : float, optional
-        Desired tolerance of the solution. If we define ``res = y' - f`` where
-        ``y'`` is the derivative of the found solution, then the solver tries
-        to achieve on each mesh interval ``norm(res / (1 + abs(f)) < tol``,
-        where ``norm`` is estimated in a root mean squared sense (using a
-        numerical quadrature formula). Default is 1e-3.
+        Desired tolerance of the solution. If we define ``r = y' - f(x, y)``
+        where y is the found solution, then the solver tries to achieve on each
+        mesh interval ``norm(r / (1 + abs(f)) < tol``, where ``norm`` is
+        estimated in a root mean squared sense (using a numerical quadrature
+        formula). Default is 1e-3.
     max_nodes : int, optional
         Maximum allowed number of the mesh nodes. If exceeded, the algorithm
         terminates. Default is 1000.
@@ -788,8 +788,9 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         Solution values at the mesh nodes.
     yp : ndarray, shape (n, m)
         Solution derivatives at the mesh nodes.
-    res : ndarray, shape (m - 1,)
-        Relative rms residuals for each mesh interval.
+    rms_res : ndarray, shape (m - 1,)
+        RMS values of the relative residuals over each mesh interval (see the
+        description of `tol` parameter).
     niter : int
         Number of completed iterations.
     status : int
@@ -1036,18 +1037,17 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
                                                          p, x, h)
         # This relation is not trivial, but can be verified.
-        res_middle = 1.5 * col_res / h
+        r_middle = 1.5 * col_res / h
         sol = create_spline(y, f, x, h)
-        rms_res = estimate_rms_residuals(
-            fun_wrapped, sol, x, h, p, res_middle, f_middle)
-        max_res = np.max(rms_res)
+        rms_res = estimate_rms_residuals(fun_wrapped, sol, x, h, p,
+                                         r_middle, f_middle)
+        max_rms_res = np.max(rms_res)
 
         if singular:
             status = 2
             break
 
-        insert_1, = np.nonzero((rms_res > tol) &
-                               (rms_res < 100 * tol))
+        insert_1, = np.nonzero((rms_res > tol) & (rms_res < 100 * tol))
         insert_2, = np.nonzero(rms_res >= 100 * tol)
         nodes_added = insert_1.shape[0] + 2 * insert_2.shape[0]
 
@@ -1055,11 +1055,12 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
             status = 1
             if verbose == 2:
                 nodes_added = "({})".format(nodes_added)
-                print_iteration_progress(iteration, max_res, m, nodes_added)
+                print_iteration_progress(iteration, max_rms_res, m,
+                                         nodes_added)
             break
 
         if verbose == 2:
-            print_iteration_progress(iteration, max_res, m, nodes_added)
+            print_iteration_progress(iteration, max_rms_res, m, nodes_added)
 
         if nodes_added > 0:
             x = modify_mesh(x, insert_1, insert_2)
@@ -1073,19 +1074,19 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
         if status == 0:
             print("Solved in {} iterations, number of nodes {}, "
                   "maximum relative residual {:.2e}."
-                  .format(iteration, x.shape[0], max_res))
+                  .format(iteration, x.shape[0], max_rms_res))
         elif status == 1:
             print("Number of nodes is exceeded after iteration {}, "
                   "maximum relative residual {:.2e}."
-                  .format(iteration, max_res))
+                  .format(iteration, max_rms_res))
         elif status == 2:
             print("Singular Jacobian encountered when solving the collocation "
                   "system on iteration {}, maximum relative residual {:.2e}."
-                  .format(iteration, max_res))
+                  .format(iteration, max_rms_res))
 
     if p.size == 0:
         p = None
 
-    return BVPResult(sol=sol, p=p, x=x, y=y, yp=f, res=rms_res,
+    return BVPResult(sol=sol, p=p, x=x, y=y, yp=f, rms_res=rms_res,
                      niter=iteration, status=status,
                      message=TERMINATION_MESSAGES[status], success=status == 0)

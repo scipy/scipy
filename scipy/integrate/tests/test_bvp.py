@@ -361,12 +361,12 @@ def test_no_params():
             assert_allclose(sol_test[0], exp_sol(x_test), atol=1e-5)
 
             f_test = exp_fun(x_test, sol_test)
-            res = sol.sol(x_test, 1) - f_test
-            rel_res = res / (1 + np.abs(f_test))
+            r = sol.sol(x_test, 1) - f_test
+            rel_res = r / (1 + np.abs(f_test))
             norm_res = np.sum(rel_res**2, axis=0)**0.5
             assert_(np.all(norm_res < 1e-3))
 
-            assert_(np.all(sol.res < 1e-3))
+            assert_(np.all(sol.rms_res < 1e-3))
             assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
             assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
@@ -394,12 +394,12 @@ def test_with_params():
                             rtol=1e-4, atol=1e-4)
 
             f_test = sl_fun(x_test, sol_test, [1])
-            res = sol.sol(x_test, 1) - f_test
-            rel_res = res / (1 + np.abs(f_test))
+            r = sol.sol(x_test, 1) - f_test
+            rel_res = r / (1 + np.abs(f_test))
             norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
             assert_(np.all(norm_res < 1e-3))
 
-            assert_(np.all(sol.res < 1e-3))
+            assert_(np.all(sol.rms_res < 1e-3))
             assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
             assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
@@ -426,8 +426,8 @@ def test_singular_term():
             assert_allclose(sol_test[0], emden_sol(x_test), atol=1e-6)
 
             f_test = emden_fun(x_test, sol_test) + S.dot(sol_test) / x_test
-            res = sol.sol(x_test, 1) - f_test
-            rel_res = res / (1 + np.abs(f_test))
+            r = sol.sol(x_test, 1) - f_test
+            rel_res = r / (1 + np.abs(f_test))
             norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
 
             assert_(np.all(norm_res < 1e-3))
@@ -455,13 +455,13 @@ def test_complex():
             assert_allclose(sol_test[0].imag, exp_sol(x_test), atol=1e-5)
 
             f_test = exp_fun(x_test, sol_test)
-            res = sol.sol(x_test, 1) - f_test
-            rel_res = res / (1 + np.abs(f_test))
+            r = sol.sol(x_test, 1) - f_test
+            rel_res = r / (1 + np.abs(f_test))
             norm_res = np.sum(np.real(rel_res * np.conj(rel_res)),
                               axis=0) ** 0.5
             assert_(np.all(norm_res < 1e-3))
 
-            assert_(np.all(sol.res < 1e-3))
+            assert_(np.all(sol.rms_res < 1e-3))
             assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
             assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
@@ -494,12 +494,12 @@ def test_big_problem():
     assert_allclose(sol_test[0], big_sol(x, n))
 
     f_test = big_fun(x, sol_test)
-    res = sol.sol(x, 1) - f_test
-    rel_res = res / (1 + np.abs(f_test))
+    r = sol.sol(x, 1) - f_test
+    rel_res = r / (1 + np.abs(f_test))
     norm_res = np.sum(np.real(rel_res * np.conj(rel_res)), axis=0) ** 0.5
     assert_(np.all(norm_res < 1e-3))
 
-    assert_(np.all(sol.res < 1e-3))
+    assert_(np.all(sol.rms_res < 1e-3))
     assert_allclose(sol.sol(sol.x), sol.y, rtol=1e-10, atol=1e-10)
     assert_allclose(sol.sol(sol.x, 1), sol.yp, rtol=1e-10, atol=1e-10)
 
@@ -519,8 +519,8 @@ def test_shock_layer():
     assert_allclose(sol_test[0], shock_sol(x_test), rtol=1e-5, atol=1e-5)
 
     f_test = shock_fun(x_test, sol_test)
-    res = sol.sol(x_test, 1) - f_test
-    rel_res = res / (1 + np.abs(f_test))
+    r = sol.sol(x_test, 1) - f_test
+    rel_res = r / (1 + np.abs(f_test))
     norm_res = np.sum(rel_res ** 2, axis=0) ** 0.5
 
     assert_(np.all(norm_res < 1e-3))
@@ -548,6 +548,7 @@ def test_verbose():
             assert_("Solved in" in text, text)
         if verbose >= 2:
             assert_("Max residual" in text, text)
+
 
 if __name__ == '__main__':
     run_module_suite()
