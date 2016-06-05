@@ -293,6 +293,7 @@ from .bsplines import *
 from .filter_design import *
 from .fir_filter_design import *
 from .ltisys import *
+from .lti_conversion import *
 from .windows import *
 from .signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
