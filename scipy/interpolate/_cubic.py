@@ -361,10 +361,11 @@ class CubicSpline(PPoly):
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
         Default is 0.
-    extrapolate : bool or None, optional
-        Whether to extrapolate to out-of-bounds points based on first and last
-        intervals, or to return NaNs. If None (default), `extrapolate` is set
-        to False for ``bc_type='periodic'`` and to True otherwise (see Notes).
+    extrapolate : {bool, 'periodic', None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), `extrapolate` is
+        set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
     bc_type : string or 2-tuple, optional
         Boundary condition type. Two additional equations, given by the
         boundary conditions, are required to determine all coefficients of
@@ -434,17 +435,8 @@ class CubicSpline(PPoly):
 
     When 'not-a-knot' boundary conditions is applied to both ends, the
     resulting spline will be the same as returned by `splrep` (with ``s=0``)
-    and `InterpolatedUnivariateSpline`, but those two methods use a
+    and `InterpolatedUnivariateSpline`, but these two methods use a
     representation in B-spline basis.
-
-    Currently `PPoly` can't correctly evaluate periodic polynomials for
-    arbitrary x. To decrease possible confusion, `extrapolate` is set to False
-    by default when ``bc_type='periodic'``. Fow now you can achieve periodic
-    evaluation for any x as follows::
-
-        S(S.x[0] + (x - S.x[0]) % (S.x[-1] - S.x[0])),
-
-    where ``S`` is a `CubicSpline` instance.
 
     .. versionadded:: 0.18.0
 
@@ -545,7 +537,10 @@ class CubicSpline(PPoly):
         bc, y = self._validate_bc(bc_type, y, y.shape[1:], axis)
 
         if extrapolate is None:
-            extrapolate = bc_type[0] != 'periodic'
+            if bc[0] == 'periodic':
+                extrapolate = 'periodic'
+            else:
+                extrapolate = True
 
         dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
         slope = np.diff(y, axis=0) / dxr

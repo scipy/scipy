@@ -468,7 +468,7 @@ class TestCubicSpline(object):
             assert_allclose(S(x[0], 2), S(x[-1], 2), rtol=tol, atol=tol)
             return
 
-        # Check other boundary conditions
+        # Check other boundary conditions.
         if bc_start == 'not-a-knot':
             if x.size == 2:
                 slope = (S(x[1]) - S(x[0])) / dx[0]
@@ -547,6 +547,12 @@ class TestCubicSpline(object):
             Y[1, :, 1] = y + 5
             S = CubicSpline(x, Y, axis=1, bc_type='periodic')
             self.check_correctness(S, 'periodic', 'periodic')
+
+    def test_periodic_eval(self):
+        x = np.linspace(0, 2 * np.pi, 10)
+        y = np.cos(x)
+        S = CubicSpline(x, y, bc_type='periodic')
+        assert_almost_equal(S(1), S(1 + 2 * np.pi), decimal=15)
 
     def test_dtypes(self):
         x = np.array([0, 1, 2, 3], dtype=int)
