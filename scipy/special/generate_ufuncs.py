@@ -462,8 +462,6 @@ The module follows the following conventions.
 
 The module is usable from Cython via::
 
-.. code-block:: cython
-
     cimport scipy.special.cython_special
 
 Available Functions
@@ -714,8 +712,16 @@ CYTHON_SPECIAL_BENCHFUNCS = {
     'psi': [('d', 1), ('D', 1)],
 }
 
-CYTHON_SPECIAL_BLACKLIST = {
+CYTHON_SPECIAL_KNOWNFAILURES = {
     'pbwa': 'see gh-6208',
+    'pro_rad1': 'see gh-6211',
+    'pro_rad2': 'see gh-6211',
+    'obl_rad1': 'see gh-6211',
+    'obl_rad2': 'see gh-6211',
+    'pro_rad1_cv': 'see gh-6211',
+    'pro_rad2_cv': 'see gh-6211',
+    'obl_rad1_cv': 'see gh-6211',
+    'obl_rad2_cv': 'see gh-6211',
 }
 
 
@@ -1815,10 +1821,10 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         else:
             cyfunc = "{}.{}".format(modname, func.name)
         incodes = str(tuple(map(lambda x: x.split("->")[0].split("*")[0], specs)))
-        if func.name in CYTHON_SPECIAL_BLACKLIST:
-            knownfailure = '"{}"'.format(CYTHON_SPECIAL_BLACKLIST[func.name])
+        if func.name in CYTHON_SPECIAL_KNOWNFAILURES:
+            knownfailure = '"{}"'.format(CYTHON_SPECIAL_KNOWNFAILURES[func.name])
         else:
-            knownfailure = '""'
+            knownfailure = str(None)
         param = [pyfunc, cyfunc, incodes, knownfailure]
         params.append("({})".format(", ".join(param)))
 
