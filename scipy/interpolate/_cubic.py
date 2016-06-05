@@ -428,6 +428,9 @@ class CubicSpline(PPoly):
 
     Notes
     -----
+    Parameters `bc_type` and `interpolate` work independently, i.e. the former
+    controls only construction of a spline, and the latter only evaluation.
+
     When a boundary condition is 'not-a-knot' and n = 2, it is replaced by
     a condition that the first derivative is equal to the linear interpolant
     slope. When both boundary conditions are 'not-a-knot' and n = 3, the
