@@ -417,10 +417,10 @@ Scalar, typed versions of many of the functions in ``scipy.special``
 can be accessed directly from Cython; the complete list is given
 below. The list is in the form::
 
-    <function>: <inargs>-><outargs> [, <inargs>-><outargs> ...]
+    <function>: <intypes>*<outypes>-><rettype> [, ...]
 
-Here ``<inargs>`` and ``<outargs>`` are specified as lists of
-typecodes which correspond to the following cython types:
+Here ``<intypes>``, ``<outtypes>``, and ``<rettype>`` are specified as
+lists of typecodes which correspond to the following cython types:
 
 - f: float
 - d: double
@@ -432,8 +432,8 @@ typecodes which correspond to the following cython types:
 - l: long
 - v: void.
 
-Multiple pairs of ``<inargs>-><outargs>`` mean the function has
-several possible signatures. For example, ``jv`` is listed as::
+Multiple pairs of ``<intypes>*<outtypes>-><rettype>`` mean the function
+has several possible signatures. For example, ``jv`` is listed as::
 
     jv: dd->d, dD->D,
 
@@ -442,7 +442,27 @@ which means that in Cython the following functions are available:
 - ``double jv(double, double)``
 - ``double complex jv(double, double complex)``.
 
+Variables for ``<outtypes>`` are passed as pointers. For example,
+``airy`` has a signature ``d*dddd->v`` and can be called in the
+following way:
+
+.. code-block:: cython
+
+    from scipy.special.cython_special cimport airy
+    cdef double x = 1
+    cdef double ai, aip, bi, bip
+    airy(x, &ai, &aip, &bi, &bip)
+
+The module follows the following conventions.
+
+- If a function's ufunc counterpart returns multiple values, then the
+  function returns its outputs as pointers via ``<outtypes>``.
+- If a function's ufunc counterpart returns a single value, then the
+  function's output is returned directly via ``<rettype>``.
+
 The module is usable from Cython via::
+
+.. code-block:: cython
 
     cimport scipy.special.cython_special
 
@@ -540,6 +560,7 @@ from itertools import product
 
 import numpy as np
 from numpy.testing import assert_allclose
+from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy import special
 from scipy.special import MODNAME
@@ -575,7 +596,10 @@ PARAMS
     ]
 
     def check(param):
-        pyfunc, cyfunc, specializations = param
+        pyfunc, cyfunc, specializations, knownfailure = param
+        if knownfailure:
+            raise KnownFailureTest(knownfailure)
+
         for typecodes in specializations:
             pts = _generate_test_points(typecodes)
             pyres, cyres = [], []
@@ -638,6 +662,8 @@ import os
 import optparse
 import re
 import textwrap
+import itertools
+import numpy
 
 add_newdocs = __import__('add_newdocs')
 
@@ -652,18 +678,6 @@ CY_TYPES = {
     'l': 'long',
     'v': 'void',
 }
-
-CY_UNDERSCORE_TYPES = {
-    'f': 'float',
-    'd': 'double',
-    'g': 'long_double',
-    'F': 'float_complex',
-    'D': 'double_complex',
-    'G': 'long_double_complex',
-    'i': 'int',
-    'l': 'long',
-    'v': 'void',
-}    
 
 C_TYPES = {
     'f': 'npy_float',
@@ -689,14 +703,24 @@ TYPE_NAMES = {
 }
 
 CYTHON_SPECIAL_BENCHFUNCS = {
+    'airy': [('d*dddd', 1), ('D*DDDD', 1)],
     'beta': [('dd', 0.25, 0.75)],
     'erf': [('d', 1), ('D', 1 + 1j)],
     'exprel': [('d', 1e-6)],
     'gamma': [('d', 100), ('D', 100 + 100j)],
     'jv': [('dd', 1, 1), ('dD', 1, 1 + 1j)],
+    'loggamma': [('D', 20)],
     'logit': [('d', 0.5)],
     'psi': [('d', 1), ('D', 1)],
 }
+
+CYTHON_SPECIAL_BLACKLIST = {
+    'pbwa': 'see gh-6208',
+}
+
+
+def underscore(arg):
+    return arg.replace(" ", "_")
 
 
 def cast_order(c):
@@ -859,7 +883,7 @@ def generate_loop(func_inputs, func_outputs, func_retval,
     return name, body
 
 
-def generate_fused_type(typecodes):
+def generate_fused_type(codes):
     """
     Generate name of and cython code for a fused type.
 
@@ -869,33 +893,65 @@ def generate_fused_type(typecodes):
         Valid inputs to CY_TYPES (i.e. f, d, g, ...).
 
     """
-    cytypes = map(lambda x: CY_TYPES[x], typecodes)
-    name = typecodes + "_number_t"
+    cytypes = map(lambda x: CY_TYPES[x], codes)
+    name = codes + "_number_t"
     declaration = ["ctypedef fused " + name + ":"]
     for cytype in cytypes:
         declaration.append("    " + cytype)
     declaration = "\n".join(declaration)
-    return name, cytypes, declaration
+    return name, declaration
 
 
-def generate_bench(name, typecodes):
+def generate_bench(name, codes):
     tab = " "*4
-    args = []
-    args_and_types = []
-    for n, typecode in enumerate(typecodes):
-        args.append("x{}".format(n))
-        args_and_types.append("{} x{}".format(CY_TYPES[typecode], n))
-    template = ["def {}(int N, " + ", ".join(args_and_types) + "):"]
-    template.append(tab + "cdef int n")
-    template.append(tab + "for n in range(N):")
-    template.append(2*tab + "{}(" + ", ".join(args) + ")")
-    template = "\n".join(template)
-    benchfunc = "{}_{}".format(name, typecodes)
-    pyfunc = "_bench_{}_{}_{}".format(name, typecodes, "py")
-    cyfunc = "_bench_{}_{}_{}".format(name, typecodes, "cy")
-    pybench = template.format(pyfunc, "_ufuncs." + name)
-    cybench = template.format(cyfunc, name)
+    top, middle, end = [], [], []
+
+    tmp = codes.split("*")
+    if len(tmp) > 1:
+        incodes = tmp[0]
+        outcodes = tmp[1]
+    else:
+        incodes = tmp[0]
+        outcodes = ""
+
+    inargs, inargs_and_types = [], []
+    for n, code in enumerate(incodes):
+        arg = "x{}".format(n)
+        inargs.append(arg)
+        inargs_and_types.append("{} {}".format(CY_TYPES[code], arg))
+    line = "def {{}}(int N, {}):".format(", ".join(inargs_and_types))
+    top.append(line)
+    top.append(tab + "cdef int n")
+
+    outargs = []
+    for n, code in enumerate(outcodes):
+        arg = "y{}".format(n)
+        outargs.append("&{}".format(arg))
+        line = "cdef {} {}".format(CY_TYPES[code], arg)
+        middle.append(tab + line)
+
+    end.append(tab + "for n in range(N):")
+    end.append(2*tab + "{}({})")
+    benchfunc = "{}_{}".format(name, incodes)
+    pyfunc = "_bench_{}_{}_{}".format(name, incodes, "py")
+    cyfunc = "_bench_{}_{}_{}".format(name, incodes, "cy")
+    pytemplate = "\n".join(top + end)
+    cytemplate = "\n".join(top + middle + end)
+    pybench = pytemplate.format(pyfunc, "_ufuncs." + name, ", ".join(inargs))
+    cybench = cytemplate.format(cyfunc, name, ", ".join(inargs + outargs))
     return benchfunc, pyfunc, cyfunc, pybench, cybench
+
+
+def npy_cdouble_from_double_complex(var):
+    """Cast a cython double complex to a numpy cdouble."""
+    res = "_complexstuff.npy_cdouble_from_double_complex({})".format(var)
+    return res
+
+
+def double_complex_from_npy_cdouble(var):
+    """Cast a numpy cdouble to a cython double complex."""
+    res = "_complexstuff.double_complex_from_npy_cdouble({})".format(var)
+    return res
 
 
 def iter_variants(inputs, outputs):
@@ -1169,14 +1225,20 @@ class FusedFunc(Func):
     def __init__(self, name, signatures, headers):
         super(FusedFunc, self).__init__(name, signatures, headers)
         self.doc = "See the documentation for scipy.special." + self.name
-        self.inargs, self.outargs = self._get_args()
+        # "codes" are the keys for CY_TYPES
+        self.incodes, self.outcodes = self._get_codes()
+        self.fused_types = set()
+        self.intypes, infused_types = self._get_types(self.incodes)
+        self.fused_types.update(infused_types)
+        self.outtypes, outfused_types = self._get_types(self.outcodes)
+        self.fused_types.update(outfused_types)
+        self.invars, self.outvars = self._get_vars()
 
-    def _get_args(self):
+    def _get_codes(self):
         inarg_num, outarg_num = None, None
         all_inp, all_outp = [], []
-        for func_name, inarg, outarg, ret, header in self.signatures:
+        for _, inarg, outarg, ret, _ in self.signatures:
             outp = re.sub(r'\*.*', '', ret) + outarg
-            ret = ret.replace('*', '')
             if inarg_num is None:
                 inarg_num = len(inarg)
                 outarg_num = len(outp)
@@ -1184,156 +1246,404 @@ class FusedFunc(Func):
             all_inp.append(inp)
             all_outp.append(outp)
 
-        inargs = []
+        incodes = []
         for n in range(inarg_num):
-            types = unique(map(lambda x: x[n], all_inp))
-            types.sort()
-            inargs.append(''.join(types))
-        outargs = []
+            codes = unique(map(lambda x: x[n], all_inp))
+            codes.sort()
+            incodes.append(''.join(codes))
+        outcodes = []
         for n in range(outarg_num):
-            types = unique(map(lambda x: x[n], all_outp))
-            types.sort()
-            outargs.append(''.join(types))
+            codes = unique(map(lambda x: x[n], all_outp))
+            codes.sort()
+            outcodes.append(''.join(codes))
 
-        return tuple(inargs), tuple(outargs)
+        return tuple(incodes), tuple(outcodes)
 
-    def generate(self):
-        tab = " "*4
-
-        # Get the types of the arguments and return values of the
-        # function and create new fused types as necessary.
+    def _get_types(self, codes):
+        all_types = []
         fused_types = set()
-        if len(self.outargs) > 1:
-            raise ValueError("Only functions with one return value allowed.")
+        for code in codes:
+            if len(code) == 1:
+                # It's not a fused type
+                all_types.append((CY_TYPES[code], code))
+            else:
+                # It's a fused type
+                fused_type, dec = generate_fused_type(code)
+                fused_types.add(dec)
+                all_types.append((fused_type, code))
+        return all_types, fused_types
+
+    def _get_vars(self):
+        invars = []
+        for n in range(len(self.intypes)):
+            invars.append("x{}".format(n))
+        outvars = []
+        for n in range(len(self.outtypes)):
+            outvars.append("y{}".format(n))
+        return invars, outvars
+
+    def _get_conditional(self, types, codes, adverb):
+        """Generate an if/elif/else clause that selects a specialization of
+        fused types.
+
+        """
+        clauses = []
+        seen = set()
+        for (typ, typcode), code in zip(types, codes):
+            if len(typcode) == 1:
+                continue
+            if typ not in seen:
+                clauses.append("{} is {}".format(typ, underscore(CY_TYPES[code])))
+                seen.add(typ)
+        if clauses and adverb != "else":
+            line = "{} {}:".format(adverb, " and ".join(clauses))
+        elif clauses and adverb == "else":
+            line = "else:"
         else:
-            outarg, = self.outargs
-        if len(outarg) == 1:
-            # It's not a fused type
-            outtype = CY_TYPES[outarg]
+            line = None
+        return line
+
+    def _get_incallvars(self, intypes, c):
+        """Generate pure input variables to a specialization,
+        i.e. variables that aren't used to return a value.
+
+        """
+        incallvars = []
+        for n, intype in enumerate(intypes):
+            var = self.invars[n]
+            if c and intype == "double complex":
+                var = npy_cdouble_from_double_complex(var)
+            incallvars.append(var)
+        return incallvars
+
+    def _get_outcallvars(self, outtypes, c):
+        """Generate output variables to a specialization,
+        i.e. pointers that are used to return values.
+
+        """
+        outcallvars, tmpvars, casts = [], [], []
+        # If there are more out variables than out types, we want the
+        # tail of the out variables
+        start = len(self.outvars) - len(outtypes)
+        outvars = self.outvars[start:]
+        for n, (var, outtype) in enumerate(zip(outvars, outtypes)):
+            if c and outtype == "double complex":
+                tmp = "tmp{}".format(n)
+                tmpvars.append(tmp)
+                outcallvars.append("&{}".format(tmp))
+                tmpcast = double_complex_from_npy_cdouble(tmp)
+                casts.append("{}[0] = {}".format(var, tmpcast))
+            else:
+                outcallvars.append("{}".format(var))
+        return outcallvars, tmpvars, casts
+
+    def _get_nan_decs(self):
+        """Set all variables to nan for specializations of fused types for
+        which don't have signatures.
+
+        """
+        # Set non fused-type variables to nan
+        tab = " "*4
+        fused_types, lines = [], [tab + "else:"]
+        seen = set()
+        for outvar, outtype, code in zip(self.outvars, self.outtypes, self.outcodes):
+            if len(code) == 1:
+                line = "{}[0] = {}".format(outvar, NAN_VALUE[code])
+                lines.append(2*tab + line)
+            else:
+                fused_type = outtype
+                name, _ = fused_type
+                if name not in seen:
+                    fused_types.append(fused_type)
+                    seen.add(name)
+        if not fused_types:
+            return lines
+
+        # Set fused-type variables to nan
+        all_codes = []
+        for fused_type in fused_types:
+            _, codes = fused_type
+            all_codes.append(codes)
+        all_codes = tuple(all_codes)
+
+        codelens = map(lambda x: len(x), all_codes)
+        last = numpy.product(codelens) - 1
+        for m, codes in enumerate(itertools.product(*all_codes)):
+            fused_codes, decs = [], []
+            for n, fused_type in enumerate(fused_types):
+                code = codes[n]
+                fused_codes.append(underscore(CY_TYPES[code]))
+                for n, outvar in enumerate(self.outvars):
+                    if self.outtypes[n] == fused_type:
+                        line = "{}[0] = {}".format(outvar, NAN_VALUE[code])
+                        decs.append(line)
+            if m == 0:
+                adverb = "if"
+            elif m == last:
+                adverb = "else"
+            else:
+                adverb = "elif"
+            cond = self._get_conditional(fused_types, codes, adverb)
+            lines.append(2*tab + cond)
+            lines.extend(map(lambda x: 3*tab + x, decs))
+        return lines
+
+    def _get_tmp_decs(self, all_tmpvars):
+        """Generate the declarations of any necessary temporary
+        variables.
+
+        """
+        tab = " "*4
+        tmpvars = list(all_tmpvars)
+        tmpvars.sort()
+        tmpdecs = []
+        for tmpvar in tmpvars:
+            line = "cdef npy_cdouble {}".format(tmpvar)
+            tmpdecs.append(tab + line)
+        return tmpdecs
+
+    def _get_python_wrap(self):
+        """Generate a python wrapper for functions which pass their
+        arguments as pointers.
+
+        """
+        tab = " "*4
+        body, callvars = [], []
+        for (intype, _), invar in zip(self.intypes, self.invars):
+            callvars.append("{} {}".format(intype, invar))
+        line = "def _{}_pywrap({}):".format(self.name, ", ".join(callvars))
+        body.append(line)
+        for (outtype, _), outvar in zip(self.outtypes, self.outvars):
+            line = "cdef {} {}".format(outtype, outvar)
+            body.append(tab + line)
+        addr_outvars = map(lambda x: "&{}".format(x), self.outvars)
+        line = "{}({}, {})".format(self.name, ", ".join(self.invars),
+                                   ", ".join(addr_outvars))
+        body.append(tab + line)
+        line = "return {}".format(", ".join(self.outvars))
+        body.append(tab + line)
+        body = "\n".join(body)
+        return body
+
+    def _get_common(self, signum, sig):
+        """Generate code common to all the _generate_* methods."""
+        tab = " "*4
+        func_name, incodes, outcodes, retcode, header = sig
+        # Convert ints to longs; cf. iter_variants()
+        incodes = incodes.replace('i', 'l')
+        outcodes = outcodes.replace('i', 'l')
+        retcode = retcode.replace('i', 'l')
+
+        if header.endswith("h"):
+            c = True
         else:
-            # It's a fused type
-            outtype, _, type_declaration = generate_fused_type(outarg)
-            fused_types.add(type_declaration)
+            c = False
+        if header.endswith("++"):
+            cpp = True
+        else:
+            cpp = False
 
-        intypes = []
-        for inarg in self.inargs:
-            if len(inarg) == 1:
-                cytype = CY_TYPES[inarg]
-                intypes.append((cytype, [cytype]))
-            else:
-                intype, cytypes, type_declaration = generate_fused_type(inarg)
-                fused_types.add(type_declaration)
-                intypes.append((intype, cytypes))
+        intypes = map(lambda x: CY_TYPES[x], incodes)
+        outtypes = map(lambda x: CY_TYPES[x], outcodes)
+        retcode = re.sub(r'\*.*', '', retcode)
+        if not retcode:
+            retcode = 'v'
+        rettype = CY_TYPES[retcode]
 
-        # Generate the body of the function. Do this first because we
-        # won't know if we need a tmp variable until all the
-        # signatures are parsed.
-        needtmp = False
-        multiple_specializations = False
-        specializations = []
-        body = []
-        for n, (func_name, inargs, outargs, ret, header) in enumerate(self.signatures):
-            # Convert ints to longs. Why? Because that's what iter_variants does...
-            inargs = inargs.replace('i', 'l')
-            outargs = outargs.replace('i', 'l')
-            ret = ret.replace('i', 'l')
-            # Generate the if-elif-else statements that select
-            # specializations of the fused types.
-            clauses = []
-            seen = set()
-            for (intype, cytypes), inarg in zip(intypes, inargs):
-                if len(cytypes) == 1:
-                    continue
-                elif intype not in seen:
-                    clauses.append("{} is {}".format(intype, CY_UNDERSCORE_TYPES[inarg]))
-                    seen.add(intype)
+        if cpp:
+            # Functions from _ufuncs_cxx are exported as a void*
+            # pointers; cast them to the correct types
+            func_name = "scipy.special._ufuncs_cxx._export_{}".format(func_name)
+            func_name = "(<{}(*)({}) nogil>{})"\
+                    .format(rettype, ", ".join(intypes + outtypes), func_name)
+        else:
+            func_name = self.cython_func_name(func_name, specialized=True)
 
-            if clauses:
-                multiple_specializations = True
-                if n == 0:
-                    line = tab + "if " + " and ".join(clauses) + ":"
-                else:
-                    line = tab + "elif " + " and ".join(clauses) + ":"
-                body.append(line)
-                sp = 2*tab
-            else:
-                sp = tab
+        if signum == 0:
+            adverb = "if"
+        else:
+            adverb = "elif"
+        cond = self._get_conditional(self.intypes, incodes, adverb)
+        if cond:
+            lines = [tab + cond]
+            sp = 2*tab
+        else:
+            lines = []
+            sp = tab
 
-            # If the function is from _ufuncs_cxx then it is exported
-            # as a void * pointer; cast it to the correct type.
-            ret = re.sub(r'\*.*', '', ret)
-            if header.endswith("++"):
-                call = "scipy.special._ufuncs_cxx._export_{}".format(func_name)
-                argtypes = map(lambda x: CY_TYPES[x], inargs + outargs)
-                rettype = CY_TYPES[ret]
-                call = "(<{}(*)(".format(rettype) + ", ".join(argtypes) + ") nogil>" + call + ")"
-            else:
-                call = self.cython_func_name(func_name, specialized=True)
-            call += "({})"
+        return func_name, incodes, outcodes, retcode, \
+            intypes, outtypes, rettype, c, lines, sp
 
-            # Get the arguments of the function, casting cython double
-            # complex to npy_cdouble as necessary
-            args = []
-            for n, arg in enumerate(inargs):
-                if header.endswith("h") and arg == "D":
-                    args.append("_complexstuff.npy_cdouble_from_double_complex(x{})".format(n))
-                else:
-                    args.append("x{}".format(n))
+    def _generate_from_return_and_no_outargs(self):
+        tab = " "*4
+        specs, body = [], []
+        for signum, sig in enumerate(self.signatures):
+            func_name, incodes, outcodes, retcode, intypes, outtypes, \
+                rettype, c, lines, sp = self._get_common(signum, sig)
+            body.extend(lines)
 
-            # Generate the call to a particular specialization
-            if outargs and ret:
-                raise ValueError("Only functions with one return value allowed.")
-            elif ret:
-                specializations.append(inargs + "->" + ret)
-                if header.endswith("h") and ret == "D":
-                    # Cast npy_cdouble to cython double complex
-                    call = "_complexstuff.double_complex_from_npy_cdouble(" + call + ")"
-                line = sp + "res = " + call.format(", ".join(args))
-            elif outargs:
-                specializations.append(inargs + "->" + outargs)
-                if header.endswith("h") and outargs == "D":
-                    needtmp = True
-                    args += "&tmp"
-                else:
-                    args += "&res"
-                line = sp + func_name + "(" + ", ".join(args) + ")"
-            else:
-                raise ValueError("Must return at least one value.")
+            # Generate the call to the specialized function
+            callvars = self._get_incallvars(intypes, c)
+            call = "{}({})".format(func_name, ", ".join(callvars))
+            if c and rettype == "double complex":
+                call = double_complex_from_npy_cdouble(call)
+            line = sp + "return {}".format(call)
             body.append(line)
-            if needtmp:
-                body.append(sp + "res = _complexstuff.npy_cdouble_from_double_complex(tmp)")
-        if multiple_specializations:
-            # If there was a specialization that we don't have a
-            # signature for, fall back by returning NAN.
+            sig = "{}->{}".format(incodes, retcode)
+            specs.append(sig)
+
+        if len(specs) > 1:
+            # Return nan for signatures without a specialization
             body.append(tab + "else:")
-            outarg, = self.outargs
-            if len(outarg) == 1:
-                body.append(2*tab + "res = {}".format(NAN_VALUE[outarg]))
+            outtype, outcodes = self.outtypes[0]
+            last = len(outcodes) - 1
+            if len(outcodes) == 1:
+                line = "return {}".format(NAN_VALUE[outcodes])
+                body.append(2*tab + line)
             else:
-                for n, t in enumerate(outarg):
+                for n, code in enumerate(outcodes):
                     if n == 0:
-                        line = 2*tab + "if {} is {}:".format(outtype, CY_UNDERSCORE_TYPES[t])
-                    elif n == len(outarg) - 1:
-                        line = 2*tab + "else:"
+                        adverb = "if"
+                    elif n == last:
+                        adverb = "else"
                     else:
-                        line = 2*tab + "elif {} is {}:".format(outtype, CY_UNDERSCORE_TYPES[t])
-                    body.append(line)
-                    body.append(3*tab + "res = {}".format(NAN_VALUE[t]))
-        body.append(tab + "return res")
+                        adverb = "elif"
+                    cond = self._get_conditional(self.outtypes, code, adverb)
+                    body.append(2*tab + cond)
+                    line = "return {}".format(NAN_VALUE[code])
+                    body.append(3*tab + line)
 
         # Generate the head of the function
-        args, head = [], []
-        for n, (intype, _) in enumerate(intypes):
-            args.append("{} x{}".format(intype, n))
-        declaration = "cpdef {} {}(".format(outtype, self.name) + ", ".join(args) + ") nogil"
-        head.append(declaration + ":")
-        head.append(tab + '"""' + self.doc + '"""')
-        head.append(tab + "cdef {} res".format(outtype))
-        if needtmp:
-            head.append(tab + "cdef npy_cdouble tmp")
+        callvars, head = [], []
+        for n, (intype, _) in enumerate(self.intypes):
+            callvars.append("{} {}".format(intype, self.invars[n]))
+        (outtype, _) = self.outtypes[0]
+        dec = "cpdef {} {}({}) nogil".format(outtype, self.name, ", ".join(callvars))
+        head.append(dec + ":")
+        head.append(tab + '"""{}"""'.format(self.doc))
 
-        source = "\n".join(head + body)
-        return declaration, source, fused_types, specializations
+        src = "\n".join(head + body)
+        return dec, src, specs
+
+    def _generate_from_outargs_and_no_return(self):
+        tab = " "*4
+        all_tmpvars = set()
+        specs, body = [], []
+        for signum, sig in enumerate(self.signatures):
+            func_name, incodes, outcodes, retcode, intypes, outtypes, \
+                rettype, c, lines, sp = self._get_common(signum, sig)
+            body.extend(lines)
+
+            # Generate the call to the specialized function
+            callvars = self._get_incallvars(intypes, c)
+            outcallvars, tmpvars, casts = self._get_outcallvars(outtypes, c)
+            callvars.extend(outcallvars)
+            all_tmpvars.update(tmpvars)
+
+            call = "{}({})".format(func_name, ", ".join(callvars))
+            body.append(sp + call)
+            body.extend(map(lambda x: sp + x, casts))
+            if len(outcodes) == 1:
+                sig = "{}->{}".format(incodes, outcodes)
+                specs.append(sig)
+            else:
+                sig = "{}*{}->v".format(incodes, outcodes)
+                specs.append(sig)
+
+        if len(specs) > 1:
+            lines = self._get_nan_decs()
+            body.extend(lines)
+
+        if len(self.outvars) == 1:
+            line = "return {}[0]".format(self.outvars[0])
+            body.append(tab + line)
+
+        # Generate the head of the function
+        callvars, head = [], []
+        for invar, (intype, _) in zip(self.invars, self.intypes):
+            callvars.append("{} {}".format(intype, invar))
+        if len(self.outvars) > 1:
+            for outvar, (outtype, _) in zip(self.outvars, self.outtypes):
+                callvars.append("{} *{}".format(outtype, outvar))
+        if len(self.outvars) == 1:
+            outtype, _ = self.outtypes[0]
+            dec = "cpdef {} {}({}) nogil".format(outtype, self.name, ", ".join(callvars))
+        else:
+            dec = "cdef void {}({}) nogil".format(self.name, ", ".join(callvars))
+        head.append(dec + ":")
+        head.append(tab + '"""{}"""'.format(self.doc))
+        if len(self.outvars) == 1:
+            outvar = self.outvars[0]
+            outtype, _ = self.outtypes[0]
+            line = "cdef {} {}".format(outtype, outvar)
+            head.append(tab + line)
+        head.extend(self._get_tmp_decs(all_tmpvars))
+
+        src = "\n".join(head + body)
+        return dec, src, specs
+
+    def _generate_from_outargs_and_return(self):
+        tab = " "*4
+        all_tmpvars = set()
+        specs, body = [], []
+        for signum, sig in enumerate(self.signatures):
+            func_name, incodes, outcodes, retcode, intypes, outtypes, \
+                rettype, c, lines, sp = self._get_common(signum, sig)
+            body.extend(lines)
+
+            # Generate the call to the specialized function
+            callvars = self._get_incallvars(intypes, c)
+            outcallvars, tmpvars, casts = self._get_outcallvars(outtypes, c)
+            callvars.extend(outcallvars)
+            all_tmpvars.update(tmpvars)
+            call = "{}({})".format(func_name, ", ".join(callvars))
+            if c and rettype == "double complex":
+                call = double_complex_from_npy_cdouble(call)
+            call = "{}[0] = {}".format(self.outvars[0], call)
+            body.append(sp + call)
+            body.extend(map(lambda x: sp + x, casts))
+            sig = "{}*{}->v".format(incodes, outcodes + retcode)
+            specs.append(sig)
+
+        if len(specs) > 1:
+            lines = self._get_nan_decs()
+            body.extend(lines)
+
+        # Generate the head of the function
+        callvars, head = [], []
+        for invar, (intype, _) in zip(self.invars, self.intypes):
+            callvars.append("{} {}".format(intype, invar))
+        for outvar, (outtype, _) in zip(self.outvars, self.outtypes):
+            callvars.append("{} *{}".format(outtype, outvar))
+        dec = "cdef void {}({}) nogil".format(self.name, ", ".join(callvars))
+        head.append(dec + ":")
+        head.append(tab + '"""{}"""'.format(self.doc))
+        head.extend(self._get_tmp_decs(all_tmpvars))
+
+        src = "\n".join(head + body)
+        return dec, src, specs
+
+    def generate(self):
+        _, _, outcodes, retcode, _ = self.signatures[0]
+        retcode = re.sub(r'\*.*', '', retcode)
+        if not retcode:
+            retcode = 'v'
+
+        if len(outcodes) == 0 and retcode != 'v':
+            dec, src, specs = self._generate_from_return_and_no_outargs()
+        elif len(outcodes) > 0 and retcode == 'v':
+            dec, src, specs = self._generate_from_outargs_and_no_return()
+        elif len(outcodes) > 0 and retcode != 'v':
+            dec, src, specs = self._generate_from_outargs_and_return()
+        else:
+            raise ValueError("Invalid signature")
+
+        if len(self.outvars) > 1:
+            wrap = self._get_python_wrap()
+        else:
+            wrap = None
+
+        return dec, src, specs, self.fused_types, wrap
 
 
 def get_declaration(ufunc, c_name, c_proto, cy_proto, header, proto_h_filename):
@@ -1453,10 +1763,10 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
 
 
 def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
-    pxdfile = modname + ".pxd"
-    pyxfile = modname + ".pyx"
-    proto_h_filename = ufunc_fn_prefix + '_defs.h'
     pwd = os.path.dirname(__file__)
+    pxdfile = os.path.join(pwd, modname + ".pxd")
+    pyxfile = os.path.join(pwd, modname + ".pyx")
+    proto_h_filename = os.path.join(pwd, ufunc_fn_prefix + '_defs.h')
     testfile = os.path.join(pwd, "tests", "test_" + modname + ".py")
     benchfile = os.path.join(pwd, '..', '..', 'benchmarks',
                              'benchmarks', modname + '.py')
@@ -1477,15 +1787,16 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
             # Don't try to deal with functions that have extra layers
             # of wrappers.
             continue
-        elif len(func.outargs) > 1:
-            # Don't try to deal multiple return values
-            continue
+
         # Get the function declaration for the .pxd and the source
         # code for the .pyx
-        dec, source, func_fused_types, specs = func.generate()
+        dec, src, specs, func_fused_types, wrap = func.generate()
         declarations.append(dec)
-        sources.append(source)
+        sources.append(src)
+        if wrap:
+            sources.append(wrap)
         fused_types.update(func_fused_types)
+
         # Declare the specializations
         cfuncs = func.get_prototypes(nptypes_for_h=True)
         for c_name, c_proto, cy_proto, header in cfuncs:
@@ -1496,19 +1807,31 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
                                               cy_proto, header,
                                               proto_h_filename)
             defs.extend(item_defs)
+
         # Get a list of all the functions for the test generator
-        pyfunc = "special." + func.name
-        cyfunc = modname + "." + func.name
-        inargs = str(tuple(map(lambda x: x.split("->")[0], specs)))
-        param = [pyfunc, cyfunc, inargs]
-        params.append("(" + ", ".join(param) + ")")
+        pyfunc = "special.{}".format(func.name)
+        if wrap:
+            cyfunc = "{}._{}_pywrap".format(modname, func.name)
+        else:
+            cyfunc = "{}.{}".format(modname, func.name)
+        incodes = str(tuple(map(lambda x: x.split("->")[0].split("*")[0], specs)))
+        if func.name in CYTHON_SPECIAL_BLACKLIST:
+            knownfailure = '"{}"'.format(CYTHON_SPECIAL_BLACKLIST[func.name])
+        else:
+            knownfailure = '""'
+        param = [pyfunc, cyfunc, incodes, knownfailure]
+        params.append("({})".format(", ".join(param)))
+
         # Add a line to the documentation
-        doc.append('- :py:func:`~scipy.special.' + func.name + '`: ' + ", ".join(specs))
+        doc.append("- :py:func:`~scipy.special.{}`: {}".
+                   format(func.name, ", ".join(specs)))
+
         # Generate code for benchmarks
         if func.name in CYTHON_SPECIAL_BENCHFUNCS:
             for arg in CYTHON_SPECIAL_BENCHFUNCS[func.name]:
-                typecodes, args = arg[0], arg[1:]
-                benchfunc, pyfunc, cyfunc, pybench, cybench = generate_bench(func.name, typecodes)
+                codes, args = arg[0], arg[1:]
+                benchfunc, pyfunc, cyfunc, pybench, cybench \
+                    = generate_bench(func.name, codes)
                 bench_aux.extend([pybench, cybench])
                 try:
                     len(args)

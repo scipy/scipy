@@ -24,6 +24,24 @@ class CythonSpecial(Benchmark):
             self.obj.append(arg*np.ones(N))
         self.obj = tuple(self.obj)
 
+    @with_attributes(params=[((1,),)] + params, param_names=param_names)
+    def time_airy_d(self, args, N, api):
+        if api == 'python':
+            cython_special._bench_airy_d_py(N, *args)
+        elif api == 'numpy':
+            special.airy(*self.obj)
+        else:
+            cython_special._bench_airy_d_cy(N, *args)
+
+    @with_attributes(params=[((1,),)] + params, param_names=param_names)
+    def time_airy_D(self, args, N, api):
+        if api == 'python':
+            cython_special._bench_airy_D_py(N, *args)
+        elif api == 'numpy':
+            special.airy(*self.obj)
+        else:
+            cython_special._bench_airy_D_cy(N, *args)
+
     @with_attributes(params=[((0.25, 0.75),)] + params, param_names=param_names)
     def time_beta_dd(self, args, N, api):
         if api == 'python':
@@ -95,6 +113,15 @@ class CythonSpecial(Benchmark):
             special.jv(*self.obj)
         else:
             cython_special._bench_jv_dD_cy(N, *args)
+
+    @with_attributes(params=[((20,),)] + params, param_names=param_names)
+    def time_loggamma_D(self, args, N, api):
+        if api == 'python':
+            cython_special._bench_loggamma_D_py(N, *args)
+        elif api == 'numpy':
+            special.loggamma(*self.obj)
+        else:
+            cython_special._bench_loggamma_D_cy(N, *args)
 
     @with_attributes(params=[((0.5,),)] + params, param_names=param_names)
     def time_logit_d(self, args, N, api):

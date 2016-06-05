@@ -14,6 +14,8 @@ ctypedef fused dl_number_t:
     double
     long
 
+cdef void airy(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) nogil
+cdef void airye(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) nogil
 cpdef double bdtr(dl_number_t x0, dl_number_t x1, double x2) nogil
 cpdef double bdtrc(dl_number_t x0, dl_number_t x1, double x2) nogil
 cpdef double bdtri(dl_number_t x0, dl_number_t x1, double x2) nogil
@@ -50,6 +52,7 @@ cpdef double cotdg(double x0) nogil
 cpdef Dd_number_t dawsn(Dd_number_t x0) nogil
 cpdef double ellipe(double x0) nogil
 cpdef double ellipeinc(double x0, double x1) nogil
+cdef void ellipj(double x0, double x1, double *y0, double *y1, double *y2, double *y3) nogil
 cpdef double ellipkinc(double x0, double x1) nogil
 cpdef double ellipkm1(double x0) nogil
 cpdef double entr(double x0) nogil
@@ -84,6 +87,7 @@ cpdef double fdtr(double x0, double x1, double x2) nogil
 cpdef double fdtrc(double x0, double x1, double x2) nogil
 cpdef double fdtri(double x0, double x1, double x2) nogil
 cpdef double fdtridfd(double x0, double x1, double x2) nogil
+cdef void fresnel(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) nogil
 cpdef Dd_number_t gamma(Dd_number_t x0) nogil
 cpdef double gammainc(double x0, double x1) nogil
 cpdef double gammaincc(double x0, double x1) nogil
@@ -102,7 +106,10 @@ cpdef double complex hankel2e(double x0, double complex x1) nogil
 cpdef double huber(double x0, double x1) nogil
 cpdef Dd_number_t hyp0f1(double x0, Dd_number_t x1) nogil
 cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) nogil
+cdef void hyp1f2(double x0, double x1, double x2, double x3, double *y0, double *y1) nogil
+cdef void hyp2f0(double x0, double x1, double x2, dl_number_t x3, double *y0, double *y1) nogil
 cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) nogil
+cdef void hyp3f0(double x0, double x1, double x2, double x3, double *y0, double *y1) nogil
 cpdef double hyperu(double x0, double x1, double x2) nogil
 cpdef double i0(double x0) nogil
 cpdef double i0e(double x0) nogil
@@ -110,7 +117,12 @@ cpdef double i1(double x0) nogil
 cpdef double i1e(double x0) nogil
 cpdef double inv_boxcox(double x0, double x1) nogil
 cpdef double inv_boxcox1p(double x0, double x1) nogil
+cdef void it2i0k0(double x0, double *y0, double *y1) nogil
+cdef void it2j0y0(double x0, double *y0, double *y1) nogil
 cpdef double it2struve0(double x0) nogil
+cdef void itairy(double x0, double *y0, double *y1, double *y2, double *y3) nogil
+cdef void iti0k0(double x0, double *y0, double *y1) nogil
+cdef void itj0y0(double x0, double *y0, double *y1) nogil
 cpdef double itmodstruve0(double x0) nogil
 cpdef double itstruve0(double x0) nogil
 cpdef Dd_number_t iv(double x0, Dd_number_t x1) nogil
@@ -125,6 +137,7 @@ cpdef double k1(double x0) nogil
 cpdef double k1e(double x0) nogil
 cpdef double kei(double x0) nogil
 cpdef double keip(double x0) nogil
+cdef void kelvin(double x0, double complex *y0, double complex *y1, double complex *y2, double complex *y3) nogil
 cpdef double ker(double x0) nogil
 cpdef double kerp(double x0) nogil
 cpdef double kl_div(double x0, double x1) nogil
@@ -140,6 +153,14 @@ cpdef dfg_number_t logit(dfg_number_t x0) nogil
 cpdef double lpmv(double x0, double x1, double x2) nogil
 cpdef double mathieu_a(double x0, double x1) nogil
 cpdef double mathieu_b(double x0, double x1) nogil
+cdef void mathieu_cem(double x0, double x1, double x2, double *y0, double *y1) nogil
+cdef void mathieu_modcem1(double x0, double x1, double x2, double *y0, double *y1) nogil
+cdef void mathieu_modcem2(double x0, double x1, double x2, double *y0, double *y1) nogil
+cdef void mathieu_modsem1(double x0, double x1, double x2, double *y0, double *y1) nogil
+cdef void mathieu_modsem2(double x0, double x1, double x2, double *y0, double *y1) nogil
+cdef void mathieu_sem(double x0, double x1, double x2, double *y0, double *y1) nogil
+cdef void modfresnelm(double x0, double complex *y0, double complex *y1) nogil
+cdef void modfresnelp(double x0, double complex *y0, double complex *y1) nogil
 cpdef double modstruve(double x0, double x1) nogil
 cpdef double nbdtr(dl_number_t x0, dl_number_t x1, double x2) nogil
 cpdef double nbdtrc(dl_number_t x0, dl_number_t x1, double x2) nogil
@@ -159,19 +180,36 @@ cpdef Dd_number_t ndtr(Dd_number_t x0) nogil
 cpdef double ndtri(double x0) nogil
 cpdef double nrdtrimn(double x0, double x1, double x2) nogil
 cpdef double nrdtrisd(double x0, double x1, double x2) nogil
+cdef void obl_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) nogil
+cdef void obl_ang1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) nogil
 cpdef double obl_cv(double x0, double x1, double x2) nogil
+cdef void obl_rad1(double x0, double x1, double x2, double x3, double *y0, double *y1) nogil
+cdef void obl_rad1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) nogil
+cdef void obl_rad2(double x0, double x1, double x2, double x3, double *y0, double *y1) nogil
+cdef void obl_rad2_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) nogil
+cdef void pbdv(double x0, double x1, double *y0, double *y1) nogil
+cdef void pbvv(double x0, double x1, double *y0, double *y1) nogil
+cdef void pbwa(double x0, double x1, double *y0, double *y1) nogil
 cpdef double pdtr(dl_number_t x0, double x1) nogil
 cpdef double pdtrc(dl_number_t x0, double x1) nogil
 cpdef double pdtri(dl_number_t x0, double x1) nogil
 cpdef double pdtrik(double x0, double x1) nogil
 cpdef double poch(double x0, double x1) nogil
+cdef void pro_ang1(double x0, double x1, double x2, double x3, double *y0, double *y1) nogil
+cdef void pro_ang1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) nogil
 cpdef double pro_cv(double x0, double x1, double x2) nogil
+cdef void pro_rad1(double x0, double x1, double x2, double x3, double *y0, double *y1) nogil
+cdef void pro_rad1_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) nogil
+cdef void pro_rad2(double x0, double x1, double x2, double x3, double *y0, double *y1) nogil
+cdef void pro_rad2_cv(double x0, double x1, double x2, double x3, double x4, double *y0, double *y1) nogil
 cpdef double pseudo_huber(double x0, double x1) nogil
 cpdef Dd_number_t psi(Dd_number_t x0) nogil
 cpdef double radian(double x0, double x1, double x2) nogil
 cpdef double rel_entr(double x0, double x1) nogil
 cpdef Dd_number_t rgamma(Dd_number_t x0) nogil
 cpdef double round(double x0) nogil
+cdef void shichi(double x0, double *y0, double *y1) nogil
+cdef void sici(double x0, double *y0, double *y1) nogil
 cpdef double sindg(double x0) nogil
 cpdef double smirnov(dl_number_t x0, double x1) nogil
 cpdef double smirnovi(dl_number_t x0, double x1) nogil
