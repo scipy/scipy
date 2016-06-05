@@ -67,6 +67,7 @@ dist
 MANIFEST
 # distutils configuration
 site.cfg
+setup.cfg
 # other temporary files
 .coverage
 .deps

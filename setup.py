@@ -88,8 +88,9 @@ def git_version():
     return GIT_REVISION
 
 
-# BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
-# update it when the contents of directories change.
+# BEFORE importing setuptools, remove MANIFEST. Otherwise it may not be
+# properly updated when the contents of directories change (true for distutils,
+# not sure about setuptools).
 if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
