@@ -1,11 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib._testutils import xslow
+from numpy.testing import dec
 
+from scipy._lib._testutils import xslow
 from scipy.special._testutils import MissingModule, check_version
-from scipy.special._precompute.utils import mpf_assert_allclose
-from scipy.special._precompute.gammainc import (compute_g, compute_alpha,
-                                                compute_d)
+from scipy.special._mptestutils import (Arg, mp_assert_allclose,
+                                        assert_mpmath_equal)
+from scipy.special._precompute.gammainc_asy import (compute_g, compute_alpha,
+                                                    compute_d)
+from scipy.special._precompute.gammainc_data import gammainc
 
 try:
     import sympy
@@ -28,9 +31,10 @@ def test_g():
         g = [mp.mpf(1), mp.mpf(1)/12, mp.mpf(1)/288,
              -mp.mpf(139)/51840, -mp.mpf(571)/2488320,
              mp.mpf(163879)/209018880, mp.mpf(5246819)/75246796800]
-        mpf_assert_allclose(compute_g(7), g)
+        mp_assert_allclose(compute_g(7), g)
 
 
+@dec.slow
 @check_version(sympy, '0.7')
 def test_alpha():
     # Test data for the alpha_k. See DLMF 8.12.14.
@@ -38,7 +42,7 @@ def test_alpha():
         alpha = [mp.mpf(0), mp.mpf(1), mp.mpf(1)/3, mp.mpf(1)/36,
                  -mp.mpf(1)/270, mp.mpf(1)/4320, mp.mpf(1)/17010,
                  -mp.mpf(139)/5443200, mp.mpf(1)/204120]
-        mpf_assert_allclose(compute_alpha(9), alpha)
+        mp_assert_allclose(compute_alpha(9), alpha)
 
 
 @xslow
@@ -78,4 +82,15 @@ def test_d():
         for k, n, std in dataset:
             res.append(d[k][n])
         std = map(lambda x: x[2], dataset)
-        mpf_assert_allclose(res, std)
+        mp_assert_allclose(res, std)
+
+
+@check_version(mp, '0.19')
+def test_gammainc():
+    # Quick check that the gammainc in
+    # special._precompute.gammainc_data agrees with mpmath's
+    # gammainc.
+    assert_mpmath_equal(gammainc,
+                        lambda a, x: mp.gammainc(a, b=x, regularized=True),
+                        [Arg(0, 100, inclusive_a=False), Arg(0, 100)],
+                        nan_ok=False, rtol=1e-17, n=50, dps=50)
