@@ -604,19 +604,19 @@ class TestCubicSpline(object):
                     'not-a-typo']
 
         for bc_type in wrong_bc:
-            assert_raises(ValueError, CubicSpline, x, y, 0, True, bc_type)
+            assert_raises(ValueError, CubicSpline, x, y, 0, bc_type, True)
 
         # Shapes mismatch when giving arbitrary derivative values:
         Y = np.c_[y, y]
         bc1 = ('clamped', (1, 0))
         bc2 = ('clamped', (1, [0, 0, 0]))
         bc3 = ('clamped', (1, [[0, 0]]))
-        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc1)
-        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc2)
-        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc3)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc1, True)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc2, True)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc3, True)
 
         # periodic condition, y[-1] must be equal to y[0]:
-        assert_raises(ValueError, CubicSpline, x, y, 0, True, 'periodic')
+        assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
 
 if __name__ == '__main__':

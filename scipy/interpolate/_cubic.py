@@ -361,11 +361,6 @@ class CubicSpline(PPoly):
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
         Default is 0.
-    extrapolate : {bool, 'periodic', None}, optional
-        If bool, determines whether to extrapolate to out-of-bounds points
-        based on first and last intervals, or to return NaNs. If 'periodic',
-        periodic extrapolation is used. If None (default), `extrapolate` is
-        set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
     bc_type : string or 2-tuple, optional
         Boundary condition type. Two additional equations, given by the
         boundary conditions, are required to determine all coefficients of
@@ -398,6 +393,11 @@ class CubicSpline(PPoly):
           is 1D, then `deriv_value` must be a scalar. If `y` is 3D with the
           shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2D
           and have the shape (n0, n1).
+    extrapolate : {bool, 'periodic', None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), `extrapolate` is
+        set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
 
     Attributes
     ----------
@@ -501,7 +501,7 @@ class CubicSpline(PPoly):
             on Wikiversity.
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
-    def __init__(self, x, y, axis=0, extrapolate=None, bc_type='not-a-knot'):
+    def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
         x, y = map(np.asarray, (x, y))
 
         if np.issubdtype(x.dtype, np.complexfloating):
