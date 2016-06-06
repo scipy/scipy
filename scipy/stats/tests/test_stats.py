@@ -17,7 +17,8 @@ from numpy.testing import (TestCase, assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_raises, run_module_suite, assert_allclose,
-                           dec, assert_raises_regex)
+                           dec)
+from scipy._lib._numpy_compat import assert_raises_regex
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
