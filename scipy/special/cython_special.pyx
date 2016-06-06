@@ -56,6 +56,12 @@ The module is usable from Cython via::
 
     cimport scipy.special.cython_special
 
+Error Handling
+==============
+
+Error handling works the same as in `scipy.special`; in particular
+error messages can be controlled by ``cython_special.errprint``.
+
 Available Functions
 ===================
 
@@ -307,6 +313,14 @@ ctypedef long double long_double
 ctypedef float complex float_complex
 ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
+
+def errprint(inflag=None):
+    """See the documentaion for scipy.special.errprint"""
+    if inflag is not None:
+        scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
+        return sf_error.set_print(int(bool(inflag)))
+    else:
+        return sf_error.get_print()
 
 cdef class _float:
     cdef public float val

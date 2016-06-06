@@ -105,18 +105,18 @@ def configuration(parent_package='',top_path=None):
                          )
 
     # Cython API
-    cspecial_src = ['cython_special.c', 'sf_error.c', '_logit.c.src',
-                  "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
-    cspecial_dep = (headers + ufuncs_src + ufuncs_cxx_src + amos_src
-                    + c_misc_src + cephes_src + mach_src + cdf_src
-                    + specfun_src)
+    cython_special_src = ['cython_special.c', 'sf_error.c', '_logit.c.src',
+                          "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
+    cython_special_dep = (headers + ufuncs_src + ufuncs_cxx_src + amos_src
+                          + c_misc_src + cephes_src + mach_src + cdf_src
+                          + specfun_src)
     cfg.setdefault('include_dirs', []).extend([curdir] + inc_dirs + [numpy.get_include()])
     cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_mach',
                                             'sc_cdf', 'sc_specfun'])
-    cfg.setdefault('define_macros', []).extend(define_macros)
+    cfg.setdefault('define_macros', []).extend(define_macros + [('CYTHON_SPECIAL', 1)])
     config.add_extension('cython_special',
-                         depends=cspecial_dep,
-                         sources=cspecial_src,
+                         depends=cython_special_dep,
+                         sources=cython_special_src,
                          extra_info=get_info("npymath"),
                          **cfg)
 
