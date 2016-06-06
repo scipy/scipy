@@ -423,7 +423,7 @@ def test_singular_term():
             assert_equal(sol.x.size, 10)
 
             sol_test = sol.sol(x_test)
-            assert_allclose(sol_test[0], emden_sol(x_test), atol=1e-6)
+            assert_allclose(sol_test[0], emden_sol(x_test), atol=1e-5)
 
             f_test = emden_fun(x_test, sol_test) + S.dot(sol_test) / x_test
             r = sol.sol(x_test, 1) - f_test
