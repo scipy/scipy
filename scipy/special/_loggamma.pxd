@@ -10,7 +10,9 @@
 import cython
 cimport sf_error
 from libc.math cimport M_PI, ceil, sin, log
-from _complexstuff cimport nan, zisnan, zabs, zlog, zlog1, zsin, zarg, zexp
+from _complexstuff cimport (
+    nan, zisnan, zabs, zlog, zlog1, zsin, zarg, zexp, zlog, zdiv
+)
 from _trig cimport sinpi
 
 cdef extern from "numpy/npy_math.h":
@@ -225,13 +227,17 @@ cdef inline double complex asymptotic_series(double complex z) nogil:
                                601580873.900642368,
                                -15116315767.0921569]
         double complex res = (z - 0.5)*zlog(z) - z + HLOG2PI
-        double complex rsqz = 1/z**2
-        double complex coeff = 1.0/z
+        double complex coeff = zdiv(1.0, z)
+        double complex rsqz = zdiv(coeff, z)
+        double complex term
 
     res += coeff*bernoulli2k[n-1]/(2*n*(2*n - 1))
     for n in range(2, 17):
         coeff *= rsqz
-        res += coeff*bernoulli2k[n-1]/(2*n*(2*n - 1))
+        term = coeff*bernoulli2k[n-1]/(2*n*(2*n - 1))
+        res += term
+        if zabs(term) <= tol*zabs(res):
+            break
     return res
 
 

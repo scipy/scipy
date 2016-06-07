@@ -95,7 +95,7 @@ def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
 def assert_func_equal(func, results, points, rtol=None, atol=None,
                       param_filter=None, knownfailure=None,
                       vectorized=True, dtype=None, nan_ok=False,
-                      ignore_inf_sign=False):
+                      ignore_inf_sign=False, distinguish_nan_and_inf=True):
     if hasattr(points, 'next'):
         # it's a generator
         points = list(points)
@@ -120,7 +120,8 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
                      result_columns=result_columns, result_func=result_func,
                      rtol=rtol, atol=atol, param_filter=param_filter,
                      knownfailure=knownfailure, nan_ok=nan_ok, vectorized=vectorized,
-                     ignore_inf_sign=ignore_inf_sign)
+                     ignore_inf_sign=ignore_inf_sign,
+                     distinguish_nan_and_inf=distinguish_nan_and_inf)
     fdata.check()
 
 
@@ -159,13 +160,16 @@ class FuncData(object):
     ignore_inf_sign : bool, optional
         Whether to ignore signs of infinities.
         (Doesn't matter for complex-valued functions.)
+    distinguish_nonfinite : bool, optional
+        Whether to distinguish between nans and infinities. If true
+        also ignores the signs of infinities.
 
     """
 
     def __init__(self, func, data, param_columns, result_columns=None,
                  result_func=None, rtol=None, atol=None, param_filter=None,
                  knownfailure=None, dataname=None, nan_ok=False, vectorized=True,
-                 ignore_inf_sign=False):
+                 ignore_inf_sign=False, distinguish_nan_and_inf=True):
         self.func = func
         self.data = data
         self.dataname = dataname
@@ -192,6 +196,9 @@ class FuncData(object):
         self.nan_ok = nan_ok
         self.vectorized = vectorized
         self.ignore_inf_sign = ignore_inf_sign
+        self.distinguish_nan_and_inf = distinguish_nan_and_inf
+        if not self.distinguish_nan_and_inf:
+            self.ignore_inf_sign = True
 
     def get_tolerances(self, dtype):
         if not np.issubdtype(dtype, np.inexact):
@@ -310,6 +317,14 @@ class FuncData(object):
                 bad_j &= ~nan_x
                 bad_j &= ~nan_y
                 point_count -= (nan_x | nan_y).sum()
+
+            if not self.distinguish_nan_and_inf and not self.nan_ok:
+                # If nan's are okay we've already covered all these cases
+                inf_x = np.isinf(x)
+                inf_y = np.isinf(y)
+                both_nonfinite = (inf_x & nan_y) | (nan_x & inf_y)
+                bad_j &= ~both_nonfinite
+                point_count -= both_nonfinite.sum()
 
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad

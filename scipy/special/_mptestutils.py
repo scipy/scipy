@@ -121,7 +121,8 @@ class IntArg(object):
 class MpmathData(object):
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
                  dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300,
-                 ignore_inf_sign=False, nan_ok=True, param_filter=None):
+                 ignore_inf_sign=False, distinguish_nan_and_inf=True,
+                 nan_ok=True, param_filter=None):
         self.scipy_func = scipy_func
         self.mpmath_func = mpmath_func
         self.arg_spec = arg_spec
@@ -137,6 +138,7 @@ class MpmathData(object):
         else:
             self.is_complex = any([isinstance(arg, ComplexArg) for arg in self.arg_spec])
         self.ignore_inf_sign = ignore_inf_sign
+        self.distinguish_nan_and_inf = distinguish_nan_and_inf
         if not name or name == '<lambda>':
             name = getattr(scipy_func, '__name__', None)
         if not name or name == '<lambda>':
@@ -201,6 +203,7 @@ class MpmathData(object):
                                       vectorized=False,
                                       rtol=self.rtol, atol=self.atol,
                                       ignore_inf_sign=self.ignore_inf_sign,
+                                      distinguish_nan_and_inf=self.distinguish_nan_and_inf,
                                       nan_ok=self.nan_ok,
                                       param_filter=self.param_filter)
                     break
