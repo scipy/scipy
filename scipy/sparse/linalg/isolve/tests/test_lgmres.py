@@ -168,7 +168,7 @@ class TestLGMRES(TestCase):
             x = K.dot(y)
             res = np.linalg.norm(A.dot(x) - b)
 
-            assert_allclose(resp, res)
+            assert_allclose(resp, res, err_msg=repr(b))
 
     def test_denormals(self):
         # Check that no warnings are emitted if the matrix contains

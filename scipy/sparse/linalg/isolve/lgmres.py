@@ -264,7 +264,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         # The problem is triangular, but the condition number may be
         # bad (or in case of breakdown the last diagonal entry may be
         # zero), so use lstsq instead of trtrs.
-        y, _, _, _, = lstsq(R[:j,:j], Q[0,:j].conj(), lapack_driver='gelsy')
+        y, _, _, _, = lstsq(R[:j,:j], Q[0,:j].conj())
         y *= inner_res_0
 
         if not np.isfinite(y).all():
