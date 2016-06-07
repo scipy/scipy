@@ -9,7 +9,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_allclose, assert_, assert_raises,
                            assert_almost_equal)
-from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, ltid,
+from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
                           dfreqresp, dbode)
 
@@ -286,29 +286,29 @@ class TestLtid(object):
 
         dt = 0.05
         # TransferFunction
-        s = ltid([1], [-1], dt=dt)
+        s = dlti([1], [-1], dt=dt)
         assert_(isinstance(s, TransferFunction))
-        assert_(isinstance(s, ltid))
+        assert_(isinstance(s, dlti))
         assert_(not isinstance(s, lti))
         assert_equal(s.dt, dt)
 
         # ZerosPolesGain
-        s = ltid(np.array([]), np.array([-1]), 1, dt=dt)
+        s = dlti(np.array([]), np.array([-1]), 1, dt=dt)
         assert_(isinstance(s, ZerosPolesGain))
-        assert_(isinstance(s, ltid))
+        assert_(isinstance(s, dlti))
         assert_(not isinstance(s, lti))
         assert_equal(s.dt, dt)
 
         # StateSpace
-        s = ltid([1], [-1], 1, 3, dt=dt)
+        s = dlti([1], [-1], 1, 3, dt=dt)
         assert_(isinstance(s, StateSpace))
-        assert_(isinstance(s, ltid))
+        assert_(isinstance(s, dlti))
         assert_(not isinstance(s, lti))
         assert_equal(s.dt, dt)
 
         # Number of inputs
-        assert_raises(ValueError, ltid, 1)
-        assert_raises(ValueError, ltid, 1, 1, 1, 1, 1)
+        assert_raises(ValueError, dlti, 1)
+        assert_raises(ValueError, dlti, 1, 1, 1, 1, 1)
 
 
 class TestStateSpaceDisc(object):

@@ -168,7 +168,7 @@ Discrete-Time Linear Systems
 .. autosummary::
    :toctree: generated/
 
-   ltid             -- Discrete-time linear time invariant system base class.
+   dlti             -- Discrete-time linear time invariant system base class.
    StateSpace       -- Linear time invariant system in state space form.
    TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.

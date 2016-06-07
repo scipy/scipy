@@ -7,7 +7,7 @@ from numpy.testing import TestCase, run_module_suite, \
 
 import warnings
 from scipy.signal import cont2discrete as c2d
-from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2, lti, ltid
+from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2, lti
 
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # March 29, 2011
