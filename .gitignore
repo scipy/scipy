@@ -97,6 +97,7 @@ site.cfg
 ehthumbs.db
 Icon?
 Thumbs.db
+*.dSYM
 
 # Documentation generated files #
 #################################
