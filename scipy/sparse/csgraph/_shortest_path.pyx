@@ -336,7 +336,7 @@ def dijkstra(csgraph, directed=True, indices=None,
              unweighted=False, limit=np.inf):
     """
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
-             unweighted=False)
+             unweighted=False, limit=np.inf)
 
     Dijkstra algorithm using Fibonacci Heaps
 
@@ -366,6 +366,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         will decrease computation time by aborting calculations between pairs
         that are separated by a distance > limit. For such pairs, the distance
         will be equal to np.inf (i.e., not connected).
+
         .. versionadded:: 0.14.0
 
     Returns
