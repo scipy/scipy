@@ -145,6 +145,14 @@ class PchipInterpolator(BPoly):
 
         hk = x[1:] - x[:-1]
         mk = (y[1:] - y[:-1]) / hk
+
+        if y.shape[0] == 2:
+            # edge case: only have two points, use linear interpolation
+            dk = np.zeros_like(y)
+            dk[0] = mk
+            dk[1] = mk
+            return dk.reshape(y_shape)
+
         smk = np.sign(mk)
         condition = (smk[1:] != smk[:-1]) | (mk[1:] == 0) | (mk[:-1] == 0)
 

@@ -422,6 +422,15 @@ class TestPCHIP(TestCase):
         xx = np.linspace(0, 9, 101)
         assert_equal(pch(xx), 0.)
 
+    def test_two_points(self):
+        # regression test for gh-6222: pchip([0, 1], [0, 1]) fails because
+        # it tries to use a three-point scheme to estimate edge derivatives,
+        # while there are only two points available.
+        # Instead, it should construct a linear interpolator.
+        x = np.linspace(0, 1, 11)
+        p = pchip([0, 1], [0, 2])
+        assert_allclose(p(x), 2*x, atol=1e-15)
+
     def test_pchip_interpolate(self):
         assert_array_almost_equal(
             pchip_interpolate([1,2,3], [4,5,6], [0.5], der=1),
