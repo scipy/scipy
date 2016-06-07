@@ -280,7 +280,7 @@ def collocation_fun(fun, y, p, x, h):
     """Evaluate collocation residuals.
 
     This function lies in the core of the method. The solution is sought
-    as a cubic C^1 continuous spline with derivatives matching the ODE rhs
+    as a cubic C1 continuous spline with derivatives matching the ODE rhs
     at given nodes `x`. Collocation conditions are formed from the equality
     of the spline derivatives and rhs of the ODE system in the middle points
     between nodes.
@@ -322,7 +322,7 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
     x_middle = x[:-1] + 0.5 * h
     i_jac, j_jac = compute_jac_indices(n, m, k)
 
-    def sys_fun(y, p):
+    def col_fun(y, p):
         return collocation_fun(fun, y, p, x, h)
 
     def sys_jac(y, p, y_middle, f, f_middle, bc0):
@@ -344,7 +344,7 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
                                     df_dy_middle, df_dp, df_dp_middle, dbc_dya,
                                     dbc_dyb, dbc_dp)
 
-    return sys_fun, sys_jac
+    return col_fun, sys_jac
 
 
 def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
@@ -405,14 +405,14 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
     .. [1]  U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
        Boundary Value Problems for Ordinary Differential Equations"
     """
-    # We know that residuals at middle points are connected with collocation
-    # function values r_middle = 1.5 * res_col / h. As our BVP solver tries
-    # to decrease relative residuals below a certain tolerance it seems
-    # reasonable to terminated Newton iterations by comparison of
-    # r_middle / (1 + np.abs(f_middle)) with a certain threshold, which we
-    # choose to be 1.5 orders lower than the BVP tolerance. We rewrite the
-    # condition as res_col < tol_r * (1 + np.abs(f_middle)), then tol_r should
-    # be computed as follows:
+    # We know that the solution residuals at the middle points of the mesh
+    # are connected with collocation residuals  r_middle = 1.5 * col_res / h.
+    # As our BVP solver tries to decrease relative residuals below a certain
+    # tolerance it seems reasonable to terminated Newton iterations by
+    # comparison of r_middle / (1 + np.abs(f_middle)) with a certain threshold,
+    # which we choose to be 1.5 orders lower than the BVP tolerance. We rewrite
+    # the condition as col_res < tol_r * (1 + np.abs(f_middle)), then tol_r
+    # should be computed as follows:
     tol_r = 2/3 * h * 5e-2 * bvp_tol
 
     # We also need to control residuals of the boundary conditions. But it
@@ -442,16 +442,16 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
     # tau ** n_trial.
     n_trial = 4
 
-    res_col, y_middle, f, f_middle = col_fun(y, p)
-    res_bc = bc(y[:, 0], y[:, -1], p)
-    res = np.hstack((res_col.ravel(order='F'), res_bc))
+    col_res, y_middle, f, f_middle = col_fun(y, p)
+    bc_res = bc(y[:, 0], y[:, -1], p)
+    res = np.hstack((col_res.ravel(order='F'), bc_res))
 
     njev = 0
     singular = False
     recompute_jac = True
     for iteration in range(max_iter):
         if recompute_jac:
-            J = jac(y, p, y_middle, f, f_middle, res_bc)
+            J = jac(y, p, y_middle, f, f_middle, bc_res)
             njev += 1
             try:
                 LU = splu(J)
@@ -472,9 +472,9 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
                 y_new[:, 0] = np.dot(B, y_new[:, 0])
             p_new = p - alpha * p_step
 
-            res_col, y_middle, f, f_middle = col_fun(y_new, p_new)
-            res_bc = bc(y_new[:, 0], y_new[:, -1], p_new)
-            res = np.hstack((res_col.ravel(order='F'), res_bc))
+            col_res, y_middle, f, f_middle = col_fun(y_new, p_new)
+            bc_res = bc(y_new[:, 0], y_new[:, -1], p_new)
+            res = np.hstack((col_res.ravel(order='F'), bc_res))
 
             step_new = LU.solve(res)
             cost_new = np.dot(step_new, step_new)
@@ -490,8 +490,8 @@ def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
         if njev == max_njev:
             break
 
-        if (np.all(np.abs(res_col) < tol_r * (1 + np.abs(f_middle))) and
-                np.all(res_bc < tol_bc)):
+        if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
+                np.all(bc_res < tol_bc)):
             break
 
         # If the full step was taken, then we are going to continue with
