@@ -1483,7 +1483,8 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_loggamma_complex(self):
         assert_mpmath_equal(sc.loggamma,
                             exception_to_nan(lambda z: mpmath.loggamma(z, **HYPERKW)),
-                            [ComplexArg()], rtol=1e-13)
+                            [ComplexArg()], nan_ok=False, distinguish_nan_and_inf=False,
+                            rtol=1e-13)
 
     @knownfailure_overridable()
     def test_pcfd(self):

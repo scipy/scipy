@@ -13,6 +13,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from scipy.special import loggamma
+except ImportError:
+    pass
+
 from .common import Benchmark, with_attributes
 
 
@@ -48,3 +53,14 @@ class Comb(Benchmark):
 
     def time_comb_float(self):
         comb(self.N[:,None], self.k[None,:])
+
+
+class Loggamma(Benchmark):
+
+    def setup(self):
+        x, y = np.logspace(3, 5, 10), np.logspace(3, 5, 10)
+        x, y = np.meshgrid(x, y)
+        self.large_z = x + 1j*y
+
+    def time_loggamma_asymptotic(self):
+        loggamma(self.large_z)
