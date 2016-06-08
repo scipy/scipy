@@ -2445,6 +2445,19 @@ class _TestSlicingAssign:
             B[:2,:2] = csc_matrix(array(block))
             assert_array_equal(B.todense()[:2,:2],block)
 
+    def test_sparsity_modifying_assignment(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            B = self.spmatrix((4,3))
+            B[0,0] = 5
+            B[1,2] = 3
+            B[2,1] = 7
+            B[3,0] = 10
+
+            expected = array([[1,0,0],[0,1,0],[0,0,1],[10,0,0]])
+            B[:3] = csr_matrix(np.eye(3))
+            assert_array_equal(B.toarray(), expected)
+
     def test_set_slice(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
