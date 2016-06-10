@@ -597,8 +597,10 @@ class TestOptimizeSimple(CheckOptimize):
         g = optimize.rosen_der
         x0 = np.ones(7) * 1000
         class _F(object):
+
             def __init__(self):
                 self.values = []
+
             def __call__(self, x):
                 value = f(x)
                 self.values.append(value)
