@@ -2967,7 +2967,13 @@ class logistic_gen(rv_continuous):
         return special.expit(x)
 
     def _ppf(self, q):
-        return -log(1.0/q-1)
+        return special.logit(q)
+
+    def _sf(self, x):
+        return special.expit(-x)
+
+    def _isf(self, q):
+        return -special.logit(q)
 
     def _stats(self):
         return 0, pi*pi/3.0, 0, 6.0/5.0
