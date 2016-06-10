@@ -470,6 +470,28 @@ class TestLoggamma(TestCase):
                                       decimal=4)
 
 
+class TestLogistic(TestCase):
+    # gh-6226
+    def test_cdf_ppf(self):
+        x = np.linspace(-20, 20)
+        y = stats.logistic.cdf(x)
+        xx = stats.logistic.ppf(y)
+        assert_allclose(x, xx)
+
+    def test_sf_isf(self):
+        x = np.linspace(-20, 20)
+        y = stats.logistic.sf(x)
+        xx = stats.logistic.isf(y)
+        assert_allclose(x, xx)
+
+    def test_extreme_values(self):
+        # p is chosen so that 1 - (1 - p) == p in double precision
+        p = 9.992007221626409e-16
+        desired = 34.53957599234088
+        assert_allclose(stats.logistic.ppf(1 - p), desired)
+        assert_allclose(stats.logistic.isf(p), desired)
+
+
 class TestLogser(TestCase):
     def test_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
