@@ -1813,6 +1813,17 @@ class TestErlang(TestCase):
             assert_allclose(result_erlang, result_gamma, rtol=1e-3)
 
 
+class TestRayleigh(TestCase):
+    # gh-6227
+    def test_logpdf(self):
+        y = stats.rayleigh.logpdf(50)
+        assert_allclose(y, -1246.0879769945718)
+
+    def test_logsf(self):
+        y = stats.rayleigh.logsf(50)
+        assert_allclose(y, -1250)
+
+
 class TestExponWeib(TestCase):
 
     def test_pdf_logpdf(self):

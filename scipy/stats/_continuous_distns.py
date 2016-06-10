@@ -3978,7 +3978,10 @@ class rayleigh_gen(rv_continuous):
         return chi.rvs(2, size=self._size, random_state=self._random_state)
 
     def _pdf(self, r):
-        return r * exp(-0.5 * r**2)
+        return exp(self._logpdf(r))
+
+    def _logpdf(self, r):
+        return log(r) - 0.5 * r * r
 
     def _cdf(self, r):
         return -special.expm1(-0.5 * r**2)
@@ -3987,7 +3990,10 @@ class rayleigh_gen(rv_continuous):
         return sqrt(-2 * special.log1p(-q))
 
     def _sf(self, r):
-        return exp(-0.5 * r**2)
+        return exp(self._logsf(r))
+
+    def _logsf(self, r):
+        return -0.5 * r * r
 
     def _isf(self, q):
         return sqrt(-2 * log(q))
