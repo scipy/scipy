@@ -2330,10 +2330,19 @@ class gumbel_l_gen(rv_continuous):
         return x - exp(x)
 
     def _cdf(self, x):
-        return 1.0-exp(-exp(x))
+        return -special.expm1(-exp(x))
 
     def _ppf(self, q):
-        return log(-log(1-q))
+        return log(-special.log1p(-q))
+
+    def _logsf(self, x):
+        return -exp(x)
+
+    def _sf(self, x):
+        return exp(-exp(x))
+
+    def _isf(self, x):
+        return log(-log(x))
 
     def _stats(self):
         return -_EULER, pi*pi/6.0, \

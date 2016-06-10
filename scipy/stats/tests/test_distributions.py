@@ -1066,6 +1066,28 @@ class TestChi2(TestCase):
         assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778,
                             decimal=14)
 
+class TestGumbelL(TestCase):
+    # gh-6228
+    def test_cdf_ppf(self):
+        x = np.linspace(-100, -4)
+        y = stats.gumbel_l.cdf(x)
+        xx = stats.gumbel_l.ppf(y)
+        assert_allclose(x, xx)
+
+    def test_logcdf_logsf(self):
+        x = np.linspace(-100, -4)
+        y = stats.gumbel_l.logcdf(x)
+        z = stats.gumbel_l.logsf(x)
+        u = np.exp(y)
+        v = -special.expm1(z)
+        assert_allclose(u, v)
+
+    def test_sf_isf(self):
+        x = np.linspace(-20, 5)
+        y = stats.gumbel_l.sf(x)
+        xx = stats.gumbel_l.isf(y)
+        assert_allclose(x, xx)
+
 
 class TestArrayArgument(TestCase):  # test for ticket:992
     def test_noexception(self):
