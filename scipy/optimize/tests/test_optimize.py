@@ -17,7 +17,8 @@ import itertools
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
                            assert_, TestCase, run_module_suite, dec,
-                           assert_almost_equal, assert_warns)
+                           assert_almost_equal, assert_warns,
+                           assert_array_less)
 
 from scipy._lib._testutils import suppressed_stdout
 from scipy import optimize
@@ -589,6 +590,33 @@ class TestOptimizeSimple(CheckOptimize):
                                 method='L-BFGS-B', jac=optimize.rosen_der,
                                 options={'disp': False, 'maxls': 1})
         assert_(not sol.success)
+
+    def test_minimize_l_bfgs_b_maxfun_interruption(self):
+        # gh-6162
+        f = optimize.rosen
+        g = optimize.rosen_der
+        x0 = np.ones(7) * 1000
+        class _F(object):
+            def __init__(self):
+                self.values = []
+            def __call__(self, x):
+                value = f(x)
+                self.values.append(value)
+                return value
+        # Look for an interesting test case.
+        # Request a maxfun that stops at a particularly bad function
+        # evaluation somewhere between 100 and 300 evaluations.
+        low, medium, high = 30, 100, 300
+        obj = _F()
+        optimize.fmin_l_bfgs_b(obj, x0, fprime=g, maxfun=high)
+        v, k = max((y, i) for i, y in enumerate(obj.values[medium:]))
+        maxfun = medium + k
+        # If the minimization strategy is reasonable,
+        # the minimize() result should not be worse than the best
+        # of the first 30 function evaluations.
+        target = min(obj.values[:low])
+        xmin, fmin, d = optimize.fmin_l_bfgs_b(f, x0, fprime=g, maxfun=maxfun)
+        assert_array_less(fmin, target)
 
     def test_custom(self):
         # This function comes from the documentation example.
