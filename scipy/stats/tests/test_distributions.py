@@ -224,6 +224,16 @@ class TestBernoulli(TestCase):
         assert_equal(h, 0.0)
 
 
+class TestBradford(TestCase):
+    # gh-6216
+    def test_cdf_ppf(self):
+        c = 0.1
+        x = np.logspace(-20, -4)
+        q = stats.bradford.cdf(x, c)
+        xx = stats.bradford.ppf(q, c)
+        assert_allclose(x, xx)
+
+
 class TestNBinom(TestCase):
     def test_rvs(self):
         vals = stats.nbinom.rvs(10, 0.75, size=(2, 50))
