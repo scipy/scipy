@@ -581,13 +581,13 @@ class bradford_gen(rv_continuous):
 
     """
     def _pdf(self, x, c):
-        return c / (c*x + 1.0) / log(1.0+c)
+        return c / (c*x + 1.0) / special.log1p(c)
 
     def _cdf(self, x, c):
-        return log(1.0+c*x) / log(c+1.0)
+        return special.log1p(c * x) / special.log1p(c)
 
     def _ppf(self, q, c):
-        return ((1.0+c)**q-1)/c
+        return special.expm1(q * special.log1p(c)) / c
 
     def _stats(self, c, moments='mv'):
         k = log(1.0+c)
