@@ -596,6 +596,7 @@ class TestOptimizeSimple(CheckOptimize):
         f = optimize.rosen
         g = optimize.rosen_der
         x0 = np.ones(7) * 1000
+
         class _F(object):
 
             def __init__(self):
@@ -605,6 +606,7 @@ class TestOptimizeSimple(CheckOptimize):
                 value = f(x)
                 self.values.append(value)
                 return value
+
         # Look for an interesting test case.
         # Request a maxfun that stops at a particularly bad function
         # evaluation somewhere between 100 and 300 evaluations.
