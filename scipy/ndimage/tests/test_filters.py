@@ -89,9 +89,9 @@ def test_valid_origins():
 def test_gaussian_kernel_truncate():
     # Test that Gaussian kernels can be truncated at different widths.
     num_nonzeros_2 = sndi.calculate_gaussian_kernel(5, truncate=2)
-    assert len(num_nonzeros_2) == 2 * int(2 * 5. + 0.5) + 1
+    assert_equal(len(num_nonzeros_2), 2 * int(2 * 5. + 0.5) + 1)
     num_nonzeros_5 = sndi.calculate_gaussian_kernel(5, truncate=5)
-    assert len(num_nonzeros_5) == 2 * int(5 * 5. + 0.5) + 1
+    assert_equal(len(num_nonzeros_5), 2 * int(5 * 5. + 0.5) + 1)
 
 
 def test_manual_filter():
@@ -102,9 +102,13 @@ def test_manual_filter():
     result1 = sndi.gaussian_filter(arr, sigma, truncate=truncate)
 
     weights = sndi.calculate_gaussian_kernel(sigma, truncate=truncate)
-    result2 = sndi.gaussian_filter(arr, weights=weights)
 
-    assert_equal(result1, result2)
+    output = arr.copy()
+    for axis in list(range(arr.ndim)):
+            sndi.correlate1d(output, weights, axis, output, "reflect", 0.0, 0)
+
+    assert_equal(result1, output)
+
 
 def test_gaussian_truncate():
     # Test that Gaussian filters can be truncated at different widths.

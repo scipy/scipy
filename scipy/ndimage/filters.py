@@ -232,7 +232,7 @@ def calculate_gaussian_kernel(sigma, order=0, truncate=4.0):
     weights : ndarray
         The gaussian kernel.
 
-    .. versionadded:: 0.17.0
+    .. versionadded:: 0.18.0
     """
     if order not in range(4):
         raise ValueError('Order outside 0..3 not implemented')
@@ -280,8 +280,7 @@ def calculate_gaussian_kernel(sigma, order=0, truncate=4.0):
 
 @docfiller
 def gaussian_filter(input, sigma=None, order=0, output=None,
-                    mode="reflect", cval=0.0, truncate=4.0,
-                    weights=None):
+                    mode="reflect", cval=0.0, truncate=4.0):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -305,9 +304,6 @@ def gaussian_filter(input, sigma=None, order=0, output=None,
     truncate : float
         Truncate the filter at this many standard deviations.
         Default is 4.0.
-    weights : ndarray
-        A kernel to convolve the input array with, if specified the ``sigma``,
-        ``order`` and ``truncate`` arguments will be ignored.
 
     Returns
     -------
@@ -348,22 +344,17 @@ def gaussian_filter(input, sigma=None, order=0, output=None,
         raise ValueError('Order outside 0..4 not implemented')
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
 
-    if not weights:
-        axes = list(range(input.ndim))
-        axes = [(axes[ii], sigmas[ii], orders[ii])
-                            for ii in range(len(axes)) if sigmas[ii] > 1e-15]
+    axes = list(range(input.ndim))
+    axes = [(axes[ii], sigmas[ii], orders[ii])
+                        for ii in range(len(axes)) if sigmas[ii] > 1e-15]
 
-        if len(axes) > 0:
-            for axis, sigma, order in axes:
-                weights = calculate_gaussian_kernel(sigma, order, truncate=truncate)
-                correlate1d(input, weights, axis, output, mode, cval, 0)
-                input = output
-        else:
-            output[...] = input[...]
+    if len(axes) > 0:
+        for axis, sigma, order in axes:
+            weights = calculate_gaussian_kernel(sigma, order, truncate=truncate)
+            correlate1d(input, weights, axis, output, mode, cval, 0)
+            input = output
     else:
-        for axis in list(range(input.ndim)):
-                correlate1d(input, weights, axis, output, mode, cval, 0)
-                input = output
+        output[...] = input[...]
 
     return return_value
 
