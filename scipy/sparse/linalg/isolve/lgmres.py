@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy._lib.six import xrange
-from scipy.linalg import get_blas_funcs, get_lapack_funcs, qr_insert
+from scipy.linalg import get_blas_funcs, get_lapack_funcs, qr_insert, lstsq
 from .utils import make_system
 
 __all__ = ['lgmres']
@@ -155,6 +155,8 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         eps = np.finfo(vs0.dtype).eps
 
+        breakdown = False
+
         for j in xrange(1, 1 + inner_m + len(outer_v)):
             # -- Arnoldi process:
             #
@@ -203,6 +205,8 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                 v_new = v_new.copy()
 
             #     ++ orthogonalize
+            v_new_norm = nrm2(v_new)
+
             hcur = np.zeros(j+1, dtype=Q.dtype)
             for i, v in enumerate(vs):
                 alpha = dot(v, v_new)
@@ -216,14 +220,12 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
             if np.isfinite(alpha):
                 v_new = scal(alpha, v_new)
-            else:
-                # v_new either zero (solution in span of previous
-                # vectors) or we have nans.  If we already have
-                # previous vectors in R, we can discard the current
-                # vector and bail out.
-                if j > 1:
-                    j -= 1
-                    break
+
+            if not (hcur[-1] > eps * v_new_norm):
+                # v_new essentially in the span of previous vectors,
+                # or we have nans. Bail out after updating the QR
+                # solution.
+                breakdown = True
 
             vs.append(v_new)
             ws.append(z)
@@ -250,14 +252,19 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             inner_res = abs(Q[0,-1]) * inner_res_0
 
             # -- check for termination
-            if inner_res <= tol * inner_res_0:
+            if inner_res <= tol * inner_res_0 or breakdown:
                 break
 
+        if not np.isfinite(R[j-1,j-1]):
+            # nans encountered, bail out
+            return postprocess(x), k_outer + 1
+
         # -- Get the LSQ problem solution
-        y, info = trtrs(R[:j,:j], Q[0,:j].conj())
-        if info != 0:
-            # Zero diagonal -> exact solution, but we handled that above
-            raise RuntimeError("QR solution failed")
+        #
+        # The problem is triangular, but the condition number may be
+        # bad (or in case of breakdown the last diagonal entry may be
+        # zero), so use lstsq instead of trtrs.
+        y, _, _, _, = lstsq(R[:j,:j], Q[0,:j].conj())
         y *= inner_res_0
 
         if not np.isfinite(y).all():

@@ -131,6 +131,59 @@ class TestLGMRES(TestCase):
         x, info = lgmres(A, b, tol=0, maxiter=10)
         assert_equal(info, 1)
 
+    def test_breakdown_with_outer_v(self):
+        A = np.array([[1, 2], [3, 4]], dtype=float)
+        b = np.array([1, 2])
+
+        x = np.linalg.solve(A, b)
+        v0 = np.array([1, 0])
+
+        # The inner iteration should converge to the correct solution,
+        # since it's in the outer vector list
+        xp, info = lgmres(A, b, outer_v=[(v0, None), (x, None)], maxiter=1)
+
+        assert_allclose(xp, x, atol=1e-12)
+
+    def test_breakdown_underdetermined(self):
+        # Should find LSQ solution in the Krylov span in one inner
+        # iteration, despite solver breakdown from nilpotent A.
+        A = np.array([[0, 1, 1, 1],
+                      [0, 0, 1, 1],
+                      [0, 0, 0, 1],
+                      [0, 0, 0, 0]], dtype=float)
+
+        bs = [
+            np.array([1, 1, 1, 1]),
+            np.array([1, 1, 1, 0]),
+            np.array([1, 1, 0, 0]),
+            np.array([1, 0, 0, 0]),
+        ]
+
+        for b in bs:
+            xp, info = lgmres(A, b, maxiter=1)
+            resp = np.linalg.norm(A.dot(xp) - b)
+
+            K = np.c_[b, A.dot(b), A.dot(A.dot(b)), A.dot(A.dot(A.dot(b)))]
+            y, _, _, _ = np.linalg.lstsq(A.dot(K), b)
+            x = K.dot(y)
+            res = np.linalg.norm(A.dot(x) - b)
+
+            assert_allclose(resp, res, err_msg=repr(b))
+
+    def test_denormals(self):
+        # Check that no warnings are emitted if the matrix contains
+        # numbers for which 1/x has no float representation, and that
+        # the solver behaves properly.
+        A = np.array([[1, 2], [3, 4]], dtype=float)
+        A *= 100 * np.nextafter(0, 1)
+
+        b = np.array([1, 1])
+
+        xp, info = lgmres(A, b)
+
+        if info == 0:
+            assert_allclose(A.dot(xp), b)
+
 
 if __name__ == "__main__":
     run_module_suite()
