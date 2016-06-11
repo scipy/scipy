@@ -22,6 +22,7 @@ import os
 import sys
 import subprocess
 import textwrap
+import warnings
 
 
 if sys.version_info[:2] < (2, 6) or (3, 0) <= sys.version_info[0:2] < (3, 2):
@@ -318,7 +319,6 @@ def parse_setuppy_commands():
             sys.exit(1)
 
     # If we got here, we didn't detect what setup.py command was given
-    import warnings
     warnings.warn("Unrecognized setuptools command, proceeding with "
                   "generating Cython sources and expanding templates")
     return True
@@ -386,7 +386,11 @@ def setup_package():
         # Raise errors for unsupported commands, improve help output, etc.
         run_build = parse_setuppy_commands()
 
+    # This import is here because it needs to be done before importing setup()
+    # from numpy.distutils, but after the MANIFEST removing and sdist import
+    # higher up in this file.
     from setuptools import setup
+
     if run_build:
         from numpy.distutils.core import setup
         cwd = os.path.abspath(os.path.dirname(__file__))
