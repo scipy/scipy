@@ -1922,6 +1922,13 @@ class TestExponWeib(TestCase):
         assert_allclose(logp, expected)
 
 
+class TestWeibullMin(TestCase):
+    # gh-6217
+    def test_logpdf(self):
+        y = stats.weibull_min.logpdf(0, 1)
+        assert_equal(y, 0)
+
+
 class TestRdist(TestCase):
     @dec.slow
     def test_rdist_cdf_gh1285(self):
