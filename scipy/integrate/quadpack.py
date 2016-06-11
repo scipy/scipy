@@ -16,7 +16,6 @@ __all__ = ['quad', 'dblquad', 'tplquad', 'nquad', 'quad_explain',
 
 error = _quadpack.error
 
-
 class IntegrationWarning(UserWarning):
     """
     Warning on issues during integration.
@@ -633,8 +632,8 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
     full_output : bool, optional
         Partial implementation of ``full_output`` from scipy.integrate.quad. 
-        The number of evaluations ``neval`` can be obtained by setting 
-        ``full_output=True`` when calling nquad.
+        The number of integrand function evaluations ``neval`` can be obtained 
+        by setting ``full_output=True`` when calling nquad.
 
     Returns
     -------
