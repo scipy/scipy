@@ -2590,7 +2590,6 @@ class rv_discrete(rv_generic):
         self.moment_tol = moment_tol
         self.inc = inc
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
-        self.return_integers = 1
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
 
@@ -2649,6 +2648,12 @@ class rv_discrete(rv_generic):
             self.__doc__ = self.__doc__.replace(
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
+
+    @property
+    @np.deprecate(message="`return_integers` attribute is not used anywhere any "
+                          " longer and is deprecated in scipy 0.18.")
+    def return_integers(self):
+        return 1
 
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
@@ -3226,11 +3231,10 @@ class rv_sample(rv_discrete):
         self.shapes = shapes
         self.vecentropy = self._entropy
 
-        self.xk, self.pk = values
-        self.return_integers = 0
-        indx = np.argsort(np.ravel(self.xk))
-        self.xk = np.take(np.ravel(self.xk), indx, 0)
-        self.pk = np.take(np.ravel(self.pk), indx, 0)
+        xk, pk = values
+        indx = np.argsort(np.ravel(xk))
+        self.xk = np.take(np.ravel(xk), indx, 0)
+        self.pk = np.take(np.ravel(pk), indx, 0)
         self.a = self.xk[0]
         self.b = self.xk[-1]
         self.qvals = np.cumsum(self.pk, axis=0)
@@ -3242,6 +3246,12 @@ class rv_sample(rv_discrete):
                                   locscale_out='loc, 1')
 
         self._construct_docstrings(name, longname, extradoc)
+
+    @property
+    @np.deprecate(message="`return_integers` attribute is not used anywhere any "
+                          " longer and is deprecated in scipy 0.18.")
+    def return_integers(self):
+        return 0
 
     def _pmf(self, x):
         return np.select([x == k for k in self.xk],
@@ -3259,7 +3269,7 @@ class rv_sample(rv_discrete):
 
     def _rvs(self):
         # Need to define it explicitly, otherwise .rvs() with size=None
-        # fails due to explicit broadcasting 
+        # fails due to explicit broadcasting in _ppf
         U = self._random_state.random_sample(self._size)
         if self._size is None:
             U = np.array(U, ndmin=1)
