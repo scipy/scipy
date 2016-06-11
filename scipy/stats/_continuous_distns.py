@@ -1535,7 +1535,7 @@ class frechet_r_gen(rv_continuous):
         return c*pow(x, c-1)*exp(-pow(x, c))
 
     def _logpdf(self, x, c):
-        return log(c) + (c-1)*log(x) - pow(x, c)
+        return log(c) + special.xlogy(c - 1, x) - pow(x, c)
 
     def _cdf(self, x, c):
         return -special.expm1(-pow(x, c))
