@@ -662,7 +662,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     >>> def opts0(*args, **kwargs):
     ...     return {'points':[0.2*args[2] + 0.5 + 0.25*args[0]]}
     >>> integrate.nquad(func, [[0,1], [-1,1], [.13,.8], [-.15,1]],
-    ...                 opts=[opts0,{},{},{}])
+    ...                 opts=[opts0,{},{},{}], full_output=True)
     (1.5267454070738633, 2.9437360001402324e-14, {'neval': 388962})
 
     >>> scale = .1
@@ -757,11 +757,15 @@ class _NQuad(object):
             f = self.func
         else:
             f = partial(self.integrate, depth=depth+1)
-        quad_r = quad(f, low, high, args=args, full_output=True, **opt)
+        quad_r = quad(f, low, high, args=args, full_output=self.full_output,
+                      **opt)
         value = quad_r[0]
         abserr = quad_r[1]
-        infodict = quad_r[2]
         if self.full_output:
+            infodict = quad_r[2]
+            # The 'neval' parameter in full_output returns the total
+            # number of times the integrand function was evaluated.
+            # Therefore, only the innermost integration loop counts.
             if depth + 1 == self.maxdepth:
                 self.out_dict['neval'] += infodict['neval']
         self.abserr = max(self.abserr, abserr)
