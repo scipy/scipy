@@ -32,6 +32,7 @@ from ._distn_infrastructure import (
         )
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
+
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
     """General Kolmogorov-Smirnov one-sided test.
@@ -207,6 +208,8 @@ class alpha_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x, a):
         return 1.0/(x**2)/_norm_cdf(a)*_norm_pdf(a-1.0/x)
 
@@ -277,6 +280,8 @@ class arcsine_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x):
         return 1.0/pi/sqrt(x*(1-x))
 
@@ -527,6 +532,8 @@ class betaprime_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _rvs(self, a, b):
         sz, rndm = self._size, self._random_state
         u1 = gamma.rvs(a, size=sz, random_state=rndm)
@@ -643,6 +650,8 @@ class burr_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x, c, d):
         return c * d * (x**(-c - 1.0)) * ((1 + x**(-c))**(-d - 1.0))
 
@@ -696,6 +705,8 @@ class burr12_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x, c, d):
         return np.exp(self._logpdf(x, c, d))
 
@@ -703,7 +714,7 @@ class burr12_gen(rv_continuous):
         return log(c) + log(d) + special.xlogy(c-1, x) + special.xlog1py(-d-1, x**c)
 
     def _cdf(self, x, c, d):
-        return 1 - self._sf(x, c, d)
+        return -special.expm1(self._logsf(x, c, d))
 
     def _logcdf(self, x, c, d):
         return special.log1p(-(1 + x**c)**(-d))
@@ -840,6 +851,7 @@ class chi_gen(rv_continuous):
     %(example)s
 
     """
+
     def _rvs(self, df):
         sz, rndm = self._size, self._random_state
         return sqrt(chi2.rvs(df, size=sz, random_state=rndm))
@@ -1295,6 +1307,8 @@ class fatiguelife_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _rvs(self, c):
         z = self._random_state.standard_normal(self._size)
         x = 0.5*c*z
@@ -1531,6 +1545,7 @@ class frechet_r_gen(rv_continuous):
     %(example)s
 
     """
+
     def _pdf(self, x, c):
         return c*pow(x, c-1)*exp(-pow(x, c))
 
@@ -2119,7 +2134,7 @@ class gengamma_gen(rv_continuous):
 
         gengamma.pdf(x, a, c) = abs(c) * x**(c*a-1) * exp(-x**c) / gamma(a)
 
-    for ``x > 0``, ``a > 0``, and ``c != 0``.
+    for ``x >= 0``, ``a > 0``, and ``c != 0``.
 
     `gengamma` takes ``a`` and ``c`` as shape parameters.
 
@@ -2573,6 +2588,8 @@ class invgamma_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x, a):
         return exp(self._logpdf(x, a))
 
@@ -2631,6 +2648,8 @@ class invgauss_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _rvs(self, mu):
         return self._random_state.wald(mu, 1.0, size=self._size)
 
@@ -2677,6 +2696,8 @@ class invweibull_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x, c):
         xc1 = np.power(x, -c - 1.0)
         xc2 = np.power(x, -c)
@@ -2722,6 +2743,8 @@ class johnsonsb_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _argcheck(self, a, b):
         return (b > 0) & (a == a)
 
@@ -2838,6 +2861,8 @@ class levy_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x):
         return 1 / sqrt(2*pi*x) / x * exp(-1/(2*x))
 
@@ -2879,6 +2904,8 @@ class levy_l_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x):
         ax = abs(x)
         return 1/sqrt(2*pi*ax)/ax*exp(-1/(2*ax))
@@ -3114,6 +3141,8 @@ class lognorm_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _rvs(self, s):
         return exp(s * self._random_state.standard_normal(self._size))
 
@@ -3169,6 +3198,8 @@ class gilbrat_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _rvs(self):
         return exp(self._random_state.standard_normal(self._size))
 
@@ -3883,6 +3914,8 @@ class powerlognorm_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _pdf(self, x, c, s):
         return (c/(x*s) * _norm_pdf(log(x)/s) *
                 pow(_norm_cdf(-log(x)/s), c*1.0-1.0))
@@ -3989,6 +4022,8 @@ class rayleigh_gen(rv_continuous):
     %(example)s
 
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _rvs(self):
         return chi.rvs(2, size=self._size, random_state=self._random_state)
 
@@ -4067,6 +4102,7 @@ class reciprocal_gen(rv_continuous):
     def _entropy(self, a, b):
         return 0.5*log(a*b)+log(log(b/a))
 reciprocal = reciprocal_gen(name="reciprocal")
+
 
 class rice_gen(rv_continuous):
     """A Rice continuous random variable.
@@ -4608,6 +4644,8 @@ class wald_gen(invgauss_gen):
 
     %(example)s
     """
+    _support_mask = rv_continuous._open_support_mask
+
     def _rvs(self):
         return self._random_state.wald(1.0, 1.0, size=self._size)
 

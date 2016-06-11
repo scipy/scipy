@@ -22,7 +22,7 @@ from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy
-
+from test_continuous_basic import distcont
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -123,6 +123,27 @@ def test_vonmises_line_support():
 def test_vonmises_numerical():
     vm = stats.vonmises(800)
     assert_almost_equal(vm.cdf(0), 0.5)
+
+
+def test_support():
+    """gh-6235"""
+    def check_open_support(rvs, args):
+        dist = getattr(stats, rvs)
+
+        assert_almost_equal(dist.pdf(dist.a, *args), 0)
+        assert_equal(dist.logpdf(dist.a, *args), -np.inf)
+        assert_almost_equal(dist.pdf(dist.b, *args), 0)
+        assert_equal(dist.logpdf(dist.b, *args), -np.inf)
+
+    dists = ['alpha', 'arcsine', 'betaprime', 'burr', 'burr12',
+             'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
+             'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
+             'powerlognorm', 'rayleigh', 'wald']
+
+    dct = dict(distcont)
+    for dist in dists:
+        args = dct[dist]
+        yield check_open_support, dist, args
 
 
 class TestRandInt(TestCase):
@@ -886,27 +907,28 @@ class TestSkewNorm(TestCase):
     def test_normal(self):
         # When the skewness is 0 the distribution is normal
         x = np.linspace(-5, 5, 100)
-        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0), 
+        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0),
                                   stats.norm.pdf(x))
 
     def test_rvs(self):
         shape = (3, 4, 5)
         x = stats.skewnorm.rvs(a=0.75, size=shape)
         assert_equal(shape, x.shape)
-        
+
         x = stats.skewnorm.rvs(a=-3, size=shape)
         assert_equal(shape, x.shape)
-        
+
     def test_moments(self):
         X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
-        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
-                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'), 
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
+                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'),
                                    decimal=2)
-        
+
         X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
-        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
-                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
+                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'),
                                    decimal=2)
+
 
 class TestExpon(TestCase):
     def test_zero(self):
@@ -1738,7 +1760,7 @@ class TestExpect(TestCase):
         assert_allclose(res_0,
                         p / (p - 1.) / np.log(1. - p), atol=1e-15)
 
-        # now check it with `loc` 
+        # now check it with `loc`
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 

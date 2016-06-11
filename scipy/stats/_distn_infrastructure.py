@@ -18,7 +18,7 @@ from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state, _lazywhere
 from scipy._lib._util import _valarray as valarray
 
-from scipy.special import (comb, chndtr, gammaln, entr, kl_div, xlogy, ive)
+from scipy.special import (comb, chndtr, entr, kl_div, xlogy, ive)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -37,7 +37,7 @@ from numpy import (place, argsort, argmax, vectorize,
 
 import numpy as np
 
-from ._constants import _EPS, _XMAX
+from ._constants import _XMAX
 
 try:
     from new import instancemethod
@@ -797,6 +797,12 @@ class rv_generic(object):
             cond = logical_and(cond, (asarray(arg) > 0))
         return cond
 
+    def _support_mask(self, x):
+        return (self.a <= x) & (x <= self.b)
+
+    def _open_support_mask(self, x):
+        return (self.a < x) & (x < self.b)
+
     ##(return 1-d using self._size to get number)
     def _rvs(self, *args):
         ## Use basic inverse cdf algorithm for RV generation as default.
@@ -954,7 +960,7 @@ class rv_generic(object):
                         mu = self._munp(1, *goodargs)
                     mu2 = mu2p - mu * mu
                     if np.isinf(mu):
-                        #if mean is inf then var is also inf
+                        # if mean is inf then var is also inf
                         mu2 = np.inf
                 out0 = default.copy()
                 place(out0, cond, mu2 * scale * scale)
@@ -1567,7 +1573,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
+        cond1 = self._support_mask(x) & (scale > 0)
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
         putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
@@ -1609,7 +1615,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
+        cond1 = self._support_mask(x) & (scale > 0)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
@@ -1650,7 +1656,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = self._open_support_mask(x) & (scale > 0)
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
@@ -1691,7 +1697,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = self._open_support_mask(x) & (scale > 0)
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
@@ -1733,7 +1739,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = self._open_support_mask(x) & (scale > 0)
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
@@ -1777,7 +1783,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = self._open_support_mask(x) & (scale > 0)
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
@@ -1884,6 +1890,15 @@ class rv_continuous(rv_generic):
     def _nnlf(self, x, *args):
         return -np.sum(self._logpdf(x, *args), axis=0)
 
+    def _unpack_loc_scale(self, theta):
+        try:
+            loc = theta[-2]
+            scale = theta[-1]
+            args = tuple(theta[:-2])
+        except IndexError:
+            raise ValueError("Not enough input arguments.")
+        return loc, scale, args
+
     def nnlf(self, theta, x):
         '''Return negative loglikelihood function.
 
@@ -1892,49 +1907,39 @@ class rv_continuous(rv_generic):
         This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
         parameters (including loc and scale).
         '''
-        try:
-            loc = theta[-2]
-            scale = theta[-1]
-            args = tuple(theta[:-2])
-        except IndexError:
-            raise ValueError("Not enough input arguments.")
+        loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
         x = asarray((x-loc) / scale)
-        cond0 = (x <= self.a) | (self.b <= x)
-        if np.any(cond0):
+        n_log_scale = len(x) * log(scale)
+        if np.any(~self._support_mask(x)):
             return inf
-        else:
-            N = len(x)
-            return self._nnlf(x, *args) + N * log(scale)
+        return self._nnlf(x, *args) + n_log_scale
+
+    def _nnlf_and_penalty(self, x, args):
+        cond0 = ~self._support_mask(x)
+        n_bad = sum(cond0)
+        if n_bad > 0:
+            x = argsreduce(~cond0, x)[0]
+        logpdf = self._logpdf(x, *args)
+        finite_logpdf = np.isfinite(logpdf)
+        n_bad += np.sum(~finite_logpdf, axis=0)
+        if n_bad > 0:
+            penalty = n_bad * log(_XMAX) * 100
+            return -np.sum(logpdf[finite_logpdf], axis=0) + penalty
+        return -np.sum(logpdf, axis=0)
 
     def _penalized_nnlf(self, theta, x):
-        ''' Return negative loglikelihood function,
-        i.e., - sum (log pdf(x, theta), axis=0)
+        ''' Return penalized negative loglikelihood function,
+        i.e., - sum (log pdf(x, theta), axis=0) + penalty
            where theta are the parameters (including loc and scale)
         '''
-        try:
-            loc = theta[-2]
-            scale = theta[-1]
-            args = tuple(theta[:-2])
-        except IndexError:
-            raise ValueError("Not enough input arguments.")
+        loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
         x = asarray((x-loc) / scale)
-
-        loginf = log(_XMAX)
-
-        if np.isneginf(self.a).all() and np.isinf(self.b).all():
-            Nbad = 0
-        else:
-            cond0 = (x <= self.a) | (self.b <= x)
-            Nbad = np.sum(cond0)
-            if Nbad > 0:
-                x = argsreduce(~cond0, x)[0]
-
-        N = len(x)
-        return self._nnlf(x, *args) + N*log(scale) + Nbad * 100.0 * loginf
+        n_log_scale = len(x) * log(scale)
+        return self._nnlf_and_penalty(x, args) + n_log_scale
 
     # return starting point for fit (shape arguments + loc + scale)
     def _fitstart(self, data, args=None):
@@ -2692,7 +2697,7 @@ class rv_discrete(rv_generic):
                 dct = dict(distdiscrete)
                 self._construct_doc(docdict_discrete, dct.get(self.name))
 
-            #discrete RV do not have the scale parameter, remove it
+            # discrete RV do not have the scale parameter, remove it
             self.__doc__ = self.__doc__.replace(
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
