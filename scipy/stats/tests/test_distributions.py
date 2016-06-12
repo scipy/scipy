@@ -932,6 +932,14 @@ class TestRvDiscrete(TestCase):
 
         assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
 
+    def test_bad_input(self):
+        xk = [1, 2, 3]
+        pk = [0.5, 0.5]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+        pk = [1, 2, 3]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
 
 class TestSkewNorm(TestCase):
 

@@ -3232,6 +3232,12 @@ class rv_sample(rv_discrete):
         self.vecentropy = self._entropy
 
         xk, pk = values
+
+        if len(xk) != len(pk):
+            raise ValueError("xk and pk need to have the same length.")
+        if not np.allclose(np.sum(pk), 1):
+            raise ValueError("The sum of provided pk is not 1.")
+
         indx = np.argsort(np.ravel(xk))
         self.xk = np.take(np.ravel(xk), indx, 0)
         self.pk = np.take(np.ravel(pk), indx, 0)
@@ -3248,7 +3254,7 @@ class rv_sample(rv_discrete):
         self._construct_docstrings(name, longname, extradoc)
 
     @property
-    @np.deprecate(message="`return_integers` attribute is not used anywhere any "
+    @np.deprecate(message="`return_integers` attribute is not used anywhere any"
                           " longer and is deprecated in scipy 0.18.")
     def return_integers(self):
         return 0
