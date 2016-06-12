@@ -3249,10 +3249,10 @@ def dlsim(system, u, t=None, x0=None):
 
     # Simulate the system
     for i in range(0, out_samples - 1):
-        xout[i+1, :] = np.dot(system.A, xout[i, :]) +\
-                       np.dot(system.B, u_dt[i, :])
-        yout[i, :] = np.dot(system.C, xout[i, :]) +\
-                     np.dot(system.D, u_dt[i, :])
+        xout[i+1, :] = (np.dot(system.A, xout[i, :]) +
+                        np.dot(system.B, u_dt[i, :]))
+        yout[i, :] = (np.dot(system.C, xout[i, :]) +
+                      np.dot(system.D, u_dt[i, :]))
 
     # Last point
     yout[out_samples-1, :] = (np.dot(system.C, xout[out_samples-1, :]) +
