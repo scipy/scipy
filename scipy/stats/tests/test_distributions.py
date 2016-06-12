@@ -940,6 +940,11 @@ class TestRvDiscrete(TestCase):
         pk = [1, 2, 3]
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
+    def test_float_xk(self):
+        xk = [1.5, 2.0, 3.6]
+        pk = [0.5, 0.5, 0.0]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
 
 class TestSkewNorm(TestCase):
 

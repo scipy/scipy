@@ -3237,6 +3237,9 @@ class rv_sample(rv_discrete):
             raise ValueError("xk and pk need to have the same length.")
         if not np.allclose(np.sum(pk), 1):
             raise ValueError("The sum of provided pk is not 1.")
+        if np.any(np.asarray(xk).astype(int) != xk):
+            raise ValueError("xk must be integers. If you really want floats, "
+                             "use xk as integer indices into the float array.")
 
         indx = np.argsort(np.ravel(xk))
         self.xk = np.take(np.ravel(xk), indx, 0)
