@@ -49,6 +49,9 @@ class TestDLTI(TestCase):
         assert_array_almost_equal(xout_truth, xout)
         assert_array_almost_equal(t_in, tout)
 
+        # Make sure input with single-dimension doesn't raise error
+        dlsim((1, 2, 3), 4)
+
         # Interpolated control - inputs should have different time steps
         # than the discrete model uses internally
         u_sparse = u[[0, 4], :]

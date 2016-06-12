@@ -3214,7 +3214,7 @@ def dlsim(system, u, t=None, x0=None):
     is_ss_input = isinstance(system, StateSpace)
     system = system._as_ss()
 
-    u = np.asarray(u)
+    u = np.atleast_1d(u)
 
     if u.ndim == 1:
         u = np.atleast_2d(u).T
