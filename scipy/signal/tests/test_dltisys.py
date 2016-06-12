@@ -280,8 +280,8 @@ class TestDLTI(TestCase):
         assert_array_equal(y.T, [[0, 1, 0.5]])
 
 
-class TestLtid(object):
-    def test_ltid_instantiation(self):
+class TestDlti(object):
+    def test_dlti_instantiation(self):
         # Test that lti can be instantiated.
 
         dt = 0.05
