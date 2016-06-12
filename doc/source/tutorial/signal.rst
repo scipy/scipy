@@ -933,7 +933,7 @@ method which is implemented by the scipy function :func:`welch`.
 
 The example below estimates the spectrum using Welch's method and uses the
 same parameters as the example above. Note the much smoother noise floor of
-the spectogram.
+the spectrogram.
 
 
 .. plot::
