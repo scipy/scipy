@@ -49,10 +49,6 @@ __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
 class LinearTimeInvariant(object):
     def __new__(cls, *system, **kwargs):
         """Create a new object, don't allow direct instances."""
-        # The reason why instances of LinearTimeInvariant are not allowed is
-        #  mostly to avoid an ugly API. LinearTimeInvariant would have to
-        # take the sampling time as a keyword input, but all other functions
-        #  take it as a another normal argument.
         if cls is LinearTimeInvariant:
             raise NotImplementedError('The LinearTimeInvariant class is not '
                                       'meant to be used directly, use `lti` '
@@ -270,7 +266,7 @@ class lti(LinearTimeInvariant):
     system representation (such as the `zeros` of a `StateSpace` system) is
     very inefficient and may lead to numerical inaccuracies. It is better to
     convert to the specific system representation first. For example, call
-    `sys = sys.to_zpk()` before accessing/changing the zeros, poles or gain.
+    ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
 
     Examples
     --------
@@ -299,6 +295,7 @@ class lti(LinearTimeInvariant):
     array([ 1.,  2.]),
     dt: None
     )
+
     """
     def __new__(cls, *system):
         """Create an instance of the appropriate subclass."""
@@ -314,7 +311,8 @@ class lti(LinearTimeInvariant):
                 return StateSpaceContinuous.__new__(StateSpaceContinuous,
                                                     *system)
             else:
-                raise ValueError('Needs 2, 3 or 4 arguments.')
+                raise ValueError("`system` needs to be an instance of `lti` "
+                                 "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
         return super(lti, cls).__new__(cls)
 
@@ -329,21 +327,21 @@ class lti(LinearTimeInvariant):
     def impulse(self, X0=None, T=None, N=None):
         """
         Return the impulse response of a continuous-time system.
-        See `scipy.signal.impulse` for details.
+        See `impulse` for details.
         """
         return impulse(self, X0=X0, T=T, N=N)
 
     def step(self, X0=None, T=None, N=None):
         """
         Return the step response of a continuous-time system.
-        See `scipy.signal.step` for details.
+        See `step` for details.
         """
         return step(self, X0=X0, T=T, N=N)
 
     def output(self, U, T, X0=None):
         """
         Return the response of a continuous-time system to input `U`.
-        See `scipy.signal.lsim` for details.
+        See `lsim` for details.
         """
         return lsim(self, U, T, X0=X0)
 
@@ -352,7 +350,7 @@ class lti(LinearTimeInvariant):
         Calculate Bode magnitude and phase data of a continuous-time system.
 
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See `scipy.signal.bode` for details.
+        [dB] and phase [deg]. See `bode` for details.
 
         Examples
         --------
@@ -377,8 +375,7 @@ class lti(LinearTimeInvariant):
 
         Returns a 2-tuple containing arrays of frequencies [rad/s] and
         complex magnitude.
-        See `scipy.signal.freqresp` for details.
-
+        See `freqresp` for details.
         """
         return freqresp(self, w=w, n=n)
 
@@ -402,19 +399,19 @@ class dlti(LinearTimeInvariant):
     Parameters
     ----------
     *system: arguments
-        The `dlti` class can be instantiated with either 3, 4 or 5 arguments.
+        The `dlti` class can be instantiated with either 2, 3 or 4 arguments.
         The following gives the number of arguments and the corresponding
         discrete-time subclass that is created:
 
-            * 3: `TransferFunction`:  (numerator, denominator)
-            * 4: `ZerosPolesGain`: (zeros, poles, gain)
-            * 5: `StateSpace`:  (A, B, C, D)
+            * 2: `TransferFunction`:  (numerator, denominator)
+            * 3: `ZerosPolesGain`: (zeros, poles, gain)
+            * 4: `StateSpace`:  (A, B, C, D)
 
         Each argument can be an array or a sequence.
-    dt: float, optional keyword argument
-        Sampling time [s] of the discrete-time systems. Defaults to `True`
+    dt: float, optional
+        Sampling time [s] of the discrete-time systems. Defaults to ``True``
         (unspecified sampling time). Must be specified as a keyword argument,
-        for example, dt=0.1.
+        for example, ``dt=0.1``.
 
     See Also
     --------
@@ -430,7 +427,7 @@ class dlti(LinearTimeInvariant):
     system representation (such as the `zeros` of a `StateSpace` system) is
     very inefficient and may lead to numerical inaccuracies.  It is better to
     convert to the specific system representation first. For example, call
-    `sys = sys.to_zpk()` before accessing/changing the zeros, poles or gain.
+    ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
 
     If (numerator, denominator) is passed in for ``*system``, coefficients for
     both the numerator and denominator should be specified in descending
@@ -491,7 +488,8 @@ class dlti(LinearTimeInvariant):
                 return StateSpaceDiscrete.__new__(StateSpaceDiscrete, *system,
                                                   **kwargs)
             else:
-                raise ValueError('Needs 2, 3 or 4 arguments.')
+                raise ValueError("`system` needs to be an instance of `dlti` "
+                                 "or have 2, 3 or 4 arguments.")
         # __new__ was called from a subclass, let it call its own functions
         return super(dlti, cls).__new__(cls)
 
@@ -518,21 +516,21 @@ class dlti(LinearTimeInvariant):
     def impulse(self, x0=None, t=None, n=None):
         """
         Return the impulse response of the discrete-time `dlti` system.
-        See `scipy.signal.dimpulse` for details.
+        See `dimpulse` for details.
         """
         return dimpulse(self, x0=x0, t=t, n=n)
 
     def step(self, x0=None, t=None, n=None):
         """
         Return the step response of the discrete-time `dlti` system.
-        See `scipy.signal.dstep` for details.
+        See `dstep` for details.
         """
         return dstep(self, x0=x0, t=t, n=n)
 
     def output(self, u, t, x0=None):
         """
         Return the response of the discrete-time system to input `u`.
-        See `scipy.signal.dlsim` for details.
+        See `dlsim` for details.
         """
         return dlsim(self, u, t, x0=x0)
 
@@ -541,17 +539,19 @@ class dlti(LinearTimeInvariant):
         Calculate Bode magnitude and phase data of a discrete-time system.
 
         Returns a 3-tuple containing arrays of frequencies [rad/s], magnitude
-        [dB] and phase [deg]. See `scipy.signal.dbode` for details.
+        [dB] and phase [deg]. See `dbode` for details.
 
         Examples
         --------
         >>> from scipy import signal
         >>> import matplotlib.pyplot as plt
 
-        # transfer function: H(z) = 1 / (z^2 + 2z + 3) with sampling time 0.5s
+        Transfer function: H(z) = 1 / (z^2 + 2z + 3) with sampling time 0.5s
+
         >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.5)
 
-        # equivalent: signal.dbode(sys)
+        Equivalent: signal.dbode(sys)
+
         >>> w, mag, phase = sys.bode()
 
         >>> plt.figure()
@@ -569,7 +569,7 @@ class dlti(LinearTimeInvariant):
 
         Returns a 2-tuple containing arrays of frequencies [rad/s] and
         complex magnitude.
-        See `scipy.signal.dfreqresp` for details.
+        See `dfreqresp` for details.
 
         """
         return dfreqresp(self, w=w, n=n, whole=whole)
@@ -598,10 +598,10 @@ class TransferFunction(LinearTimeInvariant):
             * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 2: array_like: (numerator, denominator)
-    dt: float, optional keyword argument
+    dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
-        example, dt=0.1.
+        example, ``dt=0.1``.
 
     See Also
     --------
@@ -614,12 +614,12 @@ class TransferFunction(LinearTimeInvariant):
     `TransferFunction` system representation (such as the `A`, `B`, `C`, `D`
     state-space matrices) is very inefficient and may lead to numerical
     inaccuracies.  It is better to convert to the specific system
-    representation first. For example, call `sys = sys.to_ss()` before
+    representation first. For example, call ``sys = sys.to_ss()`` before
     accessing/changing the A, B, C, D system matrices.
 
     If (numerator, denominator) is passed in for ``*system``, coefficients
     for both the numerator and denominator should be specified in descending
-    exponent order (e.g. ``s^2 + 3s + 5`` or `z^2 + 3z + 5`` would be
+    exponent order (e.g. ``s^2 + 3s + 5`` or ``z^2 + 3z + 5`` would be
     represented as ``[1, 3, 5]``)
 
     Examples
@@ -650,6 +650,7 @@ class TransferFunction(LinearTimeInvariant):
     array([ 1.,  2.,  1.]),
     dt: 0.1
     )
+
     """
     def __new__(cls, *system, **kwargs):
         """Handle object conversion if input is an instance of lti."""
@@ -780,14 +781,14 @@ class TransferFunction(LinearTimeInvariant):
         num, den: 1d array_like
             Sequences representing the coefficients of the numerator and
             denominator polynomials, in order of descending degree of 'z'.
-            That is, `5z**2 + 3z + 2` is presented as [5, 3, 2].
+            That is, ``5z**2 + 3z + 2`` is presented as ``[5, 3, 2]``.
 
         Returns
         -------
         num, den: 1d array_like
             Sequences representing the coefficients of the numerator and
             denominator polynomials, in order of ascending degree of 'z**-1'.
-            That is, `5 + 3 z**-1 + 2 z**-2` is presented as `[5, 3, 2]`.
+            That is, ``5 + 3 z**-1 + 2 z**-2`` is presented as ``[5, 3, 2]``.
         """
         diff = len(num) - len(den)
         if diff > 0:
@@ -805,15 +806,14 @@ class TransferFunction(LinearTimeInvariant):
         num, den: 1d array_like
             Sequences representing the coefficients of the numerator and
             denominator polynomials, in order of ascending degree of 'z**-1'.
-            That is, `5 + 3 z**-1 + 2 z**-2` is presented as `[5, 3, 2]`.
+            That is, ``5 + 3 z**-1 + 2 z**-2`` is presented as ``[5, 3, 2]``.
 
         Returns
         -------
         num, den: 1d array_like
             Sequences representing the coefficients of the numerator and
             denominator polynomials, in order of descending degree of 'z'.
-            That is,
-            `5z**2 + 3z + 2` is presented as [5, 3, 2].
+            That is, ``5z**2 + 3z + 2`` is presented as ``[5, 3, 2]``.
         """
         diff = len(num) - len(den)
         if diff > 0:
@@ -856,7 +856,7 @@ class TransferFunctionContinuous(TransferFunction, lti):
     `TransferFunction` system representation (such as the `A`, `B`, `C`, `D`
     state-space matrices) is very inefficient and may lead to numerical
     inaccuracies.  It is better to convert to the specific system
-    representation first. For example, call `sys = sys.to_ss()` before
+    representation first. For example, call ``sys = sys.to_ss()`` before
     accessing/changing the A, B, C, D system matrices.
 
     If (numerator, denominator) is passed in for ``*system``, coefficients
@@ -881,6 +881,7 @@ class TransferFunctionContinuous(TransferFunction, lti):
     array([ 1.,  2.,  1.]),
     dt: None
     )
+
     """
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
@@ -920,10 +921,10 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
             * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 2: array_like: (numerator, denominator)
-    dt: float, optional keyword argument
+    dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
-        for example, dt=0.1.
+        for example, ``dt=0.1``.
 
     See Also
     --------
@@ -949,14 +950,17 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
     .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
 
     >>> from scipy import signal
+
     >>> num = [1, 3, 3]
     >>> den = [1, 2, 1]
+
     >>> signal.TransferFunction(num, den, 0.5)
     TransferFunctionDiscrete(
     array([ 1.,  3.,  3.]),
     array([ 1.,  2.,  1.]),
     dt: 0.5
     )
+
     """
     pass
 
@@ -982,10 +986,10 @@ class ZerosPolesGain(LinearTimeInvariant):
             * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 3: array_like: (zeros, poles, gain)
-    dt: float, optional keyword argument
+    dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
-        example, dt=0.1.
+        example, ``dt=0.1``.
 
 
     See Also
@@ -999,14 +1003,15 @@ class ZerosPolesGain(LinearTimeInvariant):
     `ZerosPolesGain` system representation (such as the `A`, `B`, `C`, `D`
     state-space matrices) is very inefficient and may lead to numerical
     inaccuracies.  It is better to convert to the specific system
-    representation first. For example, call `sys = sys.to_ss()` before
+    representation first. For example, call ``sys = sys.to_ss()`` before
     accessing/changing the A, B, C, D system matrices.
 
     Examples
     --------
     >>> from scipy import signal
 
-    # Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
     array([1, 2]),
@@ -1015,7 +1020,8 @@ class ZerosPolesGain(LinearTimeInvariant):
     dt: None
     )
 
-    # Transfer function: H(z) = 5(z - 1)(z - 2) / (z - 3)(z - 4)
+    Transfer function: H(z) = 5(z - 1)(z - 2) / (z - 3)(z - 4)
+
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
     array([1, 2]),
@@ -1023,6 +1029,7 @@ class ZerosPolesGain(LinearTimeInvariant):
     5,
     dt: 0.1
     )
+
     """
     def __new__(cls, *system, **kwargs):
         """Handle object conversion if input is an instance of `lti`"""
@@ -1189,14 +1196,15 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     `ZerosPolesGain` system representation (such as the `A`, `B`, `C`, `D`
     state-space matrices) is very inefficient and may lead to numerical
     inaccuracies.  It is better to convert to the specific system
-    representation first. For example, call `sys = sys.to_ss()` before
+    representation first. For example, call ``sys = sys.to_ss()`` before
     accessing/changing the A, B, C, D system matrices.
 
     Examples
     --------
     >>> from scipy import signal
 
-    # Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
     array([1, 2]),
@@ -1204,6 +1212,7 @@ class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     5,
     dt: None
     )
+
     """
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
@@ -1243,10 +1252,10 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
             * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 3: array_like: (zeros, poles, gain)
-    dt: float, optional keyword argument
+    dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
-        for example, dt=0.1.
+        for example, ``dt=0.1``.
 
     See Also
     --------
@@ -1259,14 +1268,15 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     `ZerosPolesGain` system representation (such as the `A`, `B`, `C`, `D`
     state-space matrices) is very inefficient and may lead to numerical
     inaccuracies.  It is better to convert to the specific system
-    representation first. For example, call `sys = sys.to_ss()` before
+    representation first. For example, call ``sys = sys.to_ss()`` before
     accessing/changing the A, B, C, D system matrices.
 
     Examples
     --------
     >>> from scipy import signal
 
-    # Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+    Transfer function: H(s) = 5(s - 1)(s - 2) / (s - 3)(s - 4)
+
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5)
     ZerosPolesGainContinuous(
     array([1, 2]),
@@ -1275,7 +1285,8 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     dt: None
     )
 
-    # Transfer function: H(z) = 5(z - 1)(z - 2) / (z - 3)(z - 4)
+    Transfer function: H(z) = 5(z - 1)(z - 2) / (z - 3)(z - 4)
+
     >>> signal.ZerosPolesGain([1, 2], [3, 4], 5, dt=0.1)
     ZerosPolesGainDiscrete(
     array([1, 2]),
@@ -1283,6 +1294,7 @@ class ZerosPolesGainDiscrete(ZerosPolesGain, dlti):
     5,
     dt: 0.1
     )
+
     """
     pass
 
@@ -1312,10 +1324,10 @@ class StateSpace(LinearTimeInvariant):
             * 1: `lti` or `dlti` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 4: array_like: (A, B, C, D)
-    dt: float, optional keyword argument
+    dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `None`
         (continuous-time). Must be specified as a keyword argument, for
-        example, dt=0.1.
+        example, ``dt=0.1``.
 
     See Also
     --------
@@ -1328,7 +1340,7 @@ class StateSpace(LinearTimeInvariant):
     `StateSpace` system representation (such as `zeros` or `poles`) is very
     inefficient and may lead to numerical inaccuracies.  It is better to
     convert to the specific system representation first. For example, call
-    `sys = sys.to_zpk()` before accessing/changing the zeros, poles or gain.
+    ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
 
     Examples
     --------
@@ -1375,6 +1387,7 @@ class StateSpace(LinearTimeInvariant):
     array([[0]]),
     dt: 0.1
     )
+
     """
     def __new__(cls, *system, **kwargs):
         """Create new StateSpace object and settle inheritance."""
@@ -1554,7 +1567,7 @@ class StateSpaceContinuous(StateSpace, lti):
     `StateSpace` system representation (such as `zeros` or `poles`) is very
     inefficient and may lead to numerical inaccuracies.  It is better to
     convert to the specific system representation first. For example, call
-    `sys = sys.to_zpk()` before accessing/changing the zeros, poles or gain.
+    ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
 
     Examples
     --------
@@ -1576,6 +1589,7 @@ class StateSpaceContinuous(StateSpace, lti):
     array([[0]]),
     dt: None
     )
+
     """
     def to_discrete(self, dt, method='zoh', alpha=None):
         """
@@ -1613,10 +1627,10 @@ class StateSpaceDiscrete(StateSpace, dlti):
             * 1: `dlti` system: (`StateSpace`, `TransferFunction` or
               `ZerosPolesGain`)
             * 4: array_like: (A, B, C, D)
-    dt: float, optional keyword argument
+    dt: float, optional
         Sampling time [s] of the discrete-time systems. Defaults to `True`
         (unspecified sampling time). Must be specified as a keyword argument,
-        for example, dt=0.1.
+        for example, ``dt=0.1``.
 
     See Also
     --------
@@ -1629,7 +1643,7 @@ class StateSpaceDiscrete(StateSpace, dlti):
     `StateSpace` system representation (such as `zeros` or `poles`) is very
     inefficient and may lead to numerical inaccuracies.  It is better to
     convert to the specific system representation first. For example, call
-    `sys = sys.to_zpk()` before accessing/changing the zeros, poles or gain.
+    ``sys = sys.to_zpk()`` before accessing/changing the zeros, poles or gain.
 
     Examples
     --------
@@ -1650,6 +1664,7 @@ class StateSpaceDiscrete(StateSpace, dlti):
     array([[0]]),
     dt: 0.1
     )
+
     """
     pass
 
@@ -2352,12 +2367,13 @@ def freqresp(system, w=None, n=10000):
 
     Examples
     --------
-    # Generating the Nyquist plot of a transfer function
+    Generating the Nyquist plot of a transfer function
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    # transfer function: H(s) = 5 / (s-1)^3
+    Transfer function: H(s) = 5 / (s-1)^3
+
     >>> s1 = signal.ZerosPolesGain([], [1, 1, 1], [5])
 
     >>> w, H = signal.freqresp(s1)
@@ -3441,12 +3457,13 @@ def dfreqresp(system, w=None, n=10000, whole=False):
 
     Examples
     --------
-    # Generating the Nyquist plot of a transfer function
+    Generating the Nyquist plot of a transfer function
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    # transfer function: H(z) = 1 / (z^2 + 2z + 3)
+    Transfer function: H(z) = 1 / (z^2 + 2z + 3)
+
     >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
     >>> w, H = signal.dfreqresp(sys)
@@ -3455,6 +3472,7 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> plt.plot(H.real, H.imag, "b")
     >>> plt.plot(H.real, -H.imag, "r")
     >>> plt.show()
+
     """
     if isinstance(system, dlti):
         system = system._as_tf()
@@ -3526,10 +3544,12 @@ def dbode(system, w=None, n=100):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    # transfer function: H(z) = 1 / (z^2 + 2z + 3)
+    Transfer function: H(z) = 1 / (z^2 + 2z + 3)
+
     >>> sys = signal.TransferFunction([1], [1, 2, 3], dt=0.05)
 
-    # equivalent: sys.bode()
+    Equivalent: sys.bode()
+
     >>> w, mag, phase = signal.dbode(sys)
 
     >>> plt.figure()
