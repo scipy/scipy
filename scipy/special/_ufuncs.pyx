@@ -1253,6 +1253,8 @@ cdef extern from "_ufuncs_defs.h":
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_lgam1p "lgam1p"(double) nogil
 from _trig cimport sinpi as _func_sinpi
 ctypedef double _proto_sinpi_double__t(double) nogil
 cdef _proto_sinpi_double__t *_proto_sinpi_double__t_var = &_func_sinpi[double]
@@ -2091,6 +2093,26 @@ ufunc__lambertw_ptr[2*0] = <void*>_func_lambertw_scalar
 ufunc__lambertw_ptr[2*0+1] = <void*>(<char*>"_lambertw")
 ufunc__lambertw_data[0] = &ufunc__lambertw_ptr[2*0]
 _lambertw = np.PyUFunc_FromFuncAndData(ufunc__lambertw_loops, ufunc__lambertw_data, ufunc__lambertw_types, 1, 3, 1, 0, "_lambertw", ufunc__lambertw_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__lgam1p_loops[2]
+cdef void *ufunc__lgam1p_ptr[4]
+cdef void *ufunc__lgam1p_data[2]
+cdef char ufunc__lgam1p_types[4]
+cdef char *ufunc__lgam1p_doc = (
+    "Internal function, do not use.")
+ufunc__lgam1p_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__lgam1p_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__lgam1p_types[0] = <char>NPY_FLOAT
+ufunc__lgam1p_types[1] = <char>NPY_FLOAT
+ufunc__lgam1p_types[2] = <char>NPY_DOUBLE
+ufunc__lgam1p_types[3] = <char>NPY_DOUBLE
+ufunc__lgam1p_ptr[2*0] = <void*>_func_lgam1p
+ufunc__lgam1p_ptr[2*0+1] = <void*>(<char*>"_lgam1p")
+ufunc__lgam1p_ptr[2*1] = <void*>_func_lgam1p
+ufunc__lgam1p_ptr[2*1+1] = <void*>(<char*>"_lgam1p")
+ufunc__lgam1p_data[0] = &ufunc__lgam1p_ptr[2*0]
+ufunc__lgam1p_data[1] = &ufunc__lgam1p_ptr[2*1]
+_lgam1p = np.PyUFunc_FromFuncAndData(ufunc__lgam1p_loops, ufunc__lgam1p_data, ufunc__lgam1p_types, 2, 1, 1, 0, "_lgam1p", ufunc__lgam1p_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__sinpi_loops[4]
 cdef void *ufunc__sinpi_ptr[8]

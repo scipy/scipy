@@ -18,7 +18,7 @@ from scipy.special._mptestutils import (Arg, FixedArg, ComplexArg, IntArg,
                                         nonfunctional_tooslow, trace_args,
                                         time_limited, exception_to_nan,
                                         inf_to_nan)
-from scipy.special._ufuncs import _sinpi, _cospi
+from scipy.special._ufuncs import _sinpi, _cospi, _lgam1p
 
 try:
     import mpmath
@@ -1096,12 +1096,12 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             mpmath.eulernum,
                             [IntArg(1, 10000)], n=10000)
 
-    @knownfailure_overridable("spurious(?) inf for negative x")
+    @knownfailure_overridable("Bad values for n > 25 and x > 70.")
     def test_expint(self):
         assert_mpmath_equal(sc.expn,
-                            exception_to_nan(mpmath.expint),
-                            [IntArg(0, 100), Arg()])
-
+                            mpmath.expint,
+                            [IntArg(0, 100), Arg(0, np.inf)])
+        
     def test_fresnels(self):
         def fresnels(x):
             return sc.fresnel(x)[0]
@@ -1133,14 +1133,13 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [Arg(0, 1e4, inclusive_a=False), Arg(0, 1e4)],
                             nan_ok=False, rtol=1e-11)
 
-    @knownfailure_overridable()
     def test_gammaincc(self):
         # Larger arguments are tested in test_data.py:test_local
         assert_mpmath_equal(sc.gammaincc,
                             lambda z, a: mpmath.gammainc(z, a=a, regularized=True),
                             [Arg(0, 1e4, inclusive_a=False), Arg(0, 1e4)],
-                             nan_ok=False, rtol=1e-10)
-
+                            nan_ok=False, rtol=1e-10)
+        
     def test_gammaln(self):
         # The real part of loggamma is log(|gamma(z)|).
         def f(z):
@@ -1530,6 +1529,20 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [IntArg(0, 100), IntArg(0, 100), ComplexArg()],
                             n=100)
 
+    def test_lgam1p(self):
+        def param_filter(x):
+            # Filter the poles
+            return np.where((np.floor(x) == x) & (x <= 0), False, True)
+        
+        def mp_lgam1p(z):
+            # The real part of loggamma is log(|gamma(z)|)
+            return mpmath.loggamma(1 + z).real
+        
+        assert_mpmath_equal(_lgam1p,
+                            mp_lgam1p,
+                            [Arg()], rtol=1e-13, dps=100,
+                            param_filter=param_filter)
+        
     def test_loggamma(self):
         assert_mpmath_equal(sc.loggamma,
                             exception_to_nan(lambda x: mpmath.loggamma(x, **HYPERKW)),

@@ -4,6 +4,7 @@
 npy_double lgam(npy_double);
 #include "specfun_wrappers.h"
 npy_cdouble clngamma_wrap(npy_cdouble);
+npy_double lgam1p(npy_double);
 #include "misc.h"
 npy_double struve_asymp_large_z(npy_double, npy_double, npy_int, npy_double *);
 npy_double struve_bessel_series(npy_double, npy_double, npy_int, npy_double *);

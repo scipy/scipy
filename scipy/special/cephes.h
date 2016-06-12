@@ -188,6 +188,7 @@ extern double tanh ( double x );
 extern double log1p ( double x ); 
 extern double expm1 ( double x ); 
 extern double cosm1 ( double x ); 
+extern double lgam1p ( double x); 
 
 extern double yn ( int n, double x );
 extern double zeta ( double x, double q );

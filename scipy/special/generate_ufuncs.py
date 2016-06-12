@@ -314,6 +314,7 @@ _spherical_kn_d -- spherical_kn_d_real: ld->d, spherical_kn_d_complex: lD->D -- 
 loggamma -- loggamma: D->D                                 -- _loggamma.pxd
 _sinpi -- sinpi[double]: d->d, sinpi[double_complex]: D->D -- _trig.pxd
 _cospi -- cospi[double]: d->d, cospi[double_complex]: D->D -- _trig.pxd
+_lgam1p -- lgam1p: d->d                                    -- cephes.h
 """
 
 #---------------------------------------------------------------------------------
