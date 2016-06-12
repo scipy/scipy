@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 from numpy.testing import run_module_suite, assert_equal, assert_allclose
 import scipy.constants as sc
 
@@ -29,28 +31,40 @@ def test_convert_temperature():
 
 
 def test_fahrenheit_to_celcius():
-    assert_equal(sc.F2C(32), 0)
-    assert_equal(sc.F2C([32, 32]), [0, 0])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert_equal(sc.F2C(32), 0)
+        assert_equal(sc.F2C([32, 32]), [0, 0])
 
 
 def test_celcius_to_kelvin():
-    assert_equal(sc.C2K([0, 0]), [273.15, 273.15])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert_equal(sc.C2K([0, 0]), [273.15, 273.15])
 
 
 def test_kelvin_to_celcius():
-    assert_equal(sc.K2C([0, 0]), [-273.15, -273.15])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert_equal(sc.K2C([0, 0]), [-273.15, -273.15])
 
 
 def test_fahrenheit_to_kelvin():
-    assert_equal(sc.F2K([32, 32]), [273.15, 273.15])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert_equal(sc.F2K([32, 32]), [273.15, 273.15])
 
 
 def test_kelvin_to_fahrenheit():
-    assert_equal(sc.K2F([273.15, 273.15]), [32, 32])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert_equal(sc.K2F([273.15, 273.15]), [32, 32])
 
 
 def test_celcius_to_fahrenheit():
-    assert_equal(sc.C2F([0, 0]), [32, 32])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert_equal(sc.C2F([0, 0]), [32, 32])
 
 
 def test_lambda_to_nu():
