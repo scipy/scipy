@@ -25,6 +25,7 @@
 
 extern double cephes_struve(double, double);
 
+extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
 extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
@@ -33,6 +34,7 @@ extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
 extern void F_FUNC(e1xb,E1XB)(double*,double*);
 extern void F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(eix,EIX)(double*,double*);
+extern void F_FUNC(eixz,EIXZ)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(stvh0,STVH0)(double*,double*);
 extern void F_FUNC(stvh1,STVH1)(double*,double*);

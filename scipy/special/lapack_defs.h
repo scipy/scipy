@@ -16,5 +16,15 @@
 #endif
 #endif
 
-#define c_dstevr F_FUNC(dstevr,DSTEVR)
+extern void F_FUNC(dstevr,DSTEVR)(char *jobz, char *range, int *n, double *d, double *e,
+				  double *vl, double *vu, int *il, int *iu, double *abstol,
+				  int *m, double *w, double *z, int *ldz, int *isuppz,
+				  double *work, int *lwork, int *iwork, int *liwork, int *info);
 
+void c_dstevr(char *jobz, char *range, int *n, double *d, double *e,
+	      double *vl, double *vu, int *il, int *iu, double *abstol,
+	      int *m, double *w, double *z, int *ldz, int *isuppz,
+	      double *work, int *lwork, int *iwork, int *liwork, int *info) {
+    F_FUNC(dstevr,DSTEVR)(jobz, range, n, d, e, vl, vu, il, iu, abstol, m,
+			  w, z, ldz, isuppz, work, lwork, iwork, liwork, info);
+}
