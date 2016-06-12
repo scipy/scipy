@@ -1095,7 +1095,7 @@ their binary counterparts:
 
     The :func:`black_tophat` function implements a black top-hat filter of
     arrays of arbitrary rank. The black top-hat is equal to the
-    difference of the a grey-scale closing and the input.
+    difference of a grey-scale closing and the input.
 
 
 .. _ndimage-distance-transforms:
@@ -1122,7 +1122,7 @@ Block, and Chessboard distances.
     structure is generated using :func:`generate_binary_structure` with a
     squared distance equal to the rank of the array. These choices
     correspond to the common interpretations of the cityblock and the
-    chessboard distancemetrics in two dimensions.
+    chessboard distance metrics in two dimensions.
 
     In addition to the distance transform, the feature transform can be
     calculated. In this case the index of the closest background

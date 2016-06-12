@@ -27,7 +27,7 @@ submodules.
 Developer's Guide
 -----------------
 
-Explainations of how to start contributing to SciPy, and descriptions of
+Explanations of how to start contributing to SciPy, and descriptions of
 maintenance activities and policies.
 
 .. toctree::

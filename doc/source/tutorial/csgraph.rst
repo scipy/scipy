@@ -103,7 +103,7 @@ any two words in the graph::
 
 We need to check that these match, because if the words are not in the list
 that will not be the case.  Now all we need is to find the shortest path
-between these two indices in the graph.  We'll use dijkstra's algorithm,
+between these two indices in the graph.  We'll use Dijkstra's algorithm,
 because it allows us to find the path for just one node::
 
     >>> from scipy.sparse.csgraph import dijkstra
