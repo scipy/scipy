@@ -610,7 +610,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     if plot is not None:
         plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
-        _add_axis_labels_title(plot, xlabel='Quantiles',
+        _add_axis_labels_title(plot, xlabel='Theoretical quantiles',
                                ylabel='Ordered Values',
                                title='Probability Plot')
 
@@ -2702,7 +2702,7 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     mask = (S == .0) * (C == .0)
     if mask.ndim > 0:
         res[mask] = np.nan
-    return res 
+    return res
 
 def circvar(samples, high=2*pi, low=0, axis=None):
     """
