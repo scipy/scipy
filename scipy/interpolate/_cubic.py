@@ -369,10 +369,6 @@ class CubicSpline(PPoly):
         Axis along which `y` is assumed to be varying. Meaning that for
         ``x[i]`` the corresponding values are ``np.take(y, i, axis=axis)``.
         Default is 0.
-    extrapolate : bool or None, optional
-        Whether to extrapolate to out-of-bounds points based on first and last
-        intervals, or to return NaNs. If None (default), `extrapolate` is set
-        to False for ``bc_type='periodic'`` and to True otherwise (see Notes).
     bc_type : string or 2-tuple, optional
         Boundary condition type. Two additional equations, given by the
         boundary conditions, are required to determine all coefficients of
@@ -405,6 +401,11 @@ class CubicSpline(PPoly):
           is 1D, then `deriv_value` must be a scalar. If `y` is 3D with the
           shape (n0, n1, n2) and axis=2, then `deriv_value` must be 2D
           and have the shape (n0, n1).
+    extrapolate : {bool, 'periodic', None}, optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. If None (default), `extrapolate` is
+        set to 'periodic' for ``bc_type='periodic'`` and to True otherwise.
 
     Attributes
     ----------
@@ -435,6 +436,9 @@ class CubicSpline(PPoly):
 
     Notes
     -----
+    Parameters `bc_type` and `interpolate` work independently, i.e. the former
+    controls only construction of a spline, and the latter only evaluation.
+
     When a boundary condition is 'not-a-knot' and n = 2, it is replaced by
     a condition that the first derivative is equal to the linear interpolant
     slope. When both boundary conditions are 'not-a-knot' and n = 3, the
@@ -442,17 +446,8 @@ class CubicSpline(PPoly):
 
     When 'not-a-knot' boundary conditions is applied to both ends, the
     resulting spline will be the same as returned by `splrep` (with ``s=0``)
-    and `InterpolatedUnivariateSpline`, but those two methods use a
+    and `InterpolatedUnivariateSpline`, but these two methods use a
     representation in B-spline basis.
-
-    Currently `PPoly` can't correctly evaluate periodic polynomials for
-    arbitrary x. To decrease possible confusion, `extrapolate` is set to False
-    by default when ``bc_type='periodic'``. Fow now you can achieve periodic
-    evaluation for any x as follows::
-
-        S(S.x[0] + (x - S.x[0]) % (S.x[-1] - S.x[0])),
-
-    where ``S`` is a `CubicSpline` instance.
 
     .. versionadded:: 0.18.0
 
@@ -517,7 +512,7 @@ class CubicSpline(PPoly):
             on Wikiversity.
     .. [2] Carl de Boor, "A Practical Guide to Splines", Springer-Verlag, 1978.
     """
-    def __init__(self, x, y, axis=0, extrapolate=None, bc_type='not-a-knot'):
+    def __init__(self, x, y, axis=0, bc_type='not-a-knot', extrapolate=None):
         x, y = map(np.asarray, (x, y))
 
         if np.issubdtype(x.dtype, np.complexfloating):
@@ -553,7 +548,10 @@ class CubicSpline(PPoly):
         bc, y = self._validate_bc(bc_type, y, y.shape[1:], axis)
 
         if extrapolate is None:
-            extrapolate = bc_type[0] != 'periodic'
+            if bc[0] == 'periodic':
+                extrapolate = 'periodic'
+            else:
+                extrapolate = True
 
         dxr = dx.reshape([dx.shape[0]] + [1] * (y.ndim - 1))
         slope = np.diff(y, axis=0) / dxr

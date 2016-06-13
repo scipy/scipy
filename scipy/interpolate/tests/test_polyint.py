@@ -477,7 +477,7 @@ class TestCubicSpline(object):
             assert_allclose(S(x[0], 2), S(x[-1], 2), rtol=tol, atol=tol)
             return
 
-        # Check other boundary conditions
+        # Check other boundary conditions.
         if bc_start == 'not-a-knot':
             if x.size == 2:
                 slope = (S(x[1]) - S(x[0])) / dx[0]
@@ -557,6 +557,12 @@ class TestCubicSpline(object):
             S = CubicSpline(x, Y, axis=1, bc_type='periodic')
             self.check_correctness(S, 'periodic', 'periodic')
 
+    def test_periodic_eval(self):
+        x = np.linspace(0, 2 * np.pi, 10)
+        y = np.cos(x)
+        S = CubicSpline(x, y, bc_type='periodic')
+        assert_almost_equal(S(1), S(1 + 2 * np.pi), decimal=15)
+
     def test_dtypes(self):
         x = np.array([0, 1, 2, 3], dtype=int)
         y = np.array([-5, 2, 3, 1], dtype=int)
@@ -607,19 +613,19 @@ class TestCubicSpline(object):
                     'not-a-typo']
 
         for bc_type in wrong_bc:
-            assert_raises(ValueError, CubicSpline, x, y, 0, True, bc_type)
+            assert_raises(ValueError, CubicSpline, x, y, 0, bc_type, True)
 
         # Shapes mismatch when giving arbitrary derivative values:
         Y = np.c_[y, y]
         bc1 = ('clamped', (1, 0))
         bc2 = ('clamped', (1, [0, 0, 0]))
         bc3 = ('clamped', (1, [[0, 0]]))
-        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc1)
-        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc2)
-        assert_raises(ValueError, CubicSpline, x, Y, 0, True, bc3)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc1, True)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc2, True)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc3, True)
 
         # periodic condition, y[-1] must be equal to y[0]:
-        assert_raises(ValueError, CubicSpline, x, y, 0, True, 'periodic')
+        assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
 
 if __name__ == '__main__':
