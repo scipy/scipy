@@ -10,9 +10,9 @@ from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy import special
 from scipy.special import cython_special
-from scipy.special.cython_special import (_float, _double, _long_double,
-                                   _complex, _double_complex,
-                                   _long_double_complex, _int, _long)
+from scipy.special.cython_special import (
+    _float, _double, _long_double, _complex, _double_complex,
+    _long_double_complex, _int, _long)
                                    
 
 real_points = [-10, -1, 1, 10]
