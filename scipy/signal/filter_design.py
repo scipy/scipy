@@ -1038,12 +1038,25 @@ def zpk2sos(z, p, k, pairing='nearest'):
 
 
 def _align_nums(nums):
-    """
+    """Aligns the shapes of multiple numerators.
+
     Given an array of numerator coefficient arrays [[a_1, a_2,...,
     a_n],..., [b_1, b_2,..., b_m]], this function pads shorter numerator
     arrays with zero's so that all numerators have the same length. Such
     alignment is necessary for functions like 'tf2ss', which needs the
     alignment when dealing with SIMO transfer functions.
+
+    Parameters
+    ----------
+    nums: array_like
+        Numerator or list of numerators. Not necessarily with same length.
+
+    Returns
+    -------
+    nums: array
+        The numerator. If `nums` input was a list of numerators then a 2d
+        array with padded zeros for shorter numerators is returned. Otherwise
+        returns ``np.asarray(nums)``.
     """
     try:
         # The statement can throw a ValueError if one
