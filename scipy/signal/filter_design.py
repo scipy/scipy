@@ -1070,14 +1070,17 @@ def _align_nums(nums):
         return nums
 
     except ValueError:
-        nums = list(nums)
-        maxwidth = len(max(nums, key=lambda num: atleast_1d(num).size))
+        nums = [np.atleast_1d(num) for num in nums]
+        max_width = max(num.size for num in nums)
 
+        # pre-allocate
+        aligned_nums = np.zeros((len(nums), max_width))
+
+        # Create numerators with padded zeros
         for index, num in enumerate(nums):
-            num = atleast_1d(num).tolist()
-            nums[index] = [0] * (maxwidth - len(num)) + num
+            aligned_nums[index, -num.size:] = num
 
-        return atleast_1d(nums)
+        return aligned_nums
 
 
 def normalize(num, den):
