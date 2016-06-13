@@ -1095,27 +1095,43 @@ def normalize(num, den):
     descending exponent order (e.g., ``s^2 + 3s + 5`` would be represented as
     ``[1, 3, 5]``).
     """
-    num = _align_nums(num)
-    num, den = map(atleast_1d, (num, den))
-    if len(den.shape) != 1:
+    den = np.atleast_1d(den)
+    num = np.atleast_2d(_align_nums(num))
+
+    if den.ndim != 1:
         raise ValueError("Denominator polynomial must be rank-1 array.")
-    if len(num.shape) > 2:
+    if num.ndim > 2:
         raise ValueError("Numerator polynomial must be rank-1 or"
                          " rank-2 array.")
-    if len(num.shape) == 1:
-        num = asarray([num], num.dtype.char)
-    while den[0] == 0.0 and len(den) > 1:
-        den = den[1:]
-    outb = num * (1.0) / den[0]
-    outa = den * (1.0) / den[0]
-    if allclose(0, outb[:, 0], atol=1e-14):
+
+    # Trim leading zeros in denominator
+    den = np.trim_zeros(den, 'f')
+
+    # Normalize transfer function
+    num, den = num / den[0], den / den[0]
+
+    # Count numerator columns that are all zero
+    leading_zeros = 0
+    for col in num.T:
+        if np.allclose(col, 0, atol=1e-14):
+            leading_zeros += 1
+        else:
+            break
+
+    # Trim leading zeros of numerator
+    if leading_zeros > 0:
         warnings.warn("Badly conditioned filter coefficients (numerator): the "
                       "results may be meaningless", BadCoefficients)
-        while allclose(0, outb[:, 0], atol=1e-14) and (outb.shape[-1] > 1):
-            outb = outb[:, 1:]
-    if outb.shape[0] == 1:
-        outb = outb[0]
-    return outb, outa
+        # Make sure at least one column remains
+        if leading_zeros == num.shape[1]:
+            leading_zeros -= 1
+        num = num[:, leading_zeros:]
+
+    # Squeeze first dimension if singular
+    if num.shape[0] == 1:
+        num = num[0, :]
+
+    return num, den
 
 
 def lp2lp(b, a, wo=1.0):
