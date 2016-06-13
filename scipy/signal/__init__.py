@@ -149,8 +149,7 @@ Continuous-Time Linear Systems
 .. autosummary::
    :toctree: generated/
 
-   freqresp         -- frequency response of a continuous-time LTI system.
-   lti              -- Linear time invariant system base class.
+   lti              -- Continuous-time linear time invariant system base class.
    StateSpace       -- Linear time invariant system in state space form.
    TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
@@ -160,7 +159,8 @@ Continuous-Time Linear Systems
    impulse2         -- like impulse, but `scipy.integrate.odeint` is used.
    step             -- step response of continous-time LTI system.
    step2            -- like step, but `scipy.integrate.odeint` is used.
-   bode             -- Calculate Bode magnitude and phase data.
+   freqresp         -- frequency response of a continuous-time LTI system.
+   bode             -- Bode magnitude and phase data (continuous-time LTI).
 
 Discrete-Time Linear Systems
 ============================
@@ -168,9 +168,15 @@ Discrete-Time Linear Systems
 .. autosummary::
    :toctree: generated/
 
-   dlsim    -- simulation of output to a discrete-time linear system.
-   dimpulse -- impulse response of a discrete-time LTI system.
-   dstep    -- step response of a discrete-time LTI system.
+   dlti             -- Discrete-time linear time invariant system base class.
+   StateSpace       -- Linear time invariant system in state space form.
+   TransferFunction -- Linear time invariant system in transfer function form.
+   ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
+   dlsim            -- simulation of output to a discrete-time linear system.
+   dimpulse         -- impulse response of a discrete-time LTI system.
+   dstep            -- step response of a discrete-time LTI system.
+   dfreqresp        -- frequency response of a discrete-time LTI system.
+   dbode            -- Bode magnitude and phase data (discrete-time LTI).
 
 LTI Representations
 ===================
@@ -284,11 +290,10 @@ from ._upfirdn import upfirdn
 from .spline import *
 
 from .bsplines import *
-from .cont2discrete import *
-from .dltisys import *
 from .filter_design import *
 from .fir_filter_design import *
 from .ltisys import *
+from .lti_conversion import *
 from .windows import *
 from .signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter

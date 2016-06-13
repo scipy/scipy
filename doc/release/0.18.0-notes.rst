@@ -21,6 +21,14 @@ This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
 New features
 ============
 
+Discrete-time linear systems
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`scipy.linalg.dlti` provides an implementation of discrete-time linear systems.
+Accordingly, the `StateSpace`, `TransferFunction` and `ZerosPolesGain` classes
+have learned a the new keyword, `dt`, which can be used to create discrete-time
+instances of the corresponding system representation.
+
 Random matrices
 ~~~~~~~~~~~~~~~
 
