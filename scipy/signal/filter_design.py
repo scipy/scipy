@@ -1067,26 +1067,47 @@ def _align_nums(nums):
         return atleast_1d(nums)
 
 
-def normalize(b, a):
-    """Normalize polynomial representation of a transfer function.
+def normalize(num, den):
+    """Normalize numerator/denominator of a continuous-time transfer function.
 
     If values of `b` are too close to 0, they are removed. In that case, a
     BadCoefficients warning is emitted.
 
+    Parameters
+    ----------
+    num: array_like
+        Numerator of the transfer function. Can be a 2d array to normalize
+        multiple transfer functions.
+    den: array_like
+        Denominator of the transfer function. At most 1d.
+
+    Returns
+    -------
+    num: array
+        The numerator of the normalized transfer function. At least a 1d
+        array. A 2d-array if the input `num` is a 2d array.
+    den: 1d-array
+        The denominator of the normalized transfer function.
+
+    Notes
+    -----
+    Coefficients for both the numerator and denominator should be specified in
+    descending exponent order (e.g., ``s^2 + 3s + 5`` would be represented as
+    ``[1, 3, 5]``).
     """
-    b = _align_nums(b)
-    b, a = map(atleast_1d, (b, a))
-    if len(a.shape) != 1:
+    num = _align_nums(num)
+    num, den = map(atleast_1d, (num, den))
+    if len(den.shape) != 1:
         raise ValueError("Denominator polynomial must be rank-1 array.")
-    if len(b.shape) > 2:
+    if len(num.shape) > 2:
         raise ValueError("Numerator polynomial must be rank-1 or"
                          " rank-2 array.")
-    if len(b.shape) == 1:
-        b = asarray([b], b.dtype.char)
-    while a[0] == 0.0 and len(a) > 1:
-        a = a[1:]
-    outb = b * (1.0) / a[0]
-    outa = a * (1.0) / a[0]
+    if len(num.shape) == 1:
+        num = asarray([num], num.dtype.char)
+    while den[0] == 0.0 and len(den) > 1:
+        den = den[1:]
+    outb = num * (1.0) / den[0]
+    outa = den * (1.0) / den[0]
     if allclose(0, outb[:, 0], atol=1e-14):
         warnings.warn("Badly conditioned filter coefficients (numerator): the "
                       "results may be meaningless", BadCoefficients)
