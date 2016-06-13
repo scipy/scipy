@@ -595,30 +595,25 @@ class TestOptimizeSimple(CheckOptimize):
         # gh-6162
         f = optimize.rosen
         g = optimize.rosen_der
+        values = []
         x0 = np.ones(7) * 1000
 
-        class _F(object):
-
-            def __init__(self):
-                self.values = []
-
-            def __call__(self, x):
-                value = f(x)
-                self.values.append(value)
-                return value
+        def objfun(x):
+            value = f(x)
+            values.append(value)
+            return value
 
         # Look for an interesting test case.
         # Request a maxfun that stops at a particularly bad function
         # evaluation somewhere between 100 and 300 evaluations.
         low, medium, high = 30, 100, 300
-        obj = _F()
-        optimize.fmin_l_bfgs_b(obj, x0, fprime=g, maxfun=high)
-        v, k = max((y, i) for i, y in enumerate(obj.values[medium:]))
+        optimize.fmin_l_bfgs_b(objfun, x0, fprime=g, maxfun=high)
+        v, k = max((y, i) for i, y in enumerate(values[medium:]))
         maxfun = medium + k
         # If the minimization strategy is reasonable,
         # the minimize() result should not be worse than the best
         # of the first 30 function evaluations.
-        target = min(obj.values[:low])
+        target = min(values[:low])
         xmin, fmin, d = optimize.fmin_l_bfgs_b(f, x0, fprime=g, maxfun=maxfun)
         assert_array_less(fmin, target)
 
