@@ -2580,10 +2580,16 @@ class invgamma_gen(rv_continuous):
         return (-(a+1) * log(x) - gamln(a) - 1.0/x)
 
     def _cdf(self, x, a):
-        return 1.0 - special.gammainc(a, 1.0/x)
+        return special.gammaincc(a, 1.0 / x)
 
     def _ppf(self, q, a):
-        return 1.0 / special.gammaincinv(a, 1.-q)
+        return 1.0 / special.gammainccinv(a, q)
+
+    def _sf(self, x, a):
+        return special.gammainc(a, 1.0 / x)
+
+    def _isf(self, q, a):
+        return 1.0 / special.gammaincinv(a, q)
 
     def _stats(self, a, moments='mvsk'):
         m1 = _lazywhere(a > 1, (a,), lambda x: 1. / (x - 1.), np.inf)

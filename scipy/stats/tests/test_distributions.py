@@ -826,6 +826,18 @@ class TestInvGamma(TestCase):
             for x, y in zip(mvsk, expected):
                 assert_almost_equal(x, y)
 
+    def test_cdf_ppf(self):
+        x = np.logspace(-2.6, 0)
+        y = stats.invgamma.cdf(x, 1)
+        xx = stats.invgamma.ppf(y, 1)
+        assert_allclose(x, xx)
+
+    def test_sf_isf(self):
+        x = np.logspace(2, 100)
+        y = stats.invgamma.sf(x, 1)
+        xx = stats.invgamma.isf(y, 1)
+        assert_allclose(x, xx, rtol=1.0)
+
 
 class TestF(TestCase):
     def test_f_moments(self):
