@@ -337,6 +337,15 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(output)s
     %(mode)s
     %(cval)s
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.prewitt(ascent)
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> plt.imshow(result)
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
@@ -359,6 +368,15 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(output)s
     %(mode)s
     %(cval)s
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.sobel(ascent)
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> plt.imshow(result)
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
@@ -420,6 +438,15 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
     %(output)s
     %(mode)s
     %(cval)s
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.laplace(ascent)
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> plt.imshow(result)
     """
     def derivative2(input, axis, output, mode, cval):
         return correlate1d(input, [1, -2, 1], axis, output, mode, cval, 0)
@@ -442,6 +469,24 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     %(mode)s
     %(cval)s
     Extra keyword arguments will be passed to gaussian_filter().
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> ascent = misc.ascent()
+
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+
+    >>> result = ndimage.gaussian_laplace(ascent, sigma=1)
+    >>> ax1.imshow(result)
+
+    >>> result = ndimage.gaussian_laplace(ascent, sigma=3)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
 
@@ -590,7 +635,6 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     See Also
     --------
     convolve : Convolve an image with a kernel.
-
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
                                   origin, False)
