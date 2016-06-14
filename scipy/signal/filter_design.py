@@ -1083,7 +1083,7 @@ def _align_nums(nums):
         return aligned_nums
 
 
-def normalize(num, den):
+def normalize(b, a):
     """Normalize numerator/denominator of a continuous-time transfer function.
 
     If values of `b` are too close to 0, they are removed. In that case, a
@@ -1091,10 +1091,10 @@ def normalize(num, den):
 
     Parameters
     ----------
-    num: array_like
+    b: array_like
         Numerator of the transfer function. Can be a 2d array to normalize
         multiple transfer functions.
-    den: array_like
+    a: array_like
         Denominator of the transfer function. At most 1d.
 
     Returns
@@ -1111,6 +1111,8 @@ def normalize(num, den):
     descending exponent order (e.g., ``s^2 + 3s + 5`` would be represented as
     ``[1, 3, 5]``).
     """
+    num, den = b, a
+
     den = np.atleast_1d(den)
     num = np.atleast_2d(_align_nums(num))
 
@@ -1120,8 +1122,11 @@ def normalize(num, den):
         raise ValueError("Numerator polynomial must be rank-1 or"
                          " rank-2 array.")
 
-    # Trim leading zeros in denominator
-    den = np.trim_zeros(den, 'f')
+    # Trim leading zeros in denominator, leave at least one.
+    if np.all(den == 0):
+        den = den[-1:]
+    else:
+        den = np.trim_zeros(den, 'f')
 
     # Normalize transfer function
     num, den = num / den[0], den / den[0]
