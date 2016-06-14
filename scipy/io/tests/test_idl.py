@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from os import path
-from warnings import catch_warnings
+import warnings
 
 DATA_PATH = path.join(path.dirname(__file__), 'data')
 
@@ -267,8 +267,12 @@ class TestStructures:
         assert_identical(s.fc.c, np.array([4], dtype=np.int16))
 
     def test_arrays_corrupt_idl80(self):
-        """tests byte arrays with missing nbyte information from IDL 8.0 .sav file"""
-        s = readsav(path.join(DATA_PATH,'struct_arrays_byte_idl80.sav'), verbose=False)
+        # test byte arrays with missing nbyte information from IDL 8.0 .sav file
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            s = readsav(path.join(DATA_PATH,'struct_arrays_byte_idl80.sav'),
+                        verbose=False)
+
         assert_identical(s.y.x[0], np.array([55,66], dtype=np.uint8))
 
 
@@ -427,7 +431,7 @@ def test_invalid_pointer():
     # that variable and replace the variable with None and emit a warning.
     # Since it's difficult to artificially produce such files, the file used
     # here has been edited to force the pointer reference to be invalid.
-    with catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True) as w:
         s = readsav(path.join(DATA_PATH, 'invalid_pointer.sav'), verbose=False)
     assert_(len(w) == 1)
     assert_(str(w[0].message) == ("Variable referenced by pointer not found in "
