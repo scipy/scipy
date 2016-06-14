@@ -2386,6 +2386,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     count = len(d)
     if count < 10:
         warnings.warn("Warning: sample size too small for normal approximation.")
+
     r = stats.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r, axis=0)
     r_minus = np.sum((d < 0) * r, axis=0)

@@ -760,8 +760,8 @@ def test_wilcoxon_bad_arg():
 def test_wilcoxon_arg_type():
     # Should be able to accept list as arguments.
     # Address issue 6070.
-    arr = [1, 2, 3, 0, -1, 3]
-    
+    arr = [1, 2, 3, 0, -1, 3, 1, 2, 1, 1, 2]
+
     _ = stats.wilcoxon(arr, zero_method="pratt")
     _ = stats.wilcoxon(arr, zero_method="zsplit")
     _ = stats.wilcoxon(arr, zero_method="wilcox")
