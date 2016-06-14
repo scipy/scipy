@@ -527,7 +527,7 @@ class TestCubicSpline(object):
         for bc_start in bc_all:
             for bc_end in bc_all:
                 S = CubicSpline(x, y, axis=axis, bc_type=(bc_start, bc_end))
-                self.check_correctness(S, bc_start, bc_end)
+                self.check_correctness(S, bc_start, bc_end, tol=2e-14)
 
     def test_general(self):
         x = np.array([-1, 0, 0.5, 2, 4, 4.5, 5.5, 9])
