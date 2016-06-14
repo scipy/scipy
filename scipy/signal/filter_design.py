@@ -1121,12 +1121,11 @@ def normalize(b, a):
     if num.ndim > 2:
         raise ValueError("Numerator polynomial must be rank-1 or"
                          " rank-2 array.")
+    if np.all(den == 0):
+        raise ValueError("Denominator must have at least on nonzero element.")
 
     # Trim leading zeros in denominator, leave at least one.
-    if np.all(den == 0):
-        den = den[-1:]
-    else:
-        den = np.trim_zeros(den, 'f')
+    den = np.trim_zeros(den, 'f')
 
     # Normalize transfer function
     num, den = num / den[0], den / den[0]
