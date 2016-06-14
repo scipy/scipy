@@ -500,7 +500,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                           dtype=upcast_char(self.dtype.char, other.dtype.char))
         for i, col in enumerate(other.T):
             coo_matvec(self.nnz, self.row, self.col, self.data, col, result[i])
-        return np.matrix(result.T)
+        return result.T.view(type=type(other))
 
 
 def isspmatrix_coo(x):
