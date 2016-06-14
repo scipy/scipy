@@ -835,7 +835,13 @@ class TestInvGamma(TestCase):
 
     def test_sf_isf(self):
         # gh-6245
-        x = np.logspace(2, 100)
+        if sys.maxsize > 2**32:
+            x = np.logspace(2, 100)
+        else:
+            # Invgamme roundtrip on 32-bit systems has relative accuracy
+            # ~1e-15 until x=1e+15, and becomes inf above x=1e+18
+            x = np.logspace(2, 18)
+
         y = stats.invgamma.sf(x, 1)
         xx = stats.invgamma.isf(y, 1)
         assert_allclose(x, xx, rtol=1.0)
@@ -960,26 +966,26 @@ class TestSkewNorm(TestCase):
     def test_normal(self):
         # When the skewness is 0 the distribution is normal
         x = np.linspace(-5, 5, 100)
-        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0), 
+        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0),
                                   stats.norm.pdf(x))
 
     def test_rvs(self):
         shape = (3, 4, 5)
         x = stats.skewnorm.rvs(a=0.75, size=shape)
         assert_equal(shape, x.shape)
-        
+
         x = stats.skewnorm.rvs(a=-3, size=shape)
         assert_equal(shape, x.shape)
-        
+
     def test_moments(self):
         X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
-        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
-                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'), 
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
+                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'),
                                    decimal=2)
-        
+
         X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
-        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
-                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
+                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'),
                                    decimal=2)
 
 class TestExpon(TestCase):
@@ -1812,7 +1818,7 @@ class TestExpect(TestCase):
         assert_allclose(res_0,
                         p / (p - 1.) / np.log(1. - p), atol=1e-15)
 
-        # now check it with `loc` 
+        # now check it with `loc`
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 
