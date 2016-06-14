@@ -471,6 +471,17 @@ class TestNormalize(TestCase):
         assert_array_almost_equal(b_matlab, b_output, decimal=13)
         assert_array_almost_equal(a_matlab, a_output, decimal=13)
 
+    def test_errors(self):
+        """Test the error cases."""
+        # all zero denominator
+        assert_raises(ValueError, normalize, [1, 2], 0)
+
+        # denominator not 1 dimensional
+        assert_raises(ValueError, normalize, [1, 2], [[1]])
+
+        # numerator too many dimensions
+        assert_raises(ValueError, normalize, [[[1, 2]]], 1)
+
 
 class TestLp2lp(TestCase):
 
