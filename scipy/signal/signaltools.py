@@ -6,6 +6,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import threading
 import sys
+from timeit import Timer
 
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _UpFIRDn, _output_len
@@ -31,7 +32,6 @@ if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
 else:
     from fractions import gcd
-import math
 
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
@@ -39,7 +39,7 @@ __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
            'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
-           'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt',
+           'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
            'filtfilt', 'decimate', 'vectorstrength']
 
 
@@ -155,6 +155,10 @@ def correlate(in1, in2, mode='full', method='auto'):
     correlate : array
         An N-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
+
+    See also
+    --------
+    convolve : contains more documentation on `method`.
 
     Notes
     -----
@@ -308,8 +312,7 @@ def fftconvolve(in1, in2, mode="full"):
 
     Examples
     --------
-    Autocorrelation of white noise is an impulse.  (This is at least 100 times
-    as fast as `convolve`.)
+    Autocorrelation of white noise is an impulse.
 
     >>> from scipy import signal
     >>> sig = np.random.randn(1000)
@@ -455,7 +458,6 @@ def _fftconv_faster(x, h, mode):
         big_O_constant = oneD_big_O[h.size <= x.size] if x.ndim == 1 \
                                                       else 34519.21021589
     elif mode == 'valid':
-        shape_diff = _prod([n - k for n, k in zip(x.shape, h.shape)])
         out_shape = [n - k + 1 for n, k in zip(x.shape, h.shape)]
         big_O_constant = 41954.28006344 if x.ndim == 1 else 66453.24316434
     else:
@@ -487,7 +489,125 @@ def _np_conv_ok(volume, kernel, mode):
     return np_conv_ok and (volume.size >= kernel.size or mode != 'same')
 
 
-def _choose_conv_method(volume, kernel, mode):
+def _fftconvolve_valid(volume, kernel):
+    # fftconvolve doesn't support complex256
+    if hasattr(np, "complex256"):
+        if volume.dtype == 'complex256' or kernel.dtype == 'complex256':
+            return False
+
+    # for integer input,
+    # catch when more precision required than float provides (representing a
+    # integer as float can lose precision in fftconvolve if larger than 2**52)
+    if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
+        max_value = int(np.abs(volume).max()) * int(np.abs(kernel).max())
+        max_value *= int(min(volume.size, kernel.size))
+        if max_value > 2**np.finfo('float').nmant - 1:
+            return False
+
+    if volume.dtype.kind not in 'buifc' and kernel.dtype.kind not in 'buifc':
+        return False
+
+    return True
+
+
+def _timeit_fast(stmt="pass", setup="pass", repeat=3):
+    """
+    Faster, less painstaking version of timeit_auto for automated 
+    testing of many inputs.
+
+    Will do only 1 loop (like IPython's timeit) with no repetitions 
+    (unlike IPython) for very slow functions.  Only does enough loops 
+    to take 5 ms, which seems to produce similar results on Windows at 
+    least, and avoids doing an extraneous cycle that isn't measured.
+    """
+    t = Timer(stmt, setup)
+
+    # determine number so that 5 ms <= total time
+    x = 0
+    for i in range(0, 10):
+        number = 10**i
+        x = t.timeit(number)  # seconds
+        if x >= 5e-3 / 10:  # 5 ms for final test, 1/10th that for this one
+            break
+    if x > 1:  # second
+        # If it's macroscopic, don't bother with repetitions
+        best = x
+    else:
+        number *= 10
+        r = t.repeat(repeat, number)
+        best = min(r)
+
+    usec = best * 1e6 / number
+    return usec
+
+def choose_conv_method(in1, in2, mode='full', measure=False):
+    """
+    A method to find the fastest convolution method.
+
+    Parameters
+    ----------
+    in1 : array_like
+        The first argument passed into the convolution function.
+    in2 : array_like
+        The second argument passed into the convolution function.
+    mode : str {'full', 'valid', 'same'}, optional
+        A string indicating the size of the output:
+
+        ``full``
+           The output is the full discrete linear convolution
+           of the inputs. (Default)
+        ``valid``
+           The output consists only of those elements that do not
+           rely on the zero-padding.
+        ``same``
+           The output is the same size as `in1`, centered
+           with respect to the 'full' output.
+    measure : bool, optional
+        If True, run and time the convolution with `in1` and `in2` and return
+        the fastest method. If False (default), predict the fastest method
+        using precomputed values.
+
+    Returns
+    -------
+    method : str
+        A string indicating which convolution method is fastest, either
+        'direct' or 'fft'
+    times : dict, optional
+        A dictionary containing the times needed for each method. This value is
+        only returned if `measure=True`.
+
+    See also
+    --------
+    convolve
+    correlate
+
+    Notes
+    -----
+    For large n, this function is accurate and can decide upon the fastest
+    method to perform the convolution.  However, this function is not as
+    accurate for small n (when any dimension in the input or output is small).
+
+    In practice, we found that this function estimates the faster method up to
+    a multiplicative factor of 5 (i.e., the estimated method is *at most* 5
+    times slower than the fastest method). The estimation values were tuned on
+    an early 2015 MacBook Pro with 8GB RAB but we found that the prediction
+    held *fairly* accurate across different machines.
+
+    """
+    volume = asarray(in1)
+    kernel = asarray(in2)
+
+    if measure:
+        setup = ("from scipy.signal import convolve\n"
+                 "x, h = {}, {}".format(volume.tolist(), kernel.tolist()))
+        times = {}
+        for method in ['fft', 'direct']:
+            to_time = 'convolve(x, h, mode="{}", method="{}")'.format(mode, method)
+            times[method] = _timeit_fast(to_time, setup)
+
+        chosen_method = 'fft' if times['fft'] < times['direct'] else 'direct'
+        return chosen_method, times
+
     # fftconvolve doesn't support complex256
     if hasattr(np, "complex256"):
         if volume.dtype == 'complex256' or kernel.dtype == 'complex256':
@@ -502,11 +622,10 @@ def _choose_conv_method(volume, kernel, mode):
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
-    if _numeric_arrays([volume, kernel]) and _fftconv_faster(volume,
-                                                             kernel, mode):
+    if _numeric_arrays([volume, kernel]) and _fftconv_faster(volume, kernel, mode):
         return 'fft'
-    return 'direct'
 
+    return 'direct'
 
 def convolve(in1, in2, mode='full', method='auto'):
     """
@@ -561,12 +680,18 @@ def convolve(in1, in2, mode='full', method='auto'):
     --------
     numpy.polymul : performs polynomial multiplication (same operation, but
                     also accepts poly1d objects)
+    choose_conv_method : chooses the fastest appropriate convolution method
+    fftconvolve
 
     Notes
     -----
-    ``method='fft'`` only works for numerical arrays as it relies on
-    `fftconvolve`. In certain cases (i.e., arrays of objects or when
-    rounding integers can lose precision), ``method='direct'`` is always used.
+    By default, `convolve` and `correlate` use `method=auto` which uses
+    `choose_conv_method` to choose the method that is fastest using
+    pre-computed values (pre-computed values by default; can perform timing
+    with keyword argument). Because `fftconvolve` relies on floating point
+    numbers, there are certain constraints that may force `method=direct` (more
+    detail in `choose_conv_method` docstring). If `method=fft` is specified,
+    this function will go directly to `fftconvolve`.
 
     Examples
     --------
@@ -602,12 +727,8 @@ def convolve(in1, in2, mode='full', method='auto'):
         # Convolution is commutative; order doesn't have any effect on output
         volume, kernel = kernel, volume
 
-    if method == 'fft' and volume.dtype.kind not in 'buifc' \
-                       and kernel.dtype.kind not in 'buifc':
-        raise ValueError("fftconvolve only supports numeric dtypes")
-
     if method == 'auto':
-        method = _choose_conv_method(volume, kernel, mode)
+        method = choose_conv_method(volume, kernel, mode=mode)
 
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)

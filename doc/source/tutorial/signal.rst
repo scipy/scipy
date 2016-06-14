@@ -332,11 +332,11 @@ enhancing, and edge-detection for an image.
    >>> plt.show()
 
 
-Using :func:`convolve` in the above example would take quite long to run.
 Calculating the convolution in the time domain as above is mainly used for
 filtering when one of the signals is much smaller than the other ( :math:`K\gg
 M` ), otherwise linear filtering is more efficiently calculated in the
-frequency domain provided by the function :func:`fftconvolve`.
+frequency domain provided by the function :func:`fftconvolve`. By default,
+:func:`convolve` estimates the fastest method using :func:`choose_conv_method`.
 
 If the filter function :math:`w[n,m]` can be factored according to
 

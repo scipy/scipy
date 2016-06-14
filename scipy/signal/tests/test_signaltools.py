@@ -16,7 +16,7 @@ import numpy as np
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d, fftconvolve, hann,
+    correlate, convolve, convolve2d, fftconvolve, hann, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk)
@@ -166,7 +166,7 @@ class TestConvolve(_TestConvolve):
                     h = (0.5 + np.random.rand(50)).astype(dtype)
 
                     if x.dtype.kind not in 'buifc' or dtype == np.complex256:
-                        assert_raises(ValueError, convolve, x, h, method='fft')
+                        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
                         continue
 
                     if x.dtype.kind != 'b':
@@ -201,8 +201,7 @@ class TestConvolve(_TestConvolve):
                 assert_equal(direct, 2**(2*n))
 
         assert_equal(convolve([4], [5], 'valid', 'fft'), 20)
-        assert_raises(ValueError, convolve, 2 * [Decimal(3)], 2 * [Decimal(4)],
-                      method='fft')
+        assert_equal('direct', choose_conv_method(2 * [Decimal(3)], 2 * [Decimal(4)]))
 
 class _TestConvolve2d(TestCase):
 
@@ -1094,8 +1093,8 @@ class _TestCorrelateReal(TestCase):
 
     def test_method(self):
         if self.dt == Decimal:
-            assert_raises(ValueError, correlate, 2*[Decimal(3)], 
-                          2*[Decimal(4)], method='fft')
+            method = choose_conv_method([Decimal(4)], [Decimal(3)])
+            assert_equal(method, 'direct')
         else:
             a, b, y_r = self._setup_rank3()
             y_fft = correlate(a, b, method='fft')
@@ -1527,6 +1526,35 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     assert_allclose(yg, yo, rtol=1e-9, atol=1e-10)
     assert_allclose(zg1, zo1, rtol=1e-9, atol=1e-10)
     assert_allclose(zg2, zo2, rtol=1e-9, atol=1e-10)
+
+
+def test_choose_conv_method():
+    for mode in ['valid', 'same', 'full']:
+        for ndims in [1, 2]:
+            n, k, true_method = 8, 6, 'direct'
+            x = np.random.randn(*((n,) * ndims))
+            h = np.random.randn(*((k,) * ndims))
+
+            method = choose_conv_method(x, h, mode=mode)
+            assert_equal(method, true_method)
+
+            method_try, times = choose_conv_method(x, h, mode=mode, measure=True)
+            assert_(method_try in {'fft', 'direct'})
+            assert_(type(times) is dict)
+            assert_('fft' in times.keys() and 'direct' in times.keys())
+
+        n = 10
+        x = np.ones(n, dtype='complex256')
+        h = x.copy()
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+        x = np.array([2**51], dtype=int)
+        h = x.copy()
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+        x = [Decimal(3), Decimal(2)]
+        h = [Decimal(1), Decimal(4)]
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
 
 def test_filtfilt_gust():
