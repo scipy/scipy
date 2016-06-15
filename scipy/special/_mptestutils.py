@@ -118,6 +118,22 @@ class IntArg(object):
         return v
 
 
+def get_args(argspec, n):
+    if isinstance(argspec, np.ndarray):
+        args = argspec.copy()
+    else:
+        nargs = len(argspec)
+        ms = np.asarray([1.5 if isinstance(spec, ComplexArg) else 1.0 for spec in argspec])
+        ms = (n**(ms/sum(ms))).astype(int) + 1
+
+        args = []
+        for spec, m in zip(argspec, ms):
+            args.append(spec.values(m))
+        args = np.array(np.broadcast_arrays(*np.ix_(*args))).reshape(nargs, -1).T
+
+    return args
+    
+
 class MpmathData(object):
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
                  dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300,
@@ -150,19 +166,7 @@ class MpmathData(object):
         np.random.seed(1234)
 
         # Generate values for the arguments
-        if isinstance(self.arg_spec, np.ndarray):
-            argarr = self.arg_spec.copy()
-        else:
-            num_args = len(self.arg_spec)
-            ms = np.asarray([1.5 if isinstance(arg, ComplexArg) else 1.0
-                             for arg in self.arg_spec])
-            ms = (self.n**(ms/sum(ms))).astype(int) + 1
-
-            argvals = []
-            for arg, m in zip(self.arg_spec, ms):
-                argvals.append(arg.values(m))
-
-            argarr = np.array(np.broadcast_arrays(*np.ix_(*argvals))).reshape(num_args, -1).T
+        argarr = get_args(self.arg_spec, self.n)
 
         # Check
         old_dps, old_prec = mpmath.mp.dps, mpmath.mp.prec
