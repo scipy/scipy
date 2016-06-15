@@ -1050,20 +1050,21 @@ class TestEllipord(TestCase):
 class TestBessel(TestCase):
 
     def test_degenerate(self):
-        # 0-order filter is just a passthrough
-        b, a = bessel(0, 1, analog=True)
-        assert_array_equal(b, [1])
-        assert_array_equal(a, [1])
+        for norm in ('delay', 'phase', 'mag'):
+            # 0-order filter is just a passthrough
+            b, a = bessel(0, 1, analog=True, norm=norm)
+            assert_array_equal(b, [1])
+            assert_array_equal(a, [1])
 
-        # 1-order filter is same for all types
-        b, a = bessel(1, 1, analog=True)
-        assert_allclose(b, [1], rtol=1e-15)
-        assert_allclose(a, [1, 1], rtol=1e-15)
+            # 1-order filter is same for all types
+            b, a = bessel(1, 1, analog=True, norm=norm)
+            assert_allclose(b, [1], rtol=1e-15)
+            assert_allclose(a, [1, 1], rtol=1e-15)
 
-        z, p, k = bessel(1, 0.3, analog=True, output='zpk')
-        assert_array_equal(z, [])
-        assert_allclose(p, [-0.3], rtol=1e-14)
-        assert_allclose(k, 0.3, rtol=1e-14)
+            z, p, k = bessel(1, 0.3, analog=True, output='zpk', norm=norm)
+            assert_array_equal(z, [])
+            assert_allclose(p, [-0.3], rtol=1e-14)
+            assert_allclose(k, 0.3, rtol=1e-14)
 
     def test_high_order(self):
         # high even order, 'phase'
