@@ -2630,13 +2630,15 @@ def is_isomorphic(T1, T2):
     if T1S[0] != T2S[0]:
         raise ValueError('T1 and T2 must have the same number of elements.')
     n = T1S[0]
-    d = {}
+    d1 = {}
+    d2 = {}
     for i in xrange(0, n):
-        if T1[i] in d:
-            if d[T1[i]] != T2[i]:
+        if T1[i] in d1:
+            if d1[T1[i]] != T2[i] or d2[T2[i]] != T1[i]:
                 return False
         else:
-            d[T1[i]] = T2[i]
+            d1[T1[i]] = T2[i]
+            d2[T2[i]] = T1[i]
     return True
 
 
