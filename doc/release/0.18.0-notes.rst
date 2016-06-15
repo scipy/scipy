@@ -102,13 +102,14 @@ treated as missing values.
 Other changes
 =============
 
-In the `scipy.optimize` module, the interpretation of the `maxfun` option
-in `L-BFGS-B` based routines has changed.
+PR `#6240 <https://github.com/scipy/scipy/issues/6240>`__
+changes the interpretation of the `maxfun` option in `L-BFGS-B` based routines
+in the `scipy.optimize` module.
 An `L-BFGS-B` search consists of multiple iterations,
 with each iteration consisting of one or more function evaluations.
 Whereas the old search strategy terminated immediately upon reaching `maxfun`
-function evaluations, the new strategy allows the current
-iteration to finish, even if more than `maxfun` total evaluations are required.
+function evaluations, the new strategy allows the current iteration
+to finish despite reaching `maxfun`.
 
 
 Authors
