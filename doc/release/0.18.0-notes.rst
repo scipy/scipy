@@ -102,7 +102,7 @@ treated as missing values.
 Other changes
 =============
 
-PR `#6240 <https://github.com/scipy/scipy/issues/6240>`__
+PR `#6240 <https://github.com/scipy/scipy/pull/6240>`__
 changes the interpretation of the `maxfun` option in `L-BFGS-B` based routines
 in the `scipy.optimize` module.
 An `L-BFGS-B` search consists of multiple iterations,
