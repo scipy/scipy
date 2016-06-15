@@ -1465,7 +1465,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             A = fhess(*(xk,) + args)
             hcalls = hcalls + 1
 
-        while numpy.add.reduce(numpy.abs(ri)) > termcond:
+        k2 = 0
+        cg_maxiter = 20*len(x0)
+        while (numpy.add.reduce(numpy.abs(ri)) > termcond) and (k2 < cg_maxiter):
             if fhess is None:
                 if fhess_p is None:
                     Ap = approx_fhess_p(xk, psupi, fprime, epsilon)
@@ -1494,6 +1496,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             psupi = -ri + betai * psupi
             i = i + 1
             dri0 = dri1          # update numpy.dot(ri,ri) for next time.
+            k2 += 1
+
+        if k2 >= cg_maxiter:
+            # curvature keeps increasing, bail out
+            break
 
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
@@ -1528,6 +1535,17 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
+        if disp:
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % fcalls[0])
+            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Hessian evaluations: %d" % hcalls)
+    elif k2 >= cg_maxiter:
+        warnflag = 3
+        msg = ("Warning: CG iterations didn't converge.  The Hessian is not "
+              "positive definite.")
         if disp:
             print("Warning: " + msg)
             print("         Current function value: %f" % fval)
