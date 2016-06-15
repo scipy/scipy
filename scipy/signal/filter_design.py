@@ -3519,26 +3519,24 @@ def _bessel_zeros(N):
     return x
 
 
-def _norm_factor(a):
+def _norm_factor(p, k):
     """
     Numerically find frequency shift to apply to delay-normalized filter such
     that -3 dB point is at 1 rad/sec.
 
-    `a` is an array_like of polynomial coefficients
+    `p` is an array_like of polynomial poles
+    `k` is a float gain
 
     First 10 values are listed in "Bessel Scale Factors" table,
     "Bessel Filters Polynomials, Poles and Circuit Elements 2003, C. Bond."
     """
-    a = asarray(a, dtype=float)
+    p = asarray(p, dtype=complex)
 
     def G(w):
         """
         Gain of filter
         """
-        # TODO: This is inaccurate at high orders.  Evaluate using SOS when
-        # that is implemented for analog filters.
-        # https://github.com/scipy/scipy/issues/5668
-        return abs(a[-1]/npp_polyval(1j*w, a[::-1]))
+        return abs(k / prod(1j*w - p))
 
     def cutoff(w):
         """
@@ -3633,22 +3631,22 @@ def besselap(N, norm='phase'):
         # Find roots of reverse Bessel polynomial
         p = 1/_bessel_zeros(N)
 
+        a_last = _falling_factorial(2*N, N) // 2**N
+
         # Shift them to a different normalization if required
-        if norm == 'delay':
+        if norm in ('delay', 'mag'):
             # Normalized for group delay of 1
-            k = _falling_factorial(2*N, N) // 2**N
+            k = a_last
+            if norm == 'mag':
+                # -3 dB magnitude point is at 1 rad/sec
+                norm_factor = _norm_factor(p, k)
+                p /= norm_factor
+                k = norm_factor**-N * a_last
         elif norm == 'phase':
             # Phase-matched (1/2 max phase shift at 1 rad/sec)
             # Asymptotes are same as Butterworth filter
-            a_last = _falling_factorial(2*N, N) // 2**N
             p *= 10**(-math.log10(a_last)/N)
             k = 1
-        elif norm == 'mag':
-            # -3 dB magnitude point is at 1 rad/sec
-            a = _bessel_poly(N, reverse=True)
-            norm_factor = _norm_factor(a)
-            p /= norm_factor
-            k = norm_factor**-N * a[-1]
         else:
             raise ValueError('normalization not understood')
 

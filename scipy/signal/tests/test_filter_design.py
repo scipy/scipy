@@ -1489,10 +1489,11 @@ class TestBessel(TestCase):
             20: 5.174700441742707423, 21: 5.307034531360917274,
             22: 5.436140703250035999, 23: 5.562244783787878196,
             24: 5.685547371295963521, 25: 5.806227623775418541,
+            50: 8.268963160013226298, 51: 8.352374541546012058,
             }
         for N in mpmath_values:
-            assert_allclose(mpmath_values[N],
-                            _norm_factor(_bessel_poly(N, True)), rtol=1e-14)
+            z, p, k = besselap(N, 'delay')
+            assert_allclose(mpmath_values[N], _norm_factor(p, k), rtol=1e-14)
 
     def test_bessel_poly(self):
         assert_array_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
