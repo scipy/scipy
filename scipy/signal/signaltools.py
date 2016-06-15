@@ -37,7 +37,7 @@ __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
            'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
-           'lfilter_zi', 'sosfilt_zi',
+           'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt',
            'filtfilt', 'decimate', 'vectorstrength']
 
 
@@ -899,6 +899,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     filtfilt : A forward-backward filter, to obtain a filter with linear phase.
     savgol_filter : A Savitzky-Golay filter.
     sosfilt: Filter data using cascaded second-order sections.
+    sosfiltfilt: A forward-backward filter using second-order sections.
 
     Notes
     -----
@@ -2639,12 +2640,11 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
     Returns
     -------
     y : ndarray
-        The filtered output, an array of type numpy.float64 with the same
-        shape as `x`.
+        The filtered output with the same shape as `x`.
 
     See Also
     --------
-    lfilter_zi, lfilter, lfiltic, savgol_filter, sosfilt
+    sosfiltfilt, lfilter_zi, lfilter, lfiltic, savgol_filter, sosfilt
 
     Notes
     -----
@@ -2743,10 +2743,41 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
         y, z1, z2 = _filtfilt_gust(b, a, x, axis=axis, irlen=irlen)
         return y
 
-    # `method` is "pad"...
+    # method == "pad"
+    edge, ext = _validate_pad(padtype, padlen, x, axis,
+                              ntaps=max(len(a), len(b)))
 
-    ntaps = max(len(a), len(b))
+    # Get the steady state of the filter's step response.
+    zi = lfilter_zi(b, a)
 
+    # Reshape zi and create x0 so that zi*x0 broadcasts
+    # to the correct value for the 'zi' keyword argument
+    # to lfilter.
+    zi_shape = [1] * x.ndim
+    zi_shape[axis] = zi.size
+    zi = np.reshape(zi, zi_shape)
+    x0 = axis_slice(ext, stop=1, axis=axis)
+
+    # Forward filter.
+    (y, zf) = lfilter(b, a, ext, axis=axis, zi=zi * x0)
+
+    # Backward filter.
+    # Create y0 so zi*y0 broadcasts appropriately.
+    y0 = axis_slice(y, start=-1, axis=axis)
+    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), axis=axis, zi=zi * y0)
+
+    # Reverse y.
+    y = axis_reverse(y, axis=axis)
+
+    if edge > 0:
+        # Slice the actual signal from the extended signal.
+        y = axis_slice(y, start=edge, stop=-edge, axis=axis)
+
+    return y
+
+
+def _validate_pad(padtype, padlen, x, axis, ntaps):
+    """Helper to validate padding for filtfilt"""
     if padtype not in ['even', 'odd', 'constant', None]:
         raise ValueError(("Unknown value '%s' given to padtype.  padtype "
                           "must be 'even', 'odd', 'constant', or None.") %
@@ -2777,34 +2808,7 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
             ext = const_ext(x, edge, axis=axis)
     else:
         ext = x
-
-    # Get the steady state of the filter's step response.
-    zi = lfilter_zi(b, a)
-
-    # Reshape zi and create x0 so that zi*x0 broadcasts
-    # to the correct value for the 'zi' keyword argument
-    # to lfilter.
-    zi_shape = [1] * x.ndim
-    zi_shape[axis] = zi.size
-    zi = np.reshape(zi, zi_shape)
-    x0 = axis_slice(ext, stop=1, axis=axis)
-
-    # Forward filter.
-    (y, zf) = lfilter(b, a, ext, axis=axis, zi=zi * x0)
-
-    # Backward filter.
-    # Create y0 so zi*y0 broadcasts appropriately.
-    y0 = axis_slice(y, start=-1, axis=axis)
-    (y, zf) = lfilter(b, a, axis_reverse(y, axis=axis), axis=axis, zi=zi * y0)
-
-    # Reverse y.
-    y = axis_reverse(y, axis=axis)
-
-    if edge > 0:
-        # Slice the actual signal from the extended signal.
-        y = axis_slice(y, start=edge, stop=-edge, axis=axis)
-
-    return y
+    return edge, ext
 
 
 def sosfilt(sos, x, axis=-1, zi=None):
@@ -2848,7 +2852,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See Also
     --------
-    zpk2sos, sos2zpk, sosfilt_zi
+    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt
 
     Notes
     -----
@@ -2880,15 +2884,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     """
     x = np.asarray(x)
-
-    sos = atleast_2d(sos)
-    if sos.ndim != 2:
-        raise ValueError('sos array must be 2D')
-
-    n_sections, m = sos.shape
-    if m != 6:
-        raise ValueError('sos array must be shape (n_sections, 6)')
-
+    sos, n_sections = _validate_sos(sos)
     use_zi = zi is not None
     if use_zi:
         zi = np.asarray(zi)
@@ -2896,10 +2892,10 @@ def sosfilt(sos, x, axis=-1, zi=None):
         x_zi_shape[axis] = 2
         x_zi_shape = tuple([n_sections] + x_zi_shape)
         if zi.shape != x_zi_shape:
-            raise ValueError('Invalid zi shape.  With axis=%r, an input with '
+            raise ValueError('Invalid zi shape. With axis=%r, an input with '
                              'shape %r, and an sos array with %d sections, zi '
-                             'must have shape %r.' %
-                             (axis, x.shape, n_sections, x_zi_shape))
+                             'must have shape %r, got %r.' %
+                             (axis, x.shape, n_sections, x_zi_shape, zi.shape))
         zf = zeros_like(zi)
 
     for section in range(n_sections):
@@ -2910,6 +2906,93 @@ def sosfilt(sos, x, axis=-1, zi=None):
             x = lfilter(sos[section, :3], sos[section, 3:], x, axis)
     out = (x, zf) if use_zi else x
     return out
+
+
+def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
+    """
+    A forward-backward filter using cascaded second-order sections.
+
+    See `filtfilt` for more complete information about this method.
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``. Each row corresponds to a second-order
+        section, with the first three columns providing the numerator
+        coefficients and the last three providing the denominator
+        coefficients.
+    x : array_like
+        The array of data to be filtered.
+    axis : int, optional
+        The axis of `x` to which the filter is applied.
+        Default is -1.
+    padtype : str or None, optional
+        Must be 'odd', 'even', 'constant', or None.  This determines the
+        type of extension to use for the padded signal to which the filter
+        is applied.  If `padtype` is None, no padding is used.  The default
+        is 'odd'.
+    padlen : int or None, optional
+        The number of elements by which to extend `x` at both ends of
+        `axis` before applying the filter.  This value must be less than
+        ``x.shape[axis] - 1``.  ``padlen=0`` implies no padding.
+        The default value is::
+
+            3 * (2 * len(sos) + 1 - min((sos[:, 2] == 0).sum(),
+                                        (sos[:, 5] == 0).sum()))
+
+        The extra subtraction at the end attempts to compensate for poles
+        and zeros at the origin (e.g. for odd-order filters) to yield
+        equivalent estimates of `padlen` to those of `filtfilt` for
+        second-order section filters built with `scipy.signal` functions.
+
+    Returns
+    -------
+    y : ndarray
+        The filtered output with the same shape as `x`.
+
+    See Also
+    --------
+    filtfilt, sosfilt, sosfilt_zi
+
+    Notes
+    -----
+    .. versionadded:: 0.18.0
+    """
+    sos, n_sections = _validate_sos(sos)
+
+    # `method` is "pad"...
+    ntaps = 2 * n_sections + 1
+    ntaps -= min((sos[:, 2] == 0).sum(), (sos[:, 5] == 0).sum())
+    edge, ext = _validate_pad(padtype, padlen, x, axis,
+                              ntaps=ntaps)
+
+    # These steps follow the same form as filtfilt with modifications
+    zi = sosfilt_zi(sos)  # shape (n_sections, 2) --> (n_sections, ..., 2, ...)
+    zi_shape = [1] * x.ndim
+    zi_shape[axis] = 2
+    zi.shape = [n_sections] + zi_shape
+    x_0 = axis_slice(ext, stop=1, axis=axis)
+    (y, zf) = sosfilt(sos, ext, axis=axis, zi=zi * x_0)
+    y_0 = axis_slice(y, start=-1, axis=axis)
+    (y, zf) = sosfilt(sos, axis_reverse(y, axis=axis), axis=axis, zi=zi * y_0)
+    y = axis_reverse(y, axis=axis)
+    if edge > 0:
+        y = axis_slice(y, start=edge, stop=-edge, axis=axis)
+    return y
+
+
+def _validate_sos(sos):
+    """Helper to validate a SOS input"""
+    sos = atleast_2d(sos)
+    if sos.ndim != 2:
+        raise ValueError('sos array must be 2D')
+    n_sections, m = sos.shape
+    if m != 6:
+        raise ValueError('sos array must be shape (n_sections, 6)')
+    if not (sos[:, 3] == 1).all():
+        raise ValueError('sos[:, 3] should be all ones')
+    return sos, n_sections
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):

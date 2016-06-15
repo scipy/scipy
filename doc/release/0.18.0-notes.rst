@@ -75,6 +75,9 @@ filtering provided by `scipy.signal.resample` for some signals.
 `scipy.signal.firls`, which constructs FIR filters using least-squares error
 minimization, was added.
 
+`scipy.signal.sosfiltfilt`, which does forward-backward filtering like
+`scipy.signal.filtfilt` but for second-order sections, was added.
+
 
 Discrete-time linear systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

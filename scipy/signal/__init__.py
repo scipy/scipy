@@ -57,9 +57,10 @@ Filtering
    deconvolve    -- 1-d deconvolution using lfilter.
 
    sosfilt       -- 1-dimensional IIR digital linear filtering using
-                 -- a second-order-sections filter representation.
+                 -- a second-order sections filter representation.
    sosfilt_zi    -- Compute an initial state zi for the sosfilt function that
                  -- corresponds to the steady state of the step response.
+   sosfiltfilt   -- A forward-backward filter for second-order sections.
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
 
@@ -192,8 +193,8 @@ LTI Representations
    zpk2ss        -- zero-pole-gain to state-space.
    ss2tf         -- state-pace to transfer function.
    ss2zpk        -- state-space to pole-zero-gain.
-   sos2zpk       -- second-order-sections to zero-pole-gain.
-   sos2tf        -- second-order-sections to transfer function.
+   sos2zpk       -- second-order sections to zero-pole-gain.
+   sos2tf        -- second-order sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
    place_poles   -- pole placement.
    
