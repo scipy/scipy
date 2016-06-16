@@ -12,22 +12,116 @@ better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
 of bug-fixes and optimizations.  Moreover, our development attention
-will now shift to bug-fix releases on the 0.18.x branch, and on adding
+will now shift to bug-fix releases on the 0.19.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.6, 2.7 or 3.2-3.4 and NumPy 1.6.2 or greater.
+This release requires Python 2.7 or 3.4-3.5 and NumPy 1.7.1 or greater.
 
+Highlights of this release include:
+
+- A new ODE solver for two-point boundary value problems,
+  `scipy.optimize.solve_bvp`.
+- A new class, `CubicSpline`, for cubic spline interpolation of data.
+- N-dimensional tensor product polynomials, `scipy.interpolate.NdPPoly`.
+- Spherical Voronoi diagrams, `scipy.spatial.SphericalVoronoi`.
 
 New features
 ============
 
+`scipy.integrate` improvements
+------------------------------
+
+A solver of two-point boundary value problems for ODE systems has been
+implemented in `scipy.integrate.solve_bvp`. The solver allows for non-separated
+boundary conditions, unknown parameters and certain singular terms. It finds
+a C1 continious solution using a fourth-order collocation algorithm.
+
+
+`scipy.interpolate` improvements
+--------------------------------
+
+Cubic spline interpolation is now available via `scipy.interpolate.CubicSpline`.
+This class represents a piecewise cubic polynomial passing through given points
+and C2 continuous. It is represented in the standard polynomial basis on each
+segment.
+
+A representation of n-dimensional tensor product piecewise polynomials is
+available as the `scipy.interpolate.NdPPoly` class.
+
+Univariate piecewise polynomial classes, `PPoly` and `Bpoly`, can now be
+evaluated on periodic domains. Use ``extrapolate="periodic"`` keyword
+argument for this.
+
+
+`scipy.fftpack` improvements
+----------------------------
+
+`scipy.fftpack.next_fast_len` function computes the next "regular" number for
+FFTPACK. Padding the input to this length can give significant performance
+increase for `scipy.fftpack.fft`.
+
+
+`scipy.signal` improvements
+---------------------------
+
+Resampling using polyphase filtering has been implemented in the function
+`scipy.signal.resample_poly`. This method upsamples a signal, applies a
+zero-phase low-pass FIR filter, and downsamples using `scipy.signal.upfirdn`.
+This method can be faster than FFT-based filtering provided by
+`scipy.signal.resample` for some signals.
+
+`scipy.signal.firls` constructs FIR filters using least-squares error minimization.
+
+
 Discrete-time linear systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`scipy.linalg.dlti` provides an implementation of discrete-time linear systems.
+`scipy.signal.dlti` provides an implementation of discrete-time linear systems.
 Accordingly, the `StateSpace`, `TransferFunction` and `ZerosPolesGain` classes
 have learned a the new keyword, `dt`, which can be used to create discrete-time
 instances of the corresponding system representation.
+
+
+`scipy.sparse` improvements
+-----------------------------------------
+
+The functions `sum`, `max`, `mean`, `min`, `transpose`, and `reshape` in
+`scipy.sparse` have had their signatures augmented with additional arguments
+and functionality so as to improve compatibility with analogously defined
+functions in `numpy`.
+
+Sparse matrices now have a `count_nonzero` method, which counts the number of
+nonzero elements in the matrix. Unlike `getnnz()` and ``nnz`` propety,
+which return the number of stored entries (the length of the data attribute),
+this method counts the actual number of non-zero entries in data.
+
+
+`scipy.optimize` improvements
+-----------------------------
+
+The implementation of Nelder-Mead minimization,
+`scipy.minimize(..., method="Nelder-Mead")`, obtained a new keyword,
+`initial_simplex`, which can be used to specify the initial simplex for the
+optimization process.
+
+Initial step size selection in CG and BFGS minimizers has been improved. We
+expect that this change will improve numeric stability of optimization in some
+cases. See pull request gh-5536 for details.
+ 
+Handling of infinite bounds in SLSQP optimization has been improved. We expect
+that this change will improve numeric stability of optimization in the some
+cases. See pull request gh-6024 for details.
+
+A large suite of global optimization benchmarks has been added to 
+``scipy/benchmarks/go_benchmark_functions``. See pull request gh-4191 for details.
+
+
+`scipy.stats` improvements
+--------------------------
+
+Trapezoidal distribution has been implemented as `scipy.stats.trapz`.
+Skew normal distribution has been implemented as `scipy.stats.skewnorm`.
+Burr type XII distribution has been implemented as `scipy.stats.burr12`. 
 
 Random matrices
 ~~~~~~~~~~~~~~~
@@ -40,38 +134,51 @@ these group manifolds.
 `scipy.stats.random_correlation` provides a generator for random
 correlation matrices, given specified eigenvalues.
 
-`scipy.integrate` improvements
-------------------------------
 
-A solver of two-point boundary value problems for ODE systems has been
-implemented in `scipy.integrate.solve_bvp`. The solver allows for non-separated
-boundary conditions, unknown parameters and certain singular terms. It finds
-a C1 continious solution using a fourth-order collocation algorithm.
-
-`scipy.interpolate` improvements
---------------------------------
-
-Cubic spline interpolation is now available via `scipy.interpolate.CubicSpline`.
-This class represents a piecewise cubic polynomial passing through given points
-and C2 continuous. It is represented in the standard polynomial basis on each
-segment.
-
-`scipy.signal` improvements
+`scipy.linalg` improvements
 ---------------------------
 
-Resampling using polyphase filtering has been implemented in the function
-`scipy.signal.resample_poly`. This method upsamples a signal, applies a
-zero-phase low-pass FIR filter, and downsamples using `scipy.signal.upfirdn`.
-This method can be faster than FFT-based filtering provided by
-`scipy.signal.resample` for some signals.
+`scipy.linalg.svd` gained a new keyword argument, ``lapack_driver``. Available
+drivers are ``gesdd`` (default) and ``gesvd``.
 
-`scipy.sparse` compatibility improvements
------------------------------------------
+`scipy.linalg.lapack.ilaver` returns the version of the LAPACK library SciPy
+links to.
 
-The functions `sum`, `max`, `mean`, `min`, `transpose`, and `reshape` in
-`scipy.sparse` have had their signatures augmented with additional arguments
-and functionality so as to improve compatibility with analogously defined
-functions in `numpy`.
+
+`scipy.spatial` improvements
+----------------------------
+
+Boolean distances, `scipy.spatial.pdist`, have been sped up. Improvements vary
+by the function and the input size. In many cases, one can expect a speed-up
+of x2--x10. 
+
+New class `scipy.spatial.SphericalVoronoi` constructs Voronoi diagrams on the
+surface of a sphere. See pull request gh-5232 for details.
+
+`scipy.cluster` improvements
+----------------------------
+
+New clustering algorithm, the nearest neighbor chain algorithm, has been
+implemented for `scipy.cluster.hierarchy.linkage`. As a result, one can expect
+a significant algorithmic improvement for several linkage methods. 
+
+
+`scipy.special` improvements
+----------------------------
+
+New function `scipy.special.loggamma` computes the principal branch of the
+logarithm of the Gamma function. For real input, ``loggamma`` is compatible with
+`scipy.special.gammaln`. For complex input, it has more consistent behavior in
+the complex plane and should be preferred over ``gammaln``.
+
+Vectorized forms of spherical Bessel functions have been implemented as 
+`scipy.special.spherical_jn`, `scipy.special.spherical_kn`,
+`scipy.special.spherical_in` and `scipy.special.spherical_yn`.
+They are recommended for use over ``sph_*`` functions, which are now deprecated.
+
+Several special functions have been extended to the complex domain and/or
+have seen domain/stability improvements. This includes `spence`, `digamma`,
+`log1p` and several others.
 
 
 Deprecated features
@@ -84,6 +191,12 @@ Name - (accessing/setting raises warning) - (setting raises warning)
 * StateSpace - (`num`, `den`, `gain`) - (`zeros`, `poles`)
 * TransferFunction (`A`, `B`, `C`, `D`, `gain`) - (`zeros`, `poles`)
 * ZerosPolesGain (`A`, `B`, `C`, `D`, `num`, `den`) - ()
+
+Spherical Bessel functions, ``sph_in``, ``sph_jn``, ``sph_kn``, ``sph_yn``,
+``sph_jnyn`` and ``sph_inkn`` have been deprecated in favor of
+`scipy.special.spherical_jn` and ``spherical_kn``, ``spherical_yn``,
+``spherical_in``.
+
 
 Backwards incompatible changes
 ==============================
@@ -106,6 +219,17 @@ treated as missing if they match one of these attributes exactly: values that
 differ by roundoff from ``_FillValue`` or ``missing_value`` are no longer
 treated as missing values.
 
+Several deprecated methods of `scipy.stats` distributions have been removed:
+``est_loc_scale``, ``vecfunc``, ``veccdf`` and ``vec_generic_moment``.
+
+Deprecated functions ``nanmean``, ``nanstd`` and ``nanmedian`` have been removed
+from `scipy.stats`. These functions were deprecated in scipy 0.15.0 in favor
+of their `numpy` equivalents.
+
+`scipy.interpolate.PiecewisePolynomial` class has been removed. It has been
+deprecated in scipy 0.14.0, and `scipy.interpolate.BPoly.from_derivatives` serves
+as a drop-in replacement.
+
 
 Other changes
 =============
@@ -124,6 +248,16 @@ with each iteration consisting of one or more function evaluations.
 Whereas the old search strategy terminated immediately upon reaching `maxfun`
 function evaluations, the new strategy allows the current iteration
 to finish despite reaching `maxfun`.
+
+The bundled copy of Qhull in the `scipy.spatial` subpackage has been upgraded to
+version 2015.2.
+
+The bundled copy of ARPACK in the `scipy.sparse.linalg` subpackage has been
+upgraded to arpack-ng 3.3.0.
+
+The bundled copy of SuperLU in the `scipy.sparse` subpackage has been upgraded
+to version 5.1.1.
+
 
 
 Authors
