@@ -1066,7 +1066,7 @@ class TestBessel(TestCase):
         assert_allclose(k, 0.3, rtol=1e-14)
 
     def test_high_order(self):
-        # high even order
+        # high even order, 'phase'
         z, p, k = bessel(24, 100, analog=True, output='zpk')
         z2 = []
         p2 = [
@@ -1100,7 +1100,7 @@ class TestBessel(TestCase):
         assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
         assert_allclose(k, k2, rtol=1e-14)
 
-        # high odd order
+        # high odd order, 'phase'
         z, p, k = bessel(23, 1000, analog=True, output='zpk')
         z2 = []
         p2 = [
@@ -1132,12 +1132,56 @@ class TestBessel(TestCase):
         assert_allclose(sorted(p, key=np.imag), sorted(p2, key=np.imag))
         assert_allclose(k, k2, rtol=1e-14)
 
+        # high even order, 'delay' (Orchard 1965 "The Roots of the
+        # Maximally Flat-Delay Polynomials" Table 1)
+        z, p, k = bessel(31, 1, analog=True, output='zpk', norm='delay')
+        p2 = [-20.876706,
+              -20.826543 + 1.735732j,
+              -20.675502 + 3.473320j,
+              -20.421895 + 5.214702j,
+              -20.062802 + 6.961982j,
+              -19.593895 + 8.717546j,
+              -19.009148 + 10.484195j,
+              -18.300400 + 12.265351j,
+              -17.456663 + 14.065350j,
+              -16.463032 + 15.889910j,
+              -15.298849 + 17.746914j,
+              -13.934466 + 19.647827j,
+              -12.324914 + 21.610519j,
+              -10.395893 + 23.665701j,
+              - 8.005600 + 25.875019j,
+              - 4.792045 + 28.406037j,
+              ]
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(np.union1d(p2, np.conj(p2)), key=np.imag))
+
+        # high odd order, 'delay'
+        z, p, k = bessel(30, 1, analog=True, output='zpk', norm='delay')
+        p2 = [-20.201029 + 0.867750j,
+              -20.097257 + 2.604235j,
+              -19.888485 + 4.343721j,
+              -19.572188 + 6.088363j,
+              -19.144380 + 7.840570j,
+              -18.599342 + 9.603147j,
+              -17.929195 + 11.379494j,
+              -17.123228 + 13.173901j,
+              -16.166808 + 14.992008j,
+              -15.039580 + 16.841580j,
+              -13.712245 + 18.733902j,
+              -12.140295 + 20.686563j,
+              -10.250119 + 22.729808j,
+              - 7.901170 + 24.924391j,
+              - 4.734679 + 27.435615j,
+              ]
+        assert_allclose(sorted(p, key=np.imag),
+                        sorted(np.union1d(p2, np.conj(p2)), key=np.imag))
+
     def test_refs(self):
         # Compare to http://www.crbond.com/papers/bsf2.pdf
         # "Delay Normalized Bessel Polynomial Coefficients"
         bond_b = 10395
         bond_a = [1, 21, 210, 1260, 4725, 10395, 10395]
-        b, a = zpk2tf(*besselap(6, 'delay'))
+        b, a = bessel(6, 1, norm='delay', analog=True)
         assert_allclose(bond_b, b)
         assert_allclose(bond_a, a)
 
@@ -1198,29 +1242,29 @@ class TestBessel(TestCase):
         # Compare to http://www.rane.com/note147.html
         # "Table 1 - Bessel Crossovers of Second, Third, and Fourth-Order"
         a = [1, 1, 1/3]
-        b2, a2 = zpk2tf(*besselap(2, 'delay'))
+        b2, a2 = bessel(2, 1, norm='delay', analog=True)
         assert_allclose(a[::-1], a2/b2)
 
         a = [1, 1, 2/5, 1/15]
-        b2, a2 = zpk2tf(*besselap(3, 'delay'))
+        b2, a2 = bessel(3, 1, norm='delay', analog=True)
         assert_allclose(a[::-1], a2/b2)
 
         a = [1, 1, 9/21, 2/21, 1/105]
-        b2, a2 = zpk2tf(*besselap(4, 'delay'))
+        b2, a2 = bessel(4, 1, norm='delay', analog=True)
         assert_allclose(a[::-1], a2/b2)
 
         a = [1, np.sqrt(3), 1]
-        b2, a2 = zpk2tf(*besselap(2, 'phase'))
+        b2, a2 = bessel(2, 1, norm='phase', analog=True)
         assert_allclose(a[::-1], a2/b2)
 
         # TODO: Why so inaccurate?  Is reference flawed?
         a = [1, 2.481, 2.463, 1.018]
-        b2, a2 = zpk2tf(*besselap(3, 'phase'))
+        b2, a2 = bessel(3, 1, norm='phase', analog=True)
         assert_array_almost_equal(a[::-1], a2/b2, decimal=1)
 
         # TODO: Why so inaccurate?  Is reference flawed?
         a = [1, 3.240, 4.5, 3.240, 1.050]
-        b2, a2 = zpk2tf(*besselap(4, 'phase'))
+        b2, a2 = bessel(4, 1, norm='phase', analog=True)
         assert_array_almost_equal(a[::-1], a2/b2, decimal=1)
 
         # Table of -3 dB factors:
