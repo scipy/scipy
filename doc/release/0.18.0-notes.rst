@@ -77,6 +77,13 @@ functions in `numpy`.
 Deprecated features
 ===================
 
+The cross-class properties of `lti` systems have been deprecated. The
+following properties/setters will raise a `DeprecationWarning`:
+
+Name - (accessing/setting raises warning) - (setting raises warning)
+* StateSpace - (`num`, `den`, `gain`) - (`zeros`, `poles`)
+* TransferFunction (`A`, `B`, `C`, `D`, `gain`) - (`zeros`, `poles`)
+* ZerosPolesGain (`A`, `B`, `C`, `D`, `num`, `den`) - ()
 
 Backwards incompatible changes
 ==============================
