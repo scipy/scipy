@@ -106,8 +106,15 @@ treated as missing if they match one of these attributes exactly: values that
 differ by roundoff from ``_FillValue`` or ``missing_value`` are no longer
 treated as missing values.
 
+
 Other changes
 =============
+
+Scipy now uses ``setuptools`` for its builds instead of plain distutils.  This
+fixes usage of ``install_requires='scipy'`` in the ``setup.py`` files of
+projects that depend on Scipy (see Numpy issue gh-6551 for details).  It
+potentially affects the way that build/install methods for Scipy itself behave
+though.  Please report any unexpected behavior on the Scipy issue tracker.
 
 PR `#6240 <https://github.com/scipy/scipy/pull/6240>`__
 changes the interpretation of the `maxfun` option in `L-BFGS-B` based routines
