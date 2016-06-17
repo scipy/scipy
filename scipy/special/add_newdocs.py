@@ -5584,6 +5584,8 @@ add_newdoc("scipy.special", "loggamma",
     errors will introduce small spurious imaginary components in
     ``exp(loggamma(x))``.
 
+    .. versionadded:: 0.18.0
+
     Parameters
     ----------
     z : array-like
