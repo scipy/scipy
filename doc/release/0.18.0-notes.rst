@@ -6,7 +6,7 @@ SciPy 0.18.0 Release Notes
 
 .. contents::
 
-SciPy 0.18.0 is the culmination of X months of hard work. It contains
+SciPy 0.18.0 is the culmination of 6 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -24,6 +24,8 @@ Highlights of this release include:
 - A new class, `CubicSpline`, for cubic spline interpolation of data.
 - N-dimensional tensor product polynomials, `scipy.interpolate.NdPPoly`.
 - Spherical Voronoi diagrams, `scipy.spatial.SphericalVoronoi`.
+- Support for discrete-time linear systems, `scipy.signal.dlti`.
+
 
 New features
 ============
@@ -66,11 +68,12 @@ increase for `scipy.fftpack.fft`.
 
 Resampling using polyphase filtering has been implemented in the function
 `scipy.signal.resample_poly`. This method upsamples a signal, applies a
-zero-phase low-pass FIR filter, and downsamples using `scipy.signal.upfirdn`.
-This method can be faster than FFT-based filtering provided by
-`scipy.signal.resample` for some signals.
+zero-phase low-pass FIR filter, and downsamples using `scipy.signal.upfirdn`
+(which is also new in 0.18.0).  This method can be faster than FFT-based
+filtering provided by `scipy.signal.resample` for some signals.
 
-`scipy.signal.firls` constructs FIR filters using least-squares error minimization.
+`scipy.signal.firls`, which constructs FIR filters using least-squares error
+minimization, was added.
 
 
 Discrete-time linear systems
@@ -83,7 +86,7 @@ instances of the corresponding system representation.
 
 
 `scipy.sparse` improvements
------------------------------------------
+---------------------------
 
 The functions `sum`, `max`, `mean`, `min`, `transpose`, and `reshape` in
 `scipy.sparse` have had their signatures augmented with additional arguments
@@ -158,18 +161,19 @@ surface of a sphere. See pull request gh-5232 for details.
 `scipy.cluster` improvements
 ----------------------------
 
-New clustering algorithm, the nearest neighbor chain algorithm, has been
+A new clustering algorithm, the nearest neighbor chain algorithm, has been
 implemented for `scipy.cluster.hierarchy.linkage`. As a result, one can expect
-a significant algorithmic improvement for several linkage methods. 
+a significant algorithmic improvement (:math:`O(N^2)` instead of :math:`O(N^3)`)
+for several linkage methods.
 
 
 `scipy.special` improvements
 ----------------------------
 
-New function `scipy.special.loggamma` computes the principal branch of the
-logarithm of the Gamma function. For real input, ``loggamma`` is compatible with
-`scipy.special.gammaln`. For complex input, it has more consistent behavior in
-the complex plane and should be preferred over ``gammaln``.
+The new function `scipy.special.loggamma` computes the principal branch of the
+logarithm of the Gamma function. For real input, ``loggamma`` is compatible
+with `scipy.special.gammaln`. For complex input, it has more consistent
+behavior in the complex plane and should be preferred over ``gammaln``.
 
 Vectorized forms of spherical Bessel functions have been implemented as 
 `scipy.special.spherical_jn`, `scipy.special.spherical_kn`,
@@ -196,6 +200,11 @@ Spherical Bessel functions, ``sph_in``, ``sph_jn``, ``sph_kn``, ``sph_yn``,
 ``sph_jnyn`` and ``sph_inkn`` have been deprecated in favor of
 `scipy.special.spherical_jn` and ``spherical_kn``, ``spherical_yn``,
 ``spherical_in``.
+
+The following functions in `scipy.constants` are deprecated: ``C2K``, ``K2C``,
+``C2F``, ``F2C``, ``F2K`` and ``K2F``.  They are superceded by a new function
+`scipy.constants.convert_temperature` that can perform all those conversions
+plus to/from the Rankine temperature scale.
 
 
 Backwards incompatible changes
