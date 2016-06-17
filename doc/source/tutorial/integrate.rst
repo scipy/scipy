@@ -152,11 +152,11 @@ An example of using double integration to compute several values of
     ...     return dblquad(lambda t, x: np.exp(-x*t)/t**n, 0, np.inf, lambda x: 1, lambda x: np.inf)
 
     >>> print(I(4))
-    (0.25000000000435768, 1.0518245707751597e-09)
+    (0.2500000000043577, 1.29830334693681e-08)
     >>> print(I(3))
-    (0.33333333325010883, 2.8604069919261191e-09)
+    (0.33333333325010883, 1.3888461883425516e-08)
     >>> print(I(2))
-    (0.49999999999857514, 1.8855523253868967e-09)
+    (0.4999999999985751, 1.3894083651858995e-08)
 
 
 As example for non-constant limits consider the integral
