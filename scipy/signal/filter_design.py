@@ -2375,7 +2375,8 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba'):
 
 
 def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase'):
-    """Bessel/Thomson digital and analog filter design.
+    """
+    Bessel/Thomson digital and analog filter design.
 
     Design an Nth-order digital or analog Bessel filter and return the
     filter coefficients.
@@ -3277,8 +3278,8 @@ def ellipap(N, rp, rs):
 
     References
     ----------
-    Lutova, Tosic, and Evans, "Filter Design for Signal Processing", Chapters 5
-    and 12.
+    .. [1] Lutova, Tosic, and Evans, "Filter Design for Signal Processing",
+           Chapters 5 and 12.
 
     """
     if abs(int(N)) != N:
@@ -3346,6 +3347,31 @@ def ellipap(N, rp, rs):
     return z, p, k
 
 
+# TODO: Make this a real public function scipy.misc.ff
+def _falling_factorial(x, n):
+    r"""
+    Return the factorial of `x` to the `n` falling.
+
+    This is defined as:
+
+    .. math::   x^\underline n = (x)_n = x (x-1) \cdots (x-n+1)
+
+    This can more efficiently calculate ratios of factorials, since:
+
+    n!/m! == falling_factorial(n, n-m)
+
+    where n >= m
+
+    skipping the factors that cancel out
+
+    the usual factorial n! == ff(n, n)
+    """
+    val = 1
+    for k in range(x - n + 1, x + 1):
+        val *= k
+    return val
+
+
 def _bessel_poly(n, reverse=False):
     """
     Return the coefficients of Bessel polynomial of degree `n`
@@ -3366,11 +3392,12 @@ def _bessel_poly(n, reverse=False):
     Sequence is http://oeis.org/A001498 , and output can be confirmed to
     match http://oeis.org/A001498/b001498.txt :
 
-    i = 0
-    for n in range(51):
-        for x in bessel_poly(n, reverse=True):
-            print i, x
-            i += 1
+    >>> i = 0
+    >>> for n in range(51):
+    ...     for x in _bessel_poly(n, reverse=True):
+    ...         print(i, x)
+    ...         i += 1
+
     """
     if abs(int(n)) != n:
         raise ValueError("Polynomial order must be a nonnegative integer")
@@ -3379,9 +3406,8 @@ def _bessel_poly(n, reverse=False):
 
     out = []
     for k in range(n + 1):
-        num = factorial(2*n - k, exact=True)
-        den = 2**(n - k) * (factorial(k, exact=True) *
-                            factorial(n - k, exact=True))
+        num = _falling_factorial(2*n - k, n)
+        den = 2**(n - k) * factorial(k, exact=True)
         out.append(num // den)
 
     if reverse:
@@ -3608,18 +3634,18 @@ def besselap(N, norm='phase'):
         p = 1/_bessel_zeros(N)
 
         # Shift them to a different normalization if required
-        a = _bessel_poly(N, reverse=True)
-
         if norm == 'delay':
             # Normalized for group delay of 1
-            k = a[-1]
+            k = _falling_factorial(2*N, N) // 2**N
         elif norm == 'phase':
             # Phase-matched (1/2 max phase shift at 1 rad/sec)
             # Asymptotes are same as Butterworth filter
-            p *= 10**(-math.log10(a[-1])/N)
+            a_last = _falling_factorial(2*N, N) // 2**N
+            p *= 10**(-math.log10(a_last)/N)
             k = 1
         elif norm == 'mag':
             # -3 dB magnitude point is at 1 rad/sec
+            a = _bessel_poly(N, reverse=True)
             norm_factor = _norm_factor(a)
             p /= norm_factor
             k = norm_factor**-N * a[-1]
