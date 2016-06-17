@@ -1493,7 +1493,7 @@ class TestBessel(TestCase):
             }
         for N in mpmath_values:
             z, p, k = besselap(N, 'delay')
-            assert_allclose(mpmath_values[N], _norm_factor(p, k), rtol=1e-14)
+            assert_allclose(mpmath_values[N], _norm_factor(p, k), rtol=1e-13)
 
     def test_bessel_poly(self):
         assert_array_equal(_bessel_poly(5), [945, 945, 420, 105, 15, 1])
