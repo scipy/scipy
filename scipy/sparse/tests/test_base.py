@@ -1354,13 +1354,14 @@ class _TestCommon:
         assert_array_almost_equal(row*M, row*M.todense())
 
     def test_small_multiplication(self):
-        # test that A*x works for x with shape () (1,) and (1,1)
+        # test that A*x works for x with shape () (1,) (1,1) and (1,0)
         A = self.spmatrix([[1],[2],[3]])
 
         assert_(isspmatrix(A * array(1)))
         assert_equal((A * array(1)).todense(), [[1],[2],[3]])
         assert_equal(A * array([1]), array([1,2,3]))
         assert_equal(A * array([[1]]), array([[1],[2],[3]]))
+        assert_equal(A * np.ones((1,0)), np.ones((3,0)))
 
     def test_binop_custom_type(self):
         # Non-regression test: previously, binary operations would raise
