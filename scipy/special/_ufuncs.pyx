@@ -8824,6 +8824,8 @@ cdef char *ufunc_loggamma_doc = (
     "errors will introduce small spurious imaginary components in\n"
     "``exp(loggamma(x))``.\n"
     "\n"
+    ".. versionadded:: 0.18.0\n"
+    "\n"
     "Parameters\n"
     "----------\n"
     "z : array-like\n"
