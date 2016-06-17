@@ -203,6 +203,10 @@ def convert_temperature(val, old_scale, new_scale):
     res : float or array of floats
         Value(s) of the converted temperature(s) expressed in the new scale.
 
+    Notes
+    -----
+    .. versionadded:: 0.18.0
+
     Examples
     --------
     >>> from scipy.constants import convert_temperature
