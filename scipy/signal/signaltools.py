@@ -7,7 +7,7 @@ import warnings
 import threading
 import sys
 
-from . import sigtools, lti
+from . import sigtools, dlti
 from ._upfirdn import upfirdn, _UpFIRDn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
@@ -2929,9 +2929,9 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     n : int, optional
         The order of the filter (1 less than the length for 'fir'). Defaults to
         8 for 'iir' and 30 for 'fir'.
-    ftype : str {'iir', 'fir'} or ``lti`` instance, optional
+    ftype : str {'iir', 'fir'} or ``dlti`` instance, optional
         If 'iir' or 'fir', specifies the type of lowpass filter. If an instance
-        of an `lti` object, uses that object to filter before downsampling.
+        of an `dlti` object, uses that object to filter before downsampling.
     axis : int, optional
         The axis along which to decimate.
     zero_phase : bool, optional
@@ -2958,7 +2958,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     Notes
     -----
     The ``zero_phase`` keyword was added in 0.18.0.
-    The possibility to use instances of ``lti`` as ``ftype`` was added in
+    The possibility to use instances of ``dlti`` as ``ftype`` was added in
     0.18.0.
     """
 
@@ -2971,13 +2971,13 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     if ftype == 'fir':
         if n is None:
             n = 30
-        system = lti(firwin(n+1, 1. / q, window='hamming'), 1.)
+        system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
     elif ftype == 'iir':
         if n is None:
             n = 8
-        system = lti(*cheby1(n, 0.05, 0.8 / q))
-    elif isinstance(ftype, lti):
-        system = ftype
+        system = dlti(*cheby1(n, 0.05, 0.8 / q))
+    elif isinstance(ftype, dlti):
+        system = ftype._as_tf()  # Avoids copying if already in TF form
         n = np.max((system.num.size, system.den.size)) - 1
     else:
         raise ValueError('invalid ftype')

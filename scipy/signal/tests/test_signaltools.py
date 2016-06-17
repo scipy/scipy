@@ -1524,12 +1524,12 @@ class TestDecimate(TestCase):
             # Set up downsampling filters, match v0.17 defaults
             if method == 'fir':
                 n = 30
-                system = signal.lti(signal.firwin(n + 1, 1. / q,
-                                                  window='hamming'), 1.)
+                system = signal.dlti(signal.firwin(n + 1, 1. / q,
+                                                   window='hamming'), 1.)
             elif method == 'iir':
                 n = 8
                 wc = 0.8*np.pi/q
-                system = signal.lti(*signal.cheby1(n, 0.05, wc/np.pi))
+                system = signal.dlti(*signal.cheby1(n, 0.05, wc/np.pi))
 
             # Calculate expected phase response, as unit complex vector
             if zero_phase is False:
