@@ -22,7 +22,7 @@ from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy
-
+from test_continuous_basic import distcont
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -123,6 +123,27 @@ def test_vonmises_line_support():
 def test_vonmises_numerical():
     vm = stats.vonmises(800)
     assert_almost_equal(vm.cdf(0), 0.5)
+
+
+def test_support():
+    """gh-6235"""
+    def check_open_support(rvs, args):
+        dist = getattr(stats, rvs)
+
+        assert_almost_equal(dist.pdf(dist.a, *args), 0)
+        assert_equal(dist.logpdf(dist.a, *args), -np.inf)
+        assert_almost_equal(dist.pdf(dist.b, *args), 0)
+        assert_equal(dist.logpdf(dist.b, *args), -np.inf)
+
+    dists = ['alpha', 'arcsine', 'betaprime', 'burr', 'burr12',
+             'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
+             'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
+             'powerlognorm', 'rayleigh', 'wald']
+
+    dct = dict(distcont)
+    for dist in dists:
+        args = dct[dist]
+        yield check_open_support, dist, args
 
 
 class TestRandInt(TestCase):
@@ -987,6 +1008,7 @@ class TestSkewNorm(TestCase):
         assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
                                    stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'),
                                    decimal=2)
+
 
 class TestExpon(TestCase):
     def test_zero(self):
