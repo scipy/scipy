@@ -5,7 +5,7 @@ import pickle
 
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 import numpy.ma.testutils as ma_npt
 
 from scipy._lib._util import getargspec_no_self as _getargspec
@@ -273,3 +273,14 @@ def check_pickling(distfn, args):
 
     # restore the random_state
     distfn.random_state = rndm
+
+
+def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
+    np.random.seed(123)
+    sample = distfunc.rvs(*allargs)
+    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+    if not shape_only:
+        rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
+        np.random.seed(123)
+        expected = rvs(*allargs)
+        assert_allclose(sample, expected, rtol=1e-15)

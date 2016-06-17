@@ -15,8 +15,7 @@ from common_tests import (check_normalization, check_moment, check_mean_expect,
                           check_edge_support, check_named_args,
                           check_random_state_property,
                           check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
-                          check_pickling)
-
+                          check_pickling, check_rvs_broadcast)
 from scipy.stats._distr_params import distcont
 
 """
@@ -215,6 +214,67 @@ def test_moments():
                    distname)
             yield check_loc_scale, distfn, arg, m, v, distname
             yield check_moment, distfn, arg, m, v, distname
+
+
+def test_rvs_broadcast():
+    for dist, shape_args in distcont:
+        # If shape_only is True, it means the _rvs method of the
+        # distribution uses more than one random number to generate a random
+        # variate.  That means the result of using rvs with broadcasting or
+        # with a nontrivial size will not necessarily be the same as using the
+        # numpy.vectorize'd version of rvs(), so we can only compare the shapes
+        # of the results, not the values.
+        # Whether or not a distribution is in the following list is an
+        # implementation detail of the distribution, not a requirement.  If
+        # the implementation the rvs() method of a distribution changes, this
+        # test might also have to be changed.
+        shape_only = dist in ['betaprime', 'dgamma', 'exponnorm',
+                              'nct', 'dweibull', 'rice', 'levy_stable',
+                              'skewnorm']
+
+        distfunc = getattr(stats, dist)
+        loc = np.zeros(2)
+        scale = np.ones((3, 1))
+        nargs = distfunc.numargs
+        allargs = []
+        bshape = [3, 2]
+        # Generate shape parameter arguments...
+        for k in range(nargs):
+            shp = (k + 4,) + (1,)*(k + 2)
+            allargs.append(shape_args[k]*np.ones(shp))
+            bshape.insert(0, k + 4)
+        allargs.extend([loc, scale])
+        # bshape holds the expected shape when loc, scale, and the shape
+        # parameters are all broadcast together.
+        yield check_rvs_broadcast, distfunc, dist, allargs, bshape, shape_only, 'd'
+
+
+def test_rvs_gh2069_regression():
+    # Regression tests for gh-2069.  In scipy 0.17 and earlier,
+    # these tests would fail.
+    #
+    # A typical example of the broken behavior:
+    # >>> norm.rvs(loc=np.zeros(5), scale=np.ones(5))
+    # array([-2.49613705, -2.49613705, -2.49613705, -2.49613705, -2.49613705])
+    np.random.seed(123)
+    vals = stats.norm.rvs(loc=np.zeros(5), scale=1)
+    d = np.diff(vals)
+    npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
+    vals = stats.norm.rvs(loc=0, scale=np.ones(5))
+    d = np.diff(vals)
+    npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
+    vals = stats.norm.rvs(loc=np.zeros(5), scale=np.ones(5))
+    d = np.diff(vals)
+    npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
+    vals = stats.norm.rvs(loc=np.array([[0], [0]]), scale=np.ones(5))
+    d = np.diff(vals.ravel())
+    npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
+
+    npt.assert_raises(ValueError, stats.norm.rvs, [[0, 0], [0, 0]],
+                  [[1, 1], [1, 1]], 1)
+    npt.assert_raises(ValueError, stats.gamma.rvs, [2, 3, 4, 5], 0, 1, (2, 2))
+    npt.assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
+                     [[1], [2]], (4,))
 
 
 def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):

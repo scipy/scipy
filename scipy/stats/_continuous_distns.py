@@ -14,6 +14,7 @@ from scipy import integrate
 from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
                            inv_boxcox, inv_boxcox1p, erfc, chndtr, chndtrix,
                            i0, i1, ndtr as _norm_cdf, log_ndtr as _norm_logcdf)
+from scipy._lib._numpy_compat import broadcast_to
 
 from numpy import (where, arange, putmask, ravel, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
@@ -2949,29 +2950,46 @@ class levy_stable_gen(rv_continuous):
     %(example)s
 
     """
+
     def _rvs(self, alpha, beta):
+
+        def alpha1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
+            return (2/pi*(pi/2 + bTH)*tanTH -
+                    beta*log((pi/2*W*cosTH)/(pi/2 + bTH)))
+
+        def beta0func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
+            return (W/(cosTH/tan(aTH) + sin(TH)) *
+                    ((cos(aTH) + sin(aTH)*tanTH)/W)**(1.0/alpha))
+
+        def otherwise(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
+            # alpha is not 1 and beta is not 0
+            val0 = beta*tan(pi*alpha/2)
+            th0 = arctan(val0)/alpha
+            val3 = W/(cosTH/tan(alpha*(th0 + TH)) + sin(TH))
+            res3 = val3*((cos(aTH) + sin(aTH)*tanTH - val0*(sin(aTH) -
+                         cos(aTH)*tanTH))/W)**(1.0/alpha)
+            return res3
+
+        def alphanot1func(alpha, beta, TH, aTH, bTH, cosTH, tanTH, W):
+            res = _lazywhere(beta == 0,
+                             (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
+                             beta0func, f2=otherwise)
+            return res
+
         sz = self._size
+        alpha = broadcast_to(alpha, sz)
+        beta = broadcast_to(beta, sz)
         TH = uniform.rvs(loc=-pi/2.0, scale=pi, size=sz)
         W = expon.rvs(size=sz)
-        if alpha == 1:
-            return 2/pi*(pi/2+beta*TH)*tan(TH)-beta*log((pi/2*W*cos(TH))/(pi/2+beta*TH))
-
-        ialpha = 1.0/alpha
         aTH = alpha*TH
-        if beta == 0:
-            return W/(cos(TH)/tan(aTH)+sin(TH))*((cos(aTH)+sin(aTH)*tan(TH))/W)**ialpha
-
-        val0 = beta*tan(pi*alpha/2)
-        th0 = arctan(val0)/alpha
-        val3 = W/(cos(TH)/tan(alpha*(th0+TH))+sin(TH))
-        res3 = val3*((cos(aTH)+sin(aTH)*tan(TH)-val0*(sin(aTH)-cos(aTH)*tan(TH)))/W)**ialpha
-        return res3
+        bTH = beta*TH
+        cosTH = cos(TH)
+        tanTH = tan(TH)
+        res = _lazywhere(alpha == 1, (alpha, beta, TH, aTH, bTH, cosTH, tanTH, W),
+                         alpha1func, f2=alphanot1func)
+        return res
 
     def _argcheck(self, alpha, beta):
-        if beta == -1:
-            self.b = 0.0
-        elif beta == 1:
-            self.a = 0.0
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
 
     def _pdf(self, x, alpha, beta):
@@ -4074,6 +4092,7 @@ class pearson3_gen(rv_continuous):
         ans, x, skew = np.broadcast_arrays([1.0], x, skew)
         ans = ans.copy()
 
+        # mask is True where skew is small enough to use the normal approx.
         mask = np.absolute(skew) < norm2pearson_transition
         invmask = ~mask
 
@@ -4133,13 +4152,18 @@ class pearson3_gen(rv_continuous):
         return ans
 
     def _rvs(self, skew):
+        skew = broadcast_to(skew, self._size)
         ans, x, transx, skew, mask, invmask, beta, alpha, zeta = (
             self._preprocess([0], skew))
-        if mask[0]:
-            return self._random_state.standard_normal(self._size)
-        ans = self._random_state.standard_gamma(alpha, self._size)/beta + zeta
-        if ans.size == 1:
-            return ans[0]
+
+        nsmall = mask.sum()
+        nbig = mask.size - nsmall
+        ans[mask] = self._random_state.standard_normal(nsmall)
+        ans[invmask] = (self._random_state.standard_gamma(alpha, nbig)/beta +
+                        zeta)
+
+        if self._size == ():
+            ans = ans[0]
         return ans
 
     def _ppf(self, q, skew):
@@ -4442,8 +4466,8 @@ class rice_gen(rv_continuous):
 
     def _rvs(self, b):
         # http://en.wikipedia.org/wiki/Rice_distribution
-        sz = self._size if self._size else 1
-        t = b/np.sqrt(2) + self._random_state.standard_normal(size=(2, sz))
+        t = b/np.sqrt(2) + self._random_state.standard_normal(size=(2,) +
+                                                              self._size)
         return np.sqrt((t*t).sum(axis=0))
 
     def _cdf(self, x, b):
@@ -4774,10 +4798,9 @@ class truncnorm_gen(rv_continuous):
         self._na = _norm_cdf(a)
         self._sb = _norm_sf(b)
         self._sa = _norm_sf(a)
-        if self.a > 0:
-            self._delta = -(self._sb - self._sa)
-        else:
-            self._delta = self._nb - self._na
+        self._delta = np.where(self.a > 0,
+                               -(self._sb - self._sa),
+                               self._nb - self._na)
         self._logdelta = log(self._delta)
         return (a != b)
 
@@ -4791,10 +4814,11 @@ class truncnorm_gen(rv_continuous):
         return (_norm_cdf(x) - self._na) / self._delta
 
     def _ppf(self, q, a, b):
-        if self.a > 0:
-            return _norm_isf(q*self._sb + self._sa*(1.0-q))
-        else:
-            return _norm_ppf(q*self._nb + self._na*(1.0-q))
+        # XXX Use _lazywhere...
+        ppf = np.where(self.a > 0,
+                       _norm_isf(q*self._sb + self._sa*(1.0-q)),
+                       _norm_ppf(q*self._nb + self._na*(1.0-q)))
+        return ppf
 
     def _stats(self, a, b):
         nA, nB = self._na, self._nb

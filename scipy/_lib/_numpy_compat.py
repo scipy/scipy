@@ -72,3 +72,40 @@ def assert_raises_regex(exception_class, expected_regexp,
 
     return funcname(exception_class, expected_regexp, callable_obj,
                     *args, **kwargs)
+
+
+if NumpyVersion(np.__version__) >= '1.10.0':
+    from numpy import broadcast_to
+else:
+    # Definition of `broadcast_to` from numpy 1.10.0.
+
+    def _maybe_view_as_subclass(original_array, new_array):
+        if type(original_array) is not type(new_array):
+            # if input was an ndarray subclass and subclasses were OK,
+            # then view the result as that subclass.
+            new_array = new_array.view(type=type(original_array))
+            # Since we have done something akin to a view from original_array, we
+            # should let the subclass finalize (if it has it implemented, i.e., is
+            # not None).
+            if new_array.__array_finalize__:
+                new_array.__array_finalize__(original_array)
+        return new_array
+
+    def _broadcast_to(array, shape, subok, readonly):
+        shape = tuple(shape) if np.iterable(shape) else (shape,)
+        array = np.array(array, copy=False, subok=subok)
+        if not shape and array.shape:
+            raise ValueError('cannot broadcast a non-scalar to a scalar array')
+        if any(size < 0 for size in shape):
+            raise ValueError('all elements of broadcast shape must be non-'
+                             'negative')
+        broadcast = np.nditer(
+            (array,), flags=['multi_index', 'refs_ok', 'zerosize_ok'],
+            op_flags=['readonly'], itershape=shape, order='C').itviews[0]
+        result = _maybe_view_as_subclass(array, broadcast)
+        if not readonly and array.flags.writeable:
+            result.flags.writeable = True
+        return result
+
+    def broadcast_to(array, shape, subok=False):
+        return _broadcast_to(array, shape, subok=subok, readonly=True)
