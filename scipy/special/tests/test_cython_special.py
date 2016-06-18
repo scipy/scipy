@@ -2,29 +2,39 @@ import warnings
 from itertools import product
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_, assert_allclose, assert_equal
 from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy import special
 from scipy.special import cython_special
-from scipy.special.cython_special import (
-    _float, _double, _long_double, _complex, _double_complex,
-    _long_double_complex, _int, _long)
                                    
 
+int_points = [-10, -1, 1, 10]
 real_points = [-10, -1, 1, 10]
 complex_points = [complex(*tup) for tup in product(real_points, repeat=2)]
 
 
+CYTHON_SIGNATURE_MAP = {
+    'f': 'float',
+    'd': 'double',
+    'g': 'long double',
+    'F': 'float complex',
+    'D': 'double complex',
+    'G': 'long double complex',
+    'i':'int',
+    'l': 'long'
+}
+
+
 TEST_POINTS = {
-    'f': map(lambda x: _float(x).val, real_points),
-    'd': map(lambda x: _double(x).val, real_points),
-    'g': map(lambda x: _long_double(x).val, real_points),
-    'F': map(lambda x: _complex(x).val, complex_points),
-    'D': map(lambda x: _double_complex(x).val, complex_points),
-    'G': map(lambda x: _long_double_complex(x).val, complex_points),
-    'i': map(lambda x: _int(x).val, real_points),
-    'l': map(lambda x: _long(x).val, real_points),
+    'f': real_points,
+    'd': real_points,
+    'g': real_points,
+    'F': complex_points,
+    'D': complex_points,
+    'G': complex_points,
+    'i': int_points,
+    'l': int_points,
 }
 
 
@@ -83,19 +93,28 @@ def test_cython_api():
         (special.erfcx, cython_special.erfcx, ('d', 'D'), None),
         (special.erfi, cython_special.erfi, ('d', 'D'), None),
         (special.eval_chebyc, cython_special.eval_chebyc, ('dd', 'dD', 'ld'), None),
-        (special.eval_chebys, cython_special.eval_chebys, ('dd', 'dD', 'ld'), None),
-        (special.eval_chebyt, cython_special.eval_chebyt, ('dd', 'dD', 'ld'), None),
-        (special.eval_chebyu, cython_special.eval_chebyu, ('dd', 'dD', 'ld'), None),
-        (special.eval_gegenbauer, cython_special.eval_gegenbauer, ('ddd', 'ddD', 'ldd'), None),
-        (special.eval_genlaguerre, cython_special.eval_genlaguerre, ('ddd', 'ddD', 'ldd'), None),
+        (special.eval_chebys, cython_special.eval_chebys, ('dd', 'dD', 'ld'),
+             'd and l differ for negative int'),
+        (special.eval_chebyt, cython_special.eval_chebyt, ('dd', 'dD', 'ld'),
+             'd and l differ for negative int'),
+        (special.eval_chebyu, cython_special.eval_chebyu, ('dd', 'dD', 'ld'),
+             'd and l differ for negative int'),
+        (special.eval_gegenbauer, cython_special.eval_gegenbauer, ('ddd', 'ddD', 'ldd'),
+             'd and l differ for negative int'),
+        (special.eval_genlaguerre, cython_special.eval_genlaguerre, ('ddd', 'ddD', 'ldd'),
+             'd and l differ for negative int'),
         (special.eval_hermite, cython_special.eval_hermite, ('ld',), None),
         (special.eval_hermitenorm, cython_special.eval_hermitenorm, ('ld',), None),
-        (special.eval_jacobi, cython_special.eval_jacobi, ('dddd', 'dddD', 'lddd'), None),
-        (special.eval_laguerre, cython_special.eval_laguerre, ('dd', 'dD', 'ld'), None),
+        (special.eval_jacobi, cython_special.eval_jacobi, ('dddd', 'dddD', 'lddd'),
+              'd and l differ for negative int'),
+        (special.eval_laguerre, cython_special.eval_laguerre, ('dd', 'dD', 'ld'),
+              'd and l differ for negative int'),
         (special.eval_legendre, cython_special.eval_legendre, ('dd', 'dD', 'ld'), None),
         (special.eval_sh_chebyt, cython_special.eval_sh_chebyt, ('dd', 'dD', 'ld'), None),
-        (special.eval_sh_chebyu, cython_special.eval_sh_chebyu, ('dd', 'dD', 'ld'), None),
-        (special.eval_sh_jacobi, cython_special.eval_sh_jacobi, ('dddd', 'dddD', 'lddd'), None),
+        (special.eval_sh_chebyu, cython_special.eval_sh_chebyu, ('dd', 'dD', 'ld'),
+              'd and l differ for negative int'),
+        (special.eval_sh_jacobi, cython_special.eval_sh_jacobi, ('dddd', 'dddD', 'lddd'),
+              'd and l differ for negative int'),
         (special.eval_sh_legendre, cython_special.eval_sh_legendre, ('dd', 'dD', 'ld'), None),
         (special.exp1, cython_special.exp1, ('d', 'D'), None),
         (special.exp10, cython_special.exp10, ('d',), None),
@@ -255,8 +274,7 @@ def test_cython_api():
     ]
 
     # Check that everything is tested
-    skip = ['_complex', '_double', '_double_complex', '_float', '_int',
-            '_long', '_long_double', '_long_double_complex', 'errprint']
+    skip = ['errprint']
     for name in dir(cython_special):
         func = getattr(cython_special, name)
         if callable(func) and not (name.startswith('_bench') or name in skip):
@@ -269,18 +287,48 @@ def test_cython_api():
     # Then emit the available tests
     def check(param):
         pyfunc, cyfunc, specializations, knownfailure = param
+
+        # Check which parameters are expected to be fused types
+        values = [set() for code in specializations[0]]
+        for typecodes in specializations:
+            for j, v in enumerate(typecodes):
+                values[j].add(v)
+        seen = set()
+        is_fused_code = [False] * len(values)
+        for j, v in enumerate(values):
+            vv = tuple(sorted(v))
+            if vv in seen:
+                continue
+            is_fused_code[j] = (len(v) > 1)
+            seen.add(vv)
+
+        # Check results
+        for typecodes in specializations:
+            # Pick the correct specialized function
+            signature = []
+            for j, code in enumerate(typecodes):
+                if is_fused_code[j]:
+                    signature.append(CYTHON_SIGNATURE_MAP[code])
+
+            if signature:
+                cy_spec_func = cyfunc[tuple(signature)]
+            else:
+                signature = None
+                cy_spec_func = cyfunc
+
+            # Test it
+            pts = _generate_test_points(typecodes)
+            for pt in pts:
+                pyval = pyfunc(*pt)
+                cyval = cy_spec_func(*pt)
+                try:
+                    assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
+                except AssertionError:
+                    if not knownfailure:
+                        raise
+
         if knownfailure:
             raise KnownFailureTest(knownfailure)
-
-        for typecodes in specializations:
-            pts = _generate_test_points(typecodes)
-            pyres, cyres = [], []
-            for pt in pts:
-                pyres.append(pyfunc(*pt))
-                cyres.append(cyfunc(*pt))
-            pyres = np.asarray(pyres)
-            cyres = np.asarray(cyres)
-            assert_allclose(pyres, cyres)
 
     for param in params:
         yield check, param
