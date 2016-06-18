@@ -210,6 +210,7 @@ which work for masked arrays.
    sem
    zmap
    zscore
+   iqr
 
 .. autosummary::
    :toctree: generated/

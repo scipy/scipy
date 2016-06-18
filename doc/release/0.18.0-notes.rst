@@ -124,7 +124,10 @@ A large suite of global optimization benchmarks has been added to
 
 Trapezoidal distribution has been implemented as `scipy.stats.trapz`.
 Skew normal distribution has been implemented as `scipy.stats.skewnorm`.
-Burr type XII distribution has been implemented as `scipy.stats.burr12`. 
+Burr type XII distribution has been implemented as `scipy.stats.burr12`.
+
+New `scipy.stats.iqr` function computes the interquartile region of a
+distribution.
 
 Random matrices
 ~~~~~~~~~~~~~~~
