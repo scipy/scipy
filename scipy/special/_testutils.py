@@ -160,9 +160,9 @@ class FuncData(object):
     ignore_inf_sign : bool, optional
         Whether to ignore signs of infinities.
         (Doesn't matter for complex-valued functions.)
-    distinguish_nonfinite : bool, optional
-        Whether to distinguish between nans and infinities. If true
-        also ignores the signs of infinities.
+    distinguish_nan_and_inf : bool, optional
+        If True, treat numbers which contain nans or infs as as
+        equal. Sets ignore_inf_sign to be True.
 
     """
 

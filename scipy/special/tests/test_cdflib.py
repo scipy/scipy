@@ -43,6 +43,10 @@ except ImportError:
 
 class ProbArg(object):
     """Generate a set of probabilities on [0, 1]."""
+    def __init__(self):
+        # Include the endpoints for compatibility with Arg et. al.
+        self.a = 0
+        self.b = 1
     
     def values(self, n):
         """Return an array containing approximatively n numbers."""
@@ -54,9 +58,23 @@ class ProbArg(object):
         return np.unique(v)
 
 
-class _CDFData():
+class EndpointFilter(object):
+    def __init__(self, a, b, rtol, atol):
+        self.a = a
+        self.b = b
+        self.rtol = rtol
+        self.atol = atol
+
+    def __call__(self, x):
+        mask1 = np.abs(x - self.a) < self.rtol*np.abs(self.a) + self.atol
+        mask2 = np.abs(x - self.b) < self.rtol*np.abs(self.b) + self.atol
+        return np.where(mask1 | mask2, False, True)
+            
+
+class _CDFData(object):
     def __init__(self, spfunc, mpfunc, index, argspec, spfunc_first=True,
-                 dps=20, n=5000, rtol=None, atol=None):
+                 dps=20, n=5000, rtol=None, atol=None,
+                 endpt_rtol=None, endpt_atol=None):
         self.spfunc = spfunc
         self.mpfunc = mpfunc
         self.index = index
@@ -66,6 +84,22 @@ class _CDFData():
         self.n = n
         self.rtol = rtol
         self.atol = atol
+        
+        if not isinstance(argspec, list):
+            self.endpt_rtol = None
+            self.endpt_atol = None
+        elif endpt_rtol is not None or endpt_atol is not None:
+            if isinstance(endpt_rtol, list):
+                self.endpt_rtol = endpt_rtol
+            else:
+                self.endpt_rtol = [endpt_rtol]*len(self.argspec)
+            if isinstance(endpt_atol, list):
+                self.endpt_atol = endpt_atol
+            else:
+                self.endpt_atol = [endpt_atol]*len(self.argspec)
+        else:
+            self.endpt_rtol = None
+            self.endpt_atol = None
 
     def idmap(self, *args):
         if self.spfunc_first:
@@ -86,16 +120,35 @@ class _CDFData():
             args[self.index] = res
             res = self.spfunc(*tuple(args))
         return res
+
+    def get_param_filter(self):
+        if self.endpt_rtol is None and self.endpt_atol is None:
+            return None
+        
+        filters = []
+        for rtol, atol, spec in zip(self.endpt_rtol, self.endpt_atol, self.argspec):
+            if rtol is None and atol is None:
+                filters.append(None)
+                continue
+            elif rtol is None:
+                rtol = 0.0
+            elif atol is None:
+                atol = 0.0
+
+            filters.append(EndpointFilter(spec.a, spec.b, rtol, atol))
+        return filters
         
     def check(self):
         # Generate values for the arguments
         args = get_args(self.argspec, self.n)
+        param_filter = self.get_param_filter()
         param_columns = tuple(range(args.shape[1]))
         result_columns = args.shape[1]
         args = np.hstack((args, args[:,self.index].reshape(args.shape[0], 1)))
         FuncData(self.idmap, args,
                  param_columns=param_columns, result_columns=result_columns,
-                 rtol=self.rtol, atol=self.atol, vectorized=False).check()
+                 rtol=self.rtol, atol=self.atol, vectorized=False,
+                 param_filter=param_filter).check()
 
 
 def _assert_inverts(*a, **kw):
@@ -104,18 +157,19 @@ def _assert_inverts(*a, **kw):
 
 
 def _binomial_cdf(k, n, p):
+    k, n, p = mpmath.mpf(k), mpmath.mpf(n), mpmath.mpf(p)
     if k <= 0:
         return mpmath.mpf(0)
     elif k >= n:
         return mpmath.mpf(1)
-    res = 0
-    k = int(k)
-    for j in range(k + 1):
-        res += mpmath.binomial(n, j)*p**j*(1 - p)**(n - j)
-    return res
+
+    onemp = mpmath.fsub(1, p, exact=True)
+    return mpmath.betainc(n - k, k + 1, x2=onemp, regularized=True)
 
 
 def _f_cdf(dfn, dfd, x):
+    if x < 0:
+        return mpmath.mpf(0)
     dfn, dfd, x = mpmath.mpf(dfn), mpmath.mpf(dfd), mpmath.mpf(x)
     ub = dfn*x/(dfn*x + dfd)
     res = mpmath.betainc(dfn/2, dfd/2, x2=ub, regularized=True)
@@ -165,13 +219,12 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             0, [ProbArg(), IntArg(1, 1000), ProbArg()],
             rtol=1e-4)
 
-    @knownfailure_overridable()
     def test_bdtrin(self):
         _assert_inverts(
             sp.bdtrin,
             _binomial_cdf,
             1, [IntArg(1, 1000), ProbArg(), ProbArg()],
-            rtol=1e-4)
+            rtol=1e-4, endpt_atol=[None, None, 1e-6])
     
     def test_btdtria(self):
         _assert_inverts(
@@ -181,7 +234,6 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
                 Arg(0, 1, inclusive_a=False, inclusive_b=False)],
             rtol=1e-6)
 
-    @knownfailure_overridable()
     def test_btdtrib(self):
         # Use small values of a or mpmath doesn't converge
         _assert_inverts(
@@ -189,7 +241,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             lambda a, b, x: mpmath.betainc(a, b, x2=x, regularized=True),
             1, [Arg(0, 1e2, inclusive_a=False), ProbArg(),
              Arg(0, 1, inclusive_a=False, inclusive_b=False)],
-            rtol=1e-7)
+            rtol=1e-7, endpt_atol=[None, 1e-20, 1e-20])
 
     @knownfailure_overridable()
     def test_fdtridfd(self):
@@ -199,13 +251,13 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             1, [IntArg(1, 100), ProbArg(), Arg(0, 100, inclusive_a=False)],
             rtol=1e-7)
         
-    @knownfailure_overridable()
     def test_gdtria(self):
         _assert_inverts(
             sp.gdtria,
             lambda a, b, x: mpmath.gammainc(b, b=a*x, regularized=True),
             0, [ProbArg(), Arg(0, 1e3, inclusive_a=False),
-                Arg(0, 1e4, inclusive_a=False)], rtol=1e-7)
+                Arg(0, 1e4, inclusive_a=False)], rtol=1e-7,
+            endpt_atol=[None, 1e-10, 1e-10])
 
     def test_gdtrib(self):
         # Use small values of a and x or mpmath doesn't converge
@@ -215,20 +267,20 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             1, [Arg(0, 1e2, inclusive_a=False), ProbArg(),
                 Arg(0, 1e3, inclusive_a=False)], rtol=1e-5)
 
-    @knownfailure_overridable()
     def test_gdtrix(self):
         _assert_inverts(
             sp.gdtrix,
             lambda a, b, x: mpmath.gammainc(b, b=a*x, regularized=True),
             2, [Arg(0, 1e3, inclusive_a=False), Arg(0, 1e3, inclusive_a=False),
-                ProbArg()], rtol=1e-7)
+                ProbArg()], rtol=1e-7,
+            endpt_atol=[None, 1e-10, 1e-10])
 
-    @knownfailure_overridable()
     def test_stdtr(self):
+        # Ideally the left endpoint for Arg() should be 0.
         assert_mpmath_equal(
             sp.stdtr,
             _student_t_cdf,
-            [IntArg(1, 100), Arg()], rtol=1e-7)
+            [IntArg(1, 100), Arg(1e-10, np.inf)], rtol=1e-7)
 
     @knownfailure_overridable()
     def test_stdtridf(self):
@@ -237,27 +289,18 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             _student_t_cdf,
             0, [ProbArg(), Arg()], rtol=1e-7)
 
-    @knownfailure_overridable()
     def test_stdtrit(self):
         _assert_inverts(
             sp.stdtrit,
             _student_t_cdf,
-            1, [IntArg(1, 100), ProbArg()], rtol=1e-7)
+            1, [IntArg(1, 100), ProbArg()], rtol=1e-7,
+            endpt_atol=[None, 1e-10])
 
-    @knownfailure_overridable()
     def test_chdtriv(self):
         _assert_inverts(
             sp.chdtriv,
             lambda v, x: mpmath.gammainc(v/2, b=x/2, regularized=True),
             0, [ProbArg(), IntArg(1, 100)], rtol=1e-4)
-
-    def test_chndtr(self):
-        # Use a larger atol since mpmath is doing numerical integration
-        assert_mpmath_equal(
-            sp.chndtr,
-            _noncentral_chi_cdf,
-            [Arg(0, 100), IntArg(1, 100), Arg(0, 100, inclusive_a=False)],
-            n=1000, rtol=1e-4, atol=1e-15)
 
     @knownfailure_overridable()
     def test_chndtridf(self):
@@ -275,18 +318,17 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
         _assert_inverts(
             sp.chndtrinc,
             _noncentral_chi_cdf,
-            2, [Arg(0, 100, inclusive_a=False), IntArg(1, 100),
-                ProbArg()],
+            2, [Arg(0, 100, inclusive_a=False), IntArg(1, 100), ProbArg()],
             n=1000, rtol=1e-4, atol=1e-15)
         
-    @knownfailure_overridable()
     def test_chndtrix(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
             sp.chndtrix,
             _noncentral_chi_cdf,
             0, [ProbArg(), IntArg(1, 100), Arg(0, 100, inclusive_a=False)],
-            n=1000, rtol=1e-4, atol=1e-15)
+            n=1000, rtol=1e-4, atol=1e-15,
+            endpt_atol=[1e-6, None, None])
 
     def test_tklmbda_zero_shape(self):
         # When lmbda = 0 the CDF has a simple closed form
@@ -296,18 +338,18 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             lambda x: one/(mpmath.exp(-x) + one),
             [Arg()], rtol=1e-7)
 
-    @knownfailure_overridable()
     def test_tklmbda_neg_shape(self):
         _assert_inverts(
             sp.tklmbda,
             _tukey_lmbda_quantile,
             0, [ProbArg(), Arg(-np.inf, 0, inclusive_b=False)],
-            spfunc_first=False, rtol=1e-5)
+            spfunc_first=False, rtol=1e-5,
+            endpt_atol=[1e-9, None])
 
     @knownfailure_overridable()
     def test_tklmbda_pos_shape(self):
         _assert_inverts(
             sp.tklmbda,
             _tukey_lmbda_quantile,
-            0, [ProbArg(), Arg(0, np.inf, inclusive_a=False)],
+            0, [ProbArg(), Arg(0, 100, inclusive_a=False)],
             spfunc_first=False, rtol=1e-5)
