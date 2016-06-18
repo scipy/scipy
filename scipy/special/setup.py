@@ -104,7 +104,7 @@ def configuration(parent_package='',top_path=None):
                          **cfg
                          )
 
-    # combinatoris
+    # combinatorics
     config.add_extension('_comb',
                          sources=['_comb.c'])
 
@@ -113,7 +113,6 @@ def configuration(parent_package='',top_path=None):
     config.add_data_files('tests/data/*.npz')
 
     config.add_subpackage('_precompute')
-    config.add_data_files('_precompute/tests/*.py')
 
     return config
 
