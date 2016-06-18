@@ -280,7 +280,7 @@ def collocation_fun(fun, y, p, x, h):
     """Evaluate collocation residuals.
 
     This function lies in the core of the method. The solution is sought
-    as a cubic C^1 continuous spline with derivatives matching the ODE rhs
+    as a cubic C1 continuous spline with derivatives matching the ODE rhs
     at given nodes `x`. Collocation conditions are formed from the equality
     of the spline derivatives and rhs of the ODE system in the middle points
     between nodes.
@@ -322,7 +322,7 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
     x_middle = x[:-1] + 0.5 * h
     i_jac, j_jac = compute_jac_indices(n, m, k)
 
-    def sys_fun(y, p):
+    def col_fun(y, p):
         return collocation_fun(fun, y, p, x, h)
 
     def sys_jac(y, p, y_middle, f, f_middle, bc0):
@@ -344,10 +344,10 @@ def prepare_sys(n, m, k, fun, bc, fun_jac, bc_jac, x, h):
                                     df_dy_middle, df_dp, df_dp_middle, dbc_dya,
                                     dbc_dyb, dbc_dp)
 
-    return sys_fun, sys_jac
+    return col_fun, sys_jac
 
 
-def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
+def solve_newton(n, m, h, col_fun, bc, jac, y, p, B, bvp_tol):
     """Solve the nonlinear collocation system by a Newton method.
 
     This is a simple Newton method with a backtracking line search. As
@@ -355,9 +355,14 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
     is used, where J is the Jacobian matrix at the current iteration and r is
     the vector or collocation residuals (values of the system lhs).
 
+    The method alters between full Newton iterations and the fixed-Jacobian
+    iterations based
+
     There are other tricks proposed in [1]_, but they are not used as they
     don't seem to improve anything significantly, and even break the
     convergence on some test problems I tried.
+
+    All important parameters of the algorithm are defined inside the function.
 
     Parameters
     ----------
@@ -365,8 +370,8 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
         Number of equations in the ODE system.
     m : int
         Number of nodes in the mesh.
-    k : int
-        Number of the unknown parameters.
+    h : ndarray, shape (m-1,)
+        Mesh intervals.
     col_fun : callable
         Function computing collocation residuals.
     bc : callable
@@ -382,14 +387,8 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
     B : ndarray with shape (n, n) or None
         Matrix to force the S y(a) = 0 condition for a problems with the
         singular term. If None, the singular term is assumed to be absent.
-    tol : float
-        Iterations are terminated if the uniform norm of the system residuals
-        is less than `tol`. The reasonable value of `tol` should be 1-2 orders
-        less than the tolerance for our BVP solver.
-    n_iter : int
-        Max number of iterations. A small number should be used when solving a
-        boundary value problem, because it's better to refine the mesh and
-        start over than try hard on the current mesh.
+    bvp_tol : float
+        Tolerance to which we want to solve a BVP.
 
     Returns
     -------
@@ -406,55 +405,103 @@ def solve_newton(n, m, k, col_fun, bc, jac, y, p, B, tol, n_iter):
     .. [1]  U. Ascher, R. Mattheij and R. Russell "Numerical Solution of
        Boundary Value Problems for Ordinary Differential Equations"
     """
-    res_col, y_middle, f, f_middle = col_fun(y, p)
-    res_bc = bc(y[:, 0], y[:, -1], p)
-    res = np.hstack((res_col.ravel(order='F'), res_bc))
+    # We know that the solution residuals at the middle points of the mesh
+    # are connected with collocation residuals  r_middle = 1.5 * col_res / h.
+    # As our BVP solver tries to decrease relative residuals below a certain
+    # tolerance it seems reasonable to terminated Newton iterations by
+    # comparison of r_middle / (1 + np.abs(f_middle)) with a certain threshold,
+    # which we choose to be 1.5 orders lower than the BVP tolerance. We rewrite
+    # the condition as col_res < tol_r * (1 + np.abs(f_middle)), then tol_r
+    # should be computed as follows:
+    tol_r = 2/3 * h * 5e-2 * bvp_tol
 
-    # Minimum relative improvement of the criterion function (Armijo constant).
+    # We also need to control residuals of the boundary conditions. But it
+    # seems that they become very small eventually as the solver progresses,
+    # i. e. the tolerance for BC are not very important. We set it 1.5 orders
+    # lower than the BVP tolerance as well.
+    tol_bc = 5e-2 * bvp_tol
+
+    # Maximum allowed number of Jacobian evaluation and factorization, in
+    # other words the maximum number of full Newton iterations. A small value
+    # is recommended in the literature.
+    max_njev = 4
+
+    # Maximum number of iterations, considering that some of them can be
+    # performed with the fixed Jacobian. In theory such iterations are cheap,
+    # but it's not that simple in Python.
+    max_iter = 8
+
+    # Minimum relative improvement of the criterion function to accept the
+    # step (Armijo constant).
     sigma = 0.2
+
     # Step size decrease factor for backtracking.
     tau = 0.5
+
     # Maximum number of backtracking steps, the minimum step is then
     # tau ** n_trial.
-    n_trial = 5
+    n_trial = 4
 
+    col_res, y_middle, f, f_middle = col_fun(y, p)
+    bc_res = bc(y[:, 0], y[:, -1], p)
+    res = np.hstack((col_res.ravel(order='F'), bc_res))
+
+    njev = 0
     singular = False
-    for iteration in range(n_iter):
-        J = jac(y, p, y_middle, f, f_middle, res_bc)
-        try:
-            LU = splu(J)
-        except RuntimeError:
-            singular = True
-            break
+    recompute_jac = True
+    for iteration in range(max_iter):
+        if recompute_jac:
+            J = jac(y, p, y_middle, f, f_middle, bc_res)
+            njev += 1
+            try:
+                LU = splu(J)
+            except RuntimeError:
+                singular = True
+                break
 
-        step = -LU.solve(res)
+            step = LU.solve(res)
+            cost = np.dot(step, step)
+
         y_step = step[:m * n].reshape((n, m), order='F')
         p_step = step[m * n:]
 
-        cost = np.dot(step, step)
         alpha = 1
-        for i in range(n_trial):
-            y_new = y + alpha * y_step
+        for trial in range(n_trial + 1):
+            y_new = y - alpha * y_step
             if B is not None:
                 y_new[:, 0] = np.dot(B, y_new[:, 0])
-            p_new = p + alpha * p_step
+            p_new = p - alpha * p_step
 
-            res_col, y_middle, f, f_middle = col_fun(y_new, p_new)
-            res_bc = bc(y_new[:, 0], y_new[:, -1], p_new)
-            res = np.hstack((res_col.ravel(order='F'), res_bc))
+            col_res, y_middle, f, f_middle = col_fun(y_new, p_new)
+            bc_res = bc(y_new[:, 0], y_new[:, -1], p_new)
+            res = np.hstack((col_res.ravel(order='F'), bc_res))
 
-            s = LU.solve(res)
-            cost_new = np.dot(s, s)
+            step_new = LU.solve(res)
+            cost_new = np.dot(step_new, step_new)
             if cost_new < (1 - 2 * alpha * sigma) * cost:
                 break
 
-            alpha *= tau
+            if trial < n_trial:
+                alpha *= tau
 
         y = y_new
         p = p_new
 
-        if norm(res, ord=np.inf) < tol:
+        if njev == max_njev:
             break
+
+        if (np.all(np.abs(col_res) < tol_r * (1 + np.abs(f_middle))) and
+                np.all(bc_res < tol_bc)):
+            break
+
+        # If the full step was taken, then we are going to continue with
+        # the same Jacobian. This is the approach of BVP_SOLVER.
+        if alpha == 1:
+            step = step_new
+            cost = cost_new
+            recompute_jac = False
+        else:
+            recompute_jac = True
 
     return y, p, singular
 
@@ -1020,18 +1067,13 @@ def solve_bvp(fun, bc, x, y, p=None, S=None, fun_jac=None, bc_jac=None,
     if verbose == 2:
         print_iteration_header()
 
-    # Tolerance and max number of iterations for the Newton system solver.
-    # See `solve_newton`.
-    newton_tol = 1e-1 * tol
-    newton_iter = 4
-
     while True:
         m = x.shape[0]
 
         col_fun, jac_sys = prepare_sys(n, m, k, fun_wrapped, bc_wrapped,
                                        fun_jac_wrapped, bc_jac_wrapped, x, h)
-        y, p, singular = solve_newton(n, m, k, col_fun, bc_wrapped, jac_sys,
-                                      y, p, B, newton_tol, newton_iter)
+        y, p, singular = solve_newton(n, m, h, col_fun, bc_wrapped, jac_sys,
+                                      y, p, B, tol)
         iteration += 1
 
         col_res, y_middle, f, f_middle = collocation_fun(fun_wrapped, y,
