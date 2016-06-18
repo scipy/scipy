@@ -13,15 +13,15 @@ from ._upfirdn import upfirdn, _UpFIRDn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
-sum_builtin = sum
 from numpy import (allclose, angle, arange, argsort, array, asarray,
                    atleast_1d, atleast_2d, cast, dot, exp, expand_dims,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
                    poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
-                   prod, product, r_, ravel, real_if_close, reshape,
+                   product, r_, ravel, real_if_close, reshape,
                    roots, sort, sum, take, transpose, unique, where, zeros,
                    zeros_like)
 import numpy as np
+import math
 from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
@@ -32,6 +32,7 @@ if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
 else:
     from fractions import gcd
+sum_builtin = sum
 
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
@@ -120,8 +121,6 @@ def correlate(in1, in2, mode='full', method='auto'):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must be
-        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -130,7 +129,8 @@ def correlate(in1, in2, mode='full', method='auto'):
            of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
-           rely on the zero-padding.
+           rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+           must be at least as large as the other in every dimension.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
@@ -144,9 +144,8 @@ def correlate(in1, in2, mode='full', method='auto'):
            The Fast Fourier Transform is used to perform the correlation more
            quickly (only available for numerical arrays.)
         ``auto``
-           A rough estimate to see which correlation method is faster (the
-           Fourier transform or direct method) and that method is chosen
-           (default). See notes for more detail.
+           Automatically chooses direct or Fourier method based on an estimate
+           of which is faster (default).  See `convolve` Notes for more detail.
 
            .. versionadded:: 0.18.0
 
@@ -162,7 +161,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     Notes
     -----
-    The correlation z of two d-dimensional arrays x and y is defined as:
+    The correlation z of two d-dimensional arrays x and y is defined as::
 
       z[...,k,...] = sum[..., i_l, ...]
                          x[..., i_l,...] * conj(y[..., i_l + k,...])
@@ -455,8 +454,10 @@ def _fftconv_faster(x, h, mode):
     elif mode == 'same':
         out_shape = x.shape
         oneD_big_O = {True: 7183.41306773, False: 856.78174111}
-        big_O_constant = oneD_big_O[h.size <= x.size] if x.ndim == 1 \
-                                                      else 34519.21021589
+        if x.ndim == 1:
+            big_O_constant = oneD_big_O[h.size <= x.size]
+        else:
+            big_O_constant = 34519.21021589
     elif mode == 'valid':
         out_shape = [n - k + 1 for n, k in zip(x.shape, h.shape)]
         big_O_constant = 41954.28006344 if x.ndim == 1 else 66453.24316434
@@ -466,8 +467,8 @@ def _fftconv_faster(x, h, mode):
     # see whether the Fourier transform convolution method or the direct
     # convolution method is faster (discussed in scikit-image PR #1792)
     direct_time = (x.size * h.size * _prod(out_shape))
-    fft_time = sum_builtin(n * np.log(n) for n in (x.shape + h.shape +
-                                               tuple(out_shape)))
+    fft_time = sum_builtin(n * math.log(n) for n in (x.shape + h.shape +
+                                                     tuple(out_shape)))
     return big_O_constant * fft_time < direct_time
 
 
@@ -512,12 +513,12 @@ def _fftconvolve_valid(volume, kernel):
 
 def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     """
-    Faster, less painstaking version of timeit_auto for automated 
+    Faster, less painstaking version of timeit_auto for automated
     testing of many inputs.
 
-    Will do only 1 loop (like IPython's timeit) with no repetitions 
-    (unlike IPython) for very slow functions.  Only does enough loops 
-    to take 5 ms, which seems to produce similar results on Windows at 
+    Will do only 1 loop (like IPython's timeit) with no repetitions
+    (unlike IPython) for very slow functions.  Only does enough loops
+    to take 5 ms, which seems to produce similar results on Windows at
     least, and avoids doing an extraneous cycle that isn't measured.
     """
     t = Timer(stmt, setup)
@@ -539,6 +540,7 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
 
     usec = best * 1e6 / number
     return usec
+
 
 def choose_conv_method(in1, in2, mode='full', measure=False):
     """
@@ -602,7 +604,8 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
                  "x, h = {}, {}".format(volume.tolist(), kernel.tolist()))
         times = {}
         for method in ['fft', 'direct']:
-            to_time = 'convolve(x, h, mode="{}", method="{}")'.format(mode, method)
+            to_time = 'convolve(x, h, mode="{}", method="{}")'.format(mode,
+                                                                      method)
             times[method] = _timeit_fast(to_time, setup)
 
         chosen_method = 'fft' if times['fft'] < times['direct'] else 'direct'
@@ -622,10 +625,12 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
-    if _numeric_arrays([volume, kernel]) and _fftconv_faster(volume, kernel, mode):
-        return 'fft'
+    if _numeric_arrays([volume, kernel]):
+        if _fftconv_faster(volume, kernel, mode):
+            return 'fft'
 
     return 'direct'
+
 
 def convolve(in1, in2, mode='full', method='auto'):
     """
@@ -640,8 +645,6 @@ def convolve(in1, in2, mode='full', method='auto'):
         First input.
     in2 : array_like
         Second input. Should have the same number of dimensions as `in1`.
-        If operating in 'valid' mode, either `in1` or `in2` must be
-        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -650,7 +653,8 @@ def convolve(in1, in2, mode='full', method='auto'):
            of the inputs. (Default)
         ``valid``
            The output consists only of those elements that do not
-           rely on the zero-padding.
+           rely on the zero-padding. In 'valid' mode, either `in1` or `in2`
+           must be at least as large as the other in every dimension.
         ``same``
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
@@ -664,9 +668,8 @@ def convolve(in1, in2, mode='full', method='auto'):
            The Fourier Transform is used to perform the convolution by calling
            `fftconvolve`.
         ``auto``
-           A rough estimate to see which convolution method is faster (the
-           Fourier transform or direct method) and that method is chosen
-           (default).
+           Automatically chooses direct or Fourier method based on an estimate
+           of which is faster (default).  See Notes for more detail.
 
            .. versionadded:: 0.18.0
 
@@ -883,8 +886,8 @@ def wiener(im, mysize=None, noise=None):
     lMean = correlate(im, ones(mysize), 'same') / product(mysize, axis=0)
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, ones(mysize), 'same') / product(mysize, axis=0)
-            - lMean ** 2)
+    lVar = (correlate(im ** 2, ones(mysize), 'same') /
+            product(mysize, axis=0) - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
@@ -1217,8 +1220,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> t = np.linspace(-1, 1, 201)
-    >>> x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) + 0.1*np.sin(2*np.pi*1.25*t + 1)
-    ...      + 0.18*np.cos(2*np.pi*3.85*t))
+    >>> x = (np.sin(2*np.pi*0.75*t*(1-t) + 2.1) +
+    ...      0.1*np.sin(2*np.pi*1.25*t + 1) +
+    ...      0.18*np.cos(2*np.pi*3.85*t))
     >>> xn = x + np.random.randn(len(t)) * 0.08
 
     Create an order 3 lowpass butterworth filter:
@@ -1263,7 +1267,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
         x = np.asarray(x)
         inputs = [b, a, x]
         if zi is not None:
-            # _linear_filter does not broadcast zi, but does do expansion of singleton dims.
+            # _linear_filter does not broadcast zi, but does do expansion of
+            # singleton dims.
             zi = np.asarray(zi)
             if zi.ndim != x.ndim:
                 raise ValueError('object of too small depth for desired array')
@@ -1286,7 +1291,8 @@ def lfilter(b, a, x, axis=-1, zi=None):
                         raise ValueError('Unexpected shape for zi: expected '
                                          '%s, found %s.' %
                                          (expected_shape, zi.shape))
-                zi = np.lib.stride_tricks.as_strided(zi, expected_shape, strides)
+                zi = np.lib.stride_tricks.as_strided(zi, expected_shape,
+                                                     strides)
             inputs.append(zi)
         dtype = np.result_type(*inputs)
 
@@ -1499,14 +1505,15 @@ def hilbert(x, N=None, axis=-1):
     >>> signal *= (1.0 + 0.5 * np.sin(2.0*np.pi*3.0*t) )
 
     The amplitude envelope is given by magnitude of the analytic signal. The
-    instantaneous frequency can be obtained by differentiating the instantaneous
-    phase in respect to time. The instantaneous phase corresponds to the phase
-    angle of the analytic signal.
+    instantaneous frequency can be obtained by differentiating the
+    instantaneous phase in respect to time. The instantaneous phase corresponds
+    to the phase angle of the analytic signal.
 
     >>> analytic_signal = hilbert(signal)
     >>> amplitude_envelope = np.abs(analytic_signal)
     >>> instantaneous_phase = np.unwrap(np.angle(analytic_signal))
-    >>> instantaneous_frequency = np.diff(instantaneous_phase) / (2.0*np.pi) * fs
+    >>> instantaneous_frequency = (np.diff(instantaneous_phase) /
+    ...                            (2.0*np.pi) * fs)
 
     >>> fig = plt.figure()
     >>> ax0 = fig.add_subplot(211)
@@ -1524,8 +1531,9 @@ def hilbert(x, N=None, axis=-1):
     .. [1] Wikipedia, "Analytic signal".
            http://en.wikipedia.org/wiki/Analytic_signal
     .. [2] Leon Cohen, "Time-Frequency Analysis", 1995. Chapter 2.
-    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal Processing,
-           Third Edition, 2009. Chapter 12. ISBN 13: 978-1292-02572-8
+    .. [3] Alan V. Oppenheim, Ronald W. Schafer. Discrete-Time Signal
+           Processing, Third Edition, 2009. Chapter 12.
+           ISBN 13: 978-1292-02572-8
 
     """
     x = asarray(x)
@@ -1879,8 +1887,8 @@ def residue(b, a, tol=1e-3, rtype='avg'):
                 term2 = polymul(bn, polyder(an, 1))
                 bn = polysub(term1, term2)
                 an = polymul(an, an)
-            r[indx + m - 1] = (polyval(bn, pout[n]) / polyval(an, pout[n])
-                               / factorial(sig - m))
+            r[indx + m - 1] = (polyval(bn, pout[n]) / polyval(an, pout[n]) /
+                               factorial(sig - m))
         indx += sig
     return r / rscale, p, k
 
