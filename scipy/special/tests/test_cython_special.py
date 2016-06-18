@@ -3,8 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 from itertools import product
 
-import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_equal
+from numpy.testing import assert_, assert_allclose
 from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy import special
@@ -12,7 +11,7 @@ from scipy.special import cython_special
                                    
 
 int_points = [-10, -1, 1, 10]
-real_points = [-10, -1, 1, 10]
+real_points = [-10.0, -1.0, 1.0, 10.0]
 complex_points = [complex(*tup) for tup in product(real_points, repeat=2)]
 
 
@@ -289,6 +288,8 @@ def test_cython_api():
     # Then emit the available tests
     def check(param):
         pyfunc, cyfunc, specializations, knownfailure = param
+        if knownfailure:
+            raise KnownFailureTest(knownfailure)
 
         # Check which parameters are expected to be fused types
         values = [set() for code in specializations[0]]
@@ -323,14 +324,7 @@ def test_cython_api():
             for pt in pts:
                 pyval = pyfunc(*pt)
                 cyval = cy_spec_func(*pt)
-                try:
-                    assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
-                except AssertionError:
-                    if not knownfailure:
-                        raise
-
-        if knownfailure:
-            raise KnownFailureTest(knownfailure)
+                assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
 
     for param in params:
         yield check, param
