@@ -2,11 +2,12 @@
 # 1999 -- 2002
 
 from __future__ import division, print_function, absolute_import
+sum_builtin = sum
 
 import warnings
 import threading
 import sys
-from timeit import Timer
+import timeit
 
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _UpFIRDn, _output_len
@@ -32,7 +33,6 @@ if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
 else:
     from fractions import gcd
-sum_builtin = sum
 
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
@@ -521,7 +521,7 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     to take 5 ms, which seems to produce similar results on Windows at
     least, and avoids doing an extraneous cycle that isn't measured.
     """
-    t = Timer(stmt, setup)
+    t = timeit.Timer(stmt, setup)
 
     # determine number so that 5 ms <= total time
     x = 0
