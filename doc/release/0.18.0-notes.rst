@@ -218,23 +218,26 @@ plus to/from the Rankine temperature scale.
 Backwards incompatible changes
 ==============================
 
+`scipy.optimize`
+----------------
+
 The convergence criterion for ``optimize.bisect``,
 ``optimize.brentq``, ``optimize.brenth``, and ``optimize.ridder`` now
 works the same as ``numpy.allclose``.
+
+`scipy.ndimage`
+---------------
 
 The offset in ``ndimage.iterpolation.affine_transform``
 is now consistently added after the matrix is applied,
 independent of if the matrix is specified using a one-dimensional
 or a two-dimensional array.
 
+`scipy.stats`
+-------------
+
 ``stats.ks_2samp`` used to return nonsensical values if the input was
 not real or contained nans.  It now raises an exception for such inputs.
-
-`scipy.io.netcdf` masking now gives precedence to the ``_FillValue`` attribute
-over the ``missing_value`` attribute, if both are given. Also, data are only
-treated as missing if they match one of these attributes exactly: values that
-differ by roundoff from ``_FillValue`` or ``missing_value`` are no longer
-treated as missing values.
 
 Several deprecated methods of `scipy.stats` distributions have been removed:
 ``est_loc_scale``, ``vecfunc``, ``veccdf`` and ``vec_generic_moment``.
@@ -242,6 +245,37 @@ Several deprecated methods of `scipy.stats` distributions have been removed:
 Deprecated functions ``nanmean``, ``nanstd`` and ``nanmedian`` have been removed
 from `scipy.stats`. These functions were deprecated in scipy 0.15.0 in favor
 of their `numpy` equivalents.
+
+A bug in the ``rvs()`` method of the distributions in `scipy.stats` has
+been fixed.  When arguments to ``rvs()`` were given that were shaped for
+broadcasting, in many cases the returned random samples were not random.
+A simple example of the problem is ``stats.norm.rvs(loc=np.zeros(10))``.
+Because of the bug, that call would return 10 identical values.  The bug
+only affected code that relied on the broadcasting of the shape, location
+and scale parameters.
+
+The ``rvs()`` method also accepted some arguments that it should not have.
+There is a potential for backwards incompatibility in cases where ``rvs()``
+accepted arguments that are not, in fact, compatible with broadcasting.
+An example is
+
+    stats.gamma.rvs([2, 5, 10, 15], size=(2,2))
+
+The shape of the first argument is not compatible with the requested size,
+but the function still returned an array with shape (2, 2).  In scipy 0.18,
+that call generates a ``ValueError``.
+
+`scipy.io`
+----------
+
+`scipy.io.netcdf` masking now gives precedence to the ``_FillValue`` attribute
+over the ``missing_value`` attribute, if both are given. Also, data are only
+treated as missing if they match one of these attributes exactly: values that
+differ by roundoff from ``_FillValue`` or ``missing_value`` are no longer
+treated as missing values.
+
+`scipy.interpolate`
+-------------------
 
 `scipy.interpolate.PiecewisePolynomial` class has been removed. It has been
 deprecated in scipy 0.14.0, and `scipy.interpolate.BPoly.from_derivatives` serves
