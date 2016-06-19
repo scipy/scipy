@@ -29,6 +29,7 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
 from ._distn_infrastructure import (
         rv_continuous, valarray, _skew, _kurtosis, _lazywhere,
         _ncx2_log_pdf, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
+        _lazyselect
         )
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
@@ -3311,6 +3312,306 @@ class mielke_gen(rv_continuous):
         qsk = pow(q, s*1.0/k)
         return pow(qsk/(1.0-qsk), 1.0/s)
 mielke = mielke_gen(a=0.0, name='mielke')
+
+
+class kappa4_gen(rv_continuous):
+    """Kappa 4 parameter distribution.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for kappa4 is::
+
+        kappa4.pdf(x, h, k) = (1.0 - k*x)**(1.0/k - 1.0)*
+                              (1.0 - h*(1.0 - k*x)**(1.0/k))**(1.0/h-1)
+
+    if ``h`` and ``k`` are not equal to 0.
+
+    If ``h`` or ``k`` are zero then the pdf can be simplified:
+
+    h = 0 and k != 0::
+
+        kappa4.pdf(x, h, k) = (1.0 - k*x)**(1.0/k - 1.0)*
+                              exp(-(1.0 - k*x)**(1.0/k))
+
+    h != 0 and k = 0::
+
+        kappa4.pdf(x, h, k) = exp(-x)*(1.0 - h*exp(-x))**(1.0/h - 1.0)
+
+    h = 0 and k = 0::
+
+        kappa4.pdf(x, h, k) = exp(-x)*exp(-exp(-x))
+
+    kappa4 takes ``h`` and ``k`` as shape parameters.
+
+    The kappa4 distribution returns other distributions when certain
+    ``h`` and ``k`` values are used.
+
+    +------+-------------+----------------+------------------+
+    | h    | k=0.0       | k=1.0          | -inf<=k<=inf     |
+    +======+=============+================+==================+
+    | -1.0 | Logistic    |                | Generalized      |
+    |      |             |                | Logistic(1)      |
+    |      |             |                |                  |
+    |      | logistic(x) |                |                  |
+    +------+-------------+----------------+------------------+
+    |  0.0 | Gumbel      | Reverse        | Generalized      |
+    |      |             | Exponential(2) | Extreme Value    |
+    |      |             |                |                  |
+    |      | gumbel_r(x) |                | genextreme(x, k) |
+    +------+-------------+----------------+------------------+
+    |  1.0 | Exponential | Uniform        | Generalized      |
+    |      |             |                | Pareto           |
+    |      |             |                |                  |
+    |      | expon(x)    | uniform(x)     | genpareto(x, -k) |
+    +------+-------------+----------------+------------------+
+
+    (1) There are at least five generalized logistic distributions.
+        Four are described here:
+        https://en.wikipedia.org/wiki/Generalized_logistic_distribution
+        The "fifth" one is the one kappa4 should match which currently
+        isn't implemented in scipy:
+        https://en.wikipedia.org/wiki/Talk:Generalized_logistic_distribution
+        http://www.mathwave.com/help/easyfit/html/analyses/distributions/gen_logistic.html
+    (2) This distribution is currently not in scipy.
+
+    References
+    ----------
+    J.C. Finney, "Optimization of a Skewed Logistic Distribution With Respect
+    to the Kolmogorov-Smirnov Test", A Dissertation Submitted to the Graduate
+    Faculty of the Louisiana State University and Agricultural and Mechanical
+    College, (August, 2004),
+    http://etd.lsu.edu/docs/available/etd-05182004-144851/unrestricted/Finney_dis.pdf
+
+    J.R.M. Hosking, "The four-parameter kappa distribution". IBM J. Res.
+    Develop. 38 (3), 25 1-258 (1994).
+
+    B. Kumphon, A. Kaew-Man, P. Seenoi, "A Rainfall Distribution for the Lampao
+    Site in the Chi River Basin, Thailand", Journal of Water Resource and
+    Protection, vol. 4, 866-869, (2012).
+    http://file.scirp.org/pdf/JWARP20121000009_14676002.pdf
+
+    C. Winchester, "On Estimation of the Four-Parameter Kappa Distribution", A
+    Thesis Submitted to Dalhousie University, Halifax, Nova Scotia, (March
+    2000).
+    http://www.nlc-bnc.ca/obj/s4/f2/dsk2/ftp01/MQ57336.pdf
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _argcheck(self, h, k):
+        condlist = [np.logical_and(h > 0, k > 0),
+                    np.logical_and(h > 0, k == 0),
+                    np.logical_and(h > 0, k < 0),
+                    np.logical_and(h <= 0, k > 0),
+                    np.logical_and(h <= 0, k == 0),
+                    np.logical_and(h <= 0, k < 0)]
+
+        def f0(h, k):
+            return (1.0 - h**(-k))/k
+
+        def f1(h, k):
+            return log(h)
+
+        def f3(h, k):
+            a = np.empty(shape(h))
+            a[:] = -inf
+            return a
+
+        def f5(h, k):
+            return 1.0/k
+
+        self.a = _lazyselect(condlist,
+                             [f0, f1, f0, f3, f3, f5],
+                             [h, k],
+                             default=nan)
+
+        def f0(h, k):
+            return 1.0/k
+
+        def f1(h, k):
+            a = np.empty(shape(h))
+            a[:] = inf
+            return a
+
+        self.b = _lazyselect(condlist,
+                             [f0, f1, f1, f0, f1, f1],
+                             [h, k],
+                             default=nan)
+        return (h == h)
+
+    def _pdf(self, x, h, k):
+        return exp(self._logpdf(x, h, k))
+
+    def _logpdf(self, x, h, k):
+        condlist = [np.logical_and(h != 0, k != 0),
+                    np.logical_and(h == 0, k != 0),
+                    np.logical_and(h != 0, k == 0),
+                    np.logical_and(h == 0, k == 0)]
+
+        def f0(x, h, k):
+            '''pdf = (1.0 - k*x)**(1.0/k - 1.0)*(
+                      1.0 - h*(1.0 - k*x)**(1.0/k))**(1.0/h-1.0)
+               logpdf = ...
+            '''
+            return special.xlog1py(1.0/k-1.0,
+                                   -k*x
+                                   ) + special.xlog1py(1.0/h-1.0,
+                                                       -h*(1.0-k*x)**(1.0/k))
+
+        def f1(x, h, k):
+            '''pdf = (1.0 - k*x)**(1.0/k - 1.0)*exp(-(
+                      1.0 - k*x)**(1.0/k))
+               logpdf = ...
+            '''
+            return special.xlog1py(1.0/k-1.0,-k*x)-(1.0-k*x)**(1.0/k)
+
+        def f2(x, h, k):
+            '''pdf = exp(-x)*(1.0 - h*exp(-x))**(1.0/h - 1.0)
+               logpdf = ...
+            '''
+            return -x + special.xlog1py(1.0/h-1.0, -h*exp(-x))
+
+        def f3(x, h, k):
+            '''pdf = exp(-x-exp(-x))
+               logpdf = ...
+            '''
+            return -x-exp(-x)
+
+        return _lazyselect(condlist,
+                           [f0, f1, f2, f3],
+                           [x, h, k],
+                           default=nan)
+
+    def _cdf(self, x, h, k):
+        return exp(self._logcdf(x, h, k))
+
+    def _logcdf(self, x, h, k):
+        condlist = [np.logical_and(h != 0, k != 0),
+                    np.logical_and(h == 0, k != 0),
+                    np.logical_and(h != 0, k == 0),
+                    np.logical_and(h == 0, k == 0)]
+
+        def f0(x, h, k):
+            '''cdf = (1.0 - h*(1.0 - k*x)**(1.0/k))**(1.0/h)
+               logcdf = ...
+            '''
+            return (1.0/h)*special.log1p(-h*(1.0-k*x)**(1.0/k))
+
+        def f1(x, h, k):
+            '''cdf = exp(-(1.0 - k*x)**(1.0/k))
+               logcdf = ...
+            '''
+            return -(1.0 - k*x)**(1.0/k)
+
+        def f2(x, h, k):
+            '''cdf = (1.0 - h*exp(-x))**(1.0/h)
+               logcdf = ...
+            '''
+            return (1.0/h)*special.log1p(-h*exp(-x))
+
+        def f3(x, h, k):
+            '''cdf = exp(-exp(-x))
+               logcdf = ...
+            '''
+            return -exp(-x)
+
+        return _lazyselect(condlist,
+                           [f0, f1, f2, f3],
+                           [x, h, k],
+                           default=nan)
+
+    def _ppf(self, q, h, k):
+        condlist = [np.logical_and(h != 0, k != 0),
+                    np.logical_and(h == 0, k != 0),
+                    np.logical_and(h != 0, k == 0),
+                    np.logical_and(h == 0, k == 0)]
+
+        def f0(q, h, k):
+            return 1.0/k*(1.0 - ((1.0 - (q**h))/h)**k)
+
+        def f1(q, h, k):
+            return 1.0/k*(1.0 - (-log(q))**k)
+
+        def f2(q, h, k):
+            '''ppf = -log((1.0 - (q**h))/h)
+            '''
+            return -special.log1p(-(q**h)) + log(h)
+
+        def f3(q, h, k):
+            return -log(-log(q))
+
+        return _lazyselect(condlist,
+                           [f0, f1, f2, f3],
+                           [q, h, k],
+                           default=nan)
+
+    def _stats(self, h, k):
+        if h >= 0 and k >= 0:
+            maxr = 5
+        elif h < 0 and k >= 0:
+            maxr = int(-1.0/h*k)
+        elif k < 0:
+            maxr = int(-1.0/k)
+        else:
+            maxr = 5
+
+        outputs = [None if r < maxr else nan for r in range(1, 5)]
+        return outputs[:]
+kappa4 = kappa4_gen(name='kappa4')
+
+
+class kappa3_gen(rv_continuous):
+    """Kappa 3 parameter distribution.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `kappa` is::
+
+        kappa3.pdf(x, a) =
+            a*[a + x**a]**(-(a + 1)/a),     for ``x > 0``
+            0.0,                            for ``x <= 0``
+
+    `kappa3` takes ``a`` as a shape parameter and ``a > 0``.
+
+    References
+    ----------
+    P.W. Mielke and E.S. Johnson, "Three-Parameter Kappa Distribution Maximum
+    Likelihood and Likelihood Ratio Tests", Methods in Weather Research,
+    701-707, (September, 1973),
+    http://docs.lib.noaa.gov/rescue/mwr/101/mwr-101-09-0701.pdf
+
+    B. Kumphon, "Maximum Entropy and Maximum Likelihood Estimation for the
+    Three-Parameter Kappa Distribution", Open Journal of Statistics, vol 2,
+    415-419 (2012)
+    http://file.scirp.org/pdf/OJS20120400011_95789012.pdf
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def _argcheck(self, a):
+        return a > 0
+
+    def _pdf(self, x, a):
+        return a*(a + x**a)**(-1.0/a-1)
+
+    def _cdf(self, x, a):
+        return x*(a + x**a)**(-1.0/a)
+
+    def _ppf(self, q, a):
+        return (a/(q**-a - 1.0))**(1.0/a)
+
+    def _stats(self, a):
+        outputs = [None if i < a else nan for i in range(1, 5)]
+        return outputs[:]
+kappa3 = kappa3_gen(a=0.0, name='kappa3')
 
 
 class nakagami_gen(rv_continuous):
