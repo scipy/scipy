@@ -30,9 +30,10 @@ from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
 from scipy._lib.six import xrange
-from .filter_design import freqs, freqz
+from .filter_design import freqs, freqz, _validate_sos, _sos_normalize
 from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
-                             cont2discrete, tf2zpk, zpk2tf, normalize)
+                             cont2discrete, tf2zpk, zpk2tf, sos2zpk, sos2tf,
+                             zpk2sos, tf2sos, sos2ss, ss2sos, normalize)
 
 import numpy
 import numpy as np
@@ -43,7 +44,7 @@ import copy
 __all__ = ['lti', 'dlti', 'TransferFunction', 'ZerosPolesGain', 'StateSpace',
            'lsim', 'lsim2', 'impulse', 'impulse2', 'step', 'step2', 'bode',
            'freqresp', 'place_poles', 'dlsim', 'dstep', 'dimpulse',
-           'dfreqresp', 'dbode']
+           'dfreqresp', 'dbode', 'SecondOrderSections']
 
 
 class LinearTimeInvariant(object):
@@ -845,6 +846,19 @@ class TransferFunction(LinearTimeInvariant):
         return StateSpace(*tf2ss(self.num, self.den),
                           **self._dt_dict)
 
+    def to_sos(self):
+        """
+        Convert system representation to `SecondOrderSections`.
+
+        Returns
+        -------
+        sys : instance of `SecondOrderSections`
+            Second Order Sections representation of the current system
+
+        """
+        return SecondOrderSections(*tf2sos(self.num, self.den),
+                                   **self._dt_dict)
+
     @staticmethod
     def _z_to_zinv(num, den):
         """Change a transfer function from the variable `z` to `z**-1`.
@@ -1236,6 +1250,19 @@ class ZerosPolesGain(LinearTimeInvariant):
         return StateSpace(*zpk2ss(self.zeros, self.poles, self.gain),
                           **self._dt_dict)
 
+    def to_sos(self):
+        """
+        Convert system representation to `SecondOrderSections`.
+
+        Returns
+        -------
+        sys : instance of `SecondOrderSections`
+            Second Order Sections representation of the current system
+
+        """
+        return SecondOrderSections(*zpk2sos(self.zeros, self.poles, self.gain),
+                                   **self._dt_dict)
+
 
 class ZerosPolesGainContinuous(ZerosPolesGain, lti):
     r"""
@@ -1596,6 +1623,24 @@ class StateSpace(LinearTimeInvariant):
         return ZerosPolesGain(*ss2zpk(self._A, self._B, self._C, self._D,
                                       **kwargs), **self._dt_dict)
 
+    def to_sos(self, **kwargs):
+        """
+        Convert system representation to `SecondOrderSections`.
+
+        Parameters
+        ----------
+        kwargs : dict, optional
+            Additional keywords passed to `ss2zpk`
+
+        Returns
+        -------
+        sys : instance of `SecondOrderSections`
+            Second order sections representation of the current system
+
+        """
+        return SecondOrderSections(*ss2sos(self._A, self._B, self._C, self._D,
+                                           **kwargs), **self._dt_dict)
+
     def to_ss(self):
         """
         Return a copy of the current `StateSpace` system.
@@ -1738,6 +1783,148 @@ class StateSpaceDiscrete(StateSpace, dlti):
     dt: 0.1
     )
 
+    """
+    pass
+
+
+# TODO:
+#   - Docstrings
+#   - Simulation functions
+#   - freqresp functions
+#   - multiple inputs/outputs? What is current suport in other LTI classes?
+#   - Add sos support cont2discrete
+#   - Add _sos_normalize
+
+class SecondOrderSections(LinearTimeInvariant):
+    r"""Linear Time Invariant system class in second order section form.
+
+    """
+    def __new__(cls, *system, **kwargs):
+        """Handle object conversion if input is an instance of lti."""
+        if len(system) == 1 and isinstance(system[0], LinearTimeInvariant):
+            return system[0].to_sos()
+
+        # Choose whether to inherit from `lti` or from `dlti`
+        if cls is SecondOrderSections:
+            if kwargs.get('dt') is None:
+                return SecondOrderSectionsContinuous.__new__(
+                    SecondOrderSectionsContinuous,
+                    *system,
+                    **kwargs)
+            else:
+                return SecondOrderSectionsDiscrete.__new__(
+                    SecondOrderSectionsDiscrete,
+                    *system,
+                    **kwargs)
+
+        # No special conversion needed
+        return super(SecondOrderSections, cls).__new__(cls)
+
+    def __init__(self, *system, **kwargs):
+        """Initialize the state space LTI system."""
+        # Conversion of lti instances is handled in __new__
+        if isinstance(system[0], LinearTimeInvariant):
+            return
+
+        # Remove system arguments, not needed by parents anymore
+        super(SecondOrderSections, self).__init__(**kwargs)
+
+        self._sections = None
+        sos = _sos_normalize(*system)
+        self.sections = sos
+
+    def __repr__(self):
+        """Return representation of the system's transfer function"""
+        reprstr = '{0}(\n'.format(self.__class__.__name__)
+        for section in self.sections:
+            reprstr += '{0},\n'.format(repr(section))
+        reprstr += 'dt: {0}\n)'.format(repr(self.dt))
+        return reprstr
+
+    @property
+    def sections(self):
+        """Sections of the `SecondOrderSections` system."""
+        return self._sections
+
+    @sections.setter
+    def sections(self, sections):
+        sos, n_sections = _validate_sos(sections)
+        self._sections = sos
+        self.n_sections = n_sections
+
+    def _copy(self, system):
+        """
+        Copy the parameters of another `SecondOrderSections` object
+
+        Parameters
+        ----------
+        system : `SecondOrderSections`
+            The `SecondOrderSections` system that is to be copied
+
+        """
+        self.sections = system.sections
+
+    def to_tf(self):
+        """
+        Convert system representation to `TransferFunction`.
+
+        Returns
+        -------
+        sys : instance of `TransferFunction`
+            Transfer function of the current system
+
+        """
+        return TransferFunction(*sos2tf(self.sections), **self._dt_dict)
+
+    def to_zpk(self):
+        """
+        Convert system representation to `ZerosPolesGain`.
+
+        Returns
+        -------
+        sys : instance of `ZerosPolesGain`
+            Zeros, poles, gain representation of the current system
+
+        """
+        return ZerosPolesGain(*sos2zpk(self.sections), **self._dt_dict)
+
+    def to_ss(self):
+        """
+        Convert system representation to `StateSpace`.
+
+        Returns
+        -------
+        sys : instance of `StateSpace`
+            State space model of the current system
+
+        """
+        return StateSpace(*sos2ss(self.sections), **self._dt_dict)
+
+
+class SecondOrderSectionsContinuous(SecondOrderSections, lti):
+    r"""
+    Continuous-time Linear Time Invariant system in transfer function form.
+
+    """
+    def to_discrete(self, dt, method='zoh', alpha=None):
+        """
+        Returns the discretized `SecondOrderSections` system.
+
+        Parameters: See `cont2discrete` for details.
+
+        Returns
+        -------
+        sys: instance of `dlti` and `StateSpace`
+        """
+        return SecondOrderSections(*cont2discrete(self.sections, dt,
+                                                  method=method,
+                                                  alpha=alpha)[:-1],
+                                   dt=dt)
+
+
+class SecondOrderSectionsDiscrete(SecondOrderSections, dlti):
+    r"""
+    Discrete-time Linear Time Invariant system in transfer function form.
     """
     pass
 
@@ -3641,5 +3828,5 @@ def dbode(system, w=None, n=100):
 
     mag = 20.0 * numpy.log10(abs(y))
     phase = numpy.rad2deg(numpy.unwrap(numpy.angle(y)))
-    
+
     return w / dt, mag, phase

@@ -352,6 +352,10 @@ def group_delay(system, w=None, whole=False):
     return w, gd
 
 
+def _sos_normalize(sos):
+    return sos
+
+
 def _validate_sos(sos):
     """Helper to validate a SOS input"""
     sos = np.atleast_2d(sos)
