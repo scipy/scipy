@@ -415,10 +415,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     -------
     disp : bool
         Set to True to print convergence messages.
-    maxiter : int
-        Maximum number of iterations to perform.
-    maxfev : int
-        Maximum number of function evaluations to make.
+    maxiter, maxfev : int
+        Maximum allowed number of iterations and function evaluations.
+        Will default to ``N*200``, where ``N`` is the number of
+        variables, if neither `maxiter` or `maxfev` is set. If both
+        `maxiter` and `maxfev` are set, minimization will stop at the
+        first reached.
     initial_simplex : array_like of shape (N + 1, N)
         Initial simplex. If given, overrides `x0`.
         ``initial_simplex[j,:]`` should contain the coordinates of
@@ -430,6 +432,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fatol : number, optional
         Absolute error in func(xopt) between iterations that is acceptable for
         convergence.
+
     """
     if 'ftol' in unknown_options:
         warnings.warn("ftol is deprecated for Nelder-Mead,"
@@ -490,10 +493,22 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if retall:
         allvecs = [sim[0]]
 
-    if maxiter is None:
+    # If neither are set, then set both to default
+    if maxiter is None and maxfun is None:
         maxiter = N * 200
-    if maxfun is None:
         maxfun = N * 200
+    elif maxiter is None:
+        # Convert remaining Nones, to np.inf, unless the other is np.inf, in
+        # which case use the default to avoid unbounded iteration
+        if maxfun == np.inf:
+            maxiter = N * 200
+        else:
+            maxiter = np.inf
+    elif maxfun is None:
+        if maxiter == np.inf:
+            maxfun = N * 200
+        else:
+            maxfun = np.inf
 
     one2np1 = list(range(1, N + 1))
     fsim = numpy.zeros((N + 1,), float)
@@ -2384,10 +2399,12 @@ def _minimize_powell(func, x0, args=(), callback=None,
         Relative error in solution `xopt` acceptable for convergence.
     ftol : float
         Relative error in ``fun(xopt)`` acceptable for convergence.
-    maxiter : int
-        Maximum number of iterations to perform.
-    maxfev : int
-        Maximum number of function evaluations to make.
+    maxiter, maxfev : int
+        Maximum allowed number of iterations and function evaluations.
+        Will default to ``N*1000``, where ``N`` is the number of
+        variables, if neither `maxiter` or `maxfev` is set. If both
+        `maxiter` and `maxfev` are set, minimization will stop at the
+        first reached.
     direc : ndarray
         Initial set of direction vectors for the Powell method.
 
@@ -2402,10 +2419,22 @@ def _minimize_powell(func, x0, args=(), callback=None,
     if retall:
         allvecs = [x]
     N = len(x)
-    if maxiter is None:
+    # If neither are set, then set both to default
+    if maxiter is None and maxfun is None:
         maxiter = N * 1000
-    if maxfun is None:
         maxfun = N * 1000
+    elif maxiter is None:
+        # Convert remaining Nones, to np.inf, unless the other is np.inf, in
+        # which case use the default to avoid unbounded iteration
+        if maxfun == np.inf:
+            maxiter = N * 1000
+        else:
+            maxiter = np.inf
+    elif maxfun is None:
+        if maxiter == np.inf:
+            maxfun = N * 1000
+        else:
+            maxfun = np.inf
 
     if direc is None:
         direc = eye(N, dtype=float)

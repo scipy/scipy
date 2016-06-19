@@ -118,6 +118,11 @@ cases. See pull request gh-6024 for details.
 A large suite of global optimization benchmarks has been added to 
 ``scipy/benchmarks/go_benchmark_functions``. See pull request gh-4191 for details.
 
+Nelder-Mead and Powell minimization will now only set defaults for
+maximum iterations or function evaluations if neither limit is set by
+the caller. In some cases with a slow converging function and only 1
+limit set, the minimization may continue for longer than with previous
+versions and so is more likely to reach convergence. See issue gh-5966.
 
 `scipy.stats` improvements
 --------------------------
