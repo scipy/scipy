@@ -30,7 +30,7 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 import numpy
-from scipy._lib.six import callable
+from scipy._lib.six import callable, xrange
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
@@ -1437,6 +1437,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     hcalls = 0
     if maxiter is None:
         maxiter = len(x0)*200
+    cg_maxiter = 20*len(x0)
 
     xtol = len(x0) * avextol
     update = [2 * xtol]
@@ -1465,9 +1466,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             A = fhess(*(xk,) + args)
             hcalls = hcalls + 1
 
-        k2 = 0
-        cg_maxiter = 20*len(x0)
-        while (numpy.add.reduce(numpy.abs(ri)) > termcond) and (k2 < cg_maxiter):
+        for k2 in xrange(cg_maxiter):
+            if numpy.add.reduce(numpy.abs(ri)) <= termcond:
+                break
             if fhess is None:
                 if fhess_p is None:
                     Ap = approx_fhess_p(xk, psupi, fprime, epsilon)
@@ -1496,9 +1497,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             psupi = -ri + betai * psupi
             i = i + 1
             dri0 = dri1          # update numpy.dot(ri,ri) for next time.
-            k2 += 1
-
-        if k2 >= cg_maxiter:
+        else:
             # curvature keeps increasing, bail out
             break
 
