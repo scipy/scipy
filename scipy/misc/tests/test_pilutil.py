@@ -101,6 +101,26 @@ class TestPILUtil(TestCase):
 
 decorate_methods(TestPILUtil, _pilskip)
 
+    def test_imwrite(self):
+        with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+            img = misc.imread(os.path.join(datapath, 'data', 'icon.png'))
+        tmpdir = tempfile.mkdtemp()
+        try:
+            fn1 = os.path.join(tmpdir, 'test.png')
+            fn2 = os.path.join(tmpdir, 'testimg')
+            with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+                misc.imwrite(fn1, img)
+                misc.imwrite(fn2, img, 'PNG')
+
+            with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+                data1 = misc.imread(fn1)
+                data2 = misc.imread(fn2)
+
+            assert_allclose(data1, img)
+            assert_allclose(data2, img)
+        finally:
+            shutil.rmtree(tmpdir)
+
 
 def tst_fromimage(filename, irange, shape):
     fp = open(filename, "rb")
