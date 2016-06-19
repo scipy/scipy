@@ -5,6 +5,7 @@ import sys
 from decimal import Decimal
 from itertools import product
 
+from nose import SkipTest
 from numpy.testing import (
     TestCase, run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
@@ -16,9 +17,9 @@ from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve, hann,
-    hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-    invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt,
-    sosfilt_zi)
+    hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
+    invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
+    sosfilt_zi, tf2zpk)
 from scipy.signal.signaltools import _filtfilt_gust
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
@@ -1281,9 +1282,20 @@ class TestLFilterZI(TestCase):
 
 
 class TestFiltFilt(TestCase):
+    filtfilt_kind = 'tf'
+
+    def filtfilt(self, zpk, x, axis=-1, padtype='odd', padlen=None,
+                 method='pad', irlen=None):
+        if self.filtfilt_kind == 'tf':
+            b, a = zpk2tf(*zpk)
+            return filtfilt(b, a, x, axis, padtype, padlen, method, irlen)
+        elif self.filtfilt_kind == 'sos':
+            sos = zpk2sos(*zpk)
+            return sosfiltfilt(sos, x, axis, padtype, padlen)
 
     def test_basic(self):
-        out = signal.filtfilt([1, 2, 3], [1, 2, 3], np.arange(12))
+        zpk = tf2zpk([1, 2, 3], [1, 2, 3])
+        out = self.filtfilt(zpk, np.arange(12))
         assert_equal(out, arange(12))
 
     def test_sine(self):
@@ -1294,49 +1306,52 @@ class TestFiltFilt(TestCase):
         xhigh = np.sin(250 * 2 * np.pi * t)
         x = xlow + xhigh
 
-        b, a = butter(8, 0.125)
-        z, p, k = tf2zpk(b, a)
+        zpk = butter(8, 0.125, output='zpk')
         # r is the magnitude of the largest pole.
-        r = np.abs(p).max()
+        r = np.abs(zpk[1]).max()
         eps = 1e-5
         # n estimates the number of steps for the
         # transient to decay by a factor of eps.
         n = int(np.ceil(np.log(eps) / np.log(r)))
 
         # High order lowpass filter...
-        y = filtfilt(b, a, x, padlen=n)
+        y = self.filtfilt(zpk, x, padlen=n)
         # Result should be just xlow.
         err = np.abs(y - xlow).max()
         assert_(err < 1e-4)
 
         # A 2D case.
         x2d = np.vstack([xlow, xlow + xhigh])
-        y2d = filtfilt(b, a, x2d, padlen=n, axis=1)
+        y2d = self.filtfilt(zpk, x2d, padlen=n, axis=1)
         assert_equal(y2d.shape, x2d.shape)
         err = np.abs(y2d - xlow).max()
         assert_(err < 1e-4)
 
         # Use the previous result to check the use of the axis keyword.
         # (Regression test for ticket #1620)
-        y2dt = filtfilt(b, a, x2d.T, padlen=n, axis=0)
+        y2dt = self.filtfilt(zpk, x2d.T, padlen=n, axis=0)
         assert_equal(y2d, y2dt.T)
 
     def test_axis(self):
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
-        b, a = butter(3, 0.125)
-        y0 = filtfilt(b, a, x, padlen=0, axis=0)
-        y1 = filtfilt(b, a, np.swapaxes(x, 0, 1), padlen=0, axis=1)
+        zpk = butter(3, 0.125, output='zpk')
+        y0 = self.filtfilt(zpk, x, padlen=0, axis=0)
+        y1 = self.filtfilt(zpk, np.swapaxes(x, 0, 1), padlen=0, axis=1)
         assert_array_equal(y0, np.swapaxes(y1, 0, 1))
-        y2 = filtfilt(b, a, np.swapaxes(x, 0, 2), padlen=0, axis=2)
+        y2 = self.filtfilt(zpk, np.swapaxes(x, 0, 2), padlen=0, axis=2)
         assert_array_equal(y0, np.swapaxes(y2, 0, 2))
 
     def test_acoeff(self):
+        if self.filtfilt_kind != 'tf':
+            return  # only necessary for TF
         # test for 'a' coefficient as single number
         out = signal.filtfilt([.5, .5], 1, np.arange(10))
         assert_allclose(out, np.arange(10), rtol=1e-14, atol=1e-14)
 
     def test_gust_simple(self):
+        if self.filtfilt_kind != 'tf':
+            raise SkipTest('gust only implemented for TF systems')
         # The input array has length 2.  The exact solution for this case
         # was computed "by hand".
         x = np.array([1.0, 2.0])
@@ -1349,6 +1364,8 @@ class TestFiltFilt(TestCase):
                             0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
 
     def test_gust_scalars(self):
+        if self.filtfilt_kind != 'tf':
+            raise SkipTest('gust only implemented for TF systems')
         # The filter coefficients are both scalars, so the filter simply
         # multiplies its input by b/a.  When it is used in filtfilt, the
         # factor is (b/a)**2.
@@ -1358,6 +1375,21 @@ class TestFiltFilt(TestCase):
         y = filtfilt(b, a, x, method="gust")
         expected = (b/a)**2 * x
         assert_allclose(y, expected)
+
+
+class TestSOSFiltFilt(TestFiltFilt):
+    filtfilt_kind = 'sos'
+
+    def test_equivalence(self):
+        """Test equivalence between sosfiltfilt and filtfilt"""
+        x = np.random.RandomState(0).randn(1000)
+        for order in range(1, 6):
+            zpk = signal.butter(order, 0.35, output='zpk')
+            b, a = zpk2tf(*zpk)
+            sos = zpk2sos(*zpk)
+            y = filtfilt(b, a, x)
+            y_sos = sosfiltfilt(sos, x)
+            assert_allclose(y, y_sos, atol=1e-12, err_msg='order=%s' % order)
 
 
 def filtfilt_gust_opt(b, a, x):
@@ -1438,16 +1470,16 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
 
 def test_filtfilt_gust():
     # Design a filter.
-    b, a = signal.ellip(3, 0.01, 120, 0.0875)
+    z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')
 
     # Find the approximate impulse response length of the filter.
-    z, p, k = tf2zpk(b, a)
     eps = 1e-10
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
 
     np.random.seed(123)
 
+    b, a = zpk2tf(z, p, k)
     for irlen in [None, approx_impulse_len]:
         signal_len = 5 * approx_impulse_len
 
@@ -1970,11 +2002,11 @@ class TestSOSFilt(TestCase):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
 
         # Input array is x.
-        np.random.seed(159)
-        x = np.random.randint(0, 5, size=(2, 15, 3))
+        x = np.random.RandomState(159).randint(0, 5, size=(2, 15, 3))
 
-        # Design a filter in SOS format.
-        sos = signal.butter(6, 0.35, output='sos')
+        # Design a filter in ZPK format and convert to SOS
+        zpk = signal.butter(6, 0.35, output='zpk')
+        sos = zpk2sos(*zpk)
         nsections = sos.shape[0]
 
         # Filter along this axis.
@@ -1997,6 +2029,19 @@ class TestSOSFilt(TestCase):
         y = np.concatenate((y1, y2), axis=axis)
         assert_allclose(y, yf, rtol=1e-10, atol=1e-13)
         assert_allclose(z2, zf, rtol=1e-10, atol=1e-13)
+
+        # let's try the "step" initial condition
+        zi = sosfilt_zi(sos)
+        zi.shape = [nsections, 1, 2, 1]
+        zi = zi * x[:, 0:1, :]
+        y = sosfilt(sos, x, axis=axis, zi=zi)[0]
+        # check it against the TF form
+        b, a = zpk2tf(*zpk)
+        zi = lfilter_zi(b, a)
+        zi.shape = [1, zi.size, 1]
+        zi = zi * x[:, 0:1, :]
+        y_tf = lfilter(b, a, x, axis=axis, zi=zi)[0]
+        assert_allclose(y, y_tf, rtol=1e-10, atol=1e-13)
 
     def test_bad_zi_shape(self):
         # The shape of zi is checked before using any values in the
