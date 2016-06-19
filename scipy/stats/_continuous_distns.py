@@ -2979,8 +2979,9 @@ class levy_stable_gen(rv_continuous):
         sz = self._size
         alpha = broadcast_to(alpha, sz)
         beta = broadcast_to(beta, sz)
-        TH = uniform.rvs(loc=-pi/2.0, scale=pi, size=sz)
-        W = expon.rvs(size=sz)
+        TH = uniform.rvs(loc=-pi/2.0, scale=pi, size=sz,
+                         random_state=self._random_state)
+        W = expon.rvs(size=sz, random_state=self._random_state)
         aTH = alpha*TH
         bTH = beta*TH
         cosTH = cos(TH)
