@@ -1161,6 +1161,64 @@ class TestBrute:
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),
                         atol=1e-3)
 
+class TestIterationLimits(TestCase):
+    # Tests that optimisation does not give up before trying requested
+    # number of iterations or evaluations. And that it does not succeed
+    # by exceeding the limits.
+    def setUp(self):
+        self.funcalls = 0
+
+    def slow_func(self, v):
+        self.funcalls += 1
+        r,t = np.sqrt(v[0]**2+v[1]**2), np.arctan2(v[0],v[1])
+        return np.sin(r*20 + t)+r*0.5
+
+    def test_neldermead_limit(self):
+        self.check_limits("Nelder-Mead", 200)
+
+    def test_powell_limit(self):
+        self.check_limits("powell", 1000)
+
+    def check_limits(self, method, default_iters):
+        for start_v in [[0.1,0.1], [1,1], [2,2]]:
+            for mfev in [50, 500, 5000]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    assert_(res["nfev"] < mfev)
+                else:
+                    assert_(res["nfev"] >= mfev)
+            for mit in [50, 500,5000]:
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit})
+                if res["success"]:
+                    assert_(res["nit"] <= mit)
+                else:
+                    assert_(res["nit"] >= mit)
+            for mfev,mit in [[50,50], [5000,5000],[5000,np.inf]]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit, "maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    assert_(res["nfev"] < mfev and res["nit"] <= mit)
+                else:
+                    assert_(res["nfev"] >= mfev or res["nit"] >= mit)
+            for mfev,mit in [[np.inf,None], [None,np.inf]]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit, "maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    if mfev is None:
+                        assert_(res["nfev"] < default_iters*2)
+                    else:
+                        assert_(res["nit"] <= default_iters*2)
+                else:
+                    assert_(res["nfev"] >= default_iters*2 or
+                        res["nit"] >= default_iters*2)
 
 if __name__ == "__main__":
     run_module_suite()
