@@ -64,6 +64,19 @@ class TestMultivariateNormal(TestCase):
         d2 = multivariate_normal.pdf(x, mean, cov)
         assert_allclose(d1, np.log(d2))
 
+    def test_logpdf_default_values(self):
+        # Check that the log of the pdf is in fact the logpdf
+        # with default parameters Mean=None and cov = 1
+        np.random.seed(1234)
+        x = np.random.randn(5)
+        d1 = multivariate_normal.logpdf(x)
+        d2 = multivariate_normal.pdf(x)
+        # check whether default values are being used
+        d3 = multivariate_normal.logpdf(x, None, 1)
+        d4 = multivariate_normal.pdf(x, None, 1)
+        assert_allclose(d1, np.log(d2))
+        assert_allclose(d3, np.log(d4))
+
     def test_rank(self):
         # Check that the rank is detected correctly.
         np.random.seed(1234)
