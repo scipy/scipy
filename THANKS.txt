@@ -179,3 +179,4 @@ Agilent which gave a genereous donation for support of SciPy.
 UC Berkeley for providing travel money and hosting numerous sprints.
 The University of Stellenbosch for funding the development of
     the SciKits portal.
+Google Inc. for updating documentation of hypergeometric distribution.
