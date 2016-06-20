@@ -1379,7 +1379,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     .. [1] D'Agostino, R. B. (1971), "An omnibus test of normality for
            moderate and large sample size", Biometrika, 58, 341-348
 
-    .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Tests for departure from normality. Empirical results for the distributions of b2 and ...", Biometrika, 60, 613-622
+    .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Tests for departure from
+           normality", Biometrika, 60, 613-622
 
     """
     a, axis = _chk_asarray(a, axis)
