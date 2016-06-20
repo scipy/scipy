@@ -2416,10 +2416,11 @@ class _TestSlicingAssign:
             A = B / 10
             B[0,:] = A[0,:]
             assert_array_equal(A[0,:].A, B[0,:].A)
+            assert_equal(A.nnz, B.nnz)
 
             A = B / 10
             B[:,:] = A[:1,:1]
-            assert_equal(A[0,0], B[3,2])
+            assert_array_equal(np.zeros((4,3)) + A[0,0], B.A)
 
             A = B / 10
             B[:-1,0] = A[0,:].T
@@ -2444,6 +2445,19 @@ class _TestSlicingAssign:
             block = [[1,0],[0,4]]
             B[:2,:2] = csc_matrix(array(block))
             assert_array_equal(B.todense()[:2,:2],block)
+
+    def test_sparsity_modifying_assignment(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            B = self.spmatrix((4,3))
+            B[0,0] = 5
+            B[1,2] = 3
+            B[2,1] = 7
+            B[3,0] = 10
+
+            expected = array([[1,0,0],[0,1,0],[0,0,1],[10,0,0]])
+            B[:3] = csr_matrix(np.eye(3))
+            assert_array_equal(B.toarray(), expected)
 
     def test_set_slice(self):
         with warnings.catch_warnings():
