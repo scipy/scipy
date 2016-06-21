@@ -478,6 +478,7 @@ def test_local():
         data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3), rtol=1e-14),
         data_local(cexpm1, 'log1p_expm1_complex', (0,1), (4,5), rtol=1e-14),
         data_local(gammainc, 'gammainc', (0, 1), 2, rtol=5e-9),
+        data_local(gammaincc, 'gammaincc', (0, 1), 2, rtol=1e-7)
     ]
 
     for test in TESTS:
