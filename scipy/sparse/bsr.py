@@ -162,7 +162,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
-                maxval = None
+                maxval = 1
                 if shape is not None:
                     maxval = max(shape)
                 if blocksize is not None:
