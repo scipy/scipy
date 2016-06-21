@@ -168,7 +168,9 @@ class UnivariateSpline(object):
                  ext=0, check_finite=False):
 
         if check_finite:
-            if not np.isfinite(x).all() or not np.isfinite(y).all():
+            w_finite = np.isfinite(w).all() if w is not None else True
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                    not w_finite):
                 raise ValueError("x and y array must not contain NaNs or infs.")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -586,8 +588,9 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
                  ext=0, check_finite=False):
 
         if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all()):
+                    not w_finite):
                 raise ValueError("Input must not contain NaNs or infs.")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -722,8 +725,9 @@ class LSQUnivariateSpline(UnivariateSpline):
                  ext=0, check_finite=False):
 
         if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all() or not np.isfinite(t).all()):
+                    not w_finite or not np.isfinite(t).all()):
                 raise ValueError("Input(s) must not contain NaNs or infs.")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
