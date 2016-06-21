@@ -2,7 +2,6 @@
 # 1999 -- 2002
 
 from __future__ import division, print_function, absolute_import
-sum_builtin = sum
 
 import warnings
 import threading
@@ -19,7 +18,7 @@ from numpy import (allclose, angle, arange, argsort, array, asarray,
                    iscomplexobj, mean, ndarray, newaxis, ones, pi,
                    poly, polyadd, polyder, polydiv, polymul, polysub, polyval,
                    product, r_, ravel, real_if_close, reshape,
-                   roots, sort, sum, take, transpose, unique, where, zeros,
+                   roots, sort, take, transpose, unique, where, zeros,
                    zeros_like)
 import numpy as np
 import math
@@ -80,15 +79,16 @@ def _bvalfromboundary(boundary):
 
 def _inputs_swap_needed(mode, shape1, shape2):
     """
-    If in 'valid' mode, checks whether or not one of the array shapes
-    is at least as large as the other in every dimension. Returns whether
-    or not the input arrays need to be swapped depending on whether shape2
-    is larger than shape1. This is important for some of the correlation and
-    convolution implementations in this module, where the larger array input
-    needs to come before the smaller array input when operating in this mode.
+    If in 'valid' mode, returns whether or not the input arrays need to be
+    swapped depending on whether `shape1` is at least as large as `shape2` in
+    every dimension.
+
+    This is important for some of the correlation and convolution
+    implementations in this module, where the larger array input needs to come
+    before the smaller array input when operating in this mode.
+
     Note that if the mode provided is not 'valid', False is immediately
     returned.
-
     """
     if mode == 'valid':
         ok1, ok2 = True, True
@@ -135,7 +135,7 @@ def correlate(in1, in2, mode='full', method='auto'):
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
     method : str {'auto', 'direct', 'fft'}, optional
-        A string indicating what method used to perform the correlation.
+        A string indicating which method to use to calculate the correlation.
 
         ``direct``
            The correlation is determined directly from sums, the definition of
@@ -155,7 +155,7 @@ def correlate(in1, in2, mode='full', method='auto'):
         An N-dimensional array containing a subset of the discrete linear
         cross-correlation of `in1` with `in2`.
 
-    See also
+    See Also
     --------
     convolve : contains more documentation on `method`.
 
@@ -216,9 +216,8 @@ def correlate(in1, in2, mode='full', method='auto'):
     if method in ('fft', 'auto'):
         return convolve(in1, _reverse_and_conj(in2), mode, method)
 
-    # numpy is significantly faster for 1d (but numpy's 'same' mode uses
-    # the size of the larger input, not the first.)
-    if in1.ndim == in2.ndim == 1 and (in1.size >= in2.size or mode != 'same'):
+    # fastpath to faster numpy.correlate for 1d inputs when possible
+    if _np_conv_ok(in1, in2, mode):
         return np.correlate(in1, in2, mode)
 
     # _correlateND is far slower when in2.size > in1.size, so swap them
@@ -279,8 +278,8 @@ def fftconvolve(in1, in2, mode="full"):
     but can be slower when only a few output values are needed, and can only
     output float arrays (int or object array inputs will be cast to float).
 
-    However, `convolve` performs a rough calculation to see if this method or
-    the direct method is faster (as of v0.18).
+    As of v0.18, `convolve` automatically chooses this method or the direct
+    method based on an estimation of which is faster.
 
     Parameters
     ----------
@@ -412,7 +411,7 @@ def _numeric_arrays(arrays, kinds='buifc'):
 
     Parameters
     ----------
-    ndarrays : list-like
+    ndarrays : array or list of arrays
         arrays to check if numeric.
     numeric_kinds : string-like
         The dtypes of the arrays to be checked. If the dtype.kind of
@@ -440,10 +439,10 @@ def _prod(iterable):
 
 def _fftconv_faster(x, h, mode):
     """
-    See if using fftconvolve or convolve is faster. The value returned (a
-    boolean) depends on the sizes and shapes of the input values.
+    See if using `fftconvolve` or `_correlateND` is faster. The boolean value
+    returned depends on the sizes and shapes of the input values.
 
-    The big O ratios were found to hold to different machines, which makes
+    The big O ratios were found to hold across different machines, which makes
     sense as it's the ratio that matters (the effective speed of the computer
     is found in both big O constants). Regardless, this had been tuned on an
     early 2015 MacBook Pro with 8GB RAM and an Intel i5 processor.
@@ -453,9 +452,11 @@ def _fftconv_faster(x, h, mode):
         big_O_constant = 10963.92823819 if x.ndim == 1 else 8899.1104874
     elif mode == 'same':
         out_shape = x.shape
-        oneD_big_O = {True: 7183.41306773, False: 856.78174111}
         if x.ndim == 1:
-            big_O_constant = oneD_big_O[h.size <= x.size]
+            if h.size <= x.size:
+                big_O_constant = 7183.41306773
+            else:
+                big_O_constant = 856.78174111
         else:
             big_O_constant = 34519.21021589
     elif mode == 'valid':
@@ -467,8 +468,8 @@ def _fftconv_faster(x, h, mode):
     # see whether the Fourier transform convolution method or the direct
     # convolution method is faster (discussed in scikit-image PR #1792)
     direct_time = (x.size * h.size * _prod(out_shape))
-    fft_time = sum_builtin(n * math.log(n) for n in (x.shape + h.shape +
-                                                     tuple(out_shape)))
+    fft_time = sum(n * math.log(n) for n in (x.shape + h.shape +
+                                             tuple(out_shape)))
     return big_O_constant * fft_time < direct_time
 
 
@@ -482,9 +483,9 @@ def _reverse_and_conj(x):
 
 def _np_conv_ok(volume, kernel, mode):
     """
-    See if numpy supports convolution of x and y (if both are 1D ndarrays and
-    of the appropriate shape).  Numpy's 'same' mode uses the size of the
-    larger input, not the first.
+    See if numpy supports convolution of `volume` and `kernel` (i.e. both are
+    1D ndarrays and of the appropriate shape).  Numpy's 'same' mode uses the
+    size of the larger input, while Scipy's uses the size of the first input.
     """
     np_conv_ok = volume.ndim == kernel.ndim == 1
     return np_conv_ok and (volume.size >= kernel.size or mode != 'same')
@@ -513,13 +514,13 @@ def _fftconvolve_valid(volume, kernel):
 
 def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     """
-    Faster, less painstaking version of timeit_auto for automated
-    testing of many inputs.
+    Faster, less precise version of IPython's timeit.
 
     Will do only 1 loop (like IPython's timeit) with no repetitions
-    (unlike IPython) for very slow functions.  Only does enough loops
-    to take 5 ms, which seems to produce similar results on Windows at
-    least, and avoids doing an extraneous cycle that isn't measured.
+    (unlike IPython) for very slow functions.  For fast functions, only does
+    enough loops to take 5 ms, which seems to produce similar results (on
+    Windows at least), and avoids doing an extraneous cycle that isn't
+    measured.
     """
     t = timeit.Timer(stmt, setup)
 
@@ -544,7 +545,13 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
 
 def choose_conv_method(in1, in2, mode='full', measure=False):
     """
-    A method to find the fastest convolution method.
+    Find the fastest convolution/correlation method.
+
+    This primarily exists to be called during the ``method='auto'`` option in
+    `convolve` and `correlate`, but can also be used when performing many
+    convolutions of the same input shapes and dtypes, determining
+    which method to use for all of them, either to avoid the overhead of the
+    'auto' option or to use accurate real-world measurements.
 
     Parameters
     ----------
@@ -565,9 +572,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
     measure : bool, optional
-        If True, run and time the convolution with `in1` and `in2` and return
-        the fastest method. If False (default), predict the fastest method
-        using precomputed values.
+        If True, run and time the convolution of `in1` and `in2` with both
+        methods and return the fastest. If False (default), predict the fastest
+        method using precomputed values.
 
     Returns
     -------
@@ -578,22 +585,22 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
         A dictionary containing the times needed for each method. This value is
         only returned if `measure=True`.
 
-    See also
+    See Also
     --------
     convolve
     correlate
 
     Notes
     -----
-    For large n, this function is accurate and can decide upon the fastest
-    method to perform the convolution.  However, this function is not as
+    For large n, ``measure=False`` is accurate and can quickly determine the
+    fastest method to perform the convolution.  However, this is not as
     accurate for small n (when any dimension in the input or output is small).
 
     In practice, we found that this function estimates the faster method up to
     a multiplicative factor of 5 (i.e., the estimated method is *at most* 5
     times slower than the fastest method). The estimation values were tuned on
-    an early 2015 MacBook Pro with 8GB RAB but we found that the prediction
-    held *fairly* accurate across different machines.
+    an early 2015 MacBook Pro with 8GB RAM but we found that the prediction
+    held *fairly* accurately across different machines.
 
     """
     volume = asarray(in1)
@@ -601,7 +608,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     if measure:
         setup = ("from scipy.signal import convolve\n"
-                 "x, h = {}, {}".format(volume.tolist(), kernel.tolist()))
+                 "from numpy import array\n"
+                 "x, h = array({}), array({})".format(volume.tolist(),
+                                                      kernel.tolist()))
         times = {}
         for method in ['fft', 'direct']:
             to_time = 'convolve(x, h, mode="{}", method="{}")'.format(mode,
@@ -617,7 +626,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
             return 'direct'
 
     # for integer input,
-    # catch when more precision required than float provides (representing a
+    # catch when more precision required than float provides (representing an
     # integer as float can lose precision in fftconvolve if larger than 2**52)
     if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
         max_value = int(np.abs(volume).max()) * int(np.abs(kernel).max())
@@ -659,7 +668,7 @@ def convolve(in1, in2, mode='full', method='auto'):
            The output is the same size as `in1`, centered
            with respect to the 'full' output.
     method : str {'auto', 'direct', 'fft'}, optional
-        A string indicating what method used to perform the convolution.
+        A string indicating which method to use to calculate the convolution.
 
         ``direct``
            The convolution is determined directly from sums, the definition of
@@ -679,7 +688,7 @@ def convolve(in1, in2, mode='full', method='auto'):
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
 
-    See also
+    See Also
     --------
     numpy.polymul : performs polynomial multiplication (same operation, but
                     also accepts poly1d objects)
@@ -688,13 +697,12 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     Notes
     -----
-    By default, `convolve` and `correlate` use `method=auto` which uses
-    `choose_conv_method` to choose the method that is fastest using
-    pre-computed values (pre-computed values by default; can perform timing
-    with keyword argument). Because `fftconvolve` relies on floating point
-    numbers, there are certain constraints that may force `method=direct` (more
-    detail in `choose_conv_method` docstring). If `method=fft` is specified,
-    this function will go directly to `fftconvolve`.
+    By default, `convolve` and `correlate` use ``method='auto'``, which calls
+    `choose_conv_method` to choose the fastest method using pre-computed
+    values (`choose_conv_method` can also measure real-world timing with a
+    keyword argument). Because `fftconvolve` relies on floating point numbers,
+    there are certain constraints that may force `method=direct` (more detail
+    in `choose_conv_method` docstring).
 
     Examples
     --------
@@ -739,7 +747,7 @@ def convolve(in1, in2, mode='full', method='auto'):
             out = np.around(out)
         return out.astype(volume.dtype)
 
-    # fastpath to faster numpy convolve for 1d inputs
+    # fastpath to faster numpy.convolve for 1d inputs when possible
     if _np_conv_ok(volume, kernel, mode):
         return np.convolve(volume, kernel, mode)
 
@@ -1386,10 +1394,10 @@ def lfiltic(b, a, y, x=None):
         y = r_[y, zeros(N - L)]
 
     for m in range(M):
-        zi[m] = sum(b[m + 1:] * x[:M - m], axis=0)
+        zi[m] = np.sum(b[m + 1:] * x[:M - m], axis=0)
 
     for m in range(N):
-        zi[m] -= sum(a[m + 1:] * y[:N - m], axis=0)
+        zi[m] -= np.sum(a[m + 1:] * y[:N - m], axis=0)
 
     return zi
 
@@ -1429,7 +1437,7 @@ def deconvolve(signal, divisor):
     >>> recovered
     array([ 0.,  1.,  0.,  0.,  1.,  1.,  0.,  0.])
 
-    See also
+    See Also
     --------
     numpy.polydiv : performs polynomial division (same operation, but
                     also accepts poly1d objects)
@@ -1936,7 +1944,7 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     k : ndarray
         Coefficients of the direct polynomial term.
 
-    See also
+    See Also
     --------
     invresz, residue, unique_roots
 
@@ -2102,7 +2110,7 @@ def resample(x, num, t=None, axis=0, window=None):
         containing the resampled array and the corresponding resampled
         positions.
 
-    See also
+    See Also
     --------
     decimate : Downsample the signal after applying an FIR or IIR filter.
     resample_poly : Resample using polyphase filtering and an FIR filter.
@@ -2219,7 +2227,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     resampled_x : array
         The resampled array.
 
-    See also
+    See Also
     --------
     decimate : Downsample the signal after applying an FIR or IIR filter.
     resample : Resample up or down using the FFT method.
