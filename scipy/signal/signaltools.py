@@ -506,7 +506,7 @@ def _fftconvolve_valid(volume, kernel):
         if max_value > 2**np.finfo('float').nmant - 1:
             return False
 
-    if volume.dtype.kind not in 'buifc' and kernel.dtype.kind not in 'buifc':
+    if _numeric_arrays([volume, kernel]):
         return False
 
     return True
@@ -514,13 +514,17 @@ def _fftconvolve_valid(volume, kernel):
 
 def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     """
-    Faster, less precise version of IPython's timeit.
+    Returns a time the function took, in seconds.
+
+    Faster, less precise version of IPython's timeit. It can string to time but
+    can also take a callable as input.
 
     Will do only 1 loop (like IPython's timeit) with no repetitions
     (unlike IPython) for very slow functions.  For fast functions, only does
     enough loops to take 5 ms, which seems to produce similar results (on
     Windows at least), and avoids doing an extraneous cycle that isn't
     measured.
+
     """
     t = timeit.Timer(stmt, setup)
 
@@ -539,8 +543,8 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
         r = t.repeat(repeat, number)
         best = min(r)
 
-    usec = best * 1e6 / number
-    return usec
+    sec = best / number
+    return sec
 
 
 def choose_conv_method(in1, in2, mode='full', measure=False):
@@ -582,8 +586,8 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
         A string indicating which convolution method is fastest, either
         'direct' or 'fft'
     times : dict, optional
-        A dictionary containing the times needed for each method. This value is
-        only returned if `measure=True`.
+        A dictionary containing the times (in seconds) needed for each method.
+        This value is only returned if ``measure=True``.
 
     See Also
     --------
@@ -602,20 +606,21 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     an early 2015 MacBook Pro with 8GB RAM but we found that the prediction
     held *fairly* accurately across different machines.
 
+    If ``measure=True``, time the convolutions. Because this function uses
+    `fftconvolve`, an error will be thrown if it does not support the inputs.
+    There are cases when `fftconvolve` supports the inputs but this function
+    returns `direct` (e.g., to protect against floating point integer
+    precision).
+
     """
     volume = asarray(in1)
     kernel = asarray(in2)
 
     if measure:
-        setup = ("from scipy.signal import convolve\n"
-                 "from numpy import array\n"
-                 "x, h = array({}), array({})".format(volume.tolist(),
-                                                      kernel.tolist()))
         times = {}
         for method in ['fft', 'direct']:
-            to_time = 'convolve(x, h, mode="{}", method="{}")'.format(mode,
-                                                                      method)
-            times[method] = _timeit_fast(to_time, setup)
+            times[method] = _timeit_fast(lambda: convolve(volume, kernel,
+                                         mode=mode, method=method))
 
         chosen_method = 'fft' if times['fft'] < times['direct'] else 'direct'
         return chosen_method, times
