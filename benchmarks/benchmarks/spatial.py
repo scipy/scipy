@@ -131,7 +131,7 @@ class Neighbors(Benchmark):
         dim | # points T1 | # points T2 | p | probe radius |  BoxSize | LeafSize | cls
         """
 
-        if cls_str != 'cKDTree_weighted':
+        if cls != 'cKDTree_weighted':
             self.T1.count_neighbors(self.T2, probe_radius, p=p)
         else:
             self.T1.count_neighbors(self.T2, probe_radius, self_weights=self.w1, other_weights=self.w2, p=p)
