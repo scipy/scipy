@@ -77,12 +77,12 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
     array([  0,   1,   4,   0,  64, 125])
 
     >>> _lazyselect([x < 3, x > 3], [lambda x: x**2, lambda x: x**3], (x,))
-    array([   0.,    1.,    4.,   nan,   64.,  125.])
+    array([   0.,    1.,    4.,   0.,   64.,  125.])
 
     >>> a = -np.ones_like(x)
     >>> _lazyselect([x < 3, x > 3],
     ...             [lambda x, a: x**2, lambda x, a: a * x**3],
-    ...             (x, a))
+    ...             (x, a), default=np.nan)
     array([   0.,    1.,    4.,   nan,  -64., -125.])
 
     """
