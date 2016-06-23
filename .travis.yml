@@ -11,9 +11,9 @@ matrix:
         - NUMPYSPEC=numpy
       before_install:
         - pip install pep8==1.7.0
-        - pip install pyflakes
+        - pip install pyflakes==1.1.0
       script:
-        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
+        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
         - pep8 scipy benchmarks/benchmarks
     - python: 2.7
       env:
@@ -55,6 +55,7 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC="numpy==1.7.2"
+        - USE_SDIST=1
     - python: 2.7
       env:
         - TESTMODE=full
@@ -96,7 +97,7 @@ before_install:
   # Speed up install by not compiling Cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython==0.22
   - travis_retry pip install $NUMPYSPEC
-  - travis_retry pip install nose mpmath argparse Pillow codecov
+  - travis_retry pip install nose mpmath argparse Pillow codecov setuptools
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
   - if [ "${USE_WHEEL}" == "1" ]; then pip install wheel; fi
@@ -116,6 +117,13 @@ script:
         # Need verbose output or TravisCI will terminate after 10 minutes
         pip wheel . -v
         pip install wheelhouse/* -v
+        USE_WHEEL_BUILD="--no-build"
+    elif [ "${USE_SDIST}" == "1" ]; then
+        python setup.py sdist
+        # Move out of source directory to avoid finding local scipy
+        pushd dist
+        pip install scipy*
+        popd
         USE_WHEEL_BUILD="--no-build"
     fi
   - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD |& tee runtests.log

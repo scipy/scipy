@@ -49,7 +49,8 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
 
     arrays = np.broadcast_arrays(*arrays)
     temp = tuple(np.extract(cond, arr) for arr in arrays)
-    out = _valarray(np.shape(arrays[0]), value=fillvalue)
+    tcode = np.mintypecode([a.dtype.char for a in arrays])
+    out = _valarray(np.shape(arrays[0]), value=fillvalue, typecode=tcode)
     np.place(out, cond, f(*temp))
     if f2 is not None:
         temp = tuple(np.extract(~cond, arr) for arr in arrays)

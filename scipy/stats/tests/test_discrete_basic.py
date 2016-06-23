@@ -98,15 +98,20 @@ def check_cdf_ppf(distfn, arg, supp, msg):
                            supp, msg + '-roundtrip')
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg) - 1e-8, *arg),
                            supp, msg + '-roundtrip')
-    supp1 = supp[supp < distfn.b]
-    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
-                           supp1 + distfn.inc, msg + 'ppf-cdf-next')
-    # -1e-8 could cause an error if pmf < 1e-8
+
+    if not hasattr(distfn, 'xk'):
+        supp1 = supp[supp < distfn.b]
+        npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
+                               supp1 + distfn.inc, msg + ' ppf-cdf-next')
+        # -1e-8 could cause an error if pmf < 1e-8
 
 
 def check_pmf_cdf(distfn, arg, distname):
-    startind = int(distfn.ppf(0.01, *arg) - 1)
-    index = list(range(startind, startind + 10))
+    if hasattr(distfn, 'xk'):
+        index = distfn.xk
+    else:
+        startind = int(distfn.ppf(0.01, *arg) - 1)
+        index = list(range(startind, startind + 10))
     cdfs = distfn.cdf(index, *arg)
     pmfs_cum = distfn.pmf(index, *arg).cumsum()
 

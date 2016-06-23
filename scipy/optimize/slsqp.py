@@ -17,6 +17,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['approx_jacobian','fmin_slsqp']
 
+import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isfinite, atleast_1d
@@ -327,7 +328,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Decompose bounds into xl and xu
     if bounds is None or len(bounds) == 0:
-        xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
+        xl = np.empty(n, dtype=float)
+        xu = np.empty(n, dtype=float)
+        xl.fill(np.nan)
+        xu.fill(np.nan)
     else:
         bnds = array(bounds, float)
         if bnds.shape[0] != n:
@@ -340,10 +344,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                              ', '.join(str(b) for b in bnderr))
         xl, xu = bnds[:, 0], bnds[:, 1]
 
-        # filter -inf, inf and NaN values
+        # Mark infinite bounds with nans; the Fortran code understands this
         infbnd = ~isfinite(bnds)
-        xl[infbnd[:, 0]] = -1.0E12
-        xu[infbnd[:, 1]] = 1.0E12
+        xl[infbnd[:, 0]] = np.nan
+        xu[infbnd[:, 1]] = np.nan
 
     # Initialize the iteration counter and the mode value
     mode = array(0,int)

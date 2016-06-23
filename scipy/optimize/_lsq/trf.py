@@ -93,6 +93,8 @@ References
 .. [JJMore] More, J. J., "The Levenberg-Marquardt Algorithm: Implementation
     and Theory," Numerical Analysis, ed. G. A. Watson, Lecture
 """
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import svd, qr

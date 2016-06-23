@@ -5,18 +5,20 @@ import warnings
 import numpy as np
 
 from numpy.testing import (
-    assert_almost_equal, assert_array_equal, TestCase, run_module_suite,
-    assert_allclose, assert_equal, assert_, assert_raises)
+    assert_almost_equal, assert_array_equal, assert_array_almost_equal,
+    TestCase, run_module_suite, assert_allclose, assert_equal, assert_,
+    assert_raises)
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
     BarycentricInterpolator, barycentric_interpolate,
     approximate_taylor_polynomial, pchip, PchipInterpolator,
-    Akima1DInterpolator, CubicSpline)
+    pchip_interpolate, Akima1DInterpolator, CubicSpline)
 from scipy._lib.six import xrange
 
 
-def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
+def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
+                extra_args={}):
     np.random.seed(1234)
 
     x = [-1, 0, 1]
@@ -29,7 +31,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
         return
 
     xi = np.zeros(x_shape)
-    yi = interpolator_cls(x, y, axis=axis)(xi)
+    yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
 
     target_shape = ((deriv_shape or ()) + y.shape[:axis]
                     + x_shape + y.shape[axis:][1:])
@@ -37,7 +39,7 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0):
 
     # check it works also with lists
     if x_shape and y.size > 0:
-        interpolator_cls(list(x), list(y), axis=axis)(list(xi))
+        interpolator_cls(list(x), list(y), axis=axis, **extra_args)(list(xi))
 
     # check also values
     if xi.size > 0 and deriv_shape is None:
@@ -57,8 +59,12 @@ def test_shapes():
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
-                    yield check_shape, ip, s1, s2, None, axis
-
+                    if ip != CubicSpline:
+                        yield check_shape, ip, s1, s2, None, axis
+                    else:
+                        for bc in ['natural', 'clamped']:
+                            extra = {'bc_type': bc}
+                            yield check_shape, ip, s1, s2, None, axis, extra
 
 def test_derivs_shapes():
     def krogh_derivs(x, y, axis=0):
@@ -416,109 +422,210 @@ class TestPCHIP(TestCase):
         xx = np.linspace(0, 9, 101)
         assert_equal(pch(xx), 0.)
 
+    def test_two_points(self):
+        # regression test for gh-6222: pchip([0, 1], [0, 1]) fails because
+        # it tries to use a three-point scheme to estimate edge derivatives,
+        # while there are only two points available.
+        # Instead, it should construct a linear interpolator.
+        x = np.linspace(0, 1, 11)
+        p = pchip([0, 1], [0, 2])
+        assert_allclose(p(x), 2*x, atol=1e-15)
+
+    def test_pchip_interpolate(self):
+        assert_array_almost_equal(
+            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=1),
+            [1.])
+
+        assert_array_almost_equal(
+            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=0),
+            [3.5])
+
+        assert_array_almost_equal(
+            pchip_interpolate([1,2,3], [4,5,6], [0.5], der=[0, 1]),
+            [[3.5], [1]])
+
 
 class TestCubicSpline(object):
-    def test_general(self):
-        # This test can be reproduced in Octave/MATLAB with the following code:
-        # x = [-1, 0, 0.5, 2, 4, 4.5, 5.5, 9];
-        # y = [0, -0.5, 2, 3, 2.5, 1, 1, 0.5];
-        # x_eval = [-0.5, 0.1, 1, 3, 4.1, 5, 7];
-        # y_true = spline(x, y, x_eval);
+    @staticmethod
+    def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
+                          tol=1e-14):
+        """Check that spline coefficients satisfy the continuity and boundary
+        conditions."""
+        x = S.x
+        c = S.c
+        dx = np.diff(x)
+        dx = dx.reshape([dx.shape[0]] + [1] * (c.ndim - 2))
+        dxi = dx[:-1]
 
+        # Check C2 continuity.
+        assert_allclose(c[3, 1:], c[0, :-1] * dxi**3 + c[1, :-1] * dxi**2 +
+                        c[2, :-1] * dxi + c[3, :-1], rtol=tol, atol=tol)
+        assert_allclose(c[2, 1:], 3 * c[0, :-1] * dxi**2 +
+                        2 * c[1, :-1] * dxi + c[2, :-1], rtol=tol, atol=tol)
+        assert_allclose(c[1, 1:], 3 * c[0, :-1] * dxi + c[1, :-1],
+                        rtol=tol, atol=tol)
+
+        # Check that we found a parabola, the third derivative is 0.
+        if x.size == 3 and bc_start == 'not-a-knot' and bc_end == 'not-a-knot':
+            assert_allclose(c[0], 0, rtol=tol, atol=tol)
+            return
+
+        # Check periodic boundary conditions.
+        if bc_start == 'periodic':
+            assert_allclose(S(x[0], 0), S(x[-1], 0), rtol=tol, atol=tol)
+            assert_allclose(S(x[0], 1), S(x[-1], 1), rtol=tol, atol=tol)
+            assert_allclose(S(x[0], 2), S(x[-1], 2), rtol=tol, atol=tol)
+            return
+
+        # Check other boundary conditions.
+        if bc_start == 'not-a-knot':
+            if x.size == 2:
+                slope = (S(x[1]) - S(x[0])) / dx[0]
+                assert_allclose(S(x[0], 1), slope, rtol=tol, atol=tol)
+            else:
+                assert_allclose(c[0, 0], c[0, 1], rtol=tol, atol=tol)
+        elif bc_start == 'clamped':
+            assert_allclose(S(x[0], 1), 0, rtol=tol, atol=tol)
+        elif bc_start == 'natural':
+            assert_allclose(S(x[0], 2), 0, rtol=tol, atol=tol)
+        else:
+            order, value = bc_start
+            assert_allclose(S(x[0], order), value, rtol=tol, atol=tol)
+
+        if bc_end == 'not-a-knot':
+            if x.size == 2:
+                slope = (S(x[1]) - S(x[0])) / dx[0]
+                assert_allclose(S(x[1], 1), slope, rtol=tol, atol=tol)
+            else:
+                assert_allclose(c[0, -1], c[0, -2], rtol=tol, atol=tol)
+        elif bc_end == 'clamped':
+            assert_allclose(S(x[-1], 1), 0, rtol=tol, atol=tol)
+        elif bc_end == 'natural':
+            assert_allclose(S(x[-1], 2), 0, rtol=tol, atol=tol)
+        else:
+            order, value = bc_end
+            assert_allclose(S(x[-1], order), value, rtol=tol, atol=tol)
+
+    def check_all_bc(self, x, y, axis):
+        deriv_shape = list(y.shape)
+        del deriv_shape[axis]
+        first_deriv = np.empty(deriv_shape)
+        first_deriv.fill(2)
+        second_deriv = np.empty(deriv_shape)
+        second_deriv.fill(-1)
+        bc_all = [
+            'not-a-knot',
+            'natural',
+            'clamped',
+            (1, first_deriv),
+            (2, second_deriv)
+        ]
+        for bc in bc_all[:3]:
+            S = CubicSpline(x, y, axis=axis, bc_type=bc)
+            self.check_correctness(S, bc, bc)
+
+        for bc_start in bc_all:
+            for bc_end in bc_all:
+                S = CubicSpline(x, y, axis=axis, bc_type=(bc_start, bc_end))
+                self.check_correctness(S, bc_start, bc_end, tol=2e-14)
+
+    def test_general(self):
         x = np.array([-1, 0, 0.5, 2, 4, 4.5, 5.5, 9])
         y = np.array([0, -0.5, 2, 3, 2.5, 1, 1, 0.5])
+        for n in [2, 3, x.size]:
+            self.check_all_bc(x[:n], y[:n], 0)
 
-        x_test = np.array([-0.5, 0.1, 1, 3, 4.1, 5, 7])
-        y_true = np.array([
-            -2.111801336869092, 0.019677035288960, 3.164826064645384,
-            3.384966086626085, 2.210195906837064, 0.464510284120531,
-            4.956649059572205])
+            Y = np.empty((2, n, 2))
+            Y[0, :, 0] = y[:n]
+            Y[0, :, 1] = y[:n] - 1
+            Y[1, :, 0] = y[:n] + 2
+            Y[1, :, 1] = y[:n] + 3
+            self.check_all_bc(x[:n], Y, 1)
 
-        cs = CubicSpline(x, y)
-        assert_allclose(cs(x_test), y_true, rtol=1e-12)
+    def test_periodic(self):
+        for n in [2, 3, 5]:
+            x = np.linspace(0, 2 * np.pi, n)
+            y = np.cos(x)
+            S = CubicSpline(x, y, bc_type='periodic')
+            self.check_correctness(S, 'periodic', 'periodic')
 
-        Y = np.vstack((y, y)).T
-        cs = CubicSpline(x, Y)
-        Y_true = np.vstack((y_true, y_true)).T
-        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
+            Y = np.empty((2, n, 2))
+            Y[0, :, 0] = y
+            Y[0, :, 1] = y + 2
+            Y[1, :, 0] = y - 1
+            Y[1, :, 1] = y + 5
+            S = CubicSpline(x, Y, axis=1, bc_type='periodic')
+            self.check_correctness(S, 'periodic', 'periodic')
 
-        Y = np.vstack((y, y))
-        cs = CubicSpline(x, Y, axis=1)
-        Y_true = np.vstack((y_true, y_true))
-        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
-
-        Y = np.empty((2, 2, 8))
-        Y[0, 0, :] = y
-        Y[0, 1, :] = y
-        Y[1, 0, :] = y
-        Y[1, 1, :] = y
-        cs = CubicSpline(x, Y, axis=-1)
-        Y_true = np.empty((2, 2, 7))
-        Y_true[0, 0, :] = y_true
-        Y_true[0, 1, :] = y_true
-        Y_true[1, 0, :] = y_true
-        Y_true[1, 1, :] = y_true
-        assert_allclose(cs(x_test), Y_true, rtol=1e-12)
-
-    def test_corner_cases(self):
-        x = np.array([-1, 0, 1])
-        y = np.array([2, 0, 1])
-        x_test = np.array([-0.5, 0.5])
-        y_true = np.array([5/8, 1/8])
-        cs = CubicSpline(x, y)
-        assert_allclose(cs(x_test), y_true, rtol=1e-12)
-
-        x = np.array([-1, 1])
-        y = np.array([-1, 3])
-        y_true = np.array([0, 2])
-        cs = CubicSpline(x, y)
-        assert_allclose(cs(x_test), y_true, rtol=1e-12)
-
-    def _check_continuity(self, S, tol=1e-12):
-        # Check that spline coefficients satisfy the continuity conditions.
-        # Checking continuity by evaluations is not reliable as the tolerance
-        # will depend on derivative values.
-        c = S.c
-        dx = np.diff(S.x)[:-1]
-        assert_allclose(c[3, 1:], c[0, :-1] * dx**3 + c[1, :-1] * dx**2 +
-                        c[2, :-1] * dx + c[3, :-1], rtol=tol, atol=tol)
-        assert_allclose(c[2, 1:], 3 * c[0, :-1] * dx**2 + 2 * c[1, :-1] * dx +
-                        c[2, :-1], rtol=tol, atol=tol)
-        assert_allclose(c[1, 1:], 3 * c[0, :-1] * dx + c[1, :-1],
-                        rtol=tol, atol=tol)
+    def test_periodic_eval(self):
+        x = np.linspace(0, 2 * np.pi, 10)
+        y = np.cos(x)
+        S = CubicSpline(x, y, bc_type='periodic')
+        assert_almost_equal(S(1), S(1 + 2 * np.pi), decimal=15)
 
     def test_dtypes(self):
         x = np.array([0, 1, 2, 3], dtype=int)
         y = np.array([-5, 2, 3, 1], dtype=int)
-        cs = CubicSpline(x, y)
-        assert_allclose(y, cs(x), rtol=1e-12)
-        self._check_continuity(cs)
+        S = CubicSpline(x, y)
+        self.check_correctness(S)
 
         y = np.array([-1+1j, 0.0, 1-1j, 0.5-1.5j])
-        cs = CubicSpline(x, y)
-        assert_allclose(y, cs(x), rtol=1e-12)
-        self._check_continuity(cs)
+        S = CubicSpline(x, y)
+        self.check_correctness(S)
+
+        S = CubicSpline(x, x ** 3, bc_type=("natural", (1, 2j)))
+        self.check_correctness(S, "natural", (1, 2j))
+
+        y = np.array([-5, 2, 3, 1])
+        S = CubicSpline(x, y, bc_type=[(1, 2 + 0.5j), (2, 0.5 - 1j)])
+        self.check_correctness(S, (1, 2 + 0.5j), (2, 0.5 - 1j))
 
     def test_small_dx(self):
         rng = np.random.RandomState(0)
         x = np.sort(rng.uniform(size=100))
         y = 1e4 + rng.uniform(size=100)
-        cs = CubicSpline(x, y)
-        assert_allclose(cs(x), y, rtol=1e-12)
-        self._check_continuity(cs)
+        S = CubicSpline(x, y)
+        self.check_correctness(S, tol=1e-13)
 
     def test_incorrect_inputs(self):
-        x = np.array([1, 2, 3])
-        y = np.array([1, 2, 3])
-        xc = np.array([1 + 1j, 2, 3])
-        xn = np.array([np.nan, 2, 3])
-        xo = np.array([2, 1, 3])
-        yn = np.array([np.nan, 2, 3])
+        x = np.array([1, 2, 3, 4])
+        y = np.array([1, 2, 3, 4])
+        xc = np.array([1 + 1j, 2, 3, 4])
+        xn = np.array([np.nan, 2, 3, 4])
+        xo = np.array([2, 1, 3, 4])
+        yn = np.array([np.nan, 2, 3, 4])
+        y3 = [1, 2, 3]
+        x1 = [1]
+        y1 = [1]
 
         assert_raises(ValueError, CubicSpline, xc, y)
         assert_raises(ValueError, CubicSpline, xn, y)
         assert_raises(ValueError, CubicSpline, x, yn)
         assert_raises(ValueError, CubicSpline, xo, y)
+        assert_raises(ValueError, CubicSpline, x, y3)
+        assert_raises(ValueError, CubicSpline, x[:, np.newaxis], y)
+        assert_raises(ValueError, CubicSpline, x1, y1)
+
+        wrong_bc = [('periodic', 'clamped'),
+                    ((2, 0), (3, 10)),
+                    ((1, 0), ),
+                    (0., 0.),
+                    'not-a-typo']
+
+        for bc_type in wrong_bc:
+            assert_raises(ValueError, CubicSpline, x, y, 0, bc_type, True)
+
+        # Shapes mismatch when giving arbitrary derivative values:
+        Y = np.c_[y, y]
+        bc1 = ('clamped', (1, 0))
+        bc2 = ('clamped', (1, [0, 0, 0]))
+        bc3 = ('clamped', (1, [[0, 0]]))
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc1, True)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc2, True)
+        assert_raises(ValueError, CubicSpline, x, Y, 0, bc3, True)
+
+        # periodic condition, y[-1] must be equal to y[0]:
+        assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
 
 if __name__ == '__main__':

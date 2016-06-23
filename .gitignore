@@ -67,6 +67,7 @@ dist
 MANIFEST
 # distutils configuration
 site.cfg
+setup.cfg
 # other temporary files
 .coverage
 .deps
@@ -97,6 +98,7 @@ site.cfg
 ehthumbs.db
 Icon?
 Thumbs.db
+*.dSYM
 
 # Documentation generated files #
 #################################
@@ -196,6 +198,8 @@ scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.cxx
 scipy/spatial/ckdtree.h
 scipy/spatial/qhull.c
+scipy/special/_comb.c
+scipy/spatial/qhull_misc_config.h
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
@@ -209,6 +213,7 @@ scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c
 scipy/stats/statlibmodule.c
 scipy/stats/vonmises_cython.c
+scipy/stats/_stats.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c

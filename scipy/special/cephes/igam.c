@@ -83,15 +83,36 @@
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
  */
 
+/* Scipy changes:
+ * - 05-01-2016: added asymptotic expansion for igam to improve the
+ *   a ~ x regime.
+ */
+
 #include "mconf.h"
+#include "igam.h"
+
+#ifdef MAXITER
+#undef MAXITER
+#endif
+#define MAXITER 1000
+
+#define SMALL 25
+#define TOL 2.2204460492503131e-16
 
 extern double MACHEP, MAXLOG;
 static double big = 4.503599627370496e15;
 static double biginv = 2.22044604925031308085e-16;
 
+double igamc(double, double);
+double igam(double, double);
+double igam_pow(double, double);
+double igam_asy(double, double);
+
+
 double igamc(a, x)
 double a, x;
 {
+    int i;
     double ans, ax, c, yc, r, t, y, z;
     double pk, pkm1, pkm2, qk, qkm1, qkm2;
 
@@ -123,7 +144,7 @@ double a, x;
     qkm1 = z * x;
     ans = pkm1 / qkm1;
 
-    do {
+    for (i = 0; i < MAXITER; i++) {
 	c += 1.0;
 	y += 1.0;
 	z += 2.0;
@@ -147,28 +168,19 @@ double a, x;
 	    qkm2 *= biginv;
 	    qkm1 *= biginv;
 	}
+	if (t <= MACHEP) {
+	    break;
+	}
     }
-    while (t > MACHEP);
 
     return (ans * ax);
 }
 
 
-
-/* left tail of incomplete Gamma function:
- *
- *          inf.      k
- *   a  -x   -       x
- *  x  e     >   ----------
- *           -     -
- *          k=0   | (a+k+1)
- *
- */
-
 double igam(a, x)
 double a, x;
 {
-    double ans, ax, c, r;
+    double lambda;
 
     /* Check zero integration limit first */
     if (x == 0)
@@ -179,8 +191,24 @@ double a, x;
 	return (NPY_NAN);
     }
 
+    lambda = x / a;
+    if (x > SMALL && a > SMALL && lambda > 0.7 && lambda < 1.3) {
+	return igam_asy(a, x);
+    }
+
     if ((x > 1.0) && (x > a))
 	return (1.0 - igamc(a, x));
+
+    return igam_pow(a, x);
+}
+
+
+/* Compute igam using DLMF 8.11.4. */
+double igam_pow(a, x)
+double a, x;
+{
+    int i;
+    double ans, ax, c, r;
 
     /* Compute  x**a * exp(-x) / Gamma(a)  */
     ax = a * log(x) - x - lgam(a);
@@ -189,18 +217,73 @@ double a, x;
 	return (0.0);
     }
     ax = exp(ax);
-
+    
     /* power series */
     r = a;
     c = 1.0;
     ans = 1.0;
-
-    do {
+    
+    for (i = 0; i < MAXITER; i++) {
 	r += 1.0;
 	c *= x / r;
 	ans += c;
+	if (c <= MACHEP * ans) {
+	    break;
+	}
     }
-    while (c / ans > MACHEP);
-
+    
     return (ans * ax / a);
+}
+
+
+/* Compute igam using DLMF 8.12.3. */
+double igam_asy(a, x)
+double a, x;
+{
+    int k, n;
+    int maxpow = 0;
+    double lambda = x/a;
+    double eta, res, ck, ckterm, term, absterm;
+    double absoldterm = NPY_INFINITY;
+    double etapow[N] = {1};
+    double sum = 0;
+    double afac = 1;
+
+    if (lambda > 1) {
+	eta = sqrt(2*(lambda - 1 - log(lambda)));
+    } else if (lambda < 1) {
+	eta = -sqrt(2*(lambda - 1 - log(lambda)));
+    } else {
+	eta = 0;
+    }
+    res = 0.5*erfc(-eta*sqrt(a/2));
+
+    for (k = 0; k < K; k++) {
+	ck = d[k][0];
+	for (n = 1; n < N; n++) {
+	    if (n > maxpow) {
+		etapow[n] = eta*etapow[n-1];
+		maxpow += 1;
+	    }
+	    ckterm = d[k][n]*etapow[n];
+	    ck += ckterm;
+	    if (fabs(ckterm) < TOL*fabs(ck)) {
+		break;
+	    }
+	}
+	term = ck*afac;
+	absterm = fabs(term);
+	if (absterm > absoldterm) {
+	    break;
+	}
+	sum += term;
+	if (absterm < TOL*fabs(sum)) {
+	    break;
+	}
+	absoldterm = absterm;
+	afac /= a;
+    }
+    res -= exp(-0.5*a*eta*eta)*sum/sqrt(2*NPY_PI*a);
+	    
+    return res;
 }

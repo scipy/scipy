@@ -269,6 +269,17 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
+    def test_linear_dtypes(self):
+        # regression test for gh-5898, where 1D linear interpolation has been
+        # delegated to numpy.interp for all float dtypes, and the latter was
+        # not handling e.g. np.float128.
+        for dtyp in np.sctypes["float"]:
+            x = np.arange(8, dtype=dtyp)
+            y = x
+            yp = interp1d(x, y, kind='linear')(x)
+            assert_equal(yp.dtype, dtyp)
+            assert_allclose(yp, y, atol=1e-15)
+
     def test_cubic(self):
         # Check the actual implementation of spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='cubic')
@@ -865,6 +876,17 @@ class TestPPoly(TestCase):
         assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
 
+    def test_periodic(self):
+        c = np.array([[1, 4], [2, 5], [3, 6]])
+        x = np.array([0, 0.5, 1])
+        p = PPoly(c, x, extrapolate='periodic')
+
+        assert_allclose(p(1.3), 1 * 0.3 ** 2 + 2 * 0.3 + 3)
+        assert_allclose(p(-0.3), 4 * (0.7 - 0.5) ** 2 + 5 * (0.7 - 0.5) + 6)
+
+        assert_allclose(p(1.3, 1), 2 * 0.3 + 2)
+        assert_allclose(p(-0.3, 1), 8 * (0.7 - 0.5) + 5)
+
     def test_multi_shape(self):
         c = np.random.rand(6, 2, 1, 2, 3)
         x = np.array([0, 0.5, 1])
@@ -873,8 +895,7 @@ class TestPPoly(TestCase):
         assert_equal(p.c.shape, c.shape)
         assert_equal(p(0.3).shape, c.shape[2:])
 
-        assert_equal(p(np.random.rand(5,6)).shape,
-                     (5,6) + c.shape[2:])
+        assert_equal(p(np.random.rand(5, 6)).shape, (5, 6) + c.shape[2:])
 
         dp = p.derivative()
         assert_equal(dp.c.shape, (5, 2, 1, 2, 3))
@@ -1066,6 +1087,30 @@ class TestPPoly(TestCase):
         assert_allclose(ig, ipp(b) - ipp(a))
 
         assert_(np.isnan(pp.integrate(a, b, extrapolate=False)).all())
+
+    def test_integrate_periodic(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        P = PPoly(c, x, extrapolate='periodic')
+        I = P.antiderivative()
+
+        period_int = I(4) - I(1)
+
+        assert_allclose(P.integrate(1, 4), period_int)
+        assert_allclose(P.integrate(-10, -7), period_int)
+        assert_allclose(P.integrate(-10, -4), 2 * period_int)
+
+        assert_allclose(P.integrate(1.5, 2.5), I(2.5) - I(1.5))
+        assert_allclose(P.integrate(3.5, 5), I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5 + 12, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5) + 4 * period_int)
+
+        assert_allclose(P.integrate(0, -1), I(2) - I(3))
+        assert_allclose(P.integrate(-9, -10), I(2) - I(3))
+        assert_allclose(P.integrate(0, -10), I(2) - I(3) - 3 * period_int)
 
     def test_roots(self):
         x = np.linspace(0, 1, 31)**2
@@ -1262,6 +1307,18 @@ class TestBPoly(TestCase):
                              2 * 4 * 0.7 * 0.3**3 +
                                  0.3**4)
 
+    def test_periodic(self):
+        x = [0, 1, 3]
+        c = [[3, 0], [0, 0], [0, 2]]
+        # [3*(1-x)**2, 2*((x-1)/2)**2]
+        bp = BPoly(c, x, extrapolate='periodic')
+
+        assert_allclose(bp(3.4), 3 * 0.6**2)
+        assert_allclose(bp(-1.3), 2 * (0.7/2)**2)
+
+        assert_allclose(bp(3.4, 1), -6 * 0.6)
+        assert_allclose(bp(-1.3, 1), 2 * (0.7/2))
+
     def test_multi_shape(self):
         c = np.random.rand(6, 2, 1, 2, 3)
         x = np.array([0, 0.5, 1])
@@ -1423,6 +1480,30 @@ class TestBPolyCalculus(TestCase):
         b1 = BPoly(c, x, extrapolate=False)
         assert_(np.isnan(b1.integrate(0, 2)))
         assert_allclose(b1.integrate(0, 2, extrapolate=True), 2., atol=1e-14)
+
+    def test_integrate_periodic(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        P = BPoly.from_power_basis(PPoly(c, x), extrapolate='periodic')
+        I = P.antiderivative()
+
+        period_int = I(4) - I(1)
+
+        assert_allclose(P.integrate(1, 4), period_int)
+        assert_allclose(P.integrate(-10, -7), period_int)
+        assert_allclose(P.integrate(-10, -4), 2 * period_int)
+
+        assert_allclose(P.integrate(1.5, 2.5), I(2.5) - I(1.5))
+        assert_allclose(P.integrate(3.5, 5), I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5 + 12, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5) + 4 * period_int)
+
+        assert_allclose(P.integrate(0, -1), I(2) - I(3))
+        assert_allclose(P.integrate(-9, -10), I(2) - I(3))
+        assert_allclose(P.integrate(0, -10), I(2) - I(3) - 3 * period_int)
 
     def test_antider_neg(self):
         # .derivative(-nu) ==> .andiderivative(nu) and vice versa

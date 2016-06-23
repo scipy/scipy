@@ -107,8 +107,11 @@ def test_shortest_path_indices():
         assert_array_almost_equal(SP, undirected_SP[indices].reshape(outshape))
 
     for indshape in [(4,), (4, 1), (2, 2)]:
-        for func in (dijkstra, bellman_ford, johnson):
+        for func in (dijkstra, bellman_ford, johnson, shortest_path):
             yield check, func, indshape
+
+    assert_raises(ValueError, shortest_path, directed_G, method='FW',
+                  indices=indices)
 
 
 def test_predecessors():

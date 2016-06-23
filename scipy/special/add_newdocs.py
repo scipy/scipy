@@ -1242,7 +1242,7 @@ add_newdoc("scipy.special", "entr",
     -----
     This function is concave.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 
@@ -1792,7 +1792,7 @@ add_newdoc("scipy.special", "gamma",
     """
     gamma(z)
 
-    Gamma function
+    Gamma function.
 
     The gamma function is often referred to as the generalized
     factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
@@ -1843,35 +1843,9 @@ add_newdoc("scipy.special", "gammaincinv",
     Returns `x` such that ``gammainc(a, x) = y``.
     """)
 
-add_newdoc("scipy.special", "gammaln",
+add_newdoc("scipy.special", "_gammaln",
     """
-    gammaln(z)
-
-    Performs a logarithmic transformation of the
-    values of the gamma function in one of two
-    ways, depending on the input `z`:
-
-    1) `z` is not complex (i.e. `z` is a purely
-       real number *or* it is array_like and
-       contains purely real elements)
-
-    The natural logarithm of the absolute value of
-    gamma(z) is computed. Thus, it is defined as:
-
-        ln(abs(gamma(z)))
-
-    2) `z` is complex (i.e. `z` is a complex
-       number *or* it is array_like and contains
-       at least one complex element)
-
-    The natural logarithm of gamma(z) is computed.
-    Thus, it is defined as:
-
-        ln((gamma(z))
-
-    See Also
-    --------
-    gammasgn
+    Internal function, use ``gammaln`` instead.
     """)
 
 add_newdoc("scipy.special", "gammasgn",
@@ -1883,6 +1857,7 @@ add_newdoc("scipy.special", "gammasgn",
     See Also
     --------
     gammaln
+    loggamma
     """)
 
 add_newdoc("scipy.special", "gdtr",
@@ -3375,7 +3350,7 @@ add_newdoc("scipy.special", "kl_div",
     -----
     This function is non-negative and is jointly convex in `x` and `y`.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 
@@ -4380,17 +4355,37 @@ add_newdoc("scipy.special", "nctdtrit",
     """)
 
 add_newdoc("scipy.special", "ndtr",
-    """
+    r"""
     ndtr(x)
 
-    Gaussian cumulative distribution function
+    Gaussian cumulative distribution function.
 
     Returns the area under the standard Gaussian probability
-    density function, integrated from minus infinity to `x`::
+    density function, integrated from minus infinity to `x`
 
-        1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x)
+    .. math::
+
+       \frac{1}{\sqrt{2\pi}} \int_{-\infty}^x \exp(-t^2/2) dt
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+
+    Returns
+    -------
+    ndarray
+        The value of the normal CDF evaluated at `x`
+
+    See Also
+    --------
+    erf
+    erfc
+    scipy.stats.norm
+    log_ndtr
 
     """)
+
 
 add_newdoc("scipy.special", "nrdtrimn",
     """
@@ -4448,12 +4443,30 @@ add_newdoc("scipy.special", "log_ndtr",
     """
     log_ndtr(x)
 
-    Logarithm of Gaussian cumulative distribution function
+    Logarithm of Gaussian cumulative distribution function.
 
     Returns the log of the area under the standard Gaussian probability
     density function, integrated from minus infinity to `x`::
 
         log(1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x))
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+
+    Returns
+    -------
+    ndarray
+        The value of the log of the normal CDF evaluated at `x`
+
+    See Also
+    --------
+    erf
+    erfc
+    scipy.stats.norm
+    ndtr
+
     """)
 
 add_newdoc("scipy.special", "ndtri",
@@ -4852,12 +4865,48 @@ add_newdoc("scipy.special", "pseudo_huber",
 
 add_newdoc("scipy.special", "psi",
     """
-    psi(z)
+    psi(z, out=None)
 
-    Digamma function
+    The digamma function.
 
-    The derivative of the logarithm of the gamma function evaluated at
-    `z` (also called the digamma function).
+    The logarithmic derivative of the gamma function evaluated at ``z``.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex argument.
+    out : ndarray, optional
+        Array for the computed values of ``psi``.
+
+    Returns
+    -------
+    digamma : ndarray
+        Computed values of ``psi``.
+
+    Notes
+    -----
+    For large values not close to the negative real axis ``psi`` is
+    computed using the asymptotic series (5.11.2) from [1]_. For small
+    arguments not close to the negative real axis the recurrence
+    relation (5.5.2) from [1]_ is used until the argument is large
+    enough to use the asymptotic series. For values close to the
+    negative real axis the reflection formula (5.5.4) from [1]_ is
+    used first.  Note that ``psi`` has a family of zeros on the
+    negative real axis which occur between the poles at nonpositive
+    integers. Around the zeros the reflection formula suffers from
+    cancellation and the implementation loses precision. The sole
+    positive zero and the first negative zero, however, are handled
+    separately by precomputing series expansions using [2]_, so the
+    function should maintain full accuracy around the origin.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/5
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
+
     """)
 
 add_newdoc("scipy.special", "radian",
@@ -4898,7 +4947,7 @@ add_newdoc("scipy.special", "rel_entr",
     -----
     This function is jointly convex in x and y.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 
@@ -4983,14 +5032,28 @@ add_newdoc("scipy.special", "smirnovi",
     """)
 
 add_newdoc("scipy.special", "spence",
-    """
-    spence(x)
+    r"""
+    spence(z)
 
-    Dilogarithm integral
+    Spence's function, also known as the dilogarithm. It is defined to
+    be
 
-    Returns the dilogarithm integral::
+    .. math::
+      \int_0^z \frac{\log(t)}{1 - t}dt
 
-        -integral(log t / (t-1), t=1..x)
+    for complex :math:`z`, where the contour of integration is taken
+    to avoid the branch cut of the logarithm. Spence's function is
+    analytic everywhere except the negative real axis where it has a
+    branch cut.
+
+    Note that there is a different convention which defines Spence's
+    function by the integral
+
+    .. math::
+      -\int_0^z \frac{\log(1 - t)}{t}dt;
+
+    this is our ``spence(1 - z)``.
+
     """)
 
 add_newdoc("scipy.special", "stdtr",
@@ -5384,24 +5447,11 @@ add_newdoc("scipy.special", "yve",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "zeta",
+add_newdoc("scipy.special", "_zeta",
     """
-    zeta(x, q)
+    _zeta(x, q)
 
-    Hurwitz zeta function
-
-    The Riemann zeta function of two arguments (also known as the
-    Hurwitz zeta function).
-
-    This function is defined as
-
-    .. math:: \\zeta(x, q) = \\sum_{k=0}^{\\infty} 1 / (k+q)^x,
-
-    where ``x > 1`` and ``q > 0``.
-
-    See also
-    --------
-    zetac
+    Internal function, Hurwitz zeta.
 
     """)
 
@@ -5500,4 +5550,72 @@ add_newdoc("scipy.special", "_spherical_kn",
 add_newdoc("scipy.special", "_spherical_kn_d",
     """
     Internal function, use `spherical_kn` instead.
+    """)
+
+add_newdoc("scipy.special", "loggamma",
+    r"""
+    loggamma(z, out=None)
+
+    Principal branch of the logarithm of the Gamma function. It is
+    defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
+    extended to the complex plane by analytic continuation. The
+    implementation here is based on [hare1997]_.
+
+    The function has a single branch cut on the negative real axis and
+    is taken to be continuous when approaching the axis from
+    above. Note that it is not generally true that
+    :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real parts of
+    the functions do agree. The benefit of not defining ``loggamma``
+    as :math:`\log(\Gamma(z))` is that the latter function has a
+    complicated branch cut structure whereas ``loggamma`` is analytic
+    except for on the negative real axis.
+
+    The identities
+
+    .. math::
+      \exp(\log\Gamma(z)) &= \Gamma(z) \\
+      \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
+
+    make ``loggama`` useful for working in complex logspace. However,
+    ``loggamma`` necessarily returns complex outputs for real inputs,
+    so if you want to work only with real numbers use `gammaln`. On
+    the real line the two functions are related by ``exp(loggamma(x))
+    = gammasgn(x)*exp(gammaln(x))``, though in practice rounding
+    errors will introduce small spurious imaginary components in
+    ``exp(loggamma(x))``.
+
+    .. versionadded:: 0.18.0
+
+    Parameters
+    ----------
+    z : array-like
+        Values in the complex plain at which to compute ``loggamma``
+    out : ndarray, optional
+        Output array for computed values of ``loggamma``
+
+    Returns
+    -------
+    loggamma : ndarray
+        Values of ``loggamma`` at z.
+
+    See also
+    --------
+    gammaln : logarithm of the absolute value of the Gamma function
+    gammasgn : sign of the gamma function
+
+    References
+    ----------
+    .. [hare1997] D.E.G. Hare,
+      *Computing the Principal Branch of log-Gamma*,
+      Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
+    """)
+
+add_newdoc("scipy.special", "_sinpi",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_cospi",
+    """
+    Internal function, do not use.
     """)

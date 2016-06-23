@@ -171,10 +171,10 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     if info == 0:
         return x
     if info > 0:
-        raise LinAlgError("singular matrix: resolution failed at diagonal %s" %
-                          info-1)
+        raise LinAlgError("singular matrix: resolution failed at diagonal %d" %
+                          (info-1))
     raise ValueError('illegal value in %d-th argument of internal trtrs' %
-                     -info)
+                     (-info))
 
 
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
@@ -638,9 +638,9 @@ def inv(a, overwrite_a=False, check_finite=True):
 
     Raises
     ------
-    LinAlgError :
+    LinAlgError
         If `a` is singular.
-    ValueError :
+    ValueError
         If `a` is not square, or not 2-dimensional.
 
     Examples
@@ -807,10 +807,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Raises
     ------
-    LinAlgError :
+    LinAlgError
         If computation does not converge.
 
-    ValueError :
+    ValueError
         When parameters are wrong.
 
     See Also

@@ -52,6 +52,11 @@ def use_solver(**kwargs):
 
     #TODO: pass other options to scikit
 
+def _get_umf_family(A):
+    """Get umfpack family string given the sparse matrix dtype."""
+    family = {'di': 'di', 'Di': 'zi', 'dl': 'dl', 'Dl': 'zl'}
+    dt = A.dtype.char + A.indices.dtype.char
+    return family[dt]
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
     """Solve the sparse linear system Ax=b, where b may be a vector or a matrix.
@@ -129,8 +134,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        family = {'d': 'di', 'D': 'zi'}
-        umf = umfpack.UmfpackContext(family[A.dtype.char])
+        umf = umfpack.UmfpackContext(_get_umf_family(A))
         x = umf.linsolve(umfpack.UMFPACK_A, A, b_vec,
                          autoTranspose=True)
     else:
@@ -363,8 +367,7 @@ def factorized(A):
             raise ValueError("convert matrix data to double, please, using"
                   " .astype(), or set linsolve.useUmfpack = False")
 
-        family = {'d': 'di', 'D': 'zi'}
-        umf = umfpack.UmfpackContext(family[A.dtype.char])
+        umf = umfpack.UmfpackContext(_get_umf_family(A))
 
         # Make LU decomposition.
         umf.numeric(A)

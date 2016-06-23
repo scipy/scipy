@@ -336,8 +336,8 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         The interval to fit.  If None, these default to x[0] and x[-1]
         respectively.
     k : int, optional
-        The order of the spline fit. It is recommended to use cubic splines.
-        Even order splines should be avoided especially with small s values.
+        The degree of the spline fit. It is recommended to use cubic splines.
+        Even values of k should be avoided especially with small s values.
         1 <= k <= 5
     task : {1, 0, -1}, optional
         If task==0 find t and c for a given smoothing factor, s.

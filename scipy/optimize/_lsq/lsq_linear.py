@@ -1,4 +1,6 @@
 """Linear least squares with bound constraints on independent variables."""
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.linalg import norm, lstsq
 from scipy.sparse import issparse, csr_matrix
@@ -269,7 +271,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("Bounds have wrong shape.")
 
     if np.any(lb >= ub):
-        raise ValueError("Each lower bound mush be strictly less than each "
+        raise ValueError("Each lower bound must be strictly less than each "
                          "upper bound.")
 
     if lsq_solver == 'exact':

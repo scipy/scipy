@@ -64,6 +64,12 @@ cdef extern from "_ufuncs_cxx_defs.h":
     cdef double complex _func_faddeeva_erfi_complex "faddeeva_erfi_complex"(double complex) nogil
 cdef void *_export_faddeeva_erfi_complex = <void*>_func_faddeeva_erfi_complex
 cdef extern from "_ufuncs_cxx_defs.h":
+    cdef double complex _func_faddeeva_log_ndtr "faddeeva_log_ndtr"(double complex) nogil
+cdef void *_export_faddeeva_log_ndtr = <void*>_func_faddeeva_log_ndtr
+cdef extern from "_ufuncs_cxx_defs.h":
+    cdef double complex _func_faddeeva_ndtr "faddeeva_ndtr"(double complex) nogil
+cdef void *_export_faddeeva_ndtr = <void*>_func_faddeeva_ndtr
+cdef extern from "_ufuncs_cxx_defs.h":
     cdef double complex _func_faddeeva_w "faddeeva_w"(double complex) nogil
 cdef void *_export_faddeeva_w = <void*>_func_faddeeva_w
 # distutils: language = c++

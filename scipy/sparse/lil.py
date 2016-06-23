@@ -177,14 +177,6 @@ class lil_matrix(spmatrix, IndexMixin):
     # row
 
     def getnnz(self, axis=None):
-        """Get the count of explicitly-stored values (nonzeros)
-
-        Parameters
-        ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole matrix, in
-            each column, or in each row.
-        """
         if axis is None:
             return sum([len(rowvals) for rowvals in self.data])
         if axis < 0:
@@ -198,7 +190,12 @@ class lil_matrix(spmatrix, IndexMixin):
             return np.array([len(rowvals) for rowvals in self.data], dtype=np.intp)
         else:
             raise ValueError('axis out of bounds')
-    nnz = property(fget=getnnz)
+
+    def count_nonzero(self):
+        return sum(np.count_nonzero(rowvals) for rowvals in self.data)
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
+    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
 
     def __str__(self):
         val = ''
@@ -410,14 +407,35 @@ class lil_matrix(spmatrix, IndexMixin):
         new.rows = deepcopy(self.rows)
         return new
 
-    def reshape(self,shape):
+    copy.__doc__ = spmatrix.copy.__doc__
+
+    def reshape(self, shape, order='C'):
+        if type(order) != str or order != 'C':
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'order' parameter."))
+
+        if type(shape) != tuple:
+            raise TypeError("a tuple must be passed in for 'shape'")
+
+        if len(shape) != 2:
+            raise ValueError("a length-2 tuple must be passed in for 'shape'")
+
         new = lil_matrix(shape, dtype=self.dtype)
         j_max = self.shape[1]
-        for i,row in enumerate(self.rows):
-            for col,j in enumerate(row):
-                new_r,new_c = np.unravel_index(i*j_max + j,shape)
-                new[new_r,new_c] = self[i,j]
+
+        # Size is ambiguous for sparse matrices, so in order to check 'total
+        # dimension', we need to take the product of their dimensions instead
+        if new.shape[0] * new.shape[1] != self.shape[0] * self.shape[1]:
+            raise ValueError("the product of the dimensions for the new sparse "
+                             "matrix must equal that of the original matrix")
+
+        for i, row in enumerate(self.rows):
+            for col, j in enumerate(row):
+                new_r, new_c = np.unravel_index(i*j_max + j, shape)
+                new[new_r, new_c] = self[i, j]
         return new
+
+    reshape.__doc__ = spmatrix.reshape.__doc__
 
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
@@ -427,8 +445,8 @@ class lil_matrix(spmatrix, IndexMixin):
                 d[i, j] = self.data[i][pos]
         return d
 
-    def transpose(self):
-        return self.tocsr().transpose().tolil()
+    def transpose(self, axes=None, copy=False):
+        return self.tocsr().transpose(axes=axes, copy=copy).tolil()
 
     def tolil(self, copy=False):
         if copy:
@@ -436,10 +454,9 @@ class lil_matrix(spmatrix, IndexMixin):
         else:
             return self
 
-    def tocsr(self):
-        """ Return Compressed Sparse Row format arrays for this matrix.
-        """
+    tolil.__doc__ = spmatrix.tolil.__doc__
 
+    def tocsr(self, copy=False):
         lst = [len(x) for x in self.rows]
         idx_dtype = get_index_dtype(maxval=max(self.shape[1], sum(lst)))
         indptr = np.asarray(lst, dtype=idx_dtype)
@@ -459,10 +476,7 @@ class lil_matrix(spmatrix, IndexMixin):
         from .csr import csr_matrix
         return csr_matrix((data, indices, indptr), shape=self.shape)
 
-    def tocsc(self):
-        """ Return Compressed Sparse Column format arrays for this matrix.
-        """
-        return self.tocsr().tocsc()
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
 
 
 def _prepare_index_for_memoryview(i, j, x=None):

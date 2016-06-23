@@ -2,7 +2,8 @@
 
 from __future__ import division, print_function, absolute_import
 
-from os.path import join
+from os.path import join, dirname
+import glob
 
 
 def configuration(parent_package='', top_path=None):
@@ -16,11 +17,8 @@ def configuration(parent_package='', top_path=None):
     config.add_data_dir('tests')
 
     # qhull
-    qhull_src = ['geom2.c', 'geom.c', 'global.c', 'io.c', 'libqhull.c',
-                 'mem.c', 'merge.c', 'poly2.c', 'poly.c', 'qset.c',
-                 'random.c', 'rboxlib.c', 'stat.c', 'user.c', 'usermem.c',
-                 'userprintf.c', 'userprintf_rbox.c']
-    qhull_src = [join('qhull', 'src', x) for x in qhull_src]
+    qhull_src = list(glob.glob(join(dirname(__file__), 'qhull',
+                                    'src', '*.c')))
 
     inc_dirs = [get_python_inc()]
     if inc_dirs[0] != get_python_inc(plat_specific=1):
@@ -29,10 +27,22 @@ def configuration(parent_package='', top_path=None):
 
     cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
-    cfg.setdefault('define_macros', []).append(('qh_QHpointer','1'))
+
+    def get_qhull_misc_config(ext, build_dir):
+        # Generate a header file containing defines
+        config_cmd = config.get_config_cmd()
+        defines = []
+        if config_cmd.check_func('open_memstream', decl=True, call=True):
+            defines.append(('HAVE_OPEN_MEMSTREAM', '1'))
+        target = join(dirname(__file__), 'qhull_misc_config.h')
+        with open(target, 'w') as f:
+            for name, value in defines:
+                f.write('#define {0} {1}\n'.format(name, value))
+
     config.add_extension('qhull',
-                         sources=['qhull.c'] + qhull_src,
+                         sources=['qhull.c'] + qhull_src + [get_qhull_misc_config],
                          **cfg)
+
     # cKDTree    
     ckdtree_src = ['query.cxx', 
                    'build.cxx',

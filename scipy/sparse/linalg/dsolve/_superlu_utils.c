@@ -20,7 +20,7 @@
 static SuperLUGlobalObject superlu_py_global = {0};
 #endif
 
-static SuperLUGlobalObject *get_tls_global()
+static SuperLUGlobalObject *get_tls_global(void)
 {
 #ifndef WITH_THREAD
     if (superlu_py_global.memory_dict == NULL) {
@@ -39,8 +39,8 @@ static SuperLUGlobalObject *get_tls_global()
         return NULL;
     }
 
-    obj = PyDict_GetItemString(thread_dict, key);
-    if (obj) {
+    obj = (SuperLUGlobalObject*)PyDict_GetItemString(thread_dict, key);
+    if (obj && Py_TYPE(obj) == &SuperLUGlobalType) {
         return obj;
     }
 
@@ -57,7 +57,7 @@ static SuperLUGlobalObject *get_tls_global()
 #endif
 }
 
-jmp_buf *superlu_python_jmpbuf()
+jmp_buf *superlu_python_jmpbuf(void)
 {
     SuperLUGlobalObject *g;
 

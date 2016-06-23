@@ -6,13 +6,9 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import threading
 import sys
-if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
-    from math import gcd
-else:
-    from fractions import gcd
 
-from . import sigtools
-from ._upfirdn import _UpFIRDn, _output_len
+from . import sigtools, dlti
+from ._upfirdn import upfirdn, _UpFIRDn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
@@ -27,6 +23,13 @@ import numpy as np
 from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
+from .filter_design import cheby1
+from .fir_filter_design import firwin
+
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from math import gcd
+else:
+    from fractions import gcd
 
 
 __all__ = ['correlate', 'fftconvolve', 'convolve', 'convolve2d', 'correlate2d',
@@ -72,12 +75,34 @@ def _bvalfromboundary(boundary):
     return val
 
 
-def _check_valid_mode_shapes(shape1, shape2):
-    for d1, d2 in zip(shape1, shape2):
-        if not d1 >= d2:
-            raise ValueError(
-                "in1 should have at least as many items as in2 in "
-                "every dimension for 'valid' mode.")
+def _inputs_swap_needed(mode, shape1, shape2):
+    """
+    If in 'valid' mode, checks whether or not one of the array shapes
+    is at least as large as the other in every dimension. Returns whether
+    or not the input arrays need to be swapped depending on whether shape2
+    is larger than shape1. This is important for some of the correlation and
+    convolution implementations in this module, where the larger array input
+    needs to come before the smaller array input when operating in this mode.
+    Note that if the mode provided is not 'valid', False is immediately
+    returned.
+
+    """
+    if mode == 'valid':
+        ok1, ok2 = True, True
+
+        for d1, d2 in zip(shape1, shape2):
+            if not d1 >= d2:
+                ok1 = False
+            if not d2 >= d1:
+                ok2 = False
+
+        if not (ok1 or ok2):
+            raise ValueError("For 'valid' mode, one must be at least "
+                             "as large as the other in every dimension")
+
+        return not ok1
+
+    return False
 
 
 def correlate(in1, in2, mode='full'):
@@ -92,9 +117,9 @@ def correlate(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -163,28 +188,30 @@ def correlate(in1, in2, mode='full'):
     elif not in1.ndim == in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
-        # numpy is significantly faster for 1d
-        if in1.ndim == 1 and in2.ndim == 1:
-            return np.correlate(in1, in2, mode)
+    # numpy is significantly faster for 1d (but numpy's 'same' mode uses
+    # the size of the larger input, not the first.)
+    if in1.ndim == in2.ndim == 1 and (in1.size >= in2.size or mode != 'same'):
+        return np.correlate(in1, in2, mode)
 
+    # _correlateND is far slower when in2.size > in1.size, so swap them
+    # and then undo the effect afterward if mode == 'full'.  Also, it fails
+    # with 'valid' mode if in2 is larger than in1, so swap those, too.
+    # Don't swap inputs for 'same' mode, since shape of in1 matters.
+    swapped_inputs = ((mode == 'full') and (in2.size > in1.size) or
+                      _inputs_swap_needed(mode, in1.shape, in2.shape))
+
+    if swapped_inputs:
+        in1, in2 = in2, in1
+
+    if mode == 'valid':
         ps = [i - j + 1 for i, j in zip(in1.shape, in2.shape)]
         out = np.empty(ps, in1.dtype)
 
         z = sigtools._correlateND(in1, in2, out, val)
+
     else:
-        # numpy is significantly faster for 1d
-        if in1.ndim == 1 and in2.ndim == 1 and (in1.size >= in2.size):
-            return np.correlate(in1, in2, mode)
-
-        # _correlateND is far slower when in2.size > in1.size, so swap them
-        # and then undo the effect afterward
-        swapped_inputs = (mode == 'full') and (in2.size > in1.size)
-        if swapped_inputs:
-            in1, in2 = in2, in1
-
         ps = [i + j - 1 for i, j in zip(in1.shape, in2.shape)]
+
         # zero pad input
         in1zpadded = np.zeros(ps, in1.dtype)
         sc = [slice(0, i) for i in in1.shape]
@@ -197,72 +224,23 @@ def correlate(in1, in2, mode='full'):
 
         z = sigtools._correlateND(in1zpadded, in2, out, val)
 
-        # Reverse and conjugate to undo the effect of swapping inputs
-        if swapped_inputs:
-            slice_obj = [slice(None, None, -1)] * len(z.shape)
-            z = z[slice_obj].conj()
+    if swapped_inputs:
+        # Reverse in all dimensions and conjugate to undo the effect of
+        # swapping inputs
+        reverse = [slice(None, None, -1)] * z.ndim
+        z = z[reverse].conj()
 
     return z
 
 
-def _centered(arr, newsize):
-    # Return the center newsize portion of the array.
-    newsize = asarray(newsize)
-    currsize = array(arr.shape)
-    startind = (currsize - newsize) // 2
-    endind = startind + newsize
+def _centered(arr, newshape):
+    # Return the center newshape portion of the array.
+    newshape = asarray(newshape)
+    currshape = array(arr.shape)
+    startind = (currshape - newshape) // 2
+    endind = startind + newshape
     myslice = [slice(startind[k], endind[k]) for k in range(len(endind))]
     return arr[tuple(myslice)]
-
-
-def _next_regular(target):
-    """
-    Find the next regular number greater than or equal to target.
-    Regular numbers are composites of the prime factors 2, 3, and 5.
-    Also known as 5-smooth numbers or Hamming numbers, these are the optimal
-    size for inputs to FFTPACK.
-
-    Target must be a positive integer.
-    """
-    if target <= 6:
-        return target
-
-    # Quickly check if it's already a power of 2
-    if not (target & (target-1)):
-        return target
-
-    match = float('inf')  # Anything found will be smaller
-    p5 = 1
-    while p5 < target:
-        p35 = p5
-        while p35 < target:
-            # Ceiling integer division, avoiding conversion to float
-            # (quotient = ceil(target / p35))
-            quotient = -(-target // p35)
-
-            # Quickly find next power of 2 >= quotient
-            try:
-                p2 = 2**((quotient - 1).bit_length())
-            except AttributeError:
-                # Fallback for Python <2.7
-                p2 = 2**(len(bin(quotient - 1)) - 2)
-
-            N = p2 * p35
-            if N == target:
-                return N
-            elif N < match:
-                match = N
-            p35 *= 3
-            if p35 == target:
-                return p35
-        if p35 < match:
-            match = p35
-        p5 *= 5
-        if p5 == target:
-            return p5
-    if p5 < match:
-        match = p5
-    return match
 
 
 def fftconvolve(in1, in2, mode="full"):
@@ -280,9 +258,9 @@ def fftconvolve(in1, in2, mode="full"):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -360,19 +338,21 @@ def fftconvolve(in1, in2, mode="full"):
                       np.issubdtype(in2.dtype, complex))
     shape = s1 + s2 - 1
 
-    if mode == "valid":
-        _check_valid_mode_shapes(s1, s2)
+    # Check that input sizes are compatible with 'valid' mode
+    if _inputs_swap_needed(mode, s1, s2):
+        # Convolution is commutative; order doesn't have any effect on output
+        in1, s1, in2, s2 = in2, s2, in1, s1
 
     # Speed up FFT by padding to optimal size for FFTPACK
-    fshape = [_next_regular(int(d)) for d in shape]
+    fshape = [fftpack.helper.next_fast_len(int(d)) for d in shape]
     fslice = tuple([slice(0, int(sz)) for sz in shape])
     # Pre-1.9 NumPy FFT routines are not threadsafe.  For older NumPys, make
     # sure we only call rfftn/irfftn from one thread at a time.
     if not complex_result and (_rfft_mt_safe or _rfft_lock.acquire(False)):
         try:
-            ret = (np.fft.irfftn(np.fft.rfftn(in1, fshape) *
-                                 np.fft.rfftn(in2, fshape), fshape)[fslice].
-                   copy())
+            sp1 = np.fft.rfftn(in1, fshape)
+            sp2 = np.fft.rfftn(in2, fshape)
+            ret = (np.fft.irfftn(sp1 * sp2, fshape)[fslice].copy())
         finally:
             if not _rfft_mt_safe:
                 _rfft_lock.release()
@@ -381,8 +361,9 @@ def fftconvolve(in1, in2, mode="full"):
         # failed to acquire _rfft_lock (meaning rfftn isn't threadsafe and
         # is already in use by another thread).  In either case, use the
         # (threadsafe but slower) SciPy complex-FFT routines instead.
-        ret = fftpack.ifftn(fftpack.fftn(in1, fshape) *
-                            fftpack.fftn(in2, fshape))[fslice].copy()
+        sp1 = fftpack.fftn(in1, fshape)
+        sp2 = fftpack.fftn(in2, fshape)
+        ret = fftpack.ifftn(sp1 * sp2)[fslice].copy()
         if not complex_result:
             ret = ret.real
 
@@ -409,9 +390,9 @@ def convolve(in1, in2, mode='full'):
     in1 : array_like
         First input.
     in2 : array_like
-        Second input. Should have the same number of dimensions as `in1`;
-        if sizes of `in1` and `in2` are not equal then `in1` has to be the
-        larger array.
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -466,16 +447,21 @@ def convolve(in1, in2, mode='full'):
     if volume.ndim == kernel.ndim == 0:
         return volume * kernel
 
-    # fastpath to faster numpy 1d convolve
-    if volume.ndim == 1 and kernel.ndim == 1 and volume.size >= kernel.size:
+    if _inputs_swap_needed(mode, volume.shape, kernel.shape):
+        # Convolution is commutative; order doesn't have any effect on output
+        volume, kernel = kernel, volume
+
+    # fastpath to faster numpy 1d convolve (but numpy's 'same' mode uses the
+    # size of the larger input, not the first.)
+    if volume.ndim == kernel.ndim == 1 and (volume.size >= kernel.size or
+                                            mode != 'same'):
         return np.convolve(volume, kernel, mode)
 
-    slice_obj = [slice(None, None, -1)] * len(kernel.shape)
+    # Reverse in all dimensions
+    reverse = [slice(None, None, -1)] * kernel.ndim
 
-    if np.iscomplexobj(kernel):
-        return correlate(volume, kernel[slice_obj].conj(), mode)
-    else:
-        return correlate(volume, kernel[slice_obj], mode)
+    # .conj() does nothing to real arrays and is faster than iscomplexobj()
+    return correlate(volume, kernel[reverse].conj(), mode)
 
 
 def order_filter(a, domain, rank):
@@ -566,12 +552,12 @@ def medfilt(volume, kernel_size=None):
     """
     volume = atleast_1d(volume)
     if kernel_size is None:
-        kernel_size = [3] * len(volume.shape)
+        kernel_size = [3] * volume.ndim
     kernel_size = asarray(kernel_size)
     if kernel_size.shape == ():
         kernel_size = np.repeat(kernel_size.item(), volume.ndim)
 
-    for k in range(len(volume.shape)):
+    for k in range(volume.ndim):
         if (kernel_size[k] % 2) != 1:
             raise ValueError("Each element of kernel_size should be odd.")
 
@@ -609,7 +595,7 @@ def wiener(im, mysize=None, noise=None):
     """
     im = asarray(im)
     if mysize is None:
-        mysize = [3] * len(im.shape)
+        mysize = [3] * im.ndim
     mysize = asarray(mysize)
     if mysize.shape == ():
         mysize = np.repeat(mysize.item(), im.ndim)
@@ -642,8 +628,12 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Parameters
     ----------
-    in1, in2 : array_like
-        Two-dimensional input arrays to be convolved.
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -708,8 +698,11 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
+    if not in1.ndim == in2.ndim == 2:
+        raise ValueError('convolve2d inputs must both be 2D arrays')
+
+    if _inputs_swap_needed(mode, in1.shape, in2.shape):
+        in1, in2 = in2, in1
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
@@ -731,8 +724,12 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     Parameters
     ----------
-    in1, in2 : array_like
-        Two-dimensional input arrays to be convolved.
+    in1 : array_like
+        First input.
+    in2 : array_like
+        Second input. Should have the same number of dimensions as `in1`.
+        If operating in 'valid' mode, either `in1` or `in2` must be
+        at least as large as the other in every dimension.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output:
 
@@ -798,8 +795,12 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     in1 = asarray(in1)
     in2 = asarray(in2)
 
-    if mode == 'valid':
-        _check_valid_mode_shapes(in1.shape, in2.shape)
+    if not in1.ndim == in2.ndim == 2:
+        raise ValueError('correlate2d inputs must both be 2D arrays')
+
+    swapped_inputs = _inputs_swap_needed(mode, in1.shape, in2.shape)
+    if swapped_inputs:
+        in1, in2 = in2, in1
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
@@ -808,6 +809,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
         warnings.simplefilter('ignore', np.ComplexWarning)
         # FIXME: some cast generates a warning here
         out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+
+    if swapped_inputs:
+        out = out[::-1, ::-1]
 
     return out
 
@@ -876,7 +880,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     zi : array_like, optional
         Initial conditions for the filter delays.  It is a vector
         (or array of vectors for an N-dimensional input) of length
-        ``max(len(a),len(b))-1``.  If `zi` is None or is not given then
+        ``max(len(a), len(b)) - 1``.  If `zi` is None or is not given then
         initial rest is assumed.  See `lfiltic` for more information.
 
     Returns
@@ -901,28 +905,30 @@ def lfilter(b, a, x, axis=-1, zi=None):
     The filter function is implemented as a direct II transposed structure.
     This means that the filter implements::
 
-       a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[nb]*x[n-nb]
-                               - a[1]*y[n-1] - ... - a[na]*y[n-na]
+       a[0]*y[n] = b[0]*x[n] + b[1]*x[n-1] + ... + b[M]*x[n-M]
+                             - a[1]*y[n-1] - ... - a[N]*y[n-N]
 
-    using the following difference equations::
+    where `M` is the degree of the numerator, `N` is the degree of the
+    denominator, and `n` is the sample number.  It is implemented using
+    the following difference equations (assuming M = N)::
 
-         y[m] = b[0]*x[m] + z[0,m-1]
-         z[0,m] = b[1]*x[m] + z[1,m-1] - a[1]*y[m]
+         a[0]*y[n] = b[0] * x[n]               + d[0][n-1]
+           d[0][n] = b[1] * x[n] - a[1] * y[n] + d[1][n-1]
+           d[1][n] = b[2] * x[n] - a[2] * y[n] + d[2][n-1]
          ...
-         z[n-3,m] = b[n-2]*x[m] + z[n-2,m-1] - a[n-2]*y[m]
-         z[n-2,m] = b[n-1]*x[m] - a[n-1]*y[m]
+         d[N-2][n] = b[N-1]*x[n] - a[N-1]*y[n] + d[N-1][n-1]
+         d[N-1][n] = b[N] * x[n] - a[N] * y[n]
 
-    where m is the output sample number and n=max(len(a),len(b)) is the
-    model order.
+    where `d` are the state variables.
 
     The rational transfer function describing this filter in the
     z-transform domain is::
 
-                             -1               -nb
-                 b[0] + b[1]z  + ... + b[nb] z
-         Y(z) = ---------------------------------- X(z)
-                             -1               -na
-                 a[0] + a[1]z  + ... + a[na] z
+                             -1              -M
+                 b[0] + b[1]z  + ... + b[M] z
+         Y(z) = -------------------------------- X(z)
+                             -1              -N
+                 a[0] + a[1]z  + ... + a[N] z
 
     Examples
     --------
@@ -1051,13 +1057,13 @@ def lfiltic(b, a, y, x=None):
     y : array_like
         Initial conditions.
 
-        If ``N=len(a) - 1``, then ``y = {y[-1], y[-2], ..., y[-N]}``.
+        If ``N = len(a) - 1``, then ``y = {y[-1], y[-2], ..., y[-N]}``.
 
         If `y` is too short, it is padded with zeros.
     x : array_like, optional
         Initial conditions.
 
-        If ``M=len(b) - 1``, then ``x = {x[-1], x[-2], ..., x[-M]}``.
+        If ``M = len(b) - 1``, then ``x = {x[-1], x[-2], ..., x[-M]}``.
 
         If `x` is not given, its initial conditions are assumed zero.
 
@@ -1066,8 +1072,8 @@ def lfiltic(b, a, y, x=None):
     Returns
     -------
     zi : ndarray
-        The state vector ``zi``.
-        ``zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}``, where ``K = max(M,N)``.
+        The state vector ``zi = {z_0[-1], z_1[-1], ..., z_K-1[-1]}``,
+        where ``K = max(M, N)``.
 
     See Also
     --------
@@ -1259,7 +1265,7 @@ def hilbert(x, N=None, axis=-1):
         h[0] = 1
         h[1:(N + 1) // 2] = 2
 
-    if len(x.shape) > 1:
+    if x.ndim > 1:
         ind = [newaxis] * x.ndim
         ind[axis] = slice(None)
         h = h[ind]
@@ -1290,7 +1296,7 @@ def hilbert2(x, N=None):
 
     """
     x = atleast_2d(x)
-    if len(x.shape) > 2:
+    if x.ndim > 2:
         raise ValueError("x must be 2-D.")
     if iscomplexobj(x):
         raise ValueError("x must be real.")
@@ -1319,7 +1325,7 @@ def hilbert2(x, N=None):
         exec("h%d = h" % (p + 1), globals(), locals())
 
     h = h1[:, newaxis] * h2[newaxis, :]
-    k = len(x.shape)
+    k = x.ndim
     while k > 2:
         h = h[:, newaxis]
         k -= 1
@@ -1431,30 +1437,37 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
     """
     Compute b(s) and a(s) from partial fraction expansion.
 
-    If ``M = len(b)`` and ``N = len(a)``::
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
 
-                b(s)     b[0] x**(M-1) + b[1] x**(M-2) + ... + b[M-1]
-        H(s) = ------ = ----------------------------------------------
-                a(s)     a[0] x**(N-1) + a[1] x**(N-2) + ... + a[N-1]
+              b(s)     b[0] s**(M) + b[1] s**(M-1) + ... + b[M]
+      H(s) = ------ = ------------------------------------------
+              a(s)     a[0] s**(N) + a[1] s**(N-1) + ... + a[N]
 
-                 r[0]       r[1]             r[-1]
-             = -------- + -------- + ... + --------- + k(s)
-               (s-p[0])   (s-p[1])         (s-p[-1])
+    then the partial-fraction expansion H(s) is defined as::
 
-    If there are any repeated roots (closer than tol), then the partial
-    fraction expansion has terms like::
+               r[0]       r[1]             r[-1]
+           = -------- + -------- + ... + --------- + k(s)
+             (s-p[0])   (s-p[1])         (s-p[-1])
+
+    If there are any repeated roots (closer together than `tol`), then H(s)
+    has terms like::
 
           r[i]      r[i+1]              r[i+n-1]
         -------- + ----------- + ... + -----------
         (s-p[i])  (s-p[i])**2          (s-p[i])**n
 
+    This function is used for polynomials in positive powers of s or z,
+    such as analog filters or digital filters in controls engineering.  For
+    negative powers of z (typical for digital filters in DSP), use `invresz`.
+
     Parameters
     ----------
-    r : ndarray
+    r : array_like
         Residues.
-    p : ndarray
+    p : array_like
         Poles.
-    k : ndarray
+    k : array_like
         Coefficients of the direct polynomial term.
     tol : float, optional
         The tolerance for two roots to be considered equal. Default is 1e-3.
@@ -1462,15 +1475,20 @@ def invres(r, p, k, tol=1e-3, rtype='avg'):
         How to determine the returned root if multiple roots are within
         `tol` of each other.
 
-          'max': pick the maximum of those roots.
+          - 'max': pick the maximum of those roots.
+          - 'min': pick the minimum of those roots.
+          - 'avg': take the average of those roots.
 
-          'min': pick the minimum of those roots.
-
-          'avg': take the average of those roots.
+    Returns
+    -------
+    b : ndarray
+        Numerator polynomial coefficients.
+    a : ndarray
+        Denominator polynomial coefficients.
 
     See Also
     --------
-    residue, unique_roots
+    residue, invresz, unique_roots
 
     """
     extra = k
@@ -1506,12 +1524,14 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     """
     Compute partial-fraction expansion of b(s) / a(s).
 
-    If ``M = len(b)`` and ``N = len(a)``, then the partial-fraction
-    expansion H(s) is defined as::
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
 
-              b(s)     b[0] s**(M-1) + b[1] s**(M-2) + ... + b[M-1]
-      H(s) = ------ = ----------------------------------------------
-              a(s)     a[0] s**(N-1) + a[1] s**(N-2) + ... + a[N-1]
+              b(s)     b[0] s**(M) + b[1] s**(M-1) + ... + b[M]
+      H(s) = ------ = ------------------------------------------
+              a(s)     a[0] s**(N) + a[1] s**(N-1) + ... + a[N]
+
+    then the partial-fraction expansion H(s) is defined as::
 
                r[0]       r[1]             r[-1]
            = -------- + -------- + ... + --------- + k(s)
@@ -1520,9 +1540,20 @@ def residue(b, a, tol=1e-3, rtype='avg'):
     If there are any repeated roots (closer together than `tol`), then H(s)
     has terms like::
 
-            r[i]      r[i+1]              r[i+n-1]
-          -------- + ----------- + ... + -----------
-          (s-p[i])  (s-p[i])**2          (s-p[i])**n
+          r[i]      r[i+1]              r[i+n-1]
+        -------- + ----------- + ... + -----------
+        (s-p[i])  (s-p[i])**2          (s-p[i])**n
+
+    This function is used for polynomials in positive powers of s or z,
+    such as analog filters or digital filters in controls engineering.  For
+    negative powers of z (typical for digital filters in DSP), use `residuez`.
+
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
 
     Returns
     -------
@@ -1535,7 +1566,7 @@ def residue(b, a, tol=1e-3, rtype='avg'):
 
     See Also
     --------
-    invres, numpy.poly, unique_roots
+    invres, residuez, numpy.poly, unique_roots
 
     """
 
@@ -1578,26 +1609,48 @@ def residuez(b, a, tol=1e-3, rtype='avg'):
     """
     Compute partial-fraction expansion of b(z) / a(z).
 
-    If ``M = len(b)`` and ``N = len(a)``::
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
 
-                b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
-        H(z) = ------ = ----------------------------------------------
-                a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+                b(z)     b[0] + b[1] z**(-1) + ... + b[M] z**(-M)
+        H(z) = ------ = ------------------------------------------
+                a(z)     a[0] + a[1] z**(-1) + ... + a[N] z**(-N)
+
+    then the partial-fraction expansion H(z) is defined as::
 
                  r[0]                   r[-1]
          = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
            (1-p[0]z**(-1))         (1-p[-1]z**(-1))
 
-    If there are any repeated roots (closer than tol), then the partial
+    If there are any repeated roots (closer than `tol`), then the partial
     fraction expansion has terms like::
 
              r[i]              r[i+1]                    r[i+n-1]
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
 
+    This function is used for polynomials in negative powers of z,
+    such as digital filters in DSP.  For positive powers, use `residue`.
+
+    Parameters
+    ----------
+    b : array_like
+        Numerator polynomial coefficients.
+    a : array_like
+        Denominator polynomial coefficients.
+
+    Returns
+    -------
+    r : ndarray
+        Residues.
+    p : ndarray
+        Poles.
+    k : ndarray
+        Coefficients of the direct polynomial term.
+
     See also
     --------
-    invresz, unique_roots
+    invresz, residue, unique_roots
 
     """
     b, a = map(asarray, (b, a))
@@ -1649,22 +1702,53 @@ def invresz(r, p, k, tol=1e-3, rtype='avg'):
     """
     Compute b(z) and a(z) from partial fraction expansion.
 
-    If ``M = len(b)`` and ``N = len(a)``::
+    If `M` is the degree of numerator `b` and `N` the degree of denominator
+    `a`::
 
-                b(z)     b[0] + b[1] z**(-1) + ... + b[M-1] z**(-M+1)
-        H(z) = ------ = ----------------------------------------------
-                a(z)     a[0] + a[1] z**(-1) + ... + a[N-1] z**(-N+1)
+                b(z)     b[0] + b[1] z**(-1) + ... + b[M] z**(-M)
+        H(z) = ------ = ------------------------------------------
+                a(z)     a[0] + a[1] z**(-1) + ... + a[N] z**(-N)
 
-                     r[0]                   r[-1]
-             = --------------- + ... + ---------------- + k[0] + k[1]z**(-1)...
-               (1-p[0]z**(-1))         (1-p[-1]z**(-1))
+    then the partial-fraction expansion H(z) is defined as::
 
-    If there are any repeated roots (closer than tol), then the partial
+                 r[0]                   r[-1]
+         = --------------- + ... + ---------------- + k[0] + k[1]z**(-1) ...
+           (1-p[0]z**(-1))         (1-p[-1]z**(-1))
+
+    If there are any repeated roots (closer than `tol`), then the partial
     fraction expansion has terms like::
 
              r[i]              r[i+1]                    r[i+n-1]
         -------------- + ------------------ + ... + ------------------
         (1-p[i]z**(-1))  (1-p[i]z**(-1))**2         (1-p[i]z**(-1))**n
+
+    This function is used for polynomials in negative powers of z,
+    such as digital filters in DSP.  For positive powers, use `invres`.
+
+    Parameters
+    ----------
+    r : array_like
+        Residues.
+    p : array_like
+        Poles.
+    k : array_like
+        Coefficients of the direct polynomial term.
+    tol : float, optional
+        The tolerance for two roots to be considered equal. Default is 1e-3.
+    rtype : {'max', 'min, 'avg'}, optional
+        How to determine the returned root if multiple roots are within
+        `tol` of each other.
+
+          - 'max': pick the maximum of those roots.
+          - 'min': pick the minimum of those roots.
+          - 'avg': take the average of those roots.
+
+    Returns
+    -------
+    b : ndarray
+        Numerator polynomial coefficients.
+    a : ndarray
+        Denominator polynomial coefficients.
 
     See Also
     --------
@@ -1732,8 +1816,8 @@ def resample(x, num, t=None, axis=0, window=None):
 
     See also
     --------
-    decimate
-    resample_poly
+    decimate : Downsample the signal after applying an FIR or IIR filter.
+    resample_poly : Resample using polyphase filtering and an FIR filter.
 
     Notes
     -----
@@ -1770,12 +1854,12 @@ def resample(x, num, t=None, axis=0, window=None):
     sample of the next cycle:
 
     >>> from scipy import signal
-    
+
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f = signal.resample(y, 100)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-    
+
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
@@ -1797,7 +1881,7 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape[axis] = len(W)
         W.shape = newshape
         X = X * W
-    sl = [slice(None)] * len(x.shape)
+    sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
     newshape[axis] = num
     N = int(np.minimum(num, Nx))
@@ -1837,11 +1921,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     down : int
         The downsampling factor.
     axis : int, optional
-        The axis of `x` that is resampled.  Default is 0.
-    window : string or tuple of string and parameter values
-        Desired window to use to design the low-pass filter. See
-        `scipy.signal.get_window` for a list of windows and required
-        parameters.
+        The axis of `x` that is resampled. Default is 0.
+    window : string, tuple, or array_like, optional
+        Desired window to use to design the low-pass filter, or the FIR filter
+        coefficients to employ. See below for details.
 
     Returns
     -------
@@ -1850,8 +1933,8 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
 
     See also
     --------
-    decimate
-    resample
+    decimate : Downsample the signal after applying an FIR or IIR filter.
+    resample : Resample up or down using the FFT method.
 
     Notes
     -----
@@ -1863,11 +1946,22 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     the number of operations during polyphase filtering will depend on
     the filter length and `down` (see `scipy.signal.upfirdn` for details).
 
-    The `window` argument is passed directly to `scipy.signal.firwin`
-    to design a low-pass filter.
+    The argument `window` specifies the FIR low-pass filter design.
+
+    If `window` is an array_like it is assumed to be the FIR filter
+    coefficients. Note that the FIR filter is applied after the upsampling
+    step, so it should be designed to operate on a signal at a sampling
+    frequency higher than the original by a factor of `up//gcd(up, down)`.
+    This function's output will be centered with respect to this array, so it
+    is best to pass a symmetric filter with an odd number of samples if, as
+    is usually the case, a zero-phase filter is desired.
+
+    For any other type of `window`, the functions `scipy.signal.get_window`
+    and `scipy.signal.firwin` are called to generate the appropriate filter
+    coefficients.
 
     The first sample of the returned vector is the same as the first
-    sample of the input vector.  The spacing between samples is changed
+    sample of the input vector. The spacing between samples is changed
     from ``dx`` to ``dx * up / float(down)``.
 
     Examples
@@ -1877,13 +1971,13 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     for the polyphase method:
 
     >>> from scipy import signal
-    
+
     >>> x = np.linspace(0, 10, 20, endpoint=False)
     >>> y = np.cos(-x**2/6.0)
     >>> f_fft = signal.resample(y, 100)
     >>> f_poly = signal.resample_poly(y, 100, 20)
     >>> xnew = np.linspace(0, 10, 100, endpoint=False)
-    
+
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(xnew, f_fft, 'b.-', xnew, f_poly, 'r.-')
     >>> plt.plot(x, y, 'ko-')
@@ -1905,13 +1999,21 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     down //= g_
     if up == down == 1:
         return x.copy()
-    n_out = (x.shape[axis] * up) // down
+    n_out = x.shape[axis] * up
+    n_out = n_out // down + bool(n_out % down)
 
-    # Design a linear-phase low-pass FIR filter
-    max_rate = max(up, down)
-    f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
-    half_len = 10 * max_rate  # reasonable cutoff for our sinc-like function
-    h = firwin(2 * half_len + 1, f_c, window=window)
+    if isinstance(window, (list, np.ndarray)):
+        window = asarray(window)
+        if window.ndim > 1:
+            raise ValueError('window must be 1-D')
+        half_len = (window.size - 1) // 2
+        h = window
+    else:
+        # Design a linear-phase low-pass FIR filter
+        max_rate = max(up, down)
+        f_c = 1. / max_rate  # cutoff of FIR filter (rel. to Nyquist)
+        half_len = 10 * max_rate  # reasonable cutoff for our sinc-like function
+        h = firwin(2 * half_len + 1, f_c, window=window)
     h *= up
 
     # Zero-pad our filter to put the output samples at the center
@@ -2810,29 +2912,38 @@ def sosfilt(sos, x, axis=-1, zi=None):
     return out
 
 
-from scipy.signal.filter_design import cheby1
-from scipy.signal.fir_filter_design import firwin
-
-
-def decimate(x, q, n=None, ftype='iir', axis=-1):
+def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     """
-    Downsample the signal by using a filter.
+    Downsample the signal after applying an anti-aliasing filter.
 
-    By default, an order 8 Chebyshev type I filter is used.  A 30 point FIR
-    filter with hamming window is used if `ftype` is 'fir'.
+    By default, an order 8 Chebyshev type I filter is used. A 30 point FIR
+    filter with Hamming window is used if `ftype` is 'fir'.
 
     Parameters
     ----------
     x : ndarray
         The signal to be downsampled, as an N-dimensional array.
     q : int
-        The downsampling factor.
+        The downsampling factor. For downsampling factors higher than 13, it is
+        recommended to call `decimate` multiple times.
     n : int, optional
-        The order of the filter (1 less than the length for 'fir').
-    ftype : str {'iir', 'fir'}, optional
-        The type of the lowpass filter.
+        The order of the filter (1 less than the length for 'fir'). Defaults to
+        8 for 'iir' and 30 for 'fir'.
+    ftype : str {'iir', 'fir'} or ``dlti`` instance, optional
+        If 'iir' or 'fir', specifies the type of lowpass filter. If an instance
+        of an `dlti` object, uses that object to filter before downsampling.
     axis : int, optional
         The axis along which to decimate.
+    zero_phase : bool, optional
+        Prevent phase shift by filtering with `filtfilt` instead of `lfilter`
+        when using an IIR filter, and shifting the outputs back by the filter's
+        group delay when using an FIR filter. A value of ``True`` is
+        recommended, since a phase shift is generally not desired. Using
+        ``None`` defaults to ``False`` for backwards compatibility. This
+        default will change to ``True`` in a future release, so it is best to
+        set this argument explicitly.
+
+        .. versionadded:: 0.18.0
 
     Returns
     -------
@@ -2841,27 +2952,61 @@ def decimate(x, q, n=None, ftype='iir', axis=-1):
 
     See Also
     --------
-    resample
-    resample_poly
+    resample : Resample up or down using the FFT method.
+    resample_poly : Resample using polyphase filtering and an FIR filter.
+
+    Notes
+    -----
+    The ``zero_phase`` keyword was added in 0.18.0.
+    The possibility to use instances of ``dlti`` as ``ftype`` was added in
+    0.18.0.
     """
 
     if not isinstance(q, int):
         raise TypeError("q must be an integer")
 
-    if n is None:
-        if ftype == 'fir':
-            n = 30
-        else:
-            n = 8
+    if n is not None and not isinstance(n, int):
+        raise TypeError("n must be an integer")
 
     if ftype == 'fir':
-        b = firwin(n + 1, 1. / q, window='hamming')
-        a = 1.
+        if n is None:
+            n = 30
+        system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
+    elif ftype == 'iir':
+        if n is None:
+            n = 8
+        system = dlti(*cheby1(n, 0.05, 0.8 / q))
+    elif isinstance(ftype, dlti):
+        system = ftype._as_tf()  # Avoids copying if already in TF form
+        n = np.max((system.num.size, system.den.size)) - 1
     else:
-        b, a = cheby1(n, 0.05, 0.8 / q)
+        raise ValueError('invalid ftype')
 
-    y = lfilter(b, a, x, axis=axis)
+    if zero_phase is None:
+        warnings.warn(" Note: Decimate's zero_phase keyword argument will "
+                      "default to True in a future release. Until then, "
+                      "decimate defaults to one-way filtering for backwards "
+                      "compatibility. Ideally, always set this argument "
+                      "explicitly.", FutureWarning)
+        zero_phase = False
 
-    sl = [slice(None)] * y.ndim
-    sl[axis] = slice(None, None, q)
+    sl = [slice(None)] * x.ndim
+
+    if len(system.den) == 1:  # FIR case
+        if zero_phase:
+            y = resample_poly(x, 1, q, axis=axis, window=system.num)
+        else:
+            # upfirdn is generally faster than lfilter by a factor equal to the
+            # downsampling factor, since it only calculates the needed outputs
+            n_out = x.shape[axis] // q + bool(x.shape[axis] % q)
+            y = upfirdn(system.num, x, up=1, down=q, axis=axis)
+            sl[axis] = slice(None, n_out, None)
+
+    else:  # IIR case
+        if zero_phase:
+            y = filtfilt(system.num, system.den, x, axis=axis)
+        else:
+            y = lfilter(system.num, system.den, x, axis=axis)
+        sl[axis] = slice(None, None, q)
+
     return y[sl]

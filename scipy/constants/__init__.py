@@ -256,6 +256,7 @@ Temperature
 .. autosummary::
    :toctree: generated/
 
+   convert_temperature
    C2K
    K2C
    F2C

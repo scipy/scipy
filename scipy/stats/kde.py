@@ -245,7 +245,7 @@ class gaussian_kde(object):
 
         Raises
         ------
-        ValueError :
+        ValueError
             If the mean or covariance of the input Gaussian differs from
             the KDE's dimensionality.
 

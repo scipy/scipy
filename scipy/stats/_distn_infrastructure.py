@@ -18,7 +18,7 @@ from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state, _lazywhere
 from scipy._lib._util import _valarray as valarray
 
-from scipy.special import (comb, chndtr, gammaln, entr, kl_div, xlogy, ive)
+from scipy.special import (comb, chndtr, entr, kl_div, xlogy, ive)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -37,7 +37,7 @@ from numpy import (place, argsort, argmax, vectorize,
 
 import numpy as np
 
-from ._constants import _EPS, _XMAX
+from ._constants import _XMAX
 
 try:
     from new import instancemethod
@@ -797,6 +797,12 @@ class rv_generic(object):
             cond = logical_and(cond, (asarray(arg) > 0))
         return cond
 
+    def _support_mask(self, x):
+        return (self.a <= x) & (x <= self.b)
+
+    def _open_support_mask(self, x):
+        return (self.a < x) & (x < self.b)
+
     ##(return 1-d using self._size to get number)
     def _rvs(self, *args):
         ## Use basic inverse cdf algorithm for RV generation as default.
@@ -954,7 +960,7 @@ class rv_generic(object):
                         mu = self._munp(1, *goodargs)
                     mu2 = mu2p - mu * mu
                     if np.isinf(mu):
-                        #if mean is inf then var is also inf
+                        # if mean is inf then var is also inf
                         mu2 = np.inf
                 out0 = default.copy()
                 place(out0, cond, mu2 * scale * scale)
@@ -1567,7 +1573,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
+        cond1 = self._support_mask(x) & (scale > 0)
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
         putmask(output, (1-cond0)+np.isnan(x), self.badvalue)
@@ -1609,7 +1615,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x >= self.a) & (x <= self.b)
+        cond1 = self._support_mask(x) & (scale > 0)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
         output.fill(NINF)
@@ -1650,7 +1656,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = self._open_support_mask(x) & (scale > 0)
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
@@ -1691,7 +1697,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = self._open_support_mask(x) & (scale > 0)
         cond2 = (x >= self.b) & cond0
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
@@ -1733,7 +1739,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = self._open_support_mask(x) & (scale > 0)
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
         output = zeros(shape(cond), dtyp)
@@ -1777,7 +1783,7 @@ class rv_continuous(rv_generic):
         dtyp = np.find_common_type([x.dtype, np.float64], [])
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
-        cond1 = (scale > 0) & (x > self.a) & (x < self.b)
+        cond1 = self._open_support_mask(x) & (scale > 0)
         cond2 = cond0 & (x <= self.a)
         cond = cond0 & cond1
         output = empty(shape(cond), dtyp)
@@ -1884,6 +1890,15 @@ class rv_continuous(rv_generic):
     def _nnlf(self, x, *args):
         return -np.sum(self._logpdf(x, *args), axis=0)
 
+    def _unpack_loc_scale(self, theta):
+        try:
+            loc = theta[-2]
+            scale = theta[-1]
+            args = tuple(theta[:-2])
+        except IndexError:
+            raise ValueError("Not enough input arguments.")
+        return loc, scale, args
+
     def nnlf(self, theta, x):
         '''Return negative loglikelihood function.
 
@@ -1892,49 +1907,39 @@ class rv_continuous(rv_generic):
         This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
         parameters (including loc and scale).
         '''
-        try:
-            loc = theta[-2]
-            scale = theta[-1]
-            args = tuple(theta[:-2])
-        except IndexError:
-            raise ValueError("Not enough input arguments.")
+        loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
         x = asarray((x-loc) / scale)
-        cond0 = (x <= self.a) | (self.b <= x)
-        if np.any(cond0):
+        n_log_scale = len(x) * log(scale)
+        if np.any(~self._support_mask(x)):
             return inf
-        else:
-            N = len(x)
-            return self._nnlf(x, *args) + N * log(scale)
+        return self._nnlf(x, *args) + n_log_scale
+
+    def _nnlf_and_penalty(self, x, args):
+        cond0 = ~self._support_mask(x)
+        n_bad = sum(cond0)
+        if n_bad > 0:
+            x = argsreduce(~cond0, x)[0]
+        logpdf = self._logpdf(x, *args)
+        finite_logpdf = np.isfinite(logpdf)
+        n_bad += np.sum(~finite_logpdf, axis=0)
+        if n_bad > 0:
+            penalty = n_bad * log(_XMAX) * 100
+            return -np.sum(logpdf[finite_logpdf], axis=0) + penalty
+        return -np.sum(logpdf, axis=0)
 
     def _penalized_nnlf(self, theta, x):
-        ''' Return negative loglikelihood function,
-        i.e., - sum (log pdf(x, theta), axis=0)
+        ''' Return penalized negative loglikelihood function,
+        i.e., - sum (log pdf(x, theta), axis=0) + penalty
            where theta are the parameters (including loc and scale)
         '''
-        try:
-            loc = theta[-2]
-            scale = theta[-1]
-            args = tuple(theta[:-2])
-        except IndexError:
-            raise ValueError("Not enough input arguments.")
+        loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
         x = asarray((x-loc) / scale)
-
-        loginf = log(_XMAX)
-
-        if np.isneginf(self.a).all() and np.isinf(self.b).all():
-            Nbad = 0
-        else:
-            cond0 = (x <= self.a) | (self.b <= x)
-            Nbad = np.sum(cond0)
-            if Nbad > 0:
-                x = argsreduce(~cond0, x)[0]
-
-        N = len(x)
-        return self._nnlf(x, *args) + N*log(scale) + Nbad * 100.0 * loginf
+        n_log_scale = len(x) * log(scale)
+        return self._nnlf_and_penalty(x, args) + n_log_scale
 
     # return starting point for fit (shape arguments + loc + scale)
     def _fitstart(self, data, args=None):
@@ -2313,40 +2318,7 @@ class rv_continuous(rv_generic):
         return vals
 
 
-## Handlers for generic case where xk and pk are given
-## The _drv prefix probably means discrete random variable.
-
-def _drv_pmf(self, xk, *args):
-    try:
-        return self.P[xk]
-    except KeyError:
-        return 0.0
-
-
-def _drv_cdf(self, xk, *args):
-    indx = argmax((self.xk > xk), axis=-1)-1
-    return self.F[self.xk[indx]]
-
-
-def _drv_ppf(self, q, *args):
-    indx = argmax((self.qvals >= q), axis=-1)
-    return self.Finv[self.qvals[indx]]
-
-
-def _drv_nonzero(self, k, *args):
-    return 1
-
-
-def _drv_moment(self, n, *args):
-    n = asarray(n)
-    return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
-
-
-def _drv_moment_gen(self, t, *args):
-    t = asarray(t)
-    return np.sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
-
-
+# Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):
     """Non-central moment of discrete distribution."""
     def fun(x):
@@ -2592,6 +2564,16 @@ class rv_discrete(rv_generic):
     >>> R = custm.rvs(size=100)
 
     """
+    def __new__(cls, a=0, b=inf, name=None, badvalue=None,
+                 moment_tol=1e-8, values=None, inc=1, longname=None,
+                 shapes=None, extradoc=None, seed=None):
+
+        if values is not None:
+            # dispatch to a subclass
+            return super(rv_discrete, cls).__new__(rv_sample)
+        else:
+            # business as usual
+            return super(rv_discrete, cls).__new__(cls)
 
     def __init__(self, a=0, b=inf, name=None, badvalue=None,
                  moment_tol=1e-8, values=None, inc=1, longname=None,
@@ -2607,71 +2589,46 @@ class rv_discrete(rv_generic):
 
         if badvalue is None:
             badvalue = nan
-        if name is None:
-            name = 'Distribution'
         self.badvalue = badvalue
         self.a = a
         self.b = b
-        self.name = name
         self.moment_tol = moment_tol
         self.inc = inc
         self._cdfvec = vectorize(self._cdf_single, otypes='d')
-        self.return_integers = 1
         self.vecentropy = vectorize(self._entropy)
         self.shapes = shapes
-        self.extradoc = extradoc
 
         if values is not None:
-            self.xk, self.pk = values
-            self.return_integers = 0
-            indx = argsort(ravel(self.xk))
-            self.xk = take(ravel(self.xk), indx, 0)
-            self.pk = take(ravel(self.pk), indx, 0)
-            self.a = self.xk[0]
-            self.b = self.xk[-1]
-            self.P = dict(zip(self.xk, self.pk))
-            self.qvals = np.cumsum(self.pk, axis=0)
-            self.F = dict(zip(self.xk, self.qvals))
-            decreasing_keys = sorted(self.F.keys(), reverse=True)
-            self.Finv = dict((self.F[k], k) for k in decreasing_keys)
-            self._ppf = instancemethod(vectorize(_drv_ppf, otypes='d'),
-                                       self, rv_discrete)
-            self._pmf = instancemethod(vectorize(_drv_pmf, otypes='d'),
-                                       self, rv_discrete)
-            self._cdf = instancemethod(vectorize(_drv_cdf, otypes='d'),
-                                       self, rv_discrete)
-            self._nonzero = instancemethod(_drv_nonzero, self, rv_discrete)
-            self.generic_moment = instancemethod(_drv_moment,
-                                                 self, rv_discrete)
-            self.moment_gen = instancemethod(_drv_moment_gen,
+            raise ValueError("rv_discrete.__init__(..., values != None, ...)")
+
+        self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
+                                  locscale_in='loc=0',
+                                  # scale=1 for discrete RVs
+                                  locscale_out='loc, 1')
+
+        # nin correction needs to be after we know numargs
+        # correct nin for generic moment vectorization
+        _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
+        _vec_generic_moment.nin = self.numargs + 2
+        self.generic_moment = instancemethod(_vec_generic_moment,
                                              self, rv_discrete)
 
-            self.shapes = ' '   # bypass inspection
-            self._construct_argparser(meths_to_inspect=[self._pmf],
-                                      locscale_in='loc=0',
-                                      # scale=1 for discrete RVs
-                                      locscale_out='loc, 1')
-        else:
-            self._construct_argparser(meths_to_inspect=[self._pmf, self._cdf],
-                                      locscale_in='loc=0',
-                                      # scale=1 for discrete RVs
-                                      locscale_out='loc, 1')
-
-            # nin correction needs to be after we know numargs
-            # correct nin for generic moment vectorization
-            _vec_generic_moment = vectorize(_drv2_moment, otypes='d')
-            _vec_generic_moment.nin = self.numargs + 2
-            self.generic_moment = instancemethod(_vec_generic_moment,
-                                                 self, rv_discrete)
-
-            # correct nin for ppf vectorization
-            _vppf = vectorize(_drv2_ppfsingle, otypes='d')
-            _vppf.nin = self.numargs + 2  # +1 is for self
-            self._ppfvec = instancemethod(_vppf,
-                                          self, rv_discrete)
+        # correct nin for ppf vectorization
+        _vppf = vectorize(_drv2_ppfsingle, otypes='d')
+        _vppf.nin = self.numargs + 2
+        self._ppfvec = instancemethod(_vppf,
+                                      self, rv_discrete)
 
         # now that self.numargs is defined, we can adjust nin
         self._cdfvec.nin = self.numargs + 1
+
+        self._construct_docstrings(name, longname, extradoc)
+
+    def _construct_docstrings(self, name, longname, extradoc):
+        if name is None:
+            name = 'Distribution'
+        self.name = name
+        self.extradoc = extradoc
 
         # generate docstring for subclass instances
         if longname is None:
@@ -2692,10 +2649,16 @@ class rv_discrete(rv_generic):
                 dct = dict(distdiscrete)
                 self._construct_doc(docdict_discrete, dct.get(self.name))
 
-            #discrete RV do not have the scale parameter, remove it
+            # discrete RV do not have the scale parameter, remove it
             self.__doc__ = self.__doc__.replace(
                 '\n    scale : array_like, '
                 'optional\n        scale parameter (default=1)', '')
+
+    @property
+    @np.deprecate(message="`return_integers` attribute is not used anywhere any "
+                          " longer and is deprecated in scipy 0.18.")
+    def return_integers(self):
+        return 1
 
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
@@ -3243,6 +3206,114 @@ def _iter_chunked(x0, x1, chunksize=4, inc=1):
         supp = np.arange(x, x + step, inc)
         x += step
         yield supp
+
+
+class rv_sample(rv_discrete):
+    """A 'sample' discrete distribution defined by the support and values.
+
+       The ctor ignores most of the arguments, only needs the `values` argument.
+    """
+    def __init__(self, a=0, b=inf, name=None, badvalue=None,
+                 moment_tol=1e-8, values=None, inc=1, longname=None,
+                 shapes=None, extradoc=None, seed=None):
+
+        super(rv_discrete, self).__init__(seed)
+
+        if values is None:
+            raise ValueError("rv_sample.__init__(..., values=None,...)")
+
+        # cf generic freeze
+        self._ctor_param = dict(
+            a=a, b=b, name=name, badvalue=badvalue,
+            moment_tol=moment_tol, values=values, inc=inc,
+            longname=longname, shapes=shapes, extradoc=extradoc, seed=seed)
+
+        if badvalue is None:
+            badvalue = nan
+        self.badvalue = badvalue
+        self.moment_tol = moment_tol
+        self.inc = inc
+        self.shapes = shapes
+        self.vecentropy = self._entropy
+
+        xk, pk = values
+
+        if len(xk) != len(pk):
+            raise ValueError("xk and pk need to have the same length.")
+        if not np.allclose(np.sum(pk), 1):
+            raise ValueError("The sum of provided pk is not 1.")
+
+        indx = np.argsort(np.ravel(xk))
+        self.xk = np.take(np.ravel(xk), indx, 0)
+        self.pk = np.take(np.ravel(pk), indx, 0)
+        self.a = self.xk[0]
+        self.b = self.xk[-1]
+        self.qvals = np.cumsum(self.pk, axis=0)
+
+        self.shapes = ' '   # bypass inspection
+        self._construct_argparser(meths_to_inspect=[self._pmf],
+                                  locscale_in='loc=0',
+                                  # scale=1 for discrete RVs
+                                  locscale_out='loc, 1')
+
+        self._construct_docstrings(name, longname, extradoc)
+
+    @property
+    @np.deprecate(message="`return_integers` attribute is not used anywhere any"
+                          " longer and is deprecated in scipy 0.18.")
+    def return_integers(self):
+        return 0
+
+    def _pmf(self, x):
+        return np.select([x == k for k in self.xk],
+                         [np.broadcast_arrays(p, x)[0] for p in self.pk], 0)
+
+    def _cdf(self, x):
+        xx, xxk = np.broadcast_arrays(x[:, None], self.xk)
+        indx = np.argmax(xxk > xx, axis=-1) - 1
+        return self.qvals[indx]
+
+    def _ppf(self, q):
+        qq, sqq = np.broadcast_arrays(q[:, None], self.qvals)
+        indx = argmax(sqq >= qq, axis=-1)
+        return self.xk[indx]
+
+    def _rvs(self):
+        # Need to define it explicitly, otherwise .rvs() with size=None
+        # fails due to explicit broadcasting in _ppf
+        U = self._random_state.random_sample(self._size)
+        if self._size is None:
+            U = np.array(U, ndmin=1)
+            Y = self._ppf(U)[0]
+        else:
+            Y = self._ppf(U)
+        return Y
+
+    def _entropy(self):
+        return entropy(self.pk)
+
+    def generic_moment(self, n):
+        n = asarray(n)
+        return np.sum(self.xk**n[np.newaxis, ...] * self.pk, axis=0)
+
+    @np.deprecate(message="moment_gen method is not used anywhere any more "
+                          "and is deprecated in scipy 0.18.")
+    def moment_gen(self, t):
+        t = asarray(t)
+        return np.sum(exp(self.xk * t[np.newaxis, ...]) * self.pk, axis=0)
+
+    @property
+    @np.deprecate(message="F attribute is not used anywhere any longer and "
+                          "is deprecated in scipy 0.18.")
+    def F(self):
+        return dict(zip(self.xk, self.qvals))
+
+    @property
+    @np.deprecate(message="Finv attribute is not used anywhere any longer and "
+                          "is deprecated in scipy 0.18.")
+    def Finv(self):
+        decreasing_keys = sorted(self.F.keys(), reverse=True)
+        return dict((self.F[k], k) for k in decreasing_keys)
 
 
 def get_distribution_names(namespace_pairs, rv_base_class):

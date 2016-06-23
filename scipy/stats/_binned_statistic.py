@@ -466,7 +466,7 @@ def binned_statistic_dd(sample, values, statistic='mean',
     Vdim, Vlen = values.shape
 
     # Make sure `values` match `sample`
-    if(statistic is not 'count' and Vlen != Dlen):
+    if(statistic != 'count' and Vlen != Dlen):
         raise AttributeError('The number of `values` elements must match the '
                              'length of each `sample` dimension.')
 

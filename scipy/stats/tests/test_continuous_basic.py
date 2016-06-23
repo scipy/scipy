@@ -58,16 +58,13 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['alpha', 'beta', 'betaprime', 'chi', 'chi2', 'dgamma',
-                   'dweibull', 'erlang', 'exponnorm', 'f', 'fatiguelife',
-                   'foldnorm', 'gamma', 'gausshyper', 'gengamma',
-                   'gennorm', 'genpareto', 'gilbrat', 'halfgennorm',
-                   'halfnorm', 'invgamma', 'invgauss', 'johnsonsb', 'johnsonsu',
+fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
+                   'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
+                   'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
-                   'lognorm', 'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
-                   'norm', 'pearson3', 'powerlognorm', 'powernorm', 
-                   'recipinvgauss', 'rice', 'skewnorm', 't', 'truncnorm',
-                   'tukeylambda', 'vonmises', 'vonmises_line', 'wald'])
+                   'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
+                   'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
+                   'vonmises', 'vonmises_line',])
 
 def test_cont_basic():
     # this test skips slow distributions
@@ -181,7 +178,8 @@ def test_cont_basic_slow():
 
             if distfn.numargs == 0:
                 yield check_vecentropy, distfn, arg
-            if distfn.__class__._entropy != stats.rv_continuous._entropy:
+            if (distfn.__class__._entropy != stats.rv_continuous._entropy
+                    and distname != 'vonmises'):
                 yield check_private_entropy, distfn, arg, stats.rv_continuous
 
             yield check_edge_support, distfn, arg

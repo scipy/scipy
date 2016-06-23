@@ -418,9 +418,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     # set default tolerances
     if tol is not None:
         options = dict(options)
-        if meth in ['nelder-mead', 'newton-cg', 'powell', 'tnc']:
+        if meth == 'nelder-mead':
+            options.setdefault('xatol', tol)
+            options.setdefault('fatol', tol)
+        if meth in ['newton-cg', 'powell', 'tnc']:
             options.setdefault('xtol', tol)
-        if meth in ['nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp']:
+        if meth in ['powell', 'l-bfgs-b', 'tnc', 'slsqp']:
             options.setdefault('ftol', tol)
         if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg', 'trust-ncg']:
             options.setdefault('gtol', tol)

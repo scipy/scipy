@@ -336,6 +336,7 @@ class TestConstructUtils(TestCase):
         A = coo_matrix([[1,2],[3,4]])
         B = coo_matrix([[5],[6]])
         C = coo_matrix([[7]])
+        D = coo_matrix((0,0))
 
         expected = matrix([[1, 2, 5],
                            [3, 4, 6],
@@ -352,7 +353,17 @@ class TestConstructUtils(TestCase):
                            [7, 0]])
         assert_equal(construct.bmat([[None,B],[C,None]]).todense(), expected)
 
-        #TODO test failure cases
+        expected = matrix(np.empty((0,0)))
+        assert_equal(construct.bmat([[None,None]]).todense(), expected)
+        assert_equal(construct.bmat([[None,D],[D,None]]).todense(), expected)
+
+        # test bug reported in gh-5976
+        expected = matrix([[7]])
+        assert_equal(construct.bmat([[None,D],[C,None]]).todense(), expected)
+
+        # test failure cases
+        assert_raises(ValueError, construct.bmat, [[A],[B]])
+        assert_raises(ValueError, construct.bmat, [[A,C]])
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """

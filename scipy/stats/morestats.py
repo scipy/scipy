@@ -98,7 +98,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> mean
     Mean(statistic=9.0, minmax=(7.1036502226125329, 10.896349777387467))
     >>> var
-    Variance(statistic=10.0, minmax=(3.1767242068607087, 24.459103821334018))
+    Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
     >>> std
     Std_dev(statistic=2.9724954732045084, minmax=(1.7823367265645143, 4.9456146050146295))
 
@@ -610,7 +610,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     if plot is not None:
         plot.plot(osm, osr, 'bo', osm, slope*osm + intercept, 'r-')
-        _add_axis_labels_title(plot, xlabel='Quantiles',
+        _add_axis_labels_title(plot, xlabel='Theoretical quantiles',
                                ylabel='Ordered Values',
                                title='Probability Plot')
 
@@ -2372,7 +2372,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
                          "or 'pratt' or 'zsplit'")
 
     if y is None:
-        d = x
+        d = asarray(x)
     else:
         x, y = map(asarray, (x, y))
         if len(x) != len(y):
@@ -2386,6 +2386,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False):
     count = len(d)
     if count < 10:
         warnings.warn("Warning: sample size too small for normal approximation.")
+
     r = stats.rankdata(abs(d))
     r_plus = np.sum((d > 0) * r, axis=0)
     r_minus = np.sum((d < 0) * r, axis=0)
@@ -2702,7 +2703,7 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     mask = (S == .0) * (C == .0)
     if mask.ndim > 0:
         res[mask] = np.nan
-    return res 
+    return res
 
 def circvar(samples, high=2*pi, low=0, axis=None):
     """

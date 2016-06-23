@@ -136,8 +136,8 @@ eval_hermite  -- eval_hermite: ld->d                       -- orthogonal_eval.px
 eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.pxd
 exp10 -- exp10: d->d                                       -- cephes.h
 exp2 -- exp2: d->d                                         -- cephes.h
-gamma -- Gamma: d->d, cgamma_wrap: D->D                    -- cephes.h, specfun_wrappers.h
-gammaln -- lgam: d->d, clngamma_wrap: D->D                 -- cephes.h, specfun_wrappers.h
+gamma -- Gamma: d->d, cgamma: D->D                         -- cephes.h, _loggamma.pxd
+_gammaln -- lgam: d->d, clngamma_wrap: D->D                -- cephes.h, specfun_wrappers.h
 gammasgn -- gammasgn: d->d                                 -- c_misc/misc.h
 i0 -- i0: d->d                                             -- cephes.h
 i0e -- i0e: d->d                                           -- cephes.h
@@ -188,11 +188,11 @@ hankel1 -- cbesh_wrap1: dD->D                              -- amos_wrappers.h
 hankel1e -- cbesh_wrap1_e: dD->D                           -- amos_wrappers.h
 hankel2 -- cbesh_wrap2: dD->D                              -- amos_wrappers.h
 hankel2e -- cbesh_wrap2_e: dD->D                           -- amos_wrappers.h
-ndtr -- ndtr: d->d                                         -- cephes.h
-log_ndtr -- log_ndtr: d->d                                 -- cephes.h
+ndtr -- ndtr: d->d, faddeeva_ndtr: D->D                    -- cephes.h, _faddeeva.h++
+log_ndtr -- log_ndtr: d->d, faddeeva_log_ndtr: D->D        -- cephes.h, _faddeeva.h++
 ndtri -- ndtri: d->d                                       -- cephes.h
-psi -- psi: d->d, cpsi_wrap: D->D                          -- cephes.h, specfun_wrappers.h
-rgamma -- rgamma: d->d, crgamma_wrap: D->D                 -- cephes.h, specfun_wrappers.h
+psi -- digamma: d->d, cdigamma: D->D                       -- _digamma.pxd, _digamma.pxd
+rgamma -- rgamma: d->d, crgamma: D->D                      -- cephes.h, _loggamma.pxd
 round -- round: d->d                                       -- cephes.h
 sindg -- sindg: d->d                                       -- cephes.h
 cosdg -- cosdg: d->d                                       -- cephes.h
@@ -202,7 +202,7 @@ cotdg -- cotdg: d->d                                       -- cephes.h
 log1p -- log1p: d->d, clog1p: D->D                         -- cephes.h, _cunity.pxd
 expm1 -- expm1: d->d, cexpm1: D->D                         -- cephes.h, _cunity.pxd
 cosm1 -- cosm1: d->d                                       -- cephes.h
-spence -- spence: d->d                                     -- cephes.h
+spence -- spence: d->d, cspence: D-> D                     -- cephes.h, _spence.pxd
 zetac -- zetac: d->d                                       -- cephes.h
 struve -- struve_h: dd->d                                  -- misc.h
 modstruve -- struve_l: dd->d                               -- misc.h
@@ -221,7 +221,7 @@ berp -- berp_wrap: d->d                                    -- specfun_wrappers.h
 beip -- beip_wrap: d->d                                    -- specfun_wrappers.h
 kerp -- kerp_wrap: d->d                                    -- specfun_wrappers.h
 keip -- keip_wrap: d->d                                    -- specfun_wrappers.h
-zeta -- zeta: dd->d                                        -- cephes.h
+_zeta -- zeta: dd->d                                       -- cephes.h
 kolmogorov -- kolmogorov: d->d                             -- cephes.h
 kolmogi -- kolmogi: d->d                                   -- cephes.h
 besselpoly -- besselpoly: ddd->d                           -- c_misc/misc.h
@@ -311,6 +311,9 @@ _spherical_yn_d -- spherical_yn_d_real: ld->d, spherical_yn_d_complex: lD->D -- 
 _spherical_jn_d -- spherical_jn_d_real: ld->d, spherical_jn_d_complex: lD->D -- _spherical_bessel.pxd
 _spherical_in_d -- spherical_in_d_real: ld->d, spherical_in_d_complex: lD->D -- _spherical_bessel.pxd
 _spherical_kn_d -- spherical_kn_d_real: ld->d, spherical_kn_d_complex: lD->D -- _spherical_bessel.pxd
+loggamma -- loggamma: D->D                                 -- _loggamma.pxd
+_sinpi -- sinpi[double]: d->d, sinpi[double_complex]: D->D -- _trig.pxd
+_cospi -- cospi[double]: d->d, cospi[double_complex]: D->D -- _trig.pxd
 """
 
 #---------------------------------------------------------------------------------
@@ -941,38 +944,33 @@ def generate(filename, cxx_fn_prefix, ufuncs):
         toplevel += t + "\n"
 
     # Produce output
-    toplevel = "\n".join(list(all_loops.values()) + defs + [toplevel])
+    toplevel = "\n".join(sorted(all_loops.values()) + defs + [toplevel])
 
-    f = open(filename, 'wb')
-    f.write(EXTRA_CODE_COMMON)
-    f.write(EXTRA_CODE)
-    f.write(toplevel)
-    f.write(EXTRA_CODE_BOTTOM)
-    f.close()
+    with open(filename, 'w') as f:
+        f.write(EXTRA_CODE_COMMON)
+        f.write(EXTRA_CODE)
+        f.write(toplevel)
+        f.write(EXTRA_CODE_BOTTOM)
 
     defs_h = unique(defs_h)
-    f = open(proto_h_filename, 'wb')
-    f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
-    f.write("\n".join(defs_h))
-    f.write("\n#endif\n")
-    f.close()
+    with open(proto_h_filename, 'w') as f:
+        f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
+        f.write("\n".join(defs_h))
+        f.write("\n#endif\n")
 
     cxx_defs_h = unique(cxx_defs_h)
-    f = open(cxx_proto_h_filename, 'wb')
-    f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
-    f.write("\n".join(cxx_defs_h))
-    f.write("\n#endif\n")
-    f.close()
+    with open(cxx_proto_h_filename, 'w') as f:
+        f.write("#ifndef UFUNCS_PROTO_H\n#define UFUNCS_PROTO_H 1\n")
+        f.write("\n".join(cxx_defs_h))
+        f.write("\n#endif\n")
 
-    f = open(cxx_pyx_filename, 'wb')
-    f.write(EXTRA_CODE_COMMON)
-    f.write("\n".join(cxx_defs))
-    f.write("\n# distutils: language = c++\n")
-    f.close()
+    with open(cxx_pyx_filename, 'w') as f:
+        f.write(EXTRA_CODE_COMMON)
+        f.write("\n".join(cxx_defs))
+        f.write("\n# distutils: language = c++\n")
 
-    f = open(cxx_pxd_filename, 'wb')
-    f.write("\n".join(cxx_pxd_defs))
-    f.close()
+    with open(cxx_pxd_filename, 'w') as f:
+        f.write("\n".join(cxx_pxd_defs))
 
 
 def unique(lst):

@@ -5,9 +5,8 @@ We try and read any file that matlab reads, these files included
 from __future__ import division, print_function, absolute_import
 
 from os.path import dirname, join as pjoin
-import sys
 
-from numpy.testing import assert_
+from numpy.testing import assert_, assert_raises
 
 from scipy.io.matlab.mio import loadmat
 
@@ -22,3 +21,13 @@ def test_multiple_fieldnames():
     funny_names = vars['Summary'].dtype.names
     assert_(set(['_1_Station_Q', '_2_Station_Q',
                      '_3_Station_Q']).issubset(funny_names))
+
+
+def test_malformed1():
+    # Example from gh-6072
+    # Contains malformed header data, which previously resulted into a
+    # buffer overflow.
+    #
+    # Should raise an exception, not segfault
+    fname = pjoin(TEST_DATA_PATH, 'malformed1.mat')
+    assert_raises(ValueError, loadmat, fname)

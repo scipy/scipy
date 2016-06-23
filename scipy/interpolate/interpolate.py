@@ -140,11 +140,6 @@ class interp2d(object):
         interpolation domain. If omitted (None), values outside
         the domain are extrapolated.
 
-    Returns
-    -------
-    values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
-        Interpolated values at input coordinates.
-
     See Also
     --------
     RectBivariateSpline :
@@ -371,9 +366,11 @@ class interp1d(_Interpolator1D):
           list or ndarray, regardless of shape) is taken to be a single
           array-like argument meant to be used for both bounds as
           ``below, above = fill_value, fill_value``.
+
           .. versionadded:: 0.17.0
         - If "extrapolate", then points outside the data range will be
           extrapolated. ("nearest" and "linear" kinds only.)
+
           .. versionadded:: 0.17.0
     assume_sorted : bool, optional
         If False, values of `x` can be in any order and they are sorted first.
@@ -465,9 +462,11 @@ class interp1d(_Interpolator1D):
                 self._call = self.__class__._call_nearest
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
-                if (not np.issubdtype(self.y.dtype, np.complexfloating) and
-                   self.y.ndim == 1 and
-                   not _do_extrapolate(fill_value)):
+                cond = self.x.dtype == np.float_ and self.y.dtype == np.float_
+                cond = cond and self.y.ndim == 1
+                cond = cond and not _do_extrapolate(fill_value)
+
+                if cond:
                     self._call = self.__class__._call_linear_np
                 else:
                     self._call = self.__class__._call_linear
@@ -624,17 +623,18 @@ class interp1d(_Interpolator1D):
 
 
 class _PPolyBase(object):
-    """
-    Base class for piecewise polynomials.
-    """
+    """Base class for piecewise polynomials."""
     __slots__ = ('c', 'x', 'extrapolate', 'axis')
 
     def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
         self.x = np.ascontiguousarray(x, dtype=np.float64)
+
         if extrapolate is None:
             extrapolate = True
-        self.extrapolate = bool(extrapolate)
+        elif extrapolate != 'periodic':
+            extrapolate = bool(extrapolate)
+        self.extrapolate = extrapolate
 
         if not (0 <= axis < self.c.ndim - 1):
             raise ValueError("%s must be between 0 and %s" % (axis, c.ndim-1))
@@ -682,7 +682,6 @@ class _PPolyBase(object):
         `c` and `x` must be arrays of the correct shape and type.  The
         `c` array can only be of dtypes float and complex, and `x`
         array must have dtype float.
-
         """
         self = object.__new__(cls)
         self.c = c
@@ -719,7 +718,6 @@ class _PPolyBase(object):
         right : bool, optional
             Whether the new intervals are to the right or to the left
             of the current intervals.
-
         """
         c = np.asarray(c)
         x = np.asarray(x)
@@ -761,7 +759,7 @@ class _PPolyBase(object):
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
-        Evaluate the piecewise polynomial or its derivative
+        Evaluate the piecewise polynomial or its derivative.
 
         Parameters
         ----------
@@ -769,9 +767,11 @@ class _PPolyBase(object):
             Points to evaluate the interpolant at.
         nu : int, optional
             Order of derivative to evaluate. Must be non-negative.
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
+        extrapolate : {bool, 'periodic', None}, optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used.
+            If None (default), use `self.extrapolate`.
 
         Returns
         -------
@@ -786,13 +786,19 @@ class _PPolyBase(object):
         breakpoints. The polynomial intervals are considered half-open,
         ``[a, b)``, except for the last interval which is closed
         ``[a, b]``.
-
         """
         if extrapolate is None:
             extrapolate = self.extrapolate
         x = np.asarray(x)
         x_shape, x_ndim = x.shape, x.ndim
         x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+
+        # With periodic extrapolation we map x to the segment
+        # [self.x[0], self.x[-1]].
+        if extrapolate == 'periodic':
+            x = self.x[0] + (x - self.x[0]) % (self.x[-1] - self.x[0])
+            extrapolate = False
+
         out = np.empty((len(x), prod(self.c.shape[2:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
         self._evaluate(x, nu, extrapolate, out)
@@ -823,9 +829,10 @@ class PPoly(_PPolyBase):
     x : ndarray, shape (m+1,)
         Polynomial breakpoints. These must be sorted in
         increasing order.
-    extrapolate : bool, optional
-        Whether to extrapolate to out-of-bounds points based on first
-        and last intervals, or to return NaNs. Default: True.
+    extrapolate : bool or 'periodic', optional
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. Default is True.
     axis : int, optional
         Interpolation axis. Default is zero.
 
@@ -862,7 +869,6 @@ class PPoly(_PPolyBase):
     High-order polynomials in the power basis can be numerically
     unstable.  Precision problems can start to appear for orders
     larger than 20-30.
-
     """
 
     def _evaluate(self, x, nu, extrapolate, out):
@@ -876,8 +882,8 @@ class PPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of derivative to evaluate. (Default: 1)
-            If negative, the antiderivative is returned.
+            Order of derivative to evaluate. Default is 1, i.e. compute the
+            first derivative. If negative, the antiderivative is returned.
 
         Returns
         -------
@@ -892,7 +898,6 @@ class PPoly(_PPolyBase):
         breakpoints. The polynomial intervals are considered half-open,
         ``[a, b)``, except for the last interval which is closed
         ``[a, b]``.
-
         """
         if nu < 0:
             return self.antiderivative(-nu)
@@ -924,8 +929,8 @@ class PPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of antiderivative to evaluate. (Default: 1)
-            If negative, the derivative is returned.
+            Order of antiderivative to evaluate. Default is 1, i.e. compute
+            the first integral. If negative, the derivative is returned.
 
         Returns
         -------
@@ -939,6 +944,10 @@ class PPoly(_PPolyBase):
         continuously differentiable to order n-1, up to floating point
         rounding error.
 
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
+        it will be set to False for the returned instance. This is done because
+        the antiderivative is no longer periodic and its correct evaluation
+        outside of the initially given x interval is difficult.
         """
         if nu <= 0:
             return self.derivative(-nu)
@@ -956,8 +965,13 @@ class PPoly(_PPolyBase):
         _ppoly.fix_continuity(c.reshape(c.shape[0], c.shape[1], -1),
                               self.x, nu - 1)
 
+        if self.extrapolate == 'periodic':
+            extrapolate = False
+        else:
+            extrapolate = self.extrapolate
+
         # construct a compatible polynomial
-        return self.construct_fast(c, self.x, self.extrapolate, self.axis)
+        return self.construct_fast(c, self.x, extrapolate, self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """
@@ -969,15 +983,16 @@ class PPoly(_PPolyBase):
             Lower integration bound
         b : float
             Upper integration bound
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
+        extrapolate : {bool, 'periodic', None}, optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used.
+            If None (default), use `self.extrapolate`.
 
         Returns
         -------
         ig : array_like
             Definite integral of the piecewise polynomial over [a, b]
-
         """
         if extrapolate is None:
             extrapolate = self.extrapolate
@@ -988,12 +1003,53 @@ class PPoly(_PPolyBase):
             a, b = b, a
             sign = -1
 
-        # Compute the integral
         range_int = np.empty((prod(self.c.shape[2:]),), dtype=self.c.dtype)
         self._ensure_c_contiguous()
-        _ppoly.integrate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
-                         self.x, a, b, bool(extrapolate),
-                         out=range_int)
+
+        # Compute the integral.
+        if extrapolate == 'periodic':
+            # Split the integral into the part over period (can be several
+            # of them) and the remaining part.
+
+            xs, xe = self.x[0], self.x[-1]
+            period = xe - xs
+            interval = b - a
+            n_periods, left = divmod(interval, period)
+
+            if n_periods > 0:
+                _ppoly.integrate(
+                    self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                    self.x, xs, xe, False, out=range_int)
+                range_int *= n_periods
+            else:
+                range_int.fill(0)
+
+            # Map a to [xs, xe], b is always a + left.
+            a = xs + (a - xs) % period
+            b = a + left
+
+            # If b <= xe then we need to integrate over [a, b], otherwise
+            # over [a, xe] and from xs to what is remained.
+            remainder_int = np.empty_like(range_int)
+            if b <= xe:
+                _ppoly.integrate(
+                    self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                    self.x, a, b, False, out=remainder_int)
+                range_int += remainder_int
+            else:
+                _ppoly.integrate(
+                    self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                    self.x, a, xe, False, out=remainder_int)
+                range_int += remainder_int
+
+                _ppoly.integrate(
+                    self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                    self.x, xs, xs + left + a - xe, False, out=remainder_int)
+                range_int += remainder_int
+        else:
+            _ppoly.integrate(
+                self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
+                self.x, a, b, bool(extrapolate), out=range_int)
 
         # Return
         range_int *= sign
@@ -1010,9 +1066,10 @@ class PPoly(_PPolyBase):
         discontinuity : bool, optional
             Whether to report sign changes across discontinuities at
             breakpoints as roots.
-        extrapolate : bool, optional
-            Whether to return roots from the polynomial extrapolated
-            based on first and last intervals.
+        extrapolate : {bool, 'periodic', None}, optional
+            If bool, determines whether to return roots from the polynomial
+            extrapolated based on first and last intervals, 'periodic' works
+            the same as False. If None (default), use `self.extrapolate`.
 
         Returns
         -------
@@ -1045,7 +1102,6 @@ class PPoly(_PPolyBase):
         >>> pp = PPoly(np.array([[1, -4, 3], [1, 0, 0]]).T, [-2, 1, 2])
         >>> pp.roots()
         array([-1.,  1.])
-
         """
         if extrapolate is None:
             extrapolate = self.extrapolate
@@ -1080,9 +1136,10 @@ class PPoly(_PPolyBase):
         discontinuity : bool, optional
             Whether to report sign changes across discontinuities at
             breakpoints as roots.
-        extrapolate : bool, optional
-            Whether to return roots from the polynomial extrapolated
-            based on first and last intervals.
+        extrapolate : {bool, 'periodic', None}, optional
+            If bool, determines whether to return roots from the polynomial
+            extrapolated based on first and last intervals, 'periodic' works
+            the same as False. If None (default), use `self.extrapolate`.
 
         Returns
         -------
@@ -1096,7 +1153,6 @@ class PPoly(_PPolyBase):
         See Also
         --------
         PPoly.solve
-
         """
         return self.solve(0, discontinuity, extrapolate)
 
@@ -1109,10 +1165,10 @@ class PPoly(_PPolyBase):
         ----------
         tck
             A spline, as returned by `splrep`
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs. Default: True.
-
+        extrapolate : bool or 'periodic', optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used. Default is True.
         """
         t, c, k = tck
 
@@ -1133,10 +1189,10 @@ class PPoly(_PPolyBase):
         ----------
         bp : BPoly
             A Bernstein basis polynomial, as created by BPoly
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs. Default: True.
-
+        extrapolate : bool or 'periodic', optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used. Default is True.
         """
         dx = np.diff(bp.x)
         k = bp.c.shape[0] - 1  # polynomial order
@@ -1157,19 +1213,19 @@ class PPoly(_PPolyBase):
 
 
 class BPoly(_PPolyBase):
-    """
-    Piecewise polynomial in terms of coefficients and breakpoints
+    """Piecewise polynomial in terms of coefficients and breakpoints.
 
-    The polynomial in the ``i``-th interval ``x[i] <= xp < x[i+1]``
-    is written in the Bernstein polynomial basis::
+    The polynomial in the ``i``-th interval ``x[i] <= xp < x[i+1]`` is written
+    in the Bernstein polynomial basis::
 
-        S = sum(c[a, i] * b(a, k; x) for a in range(k+1))
+        S = sum(c[a, i] * b(a, k; x) for a in range(k+1)),
 
     where ``k`` is the degree of the polynomial, and::
 
-        b(a, k; x) = comb(k, a) * t**k * (1 - t)**(k - a)
+        b(a, k; x) = binom(k, a) * t**k * (1 - t)**(k - a),
 
-    with ``t = (x - x[i]) / (x[i+1] - x[i])``.
+    with ``t = (x - x[i]) / (x[i+1] - x[i])`` and ``binom`` is a binomial
+    coefficient.
 
     Parameters
     ----------
@@ -1179,8 +1235,9 @@ class BPoly(_PPolyBase):
         Polynomial breakpoints. These must be sorted in
         increasing order.
     extrapolate : bool, optional
-        Whether to extrapolate to out-of-bounds points based on first
-        and last intervals, or to return NaNs. Default: True.
+        If bool, determines whether to extrapolate to out-of-bounds points
+        based on first and last intervals, or to return NaNs. If 'periodic',
+        periodic extrapolation is used. Default is True.
     axis : int, optional
         Interpolation axis. Default is zero.
 
@@ -1251,14 +1308,14 @@ class BPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of derivative to evaluate. (Default: 1)
-            If negative, the antiderivative is returned.
+            Order of derivative to evaluate. Default is 1, i.e. compute the
+            first derivative. If negative, the antiderivative is returned.
 
         Returns
         -------
         bp : BPoly
-            Piecewise polynomial of order k2 = k - nu representing the derivative
-            of this polynomial.
+            Piecewise polynomial of order k - nu representing the derivative of
+            this polynomial.
 
         """
         if nu < 0:
@@ -1304,15 +1361,21 @@ class BPoly(_PPolyBase):
         Parameters
         ----------
         nu : int, optional
-            Order of derivative to evaluate. (Default: 1)
-            If negative, the derivative is returned.
+            Order of antiderivative to evaluate. Default is 1, i.e. compute
+            the first integral. If negative, the derivative is returned.
 
         Returns
         -------
         bp : BPoly
-            Piecewise polynomial of order k2 = k + nu representing the
+            Piecewise polynomial of order k + nu representing the
             antiderivative of this polynomial.
 
+        Notes
+        -----
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
+        it will be set to False for the returned instance. This is done because
+        the antiderivative is no longer periodic and its correct evaluation
+        outside of the initially given x interval is difficult.
         """
         if nu <= 0:
             return self.derivative(-nu)
@@ -1340,7 +1403,12 @@ class BPoly(_PPolyBase):
         # Finally, use the fact that BPs form a partition of unity.
         c2[:,1:] += np.cumsum(c2[k,:], axis=0)[:-1]
 
-        return self.construct_fast(c2, x, self.extrapolate, axis=self.axis)
+        if self.extrapolate == 'periodic':
+            extrapolate = False
+        else:
+            extrapolate = self.extrapolate
+
+        return self.construct_fast(c2, x, extrapolate, axis=self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """
@@ -1352,10 +1420,10 @@ class BPoly(_PPolyBase):
             Lower integration bound
         b : float
             Upper integration bound
-        extrapolate : bool, optional
+        extrapolate : {bool, 'periodic', None}, optional
             Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs.
-            Defaults to ``self.extrapolate``.
+            and last intervals, or to return NaNs. If 'periodic', periodic
+            extrapolation is used. If None (default), use `self.extrapolate`.
 
         Returns
         -------
@@ -1366,9 +1434,45 @@ class BPoly(_PPolyBase):
         # XXX: can probably use instead the fact that
         # \int_0^{1} B_{j, n}(x) \dx = 1/(n+1)
         ib = self.antiderivative()
-        if extrapolate is not None:
+        if extrapolate is None:
+            extrapolate = self.extrapolate
+
+        # ib.extrapolate shouldn't be 'periodic', it is converted to
+        # False for 'periodic. in antiderivative() call.
+        if extrapolate != 'periodic':
             ib.extrapolate = extrapolate
-        return ib(b) - ib(a)
+
+        if extrapolate == 'periodic':
+            # Split the integral into the part over period (can be several
+            # of them) and the remaining part.
+
+            # For simplicity and clarity convert to a <= b case.
+            if a <= b:
+                sign = 1
+            else:
+                a, b = b, a
+                sign = -1
+
+            xs, xe = self.x[0], self.x[-1]
+            period = xe - xs
+            interval = b - a
+            n_periods, left = divmod(interval, period)
+            res = n_periods * (ib(xe) - ib(xs))
+
+            # Map a and b to [xs, xe].
+            a = xs + (a - xs) % period
+            b = a + left
+
+            # If b <= xe then we need to integrate over [a, b], otherwise
+            # over [a, xe] and from xs to what is remained.
+            if b <= xe:
+                res += ib(b) - ib(a)
+            else:
+                res += ib(xe) - ib(a) + ib(xs + left + a - xe) - ib(xs)
+
+            return sign * res
+        else:
+            return ib(b) - ib(a)
 
     def extend(self, c, x, right=True):
         k = max(self.c.shape[0], c.shape[0])
@@ -1387,10 +1491,10 @@ class BPoly(_PPolyBase):
         ----------
         pp : PPoly
             A piecewise polynomial in the power basis
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs. Default: True.
-
+        extrapolate : bool or 'periodic', optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used. Default is True.
         """
         dx = np.diff(pp.x)
         k = pp.c.shape[0] - 1   # polynomial order
@@ -1422,9 +1526,10 @@ class BPoly(_PPolyBase):
         orders : None or int or array_like of ints. Default: None.
             Specifies the degree of local polynomials. If not None, some
             derivatives are ignored.
-        extrapolate : bool, optional
-            Whether to extrapolate to out-of-bounds points based on first
-            and last intervals, or to return NaNs. Default: True.
+        extrapolate : bool or 'periodic', optional
+            If bool, determines whether to extrapolate to out-of-bounds points
+            based on first and last intervals, or to return NaNs.
+            If 'periodic', periodic extrapolation is used. Default is True.
 
         Notes
         -----

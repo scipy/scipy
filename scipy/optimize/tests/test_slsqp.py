@@ -313,6 +313,20 @@ class TestSLSQP(TestCase):
         assert_(callback.been_called)
         assert_equal(callback.ncalls, res['nit'])
 
+    def test_regression_5743(self):
+        # Check that gh-5743 is fixed.
+        # SLSQP must not indicate success for this problem,
+        # which is infeasible.
+        x = [1, 2]
+        sol = minimize(
+            lambda x: x[0]**2 + x[1]**2,
+            x,
+            constraints=({'type':'eq','fun': lambda x: x[0]+x[1]-1},
+                         {'type':'ineq','fun': lambda x: x[0]-2}),
+            bounds=((0,None), (0,None)),
+            method='SLSQP')
+        assert_(not sol.success, sol)
+
 
 if __name__ == "__main__":
     run_module_suite()

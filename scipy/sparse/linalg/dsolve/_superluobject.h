@@ -17,13 +17,13 @@
 #endif
 
 #include "SuperLU/SRC/slu_zdefs.h"
-#include "numpy/arrayobject.h"
+#include "numpy/ndarrayobject.h"
 #include "SuperLU/SRC/slu_util.h"
 #include "SuperLU/SRC/slu_dcomplex.h"
 #include "SuperLU/SRC/slu_scomplex.h"
 
 
-#define _CHECK_INTEGER(x) (PyArray_ISINTEGER(x) && (x)->descr->elsize == sizeof(int))
+#define _CHECK_INTEGER(x) (PyArray_ISINTEGER((PyArrayObject*)x) && PyArray_ITEMSIZE((PyArrayObject*)x) == sizeof(int))
 
 /*
  * SuperLUObject definition
@@ -69,7 +69,7 @@ void XDestroy_CompCol_Matrix(SuperMatrix *);
 void XDestroy_CompCol_Permuted(SuperMatrix *);
 void XStatFree(SuperLUStat_t *);
 
-jmp_buf *superlu_python_jmpbuf();
+jmp_buf *superlu_python_jmpbuf(void);
 
 
 /* Custom thread begin/end statements: Numpy versions < 1.9 are not safe
@@ -78,7 +78,7 @@ jmp_buf *superlu_python_jmpbuf();
  */
 #define SLU_BEGIN_THREADS_DEF volatile PyThreadState *_save = NULL
 #define SLU_BEGIN_THREADS do { if (_save == NULL) _save = PyEval_SaveThread(); } while (0)
-#define SLU_END_THREADS   do { if (_save) { PyEval_RestoreThread(_save); _save = NULL;} } while (0)
+#define SLU_END_THREADS   do { if (_save) { PyEval_RestoreThread((PyThreadState*)_save); _save = NULL;} } while (0)
 
 /*
  * Definitions for other SuperLU data types than Z,

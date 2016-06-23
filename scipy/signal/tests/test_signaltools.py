@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
+
 from decimal import Decimal
 from itertools import product
 
@@ -13,11 +15,16 @@ import numpy as np
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d, fftconvolve,
+    correlate, convolve, convolve2d, fftconvolve, hann,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-    invres, invresz, vectorstrength, signaltools, lfiltic, tf2sos, sosfilt,
+    invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt,
     sosfilt_zi)
 from scipy.signal.signaltools import _filtfilt_gust
+
+if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
+    from math import gcd
+else:
+    from fractions import gcd
 
 
 class _TestConvolve(TestCase):
@@ -67,12 +74,6 @@ class _TestConvolve(TestCase):
                    [12, 31, 58, 49, 30]])
         assert_array_equal(c, d)
 
-    def test_valid_mode(self):
-        a = [1, 2, 3, 6, 5, 3]
-        b = [2, 3, 4, 5, 3, 4, 2, 2, 1]
-        c = convolve(a, b, 'valid')
-        assert_array_equal(c, array([70, 78, 73, 65]))
-
     def test_input_swapping(self):
         small = arange(8).reshape(2, 2, 2)
         big = 1j * arange(27).reshape(3, 3, 3)
@@ -105,22 +106,35 @@ class _TestConvolve(TestCase):
                            out_array[1:3, 1:3, 1:3])
         assert_array_equal(convolve(big, small, 'same'),
                            out_array[0:3, 0:3, 0:3])
-        assert_raises(ValueError, convolve, small, big, 'valid')
+        assert_array_equal(convolve(small, big, 'valid'),
+                           out_array[1:3, 1:3, 1:3])
         assert_array_equal(convolve(big, small, 'valid'),
                            out_array[1:3, 1:3, 1:3])
 
 
 class TestConvolve(_TestConvolve):
 
-    def test_valid_mode(self):
-        # 'valid' mode if b.size > a.size does not make sense with the new
-        # behavior
+    def test_valid_mode2(self):
+        # See gh-5897
         a = [1, 2, 3, 6, 5, 3]
         b = [2, 3, 4, 5, 3, 4, 2, 2, 1]
+        expected = [70, 78, 73, 65]
 
-        def _test():
-            convolve(a, b, 'valid')
-        self.assertRaises(ValueError, _test)
+        out = convolve(a, b, 'valid')
+        assert_array_equal(out, expected)
+
+        out = convolve(b, a, 'valid')
+        assert_array_equal(out, expected)
+
+        a = [1 + 5j, 2 - 1j, 3 + 0j]
+        b = [2 - 3j, 1 + 0j]
+        expected = [2 - 3j, 8 - 10j]
+
+        out = convolve(a, b, 'valid')
+        assert_array_equal(out, expected)
+
+        out = convolve(b, a, 'valid')
+        assert_array_equal(out, expected)
 
     def test_same_mode(self):
         a = [1, 2, 3, 3, 1, 2]
@@ -128,6 +142,18 @@ class TestConvolve(_TestConvolve):
         c = convolve(a, b, 'same')
         d = array([57, 61, 63, 57, 45, 36])
         assert_array_equal(c, d)
+
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
 
 class _TestConvolve2d(TestCase):
@@ -144,16 +170,26 @@ class _TestConvolve2d(TestCase):
     def test_valid_mode(self):
         e = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
         f = [[1, 2, 3], [3, 4, 5]]
-        g = convolve2d(e, f, 'valid')
         h = array([[62, 80, 98, 116, 134]])
+
+        g = convolve2d(e, f, 'valid')
+        assert_array_equal(g, h)
+
+        # See gh-5897
+        g = convolve2d(f, e, 'valid')
         assert_array_equal(g, h)
 
     def test_valid_mode_complx(self):
         e = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
         f = np.array([[1, 2, 3], [3, 4, 5]], dtype=complex) + 1j
-        g = convolve2d(e, f, 'valid')
         h = array([[62.+24.j, 80.+30.j, 98.+36.j, 116.+42.j, 134.+48.j]])
+
+        g = convolve2d(e, f, 'valid')
         assert_array_almost_equal(g, h)
+
+        # See gh-5897
+        g = convolve2d(f, e, 'valid')
+        assert_array_equal(g, h)
 
     def test_fillvalue(self):
         a = [[1, 2, 3], [3, 4, 5]]
@@ -183,6 +219,18 @@ class _TestConvolve2d(TestCase):
                    [82, 78, 92, 110, 114]])
         assert_array_equal(c, d)
 
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
+
 
 class TestConvolve2d(_TestConvolve2d):
 
@@ -195,13 +243,27 @@ class TestConvolve2d(_TestConvolve2d):
         assert_array_equal(g, h)
 
     def test_valid_mode2(self):
-        # Test when in2.size > in1.size
+        # See gh-5897
         e = [[1, 2, 3], [3, 4, 5]]
         f = [[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]]
+        expected = [[62, 80, 98, 116, 134]]
 
-        def _test():
-            convolve2d(e, f, 'valid')
-        self.assertRaises(ValueError, _test)
+        out = convolve2d(e, f, 'valid')
+        assert_array_equal(out, expected)
+
+        out = convolve2d(f, e, 'valid')
+        assert_array_equal(out, expected)
+
+        e = [[1 + 1j, 2 - 3j], [3 + 1j, 4 + 0j]]
+        f = [[2 - 1j, 3 + 2j, 4 + 0j], [4 - 0j, 5 + 1j, 6 - 3j]]
+        expected = [[27 - 1j, 46. + 2j]]
+
+        out = convolve2d(e, f, 'valid')
+        assert_array_equal(out, expected)
+
+        # See gh-5897
+        out = convolve2d(f, e, 'valid')
+        assert_array_equal(out, expected)
 
     def test_consistency_convolve_funcs(self):
         # Compare np.convolve, signal.convolve, signal.convolve2d
@@ -255,19 +317,38 @@ class TestFFTConvolve(TestCase):
         d = array([9., 20., 25., 35., 41., 47., 39., 28., 2.])
         assert_array_almost_equal(c, d)
 
-    def test_real_valid_mode(self):
+    def test_valid_mode(self):
+        # See gh-5897
         a = array([3, 2, 1])
         b = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
+        expected = array([24., 31., 41., 43., 49., 25., 12.])
 
-        def _test():
-            fftconvolve(a, b, 'valid')
-        self.assertRaises(ValueError, _test)
+        out = fftconvolve(a, b, 'valid')
+        assert_array_almost_equal(out, expected)
 
-    def test_real_valid_mode2(self):
+        out = fftconvolve(b, a, 'valid')
+        assert_array_almost_equal(out, expected)
+
+        a = array([3 - 1j, 2 + 7j, 1 + 0j])
+        b = array([3 + 2j, 3 - 3j, 5 + 0j, 6 - 1j, 8 + 0j])
+        expected = array([45. + 12.j, 30. + 23.j, 48 + 32.j])
+
+        out = fftconvolve(a, b, 'valid')
+        assert_array_almost_equal(out, expected)
+
+        out = fftconvolve(b, a, 'valid')
+        assert_array_almost_equal(out, expected)
+
+    def test_real_valid_mode(self):
         a = array([3, 3, 5, 6, 8, 7, 9, 0, 1])
         b = array([3, 2, 1])
-        c = fftconvolve(a, b, 'valid')
         d = array([24., 31., 41., 43., 49., 25., 12.])
+
+        c = fftconvolve(a, b, 'valid')
+        assert_array_almost_equal(c, d)
+
+        # See gh-5897
+        c = fftconvolve(b, a, 'valid')
         assert_array_almost_equal(c, d)
 
     def test_empty(self):
@@ -316,103 +397,17 @@ class TestFFTConvolve(TestCase):
             d = np.convolve(a, b, 'full')
             assert_allclose(c, d, atol=1e-10, err_msg=msg)
 
-    def test_next_regular(self):
-        np.random.seed(1234)
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
 
-        def ns():
-            for j in range(1, 1000):
-                yield j
-            yield 2**5 * 3**5 * 4**5 + 1
-
-        for n in ns():
-            m = signaltools._next_regular(n)
-            msg = "n=%d, m=%d" % (n, m)
-
-            assert_(m >= n, msg)
-
-            # check regularity
-            k = m
-            for d in [2, 3, 5]:
-                while True:
-                    a, b = divmod(k, d)
-                    if b == 0:
-                        k = a
-                    else:
-                        break
-            assert_equal(k, 1, err_msg=msg)
-
-    def test_next_regular_strict(self):
-        hams = {
-            1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 8, 8: 8, 14: 15, 15: 15,
-            16: 16, 17: 18, 1021: 1024, 1536: 1536, 51200000: 51200000,
-            510183360: 510183360, 510183360 + 1: 512000000,
-            511000000: 512000000,
-            854296875: 854296875, 854296875 + 1: 859963392,
-            196608000000: 196608000000, 196608000000 + 1: 196830000000,
-            8789062500000: 8789062500000, 8789062500000 + 1: 8796093022208,
-            206391214080000: 206391214080000,
-            206391214080000 + 1: 206624260800000,
-            470184984576000: 470184984576000,
-            470184984576000 + 1: 470715894135000,
-            7222041363087360: 7222041363087360,
-            7222041363087360 + 1: 7230196133913600,
-            # power of 5    5**23
-            11920928955078125: 11920928955078125,
-            11920928955078125 - 1: 11920928955078125,
-            # power of 3    3**34
-            16677181699666569: 16677181699666569,
-            16677181699666569 - 1: 16677181699666569,
-            # power of 2   2**54
-            18014398509481984: 18014398509481984,
-            18014398509481984 - 1: 18014398509481984,
-            # above this, int(ceil(n)) == int(ceil(n+1))
-            19200000000000000: 19200000000000000,
-            19200000000000000 + 1: 19221679687500000,
-            288230376151711744: 288230376151711744,
-            288230376151711744 + 1: 288325195312500000,
-            288325195312500000 - 1: 288325195312500000,
-            288325195312500000: 288325195312500000,
-            288325195312500000 + 1: 288555831593533440,
-            # power of 3    3**83
-            3990838394187339929534246675572349035227 - 1:
-                3990838394187339929534246675572349035227,
-            3990838394187339929534246675572349035227:
-                3990838394187339929534246675572349035227,
-            # power of 2     2**135
-            43556142965880123323311949751266331066368 - 1:
-                43556142965880123323311949751266331066368,
-            43556142965880123323311949751266331066368:
-                43556142965880123323311949751266331066368,
-            # power of 5      5**57
-            6938893903907228377647697925567626953125 - 1:
-                6938893903907228377647697925567626953125,
-            6938893903907228377647697925567626953125:
-                6938893903907228377647697925567626953125,
-            # http://www.drdobbs.com/228700538
-            # 2**96 * 3**1 * 5**13
-            290142196707511001929482240000000000000 - 1:
-                290142196707511001929482240000000000000,
-            290142196707511001929482240000000000000:
-                290142196707511001929482240000000000000,
-            290142196707511001929482240000000000000 + 1:
-                290237644800000000000000000000000000000,
-            # 2**36 * 3**69 * 5**7
-            4479571262811807241115438439905203543080960000000 - 1:
-                4479571262811807241115438439905203543080960000000,
-            4479571262811807241115438439905203543080960000000:
-                4479571262811807241115438439905203543080960000000,
-            4479571262811807241115438439905203543080960000000 + 1:
-                4480327901140333639941336854183943340032000000000,
-            # 2**37 * 3**44 * 5**42
-            30774090693237851027531250000000000000000000000000000000000000 - 1:
-                30774090693237851027531250000000000000000000000000000000000000,
-            30774090693237851027531250000000000000000000000000000000000000:
-                30774090693237851027531250000000000000000000000000000000000000,
-            30774090693237851027531250000000000000000000000000000000000000 + 1:
-                30778180617309082445871527002041377406962596539492679680000000,
-        }
-        for x, y in hams.items():
-            assert_equal(signaltools._next_regular(x), y)
+        self.assertRaises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
 
 
 class TestMedFilt(TestCase):
@@ -497,7 +492,11 @@ class TestResample(TestCase):
         # Test polyphase resampling
         self._test_data(method='polyphase')
 
-    def _test_data(self, method):
+    def test_polyphase_extfilter(self):
+        # Test external specification of downsampling filter
+        self._test_data(method='polyphase', ext=True)
+
+    def _test_data(self, method, ext=False):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
         rates_to = [49, 50, 51, 99, 100, 101, 199, 200, 201]
@@ -505,15 +504,31 @@ class TestResample(TestCase):
         # Sinusoids, windowed to avoid edge artifacts
         t = np.arange(rate) / float(rate)
         freqs = np.array((1., 10., 40.))[:, np.newaxis]
-        x = np.sin(2 * np.pi * freqs * t) * np.hanning(rate)
+        x = np.sin(2 * np.pi * freqs * t) * hann(rate)
 
         for rate_to in rates_to:
             t_to = np.arange(rate_to) / float(rate_to)
-            y_tos = np.sin(2 * np.pi * freqs * t_to) * np.hanning(rate_to)
+            y_tos = np.sin(2 * np.pi * freqs * t_to) * hann(rate_to)
             if method == 'fft':
                 y_resamps = signal.resample(x, rate_to, axis=-1)
             else:
-                y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1)
+                if ext and rate_to != rate:
+                    # Match default window design
+                    g = gcd(rate_to, rate)
+                    up = rate_to // g
+                    down = rate // g
+                    max_rate = max(up, down)
+                    f_c = 1. / max_rate
+                    half_len = 10 * max_rate
+                    window = signal.firwin(2 * half_len + 1, f_c,
+                                           window=('kaiser', 5.0))
+                    polyargs = {'window': window}
+                else:
+                    polyargs = {}
+
+                y_resamps = signal.resample_poly(x, rate_to, rate, axis=-1,
+                                                 **polyargs)
+
             for y_to, y_resamp, freq in zip(y_tos, y_resamps, freqs):
                 if freq >= 0.5 * rate_to:
                     y_to.fill(0.)  # mostly low-passed away
@@ -521,11 +536,11 @@ class TestResample(TestCase):
                 else:
                     assert_array_equal(y_to.shape, y_resamp.shape)
                     corr = np.corrcoef(y_to, y_resamp)[0, 1]
-                    assert_(corr > 0.99, msg=corr)
+                    assert_(corr > 0.99, msg=(corr, rate, rate_to))
 
         # Random data
         rng = np.random.RandomState(0)
-        x = np.hanning(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
+        x = hann(rate) * np.cumsum(rng.randn(rate))  # low-pass, wind
         for rate_to in rates_to:
             # random data
             t_to = np.arange(rate_to) / float(rate_to)
@@ -537,6 +552,34 @@ class TestResample(TestCase):
             assert_array_equal(y_to.shape, y_resamp.shape)
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
+
+    def test_poly_vs_filtfilt(self):
+        # Check that up=1.0 gives same answer as filtfilt + slicing
+        random_state = np.random.RandomState(17)
+        try_types = (int, np.float32, np.complex64, float, complex)
+        size = 10000
+        down_factors = [2, 11, 79]
+
+        for dtype in try_types:
+            x = random_state.randn(size).astype(dtype)
+            if dtype in (np.complex64, np.complex128):
+                x += 1j * random_state.randn(size)
+
+            # resample_poly assumes zeros outside of signl, wheras filtfilt
+            # can only constant-pad. Make them equivalent:
+            x[0] = 0
+            x[-1] = 0
+
+            for down in down_factors:
+                h = signal.firwin(31, 1. / down, window='hamming')
+                yf = filtfilt(h, 1.0, x, padtype='constant')[::down]
+
+                # Need to pass convolved version of filter to resample_poly,
+                # since filtfilt does forward and backward, but resample_poly
+                # only goes forward
+                hc = convolve(h, h[::-1])
+                y = signal.resample_poly(x, 1, down, window=hc)
+                assert_allclose(yf, y, atol=1e-7, rtol=1e-7)
 
 
 class TestCSpline1DEval(TestCase):
@@ -995,7 +1038,6 @@ class _TestCorrelateReal(TestCase):
     dt = None
 
     def _setup_rank1(self):
-        # a.size should be greater than b.size for the tests
         a = np.linspace(0, 3, 4).astype(self.dt)
         b = np.linspace(1, 2, 2).astype(self.dt)
 
@@ -1006,6 +1048,11 @@ class _TestCorrelateReal(TestCase):
         a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r[1:4])
+        assert_equal(y.dtype, self.dt)
+
+        # See gh-5897
+        y = correlate(b, a, 'valid')
+        assert_array_almost_equal(y, y_r[1:4][::-1])
         assert_equal(y.dtype, self.dt)
 
     def test_rank1_same(self):
@@ -1056,6 +1103,11 @@ class _TestCorrelateReal(TestCase):
         assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5])
         assert_equal(y.dtype, self.dt)
 
+        # See gh-5897
+        y = correlate(b, a, "valid")
+        assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
+        assert_equal(y.dtype, self.dt)
+
     def test_rank3_same(self):
         a, b, y_r = self._setup_rank3()
         y = correlate(a, b, "same")
@@ -1067,6 +1119,18 @@ class _TestCorrelateReal(TestCase):
         y = correlate(a, b)
         assert_array_almost_equal(y, y_r)
         assert_equal(y.dtype, self.dt)
+
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, correlate, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
 
 
 def _get_testcorrelate_class(datatype, base):
@@ -1109,6 +1173,11 @@ class _TestCorrelateComplex(TestCase):
         a, b, y_r = self._setup_rank1('valid')
         y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r, decimal=self.decimal)
+        assert_equal(y.dtype, self.dt)
+
+        # See gh-5897
+        y = correlate(b, a, 'valid')
+        assert_array_almost_equal(y, y_r[::-1].conj(), decimal=self.decimal)
         assert_equal(y.dtype, self.dt)
 
     def test_rank1_same(self):
@@ -1162,6 +1231,26 @@ class TestCorrelate2d(TestCase):
             assert_almost_equal(np.squeeze(signal.correlate2d([a], [b],
                                                               mode=mode)),
                                 signal.correlate(a, b, mode=mode))
+
+            # See gh-5897
+            if mode == 'valid':
+                assert_almost_equal(np.correlate(b, a, mode=mode),
+                                    signal.correlate(b, a, mode=mode))
+                assert_almost_equal(np.squeeze(signal.correlate2d([b], [a],
+                                                                  mode=mode)),
+                                    signal.correlate(b, a, mode=mode))
+
+    def test_invalid_shapes(self):
+        # By "invalid," we mean that no one
+        # array has dimensions that are all at
+        # least as large as the corresponding
+        # dimensions of the other array. This
+        # setup should throw a ValueError.
+        a = np.arange(1, 7).reshape((2, 3))
+        b = np.arange(-6, 0).reshape((3, 2))
+
+        self.assertRaises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
+        self.assertRaises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
 
 
 # Create three classes, one for each complex data type. The actual class
@@ -1379,18 +1468,88 @@ def test_filtfilt_gust():
 
 
 class TestDecimate(TestCase):
+    def test_bad_args(self):
+        x = np.arange(12)
+        assert_raises(TypeError, signal.decimate, x, q=0.5, n=1)
+        assert_raises(TypeError, signal.decimate, x, q=2, n=0.5)
 
-    def test_basic(self):
-        x = np.arange(6)
-        assert_array_equal(signal.decimate(x, 2, n=1).round(), x[::2])
+    def test_basic_IIR(self):
+        x = np.arange(12)
+        y = signal.decimate(x, 2, n=1, ftype='iir', zero_phase=False).round()
+        assert_array_equal(y, x[::2])
+
+    def test_basic_FIR(self):
+        x = np.arange(12)
+        y = signal.decimate(x, 2, n=1, ftype='fir', zero_phase=False).round()
+        assert_array_equal(y, x[::2])
 
     def test_shape(self):
         # Regression test for ticket #1480.
-        z = np.zeros((10, 10))
-        d0 = signal.decimate(z, 2, axis=0)
-        assert_equal(d0.shape, (5, 10))
-        d1 = signal.decimate(z, 2, axis=1)
-        assert_equal(d1.shape, (10, 5))
+        z = np.zeros((30, 30))
+        d0 = signal.decimate(z, 2, axis=0, zero_phase=False)
+        assert_equal(d0.shape, (15, 30))
+        d1 = signal.decimate(z, 2, axis=1, zero_phase=False)
+        assert_equal(d1.shape, (30, 15))
+
+    def test_phaseshift_FIR(self):
+        self._test_phaseshift(method='fir', zero_phase=False)
+
+    def test_zero_phase_FIR(self):
+        self._test_phaseshift(method='fir', zero_phase=True)
+
+    def test_phaseshift_IIR(self):
+        self._test_phaseshift(method='iir', zero_phase=False)
+
+    def test_zero_phase_IIR(self):
+        self._test_phaseshift(method='iir', zero_phase=True)
+
+    def _test_phaseshift(self, method, zero_phase):
+        rate = 120
+        rates_to = [15, 20, 30, 40]  # q = 8, 6, 4, 3
+
+        t_tot = int(100)  # Need to let antialiasing filters settle
+        t = np.arange(rate*t_tot+1) / float(rate)
+
+        # Sinusoids at 0.8*nyquist, windowed to avoid edge artifacts
+        freqs = np.array(rates_to) * 0.8 / 2
+        d = (np.exp(1j * 2 * np.pi * freqs[:, np.newaxis] * t)
+             * signal.tukey(t.size, 0.1))
+
+        for rate_to in rates_to:
+            q = rate // rate_to
+            t_to = np.arange(rate_to*t_tot+1) / float(rate_to)
+            d_tos = (np.exp(1j * 2 * np.pi * freqs[:, np.newaxis] * t_to)
+                     * signal.tukey(t_to.size, 0.1))
+
+            # Set up downsampling filters, match v0.17 defaults
+            if method == 'fir':
+                n = 30
+                system = signal.dlti(signal.firwin(n + 1, 1. / q,
+                                                   window='hamming'), 1.)
+            elif method == 'iir':
+                n = 8
+                wc = 0.8*np.pi/q
+                system = signal.dlti(*signal.cheby1(n, 0.05, wc/np.pi))
+
+            # Calculate expected phase response, as unit complex vector
+            if zero_phase is False:
+                _, h_resps = signal.freqz(system.num, system.den,
+                                          freqs/rate*2*np.pi)
+                h_resps /= np.abs(h_resps)
+            else:
+                h_resps = np.ones_like(freqs)
+
+            y_resamps = signal.decimate(d.real, q, n, ftype=system,
+                                        zero_phase=zero_phase)
+
+            # Get phase from complex inner product, like CSD
+            h_resamps = np.sum(d_tos.conj() * y_resamps, axis=-1)
+            h_resamps /= np.abs(h_resamps)
+            subnyq = freqs < 0.5*rate_to
+
+            # Complex vectors should be aligned, only compare below nyquist
+            assert_allclose(np.angle(h_resps.conj()*h_resamps)[subnyq], 0,
+                            atol=1e-3, rtol=1e-3)
 
 
 class TestHilbert(object):

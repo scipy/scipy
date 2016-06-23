@@ -40,9 +40,19 @@ from scipy.linalg._testutils import assert_no_overwrite
 
 from scipy._lib._version import NumpyVersion
 
-REAL_DTYPES = [np.float32, np.float64]
-COMPLEX_DTYPES = [np.complex64, np.complex128]
+REAL_DTYPES = [np.float32, np.float64, np.longdouble]
+COMPLEX_DTYPES = [np.complex64, np.complex128, np.clongdouble]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
+def _eps_cast(dtyp):
+    """Get the epsilon for dtype, possibly downcast to BLAS types."""
+    dt = dtyp
+    if dt == np.longdouble:
+        dt = np.float64
+    elif dt == np.clongdouble:
+        dt = np.complex128
+    return np.finfo(dt).eps
 
 
 class TestSolveBanded(TestCase):
@@ -757,8 +767,8 @@ class TestLstsq(TestCase):
                             assert_(r == 2,
                                     'expected efficient rank 2, got %s' % r)
                             assert_allclose(dot(a, x), b,
-                                            atol=25 * np.finfo(a1.dtype).eps,
-                                            rtol=25 * np.finfo(a1.dtype).eps,
+                                            atol=25 * _eps_cast(a1.dtype),
+                                            rtol=25 * _eps_cast(a1.dtype),
                                             err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet(self):
@@ -791,12 +801,12 @@ class TestLstsq(TestCase):
                     assert_(r == 2, 'expected efficient rank 2, got %s' % r)
                     assert_allclose(abs((dot(a,x) - b)**2).sum(axis=0),
                                     residuals,
-                                    rtol=25 * np.finfo(a1.dtype).eps,
-                                    atol=25 * np.finfo(a1.dtype).eps,
+                                    rtol=25 * _eps_cast(a1.dtype),
+                                    atol=25 * _eps_cast(a1.dtype),
                                     err_msg="driver: %s" % lapack_driver)
                     assert_allclose(x, (-0.428571428571429, 0.85714285714285),
-                                    rtol=25 * np.finfo(a1.dtype).eps,
-                                    atol=25 * np.finfo(a1.dtype).eps,
+                                    rtol=25 * _eps_cast(a1.dtype),
+                                    atol=25 * _eps_cast(a1.dtype),
                                     err_msg="driver: %s" % lapack_driver)
 
     def test_simple_overdet_complex(self):
@@ -804,7 +814,7 @@ class TestLstsq(TestCase):
             a = np.array([[1+2j,2], [4,5], [3,4]], dtype=dtype)
             b = np.array([1, 2+4j, 3], dtype=dtype)
             for lapack_driver in TestLstsq.lapack_drivers:
-                for overwrite in (True,False):
+                for overwrite in (True, False):
                     # Store values in case they are overwritten later
                     a1 = a.copy()
                     b1 = b.copy()
@@ -830,13 +840,13 @@ class TestLstsq(TestCase):
                     assert_(r == 2, 'expected efficient rank 2, got %s' % r)
                     assert_allclose(abs((dot(a,x) - b)**2).sum(axis=0),
                                         residuals,
-                                        rtol=25 * np.finfo(a1.dtype).eps,
-                                        atol=25 * np.finfo(a1.dtype).eps,
+                                        rtol=25 * _eps_cast(a1.dtype),
+                                        atol=25 * _eps_cast(a1.dtype),
                                         err_msg="driver: %s" % lapack_driver)
                     assert_allclose(x, (-0.4831460674157303 + 0.258426966292135j,
                                          0.921348314606741 + 0.292134831460674j),
-                                        rtol=25 * np.finfo(a1.dtype).eps,
-                                        atol=25 * np.finfo(a1.dtype).eps,
+                                        rtol=25 * _eps_cast(a1.dtype),
+                                        atol=25 * _eps_cast(a1.dtype),
                                         err_msg="driver: %s" % lapack_driver)
 
     def test_simple_underdet(self):
@@ -865,8 +875,8 @@ class TestLstsq(TestCase):
                     assert_(r == 2, 'expected efficient rank 2, got %s' % r)
                     assert_allclose(x, (-0.055555555555555, 0.111111111111111,
                                         0.277777777777777),
-                            rtol=25 * np.finfo(a1.dtype).eps,
-                            atol=25 * np.finfo(a1.dtype).eps,
+                            rtol=25 * _eps_cast(a1.dtype),
+                            atol=25 * _eps_cast(a1.dtype),
                             err_msg="driver: %s" % lapack_driver)
 
     def test_random_exact(self):
@@ -874,11 +884,11 @@ class TestLstsq(TestCase):
             for n in (20, 200):
                 for lapack_driver in TestLstsq.lapack_drivers:
                     for overwrite in (True, False):
-                        a = np.asarray(random([n,n]), dtype=dtype)
+                        a = np.asarray(random([n, n]), dtype=dtype)
                         for i in range(n):
-                            a[i,i] = 20 * (0.1 + a[i,i])
+                            a[i, i] = 20 * (0.1 + a[i, i])
                         for i in range(4):
-                            b = np.asarray(random([n,3]), dtype=dtype)
+                            b = np.asarray(random([n, 3]), dtype=dtype)
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
@@ -901,13 +911,13 @@ class TestLstsq(TestCase):
                                              '%s' % (n, r))
                             if dtype is np.float32:
                                 assert_allclose(dot(a, x), b,
-                                          rtol=500 * np.finfo(a1.dtype).eps,
-                                          atol=500 * np.finfo(a1.dtype).eps,
+                                          rtol=500 * _eps_cast(a1.dtype),
+                                          atol=500 * _eps_cast(a1.dtype),
                                           err_msg="driver: %s" % lapack_driver)
                             else:
                                 assert_allclose(dot(a, x), b,
-                                          rtol=1000 * np.finfo(a1.dtype).eps,
-                                          atol=1000 * np.finfo(a1.dtype).eps,
+                                          rtol=1000 * _eps_cast(a1.dtype),
+                                          atol=1000 * _eps_cast(a1.dtype),
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_random_complex_exact(self):
@@ -915,12 +925,12 @@ class TestLstsq(TestCase):
             for n in (20, 200):
                 for lapack_driver in TestLstsq.lapack_drivers:
                     for overwrite in (True, False):
-                        a = np.asarray(random([n,n]) + 1j*random([n,n]),
+                        a = np.asarray(random([n, n]) + 1j*random([n, n]),
                                        dtype=dtype)
                         for i in range(n):
-                            a[i,i] = 20 * (0.1 + a[i,i])
+                            a[i, i] = 20 * (0.1 + a[i, i])
                         for i in range(2):
-                            b = np.asarray(random([n,3]), dtype=dtype)
+                            b = np.asarray(random([n, 3]), dtype=dtype)
                             # Store values in case they are overwritten later
                             a1 = a.copy()
                             b1 = b.copy()
@@ -933,13 +943,13 @@ class TestLstsq(TestCase):
                                              '%s' % (n, r))
                             if dtype is np.complex64:
                                 assert_allclose(dot(a, x), b,
-                                          rtol=400 * np.finfo(a1.dtype).eps,
-                                          atol=400 * np.finfo(a1.dtype).eps,
+                                          rtol=400 * _eps_cast(a1.dtype),
+                                          atol=400 * _eps_cast(a1.dtype),
                                           err_msg="driver: %s" % lapack_driver)
                             else:
                                 assert_allclose(dot(a, x), b,
-                                          rtol=1000 * np.finfo(a1.dtype).eps,
-                                          atol=1000 * np.finfo(a1.dtype).eps,
+                                          rtol=1000 * _eps_cast(a1.dtype),
+                                          atol=1000 * _eps_cast(a1.dtype),
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_random_overdet(self):
@@ -974,21 +984,21 @@ class TestLstsq(TestCase):
                             assert_(r == m, 'expected efficient rank %s, got '
                                              '%s' % (m, r))
                             assert_allclose(x, direct_lstsq(a, b, cmplx=0),
-                                            rtol=25 * np.finfo(a1.dtype).eps,
-                                            atol=25 * np.finfo(a1.dtype).eps,
+                                            rtol=25 * _eps_cast(a1.dtype),
+                                            atol=25 * _eps_cast(a1.dtype),
                                             err_msg="driver: %s" % lapack_driver)
 
     def test_random_complex_overdet(self):
         for dtype in COMPLEX_DTYPES:
-            for (n,m) in ((20,15), (200,2)):
+            for (n, m) in ((20, 15), (200, 2)):
                     for lapack_driver in TestLstsq.lapack_drivers:
                         for overwrite in (True, False):
-                            a = np.asarray(random([n,m]) + 1j*random([n,m]),
+                            a = np.asarray(random([n, m]) + 1j*random([n, m]),
                                            dtype=dtype)
                             for i in range(m):
-                                a[i,i] = 20 * (0.1 + a[i,i])
+                                a[i, i] = 20 * (0.1 + a[i, i])
                             for i in range(2):
-                                b = np.asarray(random([n,3]), dtype=dtype)
+                                b = np.asarray(random([n, 3]), dtype=dtype)
                                 # Store values in case they are overwritten
                                 # later
                                 a1 = a.copy()
@@ -1001,19 +1011,19 @@ class TestLstsq(TestCase):
                                 assert_(r == m, 'expected efficient rank %s, got '
                                                  '%s' % (m, r))
                                 assert_allclose(x, direct_lstsq(a, b, cmplx=1),
-                                                rtol=25 * np.finfo(a1.dtype).eps,
-                                                atol=25 * np.finfo(a1.dtype).eps,
+                                                rtol=25 * _eps_cast(a1.dtype),
+                                                atol=25 * _eps_cast(a1.dtype),
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_check_finite(self):
         for dtype in REAL_DTYPES:
-            a = np.array(((1,20),(-30,4)), dtype=dtype)
-            for bt in (((1,0),(0,1)),(1,0),
-                      ((2,1),(-30,4))):
+            a = np.array(((1, 20), (-30, 4)), dtype=dtype)
+            for bt in (((1, 0), (0, 1)), (1, 0),
+                      ((2, 1), (-30, 4))):
                 for lapack_driver in TestLstsq.lapack_drivers:
                         for overwrite in (True, False):
                             for check_finite in (True, False):
-                                b = np.array(bt,dtype=dtype)
+                                b = np.array(bt, dtype=dtype)
                                 # Store values in case they are overwritten
                                 # later
                                 a1 = a.copy()
@@ -1037,8 +1047,8 @@ class TestLstsq(TestCase):
                                 assert_(r == 2, 'expected efficient rank 2, '
                                                 'got %s' % r)
                                 assert_allclose(dot(a, x), b,
-                                          rtol=25 * np.finfo(a.dtype).eps,
-                                          atol=25 * np.finfo(a.dtype).eps,
+                                          rtol=25 * _eps_cast(a.dtype),
+                                          atol=25 * _eps_cast(a.dtype),
                                           err_msg="driver: %s" % lapack_driver)
 
 

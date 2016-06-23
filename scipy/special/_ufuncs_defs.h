@@ -1,22 +1,25 @@
 #ifndef UFUNCS_PROTO_H
 #define UFUNCS_PROTO_H 1
+#include "cephes.h"
+npy_double lgam(npy_double);
+#include "specfun_wrappers.h"
+npy_cdouble clngamma_wrap(npy_cdouble);
 #include "misc.h"
 npy_double struve_asymp_large_z(npy_double, npy_double, npy_int, npy_double *);
 npy_double struve_bessel_series(npy_double, npy_double, npy_int, npy_double *);
 npy_double struve_power_series(npy_double, npy_double, npy_int, npy_double *);
+npy_double zeta(npy_double, npy_double);
 #include "amos_wrappers.h"
 npy_int airy_wrap(npy_double, npy_double *, npy_double *, npy_double *, npy_double *);
 npy_int cairy_wrap(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *);
 npy_int cairy_wrap_e_real(npy_double, npy_double *, npy_double *, npy_double *, npy_double *);
 npy_int cairy_wrap_e(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *);
-#include "cephes.h"
 npy_double bdtr(npy_int, npy_int, npy_double);
 npy_double bdtrc(npy_int, npy_int, npy_double);
 npy_double bdtri(npy_int, npy_int, npy_double);
 #include "cdf_wrappers.h"
 npy_double cdfbin2_wrap(npy_double, npy_double, npy_double);
 npy_double cdfbin3_wrap(npy_double, npy_double, npy_double);
-#include "specfun_wrappers.h"
 npy_double bei_wrap(npy_double);
 npy_double beip_wrap(npy_double);
 npy_double ber_wrap(npy_double);
@@ -68,13 +71,10 @@ npy_double cdff4_wrap(npy_double, npy_double, npy_double);
 npy_int fresnl(npy_double, npy_double *, npy_double *);
 npy_int cfresnl_wrap(npy_cdouble, npy_cdouble *, npy_cdouble *);
 npy_double Gamma(npy_double);
-npy_cdouble cgamma_wrap(npy_cdouble);
 npy_double igam(npy_double, npy_double);
 npy_double igamc(npy_double, npy_double);
 npy_double igami(npy_double, npy_double);
 npy_double gammaincinv(npy_double, npy_double);
-npy_double lgam(npy_double);
-npy_cdouble clngamma_wrap(npy_cdouble);
 npy_double gammasgn(npy_double);
 npy_double gdtr(npy_double, npy_double, npy_double);
 npy_double gdtrc(npy_double, npy_double, npy_double);
@@ -188,11 +188,8 @@ npy_double prolate_radial1_nocv_wrap(npy_double, npy_double, npy_double, npy_dou
 npy_int prolate_radial1_wrap(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *);
 npy_double prolate_radial2_nocv_wrap(npy_double, npy_double, npy_double, npy_double, npy_double *);
 npy_int prolate_radial2_wrap(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *);
-npy_double psi(npy_double);
-npy_cdouble cpsi_wrap(npy_cdouble);
 npy_double radian(npy_double, npy_double, npy_double);
 npy_double rgamma(npy_double);
-npy_cdouble crgamma_wrap(npy_cdouble);
 npy_double round(npy_double);
 npy_int shichi(npy_double, npy_double *, npy_double *);
 npy_int sici(npy_double, npy_double *, npy_double *);
@@ -213,6 +210,5 @@ npy_double cbesy_wrap_real(npy_double, npy_double);
 npy_cdouble cbesy_wrap(npy_double, npy_cdouble);
 npy_double cbesy_wrap_e_real(npy_double, npy_double);
 npy_cdouble cbesy_wrap_e(npy_double, npy_cdouble);
-npy_double zeta(npy_double, npy_double);
 npy_double zetac(npy_double);
 #endif

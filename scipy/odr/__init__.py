@@ -18,8 +18,12 @@ Package Content
    Output        -- Result from the fit.
    odr           -- Low-level function for ODR.
 
-   odr_error     -- Error exception.
-   odr_stop      -- Stop exception.
+   OdrWarning    -- Warning about potential problems when running ODR
+   OdrError      -- Error exception.
+   OdrStop       -- Stop exception.
+
+   odr_error     -- Same as OdrError (for backwards compatibility)
+   odr_stop      -- Same as OdrStop (for backwards compatibility)
 
 Prebuilt models:
 

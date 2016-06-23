@@ -284,6 +284,20 @@ def test_attributes():
         assert_(hasattr(op, "shape"))
         assert_(hasattr(op, "_matvec"))
 
+def matvec(x):
+    """ Needed for test_pickle as local functions are not pickleable """
+    return np.zeros(3)
+
+def test_pickle():
+    import pickle
+
+    for protocol in range(pickle.HIGHEST_PROTOCOL + 1):
+        A = interface.LinearOperator((3, 3), matvec)
+        s = pickle.dumps(A, protocol=protocol)
+        B = pickle.loads(s)
+
+        for k in A.__dict__:
+            assert_equal(getattr(A, k), getattr(B, k))
 
 def test_inheritance():
     class Empty(interface.LinearOperator):
@@ -312,3 +326,18 @@ def test_inheritance():
 
     mm = MatmatOnly(np.random.randn(5, 3))
     assert_equal(mm.matvec(np.random.randn(3)).shape, (5,))
+
+def test_dtypes_of_operator_sum():
+    # gh-6078
+
+    mat_complex = np.random.rand(2,2) + 1j * np.random.rand(2,2)
+    mat_real = np.random.rand(2,2)
+
+    complex_operator = interface.aslinearoperator(mat_complex)
+    real_operator = interface.aslinearoperator(mat_real)
+
+    sum_complex = complex_operator + complex_operator
+    sum_real = real_operator + real_operator
+
+    assert_equal(sum_real.dtype, np.float64)
+    assert_equal(sum_complex.dtype, np.complex128)

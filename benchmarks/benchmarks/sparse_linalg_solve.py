@@ -12,6 +12,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from scipy.sparse.linalg import lgmres
+except ImportError:
+    pass
+
 from .common import Benchmark
 
 
@@ -33,7 +38,7 @@ def _create_sparse_poisson2d(n):
 class Bench(Benchmark):
     params = [
         [4, 6, 10, 16, 25, 40, 64, 100],
-        ['dense', 'spsolve', 'cg', 'minres']
+        ['dense', 'spsolve', 'cg', 'minres', 'lgmres']
     ]
     param_names = ['(n,n)', 'solver']
 
@@ -54,7 +59,25 @@ class Bench(Benchmark):
             cg(self.P_sparse, self.b)
         elif solver == 'minres':
             minres(self.P_sparse, self.b)
+        elif solver == 'lgmres':
+            lgmres(self.P_sparse, self.b)
         elif solver == 'spsolve':
             spsolve(self.P_sparse, self.b)
         else:
             raise ValueError('Unknown solver: %r' % solver)
+
+
+class Lgmres(Benchmark):
+    params = [
+        [10, 50, 100, 1000, 10000],
+        [10, 30, 60, 90, 180],
+    ]
+    param_names = ['n', 'm']
+
+    def setup(self, n, m):
+        np.random.seed(1234)
+        self.A = sparse.eye(n, n) + sparse.rand(n, n, density=0.01)
+        self.b = np.ones(n)
+
+    def time_inner(self, n, m):
+        lgmres(self.A, self.b, inner_m=m, maxiter=1)

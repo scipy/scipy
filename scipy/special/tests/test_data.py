@@ -43,9 +43,11 @@ def data_gsl(func, dataname, *a, **kw):
     kw.setdefault('dataname', dataname)
     return FuncData(func, DATASETS_GSL[dataname], *a, **kw)
 
+
 def data_local(func, dataname, *a, **kw):
     kw.setdefault('dataname', dataname)
     return FuncData(func, DATASETS_LOCAL[dataname], *a, **kw)
+
 
 def ellipk_(k):
     return ellipk(k*k)
@@ -278,7 +280,7 @@ def test_boost():
         data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0, 1, rtol=1e-11),
         data(digamma, 'digamma_root_data_ipp-digamma_root_data', 0j, 1, rtol=1e-11),
         data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0, 1),
-        data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1),
+        data(digamma, 'digamma_small_data_ipp-digamma_small_data', 0j, 1, rtol=1e-14),
 
         data(ellipk_, 'ellint_k_data_ipp-ellint_k_data', 0, 1),
         data(ellipkinc_, 'ellint_f_data_ipp-ellint_f_data', (0,1), 2, rtol=1e-14),
@@ -419,8 +421,6 @@ def test_boost():
         data(chndtr, 'nccs_ipp-nccs', (2,0,1), 3, rtol=3e-5),
         data(chndtr, 'nccs_big_ipp-nccs_big', (2,0,1), 3, rtol=5e-4, knownfailure='chndtr inaccurate some points'),
 
-        data(sph_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2, vectorized=False, knownfailure='sph_jn inaccurate at large n, small x'),
-        data(sph_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2, rtol=4e-15, vectorized=False),
         data(sph_harm_, 'spherical_harmonic_ipp-spherical_harmonic', (1,0,3,2), (4,5), rtol=5e-11,
              param_filter=(lambda p: np.ones(p.shape, '?'),
                            lambda p: np.ones(p.shape, '?'),
@@ -469,6 +469,7 @@ def test_gsl():
     for test in TESTS:
         yield _test_factory, test
 
+
 def test_local():
     TESTS = [
         data_local(ellipkinc, 'ellipkinc_neg_m', (0, 1), 2),
@@ -476,6 +477,7 @@ def test_local():
         data_local(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
         data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3), rtol=1e-14),
         data_local(cexpm1, 'log1p_expm1_complex', (0,1), (4,5), rtol=1e-14),
+        data_local(gammainc, 'gammainc', (0, 1), 2, rtol=5e-9),
     ]
 
     for test in TESTS:
@@ -490,6 +492,19 @@ def test_local():
         warnings.simplefilter("ignore", category=IntegrationWarning)
 
         for test in TESTS:
+            yield _test_factory, test
+
+    # sph_jn, sph_yn are deprecated; silence the DeprecationWarning noise 
+    TESTS_DEP = [
+        data(sph_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2,
+            vectorized=False,
+            knownfailure='sph_jn inaccurate at large n, small x'),
+        data(sph_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2,
+            rtol=4e-15, vectorized=False),
+    ]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=DeprecationWarning)
+        for test in TESTS_DEP:
             yield _test_factory, test
 
 

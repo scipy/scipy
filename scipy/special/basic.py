@@ -12,11 +12,12 @@ from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
                    where, mgrid, sin, place, issubdtype, extract,
                    less, inexact, nan, zeros, atleast_1d, sinc)
-from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma, psi, zeta,
-                      hankel1, hankel2, yv, kv, gammaln, ndtri,
-                      errprint, poch, binom, hyp0f1)
+from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
+                      psi, _zeta, hankel1, hankel2, yv, kv, _gammaln,
+                      ndtri, errprint, poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
+from ._comb import _comb_int
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
@@ -142,6 +143,47 @@ def diric(x, n):
     dsub = extract(mask, denom)
     place(y, mask, sin(nsub*xsub)/(nsub*dsub))
     return y
+
+
+def gammaln(x):
+    """
+    Logarithm of the absolute value of the Gamma function for real inputs.
+
+    Parameters
+    ----------
+    x : array-like
+        Values on the real line at which to compute ``gammaln``
+
+    Returns
+    -------
+    gammaln : ndarray
+        Values of ``gammaln`` at x.
+
+    See Also
+    --------
+    gammasgn : sign of the gamma function
+    loggamma : principal branch of the logarithm of the gamma function
+
+    Notes
+    -----
+    When used in conjunction with `gammasgn`, this function is useful
+    for working in logspace on the real axis without having to deal with
+    complex numbers, via the relation ``exp(gammaln(x)) = gammasgn(x)*gamma(x)``.
+
+    Note that `gammaln` currently accepts complex-valued inputs, but it is not
+    the same function as for real-valued inputs, and the branch is not
+    well-defined --- using `gammaln` with complex is deprecated and will be
+    disallowed in future Scipy versions.
+
+    For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
+
+    """
+    if np.iscomplexobj(x):
+        warnings.warn(("Use of gammaln for complex arguments is "
+                       "deprecated as of scipy 0.18.0. Use "
+                       "scipy.special.loggamma instead."),
+                      DeprecationWarning)
+    return _gammaln(x)
 
 
 def jnjnp_zeros(nt):
@@ -1129,10 +1171,10 @@ def fresnel_zeros(nt):
 
 
 def assoc_laguerre(x, n, k=0.0):
-    """Compute nth-order generalized (associated) Laguerre polynomial.
+    """Compute the generalized (associated) Laguerre polynomial of degree n and order k.
 
-    The polynomial :math:`L^(alpha)_n(x)` is orthogonal over ``[0, inf)``,
-    with weighting function ``exp(-x) * x**alpha`` with ``alpha > -1``.
+    The polynomial :math:`L^{(k)}_n(x)` is orthogonal over ``[0, inf)``,
+    with weighting function ``exp(-x) * x**k`` with ``k > -1``.
 
     Notes
     -----
@@ -2121,14 +2163,7 @@ def comb(N, k, exact=False, repetition=False):
     if repetition:
         return comb(N + k - 1, k, exact)
     if exact:
-        N = int(N)
-        k = int(k)
-        if (k > N) or (N < 0) or (k < 0):
-            return 0
-        val = 1
-        for j in xrange(min(k, N-k)):
-            val = (val*(N-j))//(j+1)
-        return val
+        return _comb_int(N, k)
     else:
         k, N = asarray(k), asarray(N)
         cond = (k <= N) & (N >= 0) & (k >= 0)
@@ -2194,29 +2229,60 @@ def perm(N, k, exact=False):
         return vals
 
 
+# http://stackoverflow.com/a/16327037/125507
+def _range_prod(lo, hi):
+    """
+    Product of a range of numbers.
+
+    Returns the product of
+    lo * (lo+1) * (lo+2) * ... * (hi-2) * (hi-1) * hi
+    = hi! / (lo-1)!
+
+    Breaks into smaller products first for speed:
+    _range_prod(2, 9) = ((2*3)*(4*5))*((6*7)*(8*9))
+    """
+    if lo + 1 < hi:
+        mid = (hi + lo) // 2
+        return _range_prod(lo, mid) * _range_prod(mid + 1, hi)
+    if lo == hi:
+        return lo
+    return lo * hi
+
+
 def factorial(n, exact=False):
-    """The factorial function, n! = special.gamma(n+1).
+    """
+    The factorial of a number or array of numbers.
 
-    If exact is 0, then floating point precision is used, otherwise
-    exact long integer is computed.
+    The factorial of non-negative integer `n` is the product of all
+    positive integers less than or equal to `n`::
 
-    - Array argument accepted only for exact=False case.
-    - If n<0, the return value is 0.
+        n! = n * (n - 1) * (n - 2) * ... * 1
 
     Parameters
     ----------
     n : int or array_like of ints
-        Calculate ``n!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+        Input values.  If ``n < 0``, the return value is 0.
     exact : bool, optional
-        The result can be approximated rapidly using the gamma-formula
-        above.  If `exact` is set to True, calculate the
-        answer exactly using integer arithmetic. Default is False.
+        If True, calculate the answer exactly using long integer arithmetic.
+        If False, result is approximated in floating point rapidly using the
+        `gamma` function.
+        Default is False.
 
     Returns
     -------
-    nf : float or int
-        Factorial of `n`, as an integer or a float depending on `exact`.
+    nf : float or int or ndarray
+        Factorial of `n`, as integer or float depending on `exact`.
+
+    Notes
+    -----
+    For arrays with ``exact=True``, the factorial is computed only once, for
+    the largest input, with each other result computed in the process.
+    The output dtype is increased to ``int64`` or ``object`` if necessary.
+
+    With ``exact=False`` the factorial is approximated using the gamma
+    function:
+
+    .. math:: n! = \Gamma(n+1)
 
     Examples
     --------
@@ -2224,15 +2290,47 @@ def factorial(n, exact=False):
     >>> arr = np.array([3, 4, 5])
     >>> factorial(arr, exact=False)
     array([   6.,   24.,  120.])
+    >>> factorial(arr, exact=True)
+    array([  6,  24, 120])
     >>> factorial(5, exact=True)
     120L
 
     """
     if exact:
-        return math.factorial(n)
+        if np.ndim(n) == 0:
+            return 0 if n < 0 else math.factorial(n)
+        else:
+            n = asarray(n)
+            un = np.unique(n).astype(object)
+
+            # Convert to object array of long ints if np.int can't handle size
+            if un[-1] > 20:
+                dt = object
+            elif un[-1] > 12:
+                dt = np.int64
+            else:
+                dt = np.int
+
+            out = np.empty_like(n, dtype=dt)
+
+            # Handle invalid/trivial values
+            un = un[un > 1]
+            out[n < 2] = 1
+            out[n < 0] = 0
+
+            # Calculate products of each range of numbers
+            if un.size:
+                val = math.factorial(un[0])
+                out[n == un[0]] = val
+                for i in xrange(len(un) - 1):
+                    prev = un[i] + 1
+                    current = un[i + 1]
+                    val *= _range_prod(prev, current)
+                    out[n == current] = val
+            return out
     else:
         n = asarray(n)
-        vals = gamma(n+1)
+        vals = gamma(n + 1)
         return where(n >= 0, vals, 0)
 
 
@@ -2346,3 +2444,23 @@ def factorialk(n, k, exact=True):
         return val
     else:
         raise NotImplementedError
+
+
+def zeta(x, q=None, out=None):
+    r"""
+    Riemann zeta function.
+
+    The two-argument version is the Hurwitz zeta function:
+
+    .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},
+
+    Riemann zeta function corresponds to ``q = 1``.
+
+    See also
+    --------
+    zetac
+
+    """
+    if q is None:
+        q = 1
+    return _zeta(x, q, out)

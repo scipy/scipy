@@ -167,7 +167,7 @@ def rosen(x):
 
     The function computed is::
 
-        sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0
+        sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0)
 
     Parameters
     ----------
@@ -295,7 +295,7 @@ def wrap_function(function, args):
 
 
 def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
-         full_output=0, disp=1, retall=0, callback=None):
+         full_output=0, disp=1, retall=0, callback=None, initial_simplex=None):
     """
     Minimize a function using the downhill simplex algorithm.
 
@@ -310,13 +310,12 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Initial guess.
     args : tuple, optional
         Extra arguments passed to func, i.e. ``f(x,*args)``.
-    callback : callable, optional
-        Called after each iteration, as callback(xk), where xk is the
-        current parameter vector.
     xtol : float, optional
-        Relative error in xopt acceptable for convergence.
+        Absolute error in xopt between iterations that is acceptable for
+        convergence.
     ftol : number, optional
-        Relative error in func(xopt) acceptable for convergence.
+        Absolute error in func(xopt) between iterations that is acceptable for
+        convergence.
     maxiter : int, optional
         Maximum number of iterations to perform.
     maxfun : number, optional
@@ -327,6 +326,14 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
         Set to True to print convergence messages.
     retall : bool, optional
         Set to True to return list of solutions at each iteration.
+    callback : callable, optional
+        Called after each iteration, as callback(xk), where xk is the
+        current parameter vector.
+    initial_simplex : array_like of shape (N + 1, N), optional
+        Initial simplex. If given, overrides `x0`.
+        ``initial_simplex[j,:]`` should contain the coordinates of
+        the j-th vertex of the ``N+1`` vertices in the simplex, where
+        ``N`` is the dimension.
 
     Returns
     -------
@@ -360,7 +367,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     performance in high-dimensional problems and is not robust to
     minimizing complicated functions. Additionally, there currently is no
     complete theory describing when the algorithm will successfully
-    converge to the minimum, or how fast it will if it does.
+    converge to the minimum, or how fast it will if it does. Both the ftol and
+    xtol criteria must be met for convergence.
 
     References
     ----------
@@ -374,12 +382,13 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
            Harlow, UK, pp. 191-208.
 
     """
-    opts = {'xtol': xtol,
-            'ftol': ftol,
+    opts = {'xatol': xtol,
+            'fatol': ftol,
             'maxiter': maxiter,
             'maxfev': maxfun,
             'disp': disp,
-            'return_all': retall}
+            'return_all': retall,
+            'initial_simplex': initial_simplex}
 
     res = _minimize_neldermead(func, x0, args, callback=callback, **opts)
     if full_output:
@@ -395,9 +404,9 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
 
 def _minimize_neldermead(func, x0, args=(), callback=None,
-                         xtol=1e-4, ftol=1e-4, maxiter=None, maxfev=None,
-                         disp=False, return_all=False,
-                         **unknown_options):
+                         maxiter=None, maxfev=None, disp=False,
+                         return_all=False, initial_simplex=None,
+                         xatol=1e-4, fatol=1e-4, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -406,52 +415,91 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     -------
     disp : bool
         Set to True to print convergence messages.
-    xtol : float
-        Relative error in solution `xopt` acceptable for convergence.
-    ftol : float
-        Relative error in ``fun(xopt)`` acceptable for convergence.
     maxiter : int
         Maximum number of iterations to perform.
     maxfev : int
         Maximum number of function evaluations to make.
-
+    initial_simplex : array_like of shape (N + 1, N)
+        Initial simplex. If given, overrides `x0`.
+        ``initial_simplex[j,:]`` should contain the coordinates of
+        the j-th vertex of the ``N+1`` vertices in the simplex, where
+        ``N`` is the dimension.
+    xatol : float, optional
+        Absolute error in xopt between iterations that is acceptable for
+        convergence.
+    fatol : number, optional
+        Absolute error in func(xopt) between iterations that is acceptable for
+        convergence.
     """
+    if 'ftol' in unknown_options:
+        warnings.warn("ftol is deprecated for Nelder-Mead,"
+                      " use fatol instead. If you specified both, only"
+                      " fatol is used.",
+                      DeprecationWarning)
+        if (np.isclose(fatol, 1e-4) and
+                not np.isclose(unknown_options['ftol'], 1e-4)):
+            # only ftol was probably specified, use it.
+            fatol = unknown_options['ftol']
+        unknown_options.pop('ftol')
+    if 'xtol' in unknown_options:
+        warnings.warn("xtol is deprecated for Nelder-Mead,"
+                      " use xatol instead. If you specified both, only"
+                      " xatol is used.",
+                      DeprecationWarning)
+        if (np.isclose(xatol, 1e-4) and
+                not np.isclose(unknown_options['xtol'], 1e-4)):
+            # only xtol was probably specified, use it.
+            xatol = unknown_options['xtol']
+        unknown_options.pop('xtol')
+
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
 
     fcalls, func = wrap_function(func, args)
-    x0 = asfarray(x0).flatten()
-    N = len(x0)
-    if maxiter is None:
-        maxiter = N * 200
-    if maxfun is None:
-        maxfun = N * 200
 
     rho = 1
     chi = 2
     psi = 0.5
     sigma = 0.5
-    one2np1 = list(range(1, N + 1))
-
-    sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
-    fsim = numpy.zeros((N + 1,), float)
-    sim[0] = x0
-    if retall:
-        allvecs = [sim[0]]
-    fsim[0] = func(x0)
     nonzdelt = 0.05
     zdelt = 0.00025
-    for k in range(0, N):
-        y = numpy.array(x0, copy=True)
-        if y[k] != 0:
-            y[k] = (1 + nonzdelt)*y[k]
-        else:
-            y[k] = zdelt
 
-        sim[k + 1] = y
-        f = func(y)
-        fsim[k + 1] = f
+    x0 = asfarray(x0).flatten()
+
+    if initial_simplex is None:
+        N = len(x0)
+
+        sim = numpy.zeros((N + 1, N), dtype=x0.dtype)
+        sim[0] = x0
+        for k in range(N):
+            y = numpy.array(x0, copy=True)
+            if y[k] != 0:
+                y[k] = (1 + nonzdelt)*y[k]
+            else:
+                y[k] = zdelt
+            sim[k + 1] = y
+    else:
+        sim = np.asfarray(initial_simplex).copy()
+        if sim.ndim != 2 or sim.shape[0] != sim.shape[1] + 1:
+            raise ValueError("`initial_simplex` should be an array of shape (N+1,N)")
+        if len(x0) != sim.shape[1]:
+            raise ValueError("Size of `initial_simplex` is not consistent with `x0`")
+        N = sim.shape[1]
+
+    if retall:
+        allvecs = [sim[0]]
+
+    if maxiter is None:
+        maxiter = N * 200
+    if maxfun is None:
+        maxfun = N * 200
+
+    one2np1 = list(range(1, N + 1))
+    fsim = numpy.zeros((N + 1,), float)
+
+    for k in range(N + 1):
+        fsim[k] = func(sim[k])
 
     ind = numpy.argsort(fsim)
     fsim = numpy.take(fsim, ind, 0)
@@ -461,8 +509,8 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     iterations = 1
 
     while (fcalls[0] < maxfun and iterations < maxiter):
-        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xtol and
-                numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= ftol):
+        if (numpy.max(numpy.ravel(numpy.abs(sim[1:] - sim[0]))) <= xatol and
+                numpy.max(numpy.abs(fsim[0] - fsim[1:])) <= fatol):
             break
 
         xbar = numpy.add.reduce(sim[:-1], 0) / N
@@ -1417,7 +1465,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             A = fhess(*(xk,) + args)
             hcalls = hcalls + 1
 
-        while numpy.add.reduce(numpy.abs(ri)) > termcond:
+        k2 = 0
+        cg_maxiter = 20*len(x0)
+        while (numpy.add.reduce(numpy.abs(ri)) > termcond) and (k2 < cg_maxiter):
             if fhess is None:
                 if fhess_p is None:
                     Ap = approx_fhess_p(xk, psupi, fprime, epsilon)
@@ -1446,6 +1496,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             psupi = -ri + betai * psupi
             i = i + 1
             dri0 = dri1          # update numpy.dot(ri,ri) for next time.
+            k2 += 1
+
+        if k2 >= cg_maxiter:
+            # curvature keeps increasing, bail out
+            break
 
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
@@ -1480,6 +1535,17 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     elif k >= maxiter:
         warnflag = 1
         msg = _status_message['maxiter']
+        if disp:
+            print("Warning: " + msg)
+            print("         Current function value: %f" % fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % fcalls[0])
+            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Hessian evaluations: %d" % hcalls)
+    elif k2 >= cg_maxiter:
+        warnflag = 3
+        msg = ("Warning: CG iterations didn't converge.  The Hessian is not "
+              "positive definite.")
         if disp:
             print("Warning: " + msg)
             print("         Current function value: %f" % fval)

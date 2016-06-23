@@ -8,12 +8,13 @@ from numpy import zeros, r_, diag
 from .misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs, _compute_lwork
 from .decomp import _asarray_validated
+from scipy._lib.six import string_types
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth']
 
 
 def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
-        check_finite=True):
+        check_finite=True, lapack_driver='gesdd'):
     """
     Singular Value Decomposition.
 
@@ -40,6 +41,13 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    lapack_driver : {'gesdd', 'gesvd'}, optional
+        Whether to use the more efficient divide-and-conquer approach
+        (``'gesdd'``) or general rectangular approach (``'gesvd'``)
+        to compute the SVD. MATLAB and Octave use the ``'gesvd'`` approach.
+        Default is ``'gesdd'``.
+
+        .. versionadded:: 0.18
 
     Returns
     -------
@@ -53,7 +61,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         Unitary matrix having right singular vectors as rows.
         Of shape ``(N,N)`` or ``(K,N)`` depending on `full_matrices`.
 
-    For ``compute_uv = False``, only `s` is returned.
+    For ``compute_uv=False``, only `s` is returned.
 
     Raises
     ------
@@ -88,24 +96,30 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
-    m,n = a1.shape
+    m, n = a1.shape
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
-    gesdd, gesdd_lwork = get_lapack_funcs(('gesdd', 'gesdd_lwork'), (a1,))
+    if not isinstance(lapack_driver, string_types):
+        raise TypeError('lapack_driver must be a string')
+    if lapack_driver not in ('gesdd', 'gesvd'):
+        raise ValueError('lapack_driver must be "gesdd" or "gesvd", not "%s"'
+                         % (lapack_driver,))
+    funcs = (lapack_driver, lapack_driver + '_lwork')
+    gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,))
 
     # compute optimal lwork
-    lwork = _compute_lwork(gesdd_lwork, a1.shape[0], a1.shape[1],
+    lwork = _compute_lwork(gesXd_lwork, a1.shape[0], a1.shape[1],
                            compute_uv=compute_uv, full_matrices=full_matrices)
 
     # perform decomposition
-    u,s,v,info = gesdd(a1, compute_uv=compute_uv, lwork=lwork,
-                       full_matrices=full_matrices, overwrite_a=overwrite_a)
+    u, s, v, info = gesXd(a1, compute_uv=compute_uv, lwork=lwork,
+                          full_matrices=full_matrices, overwrite_a=overwrite_a)
 
     if info > 0:
         raise LinAlgError("SVD did not converge")
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal gesdd'
-                                                                    % -info)
+                         % -info)
     if compute_uv:
         return u, s, v
     else:
@@ -158,7 +172,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     a = _asarray_validated(a, check_finite=check_finite)
     if a.size:
         return svd(a, compute_uv=0, overwrite_a=overwrite_a,
-                check_finite=False)
+                   check_finite=False)
     elif len(a.shape) != 2:
         raise ValueError('expected matrix')
     else:
@@ -190,7 +204,7 @@ def diagsvd(s, M, N):
     if MorN == M:
         return r_['-1', part, zeros((M, N-M), typ)]
     elif MorN == N:
-        return r_[part, zeros((M-N,N), typ)]
+        return r_[part, zeros((M-N, N), typ)]
     else:
         raise ValueError("Length of s must be M or N.")
 
@@ -220,7 +234,7 @@ def orth(A):
     u, s, vh = svd(A, full_matrices=False)
     M, N = A.shape
     eps = numpy.finfo(float).eps
-    tol = max(M,N) * numpy.amax(s) * eps
+    tol = max(M, N) * numpy.amax(s) * eps
     num = numpy.sum(s > tol, dtype=int)
-    Q = u[:,:num]
+    Q = u[:, :num]
     return Q
