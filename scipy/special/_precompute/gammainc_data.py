@@ -91,7 +91,6 @@ def gammaincc(a, x, dps=50, maxterms=10**8):
             return mpf2float(mp.hypercomb(h, [z], maxterms=maxterms))
 
 
-
 def main():
     t0 = time()
     # It would be nice to have data for larger values, but either this
