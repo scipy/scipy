@@ -94,32 +94,69 @@
  *   a ~ x regime.
  * - 06-19-2016: additional series expansion added for igamc to
  *   improve accuracy at small arguments.
+ * - 06-24-2016: better choice of domain for the asymptotic series;
+ *   improvements in accuracy for the asymptotic series when a and x
+ *   are very close.
  */
 
 #include "mconf.h"
+#include "lanczos.h"
 #include "igam.h"
 
 #ifdef MAXITER
 #undef MAXITER
 #endif
-#define MAXITER 1000
 
-#define SMALL 25
+#define MAXITER 2000
+#define IGAM 1
+#define IGAMC 0
+#define SMALL 20
+#define LARGE 200
+#define SMALLRATIO 0.3
+#define LARGERATIO 4.5
 
 extern double MACHEP, MAXLOG;
 static double big = 4.503599627370496e15;
 static double biginv = 2.22044604925031308085e-16;
 
+double igam(double, double);
 double igamc(double, double);
 double igamc_continued_fraction(double, double);
-double igamc_series(double, double);
-double igam(double, double);
+double igam_leading_factor(double, double);
 double igam_series(double, double);
-double igam_asy(double, double);
+double igamc_series(double, double);
+double asymptotic_series(double, double, int);
 
 
-double igamc(a, x)
+double igam(a, x)
 double a, x;
+{
+    /* Check zero integration limit first */
+    if (x == 0)
+	return (0.0);
+
+    if ((x < 0) || (a <= 0)) {
+	mtherr("gammainc", DOMAIN);
+	return (NPY_NAN);
+    }
+
+    /* Asymptotic regime where a ~ x; see [2]. */
+    double absxma_a = fabs(x - a) / a;
+    if ((a > SMALL) && (a < LARGE) && (absxma_a < SMALLRATIO)) {
+	return asymptotic_series(a, x, IGAM);
+    } else if ((a > LARGE) && (absxma_a < LARGERATIO / sqrt(a))) {
+	return asymptotic_series(a, x, IGAM);
+    }
+
+    if ((x > 1.0) && (x > a)) {
+	return (1.0 - igamc(a, x));
+    }
+
+    return igam_series(a, x);
+}
+
+
+double igamc(double a, double x)
 {
     if ((x < 0) || (a <= 0)) {
 	mtherr("gammaincc", DOMAIN);
@@ -130,17 +167,15 @@ double a, x;
 	return 0.0;
     }
 
-    /* Asymptotic regime where a ~ x, see [2]. Our lower bound for a
-     * is slightly larger.
-     */
+    /* Asymptotic regime where a ~ x; see [2]. */
     double absxma_a = fabs(x - a) / a;
-    if ((a > 30) && (a < 200) && (absxma_a < 0.4)) {
-	return 1.0 - igam_asy(a, x);
-    } else if ((a > 200) && (absxma_a < 4.5 / sqrt(a))) {
-	return 1.0 - igam_asy(a, x);
+    if ((a > SMALL) && (a < LARGE) && (absxma_a < SMALLRATIO)) {
+	return asymptotic_series(a, x, IGAMC);
+    } else if ((a > LARGE) && (absxma_a < LARGERATIO / sqrt(a))) {
+	return asymptotic_series(a, x, IGAMC);
     }
     
-    /* Everywhere else, see [2] */
+    /* Everywhere else; see [2]. */
     if (x > 1.1) {
 	if (x < a) {
 	    return 1.0 - igam_series(a, x);
@@ -163,20 +198,49 @@ double a, x;
 }
 
 
-/* Compute igamc using DLMF 8.9.2 */
-double igamc_continued_fraction(a, x)
-double a, x;
+/* Compute
+ *
+ * x^a * exp(-x) / gamma(a)
+ *
+ * corrected from (15) and (16) in [2] by replacing exp(x - a) with
+ * exp(a - x).
+ */
+double igam_fac(double a, double x)
+{
+    if (fabs(a - x) > 0.4 * fabs(a)) {
+	double ax = a * log(x) - x - lgam(a);
+	if (ax < -MAXLOG) {
+	    mtherr("igam", UNDERFLOW);
+	    return 0.0;
+	}
+	return exp(ax);
+    }
+    
+    double fac = a + lanczos_g - 0.5;
+    double res = sqrt(fac / exp(1)) / lanczos_sum_expg_scaled(a);
+
+    if ((a < 200) && (x < 200)) {
+	res *= exp(a - x) * pow(x / fac, a);
+    } else {
+	double num = x - a - lanczos_g + 0.5;
+	res *= exp(a * log1pmx(num / fac) + x * (0.5 - lanczos_g) / fac);
+    }
+    
+    return res;
+}
+
+
+/* Compute igamc using DLMF 8.9.2. */
+double igamc_continued_fraction(double a, double x)
 {
     int i;
     double ans, ax, c, yc, r, t, y, z;
     double pk, pkm1, pkm2, qk, qkm1, qkm2;
     
-    ax = a * log(x) - x - lgam(a);
-    if (ax < -MAXLOG) {
-	mtherr("igamc", UNDERFLOW);
-	return (0.0);
+    ax = igam_fac(a, x);
+    if (ax == 0.0) {
+	return 0.0;
     }
-    ax = exp(ax);
 
     /* continued fraction */
     y = 1.0 - a;
@@ -221,11 +285,39 @@ double a, x;
 }
 
 
+/* Compute igam using DLMF 8.11.4. */
+double igam_series(double a, double x)
+{
+    int i;
+    double ans, ax, c, r;
+
+    ax = igam_fac(a, x);
+    if (ax == 0.0) {
+	return 0.0;
+    }
+    
+    /* power series */
+    r = a;
+    c = 1.0;
+    ans = 1.0;
+    
+    for (i = 0; i < MAXITER; i++) {
+	r += 1.0;
+	c *= x / r;
+	ans += c;
+	if (c <= MACHEP * ans) {
+	    break;
+	}
+    }
+
+    return (ans * ax / a);
+}
+
+
 /* Compute igamc using DLMF 8.7.3. This is related to the series in
  * igam_series but extra care is taken to avoid cancellation.
  */
-double igamc_series(a, x)
-double a, x;
+double igamc_series(double a, double x)
 {
     int n;
     double fac = 1;
@@ -247,86 +339,33 @@ double a, x;
 }
 
 
-double igam(a, x)
-double a, x;
+/* Compute igam/igamc using DLMF 8.12.3/8.12.4. */
+double asymptotic_series(double a, double x, int func)
 {
-    double lambda;
-
-    /* Check zero integration limit first */
-    if (x == 0)
-	return (0.0);
-
-    if ((x < 0) || (a <= 0)) {
-	mtherr("gammainc", DOMAIN);
-	return (NPY_NAN);
-    }
-
-    lambda = x / a;
-    if (x > SMALL && a > SMALL && lambda > 0.7 && lambda < 1.3) {
-	return igam_asy(a, x);
-    }
-
-    if ((x > 1.0) && (x > a))
-	return (1.0 - igamc(a, x));
-
-    return igam_series(a, x);
-}
-
-
-/* Compute igam using DLMF 8.11.4. */
-double igam_series(a, x)
-double a, x;
-{
-    int i;
-    double ans, ax, c, r;
-
-    /* Compute  x**a * exp(-x) / Gamma(a)  */
-    ax = a * log(x) - x - lgam(a);
-    if (ax < -MAXLOG) {
-	mtherr("igam", UNDERFLOW);
-	return (0.0);
-    }
-    ax = exp(ax);
-    
-    /* power series */
-    r = a;
-    c = 1.0;
-    ans = 1.0;
-    
-    for (i = 0; i < MAXITER; i++) {
-	r += 1.0;
-	c *= x / r;
-	ans += c;
-	if (c <= MACHEP * ans) {
-	    break;
-	}
-    }
-    
-    return (ans * ax / a);
-}
-
-
-/* Compute igam using DLMF 8.12.3. */
-double igam_asy(a, x)
-double a, x;
-{
-    int k, n;
+    int k, n, sgn;
     int maxpow = 0;
     double lambda = x / a;
+    double sigma = (x - a) / a;
     double eta, res, ck, ckterm, term, absterm;
     double absoldterm = NPY_INFINITY;
     double etapow[N] = {1};
     double sum = 0;
     double afac = 1;
 
+    if (func == IGAM) {
+	sgn = -1;
+    } else {
+	sgn = 1;
+    }
+
     if (lambda > 1) {
-	eta = sqrt(2 * (lambda - 1 - log(lambda)));
+ 	eta = sqrt(-2 * log1pmx(sigma));
     } else if (lambda < 1) {
-	eta = -sqrt(2 * (lambda - 1 - log(lambda)));
+	eta = -sqrt(-2 * log1pmx(sigma));
     } else {
 	eta = 0;
     }
-    res = 0.5 * erfc(-eta * sqrt(a / 2));
+    res = 0.5 * erfc(sgn * eta * sqrt(a / 2));
 
     for (k = 0; k < K; k++) {
 	ck = d[k][0];
@@ -353,7 +392,7 @@ double a, x;
 	absoldterm = absterm;
 	afac /= a;
     }
-    res -= exp(-0.5 * a * eta * eta) * sum / sqrt(2 * NPY_PI * a);
+    res += sgn * exp(-0.5 * a * eta * eta) * sum / sqrt(2 * NPY_PI * a);
 	    
     return res;
 }

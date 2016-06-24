@@ -331,22 +331,22 @@ def test_boost():
         data(gammainc, 'igamma_small_data_ipp-igamma_small_data', (0,1), 5, rtol=5e-15),
         data(gammainc, 'igamma_med_data_ipp-igamma_med_data', (0,1), 5, rtol=2e-13),
         data(gammainc, 'igamma_int_data_ipp-igamma_int_data', (0,1), 5, rtol=2e-13),
-        data(gammainc, 'igamma_big_data_ipp-igamma_big_data', (0,1), 5, rtol=2e-9),
+        data(gammainc, 'igamma_big_data_ipp-igamma_big_data', (0,1), 5, rtol=1e-12),
 
         data(gdtr_, 'igamma_small_data_ipp-igamma_small_data', (0,1), 5, rtol=1e-13),
         data(gdtr_, 'igamma_med_data_ipp-igamma_med_data', (0,1), 5, rtol=2e-13),
         data(gdtr_, 'igamma_int_data_ipp-igamma_int_data', (0,1), 5, rtol=2e-13),
         data(gdtr_, 'igamma_big_data_ipp-igamma_big_data', (0,1), 5, rtol=2e-9),
 
-        data(gammaincc, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=1e-4),
+        data(gammaincc, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=1e-13),
         data(gammaincc, 'igamma_med_data_ipp-igamma_med_data', (0,1), 3, rtol=2e-13),
         data(gammaincc, 'igamma_int_data_ipp-igamma_int_data', (0,1), 3, rtol=4e-14),
-        data(gammaincc, 'igamma_big_data_ipp-igamma_big_data', (0,1), 3, rtol=2e-9),
+        data(gammaincc, 'igamma_big_data_ipp-igamma_big_data', (0,1), 3, rtol=1e-11),
 
-        data(gdtrc_, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=1e-4),
+        data(gdtrc_, 'igamma_small_data_ipp-igamma_small_data', (0,1), 3, rtol=1e-13),
         data(gdtrc_, 'igamma_med_data_ipp-igamma_med_data', (0,1), 3, rtol=2e-13),
         data(gdtrc_, 'igamma_int_data_ipp-igamma_int_data', (0,1), 3, rtol=4e-14),
-        data(gdtrc_, 'igamma_big_data_ipp-igamma_big_data', (0,1), 3, rtol=2e-9),
+        data(gdtrc_, 'igamma_big_data_ipp-igamma_big_data', (0,1), 3, rtol=1e-11),
 
         data(gdtrib_, 'igamma_inva_data_ipp-igamma_inva_data', (1,0), 2, rtol=5e-9),
         data(gdtrib_comp, 'igamma_inva_data_ipp-igamma_inva_data', (1,0), 3, rtol=5e-9),
@@ -477,8 +477,8 @@ def test_local():
         data_local(ellipeinc, 'ellipeinc_neg_m', (0, 1), 2),
         data_local(clog1p, 'log1p_expm1_complex', (0,1), (2,3), rtol=1e-14),
         data_local(cexpm1, 'log1p_expm1_complex', (0,1), (4,5), rtol=1e-14),
-        data_local(gammainc, 'gammainc', (0, 1), 2, rtol=5e-9),
-        data_local(gammaincc, 'gammaincc', (0, 1), 2, rtol=1e-7)
+        data_local(gammainc, 'gammainc', (0, 1), 2, rtol=1e-12),
+        data_local(gammaincc, 'gammaincc', (0, 1), 2, rtol=1e-11)
     ]
 
     for test in TESTS:

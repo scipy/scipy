@@ -1250,11 +1250,17 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_lgam "lgam"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_clngamma_wrap "clngamma_wrap"(double complex) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_igam_fac "igam_fac"(double, double) nogil
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_lanczos_sum_expg_scaled "lanczos_sum_expg_scaled"(double) nogil
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_lgam1p "lgam1p"(double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_log1pmx "log1pmx"(double) nogil
 from _trig cimport sinpi as _func_sinpi
 ctypedef double _proto_sinpi_double__t(double) nogil
 cdef _proto_sinpi_double__t *_proto_sinpi_double__t_var = &_func_sinpi[double]
@@ -2078,6 +2084,28 @@ ufunc__gammaln_data[2] = &ufunc__gammaln_ptr[2*2]
 ufunc__gammaln_data[3] = &ufunc__gammaln_ptr[2*3]
 _gammaln = np.PyUFunc_FromFuncAndData(ufunc__gammaln_loops, ufunc__gammaln_data, ufunc__gammaln_types, 4, 1, 1, 0, "_gammaln", ufunc__gammaln_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc__igam_fac_loops[2]
+cdef void *ufunc__igam_fac_ptr[4]
+cdef void *ufunc__igam_fac_data[2]
+cdef char ufunc__igam_fac_types[6]
+cdef char *ufunc__igam_fac_doc = (
+    "Internal function, do not use.")
+ufunc__igam_fac_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__igam_fac_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__igam_fac_types[0] = <char>NPY_FLOAT
+ufunc__igam_fac_types[1] = <char>NPY_FLOAT
+ufunc__igam_fac_types[2] = <char>NPY_FLOAT
+ufunc__igam_fac_types[3] = <char>NPY_DOUBLE
+ufunc__igam_fac_types[4] = <char>NPY_DOUBLE
+ufunc__igam_fac_types[5] = <char>NPY_DOUBLE
+ufunc__igam_fac_ptr[2*0] = <void*>_func_igam_fac
+ufunc__igam_fac_ptr[2*0+1] = <void*>(<char*>"_igam_fac")
+ufunc__igam_fac_ptr[2*1] = <void*>_func_igam_fac
+ufunc__igam_fac_ptr[2*1+1] = <void*>(<char*>"_igam_fac")
+ufunc__igam_fac_data[0] = &ufunc__igam_fac_ptr[2*0]
+ufunc__igam_fac_data[1] = &ufunc__igam_fac_ptr[2*1]
+_igam_fac = np.PyUFunc_FromFuncAndData(ufunc__igam_fac_loops, ufunc__igam_fac_data, ufunc__igam_fac_types, 2, 2, 1, 0, "_igam_fac", ufunc__igam_fac_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc__lambertw_loops[1]
 cdef void *ufunc__lambertw_ptr[2]
 cdef void *ufunc__lambertw_data[1]
@@ -2093,6 +2121,26 @@ ufunc__lambertw_ptr[2*0] = <void*>_func_lambertw_scalar
 ufunc__lambertw_ptr[2*0+1] = <void*>(<char*>"_lambertw")
 ufunc__lambertw_data[0] = &ufunc__lambertw_ptr[2*0]
 _lambertw = np.PyUFunc_FromFuncAndData(ufunc__lambertw_loops, ufunc__lambertw_data, ufunc__lambertw_types, 1, 3, 1, 0, "_lambertw", ufunc__lambertw_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__lanczos_sum_expg_scaled_loops[2]
+cdef void *ufunc__lanczos_sum_expg_scaled_ptr[4]
+cdef void *ufunc__lanczos_sum_expg_scaled_data[2]
+cdef char ufunc__lanczos_sum_expg_scaled_types[4]
+cdef char *ufunc__lanczos_sum_expg_scaled_doc = (
+    "Internal function, do not use.")
+ufunc__lanczos_sum_expg_scaled_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__lanczos_sum_expg_scaled_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__lanczos_sum_expg_scaled_types[0] = <char>NPY_FLOAT
+ufunc__lanczos_sum_expg_scaled_types[1] = <char>NPY_FLOAT
+ufunc__lanczos_sum_expg_scaled_types[2] = <char>NPY_DOUBLE
+ufunc__lanczos_sum_expg_scaled_types[3] = <char>NPY_DOUBLE
+ufunc__lanczos_sum_expg_scaled_ptr[2*0] = <void*>_func_lanczos_sum_expg_scaled
+ufunc__lanczos_sum_expg_scaled_ptr[2*0+1] = <void*>(<char*>"_lanczos_sum_expg_scaled")
+ufunc__lanczos_sum_expg_scaled_ptr[2*1] = <void*>_func_lanczos_sum_expg_scaled
+ufunc__lanczos_sum_expg_scaled_ptr[2*1+1] = <void*>(<char*>"_lanczos_sum_expg_scaled")
+ufunc__lanczos_sum_expg_scaled_data[0] = &ufunc__lanczos_sum_expg_scaled_ptr[2*0]
+ufunc__lanczos_sum_expg_scaled_data[1] = &ufunc__lanczos_sum_expg_scaled_ptr[2*1]
+_lanczos_sum_expg_scaled = np.PyUFunc_FromFuncAndData(ufunc__lanczos_sum_expg_scaled_loops, ufunc__lanczos_sum_expg_scaled_data, ufunc__lanczos_sum_expg_scaled_types, 2, 1, 1, 0, "_lanczos_sum_expg_scaled", ufunc__lanczos_sum_expg_scaled_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__lgam1p_loops[2]
 cdef void *ufunc__lgam1p_ptr[4]
@@ -2113,6 +2161,26 @@ ufunc__lgam1p_ptr[2*1+1] = <void*>(<char*>"_lgam1p")
 ufunc__lgam1p_data[0] = &ufunc__lgam1p_ptr[2*0]
 ufunc__lgam1p_data[1] = &ufunc__lgam1p_ptr[2*1]
 _lgam1p = np.PyUFunc_FromFuncAndData(ufunc__lgam1p_loops, ufunc__lgam1p_data, ufunc__lgam1p_types, 2, 1, 1, 0, "_lgam1p", ufunc__lgam1p_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__log1pmx_loops[2]
+cdef void *ufunc__log1pmx_ptr[4]
+cdef void *ufunc__log1pmx_data[2]
+cdef char ufunc__log1pmx_types[4]
+cdef char *ufunc__log1pmx_doc = (
+    "Internal function, do not use.")
+ufunc__log1pmx_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__log1pmx_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__log1pmx_types[0] = <char>NPY_FLOAT
+ufunc__log1pmx_types[1] = <char>NPY_FLOAT
+ufunc__log1pmx_types[2] = <char>NPY_DOUBLE
+ufunc__log1pmx_types[3] = <char>NPY_DOUBLE
+ufunc__log1pmx_ptr[2*0] = <void*>_func_log1pmx
+ufunc__log1pmx_ptr[2*0+1] = <void*>(<char*>"_log1pmx")
+ufunc__log1pmx_ptr[2*1] = <void*>_func_log1pmx
+ufunc__log1pmx_ptr[2*1+1] = <void*>(<char*>"_log1pmx")
+ufunc__log1pmx_data[0] = &ufunc__log1pmx_ptr[2*0]
+ufunc__log1pmx_data[1] = &ufunc__log1pmx_ptr[2*1]
+_log1pmx = np.PyUFunc_FromFuncAndData(ufunc__log1pmx_loops, ufunc__log1pmx_data, ufunc__log1pmx_types, 2, 1, 1, 0, "_log1pmx", ufunc__log1pmx_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__sinpi_loops[4]
 cdef void *ufunc__sinpi_ptr[8]

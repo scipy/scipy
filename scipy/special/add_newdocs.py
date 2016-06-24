@@ -2623,6 +2623,11 @@ add_newdoc("scipy.special", "i1e",
            http://www.netlib.org/cephes/index.html
     """)
 
+add_newdoc("scipy.special", "_igam_fac",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("scipy.special", "it2i0k0",
     """
     it2i0k0(x)
@@ -3551,6 +3556,11 @@ add_newdoc("scipy.special", "kve",
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     """)
 
+add_newdoc("scipy.special", "_lanczos_sum_expg_scaled",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("scipy.special", "_lgam1p",
     """
     Internal function, do not use.
@@ -3561,6 +3571,11 @@ add_newdoc("scipy.special", "log1p",
     log1p(x)
 
     Calculates log(1+x) for use when `x` is near zero
+    """)
+
+add_newdoc("scipy.special", "_log1pmx",
+    """
+    Internal function, do not use.
     """)
 
 add_newdoc('scipy.special', 'logit',

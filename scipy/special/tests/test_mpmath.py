@@ -11,14 +11,16 @@ from numpy import pi
 import scipy.special as sc
 from scipy._lib.six import with_metaclass
 from scipy._lib._testutils import knownfailure_overridable
-from scipy.special._testutils import (MissingModule, check_version, FuncData,
-                                      DecoratorMeta, assert_func_equal)
-from scipy.special._mptestutils import (Arg, FixedArg, ComplexArg, IntArg,
-                                        assert_mpmath_equal,
-                                        nonfunctional_tooslow, trace_args,
-                                        time_limited, exception_to_nan,
-                                        inf_to_nan)
-from scipy.special._ufuncs import _sinpi, _cospi, _lgam1p
+from scipy.special._testutils import (
+    MissingModule, check_version, FuncData, DecoratorMeta,
+    assert_func_equal)
+from scipy.special._mptestutils import (
+    Arg, FixedArg, ComplexArg, IntArg, assert_mpmath_equal,
+    nonfunctional_tooslow, trace_args, time_limited, exception_to_nan,
+    inf_to_nan)
+from scipy.special._ufuncs import (
+    _sinpi, _cospi, _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
+    _igam_fac)
 
 try:
     import mpmath
@@ -465,8 +467,8 @@ def test_digamma_boundary():
 @dec.slow
 def test_gammainc_boundary():
     # Test the transition to the asymptotic series.
-    small = 25
-    a = np.linspace(0.5*0.7*small, 2*1.3*small, 100)
+    small = 20
+    a = np.linspace(0.5*small, 2*small, 100)
     x = a.copy()
     a, x = np.meshgrid(a, x)
     a, x = a.flatten(), x.flatten()
@@ -947,6 +949,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             lambda x: mpmath.log(x+1),
                             [ComplexArg()], dps=60)
 
+    def test_log1pmx(self):
+        assert_mpmath_equal(_log1pmx,
+                            lambda x: mpmath.log(x + 1) - x,
+                            [Arg()], dps=60, rtol=1e-14)
+
     def test_ei(self):
         assert_mpmath_equal(sc.expi,
                             mpmath.ei,
@@ -1053,7 +1060,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_erfc(self):
         assert_mpmath_equal(sc.erfc,
                             exception_to_nan(lambda z: mpmath.erfc(z)),
-                            [Arg()])
+                            [Arg()], rtol=1e-13)
 
     def test_erfc_complex(self):
         assert_mpmath_equal(sc.erfc,
@@ -1138,7 +1145,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(sc.gammaincc,
                             lambda z, a: mpmath.gammainc(z, a=a, regularized=True),
                             [Arg(0, 1e4, inclusive_a=False), Arg(0, 1e4)],
-                            nan_ok=False, rtol=1e-10)
+                            nan_ok=False, rtol=1e-11)
         
     def test_gammaln(self):
         # The real part of loggamma is log(|gamma(z)|).
@@ -1307,6 +1314,15 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(lambda a, b, x: mpmath.hyperu(a, b, x, **HYPERKW)),
                             [Arg(), Arg(), Arg()])
 
+    def test_igam_fac(self):
+        def mp_igam_fac(a, x):
+            return mpmath.power(x, a)*mpmath.exp(-x)/mpmath.gamma(a)
+
+        assert_mpmath_equal(_igam_fac,
+                            mp_igam_fac,
+                            [Arg(0, 1e20, inclusive_a=False), Arg(0, 1e20)],
+                            rtol=1e-10)
+
     def test_j0(self):
         # The Bessel function at large arguments is j0(x) ~ cos(x + phi)/sqrt(x)
         # and at large arguments the phase of the cosine loses precision.
@@ -1382,6 +1398,20 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
                             lambda x, k: mpmath.lambertw(x, int(k)),
                             [Arg(), IntArg(0, 10)])
+
+    def test_lanczos_sum_expg_scaled(self):
+        maxgamma = 171.624376956302725
+        e = np.exp(1)
+        g = 6.024680040776729583740234375
+        
+        def gamma(x):
+            tmp = x + g - 0.5
+            return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
+        
+        assert_mpmath_equal(gamma,
+                            mpmath.gamma,
+                            [Arg(0, maxgamma, inclusive_a=False)],
+                            rtol=1e-13)
 
     @nonfunctional_tooslow
     def test_legendre(self):
