@@ -514,10 +514,10 @@ def _fftconvolve_valid(volume, kernel):
 
 def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     """
-    Returns a time the function took, in seconds.
+    Returns the time the statement/function took, in seconds.
 
-    Faster, less precise version of IPython's timeit. It can string to time but
-    can also take a callable as input.
+    Faster, less precise version of IPython's timeit. `stmt` can be a statement
+    written as a string or a callable.
 
     Will do only 1 loop (like IPython's timeit) with no repetitions
     (unlike IPython) for very slow functions.  For fast functions, only does
@@ -526,13 +526,13 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     measured.
 
     """
-    t = timeit.Timer(stmt, setup)
+    timer = timeit.Timer(stmt, setup)
 
-    # determine number so that 5 ms <= total time
+    # determine number of calls per rep so total time for 1 rep >= 5 ms
     x = 0
-    for i in range(0, 10):
-        number = 10**i
-        x = t.timeit(number)  # seconds
+    for p in range(0, 10):
+        number = 10**p
+        x = timer.timeit(number)  # seconds
         if x >= 5e-3 / 10:  # 5 ms for final test, 1/10th that for this one
             break
     if x > 1:  # second
@@ -540,7 +540,7 @@ def _timeit_fast(stmt="pass", setup="pass", repeat=3):
         best = x
     else:
         number *= 10
-        r = t.repeat(repeat, number)
+        r = timer.repeat(repeat, number)
         best = min(r)
 
     sec = best / number
@@ -611,6 +611,24 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     There are cases when `fftconvolve` supports the inputs but this function
     returns `direct` (e.g., to protect against floating point integer
     precision).
+
+    Examples
+    --------
+    Determine the faster method for a given input:
+
+    >>> from scipy import signal
+    >>> a = np.random.randn(1000)
+    >>> b = np.random.randn(1000000)
+    >>> method = signal.choose_conv_method(a, b, mode='same')
+    >>> method
+    'fft'
+
+    This can then be applied to other arrays of the same dtype and shape:
+
+    >>> c = np.random.randn(1000)
+    >>> d = np.random.randn(1000000)
+    >>> corr1 = signal.correlate(a, b, mode='same', method=method)
+    >>> corr2 = signal.correlate(c, d, mode='same', method=method)
 
     """
     volume = asarray(in1)
