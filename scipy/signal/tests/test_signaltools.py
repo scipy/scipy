@@ -183,7 +183,7 @@ class TestConvolve(_TestConvolve):
 
                     rtol = {'rtol': 2.0e-3} if dtype in {np.complex64,
                                                          np.float32} else {}
-                    if type(results['direct']) is np.ndarray:
+                    if isinstance(results['direct'], np.ndarray):
                         assert_allclose(results['fft'], results['direct'], **rtol)
                         assert_equal(results['direct'].dtype, results['fft'].dtype)
 

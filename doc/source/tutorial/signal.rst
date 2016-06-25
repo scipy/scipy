@@ -228,13 +228,13 @@ values :math:`y\left[M\right]` to :math:`y\left[K\right]` inclusive are
 returned.
 
 The second optional flag 'method' determines how the convolution is computed,
-either through the Fourier Transform approach with :func:`fftconvolve` or
-through the direct method. The Fourier Transform method has order
-:math:`O(N\log N)` while the direct method has order :math:`O(N^2)`. Depending
-on the big O constant and the value of :math:`N`, one of these two methods may
-be faster. The default value 'auto' performs a rough calculation and chooses
-the faster method, while the values 'direct' and 'fft' force computation with
-the other two methods.
+either through the Fourier transform approach with :func:`fftconvolve` or
+through the direct method. By default, it selects the expected faster method.
+The Fourier transform method has order :math:`O(N\log N)` while the direct
+method has order :math:`O(N^2)`. Depending on the big O constant and the value
+of :math:`N`, one of these two methods may be faster. The default value 'auto'
+performs a rough calculation and chooses the expected faster method, while the
+values 'direct' and 'fft' force computation with the other two methods.
 
 The code below shows a simple example for convolution of 2 sequences
 

@@ -147,7 +147,7 @@ def correlate(in1, in2, mode='full', method='auto'):
            Automatically chooses direct or Fourier method based on an estimate
            of which is faster (default).  See `convolve` Notes for more detail.
 
-           .. versionadded:: 0.18.0
+           .. versionadded:: 0.19.0
 
     Returns
     -------
@@ -157,7 +157,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     See Also
     --------
-    convolve : contains more documentation on `method`.
+    choose_conv_method : contains more documentation on `method`.
 
     Notes
     -----
@@ -278,7 +278,7 @@ def fftconvolve(in1, in2, mode="full"):
     but can be slower when only a few output values are needed, and can only
     output float arrays (int or object array inputs will be cast to float).
 
-    As of v0.18, `convolve` automatically chooses this method or the direct
+    As of v0.19, `convolve` automatically chooses this method or the direct
     method based on an estimation of which is faster.
 
     Parameters
@@ -612,9 +612,11 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     returns `direct` (e.g., to protect against floating point integer
     precision).
 
+    .. versionadded:: 0.19
+
     Examples
     --------
-    Determine the faster method for a given input:
+    Estimate the fastest method for a given input:
 
     >>> from scipy import signal
     >>> a = np.random.randn(1000)
@@ -627,8 +629,11 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
 
     >>> c = np.random.randn(1000)
     >>> d = np.random.randn(1000000)
+    >>> # `method` works with correlate and convolve
     >>> corr1 = signal.correlate(a, b, mode='same', method=method)
     >>> corr2 = signal.correlate(c, d, mode='same', method=method)
+    >>> conv1 = signal.convolve(a, b, mode='same', method=method)
+    >>> conv2 = signal.convolve(c, d, mode='same', method=method)
 
     """
     volume = asarray(in1)
@@ -703,7 +708,7 @@ def convolve(in1, in2, mode='full', method='auto'):
            Automatically chooses direct or Fourier method based on an estimate
            of which is faster (default).  See Notes for more detail.
 
-           .. versionadded:: 0.18.0
+           .. versionadded:: 0.19.0
 
     Returns
     -------
