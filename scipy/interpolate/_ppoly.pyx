@@ -1181,14 +1181,22 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         else:
             wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
         
-    # evaluate
-    interval = 0
 
+    interval = 0
+    cdef bint ascending = x[x.shape[0] - 1] >= x[0]
+
+    # Evaluate.
     for ip in range(len(xp)):
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval_ascending(&x[0], x.shape[0], xval, interval, extrapolate)
+        if ascending:
+            i = find_interval_ascending(&x[0], x.shape[0], xval, interval,
+                                        extrapolate)
+        else:
+            i = find_interval_descending(&x[0], x.shape[0], xval, interval,
+                                         extrapolate)
+
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
