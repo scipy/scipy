@@ -52,13 +52,13 @@ def evaluate(double_or_complex[:,:,::1] c,
         There are `n` polynomials in each interval.
         Coefficient of highest order-term comes first.
     x : ndarray, shape (m+1,)
-        Breakpoints of polynomials
+        Breakpoints of polynomials.
     xp : ndarray, shape (r,)
         Points to evaluate the piecewise polynomial at.
     dx : int
         Order of derivative to evaluate.  The derivative is evaluated
         piecewise and may have discontinuities.
-    extrapolate : bint, optional
+    extrapolate : bint
         Whether to extrapolate to out-of-bounds points based on first
         and last intervals, or to return NaNs.
     out : ndarray, shape (r, n)
@@ -66,7 +66,6 @@ def evaluate(double_or_complex[:,:,::1] c,
         This argument is modified in-place.
 
     """
-
     cdef int ip, jp
     cdef int interval
     cdef double xval
@@ -83,14 +82,20 @@ def evaluate(double_or_complex[:,:,::1] c,
     if c.shape[1] != x.shape[0] - 1:
         raise ValueError("x and c have incompatible shapes")
 
-    # evaluate
     interval = 0
+    cdef bint ascending = x[x.shape[0] - 1] >= x[0]
 
+    # Evaluate.
     for ip in range(len(xp)):
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval(&x[0], x.shape[0], xval, interval, extrapolate)
+        if ascending:
+            i = find_interval_ascending(&x[0], x.shape[0], xval, interval,
+                                        extrapolate)
+        else:
+            i = find_interval_descending(&x[0], x.shape[0], xval, interval,
+                                         extrapolate)
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):
@@ -101,7 +106,8 @@ def evaluate(double_or_complex[:,:,::1] c,
 
         # Evaluate the local polynomial(s)
         for jp in range(c.shape[2]):
-            out[ip, jp] = evaluate_poly1(xval - x[interval], c, interval, jp, dx)
+            out[ip, jp] = evaluate_poly1(xval - x[interval], c, interval,
+                                         jp, dx)
 
 
 @cython.wraparound(False)
@@ -217,11 +223,11 @@ def evaluate_nd(double_or_complex[:,:,::1] c,
         for k in range(ndim):
             xval = xp[ip, k]
 
-            i = find_interval(xx[k],
-                              nxx[k],
-                              xval,
-                              interval[k],
-                              extrapolate)
+            i = find_interval_ascending(xx[k],
+                                        nxx[k],
+                                        xval,
+                                        interval[k],
+                                        extrapolate)
             if i < 0:
                 out_of_range = 1
                 break
@@ -366,14 +372,21 @@ def integrate(double_or_complex[:,:,::1] c,
     if not (b >= a):
         raise ValueError("Integral bounds not in order")
 
-    # find intervals
-    start_interval = find_interval(&x[0], x.shape[0], a, 0, extrapolate)
-    if start_interval < 0:
-        out[:] = nan
-        return
+    cdef bint ascending = x[x.shape[0] - 1] >= x[0]
+    if ascending:
+        start_interval = find_interval_ascending(&x[0], x.shape[0], a, 0,
+                                                 extrapolate)
+        end_interval = find_interval_ascending(&x[0], x.shape[0], b, 0,
+                                               extrapolate)
+    else:
+        a, b = b, a
+        start_interval = find_interval_descending(&x[0], x.shape[0], a, 0,
+                                                  extrapolate)
+        end_interval = find_interval_descending(&x[0], x.shape[0], b, 0,
+                                                extrapolate)
 
-    end_interval = find_interval(&x[0], x.shape[0], b, 0, extrapolate)
-    if end_interval < 0:
+
+    if start_interval < 0 or end_interval < 0:
         out[:] = nan
         return
 
@@ -394,9 +407,13 @@ def integrate(double_or_complex[:,:,::1] c,
                 va = evaluate_poly1(0, c, interval, jp, -1)
 
             # integral
-            vtot = vtot + (vb - va)
+            vtot += vb - va
 
         out[jp] = vtot
+
+    if not ascending:
+        for jp in range(c.shape[2]):
+            out[jp] = -out[jp]
 
 
 @cython.wraparound(False)
@@ -449,6 +466,8 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
     workspace = NULL
 
     last_root = nan
+
+    cdef bint ascending = x[x.shape[0] - 1] >= x[0]
 
     roots = []
     try:
@@ -511,16 +530,21 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
                     # Check interval
                     wr[i] += x[interval]
                     if interval == 0 and extrapolate:
-                        # Half-open to the left
-                        if not wr[i] <= x[interval+1]:
-                            continue
+                        # Half-open to the left/right.
+                        if (ascending and not wr[i] <= x[interval+1] or
+                            not ascending and not wr[i] >= x[interval + 1]):
+                                continue
                     elif interval == c.shape[1] - 1 and extrapolate:
-                        # Half-open to the right
-                        if not wr[i] >= x[interval]:
-                            continue
+                        # Half-open to the right/left.
+                        if (ascending and not wr[i] >= x[interval] or
+                            not ascending and not wr[i] <= x[interval]):
+                                continue
                     else:
-                        if not (x[interval] <= wr[i] <= x[interval+1]):
-                            continue
+                        if (ascending and
+                            not x[interval] <= wr[i] <= x[interval+1] or
+                            not ascending and
+                            not x[interval + 1] <= wr[i] <= x[interval]):
+                                continue
 
                     # Add to list
                     if wr[i] != last_root:
@@ -541,27 +565,27 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval(double *x,
-                       size_t nx,
-                       double xval,
-                       int prev_interval=0,
-                       bint extrapolate=1) nogil:
+cdef int find_interval_ascending(double *x,
+                                 size_t nx,
+                                 double xval,
+                                 int prev_interval=0,
+                                 bint extrapolate=1) nogil:
     """
-    Find an interval such that x[interval] <= xval < x[interval+1]
-    or interval == 0 and xval < x[0]
-    or interval == n-2 and xval > x[n-1]
+    Find an interval such that x[interval] <= xval < x[interval+1]. Assuming
+    that x is sorted in the ascending order.
+    If xval < x[0], then interval = 0, if xval > x[-1] then interval = n - 2.
 
     Parameters
     ----------
     x : array of double, shape (m,)
-        Piecewise polynomial breakpoints
+        Piecewise polynomial breakpoints sorted in ascending order.
     xval : double
-        Point to find
+        Point to find.
     prev_interval : int, optional
-        Interval where a previous point was found
+        Interval where a previous point was found.
     extrapolate : bint, optional
         Whether to return the last of the first interval if the
-        point is out-of-bounds. 
+        point is out-of-bounds.
 
     Returns
     -------
@@ -615,6 +639,94 @@ cdef int find_interval(double *x,
                 low = mid + 1
             else:
                 # x[mid] <= xval < x[mid+1]
+                low = mid
+                break
+
+        interval = low
+
+    return interval
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.cdivision(True)
+cdef int find_interval_descending(double *x,
+                                 size_t nx,
+                                 double xval,
+                                 int prev_interval=0,
+                                 bint extrapolate=1) nogil:
+    """
+    Find an interval such that x[interval + 1] < xval <= x[interval], assuming
+    that x are sorted in the descending order.
+    If xval > x[0], then interval = 0, if xval < x[-1] then interval = n - 2.
+
+    Parameters
+    ----------
+    x : array of double, shape (m,)
+        Piecewise polynomial breakpoints sorted in descending order.
+    xval : double
+        Point to find.
+    prev_interval : int, optional
+        Interval where a previous point was found.
+    extrapolate : bint, optional
+        Whether to return the last of the first interval if the
+        point is out-of-bounds.
+
+    Returns
+    -------
+    interval : int
+        Suitable interval or -1 if nan.
+
+    """
+    cdef int interval, high, low, mid
+    cdef double a, b
+
+    # Note that now a > b.
+    a = x[0]
+    b = x[nx-1]
+
+    interval = prev_interval
+    if interval < 0 or interval >= nx:
+        interval = 0
+
+    if not (b <= xval <= a):
+        # Out-of-bounds or NaN.
+        if xval > a and extrapolate:
+            # Above a.
+            interval = 0
+        elif xval < b and extrapolate:
+            # Below b.
+            interval = nx - 2
+        else:
+            # No extrapolation.
+            interval = -1
+    elif xval == b:
+        # Make the interval closed from the left.
+        interval = nx - 2
+    else:
+        # Apply the binary search in a general case. Note that low and high
+        # are used in terms of interval number, not in terms of abscissas.
+        # The conversion from find_interval_ascending is simply to change
+        # < to > and >= to <= in comparison with xval.
+        if xval <= x[interval]:
+            low = interval
+            high = nx - 2
+        else:
+            low = 0
+            high = interval
+
+        if xval > x[low + 1]:
+            high = low
+
+        while low < high:
+            mid = (high + low) // 2
+            if xval > x[mid]:
+                # mid < high
+                high = mid
+            elif xval <= x[mid + 1]:
+                low = mid + 1
+            else:
+                # x[mid] >= xval > x[mid+1]
                 low = mid
                 break
 
@@ -1076,7 +1188,7 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
         xval = xp[ip]
 
         # Find correct interval
-        i = find_interval(&x[0], x.shape[0], xval, interval, extrapolate)
+        i = find_interval_ascending(&x[0], x.shape[0], xval, interval, extrapolate)
         if i < 0:
             # xval was nan etc
             for jp in range(c.shape[2]):

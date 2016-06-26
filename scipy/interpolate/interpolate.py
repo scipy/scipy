@@ -669,8 +669,9 @@ class _PPolyBase(object):
             raise ValueError("polynomial must be at least of order 0")
         if self.c.shape[1] != self.x.size-1:
             raise ValueError("number of coefficients != len(x)-1")
-        if np.any(self.x[1:] - self.x[:-1] < 0):
-            raise ValueError("x-coordinates are not in increasing order")
+        dx = np.diff(self.x)
+        if not (np.all(dx >= 0) or np.all(dx <= 0)):
+            raise ValueError("`x` must be strictly increasing or decreasing.")
 
         dtype = self._get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dtype)
@@ -711,22 +712,20 @@ class _PPolyBase(object):
         if not self.c.flags.c_contiguous:
             self.c = self.c.copy()
 
-    def extend(self, c, x, right=True):
+    def extend(self, c, x):
         """
         Add additional breakpoints and coefficients to the polynomial.
 
         Parameters
         ----------
         c : ndarray, size (k, m, ...)
-            Additional coefficients for polynomials in intervals
-            ``self.x[-1] <= x < x_right[0]``, ``x_right[0] <= x < x_right[1]``,
-            ..., ``x_right[m-2] <= x < x_right[m-1]``
+            Additional coefficients for polynomials in intervals. Note that
+            the first additional interval will be formed using one of the
+            `self.x` end points.
         x : ndarray, size (m,)
-            Additional breakpoints. Must be sorted and either to
-            the right or to the left of the current breakpoints.
-        right : bool, optional
-            Whether the new intervals are to the right or to the left
-            of the current intervals.
+            Additional breakpoints. Must be sorted in the same order as
+            `self.x` and either to the right or to the left of the current
+            breakpoints.
         """
         c = np.asarray(c)
         x = np.asarray(x)
@@ -739,15 +738,38 @@ class _PPolyBase(object):
             raise ValueError("x and c have incompatible sizes")
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
             raise ValueError("c and self.c have incompatible shapes")
-        if right:
-            if x[0] < self.x[-1]:
-                raise ValueError("new x are not to the right of current ones")
-        else:
-            if x[-1] > self.x[0]:
-                raise ValueError("new x are not to the left of current ones")
 
         if c.size == 0:
             return
+
+        dx = np.diff(x)
+        if not (np.all(dx >= 0) or np.all(dx <= 0)):
+            raise ValueError("`x` is not sorted.")
+
+        if self.x[-1] >= self.x[0]:
+            if not x[-1] >= x[0]:
+                raise ValueError("`x` is in the different order "
+                                 "than `self.x`.")
+
+            if x[0] >= self.x[-1]:
+                action = 'append'
+            elif x[-1] <= self.x[0]:
+                action = 'prepend'
+            else:
+                raise ValueError("`x` is neither on the left or on the right "
+                                 "from `self.x`.")
+        else:
+            if not x[-1] <= x[0]:
+                raise ValueError("`x` is in the different order "
+                                 "than `self.x`.")
+
+            if x[0] <= self.x[-1]:
+                action = 'append'
+            elif x[-1] >= self.x[0]:
+                action = 'prepend'
+            else:
+                raise ValueError("`x` is neither on the left or on the right "
+                                 "from `self.x`.")
 
         dtype = self._get_dtype(c.dtype)
 
@@ -755,11 +777,11 @@ class _PPolyBase(object):
         c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
                       dtype=dtype)
 
-        if right:
+        if action == 'append':
             c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
             c2[k2-c.shape[0]:, self.c.shape[1]:] = c
             self.x = np.r_[self.x, x]
-        else:
+        elif action == 'prepend':
             c2[k2-self.c.shape[0]:, :c.shape[1]] = c
             c2[k2-c.shape[0]:, c.shape[1]:] = self.c
             self.x = np.r_[x, self.x]
@@ -1483,11 +1505,11 @@ class BPoly(_PPolyBase):
         else:
             return ib(b) - ib(a)
 
-    def extend(self, c, x, right=True):
+    def extend(self, c, x):
         k = max(self.c.shape[0], c.shape[0])
         self.c = self._raise_degree(self.c, k - self.c.shape[0])
         c = self._raise_degree(c, k - c.shape[0])
-        return _PPolyBase.extend(self, c, x, right)
+        return _PPolyBase.extend(self, c, x)
     extend.__doc__ = _PPolyBase.extend.__doc__
 
     @classmethod
