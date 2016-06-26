@@ -1427,12 +1427,14 @@ def anderson(x, dist='norm'):
     if dist == 'norm':
         s = np.std(x, ddof=1, axis=0)
         w = (y - xbar) / s
-        z = distributions.norm.cdf(w)
+        logcdf = distributions.norm.logcdf(w)
+        logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
-        z = distributions.expon.cdf(w)
+        logcdf = distributions.expon.logcdf(w)
+        logsf = distributions.expon.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_expon / (1.0 + 0.6/N), 3)
     elif dist == 'logistic':
@@ -1447,18 +1449,20 @@ def anderson(x, dist='norm'):
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
-        z = distributions.logistic.cdf(w)
+        logcdf = distributions.logistic.logcdf(w)
+        logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
         critical = around(_Avals_logistic / (1.0 + 0.25/N), 3)
     else:  # (dist == 'gumbel') or (dist == 'extreme1'):
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
-        z = distributions.gumbel_l.cdf(w)
+        logcdf = distributions.gumbel_l.logcdf(w)
+        logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
 
     i = arange(1, N + 1)
-    A2 = -N - np.sum((2*i - 1.0) / N * (log(z) + log(1 - z[::-1])), axis=0)
+    A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
 
     return AndersonResult(A2, critical, sig)
 

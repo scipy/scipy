@@ -177,6 +177,20 @@ class TestAnderson(TestCase):
         A,crit,sig = stats.anderson(x2)
         assert_array_less(A, crit[-2:])
 
+        v = np.ones(10)
+        v[0] = 0
+        A, crit, sig = stats.anderson(v)
+        # The expected statistic 3.208057 was computed independently of scipy.
+        # For example, in R:
+        #   > library(nortest)
+        #   > v <- rep(1, 10)
+        #   > v[1] <- 0
+        #   > result <- ad.test(v)
+        #   > result$statistic
+        #          A
+        #   3.208057
+        assert_allclose(A, 3.208057)
+
     def test_expon(self):
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
@@ -189,6 +203,22 @@ class TestAnderson(TestCase):
         finally:
             np.seterr(**olderr)
         assert_(A > crit[-1])
+
+    def test_gumbel(self):
+        # Regression test for gh-6306.  Before that issue was fixed,
+        # this case would return a2=inf.
+        v = np.ones(100)
+        v[0] = 0.0
+        a2, crit, sig = stats.anderson(v, 'gumbel')
+        # A brief reimplementation of the calculation of the statistic.
+        n = len(v)
+        xbar, s = stats.gumbel_l.fit(v)
+        logcdf = stats.gumbel_l.logcdf(v, xbar, s)
+        logsf = stats.gumbel_l.logsf(v, xbar, s)
+        i = np.arange(1, n+1)
+        expected_a2 = -n - np.mean((2*i - 1) * (logcdf + logsf[::-1]))
+
+        assert_allclose(a2, expected_a2)
 
     def test_bad_arg(self):
         assert_raises(ValueError, stats.anderson, [1], dist='plate_of_shrimp')
