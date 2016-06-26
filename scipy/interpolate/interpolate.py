@@ -846,20 +846,20 @@ class PPoly(_PPolyBase):
     """
     Piecewise polynomial in terms of coefficients and breakpoints
 
-    The polynomial in the ith interval is ``x[i] <= xp < x[i+1]``::
+    The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
+    local power basis::
 
         S = sum(c[m, i] * (xp - x[i])**(k-m) for m in range(k+1))
 
-    where ``k`` is the degree of the polynomial. This representation
-    is the local power basis.
+    where ``k`` is the degree of the polynomial.
 
     Parameters
     ----------
     c : ndarray, shape (k, m, ...)
         Polynomial coefficients, order `k` and `m` intervals
     x : ndarray, shape (m+1,)
-        Polynomial breakpoints. These must be sorted in
-        increasing order.
+        Polynomial breakpoints. Must be sorted in either increasing or
+        decreasing order.
     extrapolate : bool or 'periodic', optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
@@ -1246,16 +1246,16 @@ class PPoly(_PPolyBase):
 class BPoly(_PPolyBase):
     """Piecewise polynomial in terms of coefficients and breakpoints.
 
-    The polynomial in the ``i``-th interval ``x[i] <= xp < x[i+1]`` is written
-    in the Bernstein polynomial basis::
+    The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
+    Bernstein polynomial basis::
 
         S = sum(c[a, i] * b(a, k; x) for a in range(k+1)),
 
     where ``k`` is the degree of the polynomial, and::
 
-        b(a, k; x) = binom(k, a) * t**k * (1 - t)**(k - a),
+        b(a, k; x) = binom(k, a) * t**a * (1 - t)**(k - a),
 
-    with ``t = (x - x[i]) / (x[i+1] - x[i])`` and ``binom`` is a binomial
+    with ``t = (x - x[i]) / (x[i+1] - x[i])`` and ``binom`` is the binomial
     coefficient.
 
     Parameters
@@ -1263,8 +1263,8 @@ class BPoly(_PPolyBase):
     c : ndarray, shape (k, m, ...)
         Polynomial coefficients, order `k` and `m` intervals
     x : ndarray, shape (m+1,)
-        Polynomial breakpoints. These must be sorted in
-        increasing order.
+        Polynomial breakpoints. Must be sorted in either increasing or
+        decreasing order.
     extrapolate : bool, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
