@@ -116,13 +116,13 @@ script:
     if [ "${USE_WHEEL}" == "1" ]; then
         # Need verbose output or TravisCI will terminate after 10 minutes
         pip wheel . -v
-        pip install wheelhouse/* -v
+        pip install wheelhouse -v
         USE_WHEEL_BUILD="--no-build"
     elif [ "${USE_SDIST}" == "1" ]; then
         python setup.py sdist
         # Move out of source directory to avoid finding local scipy
         pushd dist
-        pip install scipy*
+        pip install ./scipy*
         popd
         USE_WHEEL_BUILD="--no-build"
     fi
