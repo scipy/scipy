@@ -1290,7 +1290,7 @@ class TestMedianTest(TestCase):
         mt1 = stats.median_test(x, y, nan_policy='propagate')
         s, p, m, t = stats.median_test(x, y, nan_policy='omit')
 
-        assert_equal(mt1, (np.nan, np.nan, np.nan, np.nan))
+        assert_equal(mt1, (np.nan, np.nan, np.nan, None))
         assert_allclose(s, 0.31250000000000006)
         assert_allclose(p, 0.57615012203057869)
         assert_equal(m, 4.0)

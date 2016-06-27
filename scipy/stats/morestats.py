@@ -2479,7 +2479,8 @@ def median_test(*args, **kwds):
         of the values below the grand median.  The table allows further
         analysis with, for example, `scipy.stats.chi2_contingency`, or with
         `scipy.stats.fisher_exact` if there are two samples, without having
-        to recompute the table.
+        to recompute the table.  If ``nan_policy`` is "propagate" and there
+        are nans in the input, the return value for ``table`` is ``None``.
 
     See Also
     --------
@@ -2588,9 +2589,15 @@ def median_test(*args, **kwds):
     cdata = np.concatenate(data)
     contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
     if contains_nan and nan_policy == 'propagate':
-        return (np.nan,)*4
+        return np.nan, np.nan, np.nan, None
 
-    grand_median = np.nanmedian(cdata)
+    if contains_nan:
+        grand_median = np.median(cdata[~np.isnan(cdata)])
+    else:
+        grand_median = np.median(cdata)
+    # When the minimum version of numpy supported by scipy is 1.9.0,
+    # the above if/else statement can be replaced by the single line:
+    #     grand_median = np.nanmedian(cdata)
 
     # Create the contingency table.
     table = np.zeros((2, len(data)), dtype=np.int64)
