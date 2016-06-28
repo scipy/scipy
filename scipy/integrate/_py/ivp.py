@@ -135,7 +135,7 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45',
            formulae", Journal of Computational and Applied Mathematics, Vol. 6,
            No. 1, pp. 19-26, 1980.
     .. [2] L. W. Shampine, "Some Practical Runge-Kutta Formulas", Mathematics
-           of Computation,, Vol. 46, No. 173, pp. 135–150, 1986.
+           of Computation,, Vol. 46, No. 173, pp. 135-150, 1986.
     .. [3] P. Bogacki, L.F. Shampine, "A 3(2) Pair of Runge-Kutta Formulas",
            Appl. Math. Lett. Vol. 2, No. 4. pp. 321-325, 1989.
     """
