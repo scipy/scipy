@@ -49,6 +49,8 @@ Integrators of ODE systems
    ode           -- Integrate ODE using VODE and ZVODE routines.
    complex_ode   -- Convert a complex-valued ODE to real-valued and integrate.
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
+   solve_ivp     -- Alternative routine for ODE integration with capabilities
+                    similar to MATLAB.
 """
 from __future__ import division, print_function, absolute_import
 
@@ -57,6 +59,7 @@ from .odepack import *
 from .quadpack import *
 from ._ode import *
 from ._bvp import solve_bvp
+from ._py import solve_ivp
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
