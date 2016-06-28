@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, run_module_suite,
                            assert_equal)
