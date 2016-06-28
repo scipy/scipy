@@ -204,6 +204,10 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     h : ndarray
         The frequency response.
 
+    See Also
+    --------
+    sosfreqz
+
     Notes
     -----
     Using Matplotlib's "plot" function as the callable for `plot` produces
@@ -354,7 +358,20 @@ def group_delay(system, w=None, whole=False):
     return w, gd
 
 
-def sosfreqz(sos, worN=None, whole=False, plot=None):
+def _validate_sos(sos):
+    """Helper to validate a SOS input"""
+    sos = np.atleast_2d(sos)
+    if sos.ndim != 2:
+        raise ValueError('sos array must be 2D')
+    n_sections, m = sos.shape
+    if m != 6:
+        raise ValueError('sos array must be shape (n_sections, 6)')
+    if not (sos[:, 3] == 1).all():
+        raise ValueError('sos[:, 3] should be all ones')
+    return sos, n_sections
+
+
+def sosfreqz(sos, worN=None, whole=False):
     """
     Compute the frequency response of a digital filter in SOS format.
 
@@ -386,10 +403,6 @@ def sosfreqz(sos, worN=None, whole=False, plot=None):
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
         compute frequencies from 0 to 2*pi radians/sample.
-    plot : callable
-        A callable that takes two arguments. If given, the return parameters
-        `w` and `h` are passed to plot. Useful for plotting the frequency
-        response inside `sosfreqz`.
 
     Returns
     -------
@@ -400,13 +413,15 @@ def sosfreqz(sos, worN=None, whole=False, plot=None):
 
     See Also
     --------
-    sosfilt
+    freqz, sosfilt
 
     Notes
     -----
     Using Matplotlib's "plot" function as the callable for `plot` produces
     unexpected results. It plots the real part of the complex transfer
     function, not the magnitude.  Try ``lambda w, h: plot(w, abs(h))``.
+
+    .. versionadded:: 0.19.0
 
     Examples
     --------
@@ -444,17 +459,13 @@ def sosfreqz(sos, worN=None, whole=False, plot=None):
 
     """
 
-    # A valid SOS array must have a least one section, so it should be
-    # safe to access sos[0, :] without checking the length of sos.
-    w, h = freqz(sos[0, :3], sos[0, 3:], worN=worN, whole=whole)
-
-    for row in sos[1:]:
+    sos, n_sections = _validate_sos(sos)
+    if n_sections == 0:
+        raise ValueError('Cannot compute frequencies with no sections')
+    h = 1.
+    for row in sos:
         w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole)
         h *= rowh
-
-    if plot is not None:
-        plot(w, h)
-
     return w, h
 
 

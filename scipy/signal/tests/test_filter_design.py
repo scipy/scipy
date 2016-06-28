@@ -462,6 +462,8 @@ class TestSosFreqz(TestCase):
         w2, h2 = sosfreqz(sos, worN=N)
         assert_equal(w2, w)
         assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
+        # must have at least one section
+        assert_raises(ValueError, sosfreqz, sos[:0])
 
     @mpmath_check("0.10")
     def test_sos_freqz_against_mp(self):
@@ -472,9 +474,9 @@ class TestSosFreqz(TestCase):
         N = 500
         order = 25
         Wn = 0.15
-        mpmath.mp.dps = 80
-        z_mp, p_mp, k_mp = mpsig.butter_lp(order, Wn)
-        w_mp, h_mp = mpsig.zpkfreqz(z_mp, p_mp, k_mp, N)
+        with mpmath.workdps(80):
+            z_mp, p_mp, k_mp = mpsig.butter_lp(order, Wn)
+            w_mp, h_mp = mpsig.zpkfreqz(z_mp, p_mp, k_mp, N)
         w_mp = np.array([float(x) for x in w_mp])
         h_mp = np.array([complex(x) for x in h_mp])
 
