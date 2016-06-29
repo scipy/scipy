@@ -52,18 +52,24 @@ def test_expi_complex():
 @check_version(mpmath, '0.19')
 def test_hyp0f1_gh5764():
     # Do a small and somewhat systematic test that runs quickly
-    pts = []
+    dataset = []
     axis = [-99.5, -9.5, -0.5, 0.5, 9.5, 99.5]
     for v in axis:
         for x in axis:
             for y in axis:
-                pts.append((v, x + 1J*y))
-    std = np.array([complex(mpmath.hyp0f1(*p)) for p in pts])
-    # Can't use FuncData because v should be real and z complex
-    res = np.array([sc.hyp0f1(*p) for p in pts])
-    assert_allclose(res, std, atol=1e-13, rtol=1e-13)
+                z = x + 1j*y
+                # mpmath computes the answer correctly at dps ~ 17 but
+                # fails for 20 < dps < 120 (uses a different method);
+                # set the dps high enough that this isn't an issue
+                with mpmath.workdps(120):
+                    res = complex(mpmath.hyp0f1(v, z))
+                dataset.append((v, z, res))
+    dataset = np.array(dataset)
 
+    FuncData(lambda v, z: sc.hyp0f1(v.real, z), dataset, (0, 1), 2,
+             rtol=1e-13).check()
 
+    
 @check_version(mpmath, '0.19')
 def test_hyp0f1_gh_1609():
     # this is a regression test for gh-1609
@@ -1187,7 +1193,6 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         # (similar to what is implemented for Bessel I here).
 
     def test_hyp0f1_complex(self):
-        KW = dict(maxprec=400, maxterms=1500)
         assert_mpmath_equal(lambda a, z: sc.hyp0f1(a.real, z),
                             exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
                             [Arg(-25, 25), ComplexArg(complex(-120, -120), complex(120, 120))])
