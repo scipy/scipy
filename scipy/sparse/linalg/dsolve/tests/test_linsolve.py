@@ -32,13 +32,16 @@ def toarray(a):
 
 class TestLinsolve(TestCase):
     def test_singular(self):
+        A = csc_matrix((5,5), dtype=float)
+        b = array([1, 2, 3, 4, 5], dtype=float)
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=MatrixRankWarning)
 
-            A = csc_matrix((5,5), dtype='d')
-            b = array([1, 2, 3, 4, 5],dtype='d')
-            x = spsolve(A, b, use_umfpack=False)
-            assert_(not np.isfinite(x).any())
+            for fmt in ['csc', 'csr', 'dia']:
+                Asp = A.asformat(fmt)
+                x = spsolve(Asp, b, use_umfpack=False)
+                assert_(not np.isfinite(x).any())
 
     def test_singular_gh_3312(self):
         # "Bad" test case that leads SuperLU to call LAPACK with invalid
@@ -68,11 +71,10 @@ class TestLinsolve(TestCase):
             eps = finfo(t).eps  # floating point epsilon
             b = b.astype(t)
 
-            for format in ['csc','csr']:
-                Asp = A.astype(t).asformat(format)
+            for fmt in ['csc', 'csr', 'dia']:
+                Asp = A.astype(t).asformat(fmt)
 
                 x = spsolve(Asp,b)
-
                 assert_(norm(b - Asp*x) < 10 * cond_A * eps)
 
     def test_bvector_smoketest(self):
@@ -147,25 +149,28 @@ class TestLinsolve(TestCase):
 
         for b in bs:
             x = np.linalg.solve(A.toarray(), toarray(b))
-            for spmattype in [csc_matrix, csr_matrix, dok_matrix, lil_matrix]:
-                x1 = spsolve(spmattype(A), b, use_umfpack=True)
-                x2 = spsolve(spmattype(A), b, use_umfpack=False)
+            for fmt in ['csc', 'csr', 'dok', 'lil', 'dia']:
+                Asp = A.asformat(fmt)
+                x1 = spsolve(Asp, b, use_umfpack=True)
+                x2 = spsolve(Asp, b, use_umfpack=False)
 
                 # check solution
                 if x.ndim == 2 and x.shape[1] == 1:
                     # interprets also these as "vectors"
                     x = x.ravel()
 
-                assert_array_almost_equal(toarray(x1), x, err_msg=repr((b, spmattype, 1)))
-                assert_array_almost_equal(toarray(x2), x, err_msg=repr((b, spmattype, 2)))
+                assert_array_almost_equal(toarray(x1), x,
+                                          err_msg=repr((b, fmt, 1)))
+                assert_array_almost_equal(toarray(x2), x,
+                                          err_msg=repr((b, fmt, 2)))
 
                 # dense vs. sparse output  ("vectors" are always dense)
                 if isspmatrix(b) and x.ndim > 1:
-                    assert_(isspmatrix(x1), repr((b, spmattype, 1)))
-                    assert_(isspmatrix(x2), repr((b, spmattype, 2)))
+                    assert_(isspmatrix(x1), repr((b, fmt, 1)))
+                    assert_(isspmatrix(x2), repr((b, fmt, 2)))
                 else:
-                    assert_(isinstance(x1, np.ndarray), repr((b, spmattype, 1)))
-                    assert_(isinstance(x2, np.ndarray), repr((b, spmattype, 2)))
+                    assert_(isinstance(x1, np.ndarray), repr((b, fmt, 1)))
+                    assert_(isinstance(x2, np.ndarray), repr((b, fmt, 2)))
 
                 # check output shape
                 if x.ndim == 1:
@@ -239,6 +244,20 @@ class TestLinsolve(TestCase):
         assert_equal(b.nnz, 2)
         assert_equal(x.nnz, 2)
         assert_allclose(x.A, b.A, atol=1e-12, rtol=1e-12)
+
+    def test_dia_equivalence(self):
+        b = np.ones(5)
+        random.seed(1234)
+        diags = random.randn(3, 5)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=MatrixRankWarning)
+
+            for offsets in [(0,1,2), (1,0,-1), (1,3,2), (-3,-1,-2), (-4,0,3)]:
+                A = spdiags(diags, offsets, 5, 5, format='dia')
+                x1 = spsolve(A.tocsr(), b)
+                x2 = spsolve(A, b)
+                assert_array_almost_equal(x1, x2)
 
 
 class TestSplu(object):

@@ -3,8 +3,9 @@ from __future__ import division, print_function, absolute_import
 from warnings import warn
 
 import numpy as np
+from scipy.linalg import solve_banded, LinAlgError
 from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
-                          SparseEfficiencyWarning, csc_matrix)
+                          SparseEfficiencyWarning, csc_matrix, isspmatrix_dia)
 
 from . import _superlu
 
@@ -96,6 +97,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     relatively expensive.  In that case, consider converting A to a dense
     matrix and using scipy.linalg.solve or its variants.
     """
+    if isspmatrix_dia(A):
+        return _spsolve_dia(A, b)
+
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
         warn('spsolve requires A be CSC or CSR matrix format',
@@ -184,6 +188,43 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             x = A.__class__((sparse_data, (sparse_row, sparse_col)),
                             shape=b.shape, dtype=A.dtype)
 
+    return x
+
+
+def _spsolve_dia(A, b):
+    if isspmatrix(b):
+        b_ = b.toarray()
+        overwrite_b = True
+        warn('solve_banded requires dense b', SparseEfficiencyWarning)
+    else:
+        b_ = np.asarray(b)
+        overwrite_b = b_ is not b
+
+    if len(A.offsets) == 0:
+        l, u = 0, 0
+    else:
+        l = max(0, -A.offsets.min())
+        u = max(0, A.offsets.max())
+
+    if np.array_equal(A.offsets, np.arange(u, l-1, -1)):
+        ab = A.data
+        overwrite_ab = False
+    else:
+        ab = np.zeros((l+u+1, b.shape[0]), dtype=A.data.dtype)
+        ab[u - A.offsets, :A.data.shape[1]] = A.data
+        overwrite_ab = True
+
+    try:
+        x = solve_banded((l, u), ab, b_, overwrite_ab=overwrite_ab,
+                         overwrite_b=overwrite_b)
+    except LinAlgError:
+        warn("Matrix is exactly singular", MatrixRankWarning)
+        x = np.empty_like(b_, dtype=float)
+        x.fill(np.nan)
+    if x.ndim == 2 and x.shape[1] == 1:
+        x = x.ravel()
+    elif isspmatrix(b):
+        x = b.__class__(x)
     return x
 
 
