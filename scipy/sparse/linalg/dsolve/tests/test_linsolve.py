@@ -4,7 +4,7 @@ import warnings
 import threading
 
 import numpy as np
-from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
+from numpy import array, finfo, arange, eye, unique, ones, dot, matrix
 import numpy.random as random
 from numpy.testing import (TestCase, run_module_suite,
         assert_array_almost_equal, assert_raises, assert_almost_equal,
@@ -13,9 +13,9 @@ from numpy.testing import (TestCase, run_module_suite,
 import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
-        csr_matrix, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
+                          csr_matrix, isspmatrix, dok_matrix, bsr_matrix)
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
-        MatrixRankWarning, _superlu)
+                                        MatrixRankWarning, _superlu)
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
@@ -100,36 +100,32 @@ class TestLinsolve(TestCase):
         assert_array_almost_equal(x, x2.todense())
 
     def test_non_square(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            # A is not square.
-            A = ones((3, 4))
-            b = ones((4, 1))
-            assert_raises(ValueError, spsolve, A, b)
-            # A2 and b2 have incompatible shapes.
-            A2 = csc_matrix(eye(3))
-            b2 = array([1.0, 2.0])
-            assert_raises(ValueError, spsolve, A2, b2)
+        # A is not square.
+        A = ones((3, 4))
+        b = ones((4, 1))
+        assert_raises(ValueError, spsolve, A, b)
+        # A2 and b2 have incompatible shapes.
+        A2 = csc_matrix(eye(3))
+        b2 = array([1.0, 2.0])
+        assert_raises(ValueError, spsolve, A2, b2)
 
     def test_example_comparison(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            row = array([0,0,1,2,2,2])
-            col = array([0,2,2,0,1,2])
-            data = array([1,2,3,-4,5,6])
-            sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
-            M = sM.todense()
+        row = array([0,0,1,2,2,2])
+        col = array([0,2,2,0,1,2])
+        data = array([1,2,3,-4,5,6])
+        sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
+        M = sM.todense()
 
-            row = array([0,0,1,1,0,0])
-            col = array([0,2,1,1,0,0])
-            data = array([1,1,1,1,1,1])
-            sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
-            N = sN.todense()
+        row = array([0,0,1,1,0,0])
+        col = array([0,2,1,1,0,0])
+        data = array([1,1,1,1,1,1])
+        sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
+        N = sN.todense()
 
-            sX = spsolve(sM, sN)
-            X = scipy.linalg.solve(M, N)
+        sX = spsolve(sM, sN)
+        X = scipy.linalg.solve(M, N)
 
-            assert_array_almost_equal(X, sX.todense())
+        assert_array_almost_equal(X, sX.todense())
 
     def test_shape_compatibility(self):
         A = csc_matrix([[1., 0], [0, 2]])
@@ -197,8 +193,8 @@ class TestLinsolve(TestCase):
         d = arange(N) + 1.0
         A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), N, N)
 
-        for spmatrix in (csc_matrix, csr_matrix):
-            A = spmatrix(A)
+        for fmt in ['csc', 'csr']:
+            Asp = A.asformat(fmt)
             b = np.arange(N)
 
             def not_c_contig(x):
@@ -216,17 +212,18 @@ class TestLinsolve(TestCase):
             badops = [not_c_contig, not_1dim, bad_type, too_short]
 
             for badop in badops:
-                msg = "%r %r" % (spmatrix, badop)
+                msg = "%r %r" % (fmt, badop)
+                flag = int(fmt == 'csc')
                 # Not C-contiguous
                 assert_raises((ValueError, TypeError), _superlu.gssv,
-                              N, A.nnz, badop(A.data), A.indices, A.indptr,
-                              b, int(spmatrix == csc_matrix), err_msg=msg)
+                              N, Asp.nnz, badop(Asp.data), Asp.indices,
+                              Asp.indptr, b, flag, err_msg=msg)
                 assert_raises((ValueError, TypeError), _superlu.gssv,
-                              N, A.nnz, A.data, badop(A.indices), A.indptr,
-                              b, int(spmatrix == csc_matrix), err_msg=msg)
+                              N, Asp.nnz, Asp.data, badop(Asp.indices),
+                              Asp.indptr, b, flag, err_msg=msg)
                 assert_raises((ValueError, TypeError), _superlu.gssv,
-                              N, A.nnz, A.data, A.indices, badop(A.indptr),
-                              b, int(spmatrix == csc_matrix), err_msg=msg)
+                              N, Asp.nnz, Asp.data, Asp.indices,
+                              badop(Asp.indptr), b, flag, err_msg=msg)
 
     def test_sparsity_preservation(self):
         ident = csc_matrix([
@@ -359,8 +356,8 @@ class TestSplu(object):
         lu = splu(a_)
         # Check that the permutation indices do belong to [0, n-1].
         for perm in (lu.perm_r, lu.perm_c):
-            assert_(all(perm > -1))
-            assert_(all(perm < n))
+            assert_(np.all(perm > -1))
+            assert_(np.all(perm < n))
             assert_equal(len(unique(perm)), len(perm))
 
         # Now make a symmetric, and test that the two permutation vectors are
