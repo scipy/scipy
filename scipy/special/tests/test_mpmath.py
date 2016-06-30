@@ -468,7 +468,7 @@ def test_digamma_boundary():
 def test_gammainc_boundary():
     # Test the transition to the asymptotic series.
     small = 20
-    a = np.linspace(0.5*small, 2*small, 100)
+    a = np.linspace(0.5*small, 2*small, 50)
     x = a.copy()
     a, x = np.meshgrid(a, x)
     a, x = a.flatten(), x.flatten()
