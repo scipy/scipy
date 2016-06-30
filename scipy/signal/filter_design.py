@@ -202,7 +202,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
         The normalized frequencies at which `h` was computed, in
         radians/sample.
     h : ndarray
-        The frequency response.
+        The frequency response, as complex numbers.
 
     See Also
     --------
