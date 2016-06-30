@@ -1443,7 +1443,7 @@ class _numpy_version_warn_context_mgr(object):
     versions raise warnings.
 
     This manager does not apply for cases where the old code returns
-    different values. 
+    different values.
     """
     def __init__(self, min_numpy_version, warning_type, num_warnings):
         if NumpyVersion(np.__version__) < min_numpy_version:
@@ -1463,14 +1463,14 @@ class _numpy_version_warn_context_mgr(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if self.numpy_is_old:
             self.delegate.__exit__(exc_type, exc_value, traceback)
-            _check_warnings(self.warn_list, self.warning_type, self.num_warnings) 
+            _check_warnings(self.warn_list, self.warning_type, self.num_warnings)
 
 
 def _check_warnings(warn_list, expected_type, expected_len):
     """
     Checks that all of the warnings from a list returned by
     `warnings.catch_all(record=True)` are of the required type and that the list
-    contains expected number of warnings. 
+    contains expected number of warnings.
     """
     assert_equal(len(warn_list), expected_len, "number of warnings")
     for warn_ in warn_list:
@@ -1515,7 +1515,7 @@ class TestIQR(TestCase):
             assert_equal(stats.iqr(x, interpolation='lower'), 0.0)
             assert_equal(stats.iqr(x, interpolation='higher'), 0.0)
 
-        # 0 only along constant dimensions 
+        # 0 only along constant dimensions
         # This also tests much of `axis`
         y = np.ones((4, 5, 6)) * np.arange(6)
         assert_array_equal(stats.iqr(y, axis=0), np.zeros((5, 6)))
@@ -1706,9 +1706,9 @@ class TestIQR(TestCase):
 
         # Yes NaNs
         x[1, 2] = np.nan
-        if numpy_version < '1.10.0a':
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            if numpy_version < '1.10.0a':
                 # Fails over to mishmash of omit/propagate, but mostly omit
                 # The first case showcases the "incorrect" behavior of np.percentile
                 assert_equal(stats.iqr(x, nan_policy='propagate'), 8)
@@ -1719,23 +1719,23 @@ class TestIQR(TestCase):
                     # some fixes to percentile nan handling in 1.9
                     assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
                 _check_warnings(w, RuntimeWarning, 3)
-        else:
-            assert_equal(stats.iqr(x, nan_policy='propagate'), np.nan)
-            assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
-            assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
+            else:
+                assert_equal(stats.iqr(x, nan_policy='propagate'), np.nan)
+                assert_equal(stats.iqr(x, axis=0, nan_policy='propagate'), [5, 5, np.nan, 5, 5])
+                assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
 
-        if numpy_version < '1.9.0a':
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            if numpy_version < '1.9.0a':
                 # Fails over to mishmash of omit/propagate, but mostly omit
                 assert_equal(stats.iqr(x, nan_policy='omit'), 8)
                 assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), [5, 5, np.nan, 5, 5])
                 assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 3, 2])
                 _check_warnings(w, RuntimeWarning, 3)
-        else:
-            assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
-            assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), 5 * np.ones(5))
-            assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
+            else:
+                assert_equal(stats.iqr(x, nan_policy='omit'), 7.5)
+                assert_equal(stats.iqr(x, axis=0, nan_policy='omit'), 5 * np.ones(5))
+                assert_equal(stats.iqr(x, axis=1, nan_policy='omit'), [2, 2.5, 2])
 
         assert_raises(ValueError, stats.iqr, x, nan_policy='raise')
         assert_raises(ValueError, stats.iqr, x, axis=0, nan_policy='raise')
@@ -1755,34 +1755,44 @@ class TestIQR(TestCase):
 
         # Yes NaNs
         x[1, 2] = np.nan
-        if numpy_version < '1.10.0a':
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            if numpy_version < '1.10.0a':
                 # Fails over to mishmash of omit/propagate, but mostly omit
                 assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), 8)
-                assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), 8 / 1.3489795)
+                assert_almost_equal(stats.iqr(x, scale='normal',
+                                              nan_policy='propagate'),
+                                    8 / 1.3489795)
                 assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), 4)
                 # axis=1 chosen to show behavior with both nans and without
                 if numpy_version < '1.9.0a':
                     assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, 3, 2])
-                    assert_almost_equal(stats.iqr(x, axis=1, scale='normal', nan_policy='propagate'), np.array([2, 3, 2]) / 1.3489795)
-                    assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'), [1, 1.5, 1])
+                    assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
+                                                  nan_policy='propagate'),
+                                        np.array([2, 3, 2]) / 1.3489795)
+                    assert_equal(stats.iqr(x, axis=1, scale=2.0,
+                                           nan_policy='propagate'), [1, 1.5, 1])
                 else:
                     # some fixes to percentile nan handling in 1.9
                     assert_equal(stats.iqr(x, axis=1, nan_policy='propagate'), [2, np.nan, 2])
-                    assert_almost_equal(stats.iqr(x, axis=1, scale='normal', nan_policy='propagate'), np.array([2, np.nan, 2]) / 1.3489795)
-                    assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'), [1, np.nan, 1])
+                    assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
+                                                  nan_policy='propagate'),
+                                        np.array([2, np.nan, 2]) / 1.3489795)
+                    assert_equal(stats.iqr(x, axis=1, scale=2.0,
+                                           nan_policy='propagate'), [1, np.nan, 1])
                 _check_warnings(w, RuntimeWarning, 6)
-        else:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
+            else:
                 assert_equal(stats.iqr(x, scale='raw', nan_policy='propagate'), np.nan)
                 assert_equal(stats.iqr(x, scale='normal', nan_policy='propagate'), np.nan)
                 assert_equal(stats.iqr(x, scale=2.0, nan_policy='propagate'), np.nan)
                 # axis=1 chosen to show behavior with both nans and without
-                assert_equal(stats.iqr(x, axis=1, scale='raw', nan_policy='propagate'), [2, np.nan, 2])
-                assert_almost_equal(stats.iqr(x, axis=1, scale='normal', nan_policy='propagate'), np.array([2, np.nan, 2]) / 1.3489795)
-                assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'), [1, np.nan, 1])
+                assert_equal(stats.iqr(x, axis=1, scale='raw',
+                                       nan_policy='propagate'), [2, np.nan, 2])
+                assert_almost_equal(stats.iqr(x, axis=1, scale='normal',
+                                              nan_policy='propagate'),
+                                    np.array([2, np.nan, 2]) / 1.3489795)
+                assert_equal(stats.iqr(x, axis=1, scale=2.0, nan_policy='propagate'),
+                             [1, np.nan, 1])
                 _check_warnings(w, RuntimeWarning, 6)
 
         if numpy_version < '1.9.0a':
@@ -1790,12 +1800,14 @@ class TestIQR(TestCase):
                 warnings.simplefilter("always")
                 # Fails over to mishmash of omit/propagate, but mostly omit
                 assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 8)
-                assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'), 8 / 1.3489795)
+                assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
+                                    8 / 1.3489795)
                 assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 4)
                 _check_warnings(w, RuntimeWarning, 3)
         else:
             assert_equal(stats.iqr(x, scale='raw', nan_policy='omit'), 7.5)
-            assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'), 7.5 / 1.3489795)
+            assert_almost_equal(stats.iqr(x, scale='normal', nan_policy='omit'),
+                                7.5 / 1.3489795)
             assert_equal(stats.iqr(x, scale=2.0, nan_policy='omit'), 3.75)
 
         # Bad scale
@@ -2683,9 +2695,9 @@ def test_ttest_rel_nan_2nd_arg():
 
     # NB: arguments are paired when NaNs are dropped
     r3 = stats.ttest_rel(y[1:], x[1:])
-    assert_allclose(r2, r3, atol=1e-15) 
+    assert_allclose(r2, r3, atol=1e-15)
 
-    # .. and this is consistent with R. R code: 
+    # .. and this is consistent with R. R code:
     # x = c(NA, 2.0, 3.0, 4.0)
     # y = c(1.0, 2.0, 1.0, 2.0)
     # t.test(x, y, paired=TRUE)
@@ -2902,9 +2914,9 @@ def test_ttest_ind_nan_2nd_arg():
 
     # NB: arguments are not paired when NaNs are dropped
     r3 = stats.ttest_ind(y, x[1:])
-    assert_allclose(r2, r3, atol=1e-15) 
+    assert_allclose(r2, r3, atol=1e-15)
 
-    # .. and this is consistent with R. R code: 
+    # .. and this is consistent with R. R code:
     # x = c(NA, 2.0, 3.0, 4.0)
     # y = c(1.0, 2.0, 1.0, 2.0)
     # t.test(x, y, var.equal=TRUE)
