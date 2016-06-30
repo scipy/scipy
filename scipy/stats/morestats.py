@@ -1368,9 +1368,10 @@ def anderson(x, dist='norm'):
     ----------
     x : array_like
         array of sample data
-    dist : {'norm','expon','logistic','gumbel','extreme1'}, optional
+    dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
+        'extreme1'}, optional
         the type of distribution to test against.  The default is 'norm'
-        and 'extreme1' is a synonym for 'gumbel'
+        and 'extreme1', 'gumbel_l' and 'gumbel' are synonyms.
 
     Returns
     -------
@@ -1418,7 +1419,8 @@ def anderson(x, dist='norm'):
            pp. 591-595.
 
     """
-    if dist not in ['norm', 'expon', 'gumbel', 'extreme1', 'logistic']:
+    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
+                    'gumbel_r', 'extreme1', 'logistic']:
         raise ValueError("Invalid distribution; dist must be 'norm', "
                          "'expon', 'gumbel', 'extreme1' or 'logistic'.")
     y = sort(x)
@@ -1453,7 +1455,14 @@ def anderson(x, dist='norm'):
         logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
         critical = around(_Avals_logistic / (1.0 + 0.25/N), 3)
-    else:  # (dist == 'gumbel') or (dist == 'extreme1'):
+    elif dist == 'gumbel_r':
+        xbar, s = distributions.gumbel_r.fit(x)
+        w = (y - xbar) / s
+        logcdf = distributions.gumbel_r.logcdf(w)
+        logsf = distributions.gumbel_r.logsf(w)
+        sig = array([25, 10, 5, 2.5, 1])
+        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+    else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
         logcdf = distributions.gumbel_l.logcdf(w)
