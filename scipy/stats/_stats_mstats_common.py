@@ -7,6 +7,9 @@ from . import distributions
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes']
 
+LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
+                                                   'rvalue', 'pvalue',
+                                                   'stderr'))
 
 def linregress(x, y=None):
     """
@@ -96,9 +99,6 @@ def linregress(x, y=None):
     intercept = ymean - slope*xmean
     sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
-    LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                       'rvalue', 'pvalue',
-                                                       'stderr'))
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
 
