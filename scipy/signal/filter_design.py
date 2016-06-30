@@ -378,9 +378,9 @@ def sosfreqz(sos, worN=None, whole=False):
     Given `sos`, an array with shape (n, 6) of second order sections of
     a digital filter, compute the frequency response of the system function::
 
-               B0(z)*B1(z)*...*B{n-1}(z)
-        H(z) = -------------------------
-               A0(z)*A1(z)*...*A{n-1}(z)
+               B0(z)   B1(z)         B{n-1}(z)
+        H(z) = ----- * ----- * ... * ---------
+               A0(z)   A1(z)         A{n-1}(z)
 
     for z = exp(omega*1j), where B{k}(z) and A{k}(z) are numerator and
     denominator of the transfer function of the k-th second order section.
@@ -407,9 +407,10 @@ def sosfreqz(sos, worN=None, whole=False):
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which h was computed, in radians/sample.
+        The normalized frequencies at which `h` was computed, in
+        radians/sample.
     h : ndarray
-        The frequency response.
+        The frequency response, as complex numbers.
 
     See Also
     --------
@@ -417,44 +418,52 @@ def sosfreqz(sos, worN=None, whole=False):
 
     Notes
     -----
-    Using Matplotlib's "plot" function as the callable for `plot` produces
-    unexpected results. It plots the real part of the complex transfer
-    function, not the magnitude.  Try ``lambda w, h: plot(w, abs(h))``.
 
     .. versionadded:: 0.19.0
 
     Examples
     --------
+    Design a 15th-order bandpass filter in SOS format.
 
     >>> from scipy import signal
-    >>> import matplotlib.pyplot as plt
-
-    Design an 8th order bandpass filter in SOS format.
-
-    >>> sos = signal.ellip(8, 0.5, 60, (0.2, 0.4), btype='bandpass',
+    >>> sos = signal.ellip(15, 0.5, 60, (0.2, 0.4), btype='bandpass',
     ...                    output='sos')
 
-    Compute the frequency response on a grid of 1500 points.
+    Compute the frequency response at 1500 points from DC to Nyquist.
 
     >>> w, h = signal.sosfreqz(sos, worN=1500)
 
     Plot the response.
 
+    >>> import matplotlib.pyplot as plt
     >>> plt.subplot(2, 1, 1)
-    >>> db = 20*np.log10(np.abs(h[h != 0]))
-    >>> plt.plot(w[h != 0]/np.pi, db)
+    >>> db = 20*np.log10(np.abs(h))
+    >>> plt.plot(w/np.pi, db)
     >>> plt.ylim(-75, 5)
     >>> plt.grid(True)
     >>> plt.yticks([0, -20, -40, -60])
     >>> plt.ylabel('Gain [dB]')
     >>> plt.title('Frequency Response')
     >>> plt.subplot(2, 1, 2)
-    >>> plt.plot(w/np.pi, np.arctan2(h.imag, h.real))
+    >>> plt.plot(w/np.pi, np.angle(h))
     >>> plt.grid(True)
     >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
     ...            ['$-\pi$', '$-\pi/2$', '0', '$\pi/2$', '$\pi$'])
     >>> plt.ylabel('Phase [rad]')
-    >>> plt.xlabel('Frequency (relative to Nyquist)')
+    >>> plt.xlabel('Normalized frequency (1.0 = Nyquist)')
+    >>> plt.show()
+
+    If the same filter is implemented as a single transfer function,
+    numerical error corrupts the frequency response:
+
+    >>> b, a = signal.ellip(15, 0.5, 60, (0.2, 0.4), btype='bandpass',
+    ...                    output='ba')
+    >>> w, h = signal.freqz(b, a, worN=1500)
+    >>> plt.subplot(2, 1, 1)
+    >>> db = 20*np.log10(np.abs(h))
+    >>> plt.plot(w/np.pi, db)
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(w/np.pi, np.angle(h))
     >>> plt.show()
 
     """
