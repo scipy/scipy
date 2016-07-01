@@ -679,6 +679,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if ier not in [1, 2, 3, 4]:
             raise RuntimeError("Optimal parameters not found: " + errmsg)
     else:
+        # Rename maxfev (leastsq) to max_nfev (least_squares), if specified.
+        if 'max_nfev' not in kwargs:
+            kwargs['max_nfev'] = kwargs.pop('maxfev', None)
+
         res = least_squares(func, p0, jac=jac, bounds=bounds, method=method,
                             **kwargs)
 
