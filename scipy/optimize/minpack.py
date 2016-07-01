@@ -592,8 +592,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     See Also
     --------
     least_squares : Minimize the sum of squares of nonlinear functions.
-    stats.linregress : Calculate a linear least squares regression for two sets
-                       of measurements.
+    scipy.stats.linregress : Calculate a linear least squares regression for
+                             two sets of measurements.
 
     Notes
     -----
