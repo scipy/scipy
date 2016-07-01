@@ -24,6 +24,10 @@ cdef extern from "_complexstuff.h":
     double pi "NPY_PI"
     double nan "NPY_NAN"
 
+cdef extern from "_csqrt.h":
+    np.npy_cdouble npy_compat_csqrt(np.npy_cdouble z) nogil
+
+
 DEF tol = 2.220446092504131e-16
 
 ctypedef double complex double_complex
@@ -116,7 +120,7 @@ cdef inline number_t zcos(number_t x) nogil:
 cdef inline number_t zsqrt(number_t x) nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_csqrt(npy_cdouble_from_double_complex(x))
+        r = npy_compat_csqrt(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
         return libc.math.sqrt(x)

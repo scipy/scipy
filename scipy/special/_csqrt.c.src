@@ -1,0 +1,101 @@
+#include <Python.h>
+#include <float.h>
+
+#include <numpy/npy_math.h>
+
+/*
+ * Fallback implementation of sqrt(z) for double complex z.
+ *
+ * Copied from numpy/numpy/core/src/npymath/npy_math_complex.c.src
+ *
+ * Prompted by gh-6336, which reported that
+ * > Scipy 0.18.0rc1's test_hyp0f1 (test_basic.TestHyper) crashes on 64 bit Python 3.5 for Windows.
+ * > The crash is in the npy_csqrt function, which uses the csqrt function of the CRT. 
+ */
+
+
+/**begin repeat
+ * #type = npy_double#
+ * #ctype = npy_cdouble#
+ * #c = #
+ * #C = #
+ * #TMAX = DBL_MAX#
+ */
+
+
+/* We risk spurious overflow for components >= DBL_MAX / (1 + sqrt(2)). */
+#define THRESH  (@TMAX@ / (1 + NPY_SQRT2@c@))
+
+@ctype@
+npy_compat_csqrt(@ctype@ z)
+{
+    @ctype@ result;
+    @type@ a, b;
+    @type@ t;
+    int scale;
+
+    a = npy_creal@c@(z);
+    b = npy_cimag@c@(z);
+
+    /* Handle special cases. */
+    if (a == 0 && b == 0) {
+        return (npy_cpack@c@(0, b));
+    }
+    if (npy_isinf(b)) {
+        return (npy_cpack@c@(NPY_INFINITY@C@, b));
+    }
+    if (npy_isnan(a)) {
+        t = (b - b) / (b - b);  /* raise invalid if b is not a NaN */
+        return (npy_cpack@c@(a, t));    /* return NaN + NaN i */
+    }
+    if (npy_isinf(a)) {
+        /*
+         * csqrt(inf + NaN i)  = inf +  NaN i
+         * csqrt(inf + y i)    = inf +  0 i
+         * csqrt(-inf + NaN i) = NaN +- inf i
+         * csqrt(-inf + y i)   = 0   +  inf i
+         */
+        if (npy_signbit(a)) {
+            return (npy_cpack@c@(npy_fabs@c@(b - b), npy_copysign@c@(a, b)));
+        }
+        else {
+            return (npy_cpack@c@(a, npy_copysign@c@(b - b, b)));
+        }
+    }
+    /*
+     * The remaining special case (b is NaN) is handled just fine by
+     * the normal code path below.
+     */
+
+    /* Scale to avoid overflow. */
+    if (npy_fabs@c@(a) >= THRESH || npy_fabs@c@(b) >= THRESH) {
+        a *= 0.25;
+        b *= 0.25;
+        scale = 1;
+    }
+    else {
+        scale = 0;
+    }
+
+    /* Algorithm 312, CACM vol 10, Oct 1967. */
+    if (a >= 0) {
+        t = npy_sqrt@c@((a + npy_hypot@c@(a, b)) * 0.5@c@);
+        result = npy_cpack@c@(t, b / (2 * t));
+    }
+    else {
+        t = npy_sqrt@c@((-a + npy_hypot@c@(a, b)) * 0.5@c@);
+        result = npy_cpack@c@(npy_fabs@c@(b) / (2 * t), npy_copysign@c@(t, b));
+    }
+
+    /* Rescale. */
+    if (scale) {
+        return (npy_cpack@c@(npy_creal@c@(result) * 2, npy_cimag@c@(result)));
+    }
+    else {
+        return (result);
+    }
+}
+#undef THRESH
+
+
+/**end repeat**/
