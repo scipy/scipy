@@ -177,8 +177,8 @@ def group_columns(A, order=0):
 
 
 def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
-                      bounds=(-np.inf, np.inf), sparsity=None, args=(),
-                      kwargs={}):
+                      bounds=(-np.inf, np.inf), vectorized=False,
+                      sparsity=None, args=(), kwargs={}):
     """Compute finite difference approximation of the derivatives of a
     vector-valued function.
 
@@ -189,9 +189,16 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     Parameters
     ----------
     fun : callable
-        Function of which to estimate the derivatives. The argument x
-        passed to this function is ndarray of shape (n,) (never a scalar
-        even if n=1). It must return 1-d array_like of shape (m,) or a scalar.
+        Function of which to estimate the derivatives. It can be implemented
+        in two different ways:
+
+            * Non-vectorized version must accept ndarray of shape (n,) and
+              return 1-d array_like of shape (m,).
+            * Vectorized version must accept ndarray of shape (n, k) and
+              return 2-d array_like of shape (m, k). In this way the Jacobian
+              can be approximated using a single call of `fun`.
+
+        Use `vectorized` parameter to select an appropriate variant.
     x0 : array_like of shape (n,) or float
         Point at which to estimate the derivatives. Float will be converted
         to a 1-d array.
@@ -220,6 +227,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         Each bound must match the size of `x0` or be a scalar, in the latter
         case the bound will be the same for all variables. Use it to limit the
         range of function evaluation.
+    vectorized : bool, optional
+        Whether `fun` is implemented in a vectorized fashion. Default is False.
     sparsity : {None, array_like, sparse matrix, 2-tuple}, optional
         Defines a sparsity structure of the Jacobian matrix. If the Jacobian
         matrix is known to have only few non-zero elements in each row, then
@@ -327,19 +336,25 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     if lb.shape != x0.shape or ub.shape != x0.shape:
         raise ValueError("Inconsistent shapes between bounds and `x0`.")
 
-    def fun_wrapped(x):
-        f = np.atleast_1d(fun(x, *args, **kwargs))
-        if f.ndim > 1:
-            raise RuntimeError(("`fun` return value has "
-                                "more than 1 dimension."))
-        return f
-
-    if f0 is None:
-        f0 = fun_wrapped(x0)
+    if vectorized:
+        def fun_wrapped(x):
+            f = np.atleast_2d(fun(x, *args, **kwargs))
+            if f.ndim > 2:
+                raise ValueError("`fun` return has more than 2 dimensions.")
+            return f
     else:
+        def fun_wrapped(x):
+            return np.atleast_1d(fun(x, *args, **kwargs))
+
+    if f0 is not None:
         f0 = np.atleast_1d(f0)
         if f0.ndim > 1:
             raise ValueError("`f0` passed has more than 1 dimension.")
+    elif not vectorized:
+        f0 = fun_wrapped(x0)
+        if f0.ndim > 1:
+            raise ValueError("`fun` return has more than 1 dimension, but "
+                             "vectorized=False.")
 
     if np.any((x0 < lb) | (x0 > ub)):
         raise ValueError("`x0` violates bound constraints.")
@@ -356,7 +371,12 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         use_one_sided = False
 
     if sparsity is None:
-        return _dense_difference(fun_wrapped, x0, f0, h, use_one_sided, method)
+        if vectorized:
+            return _dense_difference_vectorized(fun_wrapped, x0, f0, h,
+                                                use_one_sided, method)
+        else:
+            return _dense_difference(fun_wrapped, x0, f0, h, use_one_sided,
+                                     method)
     else:
         if not issparse(sparsity) and len(sparsity) == 2:
             structure, groups = sparsity
@@ -403,8 +423,6 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
             f1 = fun(x0 + h_vecs[i]*1.j)
             df = f1.imag
             dx = h_vecs[i, i]
-        else:
-            raise RuntimeError("Never be here.")
 
         J_transposed[i] = df / dx
 
@@ -412,6 +430,63 @@ def _dense_difference(fun, x0, f0, h, use_one_sided, method):
         J_transposed = np.ravel(J_transposed)
 
     return J_transposed.T
+
+
+def _dense_difference_vectorized(fun, x0, f0, h, use_one_sided, method):
+    h_vecs = np.diag(h)
+    x0 = x0[:, None]
+    if method == '2-point':
+        X = x0 + h_vecs
+        dx = np.diag(X) - x0.ravel()
+        if f0 is None:
+            X = np.hstack((X, x0))
+            F = fun(X)
+            f0 = F[:, -1]
+            F = F[:, :-1]
+        else:
+            F = fun(X)
+        F -= f0[:, None]
+        F /= dx
+    elif method == '3-point':
+        n = x0.size
+        one_sided = np.nonzero(use_one_sided)[0]
+        two_sided = np.nonzero(~use_one_sided)[0]
+        X = np.empty((n, 2 * n))
+        X1 = X[:, :n]
+        X2 = X[:, n:]
+        X1[:] = x0 + h_vecs
+        X2[:, one_sided] = x0 + 2 * h_vecs[:, one_sided]
+        X2[:, two_sided] = x0 - h_vecs[:, two_sided]
+        dx = np.empty_like(h)
+        dx[one_sided] = X2[one_sided, one_sided] - x0[one_sided].ravel()
+        dx[two_sided] = X1[two_sided, two_sided] - X2[two_sided, two_sided]
+
+        if f0 is None:
+            X = np.hstack((X, x0))
+            F = fun(X)
+            f0 = F[:, -1]
+            F = F[:, :-1]
+        else:
+            F = fun(X)
+
+        F1 = F[:, :n]
+        F2 = F[:, n:]
+        F1[:, one_sided] *= 4
+        F1[:, one_sided] -= F2[:, one_sided]
+        F1[:, one_sided] -= 3 * f0[:, None]
+
+        F1[:, two_sided] -= F2[:, two_sided]
+        F1 /= dx
+        F = F1
+    elif method == 'cs':
+        X = x0 + h_vecs * 1j
+        F = fun(X)
+        F = F.imag / h
+
+    if F.shape[0] == 1:
+        F = np.ravel(F)
+
+    return F
 
 
 def _sparse_difference(fun, x0, f0, h, use_one_sided,
@@ -494,17 +569,24 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     return csr_matrix(J)
 
 
-def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
-                     kwargs={}):
+def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), vectorized=False,
+                     args=(), kwargs={}):
     """Check correctness of a function computing derivatives (Jacobian or
     gradient) by comparison with a finite difference approximation.
 
     Parameters
     ----------
     fun : callable
-        Function of which to estimate the derivatives. The argument x
-        passed to this function is ndarray of shape (n,) (never a scalar
-        even if n=1). It must return 1-d array_like of shape (m,) or a scalar.
+        Function of which to estimate the derivatives. It can be implemented
+        in two different ways:
+
+            * Non-vectorized version must accept ndarray of shape (n,) and
+              return 1-d array_like of shape (m,).
+            * Vectorized version must accept ndarray of shape (n, k) and
+              return 2-d array_like of shape (m, k). In this way the Jacobian
+              can be approximated using a single call of `fun`.
+
+        Use `vectorized` parameter to select an appropriate variant.
     jac : callable
         Function which computes Jacobian matrix of `fun`. It must work with
         argument x the same way as `fun`. The return value must be array_like
@@ -517,6 +599,8 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
         Each bound must match the size of `x0` or be a scalar, in the latter
         case the bound will be the same for all variables. Use it to limit the
         range of function evaluation.
+    vectorized : bool, optional
+        Whether `fun` is implemented in a vectorized fashion. Default is False.
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun` and `jac`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)`` and the same
@@ -567,6 +651,7 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
                       np.maximum(1, np.abs(J_diff_data)))
     else:
         J_diff = approx_derivative(fun, x0, bounds=bounds,
-                                   args=args, kwargs=kwargs)
+                                   vectorized=vectorized, args=args,
+                                   kwargs=kwargs)
         abs_err = np.abs(J_to_test - J_diff)
         return np.max(abs_err / np.maximum(1, np.abs(J_diff)))
