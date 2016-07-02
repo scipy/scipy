@@ -465,8 +465,13 @@ class TestApproxDerivativeSparse(object):
         self.J_true = self.jac(self.x0)
 
     def fun(self, x):
-        e = x[1:]**3 - x[:-1]**2
-        return np.hstack((0, 3 * e)) + np.hstack((2 * e, 0))
+        if x.ndim == 1:
+            e = x[1:]**3 - x[:-1]**2
+            return np.hstack((0, 3 * e)) + np.hstack((2 * e, 0))
+        else:
+            e = x[1:]**3 - x[:-1]**2
+            z = np.zeros(e.shape[1])
+            return np.vstack((z, 3 * e)) + np.vstack((2 * e, z))
 
     def jac(self, x):
         n = x.size
@@ -500,18 +505,20 @@ class TestApproxDerivativeSparse(object):
         np.random.shuffle(order)
         groups_2 = group_columns(A, order)
 
-        for method, groups, l, u in product(
+        for method, groups, l, u, vectorized in product(
                 ['2-point', '3-point', 'cs'], [groups_1, groups_2],
-                [-np.inf, self.lb], [np.inf, self.ub]):
+                [-np.inf, self.lb], [np.inf, self.ub], [False, True]):
             J = approx_derivative(self.fun, self.x0, method=method,
-                                  bounds=(l, u), sparsity=(A, groups))
+                                  bounds=(l, u), sparsity=(A, groups),
+                                  vectorized=vectorized)
             assert_(isinstance(J, csr_matrix))
             assert_allclose(J.toarray(), self.J_true, rtol=1e-6)
 
             rel_step = 1e-8 * np.ones_like(self.x0)
             rel_step[::2] *= -1
             J = approx_derivative(self.fun, self.x0, method=method,
-                                  rel_step=rel_step, sparsity=(A, groups))
+                                  rel_step=rel_step, sparsity=(A, groups),
+                                  vectorized=vectorized)
             assert_allclose(J.toarray(), self.J_true, rtol=1e-5)
 
     def test_no_precomputed_groups(self):
@@ -522,26 +529,29 @@ class TestApproxDerivativeSparse(object):
     def test_equivalence(self):
         structure = np.ones((self.n, self.n), dtype=int)
         groups = np.arange(self.n)
-        for method in ['2-point', '3-point', 'cs']:
-            J_dense = approx_derivative(self.fun, self.x0, method=method)
-            J_sparse = approx_derivative(
-                self.fun, self.x0, sparsity=(structure, groups), method=method)
-            assert_equal(J_dense, J_sparse.toarray())
+        for method in['2-point', '3-point', 'cs']:
+            for vectorized in [False, True]:
+                J_dense = approx_derivative(self.fun, self.x0, method=method)
+                J_sparse = approx_derivative(
+                    self.fun, self.x0, sparsity=(structure, groups),
+                    method=method, vectorized=vectorized)
+                assert_equal(J_dense, J_sparse.toarray())
 
     def test_check_derivative(self):
         def jac(x):
             return csr_matrix(self.jac(x))
 
-        accuracy = check_derivative(self.fun, jac, self.x0,
-                                    bounds=(self.lb, self.ub))
-        assert_(accuracy < 1e-9)
+        for vectorized in [False, True]:
+            accuracy = check_derivative(self.fun, jac, self.x0,
+                                        bounds=(self.lb, self.ub),
+                                        vectorized=vectorized)
+            assert_(accuracy < 1e-9)
 
-        accuracy = check_derivative(self.fun, jac, self.x0,
-                                    bounds=(self.lb, self.ub))
-        assert_(accuracy < 1e-9)
+            accuracy = check_derivative(self.fun, jac, self.x0,
+                                        bounds=(self.lb, self.ub),
+                                        vectorized=vectorized)
+            assert_(accuracy < 1e-9)
 
 
 if __name__ == '__main__':
-    # run_module_suite()
-    t = TestApproxDerivativesDense()
-    t.test_check_derivative()
+    run_module_suite()

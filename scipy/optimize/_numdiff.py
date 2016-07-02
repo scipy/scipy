@@ -390,8 +390,14 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
             structure = np.atleast_2d(structure)
 
         groups = np.atleast_1d(groups)
-        return _sparse_difference(fun_wrapped, x0, f0, h, use_one_sided,
-                                  structure, groups, method)
+
+        if vectorized:
+            return _sparse_difference_vectorized(fun_wrapped, x0, f0, h,
+                                                 use_one_sided, structure,
+                                                 groups, method)
+        else:
+            return _sparse_difference(fun_wrapped, x0, f0, h, use_one_sided,
+                                      structure, groups, method)
 
 
 def _dense_difference(fun, x0, f0, h, use_one_sided, method):
@@ -569,6 +575,136 @@ def _sparse_difference(fun, x0, f0, h, use_one_sided,
     return csr_matrix(J)
 
 
+def _sparse_difference_vectorized(fun, x0, f0, h, use_one_sided, structure,
+                                  groups, method):
+    n = x0.shape[0]
+    n_groups = np.max(groups) + 1
+    h_vecs = np.empty((n_groups, n))
+    cols_in_group = []
+    for group in range(n_groups):
+        e = np.equal(group, groups)
+        cols_in_group.append(np.nonzero(e)[0])
+        h_vecs[group] = h * e
+
+    h_vecs = h_vecs.T
+    x0 = x0[:, None]
+
+    row_indices = []
+    col_indices = []
+    fractions = []
+
+    if method == '2-point':
+        X = x0 + h_vecs
+        if f0 is None:
+            X = np.hstack((X, x0))
+            F = fun(X)
+            X = X[:, :-1]
+            f0 = F[:, -1]
+            F = F[:, :-1]
+        else:
+            F = fun(X)
+
+        m = f0.shape[0]
+
+        F -= f0[:, None]
+        X -= x0
+
+        for cols, dx, df in zip(cols_in_group, X.T, F.T):
+            i, j, _ = find(structure[:, cols])
+            j = cols[j]
+            row_indices.append(i)
+            col_indices.append(j)
+            fractions.append(df[i] / dx[j])
+
+    # This case often occurs and can be implemented more efficiently.
+    elif method == '3-point' and not np.any(use_one_sided):
+        X = np.empty((n, 2 * n_groups))
+        X1 = X[:, :n_groups]
+        X2 = X[:, n_groups:]
+        X1[:] = x0 - h_vecs
+        X2[:] = x0 + h_vecs
+
+        F = fun(X)
+        m = F.shape[0]
+
+        F1 = F[:, :n_groups]
+        F2 = F[:, n_groups:]
+        F2 -= F1
+
+        X2 -= X1
+
+        for cols, dx, df in zip(cols_in_group, X2.T, F2.T):
+            i, j, _ = find(structure[:, cols])
+            j = cols[j]
+            row_indices.append(i)
+            col_indices.append(j)
+            fractions.append(df[i] / dx[j])
+
+    elif method == '3-point':
+        one_sided = np.nonzero(use_one_sided)[0]
+        two_sided = np.nonzero(~use_one_sided)[0]
+        X = np.empty((n, 2 * n_groups))
+        X1 = X[:, :n_groups]
+        X2 = X[:, n_groups:]
+        X1[:] = x0 + h_vecs
+        X2[one_sided] = x0[one_sided] + 2 * h_vecs[one_sided]
+        X2[two_sided] = x0[two_sided] - h_vecs[two_sided]
+
+        if f0 is None:
+            X = np.hstack((X, x0))
+            F = fun(X)
+            f0 = F[:, -1]
+            F = F[:, :-1]
+        else:
+            F = fun(X)
+
+        m = f0.shape[0]
+
+        F1 = F[:, :n_groups]
+        F2 = F[:, n_groups:]
+
+        X2[one_sided] -= x0[one_sided]
+        X2[two_sided] *= -1
+        X2[two_sided] += X1[two_sided]
+
+        df = np.empty(m)
+        for group, (cols, dx) in enumerate(zip(cols_in_group, X2.T)):
+            i, j, _ = find(structure[:, cols])
+            j = cols[j]
+
+            mask = use_one_sided[j]
+
+            rows = i[mask]
+            df[rows] = 4 * F1[rows, group] - 3 * f0[rows] - F2[rows, group]
+
+            rows = i[~mask]
+            df[rows] = F1[rows, group] - F2[rows, group]
+
+            row_indices.append(i)
+            col_indices.append(j)
+            fractions.append(df[i] / dx[j])
+
+    elif method == 'cs':
+        X = x0 + h_vecs * 1j
+        F = fun(X)
+        m = F.shape[0]
+        df_all = F.imag.T
+        dx_all = h_vecs.T
+
+        for cols, dx, df in zip(cols_in_group, dx_all, df_all):
+            i, j, _ = find(structure[:, cols])
+            j = cols[j]
+            row_indices.append(i)
+            col_indices.append(j)
+            fractions.append(df[i] / dx[j])
+
+    row_indices = np.hstack(row_indices)
+    col_indices = np.hstack(col_indices)
+    fractions = np.hstack(fractions)
+    J = coo_matrix((fractions, (row_indices, col_indices)), shape=(m, n))
+    return csr_matrix(J)
+
+
 def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), vectorized=False,
                      args=(), kwargs={}):
     """Check correctness of a function computing derivatives (Jacobian or
@@ -642,7 +778,8 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), vectorized=False,
     J_to_test = jac(x0, *args, **kwargs)
     if issparse(J_to_test):
         J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,
-                                   args=args, kwargs=kwargs)
+                                   vectorized=vectorized, args=args,
+                                   kwargs=kwargs)
         J_to_test = csr_matrix(J_to_test)
         abs_err = J_to_test - J_diff
         i, j, abs_err_data = find(abs_err)
