@@ -553,5 +553,27 @@ class TestApproxDerivativeSparse(object):
             assert_(accuracy < 1e-9)
 
 
+def test_different_shapes():
+    def fun_scalar_scalar(x):
+        return np.sinh(x)
+
+    def jac_scalar_scalar(x):
+        return np.cosh(x)
+
+    x0 = 1.0
+
+    J = approx_derivative(fun_scalar_scalar, x0)
+    assert_allclose(J, jac_scalar_scalar(x0), rtol=1e-9)
+
+    J = approx_derivative(fun_scalar_scalar, np.atleast_1d(x0))
+    assert_allclose(J, jac_scalar_scalar(x0), rtol=1e-9)
+
+    J = approx_derivative(fun_scalar_scalar, np.atleast_2d(x0))
+    assert_allclose(J, jac_scalar_scalar(x0), rtol=1e-9)
+
+    assert_raises(ValueError, approx_derivative, fun_scalar_scalar,
+                  np.atleast_3d(x0))
+
+
 if __name__ == '__main__':
     run_module_suite()

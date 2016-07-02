@@ -199,9 +199,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
               can be approximated using a single call of `fun`.
 
         Use `vectorized` parameter to select an appropriate variant.
-    x0 : array_like of shape (n,) or float
-        Point at which to estimate the derivatives. Float will be converted
-        to a 1-d array.
+    x0 : array_like with shape (n,) or (n, 1) or float
+        Point at which to estimate the derivatives.
     method : {'3-point', '2-point'}, optional
         Finite difference method to use:
             - '2-point' - use the fist order accuracy forward or backward
@@ -219,7 +218,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         fit into the bounds. For ``method='3-point'`` the sign of `h` is
         ignored. If None (default) then step is selected automatically,
         see Notes.
-    f0 : None or array_like, optional
+    f0 : None or array_like with shape (m,) or (m, 1), optional
         If not None it is assumed to be equal to ``fun(x0)``, in  this case
         the ``fun(x0)`` is not called. Default is None.
     bounds : tuple of array_like, optional
@@ -327,9 +326,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
     if method not in ['2-point', '3-point', 'cs']:
         raise ValueError("Unknown method '%s'. " % method)
 
-    x0 = np.atleast_1d(x0)
-    if x0.ndim > 1:
-        raise ValueError("`x0` must have at most 1 dimension.")
+    x0 = np.asarray(x0, dtype=float)
+    if x0.ndim > 2 or x0.ndim == 2 and x0.shape[1] > 1:
+        raise ValueError("`x0` must be float, 1-dimensional or 2-dimensional "
+                         "with 1 column.")
+    x0 = x0.ravel()
 
     lb, ub = _prepare_bounds(bounds, x0)
 
@@ -347,9 +348,11 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
             return np.atleast_1d(fun(x, *args, **kwargs))
 
     if f0 is not None:
-        f0 = np.atleast_1d(f0)
-        if f0.ndim > 1:
-            raise ValueError("`f0` passed has more than 1 dimension.")
+        f0 = np.asarray(f0, dtype=float)
+        if f0.ndim > 1 or f0.ndim == 2 and f0.shape[1] > 1:
+            raise ValueError("`x0` must be float, 1-dimensional or"
+                             "2-dimensional with 1 column.")
+        f0 = f0.ravel()
     elif not vectorized:
         f0 = fun_wrapped(x0)
         if f0.ndim > 1:
@@ -724,12 +727,11 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), vectorized=False,
 
         Use `vectorized` parameter to select an appropriate variant.
     jac : callable
-        Function which computes Jacobian matrix of `fun`. It must work with
-        argument x the same way as `fun`. The return value must be array_like
-        or sparse matrix with an appropriate shape.
-    x0 : array_like of shape (n,) or float
-        Point at which to estimate the derivatives. Float will be converted
-        to 1-d array.
+        Function which computes Jacobian matrix of `fun`. Note that a raveled
+        version of `x` will be passed to `jac`The return value must be
+        array_like or sparse matrix with an appropriate shape.
+    x0 : array_like with shape (n,) or (n, 1) or float
+        Point at which to estimate the derivatives.
     bounds : 2-tuple of array_like, optional
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each bound must match the size of `x0` or be a scalar, in the latter
@@ -775,6 +777,13 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), vectorized=False,
     >>> check_derivative(f, jac, x0, args=(1, 2))
     2.4492935982947064e-16
     """
+    x0 = np.asarray(x0, dtype=float)
+    if x0.ndim > 2 or x0.ndim == 2 and x0.shape[1] > 1:
+        raise ValueError("`x0` must be float, 1-dimensional or 2-dimensional "
+                         "with 1 column.")
+    if x0.ndim == 2:  # Keep float as float.
+        x0 = x0.ravel()
+
     J_to_test = jac(x0, *args, **kwargs)
     if issparse(J_to_test):
         J_diff = approx_derivative(fun, x0, bounds=bounds, sparsity=J_to_test,
