@@ -456,6 +456,7 @@ def _dense_difference_vectorized(fun, x0, f0, h, use_one_sided, method):
             F = fun(X)
         F -= f0[:, None]
         F /= dx
+        J = F
     elif method == '3-point':
         n = x0.size
         one_sided = np.nonzero(use_one_sided)[0]
@@ -486,16 +487,16 @@ def _dense_difference_vectorized(fun, x0, f0, h, use_one_sided, method):
 
         F1[:, two_sided] -= F2[:, two_sided]
         F1 /= dx
-        F = F1
+        J = F1
     elif method == 'cs':
         X = x0 + h_vecs * 1j
         F = fun(X)
-        F = F.imag / h
+        J = F.imag / h
 
-    if F.shape[0] == 1:
-        F = np.ravel(F)
+    if J.shape[0] == 1:
+        J = np.ravel(J)
 
-    return F
+    return J
 
 
 def _sparse_difference(fun, x0, f0, h, use_one_sided,
