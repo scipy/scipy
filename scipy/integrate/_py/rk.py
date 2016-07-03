@@ -331,7 +331,7 @@ def rk(fun, a, b, ya, fa, rtol, atol, method, events, is_terminal, direction):
             yms.append(ym)
 
         with np.errstate(divide='ignore'):
-            h_abs *= min(MAX_FACTOR, SAFETY * error_norm**(-1/order))
+            h_abs *= min(MAX_FACTOR, max(1, SAFETY * error_norm**(-1/order)))
 
     xs = np.asarray(xs)
     ys = np.asarray(ys)
