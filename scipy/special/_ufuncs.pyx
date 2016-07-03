@@ -5886,13 +5886,32 @@ cdef char ufunc_gammainc_types[6]
 cdef char *ufunc_gammainc_doc = (
     "gammainc(a, x)\n"
     "\n"
-    "Incomplete gamma function\n"
+    "Regularized lower incomplete gamma function.\n"
     "\n"
-    "Defined as::\n"
+    "Defined as\n"
     "\n"
-    "    1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)\n"
+    ".. math::\n"
     "\n"
-    "`a` must be positive and `x` must be >= 0.")
+    "    \\frac{1}{\\Gamma(a)} \\int_0^x t^{a - 1}e^{-t} dt\n"
+    "\n"
+    "for :math:`a > 0` and :math:`x \\geq 0`. The function satisfies the\n"
+    "relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where\n"
+    "`gammaincc` is the regularized upper incomplete gamma function.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "The implementation largely follows that of [1]_.\n"
+    "\n"
+    "See also\n"
+    "--------\n"
+    "gammaincc : regularized upper incomplete gamma function\n"
+    "gammaincinv : inverse to ``gammainc`` versus ``x``\n"
+    "gammainccinv : inverse to ``gammaincc`` versus ``x``\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Maddock et. al., \"Incomplete Gamma Functions\",\n"
+    "   http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html")
 ufunc_gammainc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_gammainc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_gammainc_types[0] = <char>NPY_FLOAT
@@ -5916,13 +5935,32 @@ cdef char ufunc_gammaincc_types[6]
 cdef char *ufunc_gammaincc_doc = (
     "gammaincc(a, x)\n"
     "\n"
-    "Complemented incomplete gamma integral\n"
+    "Regularized upper incomplete gamma function.\n"
     "\n"
-    "Defined as::\n"
+    "Defined as\n"
     "\n"
-    "    1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a, x)\n"
+    ".. math::\n"
     "\n"
-    "`a` must be positive and `x` must be >= 0.")
+    "    \\frac{1}{\\Gamma(a)} \\int_x^\\infty t^{a - 1}e^{-t} dt\n"
+    "\n"
+    "for :math:`a > 0` and :math:`x \\geq 0`. The function satisfies the\n"
+    "relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where `gammainc`\n"
+    "is the regularized lower incomplete gamma function.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "The implementation largely follows that of [1]_.\n"
+    "\n"
+    "See also\n"
+    "--------\n"
+    "gammainc : regularized lower incomplete gamma function\n"
+    "gammaincinv : inverse to ``gammainc`` versus ``x``\n"
+    "gammainccinv : inverse to ``gammaincc`` versus ``x``\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Maddock et. al., \"Incomplete Gamma Functions\",\n"
+    "   http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html")
 ufunc_gammaincc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_gammaincc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_gammaincc_types[0] = <char>NPY_FLOAT
