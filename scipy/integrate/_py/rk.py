@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy.interpolate import PPoly
-from .common import get_active_events, handle_events, norm
+from .common import select_initial_step, get_active_events, handle_events, norm
 
 # Algorithm parameters.
 
@@ -244,12 +244,14 @@ def create_spline_one_step(x, x_new, y, y_new, f, f_new, ym):
     return PPoly(c, [x0, x1], extrapolate=True, axis=1)
 
 
-def rk(fun, a, b, ya, fa, h_abs, rtol, atol, max_step, method, events,
-       direction, is_terminal):
+def rk(fun, a, b, ya, fa, rtol, atol, method, events, direction, is_terminal):
     """Integrate an ODE by Runge-Kutta method."""
+    max_step = 0.1 * np.abs(b - a)
     s = np.sign(b - a)
 
     A, B, C, E, M, K, order = prepare_method(method, ya.shape[0], s)
+
+    h_abs = select_initial_step(fun, a, b, ya, fa, order, rtol, atol)
 
     x = a
     y = ya

@@ -7,10 +7,7 @@ from .common import select_initial_step, EPS, ODEResult
 from .rk import rk
 
 
-METHOD_ORDER = {
-    'RK23': 3,
-    'RK45': 5
-}
+METHODS = ['RK23', 'RK45']
 
 
 TERMINATION_MESSAGES = {
@@ -139,8 +136,8 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45',
     .. [3] P. Bogacki, L.F. Shampine, "A 3(2) Pair of Runge-Kutta Formulas",
            Appl. Math. Lett. Vol. 2, No. 4. pp. 321-325, 1989.
     """
-    if method not in METHOD_ORDER:
-        raise ValueError("`method` must be 'RK23' or 'RK45'.")
+    if method not in METHODS:
+        raise ValueError("`method` must be one of {}.".format(METHODS))
 
     ya = np.atleast_1d(ya)
     if ya.ndim != 1:
@@ -161,9 +158,6 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45',
     if callable(events):
         events = (events,)
 
-    h_abs = select_initial_step(fun, a, b, ya, fa, METHOD_ORDER[method],
-                                rtol, atol)
-
     if events is not None:
         direction = np.empty(len(events))
         is_terminal = np.empty(len(events), dtype=bool)
@@ -181,11 +175,9 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45',
         direction = None
         is_terminal = None
 
-    max_step = 0.1 * np.abs(b - a)
-
     status, sol, xs, ys, fs, x_events = rk(
-        fun_wrapped, a, b, ya, fa, h_abs, rtol, atol, max_step, method,
-        events, direction, is_terminal)
+        fun_wrapped, a, b, ya, fa, rtol, atol, method, events, direction,
+        is_terminal)
 
     return ODEResult(sol=sol, x=xs, y=ys, yp=fs, x_events=x_events,
                      status=status, message=TERMINATION_MESSAGES[status],
