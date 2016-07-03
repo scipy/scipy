@@ -33,6 +33,30 @@ def validate_tol(rtol, atol, n):
     return rtol, atol
 
 
+def prepare_events(events):
+    if callable(events):
+        events = (events,)
+
+    if events is not None:
+        is_terminal = np.empty(len(events), dtype=bool)
+        direction = np.empty(len(events))
+        for i, event in enumerate(events):
+            try:
+                is_terminal[i] = event.terminate
+            except AttributeError:
+                is_terminal[i] = False
+
+            try:
+                direction[i] = event.direction
+            except AttributeError:
+                direction[i] = 0
+    else:
+        is_terminal = None
+        direction = None
+
+    return events, is_terminal, direction
+
+
 def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45',
               events=None):
     """Solve an initial value problem for a system of ODEs.
@@ -155,29 +179,11 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45',
         raise ValueError("`fun` return is expected to have shape {}, "
                          "but actually has {}.".format(ya.shape, fa.shape))
 
-    if callable(events):
-        events = (events,)
-
-    if events is not None:
-        direction = np.empty(len(events))
-        is_terminal = np.empty(len(events), dtype=bool)
-        for i, event in enumerate(events):
-            try:
-                is_terminal[i] = event.terminate
-            except AttributeError:
-                is_terminal[i] = False
-
-            try:
-                direction[i] = event.direction
-            except AttributeError:
-                direction[i] = 0
-    else:
-        direction = None
-        is_terminal = None
+    events, is_terminal, direction = prepare_events(events)
 
     status, sol, xs, ys, fs, x_events = rk(
-        fun_wrapped, a, b, ya, fa, rtol, atol, method, events, direction,
-        is_terminal)
+        fun_wrapped, a, b, ya, fa, rtol, atol, method, events, is_terminal,
+        direction)
 
     return ODEResult(sol=sol, x=xs, y=ys, yp=fs, x_events=x_events,
                      status=status, message=TERMINATION_MESSAGES[status],

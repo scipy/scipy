@@ -244,7 +244,7 @@ def create_spline_one_step(x, x_new, y, y_new, f, f_new, ym):
     return PPoly(c, [x0, x1], extrapolate=True, axis=1)
 
 
-def rk(fun, a, b, ya, fa, rtol, atol, method, events, direction, is_terminal):
+def rk(fun, a, b, ya, fa, rtol, atol, method, events, is_terminal, direction):
     """Integrate an ODE by Runge-Kutta method."""
     max_step = 0.1 * np.abs(b - a)
     s = np.sign(b - a)
