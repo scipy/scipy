@@ -2,7 +2,6 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.interpolate import PPoly
 from .common import select_initial_step, get_active_events, handle_events, norm
 
 # Algorithm parameters.
@@ -213,6 +212,8 @@ def create_spline_one_step(x, x_new, y, y_new, f, f_new, ym):
     sol : PPoly
         Constructed spline as a PPoly instance.
     """
+    from scipy.interpolate import PPoly
+
     if x_new < x:
         x0, x1 = x_new, x
         y0, y1 = y_new, y
