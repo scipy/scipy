@@ -625,12 +625,12 @@ cdef inline void index_swap(np.intp_t *arr, np.intp_t i1, np.intp_t i2):
     arr[i1] = arr[i2]
     arr[i2] = tmp
 
-cdef int partition_node_indices(np.float64_t *data,
+cdef void partition_node_indices(np.float64_t *data,
                                 np.intp_t *node_indices,
                                 np.intp_t split_dim,
                                 np.intp_t split_index,
                                 np.intp_t n_features,
-                                np.intp_t n_points) except -1:
+                                np.intp_t n_points):
     """Partition points in the node into two equal-sized groups.
     
     Upon return, the values in node_indices will be rearranged such that
@@ -670,7 +670,7 @@ cdef int partition_node_indices(np.float64_t *data,
 
     """
     cdef np.intp_t left, right, midindex, i
-    cdef np.float_t d1, d2
+    cdef np.float64_t d1, d2
     left = 0
     right = n_points - 1
     
@@ -689,8 +689,6 @@ cdef int partition_node_indices(np.float64_t *data,
             left = midindex + 1
         else:
             right = midindex - 1
-
-    return 0
     
     
 
