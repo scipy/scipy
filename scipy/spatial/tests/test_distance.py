@@ -1246,6 +1246,14 @@ class TestSquareForm(TestCase):
         assert_equal(rv.shape, (2,2))
         assert_(rv[0,1])
 
+    def test_squareform_one_binary_vector(self):
+        """Tests squareform on a 1x1 binary matrix
+        (conversion to double was causing problems."""
+        v = np.ones((1,), dtype=np.bool)
+        rv = squareform(v)
+        self.assertTrue(rv.shape == (2,2))
+        self.assertTrue(rv[0,1])
+
     def test_squareform_2by2_matrix(self):
         A = np.zeros((2,2))
         A[0,1] = 0.8
