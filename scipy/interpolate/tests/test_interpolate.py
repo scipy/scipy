@@ -614,6 +614,11 @@ class TestInterp1D(object):
             new_y = interp([0.1, 0.2])
             del interp
 
+    def test_overflow_nearest(self):
+        # Test that the x range doesn't overflow when given integers as input
+        x = np.array([0, 50, 127], dtype=np.int8)
+        ii = interp1d(x, x, kind='nearest')
+        assert_array_almost_equal(ii(x), x)
 
 class TestLagrange(TestCase):
 
