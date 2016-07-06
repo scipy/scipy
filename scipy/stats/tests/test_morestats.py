@@ -231,6 +231,28 @@ class TestAnderson(TestCase):
         attributes = ('statistic', 'critical_values', 'significance_level')
         check_named_results(res, attributes)
 
+    def test_gumbel_l(self):
+        # gh-2592, gh-6337
+        # Adds support to 'gumbel_r' and 'gumbel_l' as valid inputs for dist.
+        rs = RandomState(1234567890)
+        x = rs.gumbel(size=100)
+        A1, crit1, sig1 = stats.anderson(x, 'gumbel')
+        A2, crit2, sig2 = stats.anderson(x, 'gumbel_l')
+
+        assert_allclose(A2, A1)
+
+    def test_gumbel_r(self):
+        # gh-2592, gh-6337
+        # Adds support to 'gumbel_r' and 'gumbel_l' as valid inputs for dist.
+        rs = RandomState(1234567890)
+        x1 = rs.gumbel(size=100)
+        x2 = np.ones(100)
+        A1, crit1, sig1 = stats.anderson(x1, 'gumbel_r')
+        A2, crit2, sig2 = stats.anderson(x2, 'gumbel_r')
+
+        assert_array_less(A1, crit1[-2:])
+        assert_(A2 > crit2[-1])
+
 
 class TestAndersonKSamp(TestCase):
     def test_example1a(self):
