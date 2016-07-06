@@ -410,7 +410,7 @@ def brentq(f, a, b, args=(),
     n-dimensional root-finding
       `fsolve`
     one-dimensional root-finding
-      `brentq`, `brenth`, `ridder`, `bisect`, `newton`
+      `brenth`, `ridder`, `bisect`, `newton`
     scalar fixed-point finder
       `fixed_point`
 
