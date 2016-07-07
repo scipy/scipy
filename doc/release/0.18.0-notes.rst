@@ -394,6 +394,7 @@ Authors
 * Fabian Rost +
 * Bill Sacks +
 * Jona Sassenhagen +
+* Kari Schoonbee +
 * Marcello Seri +
 * Sourav Singh +
 * Martin Spacek +
@@ -457,7 +458,6 @@ Issues closed for 0.18.0
 - `#5686 <https://github.com/scipy/scipy/issues/5686>`__: scipy.stats.ttest_ind_from_stats does not accept arrays
 - `#5702 <https://github.com/scipy/scipy/issues/5702>`__: scipy.ndimage.interpolation.affine_transform lacks documentation...
 - `#5718 <https://github.com/scipy/scipy/issues/5718>`__: Wrong computation of weighted minkowski distance in cdist
-- `#5743 <https://github.com/scipy/scipy/issues/5743>`__: slsqp fails to detect infeasible problem
 - `#5745 <https://github.com/scipy/scipy/issues/5745>`__: move to setuptools for next release
 - `#5752 <https://github.com/scipy/scipy/issues/5752>`__: DOC: solve_discrete_lyapunov equation puts transpose in wrong...
 - `#5760 <https://github.com/scipy/scipy/issues/5760>`__: signal.ss2tf doesn't handle zero-order state-space models
@@ -482,6 +482,8 @@ Issues closed for 0.18.0
 - `#6028 <https://github.com/scipy/scipy/issues/6028>`__: stats.distributions does not have trapezoidal distribution
 - `#6035 <https://github.com/scipy/scipy/issues/6035>`__: Wrong link in f_oneway
 - `#6056 <https://github.com/scipy/scipy/issues/6056>`__: BUG: signal.decimate should only accept discrete LTI objects
+- `#6093 <https://github.com/scipy/scipy/issues/6093>`__: Precision error on Linux 32 bit with openblas
+- `#6101 <https://github.com/scipy/scipy/issues/6101>`__: Barycentric transforms test error on Python3, 32-bit Linux
 - `#6105 <https://github.com/scipy/scipy/issues/6105>`__: scipy.misc.face docstring is incorrect
 - `#6113 <https://github.com/scipy/scipy/issues/6113>`__: scipy.linalg.logm fails for a trivial matrix
 - `#6128 <https://github.com/scipy/scipy/issues/6128>`__: Error in dot method of sparse COO array, when used with numpy...
@@ -501,6 +503,9 @@ Issues closed for 0.18.0
 - `#6235 <https://github.com/scipy/scipy/issues/6235>`__: BUG: alpha.pdf and alpha.logpdf returns nan for x=0
 - `#6245 <https://github.com/scipy/scipy/issues/6245>`__: ENH: improve accuracy for ppf-cdf and sf-isf roundtrips for invgamma
 - `#6263 <https://github.com/scipy/scipy/issues/6263>`__: BUG: stats: Inconsistency in the multivariate_normal docstring
+- `#6292 <https://github.com/scipy/scipy/issues/6292>`__: Python 3 unorderable type errors in test_sparsetools.TestInt32Overflow
+- `#6316 <https://github.com/scipy/scipy/issues/6316>`__: TestCloughTocher2DInterpolator.test_dense crashes python3.5.2rc1_64bit...
+- `#6318 <https://github.com/scipy/scipy/issues/6318>`__: Scipy interp1d 'nearest' not working for high values on x-axis
 
 
 Pull requests for 0.18.0
@@ -807,4 +812,16 @@ Pull requests for 0.18.0
 - `#6283 <https://github.com/scipy/scipy/pull/6283>`__: DOC: some more additions to 0.18.0 release notes.
 - `#6284 <https://github.com/scipy/scipy/pull/6284>`__: Add `.. versionadded::` directive to `loggamma`.
 - `#6285 <https://github.com/scipy/scipy/pull/6285>`__: BUG: stats: Inconsistency in the multivariate_normal docstring...
+- `#6290 <https://github.com/scipy/scipy/pull/6290>`__: Add author list, gh-lists to 0.18.0 release notes
+- `#6293 <https://github.com/scipy/scipy/pull/6293>`__: TST: special: relax a test's precision
+- `#6295 <https://github.com/scipy/scipy/pull/6295>`__: BUG: sparse: stop comparing None and int in bsr_matrix constructor
+- `#6313 <https://github.com/scipy/scipy/pull/6313>`__: MAINT: Fix for python 3.5 travis-ci build problem.
+- `#6327 <https://github.com/scipy/scipy/pull/6327>`__: TST: signal: use assert_allclose for testing near-equality in...
+- `#6330 <https://github.com/scipy/scipy/pull/6330>`__: BUG: spatial/qhull: allocate qhT via malloc to ensure CRT likes...
+- `#6332 <https://github.com/scipy/scipy/pull/6332>`__: TST: fix stats.iqr test to not emit warnings, and fix line lengths.
+- `#6334 <https://github.com/scipy/scipy/pull/6334>`__: MAINT: special: fix a test for hyp0f1
+- `#6347 <https://github.com/scipy/scipy/pull/6347>`__: TST: spatial.qhull: skip a test on 32-bit platforms
+- `#6350 <https://github.com/scipy/scipy/pull/6350>`__: BUG: optimize/slsqp: don't overwrite an array out of bounds
+- `#6351 <https://github.com/scipy/scipy/pull/6351>`__: BUG: #6318 Interp1d 'nearest' integer x-axis overflow issue fixed
+- `#6355 <https://github.com/scipy/scipy/pull/6355>`__: Backports for 0.18.0
 
