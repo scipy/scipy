@@ -364,24 +364,25 @@ class TestUtilities(object):
                                                unit_cube=True,
                                                unit_cube_tol=2*eps)
 
-            # Check with larger perturbations
-            np.random.seed(4321)
-            m = (np.random.rand(grid.shape[0]) < 0.2)
-            grid[m,:] += 1000*eps*(np.random.rand(*grid[m,:].shape) - 0.5)
-
-            tri = qhull.Delaunay(grid)
-            self._check_barycentric_transforms(tri, err_msg=err_msg,
-                                               unit_cube=True,
-                                               unit_cube_tol=1500*eps)
-
-            # Check with yet larger perturbations
-            np.random.seed(4321)
-            m = (np.random.rand(grid.shape[0]) < 0.2)
-            grid[m,:] += 1e6*eps*(np.random.rand(*grid[m,:].shape) - 0.5)
-
             if not _is_32bit_platform:
                 # test numerically unstable, and reported to fail on 32-bit
                 # installs
+
+                # Check with larger perturbations
+                np.random.seed(4321)
+                m = (np.random.rand(grid.shape[0]) < 0.2)
+                grid[m,:] += 1000*eps*(np.random.rand(*grid[m,:].shape) - 0.5)
+
+                tri = qhull.Delaunay(grid)
+                self._check_barycentric_transforms(tri, err_msg=err_msg,
+                                                   unit_cube=True,
+                                                   unit_cube_tol=1500*eps)
+
+                # Check with yet larger perturbations
+                np.random.seed(4321)
+                m = (np.random.rand(grid.shape[0]) < 0.2)
+                grid[m,:] += 1e6*eps*(np.random.rand(*grid[m,:].shape) - 0.5)
+
                 tri = qhull.Delaunay(grid)
                 self._check_barycentric_transforms(tri, err_msg=err_msg,
                                                    unit_cube=True,

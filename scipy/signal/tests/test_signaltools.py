@@ -1296,7 +1296,7 @@ class TestFiltFilt(TestCase):
     def test_basic(self):
         zpk = tf2zpk([1, 2, 3], [1, 2, 3])
         out = self.filtfilt(zpk, np.arange(12))
-        assert_equal(out, arange(12))
+        assert_allclose(out, arange(12), atol=1e-14)
 
     def test_sine(self):
         rate = 2000

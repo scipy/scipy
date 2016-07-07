@@ -4053,6 +4053,15 @@ class TestBSR(sparse_test_class(getset=False,
         A = array([[1,0],[2,3]])
         assert_equal(bsr_matrix(arg, blocksize=(2,2)).todense(), A)
 
+    def test_constructor4(self):
+        # regression test for gh-6292: bsr_matrix((data, indices, indptr)) was
+        #  trying to compare an int to a None
+        n = 8
+        data = np.ones((n, n, 1), dtype=np.int8)
+        indptr = np.array([0, n], dtype=np.int32)
+        indices = np.arange(n, dtype=np.int32)
+        bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
+
     def test_eliminate_zeros(self):
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
