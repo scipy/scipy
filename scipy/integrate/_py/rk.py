@@ -245,9 +245,9 @@ def create_spline_one_step(x, x_new, y, y_new, f, f_new, ym):
     return PPoly(c, [x0, x1], extrapolate=True, axis=1)
 
 
-def rk(fun, a, b, ya, fa, rtol, atol, method, events, is_terminal, direction):
-    """Integrate an ODE by Runge-Kutta method."""
-    max_step = 0.1 * np.abs(b - a)
+def rk(fun, a, b, ya, fa, rtol, atol, max_step, method,
+       events, is_terminal, direction):
+    """Integrate an ODE by an explicit Runge-Kutta method."""
     s = np.sign(b - a)
 
     A, B, C, E, M, K, order = prepare_method(method, ya.shape[0], s)
@@ -278,7 +278,7 @@ def rk(fun, a, b, ya, fa, rtol, atol, method, events, is_terminal, direction):
 
         d = abs(b - x)
         if h_abs > d:
-            status = 1
+            status = 0
             h_abs = d
             x_new = b
             h = h_abs * s
@@ -286,7 +286,7 @@ def rk(fun, a, b, ya, fa, rtol, atol, method, events, is_terminal, direction):
             h = h_abs * s
             x_new = x + h
             if x_new == x:  # h less than spacing between numbers.
-                status = 0
+                status = -1
 
         y_new, f_new, error = rk_step(fun, x, y, f, h, A, B, C, E, K)
         scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
@@ -315,7 +315,7 @@ def rk(fun, a, b, ya, fa, rtol, atol, method, events, is_terminal, direction):
                     x_events[e].append(xe)
 
                 if terminate:
-                    status = 2
+                    status = 1
                     x_new = roots[-1]
                     y_new = sol(x_new)
                     if ym is not None:
