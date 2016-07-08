@@ -23,7 +23,7 @@ from scipy.stats import matrix_normal
 from scipy.stats import special_ortho_group, ortho_group
 from scipy.stats import random_correlation
 from scipy.stats import dirichlet, beta
-from scipy.stats import wishart, invwishart, chi2, invgamma
+from scipy.stats import wishart, multinomial, invwishart, chi2, invgamma
 from scipy.stats import norm
 from scipy.stats import ks_2samp
 
@@ -917,6 +917,47 @@ class TestWishart(TestCase):
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
 
+class TestMultinomial(TestCase):
+    def test_logpmf(self):
+        vals1 = multinomial.logpmf((3,4), 7, (0.3, 0.7))
+        assert_allclose(vals1, -1.483270127243324, rtol=1e-8)
+
+    def test_pmf(self):
+        vals0 = multinomial.pmf((5,), 5, (1,))
+        assert_allclose(vals0, 1, rtol=1e-8)
+
+        vals1 = multinomial.pmf((3,4), 7, (0.3, 0.7))
+        assert_allclose(vals1, 0.22689449999999994, rtol=1e-8)
+
+        vals2 = multinomial.pmf([[[3,5],[0,8]], [[-1, 9], [1, 1]]], 8,
+                (0.1, 0.9))
+        assert_allclose(vals2, [[0.03306744 , 0.43046721], [0, 0]], rtol=1e-8)
+
+        x = np.empty((0,2), dtype=np.float64)
+        vals3 = multinomial.pmf(x, 4, (0.3, 0.7))
+        assert_equal(vals3, np.empty([], dtype=np.float64))
+
+        vals4 = multinomial.pmf([1,2], 4, (0.3, 0.7))
+        assert_allclose(vals4, 0, rtol=1e-8)
+
+    def test_cov(self):
+        cov1 = multinomial.cov(5, (0.2, 0.3, 0.5))
+        cov2 = np.asarray([[5*0.2*0.8, -5*0.2*0.3, -5*0.2*0.5],
+            [-5*0.3*0.2, 5*0.3*0.7, -5*0.3*0.5],
+            [-5*0.5*0.2, -5*0.5*0.3, 5*0.5*0.5]])
+        assert_allclose(cov1, cov2, rtol=1e-8)
+
+    def test_frozen(self):
+        # The frozen distribution should agree with the regular one
+        np.random.seed(1234)
+        n = 12
+        pvals = (0.1, 0.2, 0.3, 0.4)
+        x = [[0,0,0,12],[0,0,1,11],[0,1,1,10],[1,1,1,9],[1,1,2,8]]
+        x = np.asarray(x, dtype=np.float64)
+        mn_frozen = multinomial(n, pvals)
+        assert_allclose(mn_frozen.pmf(x), multinomial.pmf(x, n, pvals))
+        assert_allclose(mn_frozen.logpmf(x), multinomial.logpmf(x, n, pvals))
+        assert_allclose(mn_frozen.entropy(), multinomial.entropy(n, pvals))
 
 class TestInvwishart(TestCase):
     def test_frozen(self):

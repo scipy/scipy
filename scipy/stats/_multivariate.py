@@ -7,16 +7,18 @@ import math
 import numpy as np
 import scipy.linalg
 from scipy.misc import doccer
-from scipy.special import gammaln, psi, multigammaln
+from scipy.special import gammaln, psi, multigammaln, xlogy, entr
 from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 
+from ._discrete_distns import binom
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
            'dirichlet',
            'wishart',
            'invwishart',
+           'multinomial',
            'special_ortho_group',
            'ortho_group',
            'random_correlation']
@@ -2647,6 +2649,307 @@ for name in ['logpdf', 'pdf', 'mean', 'mode', 'var', 'rvs']:
     method_frozen.__doc__ = doccer.docformat(
         method.__doc__, wishart_docdict_noparams)
     method.__doc__ = doccer.docformat(method.__doc__, wishart_docdict_params)
+
+_multinomial_doc_default_callparams = """\
+n : int
+    Number of trials
+p : array_like
+    Probability of a trial falling into each category; should sum to 1
+"""
+
+_multinomial_doc_callparams_note = \
+"""`n` should be a positive integer. Each element of `p` should be in the
+interval :math:`[0,1]` and the elements should sum to 1.
+"""
+
+_multinomial_doc_frozen_callparams = ""
+
+_multinomial_doc_frozen_callparams_note = \
+    """See class definition for a detailed description of parameters."""
+
+multinomial_docdict_params = {
+    '_doc_default_callparams': _multinomial_doc_default_callparams,
+    '_doc_callparams_note': _multinomial_doc_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+multinomial_docdict_noparams = {
+    '_doc_default_callparams': _multinomial_doc_frozen_callparams,
+    '_doc_callparams_note': _multinomial_doc_frozen_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+class multinomial_gen(multi_rv_generic):
+    r"""
+    A multinomial random variable.
+
+    Methods
+    -------
+    ``pmf(x, n, p)``
+        Probability mass function.
+    ``logpmf(x, n, p)``
+        Log of the probability mass function.
+    ``rvs(n, p, size=1, random_state=None)``
+        Draw random samples from a multinomial distribution.
+    ``entropy(n, p)``
+        Compute the entropy of the multinomial distribution.
+    ``cov(n, p)``
+        Compute the covariance matrix of the multinomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Quantiles, with the last axis of `x` denoting the components.
+    %(_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Notes
+    -----
+    %(_doc_callparams_note)s
+
+    Alternatively, the object may be called (as a function) to fix the `n` and
+    `p` parameters, returning a "frozen" multinomial random variable:
+
+    >>> rv = multinomial(8, (0.3, 0.2, 0.5))
+    >>> rv.pmf([1, 3, 4])
+    0.042000000000000072
+
+    The probability mass function for `multinomial` is
+
+    .. math::
+
+        f(x) = \begin{pmatrix} n \\ x_1, \ldots, x_k \end{pmatrix}
+        p_1^{x_1} \cdots p_k^{x_k},
+
+    supported on :math:`x=(x_1, \ldots, x_k)` where each :math:`x_i` is a
+    nonnegative integer and their sum is :math:`n`.
+    """
+
+    def __init__(self, seed=None):
+        super(multinomial_gen, self).__init__(seed)
+        self.__doc__ = \
+            doccer.docformat(self.__doc__, multinomial_docdict_params)
+
+    def __call__(self, n, p, seed=None):
+        """
+        Create a frozen multinomial distribution.
+
+        See `multinomial_frozen` for more information.
+        """
+        return multinomial_frozen(n, p, seed)
+
+    def _process_quantiles(self, x, dim):
+        """
+        Adjust quantiles array so that last axis labels the components of
+        each data point.
+        """
+        x = np.asarray(x, dtype=float)
+
+        if x.ndim == 0:
+            x = x[np.newaxis]
+        elif x.ndim == 1:
+            if dim == 1:
+                x = x[:, np.newaxis]
+            else:
+                x = x[np.newaxis, :]
+
+        return x
+
+    def _check_quantiles_then_apply(self, x, n, p, f):
+        if x.size != 0 and not x.shape[-1] == len(p):
+            raise ValueError("Size of each quantile should be len(p): "
+            "received %d, but expected %d" % (x.shape[-1], len(p)))
+        cond1 = np.sum(x, axis=-1) == n
+        cond2 = np.alltrue(x >= 0, axis=-1)
+        cond = cond1 & cond2
+        dtype = np.find_common_type([x.dtype, np.float64], [])
+        output = np.empty(x.shape[:-1], dtype)
+        output.fill(np.NINF)
+        np.place(output, cond, f(x[cond, :], n, p))
+        return _squeeze_output(output)
+
+    def _logpmf(self, x, n, p):
+        return gammaln(n+1) + np.sum(xlogy(x, p) - gammaln(x+1), axis=-1)
+
+    def logpmf(self, x, n, p):
+        """
+        Log of the Multinomial probability mass function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+            Each quantile must be a symmetric positive definite matrix.
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        logpmf : ndarray or scalar
+            Log of the probability mass function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+        """
+        x = self._process_quantiles(x, len(p))
+        return self._check_quantiles_then_apply(x, n, p, self._logpmf)
+
+    def pmf(self, x, n, p):
+        """
+        Multinomial probability mass function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+            Each quantile must be a symmetric positive definite matrix.
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        pmf : ndarray or scalar
+            Probability density function evaluated at `x`
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+        """
+        return np.exp(self.logpmf(x, n, p))
+
+    def mean(self, n, p):
+        """
+        Mean of the Multinomial distribution
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        mean : float
+            The mean of the distribution
+        """
+        return n*p
+
+    def cov(self, n, p):
+        """
+        Covariance matrix of the Multinomial distribution
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        cov : ndarray
+            The covariance matrix of the distribution
+        """
+        result = np.tensordot(p, p, 0)
+        for i in range(len(p)):
+            result[i, i] -= p[i]
+        result *= -n
+        return result
+
+    def entropy(self, n, p):
+        """
+        Compute the entropy of the Multinomial distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+
+        Returns
+        -------
+        h : scalar
+            Entropy of the Multinomial distribution
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+        """
+        k = np.r_[2:n+1]
+        ps = np.asarray(p, dtype=np.float64)
+        ps = np.reshape(ps, ps.shape + (1,))
+
+        result = -gammaln(n+1) + n*np.sum(entr(p))
+        result += np.sum(binom.pmf(k, n, ps)*gammaln(k+1))
+
+        return result
+
+    def rvs(self, n, p, size=1, random_state=None):
+        """
+        Draw random samples from a Multinomial distribution.
+
+        Parameters
+        ----------
+        %(_doc_default_callparams)s
+        size : integer or iterable of integers, optional
+            Number of samples to draw (default 1).
+        %(_doc_random_state)s
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random variates of shape (`size`, `len(p)`)
+
+        Notes
+        -----
+        %(_doc_callparams_note)s
+        """
+        random_state = self._get_random_state(random_state)
+        out = random_state.multinomial(n, p, size)
+        return _squeeze_output(out)
+
+multinomial = multinomial_gen()
+
+class multinomial_frozen(multi_rv_frozen):
+    r"""
+    Create a frozen Multinomial distribution.
+
+    Parameters
+    ----------
+    n : int
+        number of trials
+    p: array_like
+        probability of a trial falling into each category; should sum to 1
+    seed : None or int or np.random.RandomState instance, optional
+        This parameter defines the RandomState object to use for drawing
+        random variates.
+        If None (or np.random), the global np.random state is used.
+        If integer, it is used to seed the local RandomState instance
+        Default is None.
+    """
+    def __init__(self, n, p, seed=None):
+        self._dist = multinomial_gen(seed)
+        self.n, self.p = n, p
+
+    def logpmf(self, x):
+        return self._dist.logpmf(x, self.n, self.p)
+
+    def pmf(self, x):
+        return self._dist.pmf(x, self.n, self.p)
+
+    def mean(self):
+        return self._dist.mean(self.n, self.p)
+
+    def cov(self):
+        return self._dist.cov(self.n, self.p)
+
+    def entropy(self):
+        return self._dist.entropy(self.n, self.p)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.n, self.p, size, random_state)
+
+# Set frozen generator docstrings from corresponding docstrings in
+# multinomial and fill in default strings in class docstrings
+for name in ['logpmf', 'pmf', 'mean', 'cov', 'rvs']:
+    method = multinomial_gen.__dict__[name]
+    method_frozen = multinomial_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, multinomial_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__,
+            multinomial_docdict_params)
 
 class special_ortho_group_gen(multi_rv_generic):
     r"""
