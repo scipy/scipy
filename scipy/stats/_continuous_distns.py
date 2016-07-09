@@ -1557,6 +1557,12 @@ class frechet_r_gen(rv_continuous):
     def _cdf(self, x, c):
         return -special.expm1(-pow(x, c))
 
+    def _sf(self, x, c):
+        return exp(-pow(x, c))
+
+    def _logsf(self, x, c):
+        return -pow(x, c)
+
     def _ppf(self, q, c):
         return pow(-special.log1p(-q), 1.0/c)
 
@@ -1565,6 +1571,7 @@ class frechet_r_gen(rv_continuous):
 
     def _entropy(self, c):
         return -_EULER / c - log(c) + _EULER + 1
+
 frechet_r = frechet_r_gen(a=0.0, name='frechet_r')
 weibull_min = frechet_r_gen(a=0.0, name='weibull_min')
 
@@ -1597,8 +1604,17 @@ class frechet_l_gen(rv_continuous):
     def _pdf(self, x, c):
         return c*pow(-x, c-1)*exp(-pow(-x, c))
 
+    def _logpdf(self, x, c):
+        return log(c) + special.xlogy(c-1, -x) - pow(-x, c)
+
     def _cdf(self, x, c):
         return exp(-pow(-x, c))
+
+    def _logcdf(self, x, c):
+        return -pow(-x, c)
+
+    def _sf(self, x, c):
+        return -special.expm1(-pow(-x, c))
 
     def _ppf(self, q, c):
         return -pow(-log(q), 1.0/c)
@@ -1613,6 +1629,7 @@ class frechet_l_gen(rv_continuous):
 
     def _entropy(self, c):
         return -_EULER / c - log(c) + _EULER + 1
+
 frechet_l = frechet_l_gen(b=0.0, name='frechet_l')
 weibull_max = frechet_l_gen(b=0.0, name='weibull_max')
 
