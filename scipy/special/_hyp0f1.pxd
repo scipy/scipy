@@ -107,6 +107,7 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
         np.npy_cdouble zz = npy_cdouble_from_double_complex(z)
         np.npy_cdouble r
         double complex arg, s
+        double complex t1, t2
 
     # handle poles, zeros 
     if v <= 0.0 and v == floor(v):
@@ -115,8 +116,10 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
         return 1.0
 
     # both v and z small: truncate the Taylor series at O(z**2)
-    if zabs(z) < 1e-6*(1.0 + fabs(v)):
-        return 1.0 + z/v + z*z/(2.0*v*(v+1.0))
+    if zabs(z) < 1e-6*(1.0 + zabs(v)):
+        t1 = 1.0 + z/v
+        t2 = z*z / (2.0*v*(v+1.0))
+        return t1 + t2
 
     if zz.real > 0:
         arg = zsqrt(z)
