@@ -117,6 +117,8 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
 
     # both v and z small: truncate the Taylor series at O(z**2)
     if zabs(z) < 1e-6*(1.0 + zabs(v)):
+        # need to do computations in this order, for otherwise $v\approx -z \ll 1$
+        # it can lose precision (as was reported for 32-bit linux, see gh-6365)
         t1 = 1.0 + z/v
         t2 = z*z / (2.0*v*(v+1.0))
         return t1 + t2
