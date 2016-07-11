@@ -66,12 +66,12 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45', M=None,
     This function numerically integrates a system of ODEs given an initial
     value::
 
-        dy / dx = f(x, y) or M dy / dx = f(x, y)
+        dy / dx = f(x, y)
         y(a) = ya
 
     Here x is a 1-dimensional independent variable, y(x) is a n-dimensional
     vector-valued function and ya is a n-dimensional vector with initial
-    values. An optional mass matrix M is not supported by all methods.
+    values.
 
     Parameters
     ----------
@@ -104,17 +104,13 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45', M=None,
               step size control [3]_. A 3-th order accurate cubic Hermit
               polynomial is used for the continuous extension.
             * 'Radau': Implicit Runge-Kutta method of Radau IIA family of
-              order 5 [4]_. A 3-rd order accurate cubic polynomial is available
+              order 5 [4]_. A 5-th order accurate cubic polynomial is available
               naturally as the method can be viewed as a collocation method.
 
         You should use 'RK45' or 'RK23' methods for non-stiff problems and
         'Radau' for stiff problems [5]_. If not sure, first try to run 'RK45'
-        and if it does unusual many number of iterations or diverges then your
-        problem is likely to be stiff and you should use 'Radau5'.
-    M : array_like with shape (n, n) or None, optional
-        Mass matrix. Must be constant and non-singular. If None (default),
-        then it is assumed to be the identity matrix. A non-default value is
-        supported only for ``method='Radau5'``.
+        and if it does unusual many iterations or diverges then your problem
+        is likely to be stiff and you should use 'Radau'.
     max_step : float or None, optional
         Maximum allowed step size. If None, a step size is selected to be 0.1
         of the length of `x_span`.
@@ -217,13 +213,6 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45', M=None,
         if M is not None:
             raise ValueError("`M` is supported only by 'Radau' method.")
     elif method == 'Radau':
-        if M is None:
-            M = np.identity(n)
-        else:
-            M = np.asarray(M, dtype=float)
-            if M.shape != (n, n):
-                raise ValueError("`M` is expected to have shape {}, but "
-                                 "actually has {}.".format((n, n), M.shape))
         if jac is None:
             def jac_wrapped(x, y):
                 return approx_derivative(lambda z: fun(x, z),
@@ -255,7 +244,7 @@ def solve_ivp(fun, x_span, ya, rtol=1e-3, atol=1e-6, method='RK45', M=None,
             events, is_terminal, direction)
     elif method == 'Radau':
         status, sol, xs, ys, fs, x_events = radau(
-            fun, jac_wrapped, M, a, b, ya, fa, Ja, rtol, atol, max_step,
+            fun, jac_wrapped, a, b, ya, fa, Ja, rtol, atol, max_step,
             events, is_terminal, direction)
 
     return ODEResult(sol=sol, x=xs, y=ys, yp=fs, x_events=x_events,

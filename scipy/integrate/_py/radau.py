@@ -135,13 +135,13 @@ def create_spline_one_step(x, x_new, y, Z):
     else:
         c[0] = ((10 + 15*S6) * z0 + (10 - 15*S6) * z1 + 10 * z2) / (3 * h**3)
         c[1] = -((23 + 22*S6) * z0 + (23 - 22*S6) * z1 + 8 * z2) / (3 * h**2)
-        c[2] = ((13 + 7 * S6) * z0 + (13 - 7 * S6) * z1 + z2) / (3 * h)
+        c[2] = ((13 + 7*S6) * z0 + (13 - 7*S6) * z1 + z2) / (3 * h)
     c[3] = y
 
     return PPoly(c, [x, x_new], extrapolate=True)
 
 
-def solve_collocation_system(fun, x, y, h, J, M, Z0, scale, tol, LU_real,
+def solve_collocation_system(fun, x, y, h, J, Z0, scale, tol, LU_real,
                              LU_complex):
     """Solve the collocation system.
 
@@ -157,8 +157,6 @@ def solve_collocation_system(fun, x, y, h, J, M, Z0, scale, tol, LU_real,
         Step to try.
     J : ndarray, shape (n, n)
         Jacobian of `fun` with respect to `y`.
-    M : ndarray, shape (n, n)
-        Mass matrix.
     Z0 : ndarray, shape (3, n)
         Initial guess for the solution.
     scale : float
@@ -190,14 +188,15 @@ def solve_collocation_system(fun, x, y, h, J, M, Z0, scale, tol, LU_real,
     LU_real, LU_complex : tuple
         Computed LU decompositions.
     """
-    M_real = MU_REAL / h * M
-    M_complex = MU_COMPLEX / h * M
+    n = y.shape[0]
+    I = np.identity(n)
+    M_real = MU_REAL / h
+    M_complex = MU_COMPLEX / h
 
     if LU_real is None or LU_complex is None:
-        LU_real = lu_factor(M_real - J)
-        LU_complex = lu_factor(M_complex - J)
+        LU_real = lu_factor(M_real * I - J)
+        LU_complex = lu_factor(M_complex * I - J)
 
-    n = y.shape[0]
     W = TI.dot(Z0)
     Z = Z0
 
@@ -211,8 +210,8 @@ def solve_collocation_system(fun, x, y, h, J, M, Z0, scale, tol, LU_real,
         for i in range(3):
             F[i] = fun(x + ch[i], y + Z[i])
 
-        f_real = F.T.dot(TI_REAL) - M_real.dot(W[0])
-        f_complex = F.T.dot(TI_COMPLEX) - M_complex.dot(W[1] + 1j * W[2])
+        f_real = F.T.dot(TI_REAL) - M_real * W[0]
+        f_complex = F.T.dot(TI_COMPLEX) - M_complex * (W[1] + 1j * W[2])
 
         dW_real = lu_solve(LU_real, f_real, overwrite_b=True)
         dW_complex = lu_solve(LU_complex, f_complex, overwrite_b=True)
@@ -286,7 +285,7 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
     return factor
 
 
-def radau(fun, jac, M, a, b, ya, fa, Ja, rtol, atol, max_step,
+def radau(fun, jac, a, b, ya, fa, Ja, rtol, atol, max_step,
           events, is_terminal, direction):
     """
     Integrate an ODE by an implicit Runge-Kutta method of Radau IIA family.
@@ -350,28 +349,30 @@ def radau(fun, jac, M, a, b, ya, fa, Ja, rtol, atol, max_step,
 
         scale = atol + np.abs(y) * rtol
         newton_status, n_iter, Z, f_new, theta, LU_real, LU_complex = \
-            solve_collocation_system(fun, x, y, h, J, M, Z0, scale,
+            solve_collocation_system(fun, x, y, h, J, Z0, scale,
                                      newton_tol, LU_real, LU_complex)
-
         if newton_status == 1:
+            status = None
             rejected = True
             if not current_jac:
                 J = jac(x, y)
-            h_abs *= 0.75
+                h_abs *= 0.75
+            else:
+                h_abs *= 0.5
             LU_real = None
             LU_complex = None
             continue
 
         y_new = y + Z[-1]
 
-        MZE = M.dot(Z.T.dot(E)) / h
-        error = lu_solve(LU_real, f + MZE)
+        ZE = Z.T.dot(E) / h
+        error = lu_solve(LU_real, f + ZE)
         scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
         error_norm = norm(error / scale)
         safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER + n_iter)
 
         if rejected and error_norm > 1:
-            error = lu_solve(LU_real, fun(x, y + error) + MZE)
+            error = lu_solve(LU_real, fun(x, y + error) + ZE)
             error_norm = norm(error / scale)
 
         if error_norm > 1:
