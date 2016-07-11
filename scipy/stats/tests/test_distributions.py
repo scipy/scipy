@@ -2082,11 +2082,96 @@ class TestExponWeib(TestCase):
         assert_allclose(logp, expected)
 
 
-class TestWeibullMin(TestCase):
-    # gh-6217
+class TestWeibull(TestCase):
+
     def test_logpdf(self):
+        # gh-6217
         y = stats.weibull_min.logpdf(0, 1)
         assert_equal(y, 0)
+
+    def test_with_maxima_distrib(self):
+        # Tests for weibull_min and weibull_max.
+        # The expected values were computed using the symbolic algebra
+        # program 'maxima' with the package 'distrib', which has
+        # 'pdf_weibull' and 'cdf_weibull'.  The mapping between the
+        # scipy and maxima functions is as follows:
+        # -----------------------------------------------------------------
+        # scipy                              maxima
+        # ---------------------------------  ------------------------------
+        # weibull_min.pdf(x, a, scale=b)     pdf_weibull(x, a, b)
+        # weibull_min.logpdf(x, a, scale=b)  log(pdf_weibull(x, a, b))
+        # weibull_min.cdf(x, a, scale=b)     cdf_weibull(x, a, b)
+        # weibull_min.logcdf(x, a, scale=b)  log(cdf_weibull(x, a, b))
+        # weibull_min.sf(x, a, scale=b)      1 - cdf_weibull(x, a, b)
+        # weibull_min.logsf(x, a, scale=b)   log(1 - cdf_weibull(x, a, b))
+        #
+        # weibull_max.pdf(x, a, scale=b)     pdf_weibull(-x, a, b)
+        # weibull_max.logpdf(x, a, scale=b)  log(pdf_weibull(-x, a, b))
+        # weibull_max.cdf(x, a, scale=b)     1 - cdf_weibull(-x, a, b)
+        # weibull_max.logcdf(x, a, scale=b)  log(1 - cdf_weibull(-x, a, b))
+        # weibull_max.sf(x, a, scale=b)      cdf_weibull(-x, a, b)
+        # weibull_max.logsf(x, a, scale=b)   log(cdf_weibull(-x, a, b))
+        # -----------------------------------------------------------------
+        x = 1.5
+        a = 2.0
+        b = 3.0
+
+        # weibull_min
+
+        p = stats.weibull_min.pdf(x, a, scale=b)
+        assert_allclose(p, np.exp(-0.25)/3)
+
+        lp = stats.weibull_min.logpdf(x, a, scale=b)
+        assert_allclose(lp, -0.25 - np.log(3))
+
+        c = stats.weibull_min.cdf(x, a, scale=b)
+        assert_allclose(c, -special.expm1(-0.25))
+
+        lc = stats.weibull_min.logcdf(x, a, scale=b)
+        assert_allclose(lc, np.log(-special.expm1(-0.25)))
+
+        s = stats.weibull_min.sf(x, a, scale=b)
+        assert_allclose(s, np.exp(-0.25))
+
+        ls = stats.weibull_min.logsf(x, a, scale=b)
+        assert_allclose(ls, -0.25)
+
+        # Also test using a large value x, for which computing the survival
+        # function using the CDF would result in 0.
+        s = stats.weibull_min.sf(30, 2, scale=3)
+        assert_allclose(s, np.exp(-100))
+
+        ls = stats.weibull_min.logsf(30, 2, scale=3)
+        assert_allclose(ls, -100)
+
+        # weibull_max
+        x = -1.5
+
+        p = stats.weibull_max.pdf(x, a, scale=b)
+        assert_allclose(p, np.exp(-0.25)/3)
+
+        lp = stats.weibull_max.logpdf(x, a, scale=b)
+        assert_allclose(lp, -0.25 - np.log(3))
+
+        c = stats.weibull_max.cdf(x, a, scale=b)
+        assert_allclose(c, np.exp(-0.25))
+
+        lc = stats.weibull_max.logcdf(x, a, scale=b)
+        assert_allclose(lc, -0.25)
+
+        s = stats.weibull_max.sf(x, a, scale=b)
+        assert_allclose(s, -special.expm1(-0.25))
+
+        ls = stats.weibull_max.logsf(x, a, scale=b)
+        assert_allclose(ls, np.log(-special.expm1(-0.25)))
+
+        # Also test using a value of x close to 0, for which computing the
+        # survival function using the CDF would result in 0.
+        s = stats.weibull_max.sf(-1e-9, 2, scale=3)
+        assert_allclose(s, -special.expm1(-1/9000000000000000000))
+
+        ls = stats.weibull_max.logsf(-1e-9, 2, scale=3)
+        assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
 
 
 class TestRdist(TestCase):
