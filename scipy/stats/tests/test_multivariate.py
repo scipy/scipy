@@ -926,32 +926,71 @@ class TestMultinomial(TestCase):
         vals0 = multinomial.pmf((5,), 5, (1,))
         assert_allclose(vals0, 1, rtol=1e-8)
 
-        vals1 = multinomial.pmf((3,4), 7, (0.3, 0.7))
-        assert_allclose(vals1, 0.22689449999999994, rtol=1e-8)
+        vals1 = multinomial.pmf((3,4), 7, (.3, .7))
+        assert_allclose(vals1, .22689449999999994, rtol=1e-8)
 
         vals2 = multinomial.pmf([[[3,5],[0,8]], [[-1, 9], [1, 1]]], 8,
-                (0.1, 0.9))
-        assert_allclose(vals2, [[0.03306744 , 0.43046721], [0, 0]], rtol=1e-8)
+                (.1, .9))
+        assert_allclose(vals2, [[.03306744, .43046721], [0, 0]], rtol=1e-8)
 
         x = np.empty((0,2), dtype=np.float64)
-        vals3 = multinomial.pmf(x, 4, (0.3, 0.7))
+        vals3 = multinomial.pmf(x, 4, (.3, .7))
         assert_equal(vals3, np.empty([], dtype=np.float64))
 
-        vals4 = multinomial.pmf([1,2], 4, (0.3, 0.7))
+        vals4 = multinomial.pmf([1,2], 4, (.3, .7))
         assert_allclose(vals4, 0, rtol=1e-8)
 
+    def test_pmf_broadcasting(self):
+        vals0 = multinomial.pmf([1, 2], 3, [[.1, .9], [.2, .8]])
+        assert_allclose(vals0, [.243, .384], rtol=1e-8)
+
+        vals1 = multinomial.pmf([1, 2], [3, 4], [.1, .9])
+        assert_allclose(vals1, [.243, 0], rtol=1e-8)
+
     def test_cov(self):
-        cov1 = multinomial.cov(5, (0.2, 0.3, 0.5))
-        cov2 = np.asarray([[5*0.2*0.8, -5*0.2*0.3, -5*0.2*0.5],
-            [-5*0.3*0.2, 5*0.3*0.7, -5*0.3*0.5],
-            [-5*0.5*0.2, -5*0.5*0.3, 5*0.5*0.5]])
+        cov1 = multinomial.cov(5, (.2, .3, .5))
+        cov2 = [[5*.2*.8, -5*.2*.3, -5*.2*.5],
+                [-5*.3*.2, 5*.3*.7, -5*.3*.5],
+                [-5*.5*.2, -5*.5*.3, 5*.5*.5]]
         assert_allclose(cov1, cov2, rtol=1e-8)
+
+    def test_cov_broadcasting(self):
+        cov1 = multinomial.cov(5, [[.1, .9], [.2, .8]])
+        cov2 = [[[.45, -.45],[-.45, .45]], [[.8, -.8], [-.8, .8]]]
+        assert_allclose(cov1, cov2, rtol=1e-8)
+
+        cov3 = multinomial.cov([4, 5], [.1, .9])
+        cov4 = [[[.36, -.36], [-.36, .36]], [[.45, -.45], [-.45, .45]]]
+        assert_allclose(cov3, cov4, rtol=1e-8)
+
+        cov5 = multinomial.cov([4, 5], [[.3, .7], [.4, .6]])
+        cov6 = [[[4*.3*.7, -4*.3*.7], [-4*.3*.7, 4*.3*.7]],
+                [[5*.4*.6, -5*.4*.6], [-5*.4*.6, 5*.4*.6]]]
+        assert_allclose(cov5, cov6, rtol=1e-8)
+
+    def test_entropy(self):
+        ent0 = multinomial.entropy(2, [.2, .8])
+        assert_allclose(ent0, .77899774929, rtol=1e-8)
+
+    def test_entropy_broadcasting(self):
+        ent0 = multinomial.entropy([2, 3], [.2, .3])
+        assert_allclose(ent0, [.77899774929, .9738733720538], rtol=1e-8)
+
+        ent1 = multinomial.entropy([7, 8], [[.3, .7], [.4, .6]])
+        assert_allclose(ent1, [1.5926972553219099, 1.7402828220188056],
+                rtol=1e-8)
+
+        ent2 = multinomial.entropy([[7], [8]], [[.3, .7], [.4, .6]])
+        assert_allclose(ent2,
+                [[1.5926972553219099, 1.6720354911697495],
+                 [1.662929193566484, 1.7402828220188054]],
+                rtol=1e-8)
 
     def test_frozen(self):
         # The frozen distribution should agree with the regular one
         np.random.seed(1234)
         n = 12
-        pvals = (0.1, 0.2, 0.3, 0.4)
+        pvals = (.1, .2, .3, .4)
         x = [[0,0,0,12],[0,0,1,11],[0,1,1,10],[1,1,1,9],[1,1,2,8]]
         x = np.asarray(x, dtype=np.float64)
         mn_frozen = multinomial(n, pvals)
@@ -1330,7 +1369,10 @@ def test_random_state_property():
         [multivariate_normal, ()],
         [dirichlet, (np.array([1.]), )],
         [wishart, (10, scale)],
-        [invwishart, (10, scale)]
+        [invwishart, (10, scale)],
+        [multinomial, (5, [0.5, 0.4, 0.1])],
+        [ortho_group, (2,)],
+        [special_ortho_group, (2,)]
     ]
     for distfn, args in dists:
         check_random_state_property(distfn, args)
