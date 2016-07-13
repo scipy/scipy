@@ -1038,12 +1038,25 @@ def zpk2sos(z, p, k, pairing='nearest'):
 
 
 def _align_nums(nums):
-    """
+    """Aligns the shapes of multiple numerators.
+
     Given an array of numerator coefficient arrays [[a_1, a_2,...,
     a_n],..., [b_1, b_2,..., b_m]], this function pads shorter numerator
     arrays with zero's so that all numerators have the same length. Such
     alignment is necessary for functions like 'tf2ss', which needs the
     alignment when dealing with SIMO transfer functions.
+
+    Parameters
+    ----------
+    nums: array_like
+        Numerator or list of numerators. Not necessarily with same length.
+
+    Returns
+    -------
+    nums: array
+        The numerator. If `nums` input was a list of numerators then a 2d
+        array with padded zeros for shorter numerators is returned. Otherwise
+        returns ``np.asarray(nums)``.
     """
     try:
         # The statement can throw a ValueError if one
@@ -1057,44 +1070,88 @@ def _align_nums(nums):
         return nums
 
     except ValueError:
-        nums = list(nums)
-        maxwidth = len(max(nums, key=lambda num: atleast_1d(num).size))
+        nums = [np.atleast_1d(num) for num in nums]
+        max_width = max(num.size for num in nums)
 
+        # pre-allocate
+        aligned_nums = np.zeros((len(nums), max_width))
+
+        # Create numerators with padded zeros
         for index, num in enumerate(nums):
-            num = atleast_1d(num).tolist()
-            nums[index] = [0] * (maxwidth - len(num)) + num
+            aligned_nums[index, -num.size:] = num
 
-        return atleast_1d(nums)
+        return aligned_nums
 
 
 def normalize(b, a):
-    """Normalize polynomial representation of a transfer function.
+    """Normalize numerator/denominator of a continuous-time transfer function.
 
     If values of `b` are too close to 0, they are removed. In that case, a
     BadCoefficients warning is emitted.
 
+    Parameters
+    ----------
+    b: array_like
+        Numerator of the transfer function. Can be a 2d array to normalize
+        multiple transfer functions.
+    a: array_like
+        Denominator of the transfer function. At most 1d.
+
+    Returns
+    -------
+    num: array
+        The numerator of the normalized transfer function. At least a 1d
+        array. A 2d-array if the input `num` is a 2d array.
+    den: 1d-array
+        The denominator of the normalized transfer function.
+
+    Notes
+    -----
+    Coefficients for both the numerator and denominator should be specified in
+    descending exponent order (e.g., ``s^2 + 3s + 5`` would be represented as
+    ``[1, 3, 5]``).
     """
-    b = _align_nums(b)
-    b, a = map(atleast_1d, (b, a))
-    if len(a.shape) != 1:
+    num, den = b, a
+
+    den = np.atleast_1d(den)
+    num = np.atleast_2d(_align_nums(num))
+
+    if den.ndim != 1:
         raise ValueError("Denominator polynomial must be rank-1 array.")
-    if len(b.shape) > 2:
+    if num.ndim > 2:
         raise ValueError("Numerator polynomial must be rank-1 or"
                          " rank-2 array.")
-    if len(b.shape) == 1:
-        b = asarray([b], b.dtype.char)
-    while a[0] == 0.0 and len(a) > 1:
-        a = a[1:]
-    outb = b * (1.0) / a[0]
-    outa = a * (1.0) / a[0]
-    if allclose(0, outb[:, 0], atol=1e-14):
+    if np.all(den == 0):
+        raise ValueError("Denominator must have at least on nonzero element.")
+
+    # Trim leading zeros in denominator, leave at least one.
+    den = np.trim_zeros(den, 'f')
+
+    # Normalize transfer function
+    num, den = num / den[0], den / den[0]
+
+    # Count numerator columns that are all zero
+    leading_zeros = 0
+    for col in num.T:
+        if np.allclose(col, 0, atol=1e-14):
+            leading_zeros += 1
+        else:
+            break
+
+    # Trim leading zeros of numerator
+    if leading_zeros > 0:
         warnings.warn("Badly conditioned filter coefficients (numerator): the "
                       "results may be meaningless", BadCoefficients)
-        while allclose(0, outb[:, 0], atol=1e-14) and (outb.shape[-1] > 1):
-            outb = outb[:, 1:]
-    if outb.shape[0] == 1:
-        outb = outb[0]
-    return outb, outa
+        # Make sure at least one column remains
+        if leading_zeros == num.shape[1]:
+            leading_zeros -= 1
+        num = num[:, leading_zeros:]
+
+    # Squeeze first dimension if singular
+    if num.shape[0] == 1:
+        num = num[0, :]
+
+    return num, den
 
 
 def lp2lp(b, a, wo=1.0):
