@@ -37,6 +37,8 @@ repeatable minimizations.
 The keyword `sigma` in `scipy.optimize.curve_fit` was overloaded to also accept
 the covariance matrix of errors in the data.
 
+The function `scipy.optimize.newton` supports more halting conditions.
+
 `scipy.signal` improvements
 ---------------------------
 

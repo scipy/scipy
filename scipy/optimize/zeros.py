@@ -62,11 +62,22 @@ def results_c(full_output, r):
         return r
 
 
+def _newton_halt(p, dp, fp, tol, halt):
+    if halt == 'astep':
+        res = True if abs(dp) <= tol else False
+    elif halt == 'rstep':
+        res = True if abs(dp) <= tol*abs(p) else False
+    elif halt == 'afval':
+        res = True if abs(fp) <= tol else False
+    else:
+        res = True if abs(fp) <= tol*abs(p) else False
+    return res
+
+
 # Newton-Raphson method
-def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
-           fprime2=None):
-    """
-    Find a zero using the Newton-Raphson or secant method.
+def newton(func, x0, fprime=None, args=(), tol=1.48e-8,
+           maxiter=50, fprime2=None, halt='astep'):
+    """Find a zero using the Newton-Raphson or secant method.
 
     Find a zero of the function `func` given a nearby starting point `x0`.
     The Newton-Raphson method is used if the derivative `fprime` of `func`
@@ -89,7 +100,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     args : tuple, optional
         Extra arguments to be used in the function call.
     tol : float, optional
-        The allowable error of the zero value.
+        Tolerance for the halting condition. See `halt`.
     maxiter : int, optional
         Maximum number of iterations.
     fprime2 : function, optional
@@ -97,6 +108,17 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
         convenient. If it is None (default), then the normal Newton-Raphson
         or the secant method is used. If it is given, parabolic Halley's
         method is used.
+    halt : str {'astep', 'rstep', 'afval', 'rfval'}, optional
+        Halting condition. If ``x`` is the current iterate and ``dx``
+        the difference bwtweeen the current iterate and the previous
+        iterate, then the halting conditions are:
+
+        - 'astep'   ``abs(dx) <= tol``
+        - 'rstep'   ``abs(dx) <= tol*abs(x)``
+        - 'afval'   ``abs(func(x)) <= tol``
+        - 'rfval'   ``abs(func(x)) <= tol*abs(x)``
+
+        Default is 'astep'.
 
     Returns
     -------
@@ -112,36 +134,48 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     -----
     The convergence rate of the Newton-Raphson method is quadratic,
     the Halley method is cubic, and the secant method is
-    sub-quadratic.  This means that if the function is well behaved
-    the actual error in the estimated zero is approximately the square
-    (cube for Halley) of the requested tolerance up to roundoff
-    error. However, the stopping criterion used here is the step size
-    and there is no guarantee that a zero has been found. Consequently
-    the result should be verified. Safer algorithms are brentq,
-    brenth, ridder, and bisect, but they all require that the root
-    first be bracketed in an interval where the function changes
-    sign. The brentq algorithm is recommended for general use in one
-    dimensional problems when such an interval has been found.
+    sub-quadratic. This means that if the function is well behaved the
+    actual error in the estimated zero is approximately the square
+    (cube for Halley) of the requested tolerance up to roundoff error.
+
+    If `halt` is 'astep' or 'rstep', then the halting condition is
+    absolute or relative step size, and in this case there is no
+    guarantee that a zero has been found and the result should be
+    verified. If `halt` is changed to 'afval' or 'rfval' then the
+    absolute value of `func` or the relative size of `func` versus the
+    current iterate is used as a stopping criterion instead and an
+    error is raised if a root is not found. If the function is not
+    sufficiently well behaved, convergence to a root is still not
+    guaranteed.
+
+    Safer algorithms are `brentq`, `brenth`, `ridder`, and `bisect`,
+    but they all require that the root first be bracketed in an
+    interval where the function changes sign. The brentq algorithm is
+    recommended for general use in one dimensional problems when such
+    an interval has been found.
 
     """
+    if halt not in ['astep', 'rstep', 'afval', 'rfval']:
+        raise ValueError("invalid halting condition")
     if tol <= 0:
         raise ValueError("tol too small (%g <= 0)" % tol)
     if maxiter < 1:
         raise ValueError("maxiter must be greater than 0")
+
     if fprime is not None:
-        # Newton-Rapheson method
-        # Multiply by 1.0 to convert to floating point.  We don't use float(x0)
+        # Newton-Raphson method
+        # Multiply by 1.0 to convert to floating point. We don't use float(x0)
         # so it still works if x0 is complex.
         p0 = 1.0 * x0
+        myargs = (p0,) + args
+        fval = func(*myargs)
         fder2 = 0
         for iter in range(maxiter):
-            myargs = (p0,) + args
             fder = fprime(*myargs)
             if fder == 0:
                 msg = "derivative was zero."
                 warnings.warn(msg, RuntimeWarning)
                 return p0
-            fval = func(*myargs)
             if fprime2 is not None:
                 fder2 = fprime2(*myargs)
             if fder2 == 0:
@@ -154,17 +188,19 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                     p = p0 - fder / fder2
                 else:
                     p = p0 - 2*fval / (fder + sign(fder) * sqrt(discr))
-            if abs(p - p0) < tol:
+            myargs = (p,) + args
+            fval = func(*myargs)
+            if _newton_halt(p, p - p0, fval, tol, halt):
                 return p
             p0 = p
     else:
         # Secant method
         p0 = x0
+        q0 = func(*((p0,) + args))
         if x0 >= 0:
             p1 = x0*(1 + 1e-4) + 1e-4
         else:
             p1 = x0*(1 + 1e-4) - 1e-4
-        q0 = func(*((p0,) + args))
         q1 = func(*((p1,) + args))
         for iter in range(maxiter):
             if q1 == q0:
@@ -174,12 +210,12 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
                 return (p1 + p0)/2.0
             else:
                 p = p1 - q1*(p1 - p0)/(q1 - q0)
-            if abs(p - p1) < tol:
-                return p
             p0 = p1
             q0 = q1
             p1 = p
             q1 = func(*((p1,) + args))
+            if _newton_halt(p1, p1 - p0, q1, tol, halt):
+                return p1
     msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
     raise RuntimeError(msg)
 
