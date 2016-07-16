@@ -2810,20 +2810,21 @@ class multinomial_gen(multi_rv_generic):
         Adjust quantiles array so that last axis labels the components of
         each data point.
         """
-        x = np.asarray(x, dtype=np.int)
+        xx = np.asarray(x, dtype=np.int)
 
-        if x.ndim == 0:
+        if xx.ndim == 0:
             raise ValueError("x must be an array.")
 
-        if x.size != 0 and not x.shape[-1] == p.shape[-1]:
+        if xx.size != 0 and not xx.shape[-1] == p.shape[-1]:
             raise ValueError("Size of each quantile should be size of p: "
-                "received %d, but expected %d." % (x.shape[-1], p.shape[-1]))
+                "received %d, but expected %d." % (xx.shape[-1], p.shape[-1]))
 
         # true for x out of the domain
-        cond = np.sum(x, axis=-1) != n
-        cond |= np.alltrue(x < 0, axis=-1)
+        cond = np.any(np.floor(x) != xx, axis=-1)
+        cond |= np.any(xx < 0, axis=-1)
+        cond = cond | (np.sum(xx, axis=-1) != n)
 
-        return x, cond
+        return xx, cond
 
     def _checkresult(self, result, cond, bad_value):
         if cond.ndim != 0:
