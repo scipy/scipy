@@ -2827,6 +2827,7 @@ class multinomial_gen(multi_rv_generic):
         return xx, cond
 
     def _checkresult(self, result, cond, bad_value):
+        result = np.asarray(result)
         if cond.ndim != 0:
             result[cond] = bad_value
         elif cond:
@@ -2862,9 +2863,6 @@ class multinomial_gen(multi_rv_generic):
         x, xcond = self._process_quantiles(x, n, p)
 
         result = self._logpmf(x, n, p)
-
-        if result.ndim == 0:
-            return np.float64(np.NINF) if xcond | ncond | pcond else result
 
         # replace values for which x was out of the domain
         result = self._checkresult(result, xcond, np.NINF)

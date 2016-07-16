@@ -922,6 +922,12 @@ class TestMultinomial(TestCase):
         vals1 = multinomial.logpmf((3,4), 7, (0.3, 0.7))
         assert_allclose(vals1, -1.483270127243324, rtol=1e-8)
 
+        vals2 = multinomial.logpmf([3, 4], 0, [.3, .7])
+        assert_allclose(vals2, np.NAN, rtol=1e-8)
+
+        vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
+        assert_allclose(vals3, np.NAN, rtol=1e-8)
+
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))
         assert_allclose(vals0, 1, rtol=1e-8)
