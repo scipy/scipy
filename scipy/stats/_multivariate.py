@@ -2982,15 +2982,17 @@ class multinomial_gen(multi_rv_generic):
         %(_doc_callparams_note)s
         """
         n, p = self._process_parameters(n, p)
-        random_state = self._get_random_state(random_state)
 
-        # numpy's functions for drawing from multivariate distributions
-        # apparently do not support broadcasting, so just choose the first
-        # element of n and p.
-        n_index = (0,)*(n.ndim)
-        p_index = (0,)*(p.ndim-1)
-        out = random_state.multinomial(n[n_index], p[p_index], size)
-        return out
+        # we don't support broadcasting yet
+        if n.ndim != 0:
+            raise ValueError("n must be 0 dimensional (rvs does not support "
+                    "broadcasting)")
+        if p.ndim != 1:
+            raise ValueError("p must be 1 dimensional (rvs does not support "
+                    "broadcasting)")
+
+        random_state = self._get_random_state(random_state)
+        return random_state.multinomial(n, p, size)
 
 multinomial = multinomial_gen()
 
