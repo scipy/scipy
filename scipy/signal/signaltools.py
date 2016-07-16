@@ -493,9 +493,10 @@ def _np_conv_ok(volume, kernel, mode):
 
 def _fftconvolve_valid(volume, kernel):
     # fftconvolve doesn't support complex256
-    if hasattr(np, "complex256"):
-        if volume.dtype == 'complex256' or kernel.dtype == 'complex256':
-            return False
+    for not_fft_conv_supp in ["complex256", "complex192"]:
+        if hasattr(np, not_fft_conv_supp):
+            if volume.dtype == not_fft_conv_supp or kernel.dtype == not_fft_conv_supp:
+                return False
 
     # for integer input,
     # catch when more precision required than float provides (representing a
@@ -649,8 +650,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
         return chosen_method, times
 
     # fftconvolve doesn't support complex256
-    if hasattr(np, "complex256"):
-        if volume.dtype == 'complex256' or kernel.dtype == 'complex256':
+    fftconv_unsup = "complex256" if sys.maxsize > 2**32 else "complex192"
+    if hasattr(np, fftconv_unsup):
+        if volume.dtype == fftconv_unsup or kernel.dtype == fftconv_unsup:
             return 'direct'
 
     # for integer input,

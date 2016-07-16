@@ -165,8 +165,11 @@ class TestConvolve(_TestConvolve):
                     x = (0.5 + np.random.rand(100)).astype(dtype)
                     h = (0.5 + np.random.rand(50)).astype(dtype)
 
-                    if x.dtype.kind not in 'buifc' or dtype == np.complex256:
+                    if x.dtype.kind not in 'buifc' \
+                            or np.dtype(dtype).name in {'complex256', 'complex192'}:
                         assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+                        # continues the for-loop; it will throw an error
+                        # because fftconv doesn't support the dtype
                         continue
 
                     if x.dtype.kind != 'b':
@@ -1544,9 +1547,11 @@ def test_choose_conv_method():
             assert_('fft' in times.keys() and 'direct' in times.keys())
 
         n = 10
-        x = np.ones(n, dtype='complex256')
-        h = x.copy()
-        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+        for not_fft_conv_supp in ["complex256", "complex192"]:
+            if hasattr(np, not_fft_conv_supp):
+                x = np.ones(n, dtype=not_fft_conv_supp)
+                h = x.copy()
+                assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
         x = np.array([2**51], dtype=int)
         h = x.copy()
