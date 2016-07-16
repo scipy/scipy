@@ -2696,7 +2696,7 @@ class multinomial_gen(multi_rv_generic):
     r"""
     A multinomial random variable.
 
-    .. versionadded:: 0.18.0
+    .. versionadded:: 0.19.0
 
     Methods
     -------
