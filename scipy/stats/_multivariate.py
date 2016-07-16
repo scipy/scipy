@@ -2794,16 +2794,16 @@ class multinomial_gen(multi_rv_generic):
         p = np.array(p, dtype=np.float64, copy=True)
         p[...,-1] = 1. - p[...,:-1].sum(axis=-1)
 
-        if np.any(p <= 0) or np.any(p > 1):
-            raise ValueError("Elements of p should be between 0 and 1 "
-                    "and sum to 1.")
+        # true for bad p
+        pcond = np.any(p <= 0, axis=-1)
+        pcond |= np.any(p > 1, axis=-1)
 
         n = np.array(n, dtype=np.int, copy=True)
 
-        if np.any(n <= 0):
-            raise ValueError("Must have n > 0.")
+        # true for bad n
+        ncond = n <= 0
 
-        return n, p
+        return n, p, ncond, pcond
 
     def _process_quantiles(self, x, n, p):
         """
@@ -2812,14 +2812,27 @@ class multinomial_gen(multi_rv_generic):
         """
         x = np.asarray(x, dtype=np.int)
 
+        if x.ndim == 0:
+            raise ValueError("x must be an array.")
+
         if x.size != 0 and not x.shape[-1] == p.shape[-1]:
             raise ValueError("Size of each quantile should be size of p: "
                 "received %d, but expected %d." % (x.shape[-1], p.shape[-1]))
 
-        if x.ndim == 0:
-            raise ValueError("x must be an array.")
+        # true for x out of the domain
+        cond = np.sum(x, axis=-1) != n
+        cond |= np.alltrue(x < 0, axis=-1)
 
-        return x
+        return x, cond
+
+    def _checkresult(self, result, cond, bad_value):
+        if cond.ndim != 0:
+            result[cond] = bad_value
+        elif cond:
+            if result.ndim == 0:
+                return bad_value
+            result[...] = bad_value
+        return result
 
     def _logpmf(self, x, n, p):
         return gammaln(n+1) + np.sum(xlogy(x, p) - gammaln(x+1), axis=-1)
@@ -2844,28 +2857,19 @@ class multinomial_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        n, p = self._process_parameters(n, p)
-        x = self._process_quantiles(x, n, p)
-
-        chopped_p = p if p.ndim == 0 else p[..., 0]
+        n, p, ncond, pcond = self._process_parameters(n, p)
+        x, xcond = self._process_quantiles(x, n, p)
 
         result = self._logpmf(x, n, p)
 
-        # true for x out of the domain
-        cond1 = np.sum(x, axis=-1) != n
-        cond2 = np.alltrue(x < 0, axis=-1)
-        cond = cond1 | cond2
-
-        # broadcast it to the shape of result
-        cond = cond & np.ones(chopped_p.shape, dtype=np.bool_)
-
         if result.ndim == 0:
-            return np.float64(np.NINF) if cond else result
+            return np.float64(np.NINF) if xcond | ncond | pcond else result
 
         # replace values for which x was out of the domain
-        result[cond] = np.NINF
+        result = self._checkresult(result, xcond, np.NINF)
 
-        return result
+        # replace values bad for n or p
+        return self._checkresult(result, ncond | pcond, np.NAN)
 
     def pmf(self, x, n, p):
         """
@@ -2902,8 +2906,9 @@ class multinomial_gen(multi_rv_generic):
         mean : float
             The mean of the distribution
         """
-        n, p = self._process_parameters(n, p)
-        return n[..., np.newaxis]*p
+        n, p, ncond, pcond = self._process_parameters(n, p)
+        result = n[..., np.newaxis]*p
+        return self._checkresult(result, ncond | pcond, np.NAN)
 
     def cov(self, n, p):
         """
@@ -2918,7 +2923,7 @@ class multinomial_gen(multi_rv_generic):
         cov : ndarray
             The covariance matrix of the distribution
         """
-        n, p = self._process_parameters(n, p)
+        n, p, ncond, pcond = self._process_parameters(n, p)
 
         nn = n[..., np.newaxis, np.newaxis]
         result = nn * np.einsum('...j,...k->...jk', -p, p)
@@ -2927,7 +2932,7 @@ class multinomial_gen(multi_rv_generic):
         for i in range(p.shape[-1]):
             result[...,i, i] += n*p[..., i]
 
-        return result
+        return self._checkresult(result, ncond | pcond, np.nan)
 
     def entropy(self, n, p):
         """
@@ -2946,7 +2951,7 @@ class multinomial_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        n, p = self._process_parameters(n, p)
+        n, p, ncond, pcond = self._process_parameters(n, p)
 
         x = np.r_[1:np.max(n)+1]
 
@@ -2958,8 +2963,9 @@ class multinomial_gen(multi_rv_generic):
         x.shape += (1,)*new_axes_needed
 
         term2 = np.sum(binom.pmf(x, n, p)*gammaln(x+1),
-                axis=(-1, -1-new_axes_needed))
-        return term1 + term2
+            axis=(-1, -1-new_axes_needed))
+
+        return self._checkresult(term1 + term2, ncond | pcond, np.nan)
 
     def rvs(self, n, p, size=1, random_state=None):
         """
@@ -2981,7 +2987,7 @@ class multinomial_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        n, p = self._process_parameters(n, p)
+        n, p, ncond, pcond = self._process_parameters(n, p)
 
         # we don't support broadcasting yet
         if n.ndim != 0:
@@ -3015,11 +3021,12 @@ class multinomial_frozen(multi_rv_frozen):
     """
     def __init__(self, n, p, seed=None):
         self._dist = multinomial_gen(seed)
-        self.n, self.p = self._dist._process_parameters(n, p)
+        self.n, self.p, self.ncond, self.pcond = \
+                self._dist._process_parameters(n, p)
 
         # monkey patch self._dist
         def _process_parameters(n, p):
-            return self.n, self.p
+            return self.n, self.p, self.ncond, self.pcond
 
         self._dist._process_parameters = _process_parameters
 
