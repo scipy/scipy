@@ -986,6 +986,14 @@ class TestMultinomial(TestCase):
                  [1.662929193566484, 1.7402828220188054]],
                 rtol=1e-8)
 
+    def test_mean(self):
+        mean1 = multinomial.mean(5, [.2, .8])
+        assert_allclose(mean1, [5*.2, 5*.8], rtol=1e-8)
+
+    def test_mean_broadcasting(self):
+        mean1 = multinomial.mean([5, 6], [.2, .8])
+        assert_allclose(mean1, [[5*.2, 5*.8], [6*.2, 6*.8]], rtol=1e-8)
+
     def test_frozen(self):
         # The frozen distribution should agree with the regular one
         np.random.seed(1234)

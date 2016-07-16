@@ -2903,7 +2903,7 @@ class multinomial_gen(multi_rv_generic):
             The mean of the distribution
         """
         n, p = self._process_parameters(n, p)
-        return n*p
+        return n[..., np.newaxis]*p
 
     def cov(self, n, p):
         """
