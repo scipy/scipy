@@ -23,7 +23,7 @@ import numpy as np
 from scipy.special import factorial
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from .filter_design import cheby1
+from .filter_design import cheby1, _validate_sos
 from .fir_filter_design import firwin
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
@@ -2852,7 +2852,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
     See Also
     --------
-    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt
+    zpk2sos, sos2zpk, sosfilt_zi, sosfiltfilt, sosfreqz
 
     Notes
     -----
@@ -2953,7 +2953,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
 
     See Also
     --------
-    filtfilt, sosfilt, sosfilt_zi
+    filtfilt, sosfilt, sosfilt_zi, sosfreqz
 
     Notes
     -----
@@ -2980,19 +2980,6 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     if edge > 0:
         y = axis_slice(y, start=edge, stop=-edge, axis=axis)
     return y
-
-
-def _validate_sos(sos):
-    """Helper to validate a SOS input"""
-    sos = atleast_2d(sos)
-    if sos.ndim != 2:
-        raise ValueError('sos array must be 2D')
-    n_sections, m = sos.shape
-    if m != 6:
-        raise ValueError('sos array must be shape (n_sections, 6)')
-    if not (sos[:, 3] == 1).all():
-        raise ValueError('sos[:, 3] should be all ones')
-    return sos, n_sections
 
 
 def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):

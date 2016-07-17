@@ -24,7 +24,8 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'band_stop_obj', 'buttord', 'cheb1ord', 'cheb2ord', 'ellipord',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'BadCoefficients',
-           'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay']
+           'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
+           'sosfreqz']
 
 
 class BadCoefficients(UserWarning):
@@ -201,7 +202,11 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
         The normalized frequencies at which `h` was computed, in
         radians/sample.
     h : ndarray
-        The frequency response.
+        The frequency response, as complex numbers.
+
+    See Also
+    --------
+    sosfreqz
 
     Notes
     -----
@@ -351,6 +356,126 @@ def group_delay(system, w=None, whole=False):
     gd = np.zeros_like(w)
     gd[~singular] = np.real(num[~singular] / den[~singular]) - a.size + 1
     return w, gd
+
+
+def _validate_sos(sos):
+    """Helper to validate a SOS input"""
+    sos = np.atleast_2d(sos)
+    if sos.ndim != 2:
+        raise ValueError('sos array must be 2D')
+    n_sections, m = sos.shape
+    if m != 6:
+        raise ValueError('sos array must be shape (n_sections, 6)')
+    if not (sos[:, 3] == 1).all():
+        raise ValueError('sos[:, 3] should be all ones')
+    return sos, n_sections
+
+
+def sosfreqz(sos, worN=None, whole=False):
+    """
+    Compute the frequency response of a digital filter in SOS format.
+
+    Given `sos`, an array with shape (n, 6) of second order sections of
+    a digital filter, compute the frequency response of the system function::
+
+               B0(z)   B1(z)         B{n-1}(z)
+        H(z) = ----- * ----- * ... * ---------
+               A0(z)   A1(z)         A{n-1}(z)
+
+    for z = exp(omega*1j), where B{k}(z) and A{k}(z) are numerator and
+    denominator of the transfer function of the k-th second order section.
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``. Each row corresponds to a second-order
+        section, with the first three columns providing the numerator
+        coefficients and the last three providing the denominator
+        coefficients.
+    worN : {None, int, array_like}, optional
+        If None (default), then compute at 512 frequencies equally spaced
+        around the unit circle.
+        If a single integer, then compute at that many frequencies.
+        If an array_like, compute the response at the frequencies given (in
+        radians/sample).
+    whole : bool, optional
+        Normally, frequencies are computed from 0 to the Nyquist frequency,
+        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
+        compute frequencies from 0 to 2*pi radians/sample.
+
+    Returns
+    -------
+    w : ndarray
+        The normalized frequencies at which `h` was computed, in
+        radians/sample.
+    h : ndarray
+        The frequency response, as complex numbers.
+
+    See Also
+    --------
+    freqz, sosfilt
+
+    Notes
+    -----
+
+    .. versionadded:: 0.19.0
+
+    Examples
+    --------
+    Design a 15th-order bandpass filter in SOS format.
+
+    >>> from scipy import signal
+    >>> sos = signal.ellip(15, 0.5, 60, (0.2, 0.4), btype='bandpass',
+    ...                    output='sos')
+
+    Compute the frequency response at 1500 points from DC to Nyquist.
+
+    >>> w, h = signal.sosfreqz(sos, worN=1500)
+
+    Plot the response.
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.subplot(2, 1, 1)
+    >>> db = 20*np.log10(np.abs(h))
+    >>> plt.plot(w/np.pi, db)
+    >>> plt.ylim(-75, 5)
+    >>> plt.grid(True)
+    >>> plt.yticks([0, -20, -40, -60])
+    >>> plt.ylabel('Gain [dB]')
+    >>> plt.title('Frequency Response')
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(w/np.pi, np.angle(h))
+    >>> plt.grid(True)
+    >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
+    ...            ['$-\pi$', '$-\pi/2$', '0', '$\pi/2$', '$\pi$'])
+    >>> plt.ylabel('Phase [rad]')
+    >>> plt.xlabel('Normalized frequency (1.0 = Nyquist)')
+    >>> plt.show()
+
+    If the same filter is implemented as a single transfer function,
+    numerical error corrupts the frequency response:
+
+    >>> b, a = signal.ellip(15, 0.5, 60, (0.2, 0.4), btype='bandpass',
+    ...                    output='ba')
+    >>> w, h = signal.freqz(b, a, worN=1500)
+    >>> plt.subplot(2, 1, 1)
+    >>> db = 20*np.log10(np.abs(h))
+    >>> plt.plot(w/np.pi, db)
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(w/np.pi, np.angle(h))
+    >>> plt.show()
+
+    """
+
+    sos, n_sections = _validate_sos(sos)
+    if n_sections == 0:
+        raise ValueError('Cannot compute frequencies with no sections')
+    h = 1.
+    for row in sos:
+        w, rowh = freqz(row[:3], row[3:], worN=worN, whole=whole)
+        h *= rowh
+    return w, h
 
 
 def _cplxreal(z, tol=None):

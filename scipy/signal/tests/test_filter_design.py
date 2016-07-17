@@ -2,15 +2,17 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 
+from distutils.version import LooseVersion
 import numpy as np
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns)
+                           run_module_suite, assert_allclose, assert_warns,
+                           dec)
 from numpy import array, spacing, sin, pi, sort
 
 from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
-                          BadCoefficients, freqz, normalize,
+                          BadCoefficients, freqz, sosfreqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
                           cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
@@ -18,6 +20,21 @@ from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
                           firwin)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
+
+try:
+    import mpmath
+except ImportError:
+    try:
+        import sympy.mpmath as mpmath
+    except ImportError:
+        mpmath = None
+
+
+def mpmath_check(min_ver):
+    if mpmath is None:
+        return dec.skipif(True, "mpmath is not installed")
+    return dec.skipif(LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+                      "mpmath version >= %s required" % min_ver)
 
 
 class TestCplxPair(TestCase):
@@ -422,6 +439,129 @@ class TestFreqz(TestCase):
         assert_raises(ZeroDivisionError,
                       freqz, [1.0], worN=8, plot=lambda w, h: 1 / 0)
         freqz([1.0], worN=8, plot=plot)
+
+
+class TestSOSFreqz(TestCase):
+
+    def test_sosfreqz_basic(self):
+        # Compare the results of freqz and sosfreqz for a low order
+        # Butterworth filter.
+
+        N = 500
+
+        b, a = butter(4, 0.2)
+        sos = butter(4, 0.2, output='sos')
+        w, h = freqz(b, a, worN=N)
+        w2, h2 = sosfreqz(sos, worN=N)
+        assert_equal(w2, w)
+        assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
+
+        b, a = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass')
+        sos = ellip(3, 1, 30, (0.2, 0.3), btype='bandpass', output='sos')
+        w, h = freqz(b, a, worN=N)
+        w2, h2 = sosfreqz(sos, worN=N)
+        assert_equal(w2, w)
+        assert_allclose(h2, h, rtol=1e-10, atol=1e-14)
+        # must have at least one section
+        assert_raises(ValueError, sosfreqz, sos[:0])
+
+    def test_sosfrez_design(self):
+        # Compare sosfreqz output against expected values for different
+        # filter types
+
+        # from cheb2ord
+        N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        sos = cheby2(N, 60, Wn, 'stop', output='sos')
+        w, h = sosfreqz(sos)
+        h = np.abs(h)
+        w /= np.pi
+        assert_allclose(20 * np.log10(h[w <= 0.1]), 0, atol=3.01)
+        assert_allclose(20 * np.log10(h[w >= 0.6]), 0., atol=3.01)
+        assert_allclose(h[(w >= 0.2) & (w <= 0.5)], 0., atol=1e-3)  # <= -60 dB
+
+        N, Wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 150)
+        sos = cheby2(N, 150, Wn, 'stop', output='sos')
+        w, h = sosfreqz(sos)
+        dB = 20*np.log10(np.abs(h))
+        w /= np.pi
+        assert_allclose(dB[w <= 0.1], 0, atol=3.01)
+        assert_allclose(dB[w >= 0.6], 0., atol=3.01)
+        assert_array_less(dB[(w >= 0.2) & (w <= 0.5)], -149.9)
+
+        # from cheb1ord
+        N, Wn = cheb1ord(0.2, 0.3, 3, 40)
+        sos = cheby1(N, 3, Wn, 'low', output='sos')
+        w, h = sosfreqz(sos)
+        h = np.abs(h)
+        w /= np.pi
+        assert_allclose(20 * np.log10(h[w <= 0.2]), 0, atol=3.01)
+        assert_allclose(h[w >= 0.3], 0., atol=1e-2)  # <= -40 dB
+
+        N, Wn = cheb1ord(0.2, 0.3, 1, 150)
+        sos = cheby1(N, 1, Wn, 'low', output='sos')
+        w, h = sosfreqz(sos)
+        dB = 20*np.log10(np.abs(h))
+        w /= np.pi
+        assert_allclose(dB[w <= 0.2], 0, atol=1.01)
+        assert_array_less(dB[w >= 0.3], -149.9)
+
+        # adapted from ellipord
+        N, Wn = ellipord(0.3, 0.1, 3, 60)
+        sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
+        w, h = sosfreqz(sos)
+        h = np.abs(h)
+        w /= np.pi
+        assert_allclose(20 * np.log10(h[w >= 0.3]), 0, atol=3.01)
+        assert_allclose(h[w <= 0.1], 0., atol=1.5e-3)  # <= -60 dB (approx)
+
+        N, Wn = ellipord(0.3, 0.25, .5, 150)
+        sos = ellip(N, .5, 150, Wn, 'high', output='sos')
+        w, h = sosfreqz(sos)
+        dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
+        w /= np.pi
+        assert_allclose(dB[w >= 0.3], 0, atol=.55)
+        # this is not great (147 instead of 150, could be ellip[ord] problem?)
+        assert_array_less(dB[(w > 0) & (w <= 0.25)], -147)
+
+        # adapted from buttord
+        N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 40)
+        sos = butter(N, Wn, 'band', output='sos')
+        w, h = sosfreqz(sos)
+        h = np.abs(h)
+        w /= np.pi
+        assert_allclose(h[w <= 0.14], 0., atol=1e-2)  # <= -40 dB
+        assert_allclose(h[w >= 0.6], 0., atol=1e-2)  # <= -40 dB
+        assert_allclose(20 * np.log10(h[(w >= 0.2) & (w <= 0.5)]),
+                        0, atol=3.01)
+
+        N, Wn = buttord([0.2, 0.5], [0.14, 0.6], 3, 100)
+        sos = butter(N, Wn, 'band', output='sos')
+        w, h = sosfreqz(sos)
+        dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
+        w /= np.pi
+        assert_array_less(dB[(w > 0) & (w <= 0.14)], -99.9)
+        assert_array_less(dB[w >= 0.6], -99.9)
+        assert_allclose(dB[(w >= 0.2) & (w <= 0.5)], 0, atol=3.01)
+
+    @mpmath_check("0.10")
+    def test_sos_freqz_against_mp(self):
+        # Compare the result of sosfreqz applied to a high order Butterworth
+        # filter against the result computed using mpmath.  (signal.freqz fails
+        # miserably with such high order filters.)
+        import mpsig
+        N = 500
+        order = 25
+        Wn = 0.15
+        with mpmath.workdps(80):
+            z_mp, p_mp, k_mp = mpsig.butter_lp(order, Wn)
+            w_mp, h_mp = mpsig.zpkfreqz(z_mp, p_mp, k_mp, N)
+        w_mp = np.array([float(x) for x in w_mp])
+        h_mp = np.array([complex(x) for x in h_mp])
+
+        sos = butter(order, Wn, output='sos')
+        w, h = sosfreqz(sos, worN=N)
+        assert_allclose(w, w_mp, rtol=1e-12, atol=1e-14)
+        assert_allclose(h, h_mp, rtol=1e-12, atol=1e-14)
 
 
 class TestNormalize(TestCase):

@@ -86,6 +86,7 @@ Filter design
                     -- response.
    freqs         -- Analog filter frequency response.
    freqz         -- Digital filter frequency response.
+   sosfreqz      -- Digital filter frequency response for SOS format filter.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
