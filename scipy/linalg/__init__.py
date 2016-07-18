@@ -33,6 +33,7 @@ Basics
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
    pinv2 - Pseudo-inverse using svd
+   pinv3 - Pseudo-inverse using hermitian matrix
    pinvh - Pseudo-inverse of hermitian matrix
    kron - Kronecker product of two arrays
    tril - Construct a lower-triangular matrix from a given matrix
