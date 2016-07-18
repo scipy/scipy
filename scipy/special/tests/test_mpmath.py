@@ -968,27 +968,34 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             ignore_inf_sign=True)
 
     def test_ellipfun_sn(self):
+        def sn(u, m):
+            # mpmath doesn't get the zero at u = 0--fix that
+            if u == 0:
+                return 0
+            else:
+                return mpmath.ellipfun("sn", u=u, m=m)
+        
         # Oscillating function --- limit range of first argument; the
         # loss of precision there is an expected numerical feature
         # rather than an actual bug
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[0],
-                            lambda u, m: mpmath.ellipfun("sn", u=u, m=m),
+                            sn,
                             [Arg(-1e6, 1e6), Arg(a=0, b=1)],
-                            atol=1e-20)
+                            rtol=1e-8)
 
     def test_ellipfun_cn(self):
         # see comment in ellipfun_sn
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[1],
                             lambda u, m: mpmath.ellipfun("cn", u=u, m=m),
                             [Arg(-1e6, 1e6), Arg(a=0, b=1)],
-                            atol=1e-20)
+                            rtol=1e-8)
 
     def test_ellipfun_dn(self):
         # see comment in ellipfun_sn
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[2],
                             lambda u, m: mpmath.ellipfun("dn", u=u, m=m),
                             [Arg(-1e6, 1e6), Arg(a=0, b=1)],
-                            atol=1e-20)
+                            rtol=1e-8)
 
     def test_erf(self):
         assert_mpmath_equal(sc.erf,
