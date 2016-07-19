@@ -40,6 +40,17 @@ class TestGoBenchmarkFunctions(TestCase):
             # should result in an attribute error if it doesn't exist
             val = f.fglob
 
+    def test_bounds_access_subscriptable(self):
+        # In Python 2 zip returns a list which is subscriptable
+        # In Python 3 zip returns a zip object, which is not subscriptable
+        for name, klass in self.benchmark_functions:
+            if (name in ['Benchmark', 'LennardJones'] or
+                    name.startswith('Problem')):
+                continue
+
+            f = klass()
+            bounds = f.bounds[0]
+
 
 if __name__ == '__main__':
     run_module_suite()

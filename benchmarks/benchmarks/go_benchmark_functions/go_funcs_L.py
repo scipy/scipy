@@ -45,7 +45,7 @@ class Langermann(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[2.00299219, 1.006096]]
         self.fglob = -5.1621259
@@ -112,7 +112,7 @@ class LennardJones(Benchmark):
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-4.0] * self.N, [4.0] * self.N)
+        self._bounds = list(zip([-4.0] * self.N, [4.0] * self.N))
 
         self.global_optimum = [[]]
 
@@ -174,7 +174,7 @@ class Leon(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-1.2] * self.N, [1.2] * self.N)
+        self._bounds = list(zip([-1.2] * self.N, [1.2] * self.N))
 
         self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -221,7 +221,7 @@ class Levy03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[1 for _ in range(self.N)]]
@@ -260,7 +260,7 @@ class Levy05(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [[-1.30685, -1.42485]]
@@ -304,7 +304,7 @@ class Levy13(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[1 for _ in range(self.N)]]

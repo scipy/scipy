@@ -41,7 +41,7 @@ class Watson(Benchmark):
     def __init__(self, dimensions=6):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
 
         self.global_optimum = [[-0.0158, 1.012, -0.2329, 1.260, -1.513,
                                 0.9928]]
@@ -92,7 +92,7 @@ class Wavy(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-pi] * self.N, [pi] * self.N)
+        self._bounds = list(zip([-pi] * self.N, [pi] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -130,7 +130,7 @@ class WayburnSeader01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
         self.custom_bounds = ([-2, 2], [-2, 2])
 
         self.global_optimum = [[1.0, 2.0]]
@@ -169,8 +169,8 @@ class WayburnSeader02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-500.0] * self.N,
-                           [500.0] * self.N)
+        self._bounds = list(zip([-500.0] * self.N,
+                           [500.0] * self.N))
         self.custom_bounds = ([-1, 2], [-1, 2])
 
         self.global_optimum = [[0.2, 1.0]]
@@ -221,7 +221,7 @@ class Weierstrass(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-0.5] * self.N, [0.5] * self.N)
+        self._bounds = list(zip([-0.5] * self.N, [0.5] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0
@@ -270,8 +270,8 @@ class Whitley(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.24] * self.N,
-                           [10.24] * self.N)
+        self._bounds = list(zip([-10.24] * self.N,
+                           [10.24] * self.N))
         self.custom_bounds = ([-1, 2], [-1, 2])
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
@@ -314,7 +314,7 @@ class Wolfe(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [2.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [2.0] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0

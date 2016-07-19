@@ -404,11 +404,12 @@ class BenchGlobal(Benchmark):
     ])
 
     if _func_names:
-        _functions = OrderedDict([
-            (name, _functions.get(name)) 
-            for name in _func_names
-            if name in _functions
-        ])
+        _filtered_funcs = OrderedDict()
+        for name in _func_names:
+            if name in _functions:
+                _filtered_funcs[name] = _functions.get(name)
+        _functions = _filtered_funcs
+
     if not slow:
         _functions = {'AMGM': None}
 
