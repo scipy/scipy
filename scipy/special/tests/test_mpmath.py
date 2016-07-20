@@ -823,6 +823,15 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         # check asymptotic series cross-over
         assert_mpmath_equal(chi, mpmath.chi, [FixedArg([88 - 1e-9, 88, 88 + 1e-9])])
 
+    def test_chi_complex(self):
+        def chi(z):
+            return sc.shichi(z)[1]
+        # chi oscillates as Im[z] -> +- inf, so limit range
+        assert_mpmath_equal(chi,
+                            mpmath.chi,
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
+                            rtol=1e-14)
+
     def test_ci(self):
         def ci(x):
             return sc.sici(x)[1]
@@ -830,6 +839,15 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(ci,
                             mpmath.ci,
                             [Arg(-1e8, 1e8)])
+
+    def test_ci_complex(self):
+        def ci(z):
+            return sc.sici(z)[1]
+        # ci oscillates as Re[z] -> +- inf, so limit range
+        assert_mpmath_equal(ci,
+                            mpmath.ci,
+                            [ComplexArg(complex(-1e8, -np.inf), complex(1e8, np.inf))],
+                            rtol=1e-8)
 
     def test_cospi(self):
         # Without the extra factor of 2 in the relative tolerance as
@@ -863,7 +881,26 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_e1(self):
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
-                            [Arg()])
+                            [Arg()], rtol=1e-14)
+
+    def test_e1_complex(self):
+        # E_1 oscillates as Im[z] -> +- inf, so limit range
+        assert_mpmath_equal(sc.exp1,
+                            mpmath.e1,
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
+                            rtol=1e-11)
+
+        # Check cross-over region
+        assert_mpmath_equal(sc.exp1,
+                            mpmath.e1,
+                            (np.linspace(-50, 50, 171)[:, None] +
+                             np.r_[0, np.logspace(-3, 2, 61),
+                                   -np.logspace(-3, 2, 11)]*1j).ravel(),
+                            rtol=1e-11)
+        assert_mpmath_equal(sc.exp1,
+                            mpmath.e1,
+                            (np.linspace(-50, -35, 10000) + 0j),
+                            rtol=1e-11)
 
     def test_exprel(self):
         assert_mpmath_equal(sc.exprel,
@@ -884,25 +921,6 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(sc.log1p,
                             lambda x: mpmath.log(x+1),
                             [ComplexArg()], dps=60)
-
-    def test_e1_complex(self):
-        # E_1 oscillates as Im[z] -> +- inf, so limit range
-        assert_mpmath_equal(sc.exp1,
-                            mpmath.e1,
-                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
-                            rtol=1e-11)
-
-        # Check cross-over region
-        assert_mpmath_equal(sc.exp1,
-                            mpmath.e1,
-                            (np.linspace(-50, 50, 171)[:, None] +
-                             np.r_[0, np.logspace(-3, 2, 61),
-                                   -np.logspace(-3, 2, 11)]*1j).ravel(),
-                            rtol=1e-11)
-        assert_mpmath_equal(sc.exp1,
-                            mpmath.e1,
-                            (np.linspace(-50, -35, 10000) + 0j),
-                            rtol=1e-11)
 
     def test_ei(self):
         assert_mpmath_equal(sc.expi,
@@ -1569,10 +1587,28 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         # check asymptotic series cross-over
         assert_mpmath_equal(shi, mpmath.shi, [FixedArg([88 - 1e-9, 88, 88 + 1e-9])])
 
+    def test_shi_complex(self):
+        def shi(z):
+            return sc.shichi(z)[0]
+        # shi oscillates as Im[z] -> +- inf, so limit range
+        assert_mpmath_equal(shi,
+                            mpmath.shi,
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
+                            rtol=1e-14)
+        
     def test_si(self):
         def si(x):
             return sc.sici(x)[0]
         assert_mpmath_equal(si, mpmath.si, [Arg()])
+
+    def test_si_complex(self):
+        def si(z):
+            return sc.sici(z)[0]
+        # si oscillates as Re[z] -> +- inf, so limit range
+        assert_mpmath_equal(si,
+                            mpmath.si,
+                            [ComplexArg(complex(-1e8, -np.inf), complex(1e8, np.inf))],
+                            rtol=1e-14)
 
     def test_spence(self):
         # mpmath uses a different convention for the dilogarithm
