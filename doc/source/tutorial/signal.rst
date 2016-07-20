@@ -212,17 +212,29 @@ Thus, the full discrete convolution of two finite sequences of lengths
 
 One dimensional convolution is implemented in SciPy with the function
 :func:`convolve`. This function takes as inputs the signals :math:`x,`
-:math:`h` , and an optional flag and returns the signal :math:`y.` The
-optional flag allows for specification of which part of the output signal to
-return. The default value of 'full' returns the entire signal. If the flag has
-a value of 'same' then only the middle :math:`K` values are returned starting
-at :math:`y\left[\left\lfloor \frac{M-1}{2}\right\rfloor \right]` so that the
-output has the same length as the first input. If the flag has a value of
-'valid' then only the middle :math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1`
-output values are returned where :math:`z` depends on all of the values of the
-smallest input from :math:`h\left[0\right]` to :math:`h\left[M\right].` In
-other words only the values :math:`y\left[M\right]` to :math:`y\left[K\right]`
-inclusive are returned.
+:math:`h` , and two optional flags 'mode' and 'method' and returns the signal
+:math:`y.` 
+
+The first optional flag 'mode' allows for specification of which part of the
+output signal to return. The default value of 'full' returns the entire signal.
+If the flag has a value of 'same' then only the middle :math:`K` values are
+returned starting at :math:`y\left[\left\lfloor \frac{M-1}{2}\right\rfloor
+\right]` so that the output has the same length as the first input. If the flag
+has a value of 'valid' then only the middle
+:math:`K-M+1=\left(K+1\right)-\left(M+1\right)+1` output values are returned
+where :math:`z` depends on all of the values of the smallest input from
+:math:`h\left[0\right]` to :math:`h\left[M\right].` In other words only the
+values :math:`y\left[M\right]` to :math:`y\left[K\right]` inclusive are
+returned.
+
+The second optional flag 'method' determines how the convolution is computed,
+either through the Fourier transform approach with :func:`fftconvolve` or
+through the direct method. By default, it selects the expected faster method.
+The Fourier transform method has order :math:`O(N\log N)` while the direct
+method has order :math:`O(N^2)`. Depending on the big O constant and the value
+of :math:`N`, one of these two methods may be faster. The default value 'auto'
+performs a rough calculation and chooses the expected faster method, while the
+values 'direct' and 'fft' force computation with the other two methods.
 
 The code below shows a simple example for convolution of 2 sequences
 
@@ -320,11 +332,11 @@ enhancing, and edge-detection for an image.
    >>> plt.show()
 
 
-Using :func:`convolve` in the above example would take quite long to run.
 Calculating the convolution in the time domain as above is mainly used for
 filtering when one of the signals is much smaller than the other ( :math:`K\gg
 M` ), otherwise linear filtering is more efficiently calculated in the
-frequency domain provided by the function :func:`fftconvolve`.
+frequency domain provided by the function :func:`fftconvolve`. By default,
+:func:`convolve` estimates the fastest method using :func:`choose_conv_method`.
 
 If the filter function :math:`w[n,m]` can be factored according to
 

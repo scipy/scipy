@@ -16,7 +16,7 @@ import numpy as np
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d, fftconvolve, hann,
+    correlate, convolve, convolve2d, fftconvolve, hann, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk)
@@ -112,7 +112,6 @@ class _TestConvolve(TestCase):
         assert_array_equal(convolve(big, small, 'valid'),
                            out_array[1:3, 1:3, 1:3])
 
-
 class TestConvolve(_TestConvolve):
 
     def test_valid_mode2(self):
@@ -156,6 +155,56 @@ class TestConvolve(_TestConvolve):
         self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
+    def test_convolve_method(self):
+        for mode in ['full', 'valid', 'same']:
+            for _, dtype_list in np.sctypes.items():
+                for dtype in dtype_list:
+                    if dtype == np.void or dtype == str:
+                        continue
+                    np.random.seed(42)
+                    x = (0.5 + np.random.rand(100)).astype(dtype)
+                    h = (0.5 + np.random.rand(50)).astype(dtype)
+
+                    if x.dtype.kind not in 'buifc' \
+                            or np.dtype(dtype).name in {'complex256', 'complex192'}:
+                        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+                        # continues the for-loop; it will throw an error
+                        # because fftconv doesn't support the dtype
+                        continue
+
+                    if x.dtype.kind != 'b':
+                        x += 1
+                        h += 1
+
+                    if x.dtype.kind == 'c':
+                        x += 1j * np.random.rand(*x.shape).astype(dtype)
+                        h += 1j * np.random.rand(*h.shape).astype(dtype)
+
+                    results = {'direct':convolve(x, h, mode=mode,
+                                                 method='direct'),
+                               'fft':convolve(x, h, mode=mode, method='fft')}
+
+                    rtol = {'rtol': 2.0e-3} if dtype in {np.complex64,
+                                                         np.float32} else {}
+                    if isinstance(results['direct'], np.ndarray):
+                        assert_allclose(results['fft'], results['direct'], **rtol)
+                        assert_equal(results['direct'].dtype, results['fft'].dtype)
+
+        # This is really a test that convolving two large integers goes to the
+        # direct method even if they're in the fft method.
+        for n in [10, 20, 50, 51, 52, 53, 54, 60, 63]:
+            fft = convolve([2**n], [2**n], method='fft')
+            direct = convolve([2**n], [2**n], method='direct')
+
+            # this is the case when integer precision gets to us
+            # issue #6076 has more detail, hopefully more tests after resolved
+            if n < 50:
+                assert_equal(fft, direct)
+                assert_equal(fft, 2**(2*n))
+                assert_equal(direct, 2**(2*n))
+
+        assert_equal(convolve([4], [5], 'valid', 'fft'), 20)
+        assert_equal('direct', choose_conv_method(2 * [Decimal(3)], 2 * [Decimal(4)]))
 
 class _TestConvolve2d(TestCase):
 
@@ -1045,6 +1094,20 @@ class _TestCorrelateReal(TestCase):
         y_r = np.array([0, 2, 5, 8, 3]).astype(self.dt)
         return a, b, y_r
 
+    def test_method(self):
+        if self.dt == Decimal:
+            method = choose_conv_method([Decimal(4)], [Decimal(3)])
+            assert_equal(method, 'direct')
+        else:
+            a, b, y_r = self._setup_rank3()
+            y_fft = correlate(a, b, method='fft')
+            y_direct = correlate(a, b, method='direct')
+
+            assert_array_almost_equal(y_r, y_fft)
+            assert_array_almost_equal(y_r, y_direct)
+            assert_equal(y_fft.dtype, self.dt)
+            assert_equal(y_direct.dtype, self.dt)
+
     def test_rank1_valid(self):
         a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'valid')
@@ -1466,6 +1529,37 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     assert_allclose(yg, yo, rtol=1e-9, atol=1e-10)
     assert_allclose(zg1, zo1, rtol=1e-9, atol=1e-10)
     assert_allclose(zg2, zo2, rtol=1e-9, atol=1e-10)
+
+
+def test_choose_conv_method():
+    for mode in ['valid', 'same', 'full']:
+        for ndims in [1, 2]:
+            n, k, true_method = 8, 6, 'direct'
+            x = np.random.randn(*((n,) * ndims))
+            h = np.random.randn(*((k,) * ndims))
+
+            method = choose_conv_method(x, h, mode=mode)
+            assert_equal(method, true_method)
+
+            method_try, times = choose_conv_method(x, h, mode=mode, measure=True)
+            assert_(method_try in {'fft', 'direct'})
+            assert_(type(times) is dict)
+            assert_('fft' in times.keys() and 'direct' in times.keys())
+
+        n = 10
+        for not_fft_conv_supp in ["complex256", "complex192"]:
+            if hasattr(np, not_fft_conv_supp):
+                x = np.ones(n, dtype=not_fft_conv_supp)
+                h = x.copy()
+                assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+        x = np.array([2**51], dtype=int)
+        h = x.copy()
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+        x = [Decimal(3), Decimal(2)]
+        h = [Decimal(1), Decimal(4)]
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
 
 def test_filtfilt_gust():
