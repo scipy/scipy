@@ -1834,37 +1834,42 @@ class genextreme_gen(rv_continuous):
         self.a = where(c < 0, 1.0 / min(c, -_XMIN), -inf)
         return where(abs(c) == inf, 0, 1)
 
+    def _loglogcdf(self, x, c):
+        return _lazywhere((x == x) & (c != 0), (x, c),
+                          lambda x, c: special.log1p(-c*x)/c, -x)
+
     def _pdf(self, x, c):
-        cx = c*x
-        logex2 = where((c == 0)*(x == x), 0.0, special.log1p(-cx))
-        logpex2 = where((c == 0)*(x == x), -x, logex2/c)
+        return exp(self._logpdf(x, c))
+
+    def _logpdf(self, x, c):
+        cx = _lazywhere((x == x) & (c != 0), (x, c), lambda x, c: c*x, 0.0)
+        logex2 = special.log1p(-cx)
+        logpex2 = self._loglogcdf(x, c)
         pex2 = exp(logpex2)
         # Handle special cases
+        putmask(logpex2, (c == 0) & (x == -inf), 0.0)
         logpdf = where((cx == 1) | (cx == -inf), -inf, -pex2+logpex2-logex2)
         putmask(logpdf, (c == 1) & (x == 1), 0.0)
-        return exp(logpdf)
+        return logpdf
+
+    def _logcdf(self, x, c):
+        return -exp(self._loglogcdf(x, c))
 
     def _cdf(self, x, c):
-        loglogcdf = where((c == 0)*(x == x), -x, special.log1p(-c*x)/c)
-        return exp(-exp(loglogcdf))
+        return exp(self._logcdf(x, c))
 
     def _sf(self, x, c):
-        loglogcdf = _lazywhere((c == 0)*(x == x), (x, c),
-                               f=lambda x, c: -x,
-                               f2=lambda x, c: special.log1p(-c*x)/c)
-        p = -special.expm1(-exp(loglogcdf))
-        return p
+        return -special.expm1(self._logcdf(x, c))
 
     def _ppf(self, q, c):
         x = -log(-log(q))
-        return where((c == 0)*(x == x), x, -special.expm1(-c*x)/c)
+        return _lazywhere((x == x) & (c != 0), (x, c),
+                          lambda x, c: -special.expm1(-c * x) / c, x)
 
     def _isf(self, q, c):
         x = -log(-special.log1p(-q))
-        result = _lazywhere((c == 0)*(x == x), (x, c),
-                            f=lambda x, c: x,
-                            f2=lambda x, c: -special.expm1(-c*x)/c)
-        return result
+        return _lazywhere((x == x) & (c != 0), (x, c),
+                          lambda x, c: -special.expm1(-c * x) / c, x)
 
     def _stats(self, c):
         g = lambda n: gam(n*c+1)

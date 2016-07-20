@@ -2890,6 +2890,20 @@ def test_rayleigh_accuracy():
     assert_almost_equal(p, 9.0, decimal=15)
 
 
+def test_genextreme_give_no_warnings():
+    """regression test for gh-6219"""
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        p = stats.genextreme.cdf(.5, 0)
+        p = stats.genextreme.pdf(.5, 0)
+        p = stats.genextreme.ppf(.5, 0)
+        p = stats.genextreme.logpdf(-np.inf, 0.0)
+        number_of_warnings_thrown = len(w)
+        assert_equal(number_of_warnings_thrown, 0)
+
+
 def test_genextreme_entropy():
     # regression test for gh-5181
     euler_gamma = 0.5772156649015329
