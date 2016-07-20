@@ -4972,33 +4972,109 @@ add_newdoc("scipy.special", "round",
     """)
 
 add_newdoc("scipy.special", "shichi",
-    """
-    shichi(x)
+    r"""
+    shichi(x, out=None)
 
-    Hyperbolic sine and cosine integrals
+    Hyperbolic sine and cosine integrals.
+
+    The hyperbolic sine integral is
+
+    .. math::
+
+      \int_0^x \frac{\sinh{t}}{t}dt
+
+    and the hyperbolic cosine integral is
+
+    .. math::
+
+      \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
+
+    where :math:`\gamma` is Euler's constant and :math:`\log` is the
+    principle branch of the logarithm.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex points at which to compute the hyperbolic sine
+        and cosine integrals.
 
     Returns
     -------
-    shi
-        ``integral(sinh(t)/t, t=0..x)``
-    chi
-        ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``
-        where ``eul`` is Euler's constant.
+    si : ndarray
+        Hyperbolic sine integral at ``x``
+    ci : ndarray
+        Hyperbolic cosine integral at ``x``
+
+    Notes
+    -----
+    For real arguments with ``x < 0``, ``chi`` is the real part of the
+    hyperbolic cosine integral. For such points ``chi(x)`` and ``chi(x
+    + 0j)`` differ by a factor of ``1j*pi``.
+
+    For real arguments the function is computed by calling Cephes'
+    [1]_ *shichi* routine. For complex arguments the algorithm is based
+    on Mpmath's [2]_ *shi* and *chi* routines.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
     """)
 
 add_newdoc("scipy.special", "sici",
-    """
-    sici(x)
+    r"""
+    sici(x, out=None)
 
-    Sine and cosine integrals
+    Sine and cosine integrals.
+
+    The sine integral is
+
+    .. math::
+    
+      \int_0^x \frac{\sin{t}}{t}dt
+
+    and the cosine integral is
+
+    .. math::
+
+      \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
+
+    where :math:`\gamma` is Euler's constant and :math:`\log` is the
+    principle branch of the logarithm.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex points at which to compute the sine and cosine
+        integrals.
 
     Returns
     -------
-    si
-        ``integral(sin(t)/t, t=0..x)``
-    ci
-        ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``
-        where ``eul`` is Euler's constant.
+    si : ndarray
+        Sine integral at ``x``
+    ci : ndarray
+        Cosine integral at ``x``
+
+    Notes
+    -----
+    For real arguments with ``x < 0``, ``ci`` is the real part of the
+    cosine integral. For such points ``ci(x)`` and ``ci(x + 0j)``
+    differ by a factor of ``1j*pi``.
+
+    For real arguments the function is computed by calling Cephes'
+    [1]_ *sici* routine. For complex arguments the algorithm is based
+    on Mpmath's [2]_ *si* and *ci* routines.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
     """)
 
 add_newdoc("scipy.special", "sindg",
