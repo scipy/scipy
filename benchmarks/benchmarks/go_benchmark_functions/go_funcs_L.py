@@ -110,22 +110,33 @@ class LennardJones(Benchmark):
     """
 
     def __init__(self, dimensions=6):
+        # dimensions is in [6:60]
+        # max dimensions is going to be 60.
+        if not dimensions in range(6, 61):
+            raise ValueError("LJ dimensions must be in (6, 60)")
+
         Benchmark.__init__(self, dimensions)
 
         self._bounds = list(zip([-4.0] * self.N, [4.0] * self.N))
 
         self.global_optimum = [[]]
 
-        minima = [
-            -1.0, -3.0, -6.0, -9.103852, -12.712062, -
-            16.505384, -19.821489, -24.113360, -28.422532,
-            -32.765970, -37.967600, -44.326801, -
-            47.845157, -52.322627, -56.815742, -61.317995,
-            -66.530949, -72.659782, -77.1777043]
+        self.minima = [-1.0, -3.0, -6.0, -9.103852, -12.712062,
+                       -16.505384, -19.821489, -24.113360, -28.422532,
+                       -32.765970, -37.967600, -44.326801, -47.845157,
+                       -52.322627, -56.815742, -61.317995, -66.530949,
+                       -72.659782, -77.1777043]
 
         k = int(dimensions / 3)
-        self.fglob = minima[k - 2]
+        self.fglob = self.minima[k - 2]
         self.change_dimensionality = True
+
+    def change_dimensions(self, ndim):
+        if not ndim in range(6, 61):
+            raise ValueError("LJ dimensions must be in (6, 60)")
+
+        Benchmark.change_dimensions(self, ndim)
+        self.fglob = self.minima[int(self.N / 3) - 2]
 
     def fun(self, x, *args):
         self.nfev += 1
