@@ -112,7 +112,7 @@ class LennardJones(Benchmark):
     def __init__(self, dimensions=6):
         # dimensions is in [6:60]
         # max dimensions is going to be 60.
-        if not dimensions in range(6, 61):
+        if dimensions not in range(6, 61):
             raise ValueError("LJ dimensions must be in (6, 60)")
 
         Benchmark.__init__(self, dimensions)
@@ -132,7 +132,7 @@ class LennardJones(Benchmark):
         self.change_dimensionality = True
 
     def change_dimensions(self, ndim):
-        if not ndim in range(6, 61):
+        if ndim not in range(6, 61):
             raise ValueError("LJ dimensions must be in (6, 60)")
 
         Benchmark.change_dimensions(self, ndim)
