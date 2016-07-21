@@ -46,6 +46,11 @@ response from second-order sections.
 The function `scipy.signal.unit_impulse` was added to conveniently
 generate an impulse function.
 
+The function `scipy.signal.irrnotch` was added to design second-order
+IIR notch filters that can be used to remove a frequency component from
+a signal. The dual function  `scipy.signal.irrpeak` was added to
+compute the coeficients of a second-order IIR peak (resonant) filter.
+
 `scipy.sparse` improvements
 ---------------------------
 

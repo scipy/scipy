@@ -15,9 +15,9 @@ from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
                           BadCoefficients, freqz, sosfreqz, normalize,
                           buttord, cheby1, cheby2, ellip, cheb1ord, cheb2ord,
                           ellipord, butter, bessel, buttap, besselap,
-                          cheb1ap, cheb2ap, ellipap, iirfilter, freqs,
-                          lp2lp, lp2hp, lp2bp, lp2bs, bilinear, group_delay,
-                          firwin)
+                          iirnotch, iirpeak, cheb1ap, cheb2ap, ellipap, iirfilter,
+                          freqs, lp2lp, lp2hp, lp2bp, lp2bs, bilinear,
+                          group_delay, firwin)
 from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
@@ -2573,6 +2573,127 @@ def test_sos_consistency():
         zpk = func(4, *args, output='zpk')
         sos = func(4, *args, output='sos')
         assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(4,...)" % name)
+
+
+class TestIIRNotch(TestCase):
+
+    def test_ba_output(self):
+        # Compare coeficients with Matlab ones
+        # for the equivalent input:
+        b, a = iirnotch(0.06, 30)
+        b2 = [
+             9.9686824e-01, -1.9584219e+00,
+             9.9686824e-01
+             ]
+        a2 = [
+             1.0000000e+00, -1.9584219e+00,
+             9.9373647e-01
+             ]
+
+        assert_allclose(b, b2, rtol=1e-8)
+        assert_allclose(a, a2, rtol=1e-8)
+
+    def test_frequency_response(self):
+        # Get filter coeficients
+        b, a = iirnotch(0.3, 30)
+
+        # Get frequency response
+        w, h = freqz(b, a, 1000)
+
+        # Pick 5 point
+        p = [200,  # w0 = 0.200
+             295,  # w0 = 0.295
+             300,  # w0 = 0.300
+             305,  # w0 = 0.305
+             400]  # w0 = 0.400
+
+        # Get frequency response correspondent to each of those points
+        hp = h[p]
+
+        # Check if the frequency response fulfil the specifications:
+        # hp[0] and hp[4]  correspond to frequencies distant from
+        # w0 = 0.3 and should be close to 1
+        assert_allclose(abs(hp[0]), 1, rtol=1e-2)
+        assert_allclose(abs(hp[4]), 1, rtol=1e-2)
+
+        # hp[1] and hp[3] correspond to frequencies approximately
+        # on the edges of the passband and should be close to -3dB
+        assert_allclose(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
+        assert_allclose(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+
+        # hp[2] correspond to the frequency that should be removed
+        # the frequency response should be very close to 0
+        assert_allclose(abs(hp[2]), 0, atol=1e-10)
+
+    def test_errors(self):
+        # Exception should be raised if w0 > 1 or w0 <0
+        assert_raises(ValueError, iirnotch, w0=2, Q=30)
+        assert_raises(ValueError, iirnotch, w0=-1, Q=30)
+
+        # Exception should be raised if any of the parameters
+        # are not float (or cannot be converted to one)
+        assert_raises(ValueError, iirnotch, w0="blabla", Q=30)
+        assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
+
+
+class TestIIRPeak(TestCase):
+
+    def test_ba_output(self):
+        # Compare coeficients with Matlab ones
+        # for the equivalent input:
+        b, a = iirpeak(0.06, 30)
+        b2 = [
+             3.131764229e-03, 0,
+             -3.131764229e-03
+             ]
+        a2 = [
+             1.0000000e+00, -1.958421917e+00,
+             9.9373647e-01
+             ]
+        assert_allclose(b, b2, rtol=1e-8)
+        assert_allclose(a, a2, rtol=1e-8)
+
+    def test_frequency_response(self):
+        # Get filter coeficients
+        b, a = iirpeak(0.3, 30)
+
+        # Get frequency response
+        w, h = freqz(b, a, 1000)
+
+        # Pick 5 point
+        p = [30,  # w0 = 0.030
+             295,  # w0 = 0.295
+             300,  # w0 = 0.300
+             305,  # w0 = 0.305
+             800]  # w0 = 0.800
+
+        # Get frequency response correspondent to each of those points
+        hp = h[p]
+
+        # Check if the frequency response fulfil the specifications:
+        # hp[0] and hp[4]  correspond to frequencies distant from
+        # w0 = 0.3 and should be close to 0
+        assert_allclose(abs(hp[0]), 0, atol=1e-2)
+        assert_allclose(abs(hp[4]), 0, atol=1e-2)
+
+        # hp[1] and hp[3] correspond to frequencies approximately
+        # on the edges of the passband and should be close to 10**(-3/20)
+        assert_allclose(abs(hp[1]), 1/np.sqrt(2), rtol=1e-2)
+        assert_allclose(abs(hp[3]), 1/np.sqrt(2), rtol=1e-2)
+
+        # hp[2] correspond to the frequency that should be retained and
+        # the frequency response should be very close to 1
+        assert_allclose(abs(hp[2]), 1, rtol=1e-10)
+
+    def test_errors(self):
+        # Exception should be raised if w0 > 1 or w0 <0
+        assert_raises(ValueError, iirpeak, w0=2, Q=30)
+        assert_raises(ValueError, iirpeak, w0=-1, Q=30)
+
+        # Exception should be raised if any of the parameters
+        # are not float (or cannot be converted to one)
+        assert_raises(ValueError, iirpeak, w0="blabla", Q=30)
+        assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
 
 class TestIIRFilter(TestCase):
