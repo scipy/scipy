@@ -380,6 +380,8 @@ class BenchLeastSquares(Benchmark):
 
 
 try:
+    # the value of SCIPY_XSLOW is used to control how many repeats of each
+    # function
     slow = int(os.environ.get('SCIPY_XSLOW', 0))
 except ValueError:
     pass
@@ -397,6 +399,8 @@ class BenchGlobal(Benchmark):
     Benchmark the global optimizers using the go_benchmark_functions
     suite
     """
+    timeout = 300
+
     _functions = OrderedDict([
         item for item in inspect.getmembers(gbf, inspect.isclass)
         if (issubclass(item[1], gbf.Benchmark) and
@@ -423,49 +427,67 @@ class BenchGlobal(Benchmark):
 
     def __init__(self):
         self.enabled = bool(slow)
+        self.numtrials = slow
 
-    def setup(self, *a):
+        self.dump_fn = os.path.join(os.path.dirname(__file__), '..', 'global-bench-results.json')
+        self.results = {}
+
+    def setup(self, name, ret_value, solver):
         if not self.enabled:
             print("BenchGlobal.track_all not enabled --- export SCIPY_XSLOW=slow to enable,\n"
-                  "slow iterations of each benchmark will be run.\n"
+                  "'slow' iterations of each benchmark will be run.\n"
                   "Note that it can take several hours to run; intermediate output\n"
                   "can be found under benchmarks/global-bench-results.json\n"
                   "You can specify functions to benchmark via SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...")
             raise NotImplementedError()
+        # load json backing file
+        with open(self.dump_fn, 'r') as f:
+            self.results = json.load(f)
 
-    def track_all(self, results, name, ret_value, solver):
-        av_results = results[name]
+    def teardown(self, name, ret_value, solver):
+        with open(self.dump_fn, 'w') as f:
+            json.dump(self.results, f, indent=2, sort_keys=True)
 
-        if ret_value == 'success%':
-            return 100 * av_results[solver]['nsuccess'] / av_results[solver]['ntrials']
-        elif ret_value == '<nfev>':
-            return av_results[solver]['mean_nfev']
-        else:
-            raise ValueError()
+    def track_all(self, name, ret_value, solver):
+        if name in self.results and solver in self.results[name]:
+            # have we done the function, and done the solver?
+            # if so, then just return the ret_value
+            av_results = self.results[name]
+            if ret_value == 'success%':
+                return 100 * av_results[solver]['nsuccess'] / av_results[solver]['ntrials']
+            elif ret_value == '<nfev>':
+                return av_results[solver]['mean_nfev']
+            else:
+                raise ValueError()
+
+        klass = self._functions[name]
+        f = klass()
+        try:
+            b = _BenchOptimizers.from_funcobj(name, f)
+            with np.errstate(all='ignore'):
+                b.bench_run_global(methods=[solver],
+                                   numtrials=self.numtrials)
+
+            av_results = b.average_results()
+
+            if name not in self.results:
+                self.results[name] = {}
+            self.results[name][solver] = av_results[solver]
+
+            if ret_value == 'success%':
+                return 100 * av_results[solver]['nsuccess'] / av_results[solver]['ntrials']
+            elif ret_value == '<nfev>':
+                return av_results[solver]['mean_nfev']
+            else:
+                raise ValueError()
+        except:
+            print("".join(traceback.format_exc()))
+            self.results[name] = "".join(traceback.format_exc())
 
     def setup_cache(self):
         if not self.enabled:
             return {}
 
-        numtrials = slow
-
-        results = {}
-        solvers = ['DE', 'basinh.']
-
-        for name, klass in sorted(self._functions.items()):
-            try:
-                f = klass()
-                b = _BenchOptimizers.from_funcobj(name, f)
-                with np.errstate(all='ignore'):
-                    b.bench_run_global(methods=solvers, numtrials=numtrials)
-
-                results[name] = b.average_results()
-            except:
-                results[name] = "\n".join(traceback.format_exc())
-                continue
-
-            dump_fn = os.path.join(os.path.dirname(__file__), '..', 'global-bench-results.json')
-            with open(dump_fn, 'w') as f:
-                json.dump(results, f, indent=2, sort_keys=True)
-
-        return results
+        # create the logfile to start with
+        with open(self.dump_fn, 'w') as f:
+            json.dump({}, f, indent=2)
