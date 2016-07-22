@@ -878,10 +878,12 @@ Available Functions
 - :py:func:`~scipy.special.shichi`::
 
         void shichi(double, double *, double *)
+        void shichi(double complex, double complex *, double complex *)
 
 - :py:func:`~scipy.special.sici`::
 
         void sici(double, double *, double *)
+        void sici(double complex, double complex *, double complex *)
 
 - :py:func:`~scipy.special.sindg`::
 
@@ -1609,8 +1611,14 @@ cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_round "round"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_int _func_shichi "shichi"(npy_double, npy_double *, npy_double *)nogil
+from _sici cimport cshichi as _func_cshichi
+ctypedef int _proto_cshichi_t(double complex, double complex *, double complex *) nogil
+cdef _proto_cshichi_t *_proto_cshichi_t_var = &_func_cshichi
 cdef extern from "_ufuncs_defs.h":
     cdef npy_int _func_sici "sici"(npy_double, npy_double *, npy_double *)nogil
+from _sici cimport csici as _func_csici
+ctypedef int _proto_csici_t(double complex, double complex *, double complex *) nogil
+cdef _proto_csici_t *_proto_csici_t_var = &_func_csici
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_sindg "sindg"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
@@ -3153,23 +3161,43 @@ cpdef double round(double x0) nogil:
     """See the documentation for scipy.special.round"""
     return _func_round(x0)
 
-cdef void shichi(double x0, double *y0, double *y1) nogil:
+cdef void shichi(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) nogil:
     """See the documentation for scipy.special.shichi"""
-    _func_shichi(x0, y0, y1)
+    if Dd_number_t is double:
+        _func_shichi(x0, y0, y1)
+    elif Dd_number_t is double_complex:
+        _func_cshichi(x0, y0, y1)
+    else:
+        if Dd_number_t is double_complex:
+            y0[0] = NPY_NAN
+            y1[0] = NPY_NAN
+        else:
+            y0[0] = NPY_NAN
+            y1[0] = NPY_NAN
 
-def _shichi_pywrap(double x0):
-    cdef double y0
-    cdef double y1
+def _shichi_pywrap(Dd_number_t x0):
+    cdef Dd_number_t y0
+    cdef Dd_number_t y1
     shichi(x0, &y0, &y1)
     return y0, y1
 
-cdef void sici(double x0, double *y0, double *y1) nogil:
+cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) nogil:
     """See the documentation for scipy.special.sici"""
-    _func_sici(x0, y0, y1)
+    if Dd_number_t is double:
+        _func_sici(x0, y0, y1)
+    elif Dd_number_t is double_complex:
+        _func_csici(x0, y0, y1)
+    else:
+        if Dd_number_t is double_complex:
+            y0[0] = NPY_NAN
+            y1[0] = NPY_NAN
+        else:
+            y0[0] = NPY_NAN
+            y1[0] = NPY_NAN
 
-def _sici_pywrap(double x0):
-    cdef double y0
-    cdef double y1
+def _sici_pywrap(Dd_number_t x0):
+    cdef Dd_number_t y0
+    cdef Dd_number_t y1
     sici(x0, &y0, &y1)
     return y0, y1
 

@@ -208,8 +208,8 @@ cpdef double radian(double x0, double x1, double x2) nogil
 cpdef double rel_entr(double x0, double x1) nogil
 cpdef Dd_number_t rgamma(Dd_number_t x0) nogil
 cpdef double round(double x0) nogil
-cdef void shichi(double x0, double *y0, double *y1) nogil
-cdef void sici(double x0, double *y0, double *y1) nogil
+cdef void shichi(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) nogil
+cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) nogil
 cpdef double sindg(double x0) nogil
 cpdef double smirnov(dl_number_t x0, double x1) nogil
 cpdef double smirnovi(dl_number_t x0, double x1) nogil
