@@ -283,6 +283,25 @@ class TestBasinHopping(TestCase):
         res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
                            niter=0, disp=self.disp)
 
+    def test_seed_reproducibility(self):
+        # seed should ensure reproducibility between runs
+        minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
+
+        f_1 = []
+        def callback(x, f, accepted):
+            f_1.append(f)
+
+        basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
+                     niter=10, callback=callback, seed=10)
+
+        f_2 = []
+        def callback2(x, f, accepted):
+            f_2.append(f)
+
+        basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
+                     niter=10, callback=callback2, seed=10)
+        assert_equal(np.array(f_1), np.array(f_2))
+
 
 class Test_Storage(TestCase):
     def setUp(self):
