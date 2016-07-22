@@ -249,8 +249,8 @@ def kstat(data, n=2):
         k_{3} = \frac{ n^{2} } {(n-1) (n-2)} m_{3}
         k_{4} = \frac{ n^{2} [(n + 1)m_{4} - 3(n - 1) m^2_{2}]} {(n-1) (n-2) (n-3)}
 
-    where ``:math:\mu`` is the sample mean, ``:math:m_2`` is the sample
-    variance, and ``:math:m_i`` is the i-th sample central moment.
+    where :math:`\mu` is the sample mean, :math:`m_2` is the sample
+    variance, and :math:`m_i` is the i-th sample central moment.
 
     References
     ----------
