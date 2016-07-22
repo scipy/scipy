@@ -1102,10 +1102,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         if np.issubdtype(r.dtype, np.inexact):
             # Eldiv leaves entries outside the combined sparsity
-            # pattern empty, so they must be filled manually. They are
-            # always nan, so that the matrix is completely full.
+            # pattern empty, so they must be filled manually.
+            # Everything outside of other's sparsity is NaN, and everything
+            # inside it is either zero or defined by eldiv.
             out = np.empty(self.shape, dtype=self.dtype)
             out.fill(np.nan)
+            row, col = other.nonzero()
+            out[row, col] = 0
             r = r.tocoo()
             out[r.row, r.col] = r.data
             out = np.matrix(out)

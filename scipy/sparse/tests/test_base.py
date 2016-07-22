@@ -1314,12 +1314,16 @@ class _TestCommon:
                     assert_almost_equal(sp_mult, dense_mult)
 
     def test_elementwise_divide(self):
-        expected = [[1,np.nan,np.nan,1],[1,np.nan,1,np.nan],[np.nan,1,np.nan,np.nan]]
+        expected = [[1,np.nan,np.nan,1],
+                    [1,np.nan,1,np.nan],
+                    [np.nan,1,np.nan,np.nan]]
         assert_array_equal(todense(self.datsp / self.datsp),expected)
 
         denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
-        res = matrix([[1,np.nan,np.nan,0.5],[-3,np.nan,inf,np.nan],[np.nan,0.25,np.nan,np.nan]],'d')
-        assert_array_equal(todense(self.datsp / denom),res)
+        expected = [[1,np.nan,np.nan,0.5],
+                    [-3,np.nan,inf,np.nan],
+                    [np.nan,0.25,np.nan,0]]
+        assert_array_equal(todense(self.datsp / denom), expected)
 
         # complex
         A = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
@@ -1335,6 +1339,14 @@ class _TestCommon:
         Bsp = self.spmatrix(B)
         with np.errstate(divide='ignore'):
             assert_array_equal(todense(Asp / Bsp), A / B)
+
+        # mismatching sparsity patterns
+        A = array([[0,1],[1,0]])
+        B = array([[1,0],[1,0]])
+        Asp = self.spmatrix(A)
+        Bsp = self.spmatrix(B)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            assert_array_equal(np.array(todense(Asp / Bsp)), A / B)
 
     def test_pow(self):
         A = matrix([[1,0,2,0],[0,3,4,0],[0,5,0,0],[0,6,7,8]])
