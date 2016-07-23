@@ -56,6 +56,8 @@ def boxcar(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
     return np.ones(M, float)
 
 
@@ -103,7 +105,9 @@ def triang(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -167,7 +171,9 @@ def parzen(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -230,7 +236,9 @@ def bohman(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -317,7 +325,9 @@ def blackman(M, sym=True):
 
     """
     # Docstring adapted from NumPy's blackman function
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -376,7 +386,9 @@ def nuttall(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -437,7 +449,9 @@ def blackmanharris(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -498,7 +512,9 @@ def flattop(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -599,7 +615,9 @@ def bartlett(M, sym=True):
 
     """
     # Docstring adapted from NumPy's bartlett function
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -692,7 +710,9 @@ def hann(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hanning function
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -766,7 +786,9 @@ def tukey(M, alpha=0.5, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -841,7 +863,9 @@ def barthann(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -931,7 +955,9 @@ def hamming(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hamming function
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -1048,7 +1074,9 @@ def kaiser(M, beta, sym=True):
 
     """
     # Docstring adapted from NumPy's kaiser function
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -1116,7 +1144,9 @@ def gaussian(M, std, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -1191,7 +1221,9 @@ def general_gaussian(M, p, sig, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -1299,7 +1331,9 @@ def chebwin(M, at, sym=True):
                       "does not grow monotonically with increasing sidelobe "
                       "attenuation when the attenuation is smaller than "
                       "about 45 dB.")
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -1387,7 +1421,9 @@ def slepian(M, width, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -1462,7 +1498,9 @@ def cosine(M, sym=True):
     >>> plt.show()
 
     """
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
@@ -1552,7 +1590,9 @@ def exponential(M, center=None, tau=1., sym=True):
     """
     if sym and center is not None:
         raise ValueError("If sym==True, center must be None.")
-    if M < 1:
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    if M == 0:
         return np.array([])
     if M == 1:
         return np.ones(1, 'd')
