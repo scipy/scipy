@@ -558,7 +558,7 @@ def bartlett(M, sym=True):
     discontinuities at the beginning and end of the sampled signal) or
     tapering function. The Fourier transform of the Bartlett is the product
     of two sinc functions.
-    Note the excellent discussion in Kanasewich.
+    Note the excellent discussion in Kanasewich. [2]_
 
     References
     ----------
@@ -717,7 +717,7 @@ def tukey(M, alpha=0.5, sym=True):
         Number of points in the output window. If zero or less, an empty
         array is returned.
     alpha : float, optional
-        Shape parameter of the Tukey window, representing the faction of the
+        Shape parameter of the Tukey window, representing the fraction of the
         window inside the cosine tapered region.
         If zero, the Tukey window is equivalent to a rectangular window.
         If one, the Tukey window is equivalent to a Hann window.
@@ -1185,7 +1185,8 @@ def general_gaussian(M, p, sig, sym=True):
     >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
     >>> plt.axis([-0.5, 0.5, -120, 0])
-    >>> plt.title(r"Freq. resp. of the gen. Gaussian window (p=1.5, $\sigma$=7)")
+    >>> plt.title(r"Freq. resp. of the gen. Gaussian "
+    ...           "window (p=1.5, $\sigma$=7)")
     >>> plt.ylabel("Normalized magnitude [dB]")
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
