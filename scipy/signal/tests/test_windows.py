@@ -212,6 +212,8 @@ def test_windowfunc_basics():
             # just check the below runs
             window(6, *params, sym=True)
             window(6, *params, sym=False)
+            assert_raises(ValueError, window, 5.5, *params)
+            assert_raises(ValueError, window, -7, *params)
 
 
 def test_needs_params():
