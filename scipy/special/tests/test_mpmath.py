@@ -830,7 +830,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(chi,
                             mpmath.chi,
                             [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
-                            rtol=1e-14)
+                            rtol=1e-12)
 
     def test_ci(self):
         def ci(x):
@@ -1594,7 +1594,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(shi,
                             mpmath.shi,
                             [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
-                            rtol=1e-14)
+                            rtol=1e-12)
         
     def test_si(self):
         def si(x):
@@ -1608,7 +1608,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(si,
                             mpmath.si,
                             [ComplexArg(complex(-1e8, -np.inf), complex(1e8, np.inf))],
-                            rtol=1e-14)
+                            rtol=1e-12)
 
     def test_spence(self):
         # mpmath uses a different convention for the dilogarithm
