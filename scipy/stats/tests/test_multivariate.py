@@ -953,6 +953,15 @@ class TestMultinomial(TestCase):
         vals1 = multinomial.pmf([1, 2], [3, 4], [.1, .9])
         assert_allclose(vals1, [.243, 0], rtol=1e-8)
 
+        vals2 = multinomial.pmf([[[1, 2], [1, 1]]], 3, [.1, .9])
+        assert_allclose(vals2, [[.243, 0]], rtol=1e-8)
+
+        vals3 = multinomial.pmf([1, 2], [[[3], [4]]], [.1, .9])
+        assert_allclose(vals3, [[[.243], [0]]], rtol=1e-8)
+
+        vals4 = multinomial.pmf([[1, 2], [1,1]], [[[[3]]]], [.1, .9])
+        assert_allclose(vals4, [[[[.243, 0]]]], rtol=1e-8)
+
     def test_cov(self):
         cov1 = multinomial.cov(5, (.2, .3, .5))
         cov2 = [[5*.2*.8, -5*.2*.3, -5*.2*.5],

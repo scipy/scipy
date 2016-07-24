@@ -2803,7 +2803,7 @@ class multinomial_gen(multi_rv_generic):
         # true for bad n
         ncond = n <= 0
 
-        return n, p, ncond, pcond
+        return n, p, ncond | pcond
 
     def _process_quantiles(self, x, n, p):
         """
@@ -2828,6 +2828,7 @@ class multinomial_gen(multi_rv_generic):
 
     def _checkresult(self, result, cond, bad_value):
         result = np.asarray(result)
+
         if cond.ndim != 0:
             result[cond] = bad_value
         elif cond:
@@ -2859,16 +2860,19 @@ class multinomial_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        n, p, ncond, pcond = self._process_parameters(n, p)
+        n, p, npcond = self._process_parameters(n, p)
         x, xcond = self._process_quantiles(x, n, p)
 
         result = self._logpmf(x, n, p)
 
-        # replace values for which x was out of the domain
-        result = self._checkresult(result, xcond, np.NINF)
+        # replace values for which x was out of the domain; broadcast
+        # xcond to the right shape
+        xcond_ = xcond | np.zeros(npcond.shape, dtype=np.bool_)
+        result = self._checkresult(result, xcond_, np.NINF)
 
-        # replace values bad for n or p
-        return self._checkresult(result, ncond | pcond, np.NAN)
+        # replace values bad for n or p; broadcast npcond to the right shape
+        npcond_ = npcond | np.zeros(xcond.shape, dtype=np.bool_)
+        return self._checkresult(result, npcond_, np.NAN)
 
     def pmf(self, x, n, p):
         """
@@ -2905,9 +2909,9 @@ class multinomial_gen(multi_rv_generic):
         mean : float
             The mean of the distribution
         """
-        n, p, ncond, pcond = self._process_parameters(n, p)
+        n, p, npcond = self._process_parameters(n, p)
         result = n[..., np.newaxis]*p
-        return self._checkresult(result, ncond | pcond, np.NAN)
+        return self._checkresult(result, npcond, np.NAN)
 
     def cov(self, n, p):
         """
@@ -2922,7 +2926,7 @@ class multinomial_gen(multi_rv_generic):
         cov : ndarray
             The covariance matrix of the distribution
         """
-        n, p, ncond, pcond = self._process_parameters(n, p)
+        n, p, npcond = self._process_parameters(n, p)
 
         nn = n[..., np.newaxis, np.newaxis]
         result = nn * np.einsum('...j,...k->...jk', -p, p)
@@ -2931,7 +2935,7 @@ class multinomial_gen(multi_rv_generic):
         for i in range(p.shape[-1]):
             result[...,i, i] += n*p[..., i]
 
-        return self._checkresult(result, ncond | pcond, np.nan)
+        return self._checkresult(result, npcond, np.nan)
 
     def entropy(self, n, p):
         """
@@ -2950,7 +2954,7 @@ class multinomial_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        n, p, ncond, pcond = self._process_parameters(n, p)
+        n, p, npcond = self._process_parameters(n, p)
 
         x = np.r_[1:np.max(n)+1]
 
@@ -2964,7 +2968,7 @@ class multinomial_gen(multi_rv_generic):
         term2 = np.sum(binom.pmf(x, n, p)*gammaln(x+1),
             axis=(-1, -1-new_axes_needed))
 
-        return self._checkresult(term1 + term2, ncond | pcond, np.nan)
+        return self._checkresult(term1 + term2, npcond, np.nan)
 
     def rvs(self, n, p, size=1, random_state=None):
         """
@@ -2986,7 +2990,7 @@ class multinomial_gen(multi_rv_generic):
         -----
         %(_doc_callparams_note)s
         """
-        n, p, ncond, pcond = self._process_parameters(n, p)
+        n, p, npcond = self._process_parameters(n, p)
 
         # we don't support broadcasting yet
         if n.ndim != 0:
@@ -3020,12 +3024,11 @@ class multinomial_frozen(multi_rv_frozen):
     """
     def __init__(self, n, p, seed=None):
         self._dist = multinomial_gen(seed)
-        self.n, self.p, self.ncond, self.pcond = \
-                self._dist._process_parameters(n, p)
+        self.n, self.p, self.npcond = self._dist._process_parameters(n, p)
 
         # monkey patch self._dist
         def _process_parameters(n, p):
-            return self.n, self.p, self.ncond, self.pcond
+            return self.n, self.p, self.npcond
 
         self._dist._process_parameters = _process_parameters
 
