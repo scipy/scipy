@@ -288,6 +288,7 @@ class TestBasinHopping(TestCase):
         minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
 
         f_1 = []
+
         def callback(x, f, accepted):
             f_1.append(f)
 
@@ -295,6 +296,7 @@ class TestBasinHopping(TestCase):
                      niter=10, callback=callback, seed=10)
 
         f_2 = []
+
         def callback2(x, f, accepted):
             f_2.append(f)
 

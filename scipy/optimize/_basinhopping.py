@@ -7,7 +7,7 @@ import numpy as np
 from numpy import cos, sin
 import scipy.optimize
 import collections
-from scipy.optimize._differentialevolution import _make_random_gen
+from scipy._lib._util import check_random_state
 
 __all__ = ['basinhopping']
 
@@ -254,17 +254,17 @@ class RandomDisplacement(object):
     ----------
     stepsize : float, optional
         stepsize
-    rand_state : None or `np.random.RandomState` instance, optional
+    random_state : None or `np.random.RandomState` instance, optional
         The random number generator that generates the displacements
     """
-    def __init__(self, stepsize=0.5, rand_state=None):
+    def __init__(self, stepsize=0.5, random_state=None):
         self.stepsize = stepsize
-        self.rand_state = rand_state
-        if rand_state is None:
-            self.rand_state = np.random.mtrand._rand
+        self.random_state = random_state
+        if random_state is None:
+            self.random_state = np.random.mtrand._rand
 
     def __call__(self, x):
-        x += self.rand_state.uniform(-self.stepsize, self.stepsize, np.shape(x))
+        x += self.random_state.uniform(-self.stepsize, self.stepsize, np.shape(x))
         return x
 
 
@@ -290,18 +290,18 @@ class Metropolis(object):
 
     Parameters
     ----------
-    rand_state : None or `np.random.RandomState` object
+    random_state : None or `np.random.RandomState` object
         Random number generator used for acceptance test
     """
-    def __init__(self, T, rand_state=None):
+    def __init__(self, T, random_state=None):
         self.beta = 1.0 / T
-        self.rand_state = rand_state
-        if rand_state is None:
-            self.rand_state = np.random.mtrand._rand
+        self.random_state = random_state
+        if random_state is None:
+            self.random_state = np.random.mtrand._rand
 
     def accept_reject(self, energy_new, energy_old):
         w = min(1.0, np.exp(-(energy_new - energy_old) * self.beta))
-        rand = self.rand_state.rand()
+        rand = self.random_state.rand()
         return w >= rand
 
     def __call__(self, **kwargs):
@@ -596,7 +596,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     x0 = np.array(x0)
 
     # set up the np.random.RandomState generator
-    rng = _make_random_gen(seed)
+    rng = check_random_state(seed)
 
     # set up minimizer
     if minimizer_kwargs is None:
@@ -617,7 +617,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
             take_step_wrapped = take_step
     else:
         # use default
-        displace = RandomDisplacement(stepsize=stepsize, rand_state=rng)
+        displace = RandomDisplacement(stepsize=stepsize, random_state=rng)
         take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
                                              verbose=disp)
 
@@ -629,7 +629,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     else:
         accept_tests = []
     # use default
-    metropolis = Metropolis(T, rand_state=rng)
+    metropolis = Metropolis(T, random_state=rng)
     accept_tests.append(metropolis)
 
     if niter_success is None:
