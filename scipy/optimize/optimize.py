@@ -1937,11 +1937,10 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     args : tuple, optional
         Additional arguments (if present).
     brack : tuple, optional
-        Either a triple (xa,xb,xc) where xa<xb<xc and func(xb) <
-        func(xa), func(xc) or a pair (xa,xb) which are used as a
-        starting interval for a downhill bracket search (see
-        `bracket`). Providing the pair (xa,xb) does not always mean
-        the obtained solution will satisfy xa<=x<=xb.
+        Either a triple (xa,xb,xc) where xa<xb<xc and func(xa)>func(xb)<func(xc)
+        or a pair (xa,xb) which are used as a starting interval for a downhill
+        bracket search (see `bracket`). Providing the pair (xa,xb) does not
+        always mean the obtained solution will satisfy xa<=x<=xb.
     tol : float, optional
         Stop if between iteration change is less than `tol`.
     full_output : bool, optional
