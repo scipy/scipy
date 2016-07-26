@@ -500,6 +500,10 @@ def unit_impulse(shape, idx=None):
     y : ndarray
         Output array containing an impulse signal.
 
+    Notes
+    -----
+    .. versionadded:: 0.19.0
+
     Examples
     --------
     An impulse at the 0th element (:math:`\delta[n]`):

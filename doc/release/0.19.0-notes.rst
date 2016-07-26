@@ -33,6 +33,9 @@ The callback function C API supports PyCapsules in Python 2.7
 The function `scipy.signal.sosfreqz` was added to compute the frequency
 response from second-order sections.
 
+The function `scipy.signal.unit_impulse` was added to conveniently
+generate an impulse function.
+
 
 Deprecated features
 ===================
