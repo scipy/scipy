@@ -3198,8 +3198,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> from scipy import signal
     >>> b, a = signal.ellip(13, 0.009, 80, 0.05, output='ba')
     >>> sos = signal.ellip(13, 0.009, 80, 0.05, output='sos')
-    >>> x = np.zeros(700)
-    >>> x[0] = 1.
+    >>> x = signal.unit_impulse(700)
     >>> y_tf = signal.lfilter(b, a, x)
     >>> y_sos = signal.sosfilt(sos, x)
     >>> plt.plot(y_tf, 'r', label='TF')

@@ -10,7 +10,8 @@ import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
-__all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly']
+__all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
+           'unit_impulse']
 
 
 def sawtooth(t, width=1):
@@ -479,3 +480,66 @@ def _sweep_poly_phase(t, poly):
     intpoly = polyint(poly)
     phase = 2 * pi * polyval(intpoly, t)
     return phase
+
+
+def unit_impulse(shape, idx=None):
+    """
+    Unit impulse signal (discrete delta function) or unit basis vector.
+
+    Parameters
+    ----------
+    shape : int or tuple of int
+        Number of samples in the (1D) output, or a tuple that represents the
+        shape of the output.
+    idx : float or str, optional
+        Index at which the value is 1.  Defaults to the 0th element.
+        If ``idx='mid'``, the impulse will be centered at ``shape // 2``.
+
+    Returns
+    -------
+    y : ndarray
+        Output array containing an impulse signal.
+
+    Examples
+    --------
+    An impulse at the 0th element (:math:`\delta[n]`):
+
+    >>> from scipy import signal
+    >>> signal.unit_impulse(8)
+    array([ 1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
+
+    Impulse offset by 2 samples (:math:`\delta[n-2]`):
+
+    >>> signal.unit_impulse(7, 2)
+    array([ 0.,  0.,  1.,  0.,  0.,  0.,  0.])
+
+    2-dimensional impulse, centered:
+
+    >>> signal.unit_impulse((3, 3), 'mid')
+    array([[ 0.,  0.,  0.],
+           [ 0.,  1.,  0.],
+           [ 0.,  0.,  0.]])
+
+    Plot the impulse response of a 4th-order Butterworth lowpass filter:
+
+    >>> imp = signal.unit_impulse(100, 'mid')
+    >>> b, a = signal.butter(4, 0.2)
+    >>> response = signal.lfilter(b, a, imp)
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(np.arange(-50, 50), imp)
+    >>> plt.plot(np.arange(-50, 50), response)
+    >>> plt.margins(0.1, 0.1)
+
+    """
+    out = zeros(shape)
+
+    shape = np.atleast_1d(shape)
+
+    if idx is None:
+        idx = tuple(np.zeros_like(shape))
+    elif idx == 'mid':
+        idx = tuple(shape // 2)
+
+    out[idx] = 1
+    return out
