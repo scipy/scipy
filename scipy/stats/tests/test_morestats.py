@@ -1151,6 +1151,12 @@ class TestCircFuncs(TestCase):
         assert_(np.isnan(stats.circstd([])))
         assert_(np.isnan(stats.circvar([])))
 
+    def test_circmean_scalar(self):
+        x = 1.
+        M1 = x
+        M2 = stats.circmean(x)
+        assert_allclose(M2, M1, rtol=1e-5)
+
 
 def test_accuracy_wilcoxon():
     freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
