@@ -5195,6 +5195,156 @@ class halfgennorm_gen(rv_continuous):
 halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 
+class breit_wigner_gen(rv_continuous):
+    """
+    Probability density function for relativistic Breit-Wigner distribution [1]_.
+    
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
+    
+    Notes
+    -----
+    
+    Plot a Breit-Wigner distribution and random samples
+    ---------------------------------------------------
+
+    >>> import matplotlib.pyplot as plt
+    >>> BW = breit_wigner(mass=125., width=10.)
+    
+    >>> mass = np.linspace(0., 200., 500)
+    >>> pdf = [BW.pdf(m) for m in mass]
+    >>> pdf_plot = plt.plot(mass, pdf)
+    
+    >>> samples = BW.rvs(1000)
+    >>> hist_plot = plt.hist(samples, normed=True, bins=100, range=[0, 200])
+    
+    >>> plt.show()
+    
+    Statistics of a Breit-Wigner distribution
+    -----------------------------------------
+    
+    Mean and variance:
+    
+    >>> BW.stats()
+    (array(122.11538219739913), array(762.7536855273247))
+    
+    Median:
+    
+    >>> BW.median()
+    124.41711775583536
+    
+    Variance and standard deviation:
+    
+    >>> BW.var(), BW.std()
+    (762.75368552732471, 27.617995682658158)
+    
+    95 per cent interval:
+    
+    >>> BW.interval(0.95)
+    (53.719690871945822, 159.27077425799101)
+    
+    Moments:
+    
+    >>> [BW.moment(n) for n in range(1, 6)]
+    [122.11538219739913, 15674.920254744189, inf, 244138132.80994478, 80583978992.641495]
+    
+    """
+    def _argcheck(self, mass, width):
+        """
+        We require mass > 0 and width > 0.
+
+        The width -> 0 limit is well-defined mathematically - it's proportional
+        to a Dirac function. In the m -> 0 limit, the pdf vanishes.
+
+        Parameters
+        ----------
+
+        mass : float
+            Mass of resonance        
+        width : float
+            Width of resonance
+
+        Returns
+        -------
+
+        _argcheck :  bool
+            Whether shape parameters are legitimate
+        """
+        return (mass > 0) & (width > 0)
+
+    def _pdf(self, m, mass, width):
+        """
+        Parameters
+        ----------
+
+        mass : float
+            Mass of resonance        
+        width : float
+            Width of resonance
+
+        Returns
+        -------
+
+        pdf :  float
+            PDF of Breit-Wigner distribution
+
+        >>> breit_wigner(mass=125., width=0.05).pdf(125.)
+        12.732396211295313
+        """
+        alpha = width / mass
+        gamma = mass**2 * (1. + alpha**2)**0.5
+        k = 2.**(3. / 2.) * mass**2 * alpha * gamma / (pi * (mass**2 + gamma)**0.5)
+
+        return k / ((m**2 - mass**2)**2 + mass**4 * alpha**2)
+
+    def _cdf(self, m, mass, width):
+        """
+        Parameters
+        ----------
+
+        mass : float
+            Mass of resonance        
+        width : float
+            Width of resonance
+
+        Returns
+        -------
+
+        cdf :  float
+            CDF of Breit-Wigner distribution
+
+        The CDf was found by Mathematica:
+
+        pdf = k/((m^2 - mass^2)^2 + mass^4*alpha^2)
+        cdf = Integrate[pdf, m]
+
+        >>> BW = breit_wigner(mass=125., width=0.05)
+        >>> BW.cdf(125.)
+        0.50052268648248666
+        >>> BW.cdf(1E10)
+        1.0000000000000004
+        >>> BW.cdf(0.)
+        0.0
+        """
+        alpha = width / mass
+        gamma = mass**2 * (1. + alpha**2)**0.5
+        k = 2.**(3. / 2.) * mass**2 * alpha * gamma / (pi * (mass**2 + gamma)**0.5)
+        
+        arg_1 = complex(-1)**(1. / 4.) / (-1j + alpha)**0.5 * m / mass
+        arg_2 = complex(-1)**(3. / 4.) / (1j + alpha)**0.5 * m / mass
+
+        shape = -1j * np.arctan(arg_1) / (-1j + alpha)**0.5 - np.arctan(arg_2) / (1j + alpha)**0.5
+        norm = complex(-1)**(1. / 4.) * k / (2. * alpha * mass**3)
+
+        cdf_ = shape * norm
+        cdf_ = cdf_.real
+
+        return cdf_
+
+
+breit_wigner = breit_wigner_gen(a=0, b=np.inf, name='Breit-Wigner', shapes='mass, width')
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
