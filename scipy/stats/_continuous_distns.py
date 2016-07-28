@@ -5197,14 +5197,41 @@ halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 class breit_wigner_gen(rv_continuous):
     """
-    Probability density function for relativistic Breit-Wigner distribution [1]_.
+    Relativistic Breit-Wigner distribution [1]_.
+ 
+    Parameters
+    ----------
+    mass : float
+        Mass of resonance        
+    width : float
+        Width of resonance 
+   
+    %(before_notes)s
+        
+    Notes
+    -----
+    We require mass > 0 and width > 0.
+
+    The width -> 0 limit is well-defined mathematically - it's proportional
+    to a Dirac function. In the m -> 0 limit, the pdf vanishes.
     
+    The CDF was found by Mathematica:
+
+    pdf = k/((m^2 - mass^2)^2 + mass^4*alpha^2)
+    cdf = Integrate[pdf, m]
+    
+    %(after_notes)s
+ 
+    See Also
+    --------
+    cauchy : Closely related distribution, also known as the non-relativistic Breit-Wigner 
+    halfcauchy : Closely related distribution
+        
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Relativistic_Breit-Wigner_distribution
     
-    Notes
-    -----
+    %(example)s
     
     Plot a Breit-Wigner distribution and random samples
     ---------------------------------------------------
@@ -5248,47 +5275,12 @@ class breit_wigner_gen(rv_continuous):
     
     >>> [BW.moment(n) for n in range(1, 6)]
     [122.11538219739913, 15674.920254744189, inf, 244138132.80994478, 80583978992.641495]
-    
     """
     def _argcheck(self, mass, width):
-        """
-        We require mass > 0 and width > 0.
-
-        The width -> 0 limit is well-defined mathematically - it's proportional
-        to a Dirac function. In the m -> 0 limit, the pdf vanishes.
-
-        Parameters
-        ----------
-
-        mass : float
-            Mass of resonance        
-        width : float
-            Width of resonance
-
-        Returns
-        -------
-
-        _argcheck :  bool
-            Whether shape parameters are legitimate
-        """
         return (mass > 0) & (width > 0)
 
     def _pdf(self, m, mass, width):
         """
-        Parameters
-        ----------
-
-        mass : float
-            Mass of resonance        
-        width : float
-            Width of resonance
-
-        Returns
-        -------
-
-        pdf :  float
-            PDF of Breit-Wigner distribution
-
         >>> breit_wigner(mass=125., width=0.05).pdf(125.)
         12.732396211295313
         """
@@ -5300,25 +5292,6 @@ class breit_wigner_gen(rv_continuous):
 
     def _cdf(self, m, mass, width):
         """
-        Parameters
-        ----------
-
-        mass : float
-            Mass of resonance        
-        width : float
-            Width of resonance
-
-        Returns
-        -------
-
-        cdf :  float
-            CDF of Breit-Wigner distribution
-
-        The CDf was found by Mathematica:
-
-        pdf = k/((m^2 - mass^2)^2 + mass^4*alpha^2)
-        cdf = Integrate[pdf, m]
-
         >>> BW = breit_wigner(mass=125., width=0.05)
         >>> BW.cdf(125.)
         0.50052268648248666
