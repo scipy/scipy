@@ -5233,8 +5233,10 @@ class breit_wigner_gen(rv_continuous):
     
     %(example)s
     
+    Examples
+    --------
+    
     Plot a Breit-Wigner distribution and random samples
-    ---------------------------------------------------
 
     >>> import matplotlib.pyplot as plt
     >>> BW = breit_wigner(mass=125., width=10.)
@@ -5249,7 +5251,6 @@ class breit_wigner_gen(rv_continuous):
     >>> plt.show()
     
     Statistics of a Breit-Wigner distribution
-    -----------------------------------------
     
     Mean and variance:
     
@@ -5316,7 +5317,7 @@ class breit_wigner_gen(rv_continuous):
         return cdf_
 
 
-breit_wigner = breit_wigner_gen(a=0, b=np.inf, name='Breit-Wigner', shapes='mass, width')
+breit_wigner = breit_wigner_gen(a=0, b=np.inf, name='breit_wigner', shapes='mass, width')
 
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
