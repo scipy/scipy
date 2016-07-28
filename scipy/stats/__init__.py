@@ -29,6 +29,7 @@ Continuous distributions
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
+   breit_wigner      -- Breit-Wigner
    burr              -- Burr (Type III)
    burr12            -- Burr (Type XII)
    cauchy            -- Cauchy
