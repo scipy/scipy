@@ -491,9 +491,10 @@ def unit_impulse(shape, idx=None):
     shape : int or tuple of int
         Number of samples in the (1D) output, or a tuple that represents the
         shape of the output.
-    idx : float or str, optional
-        Index at which the value is 1.  Defaults to the 0th element.
-        If ``idx='mid'``, the impulse will be centered at ``shape // 2``.
+    idx : float or str or None, optional
+        Index at which the value is 1.  If None, defaults to the 0th element.
+        If ``idx='mid'``, the impulse will be centered at ``shape // 2`` in
+        all dimensions.
 
     Returns
     -------
@@ -534,6 +535,10 @@ def unit_impulse(shape, idx=None):
     >>> plt.plot(np.arange(-50, 50), imp)
     >>> plt.plot(np.arange(-50, 50), response)
     >>> plt.margins(0.1, 0.1)
+    >>> plt.xlabel('Time [samples]')
+    >>> plt.ylabel('Amplitude')
+    >>> plt.grid(True)
+    >>> plt.show()
 
     """
     out = zeros(shape)
