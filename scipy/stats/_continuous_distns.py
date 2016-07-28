@@ -5284,11 +5284,11 @@ class breit_wigner_gen(rv_continuous):
         >>> breit_wigner(mass=125., width=0.05).pdf(125.)
         12.732396211295313
         """
-        alpha = width / mass
-        gamma = mass**2 * (1. + alpha**2)**0.5
-        k = 2.**(3. / 2.) * mass**2 * alpha * gamma / (pi * (mass**2 + gamma)**0.5)
+        alpha_ = width / mass
+        gamma_ = mass**2 * (1. + alpha_**2)**0.5
+        k = 2.**(3. / 2.) * mass**2 * alpha_ * gamma_ / (pi * (mass**2 + gamma_)**0.5)
 
-        return k / ((m**2 - mass**2)**2 + mass**4 * alpha**2)
+        return k / ((m**2 - mass**2)**2 + mass**4 * alpha_**2)
 
     def _cdf(self, m, mass, width):
         """
@@ -5300,17 +5300,17 @@ class breit_wigner_gen(rv_continuous):
         >>> BW.cdf(0.)
         0.0
         """
-        alpha = width / mass
-        gamma = mass**2 * (1. + alpha**2)**0.5
-        k = 2.**(3. / 2.) * mass**2 * alpha * gamma / (pi * (mass**2 + gamma)**0.5)
+        alpha_ = width / mass
+        gamma_ = mass**2 * (1. + alpha_**2)**0.5
+        k = 2.**(3. / 2.) * mass**2 * alpha_ * gamma_ / (pi * (mass**2 + gamma_)**0.5)
         
-        arg_1 = complex(-1)**(1. / 4.) / (-1j + alpha)**0.5 * m / mass
-        arg_2 = complex(-1)**(3. / 4.) / (1j + alpha)**0.5 * m / mass
+        arg_1 = complex(-1)**(1. / 4.) / (-1j + alpha_)**0.5 * m / mass
+        arg_2 = complex(-1)**(3. / 4.) / (1j + alpha_)**0.5 * m / mass
 
-        shape = -1j * np.arctan(arg_1) / (-1j + alpha)**0.5 - np.arctan(arg_2) / (1j + alpha)**0.5
-        norm = complex(-1)**(1. / 4.) * k / (2. * alpha * mass**3)
+        shape_ = -1j * np.arctan(arg_1) / (-1j + alpha_)**0.5 - np.arctan(arg_2) / (1j + alpha_)**0.5
+        norm_ = complex(-1)**(1. / 4.) * k / (2. * alpha_ * mass**3)
 
-        cdf_ = shape * norm
+        cdf_ = norm_ * shape_ 
         cdf_ = cdf_.real
 
         return cdf_
