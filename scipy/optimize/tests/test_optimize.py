@@ -1225,7 +1225,6 @@ def test_bracket():
         return (x - a)**2 - 0.8
 
     xa, xb, xc, fa, fb, fc, _ = optimize.bracket(fun, -1/2, +1/2, (0,))
-    print(fa, fb, fc)
     assert_(not (fa > fb and fb < fc))
     assert_(fa >= fb and fb <= fc)
 
