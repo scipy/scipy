@@ -101,14 +101,14 @@ class CheckOptimizeParameterized(CheckOptimize):
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='CG', jac=self.grad,
                                     options=opts)
-            params, fopt, func_calls, grad_calls, warnflag = \
+            params, _, _, _, _ = \
                 res['x'], res['fun'], res['nfev'], res['njev'], res['status']
         else:
             retval = optimize.fmin_cg(self.func, self.startparams,
                                       self.grad, (), maxiter=self.maxiter,
                                       full_output=True, disp=self.disp,
                                       retall=False)
-            (params, fopt, func_calls, grad_calls, warnflag) = retval
+            (params, _, _, _, _) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
@@ -134,7 +134,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                     jac=self.grad, method='BFGS', args=(),
                                     options=opts)
 
-            params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag = (
+            params, _, _, _, _, _, _ = (
                     res['x'], res['fun'], res['jac'], res['hess_inv'],
                     res['nfev'], res['njev'], res['status'])
         else:
@@ -142,7 +142,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                         args=(), maxiter=self.maxiter,
                                         full_output=True, disp=self.disp,
                                         retall=False)
-            (params, fopt, gopt, Hopt, func_calls, grad_calls, warnflag) = retval
+            (params, _, _, _, _, _, _) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
@@ -184,7 +184,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Powell', options=opts)
-            params, fopt, direc, numiter, func_calls, warnflag = (
+            params, _, _, _, _, _ = (
                     res['x'], res['fun'], res['direc'], res['nit'],
                     res['nfev'], res['status'])
         else:
@@ -192,7 +192,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                           args=(), maxiter=self.maxiter,
                                           full_output=True, disp=self.disp,
                                           retall=False)
-            (params, fopt, direc, numiter, func_calls, warnflag) = retval
+            (params, _, _, _, _, _) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
@@ -226,7 +226,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                     'return_all': False}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Nelder-mead', options=opts)
-            params, fopt, numiter, func_calls, warnflag, final_simplex = (
+            params, _, _, _, _, _ = (
                     res['x'], res['fun'], res['nit'], res['nfev'],
                     res['status'], res['final_simplex'])
         else:
@@ -234,7 +234,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                         args=(), maxiter=self.maxiter,
                                         full_output=True, disp=self.disp,
                                         retall=False)
-            (params, fopt, numiter, func_calls, warnflag) = retval
+            (params, _, _, _, _) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
@@ -263,7 +263,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                     'return_all': True, 'initial_simplex': simplex}
             res = optimize.minimize(self.func, self.startparams, args=(),
                                     method='Nelder-mead', options=opts)
-            params, fopt, numiter, func_calls, warnflag = \
+            params, _, _, _, _ = \
                     res['x'], res['fun'], res['nit'], res['nfev'], \
                     res['status']
             assert_allclose(res['allvecs'][0], simplex[0])
@@ -273,7 +273,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                         full_output=True, disp=False, retall=False,
                                         initial_simplex=simplex)
 
-            (params, fopt, numiter, func_calls, warnflag) = retval
+            (params, _, _, _, _) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
@@ -511,7 +511,7 @@ class TestOptimizeSimple(CheckOptimize):
                                         self.grad, args=(),
                                         maxiter=self.maxiter)
 
-        (params, fopt, d) = retval
+        (params, _, _) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
@@ -533,7 +533,7 @@ class TestOptimizeSimple(CheckOptimize):
                                         approx_grad=True,
                                         maxiter=self.maxiter)
 
-        (params, fopt, d) = retval
+        (params, _, _) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
@@ -546,7 +546,7 @@ class TestOptimizeSimple(CheckOptimize):
         retval = optimize.fmin_l_bfgs_b(fun, self.startparams,
                                         maxiter=self.maxiter)
 
-        (params, fopt, d) = retval
+        (params, _, _) = retval
 
         assert_allclose(self.func(params), self.func(self.solution),
                         atol=1e-6)
@@ -608,13 +608,13 @@ class TestOptimizeSimple(CheckOptimize):
         # evaluation somewhere between 100 and 300 evaluations.
         low, medium, high = 30, 100, 300
         optimize.fmin_l_bfgs_b(objfun, x0, fprime=g, maxfun=high)
-        v, k = max((y, i) for i, y in enumerate(values[medium:]))
+        _, k = max((y, i) for i, y in enumerate(values[medium:]))
         maxfun = medium + k
         # If the minimization strategy is reasonable,
         # the minimize() result should not be worse than the best
         # of the first 30 function evaluations.
         target = min(values[:low])
-        xmin, fmin, d = optimize.fmin_l_bfgs_b(f, x0, fprime=g, maxfun=maxfun)
+        _, fmin, _ = optimize.fmin_l_bfgs_b(f, x0, fprime=g, maxfun=maxfun)
         assert_array_less(fmin, target)
 
     def test_custom(self):
@@ -825,7 +825,7 @@ class TestLBFGSBBounds(TestCase):
         return self.fun(x, p), self.jac(x, p)
 
     def test_l_bfgs_b_bounds(self):
-        x, f, d = optimize.fmin_l_bfgs_b(self.fun, [0, -1],
+        x, _, d = optimize.fmin_l_bfgs_b(self.fun, [0, -1],
                                          fprime=self.jac,
                                          bounds=self.bounds)
         assert_(d['warnflag'] == 0, d['task'])
@@ -833,7 +833,7 @@ class TestLBFGSBBounds(TestCase):
 
     def test_l_bfgs_b_funjac(self):
         # L-BFGS-B with fun and jac combined and extra arguments
-        x, f, d = optimize.fmin_l_bfgs_b(self.fj, [0, -1], args=(2.0, ),
+        x, _, d = optimize.fmin_l_bfgs_b(self.fj, [0, -1], args=(2.0, ),
                                          bounds=self.bounds)
         assert_(d['warnflag'] == 0, d['task'])
         assert_allclose(x, self.solution, atol=1e-6)
@@ -1128,17 +1128,17 @@ class TestBrute:
 
     def f1(self, z, *params):
         x, y = z
-        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+        a, b, c, d, e, f, _, _, _, _, _, _, _ = params
         return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
 
     def f2(self, z, *params):
         x, y = z
-        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+        _, _, _, _, _, _, g, h, i, _, _, _, scale = params
         return (-g*np.exp(-((x-h)**2 + (y-i)**2) / scale))
 
     def f3(self, z, *params):
         x, y = z
-        a, b, c, d, e, f, g, h, i, j, k, l, scale = params
+        _, _, _, _, _, _, _, _, _, j, k, l, scale = params
         return (-j*np.exp(-((x-k)**2 + (y-l)**2) / scale))
 
     def func(self, z, *params):
