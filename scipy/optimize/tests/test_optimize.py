@@ -458,7 +458,8 @@ class TestOptimizeSimple(CheckOptimize):
     def test_bfgs_nan(self):
         # Test corner case where nan is fed to optimizer.  See gh-2067.
         func = lambda x: x
-        fprime = lambda x: np.ones_like(x)
+        def fprime(x):
+            return np.ones_like(x)
         x0 = [np.nan]
         with np.errstate(over='ignore', invalid='ignore'):
             x = optimize.fmin_bfgs(func, x0, fprime, disp=False)
@@ -477,7 +478,8 @@ class TestOptimizeSimple(CheckOptimize):
 
         # Second case: NaN from second call.
         func = lambda x: 0 if x == 0 else np.nan
-        fprime = lambda x: np.ones_like(x)  # Steer away from zero.
+        def fprime(x):
+            return np.ones_like(x)  # Steer away from zero.
         with np.errstate(invalid='ignore'):
             result = optimize.minimize(func, 0, jac=fprime)
 
@@ -620,7 +622,7 @@ class TestOptimizeSimple(CheckOptimize):
     def test_custom(self):
         # This function comes from the documentation example.
         def custmin(fun, x0, args=(), maxfev=None, stepsize=0.1,
-                maxiter=100, callback=None, **options):
+                maxiter=100, callback=None, **_):
             bestx = x0
             besty = fun(x0)
             funcalls = 1
@@ -763,6 +765,8 @@ class TestOptimizeSimple(CheckOptimize):
 
         scales = [1e-50, 1, 1e50]
         methods = ['CG', 'BFGS', 'L-BFGS-B', 'Newton-CG']
+
+        scale = None
 
         def f(x):
             if first_step_size[0] is None and x[0] != x0[0]:
@@ -964,7 +968,7 @@ class TestOptimizeScalar(TestCase):
     def test_minimize_scalar_custom(self):
         # This function comes from the documentation example.
         def custmin(fun, bracket, args=(), maxfev=None, stepsize=0.1,
-                maxiter=100, callback=None, **options):
+                maxiter=100, callback=None, **_):
             bestx = (bracket[1] + bracket[0]) / 2.0
             besty = fun(bestx)
             funcalls = 1
@@ -1119,7 +1123,7 @@ class TestOptimizeResultAttributes(TestCase):
                 assert_(attribute in dir(res))
 
 
-class TestBrute:
+class TestBrute(object):
     # Test the "brute force" method
     def setUp(self):
         self.params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
