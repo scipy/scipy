@@ -458,6 +458,7 @@ class TestOptimizeSimple(CheckOptimize):
     def test_bfgs_nan(self):
         # Test corner case where nan is fed to optimizer.  See gh-2067.
         func = lambda x: x
+
         def fprime(x):
             return np.ones_like(x)
         x0 = [np.nan]
@@ -478,6 +479,7 @@ class TestOptimizeSimple(CheckOptimize):
 
         # Second case: NaN from second call.
         func = lambda x: 0 if x == 0 else np.nan
+
         def fprime(x):
             return np.ones_like(x)  # Steer away from zero.
         with np.errstate(invalid='ignore'):
