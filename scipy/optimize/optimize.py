@@ -1761,8 +1761,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
 
 class Brent:
     #need to rethink design of __init__
-    def __init__(self, func, args=(), tol=1.48e-8, maxiter=500,
-                 full_output=0):
+    def __init__(self, func, args=(), tol=1.48e-8, maxiter=500):
         self.func = func
         self.args = args
         self.tol = tol
@@ -1773,6 +1772,7 @@ class Brent:
         self.fval = None
         self.iter = 0
         self.funcalls = 0
+        self.brack = None
 
     # need to rethink design of set_bracket (new options, etc)
     def set_bracket(self, brack=None):
@@ -2003,8 +2003,7 @@ def _minimize_scalar_brent(func, brack=None, args=(),
     if tol < 0:
         raise ValueError('tolerance should be >= 0, got %r' % tol)
 
-    brent = Brent(func=func, args=args, tol=tol,
-                  full_output=True, maxiter=maxiter)
+    brent = Brent(func=func, args=args, tol=tol, maxiter=maxiter)
     brent.set_bracket(brack)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
