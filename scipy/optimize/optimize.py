@@ -2133,7 +2133,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     Given a function and distinct initial points, search in the
     downhill direction (as defined by the initital points) and return
     new points xa, xb, xc that bracket the minimum of the function
-    f(xa) > f(xb) < f(xc). It doesn't always mean that obtained
+    f(xa) >= f(xb) <= f(xc). It doesn't always mean that obtained
     solution will satisfy xa<=x<=xb
 
     Parameters
