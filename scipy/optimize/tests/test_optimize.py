@@ -1224,10 +1224,24 @@ def test_bracket():
     def fun(x, a):
         return (x - a)**2 - 0.8
 
-    xa, xb, xc, fa, fb, fc, _ = optimize.bracket(fun, -1/2, +1/2, (0,))
-    print(fa, fb, fc)
-    assert_(not (fa > fb and fb < fc))
-    assert_(fa >= fb and fb <= fc)
+    h = 1/2
+    for root in [-1, 0, 1]:
+        xa, xb, xc, fa, fb, fc, _ = optimize.bracket(fun, -h, +h, (root,))
+        assert_(fa >= fb and fb <= fc)
+
+        xa, xb, xc, fa, fb, fc, _ = optimize.bracket(fun, -h, +h, (root,),
+                                                     bounds=(-h, +h))
+        assert_(fa >= fb and fb <= fc)
+        assert_(xa >= -h and xb >= -h and xc >= -h)
+        assert_(xa <= +h and xb <= +h and xc <= +h)
+
+        lower = -h-h/2
+        upper = +h+h/2
+        xa, xb, xc, fa, fb, fc, _ = optimize.bracket(fun, -h, +h, (root,),
+                                                     bounds=(lower, upper))
+        assert_(fa >= fb and fb <= fc)
+        assert_(xa >= lower and xb >= lower and xc >= lower)
+        assert_(xa <= upper and xb <= upper and xc <= upper)
 
 if __name__ == "__main__":
     run_module_suite()

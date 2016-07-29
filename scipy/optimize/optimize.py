@@ -2126,7 +2126,8 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin)
 
 
-def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
+def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000,
+            bounds=None):
     """
     Bracket the minimum of the function.
 
@@ -2148,6 +2149,8 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         Maximum grow limit.  Defaults to 110.0
     maxiter : int, optional
         Maximum number of iterations to perform. Defaults to 1000.
+    bounds : tuple, optional
+        The optimization bounds.
 
     Returns
     -------
@@ -2159,6 +2162,8 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         Number of function evaluations made.
 
     """
+    if bounds is None:
+        bounds = (-numpy.inf, +numpy.inf)
     _gold = 1.618034
     _verysmall_num = 1e-21
     fa = func(*(xa,) + args)
@@ -2167,6 +2172,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         xa, xb = xb, xa
         fa, fb = fb, fa
     xc = xb + _gold * (xb - xa)
+    xc = numpy.clip(xc, bounds[0], bounds[1])
     fc = func(*((xc,) + args))
     funcalls = 3
     iter = 0
@@ -2179,6 +2185,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         else:
             denom = 2.0 * val
         w = xb - ((xb - xc) * tmp2 - (xb - xa) * tmp1) / denom
+        w = numpy.clip(w, bounds[0], bounds[1])
         wlim = xb + grow_limit * (xc - xb)
         if iter > maxiter:
             raise RuntimeError("Too many iterations.")
@@ -2197,6 +2204,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
                 fc = fw
                 return xa, xb, xc, fa, fb, fc, funcalls
             w = xc + _gold * (xc - xb)
+            w = numpy.clip(w, bounds[0], bounds[1])
             fw = func(*((w,) + args))
             funcalls += 1
         elif (w - wlim)*(wlim - xc) >= 0.0:
@@ -2210,12 +2218,14 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
                 xb = xc
                 xc = w
                 w = xc + _gold * (xc - xb)
+                w = numpy.clip(w, bounds[0], bounds[1])
                 fb = fc
                 fc = fw
                 fw = func(*((w,) + args))
                 funcalls += 1
         else:
             w = xc + _gold * (xc - xb)
+            w = numpy.clip(w, bounds[0], bounds[1])
             fw = func(*((w,) + args))
             funcalls += 1
         xa = xb
