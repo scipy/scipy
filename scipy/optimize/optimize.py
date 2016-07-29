@@ -1820,6 +1820,7 @@ class Brent:
         #################################
         x = w = v = xb
         fw = fv = fx = func(*((x,) + self.args))
+        funcalls += 1
         if (xa < xc):
             a = xa
             b = xc
@@ -1827,7 +1828,6 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls = 1
         iter = 0
         while (iter < self.maxiter):
             tol1 = self.tol * numpy.abs(x) + _mintol
