@@ -914,19 +914,43 @@ class TestOptimizeScalar(TestCase):
         assert_(x.success)
 
         x = optimize.minimize_scalar(self.fun, method='Brent',
+                                     bounds=(-1/2, +1/2))
+        assert_almost_equal(x.x, 1/2)
+        assert_(x.success)
+
+        x = optimize.minimize_scalar(self.fun, method='Brent',
                                      options=dict(maxiter=3))
+        assert_(not x.success)
+
+        x = optimize.minimize_scalar(self.fun, method='Brent',
+                                     options=dict(maxiter=3),
+                                     bounds=(-1/2, +1/2))
         assert_(not x.success)
 
         x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
                                     args=(1.5, ), method='Brent').x
         assert_allclose(x, self.solution, atol=1e-6)
 
+        x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
+                                    args=(1.5, ), method='Brent',
+                                    bounds=(-3, 1.5)).x
+        assert_allclose(x, self.solution, atol=1e-6)
+
         x = optimize.minimize_scalar(self.fun, method='Brent',
                                     args=(1.5,)).x
         assert_allclose(x, self.solution, atol=1e-6)
 
+        assert_raises(ValueError, optimize.minimize_scalar, self.fun,
+                      method='Brent', bracket=(0, 1), args=(1.5,),
+                      bounds=(1, 2))
+
         x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
                                     args=(1.5, ), method='Brent').x
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.minimize_scalar(self.fun, bracket=(-15, -1, 15),
+                                    args=(1.5, ), method='Brent',
+                                    bounds=(-15, 15)).x
         assert_allclose(x, self.solution, atol=1e-6)
 
         x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
