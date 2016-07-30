@@ -21,8 +21,13 @@ def configuration(parent_package='', top_path=None):
     config.add_extension("_ni_label",
                          sources=["src/_ni_label.c",],
                          include_dirs=['src']+[get_include()],
-                         )
+    )
 
+    config.add_extension("_ctest",
+                         sources=["src/_ctest.c"],
+                         include_dirs=[get_include()],
+    )
+    
     config.add_data_dir('tests')
 
     return config
