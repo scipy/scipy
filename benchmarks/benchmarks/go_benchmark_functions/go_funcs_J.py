@@ -32,7 +32,7 @@ class JennrichSampson(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.257825, 0.257825]]
         self.custom_bounds = [(-1, 0.34), (-1, 0.34)]
@@ -87,7 +87,7 @@ class Judge(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0.86479, 1.2357]]
         self.custom_bounds = [(-2.0, 2.0), (-2.0, 2.0)]

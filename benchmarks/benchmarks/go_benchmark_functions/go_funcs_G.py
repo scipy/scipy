@@ -33,7 +33,7 @@ class Gear(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([12.0] * self.N, [60.0] * self.N)
+        self._bounds = list(zip([12.0] * self.N, [60.0] * self.N))
         self.global_optimum = [[16, 19, 43, 49]]
         self.fglob = 2.7e-12
 
@@ -75,7 +75,7 @@ class Giunta(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.4673200277395354, 0.4673200169591304]]
         self.fglob = 0.06447042053690566
@@ -115,7 +115,7 @@ class GoldsteinPrice(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
+        self._bounds = list(zip([-2.0] * self.N, [2.0] * self.N))
 
         self.global_optimum = [[0., -1.]]
         self.fglob = 3.0
@@ -160,8 +160,8 @@ class Griewank(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                           [100.0] * self.N))
         self.custom_bounds = [(-50, 50), (-50, 50)]
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -209,7 +209,7 @@ class Gulf(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [50.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [50.0] * self.N))
 
         self.global_optimum = [[50.0, 25.0, 1.5]]
         self.fglob = 0.0

@@ -36,8 +36,8 @@ class Easom(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                           [100.0] * self.N))
 
         self.global_optimum = [[pi for _ in range(self.N)]]
         self.fglob = -1.0
@@ -63,8 +63,8 @@ class Eckerle4(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0., 1., 10.],
-                           [20, 20., 600.])
+        self._bounds = list(zip([0., 1., 10.],
+                           [20, 20., 600.]))
         self.global_optimum = [[1.5543827178, 4.0888321754, 4.5154121844e2]]
         self.fglob = 1.4635887487E-03
 
@@ -127,7 +127,7 @@ class EggCrate(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
 
         self.global_optimum = [[0.0, 0.0]]
         self.fglob = 0.0
@@ -168,8 +168,8 @@ class EggHolder(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-512.1] * self.N,
-                           [512.0] * self.N)
+        self._bounds = list(zip([-512.1] * self.N,
+                           [512.0] * self.N))
 
         self.global_optimum = [[512.0, 404.2319]]
         self.fglob = -959.640662711
@@ -209,8 +209,8 @@ class ElAttarVidyasagarDutta(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                           [100.0] * self.N))
         self.custom_bounds = [(-4, 4), (-4, 4)]
 
         self.global_optimum = [[3.40918683, -2.17143304]]
@@ -249,7 +249,7 @@ class Exp2(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [20.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [20.0] * self.N))
         self.custom_bounds = [(0, 2), (0, 20)]
 
         self.global_optimum = [[1.0, 10.]]
@@ -294,7 +294,7 @@ class Exponential(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = -1.0

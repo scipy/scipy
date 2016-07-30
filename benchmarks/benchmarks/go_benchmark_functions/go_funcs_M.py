@@ -37,7 +37,7 @@ class Matyas(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -99,8 +99,8 @@ class Meyer(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0., 100., 100.],
-                           [1, 1000., 500.])
+        self._bounds = list(zip([0., 100., 100.],
+                           [1, 1000., 500.]))
         self.global_optimum = [[5.6096364710e-3, 6.1813463463e3,
                                 3.4522363462e2]]
         self.fglob = 8.7945855171e1
@@ -149,7 +149,7 @@ class Michalewicz(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [pi] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [pi] * self.N))
 
         self.global_optimum = [[2.20290555, 1.570796]]
         self.fglob = -1.8013
@@ -188,7 +188,7 @@ class MieleCantrell(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.0, 1.0, 1.0, 1.0]]
         self.fglob = 0.0
@@ -233,8 +233,8 @@ class Mishra01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N,
-                           [1.0 + 1e-9] * self.N)
+        self._bounds = list(zip([0.0] * self.N,
+                           [1.0 + 1e-9] * self.N))
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 2.0
@@ -281,8 +281,8 @@ class Mishra02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N,
-                           [1.0 + 1e-9] * self.N)
+        self._bounds = list(zip([0.0] * self.N,
+                           [1.0 + 1e-9] * self.N))
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
         self.fglob = 2.0
@@ -325,7 +325,7 @@ class Mishra03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[-9.99378322, -9.99918927]]
         self.fglob = -0.19990562
@@ -365,7 +365,7 @@ class Mishra04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[-8.88055269734, -8.89097599857]]
         self.fglob = -0.177715264826
@@ -405,7 +405,7 @@ class Mishra05(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[-1.98682, -10.0]]
         self.fglob = -1.019829519930646
@@ -447,7 +447,7 @@ class Mishra06(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[2.88631, 1.82326]]
         self.fglob = -2.28395
@@ -488,7 +488,7 @@ class Mishra07(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-2, 2), (-2, 2)]
         self.global_optimum = [[sqrt(self.N)
                                for i in range(self.N)]]
@@ -531,7 +531,7 @@ class Mishra08(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(1.0, 2.0), (-4.0, 1.0)]
         self.global_optimum = [[2.0, -3.0]]
         self.fglob = 0.0
@@ -585,7 +585,7 @@ class Mishra09(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.global_optimum = [[1.0, 2.0, 3.0]]
         self.fglob = 0.0
 
@@ -629,7 +629,7 @@ class Mishra10(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.global_optimum = [[2.0, 2.0]]
         self.fglob = 0.0
 
@@ -671,7 +671,7 @@ class Mishra11(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-3, 3), (-3, 3)]
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
@@ -711,7 +711,7 @@ class MultiModal(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
