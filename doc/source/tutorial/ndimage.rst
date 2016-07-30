@@ -1559,182 +1559,281 @@ number, or as a tuple of lists, if *index* is a sequence.
 
 .. _ndimage-ccallbacks:
 
-Extending :mod:`ndimage` in C
+Extending :py:mod:`~scipy.ndimage` in C
 -----------------------------
 
-.. highlight:: c
+A few functions in :py:mod:`~scipy.ndimage` take a callback
+argument. This can be either a python function or a :ctype:`PyCapsule`
+containing a pointer to a C function. Using a C function will
+generally be more efficient since it avoids the overhead of calling a
+python function on many elements of an array. To use a C function you
+must write a C extension that contains the callback function and a
+Python function that returns a :ctype:`PyCapsule` containing a pointer
+to the callback.
 
-A few functions in the :mod:`scipy.ndimage` take a call-back
-argument. This can be a python function, but also a :ctype:`PyCObject`
-containing a pointer to a C function. To use this feature, you must
-write your own C extension that defines the function, and define a Python function that returns a :ctype:`PyCObject` containing a pointer to this function.
+An example of a function that supports callbacks is
+:py:func:`~scipy.ndimage.geometric_transform`, which accepts a
+callback function that defines a mapping from all output coordinates
+to corresponding coordinates in the input array. Consider the
+following python example which uses
+:py:func:`~scipy.ndimage.geometric_transform` to implement a shift
+function.
 
-An example of a function that supports this is
-:func:`geometric_transform` (see :ref:`ndimage-interpolation`).
-You can pass it a python callable object that defines a mapping
-from all output coordinates to corresponding coordinates in the
-input array. This mapping function can also be a C function, which
-generally will be much more efficient, since the overhead of
-calling a python function at each element is avoided.
+.. code:: python
 
-For example to implement a simple shift function we define the
-following function:
+   from scipy import ndimage
 
-::
+   def transform(output_coordinates, shift):
+       input_coordinates = output_coordinates[0] - shift, output_coordinates[1] - shift
+       return input_coordinates
 
-    static int
-    _shift_function(int *output_coordinates, double* input_coordinates,
-                    int output_rank, int input_rank, void *callback_data)
-    {
-      int ii;
-      /* get the shift from the callback data pointer: */
-      double shift = *(double*)callback_data;
-      /* calculate the coordinates: */
-      for(ii = 0; ii < irank; ii++)
-        icoor[ii] = ocoor[ii] - shift;
-      /* return OK status: */
-      return 1;
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   shift = 0.5
+   print(ndimage.geometric_transform(im, transform, extra_arguments=(shift,)))
+
+We can also implement the callback function with the following C code.
+
+.. code:: c
+
+   #include <Python.h>
+   #include <numpy/npy_common.h>
+
+
+   static void _destructor(PyObject *obj)
+   {
+       void *callback_data = PyCapsule_GetContext(obj);
+       free(callback_data);
+   }
+
+
+   static int
+   _transform(npy_intp *output_coordinates, double *input_coordinates,
+              npy_intp output_rank, npy_intp input_rank, void *callback_data)
+   {
+       npy_intp i;
+       double shift = *(double *)callback_data;
+
+       for (i = 0; i < input_rank; i++) {
+           input_coordinates[i] = output_coordinates[i] - shift;
+       }
+       return 1;
+   }
+
+
+   static PyObject *
+   py_transform(PyObject *obj, PyObject *args)
+   {
+       double *callback_data = malloc(sizeof(double));
+       PyObject *capsule = NULL;
+
+       if (!callback_data) {
+           PyErr_NoMemory();
+	   goto error;
+       }
+       if (!PyArg_ParseTuple(args, "d", callback_data)) goto error;
+
+       capsule = PyCapsule_New(_transform, NULL, _destructor);
+       if (!capsule) goto error;
+       if (PyCapsule_SetContext(capsule, callback_data) != 0) goto error;
+       return capsule;
+     error:
+       free(callback_data);
+       return NULL;
     }
 
-This function is called at every element of the output array,
-passing the current coordinates in the *output_coordinates* array.
-On return, the *input_coordinates* array must contain the
-coordinates at which the input is interpolated. The ranks of the
-input and output array are passed through *output_rank* and
-*input_rank*. The value of the shift is passed through the
-*callback_data* argument, which is a pointer to void. The function
-returns an error status, in this case always 1, since no error can
-occur.
 
-A pointer to this function and a pointer to the shift value must be
-passed to :func:`geometric_transform`. Both are passed by a single
-:ctype:`PyCObject` which is created by the following python extension
-function:
-
-::
-
-    static PyObject *
-    py_shift_function(PyObject *obj, PyObject *args)
-    {
-      double shift = 0.0;
-      if (!PyArg_ParseTuple(args, "d", &shift)) {
-        PyErr_SetString(PyExc_RuntimeError, "invalid parameters");
-        return NULL;
-      } else {
-        /* assign the shift to a dynamically allocated location: */
-        double *cdata = (double*)malloc(sizeof(double));
-        *cdata = shift;
-        /* wrap function and callback_data in a CObject: */
-        return PyCObject_FromVoidPtrAndDesc(_shift_function, cdata,
-                                            _destructor);
-      }
-    }
-
-The value of the shift is obtained and then assigned to a
-dynamically allocated memory location. Both this data pointer and
-the function pointer are then wrapped in a :ctype:`PyCObject`, which is
-returned. Additionally, a pointer to a destructor function is
-given, that will free the memory we allocated for the shift value
-when the :ctype:`PyCObject` is destroyed. This destructor is very simple:
-
-::
-
-    static void
-    _destructor(void* cobject, void *cdata)
-    {
-      if (cdata)
-        free(cdata);
-    }
-
-To use these functions, an extension module is built:
-
-::
-
-    static PyMethodDef methods[] = {
-      {"shift_function", (PyCFunction)py_shift_function, METH_VARARGS, ""},
-      {NULL, NULL, 0, NULL}
+    static PyMethodDef ExampleMethods[] = {
+        {"transform", (PyCFunction)py_transform, METH_VARARGS, ""},
+        {NULL, NULL, 0, NULL}
+    };
+				      
+				      
+    /* Initialize the module */
+    #if PY_VERSION_HEX >= 0x03000000
+    static struct PyModuleDef example = {
+        PyModuleDef_HEAD_INIT,
+        "example",
+        NULL,
+        -1,
+        ExampleMethods,
+        NULL,
+        NULL,
+        NULL,
+        NULL
     };
 
-    void
-    initexample(void)
+
+    PyMODINIT_FUNC
+    PyInit_example(void)
     {
-      Py_InitModule("example", methods);
+        return PyModule_Create(&example);
     }
 
-This extension can then be used in Python, for example:
 
-.. highlight:: python
+    #else
+    PyMODINIT_FUNC
+    initexample(void)
+    {
+        Py_InitModule("example", ExampleMethods);
+    }
+    #endif
 
-::
+More information on writing Python extension modules can be found
+`here`__. If the C code is in the file ``example.c``, then it can be
+compiled with the following ``setup.py``,
 
-    >>> import example
-    >>> array = np.arange(12).reshape(4, 3).astype(np.float64)
-    >>> fnc = example.shift_function(0.5)
-    >>> from scipy.ndimage import geometric_transform
-    >>> geometric_transform(array, fnc)
-    array([[ 0.,      0.,      0.    ],
-           [ 0.,      1.3625,  2.7375],
-           [ 0.,      4.8125,  6.1875],
-           [ 0.,      8.2625,  9.6375]])
+__ https://docs.python.org/2/extending/extending.html
 
-C callback functions for use with :mod:`ndimage` functions must all
-be written according to this scheme. The next section lists the
-:mod:`ndimage` functions that accept a C callback function and
-gives the prototype of the callback function.
+.. code:: python
+
+   from distutils.core import setup, Extension
+   import numpy
+
+   shift = Extension('example',
+                     ['example.c'],
+                     include_dirs=[numpy.get_include()]
+   )
+
+   setup(name='example',
+         ext_modules=[shift]
+   )
+
+and now running the script
+
+.. code:: python
+
+   import numpy as np
+   from scipy import ndimage
+
+   from example import transform
+
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   shift = 0.5
+   print(ndimage.geometric_transform(im, transform(shift)))
+
+produces the same result as the original python script.
+
+In the C version ``_transform`` is the callback function and the
+parameters ``output_coordinates`` and ``input_coordinates`` play the
+same role as they do in the python version while ``output_rank`` and
+``input_rank`` provide the equivalents of ``len(output_coordinates)``
+and ``len(input_coordinates)``. The variable ``shift`` is passed
+through ``callback_data`` instead of ``extra_arguments``. Finally, the
+C callback function returns an integer status which is one upon
+success and zero otherwise.
+
+The function ``py_transform`` wraps the callback function in a
+:ctype:`PyCapsule`. The main steps are:
+
+- Initialize a :ctype:`PyCapsule`. The first argument is a pointer to
+  the callback function and the third argument is a destructor
+  function which knows how to clean up memory associated with the
+  capsule's context pointer (see next step). The second argument is
+  the name of the capsule, but as :py:mod:`~scipy.ndimage` has no way
+  of knowing that it is set to ``NULL``.
+- Use :c:func:`PyCapsule_SetContext` to add any necessary data to the
+  capsule. This data is passed to the callback function through
+  ``callback_data``, and in our example is used to set ``shift``.
+
+C callback functions for :mod:`~scipy.ndimage` all follow this
+scheme. The next section lists the :mod:`~scipy.ndimage` functions
+that accept a C callback function and gives the prototype of the
+function.
+
+Finally, the same code can be written in Cython with less
+overhead as follows.
+
+.. code:: cython
+
+   from libc.stdlib cimport malloc, free
+   from cpython.pycapsule cimport (
+       PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetContext
+   )
+
+   cimport numpy as np
+   from numpy cimport npy_intp as intp
+
+
+   cdef void _destructor(obj):
+       cdef void *callback_data = PyCapsule_GetContext(obj)
+       free(callback_data)
+
+
+   cdef int _transform(intp *output_coordinates, double *input_coordinates,
+   	            intp output_rank, intp input_rank, void *callback_data):
+       cdef intp i
+       cdef double shift = (<double *>callback_data)[0]
+   
+       for i in range(input_rank):
+           input_coordinates[i] = output_coordinates[i] - shift
+       return 1
+
+
+   def transform(double shift):
+       cdef double *callback_data = <double *>malloc(sizeof(double))
+       callback_data[0] = shift
+       capsule = PyCapsule_New(<void *>_transform, NULL, _destructor)
+       PyCapsule_SetContext(capsule, callback_data)
+       return capsule
+
 
 Functions that support C callback functions
 -------------------------------------------
 
-The :mod:`ndimage` functions that support C callback functions are
-described here. Obviously, the prototype of the function that is
-provided to these functions must match exactly that what they
-expect. Therefore we give here the prototypes of the callback
-functions. All these callback functions accept a void
-*callback_data* pointer that must be wrapped in a :ctype:`PyCObject` using
-the Python :c:func:`PyCObject_FromVoidPtrAndDesc` function, which can also
-accept a pointer to a destructor function to free any memory
-allocated for *callback_data*. If *callback_data* is not needed,
-:c:func:`PyCObject_FromVoidPtr` may be used instead. The callback
-functions must return an integer error status that is equal to zero
-if something went wrong, or 1 otherwise. If an error occurs, you
-should normally set the python error status with an informative
-message before returning, otherwise, a default error message is set
-by the calling function.
+The :mod:`~scipy.ndimage` functions that support C callback functions
+are described here along with prototypes of the callback functions
+they expect. All callback functions must be wrapped in a
+:ctype:`PyCapsule` and accept a ``callback_data`` parameter which is
+set using :c:func:`PyCapsule_SetContext`. The capsule's destructor
+must know how to free memory associated with its context pointer. The
+callback functions must return an integer error status that is zero if
+something went wrong and one otherwise. If an error occurs, you should
+normally set the python error status with an informative message
+before returning, otherwise a default error message is set by the
+calling function.
 
-The function :func:`generic_filter` (see
-:ref:`ndimage-genericfilters`) accepts a callback function with the
-following prototype:
+The function :py:func:`~scipy.ndimage.generic_filter` accepts a
+callback function with the following prototype:
 
-    The calling function iterates over the elements of the input and
-    output arrays, calling the callback function at each element. The
-    elements within the footprint of the filter at the current element
-    are passed through the *buffer* parameter, and the number of
-    elements within the footprint through *filter_size*. The
-    calculated valued should be returned in the *return_value*
-    argument.
+.. code:: c
 
-The function :func:`generic_filter1d` (see
-:ref:`ndimage-genericfilters`) accepts a callback function with the
-following prototype:
+   int callback(double *buffer, npy_intp filter_size, double *res, void *callback_data)
 
-    The calling function iterates over the lines of the input and
-    output arrays, calling the callback function at each line. The
-    current line is extended according to the border conditions set by
-    the calling function, and the result is copied into the array that
-    is passed through the *input_line* array. The length of the input
-    line (after extension) is passed through *input_length*. The
-    callback function should apply the 1D filter and store the result
-    in the array passed through *output_line*. The length of the
-    output line is passed through *output_length*.
+The calling function iterates over the elements of the input and
+output arrays, calling the callback function at each element. The
+elements within the footprint of the filter at the current element are
+passed through the ``buffer`` parameter, and the number of elements
+within the footprint through ``filter_size``. The calculated value is
+returned in ``return_value``.
 
-The function :func:`geometric_transform` (see
-:ref:`ndimage-interpolation`) expects a function with the following
-prototype:
+The function :py:func:`~scipy.ndimage.generic_filter1d` accepts a
+callback function with the following prototype:
 
-    The calling function iterates over the elements of the output
-    array, calling the callback function at each element. The
-    coordinates of the current output element are passed through
-    *output_coordinates*. The callback function must return the
-    coordinates at which the input must be interpolated in
-    *input_coordinates*. The rank of the input and output arrays are
-    given by *input_rank* and *output_rank* respectively.
+.. code:: c
+
+   int callback(double *input_line, npy_intp input_length, double *output_line, npy_intp output_length, void *callback_data)
+
+The calling function iterates over the lines of the input and output
+arrays, calling the callback function at each line. The current line
+is extended according to the border conditions set by the calling
+function, and the result is copied into the array that is passed
+through ``input_line``. The length of the input line (after extension)
+is passed through ``input_length``. The callback function should apply
+the filter and store the result in the array passed through
+``output_line``. The length of the output line is passed through
+``output_length``.
+
+The function :py:func:`~scipy.ndimage.geometric_transform` expects a
+function with the following prototype:
+
+.. code:: c
+
+   int callback(npy_intp *output_coordinates, double *input_coordinates, npy_intp output_rank, npy_intp input_rank, void *callback_data)
+
+The calling function iterates over the elements of the output array,
+calling the callback function at each element. The coordinates of the
+current output element are passed through ``output_coordinates``. The
+callback function must return the coordinates at which the input must
+be interpolated in ``input_coordinates``. The rank of the input and
+output arrays are given by ``input_rank`` and ``output_rank``
+respectively.

@@ -14,23 +14,19 @@ def configuration(parent_package='', top_path=None):
                  "src/ni_fourier.c","src/ni_interpolation.c",
                  "src/ni_measure.c",
                  "src/ni_morphology.c","src/ni_support.c"],
-        include_dirs=['src']+[get_include()],
-    )
+        include_dirs=['src']+[get_include()])
 
     # Cython wants the .c and .pyx to have the underscore.
     config.add_extension("_ni_label",
                          sources=["src/_ni_label.c",],
-                         include_dirs=['src']+[get_include()],
-    )
+                         include_dirs=['src']+[get_include()])
 
     config.add_extension("_ctest",
                          sources=["src/_ctest.c"],
-                         include_dirs=[get_include()],
-    )
+                         include_dirs=[get_include()])
 
     config.add_extension("_cytest",
-                         sources=["src/_cytest.c"],
-    )
+                         sources=["src/_cytest.c"])
     
     config.add_data_dir('tests')
 

@@ -37,6 +37,11 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+`scipy.ndimage`
+---------------
+
+The callback function c api now uses PyCapsules for both Python 2 and
+Python 3.
 
 
 Other changes

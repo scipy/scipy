@@ -18,7 +18,7 @@ def test_generic_filter():
     im[:10,:10] = 0
     footprint = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     footprint_size = np.count_nonzero(footprint)
-    weights = np.full(footprint_size, 1/footprint_size)
+    weights = np.ones(footprint_size)/footprint_size
     for mod in MODULES:
         res = ndimage.generic_filter(im, mod.filter2d(weights),
                                      footprint=footprint)
