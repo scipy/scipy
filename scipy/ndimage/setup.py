@@ -27,6 +27,10 @@ def configuration(parent_package='', top_path=None):
                          sources=["src/_ctest.c"],
                          include_dirs=[get_include()],
     )
+
+    config.add_extension("_cytest",
+                         sources=["src/_cytest.c"],
+    )
     
     config.add_data_dir('tests')
 

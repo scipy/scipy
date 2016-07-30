@@ -5,6 +5,9 @@ from numpy.testing import assert_allclose
 
 from scipy import ndimage
 from scipy.ndimage import _ctest
+from scipy.ndimage import _cytest
+
+MODULES = [_ctest, _cytest]
 
 
 def test_generic_filter():
@@ -16,11 +19,12 @@ def test_generic_filter():
     footprint = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     footprint_size = np.count_nonzero(footprint)
     weights = np.full(footprint_size, 1/footprint_size)
-    res = ndimage.generic_filter(im, _ctest.filter2d(weights),
-                                 footprint=footprint)
-    std = ndimage.generic_filter(im, filter2d, footprint=footprint,
-                                 extra_arguments=(weights,))
-    assert_allclose(res, std)
+    for mod in MODULES:
+        res = ndimage.generic_filter(im, mod.filter2d(weights),
+                                     footprint=footprint)
+        std = ndimage.generic_filter(im, filter2d, footprint=footprint,
+                                     extra_arguments=(weights,))
+        assert_allclose(res, std, err_msg="{} failed".format(mod.__name__))
 
 
 def test_generic_filter1d():
@@ -33,11 +37,12 @@ def test_generic_filter1d():
 
     im = np.tile(np.hstack((np.zeros(10), np.ones(10))), (10, 1))
     filter_size = 3
-    res = ndimage.generic_filter1d(im, _ctest.filter1d(filter_size),
-                                   filter_size)
-    std = ndimage.generic_filter1d(im, filter1d, filter_size,
-                                   extra_arguments=(filter_size,))
-    assert_allclose(res, std)
+    for mod in MODULES:
+        res = ndimage.generic_filter1d(im, mod.filter1d(filter_size),
+                                       filter_size)
+        std = ndimage.generic_filter1d(im, filter1d, filter_size,
+                                       extra_arguments=(filter_size,))
+        assert_allclose(res, std, err_msg="{} failed".format(mod.__name__))
 
 
 def test_geometric_transform():
@@ -46,6 +51,7 @@ def test_geometric_transform():
 
     im = np.arange(12).reshape(4, 3).astype(np.float64)
     shift = 0.5
-    res = ndimage.geometric_transform(im, _ctest.transform(shift))
-    std = ndimage.geometric_transform(im, transform, extra_arguments=(shift,))
-    assert_allclose(res, std)
+    for mod in MODULES:
+        res = ndimage.geometric_transform(im, _ctest.transform(shift))
+        std = ndimage.geometric_transform(im, transform, extra_arguments=(shift,))
+        assert_allclose(res, std, err_msg="{} failed".format(mod.__name__))
