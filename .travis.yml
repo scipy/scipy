@@ -93,6 +93,7 @@ before_install:
   - popd
   - export CPATH=$HOME/.local/include
   - export LIBRARY_PATH=$HOME/.local/lib
+  - export LD_LIBRARY_PATH=$HOME/.local/lib
   # End install gmpy2 dependencies
   # Speed up install by not compiling Cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython==0.22
@@ -112,6 +113,8 @@ script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
+  # Test that mpmath actually uses gmpy2
+  - python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
   - |
     if [ "${USE_WHEEL}" == "1" ]; then
         # Need verbose output or TravisCI will terminate after 10 minutes
