@@ -164,8 +164,8 @@ airy -- airy_wrap: d*dddd->*i, cairy_wrap: D*DDDD->*i      -- amos_wrappers.h
 itairy -- itairy_wrap: d*dddd->*i                          -- specfun_wrappers.h
 airye -- cairy_wrap_e_real: d*dddd->*i, cairy_wrap_e: D*DDDD->*i -- amos_wrappers.h
 fresnel -- fresnl: d*dd->*i, cfresnl_wrap: D*DD->*i        -- cephes.h, specfun_wrappers.h
-shichi -- shichi: d*dd->*i                                 -- cephes.h
-sici -- sici: d*dd->*i                                     -- cephes.h
+shichi -- shichi: d*dd->*i, cshichi: D*DD->*i              -- cephes.h, _sici.pxd
+sici -- sici: d*dd->*i, csici: D*DD->*i                    -- cephes.h, _sici.pxd
 itj0y0 -- it1j0y0_wrap: d*dd->*i                           -- specfun_wrappers.h
 it2j0y0 -- it2j0y0_wrap: d*dd->*i                          -- specfun_wrappers.h
 iti0k0 -- it1i0k0_wrap: d*dd->*i                           -- specfun_wrappers.h

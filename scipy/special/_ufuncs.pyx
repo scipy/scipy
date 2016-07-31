@@ -1894,8 +1894,14 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_round "round"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_shichi "shichi"(double, double *, double *) nogil
+from _sici cimport cshichi as _func_cshichi
+ctypedef int _proto_cshichi_t(double complex, double complex *, double complex *) nogil
+cdef _proto_cshichi_t *_proto_cshichi_t_var = &_func_cshichi
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_sici "sici"(double, double *, double *) nogil
+from _sici cimport csici as _func_csici
+ctypedef int _proto_csici_t(double complex, double complex *, double complex *) nogil
+cdef _proto_csici_t *_proto_csici_t_var = &_func_csici
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_sindg "sindg"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -11465,69 +11471,173 @@ ufunc_round_data[0] = &ufunc_round_ptr[2*0]
 ufunc_round_data[1] = &ufunc_round_ptr[2*1]
 round = np.PyUFunc_FromFuncAndData(ufunc_round_loops, ufunc_round_data, ufunc_round_types, 2, 1, 1, 0, "round", ufunc_round_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_shichi_loops[2]
-cdef void *ufunc_shichi_ptr[4]
-cdef void *ufunc_shichi_data[2]
-cdef char ufunc_shichi_types[6]
+cdef np.PyUFuncGenericFunction ufunc_shichi_loops[4]
+cdef void *ufunc_shichi_ptr[8]
+cdef void *ufunc_shichi_data[4]
+cdef char ufunc_shichi_types[12]
 cdef char *ufunc_shichi_doc = (
-    "shichi(x)\n"
+    "shichi(x, out=None)\n"
     "\n"
-    "Hyperbolic sine and cosine integrals\n"
+    "Hyperbolic sine and cosine integrals.\n"
+    "\n"
+    "The hyperbolic sine integral is\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "  \\int_0^x \\frac{\\sinh{t}}{t}dt\n"
+    "\n"
+    "and the hyperbolic cosine integral is\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "  \\gamma + \\log(x) + \\int_0^x \\frac{\\cosh{t} - 1}{t} dt\n"
+    "\n"
+    "where :math:`\\gamma` is Euler's constant and :math:`\\log` is the\n"
+    "principle branch of the logarithm.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Real or complex points at which to compute the hyperbolic sine\n"
+    "    and cosine integrals.\n"
     "\n"
     "Returns\n"
     "-------\n"
-    "shi\n"
-    "    ``integral(sinh(t)/t, t=0..x)``\n"
-    "chi\n"
-    "    ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``\n"
-    "    where ``eul`` is Euler's constant.")
+    "si : ndarray\n"
+    "    Hyperbolic sine integral at ``x``\n"
+    "ci : ndarray\n"
+    "    Hyperbolic cosine integral at ``x``\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "For real arguments with ``x < 0``, ``chi`` is the real part of the\n"
+    "hyperbolic cosine integral. For such points ``chi(x)`` and ``chi(x\n"
+    "+ 0j)`` differ by a factor of ``1j*pi``.\n"
+    "\n"
+    "For real arguments the function is computed by calling Cephes'\n"
+    "[1]_ *shichi* routine. For complex arguments the algorithm is based\n"
+    "on Mpmath's [2]_ *shi* and *chi* routines.\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Cephes Mathematical Functions Library,\n"
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Fredrik Johansson and others.\n"
+    "       \"mpmath: a Python library for arbitrary-precision floating-point arithmetic\"\n"
+    "       (Version 0.19) http://mpmath.org/")
 ufunc_shichi_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_shichi_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
+ufunc_shichi_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_F_FF
+ufunc_shichi_loops[3] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_D_DD
 ufunc_shichi_types[0] = <char>NPY_FLOAT
 ufunc_shichi_types[1] = <char>NPY_FLOAT
 ufunc_shichi_types[2] = <char>NPY_FLOAT
 ufunc_shichi_types[3] = <char>NPY_DOUBLE
 ufunc_shichi_types[4] = <char>NPY_DOUBLE
 ufunc_shichi_types[5] = <char>NPY_DOUBLE
+ufunc_shichi_types[6] = <char>NPY_CFLOAT
+ufunc_shichi_types[7] = <char>NPY_CFLOAT
+ufunc_shichi_types[8] = <char>NPY_CFLOAT
+ufunc_shichi_types[9] = <char>NPY_CDOUBLE
+ufunc_shichi_types[10] = <char>NPY_CDOUBLE
+ufunc_shichi_types[11] = <char>NPY_CDOUBLE
 ufunc_shichi_ptr[2*0] = <void*>_func_shichi
 ufunc_shichi_ptr[2*0+1] = <void*>(<char*>"shichi")
 ufunc_shichi_ptr[2*1] = <void*>_func_shichi
 ufunc_shichi_ptr[2*1+1] = <void*>(<char*>"shichi")
+ufunc_shichi_ptr[2*2] = <void*>_func_cshichi
+ufunc_shichi_ptr[2*2+1] = <void*>(<char*>"shichi")
+ufunc_shichi_ptr[2*3] = <void*>_func_cshichi
+ufunc_shichi_ptr[2*3+1] = <void*>(<char*>"shichi")
 ufunc_shichi_data[0] = &ufunc_shichi_ptr[2*0]
 ufunc_shichi_data[1] = &ufunc_shichi_ptr[2*1]
-shichi = np.PyUFunc_FromFuncAndData(ufunc_shichi_loops, ufunc_shichi_data, ufunc_shichi_types, 2, 1, 2, 0, "shichi", ufunc_shichi_doc, 0)
+ufunc_shichi_data[2] = &ufunc_shichi_ptr[2*2]
+ufunc_shichi_data[3] = &ufunc_shichi_ptr[2*3]
+shichi = np.PyUFunc_FromFuncAndData(ufunc_shichi_loops, ufunc_shichi_data, ufunc_shichi_types, 4, 1, 2, 0, "shichi", ufunc_shichi_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_sici_loops[2]
-cdef void *ufunc_sici_ptr[4]
-cdef void *ufunc_sici_data[2]
-cdef char ufunc_sici_types[6]
+cdef np.PyUFuncGenericFunction ufunc_sici_loops[4]
+cdef void *ufunc_sici_ptr[8]
+cdef void *ufunc_sici_data[4]
+cdef char ufunc_sici_types[12]
 cdef char *ufunc_sici_doc = (
-    "sici(x)\n"
+    "sici(x, out=None)\n"
     "\n"
-    "Sine and cosine integrals\n"
+    "Sine and cosine integrals.\n"
+    "\n"
+    "The sine integral is\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "  \\int_0^x \\frac{\\sin{t}}{t}dt\n"
+    "\n"
+    "and the cosine integral is\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "  \\gamma + \\log(x) + \\int_0^x \\frac{\\cos{t} - 1}{t}dt\n"
+    "\n"
+    "where :math:`\\gamma` is Euler's constant and :math:`\\log` is the\n"
+    "principle branch of the logarithm.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Real or complex points at which to compute the sine and cosine\n"
+    "    integrals.\n"
     "\n"
     "Returns\n"
     "-------\n"
-    "si\n"
-    "    ``integral(sin(t)/t, t=0..x)``\n"
-    "ci\n"
-    "    ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``\n"
-    "    where ``eul`` is Euler's constant.")
+    "si : ndarray\n"
+    "    Sine integral at ``x``\n"
+    "ci : ndarray\n"
+    "    Cosine integral at ``x``\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "For real arguments with ``x < 0``, ``ci`` is the real part of the\n"
+    "cosine integral. For such points ``ci(x)`` and ``ci(x + 0j)``\n"
+    "differ by a factor of ``1j*pi``.\n"
+    "\n"
+    "For real arguments the function is computed by calling Cephes'\n"
+    "[1]_ *sici* routine. For complex arguments the algorithm is based\n"
+    "on Mpmath's [2]_ *si* and *ci* routines.\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Cephes Mathematical Functions Library,\n"
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Fredrik Johansson and others.\n"
+    "       \"mpmath: a Python library for arbitrary-precision floating-point arithmetic\"\n"
+    "       (Version 0.19) http://mpmath.org/")
 ufunc_sici_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_sici_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
+ufunc_sici_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_F_FF
+ufunc_sici_loops[3] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_D_DD
 ufunc_sici_types[0] = <char>NPY_FLOAT
 ufunc_sici_types[1] = <char>NPY_FLOAT
 ufunc_sici_types[2] = <char>NPY_FLOAT
 ufunc_sici_types[3] = <char>NPY_DOUBLE
 ufunc_sici_types[4] = <char>NPY_DOUBLE
 ufunc_sici_types[5] = <char>NPY_DOUBLE
+ufunc_sici_types[6] = <char>NPY_CFLOAT
+ufunc_sici_types[7] = <char>NPY_CFLOAT
+ufunc_sici_types[8] = <char>NPY_CFLOAT
+ufunc_sici_types[9] = <char>NPY_CDOUBLE
+ufunc_sici_types[10] = <char>NPY_CDOUBLE
+ufunc_sici_types[11] = <char>NPY_CDOUBLE
 ufunc_sici_ptr[2*0] = <void*>_func_sici
 ufunc_sici_ptr[2*0+1] = <void*>(<char*>"sici")
 ufunc_sici_ptr[2*1] = <void*>_func_sici
 ufunc_sici_ptr[2*1+1] = <void*>(<char*>"sici")
+ufunc_sici_ptr[2*2] = <void*>_func_csici
+ufunc_sici_ptr[2*2+1] = <void*>(<char*>"sici")
+ufunc_sici_ptr[2*3] = <void*>_func_csici
+ufunc_sici_ptr[2*3+1] = <void*>(<char*>"sici")
 ufunc_sici_data[0] = &ufunc_sici_ptr[2*0]
 ufunc_sici_data[1] = &ufunc_sici_ptr[2*1]
-sici = np.PyUFunc_FromFuncAndData(ufunc_sici_loops, ufunc_sici_data, ufunc_sici_types, 2, 1, 2, 0, "sici", ufunc_sici_doc, 0)
+ufunc_sici_data[2] = &ufunc_sici_ptr[2*2]
+ufunc_sici_data[3] = &ufunc_sici_ptr[2*3]
+sici = np.PyUFunc_FromFuncAndData(ufunc_sici_loops, ufunc_sici_data, ufunc_sici_types, 4, 1, 2, 0, "sici", ufunc_sici_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_sindg_loops[2]
 cdef void *ufunc_sindg_ptr[4]
