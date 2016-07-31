@@ -25,6 +25,11 @@ def configuration(parent_package='', top_path=None):
                          sources=["src/_ctest.c"],
                          include_dirs=[get_include()])
 
+    config.add_extension("_ctest_oldapi",
+                         sources=["src/_ctest.c"],
+                         include_dirs=[get_include()],
+                         define_macros=[("OLDAPI", 1)])
+
     config.add_extension("_cytest",
                          sources=["src/_cytest.c"])
     

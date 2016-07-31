@@ -5,9 +5,10 @@ from numpy.testing import assert_allclose
 
 from scipy import ndimage
 from scipy.ndimage import _ctest
+from scipy.ndimage import _ctest_oldapi
 from scipy.ndimage import _cytest
 
-MODULES = [_ctest, _cytest]
+MODULES = [_ctest, _ctest_oldapi, _cytest]
 
 
 def test_generic_filter():

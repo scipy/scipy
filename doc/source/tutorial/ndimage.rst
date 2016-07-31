@@ -1638,6 +1638,7 @@ We can also implement the callback function with the following C code.
        return capsule;
      error:
        free(callback_data);
+       Py_XDECREF(capsule);
        return NULL;
     }
 

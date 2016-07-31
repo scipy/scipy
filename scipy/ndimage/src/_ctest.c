@@ -1,13 +1,36 @@
 #include <Python.h>
 #include <numpy/npy_common.h>
+#include <numpy/npy_3kcompat.h>
+
+#ifdef OLDAPI
+#define MOD _ctest_oldapi
+#define MODSTR "_ctest_oldapi"
+#define PY3K_INIT PyInit__ctest_oldapi
+#define PY2K_INIT init_ctest_oldapi
+#else
+#define MOD _ctest
+#define MODSTR "_ctest"
+#define PY3K_INIT PyInit__ctest
+#define PY2K_INIT init_ctest
+#endif
 
 
-static void _destructor(PyObject *obj)
+#if defined(OLDAPI) && PY_VERSION_HEX < 0x03000000
+static void
+_destructor(void *cobject, void *callback_data)
+{
+    free(callback_data);
+}    
+
+
+#else
+static void
+_destructor(PyObject *obj)
 {
     void *callback_data = PyCapsule_GetContext(obj);
-
     free(callback_data);
 }
+#endif
 
 
 static int
@@ -41,9 +64,17 @@ py_filter1d(PyObject *obj, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "n", callback_data)) goto error;
 
+#ifdef OLDAPI
+    capsule = NpyCapsule_FromVoidPtrAndDesc(_filter1d, callback_data, _destructor);
+    if (!capsule) goto error;
+#else
     capsule = PyCapsule_New(_filter1d, NULL, _destructor);
     if (!capsule) goto error;
-    if (PyCapsule_SetContext(capsule, callback_data) != 0) goto error;
+    if (PyCapsule_SetContext(capsule, callback_data) != 0) {
+	Py_DECREF(capsule);
+	goto error;
+    }
+#endif
     return capsule;
  error:
     free(callback_data);
@@ -92,10 +123,18 @@ py_filter2d(PyObject *obj, PyObject *args)
 	callback_data[i] = PyFloat_AsDouble(item);
 	if (PyErr_Occurred()) goto error;
     }
-    
+
+#ifdef OLDAPI
+    capsule = NpyCapsule_FromVoidPtrAndDesc(_filter2d, callback_data, _destructor);
+    if (!capsule) goto error;
+#else
     capsule = PyCapsule_New(_filter2d, NULL, _destructor);
     if (!capsule) goto error;
-    if (PyCapsule_SetContext(capsule, callback_data) != 0) goto error;
+    if (PyCapsule_SetContext(capsule, callback_data) != 0) {
+	Py_DECREF(capsule);
+	goto error;
+    }
+#endif
     return capsule;
  error:
     free(callback_data);
@@ -129,9 +168,17 @@ py_transform(PyObject *obj, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "d", callback_data)) goto error;
 
+#ifdef OLDAPI
+    capsule = NpyCapsule_FromVoidPtrAndDesc(_transform, callback_data, _destructor);
+    if (!capsule) goto error;
+#else
     capsule = PyCapsule_New(_transform, NULL, _destructor);
     if (!capsule) goto error;
-    if (PyCapsule_SetContext(capsule, callback_data) != 0) goto error;
+    if (PyCapsule_SetContext(capsule, callback_data) != 0) {
+	Py_DECREF(capsule);
+	goto error;
+    }
+#endif
     return capsule;
  error:
     free(callback_data);
@@ -149,9 +196,9 @@ static PyMethodDef _CTestMethods[] = {
 				      
 /* Initialize the module */
 #if PY_VERSION_HEX >= 0x03000000
-static struct PyModuleDef _ctest = {
+static struct PyModuleDef MOD = {
     PyModuleDef_HEAD_INIT,
-    "_ctest",
+    MODSTR,
     NULL,
     -1,
     _CTestMethods,
@@ -163,16 +210,16 @@ static struct PyModuleDef _ctest = {
 
 
 PyMODINIT_FUNC
-PyInit__ctest(void)
+PY3K_INIT(void)
 {
-    return PyModule_Create(&_ctest);
+    return PyModule_Create(&MOD);
 }
 
 
 #else
 PyMODINIT_FUNC
-init_ctest(void)
+PY2K_INIT(void)
 {
-    Py_InitModule("_ctest", _CTestMethods);
+    Py_InitModule(MODSTR, _CTestMethods);
 }
 #endif
