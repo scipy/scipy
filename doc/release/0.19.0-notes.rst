@@ -22,6 +22,11 @@ This release requires Python 2.7 or 3.4-3.5 and NumPy 1.7.1 or greater.
 New features
 ============
 
+`scipy.ndimage` improvements
+----------------------------
+
+The callback function C API supports PyCapsules in Python 2.7
+
 `scipy.signal` improvements
 ---------------------------
 
@@ -37,11 +42,6 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
-`scipy.ndimage`
----------------
-
-The callback function c api now uses PyCapsules for both Python 2 and
-Python 3.
 
 
 Other changes
