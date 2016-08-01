@@ -335,5 +335,15 @@ class TestUnitImpulse(TestCase):
         assert_array_equal(waveforms.unit_impulse(9, 'mid'),
                            [0, 0, 0, 0, 1, 0, 0, 0, 0])
 
+    def test_dtype(self):
+        imp = waveforms.unit_impulse(7)
+        assert_(np.issubdtype(imp.dtype, np.float))
+
+        imp = waveforms.unit_impulse(5, 3, dtype=int)
+        assert_(np.issubdtype(imp.dtype, np.integer))
+
+        imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
+        assert_(np.issubdtype(imp.dtype, np.complex))
+
 if __name__ == "__main__":
     run_module_suite()

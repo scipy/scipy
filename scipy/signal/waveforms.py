@@ -482,7 +482,7 @@ def _sweep_poly_phase(t, poly):
     return phase
 
 
-def unit_impulse(shape, idx=None):
+def unit_impulse(shape, idx=None, dtype=float):
     """
     Unit impulse signal (discrete delta function) or unit basis vector.
 
@@ -495,6 +495,9 @@ def unit_impulse(shape, idx=None):
         Index at which the value is 1.  If None, defaults to the 0th element.
         If ``idx='mid'``, the impulse will be centered at ``shape // 2`` in
         all dimensions.
+    dtype : data-type, optional
+        The desired data-type for the array, e.g., `numpy.int8`.  Default is
+        `numpy.float64`.
 
     Returns
     -------
@@ -541,7 +544,7 @@ def unit_impulse(shape, idx=None):
     >>> plt.show()
 
     """
-    out = zeros(shape)
+    out = zeros(shape, dtype)
 
     shape = np.atleast_1d(shape)
 
