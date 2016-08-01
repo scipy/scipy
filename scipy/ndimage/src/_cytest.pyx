@@ -1,4 +1,4 @@
-from libc.stdlib cimport malloc, free
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.pycapsule cimport (
     PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetContext
 )
@@ -9,7 +9,7 @@ from numpy cimport npy_intp as intp
 
 cdef void _destructor(obj):
     cdef void *callback_data = PyCapsule_GetContext(obj)
-    free(callback_data)
+    PyMem_Free(callback_data)
 
 
 cdef int _filter1d(double *input_line, intp input_length, double *output_line,
@@ -26,10 +26,17 @@ cdef int _filter1d(double *input_line, intp input_length, double *output_line,
     
 
 def filter1d(intp filter_size):
-    cdef intp *callback_data = <intp *>malloc(sizeof(intp))
+    cdef intp *callback_data = <intp *>PyMem_Malloc(sizeof(intp))
+    if not callback_data:
+        raise MemoryError()
     callback_data[0] = filter_size
-    capsule = PyCapsule_New(<void *>_filter1d, NULL, _destructor)
-    PyCapsule_SetContext(capsule, callback_data)
+
+    try:
+        capsule = PyCapsule_New(<void *>_filter1d, NULL, _destructor)
+        res = PyCapsule_SetContext(capsule, callback_data)
+    except:
+        PyMem_Free(callback_data)
+        raise
     return capsule
 
 
@@ -45,12 +52,18 @@ cdef int _filter2d(double *buffer, intp filter_size, double *res,
     
     
 def filter2d(seq):
-    cdef double *callback_data = <double *>malloc(len(seq)*sizeof(double))
+    cdef double *callback_data = <double *>PyMem_Malloc(len(seq)*sizeof(double))
+    if not callback_data:
+        raise MemoryError()
     for i, item in enumerate(seq):
         callback_data[i] = float(item)
 
-    capsule = PyCapsule_New(<void *>_filter2d, NULL, _destructor)
-    PyCapsule_SetContext(capsule, callback_data)
+    try:
+        capsule = PyCapsule_New(<void *>_filter2d, NULL, _destructor)
+        PyCapsule_SetContext(capsule, callback_data)
+    except:
+        PyMem_Free(callback_data)
+        raise
     return capsule
 
 
@@ -65,8 +78,15 @@ cdef int _transform(intp *output_coordinates, double *input_coordinates,
 
 
 def transform(double shift):
-    cdef double *callback_data = <double *>malloc(sizeof(double))
+    cdef double *callback_data = <double *>PyMem_Malloc(sizeof(double))
+    if not callback_data:
+        raise MemoryError()
     callback_data[0] = shift
-    capsule = PyCapsule_New(<void *>_transform, NULL, _destructor)
-    PyCapsule_SetContext(capsule, callback_data)
+
+    try:
+        capsule = PyCapsule_New(<void *>_transform, NULL, _destructor)
+        PyCapsule_SetContext(capsule, callback_data)
+    except:
+        PyMem_Free(callback_data)
+        raise
     return capsule

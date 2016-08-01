@@ -1746,7 +1746,7 @@ overhead as follows.
 
 .. code:: cython
 
-   from libc.stdlib cimport malloc, free
+   from cpython.mem cimport PyMem_Malloc, PyMem_Free
    from cpython.pycapsule cimport (
        PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetContext
    )
@@ -1757,7 +1757,7 @@ overhead as follows.
 
    cdef void _destructor(obj):
        cdef void *callback_data = PyCapsule_GetContext(obj)
-       free(callback_data)
+       PyMem_Free(callback_data)
 
 
    cdef int _transform(intp *output_coordinates, double *input_coordinates,
@@ -1771,10 +1771,17 @@ overhead as follows.
 
 
    def transform(double shift):
-       cdef double *callback_data = <double *>malloc(sizeof(double))
+       cdef double *callback_data = <double *>PyMem_Malloc(sizeof(double))
+       if not callback_data:
+           raise MemoryError()
        callback_data[0] = shift
-       capsule = PyCapsule_New(<void *>_transform, NULL, _destructor)
-       PyCapsule_SetContext(capsule, callback_data)
+
+       try:
+           capsule = PyCapsule_New(<void *>_transform, NULL, _destructor)
+           PyCapsule_SetContext(capsule, callback_data)
+       except:
+           PyMem_Free(callback_data)
+	   raise
        return capsule
 
 

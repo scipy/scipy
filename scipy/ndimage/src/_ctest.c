@@ -19,7 +19,7 @@
 static void
 _destructor(void *cobject, void *callback_data)
 {
-    free(callback_data);
+    PyMem_Free(callback_data);
 }    
 
 
@@ -28,7 +28,7 @@ static void
 _destructor(PyObject *obj)
 {
     void *callback_data = PyCapsule_GetContext(obj);
-    free(callback_data);
+    PyMem_Free(callback_data);
 }
 #endif
 
@@ -57,7 +57,7 @@ py_filter1d(PyObject *obj, PyObject *args)
     npy_intp *callback_data = NULL;
     PyObject *capsule = NULL;
     
-    callback_data = malloc(sizeof(npy_intp));
+    callback_data = PyMem_Malloc(sizeof(npy_intp));
     if (!callback_data) {
 	PyErr_NoMemory();
 	goto error;
@@ -77,7 +77,7 @@ py_filter1d(PyObject *obj, PyObject *args)
 #endif
     return capsule;
  error:
-    free(callback_data);
+    PyMem_Free(callback_data);
     return NULL;
 }
 
@@ -108,7 +108,7 @@ py_filter2d(PyObject *obj, PyObject *args)
     
     size = PySequence_Length(seq);
     if (size == -1) goto error;
-    callback_data = malloc(size*sizeof(double));
+    callback_data = PyMem_Malloc(size*sizeof(double));
     if (!callback_data) {
 	PyErr_NoMemory();
 	goto error;
@@ -137,7 +137,7 @@ py_filter2d(PyObject *obj, PyObject *args)
 #endif
     return capsule;
  error:
-    free(callback_data);
+    PyMem_Free(callback_data);
     return NULL;
 }
 
@@ -159,7 +159,7 @@ _transform(npy_intp *output_coordinates, double *input_coordinates,
 static PyObject *
 py_transform(PyObject *obj, PyObject *args)
 {
-    double *callback_data = malloc(sizeof(double));
+    double *callback_data = PyMem_Malloc(sizeof(double));
     PyObject *capsule = NULL;
 
     if (!callback_data) {
@@ -181,7 +181,7 @@ py_transform(PyObject *obj, PyObject *args)
 #endif
     return capsule;
  error:
-    free(callback_data);
+    PyMem_Free(callback_data);
     return NULL;
 }
 
