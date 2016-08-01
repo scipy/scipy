@@ -1151,7 +1151,7 @@ class dirichlet_gen(multi_rv_generic):
     ``var(alpha)``
         The variance of the Dirichlet distribution
     ``entropy(alpha)``
-        Compute the differential entropy of the multivariate normal.
+        Compute the differential entropy of the Dirichlet distribution.
 
     Parameters
     ----------
