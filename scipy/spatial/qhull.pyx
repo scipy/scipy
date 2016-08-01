@@ -111,6 +111,7 @@ cdef extern from "qhull/src/libqhull_r.h":
         boolT ATinfinity
         boolT UPPERdelaunay
         boolT hasTriangulation
+        boolT hasAreaVolume
         int normal_size
         char *qhull_command
         facetT *facet_list
@@ -538,6 +539,7 @@ cdef class _Qhull:
 
         self.check_active()
 
+        self._qh.hasAreaVolume = 0
         with nogil:
             qh_getarea(self._qh, self._qh[0].facet_list)
 
