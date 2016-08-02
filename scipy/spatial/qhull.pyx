@@ -715,8 +715,30 @@ cdef class _Qhull:
     @cython.cdivision(True)
     def get_hull_points(self):
         cdef vertexT *vertex
-        cdef int i
+        cdef int i, j, numpoints
 
+        self.check_active()
+
+        point_ndim = self.ndim
+
+        if self._is_halfspaces:
+            point_ndim -= 1
+
+        if self._is_delaunay:
+            point_ndim += 1
+
+        numpoints = self._qh.num_points
+
+        vertex = self._qh.vertex_list
+        points = np.zeros((numpoints, point_ndim), dtype=np.double)
+        i = 0
+        while vertex and vertex.next:
+            j = 0
+            for j in xrange(point_ndim):
+                points[i][j] = vertex.point[j]
+
+            i += 1
+            vertex = vertex.next
 
     @cython.final
     @cython.boundscheck(False)
