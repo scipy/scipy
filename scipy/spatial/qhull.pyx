@@ -124,7 +124,6 @@ cdef extern from "qhull/src/libqhull_r.h":
         unsigned int facet_id
         pointT *first_point
         pointT *input_points
-        coordT *feasible_point
         realT last_low
         realT last_high
         realT last_newhigh
@@ -335,8 +334,7 @@ cdef class _Qhull:
                  bytes options=None,
                  bytes required_options=None,
                  furthest_site=False,
-                 incremental=False,
-                 feasible_point=None):
+                 incremental=False):
         cdef int exitcode
 
         self._qh = NULL
@@ -412,9 +410,6 @@ cdef class _Qhull:
                                     <realT*>points.data, 0,
                                     options_c, NULL, self._messages.handle)
 
-        if feasible_point is not None:
-            self.set_feasible_point(feasible_point)
-
         if exitcode != 0:
             msg = self._messages.get()
             self.close()
@@ -428,16 +423,6 @@ cdef class _Qhull:
     def check_active(self):
         if self._qh == NULL:
             raise RuntimeError("Qhull instance is closed")
-
-    def set_feasible_point(self, feasible_point):
-        self.check_active()
-
-        if self._qh.feasible_point:
-            stdlib.free(self._qh.feasible_point)
-        self._qh.feasible_point = <coordT*>stdlib.malloc(feasible_point.shape[-1]*sizeof(coordT))
-
-        for i in range(feasible_point.shape[-1]):
-            self._qh.feasible_point[i] = feasible_point.item(i)
 
     @cython.final
     def close(self):
