@@ -2666,8 +2666,8 @@ class HalfspaceIntersection(_QhalfUser):
             qhull_options = asbytes(qhull_options)
 
         # Run qhull
-        mode_option = b"H{}".format(','.join([str(self.feasible_point.item(i)) for i in range(halfspaces.shape[1] -1)]))
-        qhull = _Qhull(mode_option, halfspaces, qhull_options, required_options=b"Qt",
+        mode_option = "H{}".format(','.join([str(self.feasible_point.item(i)) for i in range(halfspaces.shape[1] -1)]))
+        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=b"Qt",
                        incremental=incremental)
         _QhalfUser.__init__(self, qhull, incremental=incremental)
 
