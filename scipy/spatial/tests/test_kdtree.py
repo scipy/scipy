@@ -1187,6 +1187,9 @@ def test_len0_arrays():
     assert_array_equal(y, z)
 
 def test_short_knn():
+
+    # The test case is based on github: #6425 by @SteveDoyle2
+
     xyz = np.array([
         [ 0.,   0.,   0.],
         [ 1.01, 0.,   0.],
