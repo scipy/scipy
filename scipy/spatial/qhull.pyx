@@ -2681,7 +2681,7 @@ class HalfspaceIntersection(_QhalfUser):
 
         self.dual_volume, self.dual_area = qhull.volume_area()
 
-        self.intersections = self.dual_equations[:, :-1]/self.dual_equations[:, -1:] + self.feasible_point
+        self.intersections = self.dual_equations[:, :-1]/-self.dual_equations[:, -1:] + self.feasible_point
 
         if qhull.ndim == 2:
             self._vertices = qhull.get_extremes_2d()
