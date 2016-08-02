@@ -902,6 +902,18 @@ class TestVoronoi:
 
             yield check, name
 
+    def test_halfspace_intersection(self):
+        halfspaces = np.array([[-1.0, 0.0, 0.0],
+                               [0.0, -1.0, 0.0],
+                               [1.0, 0.0, -1.0],
+                               [0.0, 1.0, -1.0]])
+        feasible_point = np.array([[0.5, 0.5]])
+
+        points = np.array([[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]])
+
+        hull = qhull.HalfspaceIntersection(halfspaces, feasible_point)
+
+        assert_allclose(points, hull.intersections)
 
 if __name__ == "__main__":
     run_module_suite()

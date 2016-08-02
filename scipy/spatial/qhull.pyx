@@ -706,6 +706,14 @@ cdef class _Qhull:
     @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
+    def get_hull_points(self):
+        cdef vertexT *vertex
+        cdef int i
+
+
+    @cython.final
+    @cython.boundscheck(False)
+    @cython.cdivision(True)
     def get_voronoi_diagram(_Qhull self):
         """
         Return the voronoi diagram currently in Qhull.
@@ -2412,3 +2420,150 @@ class Voronoi(_QhullUser):
             self._ridge_dict = dict(zip(map(tuple, self.ridge_points.tolist()),
                                         self.ridge_vertices))
         return self._ridge_dict
+
+#------------------------------------------------------------------------------
+# Halfspace Intersection
+#------------------------------------------------------------------------------
+
+class HalfspaceIntersection(_QhullUser):
+    """
+    HalfspaceIntersection(halfspaces, feasible_point, incremental=False, qhull_options=None)
+
+    Halfspace intersections in N dimensions. This reproduces the "qhalf"
+    functionality of Qhull.
+
+    .. versionadded:: 0.19.0
+
+    Parameters
+    ----------
+    halfspaces : ndarray of floats, shape (nineq, ndim+1)
+                 Stacked Inequalities of the form Ax + b <= 0 in format [A; b]
+    feasible_point: ndarray of floats, shape (1, ndim)
+                    Feasible point inside the region defined by halfspaces.
+                    It can be obtained by linear programming.
+    incremental : bool, optional
+        Allow adding new points incrementally. This takes up some additional
+        resources.
+    qhull_options : str, optional
+        Additional options to pass to Qhull. See Qhull manual
+        for details. (Default: "Qx" for ndim > 4 and "" otherwise)
+        Options "H Qt" are always enabled.
+
+    Attributes
+    ----------
+    halfspaces : ndarray of double, shape (nineq, ndim+1)
+                 Input halfspaces.
+    intersections : ndarray of double, shape (ninter, ndim)
+                    Intersections of all halfspaces.
+    dual_points : ndarray of double, shape (nineq, ndim)
+                  Dual points of the input halfspaces.
+    dual_vertices : ndarray of ints, shape (nvertices,)
+                    Indices of points forming the vertices of the dual convex hull.
+                    For 2-D convex hulls, the vertices are in counterclockwise order.
+                    For other dimensions, they are in input order.
+    dual_simplices : ndarray of ints, shape (nfacet, ndim)
+                     Indices of points forming the simplical facets of the dual convex hull.
+    dual_neighbors : ndarray of ints, shape (nfacet, ndim)
+                     Indices of neighbor facets for each facet.
+                     The kth neighbor is opposite to the kth vertex.
+                     -1 denotes no neighbor.
+    dual_equations : ndarray of double, shape (nfacet, ndim+1)
+                     [normal, offset] forming the hyperplane equation of the dual facet
+                     (see `Qhull documentation <http://www.qhull.org/>`__  for more).
+    coplanar : ndarray of int, shape (ncoplanar, 3)
+        Indices of coplanar points and the corresponding indices of
+        the nearest facets and nearest vertex indices.  Coplanar
+        points are input points which were *not* included in the
+        triangulation due to numerical precision issues.
+
+        If option "Qc" is not specified, this list is not computed.
+    dual_area : float
+        Area of the dual convex hull
+    dual_volume : float
+        Volume of the dual convex hull
+
+    Raises
+    ------
+    QhullError
+        Raised when Qhull encounters an error condition, such as
+        geometrical degeneracy when options to resolve are not enabled.
+    ValueError
+        Raised if an incompatible array is given as input.
+
+    Notes
+    -----
+    The intersections are computed using the 
+    `Qhull library <http://www.qhull.org/>`__.
+
+    Examples
+    --------
+
+    TODO: example
+    Halfspace intersection of planes forming some polygon
+
+    >>> from scipy.spatial import HalfspaceIntersection
+    >>> halfspaces = []
+    >>> feasible point = []
+    >>> intersection = HalfspaceIntersection(halfspaces, feasible_point)
+
+    Plot it:
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(halfspaces)
+    >>> for vertex in hull.intersections:
+    ...     plt.plot(vertex[0], vertex[1], 'o')
+    References
+    ----------
+    .. [Qhull] http://www.qhull.org/
+
+    """
+
+    def __init__(self, halfspaces, feasible_point,
+                    incremental=False, qhull_options=None):
+        if np.ma.isMaskedArray(halfspaces):
+            raise ValueError('Input halfspaces cannot be a masked array')
+        if np.ma.isMaskedArray(feasible_point):
+            raise ValueError('Input feasible point cannot be a masked array')
+        if feasible_point.shape[-1] != halfspaces.shape[1]-1:
+            raise ValueError('The last dimension of feasible point is not dimension of halfspaces minus one')
+        halfspaces = np.ascontiguousarray(halfspaces, dtype=np.double)
+        feasible_point = np.ascontiguousarray(feasible_point, dtype=np.double)
+
+        if qhull_options is None:
+            qhull_options = b""
+            if halfspaces.shape[1] >= 6:
+                qhull_options += b"Qx"
+        else:
+            qhull_options = asbytes(qhull_options)
+
+        # Run qhull
+        qhull = _Qhull(b"i", halfspaces, qhull_options, required_options=b"H{} Qt".format(','.join(["0"]*(halfspaces.shape[1]-1))),
+                       incremental=incremental, feasible_point=feasible_point)
+        _QhullUser.__init__(self, qhull, incremental=incremental)
+
+    def _update(self, qhull):
+        qhull.triangulate()
+
+        self.dual_simplices, self.dual_neighbors, self.dual_equations, self.coplanar = \
+                       qhull.get_simplex_facet_array()
+
+        self.dual_points = qhull.get_hull_points()
+
+        self.dual_volume, self.dual_area = qhull.volume_area()
+
+        self.intersections = self.dual_equations[:, :-1]/self.dual_equations[:, -1:] + self.feasible_point
+
+        if qhull.ndim == 2:
+            self._vertices = qhull.get_extremes_2d()
+        else:
+            self._vertices = None
+
+        self.nsimplex = self.simplices.shape[0]
+
+        _QhullUser._update(self, qhull)
+
+    @property
+    def vertices(self):
+        if self._vertices is None:
+            self._vertices = np.unique(self.simplices)
+        return self._vertices
