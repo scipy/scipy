@@ -27,7 +27,7 @@ import tempfile
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
 
-__all__ = ['Delaunay', 'ConvexHull', 'Voronoi', 'tsearch']
+__all__ = ['Delaunay', 'ConvexHull', 'Voronoi', 'HalfspaceIntersection', 'tsearch']
 
 #------------------------------------------------------------------------------
 # Qhull interface
