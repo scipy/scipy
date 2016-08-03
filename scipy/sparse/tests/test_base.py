@@ -210,10 +210,11 @@ class _TestCommon:
         # dtype.
         # This set union is a workaround for numpy#6295, which means that
         # two np.int64 dtypes don't hash to the same value.
-        self.checked_dtypes = set(supported_dtypes).union(self.math_dtypes)
+        self.checked_dtypes = set(supported_dtypes).union(self.math_dtypes
+            ).union(self.checked_bitwise_dtypes)
         self.dat_dtypes = {}
         self.datsp_dtypes = {}
-        for dtype in self.checked_dtypes + self.checked_bitwise_dtypes:
+        for dtype in self.checked_dtypes:
             self.dat_dtypes[dtype] = self.dat.astype(dtype)
             self.datsp_dtypes[dtype] = self.spmatrix(self.dat.astype(dtype))
 
