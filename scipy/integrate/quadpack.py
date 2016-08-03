@@ -16,7 +16,6 @@ __all__ = ['quad', 'dblquad', 'tplquad', 'nquad', 'quad_explain',
 
 error = _quadpack.error
 
-
 class IntegrationWarning(UserWarning):
     """
     Warning on issues during integration.
@@ -85,9 +84,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     infodict : dict
         A dictionary containing additional information.
         Run scipy.integrate.quad_explain() for more information.
-    message :
+    message
         A convergence message.
-    explain :
+    explain
         Appended only with 'cos' or 'sin' weighting and infinite
         integration limits, it contains an explanation of the codes in
         infodict['ierlst']
@@ -444,13 +443,6 @@ def _quad_weight(func,a,b,args,full_output,epsabs,epsrel,limlst,limit,maxp1,weig
                                     epsabs, epsrel, limit)
 
 
-def _infunc(x,func,gfun,hfun,more_args):
-    a = gfun(x)
-    b = hfun(x)
-    myargs = (x,) + more_args
-    return quad(func,a,b,args=myargs)[0]
-
-
 def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
     Compute a double integral.
@@ -500,15 +492,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     scipy.special : for coefficients and roots of orthogonal polynomials
 
     """
-    return quad(_infunc, a, b, (func, gfun, hfun, args),
-                epsabs=epsabs, epsrel=epsrel)
-
-
-def _infunc2(y,x,func,qfun,rfun,more_args):
-    a2 = qfun(x,y)
-    b2 = rfun(x,y)
-    myargs = (y,x) + more_args
-    return quad(func,a2,b2,args=myargs)[0]
+    return nquad(func, [lambda x: [gfun(x), hfun(x)], [a, b]], args=args)
 
 
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
@@ -566,11 +550,24 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     scipy.special: For coefficients and roots of orthogonal polynomials
 
     """
-    return dblquad(_infunc2, a, b, gfun, hfun, (func, qfun, rfun, args),
-                   epsabs=epsabs, epsrel=epsrel)
+    # f(z, y, x)
+    # qfun/rfun (x, y)
+    # gfun/hfun(x)
+    # nquad will hand (y, x, t0, ...) to ranges0
+    # nquad will hand (x, t0, ...) to ranges1
+    # Stupid different API...
+
+    def ranges0(*args):
+        return [qfun(args[1], args[0]), rfun(args[1], args[0])]
+
+    def ranges1(*args):
+        return [gfun(args[0]), hfun(args[0])]
+
+    ranges = [ranges0, ranges1, [a, b]]
+    return nquad(func, ranges, args=args)
 
 
-def nquad(func, ranges, args=None, opts=None):
+def nquad(func, ranges, args=None, opts=None, full_output=False):
     """
     Integration over multiple variables.
 
@@ -606,18 +603,21 @@ def nquad(func, ranges, args=None, opts=None):
         Each element of ranges may be either a sequence  of 2 numbers, or else
         a callable that returns such a sequence.  ``ranges[0]`` corresponds to
         integration over x0, and so on.  If an element of ranges is a callable,
-        then it will be called with all of the integration arguments available.
-        e.g. if ``func = f(x0, x1, x2)``, then ``ranges[0]`` may be defined as
-        either ``(a, b)`` or else as ``(a, b) = range0(x1, x2)``.
+        then it will be called with all of the integration arguments available,
+        as well as any parametric arguments. e.g. if 
+        ``func = f(x0, x1, x2, t0, t1)``, then ``ranges[0]`` may be defined as
+        either ``(a, b)`` or else as ``(a, b) = range0(x1, x2, t0, t1)``.
     args : iterable object, optional
-        Additional arguments ``t0, ..., tn``, required by `func`.
+        Additional arguments ``t0, ..., tn``, required by `func`, `ranges`, and
+        ``opts``.
     opts : iterable object or dict, optional
         Options to be passed to `quad`.  May be empty, a dict, or
         a sequence of dicts or functions that return a dict.  If empty, the
-        default options from scipy.integrate.quadare used.  If a dict, the same
+        default options from scipy.integrate.quad are used.  If a dict, the same
         options are used for all levels of integraion.  If a sequence, then each
         element of the sequence corresponds to a particular integration. e.g.
-        opts[0] corresponds to integration over x0, and so on. The available
+        opts[0] corresponds to integration over x0, and so on. If a callable, 
+        the signature must be the same as for ``ranges``. The available
         options together with their default values are:
 
           - epsabs = 1.49e-08
@@ -628,10 +628,12 @@ def nquad(func, ranges, args=None, opts=None):
           - wvar   = None
           - wopts  = None
 
-        The ``full_output`` option from `quad` is unavailable, due to the
-        complexity of handling the large amount of data such an option would
-        return for this kind of nested integration.  For more information on
-        these options, see `quad` and `quad_explain`.
+        For more information on these options, see `quad` and `quad_explain`.
+
+    full_output : bool, optional
+        Partial implementation of ``full_output`` from scipy.integrate.quad. 
+        The number of integrand function evaluations ``neval`` can be obtained 
+        by setting ``full_output=True`` when calling nquad.
 
     Returns
     -------
@@ -640,6 +642,8 @@ def nquad(func, ranges, args=None, opts=None):
     abserr : float
         The maximum of the estimates of the absolute error in the various
         integration results.
+    out_dict : dict, optional
+        A dict containing additional information on the integration. 
 
     See Also
     --------
@@ -653,12 +657,12 @@ def nquad(func, ranges, args=None, opts=None):
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)
-    >>> points = [[lambda (x1,x2,x3) : 0.2*x3 + 0.5 + 0.25*x1], [], [], []]
+    >>> points = [[lambda x1,x2,x3 : 0.2*x3 + 0.5 + 0.25*x1], [], [], []]
     >>> def opts0(*args, **kwargs):
     ...     return {'points':[0.2*args[2] + 0.5 + 0.25*args[0]]}
     >>> integrate.nquad(func, [[0,1], [-1,1], [.13,.8], [-.15,1]],
-    ...                 opts=[opts0,{},{},{}])
-    (1.5267454070738633, 2.9437360001402324e-14)
+    ...                 opts=[opts0,{},{},{}], full_output=True)
+    (1.5267454070738633, 2.9437360001402324e-14, {'neval': 388962})
 
     >>> scale = .1
     >>> def func2(x0, x1, x2, x3, t0, t1):
@@ -698,8 +702,7 @@ def nquad(func, ranges, args=None, opts=None):
         opts = [_OptFunc(opts)] * depth
     else:
         opts = [opt if callable(opt) else _OptFunc(opt) for opt in opts]
-
-    return _NQuad(func, ranges, opts).integrate(*args)
+    return _NQuad(func, ranges, opts, full_output).integrate(*args)
 
 
 class _RangeFunc(object):
@@ -725,12 +728,15 @@ class _OptFunc(object):
 
 
 class _NQuad(object):
-    def __init__(self, func, ranges, opts):
+    def __init__(self, func, ranges, opts, full_output):
         self.abserr = 0
         self.func = func
         self.ranges = ranges
         self.opts = opts
         self.maxdepth = len(ranges)
+        self.full_output = full_output
+        if self.full_output:
+            self.out_dict = {'neval': 0}
 
     def integrate(self, *args, **kwargs):
         depth = kwargs.pop('depth', 0)
@@ -750,11 +756,23 @@ class _NQuad(object):
             f = self.func
         else:
             f = partial(self.integrate, depth=depth+1)
-
-        value, abserr = quad(f, low, high, args=args, **opt)
+        quad_r = quad(f, low, high, args=args, full_output=self.full_output,
+                      **opt)
+        value = quad_r[0]
+        abserr = quad_r[1]
+        if self.full_output:
+            infodict = quad_r[2]
+            # The 'neval' parameter in full_output returns the total
+            # number of times the integrand function was evaluated.
+            # Therefore, only the innermost integration loop counts.
+            if depth + 1 == self.maxdepth:
+                self.out_dict['neval'] += infodict['neval']
         self.abserr = max(self.abserr, abserr)
         if depth > 0:
             return value
         else:
             # Final result of n-D integration with error
-            return value, self.abserr
+            if self.full_output:
+                return value, self.abserr, self.out_dict
+            else:
+                return value, self.abserr

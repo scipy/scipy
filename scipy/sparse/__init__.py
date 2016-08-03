@@ -103,9 +103,16 @@ There are seven available sparse matrix types:
     7. dia_matrix: DIAgonal format
 
 To construct a matrix efficiently, use either dok_matrix or lil_matrix.
-The lil_matrix class supports basic slicing and fancy
-indexing with a similar syntax to NumPy arrays.  As illustrated below,
-the COO format may also be used to efficiently construct matrices.
+The lil_matrix class supports basic slicing and fancy indexing with a
+similar syntax to NumPy arrays. As illustrated below, the COO format
+may also be used to efficiently construct matrices. Despite their
+similarity to NumPy arrays, it is **strongly discouraged** to use NumPy
+functions directly on these matrices because NumPy may not properly convert
+them for computations, leading to unexpected (and incorrect) results. If you
+do want to apply a NumPy function to these matrices, first check if SciPy has
+its own implementation for the given sparse matrix class, or **convert the
+sparse matrix to a NumPy array** (e.g. using the `toarray()` method of the
+class) first before applying the method.
 
 To perform manipulations such as multiplication or inversion, first
 convert the matrix to either CSC or CSR format. The lil_matrix format is

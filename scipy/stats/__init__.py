@@ -29,7 +29,8 @@ Continuous distributions
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
-   burr              -- Burr
+   burr              -- Burr (Type III)
+   burr12            -- Burr (Type XII)
    cauchy            -- Cauchy
    chi               -- Chi
    chi2              -- Chi-squared
@@ -71,6 +72,8 @@ Continuous distributions
    invweibull        -- Inverse Weibull
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
+   kappa4            -- Kappa 4 parameter
+   kappa3            -- Kappa 3 parameter
    ksone             -- Kolmogorov-Smirnov one-sided (no stats)
    kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
    laplace           -- Laplace
@@ -100,7 +103,9 @@ Continuous distributions
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
    semicircular      -- Semicircular
+   skewnorm          -- Skew normal
    t                 -- Student's T
+   trapz              -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
@@ -120,9 +125,13 @@ Multivariate distributions
    :toctree: generated/
 
    multivariate_normal   -- Multivariate normal distribution
+   matrix_normal         -- Matrix normal distribution
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
+   special_ortho_group   -- SO(N) group
+   ortho_group           -- O(N) group
+   random_correlation    -- random correlation matrices
 
 Discrete distributions
 ======================
@@ -171,9 +180,6 @@ which work for masked arrays.
    tmax              --
    tstd              --
    tsem              --
-   nanmean           -- Mean, ignoring NaN values
-   nanstd            -- Standard deviation, ignoring NaN values
-   nanmedian         -- Median, ignoring NaN values
    variation         -- Coefficient of variation
    find_repeats
    trim_mean
@@ -206,6 +212,7 @@ which work for masked arrays.
    sem
    zmap
    zscore
+   iqr
 
 .. autosummary::
    :toctree: generated/
@@ -288,7 +295,7 @@ Circular statistical functions
    circmean
    circvar
    circstd
-   
+
 Contingency table functions
 ===========================
 
@@ -343,8 +350,7 @@ from . import mstats
 from .contingency import chi2_contingency
 from ._multivariate import *
 
-#remove vonmises_cython from __all__, I don't know why it is included
-__all__ = [s for s in dir() if not (s.startswith('_') or s.endswith('cython'))]
+__all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
 from numpy.testing import Tester
 test = Tester().test

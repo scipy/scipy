@@ -89,3 +89,11 @@ def set_mem_rlimit(max_mem=None):
         max_mem = min(max_mem, cur_limit[0])
 
     resource.setrlimit(resource.RLIMIT_AS, (max_mem, cur_limit[1]))
+
+
+def with_attributes(**attrs):
+    def decorator(func):
+        for key, value in attrs.items():
+            setattr(func, key, value)
+        return func
+    return decorator

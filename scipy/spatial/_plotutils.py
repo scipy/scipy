@@ -122,8 +122,16 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Diagram to plot
     ax : matplotlib.axes.Axes instance, optional
         Axes to plot on
+    show_points: bool, optional
+        Add the Voronoi points to the plot.
     show_vertices : bool, optional
         Add the Voronoi vertices to the plot.
+    line_colors : string, optional
+        Specifies the line color for polygon boundaries
+    line_width : float, optional
+        Specifies the line width for polygon boundaries
+    line_alpha: float, optional
+        Specifies the line alpha for polygon boundaries
 
     Returns
     -------
@@ -144,9 +152,14 @@ def voronoi_plot_2d(vor, ax=None, **kw):
     if vor.points.shape[1] != 2:
         raise ValueError("Voronoi diagram is not 2-D")
 
-    ax.plot(vor.points[:,0], vor.points[:,1], '.')
+    if kw.get('show_points', True):
+        ax.plot(vor.points[:,0], vor.points[:,1], '.')
     if kw.get('show_vertices', True):
         ax.plot(vor.vertices[:,0], vor.vertices[:,1], 'o')
+
+    line_colors = kw.get('line_colors', 'k')
+    line_width = kw.get('line_width', 1.0)
+    line_alpha = kw.get('line_alpha', 1.0)
 
     line_segments = []
     for simplex in vor.ridge_vertices:
@@ -154,9 +167,12 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         if np.all(simplex >= 0):
             line_segments.append([(x, y) for x, y in vor.vertices[simplex]])
 
-    ax.add_collection(LineCollection(line_segments,
-                                     colors='k',
-                                     linestyle='solid'))
+    lc = LineCollection(line_segments,
+                        colors=line_colors,
+                        lw=line_width,
+                        linestyle='solid')
+    lc.set_alpha(line_alpha)
+    ax.add_collection(lc)
     ptp_bound = vor.points.ptp(axis=0)
 
     line_segments = []
@@ -177,9 +193,12 @@ def voronoi_plot_2d(vor, ax=None, **kw):
             line_segments.append([(vor.vertices[i, 0], vor.vertices[i, 1]),
                                   (far_point[0], far_point[1])])
 
-    ax.add_collection(LineCollection(line_segments,
-                                     colors='k',
-                                     linestyle='dashed'))
+    lc = LineCollection(line_segments,
+                        colors=line_colors,
+                        lw=line_width,
+                        linestyle='dashed')
+    lc.set_alpha(line_alpha)
+    ax.add_collection(lc)
     _adjust_bounds(ax, vor.points)
 
     return ax.figure

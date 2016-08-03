@@ -64,7 +64,7 @@ int ilu_cdrop_row(
     int m, n; /* m x n is the size of the supernode */
     int r = 0; /* number of dropped rows */
     register float *temp;
-    register complex *lusup = Glu->lusup;
+    register complex *lusup = (complex *) Glu->lusup;
     register int *lsub = Glu->lsub;
     register int *xlsub = Glu->xlsub;
     register int *xlusup = Glu->xlusup;

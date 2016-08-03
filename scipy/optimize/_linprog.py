@@ -64,21 +64,21 @@ def linprog_verbose_callback(xk, **kwargs):
 
     saved_printoptions = np.get_printoptions()
     np.set_printoptions(linewidth=500,
-                        formatter={'float':lambda x: "{: 12.4f}".format(x)})
+                        formatter={'float':lambda x: "{0: 12.4f}".format(x)})
     if complete:
-        print("--------- Iteration Complete - Phase {:d} -------\n".format(phase))
+        print("--------- Iteration Complete - Phase {0:d} -------\n".format(phase))
         print("Tableau:")
     elif nit == 0:
-        print("--------- Initial Tableau - Phase {:d} ----------\n".format(phase))
+        print("--------- Initial Tableau - Phase {0:d} ----------\n".format(phase))
 
     else:
-        print("--------- Iteration {:d}  - Phase {:d} --------\n".format(nit, phase))
+        print("--------- Iteration {0:d}  - Phase {1:d} --------\n".format(nit, phase))
         print("Tableau:")
 
     if nit >= 0:
         print("" + str(tableau) + "\n")
         if not complete:
-            print("Pivot Element: T[{:.0f}, {:.0f}]\n".format(pivrow, pivcol))
+            print("Pivot Element: T[{0:.0f}, {1:.0f}]\n".format(pivrow, pivcol))
         print("Basic Variables:", basis)
         print()
         print("Current Solution:")
@@ -130,7 +130,7 @@ def linprog_terse_callback(xk, **kwargs):
 
     if nit == 0:
         print("Iter:   X:")
-    print("{: <5d}   ".format(nit), end="")
+    print("{0: <5d}   ".format(nit), end="")
     print(xk)
 
 
@@ -395,7 +395,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Solve the following linear programming problem via a two-phase
     simplex algorithm.
 
-    maximize:     c^T * x
+    minimize:     c^T * x
 
     subject to:   A_ub * x <= b_ub
                   A_eq * x == b_eq
@@ -403,7 +403,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Parameters
     ----------
     c : array_like
-        Coefficients of the linear objective function to be maximized.
+        Coefficients of the linear objective function to be minimized.
     A_ub : array_like
         2-D array which, when matrix-multiplied by x, gives the values of the
         upper-bound inequality constraints at x.
@@ -461,6 +461,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         x : ndarray
             The independent variable vector which optimizes the linear
             programming problem.
+        fun : float
+            Value of the objective function.
         slack : ndarray
             The values of the slack variables.  Each slack variable corresponds
             to an inequality constraint.  If the slack is zero, then the
@@ -510,13 +512,13 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     >>> x1_bnds = (-3, None)
     >>> res = linprog(c, A, b, bounds=(x0_bnds, x1_bnds))
     >>> print(res)
-    status: 0
-    x: array([ 10.,  -3.])
-    slack: array([ 39.,   0.])
-    nit: 1
-    message: 'Optimization terminated successfully.'
-    fun: -22.0
-    success: True
+         fun: -22.0
+     message: 'Optimization terminated successfully.'
+         nit: 1
+       slack: array([ 39.,   0.])
+      status: 0
+     success: True
+           x: array([ 10.,  -3.])
 
     References
     ----------
@@ -808,12 +810,12 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     if status in (0, 1):
         if disp:
             print(messages[status])
-            print("         Current function value: {: <12.6f}".format(obj))
-            print("         Iterations: {:d}".format(nit2))
+            print("         Current function value: {0: <12.6f}".format(obj))
+            print("         Iterations: {0:d}".format(nit2))
     else:
         if disp:
             print(messages[status])
-            print("         Iterations: {:d}".format(nit2))
+            print("         Iterations: {0:d}".format(nit2))
 
     return OptimizeResult(x=x, fun=obj, nit=int(nit2), status=status, slack=slack,
                   message=messages[status], success=(status == 0))
@@ -889,6 +891,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         x : ndarray
             The independent variable vector which optimizes the linear
             programming problem.
+        fun : float
+            Value of the objective function.
         slack : ndarray
             The values of the slack variables.  Each slack variable corresponds
             to an inequality constraint.  If the slack is zero, then the
@@ -968,13 +972,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
          Current function value: -22.000000
          Iterations: 1
     >>> print(res)
-      status: 0
-       slack: array([ 39.,   0.])
-     success: True
          fun: -22.0
-           x: array([ 10.,  -3.])
      message: 'Optimization terminated successfully.'
          nit: 1
+       slack: array([ 39.,   0.])
+      status: 0
+     success: True
+           x: array([ 10.,  -3.])
 
     Note the actual objective value is 11.428571.  In this case we minimized
     the negative of the objective function.

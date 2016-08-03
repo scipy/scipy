@@ -32,7 +32,7 @@ void *superlu_malloc(size_t size)
 	ABORT("superlu_malloc: out of memory");
     }
 
-    ((int_t *) buf)[0] = size;
+    ((size_t_t *) buf)[0] = size;
 #if 0
     superlu_malloc_total += size + DWORD;
 #else
@@ -52,11 +52,11 @@ void superlu_free(void *addr)
 	ABORT("superlu_free: tried to free NULL+DWORD pointer");
 
     { 
-	int_t n = ((int_t *) p)[0];
+	int_t n = ((size_t *) p)[0];
 	
 	if ( !n )
 	    ABORT("superlu_free: tried to free a freed pointer");
-	*((int_t *) p) = 0; /* Set to zero to detect duplicate free's. */
+	*((size_t *) p) = 0; /* Set to zero to detect duplicate free's. */
 #if 0	
 	superlu_malloc_total -= (n + DWORD);
 #else

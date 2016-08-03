@@ -9,7 +9,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
 import numpy as np
 from numpy import cos, sin
 
-from scipy.optimize import basinhopping
+from scipy.optimize import (basinhopping, OptimizeResult)
 from scipy.optimize._basinhopping import (
     Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
 
@@ -38,6 +38,13 @@ def func2d(x):
     df[1] = 2. * x[1] + 0.2
     return f, df
 
+def func2d_easyderiv(x):
+    f = 2.0*x[0]**2 + 2.0*x[0]*x[1] + 2.0*x[1]**2 - 6.0*x[0]
+    df = np.zeros(2)
+    df[0] = 4.0*x[0] + 2.0*x[1] - 6.0
+    df[1] = 2.0*x[0] + 4.0*x[1]
+
+    return f, df
 
 class MyTakeStep1(RandomDisplacement):
     """use a copy of displace, but have it set a special parameter to
@@ -69,14 +76,14 @@ class MyAcceptTest(object):
     def __init__(self):
         self.been_called = False
         self.ncalls = 0
+        self.testres = [False, 'force accept', True, np.bool_(True),
+                        np.bool_(False), [], {}, 0, 1]
 
     def __call__(self, **kwargs):
         self.been_called = True
         self.ncalls += 1
-        if self.ncalls == 1:
-            return False
-        elif self.ncalls == 2:
-            return 'force accept'
+        if self.ncalls - 1 < len(self.testres):
+            return self.testres[self.ncalls - 1]
         else:
             return True
 
@@ -108,8 +115,7 @@ class TestBasinHopping(TestCase):
         """
         self.x0 = (1.0, [1.0, 1.0])
         self.sol = (-0.195, np.array([-0.195, -0.1]))
-        self.upper = (3., [3., 3.])
-        self.lower = (-3., [-3., -3.])
+        
         self.tol = 3  # number of decimal places
 
         self.niter = 100
@@ -130,19 +136,6 @@ class TestBasinHopping(TestCase):
         # if accept_test is passed, it must be callable
         assert_raises(TypeError, basinhopping, func2d, self.x0[i],
                           accept_test=1)
-        # accept_test must return bool or string "force_accept"
-
-        def bad_accept_test1(*args, **kwargs):
-            return 1
-
-        def bad_accept_test2(*args, **kwargs):
-            return "not force_accept"
-        assert_raises(ValueError, basinhopping, func2d, self.x0[i],
-                          minimizer_kwargs=self.kwargs,
-                          accept_test=bad_accept_test1)
-        assert_raises(ValueError, basinhopping, func2d, self.x0[i],
-                          minimizer_kwargs=self.kwargs,
-                          accept_test=bad_accept_test2)
 
     def test_1d_grad(self):
         # test 1d minimizations with gradient
@@ -170,6 +163,22 @@ class TestBasinHopping(TestCase):
                            disp=self.disp)
         assert_(res.nfev > 0)
         assert_equal(res.nfev, res.njev)
+
+    def test_jac(self):
+        # test jacobian returned
+        minimizer_kwargs = self.kwargs.copy()
+        # BFGS returns a Jacobian
+        minimizer_kwargs["method"] = "BFGS"
+
+        res = basinhopping(func2d_easyderiv, [0.0, 0.0],
+                           minimizer_kwargs=minimizer_kwargs, niter=self.niter,
+                           disp=self.disp)
+
+        assert_(hasattr(res.lowest_optimization_result, "jac"))
+
+        #in this case, the jacobian is just [df/dx, df/dy]
+        _, jacobian = func2d_easyderiv(res.x)
+        assert_almost_equal(res.lowest_optimization_result.jac, jacobian, self.tol)
 
     def test_2d_nograd(self):
         # test 2d minimizations without gradient
@@ -268,25 +277,44 @@ class TestBasinHopping(TestCase):
         # iterations + 1
         assert_equal(res.nit + 1, res.minimization_failures)
 
+    def test_niter_zero(self):
+        # gh5915, what happens if you call basinhopping with niter=0
+        i = 0
+        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=0, disp=self.disp)
+
 
 class Test_Storage(TestCase):
     def setUp(self):
         self.x0 = np.array(1)
         self.f0 = 0
-        self.storage = Storage(self.x0, self.f0)
+
+        minres = OptimizeResult()
+        minres.x = self.x0
+        minres.fun = self.f0
+
+        self.storage = Storage(minres)
 
     def test_higher_f_rejected(self):
-        ret = self.storage.update(self.x0 + 1, self.f0 + 1)
-        x, f = self.storage.get_lowest()
-        assert_equal(self.x0, x)
-        assert_equal(self.f0, f)
+        new_minres = OptimizeResult()
+        new_minres.x = self.x0 + 1
+        new_minres.fun = self.f0 + 1
+
+        ret = self.storage.update(new_minres)
+        minres = self.storage.get_lowest()
+        assert_equal(self.x0, minres.x)
+        assert_equal(self.f0, minres.fun)
         assert_(not ret)
 
     def test_lower_f_accepted(self):
-        ret = self.storage.update(self.x0 + 1, self.f0 - 1)
-        x, f = self.storage.get_lowest()
-        assert_(self.x0 != x)
-        assert_(self.f0 != f)
+        new_minres = OptimizeResult()
+        new_minres.x = self.x0 + 1
+        new_minres.fun = self.f0 - 1
+
+        ret = self.storage.update(new_minres)
+        minres = self.storage.get_lowest()
+        assert_(self.x0 != minres.x)
+        assert_(self.f0 != minres.fun)
         assert_(ret)
 
 

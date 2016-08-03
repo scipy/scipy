@@ -60,7 +60,7 @@ dpruneL(
     supno      = Glu->supno;
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = Glu->lusup;
+    lusup      = (double *) Glu->lusup;
     xlusup     = Glu->xlusup;
     
     /*

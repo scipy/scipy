@@ -130,7 +130,7 @@ Jörg Dietrich for the k-sample Anderson Darling test.
 Blake Griffith for improvements to scipy.sparse.
 Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
-Nathan Woods for advising on multivariate integration and building unit tests.
+Nathan Woods for work on multivariate integration. 
 Brianna Laugher for bug fixes.
 Johannes Kulick for the Dirichlet distribution.
 Bastian Venthur for bug fixes.
@@ -150,6 +150,16 @@ J.J. Green for interpolation bug fixes.
 François Magimel for documentation improvements.
 Josh Levy-Kramer for the log survival function of the hypergeometric distribution
 Will Monroe for bug fixes.
+Bernardo Sulzbach for bug fixes.
+Alexander Grigorevskiy for adding extra LAPACK least-square solvers and
+    modifying linalg.lstsq function accordingly.
+Sam Lewis for enhancements to the basinhopping module.
+Tadeusz Pudlik for documentation and vectorizing spherical Bessel functions.
+Philip DeBoer for wrapping random SO(N) and adding random O(N) and
+    correlation matrices in scipy.stats.
+Tyler Reddy and Nikolai Nowaczyk for scipy.spatial.SphericalVoronoi
+Bill Sacks for fixes to netcdf i/o.
+Kolja Glogowski for a bug fix in scipy.special.
 
 
 Institutions

@@ -43,7 +43,7 @@ __all__ = ['multigammaln']
 
 
 def multigammaln(a, d):
-    """Returns the log of multivariate gamma, also sometimes called the
+    r"""Returns the log of multivariate gamma, also sometimes called the
     generalized gamma.
 
     Parameters
@@ -60,19 +60,23 @@ def multigammaln(a, d):
 
     Notes
     -----
-    The formal definition of the multivariate gamma of dimension d for a real a
-    is::
+    The formal definition of the multivariate gamma of dimension d for a real
+    `a` is
 
-        \Gamma_d(a) = \int_{A>0}{e^{-tr(A)\cdot{|A|}^{a - (m+1)/2}dA}}
+    .. math::
 
-    with the condition ``a > (d-1)/2``, and ``A > 0`` being the set of all the
-    positive definite matrices of dimension s.  Note that a is a scalar: the
-    integrand only is multivariate, the argument is not (the function is
-    defined over a subset of the real set).
+        \Gamma_d(a) = \int_{A>0} e^{-tr(A)} |A|^{a - (d+1)/2} dA
 
-    This can be proven to be equal to the much friendlier equation::
+    with the condition :math:`a > (d-1)/2`, and :math:`A > 0` being the set of
+    all the positive definite matrices of dimension `d`.  Note that `a` is a
+    scalar: the integrand only is multivariate, the argument is not (the
+    function is defined over a subset of the real set).
 
-        \Gamma_d(a) = \pi^{d(d-1)/4}\prod_{i=1}^{d}{\Gamma(a - (i-1)/2)}.
+    This can be proven to be equal to the much friendlier equation
+
+    .. math::
+
+        \Gamma_d(a) = \pi^{d(d-1)/4} \prod_{i=1}^{d} \Gamma(a - (i-1)/2).
 
     References
     ----------

@@ -12,6 +12,8 @@ Library:
         Sources: _spectral.c
     Extension: _max_len_seq_inner
         Sources: _max_len_seq_inner.c
+    Extension: _upfirdn_apply
+        Sources: _upfirdn_apply.c
     Extension: spline
         Sources:
             splinemodule.c,

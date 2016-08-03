@@ -5,10 +5,10 @@ import warnings
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, assert_raises, TestCase, run_module_suite)
-from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
-                                 bode, freqresp, lsim, impulse, step,
-                                 abcd_normalize, place_poles,
-                                 TransferFunction, StateSpace, ZerosPolesGain)
+from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
+                          dlti, bode, freqresp, lsim, impulse, step,
+                          abcd_normalize, place_poles,
+                          TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -17,7 +17,7 @@ def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
     """
     Check each pole in P1 is close to a pole in P2 with a 1e-8
     relative tolerance or 1e-8 absolute tolerance (useful for zero poles).
-    These tolerance are very scrict but the systems tested are known to
+    These tolerances are very strict but the systems tested are known to
     accept these poles so we should not be far from what is requested.
     """
     P2 = P2.copy()
@@ -249,7 +249,7 @@ class TestSS2TF:
             yield self.tst_matrix_shapes, p, q, r
 
     def test_basic(self):
-        # Test a round trip through tf2ss and sst2f.
+        # Test a round trip through tf2ss and ss2tf.
         b = np.array([1.0, 3.0, 5.0])
         a = np.array([1.0, 2.0, 3.0])
 
@@ -257,12 +257,92 @@ class TestSS2TF:
         assert_allclose(A, [[-2, -3], [1, 0]], rtol=1e-13)
         assert_allclose(B, [[1], [0]], rtol=1e-13)
         assert_allclose(C, [[1, 2]], rtol=1e-13)
-        # N.b. the shape of D returned by tf2ss is (1,), not (1, 1). Sigh.
-        assert_allclose(D, [1], rtol=1e-14)
+        assert_allclose(D, [[1]], rtol=1e-14)
 
         bb, aa = ss2tf(A, B, C, D)
         assert_allclose(bb[0], b, rtol=1e-13)
         assert_allclose(aa, a, rtol=1e-13)
+
+    def test_zero_order_round_trip(self):
+        # See gh-5760
+        tf = (2, 1)
+        A, B, C, D = tf2ss(*tf)
+        assert_allclose(A, [[0]], rtol=1e-13)
+        assert_allclose(B, [[0]], rtol=1e-13)
+        assert_allclose(C, [[0]], rtol=1e-13)
+        assert_allclose(D, [[2]], rtol=1e-13)
+
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[2, 0]], rtol=1e-13)
+        assert_allclose(den, [1, 0], rtol=1e-13)
+
+        tf = ([[5], [2]], 1)
+        A, B, C, D = tf2ss(*tf)
+        assert_allclose(A, [[0]], rtol=1e-13)
+        assert_allclose(B, [[0]], rtol=1e-13)
+        assert_allclose(C, [[0], [0]], rtol=1e-13)
+        assert_allclose(D, [[5], [2]], rtol=1e-13)
+
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[5, 0], [2, 0]], rtol=1e-13)
+        assert_allclose(den, [1, 0], rtol=1e-13)
+
+    def test_simo_round_trip(self):
+        # See gh-5753
+        tf = ([[1, 2], [1, 1]], [1, 2])
+        A, B, C, D = tf2ss(*tf)
+        assert_allclose(A, [[-2]], rtol=1e-13)
+        assert_allclose(B, [[1]], rtol=1e-13)
+        assert_allclose(C, [[0], [-1]], rtol=1e-13)
+        assert_allclose(D, [[1], [1]], rtol=1e-13)
+
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[1, 2], [1, 1]], rtol=1e-13)
+        assert_allclose(den, [1, 2], rtol=1e-13)
+
+        tf = ([[1, 0, 1], [1, 1, 1]], [1, 1, 1])
+        A, B, C, D = tf2ss(*tf)
+        assert_allclose(A, [[-1, -1], [1, 0]], rtol=1e-13)
+        assert_allclose(B, [[1], [0]], rtol=1e-13)
+        assert_allclose(C, [[-1, 0], [0, 0]], rtol=1e-13)
+        assert_allclose(D, [[1], [1]], rtol=1e-13)
+
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[1, 0, 1], [1, 1, 1]], rtol=1e-13)
+        assert_allclose(den, [1, 1, 1], rtol=1e-13)
+
+        tf = ([[1, 2, 3], [1, 2, 3]], [1, 2, 3, 4])
+        A, B, C, D = tf2ss(*tf)
+        assert_allclose(A, [[-2, -3, -4], [1, 0, 0], [0, 1, 0]], rtol=1e-13)
+        assert_allclose(B, [[1], [0], [0]], rtol=1e-13)
+        assert_allclose(C, [[1, 2, 3], [1, 2, 3]], rtol=1e-13)
+        assert_allclose(D, [[0], [0]], rtol=1e-13)
+
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[0, 1, 2, 3], [0, 1, 2, 3]], rtol=1e-13)
+        assert_allclose(den, [1, 2, 3, 4], rtol=1e-13)
+
+        tf = ([1, [2, 3]], [1, 6])
+        A, B, C, D = tf2ss(*tf)
+        assert_allclose(A, [[-6]], rtol=1e-31)
+        assert_allclose(B, [[1]], rtol=1e-31)
+        assert_allclose(C, [[1], [-9]], rtol=1e-31)
+        assert_allclose(D, [[0], [2]], rtol=1e-31)
+
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[0, 1], [2, 3]], rtol=1e-13)
+        assert_allclose(den, [1, 6], rtol=1e-13)
+
+        tf = ([[1, -3], [1, 2, 3]], [1, 6, 5])
+        A, B, C, D = tf2ss(*tf)
+        assert_allclose(A, [[-6, -5], [1, 0]], rtol=1e-13)
+        assert_allclose(B, [[1], [0]], rtol=1e-13)
+        assert_allclose(C, [[1, -3], [-4, -2]], rtol=1e-13)
+        assert_allclose(D, [[0], [1]], rtol=1e-13)
+
+        num, den = ss2tf(A, B, C, D)
+        assert_allclose(num, [[0, 1, -3], [1, 2, 3]], rtol=1e-13)
+        assert_allclose(den, [1, 6, 5], rtol=1e-13)
 
     def test_multioutput(self):
         # Regression test for gh-2669.
@@ -650,17 +730,23 @@ class TestLti(object):
         s = lti([1], [-1])
         assert_(isinstance(s, TransferFunction))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, dlti))
+        assert_(s.dt is None)
 
         # ZerosPolesGain
         s = lti(np.array([]), np.array([-1]), 1)
         assert_(isinstance(s, ZerosPolesGain))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, dlti))
+        assert_(s.dt is None)
 
         # StateSpace
         s = lti([], [-1], 1)
         s = lti([1], [-1], 1, 3)
         assert_(isinstance(s, StateSpace))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, dlti))
+        assert_(s.dt is None)
 
 
 class TestStateSpace(object):
@@ -695,24 +781,31 @@ class TestStateSpace(object):
 
         # Getters
         s = StateSpace(1, 1, 1, 1)
-        assert_equal(s.num, [1, 0])
-        assert_equal(s.den, [1, -1])
-        assert_equal(s.poles, [1])
-        assert_equal(s.zeros, [0])
-        assert_equal(s.gain, 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_equal(s.num, [1, 0])
+            assert_equal(s.den, [1, -1])
+            assert_equal(s.poles, [1])
+            assert_equal(s.zeros, [0])
+            assert_equal(s.gain, 1)
 
         # transfer function setters
         s2 = StateSpace(2, 2, 2, 2)
-        s2.num = [1, 0]
-        s2.den = [1, -1]
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.num = [1, 0]
+            s2.den = [1, -1]
+            self._compare_systems(s, s2)
 
         # zpk setters
         s2 = StateSpace(2, 2, 2, 2)
-        s2.poles = 1
-        s2.zeros = 0
-        s2.gain = 1
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_(s.dt is None)
+            s2.poles = 1
+            s2.zeros = 0
+            s2.gain = 1
+            self._compare_systems(s, s2)
 
 
 class TestTransferFunction(object):
@@ -744,28 +837,34 @@ class TestTransferFunction(object):
 
         # Getters
         s = TransferFunction([1, 0], [1, -1])
-        assert_equal(s.poles, [1])
-        assert_equal(s.zeros, [0])
-        assert_equal(s.gain, 1)
-        assert_equal(s.A, 1)
-        assert_equal(s.B, 1)
-        assert_equal(s.C, 1)
-        assert_equal(s.D, 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_equal(s.poles, [1])
+            assert_equal(s.zeros, [0])
+            assert_equal(s.gain, 1)
+            assert_equal(s.A, 1)
+            assert_equal(s.B, 1)
+            assert_equal(s.C, 1)
+            assert_equal(s.D, 1)
 
         # state space setters
         s2 = TransferFunction([2, 3], [4, 5])
-        s2.A = 1
-        s2.B = 1
-        s2.C = 1
-        s2.D = 1
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.A = 1
+            s2.B = 1
+            s2.C = 1
+            s2.D = 1
+            self._compare_systems(s, s2)
 
         # zpk setters
         s2 = TransferFunction([2, 3], [4, 5])
-        s2.poles = 1
-        s2.zeros = 0
-        s2.gain = 1
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.poles = 1
+            s2.zeros = 0
+            s2.gain = 1
+            self._compare_systems(s, s2)
 
 
 class TestZerosPolesGain(object):
@@ -777,9 +876,11 @@ class TestZerosPolesGain(object):
 
     def _compare_systems(self, sys1, sys2):
         #Compare the contents of two systems
-        assert_equal(sys1.poles, sys2.poles)
-        assert_equal(sys1.zeros, sys2.zeros)
-        assert_equal(sys1.gain, sys2.gain)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_equal(sys1.poles, sys2.poles)
+            assert_equal(sys1.zeros, sys2.zeros)
+            assert_equal(sys1.gain, sys2.gain)
 
     def test_conversion(self):
         #Check the conversion functions
@@ -798,26 +899,32 @@ class TestZerosPolesGain(object):
 
         # Getters
         s = ZerosPolesGain(0, 1, 1)
-        assert_equal(s.num, [1, 0])
-        assert_equal(s.den, [1, -1])
-        assert_equal(s.A, 1)
-        assert_equal(s.B, 1)
-        assert_equal(s.C, 1)
-        assert_equal(s.D, 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_equal(s.num, [1, 0])
+            assert_equal(s.den, [1, -1])
+            assert_equal(s.A, 1)
+            assert_equal(s.B, 1)
+            assert_equal(s.C, 1)
+            assert_equal(s.D, 1)
 
         # state space setters
         s2 = ZerosPolesGain([2], [6], 3)
-        s2.A = 1
-        s2.B = 1
-        s2.C = 1
-        s2.D = 1
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.A = 1
+            s2.B = 1
+            s2.C = 1
+            s2.D = 1
+            self._compare_systems(s, s2)
 
         # tf setters
         s2 = ZerosPolesGain([2], [5], 3)
-        s2.num = [1, 0]
-        s2.den = [1, -1]
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.num = [1, 0]
+            s2.den = [1, -1]
+            self._compare_systems(s, s2)
 
 
 class Test_abcd_normalize(object):

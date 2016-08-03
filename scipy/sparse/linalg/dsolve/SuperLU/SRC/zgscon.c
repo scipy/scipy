@@ -3,10 +3,10 @@
  * \brief Estimates reciprocal of the condition number of a general matrix
  * 
  * <pre>
- * -- SuperLU routine (version 3.0) --
+ * -- SuperLU routine (version 5.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * October 15, 2003
+ * July 25, 2015
  *
  * Modified from lapack routines ZGECON.
  * </pre> 
@@ -80,15 +80,16 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
     int    kase, kase1, onenrm, i;
     double ainvnm;
     doublecomplex *work;
+    int    isave[3];
     extern int zrscl_(int *, doublecomplex *, doublecomplex *, int *);
 
-    extern int zlacon_(int *, doublecomplex *, doublecomplex *, double *, int *);
+    extern int zlacon2_(int *, doublecomplex *, doublecomplex *, double *, int *, int []);
 
     
     /* Test the input parameters. */
     *info = 0;
-    onenrm = *(unsigned char *)norm == '1' || lsame_(norm, "O");
-    if (! onenrm && ! lsame_(norm, "I")) *info = -1;
+    onenrm = *(unsigned char *)norm == '1' || strncmp(norm, "O", 1)==0;
+    if (! onenrm && ! strncmp(norm, "I", 1)==0) *info = -1;
     else if (L->nrow < 0 || L->nrow != L->ncol ||
              L->Stype != SLU_SC || L->Dtype != SLU_Z || L->Mtype != SLU_TRLU)
 	 *info = -2;
@@ -97,7 +98,7 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
 	*info = -3;
     if (*info != 0) {
 	i = -(*info);
-	xerbla_("zgscon", &i);
+	input_error("zgscon", &i);
 	return;
     }
 
@@ -121,7 +122,7 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
     kase = 0;
 
     do {
-	zlacon_(&L->nrow, &work[L->nrow], &work[0], &ainvnm, &kase);
+	zlacon2_(&L->nrow, &work[L->nrow], &work[0], &ainvnm, &kase, isave);
 
 	if (kase == 0) break;
 

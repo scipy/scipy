@@ -52,5 +52,5 @@ class TestF77Mismatch(TestCase):
                                    ['libg2c', 'libgfortran'])
         self.assertFalse(len(deps) > 1,
 """Both g77 and gfortran runtimes linked in scipy.linalg.flapack ! This is
-likely to cause random crashes and wrong results. See numpy INSTALL.txt for
+likely to cause random crashes and wrong results. See numpy INSTALL.rst.txt for
 more information.""")

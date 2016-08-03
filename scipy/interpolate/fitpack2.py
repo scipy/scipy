@@ -168,7 +168,9 @@ class UnivariateSpline(object):
                  ext=0, check_finite=False):
 
         if check_finite:
-            if not np.isfinite(x).all() or not np.isfinite(y).all():
+            w_finite = np.isfinite(w).all() if w is not None else True
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                    not w_finite):
                 raise ValueError("x and y array must not contain NaNs or infs.")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -586,8 +588,9 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
                  ext=0, check_finite=False):
 
         if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all()):
+                    not w_finite):
                 raise ValueError("Input must not contain NaNs or infs.")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
@@ -685,7 +688,7 @@ class LSQUnivariateSpline(UnivariateSpline):
 
     Examples
     --------
-    >>> from scipy.interpolate import LSQUnivariateSpline
+    >>> from scipy.interpolate import LSQUnivariateSpline, UnivariateSpline
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3, 50)
     >>> y = np.exp(-x**2) + 0.1 * np.random.randn(50)
@@ -705,14 +708,26 @@ class LSQUnivariateSpline(UnivariateSpline):
     >>> spl.get_knots()
     array([-3., -1., 0., 1., 3.])
 
+    Constructing lsq spline using the knots from another spline:
+
+    >>> x = np.arange(10)
+    >>> s = UnivariateSpline(x, x, s=0)
+    >>> s.get_knots()
+    array([ 0.,  2.,  3.,  4.,  5.,  6.,  7.,  9.])
+    >>> knt = s.get_knots()
+    >>> s1 = LSQUnivariateSpline(x, x, knt[1:-1])    # Chop 1st and last knot
+    >>> s1.get_knots()
+    array([ 0.,  2.,  3.,  4.,  5.,  6.,  7.,  9.])
+
     """
 
     def __init__(self, x, y, t, w=None, bbox=[None]*2, k=3,
                  ext=0, check_finite=False):
 
         if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all() or not np.isfinite(t).all()):
+                    not w_finite or not np.isfinite(t).all()):
                 raise ValueError("Input(s) must not contain NaNs or infs.")
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier

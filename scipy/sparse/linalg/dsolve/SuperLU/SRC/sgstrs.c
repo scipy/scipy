@@ -128,7 +128,7 @@ sgstrs (trans_t trans, SuperMatrix *L, SuperMatrix *U,
 	*info = -6;
     if ( *info ) {
 	i = -(*info);
-	xerbla_("sgstrs", &i);
+	input_error("sgstrs", &i);
 	return;
     }
 
@@ -332,6 +332,6 @@ sprint_soln(int n, int nrhs, float *soln)
 {
     int i;
 
-    for (i = 0; i < n; i++) 
+    for (i = 0; i < n; i++)
   	printf("\t%d: %.4f\n", i, soln[i]);
 }

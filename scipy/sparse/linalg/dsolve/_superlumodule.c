@@ -12,15 +12,13 @@
  */
 
 #include <Python.h>
-#include <setjmp.h>
 
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_sparse_superlu_ARRAY_API
-#include <numpy/arrayobject.h>
+#include <numpy/ndarrayobject.h>
 
 #include "_superluobject.h"
 #include "numpy/npy_3kcompat.h"
 
-extern jmp_buf _superlu_py_jmpbuf;
 
 /*
  * NULL-safe deconstruction functions
@@ -74,23 +72,21 @@ void XStatFree(SuperLUStat_t * stat)
 static PyObject *Py_gssv(PyObject * self, PyObject * args,
 			 PyObject * kwdict)
 {
-    PyObject *Py_B = NULL;
-    PyArrayObject *Py_X = NULL;
-    PyArrayObject *nzvals = NULL;
-    PyArrayObject *colind = NULL, *rowptr = NULL;
-    int N, nnz;
-    int info;
-    int csc = 0;
-    int *perm_r = NULL, *perm_c = NULL;
-    SuperMatrix A = { 0 }, B = {
-    0}, L = {
-    0}, U = {
-    0};
-    superlu_options_t options = { 0 };
-    SuperLUStat_t stat = { 0 };
-    PyObject *option_dict = NULL;
-    int type;
-    int ssv_finished = 0;
+    volatile PyObject *Py_B = NULL;
+    volatile PyArrayObject *Py_X = NULL;
+    volatile PyArrayObject *nzvals = NULL;
+    volatile PyArrayObject *colind = NULL, *rowptr = NULL;
+    volatile int N, nnz;
+    volatile int info;
+    volatile int csc = 0;
+    volatile int *perm_r = NULL, *perm_c = NULL;
+    volatile SuperMatrix A = { 0 }, B = { 0 }, L = { 0 }, U = { 0 };
+    volatile superlu_options_t options = { 0 };
+    volatile SuperLUStat_t stat = { 0 };
+    volatile PyObject *option_dict = NULL;
+    volatile int type;
+    volatile jmp_buf *jmpbuf_ptr;
+    SLU_BEGIN_THREADS_DEF;
 
     static char *kwlist[] = {
         "N", "nnz", "nzvals", "colind", "rowptr", "B", "csc",
@@ -111,26 +107,26 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 	return NULL;
     }
 
-    type = PyArray_TYPE(nzvals);
+    type = PyArray_TYPE((PyArrayObject*)nzvals);
     if (!CHECK_SLU_TYPE(type)) {
 	PyErr_SetString(PyExc_TypeError,
 			"nzvals is not of a type supported by SuperLU");
 	return NULL;
     }
 
-    if (!set_superlu_options_from_dict
-	(&options, 0, option_dict, NULL, NULL)) {
+    if (!set_superlu_options_from_dict((superlu_options_t*)&options, 0,
+                                       (PyObject*)option_dict, NULL, NULL)) {
 	return NULL;
     }
 
     /* Create Space for output */
     Py_X = (PyArrayObject*)PyArray_FROMANY(
-        Py_B, type, 1, 2,
-        NPY_F_CONTIGUOUS | NPY_ENSURECOPY);
+        (PyObject*)Py_B, type, 1, 2,
+        NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ENSURECOPY);
     if (Py_X == NULL)
 	return NULL;
 
-    if (Py_X->dimensions[0] != N) {
+    if (PyArray_DIM((PyArrayObject*)Py_X, 0) != N) {
         PyErr_SetString(PyExc_ValueError,
                         "b array has invalid shape");
         Py_DECREF(Py_X);
@@ -138,22 +134,24 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     }
 
     if (csc) {
-	if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr,
-				   type)) {
+	if (NCFormat_from_spMatrix((SuperMatrix*)&A, N, N, nnz,
+                                   (PyArrayObject *)nzvals, (PyArrayObject *)colind,
+                                   (PyArrayObject *)rowptr, type)) {
 	    Py_DECREF(Py_X);
 	    return NULL;
 	}
     }
     else {
-	if (NRFormat_from_spMatrix(&A, N, N, nnz, nzvals, colind, rowptr,
+	if (NRFormat_from_spMatrix((SuperMatrix*)&A, N, N, nnz, (PyArrayObject *)nzvals,
+                                   (PyArrayObject *)colind, (PyArrayObject *)rowptr,
 				   type)) {
 	    Py_DECREF(Py_X);
 	    return NULL;
 	}
     }
 
-    if (DenseSuper_from_Numeric(&B, Py_X)) {
-	Destroy_SuperMatrix_Store(&A);
+    if (DenseSuper_from_Numeric((SuperMatrix*)&B, (PyObject*)Py_X)) {
+	Destroy_SuperMatrix_Store((SuperMatrix*)&A);
 	Py_DECREF(Py_X);
 	return NULL;
     }
@@ -162,37 +160,42 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 
     /* Setup options */
 
-    if (setjmp(_superlu_py_jmpbuf)) {
+    jmpbuf_ptr = (volatile jmp_buf *)superlu_python_jmpbuf();
+    SLU_BEGIN_THREADS;
+    if (setjmp(*(jmp_buf*)jmpbuf_ptr)) {
+        SLU_END_THREADS;
 	goto fail;
     }
     else {
 	perm_c = intMalloc(N);
 	perm_r = intMalloc(N);
-	StatInit(&stat);
+	StatInit((SuperLUStat_t*)&stat);
 
 	/* Compute direct inverse of sparse Matrix */
-	gssv(type, &options, &A, perm_c, perm_r, &L, &U, &B, &stat, &info);
+	gssv(type, (superlu_options_t*)&options, (SuperMatrix*)&A, (int*)perm_c, (int*)perm_r,
+             (SuperMatrix*)&L, (SuperMatrix*)&U, (SuperMatrix*)&B, (SuperLUStat_t*)&stat,
+             (int*)&info);
+        SLU_END_THREADS;
     }
-    ssv_finished = 1;
 
-    SUPERLU_FREE(perm_r);
-    SUPERLU_FREE(perm_c);
-    Destroy_SuperMatrix_Store(&A);	/* holds just a pointer to the data */
-    Destroy_SuperMatrix_Store(&B);
-    Destroy_SuperNode_Matrix(&L);
-    Destroy_CompCol_Matrix(&U);
-    StatFree(&stat);
+    SUPERLU_FREE((void*)perm_r);
+    SUPERLU_FREE((void*)perm_c);
+    Destroy_SuperMatrix_Store((SuperMatrix*)&A);	/* holds just a pointer to the data */
+    Destroy_SuperMatrix_Store((SuperMatrix*)&B);
+    Destroy_SuperNode_Matrix((SuperMatrix*)&L);
+    Destroy_CompCol_Matrix((SuperMatrix*)&U);
+    StatFree((SuperLUStat_t*)&stat);
 
     return Py_BuildValue("Ni", Py_X, info);
 
   fail:
-    SUPERLU_FREE(perm_r);
-    SUPERLU_FREE(perm_c);
-    XDestroy_SuperMatrix_Store(&A);	/* holds just a pointer to the data */
-    XDestroy_SuperMatrix_Store(&B);
-    XDestroy_SuperNode_Matrix(&L);
-    XDestroy_CompCol_Matrix(&U);
-    XStatFree(&stat);
+    SUPERLU_FREE((void*)perm_r);
+    SUPERLU_FREE((void*)perm_c);
+    XDestroy_SuperMatrix_Store((SuperMatrix*)&A);	/* holds just a pointer to the data */
+    XDestroy_SuperMatrix_Store((SuperMatrix*)&B);
+    XDestroy_SuperNode_Matrix((SuperMatrix*)&L);
+    XDestroy_CompCol_Matrix((SuperMatrix*)&U);
+    XStatFree((SuperLUStat_t*)&stat);
     Py_XDECREF(Py_X);
     return NULL;
 }
@@ -232,7 +235,7 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 	return NULL;
     }
 
-    type = PyArray_TYPE(nzvals);
+    type = PyArray_TYPE((PyArrayObject*)nzvals);
     if (!CHECK_SLU_TYPE(type)) {
 	PyErr_SetString(PyExc_TypeError,
 			"nzvals is not of a type supported by SuperLU");
@@ -350,6 +353,11 @@ PyMODINIT_FUNC init_superlu(void)
 
     SuperLUType.ob_type = &PyType_Type;
     if (PyType_Ready(&SuperLUType) < 0) {
+	return;
+    }
+
+    SuperLUGlobalType.ob_type = &PyType_Type;
+    if (PyType_Ready(&SuperLUGlobalType) < 0) {
 	return;
     }
 

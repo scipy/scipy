@@ -92,7 +92,7 @@
  * perm_r   (input/output) int*, dimension (A->nrow)
  *          Row permutation vector which defines the permutation matrix Pr,
  *          perm_r[i] = j means row i of A is in position j in Pr*A.
- *          If options->Fact = SamePattern_SameRowPerm, the pivoting routine
+ *          If options->Fact == SamePattern_SameRowPerm, the pivoting routine
  *             will try to use the input perm_r, unless a certain threshold
  *             criterion is violated. In that case, perm_r is overwritten by
  *             a new permutation determined by partial pivoting or diagonal
@@ -108,6 +108,17 @@
  *	    The factor U from the factorization Pr*A*Pc=L*U. Use column-wise
  *          storage scheme, i.e., U has types: Stype = SLU_NC, 
  *          Dtype = SLU_S, Mtype = SLU_TRU.
+ *
+ * Glu      (input/output) GlobalLU_t *
+ *          If options->Fact == SamePattern_SameRowPerm, it is an input;
+ *              The matrix A will be factorized assuming that a 
+ *              factorization of a matrix with the same sparsity pattern
+ *              and similar numerical values was performed prior to this one.
+ *              Therefore, this factorization will reuse both row and column
+ *		scaling factors R and C, both row and column permutation
+ *		vectors perm_r and perm_c, and the L & U data structures
+ *		set up from the previous factorization.
+ *          Otherwise, it is an output.
  *
  * stat     (output) SuperLUStat_t*
  *          Record the statistics on runtime and floating-point operation count.
@@ -179,6 +190,7 @@ void
 sgstrf (superlu_options_t *options, SuperMatrix *A,
         int relax, int panel_size, int *etree, void *work, int lwork,
         int *perm_c, int *perm_r, SuperMatrix *L, SuperMatrix *U,
+    	GlobalLU_t *Glu, /* persistent to facilitate multiple factorizations */
         SuperLUStat_t *stat, int *info)
 {
     /* Local working arrays */
@@ -201,7 +213,6 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
     int       *xlsub, *xlusup, *xusub;
     int       nzlumax;
     float fill_ratio = sp_ienv(6);  /* estimated fill ratio */
-    static    GlobalLU_t Glu; /* persistent to facilitate multiple factors. */
 
     /* Local scalars */
     fact_t    fact = options->Fact;
@@ -232,14 +243,14 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
 
     /* Allocate storage common to the factor routines */
     *info = sLUMemInit(fact, work, lwork, m, n, Astore->nnz,
-                       panel_size, fill_ratio, L, U, &Glu, &iwork, &swork);
+                       panel_size, fill_ratio, L, U, Glu, &iwork, &swork);
     if ( *info ) return;
     
-    xsup    = Glu.xsup;
-    supno   = Glu.supno;
-    xlsub   = Glu.xlsub;
-    xlusup  = Glu.xlusup;
-    xusub   = Glu.xusub;
+    xsup    = Glu->xsup;
+    supno   = Glu->supno;
+    xlsub   = Glu->xlsub;
+    xlusup  = Glu->xlusup;
+    xusub   = Glu->xusub;
     
     SetIWork(m, n, panel_size, iwork, &segrep, &parent, &xplore,
 	     &repfnz, &panel_lsub, &xprune, &marker);
@@ -285,7 +296,7 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
 	     * -------------------------------------- */
 	    /* Determine the union of the row structure of the snode */
 	    if ( (*info = ssnode_dfs(jcol, kcol, asub, xa_begin, xa_end,
-				    xprune, marker, &Glu)) != 0 )
+				    xprune, marker, Glu)) != 0 )
 		return;
 
             nextu    = xusub[jcol];
@@ -293,9 +304,9 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
 	    jsupno   = supno[jcol];
 	    fsupc    = xsup[jsupno];
 	    new_next = nextlu + (xlsub[fsupc+1]-xlsub[fsupc])*(kcol-jcol+1);
-	    nzlumax = Glu.nzlumax;
+	    nzlumax = Glu->nzlumax;
 	    while ( new_next > nzlumax ) {
-		if ( (*info = sLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, &Glu)) )
+		if ( (*info = sLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu)) )
 		    return;
 	    }
     
@@ -307,14 +318,14 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
         	    dense[asub[k]] = a[k];
 
 	       	/* Numeric update within the snode */
-	        ssnode_bmod(icol, jsupno, fsupc, dense, tempv, &Glu, stat);
+	        ssnode_bmod(icol, jsupno, fsupc, dense, tempv, Glu, stat);
 
 		if ( (*info = spivotL(icol, diag_pivot_thresh, &usepr, perm_r,
-				      iperm_r, iperm_c, &pivrow, &Glu, stat)) )
+				      iperm_r, iperm_c, &pivrow, Glu, stat)) )
 		    if ( iinfo == 0 ) iinfo = *info;
 		
 #ifdef DEBUG
-		sprint_lu_col("[1]: ", icol, pivrow, xprune, &Glu);
+		sprint_lu_col("[1]: ", icol, pivrow, xprune, Glu);
 #endif
 
 	    }
@@ -338,11 +349,11 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
 	    /* symbolic factor on a panel of columns */
 	    spanel_dfs(m, panel_size, jcol, A, perm_r, &nseg1,
 		      dense, panel_lsub, segrep, repfnz, xprune,
-		      marker, parent, xplore, &Glu);
+		      marker, parent, xplore, Glu);
 	    
 	    /* numeric sup-panel updates in topological order */
 	    spanel_bmod(m, panel_size, jcol, nseg1, dense,
-		        tempv, segrep, repfnz, &Glu, stat);
+		        tempv, segrep, repfnz, Glu, stat);
 	    
 	    /* Sparse LU within the panel, and below panel diagonal */
     	    for ( jj = jcol; jj < jcol + panel_size; jj++) {
@@ -352,31 +363,31 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
 
 	    	if ((*info = scolumn_dfs(m, jj, perm_r, &nseg, &panel_lsub[k],
 					segrep, &repfnz[k], xprune, marker,
-					parent, xplore, &Glu)) != 0) return;
+					parent, xplore, Glu)) != 0) return;
 
 	      	/* Numeric updates */
 	    	if ((*info = scolumn_bmod(jj, (nseg - nseg1), &dense[k],
 					 tempv, &segrep[nseg1], &repfnz[k],
-					 jcol, &Glu, stat)) != 0) return;
+					 jcol, Glu, stat)) != 0) return;
 		
 	        /* Copy the U-segments to ucol[*] */
 		if ((*info = scopy_to_ucol(jj, nseg, segrep, &repfnz[k],
-					  perm_r, &dense[k], &Glu)) != 0)
+					  perm_r, &dense[k], Glu)) != 0)
 		    return;
 
 	    	if ( (*info = spivotL(jj, diag_pivot_thresh, &usepr, perm_r,
-				      iperm_r, iperm_c, &pivrow, &Glu, stat)) )
+				      iperm_r, iperm_c, &pivrow, Glu, stat)) )
 		    if ( iinfo == 0 ) iinfo = *info;
 
 		/* Prune columns (0:jj-1) using column jj */
 	    	spruneL(jj, perm_r, pivrow, nseg, segrep,
-                        &repfnz[k], xprune, &Glu);
+                        &repfnz[k], xprune, Glu);
 
 		/* Reset repfnz[] for this column */
 	    	resetrep_col (nseg, segrep, &repfnz[k]);
 		
 #ifdef DEBUG
-		sprint_lu_col("[2]: ", jj, pivrow, xprune, &Glu);
+		sprint_lu_col("[2]: ", jj, pivrow, xprune, Glu);
 #endif
 
 	    }
@@ -398,10 +409,10 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
 	    }
     }
 
-    countnz(min_mn, xprune, &nnzL, &nnzU, &Glu);
-    fixupL(min_mn, perm_r, &Glu);
+    countnz(min_mn, xprune, &nnzL, &nnzU, Glu);
+    fixupL(min_mn, perm_r, Glu);
 
-    sLUWorkFree(iwork, swork, &Glu); /* Free work space and compress storage */
+    sLUWorkFree(iwork, swork, Glu); /* Free work space and compress storage */
 
     if ( fact == SamePattern_SameRowPerm ) {
         /* L and U structures may have changed due to possibly different
@@ -409,25 +420,27 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
 	   There could also be memory expansions, so the array locations
            may have changed, */
         ((SCformat *)L->Store)->nnz = nnzL;
-	((SCformat *)L->Store)->nsuper = Glu.supno[n];
-	((SCformat *)L->Store)->nzval = Glu.lusup;
-	((SCformat *)L->Store)->nzval_colptr = Glu.xlusup;
-	((SCformat *)L->Store)->rowind = Glu.lsub;
-	((SCformat *)L->Store)->rowind_colptr = Glu.xlsub;
+	((SCformat *)L->Store)->nsuper = Glu->supno[n];
+	((SCformat *)L->Store)->nzval = (float *) Glu->lusup;
+	((SCformat *)L->Store)->nzval_colptr = Glu->xlusup;
+	((SCformat *)L->Store)->rowind = Glu->lsub;
+	((SCformat *)L->Store)->rowind_colptr = Glu->xlsub;
 	((NCformat *)U->Store)->nnz = nnzU;
-	((NCformat *)U->Store)->nzval = Glu.ucol;
-	((NCformat *)U->Store)->rowind = Glu.usub;
-	((NCformat *)U->Store)->colptr = Glu.xusub;
+	((NCformat *)U->Store)->nzval = (float *) Glu->ucol;
+	((NCformat *)U->Store)->rowind = Glu->usub;
+	((NCformat *)U->Store)->colptr = Glu->xusub;
     } else {
-        sCreate_SuperNode_Matrix(L, A->nrow, min_mn, nnzL, Glu.lusup, 
-	                         Glu.xlusup, Glu.lsub, Glu.xlsub, Glu.supno,
-			         Glu.xsup, SLU_SC, SLU_S, SLU_TRLU);
-    	sCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU, Glu.ucol, 
-			       Glu.usub, Glu.xusub, SLU_NC, SLU_S, SLU_TRU);
+        sCreate_SuperNode_Matrix(L, A->nrow, min_mn, nnzL, 
+	      (float *) Glu->lusup, Glu->xlusup, 
+              Glu->lsub, Glu->xlsub, Glu->supno, Glu->xsup,
+              SLU_SC, SLU_S, SLU_TRLU);
+    	sCreate_CompCol_Matrix(U, min_mn, min_mn, nnzU, 
+	      (float *) Glu->ucol, Glu->usub, Glu->xusub,
+              SLU_NC, SLU_S, SLU_TRU);
     }
     
     ops[FACT] += ops[TRSV] + ops[GEMV];	
-    stat->expansions = --(Glu.num_expansions);
+    stat->expansions = --(Glu->num_expansions);
     
     if ( iperm_r_allocated ) SUPERLU_FREE (iperm_r);
     SUPERLU_FREE (iperm_c);

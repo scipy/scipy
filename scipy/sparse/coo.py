@@ -9,13 +9,13 @@ from warnings import warn
 
 import numpy as np
 
-from scipy._lib.six import xrange, zip as izip
+from scipy._lib.six import zip as izip
 
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
-from .base import isspmatrix, SparseEfficiencyWarning
+from .base import isspmatrix, SparseEfficiencyWarning, spmatrix
 from .data import _data_matrix, _minmax_mixin
 from .sputils import (upcast, upcast_char, to_native, isshape, getdtype,
-        isintlike, get_index_dtype, downcast_intp_index)
+                      get_index_dtype, downcast_intp_index)
 
 
 class coo_matrix(_data_matrix, _minmax_mixin):
@@ -113,6 +113,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
            [0, 0, 0, 1]])
 
     """
+    format = 'coo'
+
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
 
@@ -177,19 +179,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = True
 
         if dtype is not None:
-            self.data = self.data.astype(dtype)
+            self.data = self.data.astype(dtype, copy=False)
 
         self._check()
 
     def getnnz(self, axis=None):
-        """Get the count of explicitly-stored values (nonzeros)
-
-        Parameters
-        ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole matrix, in
-            each column, or in each row.
-        """
         if axis is None:
             nnz = len(self.data)
             if nnz != len(self.row) or nnz != len(self.col):
@@ -212,11 +206,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                                minlength=self.shape[0])
         else:
             raise ValueError('axis out of bounds')
-    nnz = property(fget=getnnz)
+
+    getnnz.__doc__ = spmatrix.getnnz.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """
-        nnz = self.nnz
 
         # index arrays should have integer data types
         if self.row.dtype.kind != 'i':
@@ -231,7 +225,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.col = np.asarray(self.col, dtype=idx_dtype)
         self.data = to_native(self.data)
 
-        if nnz > 0:
+        if self.nnz > 0:
             if self.row.max() >= self.shape[0]:
                 raise ValueError('row index exceeds matrix dimensions')
             if self.col.max() >= self.shape[1]:
@@ -241,9 +235,17 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             if self.col.min() < 0:
                 raise ValueError('negative column index found')
 
-    def transpose(self, copy=False):
-        M,N = self.shape
-        return coo_matrix((self.data, (self.col, self.row)), shape=(N,M), copy=copy)
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
+        M, N = self.shape
+        return coo_matrix((self.data, (self.col, self.row)),
+                          shape=(N, M), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def toarray(self, order=None, out=None):
         """See the docstring for `spmatrix.toarray`."""
@@ -256,8 +258,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     B.ravel('A'), fortran)
         return B
 
-    def tocsc(self):
-        """Return a copy of this matrix in Compressed Sparse Column format
+    def tocsc(self, copy=False):
+        """Convert this matrix to Compressed Sparse Column format
 
         Duplicate entries will be summed together.
 
@@ -281,25 +283,23 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
+            self.sum_duplicates()
             idx_dtype = get_index_dtype((self.col, self.row),
                                         maxval=max(self.nnz, M))
-            indptr = np.empty(N + 1, dtype=idx_dtype)
-            indices = np.empty(self.nnz, dtype=idx_dtype)
-            data = np.empty(self.nnz, dtype=upcast(self.dtype))
+            row = self.row.astype(idx_dtype, copy=False)
+            col = self.col.astype(idx_dtype, copy=False)
 
-            coo_tocsr(N, M, self.nnz,
-                      self.col.astype(idx_dtype),
-                      self.row.astype(idx_dtype),
-                      self.data,
+            indptr = np.empty(N + 1, dtype=idx_dtype)
+            indices = np.empty_like(row, dtype=idx_dtype)
+            data = np.empty_like(self.data, dtype=upcast(self.dtype))
+
+            coo_tocsr(N, M, self.nnz, col, row, self.data,
                       indptr, indices, data)
 
-            A = csc_matrix((data, indices, indptr), shape=self.shape)
-            A.sum_duplicates()
+            return csc_matrix((data, indices, indptr), shape=self.shape)
 
-            return A
-
-    def tocsr(self):
-        """Return a copy of this matrix in Compressed Sparse Row format
+    def tocsr(self, copy=False):
+        """Convert this matrix to Compressed Sparse Row format
 
         Duplicate entries will be summed together.
 
@@ -323,24 +323,20 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
+            self.sum_duplicates()
             idx_dtype = get_index_dtype((self.row, self.col),
                                         maxval=max(self.nnz, N))
+            row = self.row.astype(idx_dtype, copy=False)
+            col = self.col.astype(idx_dtype, copy=False)
+
             indptr = np.empty(M + 1, dtype=idx_dtype)
-            indices = np.empty(self.nnz, dtype=idx_dtype)
-            data = np.empty(self.nnz, dtype=upcast(self.dtype))
+            indices = np.empty_like(col, dtype=idx_dtype)
+            data = np.empty_like(self.data, dtype=upcast(self.dtype))
 
-            coo_tocsr(M, N, self.nnz,
-                      self.row.astype(idx_dtype),
-                      self.col.astype(idx_dtype),
-                      self.data,
-                      indptr,
-                      indices,
-                      data)
+            coo_tocsr(M, N, self.nnz, row, col, self.data,
+                      indptr, indices, data)
 
-            A = csr_matrix((data, indices, indptr), shape=self.shape)
-            A.sum_duplicates()
-
-            return A
+            return csr_matrix((data, indices, indptr), shape=self.shape)
 
     def tocoo(self, copy=False):
         if copy:
@@ -348,9 +344,12 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         else:
             return self
 
-    def todia(self):
+    tocoo.__doc__ = spmatrix.tocoo.__doc__
+
+    def todia(self, copy=False):
         from .dia import dia_matrix
 
+        self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
         diags, diag_idx = np.unique(ks, return_inverse=True)
 
@@ -368,7 +367,9 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         return dia_matrix((data,diags), shape=self.shape)
 
-    def todok(self):
+    todia.__doc__ = spmatrix.todia.__doc__
+
+    def todok(self, copy=False):
         from .dok import dok_matrix
 
         self.sum_duplicates()
@@ -377,17 +378,23 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         return dok
 
+    todok.__doc__ = spmatrix.todok.__doc__
+
     def diagonal(self):
-        # Could be rewritten without the python loop.
-        # Data entries at the same (row, col) are summed.
-        n = min(self.shape)
-        ndata = self.data.shape[0]
-        d = np.zeros(n, dtype=self.dtype)
-        for i in xrange(ndata):
-            r = self.row[i]
-            if r == self.col[i]:
-                d[r] += self.data[i]
-        return d
+        diag = np.zeros(min(self.shape), dtype=self.dtype)
+        diag_mask = self.row == self.col
+
+        if self.has_canonical_format:
+            row = self.row[diag_mask]
+            data = self.data[diag_mask]
+        else:
+            row, _, data = self._sum_duplicates(self.row[diag_mask],
+                                                self.col[diag_mask],
+                                                self.data[diag_mask])
+        diag[row] = data
+
+        return diag
+
     diagonal.__doc__ = _data_matrix.diagonal.__doc__
 
     def _setdiag(self, values, k):
@@ -444,20 +451,38 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         This is an *in place* operation
         """
-        if self.has_canonical_format or len(self.data) == 0:
+        if self.has_canonical_format:
             return
-        order = np.lexsort((self.row,self.col))
-        self.row = self.row[order]
-        self.col = self.col[order]
-        self.data = self.data[order]
-        unique_mask = ((self.row[1:] != self.row[:-1]) |
-                       (self.col[1:] != self.col[:-1]))
-        unique_mask = np.append(True, unique_mask)
-        self.row = self.row[unique_mask]
-        self.col = self.col[unique_mask]
-        unique_inds, = np.nonzero(unique_mask)
-        self.data = np.add.reduceat(self.data, unique_inds, dtype=self.dtype)
+        summed = self._sum_duplicates(self.row, self.col, self.data)
+        self.row, self.col, self.data = summed
         self.has_canonical_format = True
+
+    def _sum_duplicates(self, row, col, data):
+        # Assumes (data, row, col) not in canonical format.
+        if len(data) == 0:
+            return row, col, data
+        order = np.lexsort((row, col))
+        row = row[order]
+        col = col[order]
+        data = data[order]
+        unique_mask = ((row[1:] != row[:-1]) |
+                       (col[1:] != col[:-1]))
+        unique_mask = np.append(True, unique_mask)
+        row = row[unique_mask]
+        col = col[unique_mask]
+        unique_inds, = np.nonzero(unique_mask)
+        data = np.add.reduceat(data, unique_inds, dtype=self.dtype)
+        return row, col, data
+
+    def eliminate_zeros(self):
+        """Remove zero entries from the matrix
+
+        This is an *in place* operation
+        """
+        mask = self.data != 0
+        self.data = self.data[mask]
+        self.row = self.row[mask]
+        self.col = self.col[mask]
 
     ###########################
     # Multiplication handlers #
@@ -471,7 +496,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         return result
 
     def _mul_multivector(self, other):
-        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
+        result = np.zeros((other.shape[1], self.shape[0]),
+                          dtype=upcast_char(self.dtype.char, other.dtype.char))
+        for i, col in enumerate(other.T):
+            coo_matvec(self.nnz, self.row, self.col, self.data, col, result[i])
+        return result.T.view(type=type(other))
 
 
 def isspmatrix_coo(x):

@@ -7,7 +7,18 @@ try:
 except ImportError:
     pass
 
-from .common import Benchmark
+try:
+    # wasn't always in scipy.special, so import separately
+    from scipy.special import comb
+except ImportError:
+    pass
+
+try:
+    from scipy.special import loggamma
+except ImportError:
+    pass
+
+from .common import Benchmark, with_attributes
 
 
 class Airy(Benchmark):
@@ -27,3 +38,29 @@ class Erf(Benchmark):
 
     time_real.params = [0.0, 2.0]
     time_real.param_names = ['offset']
+
+
+class Comb(Benchmark):
+
+    def setup(self, *args):
+        self.N = np.arange(1, 1000, 50)
+        self.k = np.arange(1, 1000, 50)
+
+    @with_attributes(params=[(10, 100, 1000, 10000), (1, 10, 100)],
+                     param_names=['N', 'k'])
+    def time_comb_exact(self, N, k):
+        comb(N, k, exact=True)
+
+    def time_comb_float(self):
+        comb(self.N[:,None], self.k[None,:])
+
+
+class Loggamma(Benchmark):
+
+    def setup(self):
+        x, y = np.logspace(3, 5, 10), np.logspace(3, 5, 10)
+        x, y = np.meshgrid(x, y)
+        self.large_z = x + 1j*y
+
+    def time_loggamma_asymptotic(self):
+        loggamma(self.large_z)

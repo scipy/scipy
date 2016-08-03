@@ -904,8 +904,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	
 	if (!(sort_buffer = malloc(n2_nonzero*is1))) goto fail;
 
-	op = PyArray_DATA(ret); os = PyArray_ITEMSIZE(ret);
-
+	os = PyArray_ITEMSIZE(ret);
 	op = PyArray_DATA(ret);
 
 	bytes_in_array = PyArray_NDIM(ap1)*sizeof(intp);

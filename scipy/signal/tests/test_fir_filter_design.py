@@ -3,11 +3,11 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
         assert_almost_equal, assert_array_almost_equal, assert_equal, \
-        assert_
+        assert_, assert_allclose
 from scipy.special import sinc
 
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-        firwin, firwin2, freqz, remez
+        firwin, firwin2, freqz, remez, firls
 
 
 def test_kaiser_beta():
@@ -383,12 +383,98 @@ class TestRemez(TestCase):
         Hmag = abs(H)
 
         # should have a zero at 0 and pi (in this case close to zero)
-        assert_((Hmag[[0,-1]] < 0.02).all(), "Zero at zero and pi")
+        assert_((Hmag[[0, -1]] < 0.02).all(), "Zero at zero and pi")
 
         # check that the pass band is close to unity
-        idx = (f > a) * (f < 0.5-a)
+        idx = np.logical_and(f > a, f < 0.5-a)
         assert_((abs(Hmag[idx] - 1) < 0.015).all(), "Pass Band Close To Unity")
 
+
+class TestFirls(TestCase):
+
+    def test_bad_args(self):
+        # even numtaps
+        assert_raises(ValueError, firls, 10, [0.1, 0.2], [0, 0])
+        # odd bands
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.4], [0, 0, 0])
+        # len(bands) != len(desired)
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.3, 0.4], [0, 0, 0])
+        # non-monotonic bands
+        assert_raises(ValueError, firls, 11, [0.2, 0.1], [0, 0])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.3, 0.3], [0] * 4)
+        assert_raises(ValueError, firls, 11, [0.3, 0.4, 0.1, 0.2], [0] * 4)
+        assert_raises(ValueError, firls, 11, [0.1, 0.3, 0.2, 0.4], [0] * 4)
+        # negative desired
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [-1, 1])
+        # len(weight) != len(pairs)
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [1, 2])
+        # negative weight
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [-1])
+
+    def test_firls(self):
+        N = 11  # number of taps in the filter
+        a = 0.1  # width of the transition band
+
+        # design a halfband symmetric low-pass filter
+        h = firls(11, [0, a, 0.5-a, 0.5], [1, 1, 0, 0], nyq=0.5)
+
+        # make sure the filter has correct # of taps
+        assert_equal(len(h), N)
+
+        # make sure it is symmetric
+        midx = (N-1) // 2
+        assert_array_almost_equal(h[:midx], h[:-midx-1:-1])
+
+        # make sure the center tap is 0.5
+        assert_almost_equal(h[midx], 0.5)
+
+        # For halfband symmetric, odd coefficients (except the center)
+        # should be zero (really small)
+        hodd = np.hstack((h[1:midx:2], h[-midx+1::2]))
+        assert_array_almost_equal(hodd, 0)
+
+        # now check the frequency response
+        w, H = freqz(h, 1)
+        f = w/2/np.pi
+        Hmag = np.abs(H)
+
+        # check that the pass band is close to unity
+        idx = np.logical_and(f > 0, f < a)
+        assert_array_almost_equal(Hmag[idx], 1, decimal=3)
+
+        # check that the stop band is close to zero
+        idx = np.logical_and(f > 0.5-a, f < 0.5)
+        assert_array_almost_equal(Hmag[idx], 0, decimal=3)
+
+    def test_compare(self):
+        # compare to OCTAVE output
+        taps = firls(9, [0, 0.5, 0.55, 1], [1, 1, 0, 0], [1, 2])
+        # >> taps = firls(8, [0 0.5 0.55 1], [1 1 0 0], [1, 2]);
+        known_taps = [-6.26930101730182e-04, -1.03354450635036e-01,
+                      -9.81576747564301e-03, 3.17271686090449e-01,
+                      5.11409425599933e-01, 3.17271686090449e-01,
+                      -9.81576747564301e-03, -1.03354450635036e-01,
+                      -6.26930101730182e-04]
+        assert_allclose(taps, known_taps)
+
+        # compare to MATLAB output
+        taps = firls(11, [0, 0.5, 0.5, 1], [1, 1, 0, 0], [1, 2])
+        # >> taps = firls(10, [0 0.5 0.5 1], [1 1 0 0], [1, 2]);
+        known_taps = [
+            0.058545300496815, -0.014233383714318, -0.104688258464392,
+            0.012403323025279, 0.317930861136062, 0.488047220029700,
+            0.317930861136062, 0.012403323025279, -0.104688258464392,
+            -0.014233383714318, 0.058545300496815]
+        assert_allclose(taps, known_taps)
+
+        # With linear changes:
+        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
+        # >> taps = firls(6, [0, 0.1, 0.2, 0.3, 0.4, 0.5], [1, 0, 0, 1, 1, 0])
+        known_taps = [
+            1.156090832768218, -4.1385894727395849, 7.5288619164321826,
+            -8.5530572592947856, 7.5288619164321826, -4.1385894727395849,
+            1.156090832768218]
+        assert_allclose(taps, known_taps)
 
 if __name__ == "__main__":
     run_module_suite()

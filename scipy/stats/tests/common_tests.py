@@ -1,18 +1,15 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import pickle
 
 import numpy as np
 import numpy.testing as npt
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_equal
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._version import NumpyVersion
 from scipy._lib._util import getargspec_no_self as _getargspec
 from scipy import stats
-
-
-NUMPY_BELOW_1_7 = NumpyVersion(np.__version__) < '1.7.0'
 
 
 def check_named_results(res, attributes, ma=False):
@@ -104,17 +101,19 @@ def check_private_entropy(distfn, args, superclass):
 
 
 def check_edge_support(distfn, args):
-    # Make sure the x=self.a and self.b are handled correctly.
+    # Make sure that x=self.a and self.b are handled correctly.
     x = [distfn.a, distfn.b]
-    if isinstance(distfn, stats.rv_continuous):
-        npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
-        npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
-
-        npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
-        npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
-
     if isinstance(distfn, stats.rv_discrete):
         x = [distfn.a - 1, distfn.b]
+
+    npt.assert_equal(distfn.cdf(x, *args), [0.0, 1.0])
+    npt.assert_equal(distfn.sf(x, *args), [1.0, 0.0])
+
+    if distfn.name not in ('skellam', 'dlaplace'):
+        # with a = -inf, log(0) generates warnings
+        npt.assert_equal(distfn.logcdf(x, *args), [-np.inf, 0.0])
+        npt.assert_equal(distfn.logsf(x, *args), [0.0, -np.inf])
+
     npt.assert_equal(distfn.ppf([0.0, 1.0], *args), x)
     npt.assert_equal(distfn.isf([0.0, 1.0], *args), x[::-1])
 
@@ -249,3 +248,39 @@ def check_cmplx_deriv(distfn, arg):
                         deriv(distfn.pdf, x, *arg) / distfn.pdf(x, *arg),
                         rtol=1e-5)
 
+
+def check_pickling(distfn, args):
+    # check that a distribution instance pickles and unpickles
+    # pay special attention to the random_state property
+
+    # save the random_state (restore later)
+    rndm = distfn.random_state
+
+    distfn.random_state = 1234
+    distfn.rvs(*args, size=8)
+    s = pickle.dumps(distfn)
+    r0 = distfn.rvs(*args, size=8)
+
+    unpickled = pickle.loads(s)
+    r1 = unpickled.rvs(*args, size=8)
+    npt.assert_equal(r0, r1)
+
+    # also smoke test some methods
+    medians = [distfn.ppf(0.5, *args), unpickled.ppf(0.5, *args)]
+    npt.assert_equal(medians[0], medians[1])
+    npt.assert_equal(distfn.cdf(medians[0], *args),
+                     unpickled.cdf(medians[1], *args))
+
+    # restore the random_state
+    distfn.random_state = rndm
+
+
+def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
+    np.random.seed(123)
+    sample = distfunc.rvs(*allargs)
+    assert_equal(sample.shape, shape, "%s: rvs failed to broadcast" % distname)
+    if not shape_only:
+        rvs = np.vectorize(lambda *allargs: distfunc.rvs(*allargs), otypes=otype)
+        np.random.seed(123)
+        expected = rvs(*allargs)
+        assert_allclose(sample, expected, rtol=1e-15)

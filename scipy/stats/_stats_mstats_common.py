@@ -7,6 +7,9 @@ from . import distributions
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes']
 
+LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
+                                                   'rvalue', 'pvalue',
+                                                   'stderr'))
 
 def linregress(x, y=None):
     """
@@ -32,7 +35,7 @@ def linregress(x, y=None):
         two-sided p-value for a hypothesis test whose null hypothesis is
         that the slope is zero.
     stderr : float
-        Standard error of the estimate
+        Standard error of the estimated gradient.
 
     See also
     --------
@@ -96,9 +99,6 @@ def linregress(x, y=None):
     intercept = ymean - slope*xmean
     sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
-    LinregressResult = namedtuple('LinregressResult', ('slope', 'intercept',
-                                                       'rvalue', 'pvalue',
-                                                       'stderr'))
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
 

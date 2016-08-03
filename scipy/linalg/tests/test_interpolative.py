@@ -249,3 +249,9 @@ class TestInterpolativeDecomposition(object):
     def test_badcall(self):
         A = hilbert(5).astype(np.float32)
         assert_raises(ValueError, pymatrixid.interp_decomp, A, 1e-6, rand=False)
+
+    def test_rank_too_large(self):
+        # svd(array, k) should not segfault
+        a = np.ones((4, 3))
+        with assert_raises(ValueError):
+            pymatrixid.svd(a, 4)

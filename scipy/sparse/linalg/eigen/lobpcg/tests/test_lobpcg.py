@@ -80,7 +80,7 @@ def test_trivial():
 
 
 def test_regression():
-    # http://mail.scipy.org/pipermail/scipy-user/2010-October/026944.html
+    # https://mail.scipy.org/pipermail/scipy-user/2010-October/026944.html
     n = 10
     X = np.ones((n, 1))
     A = np.identity(n)

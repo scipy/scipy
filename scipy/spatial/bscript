@@ -1,9 +1,15 @@
+import os
+
 from bento.commands import hooks
+
 
 @hooks.pre_build
 def pre_build(context):
-    context.tweak_extension("qhull", use="LAPACK CLIB",
-                            defines=['qh_QHpointer=1'])
+    conf = context.waf_context
+    conf.check_cc(function_name='open_memstream', header_name="stdio.h")
+    conf.write_config_header('qhull_misc_config.h')
+
+    context.tweak_extension("qhull", use="LAPACK CLIB")
 
     context.tweak_extension("ckdtree", features="c cxxshlib pyext bento",
                             includes="ckdtree/src")

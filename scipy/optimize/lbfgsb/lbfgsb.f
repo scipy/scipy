@@ -135,8 +135,7 @@ c        0<iprint<99 print also f and |proj g| every iprint iterations;
 c        iprint=99   print details of every iteration except n-vectors;
 c        iprint=100  print also the changes of active set and final x;
 c        iprint>100  print details of every iteration including x and g;
-c       When iprint > 0, the file iterate.dat will be created to
-c                        summarize the iteration.
+c       
 c
 c     csave is a working string of characters of length 60.
 c
@@ -422,8 +421,7 @@ c        0<iprint<99 print also f and |proj g| every iprint iterations;
 c        iprint=99   print details of every iteration except n-vectors;
 c        iprint=100  print also the changes of active set and final x;
 c        iprint>100  print details of every iteration including x and g;
-c       When iprint > 0, the file iterate.dat will be created to
-c                        summarize the iteration.
+c       
 c
 c     csave is a working string of characters of length 60.
 c
@@ -479,7 +477,7 @@ c     ************
  
       logical          prjctd,cnstnd,boxed,updatd,wrk
       character*3      word
-      integer          i,k,nintol,itfile,iback,nskip,
+      integer          i,k,nintol,iback,nskip,
      +                 head,col,iter,itail,iupdat,
      +                 nseg,nfgv,info,ifun,
      +                 iword,nfree,nact,ileave,nenter
@@ -542,26 +540,20 @@ c           'word' records the status of subspace solutions.
          word = '---'
 
 c           'info' records the termination information.
-         info = 0
-
-         itfile = 8
-         if (iprint .ge. 1) then
-c                                open a summary file 'iterate.dat'
-            open (8, file = 'iterate.dat', status = 'unknown')
-         endif            
+         info = 0          
 
 c        Check the input arguments for errors.
 
          call errclb(n,m,factr,l,u,nbd,task,info,k)
          if (task(1:5) .eq. 'ERROR') then
-            call prn3lb(n,x,f,task,iprint,info,itfile,
+            call prn3lb(n,x,f,task,iprint,info,
      +                  iter,nfgv,nintol,nskip,nact,sbgnrm,
      +                  zero,nseg,word,iback,stp,xstep,k,
      +                  cachyt,sbtime,lnscht)
             return
          endif
 
-         call prn1lb(n,m,l,u,x,iprint,itfile,epsmch)
+         call prn1lb(n,m,l,u,x,iprint,epsmch)
  
 c        Initialize iwhere & project x onto the feasible set.
  
@@ -578,7 +570,6 @@ c          restore local variables.
          updatd = lsave(4)
 
          nintol = isave(1)
-         itfile = isave(3)
          iback  = isave(4)
          nskip  = isave(5)
          head   = isave(6)
@@ -644,7 +635,6 @@ c     Compute the infinity norm of the (-) projected gradient.
   
       if (iprint .ge. 1) then
          write (6,1002) iter,f,sbgnrm
-         write (itfile,1003) iter,nfgv,sbgnrm,f
       endif
       if (sbgnrm .le. pgtol) then
 c                                terminate the algorithm.
@@ -679,7 +669,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      +            iprint, sbgnrm, info, epsmch)
       if (info .ne. 0) then 
 c         singular triangular system detected; refresh the lbfgs memory.
-         if(iprint .ge. 1) write (6, 1005)
+         if(iprint .ge. 1) write (0, 1005)
          info   = 0
          col    = 0
          head   = 1
@@ -727,7 +717,7 @@ c                     [ 0  I]
       if (info .ne. 0) then
 c          nonpositive definiteness in Cholesky factorization;
 c          refresh the lbfgs memory and restart the iteration.
-         if(iprint .ge. 1) write (6, 1006)
+         if(iprint .ge. 1) write (0, 1006)
          info   = 0
          col    = 0
          head   = 1
@@ -753,7 +743,7 @@ c-jlm-jn   call the direct method.
       if (info .ne. 0) then 
 c          singular triangular system detected;
 c          refresh the lbfgs memory and restart the iteration.
-         if(iprint .ge. 1) write (6, 1005)
+         if(iprint .ge. 1) write (0, 1005)
          info   = 0
          col    = 0
          head   = 1
@@ -804,7 +794,7 @@ c                restore the actual number of f and g evaluations etc.
             goto 999
          else
 c             refresh the lbfgs memory and restart the iteration.
-            if(iprint .ge. 1) write (6, 1008)
+            if(iprint .ge. 1) write (0, 1008)
             if (info .eq. 0) nfgv = nfgv - 1
             info   = 0
             col    = 0
@@ -832,7 +822,7 @@ c        Compute the infinity norm of the projected (-)gradient.
  
 c        Print iteration information.
 
-         call prn2lb(n,x,f,g,iprint,itfile,iter,nfgv,nact,
+         call prn2lb(n,x,f,g,iprint,iter,nfgv,nact,
      +               sbgnrm,nseg,word,iword,iback,stp,xstep)
          goto 1000
       endif
@@ -902,7 +892,7 @@ c           J' stored in the upper triangular of wt.
       if (info .ne. 0) then 
 c          nonpositive definiteness in Cholesky factorization;
 c          refresh the lbfgs memory and restart the iteration.
-         if(iprint .ge. 1) write (6, 1007)
+         if(iprint .ge. 1) write (0, 1007)
          info = 0
          col = 0
          head = 1
@@ -925,7 +915,7 @@ c -------------------- the end of the loop -----------------------------
  999  continue
       call timer(time2)
       time = time2 - time1
-      call prn3lb(n,x,f,task,iprint,info,itfile,
+      call prn3lb(n,x,f,task,iprint,info,
      +            iter,nfgv,nintol,nskip,nact,sbgnrm,
      +            time,nseg,word,iback,stp,xstep,k,
      +            cachyt,sbtime,lnscht)
@@ -938,8 +928,7 @@ c     Save local variables.
       lsave(3)  = boxed
       lsave(4)  = updatd
 
-      isave(1)  = nintol 
-      isave(3)  = itfile 
+      isave(1)  = nintol
       isave(4)  = iback 
       isave(5)  = nskip 
       isave(6)  = head 
@@ -1085,10 +1074,10 @@ c                   this variable is always fixed
   20  continue
 
       if (iprint .ge. 0) then
-         if (prjctd) write (6,*)
+         if (prjctd) write (0,*)
      +   'The initial X is infeasible.  Restart with its projection.'
          if (.not. cnstnd)
-     +      write (6,*) 'This problem is unconstrained.'
+     +      write (0,*) 'This problem is unconstrained.'
       endif
 
       if (iprint .gt. 0) write (6,1001) nbdd
@@ -1359,8 +1348,7 @@ c        0<iprint<99 print also f and |proj g| every iprint iterations;
 c        iprint=99   print details of every iteration except n-vectors;
 c        iprint=100  print also the changes of active set and final x;
 c        iprint>100  print details of every iteration including x and g;
-c       When iprint > 0, the file iterate.dat will be created to
-c                        summarize the iteration.
+c       
 c
 c     sbgnrm is a double precision variable.
 c       On entry sbgnrm is the norm of the projected gradient at x.
@@ -2549,7 +2537,7 @@ c     Determine the maximum step length.
 c                               the directional derivative >=0.
 c                               Line search is impossible.
             if (iprint .ge. 0) then
-                write(6,*)' ascent direction in projection gd = ', gd
+                write(0,*)' ascent direction in projection gd = ', gd
             endif
             info = -4
             return
@@ -2668,9 +2656,9 @@ c                                             and the last column of SS:
 
 c======================= The end of matupd =============================
 
-      subroutine prn1lb(n, m, l, u, x, iprint, itfile, epsmch)
+      subroutine prn1lb(n, m, l, u, x, iprint, epsmch)
  
-      integer n, m, iprint, itfile
+      integer n, m, iprint
       double precision epsmch, x(n), l(n), u(n)
 
 c     ************
@@ -2700,9 +2688,6 @@ c     ************
          write (6,7001) epsmch
          write (6,*) 'N = ',n,'    M = ',m
          if (iprint .ge. 1) then
-            write (itfile,2001) epsmch
-            write (itfile,*)'N = ',n,'    M = ',m
-            write (itfile,9001)
             if (iprint .gt. 100) then
                write (6,1004) 'L =',(l(i),i = 1,n)
                write (6,1004) 'X0 =',(x(i),i = 1,n)
@@ -2739,11 +2724,11 @@ c     ************
 
 c======================= The end of prn1lb =============================
 
-      subroutine prn2lb(n, x, f, g, iprint, itfile, iter, nfgv, nact, 
+      subroutine prn2lb(n, x, f, g, iprint, iter, nfgv, nact, 
      +                  sbgnrm, nseg, word, iword, iback, stp, xstep)
  
       character*3      word
-      integer          n, iprint, itfile, iter, nfgv, nact, nseg,
+      integer          n, iprint, iter, nfgv, nact, nseg,
      +                 iword, iback
       double precision f, sbgnrm, stp, xstep, x(n), g(n)
 
@@ -2793,8 +2778,7 @@ c                             the truncated Newton step has been used.
          imod = mod(iter,iprint)
          if (imod .eq. 0) write (6,2001) iter,f,sbgnrm
       endif
-      if (iprint .ge. 1) write (itfile,3001)
-     +          iter,nfgv,nseg,nact,word,iback,stp,xstep,sbgnrm,f
+      
 
  1004 format (/,a4, 1p, 6(1x,d11.4),/,(4x,1p,6(1x,d11.4)))
  2001 format
@@ -2807,14 +2791,14 @@ c                             the truncated Newton step has been used.
 
 c======================= The end of prn2lb =============================
 
-      subroutine prn3lb(n, x, f, task, iprint, info, itfile, 
+      subroutine prn3lb(n, x, f, task, iprint, info, 
      +                  iter, nfgv, nintol, nskip, nact, sbgnrm, 
      +                  time, nseg, word, iback, stp, xstep, k, 
      +                  cachyt, sbtime, lnscht)
  
       character*60     task
       character*3      word
-      integer          n, iprint, info, itfile, iter, nfgv, nintol,
+      integer          n, iprint, info, iter, nfgv, nintol,
      +                 nskip, nact, nseg, iback, k
       double precision f, sbgnrm, time, stp, xstep, cachyt, sbtime,
      +                 lnscht, x(n)
@@ -2857,36 +2841,19 @@ c     ************
       if (iprint .ge. 0) then
          write (6,3009) task
          if (info .ne. 0) then
-            if (info .eq. -1) write (6,9011)
-            if (info .eq. -2) write (6,9012)
-            if (info .eq. -3) write (6,9013)
-            if (info .eq. -4) write (6,9014)
-            if (info .eq. -5) write (6,9015)
-            if (info .eq. -6) write (6,*)' Input nbd(',k,') is invalid.'
+            if (info .eq. -1) write (0,9011)
+            if (info .eq. -2) write (0,9012)
+            if (info .eq. -3) write (0,9013)
+            if (info .eq. -4) write (0,9014)
+            if (info .eq. -5) write (0,9015)
+            if (info .eq. -6) write (0,*)' Input nbd(',k,') is invalid.'
             if (info .eq. -7) 
      +      write (6,*)' l(',k,') > u(',k,').  No feasible solution.'
-            if (info .eq. -8) write (6,9018)
-            if (info .eq. -9) write (6,9019)
+            if (info .eq. -8) write (0,9018)
+            if (info .eq. -9) write (0,9019)
          endif
          if (iprint .ge. 1) write (6,3007) cachyt,sbtime,lnscht
          write (6,3008) time
-         if (iprint .ge. 1) then
-            if (info .eq. -4 .or. info .eq. -9) then
-               write (itfile,3002)
-     +             iter,nfgv,nseg,nact,word,iback,stp,xstep
-            endif
-            write (itfile,3009) task
-            if (info .ne. 0) then
-               if (info .eq. -1) write (itfile,9011)
-               if (info .eq. -2) write (itfile,9012)
-               if (info .eq. -3) write (itfile,9013)
-               if (info .eq. -4) write (itfile,9014)
-               if (info .eq. -5) write (itfile,9015)
-               if (info .eq. -8) write (itfile,9018)
-               if (info .eq. -9) write (itfile,9019)
-            endif
-            write (itfile,3008) time
-         endif
       endif
 
  1004 format (/,a4, 1p, 6(1x,d11.4),/,(4x,1p,6(1x,d11.4)))
@@ -3144,8 +3111,7 @@ c        0<iprint<99 print also f and |proj g| every iprint iterations;
 c        iprint=99   print details of every iteration except n-vectors;
 c        iprint=100  print also the changes of active set and final x;
 c        iprint>100  print details of every iteration including x and g;
-c       When iprint > 0, the file iterate.dat will be created to
-c                        summarize the iteration.
+c       
 c
 c     info is an integer variable.
 c       On entry info is unspecified.

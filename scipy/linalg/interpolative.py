@@ -884,6 +884,9 @@ def svd(A, eps_or_k, rand=True):
                     U, V, S = backend.idzp_svd(eps, A)
         else:
             k = int(eps_or_k)
+            if k > min(A.shape):
+                raise ValueError("Approximation rank %s exceeds min(A.shape) = "
+                                 " %s " % (k, min(A.shape)))
             if rand:
                 if real:
                     U, V, S = backend.iddr_asvd(A, k)

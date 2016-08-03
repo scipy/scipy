@@ -5,9 +5,10 @@ from tempfile import mkdtemp, mktemp
 import os
 import shutil
 
+import numpy as np
 from numpy import array,transpose, pi
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
-                           assert_array_equal, assert_array_almost_equal, rand)
+                           assert_array_equal, assert_array_almost_equal)
 
 import scipy.sparse
 from scipy.io.mmio import mminfo, mmread, mmwrite
@@ -73,13 +74,13 @@ class TestMMIOArray(TestCase):
 
     def test_random_symmetric_float(self):
         sz = (20, 20)
-        a = rand(*sz)
+        a = np.random.random(sz)
         a = a + transpose(a)
         self.check(a, (20, 20, 400, 'array', 'real', 'symmetric'))
 
     def test_random_rectangular_float(self):
         sz = (20, 15)
-        a = rand(*sz)
+        a = np.random.random(sz)
         self.check(a, (20, 15, 300, 'array', 'real', 'general'))
 
 
@@ -144,14 +145,14 @@ class TestMMIOSparseCSR(TestMMIOArray):
 
     def test_random_symmetric_float(self):
         sz = (20, 20)
-        a = rand(*sz)
+        a = np.random.random(sz)
         a = a + transpose(a)
         a = scipy.sparse.csr_matrix(a)
         self.check(a, (20, 20, 210, 'coordinate', 'real', 'symmetric'))
 
     def test_random_rectangular_float(self):
         sz = (20, 15)
-        a = rand(*sz)
+        a = np.random.random(sz)
         a = scipy.sparse.csr_matrix(a)
         self.check(a, (20, 15, 300, 'coordinate', 'real', 'general'))
 

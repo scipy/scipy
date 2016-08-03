@@ -5,7 +5,6 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_equal, dec
 
 from scipy.stats import rankdata, tiecorrect
-from scipy._lib._version import NumpyVersion
 
 
 class TestTieCorrect(TestCase):
@@ -66,6 +65,13 @@ class TestTieCorrect(TestCase):
         expected = 1.0 - ((T1**3 - T1) + (T2**3 - T2)) / (N**3 - N)
         assert_equal(c, expected)
 
+    def test_overflow(self):
+        ntie, k = 2000, 5
+        a = np.repeat(np.arange(k), ntie)
+        n = a.size  # ntie * k
+        out = tiecorrect(rankdata(a))
+        assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
+
 
 class TestRankData(TestCase):
 
@@ -116,7 +122,6 @@ class TestRankData(TestCase):
         r = rankdata(a2d)
         assert_array_equal(r, expected)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.7.0')
     def test_rankdata_object_string(self):
         min_rank = lambda a: [1 + sum(i < j for i in a) for j in a]
         max_rank = lambda a: [sum(i <= j for i in a) for j in a]

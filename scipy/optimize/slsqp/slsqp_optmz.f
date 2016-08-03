@@ -75,7 +75,9 @@ C*  * X()            X() STORES THE CURRENT ITERATE OF THE N VECTOR X  *
 C*                   ON ENTRY X() MUST BE INITIALIZED. ON EXIT X()     *
 C*                   STORES THE SOLUTION VECTOR X IF MODE = 0.         *
 C*    XL()           XL() STORES AN N VECTOR OF LOWER BOUNDS XL TO X.  *
+C*                   ELEMENTS MAY BE NAN TO INDICATE NO LOWER BOUND.   *
 C*    XU()           XU() STORES AN N VECTOR OF UPPER BOUNDS XU TO X.  *
+C*                   ELEMENTS MAY BE NAN TO INDICATE NO UPPER BOUND.   *
 C*    F              IS THE VALUE OF THE OBJECTIVE FUNCTION.           *
 C*    C()            C() STORES THE M VECTOR C OF CONSTRAINTS,         *
 C*                   EQUALITY CONSTRAINTS (IF ANY) FIRST.              *
@@ -596,7 +598,8 @@ c     revised                        march 1989
      .                 diag,ZERO,one,ddot_sl,xnorm
 
       INTEGER          jw(*),i,ic,id,ie,IF,ig,ih,il,im,ip,iu,iw,
-     .                 i1,i2,i3,i4,la,m,meq,mineq,mode,m1,n,nl,n1,n2,n3
+     .     i1,i2,i3,i4,la,m,meq,mineq,mode,m1,n,nl,n1,n2,n3,
+     .     nancnt,j
 
       DIMENSION        a(la,n), b(la), g(n), l(nl),
      .                 w(*), x(n), xl(n), xu(n), y(m+n+n)
@@ -667,9 +670,12 @@ C  RECOVER VECTOR D FROM UPPER PART OF B
 
       ig = id + meq
 
-      IF (mineq .GT. 0) THEN
-
 C  RECOVER MATRIX G FROM LOWER PART OF A
+C  The matrix G(mineq+2*n,m1) is stored at w(ig)
+C  Not all rows will be filled if some of the upper/lower
+C  bounds are unbounded.
+
+      IF (mineq .GT. 0) THEN
 
           DO 30 i=1,mineq
               CALL dcopy_ (n, a(meq+i,1), la, w(ig-1+i), m1)
@@ -677,55 +683,73 @@ C  RECOVER MATRIX G FROM LOWER PART OF A
 
       ENDIF
 
-C  AUGMENT MATRIX G BY +I AND -I
-
-      ip = ig + mineq
-      DO 40 i=1,n
-         w(ip-1+i) = ZERO
-         CALL dcopy_ (n, w(ip-1+i), 0, w(ip-1+i), m1)
-   40 CONTINUE
-      w(ip) = one
-      CALL dcopy_ (n, w(ip), 0, w(ip), m1+1)
-
-      im = ip + n
-      DO 50 i=1,n
-         w(im-1+i) = ZERO
-         CALL dcopy_ (n, w(im-1+i), 0, w(im-1+i), m1)
-   50 CONTINUE
-      w(im) = -one
-      CALL dcopy_ (n, w(im), 0, w(im), m1+1)
-
       ih = ig + m1*n
+      iw = ih + mineq + 2*n
 
       IF (mineq .GT. 0) THEN
 
 C  RECOVER H FROM LOWER PART OF B
+C  The vector H(mineq+2*n) is stored at w(ih)
 
           CALL dcopy_ (mineq, b(meq+1), 1, w(ih), 1)
           CALL dscal_sl (mineq,       - one, w(ih), 1)
 
       ENDIF
 
+C  AUGMENT MATRIX G BY +I AND -I, AND,
 C  AUGMENT VECTOR H BY XL AND XU
+C  NaN value indicates no bound
 
+      ip = ig + mineq
       il = ih + mineq
-      CALL dcopy_ (n, xl, 1, w(il), 1)
-      iu = il + n
-      CALL dcopy_ (n, xu, 1, w(iu), 1)
-      CALL dscal_sl (n, - one, w(iu), 1)
+      nancnt = 0
 
-      iw = iu + n
+      DO 40 i=1,n
+         if (xl(i).eq.xl(i)) then
+            w(il) = xl(i)
+            do 41 j=1,n
+               w(ip + m1*(j-1)) = 0
+ 41         continue
+            w(ip + m1*(i-1)) = 1
+            ip = ip + 1
+            il = il + 1
+         else
+            nancnt = nancnt + 1
+         end if
+   40 CONTINUE
+
+      DO 50 i=1,n
+         if (xu(i).eq.xu(i)) then
+            w(il) = -xu(i)
+            do 51 j=1,n
+               w(ip + m1*(j-1)) = 0
+ 51         continue
+            w(ip + m1*(i-1)) = -1
+            ip = ip + 1
+            il = il + 1
+         else
+            nancnt = nancnt + 1
+         end if
+ 50   CONTINUE
 
       CALL lsei (w(ic), w(id), w(ie), w(IF), w(ig), w(ih), MAX(1,meq),
-     .           meq, n, n, m1, m1, n, x, xnorm, w(iw), jw, mode)
+     .           meq, n, n, m1, m1-nancnt, n, x, xnorm, w(iw), jw, mode)
 
       IF (mode .EQ. 1) THEN
 
-c   restore Lagrange multipliers
+c   restore Lagrange multipliers (only for user-defined variables)
 
           CALL dcopy_ (m,  w(iw),     1, y(1),      1)
-          CALL dcopy_ (n3, w(iw+m),   1, y(m+1),    1)
-          CALL dcopy_ (n3, w(iw+m+n), 1, y(m+n3+1), 1)
+
+c   set rest of the multipliers to nan (they are not used)
+
+          IF (n3 .GT. 0) THEN
+             y(m+1) = 0
+             y(m+1) = 0 / y(m+1)
+             do 60 i=m+2,m+n3+n3
+                y(i) = y(m+1)
+ 60          continue
+          ENDIF
 
       ENDIF
       call bound(n, x, xl, xu)
@@ -2116,9 +2140,10 @@ C        CLEAN-UP LOOP
       integer n, i
       double precision x(n), xl(n), xu(n)
       do i = 1, n
-         if(x(i) < xl(i))then
+C        Note that xl(i) and xu(i) may be NaN to indicate no bound
+         if(xl(i).eq.xl(i).and.x(i) < xl(i))then
             x(i) = xl(i)
-         else if(x(i) > xu(i))then
+         else if(xu(i).eq.xu(i).and.x(i) > xu(i))then
             x(i) = xu(i)
          end if
       end do

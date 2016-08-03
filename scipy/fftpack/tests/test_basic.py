@@ -324,6 +324,29 @@ class _TestRFFTBase(TestCase):
         assert_raises(ValueError, rfft, [])
         assert_raises(ValueError, rfft, [[1,1],[2,2]], -5)
 
+    # See gh-5790
+    class MockSeries(object):
+        def __init__(self, data):
+            self.data = np.asarray(data)
+
+        def __getattr__(self, item):
+            try:
+                return getattr(self.data, item)
+            except AttributeError:
+                raise AttributeError(("'MockSeries' object "
+                                      "has no attribute '{attr}'".
+                                      format(attr=item)))
+
+    def test_non_ndarray_with_dtype(self):
+        x = np.array([1., 2., 3., 4., 5.])
+        xs = _TestRFFTBase.MockSeries(x)
+
+        expected = [1, 2, 3, 4, 5]
+        out = rfft(xs)
+
+        # Data should not have been overwritten
+        assert_equal(x, expected)
+        assert_equal(xs.data, expected)
 
 class TestRFFTDouble(_TestRFFTBase):
     def setUp(self):

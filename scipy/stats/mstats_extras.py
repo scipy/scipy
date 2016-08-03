@@ -314,7 +314,7 @@ def median_cihs(data, alpha=0.05, axis=None):
 
     Returns
     -------
-    median_cihs :
+    median_cihs
         Alpha level confidence interval.
 
     """

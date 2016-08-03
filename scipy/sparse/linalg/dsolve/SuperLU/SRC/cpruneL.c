@@ -60,7 +60,7 @@ cpruneL(
     supno      = Glu->supno;
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = Glu->lusup;
+    lusup      = (complex *) Glu->lusup;
     xlusup     = Glu->xlusup;
     
     /*

@@ -67,6 +67,7 @@ dist
 MANIFEST
 # distutils configuration
 site.cfg
+setup.cfg
 # other temporary files
 .coverage
 .deps
@@ -97,6 +98,7 @@ site.cfg
 ehthumbs.db
 Icon?
 Thumbs.db
+*.dSYM
 
 # Documentation generated files #
 #################################
@@ -163,6 +165,7 @@ scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
+scipy/signal/_upfirdn_apply.c
 scipy/signal/correlate_nd.c
 scipy/signal/lfilter.c
 scipy/sparse/_csparsetools.c
@@ -192,9 +195,11 @@ scipy/sparse/sparsetools/csc_impl.h
 scipy/sparse/sparsetools/csr_impl.h
 scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
-scipy/spatial/ckdtree/ckdtree.cxx
-scipy/spatial/ckdtree/ckdtree.h
+scipy/spatial/ckdtree.cxx
+scipy/spatial/ckdtree.h
 scipy/spatial/qhull.c
+scipy/special/_comb.c
+scipy/spatial/qhull_misc_config.h
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c
@@ -203,11 +208,14 @@ scipy/special/_ufuncs.h
 scipy/special/_ufuncs_cxx.cxx
 scipy/special/_ufuncs_cxx.h
 scipy/special/specfunmodule.c
+scipy/special/cython_special.c
+scipy/special/cython_special.h
 scipy/stats/_rank.c
 scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c
 scipy/stats/statlibmodule.c
 scipy/stats/vonmises_cython.c
+scipy/stats/_stats.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c

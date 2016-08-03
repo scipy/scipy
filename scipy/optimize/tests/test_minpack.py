@@ -453,6 +453,70 @@ class TestCurveFit(TestCase):
         assert_raises(ValueError, curve_fit, f, xdata, ydata, bounds=bounds,
                       method='lm')
 
+    def test_bounds_p0(self):
+        # This test is for issue #5719. The problem was that an initial guess
+        # was ignored when 'trf' or 'dogbox' methods were invoked.
+        def f(x, a):
+            return np.sin(x + a)
+
+        xdata = np.linspace(-2*np.pi, 2*np.pi, 40)
+        ydata = np.sin(xdata)
+        bounds = (-3 * np.pi, 3 * np.pi)
+        for method in ['trf', 'dogbox']:
+            popt_1, _ = curve_fit(f, xdata, ydata, p0=2.1*np.pi)
+            popt_2, _ = curve_fit(f, xdata, ydata, p0=2.1*np.pi,
+                                  bounds=bounds, method=method)
+
+            # If the initial guess is ignored, then popt_2 would be close 0.
+            assert_allclose(popt_1, popt_2)
+
+    def test_jac(self):
+        # Test that Jacobian callable is handled correctly and
+        # weighted if sigma is provided.
+        def f(x, a, b):
+            return a * np.exp(-b*x)
+
+        def jac(x, a, b):
+            e = np.exp(-b*x)
+            return np.vstack((e, -a * x * e)).T
+
+        xdata = np.linspace(0, 1, 11)
+        ydata = f(xdata, 2., 2.)
+
+        # Test numerical options for least_squares backend.
+        for method in ['trf', 'dogbox']:
+            for scheme in ['2-point', '3-point', 'cs']:
+                popt, pcov = curve_fit(f, xdata, ydata, jac=scheme,
+                                       method=method)
+                assert_allclose(popt, [2, 2])
+
+        # Test the analytic option.
+        for method in ['lm', 'trf', 'dogbox']:
+            popt, pcov = curve_fit(f, xdata, ydata, method=method, jac=jac)
+            assert_allclose(popt, [2, 2])
+
+        # Now add an outlier and provide sigma.
+        ydata[5] = 100
+        sigma = np.ones(xdata.shape[0])
+        sigma[5] = 200
+        for method in ['lm', 'trf', 'dogbox']:
+            popt, pcov = curve_fit(f, xdata, ydata, sigma=sigma, method=method,
+                                   jac=jac)
+            # Still the optimization process is influenced somehow,
+            # have to set rtol=1e-3.
+            assert_allclose(popt, [2, 2], rtol=1e-3)
+
+    def test_maxfev_and_bounds(self):
+        # gh-6340: with no bounds, curve_fit accepts parameter maxfev (via leastsq)
+        # but with bounds, the parameter is `max_nfev` (via least_squares)
+        x = np.arange(0, 10)
+        y = 2*x
+        popt1, _ = curve_fit(lambda x,p: p*x, x, y, bounds=(0, 3), maxfev=100)
+        popt2, _ = curve_fit(lambda x,p: p*x, x, y, bounds=(0, 3), max_nfev=100)
+
+        assert_allclose(popt1, 2, atol=1e-14)
+        assert_allclose(popt2, 2, atol=1e-14)
+
 
 class TestFixedPoint(TestCase):
 
@@ -519,6 +583,20 @@ class TestFixedPoint(TestCase):
                 args=(), xtol=1e-12, maxiter=500)
         assert_allclose(xxroot, np.exp(-2.0*xxroot)/2.0)
         assert_allclose(xxroot, lambertw(1)/2)
+
+    def test_no_acceleration(self):
+        # github issue 5460
+        ks = 2
+        kl = 6
+        m = 1.3
+        n0 = 1.001
+        i0 = ((m-1)/m)*(kl/ks/m)**(1/(m-1))
+
+        def func(n):
+            return np.log(kl/ks/n) / np.log((i0*n/(n - 1))) + 1
+
+        n = fixed_point(func, n0, method='iteration')
+        assert_allclose(n, m)
 
 
 if __name__ == "__main__":

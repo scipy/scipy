@@ -40,3 +40,6 @@ Library:
         Sources:
             _ellip_harm_2.c,
             sf_error.c
+    Extension: _comb
+        Sources:
+            _comb.c

@@ -8,9 +8,7 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
        int iter, default_parameters *params)
 {
     int i;
-    double dm,xm,fm,fa,fb,tol;
-
-    tol = xtol + rtol*(fabs(xa) + fabs(xb));
+    double dm,xm,fm,fa,fb;
 
     fa = (*f)(xa,params);
     fb = (*f)(xb,params);
@@ -36,7 +34,7 @@ bisect(callback_type f, double xa, double xb, double xtol, double rtol,
         if (fm*fa >= 0) {
             xa = xm;
         }
-        if (fm == 0 || fabs(dm) < tol) {
+        if (fm == 0 || fabs(dm) < xtol + rtol*fabs(xm)) {
             return xm;
         }
     }

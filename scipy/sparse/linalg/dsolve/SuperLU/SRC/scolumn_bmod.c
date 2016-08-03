@@ -103,7 +103,7 @@ scolumn_bmod (
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (float *) Glu->lusup;
     xlusup  = Glu->xlusup;
     nzlumax = Glu->nzlumax;
     jcolp1 = jcol + 1;
@@ -272,7 +272,7 @@ scolumn_bmod (
     while ( new_next > nzlumax ) {
 	if (mem_error = sLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu))
 	    return (mem_error);
-	lusup = Glu->lusup;
+	lusup = (float *) Glu->lusup;
 	lsub = Glu->lsub;
     }
 

@@ -106,15 +106,20 @@ class ode(object):
 
     Solve an equation system :math:`y'(t) = f(t,y)` with (optional) ``jac = df/dy``.
 
+    *Note*: The first two arguments of ``f(t, y, ...)`` are in the
+    opposite order of the arguments in the system definition function used
+    by `scipy.integrate.odeint`.
+
     Parameters
     ----------
     f : callable ``f(t, y, *f_args)``
-        Rhs of the equation. t is a scalar, ``y.shape == (n,)``.
+        Right-hand side of the differential equation. t is a scalar,
+        ``y.shape == (n,)``.
         ``f_args`` is set by calling ``set_f_params(*args)``.
         `f` should return a scalar, array or list (not a tuple).
     jac : callable ``jac(t, y, *jac_args)``, optional
-        Jacobian of the rhs, ``jac[i,j] = d f[i] / d y[j]``.
-        ``jac_args`` is set by calling ``set_f_params(*args)``.
+        Jacobian of the right-hand side, ``jac[i,j] = d f[i] / d y[j]``.
+        ``jac_args`` is set by calling ``set_jac_params(*args)``.
 
     Attributes
     ----------
@@ -319,17 +324,17 @@ class ode(object):
     >>> t1 = 10
     >>> dt = 1
     >>> while r.successful() and r.t < t1:
-    ...     print(r.t, r.integrate(r.t+dt))
-    (0, array([-0.71038232+0.23749653j,  0.40000271+0.j        ]))
-    (1.0, array([ 0.19098503-0.52359246j,  0.22222356+0.j        ]))
-    (2.0, array([ 0.47153208+0.52701229j,  0.15384681+0.j        ]))
-    (3.0, array([-0.61905937+0.30726255j,  0.11764744+0.j        ]))
-    (4.0, array([ 0.02340997-0.61418799j,  0.09523835+0.j        ]))
-    (5.0, array([ 0.58643071+0.339819j,  0.08000018+0.j      ]))
-    (6.0, array([-0.52070105+0.44525141j,  0.06896565+0.j        ]))
-    (7.0, array([-0.15986733-0.61234476j,  0.06060616+0.j        ]))
-    (8.0, array([ 0.64850462+0.15048982j,  0.05405414+0.j        ]))
-    (9.0, array([-0.38404699+0.56382299j,  0.04878055+0.j        ]))
+    ...     print(r.t+dt, r.integrate(r.t+dt))
+    (1, array([-0.71038232+0.23749653j,  0.40000271+0.j        ]))
+    (2.0, array([ 0.19098503-0.52359246j,  0.22222356+0.j        ]))
+    (3.0, array([ 0.47153208+0.52701229j,  0.15384681+0.j        ]))
+    (4.0, array([-0.61905937+0.30726255j,  0.11764744+0.j        ]))
+    (5.0, array([ 0.02340997-0.61418799j,  0.09523835+0.j        ]))
+    (6.0, array([ 0.58643071+0.339819j,  0.08000018+0.j      ]))
+    (7.0, array([-0.52070105+0.44525141j,  0.06896565+0.j        ]))
+    (8.0, array([-0.15986733-0.61234476j,  0.06060616+0.j        ]))
+    (9.0, array([ 0.64850462+0.15048982j,  0.05405414+0.j        ]))
+    (10.0, array([-0.38404699+0.56382299j,  0.04878055+0.j        ]))
 
     References
     ----------
@@ -371,7 +376,7 @@ class ode(object):
         ----------
         name : str
             Name of the integrator.
-        integrator_params :
+        integrator_params
             Additional parameters for the integrator.
         """
         integrator = find_integrator(name)
@@ -547,7 +552,7 @@ class complex_ode(ode):
         ----------
         name : str
             Name of the integrator
-        integrator_params :
+        integrator_params
             Additional parameters for the integrator.
         """
         if name == 'zvode':

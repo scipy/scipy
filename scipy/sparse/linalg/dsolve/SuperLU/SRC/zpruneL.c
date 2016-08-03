@@ -60,7 +60,7 @@ zpruneL(
     supno      = Glu->supno;
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = Glu->lusup;
+    lusup      = (doublecomplex *) Glu->lusup;
     xlusup     = Glu->xlusup;
     
     /*

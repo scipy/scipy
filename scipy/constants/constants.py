@@ -173,6 +173,80 @@ kgf = kilogram_force = g  # * 1 kg
 # functions for conversions that are not linear
 
 
+def convert_temperature(val, old_scale, new_scale):
+    """
+    Convert from a temperature scale to another one among Celsius, Kelvin,
+    Fahrenheit and Rankine scales.
+
+    Parameters
+    ----------
+    val : array_like
+        Value(s) of the temperature(s) to be converted expressed in the
+        original scale.
+
+    old_scale: str
+        Specifies as a string the original scale from which the temperature
+        value(s) will be converted. Supported scales are Celsius ('Celsius',
+        'celsius', 'C' or 'c'), Kelvin ('Kelvin', 'kelvin', 'K', 'k'),
+        Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f') and Rankine
+        ('Rankine', 'rankine', 'R', 'r').
+
+    new_scale: str
+        Specifies as a string the new scale to which the temperature
+        value(s) will be converted. Supported scales are Celsius ('Celsius',
+        'celsius', 'C' or 'c'), Kelvin ('Kelvin', 'kelvin', 'K', 'k'),
+        Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f') and Rankine
+        ('Rankine', 'rankine', 'R', 'r').
+
+    Returns
+    -------
+    res : float or array of floats
+        Value(s) of the converted temperature(s) expressed in the new scale.
+
+    Notes
+    -----
+    .. versionadded:: 0.18.0
+
+    Examples
+    --------
+    >>> from scipy.constants import convert_temperature
+    >>> convert_temperature(np.array([-40, 40.0]), 'Celsius', 'Kelvin')
+    array([ 233.15,  313.15])
+
+    """
+    # Convert from `old_scale` to Kelvin
+    if old_scale.lower() in ['celsius', 'c']:
+        tempo = _np.asanyarray(val) + zero_Celsius
+    elif old_scale.lower() in ['kelvin', 'k']:
+        tempo = _np.asanyarray(val)
+    elif old_scale.lower() in ['fahrenheit', 'f']:
+        tempo = (_np.asanyarray(val) - 32.) * 5. / 9. + zero_Celsius
+    elif old_scale.lower() in ['rankine', 'r']:
+        tempo = _np.asanyarray(val) * 5. / 9.
+    else:
+        raise NotImplementedError("%s scale is unsupported: supported scales "
+                                  "are Celsius, Kelvin, Fahrenheit and "
+                                  "Rankine" % old_scale)
+    # and from Kelvin to `new_scale`.
+    if new_scale.lower() in ['celsius', 'c']:
+        res = tempo - zero_Celsius
+    elif new_scale.lower() in ['kelvin', 'k']:
+        res = tempo
+    elif new_scale.lower() in ['fahrenheit', 'f']:
+        res = (tempo - zero_Celsius) * 9. / 5. + 32.
+    elif new_scale.lower() in ['rankine', 'r']:
+        res = tempo * 9. / 5.
+    else:
+        raise NotImplementedError("'%s' scale is unsupported: supported "
+                                  "scales are 'Celsius', 'Kelvin', "
+                                  "'Fahrenheit' and 'Rankine'" % new_scale)
+
+    return res
+
+
+@_np.deprecate(message="scipy.constants.C2K is deprecated in scipy 0.18.0. "
+                       "Use scipy.constants.convert_temperature instead. "
+                       "Note that the new function has a different signature.")
 def C2K(C):
     """
     Convert Celsius to Kelvin
@@ -186,6 +260,10 @@ def C2K(C):
     -------
     K : float or array of floats
         Equivalent Kelvin temperature(s).
+
+    See also
+    --------
+    convert_temperature
 
     Notes
     -----
@@ -202,6 +280,9 @@ def C2K(C):
     return _np.asanyarray(C) + zero_Celsius
 
 
+@_np.deprecate(message="scipy.constants.K2C is deprecated in scipy 0.18.0. "
+                       "Use scipy.constants.convert_temperature instead. "
+                       "Note that the new function has a different signature.")
 def K2C(K):
     """
     Convert Kelvin to Celsius
@@ -215,6 +296,10 @@ def K2C(K):
     -------
     C : float or array of floats
         Equivalent Celsius temperature(s).
+
+    See also
+    --------
+    convert_temperature
 
     Notes
     -----
@@ -231,6 +316,9 @@ def K2C(K):
     return _np.asanyarray(K) - zero_Celsius
 
 
+@_np.deprecate(message="scipy.constants.F2C is deprecated in scipy 0.18.0. "
+                       "Use scipy.constants.convert_temperature instead. "
+                       "Note that the new function has a different signature.")
 def F2C(F):
     """
     Convert Fahrenheit to Celsius
@@ -244,6 +332,10 @@ def F2C(F):
     -------
     C : float or array of floats
         Equivalent Celsius temperature(s).
+
+    See also
+    --------
+    convert_temperature
 
     Notes
     -----
@@ -259,6 +351,9 @@ def F2C(F):
     return (_np.asanyarray(F) - 32) / 1.8
 
 
+@_np.deprecate(message="scipy.constants.C2F is deprecated in scipy 0.18.0. "
+                       "Use scipy.constants.convert_temperature instead. "
+                       "Note that the new function has a different signature.")
 def C2F(C):
     """
     Convert Celsius to Fahrenheit
@@ -272,6 +367,10 @@ def C2F(C):
     -------
     F : float or array of floats
         Equivalent Fahrenheit temperature(s).
+
+    See also
+    --------
+    convert_temperature
 
     Notes
     -----
@@ -287,6 +386,9 @@ def C2F(C):
     return 1.8 * _np.asanyarray(C) + 32
 
 
+@_np.deprecate(message="scipy.constants.F2K is deprecated in scipy 0.18.0. "
+                       "Use scipy.constants.convert_temperature instead. "
+                       "Note that the new function has a different signature.")
 def F2K(F):
     """
     Convert Fahrenheit to Kelvin
@@ -300,6 +402,10 @@ def F2K(F):
     -------
     K : float or array of floats
         Equivalent Kelvin temperature(s).
+
+    See also
+    --------
+    convert_temperature
 
     Notes
     -----
@@ -317,6 +423,9 @@ def F2K(F):
     return C2K(F2C(_np.asanyarray(F)))
 
 
+@_np.deprecate(message="scipy.constants.K2F is deprecated in scipy 0.18.0. "
+                       "Use scipy.constants.convert_temperature instead. "
+                       "Note that the new function has a different signature.")
 def K2F(K):
     """
     Convert Kelvin to Fahrenheit
@@ -330,6 +439,10 @@ def K2F(K):
     -------
     F : float or array of floats
         Equivalent Fahrenheit temperature(s).
+
+    See also
+    --------
+    convert_temperature
 
     Notes
     -----
@@ -345,6 +458,7 @@ def K2F(K):
 
     """
     return C2F(K2C(_np.asanyarray(K)))
+
 
 # optics
 

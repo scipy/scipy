@@ -59,6 +59,7 @@ tree objects.
    ClusterNode
    leaves_list
    to_tree
+   cut_tree
 
 These are predicates for checking the validity of linkage and
 inconsistency matrices as well as for checking isomorphism of two
@@ -170,6 +171,8 @@ from __future__ import division, print_function, absolute_import
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import warnings
+import bisect
+from collections import deque
 
 import numpy as np
 from . import _hierarchy
@@ -178,14 +181,13 @@ import scipy.spatial.distance as distance
 from scipy._lib.six import string_types
 from scipy._lib.six import xrange
 
-_cpy_non_euclid_methods = {'single': 0, 'complete': 1, 'average': 2,
-                           'weighted': 6}
-_cpy_euclid_methods = {'centroid': 3, 'median': 4, 'ward': 5}
-_cpy_linkage_methods = set(_cpy_non_euclid_methods.keys()).union(
-    set(_cpy_euclid_methods.keys()))
+_LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
+                    'median': 4, 'ward': 5, 'weighted': 6}
+_EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
+
 
 __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
-           'correspond', 'dendrogram', 'fcluster', 'fclusterdata',
+           'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
            'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
            'is_monotonic', 'is_valid_im', 'is_valid_linkage', 'leaders',
            'leaves_list', 'linkage', 'maxRstat', 'maxdists', 'maxinconsts',
@@ -193,8 +195,12 @@ __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'to_mlab_linkage', 'to_tree', 'ward', 'weighted', 'distance']
 
 
+class ClusterWarning(UserWarning):
+    pass
+
+
 def _warning(s):
-    warnings.warn('scipy.cluster: %s' % s, stacklevel=3)
+    warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
 
 
 def _copy_array_if_base_present(a):
@@ -337,8 +343,8 @@ def centroid(y):
     """
     Performs centroid/UPGMC linkage.
 
-    See ``linkage`` for more information on the return structure
-    and algorithm.
+    See ``linkage`` for more information on the input matrix,
+    return structure, and algorithm.
 
     The following are common calling conventions:
 
@@ -357,7 +363,7 @@ def centroid(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -403,7 +409,7 @@ def median(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -425,7 +431,7 @@ def median(y):
 
 def ward(y):
     """
-    Performs Ward's linkage on a condensed or redundant distance matrix.
+    Performs Ward's linkage on a condensed distance matrix.
 
     See linkage for more information on the return structure
     and algorithm.
@@ -445,7 +451,7 @@ def ward(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -467,15 +473,18 @@ def ward(y):
 
 def linkage(y, method='single', metric='euclidean'):
     """
-    Performs hierarchical/agglomerative clustering on the condensed
-    distance matrix y.
+    Performs hierarchical/agglomerative clustering.
+    
+    The input y may be either a 1d compressed distance matrix
+    or a 2d array of observation vectors.
 
-    y must be a :math:`{n \\choose 2}` sized
+    If y is a 1d compressed distance matrix,
+    then y must be a :math:`{n \\choose 2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very
     similar to the MATLAB linkage function.
 
-    An :math:`(n-1)` by 4  matrix ``Z`` is returned. At the
+    A :math:`(n-1)` by 4 matrix ``Z`` is returned. At the
     :math:`i`-th iteration, clusters with indices ``Z[i, 0]`` and
     ``Z[i, 1]`` are combined to form cluster :math:`n + i`. A
     cluster with an index less than :math:`n` corresponds to one of
@@ -596,7 +605,7 @@ def linkage(y, method='single', metric='euclidean'):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed distance matrix
+        A condensed distance matrix. A condensed distance matrix
         is a flat array containing the upper triangular of the distance matrix.
         This is the form that ``pdist`` returns. Alternatively, a collection of
         :math:`m` observation vectors in n dimensions may be passed as an
@@ -616,55 +625,58 @@ def linkage(y, method='single', metric='euclidean'):
     Z : ndarray
         The hierarchical clustering encoded as a linkage matrix.
 
+    Notes
+    -----
+    1. For method 'single' an optimized algorithm called SLINK is implemented,
+       which has :math:`O(n^2)` time complexity.
+       For methods 'complete', 'average', 'weighted' and 'ward' an algorithm
+       called nearest-neighbors chain is implemented, which too has time
+       complexity :math:`O(n^2)`.
+       For other methods a naive algorithm is implemented with :math:`O(n^3)`
+       time complexity.
+       All algorithms use :math:`O(n^2)` memory.
+       Refer to [1]_ for details about the algorithms.
+    2. Methods 'centroid', 'median' and 'ward' are correctly defined only if
+       Euclidean pairwise metric is used. If `y` is passed as precomputed
+       pairwise distances, then it is a user responsibility to assure that
+       these distances are in fact Euclidean, otherwise the produced result
+       will be incorrect.
+
+    References
+    ----------
+    .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
+           algorithms", `arXiv:1109.2378v1 <http://arxiv.org/abs/1109.2378v1>`_
+           , 2011.
     """
-    if not isinstance(method, string_types):
-        raise TypeError("Argument 'method' must be a string.")
+    if method not in _LINKAGE_METHODS:
+        raise ValueError("Invalid method: {0}".format(method))
 
     y = _convert_to_double(np.asarray(y, order='c'))
 
-    s = y.shape
-    if len(s) == 1:
+    if y.ndim == 1:
         distance.is_valid_y(y, throw=True, name='y')
-        d = distance.num_obs_y(y)
-        if method not in _cpy_non_euclid_methods:
-            raise ValueError("Valid methods when the raw observations are "
-                             "omitted are 'single', 'complete', 'weighted', "
-                             "and 'average'.")
-        # Since the C code does not support striding using strides.
         [y] = _copy_arrays_if_base_present([y])
+    elif y.ndim == 2:
+        if method in _EUCLIDEAN_METHODS and metric != 'euclidean':
+            raise ValueError("Method '{0}' requires the distance metric "
+                             "to be Euclidean".format(method))
+        if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
+            if np.all(y >= 0) and np.allclose(y, y.T):
+                _warning('The symmetric non-negative hollow observation '
+                         'matrix looks suspiciously like an uncondensed '
+                         'distance matrix')
+        y = distance.pdist(y, metric)
+    else:
+        raise ValueError("`y` must be 1 or 2 dimensional.")
 
-        Z = np.zeros((d - 1, 4))
-
-        if method == 'single':
-            _hierarchy.slink(y, Z, int(d))
-        else:
-            _hierarchy.linkage(y, Z, int(d),
-                               int(_cpy_non_euclid_methods[method]))
-
-    elif len(s) == 2:
-        X = y
-        n = s[0]
-        if method not in _cpy_linkage_methods:
-            raise ValueError('Invalid method: %s' % method)
-        if method in _cpy_non_euclid_methods:
-            dm = distance.pdist(X, metric)
-            Z = np.zeros((n - 1, 4))
-
-            if method == 'single':
-                _hierarchy.slink(dm, Z, n)
-            else:
-                _hierarchy.linkage(dm, Z, n,
-                                   int(_cpy_non_euclid_methods[method]))
-
-        elif method in _cpy_euclid_methods:
-            if metric != 'euclidean':
-                raise ValueError(("Method '%s' requires the distance metric "
-                                 "to be euclidean") % method)
-            dm = distance.pdist(X, metric)
-            Z = np.zeros((n - 1, 4))
-            _hierarchy.linkage(dm, Z, n,
-                               int(_cpy_euclid_methods[method]))
-    return Z
+    n = int(distance.num_obs_y(y))
+    method_code = _LINKAGE_METHODS[method]
+    if method == 'single':
+        return _hierarchy.slink(y, n)
+    elif method in ['complete', 'average', 'weighted', 'ward']:
+        return _hierarchy.nn_chain(y, n, method_code)
+    else:
+        return _hierarchy.linkage(y, n, method_code)
 
 
 class ClusterNode:
@@ -703,6 +715,24 @@ class ClusterNode:
             self.count = count
         else:
             self.count = left.count + right.count
+
+    def __lt__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist < node.dist
+
+    def __gt__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist > node.dist
+
+    def __eq__(self, node):
+        if not isinstance(node, ClusterNode):
+            raise ValueError("Can't compare ClusterNode "
+                             "to type {}".format(type(node)))
+        return self.dist == node.dist
 
     def get_id(self):
         """
@@ -837,6 +867,115 @@ class ClusterNode:
 
 _cnode_bare = ClusterNode(0)
 _cnode_type = type(ClusterNode)
+
+
+def _order_cluster_tree(Z):
+    """
+    Returns clustering nodes in bottom-up order by distance.
+
+    Parameters
+    ----------
+    Z : scipy.cluster.linkage array
+        The linkage matrix.
+
+    Returns
+    -------
+    nodes : list
+        A list of ClusterNode objects.
+    """
+    q = deque()
+    tree = to_tree(Z)
+    q.append(tree)
+    nodes = []
+
+    while q:
+        node = q.popleft()
+        if not node.is_leaf():
+            bisect.insort_left(nodes, node)
+            q.append(node.get_right())
+            q.append(node.get_left())
+    return nodes
+
+
+def cut_tree(Z, n_clusters=None, height=None):
+    """
+    Given a linkage matrix Z, return the cut tree.
+
+    Parameters
+    ----------
+    Z : scipy.cluster.linkage array
+        The linkage matrix.
+    n_clusters : array_like, optional
+        Number of clusters in the tree at the cut point.
+    height : array_like, optional
+        The height at which to cut the tree.  Only possible for ultrametric
+        trees.
+
+    Returns
+    -------
+    cutree : array
+        An array indicating group membership at each agglomeration step.  I.e.,
+        for a full cut tree, in the first column each data point is in its own
+        cluster.  At the next step, two nodes are merged.  Finally all singleton
+        and non-singleton clusters are in one group.  If `n_clusters` or
+        `height` is given, the columns correspond to the columns of `n_clusters` or
+        `height`.
+
+    Examples
+    --------
+    >>> from scipy import cluster
+    >>> np.random.seed(23)
+    >>> X = np.random.randn(50, 4)
+    >>> Z = cluster.hierarchy.ward(X)
+    >>> cutree = cluster.hierarchy.cut_tree(Z, n_clusters=[5, 10])
+    >>> cutree[:10]
+    array([[0, 0],
+           [1, 1],
+           [2, 2],
+           [3, 3],
+           [3, 4],
+           [2, 2],
+           [0, 0],
+           [1, 5],
+           [3, 6],
+           [4, 7]])
+
+    """
+    nobs = num_obs_linkage(Z)
+    nodes = _order_cluster_tree(Z)
+
+    if height is not None and n_clusters is not None:
+        raise ValueError("At least one of either height or n_clusters "
+                         "must be None")
+    elif height is None and n_clusters is None:  # return the full cut tree
+        cols_idx = np.arange(nobs)
+    elif height is not None:
+        heights = np.array([x.dist for x in nodes])
+        cols_idx = np.searchsorted(heights, height)
+    else:
+        cols_idx = nobs - np.searchsorted(np.arange(nobs), n_clusters)
+
+    try:
+        n_cols = len(cols_idx)
+    except TypeError:  # scalar
+        n_cols = 1
+        cols_idx = np.array([cols_idx])
+
+    groups = np.zeros((n_cols, nobs), dtype=int)
+    last_group = np.arange(nobs)
+    if 0 in cols_idx:
+        groups[0] = last_group
+
+    for i, node in enumerate(nodes):
+        idx = node.pre_order()
+        this_group = last_group.copy()
+        this_group[idx] = last_group[idx].min()
+        this_group[this_group > last_group[idx].max()] -= 1
+        if i + 1 in cols_idx:
+            groups[np.where(i + 1 == cols_idx)[0]] = this_group
+        last_group = this_group
+
+    return groups.T
 
 
 def to_tree(Z, rd=False):
@@ -2292,7 +2431,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         # If the node is a leaf node but corresponds to a non-single cluster,
         # its label is either the empty string or the number of original
         # observations belonging to cluster i.
-        if i < 2*n - p and i >= n:
+        if 2 * n - p > i >= n:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,

@@ -11,6 +11,94 @@ import inspect
 import numpy as np
 
 
+def _valarray(shape, value=np.nan, typecode=None):
+    """Return an array of all value.
+    """
+
+    out = np.ones(shape, dtype=bool) * value
+    if typecode is not None:
+        out = out.astype(typecode)
+    if not isinstance(out, np.ndarray):
+        out = np.asarray(out)
+    return out
+
+
+def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
+    """
+    np.where(cond, x, fillvalue) always evaluates x even where cond is False.
+    This one only evaluates f(arr1[cond], arr2[cond], ...).
+    For example,
+    >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
+    >>> def f(a, b):
+        return a*b
+    >>> _lazywhere(a > 2, (a, b), f, np.nan)
+    array([ nan,  nan,  21.,  32.])
+
+    Notice it assumes that all `arrays` are of the same shape, or can be
+    broadcasted together.
+
+    """
+    if fillvalue is None:
+        if f2 is None:
+            raise ValueError("One of (fillvalue, f2) must be given.")
+        else:
+            fillvalue = np.nan
+    else:
+        if f2 is not None:
+            raise ValueError("Only one of (fillvalue, f2) can be given.")
+
+    arrays = np.broadcast_arrays(*arrays)
+    temp = tuple(np.extract(cond, arr) for arr in arrays)
+    tcode = np.mintypecode([a.dtype.char for a in arrays])
+    out = _valarray(np.shape(arrays[0]), value=fillvalue, typecode=tcode)
+    np.place(out, cond, f(*temp))
+    if f2 is not None:
+        temp = tuple(np.extract(~cond, arr) for arr in arrays)
+        np.place(out, ~cond, f2(*temp))
+
+    return out
+
+
+def _lazyselect(condlist, choicelist, arrays, default=0):
+    """
+    Mimic `np.select(condlist, choicelist)`.
+
+    Notice it assumes that all `arrays` are of the same shape, or can be
+    broadcasted together.
+
+    All functions in `choicelist` must accept array arguments in the order
+    given in `arrays` and must return an array of the same shape as broadcasted
+    `arrays`.
+
+    Examples
+    --------
+    >>> x = np.arange(6)
+    >>> np.select([x <3, x > 3], [x**2, x**3], default=0)
+    array([  0,   1,   4,   0,  64, 125])
+
+    >>> _lazyselect([x < 3, x > 3], [lambda x: x**2, lambda x: x**3], (x,))
+    array([   0.,    1.,    4.,   0.,   64.,  125.])
+
+    >>> a = -np.ones_like(x)
+    >>> _lazyselect([x < 3, x > 3],
+    ...             [lambda x, a: x**2, lambda x, a: a * x**3],
+    ...             (x, a), default=np.nan)
+    array([   0.,    1.,    4.,   nan,  -64., -125.])
+
+    """
+    arrays = np.broadcast_arrays(*arrays)
+    tcode = np.mintypecode([a.dtype.char for a in arrays])
+    out = _valarray(np.shape(arrays[0]), value=default, typecode=tcode)
+    for index in range(len(condlist)):
+        func, cond = choicelist[index], condlist[index]
+        if np.all(cond is False):
+            continue
+        cond, _ = np.broadcast_arrays(cond, arrays[0])
+        temp = tuple(np.extract(cond, arr) for arr in arrays)
+        np.place(out, cond, func(*temp))
+    return out
+
+
 def _aligned_zeros(shape, dtype=float, order="C", align=None):
     """Allocate a new ndarray with aligned memory.
 
@@ -75,7 +163,7 @@ class DeprecatedImport(object):
 def check_random_state(seed):
     """Turn seed into a np.random.RandomState instance
 
-    If seed is None (or np.random), return the RandomState singleton used 
+    If seed is None (or np.random), return the RandomState singleton used
     by np.random.
     If seed is an int, return a new RandomState instance seeded with seed.
     If seed is already a RandomState instance, return it.
@@ -130,7 +218,7 @@ def _asarray_validated(a, check_finite=True,
         import scipy.sparse
         if scipy.sparse.issparse(a):
             msg = ('Sparse matrices are not supported by this function. '
-                   'Perhaps one of the scipy.linalg.sparse functions '
+                   'Perhaps one of the scipy.sparse.linalg functions '
                    'would work instead.')
             raise ValueError(msg)
     if not mask_ok:
@@ -143,11 +231,7 @@ def _asarray_validated(a, check_finite=True,
             raise ValueError('object arrays are not supported')
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
-            try:
-                a = toarray(a, dtype=np.float_)
-            except TypeError:
-                # for compatibility with numpy 1.6
-                a = toarray(a).astype(np.float_)
+            a = toarray(a, dtype=np.float_)
     return a
 
 
@@ -156,7 +240,7 @@ def _asarray_validated(a, check_finite=True,
 # https://github.com/django/django/pull/4846
 
 # Note an inconsistency between inspect.getargspec(func) and
-# inspect.signature(func). If `func` is a bound method, the latter does *not* 
+# inspect.signature(func). If `func` is a bound method, the latter does *not*
 # list `self` as a first argument, while the former *does*.
 # Hence cook up a common ground replacement: `getargspec_no_self` which
 # mimics `inspect.getargspec` but does not list `self`.

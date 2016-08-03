@@ -531,8 +531,8 @@ static double hyp2f1ra(double a, double b, double c, double x,
 		       double *loss)
 {
     double f2, f1, f0;
-    int n, da;
-    double t, err;
+    int n;
+    double t, err, da;
 
     /* Don't cross c or zero */
     if ((c < 0 && a <= c) || (c >= 0 && a >= c)) {

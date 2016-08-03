@@ -42,7 +42,14 @@ class TestCtypesQuad(TestCase):
             file = 'libm.dylib'
         else:
             file = 'libm.so'
-        self.lib = ctypes.CDLL(file)
+
+        try:
+            self.lib = ctypes.CDLL(file)
+        except OSError:
+            # This test doesn't work on some Linux platforms (Fedora for
+            # example) that put an ld script in libm.so - see gh-5370
+            self.skipTest("Ctypes can't import libm.so")
+
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
         for name in ['sin', 'cos', 'tan']:
@@ -143,9 +150,9 @@ class TestQuad(TestCase):
     def test_singular(self):
         # 3) Singular points in region of integration.
         def myfunc(x):
-            if x > 0 and x < 2.5:
+            if 0 < x < 2.5:
                 return sin(x)
-            elif x >= 2.5 and x <= 5.0:
+            elif 2.5 <= x <= 5.0:
                 return exp(-x)
             else:
                 return 0.0
@@ -238,9 +245,10 @@ class TestNQuad(TestCase):
             return {'points': [0.2*args[2] + 0.5 + 0.25*args[0]]}
 
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
-                    opts=[opts_basic, {}, {}, {}])
-        assert_quad(res, 1.5267454070738635)
-
+                    opts=[opts_basic, {}, {}, {}], full_output=True)
+        assert_quad(res[:-1], 1.5267454070738635)
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5) 
+        
     def test_variable_limits(self):
         scale = .1
 

@@ -10,10 +10,10 @@ matrix:
         - PEP8=1
         - NUMPYSPEC=numpy
       before_install:
-        - pip install pep8==1.5.1
-        - pip install pyflakes
+        - pip install pep8==1.7.0
+        - pip install pyflakes==1.1.0
       script:
-        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused' > test.out; cat test.out; test \! -s test.out
+        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
         - pep8 scipy benchmarks/benchmarks
     - python: 2.7
       env:
@@ -21,7 +21,7 @@ matrix:
         - REFGUIDE_CHECK=1
         - COVERAGE=
         - NPY_RELAXED_STRIDES_CHECKING=1
-        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.9.1"
+        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.4"
       addons:
         apt:
           packages:
@@ -40,32 +40,27 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=numpy
+        # We do not have a TLS cert for the Rackspace CDN that hosts travis-dev-wheels.scipy.org
+        - NUMPYSPEC="--pre --upgrade --no-index --timeout=60 --trusted-host travis-dev-wheels.scipy.org -f http://travis-dev-wheels.scipy.org/ numpy"
+        - USE_WHEEL=1
+        - UPLOAD_DEV_WHEEL=1
+        - WHEELHOUSE_UPLOADER_USERNAME=travis.numpy
+        # The following is generated with the command:
+        # travis encrypt -r scipy/scipy WHEELHOUSE_UPLOADER_SECRET=tH3AP1KeY
+        - secure: "cZtB3kMSAY4iYN60SF/Euw2YJvd7FjrjDAkPjQnr8DUxobgjYsdVxtLu2l\
+                   KPt5ZfX5poTFI4kDnPoI6zjvbDvMvVhxp8L9psi19h6mVS+BjAfQ06HYfz\
+                   jdPPiyTOhxfxRQ60SC+617kZSLrP6AeIiPdb+IFcM/987oYBDYOoVb0="
     - python: 3.4
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=numpy
-    - python: 3.3
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC=numpy
-    - python: 3.2
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC=numpy
+        - NUMPYSPEC="numpy==1.7.2"
+        - USE_SDIST=1
     - python: 2.7
       env:
         - TESTMODE=full
         - COVERAGE=--coverage
         - NUMPYSPEC=numpy
-    - python: 2.6
-      env:
-        - TESTMODE=fast
-        - OPTIMIZE=-OO
-        - NUMPYSPEC="numpy==1.6.2"
 addons:
   apt:
     packages:
@@ -98,13 +93,15 @@ before_install:
   - popd
   - export CPATH=$HOME/.local/include
   - export LIBRARY_PATH=$HOME/.local/lib
+  - export LD_LIBRARY_PATH=$HOME/.local/lib
   # End install gmpy2 dependencies
   # Speed up install by not compiling Cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython==0.22
   - travis_retry pip install $NUMPYSPEC
-  - travis_retry pip install nose mpmath argparse Pillow
+  - travis_retry pip install nose mpmath argparse Pillow codecov setuptools
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
+  - if [ "${USE_WHEEL}" == "1" ]; then pip install wheel; fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.2.3
@@ -115,8 +112,24 @@ before_install:
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
-  - if [ "$NPY_RELAXED_STRIDES_CHECKING" = "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
-  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE  |& tee runtests.log
+  - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
+  # Test that mpmath actually uses gmpy2
+  - python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
+  - |
+    if [ "${USE_WHEEL}" == "1" ]; then
+        # Need verbose output or TravisCI will terminate after 10 minutes
+        pip wheel . -v
+        pip install scipy*.whl -v
+        USE_WHEEL_BUILD="--no-build"
+    elif [ "${USE_SDIST}" == "1" ]; then
+        python setup.py sdist
+        # Move out of source directory to avoid finding local scipy
+        pushd dist
+        pip install scipy*
+        popd
+        USE_WHEEL_BUILD="--no-build"
+    fi
+  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD |& tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
 after_success:
@@ -145,6 +158,23 @@ after_success:
         git commit -m "Docs build of $TRAVIS_COMMIT"
         git push --set-upstream origin gh-pages --force
         popd
+    fi
+  # Try to upload the generated wheel to a rackspace container
+  # for downstream project to run their CI tests against scipy master
+  - |
+    if [[ ( "${UPLOAD_DEV_WHEEL}" == "1" ) \
+          && ( "${TRAVIS_BRANCH}" == "master" ) \
+          && ( "${TRAVIS_PULL_REQUEST}" == "false" ) ]]; then
+        pip install wheelhouse_uploader
+        python -m wheelhouse_uploader upload --local-folder \
+          ${TRAVIS_BUILD_DIR}/wheelhouse/ travis-dev-wheels
+    fi
+  # Upload coverage information
+  - if [ "${COVERAGE}" == "--coverage" ]; then
+        pushd build/testenv/lib/python*/site-packages/;
+        cp ../../../../test/.coverage .;
+        codecov;
+        popd;
     fi
 notifications:
   # Perhaps we should have status emails sent to the mailing list, but

@@ -105,8 +105,6 @@ void F_FUNC(cgees,CGEES)(char *jobvs, char *sort, _cselect1 *select, int *n, npy
 void F_FUNC(cgeesx,CGEESX)(char *jobvs, char *sort, _cselect1 *select, char *sense, int *n, npy_complex64 *a, int *lda, int *sdim, npy_complex64 *w, npy_complex64 *vs, int *ldvs, float *rconde, float *rcondv, npy_complex64 *work, int *lwork, float *rwork, int *bwork, int *info);
 void F_FUNC(cgeev,CGEEV)(char *jobvl, char *jobvr, int *n, npy_complex64 *a, int *lda, npy_complex64 *w, npy_complex64 *vl, int *ldvl, npy_complex64 *vr, int *ldvr, npy_complex64 *work, int *lwork, float *rwork, int *info);
 void F_FUNC(cgeevx,CGEEVX)(char *balanc, char *jobvl, char *jobvr, char *sense, int *n, npy_complex64 *a, int *lda, npy_complex64 *w, npy_complex64 *vl, int *ldvl, npy_complex64 *vr, int *ldvr, int *ilo, int *ihi, float *scale, float *abnrm, float *rconde, float *rcondv, npy_complex64 *work, int *lwork, float *rwork, int *info);
-void F_FUNC(cgegs,CGEGS)(char *jobvsl, char *jobvsr, int *n, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *alpha, npy_complex64 *beta, npy_complex64 *vsl, int *ldvsl, npy_complex64 *vsr, int *ldvsr, npy_complex64 *work, int *lwork, float *rwork, int *info);
-void F_FUNC(cgegv,CGEGV)(char *jobvl, char *jobvr, int *n, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *alpha, npy_complex64 *beta, npy_complex64 *vl, int *ldvl, npy_complex64 *vr, int *ldvr, npy_complex64 *work, int *lwork, float *rwork, int *info);
 void F_FUNC(cgehd2,CGEHD2)(int *n, int *ilo, int *ihi, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *info);
 void F_FUNC(cgehrd,CGEHRD)(int *n, int *ilo, int *ihi, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *lwork, int *info);
 void F_FUNC(cgelq2,CGELQ2)(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *info);
@@ -114,12 +112,10 @@ void F_FUNC(cgelqf,CGELQF)(int *m, int *n, npy_complex64 *a, int *lda, npy_compl
 void F_FUNC(cgels,CGELS)(char *trans, int *m, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *work, int *lwork, int *info);
 void F_FUNC(cgelsd,CGELSD)(int *m, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, float *s, float *rcond, int *rank, npy_complex64 *work, int *lwork, float *rwork, int *iwork, int *info);
 void F_FUNC(cgelss,CGELSS)(int *m, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, float *s, float *rcond, int *rank, npy_complex64 *work, int *lwork, float *rwork, int *info);
-void F_FUNC(cgelsx,CGELSX)(int *m, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, int *jpvt, float *rcond, int *rank, npy_complex64 *work, float *rwork, int *info);
 void F_FUNC(cgelsy,CGELSY)(int *m, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, int *jpvt, float *rcond, int *rank, npy_complex64 *work, int *lwork, float *rwork, int *info);
 void F_FUNC(cgeql2,CGEQL2)(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *info);
 void F_FUNC(cgeqlf,CGEQLF)(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *lwork, int *info);
 void F_FUNC(cgeqp3,CGEQP3)(int *m, int *n, npy_complex64 *a, int *lda, int *jpvt, npy_complex64 *tau, npy_complex64 *work, int *lwork, float *rwork, int *info);
-void F_FUNC(cgeqpf,CGEQPF)(int *m, int *n, npy_complex64 *a, int *lda, int *jpvt, npy_complex64 *tau, npy_complex64 *work, float *rwork, int *info);
 void F_FUNC(cgeqr2,CGEQR2)(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *info);
 void F_FUNC(cgeqrf,CGEQRF)(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *lwork, int *info);
 void F_FUNC(cgerfs,CGERFS)(char *trans, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *af, int *ldaf, int *ipiv, npy_complex64 *b, int *ldb, npy_complex64 *x, int *ldx, float *ferr, float *berr, npy_complex64 *work, float *rwork, int *info);
@@ -146,8 +142,6 @@ void F_FUNC(cgghrd,CGGHRD)(char *compq, char *compz, int *n, int *ilo, int *ihi,
 void F_FUNC(cgglse,CGGLSE)(int *m, int *n, int *p, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, npy_complex64 *c, npy_complex64 *d, npy_complex64 *x, npy_complex64 *work, int *lwork, int *info);
 void F_FUNC(cggqrf,CGGQRF)(int *n, int *m, int *p, npy_complex64 *a, int *lda, npy_complex64 *taua, npy_complex64 *b, int *ldb, npy_complex64 *taub, npy_complex64 *work, int *lwork, int *info);
 void F_FUNC(cggrqf,CGGRQF)(int *m, int *p, int *n, npy_complex64 *a, int *lda, npy_complex64 *taua, npy_complex64 *b, int *ldb, npy_complex64 *taub, npy_complex64 *work, int *lwork, int *info);
-void F_FUNC(cggsvd,CGGSVD)(char *jobu, char *jobv, char *jobq, int *m, int *n, int *p, int *k, int *l, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, float *alpha, float *beta, npy_complex64 *u, int *ldu, npy_complex64 *v, int *ldv, npy_complex64 *q, int *ldq, npy_complex64 *work, float *rwork, int *iwork, int *info);
-void F_FUNC(cggsvp,CGGSVP)(char *jobu, char *jobv, char *jobq, int *m, int *p, int *n, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, float *tola, float *tolb, int *k, int *l, npy_complex64 *u, int *ldu, npy_complex64 *v, int *ldv, npy_complex64 *q, int *ldq, int *iwork, float *rwork, npy_complex64 *tau, npy_complex64 *work, int *info);
 void F_FUNC(cgtcon,CGTCON)(char *norm, int *n, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *du2, int *ipiv, float *anorm, float *rcond, npy_complex64 *work, int *info);
 void F_FUNC(cgtrfs,CGTRFS)(char *trans, int *n, int *nrhs, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *dlf, npy_complex64 *df, npy_complex64 *duf, npy_complex64 *du2, int *ipiv, npy_complex64 *b, int *ldb, npy_complex64 *x, int *ldx, float *ferr, float *berr, npy_complex64 *work, float *rwork, int *info);
 void F_FUNC(cgtsv,CGTSV)(int *n, int *nrhs, npy_complex64 *dl, npy_complex64 *d, npy_complex64 *du, npy_complex64 *b, int *ldb, int *info);
@@ -220,7 +214,6 @@ void F_FUNC(clagtm,CLAGTM)(char *trans, int *n, int *nrhs, float *alpha, npy_com
 void F_FUNC(clahef,CLAHEF)(char *uplo, int *n, int *nb, int *kb, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *w, int *ldw, int *info);
 void F_FUNC(clahqr,CLAHQR)(int *wantt, int *wantz, int *n, int *ilo, int *ihi, npy_complex64 *h, int *ldh, npy_complex64 *w, int *iloz, int *ihiz, npy_complex64 *z, int *ldz, int *info);
 void F_FUNC(clahr2,CLAHR2)(int *n, int *k, int *nb, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *t, int *ldt, npy_complex64 *y, int *ldy);
-void F_FUNC(clahrd,CLAHRD)(int *n, int *k, int *nb, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *t, int *ldt, npy_complex64 *y, int *ldy);
 void F_FUNC(claic1,CLAIC1)(int *job, int *j, npy_complex64 *x, float *sest, npy_complex64 *w, npy_complex64 *gamma, float *sestpr, npy_complex64 *s, npy_complex64 *c);
 void F_FUNC(clals0,CLALS0)(int *icompq, int *nl, int *nr, int *sqre, int *nrhs, npy_complex64 *b, int *ldb, npy_complex64 *bx, int *ldbx, int *perm, int *givptr, int *givcol, int *ldgcol, float *givnum, int *ldgnum, float *poles, float *difl, float *difr, float *z, int *k, float *c, float *s, float *rwork, int *info);
 void F_FUNC(clalsa,CLALSA)(int *icompq, int *smlsiz, int *n, int *nrhs, npy_complex64 *b, int *ldb, npy_complex64 *bx, int *ldbx, float *u, int *ldu, float *vt, int *k, float *difl, float *difr, float *z, float *poles, int *givptr, int *givcol, int *ldgcol, int *perm, float *givnum, float *c, float *s, float *rwork, int *iwork, int *info);
@@ -271,7 +264,6 @@ void F_FUNC(clatps,CLATPS)(char *uplo, char *trans, char *diag, char *normin, in
 void F_FUNC(clatrd,CLATRD)(char *uplo, int *n, int *nb, npy_complex64 *a, int *lda, float *e, npy_complex64 *tau, npy_complex64 *w, int *ldw);
 void F_FUNC(clatrs,CLATRS)(char *uplo, char *trans, char *diag, char *normin, int *n, npy_complex64 *a, int *lda, npy_complex64 *x, float *scale, float *cnorm, int *info);
 void F_FUNC(clatrz,CLATRZ)(int *m, int *n, int *l, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work);
-void F_FUNC(clatzm,CLATZM)(char *side, int *m, int *n, npy_complex64 *v, int *incv, npy_complex64 *tau, npy_complex64 *c1, npy_complex64 *c2, int *ldc, npy_complex64 *work);
 void F_FUNC(clauu2,CLAUU2)(char *uplo, int *n, npy_complex64 *a, int *lda, int *info);
 void F_FUNC(clauum,CLAUUM)(char *uplo, int *n, npy_complex64 *a, int *lda, int *info);
 void F_FUNC(cpbcon,CPBCON)(char *uplo, int *n, int *kd, npy_complex64 *ab, int *ldab, float *anorm, float *rcond, npy_complex64 *work, float *rwork, int *info);
@@ -359,7 +351,6 @@ void F_FUNC(ctrsyl,CTRSYL)(char *trana, char *tranb, int *isgn, int *m, int *n, 
 void F_FUNC(ctrti2,CTRTI2)(char *uplo, char *diag, int *n, npy_complex64 *a, int *lda, int *info);
 void F_FUNC(ctrtri,CTRTRI)(char *uplo, char *diag, int *n, npy_complex64 *a, int *lda, int *info);
 void F_FUNC(ctrtrs,CTRTRS)(char *uplo, char *trans, char *diag, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *b, int *ldb, int *info);
-void F_FUNC(ctzrqf,CTZRQF)(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, int *info);
 void F_FUNC(ctzrzf,CTZRZF)(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *lwork, int *info);
 void F_FUNC(cung2l,CUNG2L)(int *m, int *n, int *k, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *info);
 void F_FUNC(cung2r,CUNG2R)(int *m, int *n, int *k, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *info);
@@ -409,8 +400,6 @@ void F_FUNC(dgees,DGEES)(char *jobvs, char *sort, _dselect2 *select, int *n, dou
 void F_FUNC(dgeesx,DGEESX)(char *jobvs, char *sort, _dselect2 *select, char *sense, int *n, double *a, int *lda, int *sdim, double *wr, double *wi, double *vs, int *ldvs, double *rconde, double *rcondv, double *work, int *lwork, int *iwork, int *liwork, int *bwork, int *info);
 void F_FUNC(dgeev,DGEEV)(char *jobvl, char *jobvr, int *n, double *a, int *lda, double *wr, double *wi, double *vl, int *ldvl, double *vr, int *ldvr, double *work, int *lwork, int *info);
 void F_FUNC(dgeevx,DGEEVX)(char *balanc, char *jobvl, char *jobvr, char *sense, int *n, double *a, int *lda, double *wr, double *wi, double *vl, int *ldvl, double *vr, int *ldvr, int *ilo, int *ihi, double *scale, double *abnrm, double *rconde, double *rcondv, double *work, int *lwork, int *iwork, int *info);
-void F_FUNC(dgegs,DGEGS)(char *jobvsl, char *jobvsr, int *n, double *a, int *lda, double *b, int *ldb, double *alphar, double *alphai, double *beta, double *vsl, int *ldvsl, double *vsr, int *ldvsr, double *work, int *lwork, int *info);
-void F_FUNC(dgegv,DGEGV)(char *jobvl, char *jobvr, int *n, double *a, int *lda, double *b, int *ldb, double *alphar, double *alphai, double *beta, double *vl, int *ldvl, double *vr, int *ldvr, double *work, int *lwork, int *info);
 void F_FUNC(dgehd2,DGEHD2)(int *n, int *ilo, int *ihi, double *a, int *lda, double *tau, double *work, int *info);
 void F_FUNC(dgehrd,DGEHRD)(int *n, int *ilo, int *ihi, double *a, int *lda, double *tau, double *work, int *lwork, int *info);
 void F_FUNC(dgelq2,DGELQ2)(int *m, int *n, double *a, int *lda, double *tau, double *work, int *info);
@@ -418,12 +407,10 @@ void F_FUNC(dgelqf,DGELQF)(int *m, int *n, double *a, int *lda, double *tau, dou
 void F_FUNC(dgels,DGELS)(char *trans, int *m, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, double *work, int *lwork, int *info);
 void F_FUNC(dgelsd,DGELSD)(int *m, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, double *s, double *rcond, int *rank, double *work, int *lwork, int *iwork, int *info);
 void F_FUNC(dgelss,DGELSS)(int *m, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, double *s, double *rcond, int *rank, double *work, int *lwork, int *info);
-void F_FUNC(dgelsx,DGELSX)(int *m, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *jpvt, double *rcond, int *rank, double *work, int *info);
 void F_FUNC(dgelsy,DGELSY)(int *m, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *jpvt, double *rcond, int *rank, double *work, int *lwork, int *info);
 void F_FUNC(dgeql2,DGEQL2)(int *m, int *n, double *a, int *lda, double *tau, double *work, int *info);
 void F_FUNC(dgeqlf,DGEQLF)(int *m, int *n, double *a, int *lda, double *tau, double *work, int *lwork, int *info);
 void F_FUNC(dgeqp3,DGEQP3)(int *m, int *n, double *a, int *lda, int *jpvt, double *tau, double *work, int *lwork, int *info);
-void F_FUNC(dgeqpf,DGEQPF)(int *m, int *n, double *a, int *lda, int *jpvt, double *tau, double *work, int *info);
 void F_FUNC(dgeqr2,DGEQR2)(int *m, int *n, double *a, int *lda, double *tau, double *work, int *info);
 void F_FUNC(dgeqrf,DGEQRF)(int *m, int *n, double *a, int *lda, double *tau, double *work, int *lwork, int *info);
 void F_FUNC(dgerfs,DGERFS)(char *trans, int *n, int *nrhs, double *a, int *lda, double *af, int *ldaf, int *ipiv, double *b, int *ldb, double *x, int *ldx, double *ferr, double *berr, double *work, int *iwork, int *info);
@@ -450,8 +437,6 @@ void F_FUNC(dgghrd,DGGHRD)(char *compq, char *compz, int *n, int *ilo, int *ihi,
 void F_FUNC(dgglse,DGGLSE)(int *m, int *n, int *p, double *a, int *lda, double *b, int *ldb, double *c, double *d, double *x, double *work, int *lwork, int *info);
 void F_FUNC(dggqrf,DGGQRF)(int *n, int *m, int *p, double *a, int *lda, double *taua, double *b, int *ldb, double *taub, double *work, int *lwork, int *info);
 void F_FUNC(dggrqf,DGGRQF)(int *m, int *p, int *n, double *a, int *lda, double *taua, double *b, int *ldb, double *taub, double *work, int *lwork, int *info);
-void F_FUNC(dggsvd,DGGSVD)(char *jobu, char *jobv, char *jobq, int *m, int *n, int *p, int *k, int *l, double *a, int *lda, double *b, int *ldb, double *alpha, double *beta, double *u, int *ldu, double *v, int *ldv, double *q, int *ldq, double *work, int *iwork, int *info);
-void F_FUNC(dggsvp,DGGSVP)(char *jobu, char *jobv, char *jobq, int *m, int *p, int *n, double *a, int *lda, double *b, int *ldb, double *tola, double *tolb, int *k, int *l, double *u, int *ldu, double *v, int *ldv, double *q, int *ldq, int *iwork, double *tau, double *work, int *info);
 void F_FUNC(dgtcon,DGTCON)(char *norm, int *n, double *dl, double *d, double *du, double *du2, int *ipiv, double *anorm, double *rcond, double *work, int *iwork, int *info);
 void F_FUNC(dgtrfs,DGTRFS)(char *trans, int *n, int *nrhs, double *dl, double *d, double *du, double *dlf, double *df, double *duf, double *du2, int *ipiv, double *b, int *ldb, double *x, int *ldx, double *ferr, double *berr, double *work, int *iwork, int *info);
 void F_FUNC(dgtsv,DGTSV)(int *n, int *nrhs, double *dl, double *d, double *du, double *b, int *ldb, int *info);
@@ -493,7 +478,6 @@ void F_FUNC(dlagts,DLAGTS)(int *job, int *n, double *a, double *b, double *c, do
 void F_FUNC(dlagv2,DLAGV2)(double *a, int *lda, double *b, int *ldb, double *alphar, double *alphai, double *beta, double *csl, double *snl, double *csr, double *snr);
 void F_FUNC(dlahqr,DLAHQR)(int *wantt, int *wantz, int *n, int *ilo, int *ihi, double *h, int *ldh, double *wr, double *wi, int *iloz, int *ihiz, double *z, int *ldz, int *info);
 void F_FUNC(dlahr2,DLAHR2)(int *n, int *k, int *nb, double *a, int *lda, double *tau, double *t, int *ldt, double *y, int *ldy);
-void F_FUNC(dlahrd,DLAHRD)(int *n, int *k, int *nb, double *a, int *lda, double *tau, double *t, int *ldt, double *y, int *ldy);
 void F_FUNC(dlaic1,DLAIC1)(int *job, int *j, double *x, double *sest, double *w, double *gamma, double *sestpr, double *s, double *c);
 void F_FUNC(dlaln2,DLALN2)(int *ltrans, int *na, int *nw, double *smin, double *ca, double *a, int *lda, double *d1, double *d2, double *b, int *ldb, double *wr, double *wi, double *x, int *ldx, double *scale, double *xnorm, int *info);
 void F_FUNC(dlals0,DLALS0)(int *icompq, int *nl, int *nr, int *sqre, int *nrhs, double *b, int *ldb, double *bx, int *ldbx, int *perm, int *givptr, int *givcol, int *ldgcol, double *givnum, int *ldgnum, double *poles, double *difl, double *difr, double *z, int *k, double *c, double *s, double *work, int *info);
@@ -573,7 +557,6 @@ void F_FUNC(dlatps,DLATPS)(char *uplo, char *trans, char *diag, char *normin, in
 void F_FUNC(dlatrd,DLATRD)(char *uplo, int *n, int *nb, double *a, int *lda, double *e, double *tau, double *w, int *ldw);
 void F_FUNC(dlatrs,DLATRS)(char *uplo, char *trans, char *diag, char *normin, int *n, double *a, int *lda, double *x, double *scale, double *cnorm, int *info);
 void F_FUNC(dlatrz,DLATRZ)(int *m, int *n, int *l, double *a, int *lda, double *tau, double *work);
-void F_FUNC(dlatzm,DLATZM)(char *side, int *m, int *n, double *v, int *incv, double *tau, double *c1, double *c2, int *ldc, double *work);
 void F_FUNC(dlauu2,DLAUU2)(char *uplo, int *n, double *a, int *lda, int *info);
 void F_FUNC(dlauum,DLAUUM)(char *uplo, int *n, double *a, int *lda, int *info);
 void F_FUNC(dopgtr,DOPGTR)(char *uplo, int *n, double *ap, double *tau, double *q, int *ldq, double *work, int *info);
@@ -716,7 +699,6 @@ void F_FUNC(dtrsyl,DTRSYL)(char *trana, char *tranb, int *isgn, int *m, int *n, 
 void F_FUNC(dtrti2,DTRTI2)(char *uplo, char *diag, int *n, double *a, int *lda, int *info);
 void F_FUNC(dtrtri,DTRTRI)(char *uplo, char *diag, int *n, double *a, int *lda, int *info);
 void F_FUNC(dtrtrs,DTRTRS)(char *uplo, char *trans, char *diag, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *info);
-void F_FUNC(dtzrqf,DTZRQF)(int *m, int *n, double *a, int *lda, double *tau, int *info);
 void F_FUNC(dtzrzf,DTZRZF)(int *m, int *n, double *a, int *lda, double *tau, double *work, int *lwork, int *info);
 void F_FUNC(ilaver,ILAVER)(int *vers_major, int *vers_minor, int *vers_patch);
 void F_FUNC(sbdsdc,SBDSDC)(char *uplo, char *compq, int *n, float *d, float *e, float *u, int *ldu, float *vt, int *ldvt, float *q, int *iq, float *work, int *iwork, int *info);
@@ -741,8 +723,6 @@ void F_FUNC(sgees,SGEES)(char *jobvs, char *sort, _sselect2 *select, int *n, flo
 void F_FUNC(sgeesx,SGEESX)(char *jobvs, char *sort, _sselect2 *select, char *sense, int *n, float *a, int *lda, int *sdim, float *wr, float *wi, float *vs, int *ldvs, float *rconde, float *rcondv, float *work, int *lwork, int *iwork, int *liwork, int *bwork, int *info);
 void F_FUNC(sgeev,SGEEV)(char *jobvl, char *jobvr, int *n, float *a, int *lda, float *wr, float *wi, float *vl, int *ldvl, float *vr, int *ldvr, float *work, int *lwork, int *info);
 void F_FUNC(sgeevx,SGEEVX)(char *balanc, char *jobvl, char *jobvr, char *sense, int *n, float *a, int *lda, float *wr, float *wi, float *vl, int *ldvl, float *vr, int *ldvr, int *ilo, int *ihi, float *scale, float *abnrm, float *rconde, float *rcondv, float *work, int *lwork, int *iwork, int *info);
-void F_FUNC(sgegs,SGEGS)(char *jobvsl, char *jobvsr, int *n, float *a, int *lda, float *b, int *ldb, float *alphar, float *alphai, float *beta, float *vsl, int *ldvsl, float *vsr, int *ldvsr, float *work, int *lwork, int *info);
-void F_FUNC(sgegv,SGEGV)(char *jobvl, char *jobvr, int *n, float *a, int *lda, float *b, int *ldb, float *alphar, float *alphai, float *beta, float *vl, int *ldvl, float *vr, int *ldvr, float *work, int *lwork, int *info);
 void F_FUNC(sgehd2,SGEHD2)(int *n, int *ilo, int *ihi, float *a, int *lda, float *tau, float *work, int *info);
 void F_FUNC(sgehrd,SGEHRD)(int *n, int *ilo, int *ihi, float *a, int *lda, float *tau, float *work, int *lwork, int *info);
 void F_FUNC(sgelq2,SGELQ2)(int *m, int *n, float *a, int *lda, float *tau, float *work, int *info);
@@ -750,12 +730,10 @@ void F_FUNC(sgelqf,SGELQF)(int *m, int *n, float *a, int *lda, float *tau, float
 void F_FUNC(sgels,SGELS)(char *trans, int *m, int *n, int *nrhs, float *a, int *lda, float *b, int *ldb, float *work, int *lwork, int *info);
 void F_FUNC(sgelsd,SGELSD)(int *m, int *n, int *nrhs, float *a, int *lda, float *b, int *ldb, float *s, float *rcond, int *rank, float *work, int *lwork, int *iwork, int *info);
 void F_FUNC(sgelss,SGELSS)(int *m, int *n, int *nrhs, float *a, int *lda, float *b, int *ldb, float *s, float *rcond, int *rank, float *work, int *lwork, int *info);
-void F_FUNC(sgelsx,SGELSX)(int *m, int *n, int *nrhs, float *a, int *lda, float *b, int *ldb, int *jpvt, float *rcond, int *rank, float *work, int *info);
 void F_FUNC(sgelsy,SGELSY)(int *m, int *n, int *nrhs, float *a, int *lda, float *b, int *ldb, int *jpvt, float *rcond, int *rank, float *work, int *lwork, int *info);
 void F_FUNC(sgeql2,SGEQL2)(int *m, int *n, float *a, int *lda, float *tau, float *work, int *info);
 void F_FUNC(sgeqlf,SGEQLF)(int *m, int *n, float *a, int *lda, float *tau, float *work, int *lwork, int *info);
 void F_FUNC(sgeqp3,SGEQP3)(int *m, int *n, float *a, int *lda, int *jpvt, float *tau, float *work, int *lwork, int *info);
-void F_FUNC(sgeqpf,SGEQPF)(int *m, int *n, float *a, int *lda, int *jpvt, float *tau, float *work, int *info);
 void F_FUNC(sgeqr2,SGEQR2)(int *m, int *n, float *a, int *lda, float *tau, float *work, int *info);
 void F_FUNC(sgeqrf,SGEQRF)(int *m, int *n, float *a, int *lda, float *tau, float *work, int *lwork, int *info);
 void F_FUNC(sgerfs,SGERFS)(char *trans, int *n, int *nrhs, float *a, int *lda, float *af, int *ldaf, int *ipiv, float *b, int *ldb, float *x, int *ldx, float *ferr, float *berr, float *work, int *iwork, int *info);
@@ -782,8 +760,6 @@ void F_FUNC(sgghrd,SGGHRD)(char *compq, char *compz, int *n, int *ilo, int *ihi,
 void F_FUNC(sgglse,SGGLSE)(int *m, int *n, int *p, float *a, int *lda, float *b, int *ldb, float *c, float *d, float *x, float *work, int *lwork, int *info);
 void F_FUNC(sggqrf,SGGQRF)(int *n, int *m, int *p, float *a, int *lda, float *taua, float *b, int *ldb, float *taub, float *work, int *lwork, int *info);
 void F_FUNC(sggrqf,SGGRQF)(int *m, int *p, int *n, float *a, int *lda, float *taua, float *b, int *ldb, float *taub, float *work, int *lwork, int *info);
-void F_FUNC(sggsvd,SGGSVD)(char *jobu, char *jobv, char *jobq, int *m, int *n, int *p, int *k, int *l, float *a, int *lda, float *b, int *ldb, float *alpha, float *beta, float *u, int *ldu, float *v, int *ldv, float *q, int *ldq, float *work, int *iwork, int *info);
-void F_FUNC(sggsvp,SGGSVP)(char *jobu, char *jobv, char *jobq, int *m, int *p, int *n, float *a, int *lda, float *b, int *ldb, float *tola, float *tolb, int *k, int *l, float *u, int *ldu, float *v, int *ldv, float *q, int *ldq, int *iwork, float *tau, float *work, int *info);
 void F_FUNC(sgtcon,SGTCON)(char *norm, int *n, float *dl, float *d, float *du, float *du2, int *ipiv, float *anorm, float *rcond, float *work, int *iwork, int *info);
 void F_FUNC(sgtrfs,SGTRFS)(char *trans, int *n, int *nrhs, float *dl, float *d, float *du, float *dlf, float *df, float *duf, float *du2, int *ipiv, float *b, int *ldb, float *x, int *ldx, float *ferr, float *berr, float *work, int *iwork, int *info);
 void F_FUNC(sgtsv,SGTSV)(int *n, int *nrhs, float *dl, float *d, float *du, float *b, int *ldb, int *info);
@@ -825,7 +801,6 @@ void F_FUNC(slagts,SLAGTS)(int *job, int *n, float *a, float *b, float *c, float
 void F_FUNC(slagv2,SLAGV2)(float *a, int *lda, float *b, int *ldb, float *alphar, float *alphai, float *beta, float *csl, float *snl, float *csr, float *snr);
 void F_FUNC(slahqr,SLAHQR)(int *wantt, int *wantz, int *n, int *ilo, int *ihi, float *h, int *ldh, float *wr, float *wi, int *iloz, int *ihiz, float *z, int *ldz, int *info);
 void F_FUNC(slahr2,SLAHR2)(int *n, int *k, int *nb, float *a, int *lda, float *tau, float *t, int *ldt, float *y, int *ldy);
-void F_FUNC(slahrd,SLAHRD)(int *n, int *k, int *nb, float *a, int *lda, float *tau, float *t, int *ldt, float *y, int *ldy);
 void F_FUNC(slaic1,SLAIC1)(int *job, int *j, float *x, float *sest, float *w, float *gamma, float *sestpr, float *s, float *c);
 void F_FUNC(slaln2,SLALN2)(int *ltrans, int *na, int *nw, float *smin, float *ca, float *a, int *lda, float *d1, float *d2, float *b, int *ldb, float *wr, float *wi, float *x, int *ldx, float *scale, float *xnorm, int *info);
 void F_FUNC(slals0,SLALS0)(int *icompq, int *nl, int *nr, int *sqre, int *nrhs, float *b, int *ldb, float *bx, int *ldbx, int *perm, int *givptr, int *givcol, int *ldgcol, float *givnum, int *ldgnum, float *poles, float *difl, float *difr, float *z, int *k, float *c, float *s, float *work, int *info);
@@ -905,7 +880,6 @@ void F_FUNC(slatps,SLATPS)(char *uplo, char *trans, char *diag, char *normin, in
 void F_FUNC(slatrd,SLATRD)(char *uplo, int *n, int *nb, float *a, int *lda, float *e, float *tau, float *w, int *ldw);
 void F_FUNC(slatrs,SLATRS)(char *uplo, char *trans, char *diag, char *normin, int *n, float *a, int *lda, float *x, float *scale, float *cnorm, int *info);
 void F_FUNC(slatrz,SLATRZ)(int *m, int *n, int *l, float *a, int *lda, float *tau, float *work);
-void F_FUNC(slatzm,SLATZM)(char *side, int *m, int *n, float *v, int *incv, float *tau, float *c1, float *c2, int *ldc, float *work);
 void F_FUNC(slauu2,SLAUU2)(char *uplo, int *n, float *a, int *lda, int *info);
 void F_FUNC(slauum,SLAUUM)(char *uplo, int *n, float *a, int *lda, int *info);
 void F_FUNC(sopgtr,SOPGTR)(char *uplo, int *n, float *ap, float *tau, float *q, int *ldq, float *work, int *info);
@@ -1047,7 +1021,6 @@ void F_FUNC(strsyl,STRSYL)(char *trana, char *tranb, int *isgn, int *m, int *n, 
 void F_FUNC(strti2,STRTI2)(char *uplo, char *diag, int *n, float *a, int *lda, int *info);
 void F_FUNC(strtri,STRTRI)(char *uplo, char *diag, int *n, float *a, int *lda, int *info);
 void F_FUNC(strtrs,STRTRS)(char *uplo, char *trans, char *diag, int *n, int *nrhs, float *a, int *lda, float *b, int *ldb, int *info);
-void F_FUNC(stzrqf,STZRQF)(int *m, int *n, float *a, int *lda, float *tau, int *info);
 void F_FUNC(stzrzf,STZRZF)(int *m, int *n, float *a, int *lda, float *tau, float *work, int *lwork, int *info);
 void F_FUNC(zbdsqr,ZBDSQR)(char *uplo, int *n, int *ncvt, int *nru, int *ncc, double *d, double *e, npy_complex128 *vt, int *ldvt, npy_complex128 *u, int *ldu, npy_complex128 *c, int *ldc, double *rwork, int *info);
 void F_FUNC(zdrscl,ZDRSCL)(int *n, double *sa, npy_complex128 *sx, int *incx);
@@ -1070,8 +1043,6 @@ void F_FUNC(zgees,ZGEES)(char *jobvs, char *sort, _zselect1 *select, int *n, npy
 void F_FUNC(zgeesx,ZGEESX)(char *jobvs, char *sort, _zselect1 *select, char *sense, int *n, npy_complex128 *a, int *lda, int *sdim, npy_complex128 *w, npy_complex128 *vs, int *ldvs, double *rconde, double *rcondv, npy_complex128 *work, int *lwork, double *rwork, int *bwork, int *info);
 void F_FUNC(zgeev,ZGEEV)(char *jobvl, char *jobvr, int *n, npy_complex128 *a, int *lda, npy_complex128 *w, npy_complex128 *vl, int *ldvl, npy_complex128 *vr, int *ldvr, npy_complex128 *work, int *lwork, double *rwork, int *info);
 void F_FUNC(zgeevx,ZGEEVX)(char *balanc, char *jobvl, char *jobvr, char *sense, int *n, npy_complex128 *a, int *lda, npy_complex128 *w, npy_complex128 *vl, int *ldvl, npy_complex128 *vr, int *ldvr, int *ilo, int *ihi, double *scale, double *abnrm, double *rconde, double *rcondv, npy_complex128 *work, int *lwork, double *rwork, int *info);
-void F_FUNC(zgegs,ZGEGS)(char *jobvsl, char *jobvsr, int *n, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *alpha, npy_complex128 *beta, npy_complex128 *vsl, int *ldvsl, npy_complex128 *vsr, int *ldvsr, npy_complex128 *work, int *lwork, double *rwork, int *info);
-void F_FUNC(zgegv,ZGEGV)(char *jobvl, char *jobvr, int *n, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *alpha, npy_complex128 *beta, npy_complex128 *vl, int *ldvl, npy_complex128 *vr, int *ldvr, npy_complex128 *work, int *lwork, double *rwork, int *info);
 void F_FUNC(zgehd2,ZGEHD2)(int *n, int *ilo, int *ihi, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *info);
 void F_FUNC(zgehrd,ZGEHRD)(int *n, int *ilo, int *ihi, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *lwork, int *info);
 void F_FUNC(zgelq2,ZGELQ2)(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *info);
@@ -1079,12 +1050,10 @@ void F_FUNC(zgelqf,ZGELQF)(int *m, int *n, npy_complex128 *a, int *lda, npy_comp
 void F_FUNC(zgels,ZGELS)(char *trans, int *m, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *work, int *lwork, int *info);
 void F_FUNC(zgelsd,ZGELSD)(int *m, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, double *s, double *rcond, int *rank, npy_complex128 *work, int *lwork, double *rwork, int *iwork, int *info);
 void F_FUNC(zgelss,ZGELSS)(int *m, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, double *s, double *rcond, int *rank, npy_complex128 *work, int *lwork, double *rwork, int *info);
-void F_FUNC(zgelsx,ZGELSX)(int *m, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, int *jpvt, double *rcond, int *rank, npy_complex128 *work, double *rwork, int *info);
 void F_FUNC(zgelsy,ZGELSY)(int *m, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, int *jpvt, double *rcond, int *rank, npy_complex128 *work, int *lwork, double *rwork, int *info);
 void F_FUNC(zgeql2,ZGEQL2)(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *info);
 void F_FUNC(zgeqlf,ZGEQLF)(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *lwork, int *info);
 void F_FUNC(zgeqp3,ZGEQP3)(int *m, int *n, npy_complex128 *a, int *lda, int *jpvt, npy_complex128 *tau, npy_complex128 *work, int *lwork, double *rwork, int *info);
-void F_FUNC(zgeqpf,ZGEQPF)(int *m, int *n, npy_complex128 *a, int *lda, int *jpvt, npy_complex128 *tau, npy_complex128 *work, double *rwork, int *info);
 void F_FUNC(zgeqr2,ZGEQR2)(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *info);
 void F_FUNC(zgeqrf,ZGEQRF)(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *lwork, int *info);
 void F_FUNC(zgerfs,ZGERFS)(char *trans, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *af, int *ldaf, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, double *ferr, double *berr, npy_complex128 *work, double *rwork, int *info);
@@ -1111,8 +1080,6 @@ void F_FUNC(zgghrd,ZGGHRD)(char *compq, char *compz, int *n, int *ilo, int *ihi,
 void F_FUNC(zgglse,ZGGLSE)(int *m, int *n, int *p, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *c, npy_complex128 *d, npy_complex128 *x, npy_complex128 *work, int *lwork, int *info);
 void F_FUNC(zggqrf,ZGGQRF)(int *n, int *m, int *p, npy_complex128 *a, int *lda, npy_complex128 *taua, npy_complex128 *b, int *ldb, npy_complex128 *taub, npy_complex128 *work, int *lwork, int *info);
 void F_FUNC(zggrqf,ZGGRQF)(int *m, int *p, int *n, npy_complex128 *a, int *lda, npy_complex128 *taua, npy_complex128 *b, int *ldb, npy_complex128 *taub, npy_complex128 *work, int *lwork, int *info);
-void F_FUNC(zggsvd,ZGGSVD)(char *jobu, char *jobv, char *jobq, int *m, int *n, int *p, int *k, int *l, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, double *alpha, double *beta, npy_complex128 *u, int *ldu, npy_complex128 *v, int *ldv, npy_complex128 *q, int *ldq, npy_complex128 *work, double *rwork, int *iwork, int *info);
-void F_FUNC(zggsvp,ZGGSVP)(char *jobu, char *jobv, char *jobq, int *m, int *p, int *n, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, double *tola, double *tolb, int *k, int *l, npy_complex128 *u, int *ldu, npy_complex128 *v, int *ldv, npy_complex128 *q, int *ldq, int *iwork, double *rwork, npy_complex128 *tau, npy_complex128 *work, int *info);
 void F_FUNC(zgtcon,ZGTCON)(char *norm, int *n, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *du2, int *ipiv, double *anorm, double *rcond, npy_complex128 *work, int *info);
 void F_FUNC(zgtrfs,ZGTRFS)(char *trans, int *n, int *nrhs, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *dlf, npy_complex128 *df, npy_complex128 *duf, npy_complex128 *du2, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, double *ferr, double *berr, npy_complex128 *work, double *rwork, int *info);
 void F_FUNC(zgtsv,ZGTSV)(int *n, int *nrhs, npy_complex128 *dl, npy_complex128 *d, npy_complex128 *du, npy_complex128 *b, int *ldb, int *info);
@@ -1185,7 +1152,6 @@ void F_FUNC(zlagtm,ZLAGTM)(char *trans, int *n, int *nrhs, double *alpha, npy_co
 void F_FUNC(zlahef,ZLAHEF)(char *uplo, int *n, int *nb, int *kb, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *w, int *ldw, int *info);
 void F_FUNC(zlahqr,ZLAHQR)(int *wantt, int *wantz, int *n, int *ilo, int *ihi, npy_complex128 *h, int *ldh, npy_complex128 *w, int *iloz, int *ihiz, npy_complex128 *z, int *ldz, int *info);
 void F_FUNC(zlahr2,ZLAHR2)(int *n, int *k, int *nb, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *t, int *ldt, npy_complex128 *y, int *ldy);
-void F_FUNC(zlahrd,ZLAHRD)(int *n, int *k, int *nb, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *t, int *ldt, npy_complex128 *y, int *ldy);
 void F_FUNC(zlaic1,ZLAIC1)(int *job, int *j, npy_complex128 *x, double *sest, npy_complex128 *w, npy_complex128 *gamma, double *sestpr, npy_complex128 *s, npy_complex128 *c);
 void F_FUNC(zlals0,ZLALS0)(int *icompq, int *nl, int *nr, int *sqre, int *nrhs, npy_complex128 *b, int *ldb, npy_complex128 *bx, int *ldbx, int *perm, int *givptr, int *givcol, int *ldgcol, double *givnum, int *ldgnum, double *poles, double *difl, double *difr, double *z, int *k, double *c, double *s, double *rwork, int *info);
 void F_FUNC(zlalsa,ZLALSA)(int *icompq, int *smlsiz, int *n, int *nrhs, npy_complex128 *b, int *ldb, npy_complex128 *bx, int *ldbx, double *u, int *ldu, double *vt, int *k, double *difl, double *difr, double *z, double *poles, int *givptr, int *givcol, int *ldgcol, int *perm, double *givnum, double *c, double *s, double *rwork, int *iwork, int *info);
@@ -1236,7 +1202,6 @@ void F_FUNC(zlatps,ZLATPS)(char *uplo, char *trans, char *diag, char *normin, in
 void F_FUNC(zlatrd,ZLATRD)(char *uplo, int *n, int *nb, npy_complex128 *a, int *lda, double *e, npy_complex128 *tau, npy_complex128 *w, int *ldw);
 void F_FUNC(zlatrs,ZLATRS)(char *uplo, char *trans, char *diag, char *normin, int *n, npy_complex128 *a, int *lda, npy_complex128 *x, double *scale, double *cnorm, int *info);
 void F_FUNC(zlatrz,ZLATRZ)(int *m, int *n, int *l, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work);
-void F_FUNC(zlatzm,ZLATZM)(char *side, int *m, int *n, npy_complex128 *v, int *incv, npy_complex128 *tau, npy_complex128 *c1, npy_complex128 *c2, int *ldc, npy_complex128 *work);
 void F_FUNC(zlauu2,ZLAUU2)(char *uplo, int *n, npy_complex128 *a, int *lda, int *info);
 void F_FUNC(zlauum,ZLAUUM)(char *uplo, int *n, npy_complex128 *a, int *lda, int *info);
 void F_FUNC(zpbcon,ZPBCON)(char *uplo, int *n, int *kd, npy_complex128 *ab, int *ldab, double *anorm, double *rcond, npy_complex128 *work, double *rwork, int *info);
@@ -1323,7 +1288,6 @@ void F_FUNC(ztrsyl,ZTRSYL)(char *trana, char *tranb, int *isgn, int *m, int *n, 
 void F_FUNC(ztrti2,ZTRTI2)(char *uplo, char *diag, int *n, npy_complex128 *a, int *lda, int *info);
 void F_FUNC(ztrtri,ZTRTRI)(char *uplo, char *diag, int *n, npy_complex128 *a, int *lda, int *info);
 void F_FUNC(ztrtrs,ZTRTRS)(char *uplo, char *trans, char *diag, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, int *info);
-void F_FUNC(ztzrqf,ZTZRQF)(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, int *info);
 void F_FUNC(ztzrzf,ZTZRZF)(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *lwork, int *info);
 void F_FUNC(zung2l,ZUNG2L)(int *m, int *n, int *k, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *info);
 void F_FUNC(zung2r,ZUNG2R)(int *m, int *n, int *k, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *info);

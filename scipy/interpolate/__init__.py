@@ -21,13 +21,12 @@ Univariate interpolation
    interp1d
    BarycentricInterpolator
    KroghInterpolator
-   PiecewisePolynomial
    PchipInterpolator
    barycentric_interpolate
    krogh_interpolate
-   piecewise_polynomial_interpolate
    pchip_interpolate
    Akima1DInterpolator
+   CubicSpline
    PPoly
    BPoly
 
@@ -58,6 +57,9 @@ For data on a grid:
 
 .. seealso:: `scipy.ndimage.interpolation.map_coordinates`
 
+Tensor product polynomials:
+
+   NdPPoly
 
 1-D Splines
 ===========
@@ -165,7 +167,7 @@ from .rbf import Rbf
 
 from .polyint import *
 
-from ._monotone import *
+from ._cubic import *
 
 from .ndgriddata import *
 

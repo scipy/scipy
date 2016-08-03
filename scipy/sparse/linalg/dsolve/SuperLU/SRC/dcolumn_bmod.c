@@ -103,7 +103,7 @@ dcolumn_bmod (
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = Glu->lusup;
+    lusup   = (double *) Glu->lusup;
     xlusup  = Glu->xlusup;
     nzlumax = Glu->nzlumax;
     jcolp1 = jcol + 1;
@@ -272,7 +272,7 @@ dcolumn_bmod (
     while ( new_next > nzlumax ) {
 	if (mem_error = dLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu))
 	    return (mem_error);
-	lusup = Glu->lusup;
+	lusup = (double *) Glu->lusup;
 	lsub = Glu->lsub;
     }
 

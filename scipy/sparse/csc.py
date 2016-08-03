@@ -9,6 +9,7 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 import numpy as np
 from scipy._lib.six import xrange
 
+from .base import spmatrix
 from ._sparsetools import csc_tocsr
 from . import _sparsetools
 from .sputils import upcast, isintlike, IndexMixin, get_index_dtype
@@ -106,11 +107,21 @@ class csc_matrix(_cs_matrix, IndexMixin):
            [2, 3, 6]])
 
     """
+    format = 'csc'
 
-    def transpose(self, copy=False):
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
+        M, N = self.shape
+
         from .csr import csr_matrix
-        M,N = self.shape
-        return csr_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
+        return csr_matrix((self.data, self.indices,
+                           self.indptr), (N, M), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def __iter__(self):
         csr = self.tocsr()
@@ -123,7 +134,9 @@ class csc_matrix(_cs_matrix, IndexMixin):
         else:
             return self
 
-    def tocsr(self):
+    tocsc.__doc__ = spmatrix.tocsc.__doc__
+
+    def tocsr(self, copy=False):
         M,N = self.shape
         idx_dtype = get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, N))
@@ -144,6 +157,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
         A.has_sorted_indices = True
         return A
 
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
+
     def __getitem__(self, key):
         # Use CSR to implement fancy indexing.
 
@@ -163,12 +178,17 @@ class csc_matrix(_cs_matrix, IndexMixin):
         # Get row and col indices, from _cs_matrix.tocoo
         major_dim, minor_dim = self._swap(self.shape)
         minor_indices = self.indices
-        major_indices = np.empty(len(minor_indices), dtype=self.indptr.dtype)
+        major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
         row, col = self._swap((major_indices, minor_indices))
 
+        # Remove explicit zeros
+        nz_mask = self.data != 0
+        row = row[nz_mask]
+        col = col[nz_mask]
+
         # Sort them to be in C-style order
-        ind = np.lexsort((col, row))
+        ind = np.argsort(row, kind='mergesort')
         row = row[ind]
         col = col[ind]
 

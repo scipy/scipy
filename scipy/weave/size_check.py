@@ -288,7 +288,7 @@ class dummy_array(object):
             else:
                 if index < 0:
                     index += dim_len
-                if index >= 0 and index < dim_len:
+                if 0 <= index < dim_len:
                     # this reduces the array dimensions by one
                     pass
                 else:

@@ -61,18 +61,18 @@ sp_ienv(int ispec)
     int i;
 
     switch (ispec) {
-	case 1: return (12);
-	case 2: return (6);
-	case 3: return (100);
+	case 1: return (20);
+	case 2: return (10);
+	case 3: return (200);
 	case 4: return (200);
-	case 5: return (60);
-        case 6: return (20);
+	case 5: return (100);
+        case 6: return (30);
         case 7: return (10);
     }
 
     /* Invalid value for ISPEC */
     i = 1;
-    xerbla_("sp_ienv", &i);
+    input_error("sp_ienv", &i);
     return 0;
 
 } /* sp_ienv_ */

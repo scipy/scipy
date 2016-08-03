@@ -9,6 +9,7 @@ from numpy import (atleast_1d, dot, take, triu, shape, eye,
                    all, where, isscalar, asarray, inf, abs,
                    finfo, inexact, issubdtype, dtype)
 from scipy.linalg import svd
+from scipy._lib._util import _asarray_validated, _lazywhere
 from .optimize import OptimizeResult, _check_unknown_options, OptimizeWarning
 from ._lsq import least_squares
 from ._lsq.common import make_strictly_feasible
@@ -35,6 +36,7 @@ def _check_func(checker, argname, thefunc, x0, args, numinputs,
                 msg += " '%s'." % func_name
             else:
                 msg += "."
+            msg += 'Shape should be %s but it is %s.' % (output_shape, shape(res))
             raise TypeError(msg)
     if issubdtype(res.dtype, inexact):
         dt = res.dtype
@@ -447,12 +449,24 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         return (retval[0], info)
 
 
-def _general_function(params, xdata, ydata, function):
-    return function(xdata, *params) - ydata
+def _wrap_func(func, xdata, ydata, weights):
+    if weights is None:
+        def func_wrapped(params):
+            return func(xdata, *params) - ydata
+    else:
+        def func_wrapped(params):
+            return weights * (func(xdata, *params) - ydata)
+    return func_wrapped
 
 
-def _weighted_general_function(params, xdata, ydata, function, weights):
-    return weights * (function(xdata, *params) - ydata)
+def _wrap_jac(jac, xdata, weights):
+    if weights is None:
+        def jac_wrapped(params):
+            return jac(xdata, *params)
+    else:
+        def jac_wrapped(params):
+            return weights[:, np.newaxis] * np.asarray(jac(xdata, *params))
+    return jac_wrapped
 
 
 def _initialize_feasible(lb, ub):
@@ -474,7 +488,7 @@ def _initialize_feasible(lb, ub):
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
               check_finite=True, bounds=(-np.inf, np.inf), method=None,
-              **kwargs):
+              jac=None, **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -522,6 +536,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         to the number of parameters, or a scalar (in which case the bound is
         taken to be the same for all parameters.) Use ``np.inf`` with an
         appropriate sign to disable bounds on all or some parameters.
+
         .. versionadded:: 0.17
     method : {'lm', 'trf', 'dogbox'}, optional
         Method to use for optimization.  See `least_squares` for more details.
@@ -529,7 +544,17 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         provided. The method 'lm' won't work when the number of observations
         is less than the number of variables, use 'trf' or 'dogbox' in this
         case.
+
         .. versionadded:: 0.17
+    jac : callable, string or None, optional
+        Function with signature ``jac(x, ...)`` which computes the Jacobian
+        matrix of the model function with respect to parameters as a dense
+        array_like structure. It will be scaled according to provided `sigma`.
+        If None (default), the Jacobian will be estimated numerically.
+        String keywords for 'trf' and 'dogbox' methods can be used to select
+        a finite difference scheme, see `least_squares`.
+
+        .. versionadded:: 0.18
     kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
         `least_squares` otherwise.
@@ -554,18 +579,22 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Raises
     ------
+    ValueError
+        if either `ydata` or `xdata` contain NaNs, or if incompatible options
+        are used.
+
+    RuntimeError
+        if the least-squares minimization fails.
+
     OptimizeWarning
         if covariance of the parameters can not be estimated.
-
-    ValueError
-        if ydata and xdata contain NaNs.
 
     See Also
     --------
     least_squares : Minimize the sum of squares of nonlinear functions.
-    stats.linregress : Calculate a linear least squares regression for two sets
-                       of measurements.
-    
+    scipy.stats.linregress : Calculate a linear least squares regression for
+                             two sets of measurements.
+
     Notes
     -----
     With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
@@ -574,7 +603,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
     the docstring of `least_squares` for more information.
-     
+
     Examples
     --------
     >>> import numpy as np
@@ -593,29 +622,32 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     >>> popt, pcov = curve_fit(func, xdata, ydata, bounds=(0, [3., 2., 1.]))
 
-    """    
+    """
     if p0 is None:
         # determine number of parameters by inspecting the function
         from scipy._lib._util import getargspec_no_self as _getargspec
         args, varargs, varkw, defaults = _getargspec(f)
         if len(args) < 2:
-            raise ValueError("Unable to determine number of fit parameters.")                      
-        p0 = np.ones(len(args) - 1)
+            raise ValueError("Unable to determine number of fit parameters.")
+        n = len(args) - 1
     else:
         p0 = np.atleast_1d(p0)
-    
-    lb, ub = prepare_bounds(bounds, p0)
-    bounded_problem = np.any((lb > -np.inf) | (ub < np.inf))
+        n = p0.size
 
+    lb, ub = prepare_bounds(bounds, n)
+    if p0 is None:
+        p0 = _initialize_feasible(lb, ub)
+
+    bounded_problem = np.any((lb > -np.inf) | (ub < np.inf))
     if method is None:
         if bounded_problem:
             method = 'trf'
         else:
-            method = 'lm'    
+            method = 'lm'
 
     if method == 'lm' and bounded_problem:
         raise ValueError("Method 'lm' only works for unconstrained problems. "
-                         "Use method='trf' or 'dogbox' instead")
+                         "Use 'trf' or 'dogbox' instead.")
 
     # NaNs can not be handled
     if check_finite:
@@ -631,24 +663,27 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         else:
             xdata = np.asarray(xdata)
 
-    args = (xdata, ydata, f)
-    if sigma is None:
-        func = _general_function
-    else:
-        func = _weighted_general_function
-        args += (1.0 / asarray(sigma),)
+    weights = 1.0 / asarray(sigma) if sigma is not None else None
+    func = _wrap_func(f, xdata, ydata, weights)
+    if callable(jac):
+        jac = _wrap_jac(jac, xdata, weights)
+    elif jac is None and method != 'lm':
+        jac = '2-point'
 
     if method == 'lm':
         # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)
-        res = leastsq(func, p0, args=args, full_output=1, **kwargs)
+        res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
         popt, pcov, infodict, errmsg, ier = res
         cost = np.sum(infodict['fvec'] ** 2)
         if ier not in [1, 2, 3, 4]:
             raise RuntimeError("Optimal parameters not found: " + errmsg)
     else:
-        p0 = _initialize_feasible(lb, ub)
-        res = least_squares(func, p0, args=args, bounds=bounds, method=method,
+        # Rename maxfev (leastsq) to max_nfev (least_squares), if specified.
+        if 'max_nfev' not in kwargs:
+            kwargs['max_nfev'] = kwargs.pop('maxfev', None)
+
+        res = least_squares(func, p0, jac=jac, bounds=bounds, method=method,
                             **kwargs)
 
         if not res.success:
@@ -720,7 +755,33 @@ def check_gradient(fcn, Dfcn, x0, args=(), col_deriv=0):
     return (good, err)
 
 
-def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
+def _del2(p0, p1, d):
+    return p0 - np.square(p1 - p0) / d
+
+
+def _relerr(actual, desired):
+    return (actual - desired) / desired
+
+
+def _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel):
+    p0 = x0
+    for i in range(maxiter):
+        p1 = func(p0, *args)
+        if use_accel:
+            p2 = func(p1, *args)
+            d = p2 - 2.0 * p1 + p0
+            p = _lazywhere(d != 0, (p0, p1, d), f=_del2, fillvalue=p2)
+        else:
+            p = p1
+        relerr = _lazywhere(p0 != 0, (p, p0), f=_relerr, fillvalue=p)
+        if np.all(np.abs(relerr) < xtol):
+            return p
+        p0 = p
+    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
+    raise RuntimeError(msg)
+
+
+def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500, method='del2'):
     """
     Find a fixed point of the function.
 
@@ -739,11 +800,16 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
         Convergence tolerance, defaults to 1e-08.
     maxiter : int, optional
         Maximum number of iterations, defaults to 500.
+    method : {"del2", "iteration"}, optional
+        Method of finding the fixed-point, defaults to "del2"
+        which uses Steffensen's Method with Aitken's ``Del^2``
+        convergence acceleration [1]_. The "iteration" method simply iterates
+        the function until convergence is detected, without attempting to
+        accelerate the convergence.
 
-    Notes
-    -----
-    Uses Steffensen's Method using Aitken's ``Del^2`` convergence acceleration.
-    See Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
+    References
+    ----------
+    .. [1] Burden, Faires, "Numerical Analysis", 5th edition, pg. 80
 
     Examples
     --------
@@ -756,34 +822,6 @@ def fixed_point(func, x0, args=(), xtol=1e-8, maxiter=500):
     array([ 1.4920333 ,  1.37228132])
 
     """
-    if not isscalar(x0):
-        x0 = asarray(x0)
-        p0 = x0
-        for iter in range(maxiter):
-            p1 = func(p0, *args)
-            p2 = func(p1, *args)
-            d = p2 - 2.0 * p1 + p0
-            p = where(d == 0, p2, p0 - (p1 - p0)*(p1 - p0) / d)
-            relerr = where(p0 == 0, p, (p-p0)/p0)
-            if all(abs(relerr) < xtol):
-                return p
-            p0 = p
-    else:
-        p0 = x0
-        for iter in range(maxiter):
-            p1 = func(p0, *args)
-            p2 = func(p1, *args)
-            d = p2 - 2.0 * p1 + p0
-            if d == 0.0:
-                return p2
-            else:
-                p = p0 - (p1 - p0)*(p1 - p0) / d
-            if p0 == 0:
-                relerr = p
-            else:
-                relerr = (p - p0)/p0
-            if abs(relerr) < xtol:
-                return p
-            p0 = p
-    msg = "Failed to converge after %d iterations, value is %s" % (maxiter, p)
-    raise RuntimeError(msg)
+    use_accel = {'del2': True, 'iteration': False}[method]
+    x0 = _asarray_validated(x0, as_inexact=True)
+    return _fixed_point_helper(func, x0, args, xtol, maxiter, use_accel)

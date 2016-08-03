@@ -39,15 +39,26 @@ robert.kern@gmail.com
 from __future__ import division, print_function, absolute_import
 
 import numpy
+from warnings import warn
 from scipy.odr import __odrpack
 
-__all__ = ['odr', 'odr_error', 'odr_stop', 'Data', 'RealData', 'Model',
-           'Output', 'ODR']
+__all__ = ['odr', 'OdrWarning', 'OdrError', 'OdrStop',
+           'Data', 'RealData', 'Model', 'Output', 'ODR',
+           'odr_error', 'odr_stop']
 
 odr = __odrpack.odr
 
 
-class odr_error(Exception):
+class OdrWarning(UserWarning):
+    """
+    Warning indicating that the data passed into
+    ODR will cause problems when passed into 'odr'
+    that the user should be aware of.
+    """
+    pass
+
+
+class OdrError(Exception):
     """
     Exception indicating an error in fitting.
 
@@ -56,7 +67,7 @@ class odr_error(Exception):
     pass
 
 
-class odr_stop(Exception):
+class OdrStop(Exception):
     """
     Exception stopping fitting.
 
@@ -65,7 +76,11 @@ class odr_stop(Exception):
     """
     pass
 
-__odrpack._set_exceptions(odr_error, odr_stop)
+# Backwards compatibility
+odr_error = OdrError
+odr_stop = OdrStop
+
+__odrpack._set_exceptions(OdrError, OdrStop)
 
 
 def _conv(obj, dtype=None):
@@ -171,9 +186,11 @@ class Data(object):
     Parameters
     ----------
     x : array_like
-        Input data for regression.
+        Observed data for the independent variable of the regression
     y : array_like, optional
-        Input data for regression.
+        If array-like, observed data for the dependent variable of the
+        regression. A scalar input implies that the model to be used on
+        the data is implicit.
     we : array_like, optional
         If `we` is a scalar, then that value is used for all data points (and
         all dimensions of the response variable).
@@ -242,6 +259,12 @@ class Data(object):
 
     def __init__(self, x, y=None, we=None, wd=None, fix=None, meta={}):
         self.x = _conv(x)
+
+        if not isinstance(self.x, numpy.ndarray):
+            raise ValueError(("Expected an 'ndarray' of data for 'x', "
+                              "but instead got data of type '{name}'").format(
+                    name=type(self.x).__name__))
+
         self.y = _conv(y)
         self.we = _conv(we)
         self.wd = _conv(wd)
@@ -278,9 +301,11 @@ class RealData(Data):
     Parameters
     ----------
     x : array_like
-        x
+        Observed data for the independent variable of the regression
     y : array_like, optional
-        y
+        If array-like, observed data for the dependent variable of the
+        regression. A scalar input implies that the model to be used on
+        the data is implicit.
     sx, sy : array_like, optional
         Standard deviations of `x`.
         `sx` are standard deviations of `x` and are converted to weights by
@@ -348,6 +373,12 @@ class RealData(Data):
             self._ga_flags['we'] = 'covy'
 
         self.x = _conv(x)
+
+        if not isinstance(self.x, numpy.ndarray):
+            raise ValueError(("Expected an 'ndarray' of data for 'x', "
+                              "but instead got data of type '{name}'").format(
+                    name=type(self.x).__name__))
+
         self.y = _conv(y)
         self.sx = _conv(sx)
         self.sy = _conv(sy)
@@ -746,16 +777,16 @@ class ODR(object):
         if isinstance(self.data.y, numpy.ndarray):
             y_s = list(self.data.y.shape)
             if self.model.implicit:
-                raise odr_error("an implicit model cannot use response data")
+                raise OdrError("an implicit model cannot use response data")
         else:
             # implicit model with q == self.data.y
             y_s = [self.data.y, x_s[-1]]
             if not self.model.implicit:
-                raise odr_error("an explicit model needs response data")
+                raise OdrError("an explicit model needs response data")
             self.set_job(fit_type=1)
 
         if x_s[-1] != y_s[-1]:
-            raise odr_error("number of observations do not match")
+            raise OdrError("number of observations do not match")
 
         n = x_s[-1]
 
@@ -800,24 +831,29 @@ class ODR(object):
         if res.shape not in fcn_perms:
             print(res.shape)
             print(fcn_perms)
-            raise odr_error("fcn does not output %s-shaped array" % y_s)
+            raise OdrError("fcn does not output %s-shaped array" % y_s)
 
         if self.model.fjacd is not None:
             res = self.model.fjacd(*arglist)
             if res.shape not in fjacd_perms:
-                raise odr_error(
-                    "fjacd does not output %s-shaped array" % (q, m, n))
+                raise OdrError(
+                    "fjacd does not output %s-shaped array" % repr((q, m, n)))
         if self.model.fjacb is not None:
             res = self.model.fjacb(*arglist)
             if res.shape not in fjacb_perms:
-                raise odr_error(
-                    "fjacb does not output %s-shaped array" % (q, p, n))
+                raise OdrError(
+                    "fjacb does not output %s-shaped array" % repr((q, p, n)))
 
         # check shape of delta0
 
         if self.delta0 is not None and self.delta0.shape != self.data.x.shape:
-            raise odr_error(
-                "delta0 is not a %s-shaped array" % self.data.x.shape)
+            raise OdrError(
+                "delta0 is not a %s-shaped array" % repr(self.data.x.shape))
+
+        if self.data.x.size == 0:
+            warn(("Empty data detected for ODR instance. "
+                  "Do not expect any fitting to occur"),
+                 OdrWarning)
 
     def _gen_work(self):
         """ Generate a suitable work array if one does not already exist.
@@ -991,7 +1027,7 @@ class ODR(object):
             (so_init is not None or
              so_iter is not None or
              so_final is not None)):
-            raise odr_error(
+            raise OdrError(
                 "no rptfile specified, cannot output to stdout twice")
 
         iprint_l = ip2arg[ip[0]] + ip2arg[ip[1]] + ip2arg[ip[3]]
@@ -1079,7 +1115,7 @@ class ODR(object):
         """
 
         if self.output is None:
-            raise odr_error("cannot restart: run() has not been called before")
+            raise OdrError("cannot restart: run() has not been called before")
 
         self.set_job(restart=1)
         self.work = self.output.work

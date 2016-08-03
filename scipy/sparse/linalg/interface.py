@@ -139,7 +139,6 @@ class LinearOperator(object):
                 raise TypeError("LinearOperator subclass should implement"
                                 " at least one of _matvec and _matmat.")
 
-            obj.__init__(*args, **kwargs)
             return obj
 
     def __init__(self, dtype, shape):
@@ -367,6 +366,18 @@ class LinearOperator(object):
                 raise ValueError('expected 1-d or 2-d array or matrix, got %r'
                                  % x)
 
+    def __matmul__(self, other):
+        if np.isscalar(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__mul__(other)
+
+    def __rmatmul__(self, other):
+        if np.isscalar(other):
+            raise ValueError("Scalar operands are not allowed, "
+                             "use '*' instead")
+        return self.__rmul__(other)
+
     def __rmul__(self, x):
         if np.isscalar(x):
             return _ScaledLinearOperator(self, x)
@@ -472,7 +483,9 @@ class _CustomLinearOperator(LinearOperator):
                                      dtype=self.dtype)
 
 
-def _get_dtype(operators, dtypes=[]):
+def _get_dtype(operators, dtypes=None):
+    if dtypes is None:
+        dtypes = []
     for obj in operators:
         if obj is not None and hasattr(obj, 'dtype'):
             dtypes.append(obj.dtype)
