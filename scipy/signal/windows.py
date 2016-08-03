@@ -13,6 +13,30 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'slepian', 'cosine', 'hann', 'exponential', 'tukey', 'get_window']
 
 
+def _len_guards(M):
+    """Handle small or incorrect window lengths"""
+    if int(M) != M or M < 0:
+        raise ValueError('Window length M must be a non-negative integer')
+    return M <= 1
+
+
+def _extend(M, sym):
+    """Extend window by 1 sample if needed for DFT-even symmetry"""
+    odd = M % 2
+    if not sym and not odd:
+        return M + 1, True
+    else:
+        return M, False
+
+
+def _truncate(w, needed):
+    """Truncate window by 1 sample if needed for DFT-even symmetry"""
+    if needed:
+        return w[:-1]
+    else:
+        return w
+
+
 def boxcar(M, sym=True):
     """Return a boxcar or rectangular window.
 
@@ -56,9 +80,13 @@ def boxcar(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    return np.ones(M, float)
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
+    w = np.ones(M, float)
+
+    return _truncate(w, needs_trunc)
 
 
 def triang(M, sym=True):
@@ -105,15 +133,10 @@ def triang(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(1, (M + 1) // 2 + 1)
     if M % 2 == 0:
         w = (2 * n - 1.0) / M
@@ -122,9 +145,7 @@ def triang(M, sym=True):
         w = 2 * n / (M + 1.0)
         w = np.r_[w, w[-2::-1]]
 
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+    return _truncate(w, needs_trunc)
 
 
 def parzen(M, sym=True):
@@ -171,15 +192,10 @@ def parzen(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(-(M - 1) / 2.0, (M - 1) / 2.0 + 0.5, 1.0)
     na = np.extract(n < -(M - 1) / 4.0, n)
     nb = np.extract(abs(n) <= (M - 1) / 4.0, n)
@@ -187,9 +203,8 @@ def parzen(M, sym=True):
     wb = (1 - 6 * (np.abs(nb) / (M / 2.0)) ** 2.0 +
           6 * (np.abs(nb) / (M / 2.0)) ** 3.0)
     w = np.r_[wa, wb, wa[::-1]]
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def bohman(M, sym=True):
@@ -236,21 +251,15 @@ def bohman(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     fac = np.abs(np.linspace(-1, 1, M)[1:-1])
     w = (1 - fac) * np.cos(np.pi * fac) + 1.0 / np.pi * np.sin(np.pi * fac)
     w = np.r_[0, w, 0]
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def blackman(M, sym=True):
@@ -325,21 +334,15 @@ def blackman(M, sym=True):
 
     """
     # Docstring adapted from NumPy's blackman function
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(0, M)
     w = (0.42 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1)) +
          0.08 * np.cos(4.0 * np.pi * n / (M - 1)))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def nuttall(M, sym=True):
@@ -386,23 +389,17 @@ def nuttall(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     a = [0.3635819, 0.4891775, 0.1365995, 0.0106411]
     n = np.arange(0, M)
     fac = n * 2 * np.pi / (M - 1.0)
     w = (a[0] - a[1] * np.cos(fac) +
          a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def blackmanharris(M, sym=True):
@@ -449,23 +446,17 @@ def blackmanharris(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     a = [0.35875, 0.48829, 0.14128, 0.01168]
     n = np.arange(0, M)
     fac = n * 2 * np.pi / (M - 1.0)
     w = (a[0] - a[1] * np.cos(fac) +
          a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def flattop(M, sym=True):
@@ -512,24 +503,18 @@ def flattop(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     a = [0.2156, 0.4160, 0.2781, 0.0836, 0.0069]
     n = np.arange(0, M)
     fac = n * 2 * np.pi / (M - 1.0)
     w = (a[0] - a[1] * np.cos(fac) +
          a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac) +
          a[4] * np.cos(4 * fac))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def bartlett(M, sym=True):
@@ -615,21 +600,15 @@ def bartlett(M, sym=True):
 
     """
     # Docstring adapted from NumPy's bartlett function
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(0, M)
     w = np.where(np.less_equal(n, (M - 1) / 2.0),
                  2.0 * n / (M - 1), 2.0 - 2.0 * n / (M - 1))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def hann(M, sym=True):
@@ -710,20 +689,15 @@ def hann(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hanning function
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(0, M)
     w = 0.5 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
+
 
 hanning = hann
 
@@ -786,21 +760,15 @@ def tukey(M, alpha=0.5, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
+    if _len_guards(M):
+        return np.ones(M)
 
     if alpha <= 0:
         return np.ones(M, 'd')
     elif alpha >= 1.0:
         return hann(M, sym=sym)
 
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    M, needs_trunc = _extend(M, sym)
 
     n = np.arange(0, M)
     width = int(np.floor(alpha*(M-1)/2.0))
@@ -814,9 +782,7 @@ def tukey(M, alpha=0.5, sym=True):
 
     w = np.concatenate((w1, w2, w3))
 
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+    return _truncate(w, needs_trunc)
 
 
 def barthann(M, sym=True):
@@ -863,21 +829,15 @@ def barthann(M, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(0, M)
     fac = np.abs(n / (M - 1.0) - 0.5)
     w = 0.62 - 0.48 * fac + 0.38 * np.cos(2 * np.pi * fac)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def hamming(M, sym=True):
@@ -955,20 +915,14 @@ def hamming(M, sym=True):
 
     """
     # Docstring adapted from NumPy's hamming function
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(0, M)
     w = 0.54 - 0.46 * np.cos(2.0 * np.pi * n / (M - 1))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def kaiser(M, beta, sym=True):
@@ -1074,22 +1028,16 @@ def kaiser(M, beta, sym=True):
 
     """
     # Docstring adapted from NumPy's kaiser function
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(0, M)
     alpha = (M - 1) / 2.0
     w = (special.i0(beta * np.sqrt(1 - ((n - alpha) / alpha) ** 2.0)) /
          special.i0(beta))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def gaussian(M, std, sym=True):
@@ -1144,21 +1092,15 @@ def gaussian(M, std, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(0, M) - (M - 1.0) / 2.0
     sig2 = 2 * std * std
     w = np.exp(-n ** 2 / sig2)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def general_gaussian(M, p, sig, sym=True):
@@ -1221,24 +1163,17 @@ def general_gaussian(M, p, sig, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     n = np.arange(0, M) - (M - 1.0) / 2.0
     w = np.exp(-0.5 * np.abs(n / sig) ** (2 * p))
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 # `chebwin` contributed by Kumar Appaiah.
-
 def chebwin(M, at, sym=True):
     r"""Return a Dolph-Chebyshev window.
 
@@ -1331,16 +1266,9 @@ def chebwin(M, at, sym=True):
                       "does not grow monotonically with increasing sidelobe "
                       "attenuation when the attenuation is smaller than "
                       "about 45 dB.")
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
 
     # compute the parameter beta
     order = M - 1.0
@@ -1368,9 +1296,8 @@ def chebwin(M, at, sym=True):
         n = M // 2 + 1
         w = np.concatenate((w[n - 1:0:-1], w[1:n]))
     w = w / max(w)
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def slepian(M, width, sym=True):
@@ -1421,15 +1348,9 @@ def slepian(M, width, sym=True):
     >>> plt.xlabel("Normalized frequency [cycles per sample]")
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
 
     # our width is the full bandwidth
     width = width / 2
@@ -1443,9 +1364,7 @@ def slepian(M, width, sym=True):
     _, win = linalg.eig_banded(H, select='i', select_range=(M-1, M-1))
     win = win.ravel() / win.max()
 
-    if not sym and not odd:
-        win = win[:-1]
-    return win
+    return _truncate(win, needs_trunc)
 
 
 def cosine(M, sym=True):
@@ -1498,21 +1417,13 @@ def cosine(M, sym=True):
     >>> plt.show()
 
     """
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
 
     w = np.sin(np.pi / M * (np.arange(0, M) + .5))
 
-    if not sym and not odd:
-        w = w[:-1]
-    return w
+    return _truncate(w, needs_trunc)
 
 
 def exponential(M, center=None, tau=1., sym=True):
@@ -1590,24 +1501,17 @@ def exponential(M, center=None, tau=1., sym=True):
     """
     if sym and center is not None:
         raise ValueError("If sym==True, center must be None.")
-    if int(M) != M or M < 0:
-        raise ValueError('Window length M must be a non-negative integer')
-    if M == 0:
-        return np.array([])
-    if M == 1:
-        return np.ones(1, 'd')
-    odd = M % 2
-    if not sym and not odd:
-        M = M + 1
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     if center is None:
         center = (M-1) / 2
 
     n = np.arange(0, M)
     w = np.exp(-np.abs(n-center) / tau)
-    if not sym and not odd:
-        w = w[:-1]
 
-    return w
+    return _truncate(w, needs_trunc)
 
 
 _win_equiv_raw = {
