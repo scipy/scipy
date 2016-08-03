@@ -4,7 +4,8 @@ import warnings
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
-                           run_module_suite, assert_raises, assert_allclose)
+                           run_module_suite, assert_raises, assert_allclose,
+                           assert_equal, assert_)
 from scipy import signal
 
 
@@ -209,11 +210,30 @@ def test_windowfunc_basics():
             w1 = window(7, *params, sym=True)
             w2 = window(7, *params, sym=False)
             assert_array_almost_equal(w1, w2)
-            # just check the below runs
-            window(6, *params, sym=True)
-            window(6, *params, sym=False)
+
+            # Check that functions run and output lengths are correct
+            assert_equal(len(window(6, *params, sym=True)), 6)
+            assert_equal(len(window(6, *params, sym=False)), 6)
+            assert_equal(len(window(7, *params, sym=True)), 7)
+            assert_equal(len(window(7, *params, sym=False)), 7)
+
+            # Check invalid lengths
             assert_raises(ValueError, window, 5.5, *params)
             assert_raises(ValueError, window, -7, *params)
+
+            # Check degenerate cases
+            assert_array_equal(window(0, *params, sym=True), [])
+            assert_array_equal(window(0, *params, sym=False), [])
+            assert_array_equal(window(1, *params, sym=True), [1])
+            assert_array_equal(window(1, *params, sym=False), [1])
+
+            # Check dtype
+            assert_(window(0, *params, sym=True).dtype == 'float')
+            assert_(window(0, *params, sym=False).dtype == 'float')
+            assert_(window(1, *params, sym=True).dtype == 'float')
+            assert_(window(1, *params, sym=False).dtype == 'float')
+            assert_(window(6, *params, sym=True).dtype == 'float')
+            assert_(window(6, *params, sym=False).dtype == 'float')
 
 
 def test_needs_params():
