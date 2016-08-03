@@ -2631,16 +2631,34 @@ class HalfspaceIntersection(_QhalfUser):
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
-    >>> halfspaces = []
-    >>> feasible point = []
-    >>> intersection = HalfspaceIntersection(halfspaces, feasible_point)
+    >>> import numpy as np
+    >>> halfspaces = np.array([[-1, 0., 0.],
+    >>>                        [0., -1., 0.],
+    >>>                        [2., 1., -4.],
+    >>>                        [-0.5, 1., -2.]])
+    >>> feasible_point = np.array([0.5, 0.5])
+    >>> hs = HalfspaceIntersection(halfspaces, feasible_point)
 
-    Plot it:
+    Plot halsfpaces as filled regions and intersection points:
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(halfspaces)
-    >>> for vertex in hull.intersections:
-    ...     plt.plot(vertex[0], vertex[1], 'o')
+    >>> xlim, ylim = (-1, 3), (-2, 6)
+    >>> x = np.linspace(-1, 3, 100)
+    >>> symbols = ['-', '+', 'x', '*']
+    >>> signs = [0, 0, -1, -1]
+    >>> for h, sym, sign in zip(halfspaces, symbols, signs):
+    >>>   if h.item(1) == 0:
+    >>>     plt.axvline(-h.item(2)/h.item(0), label='{}x+{}y+{}=0'.format(*h.tolist()))
+    >>>     xi = np.linspace(xlim[sign], -h.item(2)/h.item(0), 100)
+    >>>     plt.fill_between(xi, ylim[0], ylim[1], color="none", edgecolor="b", hatch=sym, alpha=0.5)
+    >>>   else:
+    >>>     plt.plot(x, (-h.item(2)-h.item(0)*x)/h.item(1), label='{}x+{}y+{}=0'.format(*h.tolist()))
+    >>>     plt.fill_between(x, (-h.item(2)-h.item(0)*x)/h.item(1), ylim[sign], color="none", edgecolor="b", hatch=sym, alpha=0.5)
+    >>> x, y = zip(*hs.intersections)
+    >>> plt.plot(x, y, 'o', markersize=8)
+    >>> plt.legend()
+    >>> plt.show()
+
     References
     ----------
     .. [Qhull] http://www.qhull.org/
