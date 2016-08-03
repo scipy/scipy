@@ -23,6 +23,11 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=['src']+[get_include()],
                          )
 
+    config.add_extension("_ni_measure",
+                             sources=["src/_ni_measure.c",],
+                             include_dirs=['src']+[get_include()],
+                         )
+
     config.add_data_dir('tests')
 
     return config

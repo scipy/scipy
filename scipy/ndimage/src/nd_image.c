@@ -629,95 +629,6 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
-{
-    PyArrayObject *input = NULL;
-    PyObject *result = NULL, *tuple = NULL, *start = NULL, *end = NULL;
-    PyObject *slc = NULL;
-    int jj;
-    npy_intp max_label;
-    npy_intp ii, *regions = NULL;
-
-    if (!PyArg_ParseTuple(args, "O&n",
-                          NI_ObjectToInputArray, &input, &max_label))
-        goto exit;
-
-    if (max_label < 0)
-        max_label = 0;
-    if (max_label > 0) {
-        if (input->nd > 0) {
-            regions = (npy_intp*)malloc(2 * max_label * input->nd *
-                                                             sizeof(npy_intp));
-        } else {
-            regions = (npy_intp*)malloc(max_label * sizeof(npy_intp));
-        }
-        if (!regions) {
-            PyErr_NoMemory();
-            goto exit;
-        }
-    }
-
-    if (!NI_FindObjects(input, max_label, regions))
-        goto exit;
-
-    result = PyList_New(max_label);
-    if (!result) {
-        PyErr_NoMemory();
-        goto exit;
-    }
-
-    for(ii = 0; ii < max_label; ii++) {
-        npy_intp idx = input->nd > 0 ? 2 * input->nd * ii : ii;
-        if (regions[idx] >= 0) {
-            PyObject *tuple = PyTuple_New(input->nd);
-            if (!tuple) {
-                PyErr_NoMemory();
-                goto exit;
-            }
-            for(jj = 0; jj < input->nd; jj++) {
-                start = PyLong_FromSsize_t(regions[idx + jj]);
-                end = PyLong_FromSsize_t(regions[idx + jj + input->nd]);
-                if (!start || !end) {
-                    PyErr_NoMemory();
-                    goto exit;
-                }
-                slc = PySlice_New(start, end, NULL);
-                if (!slc) {
-                    PyErr_NoMemory();
-                    goto exit;
-                }
-                Py_XDECREF(start);
-                Py_XDECREF(end);
-                start = end = NULL;
-                PyTuple_SetItem(tuple, jj, slc);
-                slc = NULL;
-            }
-            PyList_SetItem(result, ii, tuple);
-            tuple = NULL;
-        } else {
-            Py_INCREF(Py_None);
-            PyList_SetItem(result, ii, Py_None);
-        }
-    }
-
-    Py_INCREF(result);
-
- exit:
-    Py_XDECREF(input);
-    Py_XDECREF(result);
-    Py_XDECREF(tuple);
-    Py_XDECREF(start);
-    Py_XDECREF(end);
-    Py_XDECREF(slc);
-    free(regions);
-    if (PyErr_Occurred()) {
-        Py_XDECREF(result);
-        return NULL;
-    } else {
-        return result;
-    }
-}
-
 static PyObject *Py_WatershedIFT(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *markers = NULL;
@@ -916,8 +827,6 @@ static PyMethodDef methods[] = {
     {"geometric_transform",   (PyCFunction)Py_GeometricTransform,
         METH_VARARGS, NULL},
     {"zoom_shift",            (PyCFunction)Py_ZoomShift,
-     METH_VARARGS, NULL},
-    {"find_objects",          (PyCFunction)Py_FindObjects,
      METH_VARARGS, NULL},
     {"watershed_ift",         (PyCFunction)Py_WatershedIFT,
      METH_VARARGS, NULL},

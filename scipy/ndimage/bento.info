@@ -9,3 +9,5 @@ Library:
                  src/ni_support.c
     Extension: _ni_label
         Sources: src/_ni_label.c
+    Extension: _ni_measure.pyx
+        Sources: src/_ni_measure.pyx
