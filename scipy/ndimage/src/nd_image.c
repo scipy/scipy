@@ -739,31 +739,6 @@ exit:
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
-static PyObject *Py_DistanceTransformBruteForce(PyObject *obj,
-                                                                                                PyObject *args)
-{
-    PyArrayObject *input = NULL, *output = NULL, *features = NULL;
-    PyArrayObject *sampling = NULL;
-    int metric;
-
-    if (!PyArg_ParseTuple(args, "O&iO&O&O&",
-                          NI_ObjectToInputArray, &input,
-                          &metric,
-                          NI_ObjectToOptionalInputArray, &sampling,
-                                                NI_ObjectToOptionalOutputArray, &output,
-                                                NI_ObjectToOptionalOutputArray, &features))
-        goto exit;
-    if (!NI_DistanceTransformBruteForce(input, metric, sampling,
-                                                                            output, features))
-        goto exit;
-exit:
-    Py_XDECREF(input);
-    Py_XDECREF(sampling);
-    Py_XDECREF(output);
-    Py_XDECREF(features);
-    return PyErr_Occurred() ? NULL : Py_BuildValue("");
-}
-
 static PyObject *Py_DistanceTransformOnePass(PyObject *obj, PyObject *args)
 {
     PyArrayObject *strct = NULL, *distances = NULL, *features = NULL;
@@ -920,8 +895,6 @@ static PyMethodDef methods[] = {
     {"find_objects",          (PyCFunction)Py_FindObjects,
      METH_VARARGS, NULL},
     {"watershed_ift",         (PyCFunction)Py_WatershedIFT,
-     METH_VARARGS, NULL},
-    {"distance_transform_bf", (PyCFunction)Py_DistanceTransformBruteForce,
      METH_VARARGS, NULL},
     {"distance_transform_op", (PyCFunction)Py_DistanceTransformOnePass,
      METH_VARARGS, NULL},
