@@ -108,6 +108,10 @@ def triang(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
 
+    See Also
+    --------
+    bartlett : A triangular window that touches zero
+
     Examples
     --------
     Plot the window and its frequency response:
@@ -542,6 +546,10 @@ def bartlett(M, sym=True):
         The triangular window, with the first and last samples equal to zero
         and the maximum value normalized to 1 (though the value 1 does not
         appear if `M` is even and `sym` is True).
+
+    See Also
+    --------
+    triang : A triangular window that does not touch zero at the ends
 
     Notes
     -----
