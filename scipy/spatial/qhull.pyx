@@ -119,11 +119,12 @@ cdef extern from "qhull/src/libqhull_r.h":
         vertexT *vertex_list
         vertexT *vertex_tail
         int num_facets
-        int num_points
+        int num_vertices
         int center_size
         unsigned int facet_id
         pointT *first_point
         pointT *input_points
+        coordT* feasible_point
         realT last_low
         realT last_high
         realT last_newhigh
@@ -166,6 +167,7 @@ cdef extern from "qhull/src/libqhull_r.h":
     facetT *qh_findbestfacet(qhT *, pointT *point, boolT bestoutside,
                              realT *bestdist, boolT *isoutside) nogil
     void qh_setdelaunay(qhT *, int dim, int count, pointT *points) nogil
+    coordT* qh_sethalfspace_all(qhT *, int dim, int count, coordT* halfspaces, pointT *feasible)
 
 cdef extern from "qhull/src/io_r.h":
     ctypedef enum qh_RIDGE:
@@ -500,6 +502,8 @@ cdef class _Qhull:
                 qh_setdelaunay(self._qh, arr.shape[1], arr.shape[0], <realT*>arr.data)
 
             p = <realT*>arr.data
+            if self._is_halfspaces:
+                p = qh_sethalfspace_all(self._qh, arr.shape[1], arr.shape[0], p, self._qh.feasible_point)
 
             for j in xrange(arr.shape[0]):
                 facet = qh_findbestfacet(self._qh, p, 0, &bestdist, &isoutside)
@@ -511,7 +515,10 @@ cdef class _Qhull:
                     # maintain the point IDs
                     qh_setappend(self._qh, &self._qh[0].other_points, p)
 
-                p += arr.shape[1]
+                if self._is_halfspaces:
+                    p += arr.shape[1] - 1
+                else:
+                    p += arr.shape[1]
 
             qh_check_maxout(self._qh)
             self._qh[0].hasTriangulation = 0
@@ -727,10 +734,10 @@ cdef class _Qhull:
         if self._is_delaunay:
             point_ndim += 1
 
-        numpoints = self._qh.num_points
+        numvertices = self._qh.num_vertices
 
         vertex = self._qh.vertex_list
-        points = np.zeros((numpoints, point_ndim), dtype=np.double)
+        points = np.zeros((numvertices, point_ndim), dtype=np.double)
         i = 0
         while vertex and vertex.next:
             j = 0
@@ -739,6 +746,8 @@ cdef class _Qhull:
 
             i += 1
             vertex = vertex.next
+
+        return points
 
     @cython.final
     @cython.boundscheck(False)
