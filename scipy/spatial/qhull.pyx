@@ -2680,8 +2680,8 @@ class HalfspaceIntersection(_QhalfUser):
             raise ValueError('Input halfspaces cannot be a masked array')
         if np.ma.isMaskedArray(feasible_point):
             raise ValueError('Input feasible point cannot be a masked array')
-        if feasible_point.shape[-1] != halfspaces.shape[1]-1:
-            raise ValueError('The last dimension of feasible point is not dimension of halfspaces minus one')
+        if feasible_point.ndim != 1 or feasible_point.shape[0] != halfspaces.shape[1]-1:
+            raise ValueError('Feasible point must be a (ndim-1,) array')
         halfspaces = np.ascontiguousarray(halfspaces, dtype=np.double)
         self.feasible_point = np.ascontiguousarray(feasible_point, dtype=np.double)
 
