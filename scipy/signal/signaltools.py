@@ -1510,7 +1510,7 @@ def hilbert(x, N=None, axis=-1):
 
     See Also
     --------
-    fftpack.hilbert : Return Hilbert transform of a periodic sequence x.
+    scipy.fftpack.hilbert : Return Hilbert transform of a periodic sequence x.
 
     Notes
     -----
