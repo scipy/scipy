@@ -259,9 +259,7 @@ class RandomDisplacement(object):
     """
     def __init__(self, stepsize=0.5, random_state=None):
         self.stepsize = stepsize
-        self.random_state = random_state
-        if random_state is None:
-            self.random_state = np.random.mtrand._rand
+        self.random_state = check_random_state(random_state)
 
     def __call__(self, x):
         x += self.random_state.uniform(-self.stepsize, self.stepsize, np.shape(x))
@@ -295,9 +293,7 @@ class Metropolis(object):
     """
     def __init__(self, T, random_state=None):
         self.beta = 1.0 / T
-        self.random_state = random_state
-        if random_state is None:
-            self.random_state = np.random.mtrand._rand
+        self.random_state = check_random_state(random_state)
 
     def accept_reject(self, energy_new, energy_old):
         w = min(1.0, np.exp(-(energy_new - energy_old) * self.beta))
