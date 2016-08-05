@@ -22,8 +22,7 @@ def _len_guards(M):
 
 def _extend(M, sym):
     """Extend window by 1 sample if needed for DFT-even symmetry"""
-    odd = M % 2
-    if not sym and not odd:
+    if not sym:
         return M + 1, True
     else:
         return M, False
