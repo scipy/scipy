@@ -2575,10 +2575,10 @@ class HalfspaceIntersection(_QhalfUser):
     Parameters
     ----------
     halfspaces : ndarray of floats, shape (nineq, ndim+1)
-                 Stacked Inequalities of the form Ax + b <= 0 in format [A; b]
+        Stacked Inequalities of the form Ax + b <= 0 in format [A; b]
     feasible_point: ndarray of floats, shape (1, ndim)
-                    Feasible point inside the region defined by halfspaces.
-                    It can be obtained by linear programming.
+        Feasible point inside the region defined by halfspaces.
+        It can be obtained by linear programming.
     incremental : bool, optional
         Allow adding new points incrementally. This takes up some additional
         resources.
@@ -2590,24 +2590,24 @@ class HalfspaceIntersection(_QhalfUser):
     Attributes
     ----------
     halfspaces : ndarray of double, shape (nineq, ndim+1)
-                 Input halfspaces.
+        Input halfspaces.
     intersections : ndarray of double, shape (ninter, ndim)
-                    Intersections of all halfspaces.
+        Intersections of all halfspaces.
     dual_points : ndarray of double, shape (nineq, ndim)
-                  Dual points of the input halfspaces.
+        Dual points of the input halfspaces.
     dual_vertices : ndarray of ints, shape (nvertices,)
-                    Indices of points forming the vertices of the dual convex hull.
-                    For 2-D convex hulls, the vertices are in counterclockwise order.
-                    For other dimensions, they are in input order.
+        Indices of points forming the vertices of the dual convex hull.
+        For 2-D convex hulls, the vertices are in counterclockwise order.
+        For other dimensions, they are in input order.
     dual_simplices : ndarray of ints, shape (nfacet, ndim)
-                     Indices of points forming the simplical facets of the dual convex hull.
+        Indices of points forming the simplical facets of the dual convex hull.
     dual_neighbors : ndarray of ints, shape (nfacet, ndim)
-                     Indices of neighbor facets for each facet.
-                     The kth neighbor is opposite to the kth vertex.
-                     -1 denotes no neighbor.
+        Indices of neighbor facets for each facet.
+        The kth neighbor is opposite to the kth vertex.
+        -1 denotes no neighbor.
     dual_equations : ndarray of double, shape (nfacet, ndim+1)
-                     [normal, offset] forming the hyperplane equation of the dual facet
-                     (see `Qhull documentation <http://www.qhull.org/>`__  for more).
+        [normal, offset] forming the hyperplane equation of the dual facet
+        (see `Qhull documentation <http://www.qhull.org/>`__  for more).
     coplanar : ndarray of int, shape (ncoplanar, 3)
         Indices of coplanar points and the corresponding indices of
         the nearest facets and nearest vertex indices.  Coplanar
@@ -2642,9 +2642,9 @@ class HalfspaceIntersection(_QhalfUser):
     >>> from scipy.spatial import HalfspaceIntersection
     >>> import numpy as np
     >>> halfspaces = np.array([[-1, 0., 0.],
-    >>>                        [0., -1., 0.],
-    >>>                        [2., 1., -4.],
-    >>>                        [-0.5, 1., -2.]])
+    ...                        [0., -1., 0.],
+    ...                        [2., 1., -4.],
+    ...                        [-0.5, 1., -2.]])
     >>> feasible_point = np.array([0.5, 0.5])
     >>> hs = HalfspaceIntersection(halfspaces, feasible_point)
 
@@ -2656,13 +2656,13 @@ class HalfspaceIntersection(_QhalfUser):
     >>> symbols = ['-', '+', 'x', '*']
     >>> signs = [0, 0, -1, -1]
     >>> for h, sym, sign in zip(halfspaces, symbols, signs):
-    >>>   if h.item(1) == 0:
-    >>>     plt.axvline(-h.item(2)/h.item(0), label='{}x+{}y+{}=0'.format(*h.tolist()))
-    >>>     xi = np.linspace(xlim[sign], -h.item(2)/h.item(0), 100)
-    >>>     plt.fill_between(xi, ylim[0], ylim[1], color="none", edgecolor="b", hatch=sym, alpha=0.5)
-    >>>   else:
-    >>>     plt.plot(x, (-h.item(2)-h.item(0)*x)/h.item(1), label='{}x+{}y+{}=0'.format(*h.tolist()))
-    >>>     plt.fill_between(x, (-h.item(2)-h.item(0)*x)/h.item(1), ylim[sign], color="none", edgecolor="b", hatch=sym, alpha=0.5)
+    ...   if h.item(1) == 0:
+    ...     plt.axvline(-h.item(2)/h.item(0), label='{}x+{}y+{}=0'.format(*h.tolist()))
+    ...     xi = np.linspace(xlim[sign], -h.item(2)/h.item(0), 100)
+    ...     plt.fill_between(xi, ylim[0], ylim[1], color="none", edgecolor="b", hatch=sym, alpha=0.5)
+    ...   else:
+    ...     plt.plot(x, (-h.item(2)-h.item(0)*x)/h.item(1), label='{}x+{}y+{}=0'.format(*h.tolist()))
+    ...     plt.fill_between(x, (-h.item(2)-h.item(0)*x)/h.item(1), ylim[sign], color="none", edgecolor="b", hatch=sym, alpha=0.5)
     >>> x, y = zip(*hs.intersections)
     >>> plt.plot(x, y, 'o', markersize=8)
     >>> plt.legend()
