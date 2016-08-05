@@ -553,7 +553,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     # Use an ndim=3 shape, such that the last two indices
     # are the ones that may be involved in level 3 BLAS operations.
     X_shape = (nsamples,) + B.shape
-    X = np.empty(X_shape, dtype=np.promote_types(A.dtype, B.dtype))
+    X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype, float))
     t = t_q - t_0
     A = A - mu * ident
     A_1_norm = _exact_1_norm(A)
