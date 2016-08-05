@@ -907,7 +907,7 @@ class TestVoronoi:
                                [0.0, -1.0, 0.0],
                                [1.0, 0.0, -1.0],
                                [0.0, 1.0, -1.0]])
-        feasible_point = np.array([[0.5, 0.5]])
+        feasible_point = np.array([0.5, 0.5])
 
         points = np.array([[0.0, 1.0], [1.0, 1.0], [0.0, 0.0], [1.0, 0.0]])
 
