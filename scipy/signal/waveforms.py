@@ -489,12 +489,13 @@ def unit_impulse(shape, idx=None, dtype=float):
     Parameters
     ----------
     shape : int or tuple of int
-        Number of samples in the (1D) output, or a tuple that represents the
-        shape of the output.
-    idx : float or str or None, optional
+        Number of samples in the output (1-D), or a tuple that represents the
+        shape of the output (N-D).
+    idx : None or int or tuple of int or 'mid', optional
         Index at which the value is 1.  If None, defaults to the 0th element.
         If ``idx='mid'``, the impulse will be centered at ``shape // 2`` in
-        all dimensions.
+        all dimensions.  If an int, the impulse will be at `idx` in all
+        dimensions.
     dtype : data-type, optional
         The desired data-type for the array, e.g., `numpy.int8`.  Default is
         `numpy.float64`.
@@ -506,6 +507,8 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     Notes
     -----
+    The 1D case is also known as the Kronecker delta.
+
     .. versionadded:: 0.19.0
 
     Examples
@@ -528,6 +531,14 @@ def unit_impulse(shape, idx=None, dtype=float):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  0.]])
 
+    Impulse at (2, 2), using broadcasting:
+
+    >>> signal.unit_impulse((4, 4), 2)
+    array([[ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  0.,  0.],
+           [ 0.,  0.,  1.,  0.],
+           [ 0.,  0.,  0.,  0.]])
+
     Plot the impulse response of a 4th-order Butterworth lowpass filter:
 
     >>> imp = signal.unit_impulse(100, 'mid')
@@ -549,9 +560,11 @@ def unit_impulse(shape, idx=None, dtype=float):
     shape = np.atleast_1d(shape)
 
     if idx is None:
-        idx = tuple(np.zeros_like(shape))
+        idx = (0,) * len(shape)
     elif idx == 'mid':
         idx = tuple(shape // 2)
+    elif not hasattr(idx, "__iter__"):
+        idx = (idx,) * len(shape)
 
     out[idx] = 1
     return out
