@@ -261,6 +261,23 @@ class TestUtilities(object):
         assert_allclose(hull.area, 1.6670425, rtol=1e-07,
                         err_msg="Area of random polyhedron is incorrect")
 
+    def test_incremental_volume_area_random_input(self):
+        """Test that incremental mode gives the same volume/area as
+        non-incremental mode and incremental mode with restart"""
+        nr_points = 20
+        dim = 3
+        points = np.random.random((nr_points, dim))
+        inc_hull = qhull.ConvexHull(points[:dim+1, :], incremental=True)
+        inc_restart_hull = qhull.ConvexHull(points[:dim+1, :], incremental=True)
+        for i in range(dim+1, nr_points):
+            hull = qhull.ConvexHull(points[:i+1, :])
+            inc_hull.add_points(points[i:i+1, :])
+            inc_restart_hull.add_points(points[i:i+1, :], restart=True)
+            assert_allclose(hull.volume, inc_hull.volume, rtol=1e-7)
+            assert_allclose(hull.volume, inc_restart_hull.volume, rtol=1e-7)
+            assert_allclose(hull.area, inc_hull.area, rtol=1e-7)
+            assert_allclose(hull.area, inc_restart_hull.area, rtol=1e-7)
+
     def _check_barycentric_transforms(self, tri, err_msg="",
                                       unit_cube=False,
                                       unit_cube_tol=0):
