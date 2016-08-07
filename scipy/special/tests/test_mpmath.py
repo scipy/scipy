@@ -1320,7 +1320,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
 
         assert_mpmath_equal(_igam_fac,
                             mp_igam_fac,
-                            [Arg(0, 1e20, inclusive_a=False), Arg(0, 1e20)],
+                            [Arg(0, 1e14, inclusive_a=False), Arg(0, 1e14)],
                             rtol=1e-10)
 
     def test_j0(self):
