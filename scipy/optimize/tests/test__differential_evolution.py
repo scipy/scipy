@@ -199,7 +199,7 @@ class TestDifferentialEvolutionSolver(TestCase):
         # test that the getter property method for the best solution works.
         solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
         result = solver.solve()
-        assert_equal(result.x, solver.x)
+        assert_almost_equal(result.x, solver.x)
 
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
