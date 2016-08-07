@@ -27,6 +27,13 @@ New features
 
 The callback function C API supports PyCapsules in Python 2.7
 
+`scipy.optimize` improvements
+-----------------------------
+
+The `scipy.optimize.basinhopping` global minimizer obtained a new keyword,
+`seed`, which can be used to seed the random number generator and obtain
+repeatable minimizations.
+
 `scipy.signal` improvements
 ---------------------------
 
