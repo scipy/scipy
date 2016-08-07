@@ -297,9 +297,9 @@ Gamma and Related Functions
    gammaln      -- Log of the absolute value of the Gamma function.
    loggamma     -- Principal branch of the logarithm of the Gamma function.
    gammasgn     -- Sign of the gamma function.
-   gammainc     -- Incomplete gamma integral.
+   gammainc     -- Regularized lower incomplete gamma function.
    gammaincinv  -- Inverse of gammainc.
-   gammaincc    -- Complemented incomplete gamma integral.
+   gammaincc    -- Regularized upper incomplete gamma function.
    gammainccinv -- Inverse of gammaincc.
    beta         -- Beta function.
    betaln       -- Log of the absolute value of the beta function.

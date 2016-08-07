@@ -1800,29 +1800,67 @@ add_newdoc("scipy.special", "gamma",
     """)
 
 add_newdoc("scipy.special", "gammainc",
-    """
+    r"""
     gammainc(a, x)
 
-    Incomplete gamma function
+    Regularized lower incomplete gamma function.
 
-    Defined as::
+    Defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        \frac{1}{\Gamma(a)} \int_0^x t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
+    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where
+    `gammaincc` is the regularized upper incomplete gamma function.
+
+    Notes
+    -----
+    The implementation largely follows that of [1]_.
+
+    See also
+    --------
+    gammaincc : regularized upper incomplete gamma function
+    gammaincinv : inverse to ``gammainc`` versus ``x``
+    gammainccinv : inverse to ``gammaincc`` versus ``x``
+        
+    References
+    ----------
+    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammaincc",
-    """
+    r"""
     gammaincc(a, x)
 
-    Complemented incomplete gamma integral
+    Regularized upper incomplete gamma function.
 
-    Defined as::
+    Defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a, x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        \frac{1}{\Gamma(a)} \int_x^\infty t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
+    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where `gammainc`
+    is the regularized lower incomplete gamma function.
+
+    Notes
+    -----
+    The implementation largely follows that of [1]_.
+
+    See also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse to ``gammainc`` versus ``x``
+    gammainccinv : inverse to ``gammaincc`` versus ``x``
+        
+    References
+    ----------
+    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammainccinv",
@@ -2621,6 +2659,11 @@ add_newdoc("scipy.special", "i1e",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    """)
+
+add_newdoc("scipy.special", "_igam_fac",
+    """
+    Internal function, do not use.
     """)
 
 add_newdoc("scipy.special", "it2i0k0",
@@ -3551,11 +3594,26 @@ add_newdoc("scipy.special", "kve",
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     """)
 
+add_newdoc("scipy.special", "_lanczos_sum_expg_scaled",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_lgam1p",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("scipy.special", "log1p",
     """
     log1p(x)
 
     Calculates log(1+x) for use when `x` is near zero
+    """)
+
+add_newdoc("scipy.special", "_log1pmx",
+    """
+    Internal function, do not use.
     """)
 
 add_newdoc('scipy.special', 'logit',
