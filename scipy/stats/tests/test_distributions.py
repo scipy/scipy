@@ -20,8 +20,9 @@ from scipy import special
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
+from scipy.stats._continuous_distns import rv_arbitrary
 
-from scipy.special import xlogy
+from scipy.special import xlogy, cbrt
 from test_continuous_basic import distcont
 
 # python -OO strips docstrings
@@ -2272,6 +2273,43 @@ class TestTrapz(TestCase):
             res[i] = stats.trapz.pdf(x1, c1, d1)
 
         assert_allclose(v, res.reshape(v.shape), atol=1e-15)
+
+
+class TestArbitrary(TestCase):
+    def setUp(self):
+        def quad_pdf(x, prefactor):
+            return prefactor * x**2
+
+        def quad_cdf(x, prefactor):
+            return prefactor * x**3 / 3. + 0.5
+
+        def quad_ppf(q, prefactor):
+            return cbrt(3*q / prefactor - 1)
+
+        self.rv = rv_arbitrary(quad_pdf, a=-1, b=1, cdf=quad_cdf, ppf=quad_ppf)
+        self.prefactor = 1.5
+
+    def test_pdf(self):
+        assert_almost_equal(self.rv.pdf(1, self.prefactor), 1.5)
+        assert_almost_equal(self.rv.pdf(-1, self.prefactor), 1.5)
+
+    def test_cdf(self):
+        assert_almost_equal(self.rv.cdf(0, self.prefactor), 0.5)
+
+    def test_ppf(self):
+        x = 0.66
+        cdf = self.rv.cdf(0.66, self.prefactor)
+        x_ppf = self.rv.ppf(cdf, self.prefactor)
+        assert_almost_equal(x_ppf, x)
+
+    def test_freeze(self):
+        x = 0.123
+        frozen = self.rv.freeze(self.prefactor)
+        assert_almost_equal(frozen.pdf(x), self.rv.pdf(x, self.prefactor))
+
+    def test_rvs(self):
+        rn = self.rv.rvs(self.prefactor, size=100)
+        assert_equal(rn.size, 100)
 
 
 def test_540_567():

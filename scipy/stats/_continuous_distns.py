@@ -15,6 +15,7 @@ from scipy.special import (gammaln as gamln, gamma as gam, boxcox, boxcox1p,
                            inv_boxcox, inv_boxcox1p, erfc, chndtr, chndtrix,
                            i0, i1, ndtr as _norm_cdf, log_ndtr as _norm_logcdf)
 from scipy._lib._numpy_compat import broadcast_to
+from scipy._lib._util import getargspec_no_self as _getargspec
 
 from numpy import (where, arange, putmask, ravel, shape,
                    log, sqrt, exp, arctanh, tan, sin, arcsin, arctan,
@@ -5198,8 +5199,209 @@ class halfgennorm_gen(rv_continuous):
 halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 
+class rv_arbitrary(rv_continuous):
+    r"""
+    An arbitrary continuous random variable specified by a user defined
+    probability distribution function.
+
+    Parameters
+    ----------
+    pdf : callable
+        Probability distribution function, ``pdf(x, *shapes)``. The integral of
+        this function over [a, b] should be 1. No check is made for this
+        normalisation.
+    momtype : int, optional
+        The type of generic moment calculation to use: 0 for pdf, 1 (default)
+        for ppf.
+    a : float, optional
+        Lower bound of the support of the distribution, default is minus
+        infinity.
+    b : float, optional
+        Upper bound of the support of the distribution, default is plus
+        infinity.
+    xtol : float, optional
+        The tolerance for fixed point calculation for generic ppf.
+    badvalue : float, optional
+        The value in a result arrays that indicates a value that for which
+        some argument restriction is violated, default is np.nan.
+    name : str, optional
+        The name of the instance. This string is used to construct the default
+        example for distributions.
+    seed : None or int or ``numpy.random.RandomState`` instance, optional
+        This parameter defines the RandomState object to use for drawing
+        random variates.
+        If None (or np.random), the global np.random state is used.
+        If integer, it is used to seed the local RandomState instance.
+        Default is None.
+    cdf : callable, optional
+        Cumulative distribution function, ``cdf(x, *shapes)``, corresponding to
+        the probability distribution function
+    ppf : callable, optional
+        Percent point function, ``ppf(x, *shapes)``, corresponding to the
+        inverse of the cumulative distribution function
+
+    See Also
+    --------
+    rv_sample : **THIS ISN'T DOCUMENTED**
+    gaussian_kde : Representation of a kernel-density estimate using Gaussian
+        kernels.
+
+    Notes
+    -----
+    The speed of obtaining random variates from this distribution is greatly
+    improved by supplying the percentage point function ``ppf``.
+
+    Examples
+    --------
+    Let us consider a quadratic distribution:
+
+    >>> from scipy.stats import rv_arbitrary
+    >>> def quadratic(x, prefactor):
+    ...     return prefactor * x**2
+    >>> arb = rv_arbitrary(quadratic, a=-1, b=1)
+    >>> arb.pdf([-1, 0, 0.5, 1], 1.5)
+    array([0., 0.75, 0.5625, 0.])
+    >>> arb.cdf([-1, 0, 0.5, 1], 1.5)
+    array([0., 0.5, 0.84375, 1.])
+    """
+    def __init__(self, pdf, momtype=1, a=None, b=None, xtol=1e-14, badvalue=None,
+               name=None, seed=None, cdf=None, ppf=None, **unknown_kwds):
+        # have to store user supplied funcs in order to recreate the instance
+        funcs_to_inspect = [pdf]
+        self.__pdf = pdf
+        self.__cdf = cdf
+        self.__ppf = ppf
+
+        self._pdf_func = pdf
+        self._cdf_func = super(rv_arbitrary, self)._cdf
+        self._ppf_func = super(rv_arbitrary, self)._ppf
+        if cdf is not None:
+            funcs_to_inspect.append(cdf)
+            self._cdf_func = cdf
+        if ppf is not None:
+            funcs_to_inspect.append(ppf)
+            self._ppf_func = ppf
+
+        shapes = _get_shapes(funcs_to_inspect)
+        shapes = ', '.join(shapes)
+
+        super(rv_arbitrary, self).__init__(momtype=momtype, a=a, b=b,
+                                           xtol=xtol, badvalue=badvalue,
+                                           name=name, shapes=shapes,
+                                           seed=seed)
+
+        self._ctor_param = dict(pdf=pdf, cdf=cdf, ppf=ppf,
+            momtype=momtype, a=a, b=b, xtol=xtol,
+            badvalue=badvalue, name=name,
+            shapes=shapes, seed=seed)
+
+    def _parse_args(self, *args, **kwds):
+        loc, scale = 0, 1
+        if loc in kwds:
+            loc = kwds['loc']
+        if scale in kwds:
+            scale = kwds['scale']
+        return args, loc, scale
+
+    def _parse_args_rvs(self, *args, **kwds):
+        loc, scale, size = 0, 1, 0
+        if loc in kwds:
+            loc = kwds['loc']
+        if scale in kwds:
+            scale = kwds['scale']
+        if size in kwds['size']:
+            size = kwds['size']
+        return args, loc, scale, size
+
+    def _parse_args_stats(self, *args, **kwds):
+        loc, scale, moments = 0, 1, 'mv'
+        if loc in kwds:
+            loc = kwds['loc']
+        if scale in kwds:
+            scale = kwds['scale']
+        if moments in kwds['moments']:
+            moments = kwds['moments']
+        return args, loc, scale, moments
+
+    def _updated_ctor_param(self):
+        """ Return the current version of _ctor_param, possibly updated by user.
+
+            Used by freezing and pickling.
+            Keep this in sync with the signature of __init__.
+        """
+        dct = super(rv_arbitrary, self)._updated_ctor_param()
+        dct['pdf'] = self.__pdf
+        dct['cdf'] = self.__cdf
+        dct['ppf'] = self.__ppf
+        return dct
+
+    def _pdf(self, x, *args, **kwds):
+        return self._pdf_func(x, *args)
+
+    def _cdf(self, x, *args, **kwds):
+        return self._cdf_func(x, *args, **kwds)
+
+    def _ppf(self, q, *args, **kwds):
+        return self._ppf_func(q, *args, **kwds)
+
+    def fit(self, data, *args, **kwds):
+        raise NotImplementedError("fit method not supported for arbitrary"
+                                  " distribution")
+
+    def fit_loc_scale(self, data, *args):
+        raise NotImplementedError("fit_loc_scale not supported for arbitrary"
+                                  " distribution")
+
+    def _construct_default_doc(self, *args, **kwds):
+        pass
+
+    def _construct_doc(self, *args, **kwds):
+        pass
+
+
+def _get_shapes(funcs):
+    # using introspection get the name, number of positional arguments of a PDF
+    # function.
+    shapes_list = []
+    for func in funcs:
+        if func is None:
+            continue
+        shapes_args = _getargspec(func)  # NB: does not contain self
+
+        if len(shapes_args.args) < 1:
+            # have to supply at least 'x'
+            raise ValueError("The %f function you supplied must accept at least"
+                             "the 'x' argument" % func)
+        args = shapes_args.args[1:]  # peel off 'x'
+
+        if args:
+            shapes_list.append(args)
+
+            # *args or **kwargs are not allowed w/automatic shapes
+            if shapes_args.varargs is not None:
+                raise TypeError(
+                    '*args are not allowed w/out explicit shapes')
+            if shapes_args.keywords is not None:
+                raise TypeError(
+                    '**kwds are not allowed w/out explicit shapes')
+            if shapes_args.defaults is not None:
+                raise TypeError('defaults are not allowed for shapes')
+
+    if shapes_list:
+        shapes = shapes_list[0]
+
+        # make sure the signatures are consistent
+        for item in shapes_list:
+            if item != shapes:
+                raise TypeError('Shape arguments are inconsistent.')
+    else:
+        shapes = []
+
+    return shapes
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
-__all__ = _distn_names + _distn_gen_names
+__all__ = _distn_names + _distn_gen_names + ['rv_arbitrary']
