@@ -5,8 +5,8 @@ import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
                            run_module_suite, assert_raises, assert_allclose,
-                           assert_equal, assert_)
-from scipy import signal
+                           assert_equal, assert_, assert_array_less)
+from scipy import signal, fftpack
 
 
 window_funcs = [
@@ -80,7 +80,7 @@ class TestChebWin(object):
     def test_cheb_even_high_attenuation(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            cheb_even = signal.chebwin(54, at=-40)
+            cheb_even = signal.chebwin(54, at=40)
         assert_array_almost_equal(cheb_even, cheb_even_true, decimal=4)
 
     def test_cheb_odd_low_attenuation(self):
@@ -89,7 +89,7 @@ class TestChebWin(object):
                                       1.000000])
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            cheb_odd = signal.chebwin(7, at=-10)
+            cheb_odd = signal.chebwin(7, at=10)
         assert_array_almost_equal(cheb_odd, cheb_odd_low_at_true, decimal=4)
 
     def test_cheb_even_low_attenuation(self):
@@ -192,6 +192,10 @@ class TestGetWindow(object):
         w = signal.get_window('boxcar', 12)
         assert_array_equal(w, np.ones_like(w))
 
+        # window is a tuple of len 1
+        w = signal.get_window(('boxcar',), 16)
+        assert_array_equal(w, np.ones_like(w))
+
     def test_cheb_odd(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
@@ -201,8 +205,20 @@ class TestGetWindow(object):
     def test_cheb_even(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            w = signal.get_window(('chebwin', -40), 54, fftbins=False)
+            w = signal.get_window(('chebwin', 40), 54, fftbins=False)
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
+
+    def test_kaiser_float(self):
+        win1 = signal.get_window(7.2, 64)
+        win2 = signal.kaiser(64, 7.2, False)
+        assert_allclose(win1, win2)
+
+    def test_invalid_inputs(self):
+        # Window is not a float, tuple, or string
+        assert_raises(ValueError, signal.get_window, set('hann'), 8)
+
+        # Unknown window type error
+        assert_raises(ValueError, signal.get_window, 'broken', 4)
 
     def test_array_as_window(self):
         # github issue 3603
@@ -246,6 +262,15 @@ def test_windowfunc_basics():
             assert_(window(6, *params, sym=True).dtype == 'float')
             assert_(window(6, *params, sym=False).dtype == 'float')
 
+            # Check normalization
+            assert_array_less(window(10, *params, sym=True), 1.01)
+            assert_array_less(window(10, *params, sym=False), 1.01)
+            assert_array_less(window(9, *params, sym=True), 1.01)
+            assert_array_less(window(9, *params, sym=False), 1.01)
+
+            # Check periodic spectrum
+            assert_allclose(fftpack.fft(window(10, *params, sym=False)).imag,
+                            0, atol=1e-8)
 
 def test_needs_params():
     for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
