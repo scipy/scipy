@@ -37,6 +37,31 @@ def _truncate(w, needed):
         return w
 
 
+def _cos_win(M, a):
+    """
+    Generic weighted sum of cosine terms window
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window
+    a : array_like
+        Sequence of weighting coefficients
+
+    References
+    ----------
+    .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
+           Transactions on Acoustics, Speech, and Signal Processing, vol. 29,
+           no. 1, pp. 84-91, Feb 1981. doi: 10.1109/TASSP.1981.1163506
+    """
+    n = np.arange(0, M)
+    fac = n * 2 * np.pi / (M - 1.0)
+    w = np.zeros(M)
+    for k in range(len(a)):
+        w += (-1)**k * a[k] * np.cos(k * fac)
+    return w
+
+
 def boxcar(M, sym=True):
     """Return a boxcar or rectangular window.
 
@@ -342,9 +367,7 @@ def blackman(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    w = (0.42 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1)) +
-         0.08 * np.cos(4.0 * np.pi * n / (M - 1)))
+    w = _cos_win(M, [0.42, 0.50, 0.08])
 
     return _truncate(w, needs_trunc)
 
@@ -397,11 +420,7 @@ def nuttall(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    a = [0.3635819, 0.4891775, 0.1365995, 0.0106411]
-    n = np.arange(0, M)
-    fac = n * 2 * np.pi / (M - 1.0)
-    w = (a[0] - a[1] * np.cos(fac) +
-         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac))
+    w = _cos_win(M, [0.3635819, 0.4891775, 0.1365995, 0.0106411])
 
     return _truncate(w, needs_trunc)
 
@@ -454,11 +473,7 @@ def blackmanharris(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    a = [0.35875, 0.48829, 0.14128, 0.01168]
-    n = np.arange(0, M)
-    fac = n * 2 * np.pi / (M - 1.0)
-    w = (a[0] - a[1] * np.cos(fac) +
-         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac))
+    w = _cos_win(M, [0.35875, 0.48829, 0.14128, 0.01168])
 
     return _truncate(w, needs_trunc)
 
@@ -512,11 +527,7 @@ def flattop(M, sym=True):
     M, needs_trunc = _extend(M, sym)
 
     a = [0.2156, 0.4160, 0.2781, 0.0836, 0.0069]
-    n = np.arange(0, M)
-    fac = n * 2 * np.pi / (M - 1.0)
-    w = (a[0] - a[1] * np.cos(fac) +
-         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac) +
-         a[4] * np.cos(4 * fac))
+    w = _cos_win(M, a)
 
     return _truncate(w, needs_trunc)
 
@@ -701,8 +712,7 @@ def hann(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    w = 0.5 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1))
+    w = _cos_win(M, [0.5, 0.5])
 
     return _truncate(w, needs_trunc)
 
@@ -927,8 +937,7 @@ def hamming(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    w = 0.54 - 0.46 * np.cos(2.0 * np.pi * n / (M - 1))
+    w = _cos_win(M, [0.54, 0.46])
 
     return _truncate(w, needs_trunc)
 
