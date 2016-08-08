@@ -37,9 +37,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
     """Minimization of scalar function of one or more variables.
-    
+
     In general, the optimization problems are of the form::
-    
+
         minimize f(x) subject to
 
         g_i(x) >= 0,  i = 1,...,m
@@ -606,7 +606,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     if meth == '_custom':
         return method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
-        return _minimize_scalar_brent(fun, bracket, args, **options)
+        return _minimize_scalar_brent(fun, bracket, args, bounds=bounds,
+                                      **options)
     elif meth == 'bounded':
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '

@@ -1761,8 +1761,7 @@ def _minimize_scalar_bounded(func, bounds, args=(),
 
 class Brent:
     #need to rethink design of __init__
-    def __init__(self, func, args=(), tol=1.48e-8, maxiter=500,
-                 full_output=0):
+    def __init__(self, func, args=(), tol=1.48e-8, maxiter=500, bounds=None):
         self.func = func
         self.args = args
         self.tol = tol
@@ -1773,6 +1772,27 @@ class Brent:
         self.fval = None
         self.iter = 0
         self.funcalls = 0
+        self.brack = None
+        self.bounds = bounds
+
+    def _initial_bracket(self):
+        """Returns (if finite) the lower and upper boundaries of the function
+        domain.
+        """
+        if self.brack is None:
+            bounds = self.bounds
+            if numpy.isfinite(bounds[0]):
+                if numpy.isfinite(bounds[1]):
+                    brack = bounds
+                else:
+                    brack = (bounds[0], bounds[0]+1)
+            else:
+                if numpy.isfinite(bounds[1]):
+                    brack = (bounds[1] - 1, bounds[1])
+                else:
+                    brack = (0, 1)
+            self.brack = brack
+        return self.brack
 
     # need to rethink design of set_bracket (new options, etc)
     def set_bracket(self, brack=None):
@@ -1782,20 +1802,22 @@ class Brent:
         #set up
         func = self.func
         args = self.args
-        brack = self.brack
+        bounds = self.bounds
+        brack = self._initial_bracket()
         ### BEGIN core bracket_info code ###
         ### carefully DOCUMENT any CHANGES in core ##
-        if brack is None:
-            xa, xb, xc, fa, fb, fc, funcalls = bracket(func, args=args)
-        elif len(brack) == 2:
+        if len(brack) == 2:
             xa, xb, xc, fa, fb, fc, funcalls = bracket(func, xa=brack[0],
-                                                       xb=brack[1], args=args)
+                                                       xb=brack[1], args=args,
+                                                       bounds=bounds)
         elif len(brack) == 3:
             xa, xb, xc = brack
             if (xa > xc):  # swap so xa < xc can be assumed
                 xc, xa = xa, xc
             if not ((xa < xb) and (xb < xc)):
                 raise ValueError("Not a bracketing interval.")
+            if xa < bounds[0] or xc > bounds[1]:
+                raise ValueError("Bracketing interval outside the domain.")
             fa = func(*((xa,) + args))
             fb = func(*((xb,) + args))
             fc = func(*((xc,) + args))
@@ -1815,11 +1837,13 @@ class Brent:
         xa, xb, xc, fa, fb, fc, funcalls = self.get_bracket_info()
         _mintol = self._mintol
         _cg = self._cg
+        left, right = self.bounds
         #################################
         #BEGIN CORE ALGORITHM
         #################################
         x = w = v = xb
         fw = fv = fx = func(*((x,) + self.args))
+        funcalls += 1
         if (xa < xc):
             a = xa
             b = xc
@@ -1827,7 +1851,6 @@ class Brent:
             a = xc
             b = xa
         deltax = 0.0
-        funcalls = 1
         iter = 0
         while (iter < self.maxiter):
             tol1 = self.tol * numpy.abs(x) + _mintol
@@ -1844,6 +1867,9 @@ class Brent:
                     deltax = a - x       # do a golden section step
                 else:
                     deltax = b - x
+                # Clipping deltax guarantees that the proposed next solution
+                # will lie within the function domain.
+                deltax = numpy.clip(deltax, (left - x) / _cg, (right - x) / _cg)
                 rat = _cg * deltax
             else:                              # do a parabolic step
                 tmp1 = (x - w) * (fx - fv)
@@ -1870,6 +1896,10 @@ class Brent:
                         deltax = a - x  # if it's not do a golden section step
                     else:
                         deltax = b - x
+                    # Clipping deltax guarantees that the proposed next solution
+                    # will lie within the function domain.
+                    deltax = numpy.clip(deltax, (left - x) / _cg,
+                                        (right - x) / _cg)
                     rat = _cg * deltax
 
             if (numpy.abs(rat) < tol1):            # update by at least tol1
@@ -1877,6 +1907,8 @@ class Brent:
                     u = x + tol1
                 else:
                     u = x - tol1
+                # Prevent candidate value outside the function domain.
+                u = numpy.clip(u, left, right)
             else:
                 u = x + rat
             fu = func(*((u,) + self.args))      # calculate new output value
@@ -1924,7 +1956,8 @@ class Brent:
             return self.xmin
 
 
-def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
+def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500,
+          bounds=None):
     """
     Given a function of one-variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
@@ -1949,6 +1982,11 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
         funcalls).
     maxiter : int, optional
         Maximum number of iterations in solution.
+    bounds : sequence, optional
+        `bounds` sets the (inclusive) domain range, ``bounds[0] <= bounds[1]``,
+         and guarantees that the provided function won't be called for an input
+         outside that range. Defaults to ``None``, which is equivalent to
+         the domain ``(-numpy.inf, +numpy.inf)``.
 
     Returns
     -------
@@ -1973,7 +2011,8 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 
     """
     options = {'xtol': tol,
-               'maxiter': maxiter}
+               'maxiter': maxiter,
+               'bounds': bounds}
     res = _minimize_scalar_brent(func, brack, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nit'], res['nfev']
@@ -1983,6 +2022,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
 
 def _minimize_scalar_brent(func, brack=None, args=(),
                            xtol=1.48e-8, maxiter=500,
+                           bounds=None,
                            **unknown_options):
     """
     Options
@@ -1991,6 +2031,11 @@ def _minimize_scalar_brent(func, brack=None, args=(),
         Maximum number of iterations to perform.
     xtol : float
         Relative error in solution `xopt` acceptable for convergence.
+    bounds : sequence, optional
+        `bounds` sets the (inclusive) domain range, ``bounds[0] <= bounds[1]``,
+         and guarantees that the provided function won't be called for an input
+         outside that range. Defaults to ``None``, which is equivalent to
+         the domain ``(-numpy.inf, +numpy.inf)``.
 
     Notes
     -----
@@ -2002,9 +2047,10 @@ def _minimize_scalar_brent(func, brack=None, args=(),
     tol = xtol
     if tol < 0:
         raise ValueError('tolerance should be >= 0, got %r' % tol)
+    if bounds is None:
+        bounds = (-np.inf, +np.inf)
 
-    brent = Brent(func=func, args=args, tol=tol,
-                  full_output=True, maxiter=maxiter)
+    brent = Brent(func=func, args=args, tol=tol, maxiter=maxiter, bounds=bounds)
     brent.set_bracket(brack)
     brent.optimize()
     x, fval, nit, nfev = brent.get_result(full_output=True)
@@ -2126,14 +2172,15 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     return OptimizeResult(fun=fval, nfev=funcalls, x=xmin)
 
 
-def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
+def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000,
+            bounds=None):
     """
     Bracket the minimum of the function.
 
     Given a function and distinct initial points, search in the
     downhill direction (as defined by the initital points) and return
     new points xa, xb, xc that bracket the minimum of the function
-    f(xa) > f(xb) < f(xc). It doesn't always mean that obtained
+    f(xa) >= f(xb) <= f(xc). It doesn't always mean that obtained
     solution will satisfy xa<=x<=xb
 
     Parameters
@@ -2148,6 +2195,8 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         Maximum grow limit.  Defaults to 110.0
     maxiter : int, optional
         Maximum number of iterations to perform. Defaults to 1000.
+    bounds : tuple, optional
+        The optimization bounds.
 
     Returns
     -------
@@ -2159,6 +2208,10 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         Number of function evaluations made.
 
     """
+    if bounds is None:
+        bounds = (-numpy.inf, +numpy.inf)
+    if xa < bounds[0] or xb > bounds[1]:
+        raise ValueError("Bracketing interval outside the domain.")
     _gold = 1.618034
     _verysmall_num = 1e-21
     fa = func(*(xa,) + args)
@@ -2167,6 +2220,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         xa, xb = xb, xa
         fa, fb = fb, fa
     xc = xb + _gold * (xb - xa)
+    xc = numpy.clip(xc, bounds[0], bounds[1])
     fc = func(*((xc,) + args))
     funcalls = 3
     iter = 0
@@ -2179,6 +2233,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         else:
             denom = 2.0 * val
         w = xb - ((xb - xc) * tmp2 - (xb - xa) * tmp1) / denom
+        w = numpy.clip(w, bounds[0], bounds[1])
         wlim = xb + grow_limit * (xc - xb)
         if iter > maxiter:
             raise RuntimeError("Too many iterations.")
@@ -2197,6 +2252,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
                 fc = fw
                 return xa, xb, xc, fa, fb, fc, funcalls
             w = xc + _gold * (xc - xb)
+            w = numpy.clip(w, bounds[0], bounds[1])
             fw = func(*((w,) + args))
             funcalls += 1
         elif (w - wlim)*(wlim - xc) >= 0.0:
@@ -2210,12 +2266,14 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
                 xb = xc
                 xc = w
                 w = xc + _gold * (xc - xb)
+                w = numpy.clip(w, bounds[0], bounds[1])
                 fb = fc
                 fc = fw
                 fw = func(*((w,) + args))
                 funcalls += 1
         else:
             w = xc + _gold * (xc - xb)
+            w = numpy.clip(w, bounds[0], bounds[1])
             fw = func(*((w,) + args))
             funcalls += 1
         xa = xb
