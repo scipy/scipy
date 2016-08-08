@@ -331,10 +331,10 @@ class TestUnitImpulse(TestCase):
 
         # Broadcasting
         imp = waveforms.unit_impulse((4, 4), 2)
-        assert_array_equal(imp, np.array([[0.,  0.,  0.,  0.],
-                                          [0.,  0.,  0.,  0.],
-                                          [0.,  0.,  1.,  0.],
-                                          [0.,  0.,  0.,  0.]]))
+        assert_array_equal(imp, np.array([[0, 0, 0, 0],
+                                          [0, 0, 0, 0],
+                                          [0, 0, 1, 0],
+                                          [0, 0, 0, 0]]))
 
     def test_mid(self):
         assert_array_equal(waveforms.unit_impulse((3, 3), 'mid'),
