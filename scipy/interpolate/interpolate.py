@@ -99,6 +99,9 @@ class interp2d(object):
     If `x` and `y` represent a regular grid, consider using
     RectBivariateSpline.
 
+    Note that calling `interp2d` with NaNs present in input values results in
+    undefined behaviour.
+
     Methods
     -------
     __call__
@@ -329,6 +332,9 @@ class interp1d(_Interpolator1D):
     `x` and `y` are arrays of values used to approximate some function f:
     ``y = f(x)``.  This class returns a function whose call method uses
     interpolation to find the value of new points.
+
+    Note that calling `interp1d` with NaNs present in input values results in
+    undefined behaviour.
 
     Parameters
     ----------
