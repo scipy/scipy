@@ -188,25 +188,72 @@ class TestEig(object):
             assert_array_almost_equal(dot(conjugate(transpose(a)),vl[:,i]),
                                       conjugate(w[i])*vl[:,i])
 
+    def test_gh_3054(self):
+        a = [[1]]
+        b = [[0]]
+        w, vr = eig(a, b, homogeneous_eigvals=True)
+        assert_allclose(w[1,0], 0)
+        assert_(w[0,0] != 0)
+        assert_allclose(vr, 1)
+
+        w, vr = eig(a, b)
+        assert_equal(w, np.inf)
+        assert_allclose(vr, 1)
+
     def _check_gen_eig(self, A, B):
-        A, B = asarray(A), asarray(B)
+        if B is not None:
+            A, B = asarray(A), asarray(B)
+            B0 = B
+        else:
+            A = asarray(A)
+            B0 = B
+            B = np.eye(*A.shape)
         msg = "\n%r\n%r" % (A, B)
-        w, vr = eig(A,B)
-        wt = eigvals(A,B)
+
+        # Eigenvalues in homogeneous coordinates
+        w, vr = eig(A, B0, homogeneous_eigvals=True)
+        wt = eigvals(A, B0, homogeneous_eigvals=True)
+        val1 = dot(A, vr) * w[1,:]
+        val2 = dot(B, vr) * w[0,:]
+        for i in range(val1.shape[1]):
+            assert_allclose(val1[:,i], val2[:,i], rtol=1e-13, atol=1e-13, err_msg=msg)
+
+        if B0 is None:
+            assert_allclose(w[1,:], 1)
+            assert_allclose(wt[1,:], 1)
+
+        perm = np.lexsort(w)
+        permt = np.lexsort(wt)
+        assert_allclose(w[:,perm], wt[:,permt], err_msg=msg)
+
+        length = np.empty(len(vr))
+        for i in xrange(len(vr)):
+            length[i] = norm(vr[:,i])
+        assert_allclose(length, np.ones(length.size), err_msg=msg)
+
+        # Convert homogeneous coordinates
+        beta_nonzero = (w[1,:] != 0)
+        wh = w[0,beta_nonzero] / w[1,beta_nonzero]
+
+        # Eigenvalues in standard coordinates
+        w, vr = eig(A, B0)
+        wt = eigvals(A, B0)
         val1 = dot(A, vr)
         val2 = dot(B, vr) * w
         res = val1 - val2
         for i in range(res.shape[1]):
-            if all(isfinite(res[:, i])):
-                assert_array_almost_equal(res[:, i], 0, err_msg=msg)
+            if all(isfinite(res[:,i])):
+                assert_allclose(res[:,i], 0, rtol=1e-13, atol=1e-13, err_msg=msg)
 
-        assert_array_almost_equal(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]),
-                                  err_msg=msg)
+        assert_allclose(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]), err_msg=msg)
 
         length = np.empty(len(vr))
         for i in xrange(len(vr)):
-            length[i] = norm(vr[:, i])
-        assert_array_almost_equal(length, np.ones(length.size), err_msg=msg)
+            length[i] = norm(vr[:,i])
+        assert_allclose(length, np.ones(length.size), err_msg=msg)
+
+        # Compare homogeneous and nonhomogeneous versions
+        assert_allclose(sort(wh), sort(w[np.isfinite(w)]))
 
     @dec.knownfailureif(True, "See gh-2254.")
     def test_singular(self):
@@ -224,7 +271,7 @@ class TestEig(object):
             np.seterr(**olderr)
 
     def test_falker(self):
-        """Test matrices giving some Nan generalized eigen values."""
+        # Test matrices giving some Nan generalized eigenvalues.
         M = diag(array(([1,0,3])))
         K = array(([2,-1,-1],[-1,2,-1],[-1,-1,2]))
         D = array(([1,-1,0],[-1,1,0],[0,0,0]))
@@ -264,6 +311,19 @@ class TestEig(object):
                 self._check_gen_eig(A, B)
         finally:
             np.seterr(**olderr)
+
+    def test_make_eigvals(self):
+        # Step through all paths in _make_eigvals
+        np.random.seed(1234)
+        A = np.random.random((3, 3))
+        self._check_gen_eig(A, None)
+        B = np.random.random((3, 3))
+        self._check_gen_eig(A, B)
+
+        A = np.random.random((3, 3)) + 1j*np.random.random((3, 3))
+        self._check_gen_eig(A, None)
+        B = np.random.random((3, 3)) + 1j*np.random.random((3, 3))
+        self._check_gen_eig(A, B)
 
     def test_check_finite(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
