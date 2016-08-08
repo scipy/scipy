@@ -63,7 +63,7 @@ def find_minimum(f, a, b, rtol=_sqrt_epsilon, atol=_sqrt_epsilon, maxiter=500):
     x0 = a + _golden * (b - a)
     x1 = x0
     x2 = x1
-    niters = 0
+    niters = -1
     d = 0.0
     e = 0.0
     fx0 = f(x0)
@@ -177,4 +177,4 @@ def find_minimum(f, a, b, rtol=_sqrt_epsilon, atol=_sqrt_epsilon, maxiter=500):
                 x2 = u
                 fx2 = fu
 
-    return x0, fx0, niters
+    return x0, fx0, niters+1
