@@ -497,6 +497,20 @@ def flattop(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
 
+    Notes
+    -----
+    Flat top windows are used for taking accurate measurements of signal
+    amplitude in the frequency domain, with minimal scalloping error from the
+    center of a frequency bin to its edges, compared to others.  This is a
+    5th-order cosine window, with the 5 terms optimized to make the main lobe
+    maximally flat. [1]_
+
+    References
+    ----------
+    .. [1] D'Antona, Gabriele, and A. Ferrero, "Digital Signal Processing for
+           Measurement Systems", Springer Media, 2006, p. 70
+           doi: 10.1007/0-387-28666-7
+
     Examples
     --------
     Plot the window and its frequency response:
@@ -526,7 +540,7 @@ def flattop(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    a = [0.2156, 0.4160, 0.2781, 0.0836, 0.0069]
+    a = [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368]
     w = _cos_win(M, a)
 
     return _truncate(w, needs_trunc)
