@@ -83,7 +83,7 @@ Equation (Local) Minimizers
 
 .. autosummary::
    :toctree: generated/
-   
+
    leastsq - Minimize the sum of squares of M equations in N unknowns
    least_squares - Feature-rich least-squares minimization.
    nnls - Linear least-squares problem with non-negativity constraint
@@ -229,6 +229,7 @@ Utilities
 
 from __future__ import division, print_function, absolute_import
 
+from . import univariate
 from .optimize import *
 from ._minimize import *
 from ._root import *
