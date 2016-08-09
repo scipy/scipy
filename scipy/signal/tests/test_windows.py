@@ -34,6 +34,75 @@ window_funcs = [
     ]
 
 
+class TestBartHann(object):
+
+    def test_basic(self):
+        assert_allclose(signal.barthann(6, sym=True),
+                        [0, 0.35857354213752, 0.8794264578624801,
+                         0.8794264578624801, 0.3585735421375199, 0])
+        assert_allclose(signal.barthann(7),
+                        [0, 0.27, 0.73, 1.0, 0.73, 0.27, 0])
+        assert_allclose(signal.barthann(6, False),
+                        [0, 0.27, 0.73, 1.0, 0.73, 0.27])
+
+
+class TestBartlett(object):
+
+    def test_basic(self):
+        assert_allclose(signal.bartlett(6), [0, 0.4, 0.8, 0.8, 0.4, 0])
+        assert_allclose(signal.bartlett(7), [0, 1/3, 2/3, 1.0, 2/3, 1/3, 0])
+        assert_allclose(signal.bartlett(6, False),
+                        [0, 1/3, 2/3, 1.0, 2/3, 1/3])
+
+
+class TestBlackman(object):
+
+    def test_basic(self):
+        assert_allclose(signal.blackman(6, sym=False),
+                        [0, 0.13, 0.63, 1.0, 0.63, 0.13], atol=1e-14)
+        assert_allclose(signal.blackman(6),
+                        [0, 0.2007701432625305, 0.8492298567374694,
+                         0.8492298567374694, 0.2007701432625305, 0],
+                        atol=1e-14)
+        assert_allclose(signal.blackman(7, True),
+                        [0, 0.13, 0.63, 1.0, 0.63, 0.13, 0], atol=1e-14)
+
+
+class TestBlackmanHarris(object):
+
+    def test_basic(self):
+        assert_allclose(signal.blackmanharris(6, False),
+                        [6.0e-05, 0.055645, 0.520575, 1.0, 0.520575, 0.055645])
+        assert_allclose(signal.blackmanharris(6),
+                        [6.0e-05, 0.1030114893456638, 0.7938335106543362,
+                         0.7938335106543364, 0.1030114893456638, 6.0e-05])
+        assert_allclose(signal.blackmanharris(7, sym=True),
+                        [6.0e-05, 0.055645, 0.520575, 1.0, 0.520575, 0.055645,
+                         6.0e-05])
+
+
+class TestBohman(object):
+
+    def test_basic(self):
+        assert_allclose(signal.bohman(6),
+                        [0, 0.1791238937062839, 0.8343114522576858,
+                         0.8343114522576858, 0.1791238937062838, 0])
+        assert_allclose(signal.bohman(7, sym=True),
+                        [0, 0.1089977810442293, 0.6089977810442293, 1.0,
+                         0.6089977810442295, 0.1089977810442293, 0])
+        assert_allclose(signal.bohman(6, False),
+                        [0, 0.1089977810442293, 0.6089977810442293, 1.0,
+                         0.6089977810442295, 0.1089977810442293])
+
+
+class TestBoxcar(object):
+
+    def test_basic(self):
+        assert_allclose(signal.boxcar(6), [1, 1, 1, 1, 1, 1])
+        assert_allclose(signal.boxcar(7), [1, 1, 1, 1, 1, 1, 1])
+        assert_allclose(signal.boxcar(6, False), [1, 1, 1, 1, 1, 1])
+
+
 cheb_odd_true = array([0.200938, 0.107729, 0.134941, 0.165348,
                        0.198891, 0.235450, 0.274846, 0.316836,
                        0.361119, 0.407338, 0.455079, 0.503883,
@@ -70,6 +139,26 @@ cheb_even_true = array([0.203894, 0.107279, 0.133904,
 
 
 class TestChebWin(object):
+
+    def test_basic(self):
+        assert_allclose(signal.chebwin(6, 100),
+                        [0.1046401879356917, 0.5075781475823447, 1.0, 1.0,
+                         0.5075781475823447, 0.1046401879356917])
+        assert_allclose(signal.chebwin(7, 100),
+                        [0.05650405062850233, 0.316608530648474,
+                         0.7601208123539079, 1.0, 0.7601208123539079,
+                         0.316608530648474, 0.05650405062850233])
+        assert_allclose(signal.chebwin(6, 10),
+                        [1.0, 0.6071201674458373, 0.6808391469897297,
+                         0.6808391469897297, 0.6071201674458373, 1.0])
+        assert_allclose(signal.chebwin(7, 10),
+                        [1.0, 0.5190521247588651, 0.5864059018130382,
+                         0.6101519801307441, 0.5864059018130382,
+                         0.5190521247588651, 1.0])
+        assert_allclose(signal.chebwin(6, 10, False),
+                        [1.0, 0.5190521247588651, 0.5864059018130382,
+                         0.6101519801307441, 0.5864059018130382,
+                         0.5190521247588651])
 
     def test_cheb_odd_high_attenuation(self):
         with warnings.catch_warnings():
@@ -152,6 +241,133 @@ def test_exponential():
             assert_allclose(win, v, rtol=1e-14)
 
 
+class TestFlatTop(object):
+
+    def test_basic(self):
+        assert_allclose(signal.flattop(6, sym=False),
+                        [-0.000421051, -0.051263156, 0.19821053, 1.0,
+                         0.19821053, -0.051263156])
+        assert_allclose(signal.flattop(6),
+                        [-0.000421051, -0.0677142520762119, 0.6068721525762117,
+                         0.6068721525762117, -0.0677142520762119,
+                         -0.000421051])
+        assert_allclose(signal.flattop(7, True),
+                        [-0.000421051, -0.051263156, 0.19821053, 1.0,
+                         0.19821053, -0.051263156, -0.000421051])
+
+
+class TestGaussian(object):
+
+    def test_basic(self):
+        assert_allclose(signal.gaussian(6, 1.0),
+                        [0.04393693362340742, 0.3246524673583497,
+                         0.8824969025845955, 0.8824969025845955,
+                         0.3246524673583497, 0.04393693362340742])
+        assert_allclose(signal.gaussian(7, 1.2),
+                        [0.04393693362340742, 0.2493522087772962,
+                         0.7066482778577162, 1.0, 0.7066482778577162,
+                         0.2493522087772962, 0.04393693362340742])
+        assert_allclose(signal.gaussian(7, 3),
+                        [0.6065306597126334, 0.8007374029168081,
+                         0.9459594689067654, 1.0, 0.9459594689067654,
+                         0.8007374029168081, 0.6065306597126334])
+        assert_allclose(signal.gaussian(6, 3, False),
+                        [0.6065306597126334, 0.8007374029168081,
+                         0.9459594689067654, 1.0, 0.9459594689067654,
+                         0.8007374029168081])
+
+
+class TestHamming(object):
+
+    def test_basic(self):
+        assert_allclose(signal.hamming(6, False),
+                        [0.08, 0.31, 0.77, 1.0, 0.77, 0.31])
+        assert_allclose(signal.hamming(6),
+                        [0.08, 0.3978521825875242, 0.9121478174124757,
+                         0.9121478174124757, 0.3978521825875242, 0.08])
+        assert_allclose(signal.hamming(7, sym=True),
+                        [0.08, 0.31, 0.77, 1.0, 0.77, 0.31, 0.08])
+
+
+class TestHann(object):
+
+    def test_basic(self):
+        assert_allclose(signal.hann(6, sym=False),
+                        [0, 0.25, 0.75, 1.0, 0.75, 0.25])
+        assert_allclose(signal.hann(6, True),
+                        [0, 0.3454915028125263, 0.9045084971874737,
+                         0.9045084971874737, 0.3454915028125263, 0])
+        assert_allclose(signal.hann(7),
+                        [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0])
+
+
+class TestKaiser(object):
+
+    def test_basic(self):
+        assert_allclose(signal.kaiser(6, 0.5),
+                        [0.9403061933191572, 0.9782962393705389,
+                         0.9975765035372042, 0.9975765035372042,
+                         0.9782962393705389, 0.9403061933191572])
+        assert_allclose(signal.kaiser(7, 0.5),
+                        [0.9403061933191572, 0.9732402256999829,
+                         0.9932754654413773, 1.0, 0.9932754654413773,
+                         0.9732402256999829, 0.9403061933191572])
+        assert_allclose(signal.kaiser(6, 2.7),
+                        [0.2603047507678832, 0.6648106293528054,
+                         0.9582099802511439, 0.9582099802511439,
+                         0.6648106293528054, 0.2603047507678832])
+        assert_allclose(signal.kaiser(7, 2.7),
+                        [0.2603047507678832, 0.5985765418119844,
+                         0.8868495172060835, 1.0, 0.8868495172060835,
+                         0.5985765418119844, 0.2603047507678832])
+        assert_allclose(signal.kaiser(6, 2.7, False),
+                        [0.2603047507678832, 0.5985765418119844,
+                         0.8868495172060835, 1.0, 0.8868495172060835,
+                         0.5985765418119844])
+
+
+class TestNuttall(object):
+
+    def test_basic(self):
+        assert_allclose(signal.nuttall(6, sym=False),
+                        [0.0003628, 0.0613345, 0.5292298, 1.0, 0.5292298,
+                         0.0613345])
+        assert_allclose(signal.nuttall(6),
+                        [0.0003628, 0.1105152530498718, 0.7982580969501282,
+                         0.7982580969501283, 0.1105152530498719, 0.0003628])
+        assert_allclose(signal.nuttall(7, True),
+                        [0.0003628, 0.0613345, 0.5292298, 1.0, 0.5292298,
+                         0.0613345, 0.0003628])
+
+
+class TestParzen(object):
+
+    def test_basic(self):
+        assert_allclose(signal.parzen(6),
+                        [0.009259259259259254, 0.25, 0.8611111111111112,
+                         0.8611111111111112, 0.25, 0.009259259259259254])
+        assert_allclose(signal.parzen(7, sym=True),
+                        [0.00583090379008747, 0.1574344023323616,
+                         0.6501457725947521, 1.0, 0.6501457725947521,
+                         0.1574344023323616, 0.00583090379008747])
+        assert_allclose(signal.parzen(6, False),
+                        [0.00583090379008747, 0.1574344023323616,
+                         0.6501457725947521, 1.0, 0.6501457725947521,
+                         0.1574344023323616])
+
+
+class TestTriang(object):
+
+    def test_basic(self):
+
+        assert_allclose(signal.triang(6, True),
+                        [1/6, 1/2, 5/6, 5/6, 1/2, 1/6])
+        assert_allclose(signal.triang(7),
+                        [1/4, 1/2, 3/4, 1, 3/4, 1/2, 1/4])
+        assert_allclose(signal.triang(6, sym=False),
+                        [1/4, 1/2, 3/4, 1, 3/4, 1/2])
+
+
 tukey_data = {
     (4, 0.5, True): array([0.0, 1.0, 1.0, 0.0]),
     (4, 0.9, True): array([0.0, 0.84312081893436686,
@@ -165,25 +381,42 @@ tukey_data = {
     (5, 0.8, True): array([0.0, 0.69134171618254492,
                            1.0, 0.69134171618254492, 0.0]),
     (5, 1.0, True): array([0.0, 0.5, 1.0, 0.5, 0.0]),
+
+    (6, 0): [1, 1, 1, 1, 1, 1],
+    (7, 0): [1, 1, 1, 1, 1, 1, 1],
+    (6, .25): [0, 1, 1, 1, 1, 0],
+    (7, .25): [0, 1, 1, 1, 1, 1, 0],
+    (6,): [0, 0.9045084971874737, 1.0, 1.0, 0.9045084971874735, 0],
+    (7,): [0, 0.75, 1.0, 1.0, 1.0, 0.75, 0],
+    (6, .75): [0, 0.5522642316338269, 1.0, 1.0, 0.5522642316338267, 0],
+    (7, .75): [0, 0.4131759111665348, 0.9698463103929542, 1.0,
+               0.9698463103929542, 0.4131759111665347, 0],
+    (6, 1): [0, 0.3454915028125263, 0.9045084971874737, 0.9045084971874737,
+             0.3454915028125263, 0],
+    (7, 1): [0, 0.25, 0.75, 1.0, 0.75, 0.25, 0],
 }
 
 
-def test_tukey():
-    # Test against hardcoded data
-    for k, v in tukey_data.items():
-        if v is None:
-            assert_raises(ValueError, signal.tukey, *k)
-        else:
-            win = signal.tukey(*k)
-            assert_allclose(win, v, rtol=1e-14)
+class TestTukey(object):
 
-    # Test extremes of alpha correspond to boxcar and hann
-    tuk0 = signal.tukey(100, 0)
-    tuk1 = signal.tukey(100, 1)
-    box0 = signal.boxcar(100)
-    han1 = signal.hann(100)
-    assert_array_almost_equal(tuk0, box0)
-    assert_array_almost_equal(tuk1, han1)
+    def test_basic(self):
+        # Test against hardcoded data
+        for k, v in tukey_data.items():
+            if v is None:
+                assert_raises(ValueError, signal.tukey, *k)
+            else:
+                win = signal.tukey(*k)
+                assert_allclose(win, v, rtol=1e-14)
+
+    def test_extremes(self):
+        # Test extremes of alpha correspond to boxcar and hann
+        tuk0 = signal.tukey(100, 0)
+        box0 = signal.boxcar(100)
+        assert_array_almost_equal(tuk0, box0)
+
+        tuk1 = signal.tukey(100, 1)
+        han1 = signal.hann(100)
+        assert_array_almost_equal(tuk1, han1)
 
 
 class TestGetWindow(object):
@@ -270,7 +503,8 @@ def test_windowfunc_basics():
 
             # Check periodic spectrum
             assert_allclose(fftpack.fft(window(10, *params, sym=False)).imag,
-                            0, atol=1e-8)
+                            0, atol=1e-14)
+
 
 def test_needs_params():
     for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
