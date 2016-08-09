@@ -1516,8 +1516,9 @@ class _QhullUser(object):
 
     _qhull = None
 
-    def __init__(self, qhull, incremental=False):
+    def __init__(self, qhull, incremental=False, halfspaces=False):
         self._qhull = None
+        self._is_halfspaces = halfspaces
         try:
             self._update(qhull)
             if incremental:
@@ -1545,6 +1546,12 @@ class _QhullUser(object):
         self.close()
 
     def _update(self, qhull):
+        if self._is_halfspaces:
+            self._update_halfspaces(qhull)
+        else:
+            self._update_points(qhull)
+
+    def _update_points(self, qhull):
         self.points = qhull.get_points()
         self.ndim = self.points.shape[1]
         self.npoints = self.points.shape[0]
@@ -1552,7 +1559,7 @@ class _QhullUser(object):
         self.min_bound = self.points.min(axis=0)
         self.max_bound = self.points.max(axis=0)
 
-    def add_points(self, points, restart=False):
+    def _add_points(self, points, restart=False):
         """
         add_points(points, restart=False)
 
@@ -1604,6 +1611,64 @@ class _QhullUser(object):
         self._qhull.add_points(points)
         self._update(self._qhull)
 
+    def _update_halfspaces(self, qhull):
+        self.halfspaces = qhull.get_points()
+        self.ndim = self.halfspaces.shape[1] - 1
+        self.nineq = self.halfspaces.shape[0]
+        self.min_bound = self.halfspaces.min(axis=0)
+        self.max_bound = self.halfspaces.max(axis=0)
+
+    def _add_halfspaces(self, halfspaces, restart=False):
+        """
+        add_halfspaces(halfspaces, restart=False)
+
+        Process a set of additional new halfspaces.
+
+        Parameters
+        ----------
+        halfspaces : ndarray
+            New halfspaces to add. The dimensionality should match that of the
+            initial halfspaces.
+        restart : bool, optional
+            Whether to restart processing from scratch, rather than
+            adding halfspaces incrementally.
+
+        Raises
+        ------
+        QhullError
+            Raised when Qhull encounters an error condition, such as
+            geometrical degeneracy when options to resolve are not enabled.
+
+        See Also
+        --------
+        close
+
+        Notes
+        -----
+        You need to specify ``incremental=True`` when constructing the
+        object to be able to add halfspaces incrementally. Incremental addition
+        of halfspaces is also not possible after `close` has been called.
+
+        """
+        if self._qhull is None:
+            raise RuntimeError("incremental mode not enabled or already closed")
+
+        if restart:
+            halfspaces = np.concatenate([self.halfspaces, halfspaces], axis=0)
+            qhull = _Qhull(self._qhull.mode_option, halfspaces,
+                           options=self._qhull.options,
+                           furthest_site=self._qhull.furthest_site,
+                           incremental=True)
+            try:
+                self._update_halfspaces(qhull)
+                self._qhull = qhull
+            finally:
+                if qhull is not self._qhull:
+                    qhull.close()
+            return
+
+        self._qhull.add_points(halfspaces)
+        self._update(self._qhull)
 
 class Delaunay(_QhullUser):
     """
@@ -1814,6 +1879,9 @@ class Delaunay(_QhullUser):
         self.vertices = self.simplices
 
         _QhullUser._update(self, qhull)
+
+    def add_points(self, points, restart=False):
+        _QhullUser._add_points(self, points, restart)
 
     @property
     def transform(self):
@@ -2309,6 +2377,9 @@ class ConvexHull(_QhullUser):
 
         _QhullUser._update(self, qhull)
 
+    def add_points(self, points, restart=False):
+        _QhullUser._add_points(self, points, restart)
+
     @property
     def vertices(self):
         if self._vertices is None:
@@ -2452,6 +2523,9 @@ class Voronoi(_QhullUser):
 
         _QhullUser._update(self, qhull)
 
+    def add_points(self, points, restart=False):
+        _QhullUser._add_points(self, points, restart)
+
     @property
     def ridge_dict(self):
         if self._ridge_dict is None:
@@ -2460,110 +2534,10 @@ class Voronoi(_QhullUser):
         return self._ridge_dict
 
 #------------------------------------------------------------------------------
-# Halfspace intersection interface, for Python
-#------------------------------------------------------------------------------
-
-class _QhalfUser(object):
-    """
-    Takes care of basic dealings with the Qhull objects
-    """
-
-    _qhull = None
-
-    def __init__(self, qhull, incremental=False):
-        self._qhull = None
-        try:
-            self._update(qhull)
-            if incremental:
-                # last, to deal with exceptions
-                self._qhull = qhull
-        finally:
-            if qhull is not self._qhull:
-                qhull.close()
-
-    def close(self):
-        """
-        close()
-
-        Finish incremental processing.
-
-        Call this to free resources taken up by Qhull, when using the
-        incremental mode. After calling this, adding more points is no
-        longer possible.
-        """
-        if self._qhull is not None:
-            self._qhull.close()
-            self._qhull = None
-
-    def __del__(self):
-        self.close()
-
-    def _update(self, qhull):
-        self.halfspaces = qhull.get_points()
-        self.ndim = self.halfspaces.shape[1] - 1
-        self.nineq = self.halfspaces.shape[0]
-        self.min_bound = self.halfspaces.min(axis=0)
-        self.max_bound = self.halfspaces.max(axis=0)
-
-    def add_halfspaces(self, halfspaces, restart=False):
-        """
-        add_halfspaces(halfspaces, restart=False)
-
-        Process a set of additional new halfspaces.
-
-        Parameters
-        ----------
-        halfspaces : ndarray
-            New halfspaces to add. The dimensionality should match that of the
-            initial halfspaces.
-        restart : bool, optional
-            Whether to restart processing from scratch, rather than
-            adding halfspaces incrementally.
-
-        Raises
-        ------
-        QhullError
-            Raised when Qhull encounters an error condition, such as
-            geometrical degeneracy when options to resolve are not enabled.
-
-        See Also
-        --------
-        close
-
-        Notes
-        -----
-        You need to specify ``incremental=True`` when constructing the
-        object to be able to add halfspaces incrementally. Incremental addition
-        of halfspaces is also not possible after `close` has been called.
-
-        """
-        if self._qhull is None:
-            raise RuntimeError("incremental mode not enabled or already closed")
-
-        if restart:
-            halfspaces = np.concatenate([self.halfspaces, halfspaces], axis=0)
-            qhull = _Qhull(self._qhull.mode_option, halfspaces,
-                           options=self._qhull.options,
-                           furthest_site=self._qhull.furthest_site,
-                           incremental=True)
-            try:
-                self._update(qhull)
-                self._qhull = qhull
-            finally:
-                if qhull is not self._qhull:
-                    qhull.close()
-            return
-
-        self._qhull.add_points(halfspaces)
-        self._update(self._qhull)
-
-
-
-#------------------------------------------------------------------------------
 # Halfspace Intersection
 #------------------------------------------------------------------------------
 
-class HalfspaceIntersection(_QhalfUser):
+class HalfspaceIntersection(_QhullUser):
     """
     HalfspaceIntersection(halfspaces, feasible_point, incremental=False, qhull_options=None)
 
@@ -2698,7 +2672,7 @@ class HalfspaceIntersection(_QhalfUser):
         mode_option = "H{}".format(','.join([str(self.feasible_point.item(i)) for i in range(halfspaces.shape[1] -1)]))
         qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=b"Qt",
                        incremental=incremental)
-        _QhalfUser.__init__(self, qhull, incremental=incremental)
+        _QhullUser.__init__(self, qhull, incremental=incremental, halfspaces=True)
 
     def _update(self, qhull):
         qhull.triangulate()
@@ -2719,7 +2693,10 @@ class HalfspaceIntersection(_QhalfUser):
 
         self.nsimplex = self.dual_simplices.shape[0]
 
-        _QhalfUser._update(self, qhull)
+        _QhullUser._update(self, qhull)
+
+    def add_halfspaces(self, halfspaces, restart=False):
+        _QhullUser._add_halfspaces(halfspaces, restart)
 
     @property
     def vertices(self):
