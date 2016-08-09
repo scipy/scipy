@@ -404,6 +404,11 @@ add_newdoc("scipy.special", "binom",
     binom(n, k)
 
     Binomial coefficient
+
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
+    
     """)
 
 add_newdoc("scipy.special", "btdtria",

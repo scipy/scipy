@@ -3258,7 +3258,11 @@ cdef char ufunc_binom_types[6]
 cdef char *ufunc_binom_doc = (
     "binom(n, k)\n"
     "\n"
-    "Binomial coefficient")
+    "Binomial coefficient\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "comb : The number of combinations of N things taken k at a time.")
 ufunc_binom_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_binom_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_binom_types[0] = <char>NPY_FLOAT

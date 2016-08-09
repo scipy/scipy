@@ -2142,6 +2142,10 @@ def comb(N, k, exact=False, repetition=False):
     val : int, ndarray
         The total number of combinations.
 
+    See Also
+    --------
+    binom : Binomial coefficient ufunc
+
     Notes
     -----
     - Array arguments accepted only for exact=False case.
