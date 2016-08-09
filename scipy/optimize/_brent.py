@@ -8,6 +8,7 @@ _sqrt_epsilon = sqrt(finfo(float).eps)
 # about 0.3819660112501051
 _golden = 0.5 * (3.0 - sqrt(5.0))
 
+
 def find_minimum(f, a, b, rtol=_sqrt_epsilon, atol=_sqrt_epsilon, maxiter=500):
     """Seeks a local minimum of a function f in a closed interval [a, b] via
     Brent's method.

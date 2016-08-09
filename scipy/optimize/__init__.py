@@ -229,7 +229,6 @@ Utilities
 
 from __future__ import division, print_function, absolute_import
 
-from . import univariate
 from .optimize import *
 from ._minimize import *
 from ._root import *

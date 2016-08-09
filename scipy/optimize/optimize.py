@@ -38,7 +38,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from scipy._lib._util import getargspec_no_self as _getargspec
-from scipy.optimize import univariate
+from . import _brent
 
 
 # standard status messages of optimizers
@@ -1872,9 +1872,9 @@ def _minimize_scalar_brent(func, brack=None, args=(),
         return func(*((x,) + args))
     objective_function.nfev = nfev
 
-    x, fx, nit = univariate.brent.find_minimum(objective_function, a, b,
-                                               rtol=tol, atol=tol,
-                                               maxiter=maxiter)
+    x, fx, nit = _brent.find_minimum(objective_function, a, b,
+                                     rtol=tol, atol=tol,
+                                     maxiter=maxiter)
 
     return OptimizeResult(fun=fx, x=x, nit=nit, nfev=objective_function.nfev,
                           success=nit < maxiter)
