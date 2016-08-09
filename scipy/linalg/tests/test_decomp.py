@@ -140,7 +140,7 @@ class TestEigVals(TestCase):
                    (9+1j-sqrt(92+6j))/2]
         assert_array_almost_equal(w,exact_w)
 
-    def test_check_finite(self):
+    def test_finite(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
         w = eigvals(a, check_finite=False)
         exact_w = [(9+sqrt(93))/2,0,(9-sqrt(93))/2]
@@ -314,15 +314,16 @@ class TestEig(object):
 
     def test_make_eigvals(self):
         # Step through all paths in _make_eigvals
-        np.random.seed(1234)
-        A = np.random.random((3, 3))
+        seed(1234)
+        # Real eigenvalues
+        A = symrand(3)
         self._check_gen_eig(A, None)
-        B = np.random.random((3, 3))
+        B = symrand(3)
         self._check_gen_eig(A, B)
-
-        A = np.random.random((3, 3)) + 1j*np.random.random((3, 3))
+        # Complex eigenvalues
+        A = random((3, 3)) + 1j*random((3, 3))
         self._check_gen_eig(A, None)
-        B = np.random.random((3, 3)) + 1j*np.random.random((3, 3))
+        B = random((3, 3)) + 1j*random((3, 3))
         self._check_gen_eig(A, B)
 
     def test_check_finite(self):

@@ -59,12 +59,14 @@ def _make_eigvals(alpha, beta, homogeneous_eigvals):
             beta_zero = (beta == 0)
             beta_nonzero = ~beta_zero
             w[beta_nonzero] = alpha[beta_nonzero]/beta[beta_nonzero]
-            if numpy.iscomplexobj(alpha):
-                w[~alpha_zero & beta_zero] = complex(numpy.inf, 0)
-                w[alpha_zero & beta_zero] = complex(numpy.nan, numpy.nan)
-            else:
-                w[~alpha_zero & beta_zero] = numpy.inf
+            # Use numpy.inf for complex values too since
+            # 1/numpy.inf = 0, i.e. it correctly behaves as projective
+            # infinity.
+            w[~alpha_zero & beta_zero] = numpy.inf 
+            if numpy.all(alpha.imag == 0):
                 w[alpha_zero & beta_zero] = numpy.nan
+            else:
+                w[alpha_zero & beta_zero] = complex(numpy.nan, numpy.nan)
             return w
 
 
@@ -90,7 +92,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b, homogeneous_eigvals):
         raise LinAlgError("generalized eig algorithm did not converge "
                           "(info=%d)" % info)
 
-    only_real = numpy.logical_and.reduce(numpy.equal(w.imag, 0.0), axis=None)
+    only_real = numpy.all(w.imag == 0.0)
     if not (ggev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
@@ -220,7 +222,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         raise LinAlgError("eig algorithm did not converge (only eigenvalues "
                           "with order >= %d have converged)" % info)
 
-    only_real = numpy.logical_and.reduce(numpy.equal(w.imag, 0.0), axis=None)
+    only_real = numpy.all(w.imag == 0.0)
     if not (geev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
