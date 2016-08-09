@@ -2636,7 +2636,6 @@ class HalfspaceIntersection(_QhalfUser):
     Examples
     --------
 
-    TODO: example
     Halfspace intersection of planes forming some polygon
 
     >>> from scipy.spatial import HalfspaceIntersection
@@ -2655,14 +2654,17 @@ class HalfspaceIntersection(_QhalfUser):
     >>> x = np.linspace(-1, 3, 100)
     >>> symbols = ['-', '+', 'x', '*']
     >>> signs = [0, 0, -1, -1]
+    >>> fmt = {"color": None, "edgecolor": "b", "alpha": 0.5}
     >>> for h, sym, sign in zip(halfspaces, symbols, signs):
-    ...   if h.item(1) == 0:
-    ...     plt.axvline(-h.item(2)/h.item(0), label='{}x+{}y+{}=0'.format(*h.tolist()))
-    ...     xi = np.linspace(xlim[sign], -h.item(2)/h.item(0), 100)
-    ...     plt.fill_between(xi, ylim[0], ylim[1], color="none", edgecolor="b", hatch=sym, alpha=0.5)
-    ...   else:
-    ...     plt.plot(x, (-h.item(2)-h.item(0)*x)/h.item(1), label='{}x+{}y+{}=0'.format(*h.tolist()))
-    ...     plt.fill_between(x, (-h.item(2)-h.item(0)*x)/h.item(1), ylim[sign], color="none", edgecolor="b", hatch=sym, alpha=0.5)
+    ...     hlist = h.tolist()
+    ...     fmt["hatch"] = sym
+    ...     if h[1]== 0:
+    ...         plt.axvline(-h[2]/h[0], label='{}x+{}y+{}=0'.format(*hlist))
+    ...         xi = np.linspace(xlim[sign], -h[2]/h[0], 100)
+    ...         plt.fill_between(xi, ylim[0], ylim[1], **fmt)
+    ...     else:
+    ...         plt.plot(x, (-h[2]-h[0]*x)/h[1], label='{}x+{}y+{}=0'.format(*hlist))
+    ...         plt.fill_between(x, (-h[2]-h[0]*x)/h[1], **fmt)
     >>> x, y = zip(*hs.intersections)
     >>> plt.plot(x, y, 'o', markersize=8)
     >>> plt.legend()
