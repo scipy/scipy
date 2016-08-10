@@ -3310,7 +3310,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     return y
 
 
-def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
+def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     """
     Downsample the signal after applying an anti-aliasing filter.
 
@@ -3335,11 +3335,8 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     zero_phase : bool, optional
         Prevent phase shift by filtering with `filtfilt` instead of `lfilter`
         when using an IIR filter, and shifting the outputs back by the filter's
-        group delay when using an FIR filter. A value of ``True`` is
-        recommended, since a phase shift is generally not desired. Using
-        ``None`` defaults to ``False`` for backwards compatibility. This
-        default will change to ``True`` in a future release, so it is best to
-        set this argument explicitly.
+        group delay when using an FIR filter. The default value of ``True`` is
+        recommended, since a phase shift is generally not desired.
 
         .. versionadded:: 0.18.0
 
@@ -3379,14 +3376,6 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
         n = np.max((system.num.size, system.den.size)) - 1
     else:
         raise ValueError('invalid ftype')
-
-    if zero_phase is None:
-        warnings.warn(" Note: Decimate's zero_phase keyword argument will "
-                      "default to True in a future release. Until then, "
-                      "decimate defaults to one-way filtering for backwards "
-                      "compatibility. Ideally, always set this argument "
-                      "explicitly.", FutureWarning)
-        zero_phase = False
 
     sl = [slice(None)] * x.ndim
 
