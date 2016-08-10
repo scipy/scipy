@@ -10,9 +10,10 @@ from numpy import trapz
 from scipy.special.orthogonal import p_roots
 from scipy.special import gammaln
 from scipy._lib.six import xrange
+from numpy.polynomial.hermite import hermgauss
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
-           'cumtrapz', 'newton_cotes']
+           'cumtrapz', 'newton_cotes', 'gh_quad']
 
 
 class AccuracyWarning(Warning):
@@ -71,6 +72,7 @@ def fixed_quad(func, a, b, args=(), n=5):
     cumtrapz : cumulative integration for sampled data
     ode : ODE integrator
     odeint : ODE integrator
+    gh_quad : Gauss-Hermite quadrature
 
     """
     x, w = _cached_p_roots(n)
@@ -175,6 +177,7 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     cumtrapz: cumulative integration for sampled data
     ode: ODE integrator
     odeint: ODE integrator
+    gh_quad : Gauss-Hermite quadrature
 
     """
     if not isinstance(args, tuple):
@@ -244,6 +247,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     romb: integrators for sampled data
     ode: ODE integrators
     odeint: ODE integrators
+    gh_quad : Gauss-Hermite quadrature
 
     Examples
     --------
@@ -369,6 +373,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
     cumtrapz: cumulative integration for sampled data
     ode: ODE integrators
     odeint: ODE integrators
+    gh_quad : Gauss-Hermite quadrature
 
     Notes
     -----
@@ -466,7 +471,8 @@ def romb(y, dx=1.0, axis=-1, show=False):
     simps : integrators for sampled data
     cumtrapz : cumulative integration for sampled data
     ode : ODE integrators
-    odeint : ODE integrators
+    odeint : ODE integrator
+    gh_quad : Gauss-Hermite quadratures
 
     """
     y = np.asarray(y)
@@ -642,7 +648,8 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     simps : Integrators for sampled data.
     cumtrapz : Cumulative integration for sampled data.
     ode : ODE integrator.
-    odeint : ODE integrator.
+    odeint : ODE integrator
+    gh_quad : Gauss-Hermite quadrature.
 
     References
     ----------
@@ -853,3 +860,105 @@ def newton_cotes(rn, equal=0):
     fac = power*math.log(N) - gammaln(p1)
     fac = math.exp(fac)
     return ai, BN*fac
+
+
+def gh_quad(func, n, args=(), mu_hat=0, sigma_hat=1, zero_nan=False):
+    """
+    Gauss-Hermite quadrature
+
+    Compute an indefinite integral using Gauss-Hermite quadrature of order `n`,
+    optionally shifting and scaling the quadrature points to focus on the
+    high-density region.
+
+    Parameters
+    ----------
+    func : callable
+        A Python function or method to integrate (must accept vector inputs).
+        For best results, `func` should approximately equal a Gaussian
+        density times a low-order polynomial.
+    n : int
+        Order of quadrature integration. This function relies on
+        `numpy.polynomial.hermite.hermgauss`, which has not been tested for
+        order larger than 100.
+    args : tuple, optional
+        Extra arguments to pass to `func`, if any.
+    mu_hat : float, optional
+        Location parameter, used to center the quadrature nodes near
+        the high-density region.
+    sigma_hat : float, optional
+        Scale parameter, used to determine how much to spread out the quadrature
+        nodes.
+    zero_nan : bool, optional
+        If `func(x)` returns `nan` (e.g. if a quadrature point falls outside the
+        domain of x), should this value be coerced to zero? Default is False.
+
+    Returns
+    -------
+    val : float
+        Gauss-Hermite quadrature approximation to the indefinite integral of
+        `func`.
+
+    See Also
+    --------
+    fixed_quad : fixed-order Gaussian quadrature
+    quad : adaptive quadrature using QUADPACK
+    dblquad : double integrals
+    tplquad : triple integrals
+    romberg : adaptive Romberg quadrature
+    quadrature : adaptive Gaussian quadrature
+    romb : integrators for sampled data
+    simps : integrators for sampled data
+    cumtrapz : cumulative integration for sampled data
+    ode : ODE integrator
+    odeint : ODE integrator
+
+    Notes
+    -----
+    According to the documentation in `numpy.polynomial.hermite.hermgauss`,
+    (version 1.11) the quadrature points and weights "have only been tested up
+    to degree 100, higher degrees may be problematic."
+
+    References
+    ----------
+    .. [1] Liu, Q. and Pierce, D. A. (1994). 'A Note on Gauss-Hermite
+        Quadrature'. Biometrika, 81(3) 624-629.
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> from scipy.stats import t
+    >>> from scipy.optimize import minimize
+
+    Find the area under a Student-t distribution with 8 degrees of freedom
+    (which should approach one as the number of quadrature points increases):
+
+    >>> print(gh_quad(t.pdf, n=1, args=(8,)))
+    >>> print(gh_quad(t.pdf, n=10, args=(8,)))
+    >>> print(gh_quad(t.pdf, n=99, args=(8,)))
+
+    With inappropriate values of `mu_hat` and `sigma_hat`, the quadrature points
+    will be poorly placed and the approximate area under a curve (such as this
+    shifted and scaled Student-t distribution) may be very inaccurate:
+
+    >>> def func(x):
+    ... t.pdf((x + 25) / 4.0, df=8) / 4.0
+    ...
+    >>> print(gh_quad(func, n=99))
+
+    One efficient way to choose `mu_hat` and `sigma_hat` is with Laplace
+    approximation to the density's first two moments, as discussed in Liu and
+    Pierce (1994):
+
+    >>> opt = minimize(lambda x: -np.log(func(x)), 0)
+    >>> mu_hat = opt.x[0]
+    >>> sigma_hat = np.sqrt(opt.hess_inv[0,0])
+    >>> print(gh_quad(func, n=99, mu_hat=mu_hat, sigma_hat=sigma_hat))
+
+    """
+    x, w = hermgauss(deg=n)
+    w_star = w * np.exp(x**2)
+    g_x_star = func(mu_hat + np.sqrt(2) * sigma_hat * x, *args)
+    if zero_nan:
+        g_x_star[np.isnan(g_x_star)] = 0
+    val = np.sqrt(2) * sigma_hat * np.sum(w_star * g_x_star)
+    return val
