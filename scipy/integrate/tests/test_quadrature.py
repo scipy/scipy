@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 from numpy import cos, sin, pi
-from numpy.stats import norm
+from scipy.stats import norm
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_allclose, assert_
 
