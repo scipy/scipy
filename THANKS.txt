@@ -17,6 +17,7 @@ Robert Cimrman for UMFpack wrapper for sparse matrix module.
 David M. Cooke for improvements to system_info, and LBFGSB wrapper.
 Aric Hagberg for ARPACK wrappers, help with splinalg.eigen.
 Chuck Harris for Zeros package in optimize (1d root-finding algorithms).
+David J. Harris for Gauss-Hermite quadrature.
 Prabhu Ramachandran for improvements to gui_thread.
 Robert Kern for improvements to stats and bug-fixes.
 Jean-Sebastien Roy for fmin_tnc code which he adapted from Stephen Nash's
@@ -130,7 +131,7 @@ Jörg Dietrich for the k-sample Anderson Darling test.
 Blake Griffith for improvements to scipy.sparse.
 Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
-Nathan Woods for work on multivariate integration. 
+Nathan Woods for work on multivariate integration.
 Brianna Laugher for bug fixes.
 Johannes Kulick for the Dirichlet distribution.
 Bastian Venthur for bug fixes.

@@ -914,6 +914,10 @@ def gh_quad(func, n, args=(), mu_hat=0, sigma_hat=1, zero_nan=False):
     ode : ODE integrator
     odeint : ODE integrator
 
+    Notes
+    -----
+    .. versionadded:: 0.19.0
+
     References
     ----------
     .. [1] Liu, Q. and Pierce, D. A. (1994). 'A Note on Gauss-Hermite
