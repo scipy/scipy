@@ -150,8 +150,9 @@ class TestQuadrature(TestCase):
         assert_equal(gh_quad(lambda x: norm.pdf(x/2), 2, sigma_hat = 2), 2.0)
 
     def test_gh2(self):
-        """Compare with some results from the documentation of the `fastGHQuad`
-        R package"""
+        """Compare with some results from the documentation of Alexander W
+        Blocker's `fastGHQuad` package (version 0.2), available from
+        https://CRAN.R-project.org/package=fastGHQuad"""
 
         # Area under the Laplace (double-exponential) distribution
         def laplace(x):
