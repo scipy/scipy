@@ -65,7 +65,8 @@ def _cos_win(M, a):
 def boxcar(M, sym=True):
     """Return a boxcar or rectangular window.
 
-    Included for completeness, this is equivalent to no window at all.
+    Also known as a rectangular window or Dirichlet window, this is equivalent
+    to no window at all.
 
     Parameters
     ----------
@@ -196,6 +197,11 @@ def parzen(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
 
+    References
+    ----------
+    .. [1] E. Parzen, "Mathematical Considerations in the Estimation of
+           Spectra", Technometrics,  Vol. 3, No. 2 (May, 1961), pp. 167-190
+
     Examples
     --------
     Plot the window and its frequency response:
@@ -322,6 +328,12 @@ def blackman(M, sym=True):
 
     .. math::  w(n) = 0.42 - 0.5 \cos(2\pi n/M) + 0.08 \cos(4\pi n/M)
 
+    The "exact Blackman" window was designed to null out the third and fourth
+    sidelobes, but has discontinuities at the boundaries, resulting in a
+    6 dB/oct fall-off.  This window is an approximation of the "exact" window,
+    which does not null the sidelobes as well, but is smooth at the edges,
+    improving the fall-off rate to 18 dB/oct. [3]_
+
     Most references to the Blackman window come from the signal processing
     literature, where it is used as one of many windowing functions for
     smoothing values.  It is also known as an apodization (which means
@@ -336,6 +348,9 @@ def blackman(M, sym=True):
            spectra, Dover Publications, New York.
     .. [2] Oppenheim, A.V., and R.W. Schafer. Discrete-Time Signal Processing.
            Upper Saddle River, NJ: Prentice-Hall, 1999, pp. 468-471.
+    .. [3] Harris, Fredric J. (Jan 1978). "On the use of Windows for Harmonic
+           Analysis with the Discrete Fourier Transform". Proceedings of the
+           IEEE 66 (1): 51-83. doi:10.1109/PROC.1978.10837
 
     Examples
     --------
@@ -375,6 +390,8 @@ def blackman(M, sym=True):
 def nuttall(M, sym=True):
     """Return a minimum 4-term Blackman-Harris window according to Nuttall.
 
+    This variation is called "Nuttall4c" by Heinzel. [2]_
+
     Parameters
     ----------
     M : int
@@ -390,6 +407,16 @@ def nuttall(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
+
+    References
+    ----------
+    .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
+           Transactions on Acoustics, Speech, and Signal Processing, vol. 29,
+           no. 1, pp. 84-91, Feb 1981. doi: 10.1109/TASSP.1981.1163506
+    .. [2] Heinzel G. et al., "Spectrum and spectral density estimation by the
+           Discrete Fourier transform (DFT), including a comprehensive list of
+           window functions and some new flat-top windows", February 15, 2002
+           https://holometer.fnal.gov/GH_FFT.pdf
 
     Examples
     --------
@@ -1000,8 +1027,8 @@ def kaiser(M, beta, sym=True):
     maximizes the energy in the main lobe of the window relative to total
     energy.
 
-    The Kaiser can approximate many other windows by varying the beta
-    parameter.
+    The Kaiser can approximate other windows by varying the beta parameter.
+    (Some literature uses alpha = beta/pi.) [4]_
 
     ====  =======================
     beta  Window shape
@@ -1015,7 +1042,7 @@ def kaiser(M, beta, sym=True):
     A beta value of 14 is probably a good starting point. Note that as beta
     gets large, the window narrows, and so the number of samples needs to be
     large enough to sample the increasingly narrow spike, otherwise NaNs will
-    get returned.
+    be returned.
 
     Most references to the Kaiser window come from the signal processing
     literature, where it is used as one of many windowing functions for
@@ -1032,6 +1059,9 @@ def kaiser(M, beta, sym=True):
            University of Alberta Press, 1975, pp. 177-178.
     .. [3] Wikipedia, "Window function",
            http://en.wikipedia.org/wiki/Window_function
+    .. [4] F. J. Harris, "On the use of windows for harmonic analysis with the
+           discrete Fourier transform," Proceedings of the IEEE, vol. 66,
+           no. 1, pp. 51-83, Jan. 1978. doi: 10.1109/PROC.1978.10837
 
     Examples
     --------
@@ -1353,6 +1383,15 @@ def slepian(M, width, sym=True):
     -------
     w : ndarray
         The window, with the maximum value always normalized to 1
+
+    References
+    ----------
+    .. [1] D. Slepian & H. O. Pollak: "Prolate spheroidal wave functions,
+           Fourier analysis and uncertainty-I," Bell Syst. Tech. J., vol.40,
+           pp.43-63, 1961. https://archive.org/details/bstj40-1-43
+    .. [2] H. J. Landau & H. O. Pollak: "Prolate spheroidal wave functions,
+           Fourier analysis and uncertainty-II," Bell Syst. Tech. J. , vol.40,
+           pp.65-83, 1961. https://archive.org/details/bstj40-1-65
 
     Examples
     --------
