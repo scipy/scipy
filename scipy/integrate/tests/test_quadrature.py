@@ -150,20 +150,20 @@ class TestQuadrature(TestCase):
         assert_equal(gh_quad(lambda x: norm.pdf(x/2), 2, sigma_hat = 2), 2.0)
 
     def test_gh2(self):
-        """Compare with some results from the documentation of the fastGHQuad
+        """Compare with some results from the documentation of the `fastGHQuad`
         R package"""
 
         # Area under the Laplace (double-exponential) distribution
         def laplace(x):
             return np.exp(-np.abs(x))
-        assert_almost_equal(gh_quad(laplace, n=10, sigma_hat=2), 1.718700690246941, 14)
-        assert_almost_equal(gh_quad(laplace, n=100, sigma_hat=2), 1.967637483702098, 14)
+        assert_almost_equal(gh_quad(laplace, n=10, sigma_hat=2), 1.718700690246941)
+        assert_almost_equal(gh_quad(laplace, n=100, sigma_hat=2), 1.967637483702098)
 
         # Variance of the Laplace (double-exponential) distribution
         def var_laplace(x):
             return x**2 * np.exp(-np.abs(x)) / 2.0
-        assert_almost_equal(gh_quad(var_laplace, n=10, sigma_hat=2), 2.073013772758906, 14)
-        assert_almost_equal(gh_quad(var_laplace, n=100, sigma_hat=2), 2.001086971280583, 14)
+        assert_almost_equal(gh_quad(var_laplace, n=10, sigma_hat=2), 2.073013772758906)
+        assert_almost_equal(gh_quad(var_laplace, n=100, sigma_hat=2), 2.001086971280583)
 
 
 class TestCumtrapz(TestCase):
