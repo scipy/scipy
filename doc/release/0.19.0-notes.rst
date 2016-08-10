@@ -40,6 +40,9 @@ repeatable minimizations.
 The function `scipy.signal.sosfreqz` was added to compute the frequency
 response from second-order sections.
 
+The function `scipy.signal.unit_impulse` was added to conveniently
+generate an impulse function.
+
 
 Deprecated features
 ===================
