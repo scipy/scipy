@@ -43,6 +43,11 @@ response from second-order sections.
 The function `scipy.signal.unit_impulse` was added to conveniently
 generate an impulse function.
 
+`scipy.integrate` improvements
+---------------------------
+
+The function `scipy.integrate.gh_quad` was added to estimate indefinite
+integrals with Gauss-Hermite quadrature.
 
 Deprecated features
 ===================
@@ -72,4 +77,3 @@ Issues closed for 0.19.0
 
 Pull requests for 0.19.0
 ------------------------
-
