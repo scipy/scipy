@@ -884,10 +884,12 @@ def gh_quad(func, n, args=(), mu_hat=0, sigma_hat=1, zero_nan=False):
         Extra arguments to pass to `func`, if any.
     mu_hat : float, optional
         Location parameter, used to center the quadrature nodes near
-        the high-density region.
+        the high-density region (e.g. the mean or mode if `func` is proportional
+        to a probability density).
     sigma_hat : float, optional
         Scale parameter, used to determine how much to spread out the quadrature
-        nodes.
+        nodes (e.g. the standard deviation if `func` is proportional to a
+        probability density).
     zero_nan : bool, optional
         If `func(x)` returns `nan` (e.g. if a quadrature point falls outside the
         domain of x), should this value be coerced to zero? Default is False.
