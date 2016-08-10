@@ -392,7 +392,7 @@ cdef class _Qhull:
         else:
             self._is_delaunay = 0
 
-        if b"H" in mode_option:
+        if mode_option.startswith(b"H"):
             self._is_halfspaces = 1
         else:
             self._is_halfspaces = 0
@@ -722,7 +722,8 @@ cdef class _Qhull:
     @cython.cdivision(True)
     def get_hull_points(self):
         cdef vertexT *vertex
-        cdef int i, j, numpoints
+        cdef int i, j, numpoints, point_ndim
+        cdef np.ndarray[np.npy_double, ndim=2] points
 
         self.check_active()
 
@@ -737,15 +738,17 @@ cdef class _Qhull:
         numvertices = self._qh.num_vertices
 
         vertex = self._qh.vertex_list
-        points = np.zeros((numvertices, point_ndim), dtype=np.double)
-        i = 0
-        while vertex and vertex.next:
-            j = 0
-            for j in xrange(point_ndim):
-                points[i][j] = vertex.point[j]
+        points = np.zeros((numvertices, point_ndim))
 
-            i += 1
-            vertex = vertex.next
+        i = 0
+        with nogil:
+            while vertex and vertex.next:
+                j = 0
+                for j in xrange(point_ndim):
+                    points[i, j] = vertex.point[j]
+
+                i += 1
+                vertex = vertex.next
 
         return points
 
