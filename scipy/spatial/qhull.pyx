@@ -2607,7 +2607,7 @@ class HalfspaceIntersection(_QhullUser):
 
     Notes
     -----
-    The intersections are computed using the 
+    The intersections are computed using the
     `Qhull library <http://www.qhull.org/>`__.
 
     Examples
@@ -2624,9 +2624,11 @@ class HalfspaceIntersection(_QhullUser):
     >>> feasible_point = np.array([0.5, 0.5])
     >>> hs = HalfspaceIntersection(halfspaces, feasible_point)
 
-    Plot halsfpaces as filled regions and intersection points:
+    Plot halfspaces as filled regions and intersection points:
 
     >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot('111')
     >>> xlim, ylim = (-1, 3), (-2, 6)
     >>> x = np.linspace(-1, 3, 100)
     >>> symbols = ['-', '+', 'x', '*']
@@ -2636,14 +2638,42 @@ class HalfspaceIntersection(_QhullUser):
     ...     hlist = h.tolist()
     ...     fmt["hatch"] = sym
     ...     if h[1]== 0:
-    ...         plt.axvline(-h[2]/h[0], label='{}x+{}y+{}=0'.format(*hlist))
+    ...         ax.axvline(-h[2]/h[0], label='{}x+{}y+{}=0'.format(*hlist))
     ...         xi = np.linspace(xlim[sign], -h[2]/h[0], 100)
-    ...         plt.fill_between(xi, ylim[0], ylim[1], **fmt)
+    ...         ax.fill_between(xi, ylim[0], ylim[1], **fmt)
     ...     else:
-    ...         plt.plot(x, (-h[2]-h[0]*x)/h[1], label='{}x+{}y+{}=0'.format(*hlist))
-    ...         plt.fill_between(x, (-h[2]-h[0]*x)/h[1], **fmt)
+    ...         ax.plot(x, (-h[2]-h[0]*x)/h[1], label='{}x+{}y+{}=0'.format(*hlist))
+    ...         ax.fill_between(x, (-h[2]-h[0]*x)/h[1], **fmt)
     >>> x, y = zip(*hs.intersections)
-    >>> plt.plot(x, y, 'o', markersize=8)
+    >>> ax.plot(x, y, 'o', markersize=8)
+
+    By default, qhull does not provide with a way to compute an interior point.
+    This can easily be computed using linear programming. Considering halfspaces
+    of the form :math:`Ax + b`, solving the linear program:
+
+    .. math::
+
+        max \: y
+
+        s.t. Ax + y \leq -b
+
+    Will yield a point x that is furthest inside the convex polyhedron. To
+    be precise, it is the center of the largest hypersphere of radius y
+    inscribed in the polyhedron whenever the rows of A are normalized.
+
+    >>> from scipy.optimize import linprog
+    >>> from matplotlib.patches import Circle
+    >>> #Divide each row by the norm of the normal
+    >>> halfspaces = (halfspaces.T / np.linalg.norm(halfspaces, axis=1)).T
+    >>> c = np.zeros((halfspaces.shape[1],))
+    >>> c[-1] = -1
+    >>> A = np.hstack((halfspaces[:, :-1], np.ones((halfspaces.shape[0], 1))))
+    >>> b = - halfspaces[:, -1:]
+    >>> res = linprog(c, A_ub=A, b_ub=b)
+    >>> x = res.x[:-1]
+    >>> y = res.x[-1]
+    >>> circle = Circle(x, radius=y, alpha=0.3)
+    >>> ax.add_patch(circle)
     >>> plt.legend()
     >>> plt.show()
 
