@@ -7,10 +7,9 @@ import warnings
 # trapz is a public function for scipy.integrate,
 # even though it's actually a numpy function.
 from numpy import trapz
-from scipy.special.orthogonal import p_roots
+from scipy.special.orthogonal import p_roots, h_roots
 from scipy.special import gammaln
 from scipy._lib.six import xrange
-from numpy.polynomial.hermite import hermgauss
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'trapz', 'simps', 'romb',
            'cumtrapz', 'newton_cotes', 'gh_quad']
@@ -877,9 +876,7 @@ def gh_quad(func, n, args=(), mu_hat=0, sigma_hat=1, zero_nan=False):
         For best results, `func` should approximately equal a Gaussian
         density times a low-order polynomial.
     n : int
-        Order of quadrature integration. This function relies on
-        `numpy.polynomial.hermite.hermgauss`, which has not been tested for
-        order larger than 100.
+        Order of quadrature integration.
     args : tuple, optional
         Extra arguments to pass to `func`, if any.
     mu_hat : float, optional
@@ -913,6 +910,8 @@ def gh_quad(func, n, args=(), mu_hat=0, sigma_hat=1, zero_nan=False):
     cumtrapz : cumulative integration for sampled data
     ode : ODE integrator
     odeint : ODE integrator
+    scipy.special.h_roots : for coefficients and roots of Hermite polynomials
+
 
     Notes
     -----
@@ -955,7 +954,7 @@ def gh_quad(func, n, args=(), mu_hat=0, sigma_hat=1, zero_nan=False):
     >>> print(gh_quad(func, n=99, mu_hat=mu_hat, sigma_hat=sigma_hat))
 
     """
-    x, w = hermgauss(deg=n)
+    x, w = h_roots(n)
     w_star = w * np.exp(x**2)
     g_x_star = func(mu_hat + np.sqrt(2) * sigma_hat * x, *args)
     if zero_nan:
