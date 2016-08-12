@@ -6,7 +6,9 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
-import numbers
+from scipy._lib._util import check_random_state
+import warnings
+
 
 __all__ = ['differential_evolution']
 
@@ -376,7 +378,7 @@ class DifferentialEvolutionSolver(object):
 
         self.parameter_count = np.size(self.limits, 1)
 
-        self.random_number_generator = _make_random_gen(seed)
+        self.random_number_generator = check_random_state(seed)
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
@@ -770,20 +772,3 @@ class DifferentialEvolutionSolver(object):
         idxs = idxs[:number_samples]
         return idxs
 
-
-def _make_random_gen(seed):
-    """Turn seed into a np.random.RandomState instance
-
-    If seed is None, return the RandomState singleton used by np.random.
-    If seed is an int, return a new RandomState instance seeded with seed.
-    If seed is already a RandomState instance, return it.
-    Otherwise raise ValueError.
-    """
-    if seed is None or seed is np.random:
-        return np.random.mtrand._rand
-    if isinstance(seed, (numbers.Integral, np.integer)):
-        return np.random.RandomState(seed)
-    if isinstance(seed, np.random.RandomState):
-        return seed
-    raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
-                     ' instance' % seed)
