@@ -1084,8 +1084,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-            d(u,v) = \\frac{|\\sum_i {u_i-v_i}|}
-                          {\\sum_i {u_i+v_i}}
+            d(u,v) = \\frac{\\sum_i {|u_i-v_i|}}
+                           {\\sum_i {|u_i+v_i|}}
 
     13. ``Y = pdist(X, 'mahalanobis', VI=None)``
 
