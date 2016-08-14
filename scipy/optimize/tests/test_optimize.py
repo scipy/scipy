@@ -880,6 +880,15 @@ class TestOptimizeScalar(TestCase):
         x = optimize.golden(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
+        maxiter_test_cases = [0, 1, 5]
+        for maxiter in maxiter_test_cases:
+            x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
+            assert_equal(x[2], maxiter)
+
+        maxiter = 10000
+        x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
+        assert_array_less(x[2], maxiter)
+
     def test_fminbound(self):
         x = optimize.fminbound(self.fun, 0, 1)
         assert_allclose(x, 1, atol=1e-4)
