@@ -160,7 +160,7 @@ cdef extern from "qhull/src/libqhull_r.h":
     void qh_zero(qhT *, void *errfile) nogil
     int qh_new_qhull(qhT *, int dim, int numpoints, realT *points,
                      boolT ismalloc, char* qhull_cmd, void *outfile,
-                     void *errfile) nogil
+                     void *errfile, coordT* feaspoint) nogil
     int qh_pointid(qhT *, pointT *point) nogil
     vertexT *qh_nearvertex(qhT *, facetT *facet, pointT *point, double *dist) nogil
     boolT qh_addpoint(qhT *, pointT *furthest, facetT *facet, boolT checkdist) nogil
@@ -336,7 +336,8 @@ cdef class _Qhull:
                  bytes options=None,
                  bytes required_options=None,
                  furthest_site=False,
-                 incremental=False):
+                 incremental=False,
+                 np.ndarray[np.double_t, ndim=1] feasible_point=None):
         cdef int exitcode
 
         self._qh = NULL
@@ -408,15 +409,29 @@ cdef class _Qhull:
 
         self._messages.clear()
 
+        cdef coordT* coord
+        cdef int i
         with nogil:
             self._qh = <qhT*>stdlib.malloc(sizeof(qhT))
             if self._qh == NULL:
                 with gil:
                     raise MemoryError("memory allocation failed")
             qh_zero(self._qh, self._messages.handle)
+            if feasible_point is not None:
+                coord = <coordT*>stdlib.malloc(feasible_point.shape[0]*sizeof(coordT))
+                if coord == NULL:
+                    with gil:
+                        raise MemoryError("memory allocation failed")
+                i = 0
+                for i in xrange(feasible_point.shape[0]):
+                    coord[i] = feasible_point[i]
+            else:
+                coord = NULL
             exitcode = qh_new_qhull(self._qh, self.ndim, self.numpoints,
                                     <realT*>points.data, 0,
-                                    options_c, NULL, self._messages.handle)
+                                    options_c, NULL, self._messages.handle, coord)
+            if coord != NULL:
+                stdlib.free(coord)
 
         if exitcode != 0:
             msg = self._messages.get()
@@ -2702,9 +2717,10 @@ class HalfspaceIntersection(_QhullUser):
             qhull_options = asbytes(qhull_options)
 
         # Run qhull
-        mode_option = "H{}".format(','.join([str(self.feasible_point.item(i)) for i in range(halfspaces.shape[1] -1)]))
+        mode_option = "H"
         qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=b"Qt",
-                       incremental=incremental)
+                       incremental=incremental, feasible_point=feasible_point)
+
         _QhullUser.__init__(self, qhull, incremental=incremental, halfspaces=True)
 
     def _update(self, qhull):
