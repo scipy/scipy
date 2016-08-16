@@ -883,11 +883,11 @@ class TestOptimizeScalar(TestCase):
         maxiter_test_cases = [0, 1, 5]
         for maxiter in maxiter_test_cases:
             x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
-            assert_equal(x[2], maxiter)
+            assert_equal(x[3], maxiter)
 
-        maxiter = 10000
-        x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
-        assert_array_less(x[2], maxiter)
+        maxiter = 500
+        x = optimize.golden(lambda x: 0, maxiter=maxiter, full_output=True)
+        assert_equal(x[3], maxiter)
 
     def test_fminbound(self):
         x = optimize.fminbound(self.fun, 0, 1)
