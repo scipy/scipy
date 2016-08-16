@@ -760,7 +760,7 @@ cdef class _Qhull:
         cdef facetT *facet
         cdef vertexT* vertex
         cdef int i, j, numfacets, facet_ndim
-        cdef np.ndarray[np.npy_double, ndim=2] equations
+        cdef np.ndarray[np.double_t, ndim=2] equations
         cdef list facets, facetsi
 
         self.check_active()
@@ -1718,7 +1718,7 @@ class _QhullUser(object):
                            furthest_site=self._qhull.furthest_site,
                            incremental=True)
             try:
-                self._update_halfspaces(qhull)
+                self._update(qhull)
                 self._qhull = qhull
             finally:
                 if qhull is not self._qhull:
@@ -2628,6 +2628,10 @@ class HalfspaceIntersection(_QhullUser):
         Dual points of the input halfspaces.
     dual_simplices : list of lists of ints
         Indices of points forming the simplical facets of the dual convex hull.
+    dual_vertices : ndarray of ints, shape (nvertices,)
+        Indices of halfspaces forming the vertices of the dual convex hull.
+        For 2-D convex hulls, the vertices are in counterclockwise order.
+        For other dimensions, they are in input order.
     dual_equations : ndarray of double, shape (nfacet, ndim+1)
         [normal, offset] forming the hyperplane equation of the dual facet
         (see `Qhull documentation <http://www.qhull.org/>`__  for more).
@@ -2770,10 +2774,10 @@ class HalfspaceIntersection(_QhullUser):
         _QhullUser._update(self, qhull)
 
     def add_halfspaces(self, halfspaces, restart=False):
-        _QhullUser._add_halfspaces(halfspaces, restart)
+        self._add_halfspaces(halfspaces, restart)
 
     @property
-    def vertices(self):
+    def dual_vertices(self):
         if self._vertices is None:
-            self._vertices = np.unique(self.simplices)
+            self._vertices = np.unique(np.array(self.dual_simplices))
         return self._vertices
