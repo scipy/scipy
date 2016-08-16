@@ -12,6 +12,7 @@ from scipy._lib.six import xrange
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 
+import itertools
 
 def sorted_tuple(x):
     return tuple(sorted(x))
@@ -902,7 +903,8 @@ class TestVoronoi:
 
             yield check, name
 
-    def test_halfspace_intersection(self):
+class Test_HalfspaceIntersection(object):
+    def test_cube_halfspace_intersection(self):
         halfspaces = np.array([[-1.0, 0.0, 0.0],
                                [0.0, -1.0, 0.0],
                                [1.0, 0.0, -1.0],
@@ -914,6 +916,20 @@ class TestVoronoi:
         hull = qhull.HalfspaceIntersection(halfspaces, feasible_point)
 
         assert_allclose(points, hull.intersections)
+
+    def test_self_dual_polytope_intersection(self):
+        fname = os.path.join(os.path.dirname(__file__), 'data',
+                             'selfdual-4d-polytope.txt')
+        ineqs = np.genfromtxt(fname)
+        halfspaces = -np.hstack((ineqs[:, 1:], ineqs[:, :1]))
+
+        hs = qhull.HalfspaceIntersection(halfspaces, np.array([0., 0., 0., 0.]))
+
+        assert(hs.intersections.shape == (24, 4))
+
+        points = itertools.permutations([0., 0., 0.5, -0.5])
+        for point in points:
+            assert(np.sum((hs.intersections == point).all(axis=1)) == 1)
 
 if __name__ == "__main__":
     run_module_suite()
