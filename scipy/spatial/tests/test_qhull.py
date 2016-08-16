@@ -904,6 +904,17 @@ class TestVoronoi:
             yield check, name
 
 class Test_HalfspaceIntersection(object):
+    def assert_unordered_allclose(self, arr1, arr2, rtol=1e-7):
+        """Check that every line in arr1 is only once in arr2"""
+        assert(arr1.shape == arr2.shape)
+
+        truths = np.zeros((arr1.shape[0],), dtype=bool)
+        for l1 in arr1:
+            indexes = np.where((abs(arr2 - l1) < rtol).all(axis=1))[0]
+            assert(indexes.shape == (1,))
+            truths[indexes[0]] = True
+        assert(truths.all())
+
     def test_cube_halfspace_intersection(self):
         halfspaces = np.array([[-1.0, 0.0, 0.0],
                                [0.0, -1.0, 0.0],
@@ -930,6 +941,67 @@ class Test_HalfspaceIntersection(object):
         points = itertools.permutations([0., 0., 0.5, -0.5])
         for point in points:
             assert(np.sum((hs.intersections == point).all(axis=1)) == 1)
+
+    def test_wrong_feasible_point(self):
+        halfspaces = np.array([[-1.0, 0.0, 0.0],
+                               [0.0, -1.0, 0.0],
+                               [1.0, 0.0, -1.0],
+                               [0.0, 1.0, -1.0]])
+        feasible_point = np.array([0.5, 0.5, 0.5])
+        #Feasible point is (ndim,) instead of (ndim-1,)
+        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        feasible_point = np.array([[0.5], [0.5]])
+        #Feasible point is (ndim-1, 1) instead of (ndim-1,)
+        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+        feasible_point = np.array([[0.5, 0.5]])
+        #Feasible point is (1, ndim-1) instead of (ndim-1,)
+        assert_raises(ValueError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+
+        feasible_point = np.array([-0.5, -0.5])
+        #Feasible point is outside feasible region
+        assert_raises(qhull.QhullError, qhull.HalfspaceIntersection, halfspaces, feasible_point)
+
+    def test_incremental(self):
+        #Cube
+        halfspaces = np.array([[0., 0., -1., -0.5],
+                               [0., -1., 0., -0.5],
+                               [-1., 0., 0., -0.5],
+                               [1., 0., 0., -0.5],
+                               [0., 1., 0., -0.5],
+                               [0., 0., 1., -0.5]])
+        #Cut each summit
+        extra_normals = np.array([[1., 1., 1.],
+                                  [1., 1., -1.],
+                                  [1., -1., 1.],
+                                  [1, -1., -1.]])
+        offsets = np.array([[-1.]]*8)
+        extra_halfspaces = np.hstack((np.vstack((extra_normals, -extra_normals)),
+                                      offsets))
+
+        feas_point = np.array([0., 0., 0.])
+
+        inc_hs = qhull.HalfspaceIntersection(halfspaces, feas_point, incremental=True)
+
+        inc_res_hs = qhull.HalfspaceIntersection(halfspaces, feas_point, incremental=True)
+
+        for i, ehs in enumerate(extra_halfspaces):
+            inc_hs.add_halfspaces(ehs[np.newaxis, :])
+
+            inc_res_hs.add_halfspaces(ehs[np.newaxis, :], restart=True)
+
+            total = np.vstack((halfspaces, extra_halfspaces[:i+1, :]))
+
+            hs = qhull.HalfspaceIntersection(total, feas_point)
+
+            assert_allclose(inc_hs.halfspaces, inc_res_hs.halfspaces)
+            assert_allclose(inc_hs.halfspaces, hs.halfspaces)
+
+            #Direct computation and restart should have points in same order
+            assert_allclose(hs.intersections, inc_res_hs.intersections)
+            #Incremental will have points in different order than direct computation
+            self.assert_unordered_allclose(inc_hs.intersections, hs.intersections)
+
+        inc_hs.close()
 
 if __name__ == "__main__":
     run_module_suite()
