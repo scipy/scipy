@@ -2054,7 +2054,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     options = {'xtol': tol, 'maxiter': maxiter}
     res = _minimize_scalar_golden(func, brack, args, **options)
     if full_output:
-        return res['x'], res['fun'], res['nit'], res['nfev']
+        return res['x'], res['fun'], res['nfev'], res['nit']
     else:
         return res['x']
 
