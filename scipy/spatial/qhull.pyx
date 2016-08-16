@@ -119,6 +119,7 @@ cdef extern from "qhull/src/libqhull_r.h":
         vertexT *vertex_list
         vertexT *vertex_tail
         int num_facets
+        int num_visible
         int num_vertices
         int center_size
         unsigned int facet_id
@@ -772,10 +773,10 @@ cdef class _Qhull:
         if self._is_delaunay:
             facet_ndim += 1
 
-        numfacets = self._qh.num_facets
+        numfacets = self._qh.num_facets - self._qh.num_visible
 
         facet = self._qh.facet_list
-        equations = np.zeros((numfacets, facet_ndim+1))
+        equations = np.empty((numfacets, facet_ndim+1))
 
         facets = []
 
