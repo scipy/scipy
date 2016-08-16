@@ -2712,7 +2712,7 @@ class HalfspaceIntersection(_QhullUser):
     >>> from scipy.optimize import linprog
     >>> from matplotlib.patches import Circle
     >>> #Divide each row by the norm of the normal
-    >>> norm_vector = np.reshape(np.linalg.norm(halfspaces,
+    >>> norm_vector = np.reshape(np.linalg.norm(halfspaces, axis=1),
     ...     (halfspaces.shape[0], 1))
     >>> c = np.zeros((halfspaces.shape[1],))
     >>> c[-1] = -1
