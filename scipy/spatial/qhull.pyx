@@ -2598,8 +2598,7 @@ class HalfspaceIntersection(_QhullUser):
     """
     HalfspaceIntersection(halfspaces, feasible_point, incremental=False, qhull_options=None)
 
-    Halfspace intersections in N dimensions. This reproduces the "qhalf"
-    functionality of Qhull.
+    Halfspace intersections in N dimensions.
 
     .. versionadded:: 0.19.0
 
@@ -2648,6 +2647,7 @@ class HalfspaceIntersection(_QhullUser):
     -----
     The intersections are computed using the
     `Qhull library <http://www.qhull.org/>`__.
+    This reproduces the "qhalf" functionality of Qhull.
 
     Examples
     --------
@@ -2688,25 +2688,30 @@ class HalfspaceIntersection(_QhullUser):
 
     By default, qhull does not provide with a way to compute an interior point.
     This can easily be computed using linear programming. Considering halfspaces
-    of the form :math:`Ax + b`, solving the linear program:
+    of the form :math:`Ax + b \leq 0`, solving the linear program:
 
     .. math::
 
         max \: y
 
-        s.t. Ax + y \leq -b
+        s.t. Ax + y ||A_i|| \leq -b
+
+    With :math:`A_i` being the rows of A, i.e. the normals to each plane.
 
     Will yield a point x that is furthest inside the convex polyhedron. To
     be precise, it is the center of the largest hypersphere of radius y
-    inscribed in the polyhedron whenever the rows of A are normalized.
+    inscribed in the polyhedron. This point is called the Chebyshev center
+    of the polyhedron (see [Convex Optimization] 4.3.1, pp148-149). The
+    equations outputted by Qhull are always normalized.
 
     >>> from scipy.optimize import linprog
     >>> from matplotlib.patches import Circle
     >>> #Divide each row by the norm of the normal
-    >>> halfspaces = (halfspaces.T / np.linalg.norm(halfspaces, axis=1)).T
+    >>> norm_vector = np.reshape(np.linalg.norm(halfspaces,
+    ...     (halfspaces.shape[0], 1))
     >>> c = np.zeros((halfspaces.shape[1],))
     >>> c[-1] = -1
-    >>> A = np.hstack((halfspaces[:, :-1], np.ones((halfspaces.shape[0], 1))))
+    >>> A = np.hstack((halfspaces[:, :-1], norm_vector))
     >>> b = - halfspaces[:, -1:]
     >>> res = linprog(c, A_ub=A, b_ub=b)
     >>> x = res.x[:-1]
@@ -2719,6 +2724,7 @@ class HalfspaceIntersection(_QhullUser):
     References
     ----------
     .. [Qhull] http://www.qhull.org/
+    .. [Convex Optimization] http://stanford.edu/~boyd/cvxbook/
 
     """
 
