@@ -2013,7 +2013,7 @@ def _minimize_scalar_brent(func, brack=None, args=(),
 
 
 def golden(func, args=(), brack=None, tol=_epsilon,
-           maxiter=500, full_output=0):
+           full_output=0, maxiter=500):
     """
     Return the minimum of a function of one variable.
 
@@ -2035,10 +2035,10 @@ def golden(func, args=(), brack=None, tol=_epsilon,
         mean that obtained solution will satisfy a<=x<=c.
     tol : float, optional
         x tolerance stop criterion
-    maxiter : int
-        Maximum number of iterations to perform.
     full_output : bool, optional
         If True, return optional outputs.
+    maxiter : int
+        Maximum number of iterations to perform.
 
     See also
     --------
