@@ -755,6 +755,60 @@ cdef class _Qhull:
     @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
+    def get_hull_facets(self):
+        cdef facetT *facet
+        cdef vertexT* vertex
+        cdef int i, j, numfacets, facet_ndim
+        cdef np.ndarray[np.npy_double, ndim=2] equations
+        cdef list facets, facetsi
+
+        self.check_active()
+
+        facet_ndim = self.ndim
+
+        if self._is_halfspaces:
+            facet_ndim -= 1
+
+        if self._is_delaunay:
+            facet_ndim += 1
+
+        numfacets = self._qh.num_facets
+
+        facet = self._qh.facet_list
+        equations = np.zeros((numfacets, facet_ndim+1))
+
+        facets = []
+
+        i = 0
+        with nogil:
+            while facet and facet.next:
+                with gil:
+                    facetsi = []
+                j = 0
+                for j in xrange(facet_ndim):
+                    equations[i, j] = facet.normal[j]
+                equations[i, facet_ndim] = facet.offset
+
+                j = 0
+                vertex = <vertexT*>facet.vertices.e[0].p
+                while vertex:
+                    # Save the vertex info
+                    ipoint = qh_pointid(self._qh, vertex.point)
+                    with gil:
+                        facetsi.append(ipoint)
+                    j += 1
+                    vertex = <vertexT*>facet.vertices.e[j].p
+
+                i += 1
+                with gil:
+                    facets.append(facetsi)
+                facet = facet.next
+
+        return facets, equations
+
+    @cython.final
+    @cython.boundscheck(False)
+    @cython.cdivision(True)
     def get_voronoi_diagram(_Qhull self):
         """
         Return the voronoi diagram currently in Qhull.
@@ -2553,16 +2607,16 @@ class HalfspaceIntersection(_QhullUser):
     ----------
     halfspaces : ndarray of floats, shape (nineq, ndim+1)
         Stacked Inequalities of the form Ax + b <= 0 in format [A; b]
-    feasible_point: ndarray of floats, shape (1, ndim)
+    feasible_point: ndarray of floats, shape (ndim,)
         Feasible point inside the region defined by halfspaces.
         It can be obtained by linear programming.
     incremental : bool, optional
-        Allow adding new points incrementally. This takes up some additional
+        Allow adding new halfspaces incrementally. This takes up some additional
         resources.
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual
         for details. (Default: "Qx" for ndim > 4 and "" otherwise)
-        Options "H Qt" are always enabled.
+        Option "H" is always enabled.
 
     Attributes
     ----------
@@ -2572,26 +2626,11 @@ class HalfspaceIntersection(_QhullUser):
         Intersections of all halfspaces.
     dual_points : ndarray of double, shape (nineq, ndim)
         Dual points of the input halfspaces.
-    dual_vertices : ndarray of ints, shape (nvertices,)
-        Indices of points forming the vertices of the dual convex hull.
-        For 2-D convex hulls, the vertices are in counterclockwise order.
-        For other dimensions, they are in input order.
-    dual_simplices : ndarray of ints, shape (nfacet, ndim)
+    dual_simplices : list of lists of ints
         Indices of points forming the simplical facets of the dual convex hull.
-    dual_neighbors : ndarray of ints, shape (nfacet, ndim)
-        Indices of neighbor facets for each facet.
-        The kth neighbor is opposite to the kth vertex.
-        -1 denotes no neighbor.
     dual_equations : ndarray of double, shape (nfacet, ndim+1)
         [normal, offset] forming the hyperplane equation of the dual facet
         (see `Qhull documentation <http://www.qhull.org/>`__  for more).
-    coplanar : ndarray of int, shape (ncoplanar, 3)
-        Indices of coplanar points and the corresponding indices of
-        the nearest facets and nearest vertex indices.  Coplanar
-        points are input points which were *not* included in the
-        triangulation due to numerical precision issues.
-
-        If option "Qc" is not specified, this list is not computed.
     dual_area : float
         Area of the dual convex hull
     dual_volume : float
@@ -2703,15 +2742,12 @@ class HalfspaceIntersection(_QhullUser):
 
         # Run qhull
         mode_option = "H{}".format(','.join([str(self.feasible_point.item(i)) for i in range(halfspaces.shape[1] -1)]))
-        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=b"Qt",
+        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=None,
                        incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental, halfspaces=True)
 
     def _update(self, qhull):
-        qhull.triangulate()
-
-        self.dual_simplices, self.dual_neighbors, self.dual_equations, self.coplanar = \
-                       qhull.get_simplex_facet_array()
+        self.dual_simplices, self.dual_equations = qhull.get_hull_facets()
 
         self.dual_points = qhull.get_hull_points()
 
@@ -2723,8 +2759,6 @@ class HalfspaceIntersection(_QhullUser):
             self._vertices = qhull.get_extremes_2d()
         else:
             self._vertices = None
-
-        self.nsimplex = self.dual_simplices.shape[0]
 
         _QhullUser._update(self, qhull)
 
