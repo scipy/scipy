@@ -484,7 +484,7 @@ class GenSARunner(object):
 def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         acceptparam=-5.0, maxtime=3600, maxcall=1e7, args=()):
     """
-    Find the global minimum of a function using the General Simulated
+    Find the global minimum of a function using the Generalized Simulated
     Annealing algorithm
 
     Parameters
