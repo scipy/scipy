@@ -2171,7 +2171,6 @@ class Delaunay(_QhullUser):
         z[...,-1] += self.paraboloid_shift
         return z
 
-
 def tsearch(tri, xi):
     """
     tsearch(tri, xi)
@@ -2608,8 +2607,10 @@ class HalfspaceIntersection(_QhullUser):
 
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
-    >>> ax = fig.add_subplot('111')
-    >>> xlim, ylim = (-1, 3), (-2, 6)
+    >>> ax = fig.add_subplot('111', aspect='equal')
+    >>> xlim, ylim = (-1, 3), (-1, 3)
+    >>> ax.set_xlim(xlim)
+    >>> ax.set_ylim(ylim)
     >>> x = np.linspace(-1, 3, 100)
     >>> symbols = ['-', '+', 'x', '*']
     >>> signs = [0, 0, -1, -1]
@@ -2623,7 +2624,7 @@ class HalfspaceIntersection(_QhullUser):
     ...         ax.fill_between(xi, ylim[0], ylim[1], **fmt)
     ...     else:
     ...         ax.plot(x, (-h[2]-h[0]*x)/h[1], label='{}x+{}y+{}=0'.format(*hlist))
-    ...         ax.fill_between(x, (-h[2]-h[0]*x)/h[1], **fmt)
+    ...         ax.fill_between(x, (-h[2]-h[0]*x)/h[1], ylim[sign], **fmt)
     >>> x, y = zip(*hs.intersections)
     >>> ax.plot(x, y, 'o', markersize=8)
 
@@ -2642,13 +2643,12 @@ class HalfspaceIntersection(_QhullUser):
     Will yield a point x that is furthest inside the convex polyhedron. To
     be precise, it is the center of the largest hypersphere of radius y
     inscribed in the polyhedron. This point is called the Chebyshev center
-    of the polyhedron (see [Convex Optimization] 4.3.1, pp148-149). The
+    of the polyhedron (see [1]_ 4.3.1, pp148-149). The
     equations outputted by Qhull are always normalized.
 
     >>> from scipy.optimize import linprog
     >>> from matplotlib.patches import Circle
-    >>> #Divide each row by the norm of the normal
-    >>> norm_vector = np.reshape(np.linalg.norm(halfspaces, axis=1),
+    >>> norm_vector = np.reshape(np.linalg.norm(halfspaces[:, :-1], axis=1),
     ...     (halfspaces.shape[0], 1))
     >>> c = np.zeros((halfspaces.shape[1],))
     >>> c[-1] = -1
@@ -2659,13 +2659,14 @@ class HalfspaceIntersection(_QhullUser):
     >>> y = res.x[-1]
     >>> circle = Circle(x, radius=y, alpha=0.3)
     >>> ax.add_patch(circle)
-    >>> plt.legend()
+    >>> plt.legend(bbox_to_anchor=(1.6, 1.0))
     >>> plt.show()
 
     References
     ----------
     .. [Qhull] http://www.qhull.org/
-    .. [Convex Optimization] http://stanford.edu/~boyd/cvxbook/
+    .. [1] S. Boyd, L. Vandenberghe, Convex Optimization, available
+           at http://stanford.edu/~boyd/cvxbook/
 
     """
 
