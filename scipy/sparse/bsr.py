@@ -162,7 +162,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
                 # Select index dtype large enough to pass array and
                 # scalar parameters to sparsetools
-                maxval = None
+                maxval = 1
                 if shape is not None:
                     maxval = max(shape)
                 if blocksize is not None:
@@ -413,7 +413,15 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     # Conversion methods #
     ######################
 
-    def tobsr(self,blocksize=None,copy=False):
+    def tobsr(self, blocksize=None, copy=False):
+        """Convert this matrix into Block Sparse Row Format.
+
+        With copy=False, the data/indices may be shared between this
+        matrix and the resultant bsr_matrix.
+
+        If blocksize=(R, C) is provided, it will be used for determining
+        block size of the bsr_matrix.
+        """
         if blocksize not in [None, self.blocksize]:
             return self.tocsr().tobsr(blocksize=blocksize)
         if copy:
@@ -421,14 +429,18 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         else:
             return self
 
-    def tocsr(self):
-        return self.tocoo(copy=False).tocsr()
+    def tocsr(self, copy=False):
+        return self.tocoo(copy=False).tocsr(copy=copy)
         # TODO make this more efficient
 
-    def tocsc(self):
-        return self.tocoo(copy=False).tocsc()
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
 
-    def tocoo(self,copy=True):
+    def tocsc(self, copy=False):
+        return self.tocoo(copy=False).tocsc(copy=copy)
+
+    tocsc.__doc__ = spmatrix.tocsc.__doc__
+
+    def tocoo(self, copy=True):
         """Convert this matrix to COOrdinate format.
 
         When copy=False the data array will be shared between
@@ -463,25 +475,32 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
 
-    def transpose(self):
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
 
-        R,C = self.blocksize
-        M,N = self.shape
+        R, C = self.blocksize
+        M, N = self.shape
         NBLK = self.nnz//(R*C)
 
         if self.nnz == 0:
-            return bsr_matrix((N,M), blocksize=(C,R),
-                              dtype=self.dtype)
+            return bsr_matrix((N, M), blocksize=(C, R),
+                              dtype=self.dtype, copy=copy)
 
         indptr = np.empty(N//C + 1, dtype=self.indptr.dtype)
         indices = np.empty(NBLK, dtype=self.indices.dtype)
-        data = np.empty((NBLK,C,R), dtype=self.data.dtype)
+        data = np.empty((NBLK, C, R), dtype=self.data.dtype)
 
         bsr_transpose(M//R, N//C, R, C,
                       self.indptr, self.indices, self.data.ravel(),
                       indptr, indices, data.ravel())
 
-        return bsr_matrix((data,indices,indptr), shape=(N,M))
+        return bsr_matrix((data, indices, indptr),
+                          shape=(N, M), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #

@@ -8,9 +8,10 @@ from __future__ import division, print_function, absolute_import
 import numpy
 import numpy as np
 from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
-                   zeros, eye, poly1d, r_, sum, fromstring, isfinite,
+                   zeros, eye, poly1d, r_, fromstring, isfinite,
                    squeeze, amax, reshape, sign, broadcast_arrays)
 
+from scipy._lib._util import _asarray_validated
 
 __all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
            'ascent', 'face']
@@ -91,8 +92,17 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     >>> logsumexp([1,2],b=[1,-1],return_sign=True)
     (1.5413248546129181, -1.0)
 
+    Notice that `logsumexp` does not directly support masked arrays. To use it
+    on a masked array, convert the mask into zero weights:
+
+    >>> a = np.ma.array([np.log(2), 2, np.log(3)],
+    ...                  mask=[False, True, False])
+    >>> b = (~a.mask).astype(int)
+    >>> logsumexp(a.data, b=b), np.log(5)
+    1.6094379124341005, 1.6094379124341005
+
     """
-    a = asarray(a)
+    a = _asarray_validated(a, check_finite=False)
     if b is not None:
         a, b = broadcast_arrays(a,b)
         if np.any(b == 0):
@@ -114,7 +124,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
-        s = sum(tmp, axis=axis, keepdims=keepdims)
+        s = np.sum(tmp, axis=axis, keepdims=keepdims)
         if return_sign:
             sgn = sign(s)
             s *= sgn  # /= makes more sense but we need zero -> zero
@@ -373,7 +383,7 @@ def face(gray=False):
     Parameters
     ----------
     gray : bool, optional
-        If True then return color image, otherwise return an 8-bit gray-scale
+        If True return 8-bit grey-scale image, otherwise return a color image
 
     Returns
     -------

@@ -3,7 +3,9 @@ from numpy.math cimport NAN, isinf
 cimport numpy as np
 
 from _xlogy cimport xlogy
-from _complexstuff cimport zsqrt, zpow, zabs
+from _complexstuff cimport (
+    zsqrt, zpow, zabs, npy_cdouble_from_double_complex,
+    double_complex_from_npy_cdouble)
 
 cdef extern from "float.h":
     double DBL_MAX, DBL_MIN
@@ -102,9 +104,10 @@ cdef inline double _hyp0f1_asy(double v, double z) nogil:
 #
 cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
     cdef:
-        np.npy_cdouble zz = (<np.npy_cdouble*>&z)[0]
+        np.npy_cdouble zz = npy_cdouble_from_double_complex(z)
         np.npy_cdouble r
         double complex arg, s
+        double complex t1, t2
 
     # handle poles, zeros 
     if v <= 0.0 and v == floor(v):
@@ -113,17 +116,21 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) nogil:
         return 1.0
 
     # both v and z small: truncate the Taylor series at O(z**2)
-    if zabs(z) < 1e-6*(1.0 + fabs(v)):
-        return 1.0 + z/v + z*z/(2.0*v*(v+1.0))
+    if zabs(z) < 1e-6*(1.0 + zabs(v)):
+        # need to do computations in this order, for otherwise $v\approx -z \ll 1$
+        # it can lose precision (as was reported for 32-bit linux, see gh-6365)
+        t1 = 1.0 + z/v
+        t2 = z*z / (2.0*v*(v+1.0))
+        return t1 + t2
 
     if zz.real > 0:
         arg = zsqrt(z)
         s = 2.0 * arg
-        r = cbesi_wrap(v-1.0, (<np.npy_cdouble*>&s)[0] )
+        r = cbesi_wrap(v-1.0, npy_cdouble_from_double_complex(s))
     else:
         arg = zsqrt(-z)
         s = 2.0 * arg
-        r = cbesj_wrap(v-1.0, (<np.npy_cdouble*>&s)[0] )
+        r = cbesj_wrap(v-1.0, npy_cdouble_from_double_complex(s))
 
-    return (<double complex*>&r)[0] * Gamma(v) * zpow(arg, 1.0 - v)
+    return double_complex_from_npy_cdouble(r) * Gamma(v) * zpow(arg, 1.0 - v)
 

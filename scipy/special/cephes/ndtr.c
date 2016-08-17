@@ -320,6 +320,9 @@ double log_ndtr(double a)
 	denom_cons = 1.0 / (a * a);	/* the precomputed division we use to adjust the denominator */
     long sign = 1, i = 0;
 
+    if (a > 6) {
+	return -ndtr(-a);     /* log(1+x) \approx x */
+    }
     if (a > -20) {
 	return log(ndtr(a));
     }

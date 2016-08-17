@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy._lib.six import xrange
-from scipy.linalg import get_blas_funcs, get_lapack_funcs, qr_insert
+from scipy.linalg import get_blas_funcs, get_lapack_funcs, qr_insert, lstsq
 from .utils import make_system
 
 __all__ = ['lgmres']
@@ -132,7 +132,7 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         # -- check stopping condition
         r_norm = nrm2(r_outer)
-        if r_norm < tol * b_norm or r_norm < tol:
+        if r_norm <= tol * b_norm or r_norm <= tol:
             break
 
         # -- inner LGMRES iteration
@@ -154,6 +154,8 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         R = np.zeros((1, 0), dtype=vs0.dtype)
 
         eps = np.finfo(vs0.dtype).eps
+
+        breakdown = False
 
         for j in xrange(1, 1 + inner_m + len(outer_v)):
             # -- Arnoldi process:
@@ -203,25 +205,30 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                 v_new = v_new.copy()
 
             #     ++ orthogonalize
-            hcur = []
-            for v in vs:
-                alpha = dot(v, v_new)
-                hcur.append(alpha)
-                v_new = axpy(v, v_new, v.shape[0], -alpha)  # v_new -= alpha*v
-            hcur.append(nrm2(v_new))
+            v_new_norm = nrm2(v_new)
 
-            if hcur[-1] == 0:
-                # Exact solution.
-                break
-            else:
-                v_new = scal(1.0/hcur[-1], v_new)
+            hcur = np.zeros(j+1, dtype=Q.dtype)
+            for i, v in enumerate(vs):
+                alpha = dot(v, v_new)
+                hcur[i] = alpha
+                v_new = axpy(v, v_new, v.shape[0], -alpha)  # v_new -= alpha*v
+            hcur[-1] = nrm2(v_new)
+
+            with np.errstate(over='ignore', divide='ignore'):
+                # Careful with denormals
+                alpha = 1/hcur[-1]
+
+            if np.isfinite(alpha):
+                v_new = scal(alpha, v_new)
+
+            if not (hcur[-1] > eps * v_new_norm):
+                # v_new essentially in the span of previous vectors,
+                # or we have nans. Bail out after updating the QR
+                # solution.
+                breakdown = True
 
             vs.append(v_new)
             ws.append(z)
-
-            hcur = np.asarray(hcur, dtype=Q.dtype)
-            if not np.isfinite(hcur).all():
-                raise ValueError("Non-finite results encountered.")
 
             # -- GMRES optimization problem
 
@@ -237,19 +244,33 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             Q, R = qr_insert(Q2, R2, hcur, j-1, which='col',
                              overwrite_qru=True, check_finite=False)
 
-            # Solve least squares problem
-            # H y = Q R y = inner_res_0 * e_1
-            y, info = trtrs(R[:j,:j], Q[0,:j].conj())
-            if info != 0:
-                # Zero diagonal -> exact solution, but we catch that above
-                raise RuntimeError("QR solution failed")
-            y *= inner_res_0
+            # Transformed least squares problem
+            # || Q R y - inner_res_0 * e_1 ||_2 = min!
+            # Since R = [R'; 0], solution is y = inner_res_0 (R')^{-1} (Q^H)[:j,0]
 
-            inner_res = nrm2(np.dot(R, y) - inner_res_0*Q[0].conj())
+            # Residual is immediately known
+            inner_res = abs(Q[0,-1]) * inner_res_0
 
             # -- check for termination
-            if inner_res < tol * inner_res_0:
+            if inner_res <= tol * inner_res_0 or breakdown:
                 break
+
+        if not np.isfinite(R[j-1,j-1]):
+            # nans encountered, bail out
+            return postprocess(x), k_outer + 1
+
+        # -- Get the LSQ problem solution
+        #
+        # The problem is triangular, but the condition number may be
+        # bad (or in case of breakdown the last diagonal entry may be
+        # zero), so use lstsq instead of trtrs.
+        y, _, _, _, = lstsq(R[:j,:j], Q[0,:j].conj())
+        y *= inner_res_0
+
+        if not np.isfinite(y).all():
+            # Floating point over/underflow, non-finite result from
+            # matmul etc. -- report failure.
+            return postprocess(x), k_outer + 1
 
         # -- GMRES terminated: eval solution
         dx = ws[0]*y[0]
@@ -258,14 +279,15 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         # -- Store LGMRES augmentation vectors
         nx = nrm2(dx)
-        if store_outer_Av:
-            q = Q.dot(R.dot(y))
-            ax = vs[0]*q[0]
-            for v, qc in zip(vs[1:], q[1:]):
-                ax = axpy(v, ax, ax.shape[0], qc)
-            outer_v.append((dx/nx, ax/nx))
-        else:
-            outer_v.append((dx/nx, None))
+        if nx > 0:
+            if store_outer_Av:
+                q = Q.dot(R.dot(y))
+                ax = vs[0]*q[0]
+                for v, qc in zip(vs[1:], q[1:]):
+                    ax = axpy(v, ax, ax.shape[0], qc)
+                outer_v.append((dx/nx, ax/nx))
+            else:
+                outer_v.append((dx/nx, None))
 
         # -- Retain only a finite number of augmentation vectors
         while len(outer_v) > outer_k:

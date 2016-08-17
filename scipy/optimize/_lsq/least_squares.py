@@ -1,4 +1,5 @@
 """Generic interface for least-square minimization."""
+from __future__ import division, print_function, absolute_import
 
 from warnings import warn
 
@@ -749,7 +750,7 @@ def least_squares(
         raise ValueError("Inconsistent shapes between bounds and `x0`.")
 
     if np.any(lb >= ub):
-        raise ValueError("Each lower bound mush be strictly less than each "
+        raise ValueError("Each lower bound must be strictly less than each "
                          "upper bound.")
 
     if not in_bounds(x0, lb, ub):

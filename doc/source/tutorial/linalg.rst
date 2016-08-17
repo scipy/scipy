@@ -156,7 +156,7 @@ Solving linear system
 Solving linear systems of equations is straightforward using the scipy
 command :obj:`linalg.solve`. This command expects an input matrix and
 a right-hand-side vector. The solution vector is then computed. An
-option for entering a symmetrix matrix is offered which can speed up
+option for entering a symmetric matrix is offered which can speed up
 the processing when applicable.  As an example, suppose it is desired
 to solve the following simultaneous equations:
 

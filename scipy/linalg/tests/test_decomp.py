@@ -787,14 +787,20 @@ class TestLUSolve(TestCase):
         assert_array_almost_equal(x1,x2)
 
 
-class TestSVD(TestCase):
+class TestSVD_GESDD(TestCase):
     def setUp(self):
+        self.lapack_driver = 'gesdd'
         seed(1234)
+
+    def test_degenerate(self):
+        assert_raises(TypeError, svd, [[1.]], lapack_driver=1.)
+        assert_raises(ValueError, svd, [[1.]], lapack_driver='foo')
 
     def test_simple(self):
         a = [[1,2,3],[1,20,3],[2,5,6]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices)
+            u,s,vh = svd(a, full_matrices=full_matrices,
+                         lapack_driver=self.lapack_driver)
             assert_array_almost_equal(dot(transpose(u),u),identity(3))
             assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
             sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
@@ -805,7 +811,8 @@ class TestSVD(TestCase):
     def test_simple_singular(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices)
+            u,s,vh = svd(a, full_matrices=full_matrices,
+                         lapack_driver=self.lapack_driver)
             assert_array_almost_equal(dot(transpose(u),u),identity(3))
             assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
             sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
@@ -816,7 +823,8 @@ class TestSVD(TestCase):
     def test_simple_underdet(self):
         a = [[1,2,3],[4,5,6]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices)
+            u,s,vh = svd(a, full_matrices=full_matrices,
+                         lapack_driver=self.lapack_driver)
             assert_array_almost_equal(dot(transpose(u),u),identity(u.shape[0]))
             sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
             for i in range(len(s)):
@@ -826,7 +834,8 @@ class TestSVD(TestCase):
     def test_simple_overdet(self):
         a = [[1,2],[4,5],[3,4]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices)
+            u,s,vh = svd(a, full_matrices=full_matrices,
+                         lapack_driver=self.lapack_driver)
             assert_array_almost_equal(dot(transpose(u),u), identity(u.shape[1]))
             assert_array_almost_equal(dot(transpose(vh),vh),identity(2))
             sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
@@ -840,7 +849,8 @@ class TestSVD(TestCase):
         for i in range(3):
             for a in [random([n,m]),random([m,n])]:
                 for full_matrices in (True, False):
-                    u,s,vh = svd(a, full_matrices=full_matrices)
+                    u,s,vh = svd(a, full_matrices=full_matrices,
+                                 lapack_driver=self.lapack_driver)
                     assert_array_almost_equal(dot(transpose(u),u),identity(u.shape[1]))
                     assert_array_almost_equal(dot(vh, transpose(vh)),identity(vh.shape[0]))
                     sigma = zeros((u.shape[1],vh.shape[0]),s.dtype.char)
@@ -851,7 +861,8 @@ class TestSVD(TestCase):
     def test_simple_complex(self):
         a = [[1,2,3],[1,2j,3],[2,5,6]]
         for full_matrices in (True, False):
-            u,s,vh = svd(a, full_matrices=full_matrices)
+            u,s,vh = svd(a, full_matrices=full_matrices,
+                         lapack_driver=self.lapack_driver)
             assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
             assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(vh.shape[0]))
             sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
@@ -866,7 +877,8 @@ class TestSVD(TestCase):
             for full_matrices in (True, False):
                 for a in [random([n,m]),random([m,n])]:
                     a = a + 1j*random(list(a.shape))
-                    u,s,vh = svd(a, full_matrices=full_matrices)
+                    u,s,vh = svd(a, full_matrices=full_matrices,
+                                 lapack_driver=self.lapack_driver)
                     assert_array_almost_equal(dot(conj(transpose(u)),u),identity(u.shape[1]))
                     # This fails when [m,n]
                     # assert_array_almost_equal(dot(conj(transpose(vh)),vh),identity(len(vh),dtype=vh.dtype.char))
@@ -882,11 +894,11 @@ class TestSVD(TestCase):
             for dt in [np.float32, np.float64, np.complex64, np.complex128]:
                 a = np.random.rand(*sz).astype(dt)
                 # should not crash
-                svd(a)
+                svd(a, lapack_driver=self.lapack_driver)
 
     def test_check_finite(self):
         a = [[1,2,3],[1,20,3],[2,5,6]]
-        u,s,vh = svd(a, check_finite=False)
+        u,s,vh = svd(a, check_finite=False, lapack_driver=self.lapack_driver)
         assert_array_almost_equal(dot(transpose(u),u),identity(3))
         assert_array_almost_equal(dot(transpose(vh),vh),identity(3))
         sigma = zeros((u.shape[0],vh.shape[0]),s.dtype.char)
@@ -909,7 +921,13 @@ class TestSVD(TestCase):
              [0., 0.16666667, 0.66666667, 0.16666667, 0., 0.],
              [0., 0., 0.16666667, 0.66666667, 0.16666667, 0.],
              [0., 0., 0., 0.16666667, 0.66666667, 0.16666667]])
-        svd(b)
+        svd(b, lapack_driver=self.lapack_driver)
+
+
+class TestSVD_GESVD(TestSVD_GESDD):
+    def setUp(self):
+        self.lapack_driver = 'gesvd'
+        seed(1234)
 
 
 class TestSVDVals(TestCase):
@@ -2128,6 +2146,41 @@ class TestOrdQZ(TestCase):
         ret = ordqz(self.B2, self.A1, sort='lhp')
         self.check(self.B2, self.A1, 'lhp', *ret)
 
+class TestOrdQZWorkspaceSize(TestCase):
+
+    def setUp(self):
+        seed(12345)
+
+    def test_decompose(self):
+
+        N = 202
+
+        # raises error if lwork parameter to dtrsen is too small
+        for ddtype in [np.float32, np.float64]:
+            A = random((N,N)).astype(ddtype)
+            B = random((N,N)).astype(ddtype)
+            # sort = lambda alphar, alphai, beta: alphar**2 + alphai**2< beta**2
+            sort = lambda alpha, beta: alpha < beta
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='real')
+
+        for ddtype in [np.complex, np.complex64]:
+            A = random((N,N)).astype(ddtype)
+            B = random((N,N)).astype(ddtype)
+            sort = lambda alpha, beta: alpha < beta
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='complex')
+
+    @dec.slow
+    def test_decompose_ouc(self):
+
+        N = 202
+
+        # segfaults if lwork parameter to dtrsen is too small
+        for ddtype in [np.float32, np.float64, np.complex, np.complex64]:
+            A = random((N,N)).astype(ddtype)
+            B = random((N,N)).astype(ddtype)
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
+
+
 class TestDatacopied(TestCase):
 
     def test_datacopied(self):
@@ -2295,6 +2348,7 @@ class TestOverwrite(object):
 
     def test_svd(self):
         assert_no_overwrite(svd, [(3,3)])
+        assert_no_overwrite(lambda a: svd(a, lapack_driver='gesvd'), [(3,3)])
 
     def test_svdvals(self):
         assert_no_overwrite(svdvals, [(3,3)])

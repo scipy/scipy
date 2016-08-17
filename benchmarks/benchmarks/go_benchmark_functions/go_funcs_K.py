@@ -38,7 +38,7 @@ class Katsuura(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [100.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [100.0] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.custom_bounds = [(0, 1), (0, 1)]
@@ -85,7 +85,7 @@ class Keane(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[7.85396153, 7.85396135]]
         self.custom_bounds = [(-1, 0.34), (-1, 0.34)]
@@ -134,7 +134,7 @@ class Kowalik(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
         self.global_optimum = [[0.192833, 0.190836, 0.123117, 0.135766]]
         self.fglob = 0.00030748610
 

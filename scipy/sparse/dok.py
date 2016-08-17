@@ -350,9 +350,13 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return new
 
     def __neg__(self):
+        if self.dtype.kind == 'b':
+            raise NotImplementedError('negating a sparse boolean '
+                                      'matrix is not supported')
         new = dok_matrix(self.shape, dtype=self.dtype)
         for key in self.keys():
             new[key] = -self[key]
+
         return new
 
     def _mul_scalar(self, other):
@@ -414,14 +418,21 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     # perhaps it should be the number of rows?  For now it returns the number
     # of non-zeros.
 
-    def transpose(self):
-        """ Return the transpose
-        """
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
         M, N = self.shape
-        new = dok_matrix((N, M), dtype=self.dtype)
+        new = dok_matrix((N, M), dtype=self.dtype, copy=copy)
+
         for key, value in iteritems(self):
             new[key[1], key[0]] = value
+
         return new
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def conjtransp(self):
         """ Return the conjugate transpose
@@ -436,6 +447,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         new = dok_matrix(self.shape, dtype=self.dtype)
         new.update(self)
         return new
+
+    copy.__doc__ = spmatrix.copy.__doc__
 
     def getrow(self, i):
         """Returns a copy of row i of the matrix as a (1 x n)
@@ -455,30 +468,32 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             out[i, 0] = self[i, j]
         return out
 
-    def tocoo(self):
-        """ Return a copy of this matrix in COOrdinate format"""
+    def tocoo(self, copy=False):
         from .coo import coo_matrix
         if self.nnz == 0:
             return coo_matrix(self.shape, dtype=self.dtype)
-        else:
-            idx_dtype = get_index_dtype(maxval=max(self.shape[0], self.shape[1]))
-            data = np.asarray(_list(self.values()), dtype=self.dtype)
-            indices = np.asarray(_list(self.keys()), dtype=idx_dtype).T
-            return coo_matrix((data,indices), shape=self.shape, dtype=self.dtype)
 
-    def todok(self,copy=False):
+        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        data = np.asarray(_list(self.values()), dtype=self.dtype)
+        indices = np.asarray(_list(self.keys()), dtype=idx_dtype).T
+        A = coo_matrix((data, indices), shape=self.shape, dtype=self.dtype)
+        A.has_canonical_format = True
+        return A
+
+    tocoo.__doc__ = spmatrix.tocoo.__doc__
+
+    def todok(self, copy=False):
         if copy:
             return self.copy()
         else:
             return self
 
-    def tocsr(self):
-        """ Return a copy of this matrix in Compressed Sparse Row format"""
-        return self.tocoo().tocsr()
+    todok.__doc__ = spmatrix.todok.__doc__
 
-    def tocsc(self):
-        """ Return a copy of this matrix in Compressed Sparse Column format"""
-        return self.tocoo().tocsc()
+    def tocsc(self, copy=False):
+        return self.tocoo(copy=False).tocsc(copy=copy)
+
+    tocsc.__doc__ = spmatrix.tocsc.__doc__
 
     def resize(self, shape):
         """ Resize the matrix in-place to dimensions given by 'shape'.

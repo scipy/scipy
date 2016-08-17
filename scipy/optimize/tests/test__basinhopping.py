@@ -76,14 +76,14 @@ class MyAcceptTest(object):
     def __init__(self):
         self.been_called = False
         self.ncalls = 0
+        self.testres = [False, 'force accept', True, np.bool_(True),
+                        np.bool_(False), [], {}, 0, 1]
 
     def __call__(self, **kwargs):
         self.been_called = True
         self.ncalls += 1
-        if self.ncalls == 1:
-            return False
-        elif self.ncalls == 2:
-            return 'force accept'
+        if self.ncalls - 1 < len(self.testres):
+            return self.testres[self.ncalls - 1]
         else:
             return True
 
@@ -136,19 +136,6 @@ class TestBasinHopping(TestCase):
         # if accept_test is passed, it must be callable
         assert_raises(TypeError, basinhopping, func2d, self.x0[i],
                           accept_test=1)
-        # accept_test must return bool or string "force_accept"
-
-        def bad_accept_test1(*args, **kwargs):
-            return 1
-
-        def bad_accept_test2(*args, **kwargs):
-            return "not force_accept"
-        assert_raises(ValueError, basinhopping, func2d, self.x0[i],
-                          minimizer_kwargs=self.kwargs,
-                          accept_test=bad_accept_test1)
-        assert_raises(ValueError, basinhopping, func2d, self.x0[i],
-                          minimizer_kwargs=self.kwargs,
-                          accept_test=bad_accept_test2)
 
     def test_1d_grad(self):
         # test 1d minimizations with gradient
@@ -289,6 +276,33 @@ class TestBasinHopping(TestCase):
         # the number of failed minimizations should be the number of
         # iterations + 1
         assert_equal(res.nit + 1, res.minimization_failures)
+
+    def test_niter_zero(self):
+        # gh5915, what happens if you call basinhopping with niter=0
+        i = 0
+        res = basinhopping(func1d, self.x0[i], minimizer_kwargs=self.kwargs,
+                           niter=0, disp=self.disp)
+
+    def test_seed_reproducibility(self):
+        # seed should ensure reproducibility between runs
+        minimizer_kwargs = {"method": "L-BFGS-B", "jac": True}
+
+        f_1 = []
+
+        def callback(x, f, accepted):
+            f_1.append(f)
+
+        basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
+                     niter=10, callback=callback, seed=10)
+
+        f_2 = []
+
+        def callback2(x, f, accepted):
+            f_2.append(f)
+
+        basinhopping(func2d, [1.0, 1.0], minimizer_kwargs=minimizer_kwargs,
+                     niter=10, callback=callback2, seed=10)
+        assert_equal(np.array(f_1), np.array(f_2))
 
 
 class Test_Storage(TestCase):

@@ -404,6 +404,11 @@ add_newdoc("scipy.special", "binom",
     binom(n, k)
 
     Binomial coefficient
+
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
+    
     """)
 
 add_newdoc("scipy.special", "btdtria",
@@ -1242,7 +1247,7 @@ add_newdoc("scipy.special", "entr",
     -----
     This function is concave.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 
@@ -1792,7 +1797,7 @@ add_newdoc("scipy.special", "gamma",
     """
     gamma(z)
 
-    Gamma function
+    Gamma function.
 
     The gamma function is often referred to as the generalized
     factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
@@ -1800,29 +1805,67 @@ add_newdoc("scipy.special", "gamma",
     """)
 
 add_newdoc("scipy.special", "gammainc",
-    """
+    r"""
     gammainc(a, x)
 
-    Incomplete gamma function
+    Regularized lower incomplete gamma function.
 
-    Defined as::
+    Defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        \frac{1}{\Gamma(a)} \int_0^x t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
+    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where
+    `gammaincc` is the regularized upper incomplete gamma function.
+
+    Notes
+    -----
+    The implementation largely follows that of [1]_.
+
+    See also
+    --------
+    gammaincc : regularized upper incomplete gamma function
+    gammaincinv : inverse to ``gammainc`` versus ``x``
+    gammainccinv : inverse to ``gammaincc`` versus ``x``
+        
+    References
+    ----------
+    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammaincc",
-    """
+    r"""
     gammaincc(a, x)
 
-    Complemented incomplete gamma integral
+    Regularized upper incomplete gamma function.
 
-    Defined as::
+    Defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a, x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        \frac{1}{\Gamma(a)} \int_x^\infty t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
+    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where `gammainc`
+    is the regularized lower incomplete gamma function.
+
+    Notes
+    -----
+    The implementation largely follows that of [1]_.
+
+    See also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse to ``gammainc`` versus ``x``
+    gammainccinv : inverse to ``gammaincc`` versus ``x``
+        
+    References
+    ----------
+    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammainccinv",
@@ -1843,35 +1886,9 @@ add_newdoc("scipy.special", "gammaincinv",
     Returns `x` such that ``gammainc(a, x) = y``.
     """)
 
-add_newdoc("scipy.special", "gammaln",
+add_newdoc("scipy.special", "_gammaln",
     """
-    gammaln(z)
-
-    Performs a logarithmic transformation of the
-    values of the gamma function in one of two
-    ways, depending on the input `z`:
-
-    1) `z` is not complex (i.e. `z` is a purely
-       real number *or* it is array_like and
-       contains purely real elements)
-
-    The natural logarithm of the absolute value of
-    gamma(z) is computed. Thus, it is defined as:
-
-        ln(abs(gamma(z)))
-
-    2) `z` is complex (i.e. `z` is a complex
-       number *or* it is array_like and contains
-       at least one complex element)
-
-    The natural logarithm of gamma(z) is computed.
-    Thus, it is defined as:
-
-        ln((gamma(z))
-
-    See Also
-    --------
-    gammasgn
+    Internal function, use ``gammaln`` instead.
     """)
 
 add_newdoc("scipy.special", "gammasgn",
@@ -1883,6 +1900,7 @@ add_newdoc("scipy.special", "gammasgn",
     See Also
     --------
     gammaln
+    loggamma
     """)
 
 add_newdoc("scipy.special", "gdtr",
@@ -2648,6 +2666,11 @@ add_newdoc("scipy.special", "i1e",
            http://www.netlib.org/cephes/index.html
     """)
 
+add_newdoc("scipy.special", "_igam_fac",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("scipy.special", "it2i0k0",
     """
     it2i0k0(x)
@@ -3375,7 +3398,7 @@ add_newdoc("scipy.special", "kl_div",
     -----
     This function is non-negative and is jointly convex in `x` and `y`.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 
@@ -3576,11 +3599,26 @@ add_newdoc("scipy.special", "kve",
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     """)
 
+add_newdoc("scipy.special", "_lanczos_sum_expg_scaled",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_lgam1p",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("scipy.special", "log1p",
     """
     log1p(x)
 
     Calculates log(1+x) for use when `x` is near zero
+    """)
+
+add_newdoc("scipy.special", "_log1pmx",
+    """
+    Internal function, do not use.
     """)
 
 add_newdoc('scipy.special', 'logit',
@@ -4380,17 +4418,37 @@ add_newdoc("scipy.special", "nctdtrit",
     """)
 
 add_newdoc("scipy.special", "ndtr",
-    """
+    r"""
     ndtr(x)
 
-    Gaussian cumulative distribution function
+    Gaussian cumulative distribution function.
 
     Returns the area under the standard Gaussian probability
-    density function, integrated from minus infinity to `x`::
+    density function, integrated from minus infinity to `x`
 
-        1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x)
+    .. math::
+
+       \frac{1}{\sqrt{2\pi}} \int_{-\infty}^x \exp(-t^2/2) dt
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+
+    Returns
+    -------
+    ndarray
+        The value of the normal CDF evaluated at `x`
+
+    See Also
+    --------
+    erf
+    erfc
+    scipy.stats.norm
+    log_ndtr
 
     """)
+
 
 add_newdoc("scipy.special", "nrdtrimn",
     """
@@ -4448,12 +4506,30 @@ add_newdoc("scipy.special", "log_ndtr",
     """
     log_ndtr(x)
 
-    Logarithm of Gaussian cumulative distribution function
+    Logarithm of Gaussian cumulative distribution function.
 
     Returns the log of the area under the standard Gaussian probability
     density function, integrated from minus infinity to `x`::
 
         log(1/sqrt(2*pi) * integral(exp(-t**2 / 2), t=-inf..x))
+
+    Parameters
+    ----------
+    x : array_like, real or complex
+        Argument
+
+    Returns
+    -------
+    ndarray
+        The value of the log of the normal CDF evaluated at `x`
+
+    See Also
+    --------
+    erf
+    erfc
+    scipy.stats.norm
+    ndtr
+
     """)
 
 add_newdoc("scipy.special", "ndtri",
@@ -4852,12 +4928,48 @@ add_newdoc("scipy.special", "pseudo_huber",
 
 add_newdoc("scipy.special", "psi",
     """
-    psi(z)
+    psi(z, out=None)
 
-    Digamma function
+    The digamma function.
 
-    The derivative of the logarithm of the gamma function evaluated at
-    `z` (also called the digamma function).
+    The logarithmic derivative of the gamma function evaluated at ``z``.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex argument.
+    out : ndarray, optional
+        Array for the computed values of ``psi``.
+
+    Returns
+    -------
+    digamma : ndarray
+        Computed values of ``psi``.
+
+    Notes
+    -----
+    For large values not close to the negative real axis ``psi`` is
+    computed using the asymptotic series (5.11.2) from [1]_. For small
+    arguments not close to the negative real axis the recurrence
+    relation (5.5.2) from [1]_ is used until the argument is large
+    enough to use the asymptotic series. For values close to the
+    negative real axis the reflection formula (5.5.4) from [1]_ is
+    used first.  Note that ``psi`` has a family of zeros on the
+    negative real axis which occur between the poles at nonpositive
+    integers. Around the zeros the reflection formula suffers from
+    cancellation and the implementation loses precision. The sole
+    positive zero and the first negative zero, however, are handled
+    separately by precomputing series expansions using [2]_, so the
+    function should maintain full accuracy around the origin.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/5
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
+
     """)
 
 add_newdoc("scipy.special", "radian",
@@ -4898,7 +5010,7 @@ add_newdoc("scipy.special", "rel_entr",
     -----
     This function is jointly convex in x and y.
 
-    .. versionadded:: 0.14.0
+    .. versionadded:: 0.15.0
 
     """)
 
@@ -4923,33 +5035,109 @@ add_newdoc("scipy.special", "round",
     """)
 
 add_newdoc("scipy.special", "shichi",
-    """
-    shichi(x)
+    r"""
+    shichi(x, out=None)
 
-    Hyperbolic sine and cosine integrals
+    Hyperbolic sine and cosine integrals.
+
+    The hyperbolic sine integral is
+
+    .. math::
+
+      \int_0^x \frac{\sinh{t}}{t}dt
+
+    and the hyperbolic cosine integral is
+
+    .. math::
+
+      \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
+
+    where :math:`\gamma` is Euler's constant and :math:`\log` is the
+    principle branch of the logarithm.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex points at which to compute the hyperbolic sine
+        and cosine integrals.
 
     Returns
     -------
-    shi
-        ``integral(sinh(t)/t, t=0..x)``
-    chi
-        ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``
-        where ``eul`` is Euler's constant.
+    si : ndarray
+        Hyperbolic sine integral at ``x``
+    ci : ndarray
+        Hyperbolic cosine integral at ``x``
+
+    Notes
+    -----
+    For real arguments with ``x < 0``, ``chi`` is the real part of the
+    hyperbolic cosine integral. For such points ``chi(x)`` and ``chi(x
+    + 0j)`` differ by a factor of ``1j*pi``.
+
+    For real arguments the function is computed by calling Cephes'
+    [1]_ *shichi* routine. For complex arguments the algorithm is based
+    on Mpmath's [2]_ *shi* and *chi* routines.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
     """)
 
 add_newdoc("scipy.special", "sici",
-    """
-    sici(x)
+    r"""
+    sici(x, out=None)
 
-    Sine and cosine integrals
+    Sine and cosine integrals.
+
+    The sine integral is
+
+    .. math::
+    
+      \int_0^x \frac{\sin{t}}{t}dt
+
+    and the cosine integral is
+
+    .. math::
+
+      \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
+
+    where :math:`\gamma` is Euler's constant and :math:`\log` is the
+    principle branch of the logarithm.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex points at which to compute the sine and cosine
+        integrals.
 
     Returns
     -------
-    si
-        ``integral(sin(t)/t, t=0..x)``
-    ci
-        ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``
-        where ``eul`` is Euler's constant.
+    si : ndarray
+        Sine integral at ``x``
+    ci : ndarray
+        Cosine integral at ``x``
+
+    Notes
+    -----
+    For real arguments with ``x < 0``, ``ci`` is the real part of the
+    cosine integral. For such points ``ci(x)`` and ``ci(x + 0j)``
+    differ by a factor of ``1j*pi``.
+
+    For real arguments the function is computed by calling Cephes'
+    [1]_ *sici* routine. For complex arguments the algorithm is based
+    on Mpmath's [2]_ *si* and *ci* routines.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
     """)
 
 add_newdoc("scipy.special", "sindg",
@@ -4983,14 +5171,28 @@ add_newdoc("scipy.special", "smirnovi",
     """)
 
 add_newdoc("scipy.special", "spence",
-    """
-    spence(x)
+    r"""
+    spence(z)
 
-    Dilogarithm integral
+    Spence's function, also known as the dilogarithm. It is defined to
+    be
 
-    Returns the dilogarithm integral::
+    .. math::
+      \int_0^z \frac{\log(t)}{1 - t}dt
 
-        -integral(log t / (t-1), t=1..x)
+    for complex :math:`z`, where the contour of integration is taken
+    to avoid the branch cut of the logarithm. Spence's function is
+    analytic everywhere except the negative real axis where it has a
+    branch cut.
+
+    Note that there is a different convention which defines Spence's
+    function by the integral
+
+    .. math::
+      -\int_0^z \frac{\log(1 - t)}{t}dt;
+
+    this is our ``spence(1 - z)``.
+
     """)
 
 add_newdoc("scipy.special", "stdtr",
@@ -5384,24 +5586,11 @@ add_newdoc("scipy.special", "yve",
            http://netlib.org/amos/
     """)
 
-add_newdoc("scipy.special", "zeta",
+add_newdoc("scipy.special", "_zeta",
     """
-    zeta(x, q)
+    _zeta(x, q)
 
-    Hurwitz zeta function
-
-    The Riemann zeta function of two arguments (also known as the
-    Hurwitz zeta function).
-
-    This function is defined as
-
-    .. math:: \\zeta(x, q) = \\sum_{k=0}^{\\infty} 1 / (k+q)^x,
-
-    where ``x > 1`` and ``q > 0``.
-
-    See also
-    --------
-    zetac
+    Internal function, Hurwitz zeta.
 
     """)
 
@@ -5500,4 +5689,72 @@ add_newdoc("scipy.special", "_spherical_kn",
 add_newdoc("scipy.special", "_spherical_kn_d",
     """
     Internal function, use `spherical_kn` instead.
+    """)
+
+add_newdoc("scipy.special", "loggamma",
+    r"""
+    loggamma(z, out=None)
+
+    Principal branch of the logarithm of the Gamma function. It is
+    defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
+    extended to the complex plane by analytic continuation. The
+    implementation here is based on [hare1997]_.
+
+    The function has a single branch cut on the negative real axis and
+    is taken to be continuous when approaching the axis from
+    above. Note that it is not generally true that
+    :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real parts of
+    the functions do agree. The benefit of not defining ``loggamma``
+    as :math:`\log(\Gamma(z))` is that the latter function has a
+    complicated branch cut structure whereas ``loggamma`` is analytic
+    except for on the negative real axis.
+
+    The identities
+
+    .. math::
+      \exp(\log\Gamma(z)) &= \Gamma(z) \\
+      \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
+
+    make ``loggama`` useful for working in complex logspace. However,
+    ``loggamma`` necessarily returns complex outputs for real inputs,
+    so if you want to work only with real numbers use `gammaln`. On
+    the real line the two functions are related by ``exp(loggamma(x))
+    = gammasgn(x)*exp(gammaln(x))``, though in practice rounding
+    errors will introduce small spurious imaginary components in
+    ``exp(loggamma(x))``.
+
+    .. versionadded:: 0.18.0
+
+    Parameters
+    ----------
+    z : array-like
+        Values in the complex plain at which to compute ``loggamma``
+    out : ndarray, optional
+        Output array for computed values of ``loggamma``
+
+    Returns
+    -------
+    loggamma : ndarray
+        Values of ``loggamma`` at z.
+
+    See also
+    --------
+    gammaln : logarithm of the absolute value of the Gamma function
+    gammasgn : sign of the gamma function
+
+    References
+    ----------
+    .. [hare1997] D.E.G. Hare,
+      *Computing the Principal Branch of log-Gamma*,
+      Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
+    """)
+
+add_newdoc("scipy.special", "_sinpi",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_cospi",
+    """
+    Internal function, do not use.
     """)

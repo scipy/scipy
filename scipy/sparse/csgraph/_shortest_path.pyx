@@ -34,10 +34,11 @@ def shortest_path(csgraph, method='auto',
                   directed=True,
                   return_predecessors=False,
                   unweighted=False,
-                  overwrite=False):
+                  overwrite=False,
+                  indices=None):
     """
     shortest_path(csgraph, method='auto', directed=True, return_predecessors=False,
-                  unweighted=False, overwrite=False)
+                  unweighted=False, overwrite=False, indices=None)
 
     Perform a shortest-path graph search on a positive directed or
     undirected graph.
@@ -92,6 +93,9 @@ def shortest_path(csgraph, method='auto',
         If True, overwrite csgraph with the result.  This applies only if
         method == 'FW' and csgraph is a dense, c-ordered array with
         dtype=float64.
+    indices : array_like or int, optional
+        If specified, only compute the paths for the points at the given
+        indices. Incompatible with method == 'FW'.
 
     Returns
     -------
@@ -138,7 +142,7 @@ def shortest_path(csgraph, method='auto',
         else:
             Nk = np.sum(csgraph > 0)
 
-        if Nk < N * N / 4:
+        if indices is not None or Nk < N * N / 4:
             if ((issparse and np.any(csgraph.data < 0))
                       or (not issparse and np.any(csgraph < 0))):
                 method = 'J'
@@ -148,6 +152,8 @@ def shortest_path(csgraph, method='auto',
             method = 'FW'
 
     if method == 'FW':
+        if indices is not None:
+            raise ValueError("Cannot specify indices with method == 'FW'.")
         return floyd_warshall(csgraph, directed,
                               return_predecessors=return_predecessors,
                               unweighted=unweighted,
@@ -156,17 +162,17 @@ def shortest_path(csgraph, method='auto',
     elif method == 'D':
         return dijkstra(csgraph, directed,
                         return_predecessors=return_predecessors,
-                        unweighted=unweighted)
+                        unweighted=unweighted, indices=indices)
 
     elif method == 'BF':
         return bellman_ford(csgraph, directed,
                             return_predecessors=return_predecessors,
-                            unweighted=unweighted)
+                            unweighted=unweighted, indices=indices)
 
     elif method == 'J':
         return johnson(csgraph, directed,
                        return_predecessors=return_predecessors,
-                       unweighted=unweighted)
+                       unweighted=unweighted, indices=indices)
 
     else:
         raise ValueError("unrecognized method '%s'" % method)
@@ -330,7 +336,7 @@ def dijkstra(csgraph, directed=True, indices=None,
              unweighted=False, limit=np.inf):
     """
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
-             unweighted=False)
+             unweighted=False, limit=np.inf)
 
     Dijkstra algorithm using Fibonacci Heaps
 
@@ -360,6 +366,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         will decrease computation time by aborting calculations between pairs
         that are separated by a distance > limit. For such pairs, the distance
         will be equal to np.inf (i.e., not connected).
+
         .. versionadded:: 0.14.0
 
     Returns

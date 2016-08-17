@@ -22,6 +22,8 @@ class TestGoBenchmarkFunctions(TestCase):
         # Check that the function returns the global minimum if given
         # the optimal solution
         for name, klass in self.benchmark_functions:
+            # LennardJones is filtered here because there are many global
+            # optimima that give the same minimum energy
             if (name in ['Benchmark', 'LennardJones'] or
                  name.startswith('Problem')):
                 continue
@@ -39,6 +41,33 @@ class TestGoBenchmarkFunctions(TestCase):
             f = klass()
             # should result in an attribute error if it doesn't exist
             val = f.fglob
+
+    def test_bounds_access_subscriptable(self):
+        # In Python 2 zip returns a list which is subscriptable
+        # In Python 3 zip returns a zip object, which is not subscriptable
+        for name, klass in self.benchmark_functions:
+            if (name == 'Benchmark' or name.startswith('Problem')):
+                continue
+
+            f = klass()
+            bounds = f.bounds[0]
+
+    def test_redimension(self):
+        # check that problems can be redimensioned, use LJ for this.
+        LJ = self.benchmark_functions['LennardJones']
+        L = LJ()
+        L.change_dimensions(10)
+
+        # if we change the size of the problem then the initial vector has to
+        # resize
+        x0 = L.initial_vector()
+        assert_(len(x0) == 10)
+
+        # the bounds should be the correct length now.
+        bounds = L.bounds
+        assert_(len(bounds) == 10)
+
+        assert_(L.N == 10)
 
 
 if __name__ == '__main__':

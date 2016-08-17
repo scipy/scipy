@@ -44,8 +44,6 @@ r_attribute = re.compile(r'^@[Aa][Tt][Tt][Rr][Ii][Bb][Uu][Tt][Ee]\s*(..*$)')
 
 # To get attributes name enclosed with ''
 r_comattrval = re.compile(r"'(..+)'\s+(..+$)")
-# To get attributes name enclosed with '', possibly spread across multilines
-r_mcomattrval = re.compile(r"'([..\n]+)'\s+(..+$)")
 # To get normal attributes
 r_wcomattrval = re.compile(r"(\S+)\s+(..+$)")
 

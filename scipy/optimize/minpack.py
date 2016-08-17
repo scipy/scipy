@@ -449,12 +449,24 @@ def leastsq(func, x0, args=(), Dfun=None, full_output=0,
         return (retval[0], info)
 
 
-def _general_function(params, xdata, ydata, function):
-    return function(xdata, *params) - ydata
+def _wrap_func(func, xdata, ydata, weights):
+    if weights is None:
+        def func_wrapped(params):
+            return func(xdata, *params) - ydata
+    else:
+        def func_wrapped(params):
+            return weights * (func(xdata, *params) - ydata)
+    return func_wrapped
 
 
-def _weighted_general_function(params, xdata, ydata, function, weights):
-    return weights * (function(xdata, *params) - ydata)
+def _wrap_jac(jac, xdata, weights):
+    if weights is None:
+        def jac_wrapped(params):
+            return jac(xdata, *params)
+    else:
+        def jac_wrapped(params):
+            return weights[:, np.newaxis] * np.asarray(jac(xdata, *params))
+    return jac_wrapped
 
 
 def _initialize_feasible(lb, ub):
@@ -476,7 +488,7 @@ def _initialize_feasible(lb, ub):
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
               check_finite=True, bounds=(-np.inf, np.inf), method=None,
-              **kwargs):
+              jac=None, **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -534,6 +546,15 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         case.
 
         .. versionadded:: 0.17
+    jac : callable, string or None, optional
+        Function with signature ``jac(x, ...)`` which computes the Jacobian
+        matrix of the model function with respect to parameters as a dense
+        array_like structure. It will be scaled according to provided `sigma`.
+        If None (default), the Jacobian will be estimated numerically.
+        String keywords for 'trf' and 'dogbox' methods can be used to select
+        a finite difference scheme, see `least_squares`.
+
+        .. versionadded:: 0.18
     kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
         `least_squares` otherwise.
@@ -571,8 +592,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     See Also
     --------
     least_squares : Minimize the sum of squares of nonlinear functions.
-    stats.linregress : Calculate a linear least squares regression for two sets
-                       of measurements.
+    scipy.stats.linregress : Calculate a linear least squares regression for
+                             two sets of measurements.
 
     Notes
     -----
@@ -642,23 +663,27 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         else:
             xdata = np.asarray(xdata)
 
-    args = (xdata, ydata, f)
-    if sigma is None:
-        func = _general_function
-    else:
-        func = _weighted_general_function
-        args += (1.0 / asarray(sigma),)
+    weights = 1.0 / asarray(sigma) if sigma is not None else None
+    func = _wrap_func(f, xdata, ydata, weights)
+    if callable(jac):
+        jac = _wrap_jac(jac, xdata, weights)
+    elif jac is None and method != 'lm':
+        jac = '2-point'
 
     if method == 'lm':
         # Remove full_output from kwargs, otherwise we're passing it in twice.
         return_full = kwargs.pop('full_output', False)
-        res = leastsq(func, p0, args=args, full_output=1, **kwargs)
+        res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
         popt, pcov, infodict, errmsg, ier = res
         cost = np.sum(infodict['fvec'] ** 2)
         if ier not in [1, 2, 3, 4]:
             raise RuntimeError("Optimal parameters not found: " + errmsg)
     else:
-        res = least_squares(func, p0, args=args, bounds=bounds, method=method,
+        # Rename maxfev (leastsq) to max_nfev (least_squares), if specified.
+        if 'max_nfev' not in kwargs:
+            kwargs['max_nfev'] = kwargs.pop('maxfev', None)
+
+        res = least_squares(func, p0, jac=jac, bounds=bounds, method=method,
                             **kwargs)
 
         if not res.success:

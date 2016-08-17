@@ -10,7 +10,7 @@ from common_tests import (check_normalization, check_moment, check_mean_expect,
                           check_kurt_expect, check_entropy,
                           check_private_entropy, check_edge_support,
                           check_named_args, check_random_state_property,
-                          check_pickling)
+                          check_pickling, check_rvs_broadcast)
 from scipy.stats._distr_params import distdiscrete
 knf = npt.dec.knownfailureif
 
@@ -92,21 +92,62 @@ def test_moments():
         yield check_moment_frozen, distfn, arg, v+m*m, 2
 
 
+def test_rvs_broadcast():
+    for dist, shape_args in distdiscrete:
+        # If shape_only is True, it means the _rvs method of the
+        # distribution uses more than one random number to generate a random
+        # variate.  That means the result of using rvs with broadcasting or
+        # with a nontrivial size will not necessarily be the same as using the
+        # numpy.vectorize'd version of rvs(), so we can only compare the shapes
+        # of the results, not the values.
+        # Whether or not a distribution is in the following list is an
+        # implementation detail of the distribution, not a requirement.  If
+        # the implementation the rvs() method of a distribution changes, this
+        # test might also have to be changed.
+        shape_only = dist in ['skellam']
+
+        try:
+            distfunc = getattr(stats, dist)
+        except TypeError:
+            distfunc = dist
+            dist = 'rv_discrete(values=(%r, %r))' % (dist.xk, dist.pk)
+        loc = np.zeros(2)
+        nargs = distfunc.numargs
+        allargs = []
+        bshape = []
+        # Generate shape parameter arguments...
+        for k in range(nargs):
+            shp = (k + 3,) + (1,)*(k + 1)
+            param_val = shape_args[k]
+            allargs.append(param_val*np.ones(shp, dtype=np.array(param_val).dtype))
+            bshape.insert(0, shp[0])
+        allargs.append(loc)
+        bshape.append(loc.size)
+        # bshape holds the expected shape when loc, scale, and the shape
+        # parameters are all broadcast together.
+        yield check_rvs_broadcast, distfunc, dist, allargs, bshape, shape_only, [np.int_]
+
+
 def check_cdf_ppf(distfn, arg, supp, msg):
     # cdf is a step function, and ppf(q) = min{k : cdf(k) >= q, k integer}
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg), *arg),
                            supp, msg + '-roundtrip')
     npt.assert_array_equal(distfn.ppf(distfn.cdf(supp, *arg) - 1e-8, *arg),
                            supp, msg + '-roundtrip')
-    supp1 = supp[supp < distfn.b]
-    npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
-                           supp1 + distfn.inc, msg + 'ppf-cdf-next')
-    # -1e-8 could cause an error if pmf < 1e-8
+
+    if not hasattr(distfn, 'xk'):
+        supp1 = supp[supp < distfn.b]
+        npt.assert_array_equal(distfn.ppf(distfn.cdf(supp1, *arg) + 1e-8, *arg),
+                               supp1 + distfn.inc, msg + ' ppf-cdf-next')
+        # -1e-8 could cause an error if pmf < 1e-8
 
 
 def check_pmf_cdf(distfn, arg, distname):
-    startind = int(distfn.ppf(0.01, *arg) - 1)
-    index = list(range(startind, startind + 10))
+    if hasattr(distfn, 'xk'):
+        index = distfn.xk
+    else:
+        startind = int(distfn.ppf(0.01, *arg) - 1)
+        index = list(range(startind, startind + 10))
     cdfs = distfn.cdf(index, *arg)
     pmfs_cum = distfn.pmf(index, *arg).cumsum()
 
@@ -158,8 +199,8 @@ def check_discrete_chisquare(distfn, arg, rvs, alpha, msg):
 
     # construct intervals with minimum mass `wsupp`.
     # intervals are left-half-open as in a cdf difference
-    lo = max(distfn.a, -1000)
-    distsupport = xrange(lo, min(distfn.b, 1000) + 1)
+    lo = int(max(distfn.a, -1000))
+    distsupport = xrange(lo, int(min(distfn.b, 1000)) + 1)
     last = 0
     distsupp = [lo]
     distmass = []

@@ -115,10 +115,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/0.18.0-notes.rst'
+RELEASE = 'doc/release/0.19.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v0.17.0'
+LOG_START = 'v0.18.0'
 LOG_END = 'master'
 
 
@@ -560,7 +560,7 @@ def _build_mpkg(pyver):
         ldflags = "-undefined dynamic_lookup -bundle -arch i386 -arch ppc -Wl,-search_paths_first"
     ldflags += " -L%s" % os.path.join(os.path.dirname(__file__), "build")
 
-    sh("LDFLAGS='%s' %s setupegg.py bdist_mpkg" % (ldflags, MPKG_PYTHON[pyver]))
+    sh("LDFLAGS='%s' %s setup.py bdist_mpkg" % (ldflags, MPKG_PYTHON[pyver]))
 
 
 @task

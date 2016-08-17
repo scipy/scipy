@@ -37,7 +37,7 @@ class CarromTable(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.global_optimum = [(9.646157266348881, 9.646134286497169),
                                (-9.646157266348881, 9.646134286497169),
                                (9.646157266348881, -9.646134286497169),
@@ -86,7 +86,7 @@ class Chichinadze(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-30.0] * self.N, [30.0] * self.N)
+        self._bounds = list(zip([-30.0] * self.N, [30.0] * self.N))
         self.custom_bounds = [(-10, 10), (-10, 10)]
 
         self.global_optimum = [[6.189866586965680, 0.5]]
@@ -125,8 +125,8 @@ class Cigar(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                                [100.0] * self.N))
         self.custom_bounds = [(-5, 5), (-5, 5)]
 
         self.global_optimum = [[0 for _ in range(self.N)]]
@@ -189,7 +189,7 @@ class Cola(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self._bounds = [[0.0, 4.0]] + list(zip([-4.0] * (self.N - 1),
-                 [4.0] * (self.N - 1)))
+                                               [4.0] * (self.N - 1)))
 
         self.global_optimum = [[0.651906, 1.30194, 0.099242, -0.883791,
                                 -0.8796, 0.204651, -3.28414, 0.851188,
@@ -257,7 +257,7 @@ class Colville(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[1 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -306,7 +306,7 @@ class Corana(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -358,7 +358,7 @@ class CosineMixture(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self.change_dimensionality = True
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[-1. for _ in range(self.N)]]
         self.fglob = -0.9 * self.N
@@ -397,7 +397,7 @@ class CrossInTray(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [(1.349406685353340, 1.349406608602084),
                                (-1.349406685353340, 1.349406608602084),
@@ -441,7 +441,7 @@ class CrossLegTable(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0., 0.]]
         self.fglob = -1.0
@@ -482,7 +482,7 @@ class CrownedCross(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0, 0]]
         self.fglob = 0.0001
@@ -524,7 +524,7 @@ class Csendes(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         self.change_dimensionality = True
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = np.nan
@@ -580,7 +580,7 @@ class Cube(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = ([0, 2], [0, 2])
 
         self.global_optimum = [[1.0, 1.0]]

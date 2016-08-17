@@ -620,8 +620,12 @@ class _TestCommon:
         assert_raises(NotImplementedError, self.spmatrix(A).power, A)       
 
     def test_neg(self):
-        A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
-        assert_equal(-A,(-self.spmatrix(A)).todense())
+        A = matrix([[-1, 0, 17], [0, -5, 0], [1, -4, 0], [0, 0, 0]], 'd')
+        assert_equal(-A, (-self.spmatrix(A)).todense())
+
+        # see gh-5843
+        A = matrix([[True, False, False], [False, False, True]])
+        assert_raises(NotImplementedError, self.spmatrix(A).__neg__)
 
     def test_real(self):
         D = matrix([[1 + 3j, 2 - 4j]])
@@ -736,6 +740,16 @@ class _TestCommon:
 
         assert_equal(A_nz, Asp_nz)
 
+    def test_numpy_nonzero(self):
+        # See gh-5987
+        A = array([[1, 0, 1], [0, 1, 1], [0, 0, 1]])
+        Asp = self.spmatrix(A)
+
+        A_nz = set([tuple(ij) for ij in transpose(np.nonzero(A))])
+        Asp_nz = set([tuple(ij) for ij in transpose(np.nonzero(Asp))])
+
+        assert_equal(A_nz, Asp_nz)
+
     def test_getrow(self):
         assert_array_equal(self.datsp.getrow(1).todense(), self.dat[1,:])
         assert_array_equal(self.datsp.getrow(-1).todense(), self.dat[-1,:])
@@ -749,32 +763,96 @@ class _TestCommon:
         dat_1 = np.matrix([[0, 1, 2],
                            [3, -4, 5],
                            [-6, 7, 9]])
-        dat_2 = np.random.rand(40, 40)
+        dat_2 = np.random.rand(5, 5)
         dat_3 = np.array([[]])
         dat_4 = np.zeros((40, 40))
-        dat_5 = sparse.rand(40, 40, density=1e-2).A
+        dat_5 = sparse.rand(5, 5, density=1e-2).A
         matrices = [dat_1, dat_2, dat_3, dat_4, dat_5]
 
         def check(dtype, j):
             dat = np.matrix(matrices[j], dtype=dtype)
             datsp = self.spmatrix(dat, dtype=dtype)
+            with np.errstate(over='ignore'):
+                assert_array_almost_equal(dat.sum(), datsp.sum())
+                assert_equal(dat.sum().dtype, datsp.sum().dtype)
+                assert_(np.isscalar(datsp.sum(axis=None)))
+                assert_array_almost_equal(dat.sum(axis=None),
+                                          datsp.sum(axis=None))
+                assert_equal(dat.sum(axis=None).dtype,
+                             datsp.sum(axis=None).dtype)
+                assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
+                assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
+                assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
+                assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
+                assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
+                assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
+                assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
+                assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
 
-            assert_array_almost_equal(dat.sum(), datsp.sum())
-            assert_equal(dat.sum().dtype, datsp.sum().dtype)
-            assert_array_almost_equal(dat.sum(axis=None), datsp.sum(axis=None))
-            assert_equal(dat.sum(axis=None).dtype, datsp.sum(axis=None).dtype)
-            assert_array_almost_equal(dat.sum(axis=0), datsp.sum(axis=0))
-            assert_equal(dat.sum(axis=0).dtype, datsp.sum(axis=0).dtype)
-            assert_array_almost_equal(dat.sum(axis=1), datsp.sum(axis=1))
-            assert_equal(dat.sum(axis=1).dtype, datsp.sum(axis=1).dtype)
-            assert_array_almost_equal(dat.sum(axis=-2), datsp.sum(axis=-2))
-            assert_equal(dat.sum(axis=-2).dtype, datsp.sum(axis=-2).dtype)
-            assert_array_almost_equal(dat.sum(axis=-1), datsp.sum(axis=-1))
-            assert_equal(dat.sum(axis=-1).dtype, datsp.sum(axis=-1).dtype)
-
-        for dtype in self.math_dtypes:
+        for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
                 yield check, dtype, j
+
+    def test_sum_invalid_params(self):
+        out = np.asmatrix(np.zeros((1, 3)))
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        assert_raises(ValueError, datsp.sum, axis=3)
+        assert_raises(TypeError, datsp.sum, axis=(0, 1))
+        assert_raises(TypeError, datsp.sum, axis=1.5)
+        assert_raises(ValueError, datsp.sum, axis=1, out=out)
+
+    def test_sum_dtype(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        def check(dtype):
+            dat_mean = dat.mean(dtype=dtype)
+            datsp_mean = datsp.mean(dtype=dtype)
+
+            assert_array_almost_equal(dat_mean, datsp_mean)
+            assert_equal(dat_mean.dtype, datsp_mean.dtype)
+
+        for dtype in self.checked_dtypes:
+            yield check, dtype
+
+    def test_sum_out(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        dat_out = np.matrix(0)
+        datsp_out = np.matrix(0)
+
+        dat.sum(out=dat_out)
+        datsp.sum(out=datsp_out)
+        assert_array_almost_equal(dat_out, datsp_out)
+
+        dat_out = np.asmatrix(np.zeros((3, 1)))
+        datsp_out = np.asmatrix(np.zeros((3, 1)))
+
+        dat.sum(axis=1, out=dat_out)
+        datsp.sum(axis=1, out=datsp_out)
+        assert_array_almost_equal(dat_out, datsp_out)
+
+    def test_numpy_sum(self):
+        # See gh-5987
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        dat_mean = np.sum(dat)
+        datsp_mean = np.sum(datsp)
+
+        assert_array_almost_equal(dat_mean, datsp_mean)
+        assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
     def test_mean(self):
         def check(dtype):
@@ -785,6 +863,7 @@ class _TestCommon:
 
             assert_array_almost_equal(dat.mean(), datsp.mean())
             assert_equal(dat.mean().dtype, datsp.mean().dtype)
+            assert_(np.isscalar(datsp.mean(axis=None)))
             assert_array_almost_equal(dat.mean(axis=None), datsp.mean(axis=None))
             assert_equal(dat.mean(axis=None).dtype, datsp.mean(axis=None).dtype)
             assert_array_almost_equal(dat.mean(axis=0), datsp.mean(axis=0))
@@ -796,8 +875,69 @@ class _TestCommon:
             assert_array_almost_equal(dat.mean(axis=-1), datsp.mean(axis=-1))
             assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
 
-        for dtype in self.math_dtypes:
+        for dtype in self.checked_dtypes:
             yield check, dtype
+
+    def test_mean_invalid_params(self):
+        out = np.asmatrix(np.zeros((1, 3)))
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        assert_raises(ValueError, datsp.mean, axis=3)
+        assert_raises(TypeError, datsp.mean, axis=(0, 1))
+        assert_raises(TypeError, datsp.mean, axis=1.5)
+        assert_raises(ValueError, datsp.mean, axis=1, out=out)
+
+    def test_mean_dtype(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        def check(dtype):
+            dat_mean = dat.mean(dtype=dtype)
+            datsp_mean = datsp.mean(dtype=dtype)
+
+            assert_array_almost_equal(dat_mean, datsp_mean)
+            assert_equal(dat_mean.dtype, datsp_mean.dtype)
+
+        for dtype in self.checked_dtypes:
+            yield check, dtype
+
+    def test_mean_out(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        dat_out = np.matrix(0)
+        datsp_out = np.matrix(0)
+
+        dat.mean(out=dat_out)
+        datsp.mean(out=datsp_out)
+        assert_array_almost_equal(dat_out, datsp_out)
+
+        dat_out = np.asmatrix(np.zeros((3, 1)))
+        datsp_out = np.asmatrix(np.zeros((3, 1)))
+
+        dat.mean(axis=1, out=dat_out)
+        datsp.mean(axis=1, out=datsp_out)
+        assert_array_almost_equal(dat_out, datsp_out)
+
+    def test_numpy_mean(self):
+        # See gh-5987
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        dat_mean = np.mean(dat)
+        datsp_mean = np.mean(datsp)
+
+        assert_array_almost_equal(dat_mean, datsp_mean)
+        assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
     def test_expm(self):
         with warnings.catch_warnings():
@@ -1174,12 +1314,16 @@ class _TestCommon:
                     assert_almost_equal(sp_mult, dense_mult)
 
     def test_elementwise_divide(self):
-        expected = [[1,np.nan,np.nan,1],[1,np.nan,1,np.nan],[np.nan,1,np.nan,np.nan]]
+        expected = [[1,np.nan,np.nan,1],
+                    [1,np.nan,1,np.nan],
+                    [np.nan,1,np.nan,np.nan]]
         assert_array_equal(todense(self.datsp / self.datsp),expected)
 
         denom = self.spmatrix(matrix([[1,0,0,4],[-1,0,0,0],[0,8,0,-5]],'d'))
-        res = matrix([[1,np.nan,np.nan,0.5],[-3,np.nan,inf,np.nan],[np.nan,0.25,np.nan,np.nan]],'d')
-        assert_array_equal(todense(self.datsp / denom),res)
+        expected = [[1,np.nan,np.nan,0.5],
+                    [-3,np.nan,inf,np.nan],
+                    [np.nan,0.25,np.nan,0]]
+        assert_array_equal(todense(self.datsp / denom), expected)
 
         # complex
         A = array([[1-2j,0+5j,-1+0j],[4-3j,-3+6j,5]])
@@ -1195,6 +1339,14 @@ class _TestCommon:
         Bsp = self.spmatrix(B)
         with np.errstate(divide='ignore'):
             assert_array_equal(todense(Asp / Bsp), A / B)
+
+        # mismatching sparsity patterns
+        A = array([[0,1],[1,0]])
+        B = array([[1,0],[1,0]])
+        Asp = self.spmatrix(A)
+        Bsp = self.spmatrix(B)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            assert_array_equal(np.array(todense(Asp / Bsp)), A / B)
 
     def test_pow(self):
         A = matrix([[1,0,2,0],[0,3,4,0],[0,5,0,0],[0,6,7,8]])
@@ -1218,13 +1370,14 @@ class _TestCommon:
         assert_array_almost_equal(row*M, row*M.todense())
 
     def test_small_multiplication(self):
-        # test that A*x works for x with shape () (1,) and (1,1)
+        # test that A*x works for x with shape () (1,) (1,1) and (1,0)
         A = self.spmatrix([[1],[2],[3]])
 
         assert_(isspmatrix(A * array(1)))
         assert_equal((A * array(1)).todense(), [[1],[2],[3]])
         assert_equal(A * array([1]), array([1,2,3]))
         assert_equal(A * array([[1]]), array([[1],[2],[3]]))
+        assert_equal(A * np.ones((1,0)), np.ones((3,0)))
 
     def test_binop_custom_type(self):
         # Non-regression test: previously, binary operations would raise
@@ -1415,11 +1568,17 @@ class _TestCommon:
 
             a = datsp.transpose()
             b = dat.transpose()
+
             assert_array_equal(a.todense(), b)
             assert_array_equal(a.transpose().todense(), dat)
             assert_equal(a.dtype, b.dtype)
 
-            assert_array_equal(self.spmatrix((3,4)).T.todense(), zeros((4,3)))
+        # See gh-5987
+        empty = self.spmatrix((3, 4))
+        assert_array_equal(np.transpose(empty).todense(),
+                           np.transpose(zeros((3, 4))))
+        assert_array_equal(empty.T.todense(), zeros((4, 3)))
+        assert_raises(ValueError, empty.transpose, axes=0)
 
         for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
@@ -2273,10 +2432,11 @@ class _TestSlicingAssign:
             A = B / 10
             B[0,:] = A[0,:]
             assert_array_equal(A[0,:].A, B[0,:].A)
+            assert_equal(A.nnz, B.nnz)
 
             A = B / 10
             B[:,:] = A[:1,:1]
-            assert_equal(A[0,0], B[3,2])
+            assert_array_equal(np.zeros((4,3)) + A[0,0], B.A)
 
             A = B / 10
             B[:-1,0] = A[0,:].T
@@ -2301,6 +2461,19 @@ class _TestSlicingAssign:
             block = [[1,0],[0,4]]
             B[:2,:2] = csc_matrix(array(block))
             assert_array_equal(B.todense()[:2,:2],block)
+
+    def test_sparsity_modifying_assignment(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+            B = self.spmatrix((4,3))
+            B[0,0] = 5
+            B[1,2] = 3
+            B[2,1] = 7
+            B[3,0] = 10
+
+            expected = array([[1,0,0],[0,1,0],[0,0,1],[10,0,0]])
+            B[:3] = csr_matrix(np.eye(3))
+            assert_array_equal(B.toarray(), expected)
 
     def test_set_slice(self):
         with warnings.catch_warnings():
@@ -2983,6 +3156,37 @@ class _TestMinMax(object):
             assert_array_equal(np.zeros((1, 0)), X.min(axis=axis).A)
             assert_array_equal(np.zeros((1, 0)), X.max(axis=axis).A)
 
+    def test_minmax_invalid_params(self):
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        for fname in ('min', 'max'):
+            func = getattr(datsp, fname)
+            assert_raises(ValueError, func, axis=3)
+            assert_raises(TypeError, func, axis=(0, 1))
+            assert_raises(TypeError, func, axis=1.5)
+            assert_raises(ValueError, func, axis=1, out=1)
+
+    def test_numpy_minmax(self):
+        # See gh-5987
+        # xref gh-7460 in 'numpy'
+        from scipy.sparse import data
+
+        dat = np.matrix([[0, 1, 2],
+                         [3, -4, 5],
+                         [-6, 7, 9]])
+        datsp = self.spmatrix(dat)
+
+        # We are only testing sparse matrices who have
+        # implemented 'min' and 'max' because they are
+        # the ones with the compatibility issues with
+        # the 'numpy' implementation.
+        if isinstance(datsp, data._minmax_mixin):
+            assert_array_equal(np.min(datsp), np.min(dat))
+            assert_array_equal(np.max(datsp), np.max(dat))
+
 
 class _TestGetNnzAxis(object):
     def test_getnnz_axis(self):
@@ -3581,15 +3785,29 @@ class TestLIL(sparse_test_class(minmax=False)):
         assert_equal(x[0,0],0)
 
     def test_reshape(self):
-        x = lil_matrix((4,3))
-        x[0,0] = 1
-        x[2,1] = 3
-        x[3,2] = 5
-        x[0,2] = 7
+        x = lil_matrix((4, 3))
+        x[0, 0] = 1
+        x[2, 1] = 3
+        x[3, 2] = 5
+        x[0, 2] = 7
 
-        for s in [(12,1),(1,12)]:
+        for s in [(12, 1), (1, 12)]:
             assert_array_equal(x.reshape(s).todense(),
                                x.todense().reshape(s))
+
+            # LIL matrices are read/written in row-major order
+            assert_array_equal(x.reshape(s, order='C').todense(),
+                               x.todense().reshape(s, order='C'))
+
+            # See gh-5987
+            assert_array_equal(np.reshape(x, s).todense(),
+                               np.reshape(x.todense(), s))
+
+        assert_raises(TypeError, x.reshape, 2)
+        assert_raises(ValueError, x.reshape, (1, 5, 3))
+        assert_raises(ValueError, x.reshape, (1, 5))
+        assert_raises(ValueError, x.reshape, (6, 2), order=2)
+        assert_raises(ValueError, x.reshape, (6, 2), order='A')
 
     def test_inplace_ops(self):
         A = lil_matrix([[0,2,3],[4,0,6]])
@@ -3851,6 +4069,15 @@ class TestBSR(sparse_test_class(getset=False,
         A = array([[1,0],[2,3]])
         assert_equal(bsr_matrix(arg, blocksize=(2,2)).todense(), A)
 
+    def test_constructor4(self):
+        # regression test for gh-6292: bsr_matrix((data, indices, indptr)) was
+        #  trying to compare an int to a None
+        n = 8
+        data = np.ones((n, n, 1), dtype=np.int8)
+        indptr = np.array([0, n], dtype=np.int32)
+        indices = np.arange(n, dtype=np.int32)
+        bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
+
     def test_eliminate_zeros(self):
         data = kron([1, 0, 0, 0, 2, 0, 3, 0], [[1,1],[1,1]]).T
         data = data.reshape(-1,2,2)
@@ -3972,7 +4199,15 @@ class _NonCanonicalMixin(object):
         NC = construct(arg1, **kwargs)
 
         # check that result is valid
-        assert_allclose(NC.A, M.A)
+        if NC.dtype in [np.float32, np.complex64]:
+            # For single-precision floats, the differences between M and NC
+            # that are introduced by the extra operations involved in the
+            # construction of NC necessitate a more lenient tolerance level
+            # than the default.
+            rtol = 1e-05
+        else:
+            rtol = 1e-07
+        assert_allclose(NC.A, M.A, rtol=rtol)
 
         # check that at least one explicit zero
         if has_zeros:

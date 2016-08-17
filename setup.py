@@ -21,6 +21,8 @@ DOCLINES = __doc__.split("\n")
 import os
 import sys
 import subprocess
+import textwrap
+import warnings
 
 
 if sys.version_info[:2] < (2, 6) or (3, 0) <= sys.version_info[0:2] < (3, 2):
@@ -56,7 +58,7 @@ Operating System :: MacOS
 """
 
 MAJOR = 0
-MINOR = 18
+MINOR = 19
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -87,8 +89,9 @@ def git_version():
     return GIT_REVISION
 
 
-# BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
-# update it when the contents of directories change.
+# BEFORE importing setuptools, remove MANIFEST. Otherwise it may not be
+# properly updated when the contents of directories change (true for distutils,
+# not sure about setuptools).
 if os.path.exists('MANIFEST'):
     os.remove('MANIFEST')
 
@@ -160,6 +163,37 @@ if HAVE_SPHINX:
             BuildDoc.run(self)
 
 
+def check_submodules():
+    """ verify that the submodules are checked out and clean
+        use `git submodule update --init`; on failure
+    """
+    if not os.path.exists('.git'):
+        return
+    with open('.gitmodules') as f:
+        for l in f:
+            if 'path' in l:
+                p = l.split('=')[-1].strip()
+                if not os.path.exists(p):
+                    raise ValueError('Submodule %s missing' % p)
+
+
+    proc = subprocess.Popen(['git', 'submodule', 'status'],
+                            stdout=subprocess.PIPE)
+    status, _ = proc.communicate()
+    status = status.decode("ascii", "replace")
+    for line in status.splitlines():
+        if line.startswith('-') or line.startswith('+'):
+            raise ValueError('Submodule not clean: %s' % line)
+
+
+from distutils.command.sdist import sdist
+class sdist_checked(sdist):
+    """ check submodules on sdist to prevent incomplete tarballs """
+    def run(self):
+        check_submodules()
+        sdist.run(self)
+
+
 def generate_cython():
     cwd = os.path.abspath(os.path.dirname(__file__))
     print("Cythonizing sources")
@@ -169,6 +203,125 @@ def generate_cython():
                         cwd=cwd)
     if p != 0:
         raise RuntimeError("Running cythonize failed!")
+
+
+def parse_setuppy_commands():
+    """Check the commands and respond appropriately.  Disable broken commands.
+
+    Return a boolean value for whether or not to run the build or not (avoid
+    parsing Cython and template files if False).
+    """
+    if len(sys.argv) < 2:
+        # User forgot to give an argument probably, let setuptools handle that.
+        return True
+
+    info_commands = ['--help-commands', '--name', '--version', '-V',
+                     '--fullname', '--author', '--author-email',
+                     '--maintainer', '--maintainer-email', '--contact',
+                     '--contact-email', '--url', '--license', '--description',
+                     '--long-description', '--platforms', '--classifiers',
+                     '--keywords', '--provides', '--requires', '--obsoletes']
+    # Add commands that do more than print info, but also don't need Cython and
+    # template parsing.
+    info_commands.extend(['egg_info', 'install_egg_info', 'rotate'])
+
+    for command in info_commands:
+        if command in sys.argv[1:]:
+            return False
+
+    # Note that 'alias', 'saveopts' and 'setopt' commands also seem to work
+    # fine as they are, but are usually used together with one of the commands
+    # below and not standalone.  Hence they're not added to good_commands.
+    good_commands = ('develop', 'sdist', 'build', 'build_ext', 'build_py',
+                     'build_clib', 'build_scripts', 'bdist_wheel', 'bdist_rpm',
+                     'bdist_wininst', 'bdist_msi', 'bdist_mpkg',
+                     'build_sphinx')
+
+    for command in good_commands:
+        if command in sys.argv[1:]:
+            return True
+
+    # The following commands are supported, but we need to show more
+    # useful messages to the user
+    if 'install' in sys.argv[1:]:
+        print(textwrap.dedent("""
+            Note: if you need reliable uninstall behavior, then install
+            with pip instead of using `setup.py install`:
+
+              - `pip install .`       (from a git repo or downloaded source
+                                       release)
+              - `pip install scipy`   (last SciPy release on PyPI)
+
+            """))
+        return True
+
+    if '--help' in sys.argv[1:] or '-h' in sys.argv[1]:
+        print(textwrap.dedent("""
+            SciPy-specific help
+            -------------------
+
+            To install SciPy from here with reliable uninstall, we recommend
+            that you use `pip install .`. To install the latest SciPy release
+            from PyPI, use `pip install scipy`.
+
+            For help with build/installation issues, please ask on the
+            scipy-user mailing list.  If you are sure that you have run
+            into a bug, please report it at https://github.com/scipy/scipy/issues.
+
+            Setuptools commands help
+            ------------------------
+            """))
+        return False
+
+    # The following commands aren't supported.  They can only be executed when
+    # the user explicitly adds a --force command-line argument.
+    bad_commands = dict(
+        test="""
+            `setup.py test` is not supported.  Use one of the following
+            instead:
+
+              - `python runtests.py`              (to build and test)
+              - `python runtests.py --no-build`   (to test installed scipy)
+              - `>>> scipy.test()`           (run tests for installed scipy
+                                              from within an interpreter)
+            """,
+        upload="""
+            `setup.py upload` is not supported, because it's insecure.
+            Instead, build what you want to upload and upload those files
+            with `twine upload -s <filenames>` instead.
+            """,
+        upload_docs="`setup.py upload_docs` is not supported",
+        easy_install="`setup.py easy_install` is not supported",
+        clean="""
+            `setup.py clean` is not supported, use one of the following instead:
+
+              - `git clean -xdf` (cleans all files)
+              - `git clean -Xdf` (cleans all versioned files, doesn't touch
+                                  files that aren't checked into the git repo)
+            """,
+        check="`setup.py check` is not supported",
+        register="`setup.py register` is not supported",
+        bdist_dumb="`setup.py bdist_dumb` is not supported",
+        bdist="`setup.py bdist` is not supported",
+        flake8="`setup.py flake8` is not supported, use flake8 standalone",
+        )
+    bad_commands['nosetests'] = bad_commands['test']
+    for command in ('upload_docs', 'easy_install', 'bdist', 'bdist_dumb',
+                     'register', 'check', 'install_data', 'install_headers',
+                     'install_lib', 'install_scripts', ):
+        bad_commands[command] = "`setup.py %s` is not supported" % command
+
+    for command in bad_commands.keys():
+        if command in sys.argv[1:]:
+            print(textwrap.dedent(bad_commands[command]) +
+                  "\nAdd `--force` to your command to use it anyway if you "
+                  "must (unsupported).\n")
+            sys.exit(1)
+
+    # If we got here, we didn't detect what setup.py command was given
+    warnings.warn("Unrecognized setuptools command, proceeding with "
+                  "generating Cython sources and expanding templates")
+    return True
 
 
 def configuration(parent_package='', top_path=None):
@@ -188,14 +341,12 @@ def configuration(parent_package='', top_path=None):
 
 
 def setup_package():
-
     # Rewrite the version file every time
     write_version_py()
 
+    cmdclass = {'sdist': sdist_checked}
     if HAVE_SPHINX:
-        cmdclass = {'build_sphinx': ScipyBuildDoc}
-    else:
-        cmdclass = {}
+        cmdclass['build_sphinx'] = ScipyBuildDoc
 
     # Figure out whether to add ``*_requires = ['numpy']``.
     # We don't want to do that unconditionally, because we risk updating
@@ -229,37 +380,36 @@ def setup_package():
         install_requires=build_requires,
     )
 
-    if len(sys.argv) >= 2 and ('--help' in sys.argv[1:] or
-            sys.argv[1] in ('--help-commands', 'egg_info', '--version',
-                            'clean')):
-        # For these actions, NumPy is not required.
-        #
-        # They are required to succeed without Numpy for example when
-        # pip is used to install Scipy when Numpy is not yet present in
-        # the system.
-        try:
-            from setuptools import setup
-        except ImportError:
-            from distutils.core import setup
-
-        FULLVERSION, GIT_REVISION = get_version_info()
-        metadata['version'] = FULLVERSION
+    if "--force" in sys.argv:
+        run_build = True
     else:
-        if (len(sys.argv) >= 2 and sys.argv[1] in ('bdist_wheel', 'bdist_egg')) or (
-                    'develop' in sys.argv):
-            # bdist_wheel/bdist_egg needs setuptools
-            import setuptools
+        # Raise errors for unsupported commands, improve help output, etc.
+        run_build = parse_setuppy_commands()
 
+    # This import is here because it needs to be done before importing setup()
+    # from numpy.distutils, but after the MANIFEST removing and sdist import
+    # higher up in this file.
+    from setuptools import setup
+
+    if run_build:
         from numpy.distutils.core import setup
-
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
             # Generate Cython sources, unless building from source release
             generate_cython()
 
         metadata['configuration'] = configuration
+    else:
+        # Don't import numpy here - non-build actions are required to succeed
+        # without Numpy for example when pip is used to install Scipy when
+        # Numpy is not yet present in the system.
+
+        # Version number is added to metadata inside configuration() if build
+        # is run.
+        metadata['version'] = get_version_info()[0]
 
     setup(**metadata)
+
 
 if __name__ == '__main__':
     setup_package()

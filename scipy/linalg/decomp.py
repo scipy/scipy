@@ -274,7 +274,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     Raises
     ------
-    LinAlgError :
+    LinAlgError
         If eigenvalue computation does not converge,
         an error occurred, or b matrix is not definite positive. Note that
         if input matrices are not symmetric or hermitian, no error is reported
@@ -665,7 +665,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
     Raises
     ------
-    LinAlgError :
+    LinAlgError
         If eigenvalue computation does not converge,
         an error occurred, or b matrix is not definite positive. Note that
         if input matrices are not symmetric or hermitian, no error is reported

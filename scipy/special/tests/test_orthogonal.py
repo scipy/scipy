@@ -719,7 +719,7 @@ def test_la_roots():
 
     vgq(rootf(50), evalf(50), weightf(50), 0., np.inf, 5)
     vgq(rootf(50), evalf(50), weightf(50), 0., np.inf, 25, atol=1e-13)
-    vgq(rootf(50), evalf(50), weightf(50), 0., np.inf, 100, atol=1e-13)
+    vgq(rootf(50), evalf(50), weightf(50), 0., np.inf, 100, rtol=1e-14, atol=2e-13)
 
     x, w = orth.la_roots(5, 2, False)
     y, v, m = orth.la_roots(5, 2, True)

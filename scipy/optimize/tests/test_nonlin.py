@@ -354,8 +354,8 @@ class TestJacobianDotSolve(object):
         self._check_dot(nonlin.ExcitingMixing, complex=True)
 
     def test_krylov(self):
-        self._check_dot(nonlin.KrylovJacobian, complex=False, tol=1e-4)
-        self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-4)
+        self._check_dot(nonlin.KrylovJacobian, complex=False, tol=1e-3)
+        self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-3)
 
 
 class TestNonlinOldTests(TestCase):

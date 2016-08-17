@@ -36,12 +36,15 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 
 from scipy import special
 import scipy.special._ufuncs as cephes
-from scipy.special import ellipk
+from scipy.special import ellipk, zeta
 
 from scipy.special._testutils import assert_tol_equal, with_special_errors, \
      assert_func_equal
 
 from scipy._lib._version import NumpyVersion
+
+import math
+
 
 class TestCephes(TestCase):
     def test_airy(self):
@@ -151,7 +154,7 @@ class TestCephes(TestCase):
 
     def test_betaln(self):
         assert_equal(cephes.betaln(1,1),0.0)
-        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes.gammaln(1e-200))
+        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes._gammaln(1e-200))
         assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447,
                         rtol=1e-14, atol=0)
 
@@ -301,7 +304,7 @@ class TestCephes(TestCase):
         assert_equal(cephes.expm1(np.inf), np.inf)
         assert_equal(cephes.expm1(-np.inf), -1)
         assert_equal(cephes.expm1(np.nan), np.nan)
-    
+
     # Earlier numpy version don't guarantee that npy_cexp conforms to C99.
     @dec.skipif(NumpyVersion(np.__version__) < '1.9.0')
     def test_expm1_complex(self):
@@ -322,7 +325,7 @@ class TestCephes(TestCase):
         assert_equal(expm1(complex(1, np.nan)), complex(np.nan, np.nan))
         assert_equal(expm1(complex(np.nan, 1)), complex(np.nan, np.nan))
         assert_equal(expm1(complex(np.nan, np.nan)), complex(np.nan, np.nan))
- 
+
     @dec.knownfailureif(True, 'The real part of expm1(z) bad at these points')
     def test_expm1_complex_hard(self):
         # The real part of this function is difficult to evaluate when
@@ -330,7 +333,7 @@ class TestCephes(TestCase):
         y = np.array([0.1, 0.2, 0.3, 5, 11, 20])
         x = -np.log(np.cos(y))
         z = x + 1j*y
-        
+
         # evaluate using mpmath.expm1 with dps=1000
         expected = np.array([-5.5507901846769623e-17+0.10033467208545054j,
                               2.4289354732893695e-18+0.20271003550867248j,
@@ -374,7 +377,7 @@ class TestCephes(TestCase):
         assert_equal(cephes.gammainccinv(5,1),0.0)
 
     def test_gammaln(self):
-        cephes.gammaln(10)
+        cephes._gammaln(10)
 
     def test_gammasgn(self):
         vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)
@@ -896,10 +899,14 @@ class TestCephes(TestCase):
         cephes.yve(1,1)
 
     def test_zeta(self):
-        cephes.zeta(2,2)
+        assert_allclose(zeta(2,2), pi**2/6 - 1, rtol=1e-12)
 
     def test_zetac(self):
         assert_equal(cephes.zetac(0),-1.5)
+
+    def test_zeta_1arg(self):
+        assert_allclose(zeta(2), pi**2/6, rtol=1e-12)
+        assert_allclose(zeta(4), pi**4/90, rtol=1e-12)
 
     def test_wofz(self):
         z = [complex(624.2,-0.26123), complex(-0.4,3.), complex(0.6,2.),
@@ -1261,6 +1268,15 @@ class TestCombinatorics(TestCase):
         assert_almost_equal(special.comb(10, 3), 120.)
         assert_equal(special.comb(10, 3, exact=True), 120)
         assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
+
+        assert_allclose([special.comb(20, k, exact=True) for k in range(21)],
+                        special.comb(20, list(range(21))), atol=1e-15)
+
+        ii = np.iinfo(int).max + 1
+        assert_equal(special.comb(ii, ii-1, exact=True), ii)
+
+        expected = 100891344545564193334812497256
+        assert_equal(special.comb(100, 50, exact=True), expected)
 
     def test_comb_with_np_int64(self):
         n = 70
@@ -1706,13 +1722,66 @@ class TestExp(TestCase):
 
 class TestFactorialFunctions(TestCase):
     def test_factorial(self):
+        # Some known values, float math
+        assert_array_almost_equal(special.factorial(0), 1)
+        assert_array_almost_equal(special.factorial(1), 1)
+        assert_array_almost_equal(special.factorial(2), 2)
         assert_array_almost_equal([6., 24., 120.],
-                special.factorial([3, 4, 5], exact=False))
+                                  special.factorial([3, 4, 5], exact=False))
+        assert_array_almost_equal(special.factorial([[5, 3], [4, 3]]),
+                                  [[120, 6], [24, 6]])
+
+        # Some known values, integer math
+        assert_equal(special.factorial(0, exact=True), 1)
+        assert_equal(special.factorial(1, exact=True), 1)
+        assert_equal(special.factorial(2, exact=True), 2)
         assert_equal(special.factorial(5, exact=True), 120)
+        assert_equal(special.factorial(15, exact=True), 1307674368000)
+
+        # ndarray shape is maintained
+        assert_equal(special.factorial([7, 4, 15, 10], exact=True),
+                     [5040, 24, 1307674368000, 3628800])
+
+        assert_equal(special.factorial([[5, 3], [4, 3]], True),
+                     [[120, 6], [24, 6]])
+
+        # object arrays
+        assert_equal(special.factorial(np.arange(-3, 22), True),
+                     special.factorial(np.arange(-3, 22), False))
+
+        # int64 array
+        assert_equal(special.factorial(np.arange(-3, 15), True),
+                     special.factorial(np.arange(-3, 15), False))
+
+        # int32 array
+        assert_equal(special.factorial(np.arange(-3, 5), True),
+                     special.factorial(np.arange(-3, 5), False))
+
+        # Consistent output for n < 0
+        for exact in (True, False):
+            assert_array_equal(0, special.factorial(-3, exact))
+            assert_array_equal([1, 2, 0, 0],
+                               special.factorial([1, 2, -5, -4], exact))
+
+        for n in range(0, 22):
+            # Compare all with math.factorial
+            correct = math.factorial(n)
+            assert_array_equal(correct, special.factorial(n, True))
+            assert_array_equal(correct, special.factorial([n], True)[0])
+
+            assert_allclose(float(correct), special.factorial(n, False))
+            assert_allclose(float(correct), special.factorial([n], False)[0])
+
+            # Compare exact=True vs False, scalar vs array
+            assert_array_equal(special.factorial(n, True),
+                               special.factorial(n, False))
+
+            assert_array_equal(special.factorial([n], True),
+                               special.factorial([n], False))
 
     def test_factorial2(self):
         assert_array_almost_equal([105., 384., 945.],
-                special.factorial2([7, 8, 9], exact=False))
+                                  special.factorial2([7, 8, 9], exact=False))
         assert_equal(special.factorial2(7, exact=True), 105)
 
     def test_factorialk(self):

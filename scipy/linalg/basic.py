@@ -230,7 +230,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
-        b2 = np.array(b1, copy=overwrite_b)
+        b2 = np.array(b1, copy=(not overwrite_b))
         b2 /= a1[1, 0]
         return b2
     if l == u == 1:
@@ -638,9 +638,9 @@ def inv(a, overwrite_a=False, check_finite=True):
 
     Raises
     ------
-    LinAlgError :
+    LinAlgError
         If `a` is singular.
-    ValueError :
+    ValueError
         If `a` is not square, or not 2-dimensional.
 
     Examples
@@ -807,10 +807,10 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     Raises
     ------
-    LinAlgError :
+    LinAlgError
         If computation does not converge.
 
-    ValueError :
+    ValueError
         When parameters are wrong.
 
     See Also

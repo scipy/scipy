@@ -141,7 +141,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
                  scaling, axis)
 
 
-def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
+def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using Welch's method.
@@ -160,7 +160,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
-        Defaults to 'hanning'.
+        Defaults to 'hann'.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
     noverlap : int, optional
@@ -202,7 +202,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     Notes
     -----
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hanning' window an
+    and on your requirements.  For the default 'hann' window an
     overlap of 50% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
@@ -275,7 +275,7 @@ def welch(x, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     return freqs, Pxx.real
 
 
-def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
+def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate the cross power spectral density, Pxy, using Welch's method.
@@ -292,7 +292,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
-        Defaults to 'hanning'.
+        Defaults to 'hann'.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
     noverlap: int, optional
@@ -342,7 +342,7 @@ def csd(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None, nfft=None,
     zero-padded to match.
 
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hanning' window an
+    and on your requirements.  For the default 'hann' window an
     overlap of 50\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
@@ -518,7 +518,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     return freqs, time, Pxy
 
 
-def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
+def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     """
     Estimate the magnitude squared coherence estimate, Cxy, of discrete-time
@@ -540,7 +540,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
-        Defaults to 'hanning'.
+        Defaults to 'hann'.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
     noverlap: int, optional
@@ -575,7 +575,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     Notes
     --------
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hanning' window an
+    and on your requirements.  For the default 'hann' window an
     overlap of 50\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
@@ -629,7 +629,7 @@ def coherence(x, y, fs=1.0, window='hanning', nperseg=256, noverlap=None,
     return freqs, Cxy
 
 
-def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
+def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
                     noverlap=None, nfft=None, detrend='constant',
                     return_onesided=True, scaling='spectrum', axis=-1,
                     mode='psd'):
@@ -655,7 +655,7 @@ def _spectral_helper(x, y, fs=1.0, window='hanning', nperseg=256,
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
-        Defaults to 'hanning'.
+        Defaults to 'hann'.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
     noverlap : int, optional

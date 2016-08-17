@@ -72,6 +72,8 @@ Continuous distributions
    invweibull        -- Inverse Weibull
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
+   kappa4            -- Kappa 4 parameter
+   kappa3            -- Kappa 3 parameter
    ksone             -- Kolmogorov-Smirnov one-sided (no stats)
    kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
    laplace           -- Laplace
@@ -103,6 +105,7 @@ Continuous distributions
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
+   trapz              -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
@@ -128,6 +131,7 @@ Multivariate distributions
    invwishart            -- Inverse Wishart
    special_ortho_group   -- SO(N) group
    ortho_group           -- O(N) group
+   random_correlation    -- random correlation matrices
 
 Discrete distributions
 ======================
@@ -208,6 +212,7 @@ which work for masked arrays.
    sem
    zmap
    zscore
+   iqr
 
 .. autosummary::
    :toctree: generated/
@@ -345,8 +350,7 @@ from . import mstats
 from .contingency import chi2_contingency
 from ._multivariate import *
 
-#remove vonmises_cython from __all__, I don't know why it is included
-__all__ = [s for s in dir() if not (s.startswith('_') or s.endswith('cython'))]
+__all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
 from numpy.testing import Tester
 test = Tester().test

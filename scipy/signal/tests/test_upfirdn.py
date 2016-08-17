@@ -33,9 +33,11 @@
 
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, assert_raises
+from itertools import product
+from numpy.testing import (TestCase, run_module_suite, assert_equal,
+                           assert_raises, assert_allclose)
 
-from scipy.signal import upfirdn
+from scipy.signal import upfirdn, firwin, lfilter
 from scipy.signal._upfirdn import _output_len
 
 
@@ -51,7 +53,7 @@ def upfirdn_naive(x, h, up=1, down=1):
     return out
 
 
-class _UpFIRDnCase(object):
+class UpFIRDnCase(object):
     """Test _UpFIRDn object"""
     def __init__(self, up, down, h, x_dtype):
         self.up = up
@@ -101,44 +103,75 @@ class _UpFIRDnCase(object):
         assert_allclose(yr, y)
 
 
-def test_upfirdn():
-    """Test upfirdn"""
-    big, small = 100, 10  # up/down factors
-    longest_h = 25
-    n_rep = 3
-    try_types = (int, np.float32, np.complex64, float, complex)
-    random_state = np.random.RandomState(17)
-    for x_dtype in try_types:
-        # some trivial cases
-        for h in (1., 1j):
-            yield _UpFIRDnCase(1, 1, h, x_dtype)
-            yield _UpFIRDnCase(2, 2, h, x_dtype)
-            yield _UpFIRDnCase(3, 2, h, x_dtype)
-            yield _UpFIRDnCase(2, 3, h, x_dtype)
-        for h_dtype in try_types:
-            # mixture of big, small, and both directions (net up and net down)
-            for p_max, q_max in ((big, big),
-                                 (small, big),
-                                 (big, small),
-                                 (small, small)):
-                for _ in range(n_rep):
-                    p_add = q_max if p_max > q_max else 1
-                    q_add = p_max if q_max > p_max else 1
-                    p = random_state.randint(p_max) + p_add
-                    q = random_state.randint(q_max) + q_add
-                    len_h = random_state.randint(longest_h) + 1
-                    h = np.atleast_1d(random_state.randint(len_h))
-                    h = h.astype(h_dtype)
-                    if h_dtype == complex:
-                        h += 1j * random_state.randint(len_h)
-                    yield _UpFIRDnCase(p, q, h, x_dtype)
-    # Degenerate cases
-    assert_raises(ValueError, upfirdn, [1], [1], 1, 0)  # up or down < 1
-    assert_raises(ValueError, upfirdn, [], [1], 1, 1)  # h.ndim != 1
-    assert_raises(ValueError, upfirdn, [[1]], [1], 1, 1)
+class test_upfirdn(TestCase):
 
+    def test_valid_input(self):
+        assert_raises(ValueError, upfirdn, [1], [1], 1, 0)  # up or down < 1
+        assert_raises(ValueError, upfirdn, [], [1], 1, 1)  # h.ndim != 1
+        assert_raises(ValueError, upfirdn, [[1]], [1], 1, 1)
 
-if __name__ == '__main__':
-    # Execute the test suite
-    for t in test_upfirdn():
-        t()
+    def test_vs_lfilter(self):
+        # Check that up=1.0 gives same answer as lfilter + slicing
+        random_state = np.random.RandomState(17)
+        try_types = (int, np.float32, np.complex64, float, complex)
+        size = 10000
+        down_factors = [2, 11, 79]
+
+        for dtype in try_types:
+            x = random_state.randn(size).astype(dtype)
+            if dtype in (np.complex64, np.complex128):
+                x += 1j * random_state.randn(size)
+
+            for down in down_factors:
+                h = firwin(31, 1. / down, window='hamming')
+                yl = lfilter(h, 1.0, x)[::down]
+                y = upfirdn(h, x, up=1, down=down)
+                assert_allclose(yl, y[:yl.size], atol=1e-7, rtol=1e-7)
+
+    def test_vs_naive(self):
+        tests = []
+        try_types = (int, np.float32, np.complex64, float, complex)
+
+        # Simple combinations of factors
+        for x_dtype, h in product(try_types, (1., 1j)):
+                tests.append(UpFIRDnCase(1, 1, h, x_dtype))
+                tests.append(UpFIRDnCase(2, 2, h, x_dtype))
+                tests.append(UpFIRDnCase(3, 2, h, x_dtype))
+                tests.append(UpFIRDnCase(2, 3, h, x_dtype))
+
+        # mixture of big, small, and both directions (net up and net down)
+        # use all combinations of data and filter dtypes
+        factors = (100, 10)  # up/down factors
+        cases = product(factors, factors, try_types, try_types)
+        for case in cases:
+            tests += self._random_factors(*case)
+
+        for test in tests:
+            test()
+
+    def _random_factors(self, p_max, q_max, h_dtype, x_dtype):
+        n_rep = 3
+        longest_h = 25
+        random_state = np.random.RandomState(17)
+        tests = []
+
+        for _ in range(n_rep):
+            # Randomize the up/down factors somewhat
+            p_add = q_max if p_max > q_max else 1
+            q_add = p_max if q_max > p_max else 1
+            p = random_state.randint(p_max) + p_add
+            q = random_state.randint(q_max) + q_add
+
+            # Generate random FIR coefficients
+            len_h = random_state.randint(longest_h) + 1
+            h = np.atleast_1d(random_state.randint(len_h))
+            h = h.astype(h_dtype)
+            if h_dtype == complex:
+                h += 1j * random_state.randint(len_h)
+
+            tests.append(UpFIRDnCase(p, q, h, x_dtype))
+
+        return tests
+
+if __name__ == "__main__":
+    run_module_suite()

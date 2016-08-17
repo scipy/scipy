@@ -16,8 +16,13 @@ cimport numpy as np
 cimport cython
 cimport qhull
 cimport setlist
+from libc cimport stdio, stdlib
+from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
 
 from numpy.compat import asbytes
+import os
+import sys
+import tempfile
 
 cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
@@ -44,11 +49,11 @@ cdef extern from "setjmp.h" nogil:
     void longjmp(jmp_buf STATE, int VALUE) nogil
 
 # Define the clockwise constant
-cdef extern from "qhull/src/user.h":
+cdef extern from "qhull/src/user_r.h":
     cdef enum:
         qh_ORIENTclock
 
-cdef extern from "qhull/src/qset.h":
+cdef extern from "qhull/src/qset_r.h":
     ctypedef union setelemT:
         void *p
         int i
@@ -57,10 +62,10 @@ cdef extern from "qhull/src/qset.h":
         int maxsize
         setelemT e[1]
 
-    int qh_setsize(setT *set) nogil
-    void qh_setappend(setT **setp, void *elem) nogil
+    int qh_setsize(qhT *, setT *set) nogil
+    void qh_setappend(qhT *, setT **setp, void *elem) nogil
 
-cdef extern from "qhull/src/libqhull.h":
+cdef extern from "qhull/src/libqhull_r.h":
     ctypedef double realT
     ctypedef double coordT
     ctypedef double pointT
@@ -106,6 +111,7 @@ cdef extern from "qhull/src/libqhull.h":
         boolT ATinfinity
         boolT UPPERdelaunay
         boolT hasTriangulation
+        boolT hasAreaVolume
         int normal_size
         char *qhull_command
         facetT *facet_list
@@ -131,64 +137,60 @@ cdef extern from "qhull/src/libqhull.h":
         unsigned int visit_id
         unsigned int vertex_visit
 
-    extern qhT *qh_qh
     extern int qh_PRINToff
     extern int qh_ALL
 
-    void qh_init_A(void *inp, void *out, void *err, int argc, char **argv) nogil
-    void qh_init_B(realT *points, int numpoints, int dim, boolT ismalloc) nogil
-    void qh_checkflags(char *, char *) nogil
-    void qh_initflags(char *) nogil
-    void qh_option(char *, char*, char* ) nogil
-    void qh_freeqhull(boolT) nogil
-    void qh_memfreeshort(int *curlong, int *totlong) nogil
-    void qh_qhull() nogil
-    void qh_check_output() nogil
-    void qh_produce_output() nogil
-    void qh_triangulate() nogil
-    void qh_checkpolygon() nogil
-    void qh_findgood_all() nogil
-    void qh_appendprint(int format) nogil
-    setT *qh_pointvertex() nogil
-    realT *qh_readpoints(int* num, int *dim, boolT* ismalloc) nogil
-    int qh_new_qhull(int dim, int numpoints, realT *points,
+    void qh_init_A(qhT *, void *inp, void *out, void *err, int argc, char **argv) nogil
+    void qh_init_B(qhT *, realT *points, int numpoints, int dim, boolT ismalloc) nogil
+    void qh_checkflags(qhT *, char *, char *) nogil
+    void qh_initflags(qhT *, char *) nogil
+    void qh_option(qhT *, char *, char*, char* ) nogil
+    void qh_freeqhull(qhT *, boolT) nogil
+    void qh_memfreeshort(qhT *, int *curlong, int *totlong) nogil
+    void qh_qhull(qhT *) nogil
+    void qh_check_output(qhT *) nogil
+    void qh_produce_output(qhT *) nogil
+    void qh_triangulate(qhT *) nogil
+    void qh_checkpolygon(qhT *) nogil
+    void qh_findgood_all(qhT *) nogil
+    void qh_appendprint(qhT *, int format) nogil
+    setT *qh_pointvertex(qhT *) nogil
+    realT *qh_readpoints(qhT *, int* num, int *dim, boolT* ismalloc) nogil
+    void qh_zero(qhT *, void *errfile) nogil
+    int qh_new_qhull(qhT *, int dim, int numpoints, realT *points,
                      boolT ismalloc, char* qhull_cmd, void *outfile,
                      void *errfile) nogil
-    int qh_pointid(pointT *point) nogil
-    vertexT *qh_nearvertex(facetT *facet, pointT *point, double *dist) nogil
-    boolT qh_addpoint(pointT *furthest, facetT *facet, boolT checkdist) nogil
-    facetT *qh_findbestfacet(pointT *point, boolT bestoutside,
+    int qh_pointid(qhT *, pointT *point) nogil
+    vertexT *qh_nearvertex(qhT *, facetT *facet, pointT *point, double *dist) nogil
+    boolT qh_addpoint(qhT *, pointT *furthest, facetT *facet, boolT checkdist) nogil
+    facetT *qh_findbestfacet(qhT *, pointT *point, boolT bestoutside,
                              realT *bestdist, boolT *isoutside) nogil
-    void qh_setdelaunay(int dim, int count, pointT *points) nogil
-    void qh_restore_qhull(qhT **oldqh) nogil
-    qhT *qh_save_qhull() nogil
+    void qh_setdelaunay(qhT *, int dim, int count, pointT *points) nogil
 
-cdef extern from "qhull/src/io.h":
+cdef extern from "qhull/src/io_r.h":
     ctypedef enum qh_RIDGE:
         qh_RIDGEall
         qh_RIDGEinner
         qh_RIDGEouter
 
-    ctypedef void printvridgeT(void *fp, vertexT *vertex, vertexT *vertexA,
+    ctypedef void printvridgeT(qhT *, void *fp, vertexT *vertex, vertexT *vertexA,
                                setT *centers, boolT unbounded)
-    int qh_eachvoronoi_all(void *fp, void* printvridge,
+    int qh_eachvoronoi_all(qhT *, void *fp, void* printvridge,
                            boolT isUpper, qh_RIDGE innerouter,
                            boolT inorder) nogil
 
-    void qh_order_vertexneighbors(vertexT *vertex) nogil
-    int qh_compare_facetvisit(void *p1, void *p2) nogil
+    void qh_order_vertexneighbors(qhT *, vertexT *vertex) nogil
+    int qh_compare_facetvisit(const void *p1, const void *p2) nogil
 
-cdef extern from "qhull/src/geom.h":
-    pointT *qh_facetcenter(setT *vertices) nogil
+cdef extern from "qhull/src/geom_r.h":
+    pointT *qh_facetcenter(qhT *, setT *vertices) nogil
+    double qh_getarea(qhT *, facetT *facetlist) nogil
 
-cdef extern from "qhull/src/geom.h":
-    double qh_getarea(facetT *facetlist) nogil
+cdef extern from "qhull/src/poly_r.h":
+    void qh_check_maxout(qhT *) nogil
 
-cdef extern from "qhull/src/poly.h":
-    void qh_check_maxout() nogil
-
-cdef extern from "qhull/src/mem.h":
-    void qh_memfree(void *object, int insize)
+cdef extern from "qhull/src/mem_r.h":
+    void qh_memfree(qhT *, void *object, int insize)
 
 from libc.string cimport memcpy
 from libc.stdlib cimport qsort
@@ -197,7 +199,9 @@ from libc.stdlib cimport qsort
 # LAPACK interface
 #------------------------------------------------------------------------------
 
-cdef extern from "qhull_blas.h":
+cdef extern from "qhull_misc.h":
+    stdio.FILE *qhull_open_memstream(char **, size_t *)
+    void qhull_misc_lib_check()
     void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
                    int *info) nogil
     void qh_dgetrs(char *trans, int *n, int *nrhs, double *a, int *lda,
@@ -210,34 +214,105 @@ cdef extern from "qhull_blas.h":
 # Qhull wrapper
 #------------------------------------------------------------------------------
 
-# Qhull is not threadsafe: needs locking
-_qhull_lock = threading.Lock()
+# Check Qhull library compatibility at import time
+qhull_misc_lib_check()
 
-# Qhull has (swappable) global state: keep track which Qhull instance is active
-# and how many instances are alive
-cdef _Qhull _active_qhull = None
-cdef int _qhull_count = 0
-
-# Qhull objects pending cleanup
-#
-# Python's garbage collector can trigger a call to a destructor while
-# the qhull lock is held.  Destructors, for instance that of
-# Voronoi/etc, can call _Qhull methods that require the lock, which
-# causes a deadlock also in a single-threaded code.
-#
-# We ensure that _Qhull.close is safe to call from a destructor, by
-# postponing the cleanup if the lock happens to be held. The other
-# methods are not safe to call.
-#
-cdef list _qhull_pending_cleanup = []
 
 class QhullError(RuntimeError):
     pass
 
+
+@cython.final
+cdef class _QhullMessageStream:
+    """
+    Qhull emits error messages to FILE* streams, which we should capture.
+    Do this by directing them to a temporary file.
+    """
+    cdef stdio.FILE *handle
+    cdef bytes _filename
+    cdef bint _removed
+    cdef size_t _memstream_size
+    cdef char *_memstream_ptr
+
+    def __init__(self):
+        # Try first in-memory files, if available
+        self._memstream_ptr = NULL
+        self.handle = qhull_open_memstream(&self._memstream_ptr,
+                                           &self._memstream_size)
+        if self.handle != NULL:
+            self._removed = 1
+            return
+
+        # Fall back to temporary files
+        fd, filename = tempfile.mkstemp(prefix='qhull-err-')
+        os.close(fd)
+        self._filename = filename.encode(sys.getfilesystemencoding())
+        self.handle = stdio.fopen(self._filename, "w+")
+        if self.handle == NULL:
+            stdio.remove(self._filename)
+            raise IOError("Failed to open file {0}".format(self._filename))
+        self._removed = 0
+
+        # Use a posix-style deleted file, if possible
+        if stdio.remove(self._filename) == 0:
+            self._removed = 1
+
+    def __del__(self):
+        self.close()
+
+    def get(self):
+        cdef long pos
+        cdef size_t nread
+        cdef np.uint8_t[::1] buf
+        cdef bytes obj
+
+        pos = stdio.ftell(self.handle)
+        if pos <= 0:
+            return ""
+
+        if self._memstream_ptr != NULL:
+            stdio.fflush(self.handle)
+            obj = PyBytes_FromStringAndSize(self._memstream_ptr, pos)
+        else:
+            arr = np.zeros(pos, dtype=np.uint8)
+            buf = arr
+
+            stdio.rewind(self.handle)
+            nread = stdio.fread(<void*>&buf[0], 1, pos, self.handle)
+            obj = arr[:nread].tostring()
+
+        if PY_VERSION_HEX >= 0x03000000:
+            return obj.decode('latin1')
+        else:
+            return obj
+
+    def clear(self):
+        stdio.rewind(self.handle)
+
+    def close(self):
+        if self._memstream_ptr != NULL:
+            stdlib.free(self._memstream_ptr)
+            self._memstream_ptr = NULL
+
+        if self.handle != NULL:
+            stdio.fclose(self.handle)
+            self.handle = NULL
+
+        if not self._removed:
+            stdio.remove(self._filename)
+            self._removed = 1
+
+
 @cython.final
 cdef class _Qhull:
-    cdef qhT *_saved_qh
+    # Note that the qhT struct is allocated separately --- otherwise
+    # it may end up allocated in a way not compatible with the CRT
+    # (on Windows)
+    cdef qhT *_qh
+
     cdef list _point_arrays
+    cdef _QhullMessageStream _messages
+
     cdef public bytes options
     cdef public bytes mode_option
     cdef public object furthest_site
@@ -260,8 +335,10 @@ cdef class _Qhull:
                  bytes required_options=None,
                  furthest_site=False,
                  incremental=False):
-        global _active_qhull, _qhull_count
         cdef int exitcode
+
+        self._qh = NULL
+        self._messages = _QhullMessageStream()
 
         points = np.ascontiguousarray(points, dtype=np.double)
 
@@ -319,136 +396,56 @@ cdef class _Qhull:
 
         options = b"qhull "  + mode_option +  b" " + self.options
 
-        _qhull_lock.acquire()
-        try:
-            if _active_qhull is not None:
-                _active_qhull._deactivate()
+        options_c = <char*>options
 
-            _active_qhull = self
-            _qhull_count += 1
+        self._messages.clear()
 
-            options_c = <char*>options
-            with nogil:
-                exitcode = qh_new_qhull(self.ndim, self.numpoints,
-                                        <realT*>points.data, 0,
-                                        options_c, NULL, stderr)
+        with nogil:
+            self._qh = <qhT*>stdlib.malloc(sizeof(qhT))
+            if self._qh == NULL:
+                with gil:
+                    raise MemoryError("memory allocation failed")
+            qh_zero(self._qh, self._messages.handle)
+            exitcode = qh_new_qhull(self._qh, self.ndim, self.numpoints,
+                                    <realT*>points.data, 0,
+                                    options_c, NULL, self._messages.handle)
 
-            if exitcode != 0:
-                self._uninit()
-                raise QhullError("Qhull error")
-        finally:
-            _qhull_lock.release()
+        if exitcode != 0:
+            msg = self._messages.get()
+            self.close()
+            raise QhullError(msg)
 
     @cython.final
-    def volume_area(self):
-        cdef double volume
-        cdef double area
+    def __del__(self):
+        self.close()
+        self._messages.close()
 
-        _qhull_lock.acquire()
-        try:
-            self._activate()
-            qh_getarea(qh_qh.facet_list)
-            volume = qh_qh.totvol
-            area = qh_qh.totarea
-        finally:
-            _qhull_lock.release()
-
-        return volume, area
+    def check_active(self):
+        if self._qh == NULL:
+            raise RuntimeError("Qhull instance is closed")
 
     @cython.final
     def close(self):
-        if _qhull_lock.acquire(False):
-            try:
-                self._cleanup_pending()
-                self._uninit()
-            finally:
-                _qhull_lock.release()
-        else:
-            # Failed to acquire the lock. 
-            _qhull_pending_cleanup.append(self)
-
-    @cython.final
-    cdef int _cleanup_pending(self) except -1:
         """
-        Process any pending cleanups (_qhull_lock MUST be held when calling this)
+        Uninitialize this instance
         """
-        cdef _Qhull qh
-        cdef int k
-
-        for k in range(len(_qhull_pending_cleanup)):
-            try:
-                qh = _qhull_pending_cleanup.pop()
-            except IndexError:
-                break
-            qh._uninit()
-
-        return 0
-
-    @cython.final
-    cdef int _activate(self) except -1:
-        """
-        Activate this instance (_qhull_lock MUST be held when calling this)
-        """
-        global _active_qhull
-
-        if _active_qhull is self:
-            return 0
-        elif _active_qhull is not None:
-            _active_qhull._deactivate()
-
-        assert _active_qhull is None
-
-        if self._saved_qh == NULL:
-            raise RuntimeError("Qhull instance is closed")
-
-        qh_restore_qhull(&self._saved_qh)
-        self._saved_qh = NULL
-        _active_qhull = self
-
-        return 0
-
-    @cython.final
-    cdef int _deactivate(self) except -1:
-        """
-        Deactivate this instance (_qhull_lock MUST be held when calling this)
-        """
-        global _active_qhull
-
-        assert _active_qhull is self
-        assert self._saved_qh == NULL
-
-        self._saved_qh = qh_save_qhull()
-        _active_qhull = None
-
-    @cython.final
-    cdef int _uninit(self) except -1:
-        """
-        Uninitialize this instance (_qhull_lock MUST be held when calling this)
-        """
-        global _active_qhull, _qhull_count
         cdef int curlong, totlong
 
-        if not (_active_qhull is self or self._saved_qh != NULL):
-            # already freed
-            return 0
+        if self._qh == NULL:
+            return
 
-        self._activate()
+        qh_freeqhull(self._qh, qh_ALL)
+        qh_memfreeshort(self._qh, &curlong, &totlong)
 
-        qh_freeqhull(qh_ALL)
+        stdlib.free(self._qh)
+        self._qh = NULL
 
-        _qhull_count -= 1
-        _active_qhull = None
-        self._saved_qh = NULL
+        self._messages.close()
 
-        if _qhull_count == 0:
-            # last one out cleans the house
-            qh_memfreeshort(&curlong, &totlong)
-            if curlong != 0 or totlong != 0:
-                raise QhullError(
-                    "qhull: did not free %d bytes (%d pieces)" %
-                    (totlong, curlong))
-
-        return 0
+        if curlong != 0 or totlong != 0:
+            raise QhullError(
+                "qhull: did not free %d bytes (%d pieces)" %
+                (totlong, curlong))
 
     @cython.final
     def get_points(self):
@@ -468,6 +465,8 @@ cdef class _Qhull:
         cdef boolT isoutside
         cdef np.ndarray arr
 
+        self.check_active()
+
         points = np.asarray(points)
         if points.ndim!=2 or points.shape[1] != self._point_arrays[0].shape[1]:
             raise ValueError("invalid size for new points array")
@@ -480,89 +479,86 @@ cdef class _Qhull:
         else:
             arr = np.array(points, dtype=np.double, order="C", copy=True)
 
-        _qhull_lock.acquire()
-        try:
-            self._activate()
+        self._messages.clear()
 
+        try:
             # nonlocal error handling
-            exitcode = setjmp(qh_qh.errexit)
+            exitcode = setjmp(self._qh[0].errexit)
             if exitcode != 0:
-                raise QhullError("Qhull error")
-            qh_qh.NOerrexit = 0
+                raise QhullError(self._messages.get())
+            self._qh[0].NOerrexit = 0
 
             # add points to triangulation
             if self._is_delaunay:
                 # lift to paraboloid
-                qh_setdelaunay(arr.shape[1], arr.shape[0], <realT*>arr.data)
+                qh_setdelaunay(self._qh, arr.shape[1], arr.shape[0], <realT*>arr.data)
 
             p = <realT*>arr.data
 
             for j in xrange(arr.shape[0]):
-                facet = qh_findbestfacet(p, 0, &bestdist, &isoutside)
+                facet = qh_findbestfacet(self._qh, p, 0, &bestdist, &isoutside)
                 if isoutside:
-                    if not qh_addpoint(p, facet, 0):
+                    if not qh_addpoint(self._qh, p, facet, 0):
                         break
                 else:
                     # append the point to the "other points" list, to
                     # maintain the point IDs
-                    qh_setappend(&qh_qh.other_points, p)
+                    qh_setappend(self._qh, &self._qh[0].other_points, p)
 
                 p += arr.shape[1]
 
-            qh_check_maxout()
-            qh_qh.hasTriangulation = 0
+            qh_check_maxout(self._qh)
+            self._qh[0].hasTriangulation = 0
 
             self._point_arrays.append(arr)
             self.numpoints += arr.shape[0]
         finally:
-            qh_qh.NOerrexit = 1
-            _qhull_lock.release()
+            self._qh[0].NOerrexit = 1
 
     @cython.final
     def get_paraboloid_shift_scale(self):
         cdef double paraboloid_scale
         cdef double paraboloid_shift
 
-        _qhull_lock.acquire()
-        try:
-            self._activate()
+        self.check_active()
 
-            if qh_qh.SCALElast:
-                paraboloid_scale = qh_qh.last_newhigh / (
-                    qh_qh.last_high - qh_qh.last_low)
-                paraboloid_shift = - qh_qh.last_low * paraboloid_scale
-            else:
-                paraboloid_scale = 1.0
-                paraboloid_shift = 0.0
-        finally:
-            _qhull_lock.release()
+        if self._qh[0].SCALElast:
+            paraboloid_scale = self._qh[0].last_newhigh / (
+                self._qh[0].last_high - self._qh[0].last_low)
+            paraboloid_shift = - self._qh[0].last_low * paraboloid_scale
+        else:
+            paraboloid_scale = 1.0
+            paraboloid_shift = 0.0
 
         return paraboloid_scale, paraboloid_shift
 
     @cython.final
-    def triangulate(self):
-        _qhull_lock.acquire()
-        try:
-            self._activate()
+    def volume_area(self):
+        cdef double volume
+        cdef double area
 
-            with nogil:
-                qh_triangulate() # get rid of non-simplical facets
-        finally:
-            _qhull_lock.release()
+        self.check_active()
+
+        self._qh.hasAreaVolume = 0
+        with nogil:
+            qh_getarea(self._qh, self._qh[0].facet_list)
+
+        volume = self._qh[0].totvol
+        area = self._qh[0].totarea
+
+        return volume, area
 
     @cython.final
-    def get_simplex_facet_array(self):
-        _qhull_lock.acquire()
-        try:
-            self._activate()
-            return self._get_simplex_facet_array()
-        finally:
-            _qhull_lock.release()
+    def triangulate(self):
+        self.check_active()
+
+        with nogil:
+            qh_triangulate(self._qh) # get rid of non-simplical facets
 
     @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
-    cdef _get_simplex_facet_array(self):
+    def get_simplex_facet_array(self):
         """
         Return array of simplical facets currently in Qhull.
 
@@ -596,30 +592,32 @@ cdef class _Qhull:
         cdef unsigned int lower_bound
         cdef unsigned int swapped_index
 
+        self.check_active()
+
         facet_ndim = self.ndim
         numpoints = self.numpoints
 
         if self._is_delaunay:
             facet_ndim += 1
 
-        id_map = np.empty(qh_qh.facet_id, dtype=np.intc)
+        id_map = np.empty(self._qh[0].facet_id, dtype=np.intc)
 
         # Compute facet indices
         with nogil:
-            for i in range(qh_qh.facet_id):
+            for i in range(self._qh[0].facet_id):
                 id_map[i] = -1
 
-            facet = qh_qh.facet_list
+            facet = self._qh[0].facet_list
             j = 0
             while facet and facet.next:
-                if not self._is_delaunay or facet.upperdelaunay == qh_qh.UPPERdelaunay:
+                if not self._is_delaunay or facet.upperdelaunay == self._qh[0].UPPERdelaunay:
                     if not facet.simplicial and ( \
-                           qh_setsize(facet.vertices) != facet_ndim or \
-                           qh_setsize(facet.neighbors) != facet_ndim):
+                           qh_setsize(self._qh, facet.vertices) != facet_ndim or \
+                           qh_setsize(self._qh, facet.neighbors) != facet_ndim):
                         with gil:
                             raise QhullError(
                                 "non-simplical facet encountered: %r vertices"
-                                % (qh_setsize(facet.vertices),))
+                                % (qh_setsize(self._qh, facet.vertices),))
 
                     id_map[facet.id] = j
                     j += 1
@@ -636,10 +634,10 @@ cdef class _Qhull:
 
         # Retrieve facet information
         with nogil:
-            facet = qh_qh.facet_list
+            facet = self._qh[0].facet_list
             j = 0
             while facet and facet.next:
-                if self._is_delaunay and facet.upperdelaunay != qh_qh.UPPERdelaunay:
+                if self._is_delaunay and facet.upperdelaunay != self._qh[0].UPPERdelaunay:
                     facet = facet.next
                     continue
 
@@ -654,7 +652,7 @@ cdef class _Qhull:
                         # Save the vertex info
                         swapped_index = 1 ^ i
                         vertex = <vertexT*>facet.vertices.e[i].p
-                        ipoint = qh_pointid(vertex.point)
+                        ipoint = qh_pointid(self._qh, vertex.point)
                         facets[j, swapped_index] = ipoint
 
                         # Save the neighbor info
@@ -666,7 +664,7 @@ cdef class _Qhull:
                 for i in xrange(lower_bound, facet_ndim):
                     # Save the vertex info
                     vertex = <vertexT*>facet.vertices.e[i].p
-                    ipoint = qh_pointid(vertex.point)
+                    ipoint = qh_pointid(self._qh, vertex.point)
                     facets[j, i] = ipoint
 
                     # Save the neighbor info
@@ -680,9 +678,9 @@ cdef class _Qhull:
 
                 # Save coplanar info
                 if facet.coplanarset:
-                    for i in range(qh_setsize(facet.coplanarset)):
+                    for i in range(qh_setsize(self._qh, facet.coplanarset)):
                         point = <pointT*>facet.coplanarset.e[i].p
-                        vertex = qh_nearvertex(facet, point, &dist)
+                        vertex = qh_nearvertex(self._qh, facet, point, &dist)
 
                         if ncoplanar >= coplanar.shape[0]:
                             with gil:
@@ -695,9 +693,9 @@ cdef class _Qhull:
                                     tmp = np.resize(tmp, (2*ncoplanar+1, 3))
                                 coplanar = tmp
 
-                        coplanar[ncoplanar, 0] = qh_pointid(point)
+                        coplanar[ncoplanar, 0] = qh_pointid(self._qh, point)
                         coplanar[ncoplanar, 1] = id_map[facet.id]
-                        coplanar[ncoplanar, 2] = qh_pointid(vertex.point)
+                        coplanar[ncoplanar, 2] = qh_pointid(self._qh, vertex.point)
                         ncoplanar += 1
 
                 j += 1
@@ -706,18 +704,9 @@ cdef class _Qhull:
         return facets, neighbors, equations, coplanar[:ncoplanar]
 
     @cython.final
-    def get_voronoi_diagram(_Qhull self):
-        _qhull_lock.acquire()
-        try:
-            self._activate()
-            return self._get_voronoi_diagram()
-        finally:
-            _qhull_lock.release()
-
-    @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
-    cdef _get_voronoi_diagram(_Qhull self):
+    def get_voronoi_diagram(_Qhull self):
         """
         Return the voronoi diagram currently in Qhull.
 
@@ -759,13 +748,15 @@ cdef class _Qhull:
         cdef list regions
         cdef list cur_region
 
+        self.check_active()
+
         # -- Grab Voronoi ridges
         self._nridges = 0
         self._ridge_error = None
         self._ridge_points = np.empty((10, 2), np.intc)
         self._ridge_vertices = []
 
-        qh_eachvoronoi_all(<void*>self, &_visit_voronoi, qh_qh.UPPERdelaunay,
+        qh_eachvoronoi_all(self._qh, <void*>self, &_visit_voronoi, self._qh[0].UPPERdelaunay,
                            qh_RIDGEall, 1)
 
         self._ridge_points = self._ridge_points[:self._nridges]
@@ -783,18 +774,18 @@ cdef class _Qhull:
         for i in range(self.numpoints):
             point_region[i] = -1
 
-        vertex = qh_qh.vertex_list
+        vertex = self._qh[0].vertex_list
         while vertex and vertex.next:
-            qh_order_vertexneighbors_nd(self.ndim+1, vertex)
+            qh_order_vertexneighbors_nd(self._qh, self.ndim+1, vertex)
 
-            i = qh_pointid(vertex.point)
+            i = qh_pointid(self._qh, vertex.point)
             if i < self.numpoints:
                 # Qz results to one extra point
                 point_region[i] = len(regions)
 
             inf_seen = 0
             cur_region = []
-            for k in xrange(qh_setsize(vertex.neighbors)):
+            for k in xrange(qh_setsize(self._qh, vertex.neighbors)):
                 neighbor = <facetT*>vertex.neighbors.e[k].p
                 i = neighbor.visitid - 1
                 if i == -1:
@@ -814,12 +805,12 @@ cdef class _Qhull:
         nvoronoi_vertices = 0
         voronoi_vertices = np.empty((10, self.ndim), np.double)
 
-        facet = qh_qh.facet_list
+        facet = self._qh[0].facet_list
         while facet and facet.next:
             if facet.visitid > 0:
                 # finite Voronoi vertex
 
-                center = qh_facetcenter(facet.vertices)
+                center = qh_facetcenter(self._qh, facet.vertices)
 
                 nvoronoi_vertices = max(facet.visitid, nvoronoi_vertices)
                 if nvoronoi_vertices >= voronoi_vertices.shape[0]:
@@ -834,15 +825,15 @@ cdef class _Qhull:
                 for k in range(self.ndim):
                     voronoi_vertices[facet.visitid-1, k] = center[k]
 
-                qh_memfree(center, qh_qh.center_size)
+                qh_memfree(self._qh, center, self._qh[0].center_size)
 
                 if facet.coplanarset:
-                    for k in range(qh_setsize(facet.coplanarset)):
+                    for k in range(qh_setsize(self._qh, facet.coplanarset)):
                         point = <pointT*>facet.coplanarset.e[k].p
-                        vertex = qh_nearvertex(facet, point, &dist)
+                        vertex = qh_nearvertex(self._qh, facet, point, &dist)
 
-                        i = qh_pointid(point)
-                        j = qh_pointid(vertex.point)
+                        i = qh_pointid(self._qh, point)
+                        j = qh_pointid(self._qh, vertex.point)
 
                         if i < self.numpoints:
                             # Qz can result to one extra point
@@ -856,21 +847,9 @@ cdef class _Qhull:
                regions, point_region
 
     @cython.final
-    def get_extremes_2d(_Qhull self):
-        if self._is_delaunay:
-            raise ValueError("Cannot compute for Delaunay")
-
-        _qhull_lock.acquire()
-        try:
-            self._activate()
-            return self._get_extremes_2d()
-        finally:
-            _qhull_lock.release()
-
-    @cython.final
     @cython.boundscheck(False)
     @cython.cdivision(True)
-    cdef _get_extremes_2d(_Qhull self):
+    def get_extremes_2d(_Qhull self):
         """
         Compute the extremal points in a 2-D convex hull, i.e. the
         vertices of the convex hull, ordered counterclockwise.
@@ -886,17 +865,22 @@ cdef class _Qhull:
         cdef int[:] extremes
         cdef int nextremes
 
+        self.check_active()
+
+        if self._is_delaunay:
+            raise ValueError("Cannot compute for Delaunay")
+
         nextremes = 0
         extremes_arr = np.zeros(100, dtype=np.intc)
         extremes = extremes_arr
 
-        qh_qh.visit_id += 1
-        qh_qh.vertex_visit += 1
+        self._qh[0].visit_id += 1
+        self._qh[0].vertex_visit += 1
 
-        facet = qh_qh.facet_list
+        facet = self._qh[0].facet_list
         startfacet = facet
         while facet:
-            if facet.visitid == qh_qh.visit_id:
+            if facet.visitid == self._qh[0].visit_id:
                 raise QhullError("Qhull internal error: loop in facet list")
 
             if facet.toporient:
@@ -913,17 +897,17 @@ cdef class _Qhull:
                 extremes_arr.resize(2*extremes_arr.shape[0]+1)
                 extremes = extremes_arr
 
-            if vertexA.visitid != qh_qh.vertex_visit:
-                vertexA.visitid = qh_qh.vertex_visit
-                extremes[nextremes] = qh_pointid(vertexA.point)
+            if vertexA.visitid != self._qh[0].vertex_visit:
+                vertexA.visitid = self._qh[0].vertex_visit
+                extremes[nextremes] = qh_pointid(self._qh, vertexA.point)
                 nextremes += 1
 
-            if vertexB.visitid != qh_qh.vertex_visit:
-                vertexB.visitid = qh_qh.vertex_visit
-                extremes[nextremes] = qh_pointid(vertexB.point)
+            if vertexB.visitid != self._qh[0].vertex_visit:
+                vertexB.visitid = self._qh[0].vertex_visit
+                extremes[nextremes] = qh_pointid(self._qh, vertexB.point)
                 nextremes += 1
 
-            facet.visitid = qh_qh.visit_id
+            facet.visitid = self._qh[0].visit_id
             facet = nextfacet
 
             if facet == startfacet:
@@ -934,7 +918,7 @@ cdef class _Qhull:
         return extremes_arr
 
 
-cdef void _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
+cdef void _visit_voronoi(qhT *_qh, void *ptr, vertexT *vertex, vertexT *vertexA,
                          setT *centers, boolT unbounded):
     cdef _Qhull qh = <_Qhull>ptr
     cdef int point_1, point_2, ix
@@ -951,8 +935,8 @@ cdef void _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
             return
 
     # Record which points the ridge is between
-    point_1 = qh_pointid(vertex.point)
-    point_2 = qh_pointid(vertexA.point)
+    point_1 = qh_pointid(_qh, vertex.point)
+    point_2 = qh_pointid(_qh, vertexA.point)
 
     p = <int*>qh._ridge_points.data
     p[2*qh._nridges + 0] = point_1
@@ -960,7 +944,7 @@ cdef void _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
 
     # Record which voronoi vertices constitute the ridge
     cur_vertices = []
-    for i in xrange(qh_setsize(centers)):
+    for i in xrange(qh_setsize(_qh, centers)):
         ix = (<facetT*>centers.e[i].p).visitid - 1
         cur_vertices.append(ix)
     qh._ridge_vertices.append(cur_vertices)
@@ -969,11 +953,12 @@ cdef void _visit_voronoi(void *ptr, vertexT *vertex, vertexT *vertexA,
 
     return
 
-cdef void qh_order_vertexneighbors_nd(int nd, vertexT *vertex):
+
+cdef void qh_order_vertexneighbors_nd(qhT *qh, int nd, vertexT *vertex):
     if nd == 3:
-        qh_order_vertexneighbors(vertex)
+        qh_order_vertexneighbors(qh, vertex)
     elif nd >= 4:
-        qsort(<facetT**>&vertex.neighbors.e[0].p, qh_setsize(vertex.neighbors),
+        qsort(<facetT**>&vertex.neighbors.e[0].p, qh_setsize(qh, vertex.neighbors),
               sizeof(facetT*), qh_compare_facetvisit)
 
 
@@ -1597,7 +1582,7 @@ class Delaunay(_QhullUser):
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual for
         details. Option "Qt" is always enabled.
-        Default:"Qbb Qc Qz Qx" for ndim > 4 and "Qbb Qc Qz" otherwise.
+        Default:"Qbb Qc Qz Qx Q12" for ndim > 4 and "Qbb Qc Qz Q12" otherwise.
         Incremental mode omits "Qz".
 
         .. versionadded:: 0.12.0
@@ -1684,9 +1669,6 @@ class Delaunay(_QhullUser):
        Delaunay triangulation. Omitted points are listed in the
        `coplanar` attribute.
 
-    Do not call the ``add_points`` method from a ``__del__``
-    destructor.
-
     Examples
     --------
     Triangulation of a set of points:
@@ -1755,7 +1737,7 @@ class Delaunay(_QhullUser):
 
         if qhull_options is None:
             if not incremental:
-                qhull_options = b"Qbb Qc Qz"
+                qhull_options = b"Qbb Qc Qz Q12"
             else:
                 qhull_options = b"Qc"
             if points.shape[1] >= 5:
@@ -2218,9 +2200,6 @@ class ConvexHull(_QhullUser):
     The convex hull is computed using the 
     `Qhull library <http://www.qhull.org/>`__.
 
-    Do not call the ``add_points`` method from a ``__del__``
-    destructor.
-
     Examples
     --------
 
@@ -2347,9 +2326,6 @@ class Voronoi(_QhullUser):
     -----
     The Voronoi diagram is computed using the 
     `Qhull library <http://www.qhull.org/>`__.
-
-    Do not call the ``add_points`` method from a ``__del__``
-    destructor.
 
     Examples
     --------

@@ -30,6 +30,15 @@ class TestBinnedStatistic(object):
         assert_allclose(count1, count2)
         assert_allclose(edges1, edges2)
 
+    def test_gh5927(self):
+        # smoke test for gh5927 - binned_statistic was using `is` for string
+        # comparison
+        x = self.x
+        v = self.v
+        statistics = [u'mean', u'median', u'count', u'sum']
+        for statistic in statistics:
+            res = binned_statistic(x, v, statistic, bins=10)
+
     def test_1d_result_attributes(self):
         x = self.x
         v = self.v

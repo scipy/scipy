@@ -26,7 +26,9 @@ cimport cython
 from libc.math cimport sqrt, exp, floor, fabs, log, sin, M_PI as pi
 
 from numpy cimport npy_cdouble
-from _complexstuff cimport nan, inf, number_t
+from _complexstuff cimport (
+    nan, inf, number_t, npy_cdouble_from_double_complex,
+    double_complex_from_npy_cdouble)
 
 cimport sf_error
 
@@ -52,16 +54,16 @@ cdef inline number_t hyp2f1(double a, double b, double c, number_t z) nogil:
     if number_t is double:
         return hyp2f1_wrap(a, b, c, z)
     else:
-        r = chyp2f1_wrap(a, b, c, (<npy_cdouble*>&z)[0])
-        return (<number_t*>&r)[0]
+        r = chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
+        return double_complex_from_npy_cdouble(r)
 
 cdef inline number_t hyp1f1(double a, double b, number_t z) nogil:
     cdef npy_cdouble r
     if number_t is double:
         return hyp1f1_wrap(a, b, z)
     else:
-        r = chyp1f1_wrap(a, b, (<npy_cdouble*>&z)[0])
-        return (<number_t*>&r)[0]
+        r = chyp1f1_wrap(a, b, npy_cdouble_from_double_complex(z))
+        return double_complex_from_npy_cdouble(r)
 
 #-----------------------------------------------------------------------------
 # Binomial coefficient

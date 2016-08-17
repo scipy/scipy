@@ -6,7 +6,13 @@ Special functions (:mod:`scipy.special`)
 .. module:: scipy.special
 
 Nearly all of the functions below are universal functions and follow
-broadcasting and automatic array-looping rules. Exceptions are noted.
+broadcasting and automatic array-looping rules. Exceptions are
+noted.
+
+.. seealso::
+
+   `scipy.special.cython_special` -- Typed Cython versions of special functions
+
 
 Error handling
 ==============
@@ -288,11 +294,12 @@ Gamma and Related Functions
    :toctree: generated/
 
    gamma        -- Gamma function.
-   gammaln      -- Log transformation of the gamma function.
+   gammaln      -- Log of the absolute value of the Gamma function.
+   loggamma     -- Principal branch of the logarithm of the Gamma function.
    gammasgn     -- Sign of the gamma function.
-   gammainc     -- Incomplete gamma integral.
+   gammainc     -- Regularized lower incomplete gamma function.
    gammaincinv  -- Inverse of gammainc.
-   gammaincc    -- Complemented incomplete gamma integral.
+   gammaincc    -- Regularized upper incomplete gamma function.
    gammainccinv -- Inverse of gammaincc.
    beta         -- Beta function.
    betaln       -- Log of the absolute value of the beta function.
@@ -596,7 +603,7 @@ Other Special Functions
    factorialk   -- [+](...((n!)!)!...)! where there are k '!'
    shichi       -- Hyperbolic sine and cosine integrals.
    sici         -- Integral of the sinc and "cosinc" functions.
-   spence       -- Dilogarithm integral.
+   spence       -- Spence's function, also known as the dilogarithm.
    lambertw     -- Lambert W function
    zeta         -- Riemann zeta function of two arguments.
    zetac        -- Standard Riemann zeta function minus 1.
@@ -643,7 +650,6 @@ from ._ellip_harm import ellip_harm, ellip_harm_2, ellip_normal
 from .lambertw import lambertw
 from ._spherical_bessel import (spherical_jn, spherical_yn, spherical_in,
                                 spherical_kn)
-
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

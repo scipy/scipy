@@ -214,7 +214,10 @@ def find_best_blas_type(arrays=(), dtype=None):
             prefer_fortran = True
 
     prefix = _type_conv.get(dtype.char, 'd')
-    if dtype.char not in 'fdFD':
+    if dtype.char == 'G':
+        # complex256 -> complex128 (i.e., C long double -> C double)
+        dtype = _np.dtype('D')
+    elif dtype.char not in 'fdFD':
         dtype = _np.dtype('d')
 
     return prefix, dtype, prefer_fortran

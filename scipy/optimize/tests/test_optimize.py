@@ -17,7 +17,8 @@ import itertools
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
                            assert_, TestCase, run_module_suite, dec,
-                           assert_almost_equal)
+                           assert_almost_equal, assert_warns,
+                           assert_array_less)
 
 from scipy._lib._testutils import suppressed_stdout
 from scipy import optimize
@@ -250,6 +251,72 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-14, rtol=1e-7)
 
     @suppressed_stdout
+    def test_neldermead_initial_simplex(self):
+        # Nelder-Mead simplex algorithm
+        simplex = np.zeros((4, 3))
+        simplex[...] = self.startparams
+        for j in range(3):
+            simplex[j+1,j] += 0.1
+
+        if self.use_wrapper:
+            opts = {'maxiter': self.maxiter, 'disp': False,
+                    'return_all': True, 'initial_simplex': simplex}
+            res = optimize.minimize(self.func, self.startparams, args=(),
+                                    method='Nelder-mead', options=opts)
+            params, fopt, numiter, func_calls, warnflag = \
+                    res['x'], res['fun'], res['nit'], res['nfev'], \
+                    res['status']
+            assert_allclose(res['allvecs'][0], simplex[0])
+        else:
+            retval = optimize.fmin(self.func, self.startparams,
+                                        args=(), maxiter=self.maxiter,
+                                        full_output=True, disp=False, retall=False,
+                                        initial_simplex=simplex)
+
+            (params, fopt, numiter, func_calls, warnflag) = retval
+
+        assert_allclose(self.func(params), self.func(self.solution),
+                        atol=1e-6)
+
+        # Ensure that function call counts are 'known good'; these are from
+        # Scipy 0.17.0. Don't allow them to increase.
+        assert_(self.funccalls == 100, self.funccalls)
+        assert_(self.gradcalls == 0, self.gradcalls)
+
+        # Ensure that the function behaves the same; this is from Scipy 0.15.0
+        assert_allclose(self.trace[50:52],
+                        [[0.14687474, -0.5103282, 0.48252111],
+                         [0.14474003, -0.5282084, 0.48743951]],
+                        atol=1e-14, rtol=1e-7)
+
+    @suppressed_stdout
+    def test_neldermead_initial_simplex_bad(self):
+        # Check it fails with a bad simplices
+        bad_simplices = []
+
+        simplex = np.zeros((3, 2))
+        simplex[...] = self.startparams[:2]
+        for j in range(2):
+            simplex[j+1,j] += 0.1
+        bad_simplices.append(simplex)
+
+        simplex = np.zeros((3, 3))
+        bad_simplices.append(simplex)
+
+        for simplex in bad_simplices:
+            if self.use_wrapper:
+                opts = {'maxiter': self.maxiter, 'disp': False,
+                        'return_all': False, 'initial_simplex': simplex}
+                assert_raises(ValueError,
+                              optimize.minimize, self.func, self.startparams, args=(),
+                              method='Nelder-mead', options=opts)
+            else:
+                assert_raises(ValueError, optimize.fmin, self.func, self.startparams,
+                              args=(), maxiter=self.maxiter,
+                              full_output=True, disp=False, retall=False,
+                              initial_simplex=simplex)
+
+    @suppressed_stdout
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
         if self.use_wrapper:
@@ -352,6 +419,18 @@ class CheckOptimizeParameterized(CheckOptimize):
                         [[-4.35700753e-07, -5.24869435e-01, 4.87527480e-01],
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
+
+
+def test_neldermead_xatol_fatol():
+    # gh4484
+    # test we can call with fatol, xatol specified
+    func = lambda x: x[0]**2 + x[1]**2
+
+    optimize._minimize._minimize_neldermead(func, [1, 1], maxiter=2,
+                                            xatol=1e-3, fatol=1e-3)
+    assert_warns(DeprecationWarning,
+                 optimize._minimize._minimize_neldermead,
+                 func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
 
 class TestOptimizeWrapperDisp(CheckOptimizeParameterized):
@@ -511,6 +590,32 @@ class TestOptimizeSimple(CheckOptimize):
                                 method='L-BFGS-B', jac=optimize.rosen_der,
                                 options={'disp': False, 'maxls': 1})
         assert_(not sol.success)
+
+    def test_minimize_l_bfgs_b_maxfun_interruption(self):
+        # gh-6162
+        f = optimize.rosen
+        g = optimize.rosen_der
+        values = []
+        x0 = np.ones(7) * 1000
+
+        def objfun(x):
+            value = f(x)
+            values.append(value)
+            return value
+
+        # Look for an interesting test case.
+        # Request a maxfun that stops at a particularly bad function
+        # evaluation somewhere between 100 and 300 evaluations.
+        low, medium, high = 30, 100, 300
+        optimize.fmin_l_bfgs_b(objfun, x0, fprime=g, maxfun=high)
+        v, k = max((y, i) for i, y in enumerate(values[medium:]))
+        maxfun = medium + k
+        # If the minimization strategy is reasonable,
+        # the minimize() result should not be worse than the best
+        # of the first 30 function evaluations.
+        target = min(values[:low])
+        xmin, fmin, d = optimize.fmin_l_bfgs_b(f, x0, fprime=g, maxfun=maxfun)
+        assert_array_less(fmin, target)
 
     def test_custom(self):
         # This function comes from the documentation example.
@@ -1056,6 +1161,64 @@ class TestBrute:
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),
                         atol=1e-3)
 
+class TestIterationLimits(TestCase):
+    # Tests that optimisation does not give up before trying requested
+    # number of iterations or evaluations. And that it does not succeed
+    # by exceeding the limits.
+    def setUp(self):
+        self.funcalls = 0
+
+    def slow_func(self, v):
+        self.funcalls += 1
+        r,t = np.sqrt(v[0]**2+v[1]**2), np.arctan2(v[0],v[1])
+        return np.sin(r*20 + t)+r*0.5
+
+    def test_neldermead_limit(self):
+        self.check_limits("Nelder-Mead", 200)
+
+    def test_powell_limit(self):
+        self.check_limits("powell", 1000)
+
+    def check_limits(self, method, default_iters):
+        for start_v in [[0.1,0.1], [1,1], [2,2]]:
+            for mfev in [50, 500, 5000]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    assert_(res["nfev"] < mfev)
+                else:
+                    assert_(res["nfev"] >= mfev)
+            for mit in [50, 500,5000]:
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit})
+                if res["success"]:
+                    assert_(res["nit"] <= mit)
+                else:
+                    assert_(res["nit"] >= mit)
+            for mfev,mit in [[50,50], [5000,5000],[5000,np.inf]]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit, "maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    assert_(res["nfev"] < mfev and res["nit"] <= mit)
+                else:
+                    assert_(res["nfev"] >= mfev or res["nit"] >= mit)
+            for mfev,mit in [[np.inf,None], [None,np.inf]]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit, "maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    if mfev is None:
+                        assert_(res["nfev"] < default_iters*2)
+                    else:
+                        assert_(res["nit"] <= default_iters*2)
+                else:
+                    assert_(res["nfev"] >= default_iters*2 or
+                        res["nit"] >= default_iters*2)
 
 if __name__ == "__main__":
     run_module_suite()

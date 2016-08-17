@@ -1,0 +1,75 @@
+==========================
+SciPy 0.19.0 Release Notes
+==========================
+
+.. note:: Scipy 0.19.0 is not released yet!
+
+.. contents::
+
+SciPy 0.19.0 is the culmination of X months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a number of deprecations and
+API changes in this release, which are documented below.  All users
+are encouraged to upgrade to this release, as there are a large number
+of bug-fixes and optimizations.  Moreover, our development attention
+will now shift to bug-fix releases on the 0.20.x branch, and on adding
+new features on the master branch.
+
+This release requires Python 2.7 or 3.4-3.5 and NumPy 1.7.1 or greater.
+
+
+
+New features
+============
+
+`scipy.ndimage` improvements
+----------------------------
+
+The callback function C API supports PyCapsules in Python 2.7
+
+`scipy.optimize` improvements
+-----------------------------
+
+The `scipy.optimize.basinhopping` global minimizer obtained a new keyword,
+`seed`, which can be used to seed the random number generator and obtain
+repeatable minimizations.
+
+`scipy.signal` improvements
+---------------------------
+
+The function `scipy.signal.sosfreqz` was added to compute the frequency
+response from second-order sections.
+
+The function `scipy.signal.unit_impulse` was added to conveniently
+generate an impulse function.
+
+
+Deprecated features
+===================
+
+
+
+Backwards incompatible changes
+==============================
+
+
+
+Other changes
+=============
+
+
+
+
+Authors
+=======
+
+
+
+
+Issues closed for 0.19.0
+------------------------
+
+
+Pull requests for 0.19.0
+------------------------
+

@@ -23,19 +23,18 @@
 #endif
 #endif
 
-extern double cephes_psi(double);
 extern double cephes_struve(double, double);
 
 extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
-extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
-extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
+extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*,int*);
 extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
-extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
+extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*,int*);
 extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
 extern void F_FUNC(e1xb,E1XB)(double*,double*);
 extern void F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(eix,EIX)(double*,double*);
+extern void F_FUNC(eixz,EIXZ)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(stvh0,STVH0)(double*,double*);
 extern void F_FUNC(stvh1,STVH1)(double*,double*);
@@ -70,14 +69,6 @@ extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*
 /* This must be linked with fortran
  */
 
-npy_cdouble cgamma_wrap( npy_cdouble z) {
-  int kf = 1;
-  npy_cdouble cy;
-
-  F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
-  return cy;
-}
-
 npy_cdouble clngamma_wrap( npy_cdouble z) {
   int kf = 0;
   npy_cdouble cy;
@@ -86,35 +77,9 @@ npy_cdouble clngamma_wrap( npy_cdouble z) {
   return cy;
 }
 
-npy_cdouble cpsi_wrap( npy_cdouble z) {
-  npy_cdouble cy;
-  
-  if (IMAG(z)==0.0) {
-    REAL(cy) = cephes_psi(REAL(z));
-    IMAG(cy) = 0.0;
-  }
-  else {
-    F_FUNC(cpsi,CPSI)(CADDR(z), CADDR(cy));
-  }
-  return cy;
-}
-
-npy_cdouble crgamma_wrap( npy_cdouble z) {
-  int kf = 1;
-  npy_cdouble cy;
-  npy_cdouble cy2;
-  double magsq;
-
-  F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
-  magsq = ABSQ(cy);
-  REAL(cy2) = REAL(cy) / magsq;
-  IMAG(cy2) = -IMAG(cy) / magsq;
-  return cy2;
-}
-
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   npy_cdouble outz;
-  int l1, l0;
+  int l1, l0, isfer = 0;
  
  
   l0 = ((c == floor(c)) && (c < 0));
@@ -125,7 +90,18 @@ npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
     IMAG(outz) = 0.0;
     return outz;
   }
-  F_FUNC(hygfz, HYGFZ)(&a, &b, &c, &z, &outz);
+  F_FUNC(hygfz, HYGFZ)(&a, &b, &c, &z, &outz, &isfer);
+  if (isfer == 3) {
+    sf_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
+    REAL(outz) = NPY_INFINITY;
+    IMAG(outz) = 0.0;
+  } else if (isfer == 5) {
+    sf_error("chyp2f1", SF_ERROR_LOSS, NULL);
+  } else if (isfer != 0) {
+    sf_error("chyp2f1", isfer, NULL);
+    REAL(outz) = NPY_NAN;
+    IMAG(outz) = NPY_NAN;
+  }
   return outz;
 }
 
@@ -144,14 +120,21 @@ npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) {
 double hypU_wrap(double a, double b, double x) {
   double out;
   int md; /* method code --- not returned */
+  int isfer = 0;
 
-  F_FUNC(chgu,CHGU)(&a, &b, &x, &out, &md);
+  F_FUNC(chgu,CHGU)(&a, &b, &x, &out, &md, &isfer);
   if (out == 1e300) {
       sf_error("hypU", SF_ERROR_OVERFLOW, NULL);
       out = NPY_INFINITY;
   }
+  if (isfer == 6) {
+    sf_error("hypU", SF_ERROR_NO_RESULT, NULL);
+    out = NPY_NAN;
+  } else if (isfer != 0) {
+    sf_error("hypU", isfer, NULL);
+    out = NPY_NAN;
+  }
   return out;
-  
 }
 
 double hyp1f1_wrap(double a, double b, double x) {

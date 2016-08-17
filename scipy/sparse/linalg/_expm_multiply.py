@@ -553,7 +553,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     # Use an ndim=3 shape, such that the last two indices
     # are the ones that may be involved in level 3 BLAS operations.
     X_shape = (nsamples,) + B.shape
-    X = np.empty(X_shape, dtype=float)
+    X = np.empty(X_shape, dtype=np.result_type(A.dtype, B.dtype, float))
     t = t_q - t_0
     A = A - mu * ident
     A_1_norm = _exact_1_norm(A)
@@ -606,7 +606,7 @@ def _expm_multiply_interval_core_1(A, X, h, mu, m_star, s, q, tol):
     d = q // s
     input_shape = X.shape[1:]
     K_shape = (m_star + 1, ) + input_shape
-    K = np.empty(K_shape, dtype=float)
+    K = np.empty(K_shape, dtype=X.dtype)
     for i in range(s):
         Z = X[i*d]
         K[0] = Z
@@ -637,7 +637,7 @@ def _expm_multiply_interval_core_2(A, X, h, mu, m_star, s, q, tol):
     r = q - d * j
     input_shape = X.shape[1:]
     K_shape = (m_star + 1, ) + input_shape
-    K = np.empty(K_shape, dtype=float)
+    K = np.empty(K_shape, dtype=X.dtype)
     for i in range(j + 1):
         Z = X[i*d]
         K[0] = Z

@@ -387,7 +387,8 @@ except ValueError:
 
 _func_names = os.environ.get('SCIPY_GLOBAL_BENCH', [])
 if _func_names:
-    slow = 1
+    if not slow:
+        slow = 100
     _func_names = [x.strip() for x in _func_names.split(',')]
 
 
@@ -399,16 +400,17 @@ class BenchGlobal(Benchmark):
     _functions = OrderedDict([
         item for item in inspect.getmembers(gbf, inspect.isclass)
         if (issubclass(item[1], gbf.Benchmark) and
-            item[0] not in ('Benchmark', 'LennardJones') and
+            item[0] not in ('Benchmark') and
             not item[0].startswith('Problem'))
     ])
 
     if _func_names:
-        _functions = OrderedDict([
-            (name, _functions.get(name)) 
-            for name in _func_names
-            if name in _functions
-        ])
+        _filtered_funcs = OrderedDict()
+        for name in _func_names:
+            if name in _functions:
+                _filtered_funcs[name] = _functions.get(name)
+        _functions = _filtered_funcs
+
     if not slow:
         _functions = {'AMGM': None}
 
@@ -424,7 +426,8 @@ class BenchGlobal(Benchmark):
 
     def setup(self, *a):
         if not self.enabled:
-            print("BenchGlobal.track_all not enabled --- export SCIPY_XSLOW=1 to enable\n"
+            print("BenchGlobal.track_all not enabled --- export SCIPY_XSLOW=slow to enable,\n"
+                  "slow iterations of each benchmark will be run.\n"
                   "Note that it can take several hours to run; intermediate output\n"
                   "can be found under benchmarks/global-bench-results.json\n"
                   "You can specify functions to benchmark via SCIPY_GLOBAL_BENCH=AMGM,Adjiman,...")
@@ -444,7 +447,7 @@ class BenchGlobal(Benchmark):
         if not self.enabled:
             return {}
 
-        numtrials = 100
+        numtrials = slow
 
         results = {}
         solvers = ['DE', 'basinh.']

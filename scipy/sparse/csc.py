@@ -9,6 +9,7 @@ __all__ = ['csc_matrix', 'isspmatrix_csc']
 import numpy as np
 from scipy._lib.six import xrange
 
+from .base import spmatrix
 from ._sparsetools import csc_tocsr
 from . import _sparsetools
 from .sputils import upcast, isintlike, IndexMixin, get_index_dtype
@@ -108,10 +109,19 @@ class csc_matrix(_cs_matrix, IndexMixin):
     """
     format = 'csc'
 
-    def transpose(self, copy=False):
+    def transpose(self, axes=None, copy=False):
+        if axes is not None:
+            raise ValueError(("Sparse matrices do not support "
+                              "an 'axes' parameter because swapping "
+                              "dimensions is the only logical permutation."))
+
+        M, N = self.shape
+
         from .csr import csr_matrix
-        M,N = self.shape
-        return csr_matrix((self.data,self.indices,self.indptr),(N,M),copy=copy)
+        return csr_matrix((self.data, self.indices,
+                           self.indptr), (N, M), copy=copy)
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def __iter__(self):
         csr = self.tocsr()
@@ -124,7 +134,9 @@ class csc_matrix(_cs_matrix, IndexMixin):
         else:
             return self
 
-    def tocsr(self):
+    tocsc.__doc__ = spmatrix.tocsc.__doc__
+
+    def tocsr(self, copy=False):
         M,N = self.shape
         idx_dtype = get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, N))
@@ -144,6 +156,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
         A = csr_matrix((data, indices, indptr), shape=self.shape)
         A.has_sorted_indices = True
         return A
+
+    tocsr.__doc__ = spmatrix.tocsr.__doc__
 
     def __getitem__(self, key):
         # Use CSR to implement fancy indexing.

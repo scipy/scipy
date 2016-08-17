@@ -483,7 +483,9 @@ class _CustomLinearOperator(LinearOperator):
                                      dtype=self.dtype)
 
 
-def _get_dtype(operators, dtypes=[]):
+def _get_dtype(operators, dtypes=None):
+    if dtypes is None:
+        dtypes = []
     for obj in operators:
         if obj is not None and hasattr(obj, 'dtype'):
             dtypes.append(obj.dtype)

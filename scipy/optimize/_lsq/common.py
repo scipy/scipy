@@ -1,4 +1,6 @@
 """Functions used by least-squares algorithms."""
+from __future__ import division, print_function, absolute_import
+
 from math import copysign
 
 import numpy as np

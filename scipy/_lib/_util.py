@@ -49,12 +49,53 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
 
     arrays = np.broadcast_arrays(*arrays)
     temp = tuple(np.extract(cond, arr) for arr in arrays)
-    out = _valarray(np.shape(arrays[0]), value=fillvalue)
+    tcode = np.mintypecode([a.dtype.char for a in arrays])
+    out = _valarray(np.shape(arrays[0]), value=fillvalue, typecode=tcode)
     np.place(out, cond, f(*temp))
     if f2 is not None:
         temp = tuple(np.extract(~cond, arr) for arr in arrays)
         np.place(out, ~cond, f2(*temp))
 
+    return out
+
+
+def _lazyselect(condlist, choicelist, arrays, default=0):
+    """
+    Mimic `np.select(condlist, choicelist)`.
+
+    Notice it assumes that all `arrays` are of the same shape, or can be
+    broadcasted together.
+
+    All functions in `choicelist` must accept array arguments in the order
+    given in `arrays` and must return an array of the same shape as broadcasted
+    `arrays`.
+
+    Examples
+    --------
+    >>> x = np.arange(6)
+    >>> np.select([x <3, x > 3], [x**2, x**3], default=0)
+    array([  0,   1,   4,   0,  64, 125])
+
+    >>> _lazyselect([x < 3, x > 3], [lambda x: x**2, lambda x: x**3], (x,))
+    array([   0.,    1.,    4.,   0.,   64.,  125.])
+
+    >>> a = -np.ones_like(x)
+    >>> _lazyselect([x < 3, x > 3],
+    ...             [lambda x, a: x**2, lambda x, a: a * x**3],
+    ...             (x, a), default=np.nan)
+    array([   0.,    1.,    4.,   nan,  -64., -125.])
+
+    """
+    arrays = np.broadcast_arrays(*arrays)
+    tcode = np.mintypecode([a.dtype.char for a in arrays])
+    out = _valarray(np.shape(arrays[0]), value=default, typecode=tcode)
+    for index in range(len(condlist)):
+        func, cond = choicelist[index], condlist[index]
+        if np.all(cond is False):
+            continue
+        cond, _ = np.broadcast_arrays(cond, arrays[0])
+        temp = tuple(np.extract(cond, arr) for arr in arrays)
+        np.place(out, cond, func(*temp))
     return out
 
 
@@ -122,7 +163,7 @@ class DeprecatedImport(object):
 def check_random_state(seed):
     """Turn seed into a np.random.RandomState instance
 
-    If seed is None (or np.random), return the RandomState singleton used 
+    If seed is None (or np.random), return the RandomState singleton used
     by np.random.
     If seed is an int, return a new RandomState instance seeded with seed.
     If seed is already a RandomState instance, return it.
@@ -199,7 +240,7 @@ def _asarray_validated(a, check_finite=True,
 # https://github.com/django/django/pull/4846
 
 # Note an inconsistency between inspect.getargspec(func) and
-# inspect.signature(func). If `func` is a bound method, the latter does *not* 
+# inspect.signature(func). If `func` is a bound method, the latter does *not*
 # list `self` as a first argument, while the former *does*.
 # Hence cook up a common ground replacement: `getargspec_no_self` which
 # mimics `inspect.getargspec` but does not list `self`.
