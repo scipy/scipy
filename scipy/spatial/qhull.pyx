@@ -2187,6 +2187,7 @@ def tsearch(tri, xi):
     """
     return tri.find_simplex(xi)
 
+Delaunay.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
 
 #------------------------------------------------------------------------------
 # Delaunay triangulation interface, for low-level C
@@ -2378,6 +2379,7 @@ class ConvexHull(_QhullUser):
             self._vertices = np.unique(self.simplices)
         return self._vertices
 
+ConvexHull.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
 
 #------------------------------------------------------------------------------
 # Voronoi diagrams
@@ -2525,6 +2527,8 @@ class Voronoi(_QhullUser):
             self._ridge_dict = dict(zip(map(tuple, self.ridge_points.tolist()),
                                         self.ridge_vertices))
         return self._ridge_dict
+
+Voronoi.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
 
 #------------------------------------------------------------------------------
 # Halfspace Intersection
