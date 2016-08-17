@@ -13,7 +13,7 @@ try:
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                OptimizeResult)
+                                gensa, OptimizeResult)
 except ImportError:
     pass
 
@@ -187,16 +187,35 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'DE')
 
+    def run_gensa(self):
+        """
+        Do an optimization run for gensa
+        """
+        self.function.nfev = 0
+
+        t0 = time.time()
+
+        res =gensa(
+                self.fun,
+                self.bounds,
+                )
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'gensa')
+
     def bench_run_global(self, numtrials=50, methods=None):
         """
         Run the optimization tests for the required minimizers.
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.']
+            methods = ['DE', 'basinh.', 'gensa']
 
-        method_fun = {'DE': self.run_differentialevolution,
-                      'basinh.': self.run_basinhopping}
+        method_fun = {
+                'DE': self.run_differentialevolution,
+                'basinh.': self.run_basinhopping,
+                'gensa': self.run_gensa}
 
         for i in range(numtrials):
             for m in methods:
@@ -417,7 +436,7 @@ class BenchGlobal(Benchmark):
     params = [
         list(_functions.keys()),
         ["success%", "<nfev>"],
-        ['DE', 'basinh.'],
+        ['DE', 'basinh.', 'gensa'],
     ]
     param_names = ["test function", "result type", "solver"]
 
