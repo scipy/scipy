@@ -2054,7 +2054,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     options = {'xtol': tol, 'maxiter': maxiter}
     res = _minimize_scalar_golden(func, brack, args, **options)
     if full_output:
-        return res['x'], res['fun'], res['nfev'], res['nit']
+        return res['x'], res['fun'], res['nfev']
     else:
         return res['x']
 
@@ -2107,7 +2107,8 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     funcalls += 2
     nit = 0
     for i in xrange(maxiter):
-        if (numpy.abs(x3 - x0) <= tol * (numpy.abs(x1) + numpy.abs(x2))):
+        if ((numpy.abs(x3 - x0) <= tol * (numpy.abs(x1) + numpy.abs(x2))) or
+                (x1 == x2)):
             break
         if (f2 < f1):
             x0 = x1
