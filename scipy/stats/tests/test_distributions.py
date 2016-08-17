@@ -535,6 +535,30 @@ class TestLogser(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_pmf_small_p(self):
+        m = stats.logser.pmf(4, 1e-20)
+        # The expected value was computed using mpmath:
+        #   >>> from sympy import mpmath
+        #   >>> mpmath.mp.dps = 64
+        #   >>> k = 4
+        #   >>> p = mpmath.mpf('1e-20')
+        #   >>> float(-(p**k)/k/mpmath.log(1-p))
+        #   2.5e-61
+        # It is also clear from noticing that for very small p,
+        # log(1-p) is approximately -p, and the formula becomes
+        #    p**(k-1) / k
+        assert_allclose(m, 2.5e-61)
+
+    def test_mean_small_p(self):
+        m = stats.logser.mean(1e-8)
+        # The expected mean was computed using mpmath:
+        #   >>> from sympy import mpmath
+        #   >>> mpmath.dps = 60
+        #   >>> p = mpmath.mpf('1e-8')
+        #   >>> float(-p / ((1 - p)*mpmath.log(1 - p)))
+        #   1.000000005
+        assert_allclose(m, 1.000000005)
+
 
 class TestPareto(TestCase):
     def test_stats(self):
@@ -2969,6 +2993,20 @@ def test_genextreme_sf_isf():
     assert_allclose(s, 0.00034218086528426593)
     x2 = stats.genextreme.isf(s, 0)
     assert_allclose(x2, x)
+
+
+def test_burr12_ppf_small_arg():
+    prob = 1e-16
+    quantile = stats.burr12.ppf(prob, 2, 3)
+    # The expected quantile was computed using mpmath:
+    #   >>> from sympy import mpmath
+    #   >>> prob = mpmath.mpf('1e-16')
+    #   >>> c = mpmath.mpf(2)
+    #   >>> d = mpmath.mpf(3)
+    #   >>> float(((1-q)**(-1/d) - 1)**(1/c))
+    #   5.7735026918962575e-09
+    assert_allclose(quantile, 5.7735026918962575e-09)
+
 
 if __name__ == "__main__":
     run_module_suite()
