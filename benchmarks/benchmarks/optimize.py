@@ -469,7 +469,7 @@ class BenchGlobal(Benchmark):
         numtrials = slow
 
         results = {}
-        solvers = ['DE', 'basinh.']
+        solvers = ['DE', 'basinh.', 'gensa']
 
         for name, klass in sorted(self._functions.items()):
             try:
