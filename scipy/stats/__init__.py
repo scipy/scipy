@@ -102,6 +102,7 @@ Continuous distributions
    rayleigh          -- Rayleigh
    rice              -- Rice
    recipinvgauss     -- Reciprocal Inverse Gaussian
+   rv_arbitrary      -- User defined probability distribution function
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T

@@ -5260,9 +5260,9 @@ class rv_arbitrary(rv_continuous):
     ...     return prefactor * x**2
     >>> arb = rv_arbitrary(quadratic, a=-1, b=1)
     >>> arb.pdf([-1, 0, 0.5, 1], 1.5)
-    array([0., 0.75, 0.5625, 0.])
+    array([1.5, 0., 0.375, 1.5])
     >>> arb.cdf([-1, 0, 0.5, 1], 1.5)
-    array([0., 0.5, 0.84375, 1.])
+    array([0., 0.5, 0.5625, 1.])
     """
     def __init__(self, pdf, momtype=1, a=None, b=None, xtol=1e-14, badvalue=None,
                name=None, seed=None, cdf=None, ppf=None, **unknown_kwds):
