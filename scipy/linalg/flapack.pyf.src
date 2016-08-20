@@ -2543,8 +2543,8 @@ subroutine ssyevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     integer intent(hide) :: n=shape(a,0)
     real intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    real intent(hide) :: vl=0
-    real intent(hide) :: vu=1
+    real optional,intent(in) :: vl=0
+    real optional,intent(in) :: vu=1
     integer optional,intent(in) :: il=1
     integer optional,intent(in),depend(n) :: iu=n
     real intent(hide) :: abstol=0.
@@ -2571,8 +2571,8 @@ subroutine dsyevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     integer intent(hide) :: n=shape(a,0)
     double precision intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    double precision intent(hide) :: vl=0
-    double precision intent(hide) :: vu=1
+    double precision optional,intent(in) :: vl=0
+    double precision optional,intent(in) :: vu=1
     integer optional,intent(in) :: il=1
     integer optional,intent(in),depend(n) :: iu=n
     double precision intent(hide) :: abstol=0.
@@ -2599,8 +2599,8 @@ subroutine cheevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     integer intent(hide) :: n=shape(a,0)
     complex intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    real intent(hide) :: vl=0
-    real intent(hide) :: vu=1
+    real optional,intent(in) :: vl=0
+    real optional,intent(in) :: vu=1
     integer optional,intent(in) :: il=1
     integer optional,intent(in),depend(n) :: iu=n
     real intent(hide) :: abstol=0.
@@ -2629,8 +2629,8 @@ subroutine zheevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,isuppz,wo
     integer intent(hide) :: n=shape(a,0)
     complex*16 intent(in,copy,aligned8),dimension(n,n) :: a
     integer intent(hide),depend(n,a) :: lda=n
-    double precision intent(hide) :: vl=0
-    double precision intent(hide) :: vu=1
+    double precision optional,intent(in) :: vl=0
+    double precision optional,intent(in) :: vu=1
     integer optional,intent(in) :: il=1
     integer optional,intent(in),depend(n) :: iu=n
     double precision intent(hide) :: abstol=0.
