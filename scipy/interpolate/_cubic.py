@@ -109,7 +109,7 @@ class PchipInterpolator(BPoly):
         """
         Return the roots of the interpolated function.
         """
-        return (PPoly.from_bernstein_basis(self._bpoly)).roots()
+        return (PPoly.from_bernstein_basis(self)).roots()
 
     @staticmethod
     def _edge_case(h0, h1, m0, m1):
