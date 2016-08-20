@@ -406,10 +406,10 @@ class logser_gen(rv_discrete):
         return (p > 0) & (p < 1)
 
     def _pmf(self, k, p):
-        return -np.power(p, k) * 1.0 / k / log(1 - p)
+        return -np.power(p, k) * 1.0 / k / special.log1p(-p)
 
     def _stats(self, p):
-        r = log(1 - p)
+        r = special.log1p(-p)
         mu = p / (p - 1.0) / r
         mu2p = -p / r / (p - 1.0)**2
         var = mu2p - mu*mu

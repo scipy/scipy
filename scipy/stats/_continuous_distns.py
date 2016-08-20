@@ -490,7 +490,7 @@ class beta_gen(rv_continuous):
             # s1 and s2 are used in the extra arguments passed to _beta_mle_ab
             # by optimize.fsolve.
             s1 = np.log(data).sum()
-            s2 = np.log(1 - data).sum()
+            s2 = special.log1p(-data).sum()
 
             # Use the "method of moments" to estimate the initial
             # guess for a and b.
@@ -728,7 +728,10 @@ class burr12_gen(rv_continuous):
         return special.xlog1py(-d, x**c)
 
     def _ppf(self, q, c, d):
-        return ((1 - q)**(-1.0/d) - 1)**(1.0/c)
+        # The following is an implementation of
+        #   ((1 - q)**(-1.0/d) - 1)**(1.0/c)
+        # that does a better job handling small values of q.
+        return special.expm1(-1/d * special.log1p(-q))**(1/c)
 
     def _munp(self, n, c, d):
         nc = 1. * n / c
