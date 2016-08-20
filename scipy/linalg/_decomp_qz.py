@@ -241,15 +241,15 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     B : (N, N) array_like
         2d array to decompose
     sort : {callable, 'lhp', 'rhp', 'iuc', 'ouc'}, optional
-        Specifies whether the upper eigenvalues should be sorted.  A callable
-        may be passed that, given a eigenvalue, returns a boolean denoting
-        whether the eigenvalue should be sorted to the top-left (True). For
-        real matrix pairs, the sort function takes three real arguments
-        (alphar, alphai, beta). The eigenvalue
-        ``x = (alphar + alphai*1j)/beta``.  For complex matrix pairs or
-        output='complex', the sort function takes two complex arguments
-        (alpha, beta). The eigenvalue ``x = (alpha/beta)``.
-        Alternatively, string parameters may be used:
+        Specifies whether the upper eigenvalues should be sorted. A
+        callable may be passed that, given an ordered pair ``(alpha,
+        beta)`` representing the eigenvalue ``x = (alpha/beta)``,
+        returns a boolean denoting whether the eigenvalue should be
+        sorted to the top-left (True). For the real matrix pairs
+        ``beta`` is real while ``alpha`` can be complex, and for
+        complex matrix pairs both ``alpha`` and ``beta`` can be
+        complex. The callable must be able to accept a numpy
+        array. Alternatively, string parameters may be used:
 
             - 'lhp'   Left-hand plane (x.real < 0.0)
             - 'rhp'   Right-hand plane (x.real > 0.0)
@@ -297,6 +297,7 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
     See also
     --------
     qz
+
     """
     #NOTE: should users be able to set these?
     lwork = None
