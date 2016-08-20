@@ -6,7 +6,7 @@
 ! $Revision$ $Date$
 !
 ! Additions by Travis Oliphant, Tiziano Zito, Collin RM Stocks, Fabian Pedregosa
-!              Skipper Seabold
+!              Skipper Seabold, Alex Papanicolaou
 !
 ! <prefix2=s,d> <ctype2=float,double> <ftype2=real,double precision> <wrap2=ws,d>
 ! <prefix2c=c,z> <ftype2c=complex,double complex> <ctype2c=complex_float,complex_double> <wrap2c=wc,z>
