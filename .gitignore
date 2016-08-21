@@ -113,6 +113,7 @@ benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
 scipy/__config__.py
+scipy/_lib/_test_ccallback_cython.c
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
 scipy/fftpack/_fftpackmodule.c

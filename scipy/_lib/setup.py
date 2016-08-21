@@ -1,12 +1,24 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+import os
+
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
 
     config = Configuration('_lib', parent_package, top_path)
     config.add_data_files('tests/*.py')
+
+    include_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'src'))
+    depends = [os.path.join(include_dir, 'ccallback.h')]
+    config.add_extension("_test_ccallback",
+                         sources=["src/_test_ccallback.c"],
+                         depends=depends,
+                         include_dirs=[include_dir])
+
+    config.add_extension("_test_ccallback_cython",
+                         sources=["_test_ccallback_cython.c"])
 
     return config
 
