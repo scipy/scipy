@@ -27,6 +27,10 @@ except ImportError:
 from scipy.linalg.lapack import get_lapack_funcs
 from scipy.linalg.blas import get_blas_funcs
 
+# Special import for monkey patched functions
+from scipy.linalg.lapack import dsyevr, ssyevr, cheevr, zheevr
+
+
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
@@ -368,8 +372,7 @@ class TestDlasd4(TestCase):
             res = lasd4(i, sgm, mvc)
             roots.append(res[1])
 
-            assert_((res[3] <= 0),"LAPACK root finding dlasd4 failed to find \
-                                    the singular value %i" % i)
+            assert_((res[3] <= 0),"LAPACK root finding dlasd4 failed to find \ the singular value %i" % i)
         roots = np.array(roots)[::-1]
 
         assert_((not np.any(np.isnan(roots)),"There are NaN roots"))
@@ -508,6 +511,69 @@ def test_sgesdd_lwork_bug_workaround():
 
     assert_equal(returncode, 0,
                  "Code apparently failed: " + p.stdout.read())
+
+
+class TestFlapackEV(TestCase):
+
+    def test_syevr(self):
+        m, n = 5, 4
+        _types = {'s': np.single, 'd': np.double}
+        for t in 'sd':
+            f = ssyevr if t == 's' else dsyevr
+
+            A = np.random.random((m, n)).astype(_types[t])
+            A = np.dot(A.T, A)
+            lam_full, v_full = np.linalg.eigh(A)
+
+            job = 'N'
+            uplo = 'U'
+            overwrite_a = 0
+            lwork = 200
+
+            for il in range(1, n + 1):
+                for iu in range(il, n + 1):
+                    n_eig = iu - il + 1
+                    targ_lam = lam_full[il - 1:iu]
+
+                    lam, v, ret = f(A, job, 'I', uplo, il, iu)
+                    assert_array_almost_equal(lam[:n_eig], targ_lam)
+
+                    vl = np.floor(1000. * lam_full[il - 1]) / 1000.
+                    vu = np.ceil(1000. * lam_full[iu - 1]) / 1000.
+                    lam, v, ret = f(A, job, 'V', uplo, 1, 1,
+                                    lwork, overwrite_a, vl, vu)
+                    assert_array_almost_equal(lam[:n_eig], targ_lam)
+
+    def test_heevr(self):
+        m, n = 5, 4
+        _types = {'c': np.complex64, 'z': np.complex128}
+        for t in 'cz':
+            f = cheevr if t == 'c' else zheevr
+
+            R = np.random.random((m, n))
+            I = np.random.random((m, n))
+            A = (R + 1j * I).astype(_types[t])
+            A = np.dot(A.T, A)
+            lam_full, v_full = np.linalg.eigh(A)
+
+            job = 'N'
+            uplo = 'U'
+            overwrite_a = 0
+            lwork = 200
+
+            for il in range(1, n + 1):
+                for iu in range(il, n + 1):
+                    n_eig = iu - il + 1
+                    targ_lam = lam_full[il - 1:iu]
+
+                    lam, v, ret = f(A, job, 'I', uplo, il, iu)
+                    assert_array_almost_equal(lam[:n_eig], targ_lam)
+
+                    vl = np.floor(1000. * lam_full[il - 1]) / 1000.
+                    vu = np.ceil(1000. * lam_full[iu - 1]) / 1000.
+                    lam, v, ret = f(A, job, 'V', uplo, 1, 1,
+                                    lwork, overwrite_a, vl, vu)
+                    assert_array_almost_equal(lam[:n_eig], targ_lam, decimal=5)
 
 
 if __name__ == "__main__":
