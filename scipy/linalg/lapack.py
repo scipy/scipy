@@ -404,6 +404,73 @@ _flapack.dgegv = dgegv
 _flapack.sgegv = sgegv
 _flapack.zgegv = zgegv
 
+# Patching EVR Methods to handle value ranges
+_evr_doc = """
+w,z,info = {name}(a,[jobz,range,uplo,il,iu,lwork,overwrite_a,vl,vu])
+
+Wrapper for ``{name}``.
+
+Parameters
+----------
+a : input rank-2 array({type!r}) with bounds (n,n)
+
+Other Parameters
+----------------
+jobz : input string(len=1), optional
+    Default: 'V'
+range : input string(len=1), optional
+    Default: 'A'
+uplo : input string(len=1), optional
+    Default: 'L'
+overwrite_a : input int, optional
+    Default: 0
+il : input int, optional
+    Default: 1
+iu : input int, optional
+    Default: n
+lwork : input int, optional
+    Default: 26*n
+vl : input float, optional
+    Default: 0
+vu : input float, optional
+    Default: 1
+
+Returns
+-------
+w : rank-1 array({w_type!r}) with bounds (n)
+z : rank-2 array({type!r}) with bounds (n,m)
+info : int
+"""
+
+
+def evr_decorator(evr_fun, name, type):
+
+    _arg_list = ['a', 'jobz', 'range', 'uplo', 'il',
+                 'iu', 'lwork', 'overwrite_a', 'vl', 'vu']
+
+    def wrapper(*args, **kwargs):
+        _new_kwargs = kwargs.copy()
+        for k, arg in zip(_arg_list, args):
+            _new_kwargs[k] = arg
+        # Fix bug in -EVR where il/iu are not ignored
+        if _new_kwargs['range'] != 'I':
+            _new_kwargs['il'] = 1
+            _new_kwargs['iu'] = min(_new_kwargs['a'].shape)
+        return evr_fun(**_new_kwargs)
+
+    wrapper.__module__ = 'scipy.linalg._flapack'
+    wrapper.__doc__ = _evr_doc.format(
+        name=name, w_type=type.lower(), type=type)
+    wrapper.__name__ = name
+
+    return wrapper
+
+ssyevr = evr_decorator(ssyevr, 'ssyevr', 'f')
+dsyevr = evr_decorator(dsyevr, 'dsyevr', 'd')
+cheevr = evr_decorator(cheevr, 'cheevr', 'F')
+zheevr = evr_decorator(zheevr, 'zheevr', 'D')
+
+
 # some convenience alias for complex functions
 _lapack_alias = {
     'corghr': 'cunghr', 'zorghr': 'zunghr',
