@@ -2541,7 +2541,7 @@ Voronoi.add_points.__func__.__doc__ = _QhullUser._add_points.__doc__
 
 class HalfspaceIntersection(_QhullUser):
     """
-    HalfspaceIntersection(halfspaces, feasible_point, incremental=False, qhull_options=None)
+    HalfspaceIntersection(halfspaces, interior_point, incremental=False, qhull_options=None)
 
     Halfspace intersections in N dimensions.
 
@@ -2551,9 +2551,9 @@ class HalfspaceIntersection(_QhullUser):
     ----------
     halfspaces : ndarray of floats, shape (nineq, ndim+1)
         Stacked Inequalities of the form Ax + b <= 0 in format [A; b]
-    feasible_point: ndarray of floats, shape (ndim,)
-        Feasible point inside the region defined by halfspaces.
-        It can be obtained by linear programming.
+    interior_point : ndarray of floats, shape (ndim,)
+        Point clearly inside the region defined by halfspaces. Also called a feasible
+        point, it can be obtained by linear programming.
     incremental : bool, optional
         Allow adding new halfspaces incrementally. This takes up some additional
         resources.
@@ -2566,6 +2566,8 @@ class HalfspaceIntersection(_QhullUser):
     ----------
     halfspaces : ndarray of double, shape (nineq, ndim+1)
         Input halfspaces.
+    interior_point :ndarray of floats, shape (ndim,)
+        Input interior point.
     intersections : ndarray of double, shape (ninter, ndim)
         Intersections of all halfspaces.
     dual_points : ndarray of double, shape (nineq, ndim)
@@ -2680,16 +2682,16 @@ class HalfspaceIntersection(_QhullUser):
 
     """
 
-    def __init__(self, halfspaces, feasible_point,
+    def __init__(self, halfspaces, interior_point,
                     incremental=False, qhull_options=None):
         if np.ma.isMaskedArray(halfspaces):
             raise ValueError('Input halfspaces cannot be a masked array')
-        if np.ma.isMaskedArray(feasible_point):
-            raise ValueError('Input feasible point cannot be a masked array')
-        if feasible_point.shape != (halfspaces.shape[1]-1,):
+        if np.ma.isMaskedArray(interior_point):
+            raise ValueError('Input interior point cannot be a masked array')
+        if interior_point.shape != (halfspaces.shape[1]-1,):
             raise ValueError('Feasible point must be a (ndim-1,) array')
         halfspaces = np.ascontiguousarray(halfspaces, dtype=np.double)
-        self.feasible_point = np.ascontiguousarray(feasible_point, dtype=np.double)
+        self.interior_point = np.ascontiguousarray(interior_point, dtype=np.double)
 
         if qhull_options is None:
             qhull_options = b""
@@ -2699,7 +2701,7 @@ class HalfspaceIntersection(_QhullUser):
             qhull_options = asbytes(qhull_options)
 
         # Run qhull
-        mode_option = "H{}".format(','.join([str(self.feasible_point.item(i)) for i in range(halfspaces.shape[1] -1)]))
+        mode_option = "H{}".format(','.join([str(self.interior_point.item(i)) for i in range(halfspaces.shape[1] -1)]))
         qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=None,
                        incremental=incremental)
         _QhullUser.__init__(self, qhull, incremental=incremental)
@@ -2711,7 +2713,7 @@ class HalfspaceIntersection(_QhullUser):
 
         self.dual_volume, self.dual_area = qhull.volume_area()
 
-        self.intersections = self.dual_equations[:, :-1]/-self.dual_equations[:, -1:] + self.feasible_point
+        self.intersections = self.dual_equations[:, :-1]/-self.dual_equations[:, -1:] + self.interior_point
 
         if qhull.ndim == 2:
             self._vertices = qhull.get_extremes_2d()
