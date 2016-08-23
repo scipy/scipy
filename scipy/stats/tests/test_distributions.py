@@ -2276,17 +2276,19 @@ class TestTrapz(TestCase):
 
 
 class TestArbitrary(TestCase):
+
+    def quad_pdf(self, x, prefactor):
+        return prefactor * x ** 2
+
+    def quad_cdf(self, x, prefactor):
+        return prefactor * x ** 3 / 3. + 0.5
+
+    def quad_ppf(self, q, prefactor):
+        return cbrt(3 * q / prefactor - 1)
+
     def setUp(self):
-        def quad_pdf(x, prefactor):
-            return prefactor * x**2
-
-        def quad_cdf(x, prefactor):
-            return prefactor * x**3 / 3. + 0.5
-
-        def quad_ppf(q, prefactor):
-            return cbrt(3*q / prefactor - 1)
-
-        self.rv = rv_arbitrary(quad_pdf, a=-1, b=1, cdf=quad_cdf, ppf=quad_ppf)
+        self.rv = rv_arbitrary(self.quad_pdf, a=-1, b=1, cdf=self.quad_cdf,
+                               ppf=self.quad_ppf)
         self.prefactor = 1.5
 
     def test_pdf(self):
@@ -2310,6 +2312,22 @@ class TestArbitrary(TestCase):
     def test_rvs(self):
         rn = self.rv.rvs(self.prefactor, size=100)
         assert_equal(rn.size, 100)
+
+    def test_fit(self):
+        # fit a normal distribution because we can easily work out the stats
+        def pdf(x, locy, scaley):
+            return stats.norm.pdf(x, loc=locy, scale=scaley)
+
+        def ppf(q, locy, scaley):
+            return stats.norm.ppf(q, loc=locy, scale=scaley)
+
+        rv = rv_arbitrary(pdf)
+        rn = norm.rvs(1, 2, size=1000)
+        # loc and scale are fixed in rv_arbitrary.fit
+        # fit just returns the shapes.
+        output = rv.fit(rn, 0.8, 2.2)
+        assert_allclose(output[0], np.mean(rn), rtol=1e-4)
+        assert_allclose(output[1], np.std(rn), rtol=1e-4)
 
 
 def test_540_567():

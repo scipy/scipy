@@ -5283,6 +5283,7 @@ class rv_arbitrary(rv_continuous):
             self._ppf_func = ppf
 
         shapes = _get_shapes(funcs_to_inspect)
+        self.numargs = len(shapes)
         shapes = ', '.join(shapes)
 
         super(rv_arbitrary, self).__init__(momtype=momtype, a=a, b=b,
@@ -5295,33 +5296,32 @@ class rv_arbitrary(rv_continuous):
             badvalue=badvalue, name=name,
             shapes=shapes, seed=seed)
 
-    def _parse_args(self, *args, **kwds):
-        loc, scale = 0, 1
-        if loc in kwds:
-            loc = kwds['loc']
-        if scale in kwds:
-            scale = kwds['scale']
-        return args, loc, scale
+        # reset args parsers, they are overwritten in super class constructor
 
-    def _parse_args_rvs(self, *args, **kwds):
-        loc, scale, size = 0, 1, 0
-        if loc in kwds:
-            loc = kwds['loc']
-        if scale in kwds:
-            scale = kwds['scale']
-        if size in kwds['size']:
-            size = kwds['size']
-        return args, loc, scale, size
+        def _parse_args(*args, **kwds):
+            if len(args) > self.numargs or 'loc' in kwds or 'scale' in kwds:
+                warnings.warn("loc and scale fixed at 0, 1 for rv_arbitrary")
+            return args, 0, 1
 
-    def _parse_args_stats(self, *args, **kwds):
-        loc, scale, moments = 0, 1, 'mv'
-        if loc in kwds:
-            loc = kwds['loc']
-        if scale in kwds:
-            scale = kwds['scale']
-        if moments in kwds['moments']:
-            moments = kwds['moments']
-        return args, loc, scale, moments
+        def _parse_args_rvs(*args, **kwds):
+            if len(args) > self.numargs or 'loc' in kwds or 'scale' in kwds:
+                warnings.warn("loc and scale fixed at 0, 1 for rv_arbitrary")
+            size = 1
+            if 'size' in kwds:
+                size = kwds['size']
+            return args, 0, 1, size
+
+        def _parse_args_stats(*args, **kwds):
+            if len(args) > self.numargs or 'loc' in kwds or 'scale' in kwds:
+                warnings.warn("loc and scale fixed at 0, 1 for rv_arbitrary")
+            moments = 'mv'
+            if 'moments' in kwds:
+                moments = kwds['moments']
+            return args, 0, 1, moments
+
+        self._parse_args = _parse_args
+        self._parse_args_rvs = _parse_args_rvs
+        self._parse_args_stats = _parse_args_stats
 
     def _updated_ctor_param(self):
         """ Return the current version of _ctor_param, possibly updated by user.
@@ -5345,12 +5345,65 @@ class rv_arbitrary(rv_continuous):
         return self._ppf_func(q, *args, **kwds)
 
     def fit(self, data, *args, **kwds):
-        raise NotImplementedError("fit method not supported for arbitrary"
-                                  " distribution")
+        """
+        Return MLEs for shape parameters from data.
+
+        MLE stands for Maximum Likelihood Estimate.  Starting estimates for
+        the fit are given by input arguments.
+
+        One can hold some parameters fixed to specific values by passing in
+        keyword arguments ``f0``, ``f1``, ..., ``fn`` (for shape parameters).
+
+        Parameters
+        ----------
+        data : array_like
+            Data to use in calculating the MLEs.
+        args : floats, optional
+            Starting value(s) for any shape-characterizing arguments. No
+            default value.
+        kwds : floats, optional
+            Special keyword arguments are recognized as holding certain
+            parameters fixed:
+
+            - f0...fn : hold respective shape parameters fixed.
+              Alternatively, shape parameters to fix can be specified by name.
+              For example, if ``self.shapes == "a, b"``, ``fa``and ``fix_a``
+              are equivalent to ``f0``, and ``fb`` and ``fix_b`` are
+              equivalent to ``f1``.
+
+            - optimizer : The optimizer to use.  The optimizer must take ``func``,
+              and starting position as the first two arguments,
+              plus ``args`` (for extra arguments to pass to the
+              function to be optimized) and ``disp=0`` to suppress
+              output as keyword arguments.
+
+        Returns
+        -------
+        shape : tuple of floats
+            MLEs for any shape statistics.
+
+        Notes
+        -----
+        This fit is computed by maximizing a log-likelihood function, with
+        penalty applied for samples outside of range of the distribution. The
+        returned answer is not guaranteed to be the globally optimal MLE, it
+        may only be locally optimal, or the optimization may fail altogether.
+        """
+        kwds['floc'] = 0
+        kwds['fscale'] = 1
+        return super(rv_arbitrary, self).fit(data, *args, **kwds)[:-2]
 
     def fit_loc_scale(self, data, *args):
-        raise NotImplementedError("fit_loc_scale not supported for arbitrary"
-                                  " distribution")
+        """
+        Not applicable for ``rv_arbitrary``
+        """
+        # rv_arbitrary uses fixed loc and scale in order to keep the pdf
+        # normalised.
+        return 0, 1
+
+    def _unpack_loc_scale(self, theta):
+        # loc and scale fixed at 0, 1 for rv_arbitrary
+        return 0, 1, theta[0:self.numargs]
 
     def _construct_default_doc(self, *args, **kwds):
         pass
