@@ -2318,11 +2318,8 @@ class TestArbitrary(TestCase):
         def pdf(x, locy, scaley):
             return stats.norm.pdf(x, loc=locy, scale=scaley)
 
-        def ppf(q, locy, scaley):
-            return stats.norm.ppf(q, loc=locy, scale=scaley)
-
         rv = rv_arbitrary(pdf)
-        rn = norm.rvs(1, 2, size=1000)
+        rn = stats.norm.rvs(1, 2, size=1000)
         # loc and scale are fixed in rv_arbitrary.fit
         # fit just returns the shapes.
         output = rv.fit(rn, 0.8, 2.2)

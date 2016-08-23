@@ -5242,12 +5242,17 @@ class rv_arbitrary(rv_continuous):
 
     See Also
     --------
-    rv_sample : **THIS ISN'T DOCUMENTED**
+    rv_sample : The discrete equivalent
     gaussian_kde : Representation of a kernel-density estimate using Gaussian
         kernels.
 
     Notes
     -----
+    Unlike all other ``rv_continuous`` distributions the methods of
+    rv_arbitrary do not use ``loc`` or ``scale`` to shift and scale the
+    distribution. This is because those transforms can alter the normalization
+    of the distribution. If you wish to shift and scale the distribution you
+    should specify these variables as part of the distribution ``shapes``.
     The speed of obtaining random variates from this distribution is greatly
     improved by supplying the percentage point function ``ppf``.
 
@@ -5263,6 +5268,22 @@ class rv_arbitrary(rv_continuous):
     array([1.5, 0., 0.375, 1.5])
     >>> arb.cdf([-1, 0, 0.5, 1], 1.5)
     array([0., 0.5, 0.5625, 1.])
+
+    Now lets examine a normal distribution:
+
+    >>> from scipy.stats import norm
+    >>> def arb_norm(x, mu, sd):
+    ...     return norm.pdf(x, loc=mu, scale=sd)
+    >>> rv = rv_arbitrary(arb_norm, seed=1234)
+    >>> rn = norm.rvs(1., 2., size=1000)
+    >>> # fit the distribution
+    >>> rv.fit(rn, 0.5, 1)
+    (1.088247083190643, 2.029057264661581
+    >>> np.mean(rn), np.std(rn)
+    (1.0882247620540428, 2.0290745264994356)
+    >>> # fit the distribution with the built in distribution
+    >>> norm.fit(rn)
+    (1.0882247620540428, 2.0290745264994356)
     """
     def __init__(self, pdf, momtype=1, a=None, b=None, xtol=1e-14, badvalue=None,
                name=None, seed=None, cdf=None, ppf=None, **unknown_kwds):
