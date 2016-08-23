@@ -1870,10 +1870,13 @@ class Delaunay(_QhullUser):
         self.vertices = self.simplices
 
         _QhullUser._update(self, qhull)
-        self.points = self._points
 
     def add_points(self, points, restart=False):
-        _QhullUser._add_points(self, points, restart)
+        self._add_points(points, restart)
+
+    @property
+    def points(self):
+        return self._points
 
     @property
     def transform(self):
@@ -2368,10 +2371,13 @@ class ConvexHull(_QhullUser):
         self.nsimplex = self.simplices.shape[0]
 
         _QhullUser._update(self, qhull)
-        self.points = self._points
 
     def add_points(self, points, restart=False):
-        _QhullUser._add_points(self, points, restart)
+        self._add_points(points, restart)
+
+    @property
+    def points(self):
+        return self._points
 
     @property
     def vertices(self):
@@ -2516,10 +2522,13 @@ class Voronoi(_QhullUser):
         self._ridge_dict = None
 
         _QhullUser._update(self, qhull)
-        self.points = self._points
 
     def add_points(self, points, restart=False):
-        _QhullUser._add_points(self, points, restart)
+        self._add_points(points, restart)
+
+    @property
+    def points(self):
+        return self._points
 
     @property
     def ridge_dict(self):
@@ -2565,8 +2574,9 @@ class HalfspaceIntersection(_QhullUser):
         Intersections of all halfspaces.
     dual_points : ndarray of double, shape (nineq, ndim)
         Dual points of the input halfspaces.
-    dual_simplices : list of lists of ints
-        Indices of points forming the simplical facets of the dual convex hull.
+    dual_facets : list of lists of ints
+        Indices of points forming the (non necessarily simplicial) facets of
+        the dual convex hull.
     dual_vertices : ndarray of ints, shape (nvertices,)
         Indices of halfspaces forming the vertices of the dual convex hull.
         For 2-D convex hulls, the vertices are in counterclockwise order.
@@ -2699,7 +2709,7 @@ class HalfspaceIntersection(_QhullUser):
         _QhullUser.__init__(self, qhull, incremental=incremental)
 
     def _update(self, qhull):
-        self.dual_simplices, self.dual_equations = qhull.get_hull_facets()
+        self.dual_facets, self.dual_equations = qhull.get_hull_facets()
 
         self.dual_points = qhull.get_hull_points()
 
@@ -2714,7 +2724,6 @@ class HalfspaceIntersection(_QhullUser):
 
         _QhullUser._update(self, qhull)
 
-        self.halfspaces = self._points
         self.ndim = self.halfspaces.shape[1] - 1
         self.nineq = self.halfspaces.shape[0]
 
@@ -2750,10 +2759,14 @@ class HalfspaceIntersection(_QhullUser):
         of halfspaces is also not possible after `close` has been called.
 
         """
-        _QhullUser._add_points(self, halfspaces, restart)
+        self._add_points(halfspaces, restart)
+
+    @property
+    def halfspaces(self):
+        return self._points
 
     @property
     def dual_vertices(self):
         if self._vertices is None:
-            self._vertices = np.unique(np.array(self.dual_simplices))
+            self._vertices = np.unique(np.array(self.dual_facets))
         return self._vertices
