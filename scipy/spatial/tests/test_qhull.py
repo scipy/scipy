@@ -906,7 +906,7 @@ class TestVoronoi:
 class Test_HalfspaceIntersection(object):
     def assert_unordered_allclose(self, arr1, arr2, rtol=1e-7):
         """Check that every line in arr1 is only once in arr2"""
-        assert(arr1.shape == arr2.shape)
+        assert_equal(arr1.shape, arr2.shape)
 
         truths = np.zeros((arr1.shape[0],), dtype=bool)
         for l1 in arr1:
