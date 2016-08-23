@@ -781,29 +781,25 @@ cdef class _Qhull:
         facets = []
 
         i = 0
-        with nogil:
-            while facet and facet.next:
-                with gil:
-                    facetsi = []
-                j = 0
-                for j in xrange(facet_ndim):
-                    equations[i, j] = facet.normal[j]
-                equations[i, facet_ndim] = facet.offset
+        while facet and facet.next:
+            facetsi = []
+            j = 0
+            for j in xrange(facet_ndim):
+                equations[i, j] = facet.normal[j]
+            equations[i, facet_ndim] = facet.offset
 
-                j = 0
-                vertex = <vertexT*>facet.vertices.e[0].p
-                while vertex:
-                    # Save the vertex info
-                    ipoint = qh_pointid(self._qh, vertex.point)
-                    with gil:
-                        facetsi.append(ipoint)
-                    j += 1
-                    vertex = <vertexT*>facet.vertices.e[j].p
+            j = 0
+            vertex = <vertexT*>facet.vertices.e[0].p
+            while vertex:
+                # Save the vertex info
+                ipoint = qh_pointid(self._qh, vertex.point)
+                facetsi.append(ipoint)
+                j += 1
+                vertex = <vertexT*>facet.vertices.e[j].p
 
-                i += 1
-                with gil:
-                    facets.append(facetsi)
-                facet = facet.next
+            i += 1
+            facets.append(facetsi)
+            facet = facet.next
 
         return facets, equations
 
