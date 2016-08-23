@@ -936,7 +936,7 @@ class Test_HalfspaceIntersection(object):
 
         hs = qhull.HalfspaceIntersection(halfspaces, np.array([0., 0., 0., 0.]))
 
-        assert(hs.intersections.shape == (24, 4))
+        assert_equal(hs.intersections.shape, (24, 4))
 
         points = itertools.permutations([0., 0., 0.5, -0.5])
         for point in points:

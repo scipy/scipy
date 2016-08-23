@@ -161,7 +161,7 @@ cdef extern from "qhull/src/libqhull_r.h":
     void qh_zero(qhT *, void *errfile) nogil
     int qh_new_qhull(qhT *, int dim, int numpoints, realT *points,
                      boolT ismalloc, char* qhull_cmd, void *outfile,
-                     void *errfile) nogil
+                     void *errfile, coordT* feaspoint) nogil
     int qh_pointid(qhT *, pointT *point) nogil
     vertexT *qh_nearvertex(qhT *, facetT *facet, pointT *point, double *dist) nogil
     boolT qh_addpoint(qhT *, pointT *furthest, facetT *facet, boolT checkdist) nogil
@@ -337,7 +337,8 @@ cdef class _Qhull:
                  bytes options=None,
                  bytes required_options=None,
                  furthest_site=False,
-                 incremental=False):
+                 incremental=False,
+                 np.ndarray[np.double_t, ndim=1] interior_point=None):
         cdef int exitcode
 
         self._qh = NULL
@@ -409,15 +410,29 @@ cdef class _Qhull:
 
         self._messages.clear()
 
+        cdef coordT* coord
+        cdef int i
         with nogil:
             self._qh = <qhT*>stdlib.malloc(sizeof(qhT))
             if self._qh == NULL:
                 with gil:
                     raise MemoryError("memory allocation failed")
             qh_zero(self._qh, self._messages.handle)
+            if interior_point is not None:
+                coord = <coordT*>stdlib.malloc(interior_point.shape[0]*sizeof(coordT))
+                if coord == NULL:
+                    with gil:
+                        raise MemoryError("memory allocation failed")
+                i = 0
+                for i in xrange(interior_point.shape[0]):
+                    coord[i] = interior_point[i]
+            else:
+                coord = NULL
             exitcode = qh_new_qhull(self._qh, self.ndim, self.numpoints,
                                     <realT*>points.data, 0,
-                                    options_c, NULL, self._messages.handle)
+                                    options_c, NULL, self._messages.handle, coord)
+            if coord != NULL:
+                stdlib.free(coord)
 
         if exitcode != 0:
             msg = self._messages.get()
@@ -1605,7 +1620,7 @@ class _QhullUser(object):
         self.min_bound = self._points.min(axis=0)
         self.max_bound = self._points.max(axis=0)
 
-    def _add_points(self, points, restart=False):
+    def _add_points(self, points, restart=False, interior_point=None):
         """
         add_points(points, restart=False)
 
@@ -1645,7 +1660,7 @@ class _QhullUser(object):
             qhull = _Qhull(self._qhull.mode_option, points,
                            options=self._qhull.options,
                            furthest_site=self._qhull.furthest_site,
-                           incremental=True)
+                           incremental=True, interior_point=interior_point)
             try:
                 self._update(qhull)
                 self._qhull = qhull
@@ -2701,9 +2716,10 @@ class HalfspaceIntersection(_QhullUser):
             qhull_options = asbytes(qhull_options)
 
         # Run qhull
-        mode_option = "H{}".format(','.join([str(self.interior_point.item(i)) for i in range(halfspaces.shape[1] -1)]))
+        mode_option = "H"
         qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=None,
-                       incremental=incremental)
+                       incremental=incremental, interior_point=interior_point)
+
         _QhullUser.__init__(self, qhull, incremental=incremental)
 
     def _update(self, qhull):
@@ -2757,7 +2773,7 @@ class HalfspaceIntersection(_QhullUser):
         of halfspaces is also not possible after `close` has been called.
 
         """
-        self._add_points(halfspaces, restart)
+        self._add_points(halfspaces, restart, self.interior_point)
 
     @property
     def halfspaces(self):
