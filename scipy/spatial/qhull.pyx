@@ -419,20 +419,12 @@ cdef class _Qhull:
                     raise MemoryError("memory allocation failed")
             qh_zero(self._qh, self._messages.handle)
             if interior_point is not None:
-                coord = <coordT*>stdlib.malloc(interior_point.shape[0]*sizeof(coordT))
-                if coord == NULL:
-                    with gil:
-                        raise MemoryError("memory allocation failed")
-                i = 0
-                for i in xrange(interior_point.shape[0]):
-                    coord[i] = interior_point[i]
+                coord = <coordT*>interior_point.data
             else:
                 coord = NULL
             exitcode = qh_new_qhull(self._qh, self.ndim, self.numpoints,
                                     <realT*>points.data, 0,
                                     options_c, NULL, self._messages.handle, coord)
-            if coord != NULL:
-                stdlib.free(coord)
 
         if exitcode != 0:
             msg = self._messages.get()
