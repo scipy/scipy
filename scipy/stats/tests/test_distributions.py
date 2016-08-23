@@ -10,7 +10,7 @@ import pickle
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_raises, assert_warns, dec)
+    assert_allclose, assert_, assert_raises, assert_warns, dec, assert_warns)
 from nose import SkipTest
 
 import numpy
@@ -2295,6 +2295,11 @@ class TestArbitrary(TestCase):
         assert_almost_equal(self.rv.pdf(1, self.prefactor), 1.5)
         assert_almost_equal(self.rv.pdf(-1, self.prefactor), 1.5)
 
+    def test_loc_scale_not_used(self):
+        assert_warns(UserWarning, self.rv.pdf, 1.5, 1, 0, 1)
+        assert_warns(UserWarning, self.rv.cdf, 1.5, 1, 0, 1)
+        assert_warns(UserWarning, self.rv.ppf, 1.5, 0.5, 0, 1)
+
     def test_cdf(self):
         assert_almost_equal(self.rv.cdf(0, self.prefactor), 0.5)
 
@@ -2315,8 +2320,8 @@ class TestArbitrary(TestCase):
 
     def test_fit(self):
         # fit a normal distribution because we can easily work out the stats
-        def pdf(x, locy, scaley):
-            return stats.norm.pdf(x, loc=locy, scale=scaley)
+        def pdf(x, mu, sd):
+            return stats.norm.pdf(x, loc=mu, scale=sd)
 
         rv = rv_arbitrary(pdf)
         rn = stats.norm.rvs(1, 2, size=1000)

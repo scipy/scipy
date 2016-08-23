@@ -5274,16 +5274,13 @@ class rv_arbitrary(rv_continuous):
     >>> from scipy.stats import norm
     >>> def arb_norm(x, mu, sd):
     ...     return norm.pdf(x, loc=mu, scale=sd)
-    >>> rv = rv_arbitrary(arb_norm, seed=1234)
-    >>> rn = norm.rvs(1., 2., size=1000)
+    >>> rv = rv_arbitrary(arb_norm)
+    >>> rn = norm.rvs(1., 2., size=1000, random_state=1234)
     >>> # fit the distribution
     >>> rv.fit(rn, 0.5, 1)
-    (1.088247083190643, 2.029057264661581
+    (1.0314369961717884, 1.946136615700478)
     >>> np.mean(rn), np.std(rn)
-    (1.0882247620540428, 2.0290745264994356)
-    >>> # fit the distribution with the built in distribution
-    >>> norm.fit(rn)
-    (1.0882247620540428, 2.0290745264994356)
+    (1.0314811643075241, 1.946132398754459)
     """
     def __init__(self, pdf, momtype=1, a=None, b=None, xtol=1e-14, badvalue=None,
                name=None, seed=None, cdf=None, ppf=None, **unknown_kwds):
