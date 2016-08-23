@@ -2,7 +2,15 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import assert_equal, assert_raises
 
+import nose
+import ctypes
 from scipy._lib import _test_ccallback, _test_ccallback_cython
+
+try:
+    import cffi
+    HAVE_CFFI = True
+except ImportError:
+    HAVE_CFFI = False
 
 
 ERROR_VALUE = 2.0
@@ -25,16 +33,31 @@ def test_callbacks():
         'nonlocal': _test_ccallback.call_nonlocal
     }
 
+    def _get_cffi_func():
+        if not HAVE_CFFI:
+            raise nose.SkipTest("cffi not installed")
+
+        # Get function address
+        voidp = ctypes.cast(_test_ccallback_cython.plus1_ctypes,
+                            ctypes.c_void_p)
+        address = voidp.value
+
+        # Create corresponding cffi handle
+        ffi = cffi.FFI()
+        func = ffi.cast('double (*)(double, int *, void *)', address)
+        return func
+
     funcs = {
-        'capsule': _test_ccallback.get_plus1_capsule(),
-        'cython': (_test_ccallback_cython, "plus1_cython"),
-        'python': callback_python,
-        'ctypes': _test_ccallback_cython.plus1_ctypes,
+        'capsule': lambda: _test_ccallback.get_plus1_capsule(),
+        'cython': lambda: (_test_ccallback_cython, "plus1_cython"),
+        'python': lambda: callback_python,
+        'ctypes': lambda: _test_ccallback_cython.plus1_ctypes,
+        'cffi': _get_cffi_func
     }
 
     def check(caller, func):
         caller = callers[caller]
-        func = funcs[func]
+        func = funcs[func]()
 
         # Test basic call
         assert_equal(caller(func, 1.0), 2.0)

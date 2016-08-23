@@ -21,6 +21,8 @@
  * need to add additonal cleanup yourself).
  *
  */
+
+#include <setjmp.h>
 #include <Python.h>
 
 #include "ccallback.h"
@@ -234,9 +236,6 @@ static double plus1_callback(double a, int *error_flag, void *user_data)
 
 static PyObject *get_plus1_capsule(PyObject *obj, PyObject *args)
 {
-    PyObject *callback_obj;
-    PyObject *capsule;
-
     if (!PyArg_ParseTuple(args, "")) {
         return NULL;
     }
@@ -266,7 +265,7 @@ static struct PyModuleDef test_ccallback_module = {
     "_test_ccallback",
     NULL,
     -1,
-    methods,
+    test_ccallback_methods,
     NULL,
     NULL,
     NULL,
