@@ -73,8 +73,14 @@ static double trampoline_simple(double a, int *error_flag, void *data)
         PyGILState_Release(state);
     }
     else {
-        result = ((double(*)(double, int *, void *))callback->c_function)(
-            a, &error, callback->user_data);
+        if (callback->signature_index == 0) {
+            result = ((double(*)(double, int *, void *))callback->c_function)(
+                a, &error, callback->user_data);
+        }
+        else {
+            result = ((double(*)(double, double, int *, void *))callback->c_function)(
+                a, 0.0, &error, callback->user_data);
+        }
     }
 
     if (error) {
@@ -112,6 +118,10 @@ static double trampoline_nonlocal(double a)
  * Caller entry point functions
  */
 
+static char *signatures[] = {"double (double, int *, void *)",
+                             "double (double, double, int *, void *)",
+                             NULL};
+
 static PyObject *call_simple(PyObject *obj, PyObject *args)
 {
     PyObject *callback_obj;
@@ -124,8 +134,7 @@ static PyObject *call_simple(PyObject *obj, PyObject *args)
         return NULL;
     }
 
-    ret = ccallback_prepare(&callback, "double (double, int *, void *)", callback_obj,
-                            CCALLBACK_DEFAULTS);
+    ret = ccallback_prepare(&callback, signatures, callback_obj, CCALLBACK_DEFAULTS);
     if (ret != 0) {
         return NULL;
     }
@@ -156,8 +165,7 @@ static PyObject *call_nodata(PyObject *obj, PyObject *args)
         return NULL;
     }
 
-    ret = ccallback_prepare(&callback, "double (double, int *, void *)", callback_obj,
-                            CCALLBACK_OBTAIN);
+    ret = ccallback_prepare(&callback, signatures, callback_obj, CCALLBACK_OBTAIN);
     if (ret != 0) {
         return NULL;
     }
@@ -187,8 +195,7 @@ static PyObject *call_nonlocal(PyObject *obj, PyObject *args)
         return NULL;
     }
 
-    ret = ccallback_prepare(&callback, "double (double, int *, void *)", callback_obj,
-                            CCALLBACK_OBTAIN);
+    ret = ccallback_prepare(&callback, signatures, callback_obj, CCALLBACK_OBTAIN);
     if (ret != 0) {
         /* Immediate error return */
         return NULL;
@@ -244,6 +251,44 @@ static PyObject *get_plus1_capsule(PyObject *obj, PyObject *args)
 }
 
 
+static char *plus1b_signature = "double (double, double, int *, void *)";
+
+
+static double plus1b_callback(double a, double b, int *error_flag, void *user_data)
+{
+    return plus1_callback(a, error_flag, user_data) + b;
+}
+
+
+static PyObject *get_plus1b_capsule(PyObject *obj, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, "")) {
+        return NULL;
+    }
+
+    return PyCapsule_New((void *)plus1b_callback, plus1b_signature, NULL);
+}
+
+
+static char *plus1bc_signature = "double (double, double, double, int *, void *)";
+
+
+static double plus1bc_callback(double a, double b, double c, int *error_flag, void *user_data)
+{
+    return plus1_callback(a, error_flag, user_data) + b + c;
+}
+
+
+static PyObject *get_plus1bc_capsule(PyObject *obj, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, "")) {
+        return NULL;
+    }
+
+    return PyCapsule_New((void *)plus1bc_callback, plus1bc_signature, NULL);
+}
+
+
 /*
  * Initialize the module
  */
@@ -254,6 +299,8 @@ static PyMethodDef test_ccallback_methods[] = {
     {"call_nodata", (PyCFunction)call_nodata, METH_VARARGS, ""},
     {"call_nonlocal", (PyCFunction)call_nonlocal, METH_VARARGS, ""},
     {"get_plus1_capsule", (PyCFunction)get_plus1_capsule, METH_VARARGS, ""},
+    {"get_plus1b_capsule", (PyCFunction)get_plus1b_capsule, METH_VARARGS, ""},
+    {"get_plus1bc_capsule", (PyCFunction)get_plus1bc_capsule, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}
 };
 

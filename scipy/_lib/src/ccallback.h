@@ -206,6 +206,11 @@ struct ccallback {
     void *user_data;
     jmp_buf error_buf;
     ccallback_t *prev_callback;
+    int signature_index;
+
+    /* Unused variables that can be used by the trampoline etc. code for any purpose */
+    long info;
+    void *info_p;
 };
 
 
@@ -430,7 +435,8 @@ static void *ccallback__get_ctypes_function_pointer(PyObject * obj)
 }
 
 
-static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj, char *signature)
+/* Parse cffi object -- returns 1 if success, 0 if not ctypes object, or -1 on failure */
+static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj, char **signatures)
 {
     static PyObject *ctypes_module = NULL, *cfuncptr_type = NULL;
     static int import_failed = 0;
@@ -438,6 +444,7 @@ static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj
     PyObject *expected_type = NULL,
         *argtypes = NULL, *restype = NULL, *arg = NULL;
     PyObject *cfunc;
+    char **sig;
     void *user_data;
     int return_value = 0;
 
@@ -493,7 +500,8 @@ static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj
     }
 
     /* Parse and check the signature string */
-    {
+    callback->signature_index = 0;
+    for (sig = signatures; *sig != NULL; ++sig, ++callback->signature_index) {
         int num_args, cur_arg;
         Py_ssize_t size;
 
@@ -501,10 +509,10 @@ static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj
         int pointer_levels[CCALLBACK_MAX_ARGS];
         Py_ssize_t lengths[CCALLBACK_MAX_ARGS];
 
-        num_args = ccallback__parse_signature(signature, types, lengths, pointer_levels, CCALLBACK_MAX_ARGS);
+        num_args = ccallback__parse_signature(*sig, types, lengths, pointer_levels, CCALLBACK_MAX_ARGS);
         if (num_args < 0) {
             PyErr_Format(PyExc_RuntimeError, "scipy/ccallback: failed to parse signature '%s'",
-                         signature);
+                         *sig);
             goto error;
         }
 
@@ -515,20 +523,7 @@ static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj
         }
 
         if (restype != expected_type) {
-#if PY3K
-            PyErr_Format(PyExc_ValueError, "ctypes function restype is not '%S'",
-                         expected_type);
-#else
-            PyObject *expected_type_str;
-            expected_type_str = PyObject_Str(expected_type);
-            if (expected_type_str == NULL) {
-                goto error;
-            }
-            PyErr_Format(PyExc_ValueError, "ctypes function restype is not '%s'",
-                         PyBytes_AsString(expected_type_str));
-            Py_DECREF(expected_type_str);
-#endif
-            goto error;
+            goto next_signature;
         }
 
         Py_DECREF(expected_type);
@@ -540,8 +535,7 @@ static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj
             goto error;
         }
         else if (size != num_args) {
-            PyErr_SetString(PyExc_ValueError, "ctypes function takes wrong number of arguments");
-            goto error;
+            goto next_signature;
         }
 
         for (cur_arg = 0; cur_arg < num_args; ++cur_arg) {
@@ -558,20 +552,7 @@ static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj
             }
 
             if (arg != expected_type) {
-#if PY3K
-                PyErr_Format(PyExc_ValueError, "ctypes function argtypes[%d] != %S",
-                             cur_arg, expected_type);
-#else
-                PyObject *expected_type_str, *s2;
-                expected_type_str = PyObject_Str(expected_type);
-                if (expected_type_str == NULL) {
-                    goto error;
-                }
-                PyErr_Format(PyExc_ValueError, "ctypes function argtypes[%d] != %s",
-                             cur_arg, PyBytes_AsString(expected_type_str));
-                Py_DECREF(expected_type_str);
-#endif
-                goto error;
+                goto next_signature;
             }
 
             Py_DECREF(arg);
@@ -579,6 +560,17 @@ static int ccallback__parse_ctypes(ccallback_t *callback, PyObject *callback_obj
             arg = NULL;
             expected_type = NULL;
         }
+
+        /* Match! */
+        break;
+
+    next_signature:
+        continue;
+    }
+
+    if (*sig == NULL) {
+        PyErr_SetString(PyExc_ValueError, "ctypes function pointer did not match expected signature");
+        goto error;
     }
 
     /* All checks passed */
@@ -684,7 +676,8 @@ done:
 }
 
 
-static int ccallback__parse_cffi(ccallback_t *callback, PyObject *callback_obj, char *signature)
+/* Parse cffi object -- returns 1 if success, 0 if not ctypes object, or -1 on failure */
+static int ccallback__parse_cffi(ccallback_t *callback, PyObject *callback_obj, char **signatures)
 {
     static PyObject *ffi = NULL, *cdata_type = NULL;
     static int import_failed = 0;
@@ -701,6 +694,7 @@ static int ccallback__parse_cffi(ccallback_t *callback, PyObject *callback_obj, 
     Py_ssize_t size;
     void *user_data;
     void *funcptr;
+    char **sig;
 
     int cur_arg, num_args;
     char *types[CCALLBACK_MAX_ARGS];
@@ -752,6 +746,7 @@ static int ccallback__parse_cffi(ccallback_t *callback, PyObject *callback_obj, 
         }
     }
     else {
+        /* Not a ctypes object -- skip */
         return_value = 0;
         goto done;
     }
@@ -776,78 +771,77 @@ static int ccallback__parse_cffi(ccallback_t *callback, PyObject *callback_obj, 
     Py_DECREF(attr);
     attr = NULL;
 
-    /* Parse expected signature */
-    num_args = ccallback__parse_signature(signature, types, lengths, pointer_levels, CCALLBACK_MAX_ARGS);
-    if (num_args < 0) {
-        PyErr_Format(PyExc_RuntimeError, "scipy/ccallback: failed to parse signature '%s'",
-                     signature);
-        goto error;
-    }
-
-    /* Check return value */
-    result = PyObject_GetAttrString(cffi_type, "result");
-    if (result == NULL) {
-        goto error;
-    }
-
-    ret = ccallback__check_cffi_type(result, types[0], lengths[0], pointer_levels[0]);
-    if (ret == -1) {
-        goto error;
-    }
-    else if (!ret) {
-        return_value = -1;
-        PyErr_SetString(PyExc_ValueError, "cffi object has mismatching return value");
-        goto done;
-    }
-
-    Py_DECREF(result);
-    result = NULL;
-
-    /* Check arguments */
-    args = PyObject_GetAttrString(cffi_type, "args");
-    if (args == NULL) {
-        goto error;
-    }
-
-    size = PySequence_Size(args);
-    if (size == -1) {
-        goto error;
-    }
-    else if (size != num_args) {
-        PyErr_SetString(PyExc_ValueError, "cffi function takes wrong number of arguments");
-        goto error;
-    }
-
-    for (cur_arg = 0; cur_arg < num_args; ++cur_arg) {
-        arg = PySequence_GetItem(args, cur_arg);
-        if (arg == NULL) {
+    /* Try to match to expected signatures */
+    callback->signature_index = 0;
+    for (sig = signatures; *sig != NULL; ++sig, ++callback->signature_index) {
+        /* Parse expected signature */
+        num_args = ccallback__parse_signature(*sig, types, lengths, pointer_levels, CCALLBACK_MAX_ARGS);
+        if (num_args < 0) {
+            PyErr_Format(PyExc_RuntimeError, "scipy/ccallback: failed to parse signature '%s'",
+                         *sig);
             goto error;
         }
 
-        ret = ccallback__check_cffi_type(arg, types[cur_arg+1], lengths[cur_arg+1],
-                                         pointer_levels[cur_arg+1]);
+        /* Check return value */
+        result = PyObject_GetAttrString(cffi_type, "result");
+        if (result == NULL) {
+            goto error;
+        }
+
+        ret = ccallback__check_cffi_type(result, types[0], lengths[0], pointer_levels[0]);
         if (ret == -1) {
             goto error;
         }
         else if (!ret) {
-            PyObject *expected_str;
+            goto next_signature;
+        }
 
-            expected_str = PyUString_FromStringAndSize(types[cur_arg+1], lengths[cur_arg+1]);
-            if (expected_str == NULL) {
-                goto error;
-            }
-#if PY3K
-            PyErr_Format(PyExc_ValueError, "cffi function args[%d] != %U", cur_arg, expected_str);
-#else
-            PyErr_Format(PyExc_ValueError, "ctypes function argtypes[%d] != %s",
-                         cur_arg, PyBytes_AsString(expected_str));
-#endif
-            Py_DECREF(expected_str);
+        Py_DECREF(result);
+        result = NULL;
+
+        /* Check arguments */
+        args = PyObject_GetAttrString(cffi_type, "args");
+        if (args == NULL) {
             goto error;
         }
 
-        Py_DECREF(arg);
-        arg = NULL;
+        size = PySequence_Size(args);
+        if (size == -1) {
+            goto error;
+        }
+        else if (size != num_args) {
+            goto next_signature;
+        }
+
+        for (cur_arg = 0; cur_arg < num_args; ++cur_arg) {
+            arg = PySequence_GetItem(args, cur_arg);
+            if (arg == NULL) {
+                goto error;
+            }
+
+            ret = ccallback__check_cffi_type(arg, types[cur_arg+1], lengths[cur_arg+1],
+                                             pointer_levels[cur_arg+1]);
+            if (ret == -1) {
+                goto error;
+            }
+            else if (!ret) {
+                goto next_signature;
+            }
+
+            Py_DECREF(arg);
+            arg = NULL;
+        }
+
+        /* Match! */
+        break;
+
+    next_signature:
+        continue;
+    }
+
+    if (*sig == NULL) {
+        PyErr_SetString(PyExc_ValueError, "cffi function pointer did not match expected signature");
+        goto error;
     }
 
     /* Get function pointer */
@@ -910,14 +904,24 @@ static ccallback_t *ccallback_obtain(void)
 
 
 /* Set up callback. */
-static int ccallback_prepare(ccallback_t *callback, char *signature, PyObject *callback_obj, int flags)
+static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject *callback_obj, int flags)
 {
     /* Parse callback_obj */
     if (PyCapsule_CheckExact(callback_obj)) {
         /* C function in a PyCapsule + user data as context */
         void *ptr, *user_data;
+        char **sig;
+        const char *name;
 
-        ptr = PyCapsule_GetPointer(callback_obj, signature);
+        name = PyCapsule_GetName(callback_obj);
+        callback->signature_index = 0;
+        for (sig = signatures; *sig != NULL; ++sig, ++callback->signature_index) {
+            if (name && strcmp(name, *sig) == 0) {
+                break;
+            }
+        }
+
+        ptr = PyCapsule_GetPointer(callback_obj, *sig);
         if (ptr == NULL) {
             PyErr_SetString(PyExc_ValueError, "Invalid function signature in PyCapsule");
             return -1;
@@ -937,8 +941,21 @@ static int ccallback_prepare(ccallback_t *callback, char *signature, PyObject *c
         /* C function in a PyCapsule + explicit user data (possibly in capsule) */
         void *ptr, *data_ptr;
         int success;
+        char **sig;
+        const char *name;
+        PyObject *capsule;
 
-        ptr = PyCapsule_GetPointer(PyTuple_GET_ITEM(callback_obj, 0), signature);
+        capsule = PyTuple_GET_ITEM(callback_obj, 0);
+
+        name = PyCapsule_GetName(capsule);
+        callback->signature_index = 0;
+        for (sig = signatures; *sig != NULL; ++sig, ++callback->signature_index) {
+            if (name && strcmp(name, *sig) == 0) {
+                break;
+            }
+        }
+
+        ptr = PyCapsule_GetPointer(capsule, *sig);
         if (ptr == NULL) {
             PyErr_SetString(PyExc_ValueError, "Invalid function signature in PyCapsule");
             return -1;
@@ -962,6 +979,8 @@ static int ccallback_prepare(ccallback_t *callback, char *signature, PyObject *c
         void *ptr, *data_ptr;
         PyObject *pyx_api, *module_dict, *capsule;
         int success;
+        char **sig;
+        const char *name;
 
         module_dict = PyModule_GetDict(PyTuple_GET_ITEM(callback_obj, 0));
         if (module_dict == NULL) {
@@ -980,7 +999,15 @@ static int ccallback_prepare(ccallback_t *callback, char *signature, PyObject *c
             return -1;
         }
 
-        ptr = PyCapsule_GetPointer(capsule, signature);
+        name = PyCapsule_GetName(capsule);
+        callback->signature_index = 0;
+        for (sig = signatures; *sig != NULL; ++sig, ++callback->signature_index) {
+            if (name && strcmp(name, *sig) == 0) {
+                break;
+            }
+        }
+
+        ptr = PyCapsule_GetPointer(capsule, *sig);
         if (ptr == NULL) {
             PyErr_SetString(PyExc_ValueError, "Invalid function signature in PyCapsule");
             return -1;
@@ -1004,7 +1031,7 @@ static int ccallback_prepare(ccallback_t *callback, char *signature, PyObject *c
         int ret;
 
         /* Try ctypes */
-        ret = ccallback__parse_ctypes(callback, callback_obj, signature);
+        ret = ccallback__parse_ctypes(callback, callback_obj, signatures);
         if (ret == -1) {
             return -1;
         }
@@ -1013,7 +1040,7 @@ static int ccallback_prepare(ccallback_t *callback, char *signature, PyObject *c
         }
         else {
             /* Try cffi */
-            ret = ccallback__parse_cffi(callback, callback_obj, signature);
+            ret = ccallback__parse_cffi(callback, callback_obj, signatures);
             if (ret == -1) {
                 return -1;
             }
@@ -1025,6 +1052,7 @@ static int ccallback_prepare(ccallback_t *callback, char *signature, PyObject *c
                 callback->py_function = callback_obj;
                 callback->c_function = NULL;
                 callback->user_data = NULL;
+                callback->signature_index = -1;
             }
             else if (PyTuple_CheckExact(callback_obj) &&
                      PyTuple_GET_SIZE(callback_obj) == 2 &&
@@ -1033,6 +1061,7 @@ static int ccallback_prepare(ccallback_t *callback, char *signature, PyObject *c
                 callback->py_function = PyTuple_GET_ITEM(callback_obj, 0);
                 callback->c_function = NULL;
                 callback->user_data = PyTuple_GET_ITEM(callback_obj, 1);
+                callback->signature_index = -1;
             }
             else {
                 PyErr_SetString(PyExc_ValueError, "invalid callable given");

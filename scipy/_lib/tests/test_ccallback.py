@@ -33,26 +33,41 @@ def test_callbacks():
         'nonlocal': _test_ccallback.call_nonlocal
     }
 
-    def _get_cffi_func():
+    def _get_cffi_func(base, signature):
         if not HAVE_CFFI:
             raise nose.SkipTest("cffi not installed")
 
         # Get function address
-        voidp = ctypes.cast(_test_ccallback_cython.plus1_ctypes,
-                            ctypes.c_void_p)
+        voidp = ctypes.cast(base, ctypes.c_void_p)
         address = voidp.value
 
         # Create corresponding cffi handle
         ffi = cffi.FFI()
-        func = ffi.cast('double (*)(double, int *, void *)', address)
+        func = ffi.cast(signature, address)
         return func
 
+    # These functions have signatures known to the callers
     funcs = {
+        'python': lambda: callback_python,
         'capsule': lambda: _test_ccallback.get_plus1_capsule(),
         'cython': lambda: (_test_ccallback_cython, "plus1_cython"),
-        'python': lambda: callback_python,
         'ctypes': lambda: _test_ccallback_cython.plus1_ctypes,
-        'cffi': _get_cffi_func
+        'cffi': lambda: _get_cffi_func(_test_ccallback_cython.plus1_ctypes,
+                                       'double (*)(double, int *, void *)'),
+        'capsule_b': lambda: _test_ccallback.get_plus1b_capsule(),
+        'cython_b': lambda: (_test_ccallback_cython, "plus1b_cython"),
+        'ctypes_b': lambda: _test_ccallback_cython.plus1b_ctypes,
+        'cffi_b': lambda: _get_cffi_func(_test_ccallback_cython.plus1b_ctypes,
+                                         'double (*)(double, double, int *, void *)'),
+    }
+
+    # These functions have signatures the callers don't know
+    bad_funcs = {
+        'capsule_bc': lambda: _test_ccallback.get_plus1bc_capsule(),
+        'cython_bc': lambda: (_test_ccallback_cython, "plus1bc_cython"),
+        'ctypes_bc': lambda: _test_ccallback_cython.plus1bc_ctypes,
+        'cffi_bc': lambda: _get_cffi_func(_test_ccallback_cython.plus1bc_ctypes,
+                                          'double (*)(double, double, double, int *, void *)'),
     }
 
     def check(caller, func):
@@ -72,7 +87,24 @@ def test_callbacks():
             func2 = (func, 2.0)
         assert_equal(caller(func2, 1.0), 3.0)
 
+    def check_bad(caller, func):
+        caller = callers[caller]
+        func = bad_funcs[func]()
+
+        # Test that basic call fails
+        assert_raises(ValueError, caller, func, 1.0)
+
+        # Test that passing in user_data also fails
+        if isinstance(func, tuple):
+            func2 = func + (2.0,)
+        else:
+            func2 = (func, 2.0)
+        assert_raises(ValueError, caller, func2, 1.0)
+
     for caller in callers.keys():
         for func in funcs.keys():
             yield check, caller, func
+
+        for func in bad_funcs.keys():
+            yield check_bad, caller, func
 
