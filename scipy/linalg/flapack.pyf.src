@@ -2566,7 +2566,7 @@ subroutine <prefix2c>heevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,
     ! simple/expert driver: all eigenvectors or optionally selected eigenvalues
     ! algorithm: Relatively Robust Representation
     ! matrix storage
-    ! Real - Single/Double precision
+    ! Complex - Single/Double precision
     character intent(in) :: jobz='V'
     character intent(in) :: range='A'
     character intent(in) :: uplo='L'
@@ -2586,7 +2586,7 @@ subroutine <prefix2c>heevr(jobz,range,uplo,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,
     integer intent(in),depend(n) :: lwork=26*n
     <ftype2c>  intent(hide),dimension(lwork) :: work
     integer intent(hide),depend(n) :: lrwork=24*n
-    real  intent(hide),dimension(lrwork) :: rwork
+    <ftype2>  intent(hide),dimension(lrwork) :: rwork
     integer intent(hide),depend(n):: liwork=10*n
     integer intent(hide),dimension(liwork) :: iwork
     integer  intent(out) :: info
