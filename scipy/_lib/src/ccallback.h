@@ -218,6 +218,27 @@ struct ccallback {
  * Internal: thread-local storage
  */
 
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 4)))
+
+static __thread ccallback_t *_active_ccallback = NULL;
+
+static void *ccallback__get_thread_local(void)
+{
+    return (void *)_active_ccallback;
+}
+
+static int ccallback__set_thread_local(void *value)
+{
+    _active_ccallback = value;
+}
+
+static ccallback_t *ccallback_obtain(void)
+{
+    return (ccallback_t *)ccallback__get_thread_local();
+}
+
+#else
+
 static void *ccallback__get_thread_local(void)
 {
     PyObject *local_dict, *capsule;
@@ -240,7 +261,6 @@ static void *ccallback__get_thread_local(void)
 
     return callback_ptr;
 }
-
 
 static int ccallback__set_thread_local(void *value)
 {
@@ -267,6 +287,25 @@ static int ccallback__set_thread_local(void *value)
         return ret;
     }
 }
+
+static ccallback_t *ccallback_obtain(void)
+{
+    PyGILState_STATE state;
+    ccallback_t *callback_ptr;
+
+    state = PyGILState_Ensure();
+
+    callback_ptr = (ccallback_t *)ccallback__get_thread_local();
+    if (callback_ptr == NULL) {
+        Py_FatalError("scipy/ccallback: failed to get thread local state");
+    }
+
+    PyGILState_Release(state);
+
+    return callback_ptr;
+}
+
+#endif
 
 
 /*
@@ -883,25 +922,6 @@ done:
 /*
  * Public functions
  */
-
-/* Find the callback function active for the current thread. */
-static ccallback_t *ccallback_obtain(void)
-{
-    PyGILState_STATE state;
-    ccallback_t *callback_ptr;
-
-    state = PyGILState_Ensure();
-
-    callback_ptr = (ccallback_t *)ccallback__get_thread_local();
-    if (callback_ptr == NULL) {
-        Py_FatalError("scipy/ccallback: failed to get thread local state");
-    }
-
-    PyGILState_Release(state);
-
-    return callback_ptr;
-}
-
 
 /* Set up callback. */
 static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject *callback_obj, int flags)
