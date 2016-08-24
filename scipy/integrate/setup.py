@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
+import os
 from os.path import join
 
 from scipy._build_utils import numpy_nodepr_api
@@ -32,11 +33,17 @@ def configuration(parent_package='',top_path=None):
 
     # Extensions
     # quadpack:
+    include_dirs = [join(os.path.dirname(__file__), '..', '_lib', 'src')]
+    if 'include_dirs' in lapack_opt:
+        lapack_opt = dict(lapack_opt)
+        include_dirs.extend(lapack_opt.pop('include_dirs'))
+
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
                          libraries=(['quadpack', 'mach'] + lapack_libs),
                          depends=(['quadpack.h','__quadpack.h']
                                   + quadpack_src + mach_src),
+                         include_dirs=include_dirs,
                          **lapack_opt)
 
     # odepack

@@ -12,6 +12,7 @@ from scipy._lib.six import xrange
 try:
     import ctypes
     import ctypes.util
+    from scipy._lib._test_ccallback_cython import sine_ctypes
     _ctypes_missing = False
 except ImportError:
     _ctypes_missing = True
@@ -35,17 +36,21 @@ class TestCtypesQuad(TestCase):
     def setUp(self):
         if sys.platform == 'win32':
             if sys.version_info < (3, 5):
-                file = ctypes.util.find_msvcrt()
+                files = [ctypes.util.find_msvcrt()]
             else:
-                file = 'api-ms-win-crt-math-l1-1-0.dll'
+                files = ['api-ms-win-crt-math-l1-1-0.dll']
         elif sys.platform == 'darwin':
-            file = 'libm.dylib'
+            files = ['libm.dylib']
         else:
-            file = 'libm.so'
+            files = ['libm.so', 'libm.so.6']
 
-        try:
-            self.lib = ctypes.CDLL(file)
-        except OSError:
+        for file in files:
+            try:
+                self.lib = ctypes.CDLL(file)
+                break
+            except OSError:
+                pass
+        else:
             # This test doesn't work on some Linux platforms (Fedora for
             # example) that put an ld script in libm.so - see gh-5370
             self.skipTest("Ctypes can't import libm.so")
@@ -78,6 +83,38 @@ class TestCtypesQuad(TestCase):
             quad(math.sin, 0, 100)
         slow = time.time() - start
         assert_(fast < 0.5*slow, (fast, slow))
+
+    @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
+    def test_ctypes_sine(self):
+        quad(sine_ctypes, 0, 1)
+
+    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
+                msg="Compiled test functions not loaded")
+    def test_ctypes_variants(self):
+        lib = ctypes.CDLL(clib_test.__file__)
+
+        sin_0 = lib._sin_0
+        sin_0.restype = ctypes.c_double
+        sin_0.argtypes = [ctypes.c_double, ctypes.c_void_p]
+
+        sin_1 = lib._sin_1
+        sin_1.restype = ctypes.c_double
+        sin_1.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double), ctypes.c_void_p]
+
+        sin_2 = lib._sin_2
+        sin_2.restype = ctypes.c_double
+        sin_2.argtypes = [ctypes.c_double]
+
+        sin_3 = lib._sin_3
+        sin_3.restype = ctypes.c_double
+        sin_3.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_double)]
+
+        sin_4 = lib._sin_3
+        sin_4.restype = ctypes.c_double
+        sin_4.argtypes = [ctypes.c_int, ctypes.c_double]
+
+        for func in [sin_0, sin_1, sin_2, sin_3, sin_4]:
+            assert_allclose(quad(func, 0, pi)[0], 2.0)
 
 
 class TestMultivariateCtypesQuad(TestCase):
