@@ -2211,6 +2211,7 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape[axis] = len(W)
         W.shape = newshape
         X = X * W
+        W.shape = (Nx,)
     sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
     newshape[axis] = num
