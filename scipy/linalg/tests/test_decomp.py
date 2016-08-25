@@ -765,8 +765,6 @@ def test_eigh_range_invalid():
     assert_raises(ValueError, eigh, a, eigrng=(1, 0))
 
 
-
-
 def test_eigh_integer():
     a = array([[1,2],[2,7]])
     b = array([[3,1],[1,5]])
