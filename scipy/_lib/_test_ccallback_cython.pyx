@@ -6,23 +6,25 @@ DEF ERROR_VALUE = 2
 
 from libc.math cimport sin
 
-cdef double plus1_cython(double a, int *error_flag, void *user_data) except *:
+cdef double plus1_cython(double a, int *error_flag, void *user_data) nogil except *:
     if a == ERROR_VALUE:
         error_flag[0] = 1
-        raise ValueError("failure...")
+        with gil:
+            raise ValueError("failure...")
 
     if user_data == NULL:
         return a + 1
     else:
-        return a + <object>user_data
+        with gil:
+            return a + <object>user_data
 
-cdef double plus1b_cython(double a, double b, int *error_flag, void *user_data) except *:
+cdef double plus1b_cython(double a, double b, int *error_flag, void *user_data) nogil except *:
     return plus1_cython(a, error_flag, user_data) + b
 
-cdef double plus1bc_cython(double a, double b, double c, int *error_flag, void *user_data) except *:
+cdef double plus1bc_cython(double a, double b, double c, int *error_flag, void *user_data) nogil except *:
     return plus1_cython(a, error_flag, user_data) + b + c
 
-cdef double sine(double x, void *user_data) except *:
+cdef double sine(double x, void *user_data) nogil except *:
     return sin(x)
 
 

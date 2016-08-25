@@ -140,7 +140,9 @@ static PyObject *call_simple(PyObject *obj, PyObject *args)
     }
 
     /* Call */
+    Py_BEGIN_ALLOW_THREADS
     result = trampoline_simple(value, &error_flag, (void *)&callback);
+    Py_END_ALLOW_THREADS
 
     ccallback_release(&callback);
 
@@ -171,7 +173,9 @@ static PyObject *call_nodata(PyObject *obj, PyObject *args)
     }
 
     /* Call */
+    Py_BEGIN_ALLOW_THREADS
     result = trampoline_nodata(value, &error_flag);
+    Py_END_ALLOW_THREADS
 
     ccallback_release(&callback);
 
@@ -188,8 +192,9 @@ static PyObject *call_nonlocal(PyObject *obj, PyObject *args)
 {
     PyObject *callback_obj;
     double value, result;
-    ccallback_t callback;
     int ret;
+    volatile ccallback_t callback;
+    volatile PyThreadState *_save = NULL;
 
     if (!PyArg_ParseTuple(args, "Od", &callback_obj, &value)) {
         return NULL;
@@ -202,14 +207,19 @@ static PyObject *call_nonlocal(PyObject *obj, PyObject *args)
     }
 
     /* Nonlocal return */
+    _save = PyEval_SaveThread();
+
     if (setjmp(callback.error_buf) != 0) {
         /* Nonlocal error return */
+        PyEval_RestoreThread(_save);
         ccallback_release(&callback);
         return NULL;
     }
 
     /* Call */
     result = trampoline_nonlocal(value);
+
+    PyEval_RestoreThread(_save);
 
     ccallback_release(&callback);
 
@@ -227,8 +237,10 @@ static char *plus1_signature = "double (double, int *, void *)";
 static double plus1_callback(double a, int *error_flag, void *user_data)
 {
     if (a == ERROR_VALUE) {
+        PyGILState_STATE state = PyGILState_Ensure();
         *error_flag = 1;
         PyErr_SetString(PyExc_ValueError, "ERROR_VALUE encountered!");
+        PyGILState_Release(state);
         return 0;
     }
 
@@ -236,7 +248,11 @@ static double plus1_callback(double a, int *error_flag, void *user_data)
         return a + 1;
     }
     else {
-        return a + PyFloat_AsDouble((PyObject *)user_data);
+        PyGILState_STATE state = PyGILState_Ensure();
+        double result;
+        result = a + PyFloat_AsDouble((PyObject *)user_data);
+        PyGILState_Release(state);
+        return result;
     }
 }
 
