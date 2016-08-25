@@ -653,6 +653,25 @@ def test_eigh():
                                    turbo, eigenvalues)
 
 
+def test_eigh_rng():
+    DIM = 6
+    v = {'dim': (DIM,),
+         'dtype': ('f','d','F','D'),
+         'overwrite': (True, False),
+         'lower': (True, False),
+         'eigrng': (None, (-.5, .5), (-.75, .75))}
+
+    for dim in v['dim']:
+        for typ in v['dtype']:
+            for overwrite in v['overwrite']:
+                for eigenrange in v['eigrng']:
+                    for lower in v['lower']:
+                        yield (eigenhproblem_range,
+                               'ordinary',
+                               dim, typ, overwrite, lower,
+                               eigenrange)
+
+
 def test_eigh_of_sparse():
     # This tests the rejection of inputs that eigh cannot currently handle.
     import scipy.sparse
@@ -713,6 +732,39 @@ def eigenhproblem_general(desc, dim, dtype,
     assert_array_almost_equal(diag1_, w, DIGITS[dtype])
     diag2_ = diag(dot(z.T.conj(), dot(b_c, z))).real
     assert_array_almost_equal(diag2_, ones(diag2_.shape[0]), DIGITS[dtype])
+
+
+def eigenhproblem_range(desc, dim, dtype,
+                        overwrite, lower,
+                        eigenrange):
+    """Solve a standard eigenvalue problem."""
+    if iscomplex(empty(1, dtype=dtype)):
+        a = _complex_symrand(dim, dtype)
+    else:
+        a = symrand(dim).astype(dtype)
+
+    if overwrite:
+        a_c = a.copy()
+    else:
+        a_c = a
+    w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigrng=eigenrange)
+    assert_dtype_equal(z.dtype, dtype)
+    assert_equal(len(np.nonzero(w)[0]), len(w))
+    assert_equal(z.shape[1], len(w))
+    w = w.astype(dtype)
+    diag_ = diag(dot(z.T.conj(), dot(a_c, z))).real
+    assert_array_almost_equal(diag_, w, DIGITS[dtype])
+
+
+def test_eigh_range_invalid():
+    # This tests the rejection of inputs that eigh cannot currently handle.
+    dim = 6
+    dtype = 'd'
+    a = symrand(dim).astype(dtype)
+    assert_raises(ValueError, eigh, a, eigvals=True, eigrng=True)
+    assert_raises(ValueError, eigh, a, eigrng=(1, 0))
+
+
 
 
 def test_eigh_integer():
