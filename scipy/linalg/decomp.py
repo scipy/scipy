@@ -7,6 +7,7 @@
 # additions by Bart Vandereycken, June 2006
 # additions by Andrew D Straw, May 2007
 # additions by Tiziano Zito, November 2008
+# additions by Alex Papanicolaou, August 2016
 #
 # April 2010: Functions for LU, QR, SVD, Schur and Cholesky decompositions were
 # moved to their own files.  Still in this file are functions for eigenstuff
@@ -240,7 +241,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
 def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
          overwrite_b=False, turbo=True, eigvals=None, type=1,
-         check_finite=True):
+         check_finite=True, eigrng=None):
     """
     Solve an ordinary or generalized eigenvalue problem for a complex
     Hermitian or real symmetric matrix.
@@ -272,7 +273,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     eigvals : tuple (lo, hi), optional
         Indexes of the smallest and largest (in ascending order) eigenvalues
         and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
-        If omitted, all eigenvalues and eigenvectors are returned.
+        If eigvals and eigrng are omitted, all eigenvalues and eigenvectors
+        are returned.
     type : int, optional
         Specifies the problem type to be solved:
 
@@ -289,6 +291,10 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    eigrng : tuple (vl, vu), optional
+        The half-open interval (vl,vu] on which eigenvalues and corresponding
+        eigenvectors are to be returned: vl < vu.  If eigrng and eigvals are
+        omitted, all eigenvalues and eigenvectors are returned.
 
     Returns
     -------
@@ -352,14 +358,21 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     _job = (eigvals_only and 'N') or 'V'
 
     # port eigenvalue range from python to fortran convention
+    if eigvals is not None and eigrng is not None:
+        raise ValueError("Only one of eigvals or eigrng may be set")
     if eigvals is not None:
         lo, hi = eigvals
         if lo < 0 or hi >= a1.shape[0]:
-            raise ValueError('The eigenvalue range specified is not valid.\n'
+            raise ValueError('The eigenvalue index range specified is not valid.\n'
                              'Valid range is [%s,%s]' % (0, a1.shape[0]-1))
         lo += 1
         hi += 1
         eigvals = (lo, hi)
+    if eigrng is not None:
+        vl, vu = eigrng
+        if vl >= vu:
+            raise ValueError('The eigenvalue value range specified is not valid:\n'
+                             '(%s,%s]' % (vl, vu))
 
     # set lower
     if lower:
@@ -379,14 +392,21 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     #        for all lapack routines
     if b1 is None:
         (evr,) = get_lapack_funcs((pfx+'evr',), (a1,))
-        if eigvals is None:
-            w, v, info = evr(a1, uplo=uplo, jobz=_job, range="A", il=1,
-                             iu=a1.shape[0], overwrite_a=overwrite_a)
-        else:
+        if eigvals is not None:
             (lo, hi) = eigvals
             w_tot, v, info = evr(a1, uplo=uplo, jobz=_job, range="I",
                                  il=lo, iu=hi, overwrite_a=overwrite_a)
             w = w_tot[0:hi-lo+1]
+        elif eigrng is not None:
+            (vl, vu) = eigrng
+            w_full, v_full, info = evr(a1, uplo=uplo, jobz=_job, range="V", vl=vl,
+                                       vu=vu, overwrite_a=overwrite_a)
+            ix = nonzero(w_full)[0].tolist()
+            w = w_full[ix]
+            v = v_full[:, ix]
+        else:
+            w, v, info = evr(a1, uplo=uplo, jobz=_job, range="A", il=1,
+                             iu=a1.shape[0], overwrite_a=overwrite_a)
 
     # Generalized Eigenvalue Problem
     else:
