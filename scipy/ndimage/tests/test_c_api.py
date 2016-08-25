@@ -8,7 +8,29 @@ from scipy.ndimage import _ctest
 from scipy.ndimage import _ctest_oldapi
 from scipy.ndimage import _cytest
 
-MODULES = [_ctest, _ctest_oldapi, _cytest]
+FILTER1D_FUNCTIONS = [
+    lambda filter_size: _ctest.filter1d(filter_size),
+    lambda filter_size: _ctest_oldapi.filter1d(filter_size),
+    lambda filter_size: _cytest.filter1d(filter_size, with_signature=False),
+    lambda filter_size: _cytest.filter1d(filter_size, with_signature=True),
+    lambda filter_size: (_cytest, "_filter1d", _cytest.filter1d_capsule(filter_size)),
+]
+
+FILTER2D_FUNCTIONS = [
+    lambda weights: _ctest.filter2d(weights),
+    lambda weights: _ctest_oldapi.filter2d(weights),
+    lambda weights: _cytest.filter2d(weights, with_signature=False),
+    lambda weights: _cytest.filter2d(weights, with_signature=True),
+    lambda weights: (_cytest, "_filter2d", _cytest.filter2d_capsule(weights)),
+]
+
+TRANSFORM_FUNCTIONS = [
+    lambda shift: _ctest.transform(shift),
+    lambda shift: _ctest_oldapi.transform(shift),
+    lambda shift: _cytest.transform(shift, with_signature=False),
+    lambda shift: _cytest.transform(shift, with_signature=True),
+    lambda shift: (_cytest, "_transform", _cytest.transform_capsule(shift)),
+]
 
 
 def test_generic_filter():
@@ -20,12 +42,12 @@ def test_generic_filter():
     footprint = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     footprint_size = np.count_nonzero(footprint)
     weights = np.ones(footprint_size)/footprint_size
-    for mod in MODULES:
-        res = ndimage.generic_filter(im, mod.filter2d(weights),
+    for j, func in enumerate(FILTER2D_FUNCTIONS):
+        res = ndimage.generic_filter(im, func(weights),
                                      footprint=footprint)
         std = ndimage.generic_filter(im, filter2d, footprint=footprint,
                                      extra_arguments=(weights,))
-        assert_allclose(res, std, err_msg="{} failed".format(mod.__name__))
+        assert_allclose(res, std, err_msg="#{} failed".format(j))
 
 
 def test_generic_filter1d():
@@ -38,12 +60,12 @@ def test_generic_filter1d():
 
     im = np.tile(np.hstack((np.zeros(10), np.ones(10))), (10, 1))
     filter_size = 3
-    for mod in MODULES:
-        res = ndimage.generic_filter1d(im, mod.filter1d(filter_size),
+    for j, func in enumerate(FILTER1D_FUNCTIONS):
+        res = ndimage.generic_filter1d(im, func(filter_size),
                                        filter_size)
         std = ndimage.generic_filter1d(im, filter1d, filter_size,
                                        extra_arguments=(filter_size,))
-        assert_allclose(res, std, err_msg="{} failed".format(mod.__name__))
+        assert_allclose(res, std, err_msg="#{} failed".format(j))
 
 
 def test_geometric_transform():
@@ -52,7 +74,7 @@ def test_geometric_transform():
 
     im = np.arange(12).reshape(4, 3).astype(np.float64)
     shift = 0.5
-    for mod in MODULES:
-        res = ndimage.geometric_transform(im, _ctest.transform(shift))
+    for j, func in enumerate(TRANSFORM_FUNCTIONS):
+        res = ndimage.geometric_transform(im, func(shift))
         std = ndimage.geometric_transform(im, transform, extra_arguments=(shift,))
-        assert_allclose(res, std, err_msg="{} failed".format(mod.__name__))
+        assert_allclose(res, std, err_msg="#{} failed".format(j))

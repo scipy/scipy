@@ -38,10 +38,10 @@
 #include "ni_interpolation.h"
 #include "ni_measure.h"
 
+#include "ccallback.h"
 #include "numpy/npy_3kcompat.h"
 
 typedef struct {
-    PyObject *function;
     PyObject *extra_arguments;
     PyObject *extra_keywords;
 } NI_PythonCallbackData;
@@ -280,7 +280,8 @@ static int Py_Filter1DFunc(double *iline, npy_intp ilen,
     PyObject *rv = NULL, *args = NULL, *tmp = NULL;
     npy_intp ii;
     double *po = NULL;
-    NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)data;
+    ccallback_t *callback = (ccallback_t *)data;
+    NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)callback->info_p;
 
     py_ibuffer = NA_NewArray(iline, NPY_DOUBLE, 1, &ilen);
     py_obuffer = NA_NewArray(NULL, NPY_DOUBLE, 1, &olen);
@@ -292,7 +293,7 @@ static int Py_Filter1DFunc(double *iline, npy_intp ilen,
     args = PySequence_Concat(tmp, cbdata->extra_arguments);
     if (!args)
         goto exit;
-    rv = PyObject_Call(cbdata->function, args, cbdata->extra_keywords);
+    rv = PyObject_Call(callback->py_function, args, cbdata->extra_keywords);
     if (!rv)
         goto exit;
     po = (double*)PyArray_DATA(py_obuffer);
@@ -311,11 +312,19 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL;
     PyObject *fnc = NULL, *extra_arguments = NULL, *extra_keywords = NULL;
-    void *func = Py_Filter1DFunc, *data = NULL;
+    void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
     int axis, mode;
     npy_intp origin, filter_size;
     double cval;
+    ccallback_t callback;
+    static char *callback_signatures[] = {
+        "int (double *, npy_intp, double *, npy_intp, void *)",
+        NULL
+    };
+
+    callback.py_function = NULL;
+    callback.c_function = NULL;
 
     if (!PyArg_ParseTuple(args, "O&OniO&idnOO",
                           NI_ObjectToInputArray, &input,
@@ -334,31 +343,44 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
                                         "extra_keywords must be a dictionary");
         goto exit;
     }
-    if (PyCapsule_CheckExact(fnc)) {
+    if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
+        /* 'Legacy' low-level callable */
         func = PyCapsule_GetPointer(fnc, NULL);
         data = PyCapsule_GetContext(fnc);
-    } else if (NpyCapsule_Check(fnc)) {
-	/*
-	 * NpyCapsules are PyCObjects in Py2k and PyCapsules in Py3k,
-	 * so this check is redundant in Py3k but lets the user pass
-	 * in PyCObects in Py2k.
-	 */
-	func = NpyCapsule_AsVoidPtr(fnc);
-	data = NpyCapsule_GetDesc(fnc);
-    } else if (PyCallable_Check(fnc)) {
-        cbdata.function = fnc;
-        cbdata.extra_arguments = extra_arguments;
-        cbdata.extra_keywords = extra_keywords;
-        data = (void*)&cbdata;
+#if PY_VERSION_HEX < 0x03000000
+    } else if (PyCObject_Check(fnc)) {
+        /* 'Legacy' low-level callable on Py2 */
+	func = PyCObject_AsVoidPtr(fnc);
+	data = PyCObject_GetDesc(fnc);
+#endif
     } else {
-        PyErr_SetString(PyExc_RuntimeError,
-                                        "function parameter is not callable");
-        goto exit;
+        int ret;
+
+        ret = ccallback_prepare(&callback, callback_signatures, fnc, CCALLBACK_DEFAULTS);
+        if (ret == -1) {
+            goto exit;
+        }
+
+        if (callback.py_function != NULL) {
+            cbdata.extra_arguments = extra_arguments;
+            cbdata.extra_keywords = extra_keywords;
+            callback.info_p = (void*)&cbdata;
+            func = Py_Filter1DFunc;
+            data = (void*)&callback;
+        }
+        else {
+            func = callback.c_function;
+            data = callback.user_data;
+        }
     }
+
     if (!NI_GenericFilter1D(input, func, data, filter_size, axis, output,
                             (NI_ExtendMode)mode, cval, origin))
         goto exit;
 exit:
+    if (callback.py_function != NULL || callback.c_function != NULL) {
+        ccallback_release(&callback);
+    }
     Py_XDECREF(input);
     Py_XDECREF(output);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
@@ -369,7 +391,8 @@ static int Py_FilterFunc(double *buffer, npy_intp filter_size,
 {
     PyArrayObject *py_buffer = NULL;
     PyObject *rv = NULL, *args = NULL, *tmp = NULL;
-    NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)data;
+    ccallback_t *callback = (ccallback_t *)data;
+    NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)callback->info_p;
 
     py_buffer = NA_NewArray(buffer, NPY_DOUBLE, 1, &filter_size);
     if (!py_buffer)
@@ -380,7 +403,7 @@ static int Py_FilterFunc(double *buffer, npy_intp filter_size,
     args = PySequence_Concat(tmp, cbdata->extra_arguments);
     if (!args)
         goto exit;
-    rv = PyObject_Call(cbdata->function, args, cbdata->extra_keywords);
+    rv = PyObject_Call(callback->py_function, args, cbdata->extra_keywords);
     if (!rv)
         goto exit;
     *output = PyFloat_AsDouble(rv);
@@ -396,11 +419,19 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
     PyObject *fnc = NULL, *extra_arguments = NULL, *extra_keywords = NULL;
-    void *func = Py_FilterFunc, *data = NULL;
+    void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
     int mode;
     npy_intp *origin = NULL;
     double cval;
+    ccallback_t callback;
+    static char *callback_signatures[] = {
+        "int (double *, npy_intp, double *, void *)",
+        NULL
+    };
+
+    callback.py_function = NULL;
+    callback.c_function = NULL;
 
     if (!PyArg_ParseTuple(args, "O&OO&O&idO&OO",
                           NI_ObjectToInputArray, &input,
@@ -420,31 +451,42 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
                                         "extra_keywords must be a dictionary");
         goto exit;
     }
-    if (PyCapsule_CheckExact(fnc)) {
+    if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
         func = PyCapsule_GetPointer(fnc, NULL);
         data = PyCapsule_GetContext(fnc);
-    } else if (NpyCapsule_Check(fnc)) {
-	/*
-	 * NpyCapsules are PyCObjects in Py2k and PyCapsules in Py3k,
-	 * so this check is redundant in Py3k but lets the user pass
-	 * in PyCObects in Py2k.
-	 */
-	func = NpyCapsule_AsVoidPtr(fnc);
-	data = NpyCapsule_GetDesc(fnc);
-    } else if (PyCallable_Check(fnc)) {
-        cbdata.function = fnc;
-        cbdata.extra_arguments = extra_arguments;
-        cbdata.extra_keywords = extra_keywords;
-        data = (void*)&cbdata;
+#if PY_VERSION_HEX < 0x03000000
+    } else if (PyCObject_Check(fnc)) {
+        /* 'Legacy' low-level callable on Py2 */
+	func = PyCObject_AsVoidPtr(fnc);
+	data = PyCObject_GetDesc(fnc);
+#endif
     } else {
-        PyErr_SetString(PyExc_RuntimeError,
-                                        "function parameter is not callable");
-        goto exit;
+        int ret;
+
+        ret = ccallback_prepare(&callback, callback_signatures, fnc, CCALLBACK_DEFAULTS);
+        if (ret == -1) {
+            goto exit;
+        }
+
+        if (callback.py_function != NULL) {
+            cbdata.extra_arguments = extra_arguments;
+            cbdata.extra_keywords = extra_keywords;
+            callback.info_p = (void*)&cbdata;
+            func = Py_FilterFunc;
+            data = (void*)&callback;
+        }
+        else {
+            func = callback.c_function;
+            data = callback.user_data;
+        }
     }
     if (!NI_GenericFilter(input, func, data, footprint, output,
                                                 (NI_ExtendMode)mode, cval, origin))
         goto exit;
 exit:
+    if (callback.py_function != NULL || callback.c_function != NULL) {
+        ccallback_release(&callback);
+    }
     Py_XDECREF(input);
     Py_XDECREF(output);
     Py_XDECREF(footprint);
@@ -524,7 +566,8 @@ static int Py_Map(npy_intp *ocoor, double* icoor, int orank, int irank,
 {
     PyObject *coors = NULL, *rets = NULL, *args = NULL, *tmp = NULL;
     npy_intp ii;
-    NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)data;
+    ccallback_t *callback = (ccallback_t *)data;
+    NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)callback->info_p;
 
     coors = PyTuple_New(orank);
     if (!coors)
@@ -540,7 +583,7 @@ static int Py_Map(npy_intp *ocoor, double* icoor, int orank, int irank,
     args = PySequence_Concat(tmp, cbdata->extra_arguments);
     if (!args)
         goto exit;
-    rets = PyObject_Call(cbdata->function, args, cbdata->extra_keywords);
+    rets = PyObject_Call(callback->py_function, args, cbdata->extra_keywords);
     if (!rets)
         goto exit;
     for(ii = 0; ii < irank; ii++) {
@@ -566,6 +609,14 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     double cval;
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
+    ccallback_t callback;
+    static char *callback_signatures[] = {
+        "int (npy_intp *, double *, int, int, void *)",
+        NULL
+    };
+
+    callback.py_function = NULL;
+    callback.c_function = NULL;
 
     if (!PyArg_ParseTuple(args, "O&OO&O&O&O&iidOO",
                           NI_ObjectToInputArray, &input,
@@ -589,27 +640,34 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
                                             "extra_keywords must be a dictionary");
             goto exit;
         }
-        if (PyCapsule_CheckExact(fnc)) {
+        if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
 	    func = PyCapsule_GetPointer(fnc, NULL);
             data = PyCapsule_GetContext(fnc);
-	} else if (NpyCapsule_Check(fnc)) {
-	    /*
-	     * NpyCapsules are PyCObjects in Py2k and PyCapsules in Py3k,
-	     * so this check is redundant in Py3k but lets the user pass
-	     * in PyCObects in Py2k.
-	     */
-	    func = NpyCapsule_AsVoidPtr(fnc);
-	    data = NpyCapsule_GetDesc(fnc);
-        } else if (PyCallable_Check(fnc)) {
-            func = Py_Map;
-            cbdata.function = fnc;
-            cbdata.extra_arguments = extra_arguments;
-            cbdata.extra_keywords = extra_keywords;
-            data = (void*)&cbdata;
+#if PY_VERSION_HEX < 0x03000000
+        } else if (PyCObject_Check(fnc)) {
+            /* 'Legacy' low-level callable on Py2 */
+            func = PyCObject_AsVoidPtr(fnc);
+            data = PyCObject_GetDesc(fnc);
+#endif
         } else {
-            PyErr_SetString(PyExc_RuntimeError,
-                                            "function parameter is not callable");
-            goto exit;
+            int ret;
+
+            ret = ccallback_prepare(&callback, callback_signatures, fnc, CCALLBACK_DEFAULTS);
+            if (ret == -1) {
+                goto exit;
+            }
+
+            if (callback.py_function != NULL) {
+                cbdata.extra_arguments = extra_arguments;
+                cbdata.extra_keywords = extra_keywords;
+                callback.info_p = (void*)&cbdata;
+                func = Py_Map;
+                data = (void*)&callback;
+            }
+            else {
+                func = callback.c_function;
+                data = callback.user_data;
+            }
         }
     }
 
@@ -618,6 +676,9 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
         goto exit;
 
 exit:
+    if (callback.py_function != NULL || callback.c_function != NULL) {
+        ccallback_release(&callback);
+    }
     Py_XDECREF(input);
     Py_XDECREF(output);
     Py_XDECREF(coordinates);
