@@ -385,6 +385,9 @@ class spmatrix(object):
             ##
             # dense 2D array or matrix ("multivector")
 
+            if other.shape[0] != self.shape[1]:
+                raise ValueError('dimension mismatch')
+
             other = np.asarray(other)
 
             if other.ndim == 0:
