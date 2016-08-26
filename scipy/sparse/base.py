@@ -390,7 +390,7 @@ class spmatrix(object):
 
             result = self._mul_multivector(np.asarray(other))
 
-            if isinstance(other,np.matrix):
+            if isinstance(other, np.matrix):
                 result = np.asmatrix(result)
 
             return result
