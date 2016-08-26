@@ -385,10 +385,12 @@ class spmatrix(object):
             ##
             # dense 2D array or matrix ("multivector")
 
-            if other.shape[0] != self.shape[1]:
-                raise ValueError('dimension mismatch')
+            other = np.asarray(other)
 
-            result = self._mul_multivector(np.asarray(other))
+            if other.ndim == 0:
+                return NotImplemented
+
+            result = self._mul_multivector(other)
 
             if isinstance(other, np.matrix):
                 result = np.asmatrix(result)
