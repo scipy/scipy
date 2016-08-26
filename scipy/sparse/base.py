@@ -394,6 +394,7 @@ class spmatrix(object):
                 result = np.asmatrix(result)
 
             return result
+
         else:
             raise ValueError('could not interpret dimensions')
 
