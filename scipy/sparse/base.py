@@ -367,10 +367,16 @@ class spmatrix(object):
 
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
             # dense row or column vector
-            if other.shape != (N,) and other.shape != (N, 1):
+            if other.shape[0] != self.shape[1]:
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_vector(np.ravel(other))
+            other = np.asarray(other)
+
+            if other.ndim == 0:
+                return NotImplemented
+
+            result = self._mul_multivector(other)
+
 
             if isinstance(other, np.matrix):
                 result = np.asmatrix(result)
