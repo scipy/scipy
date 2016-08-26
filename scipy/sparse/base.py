@@ -390,16 +390,16 @@ class spmatrix(object):
 
 
             if isinstance(other,np.matrix):
-
-            	result = self._mul_multivector(np.asarray(other))
+                
+                result = self._mul_multivector(np.asarray(other))
                 result = np.asmatrix(result)
-
+                
             else:
                 other = np.asarray(other)
-
+                
                 if other.ndim == 0:
                     return NotImplemented
-
+                
                 result = self._mul_multivector(other)
             
             return result
