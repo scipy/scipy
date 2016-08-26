@@ -370,6 +370,9 @@ class spmatrix(object):
             if other.shape != (N,) and other.shape != (N, 1):
                 raise ValueError('dimension mismatch')
 
+            if np.asarray(other).ndim == 0:
+                return NotImplemented
+
             result = self._mul_vector(np.ravel(other))
 
             if isinstance(other, np.matrix):
@@ -388,21 +391,16 @@ class spmatrix(object):
             if other.shape[0] != self.shape[1]:
                 raise ValueError('dimension mismatch')
 
+            if np.asarray(other).ndim == 0:
+                return NotImplemented
+
+            result = self._mul_multivector(np.asarray(other))
 
             if isinstance(other,np.matrix):
-                
-                result = self._mul_multivector(np.asarray(other))
                 result = np.asmatrix(result)
-                
-            else:
-                other = np.asarray(other)
-                
-                if other.ndim == 0:
-                    return NotImplemented
-                
-                result = self._mul_multivector(other)
-            
+
             return result
+
         else:
             raise ValueError('could not interpret dimensions')
 
