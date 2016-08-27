@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh']
+           'pinv', 'pinv2', 'pinv3', 'pinvh']
 
 import warnings
 import numpy as np
@@ -876,7 +876,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                            "This is likely the result of LAPACK bug "
                            "0038, fixed in LAPACK 3.2.2 (released "
                            "July 21, 2010). ")
-                    
+
                     if lapack_driver is None:
                         # restart with gelss
                         lstsq.default_lapack_driver = 'gelss'
@@ -1045,6 +1045,66 @@ def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     u /= s[:rank]
     B = np.transpose(np.conjugate(np.dot(u, vh[:rank])))
 
+    if return_rank:
+        return B, rank
+    else:
+        return B
+
+
+def pinv3(a, cond=None, rcond=None, return_rank=False, check_finite=True):
+    """
+    Compute the (Moore-Penrose) pseudo-inverse of a matrix.
+
+    Calculate a generalized inverse of a matrix using a Hermitian matrix.
+
+    Parameters
+    ----------
+    a : (N, N) array_like
+        Real symmetric or complex hermetian matrix to be pseudo-inverted
+    cond, rcond : float or None
+        Cutoff for 'small' eigenvalues.
+        Singular values smaller than rcond * largest_eigenvalue are considered
+        zero.
+        If None or -1, suitable machine precision is used.
+    return_rank : bool, optional
+        if True, return the effective rank of the matrix
+    check_finite : bool, optional
+        Whether to check that the input matrix contains only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+
+    Returns
+    -------
+    B : (N, N) ndarray
+        The pseudo-inverse of matrix `a`.
+    rank : int
+        The effective rank of the matrix.  Returned if return_rank == True
+
+    Raises
+    ------
+    LinAlgError
+        If eigenvalue does not converge
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.random.randn(9, 6)
+    >>> B = linalg.pinv3(a)
+    >>> np.allclose(a, np.dot(a, np.dot(B, a)))
+    True
+    >>> np.allclose(B, np.dot(B, np.dot(a, B)))
+    True
+    """
+    a = _asarray_validated(a, check_finite=check_finite)
+    transpose = a.shape[0] < a.shape[1]
+    a = a.T if transpose else a
+
+    aH = a.conj().T
+    aHa_inv, rank = pinvh(aH.dot(a), cond, rcond, return_rank=True,
+                          check_finite=False)
+    B = aHa_inv.dot(aH)
+
+    B = B.T if transpose else B
     if return_rank:
         return B, rank
     else:
