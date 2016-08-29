@@ -67,6 +67,10 @@ def next_fast_len(target):
     out : int
         The first 5-smooth number greater than or equal to `target`.
 
+    Notes
+    -----
+    .. versionadded:: 0.18.0
+
     Examples
     --------
     On a particular machine, an FFT of prime length takes 133 ms:
