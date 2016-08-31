@@ -160,7 +160,8 @@ Philip DeBoer for wrapping random SO(N) and adding random O(N) and
 Tyler Reddy and Nikolai Nowaczyk for scipy.spatial.SphericalVoronoi
 Bill Sacks for fixes to netcdf i/o.
 Kolja Glogowski for a bug fix in scipy.special.
-
+Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
+on data.
 
 Institutions
 ------------
