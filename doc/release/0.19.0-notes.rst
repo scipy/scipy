@@ -34,6 +34,9 @@ The `scipy.optimize.basinhopping` global minimizer obtained a new keyword,
 `seed`, which can be used to seed the random number generator and obtain
 repeatable minimizations.
 
+The keyword `sigma` in `scipy.optimize.curve_fit` was overloaded to also accept
+the covariance matrix of errors in the data.
+
 `scipy.signal` improvements
 ---------------------------
 
