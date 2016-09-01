@@ -21,6 +21,7 @@ Filters
    correlate1d - 1-D correlation along the given axis
    gaussian_filter
    gaussian_filter1d
+   calculate_gaussian_kernel
    gaussian_gradient_magnitude
    gaussian_laplace
    generic_filter - Multi-dimensional filter using a given function

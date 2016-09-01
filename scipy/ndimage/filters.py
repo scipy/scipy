@@ -37,7 +37,8 @@ from . import _nd_image
 from scipy.misc import doccer
 from scipy._lib._version import NumpyVersion
 
-__all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
+__all__ = ['correlate1d', 'convolve1d', 'calculate_gaussian_kernel',
+           'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
            'gaussian_laplace', 'generic_gradient_magnitude',
            'gaussian_gradient_magnitude', 'correlate', 'convolve',
@@ -205,6 +206,34 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     gaussian_filter1d : ndarray
 
     """
+    weights = calculate_gaussian_kernel(sigma, order, truncate=truncate)
+    return correlate1d(input, weights, axis, output, mode, cval, 0)
+
+
+@docfiller
+def calculate_gaussian_kernel(sigma, order=0, truncate=4.0):
+    """Calculate a 1D gaussian kernel
+
+    Parameters
+    ----------
+    sigma : scalar
+        standard deviation for Gaussian kernel
+    order : {0, 1, 2, 3}, optional
+        An order of 0 corresponds to convolution with a Gaussian
+        kernel. An order of 1, 2, or 3 corresponds to convolution with
+        the first, second or third derivatives of a Gaussian. Higher
+        order derivatives are not implemented
+    truncate : float, optional
+        Truncate the filter at this many standard deviations.
+        Default is 4.0.
+
+    Returns
+    -------
+    weights : ndarray
+        The gaussian kernel.
+
+    .. versionadded:: 0.18.0
+    """
     if order not in range(4):
         raise ValueError('Order outside 0..3 not implemented')
     sd = float(sigma)
@@ -245,12 +274,13 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
             tmp = (3.0 - x * x / sd) * x * weights[lw + ii] / sd2
             weights[lw + ii] = -tmp
             weights[lw - ii] = tmp
-    return correlate1d(input, weights, axis, output, mode, cval, 0)
+
+    return weights
 
 
 @docfiller
-def gaussian_filter(input, sigma, order=0, output=None,
-                  mode="reflect", cval=0.0, truncate=4.0):
+def gaussian_filter(input, sigma=None, order=0, output=None,
+                    mode="reflect", cval=0.0, truncate=4.0):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -313,16 +343,19 @@ def gaussian_filter(input, sigma, order=0, output=None,
     if not set(orders).issubset(set(range(4))):
         raise ValueError('Order outside 0..4 not implemented')
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
+
     axes = list(range(input.ndim))
     axes = [(axes[ii], sigmas[ii], orders[ii])
                         for ii in range(len(axes)) if sigmas[ii] > 1e-15]
+
     if len(axes) > 0:
         for axis, sigma, order in axes:
-            gaussian_filter1d(input, sigma, axis, order, output,
-                              mode, cval, truncate)
+            weights = calculate_gaussian_kernel(sigma, order, truncate=truncate)
+            correlate1d(input, weights, axis, output, mode, cval, 0)
             input = output
     else:
         output[...] = input[...]
+
     return return_value
 
 
