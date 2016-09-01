@@ -54,11 +54,10 @@ def _cos_win(M, a):
            Transactions on Acoustics, Speech, and Signal Processing, vol. 29,
            no. 1, pp. 84-91, Feb 1981. doi: 10.1109/TASSP.1981.1163506
     """
-    n = np.arange(0, M)
-    fac = n * 2 * np.pi / (M - 1.0)
+    fac = np.linspace(-np.pi, np.pi, M)
     w = np.zeros(M)
     for k in range(len(a)):
-        w += (-1)**k * a[k] * np.cos(k * fac)
+        w += a[k] * np.cos(k * fac)
     return w
 
 
