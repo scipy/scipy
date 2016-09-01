@@ -37,7 +37,7 @@ def _truncate(w, needed):
         return w
 
 
-def _cos_win(M, a):
+def _cos_win(M, a, sym=True):
     """
     Generic weighted sum of cosine terms window
 
@@ -47,6 +47,10 @@ def _cos_win(M, a):
         Number of points in the output window
     a : array_like
         Sequence of weighting coefficients
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
 
     References
     ----------
@@ -54,11 +58,16 @@ def _cos_win(M, a):
            Transactions on Acoustics, Speech, and Signal Processing, vol. 29,
            no. 1, pp. 84-91, Feb 1981. doi: 10.1109/TASSP.1981.1163506
     """
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
     fac = np.linspace(-np.pi, np.pi, M)
     w = np.zeros(M)
     for k in range(len(a)):
         w += a[k] * np.cos(k * fac)
-    return w
+
+    return _truncate(w, needs_trunc)
 
 
 def boxcar(M, sym=True):
