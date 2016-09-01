@@ -46,6 +46,12 @@ response from second-order sections.
 The function `scipy.signal.unit_impulse` was added to conveniently
 generate an impulse function.
 
+`scipy.sparse` improvements
+---------------------------
+
+The functions `scipy.sparse.save_npz` and `scipy.sparse.load_npz` were added,
+providing simple serialization for some sparse formats.
+
 
 Deprecated features
 ===================
