@@ -67,6 +67,13 @@ except:
 
 
 class TestLinkage(object):
+    def test_linkage_non_finite_elements_in_distance_matrix(self):
+        # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
+        # Exception expected.
+        y = np.zeros((6,))
+        y[0] = np.nan
+        assert_raises(ValueError, linkage, y)
+
     def test_linkage_empty_distance_matrix(self):
         # Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected.
         y = np.zeros((0,))
