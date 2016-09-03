@@ -18,7 +18,7 @@ cdef void raw_capsule_destructor(object capsule):
     name = PyCapsule_GetName(capsule)
     free(name)
 
-def get_raw_capsule(func_obj, char *name, context_obj):
+def get_raw_capsule(func_obj, name_obj, context_obj):
     """
     get_raw_capsule(ptr, name, context)
 
@@ -39,7 +39,12 @@ def get_raw_capsule(func_obj, char *name, context_obj):
         void *func
         void *context
         char *capsule_name
+        char *name
         char *name_copy
+
+    if not isinstance(name_obj, bytes):
+        name_obj = name_obj.encode('ascii')
+    name = <char*>name_obj
 
     if PyCapsule_CheckExact(context_obj):
         capsule_name = PyCapsule_GetName(context_obj)
