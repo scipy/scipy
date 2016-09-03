@@ -1,16 +1,3 @@
-"""
-============================
-Low-level callback functions
-============================
-
-Some functions in SciPy take as arguments callback functions, which in
-addition to being plain Python functions, can also be low-level
-compiled functions.  Using compiled callback functions can improve
-performance somewhat by avoiding wrapping data in Python objects.
-
-In general, the callback functions are specified by 
-"""
-
 from . import _ccallback_c
 
 import types
@@ -26,9 +13,9 @@ try:
     CData = ffi.CData
 except ImportError:
     ffi = None
+
     class CData(object):
         pass
-
 
 
 class LowLevelCallable(tuple):
@@ -38,7 +25,7 @@ class LowLevelCallable(tuple):
     Parameters
     ----------
     function : {PyCapsule, ctypes function pointer, cffi function pointer}
-        Low-level callback function
+        Low-level callback function.
     user_data : {PyCapsule, ctypes void pointer, cffi void pointer}
         User data to pass on to the callback function.
 
@@ -49,17 +36,35 @@ class LowLevelCallable(tuple):
     user_data
         User data given
 
+    Methods
+    -------
+    from_cython
+        Class method for constructing callables from Cython C-exported
+        functions.
+
     Notes
     -----
-    The callback function can be one of:
+    The argument ``function`` can be one of:
 
-    1. PyCapsule, whose name contains the C signature, in format:
-       ``int (double, double, void *)``
-    2. ctypes function pointer
-    3. cffi function pointer
+    - PyCapsule, whose name contains the C function signature
+    - ctypes function pointer
+    - cffi function pointer
 
-    The signature of the low-level callback, when used, must match one of 
-    those expected by the routine it is passed to.
+    The signature of the low-level callback must match one of  those expected 
+    by the routine it is passed to.
+
+    If constructing low-level functions from a PyCapsule, the name of the 
+    capsule must be the corresponding signature, in the format::
+
+        return_type (arg1_type, arg2_type, ...)
+
+    For example::
+
+        "void (double)"
+        "double (double, int *, void *)"
+
+    The context of a PyCapsule passed in as ``function`` is used as ``user_data``, 
+    if an explicit value for `user_data` was not given.
 
     """
 

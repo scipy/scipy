@@ -1333,7 +1333,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     Parameters
     ----------
     %(input)s
-    function : callable
+    function : {callable, scipy.LowLevelCallable}
         Function to apply along given axis.
     filter_size : scalar
         Length of the filter.
@@ -1344,6 +1344,39 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     %(origin)s
     %(extra_arguments)s
     %(extra_keywords)s
+
+    Notes
+    -----
+    This function also accepts low-level callback functions with
+    the following signature and wrapped in `scipy.LowLevelCallable`:
+
+    .. code:: c
+
+       int function(double *input_line, npy_intp input_length, 
+                    double *output_line, npy_intp output_length, 
+                    void *user_data)
+
+    The calling function iterates over the lines of the input and output
+    arrays, calling the callback function at each line. The current line
+    is extended according to the border conditions set by the calling
+    function, and the result is copied into the array that is passed
+    through ``input_line``. The length of the input line (after extension)
+    is passed through ``input_length``. The callback function should apply
+    the filter and store the result in the array passed through
+    ``output_line``. The length of the output line is passed through
+    ``output_length``. ``user_data`` is the data pointer provided 
+    to `scipy.LowLevelCallable` as-is.
+
+    The callback function must return an integer error status that is zero 
+    if something went wrong and one otherwise. If an error occurs, you should
+    normally set the python error status with an informative message
+    before returning, otherwise a default error message is set by the
+    calling function.
+
+    In addition, some other low-level function pointer specifications 
+    are accepted, but these are for backward compatibility only and should
+    not be used in new code.
+
     """
     if extra_keywords is None:
         extra_keywords = {}
@@ -1376,7 +1409,7 @@ def generic_filter(input, function, size=None, footprint=None,
     Parameters
     ----------
     %(input)s
-    function : callable
+    function : {callable, scipy.LowLevelCallable}
         Function to apply at each element.
     %(size_foot)s
     %(output)s
@@ -1385,6 +1418,35 @@ def generic_filter(input, function, size=None, footprint=None,
     %(origin)s
     %(extra_arguments)s
     %(extra_keywords)s
+
+    Notes
+    -----
+    This function also accepts low-level callback functions with
+    the following signature and wrapped in `scipy.LowLevelCallable`:
+
+    .. code:: c
+
+       int callback(double *buffer, npy_intp filter_size, 
+                    double *return_value, void *user_data)
+
+    The calling function iterates over the elements of the input and
+    output arrays, calling the callback function at each element. The
+    elements within the footprint of the filter at the current element are
+    passed through the ``buffer`` parameter, and the number of elements
+    within the footprint through ``filter_size``. The calculated value is
+    returned in ``return_value``. ``user_data`` is the data pointer provided 
+    to `scipy.LowLevelCallable` as-is.
+
+    The callback function must return an integer error status that is zero 
+    if something went wrong and one otherwise. If an error occurs, you should
+    normally set the python error status with an informative message
+    before returning, otherwise a default error message is set by the
+    calling function.
+
+    In addition, some other low-level function pointer specifications 
+    are accepted, but these are for backward compatibility only and should
+    not be used in new code.
+
     """
     if extra_keywords is None:
         extra_keywords = {}
