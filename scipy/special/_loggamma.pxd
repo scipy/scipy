@@ -9,7 +9,7 @@
 
 import cython
 cimport sf_error
-from libc.math cimport M_PI, ceil, sin, log
+from libc.math cimport M_PI, ceil, sin, log, signbit
 from _complexstuff cimport (
     nan, zisnan, zabs, zlog, zlog1, zsin, zarg, zexp, zlog, zdiv
 )
@@ -105,7 +105,7 @@ cdef inline double complex loggamma(double complex z) nogil:
                 # log(pi/sin(pi*z)) didn't.
                 argterm += 2*M_PI
 
-        if iz >= 0:
+        if signbit(iz) == 0:
             res += 1j*argterm
         else:
             res -= 1j*argterm
