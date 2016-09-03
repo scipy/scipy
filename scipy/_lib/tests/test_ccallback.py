@@ -58,7 +58,8 @@ def _get_cffi_data():
 CALLERS = {
     'simple': _test_ccallback.test_call_simple,
     'nodata': _test_ccallback.test_call_nodata,
-    'nonlocal': _test_ccallback.test_call_nonlocal
+    'nonlocal': _test_ccallback.test_call_nonlocal,
+    'cython': _test_ccallback_cython.test_call_cython,
 }
 
 # These functions have signatures known to the callers

@@ -6,6 +6,8 @@ from cpython.long cimport PyLong_AsVoidPtr
 from libc.stdlib cimport malloc, free
 from libc.string cimport strdup
 
+from .ccallback cimport ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS
+
 
 #
 # PyCapsule helpers
@@ -89,7 +91,66 @@ DEF ERROR_VALUE = 2
 
 from libc.math cimport sin
 
+
+cdef char **signatures = ["double (double, int *, void *)",
+                          "double (double, double, int *, void *)",
+                          NULL]
+
+
+cdef double test_thunk_cython(double a, int *error_flag, void *data) nogil except? -1.0:
+    """
+    Implementation of a thunk routine in Cython
+    """
+    cdef:
+        ccallback_t *callback = <ccallback_t *>data
+        double result = 0
+
+    if callback.c_function != NULL:
+        if callback.signature_index == 0:
+            result = (<double(*)(double, int *, void *) nogil>callback.c_function)(
+                a, error_flag, callback.user_data)
+        else:
+            result = (<double(*)(double, double, int *, void *) nogil>callback.c_function)(
+                a, 0.0, error_flag, callback.user_data)
+
+        if error_flag[0]:
+            # Python error has been set by the callback
+            return -1.0
+    else:
+        with gil:
+            try:
+                return float((<object>callback.py_function)(a))
+            except:
+                error_flag[0] = 1
+                raise
+
+    return result
+
+
+def test_call_cython(callback_obj, double value):
+    """
+    Implementation of a caller routine in Cython
+    """
+    cdef:
+        ccallback_t callback
+        int error_flag = 0
+        int ret
+        double result
+
+    ccallback_prepare(&callback, signatures, callback_obj, CCALLBACK_DEFAULTS)
+
+    with nogil:
+        result = test_thunk_cython(value, &error_flag, <void *>&callback)
+
+    ccallback_release(&callback)
+
+    return result
+
+
 cdef double plus1_cython(double a, int *error_flag, void *user_data) nogil except *:
+    """
+    Implementation of a callable in Cython
+    """
     if a == ERROR_VALUE:
         error_flag[0] = 1
         with gil:
@@ -110,6 +171,7 @@ cdef double sine(double x, void *user_data) nogil except *:
     return sin(x)
 
 
+# Ctypes declarations of the callables above
 import ctypes
 
 plus1_t = ctypes.CFUNCTYPE(ctypes.c_double, ctypes.c_double, ctypes.POINTER(ctypes.c_int), ctypes.c_void_p)
