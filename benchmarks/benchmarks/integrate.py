@@ -13,6 +13,13 @@ except ImportError:
     _test_ccallback_cython = None
 
 try:
+    from scipy import LowLevelCallable
+    from_cython = LowLevelCallable.from_cython
+except ImportError:
+    LowLevelCallable = lambda func, data: (func, data)
+    from_cython = lambda *a: a
+
+try:
     import cffi
 except ImportError:
     cffi = None
@@ -82,7 +89,7 @@ class Quad(Benchmark):
         from math import sin
 
         self.f_python = lambda x: sin(x)
-        self.f_cython = (_test_ccallback_cython, "sine")
+        self.f_cython = from_cython(_test_ccallback_cython, "sine")
 
         lib = ctypes.CDLL(clib_test.__file__)
 
@@ -94,7 +101,7 @@ class Quad(Benchmark):
             voidp = ctypes.cast(self.f_ctypes, ctypes.c_void_p)
             address = voidp.value
             ffi = cffi.FFI()
-            self.f_cffi = ffi.cast("double (*)(int, double *)", address)
+            self.f_cffi = LowLevelCallable(ffi.cast("double (*)(int, double *)", address))
 
     def time_quad_python(self):
         quad(self.f_python, 0, np.pi)

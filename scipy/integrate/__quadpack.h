@@ -137,10 +137,33 @@ init_multivariate_data(ccallback_t *callback, int ndim, PyObject *extra_argument
 static int
 init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
 {
+    static PyObject *cfuncptr_type = NULL;
+
     int ret;
     int ndim;
+    int flags = CCALLBACK_OBTAIN;
 
-    ret = ccallback_prepare(callback, quadpack_call_signatures, func, CCALLBACK_OBTAIN);
+    if (cfuncptr_type == NULL) {
+        PyObject *module;
+
+        module = PyImport_ImportModule("ctypes");
+        if (module == NULL) {
+            return -1;
+        }
+
+        cfuncptr_type = PyObject_GetAttrString(module, "_CFuncPtr");
+        Py_DECREF(module);
+        if (cfuncptr_type == NULL) {
+            return -1;
+        }
+    }
+
+    if (PyObject_TypeCheck(func, (PyTypeObject *)cfuncptr_type)) {
+        /* Legacy support --- ctypes objects can be passed in as-is */
+        flags |= CCALLBACK_PARSE;
+    }
+
+    ret = ccallback_prepare(callback, quadpack_call_signatures, func, flags);
     if (ret == -1) {
         return -1;
     }
@@ -185,7 +208,7 @@ free_callback(ccallback_t *callback)
 }
 
 
-double trampoline_quad(double *x)
+double quad_thunk(double *x)
 {
     ccallback_t *callback = ccallback_obtain();
     double result = 0;
@@ -311,7 +334,7 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
       goto fail;
   }
 
-  DQAGSE(trampoline_quad, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, 
+  DQAGSE(quad_thunk, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, 
          blist, rlist, elist, iord, &last);
 
   free_callback(&callback);
@@ -391,7 +414,7 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
       goto fail;
   }
 
-  DQAGIE(trampoline_quad, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  DQAGIE(quad_thunk, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
 
   free_callback(&callback);
 
@@ -484,7 +507,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
       goto fail;
   }
 
-  DQAGPE(trampoline_quad, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
+  DQAGPE(quad_thunk, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
 
   free_callback(&callback);
 
@@ -589,7 +612,7 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
       goto fail;
   }
 
-  DQAWOE(trampoline_quad, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
+  DQAWOE(quad_thunk, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
 
   free_callback(&callback);
 
@@ -690,7 +713,7 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
       goto fail;
   }
 
-  DQAWFE(trampoline_quad, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
+  DQAWFE(quad_thunk, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
 
   free_callback(&callback);
 
@@ -779,7 +802,7 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
       goto fail;
   }
 
-  DQAWCE(trampoline_quad, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  DQAWCE(quad_thunk, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
 
   free_callback(&callback);
 
@@ -858,7 +881,7 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
       goto fail;
   }
 
-  DQAWSE(trampoline_quad, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
+  DQAWSE(quad_thunk, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
 
   free_callback(&callback);
 

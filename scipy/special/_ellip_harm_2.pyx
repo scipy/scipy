@@ -7,6 +7,7 @@ import scipy.integrate
 cdef extern from "Python.h":
     object PyCapsule_New(void *pointer, char *name, void *destructor)
 
+from scipy._lib._ccallback import LowLevelCallable
 from ._ellip_harm cimport ellip_harmonic, ellip_harm_eval, lame_coefficients
 
 ctypedef struct _ellip_data_t:
@@ -123,7 +124,7 @@ def _ellipsoid(double h2, double k2, int n, int p, double s):
 
     try:
         capsule = PyCapsule_New(<void*>&data, NULL, NULL)
-        res, err = scipy.integrate.quad((mod, "_F_integrand", capsule), 0, 1/s,
+        res, err = scipy.integrate.quad(LowLevelCallable.from_cython(mod, "_F_integrand", capsule), 0, 1/s,
                                         epsabs=1e-300, epsrel=1e-15)
     finally:
         free(bufferp)
@@ -161,18 +162,18 @@ def _ellipsoid_norm(double h2, double k2, int n, int p):
 
         wvar = (-0.5, -0.5)
 
-        res, err = quad((mod, "_F_integrand1", capsule), h, k,
+        res, err = quad(LowLevelCallable.from_cython(mod, "_F_integrand1", capsule), h, k,
                         epsabs=1e-300, epsrel=1e-15, weight="alg", wvar=wvar)
 
-        res1, err1 = quad((mod, "_F_integrand2", capsule), h, k,
+        res1, err1 = quad(LowLevelCallable.from_cython(mod, "_F_integrand2", capsule), h, k,
                           epsabs=1e-300, epsrel=1e-15, weight="alg", wvar=wvar)
 
         wvar = (0, -0.5)
 
-        res2, err2 = quad((mod, "_F_integrand3", capsule), 0, h,
+        res2, err2 = quad(LowLevelCallable.from_cython(mod, "_F_integrand3", capsule), 0, h,
                           epsabs=1e-300, epsrel=1e-15, weight="alg", wvar=wvar)
 
-        res3, err3 = quad((mod, "_F_integrand4", capsule), 0, h,
+        res3, err3 = quad(LowLevelCallable.from_cython(mod, "_F_integrand4", capsule), 0, h,
                           epsabs=1e-300, epsrel=1e-15, weight="alg", wvar=wvar)
 
     finally:

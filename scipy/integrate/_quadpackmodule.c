@@ -35,7 +35,7 @@ PyObject *PyInit__quadpack(void)
     import_array();
     d = PyModule_GetDict(m);
 
-    s = PyUString_FromString(" 1.13 ");
+    s = PyUnicode_FromString(" 1.13 ");
     PyDict_SetItemString(d, "__version__", s);
     quadpack_error = PyErr_NewException ("quadpack.error", NULL, NULL);
     Py_DECREF(s);
@@ -52,7 +52,7 @@ PyMODINIT_FUNC init_quadpack(void) {
   import_array();
   d = PyModule_GetDict(m);
 
-  s = PyUString_FromString(" 1.13 ");
+  s = PyString_FromString(" 1.13 ");
   PyDict_SetItemString(d, "__version__", s);
   quadpack_error = PyErr_NewException ("quadpack.error", NULL, NULL);
   Py_DECREF(s);

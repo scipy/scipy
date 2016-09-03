@@ -15,8 +15,7 @@ cdef double plus1_cython(double a, int *error_flag, void *user_data) nogil excep
     if user_data == NULL:
         return a + 1
     else:
-        with gil:
-            return a + <object>user_data
+        return a + (<double *>user_data)[0]
 
 cdef double plus1b_cython(double a, double b, int *error_flag, void *user_data) nogil except *:
     return plus1_cython(a, error_flag, user_data) + b
