@@ -431,7 +431,7 @@ def genlaguerre(n, alpha, monic=False):
     L^(alpha)_n(x), orthogonal over [0,inf) with weighting function
     exp(-x) x**alpha with alpha > -1
     """
-    if any(alpha <= -1):
+    if alpha <= -1:
         raise ValueError("alpha must be > -1")
     if n < 0:
         raise ValueError("n must be nonnegative.")
