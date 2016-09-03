@@ -1,4 +1,6 @@
 import numpy as np
+from numpy.testing import assert_allclose
+
 from scipy.special._testutils import FuncData
 from scipy.special import gamma, gammaln, loggamma
 
@@ -41,3 +43,17 @@ def test_realpart():
         return loggamma(z).real
     
     FuncData(f, dataset, 0, 1, rtol=1e-14, atol=1e-14).check()
+
+
+def test_gh_6536():
+    z = loggamma(complex(-3.4, +0.0))
+    zbar = loggamma(complex(-3.4, -0.0))
+    assert_allclose(z, zbar.conjugate(), rtol=1e-15, atol=0)
+    
+
+def test_branch_cut():
+    # Make sure negative zero is treated correctly
+    x = -np.logspace(300, -30, 100)
+    z = np.asarray([complex(x0, 0.0) for x0 in x])
+    zbar = np.asarray([complex(x0, -0.0) for x0 in x])
+    assert_allclose(z, zbar.conjugate(), rtol=1e-15, atol=0)
