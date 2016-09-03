@@ -113,5 +113,10 @@ else:
     del _NumpyVersion
 
     from numpy.testing import Tester
-    test = Tester().test
-    bench = Tester().bench
+    if ".dev0" in __version__:
+        test = Tester(raise_warnings="develop").test
+        bench = Tester(raise_warnings="develop").bench
+    else:
+        test = Tester(raise_warnings="release").test
+        bench = Tester(raise_warnings="release").bench
+
