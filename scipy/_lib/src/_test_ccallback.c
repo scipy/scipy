@@ -28,168 +28,6 @@
 #include "ccallback.h"
 
 
-#define GET_RAW_CAPSULE_DOC ( \
-    "get_raw_capsule(ptr, name, context)\n" \
-    "\n" \
-    "Create a new PyCapsule with given pointer, name, and context.\n" \
-    "\n" \
-    "Parameters\n" \
-    "----------\n" \
-    "ptr : {PyCapsule, int}\n" \
-    "    Memory address of the pointer.\n" \
-    "name : str\n" \
-    "    Python string containing the signature.\n" \
-    "context : {PyCapsule, int}\n" \
-    "    Memory address of the context.\n" \
-    "    If NULL and ptr is a PyCapsule, use the one from the context of ptr.\n")
-
-
-static void raw_capsule_destructor(PyObject *capsule)
-{
-    char *name;
-    name = (char *)PyCapsule_GetName(capsule);
-    if (!PyErr_Occurred()) {
-        free(name);
-    }
-}
-
-
-static PyObject *get_raw_capsule(PyObject *obj, PyObject *args)
-{
-    PyObject *func_obj = NULL, *name_obj = NULL, *context_obj = NULL;
-    void *func;
-    char *name;
-    char *name_copy;
-    void *context;
-    PyObject *capsule;
-
-    if (!PyArg_ParseTuple(args, "OsO", &func_obj, &name, &context_obj)) {
-        return NULL;
-    }
-
-    if (PyCapsule_CheckExact(context_obj)) {
-        char *capsule_name;
-
-        capsule_name = (char *)PyCapsule_GetName(context_obj);
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-
-        context = PyCapsule_GetPointer(context_obj, capsule_name);
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-    }
-    else if (context_obj == Py_None) {
-        context = NULL;
-    }
-    else {
-        PyObject *context_obj2;
-
-        context_obj2 = PyNumber_Long(context_obj);
-        if (context_obj2 == NULL) {
-            return NULL;
-        }
-
-        context = PyLong_AsVoidPtr(context_obj2);
-        Py_DECREF(context_obj2);
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-    }
-
-    if (PyCapsule_CheckExact(func_obj)) {
-        char *capsule_name;
-
-        capsule_name = (char *)PyCapsule_GetName(func_obj);
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-
-        func = PyCapsule_GetPointer(func_obj, capsule_name);
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-
-        if (context == NULL) {
-            context = PyCapsule_GetContext(func_obj);
-            if (PyErr_Occurred()) {
-                return NULL;
-            }
-        }
-
-        if (*name == '\0') {
-            name = capsule_name;
-        }
-    }
-    else {
-        PyObject *func_obj2;
-
-        func_obj2 = PyNumber_Long(func_obj);
-        if (func_obj2 == NULL) {
-            return NULL;
-        }
-
-        func = PyLong_AsVoidPtr(func_obj2);
-        Py_DECREF(func_obj2);
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-    }
-
-    if (name == NULL) {
-        name_copy = name;
-    }
-    else {
-        name_copy = strdup(name);
-        if (name_copy == NULL) {
-            return PyErr_NoMemory();
-        }
-    }
-
-    capsule = PyCapsule_New(func, name_copy, raw_capsule_destructor);
-    if (capsule == NULL) {
-        return NULL;
-    }
-
-    if (context != NULL) {
-        if (PyCapsule_SetContext(capsule, context) != 0) {
-            Py_DECREF(capsule);
-            return NULL;
-        }
-    }
-
-    return capsule;
-}
-
-
-#define CHECK_CAPSULE_DOC ( \
-    "check_capsule(item)\n" \
-    "\n" \
-    "Return True if the given object is a PyCapsule.")
-
-
-static PyObject *check_capsule(PyObject *obj, PyObject *args)
-{
-    PyObject *item = NULL;
-
-    if (!PyArg_ParseTuple(args, "O", &item)) {
-        return NULL;
-    }
-
-    if (PyCapsule_CheckExact(item)) {
-        Py_RETURN_TRUE;
-    }
-    else {
-        Py_RETURN_FALSE;
-    }
-}
-
-
-/*
- * Test code
- */
-
 #define ERROR_VALUE 2
 
 /* Thunks for the different cases considered */
@@ -479,9 +317,7 @@ static PyObject *test_get_data_capsule(PyObject *obj, PyObject *args)
  */
 
 
-static PyMethodDef ccallback_c_methods[] = {
-    {"get_raw_capsule", (PyCFunction)get_raw_capsule, METH_VARARGS, GET_RAW_CAPSULE_DOC},
-    {"check_capsule", (PyCFunction)check_capsule, METH_VARARGS, CHECK_CAPSULE_DOC},
+static PyMethodDef test_ccallback_methods[] = {
     {"test_call_simple", (PyCFunction)test_call_simple, METH_VARARGS, ""},
     {"test_call_nodata", (PyCFunction)test_call_nodata, METH_VARARGS, ""},
     {"test_call_nonlocal", (PyCFunction)test_call_nonlocal, METH_VARARGS, ""},
@@ -496,12 +332,12 @@ static PyMethodDef ccallback_c_methods[] = {
 
 #if PY_VERSION_HEX >= 0x03000000
 
-static struct PyModuleDef ccallback_c_module = {
+static struct PyModuleDef test_ccallback_module = {
     PyModuleDef_HEAD_INIT,
-    "_ccallback_c",
+    "_test_ccallback",
     NULL,
     -1,
-    ccallback_c_methods,
+    test_ccallback_methods,
     NULL,
     NULL,
     NULL,
@@ -510,18 +346,18 @@ static struct PyModuleDef ccallback_c_module = {
 
 
 PyMODINIT_FUNC
-PyInit__ccallback_c(void)
+PyInit__test_ccallback(void)
 {
-    return PyModule_Create(&ccallback_c_module);
+    return PyModule_Create(&test_ccallback_module);
 }
 
 
 #else
 
 PyMODINIT_FUNC
-init_ccallback_c(void)
+init_test_ccallback(void)
 {
-    Py_InitModule("_ccallback_c", ccallback_c_methods);
+    Py_InitModule("_test_ccallback", test_ccallback_methods);
 }
 
 #endif

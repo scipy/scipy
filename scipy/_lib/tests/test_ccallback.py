@@ -6,8 +6,8 @@ import time
 import nose
 import ctypes
 import threading
-from scipy._lib import _ccallback_c as _test_ccallback
-from scipy._lib import _test_ccallback_cython
+from scipy._lib import _ccallback_c as _test_ccallback_cython
+from scipy._lib import _test_ccallback
 from scipy._lib._ccallback import LowLevelCallable
 
 try:

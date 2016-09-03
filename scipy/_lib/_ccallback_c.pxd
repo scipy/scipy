@@ -1,5 +1,5 @@
 #
-# Test code for src/ccallback.h
+# Test function exports
 #
 
 cdef double plus1_cython(double a, int *error_flag, void *user_data) nogil except *

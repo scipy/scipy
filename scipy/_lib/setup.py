@@ -12,13 +12,16 @@ def configuration(parent_package='',top_path=None):
 
     include_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'src'))
     depends = [os.path.join(include_dir, 'ccallback.h')]
+
     config.add_extension("_ccallback_c",
-                         sources=["src/_ccallback.c"],
+                         sources=["_ccallback_c.c"],
                          depends=depends,
                          include_dirs=[include_dir])
 
-    config.add_extension("_test_ccallback_cython",
-                         sources=["_test_ccallback_cython.c"])
+    config.add_extension("_test_ccallback",
+                         sources=["src/_test_ccallback.c"],
+                         depends=depends,
+                         include_dirs=[include_dir])
 
     return config
 
