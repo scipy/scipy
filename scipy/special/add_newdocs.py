@@ -5695,17 +5695,32 @@ add_newdoc("scipy.special", "loggamma",
     r"""
     loggamma(z, out=None)
 
-    Principal branch of the logarithm of the Gamma function. It is
-    defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
-    extended to the complex plane by analytic continuation. The
-    implementation here is based on [hare1997]_.
+    Principal branch of the logarithm of the Gamma function.
 
-    The function has a single branch cut on the negative real axis and
-    is taken to be continuous when approaching the axis from
-    above. Note that it is not generally true that
-    :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real parts of
-    the functions do agree. The benefit of not defining ``loggamma``
-    as :math:`\log(\Gamma(z))` is that the latter function has a
+    Defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
+    extended to the complex plane by analytic continuation. The
+    function has a single branch cut on the negative real axis.
+
+    .. versionadded:: 0.18.0
+
+    Parameters
+    ----------
+    z : array-like
+        Values in the complex plain at which to compute ``loggamma``
+    out : ndarray, optional
+        Output array for computed values of ``loggamma``
+
+    Returns
+    -------
+    loggamma : ndarray
+        Values of ``loggamma`` at z.
+
+    Notes
+    -----
+    It is not generally true that :math:`\log\Gamma(z) =
+    \log(\Gamma(z))`, though the real parts of the functions do
+    agree. The benefit of not defining ``loggamma`` as
+    :math:`\log(\Gamma(z))` is that the latter function has a
     complicated branch cut structure whereas ``loggamma`` is analytic
     except for on the negative real axis.
 
@@ -5723,19 +5738,7 @@ add_newdoc("scipy.special", "loggamma",
     errors will introduce small spurious imaginary components in
     ``exp(loggamma(x))``.
 
-    .. versionadded:: 0.18.0
-
-    Parameters
-    ----------
-    z : array-like
-        Values in the complex plain at which to compute ``loggamma``
-    out : ndarray, optional
-        Output array for computed values of ``loggamma``
-
-    Returns
-    -------
-    loggamma : ndarray
-        Values of ``loggamma`` at z.
+    The implementation here is based on [hare1997]_.
 
     See also
     --------
