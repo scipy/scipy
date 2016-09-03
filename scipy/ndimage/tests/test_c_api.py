@@ -82,7 +82,6 @@ def test_generic_filter1d():
         yield check, j
 
 
-
 def test_geometric_transform():
     def transform(output_coordinates, shift):
         return output_coordinates[0] - shift, output_coordinates[1] - shift
