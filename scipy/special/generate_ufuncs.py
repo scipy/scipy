@@ -770,7 +770,7 @@ def generate_doc(name, specs):
     for spec in specs:
         incodes, outcodes = spec.split("->")
         incodes = incodes.split("*")
-        intypes = map(lambda x: CY_TYPES[x], incodes[0])
+        intypes = list(map(lambda x: CY_TYPES[x], incodes[0]))
         if len(incodes) > 1:
             types = map(lambda x: "{} *".format(CY_TYPES[x]), incodes[1])
             intypes.extend(types)
@@ -1206,7 +1206,7 @@ class FusedFunc(Func):
             all_codes.append(codes)
         all_codes = tuple(all_codes)
 
-        codelens = map(lambda x: len(x), all_codes)
+        codelens = list(map(lambda x: len(x), all_codes))
         last = numpy.product(codelens) - 1
         for m, codes in enumerate(itertools.product(*all_codes)):
             fused_codes, decs = [], []
@@ -1283,8 +1283,8 @@ class FusedFunc(Func):
         else:
             cpp = False
 
-        intypes = map(lambda x: CY_TYPES[x], incodes)
-        outtypes = map(lambda x: CY_TYPES[x], outcodes)
+        intypes = list(map(lambda x: CY_TYPES[x], incodes))
+        outtypes = list(map(lambda x: CY_TYPES[x], outcodes))
         retcode = re.sub(r'\*.*', '', retcode)
         if not retcode:
             retcode = 'v'
