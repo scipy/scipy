@@ -5,23 +5,16 @@ import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_, TestCase, run_module_suite, dec,
-        assert_allclose, assert_array_less, assert_almost_equal)
+        assert_allclose, assert_array_less, assert_almost_equal, assert_raises)
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy._lib.six import xrange
+from scipy._lib._ccallback import LowLevelCallable
 
-try:
-    import ctypes
-    import ctypes.util
-    from scipy._lib._test_ccallback_cython import sine_ctypes
-    _ctypes_missing = False
-except ImportError:
-    _ctypes_missing = True
+import ctypes
+import ctypes.util
+from scipy._lib._ccallback_c import sine_ctypes
 
-try:
-    import scipy.integrate._test_multivariate as clib_test
-    _ctypes_multivariate_fail = False
-except:
-    _ctypes_multivariate_fail = True
+import scipy.integrate._test_multivariate as clib_test
 
 
 def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
@@ -32,7 +25,6 @@ def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
 
 
 class TestCtypesQuad(TestCase):
-    @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
     def setUp(self):
         if sys.platform == 'win32':
             if sys.version_info < (3, 5):
@@ -62,15 +54,11 @@ class TestCtypesQuad(TestCase):
             func.restype = restype
             func.argtypes = argtypes
 
-    @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
     def test_typical(self):
         assert_quad(quad(self.lib.sin, 0, 5), quad(math.sin, 0, 5)[0])
         assert_quad(quad(self.lib.cos, 0, 5), quad(math.cos, 0, 5)[0])
         assert_quad(quad(self.lib.tan, 0, 1), quad(math.tan, 0, 1)[0])
 
-    #@dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
-    # This doesn't seem to always work.  Need a better way to figure out
-    # whether the fast path is called.
     @dec.knownfailureif(True, msg="Unreliable test, see ticket 1684.")
     def test_improvement(self):
         import time
@@ -84,12 +72,9 @@ class TestCtypesQuad(TestCase):
         slow = time.time() - start
         assert_(fast < 0.5*slow, (fast, slow))
 
-    @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
     def test_ctypes_sine(self):
-        quad(sine_ctypes, 0, 1)
+        quad(LowLevelCallable(sine_ctypes), 0, 1)
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def test_ctypes_variants(self):
         lib = ctypes.CDLL(clib_test.__file__)
 
@@ -113,13 +98,27 @@ class TestCtypesQuad(TestCase):
         sin_4.restype = ctypes.c_double
         sin_4.argtypes = [ctypes.c_int, ctypes.c_double]
 
-        for func in [sin_0, sin_1, sin_2, sin_3, sin_4]:
-            assert_allclose(quad(func, 0, pi)[0], 2.0)
+        all_sigs = [sin_0, sin_1, sin_2, sin_3, sin_4]
+        legacy_sigs = [sin_2, sin_4]
+        legacy_only_sigs = [sin_4]
+
+        # LowLevelCallables work for new signatures
+        for j, func in enumerate(all_sigs):
+            callback = LowLevelCallable(func)
+            if func in legacy_only_sigs:
+                assert_raises(ValueError, quad, callback, 0, pi)
+            else:
+                assert_allclose(quad(callback, 0, pi)[0], 2.0)
+
+        # Plain ctypes items work only for legacy signatures
+        for j, func in enumerate(legacy_sigs):
+            if func in legacy_sigs:
+                assert_allclose(quad(func, 0, pi)[0], 2.0)
+            else:
+                assert_raises(ValueError, quad, func, 0, pi)
 
 
 class TestMultivariateCtypesQuad(TestCase):
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def setUp(self):
         self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
@@ -130,30 +129,22 @@ class TestMultivariateCtypesQuad(TestCase):
             func.restype = restype
             func.argtypes = argtypes
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def test_typical(self):
         # 1) Typical function with two extra arguments:
         assert_quad(quad(self.lib._multivariate_typical, 0, pi, (2, 1.8)),
                     0.30614353532540296487)
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
         assert_quad(quad(self.lib._multivariate_indefinite, 0, Inf),
                     0.577215664901532860606512)
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def test_threadsafety(self):
         # Ensure multivariate ctypes are threadsafe
         def threadsafety(y):
             return y + quad(self.lib._multivariate_sin, 0, 1)[0]
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def test_improvement(self):
         def myfunc(x):           # Euler's constant integrand
             return -exp(-x)*log(x)

@@ -81,16 +81,20 @@ static char *quadpack_call_signatures[] = {
     "double (int, double *, void *)",
     "double (double)",
     "double (int, double *)",
+    NULL
+};
+
+static char *quadpack_call_legacy_signatures[] = {
+    "double (double)",
     "double (int, double)", /* sic -- for backward compat only */
     NULL
 };
 
 typedef enum {
-    CB_1D = 0,
-    CB_ND = 1,
-    CB_1D_LEGACY = 2,
-    CB_ND_LEGACY = 3,
-    CB_ND_LEGACY_2 = 4
+    CB_1D_USER = 0,
+    CB_ND_USER = 1,
+    CB_1D = 2,
+    CB_ND = 3
 } quadpack_signature_t;
 
 
@@ -142,6 +146,8 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
     int ret;
     int ndim;
     int flags = CCALLBACK_OBTAIN;
+    int legacy = 0;
+    char **signatures = quadpack_call_signatures;
 
     if (cfuncptr_type == NULL) {
         PyObject *module;
@@ -161,18 +167,29 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
     if (PyObject_TypeCheck(func, (PyTypeObject *)cfuncptr_type)) {
         /* Legacy support --- ctypes objects can be passed in as-is */
         flags |= CCALLBACK_PARSE;
+        signatures = quadpack_call_legacy_signatures;
+        legacy = 1;
     }
 
-    ret = ccallback_prepare(callback, quadpack_call_signatures, func, flags);
+    ret = ccallback_prepare(callback, signatures, func, flags);
     if (ret == -1) {
         return -1;
+    }
+
+    if (legacy) {
+        if (callback->signature_index == 0) {
+            callback->signature_index = CB_1D;
+        }
+        else {
+            callback->signature_index = CB_ND;
+        }
     }
 
     if (callback->signature_index == -1) {
         /* pure-Python */
         callback->info_p = (void *)extra_arguments;
     }
-    else if (callback->signature_index == CB_1D || callback->signature_index == CB_1D_LEGACY) {
+    else if (callback->signature_index == CB_1D || callback->signature_index == CB_1D_USER) {
         /* extra_arguments is just ignored */
         callback->info_p = NULL;
     }
@@ -200,8 +217,7 @@ free_callback(ccallback_t *callback)
 {
     ccallback_release(callback);
 
-    if (callback->signature_index == CB_ND || callback->signature_index == CB_ND_LEGACY ||
-            callback->signature_index == CB_ND_LEGACY_2) {
+    if (callback->signature_index == CB_ND || callback->signature_index == CB_ND_USER) {
         free(callback->info_p);
         callback->info_p = NULL;
     }
@@ -246,19 +262,18 @@ double quad_thunk(double *x)
     }
     else {
         switch (callback->signature_index) {
-        case CB_1D:
+        case CB_1D_USER:
             result = ((double(*)(double, void *))callback->c_function)(*x, callback->user_data);
             break;
-        case CB_1D_LEGACY:
+        case CB_1D:
             result = ((double(*)(double))callback->c_function)(*x);
             break;
-        case CB_ND:
+        case CB_ND_USER:
             ((double *)callback->info_p)[0] = *x;
             result = ((double(*)(int, double *, void *))callback->c_function)(
                 (int)callback->info, (double *)callback->info_p, callback->user_data);
             break;
-        case CB_ND_LEGACY:
-        case CB_ND_LEGACY_2:
+        case CB_ND:
             ((double *)callback->info_p)[0] = *x;
             result = ((double(*)(int, double *))callback->c_function)(
                 (int)callback->info, (double *)callback->info_p);
