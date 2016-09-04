@@ -145,6 +145,8 @@ Matlab-style IIR filter design
    ellip -- Elliptic (Cauer)
    ellipord
    bessel -- Bessel (no order selection available -- try butterod)
+   iirnotch      -- Design second-order IIR notch digital filter.
+   iirpeak       -- Design second-order IIR peak (resonant) digital filter.
 
 Continuous-Time Linear Systems
 ==============================
