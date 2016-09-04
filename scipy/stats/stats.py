@@ -166,8 +166,6 @@ import warnings
 import math
 from collections import namedtuple
 
-from scipy._lib.six import xrange
-
 # Scipy imports.
 from scipy._lib.six import callable, string_types, xrange
 from scipy._lib._version import NumpyVersion
