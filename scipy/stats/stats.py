@@ -162,9 +162,11 @@ References
 
 from __future__ import division, print_function, absolute_import
 
-from collections import namedtuple
-import math
 import warnings
+import math
+from collections import namedtuple
+
+from scipy._lib.six import xrange
 
 # Scipy imports.
 from scipy._lib.six import callable, string_types, xrange
@@ -173,7 +175,8 @@ from numpy import array, asarray, ma, zeros
 import scipy.special as special
 import scipy.linalg as linalg
 import numpy as np
-from . import distributions, mstats_basic, _stats
+from . import distributions
+from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 from ._stats import _kendall_condis
@@ -4550,21 +4553,13 @@ def ks_2samp(data1, data2):
     """
     data1 = np.sort(data1)
     data2 = np.sort(data2)
-    n1, = data1.shape
-    n2, = data2.shape
-    common_type = np.find_common_type([], [data1.dtype, data2.dtype])
-    if not (np.issubdtype(common_type, np.number) and
-            not np.issubdtype(common_type, np.complexfloating)):
-        raise ValueError('ks_2samp only accepts real inputs')
-    # nans, if any, are at the end after sorting.
-    if np.isnan(data1[-1]) or np.isnan(data2[-1]):
-        raise ValueError('ks_2samp only accepts non-nan inputs')
-    # Absolute KS distance can be computed (less efficiently) as follows:
-    # data_all = np.concatenate([data1, data2])
-    # d = np.max(np.abs(data1.searchsorted(data_all, side='right') / n1 -
-    #                   data2.searchsorted(data_all, side='right') / n2))
-    d = _stats.ks_2samp(np.asarray(data1, common_type),
-                        np.asarray(data2, common_type))
+    n1 = data1.shape[0]
+    n2 = data2.shape[0]
+    data_all = np.concatenate([data1, data2])
+    cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
+    cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
+    d = np.max(np.absolute(cdf1 - cdf2))
+    # Note: d absolute not signed distance
     en = np.sqrt(n1 * n2 / float(n1 + n2))
     try:
         prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
