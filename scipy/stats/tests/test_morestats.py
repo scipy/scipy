@@ -1223,6 +1223,13 @@ class TestCircFuncs(TestCase):
         M2 = stats.circmean(x)
         assert_allclose(M2, M1, rtol=1e-5)
 
+    def test_circmean_range(self):
+        # regression test for gh-6420: circmean(..., high, low) must be
+        # between `high` and `low`
+        m = stats.circmean(np.arange(0, 2, 0.1), np.pi, -np.pi)
+        assert_(m < np.pi)
+        assert_(m > -np.pi)
+
 
 def test_accuracy_wilcoxon():
     freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
