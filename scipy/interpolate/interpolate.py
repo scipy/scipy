@@ -2914,7 +2914,7 @@ def _find_mixed(xk, yk, order, conds, B):
     return _find_user(xk, yk, order, conds, B)
 
 
-@np.deprecate(message="splmake is deprecated in scipy 0.17, "
+@np.deprecate(message="splmake is deprecated in scipy 0.19.0, "
         "use make_interp_spline instead.")
 def splmake(xk, yk, order=3, kind='smoothest', conds=None):
     """
@@ -2965,7 +2965,7 @@ def splmake(xk, yk, order=3, kind='smoothest', conds=None):
     return xk, coefs, order
 
 
-@np.deprecate(message="spleval is deprecated in scipy 0.17, "
+@np.deprecate(message="spleval is deprecated in scipy 0.19.0, "
         "use BSpline instead.")
 def spleval(xck, xnew, deriv=0):
     """
@@ -3019,7 +3019,7 @@ def spleval(xck, xnew, deriv=0):
     return res
 
 
-@np.deprecate(message="spltopp is deprecated in scipy 0.17, "
+@np.deprecate(message="spltopp is deprecated in scipy 0.19.0, "
         "use PPoly.from_spline instead.")
 def spltopp(xk, cvals, k):
     """Return a piece-wise polynomial object from a fixed-spline tuple.
@@ -3027,7 +3027,7 @@ def spltopp(xk, cvals, k):
     return ppform.fromspline(xk, cvals, k)
 
 
-@np.deprecate(message="spline is deprecated in scipy 0.17, "
+@np.deprecate(message="spline is deprecated in scipy 0.19.0, "
         "use Bspline class instead.")
 def spline(xk, yk, xnew, order=3, kind='smoothest', conds=None):
     """
