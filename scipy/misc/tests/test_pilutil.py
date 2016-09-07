@@ -102,6 +102,133 @@ class TestPILUtil(TestCase):
 decorate_methods(TestPILUtil, _pilskip)
 
 
+class Test_bytescale(TestCase):
+    @classmethod
+    def setUpClass(cls):
+
+        # straight out of the scipy.misc.bytescale docstring
+        cls.img = np.array([[91.06794177, 3.39058326, 84.4221549 ],
+                            [73.88003259, 80.91433048, 4.88878881],
+                            [51.53875334, 34.45808177, 27.5873488 ]])
+
+    def assertArrayEquals(self, actual, expected):
+        '''
+        Assert that two arrays are equal and have the same data type
+        '''
+        assert_array_equal(actual, expected)
+        self.assertEquals(actual.dtype, expected.dtype)
+
+    def assertValidOutput(self, inputArray, outputArray, cmin=None, cmax=None, high=255, low=0):
+        '''
+        Assert that every array element is properly scaled based on cmin, cmax, low,
+        and high parameters used. It's like an independent check that the scaling is being done
+        right.
+        '''
+        def scale(val):
+            '''
+            perform the scaling of a single element
+            '''
+            inrange = cmax - cmin
+            outrange = high - low
+            scaledVal = int(round(outrange * (val - cmin) / inrange + low))
+            scaledVal = max((low, scaledVal))
+            scaledVal = min((high, scaledVal))
+            return scaledVal
+
+        if cmin is None:
+            cmin = inputArray.min()
+        if cmax is None:
+            cmax = inputArray.max()
+        assert cmax > cmin
+        assert high >= low
+
+        for inVal, outVal in zip(inputArray.ravel(), outputArray.ravel()):
+            expected = scale(inVal)
+            self.assertEqual(outVal, expected)
+
+    def test_bytescale_ex1(self):
+        '''
+        Testing first example in misc.bytescale docstring
+        '''
+        expected = np.array([[255, 0, 236],
+                            [205, 225, 4],
+                            [140, 90, 70]], dtype=np.uint8)
+
+        out = misc.bytescale(self.img)
+
+        self.assertValidOutput(self.img, out)
+        self.assertArrayEquals(out, expected)
+
+    def test_bytescale_ex2(self):
+        '''
+        Testing second example in misc.bytescale docstring
+        '''
+        low = 100
+        high = 200
+        expected = np.array([[200, 100, 192],
+                            [180, 188, 102],
+                            [155, 135, 128]], dtype=np.uint8)
+
+        out = misc.bytescale(self.img, high=high, low=low)
+
+        self.assertValidOutput(self.img, out, low=low, high=high)
+        self.assertArrayEquals(out, expected)
+
+    def test_bytescale_ex3(self):
+        '''
+        Testing third example in misc.bytescale docstring
+        '''
+        cmin = 0
+        cmax = 255
+        expected = np.array([[91, 3, 84],
+                            [74, 81, 5],
+                            [52, 34, 28]], dtype=np.uint8)
+
+        out = misc.bytescale(self.img, cmin=cmin, cmax=cmax)
+
+        self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax)
+        self.assertArrayEquals(out, expected)
+
+    def test_bytescale_low1_high255(self):
+        '''
+        Testing misc.bytescale with low and high params
+        '''
+        low = 1
+        high = 255
+
+        out = misc.bytescale(self.img, high=high, low=low)
+
+        self.assertValidOutput(self.img, out, low=low, high=high)
+        self.assertEquals(out.min(), low)
+        self.assertEquals(out.max(), high)
+
+    def test_bytescale_cmin5_cmax85(self):
+        '''
+        Testing misc.bytescale with cmin and cmax params
+        '''
+        cmin = 5
+        cmax = 85
+
+        out = misc.bytescale(self.img, cmin=cmin, cmax=cmax)
+
+        self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax)
+
+    def test_bytescale_cmincmax_lowhigh(self):
+        '''
+        Testing misc.bytescale with cmin, cmax, low and high params
+        '''
+        cmin = 5
+        cmax = 85
+        high = 255
+        low = 1
+
+        out = misc.bytescale(self.img, cmin=cmin, cmax=cmax, high=high, low=low)
+
+        self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax, high=high, low=low)
+        self.assertEquals(out.min(), low)
+        self.assertEquals(out.max(), high)
+
+
 def tst_fromimage(filename, irange, shape):
     fp = open(filename, "rb")
     img = misc.fromimage(PIL.Image.open(fp))
