@@ -32,6 +32,7 @@ __all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
 def _scale(data, low, high, cmin=None, cmax=None):
     """
     Scales an array from an input range of [cmin, cmax] to an output range of [low, high].
+    If cmin and cmax are equal, don't apply any scaling as this scaling is undefined.
 
     Parameters
     ----------
@@ -53,21 +54,19 @@ def _scale(data, low, high, cmin=None, cmax=None):
 
     """
     if high < low:
-        raise ValueError("`high` should be larger than `low`.")
+        raise ValueError("`high` should be larger than or equal to `low`.")
 
     if cmin is None:
         cmin = data.min()
     if cmax is None:
         cmax = data.max()
 
-    cscale = cmax - cmin
-    if cscale < 0:
-        raise ValueError("`cmax` should be larger than `cmin`.")
-    elif cscale == 0:
-        cscale = 1
+    if cmax < cmin:
+        raise ValueError("`cmax` should be larger than or equal to `cmin`.")
+    elif cmax == cmin:  # this scaling is undefined, so don't apply any scaling
+        return data
 
-    outrange = float(high - low)
-    return (data * 1.0 - cmin) * outrange / cscale + low
+    return (data * 1.0 - cmin) * (high - low) / (cmax - cmin) + low
 
 
 # Returns a byte-scaled image
