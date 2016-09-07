@@ -29,6 +29,47 @@ __all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
            'imrotate', 'imresize', 'imshow', 'imfilter']
 
 
+def _scale(data, low, high, cmin=None, cmax=None):
+    """
+    Scales an array from an input range of [cmin, cmax] to an output range of [low, high].
+
+    Parameters
+    ----------
+    data : ndarray
+        Input numpy array.
+    low : scalar
+        Scale cmin value to `low`.
+    high : scalar
+        Scale cmax value to `high`.
+    cmin : scalar, optional
+        Bias scaling of small values. Default is ``data.min()``.
+    cmax : scalar, optional
+        Bias scaling of large values. Default is ``data.max()``.
+
+    Returns
+    -------
+    array : ndarray
+        The scaled array.
+
+    """
+    if high < low:
+        raise ValueError("`high` should be larger than `low`.")
+
+    if cmin is None:
+        cmin = data.min()
+    if cmax is None:
+        cmax = data.max()
+
+    cscale = cmax - cmin
+    if cscale < 0:
+        raise ValueError("`cmax` should be larger than `cmin`.")
+    elif cscale == 0:
+        cscale = 1
+
+    outrange = float(high - low)
+    return (data * 1.0 - cmin) * outrange / cscale + low
+
+
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     """
@@ -79,22 +120,7 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     if data.dtype == uint8:
         return data
 
-    if high < low:
-        raise ValueError("`high` should be larger than `low`.")
-
-    if cmin is None:
-        cmin = data.min()
-    if cmax is None:
-        cmax = data.max()
-
-    cscale = cmax - cmin
-    if cscale < 0:
-        raise ValueError("`cmax` should be larger than `cmin`.")
-    elif cscale == 0:
-        cscale = 1
-
-    outrange = float(high - low)
-    bytedata = (data * 1.0 - cmin) * outrange / cscale + low
+    bytedata = _scale(data, low, high, cmin, cmax)
     bytedata[bytedata > high] = high
     bytedata[bytedata < low] = low
     return cast[uint8](bytedata.round())
@@ -308,11 +334,7 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             bytedata = (data > high)
             image = Image.frombytes('1', shape, bytedata.tostring())
             return image
-        if cmin is None:
-            cmin = amin(ravel(data))
-        if cmax is None:
-            cmax = amax(ravel(data))
-        data = (data*1.0 - cmin)*(high - low)/(cmax - cmin) + low
+        data = _scale(data, low, high, cmin, cmax)
         if mode == 'I':
             data32 = data.astype(numpy.uint32)
             image = Image.frombytes(mode, shape, data32.tostring())
