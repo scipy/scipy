@@ -64,7 +64,7 @@ class TestPILUtil(TestCase):
         x = np.array([0, 1, 2], np.uint8)
         y = np.array([0, 1, 2])
         assert_equal(misc.bytescale(x), x)
-        assert_equal(misc.bytescale(y), [0, 127, 255])
+        assert_equal(misc.bytescale(y), [0, 128, 255])
 
     def test_bytescale_keywords(self):
         x = np.array([40, 60, 120, 200, 300, 500])
