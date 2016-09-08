@@ -132,43 +132,6 @@ class Test_bytescale(TestCase):
             expected = scale(inVal)
             self.assertEqual(outVal, expected)
 
-    def test_bytescale_ex1(self):
-        # Testing first example in misc.bytescale docstring
-        expected = np.array([[255, 0, 236],
-                            [205, 225, 4],
-                            [140, 90, 70]], dtype=np.uint8)
-
-        out = misc.bytescale(self.img)
-
-        self.assertValidOutput(self.img, out)
-        self.assertArrayEquals(out, expected)
-
-    def test_bytescale_ex2(self):
-        # Testing second example in misc.bytescale docstring
-        low = 100
-        high = 200
-        expected = np.array([[200, 100, 192],
-                            [180, 188, 102],
-                            [155, 135, 128]], dtype=np.uint8)
-
-        out = misc.bytescale(self.img, high=high, low=low)
-
-        self.assertValidOutput(self.img, out, low=low, high=high)
-        self.assertArrayEquals(out, expected)
-
-    def test_bytescale_ex3(self):
-        # Testing third example in misc.bytescale docstring
-        cmin = 0
-        cmax = 255
-        expected = np.array([[91, 3, 84],
-                            [74, 81, 5],
-                            [52, 34, 28]], dtype=np.uint8)
-
-        out = misc.bytescale(self.img, cmin=cmin, cmax=cmax)
-
-        self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax)
-        self.assertArrayEquals(out, expected)
-
     def test_bytescale_low1_high255(self):
         # Testing misc.bytescale with low and high params
         low = 1
