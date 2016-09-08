@@ -59,7 +59,7 @@ _ufuncs_with_fixed_point_at_zero = frozenset([
 MAXPRINT = 50
 
 
-class spmatrix(dict):
+class spmatrix(object):
     """ This class provides a base class for all sparse matrices.  It
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
