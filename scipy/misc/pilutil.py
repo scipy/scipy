@@ -345,7 +345,11 @@ def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             bytedata = (data > high)
             image = Image.frombytes('1', shape, bytedata.tostring())
             return image
-        data = _scale(data, low, high, cmin, cmax)
+        if cmin is None:
+            cmin = amin(ravel(data))
+        if cmax is None:
+            cmax = amax(ravel(data))
+        data = (data*1.0 - cmin)*(high - low)/(cmax - cmin) + low
         if mode == 'I':
             data32 = data.astype(numpy.uint32)
             image = Image.frombytes(mode, shape, data32.tostring())
