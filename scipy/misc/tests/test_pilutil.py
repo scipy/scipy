@@ -93,9 +93,9 @@ class Test_bytescale(TestCase):
     def setUpClass(cls):
 
         # straight out of the scipy.misc.bytescale docstring
-        cls.img = np.array([[91.06794177, 3.39058326, 84.4221549 ],
+        cls.img = np.array([[91.06794177, 3.39058326, 84.4221549],
                             [73.88003259, 80.91433048, 4.88878881],
-                            [51.53875334, 34.45808177, 27.5873488 ]])
+                            [51.53875334, 34.45808177, 27.5873488]])
 
     def assertArrayEquals(self, actual, expected):
         '''
