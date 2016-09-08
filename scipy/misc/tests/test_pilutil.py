@@ -104,11 +104,12 @@ class Test_bytescale(TestCase):
         assert_array_equal(actual, expected)
         self.assertEquals(actual.dtype, expected.dtype)
 
-    def assertValidOutput(self, inputArray, outputArray, cmin=None, cmax=None, high=255, low=0):
+    def assertValidOutput(self, inputArray, outputArray, cmin=None, cmax=None,
+                          high=255, low=0):
         '''
-        Assert that every array element is properly scaled based on cmin, cmax, low,
-        and high parameters used. It's like an independent check that the scaling is being done
-        right.
+        Assert that every array element is properly scaled based on cmin, cmax,
+        low, and high parameters used. It's like an independent check that the
+        scaling is being done right.
         '''
         def scale(val):
             '''
@@ -159,9 +160,11 @@ class Test_bytescale(TestCase):
         high = 255
         low = 1
 
-        out = misc.bytescale(self.img, cmin=cmin, cmax=cmax, high=high, low=low)
+        out = misc.bytescale(self.img, cmin=cmin, cmax=cmax,
+                             high=high, low=low)
 
-        self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax, high=high, low=low)
+        self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax,
+                               high=high, low=low)
         self.assertEquals(out.min(), low)
         self.assertEquals(out.max(), high)
 
@@ -181,16 +184,31 @@ class Test_bytescale(TestCase):
 
     def test_bytescale_cmin_equals_cmax(self):
         # Undefined scaling (cmin==cmax), so don't scale
-        assert_equal(misc.bytescale(np.array([3, 3, 3])), [3, 3, 3])
-        assert_equal(misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2), [1, 2, 3])
+        actual = misc.bytescale(np.array([3, 3, 3]))
+        expected = [3, 3, 3]
+        assert_equal(actual, expected)
 
-        # Undefined scaling (cmin==cmax), but low is specified. Cap lower bounds
-        assert_equal(misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, low=4), [4, 4, 4])
-        assert_equal(misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, low=2), [2, 2, 3])
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2)
+        expected = [1, 2, 3]
+        assert_equal(actual, expected)
 
-        # Undefined scaling (cmin==cmax), but high is specified. Cap upper bounds
-        assert_equal(misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, high=0), [0, 0, 0])
-        assert_equal(misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, high=2), [1, 2, 2])
+        # Undefined scaling (cmin==cmax), but low is given. Cap lower bounds
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, low=4)
+        expected = [4, 4, 4]
+        assert_equal(actual, expected)
+
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, low=2)
+        expected = [2, 2, 3]
+        assert_equal(actual, expected)
+
+        # Undefined scaling (cmin==cmax), but high is given. Cap upper bounds
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, high=0)
+        expected = [0, 0, 0]
+        assert_equal(actual, expected)
+
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, high=2)
+        expected = [1, 2, 2]
+        assert_equal(actual, expected)
 
     def test_cmax_lessthan_cmin(self):
         with self.assertRaises(ValueError):
