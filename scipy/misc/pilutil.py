@@ -120,10 +120,10 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     if data.dtype == uint8:
         return data
 
-    bytedata = _scale(data, low, high, cmin, cmax)
-    bytedata[bytedata > high] = high
-    bytedata[bytedata < low] = low
-    return cast[uint8](bytedata.round())
+    scaled_data = _scale(data, low, high, cmin, cmax)
+    scaled_data[scaled_data > high] = high
+    scaled_data[scaled_data < low] = low
+    return cast[uint8](scaled_data.round())
 
 
 def imread(name, flatten=False, mode=None):
