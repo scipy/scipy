@@ -133,9 +133,7 @@ class Test_bytescale(TestCase):
             self.assertEqual(outVal, expected)
 
     def test_bytescale_ex1(self):
-        '''
-        Testing first example in misc.bytescale docstring
-        '''
+        # Testing first example in misc.bytescale docstring
         expected = np.array([[255, 0, 236],
                             [205, 225, 4],
                             [140, 90, 70]], dtype=np.uint8)
@@ -146,9 +144,7 @@ class Test_bytescale(TestCase):
         self.assertArrayEquals(out, expected)
 
     def test_bytescale_ex2(self):
-        '''
-        Testing second example in misc.bytescale docstring
-        '''
+        # Testing second example in misc.bytescale docstring
         low = 100
         high = 200
         expected = np.array([[200, 100, 192],
@@ -161,9 +157,7 @@ class Test_bytescale(TestCase):
         self.assertArrayEquals(out, expected)
 
     def test_bytescale_ex3(self):
-        '''
-        Testing third example in misc.bytescale docstring
-        '''
+        # Testing third example in misc.bytescale docstring
         cmin = 0
         cmax = 255
         expected = np.array([[91, 3, 84],
@@ -176,9 +170,7 @@ class Test_bytescale(TestCase):
         self.assertArrayEquals(out, expected)
 
     def test_bytescale_low1_high255(self):
-        '''
-        Testing misc.bytescale with low and high params
-        '''
+        # Testing misc.bytescale with low and high params
         low = 1
         high = 255
 
@@ -189,9 +181,7 @@ class Test_bytescale(TestCase):
         self.assertEquals(out.max(), high)
 
     def test_bytescale_cmin5_cmax85(self):
-        '''
-        Testing misc.bytescale with cmin and cmax params
-        '''
+        # Testing misc.bytescale with cmin and cmax params
         cmin = 5
         cmax = 85
 
@@ -200,9 +190,7 @@ class Test_bytescale(TestCase):
         self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax)
 
     def test_bytescale_cmincmax_lowhigh(self):
-        '''
-        Testing misc.bytescale with cmin, cmax, low and high params
-        '''
+        # Testing misc.bytescale with cmin, cmax, low and high params
         cmin = 5
         cmax = 85
         high = 255
