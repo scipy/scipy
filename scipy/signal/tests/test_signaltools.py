@@ -652,7 +652,23 @@ class TestCSpline1DEval(TestCase):
         # make sure interpolated values are on knot points
         assert_array_almost_equal(y2[::10], y, decimal=5)
 
+    def test_complex(self):
+        #  create some smoothly varying complex signal to interpolate
+        x = np.arange(2)
+        y = np.zeros(x.shape, dtype=np.complex64)
+        T = 10.0
+        f = 1.0 / T
+        y = np.exp(2.0J * np.pi * f * x)
 
+        # get the cspline transform
+        cy = signal.cspline1d(y)
+
+        # determine new test x value and interpolate
+        xnew = np.array([0.5])
+        ynew = signal.cspline1d_eval(cy, xnew)
+
+        assert_equal(ynew.dtype, y.dtype)
+        
 class TestOrderFilt(TestCase):
 
     def test_basic(self):

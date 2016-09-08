@@ -322,7 +322,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
 
     """
     newx = (asarray(newx) - x0) / float(dx)
-    res = zeros_like(newx)
+    res = zeros_like(newx, dtype=cj.dtype)
     if res.size == 0:
         return res
     N = len(cj)
@@ -335,7 +335,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     newx = newx[cond3]
     if newx.size == 0:
         return res
-    result = zeros_like(newx)
+    result = zeros_like(newx, dtype=cj.dtype)
     jlower = floor(newx - 2).astype(int) + 1
     for i in range(4):
         thisj = jlower + i
