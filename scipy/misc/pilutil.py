@@ -31,8 +31,9 @@ __all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
 
 def _scale(data, low, high, cmin=None, cmax=None):
     """
-    Scales an array from an input range of [cmin, cmax] to an output range of [low, high].
-    If cmin and cmax are equal, don't apply any scaling as this scaling is undefined.
+    Scales an array from an input range of [cmin, cmax] to an output range of 
+    [low, high]. If cmin and cmax are equal, no scaling is applied as this 
+    scaling is undefined.
 
     Parameters
     ----------
