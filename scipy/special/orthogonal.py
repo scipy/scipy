@@ -1596,6 +1596,11 @@ def chebyc(n, monic=False):
     --------
     chebyt : Chebyshev polynomial of the first kind.
 
+    References
+    ----------
+    .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
+           Section 22. National Bureau of Standards, 1972.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1687,6 +1692,11 @@ def chebys(n, monic=False):
     See Also
     --------
     chebyu : Chebyshev polynomial of the second kind
+
+    References
+    ----------
+    .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
+           Section 22. National Bureau of Standards, 1972.
 
     """
     if n < 0:
