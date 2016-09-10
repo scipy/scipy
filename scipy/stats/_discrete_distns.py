@@ -142,13 +142,17 @@ class nbinom_gen(rv_discrete):
 
     Notes
     -----
-    The probability mass function for `nbinom` is::
+    Negative binomial distribution describes a sequence of i.i.d. Bernoulli 
+    trials, repeated until a predefined, non-random number of successes occurs.
 
-         nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
+    The probability mass function of the number of failures for `nbinom` is::
+
+       nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
 
     for ``k >= 0``.
 
-    `nbinom` takes ``n`` and ``p`` as shape parameters.
+    `nbinom` takes ``n`` and ``p`` as shape parameters where n is the number of
+    successes, whereas p is the probability of a single success.
 
     %(after_notes)s
 
