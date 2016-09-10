@@ -65,7 +65,8 @@ Deprecated features
 
 Backwards incompatible changes
 ==============================
-
+The function `scipy.signal.find_peaks_cwt()` now returns an array instead of
+a list.
 
 
 Other changes
