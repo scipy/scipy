@@ -74,6 +74,12 @@ class TestPILUtil(TestCase):
         assert_equal(res_cmincmax, [0, 0, 64, 149, 255, 255])
         assert_equal(misc.bytescale(np.array([3, 3, 3]), low=4), [4, 4, 4])
 
+    def test_bytescale_cscale_lowhigh(self):
+        a = np.arange(10)
+        actual = misc.bytescale(a, cmin=3, cmax=6, low=100, high=200)
+        expected = [100, 100, 100, 100, 133, 167, 200, 200, 200, 200]
+        assert_equal(actual, expected)
+
     def test_imsave(self):
         picdir = os.path.join(datapath, "data")
         for png in glob.iglob(picdir + "/*.png"):
