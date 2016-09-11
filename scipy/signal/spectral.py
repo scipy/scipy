@@ -823,7 +823,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
         if scaling == 'density':
             scale = 1.0 / (fs * (win*win).sum())
         elif scaling == 'spectrum':
-            scale = 1.0 / win.sum()**2
+            scale = 1.0 / (win*win).sum()
         else:
             raise ValueError('Unknown scaling: %r' % scaling)
     else:
