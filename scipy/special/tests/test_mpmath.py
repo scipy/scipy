@@ -46,6 +46,23 @@ def test_expi_complex():
 
     FuncData(sc.expi, dataset, 0, 1).check()
 
+
+# ------------------------------------------------------------------------------
+# expn
+# ------------------------------------------------------------------------------
+
+@check_version(mpmath, '0.19')
+def test_expn_large_n():
+    # Test the transition to the asymptotic regime of n.
+    dataset = []
+    for n in [50, 51]:
+        for x in np.logspace(0, 4, 200):
+            with mpmath.workdps(100):
+                dataset.append((n, x, float(mpmath.expint(n, x))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.expn, dataset, (0, 1), 2, rtol=1e-13).check()
+
 # ------------------------------------------------------------------------------
 # hyp0f1
 # ------------------------------------------------------------------------------
@@ -1103,11 +1120,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             mpmath.eulernum,
                             [IntArg(1, 10000)], n=10000)
 
-    @knownfailure_overridable("Bad values for n > 25 and x > 70.")
     def test_expint(self):
         assert_mpmath_equal(sc.expn,
                             mpmath.expint,
-                            [IntArg(0, 100), Arg(0, np.inf)])
+                            [IntArg(0, 200), Arg(0, np.inf)],
+                            rtol=1e-13, dps=160)
         
     def test_fresnels(self):
         def fresnels(x):
