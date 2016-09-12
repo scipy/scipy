@@ -503,11 +503,11 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     visitparam: float, optional
         Parameter for visiting distribution. Higher value means the
         visiting distribution has a heavier tail which makes the
-        algorithm jump to a farer region.
+        algorithm jump to a farer region. The value range is ]0; 3]
     acceptparam: float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
-        smaller the probability of acceptance.
+        smaller the probability of acceptance. It has to be any negative value.
     maxtime: integer, optional
         Time limit for running the algorithm in seconds
     maxcall: integer, optional
