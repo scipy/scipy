@@ -467,7 +467,6 @@ class BenchGlobal(Benchmark):
             return {}
 
         numtrials = slow
-
         results = {}
         solvers = ['DE', 'basinh.', 'gensa']
 

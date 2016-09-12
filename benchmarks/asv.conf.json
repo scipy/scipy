@@ -11,12 +11,9 @@
 
     // The URL of the source code repository for the project being
     // benchmarked
-    //"repo": "https://github.com/scipy/scipy.git",
-    //"repo": "/home/sgubian/tmp/scipy",
-    "repo": "git@github.com:sgubianpm/scipy.git",
+    "repo": "https://github.com/scipy/scipy.git",
     "dvcs": "git",
-    //"branches": ["master", "maintenance/0.15.x", "maintenance/0.14.x"],
-    "branches": ["adding-gensa-benchmarked", ],
+    "branches": ["master", "maintenance/0.15.x", "maintenance/0.14.x"],
 
     // The base URL to "how a commit for the project.
     //"show_commit_url": "http://github.com/scipy/scipy/commit/",

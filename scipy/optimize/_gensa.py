@@ -16,10 +16,6 @@ BIG_VALUE = 1.e13
 MAX_REINIT_COUNT = 100
 
 
-class GenSARunnerException(Exception):
-    pass
-
-
 class GenSARunner(object):
     """This class implements the core of the gensa algorithm.
 
@@ -39,17 +35,16 @@ class GenSARunner(object):
     def __init__(self, fun, x0, lower, upper, fargs=()):
         self._lower = np.array(lower)
         self._upper = np.array(upper)
-        assert(len(lower) == len(
-            upper)),'Lower and upper bounds are inconsistent'
+        if x0 is not None:
+            if self._lower.size != x0.size:
+                raise ValueError("Lower bounds size does not match x0")
+            if self._upper.size != x0.size:
+                raise ValueError("Upper bounds size does not match x0")
         if x0 is None:
             x0 = self._lower + np.random.rand(len(self._lower)) * (
                     self._upper - self._lower)
         else:
             x0 = np.array(x0)
-        assert(len(self._lower) == len(
-            x0)), 'Lower bounds size does not match x0'
-        assert(len(self._upper) == len(
-            x0)), 'Upper bounds size does not match x0'
         self._fun = fun
         self._fargs = fargs
         self._x = np.array(x0)
@@ -96,7 +91,7 @@ class GenSARunner(object):
         self._nbfuncall = 0
         self._indTrace = 0
         if self._markovlength % self._dim != 0:
-            raise GenSARunnerException('Incorrect markov length.')
+            raise ValueError('Incorrect markov length.')
         inconstraint = True
         initerror = True
         reinit_counter = 0
@@ -115,7 +110,7 @@ class GenSARunner(object):
                         'Stopping algorithm because function '
                         'create NaN or (+/-) inifinity values even with '
                         'trying new random parameters')]
-                    raise GenSARunnerException(self._message)
+                    raise ValueError(self._message)
                 for i in range(self._dim):
                     self._x[i] = self._lower[i] + np.random.ranf() * (
                         self._upper[i] - self._lower[i])
@@ -347,7 +342,6 @@ class GenSARunner(object):
         self._x = np.array(self._xbuffer)
         return self._fvalue
 
-    # @profile
     def _visita(self):
         """Visiting function"""
         pi = np.arcsin(1.0) * 2.0
@@ -452,7 +446,6 @@ class GenSARunner(object):
         g[idx] = 101.0
         return g
 
-    # @profile
     def _yygas(self):
         if self._usey == 1:
             enter = True
@@ -489,23 +482,32 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
 
     Parameters
     ----------
-    func : callable ``f(x, *args)``
-        Function to be optimized.  ``args`` can be passed as an optional item
-        as argument (see below)
-    x0 : ndarray
-        Optional initial guess. If not given (None), a random one is computed
-        using bounds sequence
+    func : callable
+        The objective function to be minimized.  Must be in the form
+        ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
+        and ``args`` is a  tuple of any additional fixed parameters needed to
+        completely specify the function.
+    bounds : sequence
+        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
+        defining the lower and upper bounds for the optimizing argument of
+        `func`. It is required to have ``len(bounds) == len(x)``.
+        ``len(bounds)`` is used to determine the number of parameters in ``x``.
     bounds: sequence
         Bounds for variable. (min, max) pairs for each element in x,
         defining the bounds on that parameter.
     niter: integer, optional
         The number of gensa iterations
     T: float, optional
-        Initial value for temperature
+        Initial value for temperature. The higher the initial temperature, the
+        the higher the probability of hill-climbing for the initial iterations.
     visitparam: float, optional
-        Parameter for visiting distribution
+        Parameter for visiting distribution. Higher value means the
+        visiting distribution has a heavier tail which makes the
+        algorithm jump to a farer region.
     acceptparam: float, optional
-        Parameter for acceptance distribution
+        Parameter for acceptance distribution. It is used to control the
+        probability of acceptance. The lower the acceptance parameter, the
+        smaller the probability of acceptance.
     maxtime: integer, optional
         Time limit for running the algorithm in seconds
     maxcall: integer, optional
@@ -513,7 +515,9 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
         done.
-    args: Optional arguments to be passed to the objective function call.
+    args : tuple, optional
+        Any additional fixed parameters needed to
+        completely specify the objective function.
 
 
     Returns
@@ -525,18 +529,17 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         cause of the termination.
         See `OptimizeResult` for a description of other attributes.
 
+
     Notes
     -----
     GenSA is an implementation of the General Simulated Annealing algorithm
     (GSA [2]_). This stochastic approach generalizes CSA (Classical Simulated
     Annealing) and FSA (Fast Simulated Annealing) to find the neighborhood of
     minima, then calls a local method (lbfgs) to find their exact value.
-    The algorithm was originally implemented in C++/R and is explained in
-    more detail by Yang Xiang and al [5]_.
     GenSA can process complicated and high dimension non-linear objective
     functions with a large number of local minima as described by Muller
     paper [6]_.
-    .. versionadded:: 0.18.0
+    .. versionadded:: 0.19.0
 
     References
     ----------
@@ -584,6 +587,7 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     gr.initialize()
     gr.start_search()
     return gr.result
+
 
 def main():
     func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
