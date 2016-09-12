@@ -195,7 +195,7 @@ class _BenchOptimizers(Benchmark):
 
         t0 = time.time()
 
-        res =gensa(
+        res = gensa(
                 self.fun,
                 self.bounds,
                 )
