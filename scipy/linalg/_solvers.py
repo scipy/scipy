@@ -409,7 +409,7 @@ def solve_discrete_are(a, b, q, r):
     # Decide on which output type is needed for QZ 
     out_str = 'real' if r_or_c == float else 'complex'
     
-    *_ , u = ordqz( H , J , sort = 'iuc' , overwrite_a=True, 
+    _ , _ , _ , _ , _ , u = ordqz( H , J , sort = 'iuc' , overwrite_a=True, 
                     overwrite_b=True , check_finite=False , output=out_str)
     
     # Get the relevant parts of the stable subspace basis
