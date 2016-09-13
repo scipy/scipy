@@ -182,7 +182,7 @@ class TestSolveDiscreteARE(TestCase):
 
     def test_cases(self):
         for case in self.cases:
-            self.check_case(case[0], case[1], case[2], case[3], case[4])
+            self.check_case(case[0], case[1], case[2], case[3])
 
 
 class TestSolveSylvester(TestCase):
