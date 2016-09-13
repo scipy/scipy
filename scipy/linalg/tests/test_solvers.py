@@ -156,11 +156,18 @@ class TestSolveDiscreteARE(TestCase):
          np.matrix([[-2j,], [1j,]]),
          np.matrix([[1, 0], [0, 2]]),
          np.matrix([[1,],])),
-        # Real a, b; complex q, r
+        # Real a, b; complex q, r (corrected for hermitian Q)
         (np.matrix([[3, 1], [0, -1]]),
          np.matrix([[1, 2], [1, 3]]),
-         np.matrix([[1, -3j], [1-1j, 2]]),
-         np.matrix([[-2j, 2], [1j, 3]])),
+         np.matrix([[1, 1+1j], [1-1j, 2]]),
+         np.matrix([[2, -2j], [2j, 3]])),
+        # An example from the reported failing cases <= SciPy v0.18
+        (np.matrix([[ 0.63399379,  0.54906824,  0.76253406],
+                   [ 0.5404729 ,  0.53745766,  0.08731853],
+                   [ 0.27524045,  0.84922129,  0.4681622 ]]),
+         np.matrix([[ 0.96861695],[ 0.05532739],[ 0.78934047]]),
+         np.matrix([[1,0,0],[0,1,0],[0,0,1.]]),
+         np.matrix([[1.]]))
         ]
 
     def check_case(self, a, b, q, r):
@@ -172,7 +179,7 @@ class TestSolveDiscreteARE(TestCase):
 
     def test_cases(self):
         for case in self.cases:
-            self.check_case(case[0], case[1], case[2], case[3])
+            self.check_case(case[0], case[1], case[2], case[3], case[4])
 
 
 class TestSolveSylvester(TestCase):
