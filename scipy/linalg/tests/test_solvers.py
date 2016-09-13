@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.linalg import inv
+from numpy.linalg import inv , solve
 
 from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
     assert_equal, assert_almost_equal, assert_array_almost_equal, assert_, \
@@ -174,12 +174,15 @@ class TestSolveDiscreteARE(TestCase):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
 
         x = solve_discrete_are(a, b, q, r)
-        assert_array_almost_equal(
-            a.getH()*x*a-(a.getH()*x*b)*inv(r+b.getH()*x*b)*(b.getH()*x*a)+q-x, 0.0)
+        res = a.conj().T.dot(x.dot(a)) - x + q
+        res -= a.conj().T.dot(x.dot(b)).dot(
+                    solve(r+b.conj().T.dot(x.dot(b)),b.conj().T).dot(x.dot(a))
+                    )
+        assert_array_almost_equal(res,np.zeros_like(res))
 
     def test_cases(self):
         for case in self.cases:
-            self.check_case(case[0], case[1], case[2], case[3])
+            self.check_case(case[0], case[1], case[2], case[3], case[4])
 
 
 class TestSolveSylvester(TestCase):
