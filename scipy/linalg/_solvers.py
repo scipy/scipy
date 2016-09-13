@@ -356,20 +356,19 @@ def solve_discrete_are(a, b, q, r):
     b = _asarray_validated(b)
     q = _asarray_validated(q)
     r = _asarray_validated(r)
-
     
     # Get the correct data types otherwise Numpy complains about pushing 
     # complex numbers into real arrays.
     r_or_c = complex if np.iscomplexobj(b) else float
 
-    for ind , x in enumerate((a,q,r)):
+    for ind, x in enumerate((a,q,r)):
         if np.iscomplexobj(x):
             r_or_c = complex
         if not np.equal(*x.shape):
             raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
     
     # Shape consistency checks
-    m , n = b.shape
+    m, n = b.shape
 
     if m != a.shape[0]:
         raise ValueError("Matrix a and b should have the same number of rows.")
@@ -380,7 +379,6 @@ def solve_discrete_are(a, b, q, r):
     if n != r.shape[0]:
         raise ValueError("Matrix b and r should have the same number of cols.")
     
-    
     # Check if the data is (sufficiently) hermitian
     if norm(q - q.conj().T,1) > np.spacing(norm(q,1))*100:
         raise ValueError("Matrix q should be symmetric/hermitian.")
@@ -389,38 +387,37 @@ def solve_discrete_are(a, b, q, r):
         raise ValueError("Matrix r should be symmetric/hermitian.")
         
     # Form the matrix pencil        
-    H = np.zeros(( 2*m + n , 2*m + n ) , dtype = r_or_c )
-    H[ :m    , :m    ] = a
-    H[ :m    , 2*m:  ] = b
-    H[ m:2*m , :m    ] = -q
-    H[ m:2*m , m:2*m ] = np.eye(m)
-    H[ 2*m:  , 2*m:  ] = r
+    H = np.zeros((2*m + n, 2*m + n), dtype = r_or_c)
+    H[:m, :m] = a
+    H[:m, 2*m:] = b
+    H[m:2*m, :m] = -q
+    H[m:2*m, m:2*m] = np.eye(m)
+    H[2*m:, 2*m:] = r
 
-    J = np.zeros_like( H , dtype = r_or_c )
-    J[ :m    , :m    ] = np.eye(m)
-    J[ m:2*m , m:2*m ] = a.conj().T
-    J[ 2*m:  , m:2*m ] = -b.conj().T
+    J = np.zeros_like(H, dtype = r_or_c)
+    J[:m, :m] = np.eye(m)
+    J[m:2*m, m:2*m] = a.conj().T
+    J[2*m:, m:2*m] = -b.conj().T
 
     # Deflate the pencil by the R column
-    q_of_qr , _ = qr(H[:,-n:])
+    q_of_qr, _ = qr(H[:,-n:])
     H = q_of_qr[:,n:].conj().T.dot(H[:,:2*m])
     J = q_of_qr[:,n:].conj().T.dot(J[:,:2*m])
     
     # Decide on which output type is needed for QZ 
     out_str = 'real' if r_or_c == float else 'complex'
     
-    _ , _ , _ , _ , _ , u = ordqz( H , J , sort = 'iuc' , overwrite_a=True, 
-                    overwrite_b=True , check_finite=False , output=out_str)
+    _, _, _, _, _, u = ordqz(H, J, sort = 'iuc', overwrite_a=True, 
+                    overwrite_b=True, check_finite=False, output=out_str)
     
     # Get the relevant parts of the stable subspace basis
     # TODO: Check if it succeded to get the right ordering.
-    u00 = u[  :m   , :m ]
-    u10 = u[ m:2*m , :m ]    
+    u00 = u[:m, :m]
+    u10 = u[m:2*m, :m]
         
-
     # Solve via back-substituion
-    up , ul , uu = lu(u00)
-    x = solve( ul.conj().T , 
-                  solve( uu.conj().T , u10.conj().T ) ).T.dot(up.conj().T)
+    up, ul, uu = lu(u00)
+    x = solve(ul.conj().T, 
+                  solve(uu.conj().T, u10.conj().T)).T.dot(up.conj().T)
 
     return (x + x.conj().T)/2
