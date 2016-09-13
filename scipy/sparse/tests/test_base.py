@@ -194,8 +194,8 @@ class BinopTester_with_shape(object):
     def shape(self):
         return self._shape
 
-	def ndim(self):
-		return len(self._shape)
+    def ndim(self):
+        return len(self._shape)
 
     def __add__(self, mat):
         return "matrix on the right"
@@ -1446,7 +1446,6 @@ class _TestCommon:
         if TEST_MATMUL:
             assert_equal(eval('A @ B'), "matrix on the left")
             assert_equal(eval('B @ A'), "matrix on the right")
-
 
     def test_matmul(self):
         if not TEST_MATMUL:
