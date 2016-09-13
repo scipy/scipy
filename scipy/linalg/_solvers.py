@@ -421,6 +421,6 @@ def solve_discrete_are(a, b, q, r):
     # Solve via back-substituion
     up , ul , uu = lu(u00)
     x = solve( ul.conj().T , 
-                  solve( uu.conj().T , u10.conj().T ) ).T.dot(up.conj().T)
+              solve( uu.conj().T , u10.conj().T ) ).conj().T.dot(up.conj().T)
 
     return (x + x.conj().T)/2
