@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.linalg import inv , solve
+from numpy.linalg import inv, solve
 
 from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
     assert_equal, assert_almost_equal, assert_array_almost_equal, assert_, \
@@ -162,10 +162,10 @@ class TestSolveDiscreteARE(TestCase):
          np.array([[1, 1+1j], [1-1j, 2]]),
          np.array([[2, -2j], [2j, 3]])),
         # An example from the reported failing cases <= SciPy v0.18
-        (np.array([[ 0.63399379,  0.54906824,  0.76253406],
-                   [ 0.5404729 ,  0.53745766,  0.08731853],
-                   [ 0.27524045,  0.84922129,  0.4681622 ]]),
-         np.array([[ 0.96861695],[ 0.05532739],[ 0.78934047]]),
+        (np.array([[0.63399379, 0.54906824, 0.76253406],
+                   [0.5404729, 0.53745766, 0.08731853],
+                   [0.27524045, 0.84922129, 0.4681622]]),
+         np.array([[0.96861695],[0.05532739],[0.78934047]]),
          np.eye(3),
          np.eye(1))
         ]
