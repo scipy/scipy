@@ -137,37 +137,37 @@ class TestSolveDiscreteARE(TestCase):
     cases = [
         # Difficult from a numerical standpoint, again from Laub, A. J.
         # (http://dspace.mit.edu/bitstream/handle/1721.1/1301/R-0859-05666488.pdf)
-        (np.matrix([[4, 3], [-9.0/2.0, -7.0/2.0]]),
-         np.matrix([[1,], [-1,]]),
-         np.matrix([[9, 6], [6, 4]]),
-         np.matrix([[1,],])),
+        (np.array([[4, 3], [-9.0/2.0, -7.0/2.0]]),
+         np.array([[1,], [-1,]]),
+         np.array([[9, 6], [6, 4]]),
+         np.array([[1,],])),
         # Another example from Laub
-        (np.matrix([[0.9512, 0], [0, 0.9048]]),
-         np.matrix([[4.877, 4.877], [-1.1895, 3.569]]),
-         np.matrix([[0.005, 0],[0, 0.02]]),
-         np.matrix([[1.0/3.0, 0],[0, 3]])),
+        (np.array([[0.9512, 0], [0, 0.9048]]),
+         np.array([[4.877, 4.877], [-1.1895, 3.569]]),
+         np.array([[0.005, 0],[0, 0.02]]),
+         np.array([[1.0/3.0, 0],[0, 3]])),
         # Complex a; real b, q, r
-        (np.matrix([[2, 1-2j], [0, -3j]]),
-         np.matrix([[0,], [1,]]),
-         np.matrix([[1, 0], [0, 2]]),
-         np.matrix([[1,],])),
+        (np.array([[2, 1-2j], [0, -3j]]),
+         np.array([[0,], [1,]]),
+         np.array([[1, 0], [0, 2]]),
+         np.array([[1,],])),
         # Real a, q, r; complex b
-        (np.matrix([[2, 1], [0, -1]]),
-         np.matrix([[-2j,], [1j,]]),
-         np.matrix([[1, 0], [0, 2]]),
-         np.matrix([[1,],])),
+        (np.array([[2, 1], [0, -1]]),
+         np.array([[-2j,], [1j,]]),
+         np.array([[1, 0], [0, 2]]),
+         np.array([[1,],])),
         # Real a, b; complex q, r (corrected for hermitian Q)
-        (np.matrix([[3, 1], [0, -1]]),
-         np.matrix([[1, 2], [1, 3]]),
-         np.matrix([[1, 1+1j], [1-1j, 2]]),
-         np.matrix([[2, -2j], [2j, 3]])),
+        (np.array([[3, 1], [0, -1]]),
+         np.array([[1, 2], [1, 3]]),
+         np.array([[1, 1+1j], [1-1j, 2]]),
+         np.array([[2, -2j], [2j, 3]])),
         # An example from the reported failing cases <= SciPy v0.18
-        (np.matrix([[ 0.63399379,  0.54906824,  0.76253406],
+        (np.array([[ 0.63399379,  0.54906824,  0.76253406],
                    [ 0.5404729 ,  0.53745766,  0.08731853],
                    [ 0.27524045,  0.84922129,  0.4681622 ]]),
-         np.matrix([[ 0.96861695],[ 0.05532739],[ 0.78934047]]),
-         np.matrix([[1,0,0],[0,1,0],[0,0,1.]]),
-         np.matrix([[1.]]))
+         np.array([[ 0.96861695],[ 0.05532739],[ 0.78934047]]),
+         np.eye(3),
+         np.eye(1))
         ]
 
     def check_case(self, a, b, q, r):
