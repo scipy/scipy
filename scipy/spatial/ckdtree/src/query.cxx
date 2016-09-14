@@ -311,7 +311,6 @@ query_single_point(const ckdtree *self,
                         prefetch_datapoint(data+indices[i+2]*m, m);
                 
                     d = MinMaxDist::distance_p(self, data+indices[i]*m, x, p, m, distance_upper_bound);
-
                     if (d < distance_upper_bound) {
                         /* replace furthest neighbor */
                         if (neighbors.n == kmax)
@@ -472,10 +471,12 @@ query_single_point(const ckdtree *self,
     }
     /* fill output arrays with sorted neighbors */
     int j = nk - 1;
+    while(k[j] > neighbors.n) {
+        j--;
+    }
     for (i=neighbors.n-1; i>=0; --i) {
         neighbor = neighbors.pop();
         if(i + 1 != k[j]) continue;
-
         result_indices[j] = neighbor.contents.intdata;
         if (NPY_LIKELY(p == 2.0))
             result_distances[j] = std::sqrt(-neighbor.priority);

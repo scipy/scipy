@@ -1151,6 +1151,19 @@ class TestCircFuncs(TestCase):
         assert_(np.isnan(stats.circstd([])))
         assert_(np.isnan(stats.circvar([])))
 
+    def test_circmean_scalar(self):
+        x = 1.
+        M1 = x
+        M2 = stats.circmean(x)
+        assert_allclose(M2, M1, rtol=1e-5)
+
+    def test_circmean_range(self):
+        # regression test for gh-6420: circmean(..., high, low) must be
+        # between `high` and `low`
+        m = stats.circmean(np.arange(0, 2, 0.1), np.pi, -np.pi)
+        assert_(m < np.pi)
+        assert_(m > -np.pi)
+
 
 def test_accuracy_wilcoxon():
     freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]

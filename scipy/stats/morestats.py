@@ -2699,11 +2699,14 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).sum(axis=axis)
     C = cos(ang).sum(axis=axis)
-    res = arctan2(S, C)*(high - low)/2.0/pi + low
-    mask = (S == .0) * (C == .0)
+    res = arctan2(S, C)
+    mask = res < 0
     if mask.ndim > 0:
-        res[mask] = np.nan
-    return res
+        res[mask] += 2*pi
+    elif mask:
+        res += 2*pi
+    return res*(high - low)/2.0/pi + low
+
 
 def circvar(samples, high=2*pi, low=0, axis=None):
     """

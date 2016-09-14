@@ -230,7 +230,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
-        b2 = np.array(b1, copy=overwrite_b)
+        b2 = np.array(b1, copy=(not overwrite_b))
         b2 /= a1[1, 0]
         return b2
     if l == u == 1:

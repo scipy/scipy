@@ -444,6 +444,11 @@ class TestPCHIP(TestCase):
             pchip_interpolate([1,2,3], [4,5,6], [0.5], der=[0, 1]),
             [[3.5], [1]])
 
+    def test_roots(self):
+        # regression test for gh-6357: .roots method should work
+        p = pchip([0, 1], [-1, 1])
+        r = p.roots()
+        assert_allclose(r, 0.5)
 
 class TestCubicSpline(object):
     @staticmethod
