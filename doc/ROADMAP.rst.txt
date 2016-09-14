@@ -1,37 +1,40 @@
-Scipy Roadmap
+SciPy Roadmap
 =============
 
 Most of this roadmap is intended to provide a high-level view on what is
-needed per scipy submodule in terms of new functionality, bug fixes, etc.
-before we can release a ``1.0`` version of Scipy.  Furthermore it contains
-ideas for major new features - those are marked as such, and are not needed
-for Scipy to become 1.0.  Things not mentioned in this roadmap are
-not necessarily unimportant or out of scope, however we (the Scipy developers)
-want to provide to our users and contributors a clear picture of where Scipy is
+most needed per SciPy submodule in terms of new functionality, bug fixes, etc.
+Part of those are must-haves for the ``1.0`` version of Scipy.
+Furthermore it contains ideas for major new features - those are marked as such,
+and are not needed for SciPy to become 1.0.  Things not mentioned in this roadmap are
+not necessarily unimportant or out of scope, however we (the SciPy developers)
+want to provide to our users and contributors a clear picture of where SciPy is
 going and where help is needed most urgently.
 
 When a module is in a 1.0-ready state, it means that it has the functionality
 we consider essential and has an API and code quality (including documentation
-and tests) that's of high enough quality.  
+and tests) that's of high enough quality.
 
 
 General
 -------
-This roadmap will be evolving together with Scipy.  Updates can be submitted as
-pull requests and, unless they're very minor, have to be discussed on the
-scipy-dev mailing list.
+This roadmap will be evolving together with SciPy.  Updates can be submitted as
+pull requests.  For large or disruptive changes you may want to discuss
+those first on the scipy-dev mailing list.
 
 
 API changes
 ```````````
-In general, we want to take advantage of the major version change to fix the
+In general, we want to take advantage of the major version change to fix some
 known warts in the API.  The change from 0.x.x to 1.x.x is the chance to fix
 those API issues that we all know are ugly warts.  Example: unify the
 convention for specifying tolerances (including absolute, relative, argument
 and function value tolerances) of the optimization functions.  More API issues
-will be noted in the module sections below.
+will be noted in the module sections below.  However, there should be
+*clear value* in making a breaking change.  The 1.0 version label is not a
+license to just break things - see it as a normal release with a somewhat
+more aggressive/extensive set of cleanups.
 
-It should be made more clear what is public and what is private in scipy.
+It should be made more clear what is public and what is private in SciPy.
 Everything private should be underscored as much as possible.  Now this is done
 consistently when we add new code, but for 1.0 it should also be done for
 existing code.
@@ -56,7 +59,7 @@ necessary.
 Documentation
 `````````````
 The documentation is in decent shape.  Expanding of current docstrings and
-putting them in the standard numpy format should continue, so the number of
+putting them in the standard NumPy format should continue, so the number of
 reST errors and glitches in the html docs decreases.  Most modules also have a
 tutorial in the reference guide that is a good introduction, however there are
 a few missing or incomplete tutorials - this should be fixed.
@@ -72,33 +75,32 @@ Regarding Cython code:
 
   - It's not clear how much functionality can be Cythonized without making the
     .so files too large.  This needs measuring.
-  - Cython's old syntax for using numpy arrays should be removed and replaced
+  - Cython's old syntax for using NumPy arrays should be removed and replaced
     with Cython memoryviews.
   - New feature idea: more of the currently wrapped libraries should export
     Cython-importable versions that can be used without linking.
 
 Regarding build environments:
 
-  - NumPy and SciPy should both build from source on Windows with a (possibly
-    modified) MinGW or MinGW-w64 toolchain and be compatible with Python
+  - NumPy and SciPy should both build from source on Windows with a MinGW-w64
+    toolchain and be compatible with Python
     installations compiled with either the same MinGW or with MSVC.
-  - Bento will be officially supported as the second build tool besides
-    distutils.  At the moment it still has an experimental,
-    use-at-your-own-risk status, but that has to change.
+  - Bento development has stopped, so will remain having an experimental,
+    use-at-your-own-risk status.  Only the people that use it will be
+    responsible for keeping the Bento build updated.
 
 A more complete continuous integration setup is needed; at the moment we often
 find out right before a release that there are issues on some less-often used
-platform or Python version.  At least needed are Windows (MSVC and MinGW),
-Linux and OS X builds, coverage of the lowest and highest Python and Numpy
-versions that are supported, a Bento build and a PEP8/PyFlakes checker.
+platform or Python version.  At least needed are Windows (MSVC and MingwPy),
+Linux and OS X builds, coverage of the lowest and highest Python and NumPy
+versions that are supported.
 
 Modules
 -------
 
 cluster
 ```````
-This module is in good shape, after having been rewritten in Cython during a
-GSoC'14 project.
+This module is in good shape.
 
 
 constants
@@ -112,27 +114,29 @@ Needed:
 
   - solve issues with single precision: large errors, disabled for difficult sizes
   - fix caching bug
-  - Bluestein algorithm nice to have, padding is alternative
-  - deprecate fftpack.convolve as public function (was not meant to be public),
-    resolve differences between ``signal.fftconvolve`` / ``fftpack.convolve`` /
-    ``signal.convolve`` and ``numpy.convolve`` 
+  - Bluestein algorithm (or chirp Z-transform)
+  - deprecate fftpack.convolve as public function (was not meant to be public)
 
 There's a large overlap with ``numpy.fft``.  This duplication has to change
 (both are too widely used to deprecate one); in the documentation we should
 make clear that ``scipy.fftpack`` is preferred over ``numpy.fft``.
+If there are differences in signature or functionality, the best version
+should be picked case by case (example: numpy's ``rfft`` is preferred, see
+gh-2487).
 
 
 integrate
 `````````
 Needed for ODE solvers:
 
-  - documentation is pretty bad, needs fixing
-  - figure out if/how to integrate scikits.odes (Sundials wrapper)
-  - figure out what to deprecate 
+  - Documentation is pretty bad, needs fixing
+  - A promising new ODE solver interface is in progress: gh-6326.
+    This needs to be finished and merged.  After that, older API can
+    possibly be deprecated.
 
 The numerical integration functions are in good shape.  Support for integrating
 complex-valued functions and integrating multiple intervals (see gh-3325) could
-be added, but is not required for Scipy 1.0.
+be added, but is not required for SciPy 1.0.
 
 
 interpolate
@@ -140,14 +144,13 @@ interpolate
 Needed:
 
   - Both fitpack and fitpack2 interfaces will be kept.
-  - splmake should go; is different spline representation --> need exactly one
+  - splmake should go; is different spline representation, we need exactly one
   - interp1d/interp2d are somewhat ugly but widely used, so we keep them.
-  - Regular grid interpolation routines needed
 
 
 Ideas for new features:
 
-  - Transparant B-splines and their usage in the interpolation routines is needed.
+  - Transparent B-splines and their usage in the interpolation routines is needed.
   - Integration and differentiation and arithmetic routines for splines
   - Transparent tensor-product splines.
   - NURBS support.
@@ -157,9 +160,9 @@ io
 --
 wavfile;
 
-    - PCM float will be supported, for anything else use audiolab or other
+    - PCM float will be supported, for anything else use ``audiolab`` or other
       specialized libraries.
-    - raise errors instead of warnings if data not understood.
+    - Raise errors instead of warnings if data not understood.
 
 Other sub-modules (matlab, netcdf, idl, harwell-boeing, arff, matrix market)
 are in good shape.
@@ -169,11 +172,10 @@ linalg
 ``````
 Needed:
 
-  - remove functions that are duplicate with numpy.linalg
-  - get_lapack_funcs should always use flapack
-  - cblas, clapack are deprecated, will go away
-  - wrap more lapack functions
-  - one too many funcs for LU decomposition, remove one
+  - Remove functions that are duplicate with ``numpy.linalg``
+  - ``get_lapack_funcs`` should always use ``flapack``
+  - Wrap more LAPACK functions
+  - One too many funcs for LU decomposition, remove one
 
 Ideas for new features:
 
@@ -186,18 +188,18 @@ misc
 ``scipy.misc`` will be removed as a public module.  The functions in it can be
 moved to other modules:
 
-  - pilutil, images : ndimage
-  - comb, factorials, logsumexp, pade : special
-  - doccer : move to scipy._lib
-  - info, who : these are in numpy
-  - derivative, central_diff_weight : remove, replace with more extensive
+  - ``pilutil``, images : ``ndimage``
+  - ``comb``, ``factorial``, ``logsumexp``, ``pade`` : ``special``
+  - ``doccer`` : move to ``scipy._lib``
+  - ``info``, ``who`` : these are NumPy functions
+  - ``derivative``, ``central_diff_weight`` : remove, replace with more extensive
     functionality for numerical differentiation - likely in a new module
     ``scipy.diff`` (see below)
 
 
 ndimage
 ```````
-Underlying ndimage is a powerful interpolation engine.  Unfortunately, it was
+Underlying ``ndimage`` is a powerful interpolation engine.  Unfortunately, it was
 never decided whether to use a pixel model (``(1, 1)`` elements with centers
 ``(0.5, 0.5)``) or a data point model (values at points on a grid).  Over time,
 it seems that the data point model is better defined and easier to implement.
@@ -245,7 +247,7 @@ fftconvolve, convolve2d, correlate2d, and sepfir2d.) Eliminate the overlap with
 `ndimage` (and elsewhere).  From `numpy`, `scipy.signal` and `scipy.ndimage`
 (and anywhere else we find them), pick the "best of class" for 1-D, 2-D and n-d
 convolution and correlation, put the implementation somewhere, and use that
-consistently throughout scipy.
+consistently throughout SciPy.
 
 *B-splines*: (Relevant functions are bspline, cubic, quadratic, gauss_spline,
 cspline1d, qspline1d, cspline2d, qspline2d, cspline1d_eval, and spline_filter.)
@@ -261,8 +263,8 @@ representations).
 
 *Wavelets*: what's there now doesn't make much sense.  Continous wavelets
 only at the moment - decide whether to completely rewrite or remove them.
-Discrete wavelet transforms should be added, see the "new modules" section
-below.
+Discrete wavelet transforms are out of scope (PyWavelets does a good job
+for those).
 
 
 sparse
@@ -276,9 +278,12 @@ There are a lot of formats.  These should be kept, but
 improvements/optimizations should go into CSR/CSC, which are the preferred
 formats.  LIL may be the exception, it's inherently inefficient.  It could be
 dropped if DOK is extended to support all the operations LIL currently
-provides.
+provides.  Alternatives are being worked on, see  https://github.com/ev-br/sparr
+and https://github.com/perimosocordiae/sparray.
 
-Don't emulate np.matrix behavior, drop 2-D?
+Ideas for new features:
+
+    - Sparse arrays now act like np.matrix.  We want sparse *arrays*.
 
 
 sparse.csgraph
@@ -292,7 +297,7 @@ Arpack is in good shape.
 
 isolve:
 
-    - callback keyword is inconsistent 
+    - callback keyword is inconsistent
     - tol keyword is broken, should be relative tol
     - Fortran code not re-entrant (but we don't solve, maybe re-use from
       PyKrilov)
@@ -309,34 +314,41 @@ Ideas for new features:
 
 spatial
 ```````
-KDTree/cKDTree and the QHull wrappers are in good shape.  The distance module
-needs bug fixes in the distance metrics, and distance_wrap.c needs to be
-cleaned up (maybe rewrite in Cython).
+QHull wrappers are in good shape.
+
+Needed:
+
+    - ``KDTree`` will be removed, and ``cKDTree`` will be renamed to ``KDTree``
+      in a backwards-compatible way.
+    - ``distance_wrap.c`` needs to be cleaned up (maybe rewrite in Cython).
 
 
 special
 ```````
-special has a lot of functions that need improvements in precision.  All
-functions that are also implemented in mpmath can be tested against mpmath, and
-should match well.
+Though there are still a lot of functions that need improvements in precision,
+probably the only show-stoppers are hypergeometric functions, parabolic cylinder
+functions, and spheroidal wave functions. Three possible ways to handle this:
 
-Things not in mpmath:
+    1. Get good double-precision implementations. This is doable for parabolic
+       cylinder functions (in progress). I think it's possible for hypergeometric
+       functions, though maybe not in time. For spheroidal wavefunctions this is
+       not possible with current theory.
 
-  - cdflib
-  - <Pauli checks> some others
+    2. Port Boost's arbitrary precision library and use it under the hood to get
+       double precision accuracy. This might be necessary as a stopgap measure
+       for hypergeometric functions; the idea of using arbitrary precision has
+       been suggested before by @nmayorov and in gh-5349. Likely necessary for
+       spheroidal wave functions, this could be reused:
+       https://github.com/radelman/scattering.
+
+    3. Add clear warnings to the documentation about the limits of the existing
+       implementations.
 
 
 stats
 `````
-This is a large module with by far the most open issues.  It has improved a lot
-over the past few releases, but more cleanup and rewriting of functions is
-needed.  The Statistics Review milestone on Github gives a reasonable overview
-of which functions need checking, documentation and tests. 
 
 ``stats.distributions`` is in good shape.
-
-All hypothesis tests should get a keyword 'alternative' where applicable (see
-``stats.kstest`` for an example).
 
 ``gaussian_kde`` is in good shape but limited. It should not be expanded
 probably, this fits better in statsmodels (which already has a lot more KDE
@@ -365,13 +377,15 @@ diff
 Currently Scipy doesn't provide much support for numerical differentiation.
 A new ``scipy.diff`` module for that is discussed in
 https://github.com/scipy/scipy/issues/2035.  There's also a fairly detailed
-GSoC proposal to build on, see LINK.
+GSoC proposal to build on, see `here <https://github.com/scipy/scipy/wiki/Proposal:-add-finite-difference-numerical-derivatives-as-scipy.diff>`_.
 
+There is also ``approx_derivative`` in ``optimize``, which is still private
+but could form a solid basis for this module.
 
 transforms
 ``````````
-Scipy needs support for discrete wavelet transforms (DWT).  Those are under
-development in LINK, and will likely be integrated in Scipy in the near future.
-In order to make space for other types of transform (there's a PR for a
-Hankel transform for example), it may be a good idea to name the module in
-which DWT code is put ``scipy.transforms``.
+This module was discussed previously, mainly to provide a home for
+discrete wavelet transform functionality.  Other transforms could fit as well,
+for example there's a PR for a Hankel transform .
+*Note: this is on the back burner, because the plans to integrate PyWavelets
+DWT code has been put on hold.*
