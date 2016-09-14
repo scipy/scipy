@@ -94,6 +94,7 @@ NAME_MAP = {
     u('Janani'): u('Janani Padmanabhan'),
     u('jnothman'): u('Joel Nothman'),
     u('jona-sassenhagen'): u('Jona Sassenhagen'),
+    u('johschmitz'): u('Johannes Schmitz'),
     u('jor'): u('Joscha Reimer'),
     u('jesseengel'): u('Jesse Engel'),
     u('josef'): u('Josef Perktold'),
