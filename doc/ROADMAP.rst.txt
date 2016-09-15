@@ -244,7 +244,7 @@ signal
 ``````
 *Convolution and correlation*: (Relevant functions are convolve, correlate,
 fftconvolve, convolve2d, correlate2d, and sepfir2d.) Eliminate the overlap with
-`ndimage` (and elsewhere).  From `numpy`, `scipy.signal` and `scipy.ndimage`
+`ndimage` (and elsewhere).  From ``numpy``, ``scipy.signal`` and ``scipy.ndimage``
 (and anywhere else we find them), pick the "best of class" for 1-D, 2-D and n-d
 convolution and correlation, put the implementation somewhere, and use that
 consistently throughout SciPy.
@@ -351,12 +351,12 @@ stats
 ``stats.distributions`` is in good shape.
 
 ``gaussian_kde`` is in good shape but limited. It should not be expanded
-probably, this fits better in statsmodels (which already has a lot more KDE
+probably, this fits better in Statsmodels (which already has a lot more KDE
 functionality).
 
 ``stats.mstats`` is a useful module for worked with data with missing values.
 One problem it has though is that in many cases the functions have diverged
-from their counterparts in `scipy.stats`.  The ``mstats`` functions should be
+from their counterparts in ``scipy.stats``.  The ``mstats`` functions should be
 updated so that the two sets of functions are consistent.
 
 
