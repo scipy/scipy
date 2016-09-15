@@ -11,7 +11,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.linalg import inv, LinAlgError, norm
+from numpy.linalg import inv, LinAlgError, norm, cond
 
 from .basic import solve
 from .lapack import get_lapack_funcs
@@ -237,7 +237,7 @@ def solve_continuous_are(a, b, q, r):
     The CARE is defined as
 
     .. math::
-        (A'X + XA - XBR^-1B'X+Q=0)
+        A'X + XA - XB R^{-1} B'X + Q = 0
 
     It is solved directly using a Schur decomposition method.
 
@@ -263,14 +263,19 @@ def solve_continuous_are(a, b, q, r):
 
     Notes
     -----
-    Method taken from:
-    Laub, "A Schur Method for Solving Algebraic Riccati Equations."
-    U.S. Energy Research and Development Agency under contract
-    ERDA-E(49-18)-2087.
-    http://dspace.mit.edu/bitstream/handle/1721.1/1301/R-0859-05666488.pdf
+    Method is taken from [1]_.
 
     .. versionadded:: 0.11.0
 
+    
+    References
+    ----------
+    
+    .. [1] Alan J Laub, "A Schur Method for Solving Algebraic Riccati 
+       Equations.", Massachusetts Institute of Technology. Laboratory for 
+       Information and Decision Systems. LIDS-R ; 859. Available online :
+       http://hdl.handle.net/1721.1/1301
+        
     """
 
     try:
@@ -308,18 +313,16 @@ def solve_discrete_are(a, b, q, r):
     The DARE is defined as
 
     .. math::
-        X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q
+        X = A'XA - (A'XB) (R+B'XB)^{-1} (B'XA) + Q
 
-    It is solved via forming the extended symplectic pencil    
-    .. math:`H - \lambda J` given by the block matrices
+    The limitations for a solution to exist are :
         
+        * All eigenvalues of ..math:`A` outside the unit disc, should be 
+          controllable. 
+
+        * The associated symplectic pencil (See Notes), should have 
+          eigenvalues sufficiently away from the unit circle. 
     
-           [  A   0   B ]             [ I   0   B ] 
-           [ -Q   I   0 ] - \lambda * [ 0  A^T  0 ]
-           [  0   0   R ]             [ 0 -B^T  0 ]
-        
-    and using a QZ decomposition method.
-
     Parameters
     ----------
     a : (M, M) array_like
@@ -329,12 +332,13 @@ def solve_discrete_are(a, b, q, r):
     q : (M, M) array_like
         Input
     r : (N, N) array_like
-        Non-singular, square matrix
+        Square matrix
 
     Returns
     -------
     x : ndarray
-        Solution to the discrete algebraic Riccati equation
+        Solution to the discrete algebraic Riccati equation. If a solution
+        could not be found an empty array is returned.
 
     See Also
     --------
@@ -342,14 +346,36 @@ def solve_discrete_are(a, b, q, r):
 
     Notes
     -----
-    Method taken from:
-    P. van Dooren , "A Generalized Eigenvalue Approach For Solving Riccati 
-    Equations.", SIAM Journal on Scientific and Statistical Computing,
-    Vol.2(2), DOI: 10.1137/0902010
-
+    The equation is solved by forming the extended symplectic matrix pencil, 
+    as described in [1]_, .. math:`H - \lambda J` given by the block matrices
+        
+    
+           [  A   0   B ]             [ I   0   B ] 
+           [ -Q   I   0 ] - \lambda * [ 0  A^T  0 ]
+           [  0   0   R ]             [ 0 -B^T  0 ]
+        
+    and using a QZ decomposition method.
+    
+    In this algorithm, the fail conditions are linked to the symmetrycity 
+    of the product .. math:`U_2 U_1^{-1}` and condition number of 
+    .. math:`U_1`. Here, .. math:`U` is the 2m-by-m matrix that holds the 
+    eigenvectors spanning the stable subspace with 2m rows and partitioned 
+    into two m-row matrices. See [1]_ and [2]_ for more details.
+    
 
     .. versionadded:: 0.11.0
 
+    References
+    ----------
+    .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving 
+       Riccati Equations.", SIAM Journal on Scientific and Statistical 
+       Computing, Vol.2(2), DOI: 10.1137/0902010
+       
+    .. [2] Alan J Laub, "A Schur Method for Solving Algebraic Riccati 
+       Equations.", Massachusetts Institute of Technology. Laboratory for 
+       Information and Decision Systems. LIDS-R ; 859. Available online :
+       http://hdl.handle.net/1721.1/1301
+       
     """
     
     a = _asarray_validated(a)
@@ -364,6 +390,7 @@ def solve_discrete_are(a, b, q, r):
     for ind, x in enumerate((a,q,r)):
         if np.iscomplexobj(x):
             r_or_c = complex
+            
         if not np.equal(*x.shape):
             raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
     
@@ -399,7 +426,7 @@ def solve_discrete_are(a, b, q, r):
     J[m:2*m, m:2*m] = a.conj().T
     J[2*m:, m:2*m] = -b.conj().T
 
-    # Deflate the pencil by the R column
+    # Deflate the pencil by the R column ala Ref. [1]
     q_of_qr, _ = qr(H[:,-n:])
     H = q_of_qr[:,n:].conj().T.dot(H[:,:2*m])
     J = q_of_qr[:,n:].conj().T.dot(J[:,:2*m])
@@ -411,13 +438,24 @@ def solve_discrete_are(a, b, q, r):
                     overwrite_b=True, check_finite=False, output=out_str)
     
     # Get the relevant parts of the stable subspace basis
-    # TODO: Check if it succeded to get the right ordering.
     u00 = u[:m, :m]
     u10 = u[m:2*m, :m]
-        
-    # Solve via back-substituion
+    
+    # Solve via back-substituion after checking the condition of u00 
     up, ul, uu = lu(u00)
+
+    if 1/cond(uu) < np.spacing(1.):
+        return np.array([[]])
+    
     x = solve(ul.conj().T, 
                   solve(uu.conj().T, u10.conj().T)).conj().T.dot(up.conj().T)
 
+    # Check the deviation from symmetry for success
+    u_sym = u00.conj().T.dot(u10)
+    u_sym -= u_sym.conj().T
+    sym_threshold = np.max(np.spacing([1000., norm(u_sym, 1)]))
+
+    if np.max(np.abs(u_sym)) > sym_threshold:
+        return np.array([[]])
+    
     return (x + x.conj().T)/2

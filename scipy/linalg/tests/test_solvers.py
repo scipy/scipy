@@ -156,12 +156,12 @@ class TestSolveDiscreteARE(TestCase):
          np.array([[-2j,], [1j,]]),
          np.array([[1, 0], [0, 2]]),
          np.array([[1,],])),
-        # Real a, b; complex q, r (corrected for hermitian Q)
+        # Real a, b; complex q, r 
         (np.array([[3, 1], [0, -1]]),
          np.array([[1, 2], [1, 3]]),
          np.array([[1, 1+1j], [1-1j, 2]]),
          np.array([[2, -2j], [2j, 3]])),
-        # An example from the reported failing cases <= SciPy v0.18
+        # User-reported 
         (np.array([[0.63399379, 0.54906824, 0.76253406],
                    [0.5404729, 0.53745766, 0.08731853],
                    [0.27524045, 0.84922129, 0.4681622]]),
