@@ -2153,7 +2153,7 @@ class TestOrdQZ(TestCase):
         sortfun = _select_function(sort)
         lastsort = True
         for i in range(A.shape[0]):
-            cursort = sortfun(alpha[i], beta[i])
+            cursort = sortfun(np.array([alpha[i]]), np.array([beta[i]]))
             # once the sorting criterion was not matched all subsequent
             # eigenvalues also shouldn't match
             if not lastsort:
