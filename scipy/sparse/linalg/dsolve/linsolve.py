@@ -327,7 +327,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
 def factorized(A):
     """
-    Return a fuction for solving a sparse linear system, with A pre-factorized.
+    Return a function for solving a sparse linear system, with A pre-factorized.
 
     Parameters
     ----------
