@@ -26,6 +26,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
 from scipy.linalg.lapack import dgbtrf, dgbtrs, zgbtrf, zgbtrs, \
      dsbev, dsbevd, dsbevx, zhbevd, zhbevx
 from scipy.linalg.misc import norm
+from scipy.linalg._decomp_qz import _select_function
 
 from numpy import array, transpose, sometrue, diag, ones, linalg, \
      argsort, zeros, arange, float32, complex64, dot, conj, identity, \
@@ -2058,30 +2059,30 @@ class TestOrdQZ(TestCase):
     @classmethod
     def setupClass(cls):
         # http://www.nag.com/lapack-ex/node119.html
-        cls.A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
-                            7.5 + 0.5j],
-                           [-0.46 - 7.78j, -3.5 - 37.5j, -15.5 + 58.5j,
-                            -10.5 - 1.5j],
-                           [4.30 - 5.50j, 39.7 - 17.1j, -68.5 + 12.5j,
-                            -7.5 - 3.5j],
-                           [5.50 + 4.40j, 14.4 + 43.3j, -32.5 - 46.0j,
-                            -19.0 - 32.5j]])
+        A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
+                        7.5 + 0.5j],
+                       [-0.46 - 7.78j, -3.5 - 37.5j, -15.5 + 58.5j,
+                        -10.5 - 1.5j],
+                       [4.30 - 5.50j, 39.7 - 17.1j, -68.5 + 12.5j,
+                        -7.5 - 3.5j],
+                       [5.50 + 4.40j, 14.4 + 43.3j, -32.5 - 46.0j,
+                        -19.0 - 32.5j]])
 
-        cls.B1 = np.array([[1.0 - 5.0j, 1.6 + 1.2j, -3 + 0j, 0.0 - 1.0j],
-                           [0.8 - 0.6j, .0 - 5.0j, -4 + 3j, -2.4 - 3.2j],
-                           [1.0 + 0.0j, 2.4 + 1.8j, -4 - 5j, 0.0 - 3.0j],
-                           [0.0 + 1.0j, -1.8 + 2.4j, 0 - 4j, 4.0 - 5.0j]])
+        B1 = np.array([[1.0 - 5.0j, 1.6 + 1.2j, -3 + 0j, 0.0 - 1.0j],
+                       [0.8 - 0.6j, .0 - 5.0j, -4 + 3j, -2.4 - 3.2j],
+                       [1.0 + 0.0j, 2.4 + 1.8j, -4 - 5j, 0.0 - 3.0j],
+                       [0.0 + 1.0j, -1.8 + 2.4j, 0 - 4j, 4.0 - 5.0j]])
 
         # http://www.nag.com/numeric/fl/nagdoc_fl23/xhtml/F08/f08yuf.xml
-        cls.A2 = np.array([[3.9, 12.5, -34.5, -0.5],
-                           [4.3, 21.5, -47.5, 7.5],
-                           [4.3, 21.5, -43.5, 3.5],
-                           [4.4, 26.0, -46.0, 6.0]])
+        A2 = np.array([[3.9, 12.5, -34.5, -0.5],
+                       [4.3, 21.5, -47.5, 7.5],
+                       [4.3, 21.5, -43.5, 3.5],
+                       [4.4, 26.0, -46.0, 6.0]])
 
-        cls.B2 = np.array([[1, 2, -3, 1],
-                           [1, 3, -5, 4],
-                           [1, 3, -4, 3],
-                           [1, 3, -4, 4]])
+        B2 = np.array([[1, 2, -3, 1],
+                       [1, 3, -5, 4],
+                       [1, 3, -4, 3],
+                       [1, 3, -4, 4]])
 
         # example with the eigenvalues
         # -0.33891648, 1.61217396+0.74013521j, 1.61217396-0.74013521j,
@@ -2091,20 +2092,30 @@ class TestOrdQZ(TestCase):
         #  * one eigenvalue in the lhp
         #  * 2 eigenvalues in the unit circle
         #  * 2 non-real eigenvalues
-        cls.A3 = np.array([[5., 1., 3., 3.],
-                           [4., 4., 2., 7.],
-                           [7., 4., 1., 3.],
-                           [0., 4., 8., 7.]])
-        cls.B3 = np.array([[8., 10., 6., 10.],
-                           [7., 7., 2., 9.],
-                           [9., 1., 6., 6.],
-                           [5., 1., 4., 7.]])
+        A3 = np.array([[5., 1., 3., 3.],
+                       [4., 4., 2., 7.],
+                       [7., 4., 1., 3.],
+                       [0., 4., 8., 7.]])
+        B3 = np.array([[8., 10., 6., 10.],
+                       [7., 7., 2., 9.],
+                       [9., 1., 6., 6.],
+                       [5., 1., 4., 7.]])
+
+        # example with infinite eigenvalues
+        A4 = np.eye(2)
+        B4 = np.array([[0, 0], [0, 1]])
+
+        cls.A = [A1, A2, A3, A4]
+        cls.B = [B1, B2, B3, B4]
 
     def qz_decomp(self, sort):
-        retc = ordqz(self.A1, self.B1, sort=sort)
-        ret1 = ordqz(self.A2, self.B2, sort=sort)
-        ret2 = ordqz(self.A3, self.B3, sort=sort)
-        return retc, ret1, ret2
+        try:
+            olderr = np.seterr('raise')
+            ret = [ordqz(Ai, Bi, sort=sort) for Ai, Bi in zip(self.A, self.B)]
+        finally:
+            np.seterr(**olderr)
+            
+        return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
         I = np.eye(*A.shape)
@@ -2135,16 +2146,11 @@ class TestOrdQZ(TestCase):
                     tmp = tmp[[1, 0]]
                 assert_array_almost_equal(evals, tmp)
             else:
-                assert_almost_equal(AA[i, i]/BB[i, i], alpha[i]/beta[i])
-        sortfun = sort
-        if sortfun == 'lhp':
-            sortfun = lambda x, y: (x/y).real < 0
-        if sortfun == 'rhp':
-            sortfun = lambda x, y: (x/y).real > 0
-        if sortfun == 'iuc':
-            sortfun = lambda x, y: np.abs(x/y) < 1
-        if sortfun == 'ouc':
-            sortfun = lambda x, y: np.abs(x/y) > 1
+                if beta[i] == 0:
+                    assert_equal(BB[i, i], 0)
+                else:
+                    assert_almost_equal(AA[i, i]/BB[i, i], alpha[i]/beta[i])
+        sortfun = _select_function(sort)
         lastsort = True
         for i in range(A.shape[0]):
             cursort = sortfun(alpha[i], beta[i])
@@ -2154,58 +2160,90 @@ class TestOrdQZ(TestCase):
                 assert(not cursort)
             lastsort = cursort
 
-    def test_lhp(self):
-        retc, ret1, ret2 = self.qz_decomp('lhp')
+    def check_all(self, sort):
+        ret = self.qz_decomp(sort)
 
-        self.check(self.A1, self.B1, 'lhp', *retc)
-        self.check(self.A2, self.B2, 'lhp', *ret1)
-        self.check(self.A3, self.B3, 'lhp', *ret2)
+        for reti, Ai, Bi in zip(ret, self.A, self.B):
+            self.check(Ai, Bi, sort, *reti)
+
+    def test_lhp(self):
+        self.check_all('lhp')
 
     def test_rhp(self):
-        retc, ret1, ret2 = self.qz_decomp('rhp')
-
-        self.check(self.A1, self.B1, 'rhp', *retc)
-        self.check(self.A2, self.B2, 'rhp', *ret1)
-        self.check(self.A3, self.B3, 'rhp', *ret2)
+        self.check_all('rhp')
 
     def test_iuc(self):
-        retc, ret1, ret2 = self.qz_decomp('iuc')
-
-        self.check(self.A1, self.B1, 'iuc', *retc)
-        self.check(self.A2, self.B2, 'iuc', *ret1)
-        self.check(self.A3, self.B3, 'iuc', *ret2)
+        self.check_all('iuc')
 
     def test_ouc(self):
-        retc, ret1, ret2 = self.qz_decomp('ouc')
-
-        self.check(self.A1, self.B1, 'ouc', *retc)
-        self.check(self.A2, self.B2, 'ouc', *ret1)
-        self.check(self.A3, self.B3, 'ouc', *ret2)
+        self.check_all('ouc')
 
     def test_ref(self):
         # real eigenvalues first (top-left corner)
-        sort = lambda x, y: (x/y).imag == 0
-        retc, ret1, ret2 = self.qz_decomp(sort)
+        def sort(x, y):
+            out = np.empty_like(x, dtype=bool)
+            nonzero = (y != 0)
+            out[~nonzero] = False
+            out[nonzero] = (x[nonzero]/y[nonzero]).imag == 0
+            return out
 
-        self.check(self.A1, self.B1, sort, *retc)
-        self.check(self.A2, self.B2, sort, *ret1)
-        self.check(self.A3, self.B3, sort, *ret2)
+        self.check_all(sort)
 
     def test_cef(self):
         # complex eigenvalues first (top-left corner)
-        sort = lambda x, y: (x/y).imag != 0
-        retc, ret1, ret2 = self.qz_decomp(sort)
+        def sort(x, y):
+            out = np.empty_like(x, dtype=bool)
+            nonzero = (y != 0)
+            out[~nonzero] = False
+            out[nonzero] = (x[nonzero]/y[nonzero]).imag != 0
+            return out
 
-        self.check(self.A1, self.B1, sort, *retc)
-        self.check(self.A2, self.B2, sort, *ret1)
-        self.check(self.A3, self.B3, sort, *ret2)
+        self.check_all(sort)
 
     def test_diff_input_types(self):
-        ret = ordqz(self.A1, self.B2, sort='lhp')
-        self.check(self.A1, self.B2, 'lhp', *ret)
+        ret = ordqz(self.A[1], self.B[2], sort='lhp')
+        self.check(self.A[1], self.B[2], 'lhp', *ret)
 
-        ret = ordqz(self.B2, self.A1, sort='lhp')
-        self.check(self.B2, self.A1, 'lhp', *ret)
+        ret = ordqz(self.B[2], self.A[1], sort='lhp')
+        self.check(self.B[2], self.A[1], 'lhp', *ret)
+
+    def test_sort_explicit(self):
+        # Test order of the eigenvalues in the 2 x 2 case where we can
+        # explicitly compute the solution
+        A = np.eye(2)
+
+        B1 = np.diag([-2, 0.5])
+        expected1 = [('lhp', [-0.5, 2]),
+                    ('rhp', [2, -0.5]),
+                    ('iuc', [-0.5, 2]),
+                    ('ouc', [2, -0.5])]
+        B2 = np.diag([-2 + 1j, 0.5 + 0.5j])
+        expected2 = [('lhp', [1/(-2 + 1j), 1/(0.5 + 0.5j)]),
+                     ('rhp', [1/(0.5 + 0.5j), 1/(-2 + 1j)]),
+                     ('iuc', [1/(-2 + 1j), 1/(0.5 + 0.5j)]),
+                     ('ouc', [1/(0.5 + 0.5j), 1/(-2 + 1j)])]
+        # 'lhp' is ambiguous so don't test it
+        B3 = np.diag([2, 0])
+        expected3 = [('rhp', [0.5, np.inf]),
+                     ('iuc', [0.5, np.inf]),
+                     ('ouc', [np.inf, 0.5])]
+        # 'rhp' is ambiguous so don't test it
+        B4 = np.diag([-2, 0])
+        expected4 = [('lhp', [-0.5, np.inf]),
+                     ('iuc', [-0.5, np.inf]),
+                     ('ouc', [np.inf, -0.5])]
+
+        B = [B1, B2, B3, B4]
+        expected = [expected1, expected2, expected3, expected4]
+        for Bi, expectedi in zip(B, expected):
+            for sortstr, expected_eigvals in expectedi:
+                _, _, alpha, beta, _, _ = ordqz(A, Bi, sort=sortstr)
+                nonzero = (beta != 0)
+                x = np.empty_like(alpha)
+                x[~nonzero] = np.inf
+                x[nonzero] = alpha[nonzero]/beta[nonzero]
+                assert_allclose(expected_eigvals, x)
+
 
 class TestOrdQZWorkspaceSize(TestCase):
 
