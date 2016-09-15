@@ -1,3 +1,7 @@
+# Generalized simulated annealing implementation.
+# Copyright (c) 2016 Sylvain Gubian <sylvain.gubian@pmi.com>,
+# Yang Xiang <yang.xiang@pmi.com>
+# Author: Sylvain Gubian, PMP S.A.
 """
 gensa: A generalized simulated annealing global optimization algorithm
 """
@@ -8,6 +12,7 @@ import time
 from scipy.optimize import OptimizeResult
 from scipy.optimize import _lbfgsb
 from scipy.special import gammaln
+from scipy._lib._util import check_random_state
 
 __all__ = ['gensa']
 
@@ -19,69 +24,87 @@ MAX_REINIT_COUNT = 100
 class GenSARunner(object):
     """This class implements the core of the gensa algorithm.
 
-    x0 : ndarray
-        The starting coordinates.
     fun : callable
         The objective function
-    lower: ndarray
-        The lower bounds of the search domain
-    upper: ndarray
-        The upper bounds of the search domain
-    fargs: dict
-        Additional arguments to pass to the objective function
+    x0 : ndarray
+        The starting coordinates.
+    bounds : sequence
+        Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
+        defining the lower and upper bounds for the optimizing argument of
+        `func`. It is required to have ``len(bounds) == len(x)``.
+        ``len(bounds)`` is used to determine the number of parameters in ``x``.
+    args : tuple, optional
+        Any additional fixed parameters needed to
+        completely specify the objective function.
 
     """
-
-    def __init__(self, fun, x0, lower, upper, fargs=()):
-        self._lower = np.array(lower)
-        self._upper = np.array(upper)
-        if x0 is not None:
-            if self._lower.size != x0.size:
-                raise ValueError("Lower bounds size does not match x0")
-            if self._upper.size != x0.size:
-                raise ValueError("Upper bounds size does not match x0")
+    def __init__(self, fun, x0, bounds, args=(), seed=None):
+        self.fun = fun
+        self.args = args
+        if x0 is not None and not len(x0) == len(bounds):
+            raise ValueError('Bounds size does not match x0')
+        lu = zip(*bounds)
+        self._lower = np.array(lu[0])
+        self._upper = np.array(lu[1])
+        # Checking that bounds are consistent
+        if not np.all(self._lower < self._upper):
+            raise ValueError('Bounds are note consistent min < max')
+        # Initialization of RandomState for reproducible runs if seed provided
+        self._random_state = check_random_state(seed)
         if x0 is None:
-            x0 = self._lower + np.random.rand(len(self._lower)) * (
-                    self._upper - self._lower)
-        else:
-            x0 = np.array(x0)
-        self._fun = fun
-        self._fargs = fargs
+            x0 = self._lower + self._random_state.random_sample(
+                    len(bounds)) * (self._upper - self._lower)
+        self.seed = seed
+        # Number of maximum sof iteration for local search
+        self.itsoftmax = x0.size * 6
+        # Size of the markov chain. Twice the dimension problem is a
+        # recommended value.
+        self.markov_length = x0.size * 2
+        # In case the real value of the global minimum is known
+        # it can be used as stopping criterion
+        self.know_real = False
+        self.real_threshold = -np.inf
+        # Maximum duration time of execution as a stopping criterion
+        self.maxtime = 3600
+        # Maximum number of function call that can be used a stopping criterion
+        self.maxfuncall = 1e7
+        # Maximum number of step (main iteration)  that ca be used as
+        # stopping criterion
+        self.maxsteps = 500
+        # Minimum value of annealing temperature reached to perform
+        # re-annealing
+        self.temp_restart = 0.1
+        # Visiting distribution parameter
+        self.qv = 2.62
+        # Acceptance parameter value
+        self.qa = -5.0
+        # Initial temperature value for annealing
+        self.temp_start = 5230
+        # Not yet implemented contraint function that would be used in the
+        # future
+        self.has_constraint = False
+        self.judge_constraint = None
+        self.factr = 1000
+        self.pgtol = 1.e-6
+        self.reps = 1.e-6
+
         self._x = np.array(x0)
-        self._dim, = self._x.shape
         self._xrange = self._upper - self._lower
         self._xbackup = np.array(self._x)
         self._xmini = np.array(self._x)
-        self._xbuffer = np.zeros(self._dim)
-        self._itsoftmax = self._dim * 6
-        self._factr = 1000
-        self._pgtol = 1.e-6
-        self._reps = 1.e-6
-        self._markovlength = self._dim * 2
-        self._hasconstraint = False
-        self._tempsta = 5230
-        self._temp = self._tempsta
-        self._knowreal = False
-        self._maxtime = 3600
-        self._maxfuncall = 1e7
-        self._maxsteps = 500
-        self._temprestart = 0.1
-        self._qv = 2.62
+        self._xbuffer = np.zeros(self._x.size)
+        self._temp = self.temp_start
         self._usey = 1
         self._xgas = 0.0
         self._ygas = 0.0
         self._ranbyx = 0.0
         self._ranbyy = 0.0
         self._sgas = -1.0
-        self._qa = -5.0  # Acceptance parameter
-        self.nblocal = 0
         self._step_record = 0
         self._nbfuncall = 0
-        self._extensive = False
-
-    def _judge_constraint(self):
-        # Not implemented yet
-        return True
+        self._emini_unchanged = True
+        self._index_no_emini_update = 0
+        self._temp_qa = 0
 
     def initialize(self):
         """
@@ -89,47 +112,116 @@ class GenSARunner(object):
         are giving invalid objective value
         """
         self._nbfuncall = 0
-        self._indTrace = 0
-        if self._markovlength % self._dim != 0:
+        if self.markov_length % self._x.size != 0:
             raise ValueError('Incorrect markov length.')
-        inconstraint = True
-        initerror = True
+        in_constraint = True
+        init_error = True
         reinit_counter = 0
-        while(initerror):
-            if inconstraint:
-                if self._hasconstraint:
-                    inconstraint = self._judge_constraint()
-                    while(not inconstraint):
-                        self._coordin()
-                        inconstraint = self._judge_constraint()
+        while(init_error):
             self._energy(self._x)
             if self._etot >= BIG_VALUE:
                 if reinit_counter >= MAX_REINIT_COUNT:
-                    initerror = False
+                    init_error = False
                     self._message = [(
                         'Stopping algorithm because function '
                         'create NaN or (+/-) inifinity values even with '
                         'trying new random parameters')]
-                    raise ValueError(self._message)
-                for i in range(self._dim):
-                    self._x[i] = self._lower[i] + np.random.ranf() * (
-                        self._upper[i] - self._lower[i])
+                    raise ValueError(self._message[0])
+                self._x = self._lower + self._random_state.random_sample(
+                        self._x.size) * (self._upper - self._lower)
                 reinit_counter += 1
             else:
-                initerror = False
+                init_error = False
+
+    def _visiting(self, step):
+        """
+        Assignement of components values based on visiting distribution.
+        The way of exploring space depends on the Markov chain stepping
+        """
+        # It it is the first part of the markov chain
+        # Changing all components at the same time
+        if step < self._x.size:
+            visits = [self._visita() for _ in range(self._x.size)]
+            visits[visits > 1.e8] = 1.e8 * self._random_state.random_sample()
+            visits[visits < -1e8] = -1.e8 * self._random_state.random_sample()
+            self._x = visits + self._xbackup
+            a = self._x - self._lower
+            b = np.fmod(a, self._xrange) + self._xrange
+            self._x = np.fmod(b, self._xrange) + self._lower
+            self._x[np.fabs(self._x - self._lower) < 1.e-10] += 1.e-10
+        else:
+            # Second part of the markov chain
+            # Now change only one component at a time
+            visit = self._visita()
+            if visit > 1.e8:
+                visit = 1.e8 * self._random_state.random_sample()
+            elif visit < -1e8:
+                visit = -1.e8 * self._random_state.random_sample()
+            index = step - self._x.size
+            self._x[index] = visit + self._xbackup[index]
+            a = self._x[index] - self._lower[index]
+            b = np.fmod(
+                a, self._xrange[index]) + self._xrange[index]
+            self._x[index] = np.fmod(
+                b, self._xrange[index]) + self._lower[index]
+            if np.fabs(self._x[index] - self._lower[
+                    index]) < 1.e-10:
+                self._x[index] += 1.e-10
+
+    def _run_markov_chain(self, step):
+        for j in range(self.markov_length):
+            if j == 0:
+                self._emini_unchanged = True
+            if step == 0 and j == 0:
+                self._emini_unchanged = False
+            # Keeping old location before visiting new place
+            self._xbackup = np.array(self._x)
+            self._visiting(j)
+            self._energy(self._x)
+            if self._etot < self._etot0:
+                # We get a better energy value
+                self._etot0 = np.array(self._etot)
+                if self._etot < self._emini:
+                    self._emini = np.array(self._etot)
+                    self._xmini = np.array(self._x)
+                    self._emini_unchanged = False
+                    self._index_no_emini_update = 0
+            else:
+                # We do not have improvement but do we accept location
+                r = self._random_state.random_sample()
+                pqa1 = (self.qa - 1.0) * (
+                    self._etot - self._etot0) / self._temp_qa + 1.0
+                if pqa1 < 0.0:
+                    pqa = 0.0
+                else:
+                    pqa = np.exp(np.log(pqa1) / (1.0 - self.qa))
+                if r > pqa:
+                    # We reject the new visiting location
+                    self._x = self._xbackup
+                else:
+                    # The new visiting location is accepted
+                    self._etot0 = self._etot
+            if self._check_stopping():
+                self._stop_search()
+                return 0
+            if self._index_no_emini_update >= self._index_tol_emini_update - 1:
+                if j == 0:
+                    self._emini_markov = np.array(self._etot0)
+                    self._xmini_markov = np.array(self._x)
+                else:
+                    if self._etot0 < self._emini_markov:
+                        self._emini_markov = np.array(self._etot0)
+                        self._xmini_markov = np.array(self._x)
 
     def start_search(self):
-        """ Start annealing search process """
-        self.nblocal += 1
-        inconstraint = True
-        itnew = 0
-        emini_unchanged = True
-        emini_markov = 0.0
-        index_no_emini_update = 0
-        index_tol_emini_update = 1000
-        xminimarkov = np.zeros(self._dim)
-        etot_ls_ex = BIG_VALUE
-        # Here check that the function is smooth
+        """ Start annealing process with eventually re-annealing
+        """
+        in_constraint = True
+        self._emini_unchanged = True
+        self._emini_markov = 0.0
+        self._xmini_markov = np.zeros(self._x.size)
+        self._index_no_emini_update = 0
+        self._index_tol_emini_update = 1000
         self._starttime = time.time()
         self._emini = np.array(self._etot)
         self._xmini = np.array(self._x)
@@ -141,180 +233,88 @@ class GenSARunner(object):
         if self._check_stopping():
             self._stop_search()
         self._step_record = 0
-        self._temp = self._tempsta
+        self._temp = self.temp_start
         tolowtemp = True
         while(tolowtemp):
-            for i in range(self._maxsteps):
-                itnew = i + 1
-                s1 = float(itnew)
-                s = s1 + 1.0
-                t1 = np.exp((self._qv - 1) * np.log(2.0)) - 1.0
-                t2 = np.exp((self._qv - 1) * np.log(s)) - 1.0
-                self._temp = self._tempsta * t1 / t2
+            for i in range(self.maxsteps):
+                # Evaluating iteration artificial temperature
+                s = float(i) + 2.0
+                t1 = np.exp((self.qv - 1) * np.log(2.0)) - 1.0
+                t2 = np.exp((self.qv - 1) * np.log(s)) - 1.0
+                self._temp = self.temp_start * t1 / t2
                 self._step_record += 1
+                self._temp_qa = self._temp / float(i + 1)
+                self._index_no_emini_update += 1
                 # Maximum number of iterations reached
-                if self._step_record == self._maxsteps:
+                if self._step_record == self.maxsteps:
                     tolowtemp = False
                     break
-                # Need a reannealing process
-                if self._temp < self._temprestart:
+                # Need a re-annealing process? - Restarting main loop
+                if self._temp < self.temp_restart:
                     break
-                temp_qa = self._temp / float(itnew)
-                index_no_emini_update += 1
-                # Starting markov chain loop
-                for j in range(self._markovlength):
-                    if j == 0:
-                        emini_unchanged = True
-                    if i == 0 and j == 0:
-                        emini_unchanged = False
-                    self._xbackup = np.array(self._x)
-                    # inconstraint = False
-                    # while (not inconstraint):
-                    if j < self._dim:
-                        for k in range(self._dim):
-                            visit = self._visita()
-                            if visit > 1.e8:
-                                visit = 1.e8 * np.random.ranf()
-                            elif visit < -1e8:
-                                visit = -1e8 * np.random.ranf()
-                            self._x[k] = visit + self._xbackup[k]
-                            a = self._x[k] - self._lower[k]
-                            b = np.fmod(a, self._xrange[k]) + self._xrange[k]
-                            self._x[k] = np.fmod(
-                                b, self._xrange[k]) + self._lower[k]
-                            if np.fabs(self._x[k] - self._lower[k] < 1.e-10):
-                                self._x[k] += 1.e-10
-                        # end coordinates loop
-                    else:
-                        # Now change only one component at a time
-                        visit = self._visita()
-                        if visit > 1.e8:
-                            visit = 1.e8 * np.random.ranf()
-                        elif visit < -1e8:
-                            visit = -1.e8 * np.random.ranf()
-                        index = j - self._dim
-                        self._x[index] = visit + self._xbackup[index]
-                        a = self._x[index] - self._lower[index]
-                        b = np.fmod(
-                            a, self._xrange[index]) + self._xrange[index]
-                        self._x[index] = np.fmod(
-                            b, self._xrange[index]) + self._lower[index]
-                        if np.fabs(self._x[index] - self._lower[
-                                index]) < 1.e-10:
-                            self._x[index] += 1.e-10
-                    if self._hasconstraint:
-                        inconstraint = self._judge_constraint()
-                    else:
-                        inconstraint = True
-                    if inconstraint:
-                        self._energy(self._x)
-                        if self._etot < self._etot0:
-                            self._etot0 = np.array(self._etot)
-                            if self._etot < self._emini:
-                                self._emini = np.array(self._etot)
-                                self._xmini = np.array(self._x)
-                                emini_unchanged = False
-                                index_no_emini_update = 0
-                        else:
-                            r = np.random.ranf()
-                            pqa1 = (self._qa - 1.0) * (
-                                self._etot - self._etot0) / temp_qa + 1.0
-                            if pqa1 < 0.0:
-                                pqa = 0.0
-                            else:
-                                pqa = np.exp(np.log(pqa1) / (1.0 - self._qa))
-                            if r > pqa:
-                                self._x = self._xbackup
-                            else:
-                                self._etot0 = self._etot
-                        if self._check_stopping():
-                            self._stop_search()
-                            return 0
-                    # End of while not inconstraint
-                    if index_no_emini_update >= index_tol_emini_update - 1:
-                        if j == 0:
-                            emini_markov = np.array(self._etot0)
-                            xminimarkov = np.array(self._x)
-                        else:
-                            if self._etot0 < emini_markov:
-                                emini_markov = np.array(self._etot0)
-                                xminimarkov = np.array(self._x)
-                # End of markov chain loop
-                if self._extensive:
-                    if j == 0:
-                        #print("-> First extensive")
-                        temp = np.array(self._x)
-                        etot_ls_ex = self._ls_energy(temp)
-                        index_no_emini_update = 0
-                    else:
-                        if np.sum((self._etot - etot_ls_ex)**2) > 1e-10:
-                            #print("->extensive")
-                            temp = np.array(self._x)
-                            etot_ls_ex = self._ls_energy(temp)
-                            index_no_emini_update = 0
-                    if etot_ls_ex < self._emini:
-                        #print("-> better VALUE in extensive")
+                # Starting Markov chain
+                self._run_markov_chain(i)
+
+                # Decision making for performing a local search
+                # based on the markov chain results
+                if not self._emini_unchanged:
+                    temp = np.array(self._xmini)
+                    etemp = self._ls_energy(temp)
+                    temp = self._xbuffer
+                    if etemp < self._emini:
                         self._xmini = np.array(temp)
-                        self._emini = np.array(etot_ls_ex)
-                else:
-                    if not emini_unchanged:
-                        temp = np.array(self._xmini)
-                        etemp = self._ls_energy(temp)
-                        temp = self._xbuffer
-                        if etemp < self._emini:
-                            self._xmini = np.array(temp)
-                            self._emini = np.array(etemp)
-                            index_no_emini_update = 0
-                if index_no_emini_update >= index_tol_emini_update - 1:
-                    emini_markov = np.array(self._ls_energy(xminimarkov))
-                    index_no_emini_update = 0
-                    index_tol_emini_update = self._dim
-                    if emini_markov < self._emini:
-                        self._xmini = np.array(xminimarkov)
-                        self._emini = np.array(emini_markov)
+                        self._emini = np.array(etemp)
+                        self._index_no_emini_update = 0
+                if self._index_no_emini_update >= \
+                    self._index_tol_emini_update - 1:
+                    self._emini_markov = np.array(self._ls_energy(
+                        self._xmini_markov))
+                    self._index_no_emini_update = 0
+                    self._index_tol_emini_update = self._x.size
+                    if self._emini_markov < self._emini:
+                        self._xmini = np.array(self._xmini_markov)
+                        self._emini = np.array(self._emini_markov)
                 if self._check_stopping():
                     self._stop_search()
                     return 0
-            # End main loop
-            #tolowtemp = False
         self._stop_search()
         self._message = ["Number of iteration reached"]
         return 0
 
     def _check_stopping(self):
-        """Check if the search has to be stopped"""
-        if self._knowreal:
-            if self._emini <= self._realthreshold:
+        """Check if the search has to be stopped
+        """
+        if self.know_real:
+            if self._emini <= self.realthreshold:
                 self._message = ["Known value for minimum reached"]
                 return True
         self._endtime = time.time()
         delta = self._endtime - self._starttime
-        if delta >= self._maxtime:
+        if delta >= self.maxtime:
             self._message = ["Time limit reached"]
             return True
-        if self._nbfuncall >= self._maxfuncall:
+        if self._nbfuncall >= self.maxfuncall:
             self._message = ["Number of function call reached"]
             return True
-        #TODO:
-        # Check if no more improvments from tracer
-        # Compare tracer value minernergy with self._emini
-        # if lower than 1e-10, return true
 
     def _stop_search(self):
-        """Record time stamp when stop searching"""
+        """Record time stamp when stop searching
+        """
         self._endtime = time.time()
 
     def _coordin(self):
-        """Random generation of new coordinates"""
-        for i in range(self._dim):
-            self._x[i] = np.random.ranf() * self._xrange[i] + self._lower[i]
+        """Random generation of new coordinates
+        """
+        self._x = self._random_state.random_sample(
+            self._x.size) * self._xrange + self._lower
 
     def _energy(self, x):
-        """Calling objective function and adding elasticity if needed"""
+        """Calling objective function and adding elasticity if needed
+        """
         delta_energy = 0
-        if self._hasconstraint:
-            inconstraint = self._judge_constraint()
-            if not inconstraint:
+        if self.has_constraint:
+            in_constraint = self.judge_constraint()
+            if not in_constraint:
                 self._etot = BIG_VALUE
                 return 0
         if np.all(np.logical_and(
@@ -329,51 +329,55 @@ class GenSARunner(object):
                 x[ucomp] - self._upper[ucomp]) * KSPRING
             delta_energy = np.sum(delta_energy_l) + np.sum(
                 delta_energy_u)
-        self._etot = self._fun(x, *self._fargs)
+        self._etot = self.fun(x, *self.args)
         self._nbfuncall += 1
         self._etot = self._etot + delta_energy
         if np.isinf(self._etot) or np.isnan(self._etot):
             self._etot = BIG_VALUE
 
     def _ls_energy(self, x):
-        """Performing a local search on the current location"""
+        """Performing a local search on the current location
+        """
         self._xbuffer = np.array(x)
         self._smooth_search()
         self._x = np.array(self._xbuffer)
         return self._fvalue
 
     def _visita(self):
-        """Visiting function"""
+        """Visiting distribution function
+        """
         pi = np.arcsin(1.0) * 2.0
-        fator1 = np.exp(np.log(self._temp) / (self._qv - 1.0))
-        fator2 = np.exp((4.0 - self._qv) * np.log(self._qv - 1.0))
-        fator3 = np.exp((2.0 - self._qv) * np.log(2.0) / (self._qv - 1.0))
-        fator4 = np.sqrt(pi) * fator1 * fator2 / (fator3 * (3.0 - self._qv))
-        fator5 = 1.0 / (self._qv - 1.0) - 0.5
+        fator1 = np.exp(np.log(self._temp) / (self.qv - 1.0))
+        fator2 = np.exp((4.0 - self.qv) * np.log(self.qv - 1.0))
+        fator3 = np.exp((2.0 - self.qv) * np.log(2.0) / (self.qv - 1.0))
+        fator4 = np.sqrt(pi) * fator1 * fator2 / (fator3 * (3.0 - self.qv))
+        fator5 = 1.0 / (self.qv - 1.0) - 0.5
         d1 = 2.0 - fator5
         fator6 = pi * (1.0 - fator5) / \
             np.sin(pi * (1.0 - fator5)) / np.exp(gammaln(d1))
-        sigmax = np.exp(-(self._qv - 1.0) *
-                        np.log(fator6 / fator4) / (3.0 - self._qv))
+        sigmax = np.exp(-(self.qv - 1.0) *
+                        np.log(fator6 / fator4) / (3.0 - self.qv))
         x = sigmax * self._yygas()
         y = self._yygas()
         den = np.exp(
-            (self._qv - 1.0) * np.log((np.fabs(y))) / (3.0 - self._qv))
+            (self.qv - 1.0) * np.log((np.fabs(y))) / (3.0 - self.qv))
         return x / den
 
     def _fobjective(self, x):
-        """Wrapper to the objective function"""
+        """Wrapper to the objective function
+        """
         self._x = np.array(x)
         self._energy(self._x)
         return self._etot
 
     def _smooth_search(self):
-        """Local search implementation using setulb core function"""
+        """Local search implementation using setulb core function
+        """
         m = 5
         iteration = 0
         f = 0
-        n = self._dim
-        ndb = np.zeros(self._dim)
+        n = self._x.size
+        ndb = np.zeros(self._x.size)
         ndb.fill(2)
         iprint = -1
         x = np.array(self._xbuffer, np.float64)
@@ -389,25 +393,25 @@ class GenSARunner(object):
         isave = np.zeros(44, np.int32)
         dsave = np.zeros(29, np.float64)
         task[:] = 'START'
-        if self._itsoftmax < 100:
-            self._itsoftmax = 100
-        elif self._itsoftmax > 1000:
-            self._itsoftmax = 1000
+        if self.itsoftmax < 100:
+            self.itsoftmax = 100
+        elif self.itsoftmax > 1000:
+            self.itsoftmax = 1000
         while True:
-            if iteration >= self._itsoftmax:
+            if iteration >= self.itsoftmax:
                 self._xbuffer = np.array(x)
                 self._fvalue = f
                 return
             _lbfgsb.setulb(m, x, l, u, ndb,
-                           f, g, self._factr, self._pgtol, wa, iwa, task,
+                           f, g, self.factr, self.pgtol, wa, iwa, task,
                            iprint, csave, lsave, isave, dsave, 100)
             iteration += 1
             task_str = task.tostring()
             if task_str.startswith(b'FG'):
                 self._xbuffer = np.array(x)
                 f = self._fobjective(self._xbuffer)
-                if self._knowreal:
-                    if f <= self._realthreshold:
+                if self.know_real:
+                    if f <= self.real_threshold:
                         self._xbuffer = np.array(x)
                         self._fvalue = f
                         return
@@ -420,17 +424,14 @@ class GenSARunner(object):
                 return
 
     def _compute_gradient(self, x):
-        """Computation of numerical derivatives for local search"""
-        # Can be done later here:
-        # Check here if the expression of the derivatives is provided
-        # For that, add an argument for jacobian in the main function
-        # and use MemoizeJac from optimize.py
-        g = np.zeros(self._dim, np.float64)
-        for i in range(self._dim):
+        """Computation of numerical derivatives for local search
+        """
+        g = np.zeros(self._x.size, np.float64)
+        for i in range(self._x.size):
             x1 = np.array(x)
             x2 = np.array(x)
-            respl = self._reps
-            respr = self._reps
+            respl = self.reps
+            respr = self.reps
             x1[i] = x[i] + respr
             if x1[i] > self._upper[i]:
                 x1[i] = self._upper[i]
@@ -451,8 +452,8 @@ class GenSARunner(object):
             enter = True
             while(enter or (self._sgas <= 0 or self._sgas >= 1)):
                 enter = False
-                self._xgas = np.random.ranf() * 2.0 - 1.0
-                self._ygas = np.random.ranf() * 2.0 - 1.0
+                self._xgas = self._random_state.random_sample() * 2.0 - 1.0
+                self._ygas = self._random_state.random_sample() * 2.0 - 1.0
                 self._sgas = self._xgas * self._xgas + self._ygas * self._ygas
             root = np.sqrt(-2.0 / self._sgas * np.log(self._sgas))
             self._ranbyx = self._xgas * root
@@ -475,7 +476,7 @@ class GenSARunner(object):
         return res
 
 def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
-        acceptparam=-5.0, maxtime=3600, maxcall=1e7, args=()):
+        acceptparam=-5.0, maxtime=3600, maxcall=1e7, args=(), seed=None):
     """
     Find the global minimum of a function using the Generalized Simulated
     Annealing algorithm
@@ -492,25 +493,22 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
         ``len(bounds)`` is used to determine the number of parameters in ``x``.
-    bounds: sequence
-        Bounds for variable. (min, max) pairs for each element in x,
-        defining the bounds on that parameter.
-    niter: integer, optional
+    niter : integer, optional
         The number of gensa iterations
-    T: float, optional
+    T : float, optional
         Initial value for temperature. The higher the initial temperature, the
         the higher the probability of hill-climbing for the initial iterations.
-    visitparam: float, optional
+    visitparam : float, optional
         Parameter for visiting distribution. Higher value means the
         visiting distribution has a heavier tail which makes the
         algorithm jump to a farer region. The value range is ]0; 3]
-    acceptparam: float, optional
+    acceptparam : float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
         smaller the probability of acceptance. It has to be any negative value.
-    maxtime: integer, optional
+    maxtime : integer, optional
         Time limit for running the algorithm in seconds
-    maxcall: integer, optional
+    maxcall : integer, optional
         Soft limit for the number of objective function calls. If the
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
@@ -518,7 +516,15 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
-
+    seed : int or `np.random.RandomState`, optional
+        If `seed` is not specified the `np.RandomState` singleton is used.
+        If `seed` is an int, a new `np.random.RandomState` instance is used,
+        seeded with seed.
+        If `seed` is already a `np.random.RandomState instance`, then that
+        `np.random.RandomState` instance is used.
+        Specify `seed` for repeatable minimizations. The random numbers
+        generated with this seed only affect the visiting distribution
+        function and new coordinates generation.
 
     Returns
     -------
@@ -529,16 +535,43 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         cause of the termination.
         See `OptimizeResult` for a description of other attributes.
 
-
     Notes
     -----
     GenSA is an implementation of the General Simulated Annealing algorithm
     (GSA [2]_). This stochastic approach generalizes CSA (Classical Simulated
     Annealing) and FSA (Fast Simulated Annealing) to find the neighborhood of
-    minima, then calls a local method (lbfgs) to find their exact value.
+    minima, then calls a local method (lbfgsb) to find their exact value.
     GenSA can process complicated and high dimension non-linear objective
     functions with a large number of local minima as described by Muller
     paper [6]_.
+
+    GSA uses a distorted Cauchy-Lorentz visiting distribution, with it shape
+    controlled by the parameter :math:`q_{v}`
+
+    .. math::
+        g_{q_{v}}(\Delta x(t)) \propto \frac{\left[T_{q_{v}}(t) \right]^{-\frac{D}{3-q_{v}}}}{ \left[{1+(q_{v}-1)\frac{(\Delta x(t))^{2}} {\left[T_{q_{v}}(t)\right]^{\frac{2}{3-q_{v}}}}}\right]^{ \frac{1}{q_{v}-1}+\frac{D-1}{2}}}
+
+    Where :math:`t` is the artificial time. This visiting distribution is used
+    to generate a trial jump distance :math:`\Delta x(t)` of variable
+    :math:`x(t)` under artificial temperature :math:`T_{q_{v}}(t)`.
+
+    From the starting point, after calling the visiting distribution
+    function, the acceptance probability is computed as follows:
+
+    .. math::
+        p_{q_{a}} = \min{\{1,\left[1-(1-q_{a}) \beta \Delta E \right]^{ \frac{1}{1-q_{a}}}\}}
+
+    Where :math:`q_{a}` is a parameter. For :math:`q_{a}<1`, zero acceptance
+    probability is assigned to the cases where
+
+    .. math::
+        [1-(1-q_{a}) \beta \Delta E] < 0
+
+    The artificial temperature :math:`T_{q_{v}}(t)` is decreased according to
+
+    ..math::
+    T_{q_{v}}(t) = T_{q_{v}}(1) \frac{2^{q_{v}-1}-1}{\left( 1+t\right)^{q_{v}-1}-1}
+
     .. versionadded:: 0.19.0
 
     References
@@ -575,15 +608,13 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
     ...    ret.x, ret.fun))
     """
-    lower, upper = zip(*bounds)
-    gr = GenSARunner(func, x0, np.array(lower), np.array(upper), fargs=args)
-    gr._tempsta = T
-    gr._qv = visitparam
-    gr._qa = acceptparam
-    gr._maxtime = maxtime
-    gr._maxfuncall = maxcall
-    gr._maxsteps = niter
-    gr._extensive = False
+    gr = GenSARunner(func, x0, bounds, args, seed)
+    gr.temp_start = T
+    gr.qv = visitparam
+    gr.qa = acceptparam
+    gr.maxtime = maxtime
+    gr.maxfuncall = maxcall
+    gr.maxsteps = niter
     gr.initialize()
     gr.start_search()
     return gr.result
@@ -592,11 +623,10 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
 def main():
     func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
         + 10 * np.size(x)
-    dim = 5
+    dim = 10
     lw = np.array([-5.12] * dim)
     up = np.array([5.12] * dim)
-    xinit = lw + np.random.rand(dim) * (up - lw)
-    ret = gensa(func, xinit, (zip(lw, up)))
+    ret = gensa(func, None, (zip(lw, up)))
     print("global minimum: xmin = {0}, f(xmin) = {1}".format(
         ret.x, ret.fun))
 
