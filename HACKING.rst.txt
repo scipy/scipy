@@ -42,7 +42,7 @@ start this discussion before your code is finished.
 Assuming the outcome of the discussion on the mailing list is positive and you
 have a function or piece of code that does what you need it to do, what next?
 Before code is added to SciPy, it at least has to have good documentation, unit
-tests and correct code style.  
+tests and correct code style.
 
 1. Unit tests
     In principle you should aim to create unit tests that exercise all the code
@@ -72,7 +72,7 @@ tests and correct code style.
     idea.
 
 At the end of this document a checklist is given that may help to check if your
-code fulfills all requirements for inclusion in SciPy. 
+code fulfills all requirements for inclusion in SciPy.
 
 Another question you may have is: *where exactly do I put my code*?  To answer
 this, it is useful to understand how the SciPy public API (application
@@ -260,8 +260,10 @@ Useful SciPy documents
   - The `how to document`_ guidelines
   - NumPy/SciPy `testing guidelines`_
   - `SciPy API`_
+  - The `SciPy Roadmap`_
   - SciPy `maintainers`_
   - NumPy/SciPy `git workflow`_
+  - How to submit a good `bug report`_
 
 
 FAQ
@@ -280,10 +282,10 @@ compatibility`_.
 
 *Why is SciPy under the BSD license and not, say, the GPL?*
 
-Like Python, SciPy uses a "permissive" open source license, which allows 
-proprietary re-use. While this allows companies to use and modify the software 
-without giving anything back, it is felt that the larger user base results in 
-more contributions overall, and companies often publish their modifications 
+Like Python, SciPy uses a "permissive" open source license, which allows
+proprietary re-use. While this allows companies to use and modify the software
+without giving anything back, it is felt that the larger user base results in
+more contributions overall, and companies often publish their modifications
 anyway, without being required to.  See John Hunter's `BSD pitch`_.
 
 
@@ -440,6 +442,8 @@ various assert functions.
 
 .. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
+.. _bug report http://scipy.org/bug-report.html
+
 .. _PEP8: http://www.python.org/dev/peps/pep-0008/
 
 .. _pep8 package: http://pypi.python.org/pypi/pep8
@@ -448,7 +452,9 @@ various assert functions.
 
 .. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
-.. _git workflow: https://docs.scipy.org/doc/numpy/dev/gitwash/index.html
+.. _SciPy Roadmap http://docs.scipy.org/doc/scipy/reference/roadmap.html
+
+.. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
 
