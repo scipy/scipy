@@ -196,7 +196,7 @@ def _get_ctypes_data(data):
 
 def _get_cffi_func(func):
     # Get function pointer
-    func_ptr = ffi.cast('unsigned long long', func)
+    func_ptr = ffi.cast('uintptr_t', func)
 
     # Get signature
     signature = ffi.getctype(ffi.typeof(func)).replace('(*)', ' ')
@@ -206,4 +206,4 @@ def _get_cffi_func(func):
 
 def _get_cffi_data(data):
     # Get pointer
-    return ffi.cast('unsigned long long', data)
+    return ffi.cast('uintptr_t', data)
