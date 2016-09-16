@@ -346,7 +346,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : {'avg', 'first', 'str'}, optional
+    even : str {'avg', 'first', 'last'}, optional
         'avg' : Average two results:1) use the first N-2 intervals with
                   a trapezoidal rule on the last interval and 2) use the last
                   N-2 intervals with a trapezoidal rule on the first interval.
