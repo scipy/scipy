@@ -2103,10 +2103,14 @@ class TestOrdQZ(TestCase):
 
         # example with infinite eigenvalues
         A4 = np.eye(2)
-        B4 = np.array([[0, 0], [0, 1]])
+        B4 = np.diag([0, 1])
 
-        cls.A = [A1, A2, A3, A4]
-        cls.B = [B1, B2, B3, B4]
+        # example with (alpha, beta) = (0, 0)
+        A5 = np.diag([1, 0])
+        B5 = np.diag([1, 0])
+
+        cls.A = [A1, A2, A3, A4, A5]
+        cls.B = [B1, B2, B3, B4, A5]
 
     def qz_decomp(self, sort):
         try:
@@ -2146,7 +2150,10 @@ class TestOrdQZ(TestCase):
                     tmp = tmp[[1, 0]]
                 assert_array_almost_equal(evals, tmp)
             else:
-                if beta[i] == 0:
+                if alpha[i] == 0 and beta[i] == 0:
+                    assert_equal(AA[i, i], 0)
+                    assert_equal(BB[i, i], 0)
+                elif beta[i] == 0:
                     assert_equal(BB[i, i], 0)
                 else:
                     assert_almost_equal(AA[i, i]/BB[i, i], alpha[i]/beta[i])
@@ -2210,38 +2217,48 @@ class TestOrdQZ(TestCase):
     def test_sort_explicit(self):
         # Test order of the eigenvalues in the 2 x 2 case where we can
         # explicitly compute the solution
-        A = np.eye(2)
-
+        A1 = np.eye(2)
         B1 = np.diag([-2, 0.5])
         expected1 = [('lhp', [-0.5, 2]),
                     ('rhp', [2, -0.5]),
                     ('iuc', [-0.5, 2]),
                     ('ouc', [2, -0.5])]
+        A2 = np.eye(2)
         B2 = np.diag([-2 + 1j, 0.5 + 0.5j])
         expected2 = [('lhp', [1/(-2 + 1j), 1/(0.5 + 0.5j)]),
                      ('rhp', [1/(0.5 + 0.5j), 1/(-2 + 1j)]),
                      ('iuc', [1/(-2 + 1j), 1/(0.5 + 0.5j)]),
                      ('ouc', [1/(0.5 + 0.5j), 1/(-2 + 1j)])]
         # 'lhp' is ambiguous so don't test it
+        A3 = np.eye(2)
         B3 = np.diag([2, 0])
         expected3 = [('rhp', [0.5, np.inf]),
                      ('iuc', [0.5, np.inf]),
                      ('ouc', [np.inf, 0.5])]
         # 'rhp' is ambiguous so don't test it
+        A4 = np.eye(2)
         B4 = np.diag([-2, 0])
         expected4 = [('lhp', [-0.5, np.inf]),
                      ('iuc', [-0.5, np.inf]),
                      ('ouc', [np.inf, -0.5])]
+        A5 = np.diag([0, 1])
+        B5 = np.diag([0, 0.5])
+        # 'lhp' and 'iuc' are ambiguous so don't test them
+        expected5 = [('rhp', [2, np.nan]),
+                     ('ouc', [2, np.nan])]
 
-        B = [B1, B2, B3, B4]
-        expected = [expected1, expected2, expected3, expected4]
-        for Bi, expectedi in zip(B, expected):
+        A = [A1, A2, A3, A4, A5]
+        B = [B1, B2, B3, B4, B5]
+        expected = [expected1, expected2, expected3, expected4, expected5]
+        for Ai, Bi, expectedi in zip(A, B, expected):
             for sortstr, expected_eigvals in expectedi:
-                _, _, alpha, beta, _, _ = ordqz(A, Bi, sort=sortstr)
-                nonzero = (beta != 0)
+                _, _, alpha, beta, _, _ = ordqz(Ai, Bi, sort=sortstr)
+                azero = (alpha == 0)
+                bzero = (beta == 0)
                 x = np.empty_like(alpha)
-                x[~nonzero] = np.inf
-                x[nonzero] = alpha[nonzero]/beta[nonzero]
+                x[azero & bzero] = np.nan
+                x[~azero & bzero] = np.inf
+                x[~bzero] = alpha[~bzero]/beta[~bzero]
                 assert_allclose(expected_eigvals, x)
 
 

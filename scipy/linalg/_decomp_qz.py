@@ -37,6 +37,7 @@ def _select_function(sort):
 def _lhp(x, y):
     out = np.empty_like(x, dtype=bool)
     nonzero = (y != 0)
+    # handles (x, y) = (0, 0) too
     out[~nonzero] = False
     out[nonzero] = (np.real(x[nonzero]/y[nonzero]) < 0.0)
     return out
@@ -45,6 +46,7 @@ def _lhp(x, y):
 def _rhp(x, y):
     out = np.empty_like(x, dtype=bool)
     nonzero = (y != 0)
+    # handles (x, y) = (0, 0) too
     out[~nonzero] = False
     out[nonzero] = (np.real(x[nonzero]/y[nonzero]) > 0.0)
     return out
@@ -53,6 +55,7 @@ def _rhp(x, y):
 def _iuc(x, y):
     out = np.empty_like(x, dtype=bool)
     nonzero = (y != 0)
+    # handles (x, y) = (0, 0) too
     out[~nonzero] = False
     out[nonzero] = (abs(x[nonzero]/y[nonzero]) < 1.0)
     return out
@@ -60,9 +63,11 @@ def _iuc(x, y):
 
 def _ouc(x, y):
     out = np.empty_like(x, dtype=bool)
-    nonzero = (y != 0)
-    out[~nonzero] = True
-    out[nonzero] = (abs(x[nonzero]/y[nonzero]) > 1.0)
+    xzero = (x == 0)
+    yzero = (y == 0)
+    out[xzero & yzero] = False
+    out[~xzero & yzero] = True
+    out[~yzero] = (abs(x[~yzero]/y[~yzero]) > 1.0)
     return out
 
 
@@ -287,10 +292,12 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
             - 'iuc'   Inside the unit circle (x*x.conjugate() < 1.0)
             - 'ouc'   Outside the unit circle (x*x.conjugate() > 1.0)
 
-        With the string parameters, an infinite eigenvalue
-        (i.e. ``beta = 0``) is considered to lie in neither the
-        left-hand nor the right-hand plane, but it is considered to lie
-        outside the unit circle.
+        With the predefined sorting functions, an infinite eigenvalue
+        (i.e. ``alpha != 0`` and ``beta = 0``) is considered to lie in
+        neither the left-hand nor the right-hand plane, but it is
+        considered to lie outside the unit circle. For the eigenvalue
+        ``(alpha, beta) = (0, 0)`` the predefined sorting functions
+        all return `False`.
 
     output : str {'real','complex'}, optional
         Construct the real or complex QZ decomposition for real matrices.
