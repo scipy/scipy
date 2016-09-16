@@ -320,6 +320,7 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
     ccallback_t callback;
     static char *callback_signatures[] = {
         "int (double *, npy_intp, double *, npy_intp, void *)",
+        "int (double *, intptr_t, double *, intptr_t, void *)",
         NULL
     };
 
@@ -427,6 +428,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     ccallback_t callback;
     static char *callback_signatures[] = {
         "int (double *, npy_intp, double *, void *)",
+        "int (double *, intptr_t, double *, void *)",
         NULL
     };
 
@@ -612,6 +614,7 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     ccallback_t callback;
     static char *callback_signatures[] = {
         "int (npy_intp *, double *, int, int, void *)",
+        "int (intptr_t *, double *, int, int, void *)",
         NULL
     };
 
