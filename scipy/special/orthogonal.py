@@ -273,9 +273,42 @@ def j_roots(n, alpha, beta, mu=False):
 
 
 def jacobi(n, alpha, beta, monic=False):
-    """Returns the nth order Jacobi polynomial, P^(alpha,beta)_n(x)
-    orthogonal over [-1,1] with weighting function
-    (1-x)**alpha (1+x)**beta with alpha,beta > -1.
+    r"""Jacobi polynomial.
+
+    Defined to be the solution of
+
+    .. math::
+        (1 - x^2)\frac{d^2}{dx^2}P_n^{(\alpha, \beta)}
+          + (\beta - \alpha - (\alpha + \beta + 2)x)
+            \frac{d}{dx}P_n^{(\alpha, \beta)}
+          + n(n + \alpha + \beta + 1)P_n^{(\alpha, \beta)} = 0
+
+    for :math:`\alpha, \beta > -1`; :math:`P_n^{(\alpha, \beta)}` is a
+    polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    alpha : float
+        Parameter, must be greater than -1.
+    beta : float
+        Parameter, must be greater than -1.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    P : orthopoly1d
+        Jacobi polynomial.
+
+    Notes
+    -----
+    For fixed :math:`\alpha, \beta`, the polynomials
+    :math:`P_n^{(\alpha, \beta)}` are orthogonal over :math:`[-1, 1]`
+    with weight function :math:`(1 - x)^\alpha(1 + x)^\beta`.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -345,9 +378,40 @@ def js_roots(n, p1, q1, mu=False):
         return x, w
 
 def sh_jacobi(n, p, q, monic=False):
-    """Returns the nth order Jacobi polynomial, G_n(p,q,x)
-    orthogonal over [0,1] with weighting function
-    (1-x)**(p-q) (x)**(q-1) with p>q-1 and q > 0.
+    r"""Shifted Jacobi polynomial.
+
+    Defined by
+
+    .. math::
+
+        G_n^{(p, q)}(x) 
+          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
+
+    where :math:`P_n^{(\cdot, \cdot)}` is the nth Jacobi polynomial.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    p : float
+        Parameter, must have :math:`p > q - 1`.
+    q : float
+        Parameter, must be greater than 0.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    G : orthopoly1d
+        Shifted Jacobi polynomial.
+
+    Notes
+    -----
+    For fixed :math:`p, q`, the polynomials :math:`G_n^{(p, q)}` are
+    orthogonal over :math:`[0, 1]` with weight function :math:`(1 -
+    x)^{p - q}x^{q - 1}`.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -427,11 +491,48 @@ def la_roots(n, alpha, mu=False):
 
 
 def genlaguerre(n, alpha, monic=False):
-    """Returns the nth order generalized (associated) Laguerre polynomial,
-    L^(alpha)_n(x), orthogonal over [0,inf) with weighting function
-    exp(-x) x**alpha with alpha > -1
+    r"""Generalized (associated) Laguerre polynomial.
+
+    Defined to be the solution of
+
+    .. math::
+        x\frac{d^2}{dx^2}L_n^{(\alpha)} 
+          + (\alpha + 1 - x)\frac{d}{dx}L_n^{(\alpha)}
+          + nL_n^{(\alpha)} = 0,
+
+    where :math:`\alpha > -1`; :math:`L_n^{(\alpha)}` is a polynomial
+    of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    alpha : float
+        Parameter, must be greater than -1.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    L : orthopoly1d
+        Generalized Laguerre polynomial.
+
+    Notes
+    -----
+    For fixed :math:`\alpha`, the polynomials :math:`L_n^{(\alpha)}`
+    are orthogonal over :math:`[0, \infty)` with weight function
+    :math:`e^{-x}x^\alpha`.
+
+    The Laguerre polynomials are the special case where :math:`\alpha
+    = 0`.
+
+    See Also
+    --------
+    laguerre : Laguerre polynomial.
+
     """
-    if any(alpha <= -1):
+    if alpha <= -1:
         raise ValueError("alpha must be > -1")
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -488,8 +589,33 @@ def l_roots(n, mu=False):
 
 
 def laguerre(n, monic=False):
-    """Return the nth order Laguerre polynoimal, L_n(x), orthogonal over
-    [0,inf) with weighting function exp(-x)
+    r"""Laguerre polynomial.
+
+    Defined to be the solution of
+
+    .. math::
+        x\frac{d^2}{dx^2}L_n + (1 - x)\frac{d}{dx}L_n + nL_n = 0;
+
+    :math:`L_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    L : orthopoly1d
+        Laguerre Polynomial.
+
+    Notes
+    -----
+    The polynomials :math:`L_n` are orthogonal over :math:`[0,
+    \infty)` with weight function :math:`e^{-x}`.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -952,8 +1078,34 @@ def _h_roots_asy(n):
 
 
 def hermite(n, monic=False):
-    """Return the nth order Hermite polynomial, H_n(x), orthogonal over
-    (-inf,inf) with weighting function exp(-x**2)
+    r"""Physicist's Hermite polynomial.
+
+    Defined by
+
+    .. math::
+
+        H_n(x) = (-1)^ne^{x^2}\frac{d^n}{dx^n}e^{-x^2};
+
+    :math:`H_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    H : orthopoly1d
+        Hermite polynomial.
+
+    Notes
+    -----
+    The polynomials :math:`H_n` are orthogonal over :math:`(-\infty,
+    \infty)` with weight function :math:`e^{-x^2}`.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -982,7 +1134,7 @@ def he_roots(n, mu=False):
     The sample points are the roots of the n-th degree Hermite polynomial,
     :math:`He_n(x)`.  These sample points and weights correctly integrate
     polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-(x/2)^2}`.
+    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-x^2/2}`.
 
     Parameters
     ----------
@@ -1041,8 +1193,35 @@ def he_roots(n, mu=False):
 
 
 def hermitenorm(n, monic=False):
-    """Return the nth order normalized Hermite polynomial, He_n(x), orthogonal
-    over (-inf,inf) with weighting function exp(-(x/2)**2)
+    r"""Normalized (probabilist's) Hermite polynomial.
+
+    Defined by
+
+    .. math::
+
+        He_n(x) = (-1)^ne^{x^2/2}\frac{d^n}{dx^n}e^{-x^2/2};
+
+    :math:`He_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    He : orthopoly1d
+        Hermite polynomial.
+
+    Notes
+    -----
+
+    The polynomials :math:`He_n` are orthogonal over :math:`(-\infty,
+    \infty)` with weight function :math:`e^{-x^2/2}`.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1122,9 +1301,37 @@ def cg_roots(n, alpha, mu=False):
 
 
 def gegenbauer(n, alpha, monic=False):
-    """Return the nth order Gegenbauer (ultraspherical) polynomial,
-    C^(alpha)_n(x), orthogonal over [-1,1] with weighting function
-    (1-x**2)**(alpha-1/2) with alpha > -1/2
+    r"""Gegenbauer (ultraspherical) polynomial.
+
+    Defined to be the solution of
+
+    .. math::
+        (1 - x^2)\frac{d^2}{dx^2}C_n^{(\alpha)}
+          - (2\alpha + 1)x\frac{d}{dx}C_n^{(\alpha)}
+          + n(n + 2\alpha)C_n^{(\alpha)} = 0
+
+    for :math:`\alpha > -1/2`; :math:`C_n^{(\alpha)}` is a polynomial
+    of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    C : orthopoly1d
+        Gegenbauer polynomial.
+
+    Notes
+    -----
+    The polynomials :math:`C_n^{(\alpha)}` are orthogonal over
+    :math:`[-1,1]` with weight function :math:`(1 - x^2)^{(\alpha -
+    1/2)}`.
+
     """
     base = jacobi(n, alpha - 0.5, alpha - 0.5, monic=monic)
     if monic:
@@ -1185,8 +1392,37 @@ def t_roots(n, mu=False):
 
 
 def chebyt(n, monic=False):
-    """Return nth order Chebyshev polynomial of first kind, Tn(x).  Orthogonal
-    over [-1,1] with weight function (1-x**2)**(-1/2).
+    r"""Chebyshev polynomial of the first kind.
+
+    Defined to be the solution of
+
+    .. math::
+        (1 - x^2)\frac{d^2}{dx^2}T_n - x\frac{d}{dx}T_n + n^2T_n = 0;
+
+    :math:`T_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    T : orthopoly1d
+        Chebyshev polynomial of the first kind.
+
+    Notes
+    -----
+    The polynomials :math:`T_n` are orthogonal over :math:`[-1, 1]`
+    with weight function :math:`(1 - x^2)^{-1/2}`.
+
+    See Also
+    --------
+    chebyu : Chebyshev polynomial of the second kind.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1250,8 +1486,38 @@ def u_roots(n, mu=False):
 
 
 def chebyu(n, monic=False):
-    """Return nth order Chebyshev polynomial of second kind, Un(x).  Orthogonal
-    over [-1,1] with weight function (1-x**2)**(1/2).
+    r"""Chebyshev polynomial of the second kind.
+
+    Defined to be the solution of
+
+    .. math::
+        (1 - x^2)\frac{d^2}{dx^2}U_n - 3x\frac{d}{dx}U_n
+          + n(n + 2)U_n = 0;
+
+    :math:`U_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    U : orthopoly1d
+        Chebyshev polynomial of the second kind.
+
+    Notes
+    -----
+    The polynomials :math:`U_n` are orthogonal over :math:`[-1, 1]`
+    with weight function :math:`(1 - x^2)^{1/2}`.
+
+    See Also
+    --------
+    chebyt : Chebyshev polynomial of the first kind.
+
     """
     base = jacobi(n, 0.5, 0.5, monic=monic)
     if monic:
@@ -1304,9 +1570,38 @@ def c_roots(n, mu=False):
 
 
 def chebyc(n, monic=False):
-    """Return n-th order Chebyshev polynomial of first kind, :math:`C_n(x)`. 
-    Orthogonal over :math:`[-2, 2]` with weight function
-    :math:`f(x) = 1/\sqrt{1 - (x/2)^2}`
+    r"""Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
+
+    Defined as :math:`C_n(x) = 2T_n(x/2)`, where :math:`T_n` is the
+    nth Chebychev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    C : orthopoly1d
+        Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
+
+    Notes
+    -----
+    The polynomials :math:`C_n(x)` are orthogonal over :math:`[-2, 2]`
+    with weight function :math:`1/\sqrt{1 - (x/2)^2}`.
+
+    See Also
+    --------
+    chebyt : Chebyshev polynomial of the first kind.
+
+    References
+    ----------
+    .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
+           Section 22. National Bureau of Standards, 1972.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1372,9 +1667,38 @@ def s_roots(n, mu=False):
 
 
 def chebys(n, monic=False):
-    r"""Return nth order Chebyshev polynomial of second kind, :math:`S_n(x)`.
-    Orthogonal over :math:`[-2, 2]` with weight function
-    :math:`f(x) = \sqrt{1 - (x/2)^2}`.
+    r"""Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
+
+    Defined as :math:`S_n(x) = U_n(x/2)` where :math:`U_n` is the
+    nth Chebychev polynomial of the second kind.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    S : orthopoly1d
+        Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
+
+    Notes
+    -----
+    The polynomials :math:`S_n(x)` are orthogonal over :math:`[-2, 2]`
+    with weight function :math:`\sqrt{1 - (x/2)}^2`.
+
+    See Also
+    --------
+    chebyu : Chebyshev polynomial of the second kind
+
+    References
+    ----------
+    .. [1] Abramowitz and Stegun, "Handbook of Mathematical Functions"
+           Section 22. National Bureau of Standards, 1972.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
@@ -1436,8 +1760,29 @@ def ts_roots(n, mu=False):
 
 
 def sh_chebyt(n, monic=False):
-    """Return nth order shifted Chebyshev polynomial of first kind, Tn(x).
-    Orthogonal over [0,1] with weight function (x-x**2)**(-1/2).
+    r"""Shifted Chebyshev polynomial of the first kind.
+
+    Defined as :math:`T^*_n(x) = T_n(2x - 1)` for :math:`T_n` the nth
+    Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    T : orthopoly1d
+        Shifted Chebyshev polynomial of the first kind.
+
+    Notes
+    -----
+    The polynomials :math:`T^*_n` are orthogonal over :math:`[0, 1]`
+    with weight function :math:`(x - x^2)^{-1/2}`.
+
     """
     base = sh_jacobi(n, 0.0, 0.5, monic=monic)
     if monic:
@@ -1493,8 +1838,29 @@ def us_roots(n, mu=False):
 
 
 def sh_chebyu(n, monic=False):
-    """Return nth order shifted Chebyshev polynomial of second kind, Un(x).
-    Orthogonal over [0,1] with weight function (x-x**2)**(1/2).
+    r"""Shifted Chebyshev polynomial of the second kind.
+
+    Defined as :math:`U^*_n(x) = U_n(2x - 1)` for :math:`U_n` the nth
+    Chebyshev polynomial of the second kind.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    U : orthopoly1d
+        Shifted Chebyshev polynomial of the second kind.
+
+    Notes
+    -----
+    The polynomials :math:`U^*_n` are orthogonal over :math:`[0, 1]`
+    with weight function :math:`(x - x^2)^{1/2}`.
+
     """
     base = sh_jacobi(n, 2.0, 1.5, monic=monic)
     if monic:
@@ -1551,24 +1917,33 @@ def p_roots(n, mu=False):
 
 
 def legendre(n, monic=False):
-    """
-    Legendre polynomial coefficients
+    r"""Legendre polynomial.
 
-    Returns the nth-order Legendre polynomial, P_n(x), orthogonal over
-    [-1, 1] with weight function 1.
+    Defined to be the solution of
+
+    .. math::
+        \frac{d}{dx}\left[(1 - x^2)\frac{d}{dx}P_n(x)\right]
+          + n(n + 1)P_n(x) = 0;
+
+    :math:`P_n(x)` is a polynomial of degree :math:`n`.
 
     Parameters
     ----------
-    n
-        Order of the polynomial
+    n : int
+        Degree of the polynomial.
     monic : bool, optional
-        If True, output is a monic polynomial (normalized so the leading
-        coefficient is 1).  Default is False.
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
 
     Returns
     -------
     P : orthopoly1d
-        The Legendre polynomial object
+        Legendre polynomial.
+
+    Notes
+    -----
+    The polynomials :math:`P_n` are orthogonal over :math:`[-1, 1]`
+    with weight function 1.
 
     Examples
     --------
@@ -1637,8 +2012,29 @@ def ps_roots(n, mu=False):
         return x, w
 
 def sh_legendre(n, monic=False):
-    """Returns the nth order shifted Legendre polynomial, P^*_n(x), orthogonal
-    over [0,1] with weighting function 1.
+    r"""Shifted Legendre polynomial.
+
+    Defined as :math:`P^*_n(x) = P_n(2x - 1)` for :math:`P_n` the nth
+    Legendre polynomial.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial.
+    monic : bool, optional
+        If `True`, scale the leading coefficient to be 1. Default is
+        `False`.
+
+    Returns
+    -------
+    P : orthopoly1d
+        Shifted Legendre polynomial.
+
+    Notes
+    -----
+    The polynomials :math:`P^*_n` are orthogonal over :math:`[0, 1]`
+    with weight function 1.
+
     """
     if n < 0:
         raise ValueError("n must be nonnegative.")
