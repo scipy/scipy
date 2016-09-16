@@ -305,9 +305,9 @@ def jacobi(n, alpha, beta, monic=False):
 
     Notes
     -----
-    For fixed :math:`\alpha, \beta`, the polynomials `P_n^{(\alpha,
-    \beta)}` are orthogonal over :math:`[-1, 1]` with weight function
-    :math:`(1 - x)^\alpha(1 + x)^\beta`.
+    For fixed :math:`\alpha, \beta`, the polynomials
+    :math:`P_n^{(\alpha, \beta)}` are orthogonal over :math:`[-1, 1]`
+    with weight function :math:`(1 - x)^\alpha(1 + x)^\beta`.
 
     """
     if n < 0:
@@ -520,8 +520,8 @@ def genlaguerre(n, alpha, monic=False):
 
     Notes
     -----
-    For fixed :math:`\alpha`, the polynomials `L_n^{(\alpha)}` are
-    orthogonal over :math:`[0, \infty)` with weight function
+    For fixed :math:`\alpha`, the polynomials :math:`L_n^{(\alpha)}`
+    are orthogonal over :math:`[0, \infty)` with weight function
     :math:`e^{-x}x^\alpha`.
 
     The Laguerre polynomials are the special case where :math:`\alpha
@@ -1103,7 +1103,7 @@ def hermite(n, monic=False):
 
     Notes
     -----
-    The polynomials `H_n` are orthogonal over :math:`(-\infty,
+    The polynomials :math:`H_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2}`.
 
     """
@@ -1134,7 +1134,7 @@ def he_roots(n, mu=False):
     The sample points are the roots of the n-th degree Hermite polynomial,
     :math:`He_n(x)`.  These sample points and weights correctly integrate
     polynomials of degree :math:`2n - 1` or less over the interval
-    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-(x/2)^2}`.
+    :math:`[-\infty, \infty]` with weight function :math:`f(x) = e^{-x^2/2}`.
 
     Parameters
     ----------
@@ -1218,8 +1218,9 @@ def hermitenorm(n, monic=False):
 
     Notes
     -----
-    The polynomials `He_n` are orthogonal over :math:`(-\infty,
-    \infty)` with weight function :math:`e^{-(x/2)^2}`.
+
+    The polynomials :math:`He_n` are orthogonal over :math:`(-\infty,
+    \infty)` with weight function :math:`e^{-x^2/2}`.
 
     """
     if n < 0:
