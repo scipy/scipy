@@ -828,12 +828,12 @@ class TestInterp(TestCase):
         der = [(1, 8.)]  # order, value: f'(x) = 8.
 
         # derivative at right-hand edge
-        b = make_interp_spline(self.xx, self.yy, k=2, deriv_r=der)
+        b = make_interp_spline(self.xx, self.yy, k=2, bc_type=(None, der))
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[-1], 1), der[0][1], atol=1e-14, rtol=1e-14)
 
         # derivative at left-hand edge
-        b = make_interp_spline(self.xx, self.yy, k=2, deriv_l=der)
+        b = make_interp_spline(self.xx, self.yy, k=2, bc_type=(der, None))
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[0], 1), der[0][1], atol=1e-14, rtol=1e-14)
 
@@ -842,16 +842,14 @@ class TestInterp(TestCase):
 
         # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.)], [(1, 4.)]
-        b = make_interp_spline(self.xx, self.yy, k,
-                               deriv_l=der_l, deriv_r=der_r)
+        b = make_interp_spline(self.xx, self.yy, k, bc_type=(der_l, der_r))
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose([b(self.xx[0], 1), b(self.xx[-1], 1)],
                         [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
 
         # 'natural' cubic spline, zero out 2nd derivatives at the boundaries
         der_l, der_r = [(2, 0)], [(2, 0)]
-        b = make_interp_spline(self.xx, self.yy, k,
-                               deriv_l=der_l, deriv_r=der_r)
+        b = make_interp_spline(self.xx, self.yy, k, bc_type=(der_l, der_r))
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_quintic_derivs(self):
@@ -860,7 +858,7 @@ class TestInterp(TestCase):
         y = np.sin(x)
         der_l = [(1, -12.), (2, 1)]
         der_r = [(1, 8.), (2, 3.)]
-        b = make_interp_spline(x, y, k=k, deriv_l=der_l, deriv_r=der_r)
+        b = make_interp_spline(x, y, k=k, bc_type=(der_l, der_r))
         assert_allclose(b(x), y, atol=1e-14, rtol=1e-14)
         assert_allclose([b(x[0], 1), b(x[0], 2)],
                         [val for (nu, val) in der_l])
@@ -879,7 +877,7 @@ class TestInterp(TestCase):
         t = _augknt(self.xx, k)
 
         der_l = [(1, 3.), (2, 4.)]
-        b = make_interp_spline(self.xx, self.yy, k, t, deriv_l=der_l)
+        b = make_interp_spline(self.xx, self.yy, k, t, bc_type=(der_l, None))
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
     def test_knots_not_data_sites(self):
@@ -891,7 +889,7 @@ class TestInterp(TestCase):
                   (self.xx[1:] + self.xx[:-1]) / 2.,
                   (self.xx[-1],)*(k+1)]
         b = make_interp_spline(self.xx, self.yy, k, t,
-                               deriv_l=[(2, 0)], deriv_r=[(2, 0)])
+                               bc_type=([(2, 0)], [(2, 0)]))
 
         assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
         assert_allclose([b(self.xx[0], 2), b(self.xx[-1], 2)], [0., 0.],
@@ -903,7 +901,7 @@ class TestInterp(TestCase):
         k = 3
         x = [0., 1.]
         y = [0., 1.]
-        b = make_interp_spline(x, y, k, deriv_l=[(1, 0.)], deriv_r=[(1, 3.)])
+        b = make_interp_spline(x, y, k, bc_type=([(1, 0.)], [(1, 3.)]))
         
         xx = np.linspace(0., 1.)
         yy = xx**3
@@ -912,7 +910,7 @@ class TestInterp(TestCase):
         # If one of the derivatives is omitted, the spline definition is 
         # incomplete:
         assert_raises(ValueError, make_interp_spline, x, y, k, 
-                **dict(deriv_l=[(1, 0.)], deriv_r=None))
+                **dict(bc_type=([(1, 0.)], None)))
 
     def test_complex(self):
         k = 3
@@ -921,8 +919,7 @@ class TestInterp(TestCase):
 
         # first derivatives at left & right edges:
         der_l, der_r = [(1, 3.j)], [(1, 4.+2.j)]
-        b = make_interp_spline(xx, yy, k,
-                               deriv_l=der_l, deriv_r=der_r)
+        b = make_interp_spline(xx, yy, k, bc_type=(der_l, der_r))
         assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
         assert_allclose([b(xx[0], 1), b(xx[-1], 1)],
                         [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
@@ -957,8 +954,7 @@ class TestInterp(TestCase):
         der_l = [(1, [1., 2.])]
         der_r = [(1, [3., 4.])]
 
-        b = make_interp_spline(self.xx, yy, k=3,
-                               deriv_l=der_l, deriv_r=der_r)
+        b = make_interp_spline(self.xx, yy, k=3, bc_type=(der_l, der_r))
         assert_allclose(b(self.xx), yy, atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[0], 1), der_l[0][1], atol=1e-14, rtol=1e-14)
         assert_allclose(b(self.xx[-1], 1), der_r[0][1], atol=1e-14, rtol=1e-14)
@@ -975,7 +971,7 @@ class TestInterp(TestCase):
         # now throw in some derivatives
         d_l = [(1, np.random.random((5, 6, 7)))]
         d_r = [(1, np.random.random((5, 6, 7)))]
-        b = make_interp_spline(x, y, k, deriv_l=d_l, deriv_r=d_r)
+        b = make_interp_spline(x, y, k, bc_type=(d_l, d_r))
         assert_equal(b.c.shape, (n + k - 1, 5, 6, 7))
 
     def test_full_matrix(self):

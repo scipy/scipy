@@ -516,8 +516,8 @@ def _as_float_array(x, check_finite=False):
     return x
 
 
-def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
-                       axis=0, check_finite=True):
+def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
+                       check_finite=True):
     """Compute the (coefficients of) interpolating B-spline.
 
     Parameters
@@ -533,12 +533,15 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
         The number of knots needs to agree with the number of datapoints and
         the number of derivatives at the edges. Specifically, ``nt - n`` must
         equal ``len(deriv_l) + len(deriv_r)``.
-    deriv_l : iterable of pairs (int, float) or None
-        Derivatives known at ``x[0]``: (order, value).
-        Default is None.
-    deriv_r : iterable of pairs (int, float) or None
-        Derivatives known at ``x[-1]``.
-        Default is None.
+    bc_type : 2-tuple or None
+        Boundary conditions.
+        Default is None, which means choosing the boundary conditions
+        automatically. Otherwise, it must be a length-two tuple where the first
+        element sets the boundary conditions at ``x[0]`` and the second
+        element sets the boundary conditions at ``x[-1]``. Each of these must
+        be an iterable of pairs ``(order, value)`` which gives the values of
+        derivatives of specified orders at the given edge of the interpolation
+        interval.
     axis : int, optional
         Interpolation axis. Default is 0.
     check_finite : bool, optional
@@ -577,7 +580,7 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     Here we use a 'natural' spline, with zero 2nd derivatives at edges:
 
     >>> l, r = [(2, 0)], [(2, 0)]
-    >>> b_n = make_interp_spline(x, y, deriv_l=l, deriv_r=r)
+    >>> b_n = make_interp_spline(x, y, bc_type=(l, r))
     >>> np.allclose(b_n(x), y)
     True
     >>> x0, x1 = x[0], x[-1]
@@ -612,11 +615,16 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     See Also
     --------
     BSpline : base class representing the B-spline objects
+    CubicSpline : a cubic spline in the polynomial basis
     make_lsq_spline : a similar factory function for spline fitting
     UnivariateSpline : a wrapper over FITPACK spline fitting routines
     splrep : a wrapper over FITPACK spline fitting routines
 
     """
+    if bc_type is None:
+        bc_type = (None, None)
+    deriv_l, deriv_r = bc_type
+
     # special-case k=0 right away
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
@@ -655,7 +663,7 @@ def make_interp_spline(x, y, k=3, t=None, deriv_l=None, deriv_r=None,
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
-        raise ValueError('x & y are incompatible.')
+        raise ValueError('x and y are incompatible.')
     if t.size < x.size + k + 1:
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
