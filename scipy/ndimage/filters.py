@@ -1347,13 +1347,16 @@ def generic_filter1d(input, function, filter_size, axis=-1,
 
     Notes
     -----
-    This function also accepts low-level callback functions with
-    the following signature and wrapped in `scipy.LowLevelCallable`:
+    This function also accepts low-level callback functions with one of
+    the following signatures and wrapped in `scipy.LowLevelCallable`:
 
     .. code:: c
 
        int function(double *input_line, npy_intp input_length, 
                     double *output_line, npy_intp output_length, 
+                    void *user_data)
+       int function(double *input_line, intptr_t input_length, 
+                    double *output_line, intptr_t output_length, 
                     void *user_data)
 
     The calling function iterates over the lines of the input and output
@@ -1421,12 +1424,14 @@ def generic_filter(input, function, size=None, footprint=None,
 
     Notes
     -----
-    This function also accepts low-level callback functions with
-    the following signature and wrapped in `scipy.LowLevelCallable`:
+    This function also accepts low-level callback functions with one of
+    the following signatures and wrapped in `scipy.LowLevelCallable`:
 
     .. code:: c
 
        int callback(double *buffer, npy_intp filter_size, 
+                    double *return_value, void *user_data)
+       int callback(double *buffer, intptr_t filter_size, 
                     double *return_value, void *user_data)
 
     The calling function iterates over the elements of the input and

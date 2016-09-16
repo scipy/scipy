@@ -312,6 +312,8 @@ does not correspond to
 
 because the order of the polynomial in f2 is larger than two.
 
+.. _quad-callbacks:
+
 Faster integration using low-level callback functions
 -----------------------------------------------------
 

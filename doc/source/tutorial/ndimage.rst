@@ -1635,6 +1635,8 @@ We can also implement the callback function with the following C code.
 
 .. code:: c
 
+   /* example.c */
+
    #include <Python.h>
    #include <numpy/npy_common.h>
 
@@ -1764,8 +1766,23 @@ C callback functions for :mod:`ndimage` all follow this scheme. The
 next section lists the :mod:`ndimage` functions that accept a C
 callback function and gives the prototype of the function.
 
-Finally, the same code can be written in Cython with less
-overhead as follows.
+.. seealso::
+
+   The functions that support low-level callback arguments are:
+
+   `generic_filter`, `generic_filter1d`, `geometric_transform`
+
+Below, we show alternative ways to write the code, using Cython_,
+ctypes_, or cffi_ instead of writing wrapper code in C.
+
+.. _Cython: http://cython.org/
+.. _ctypes: https://docs.python.org/3/library/ctypes.html
+.. _cffi: https://cffi.readthedocs.io/
+
+.. rubric:: Cython
+
+Functionally the same code as above can be written in Cython with
+somewhat less boilerplate as follows.
 
 .. code:: cython
 
@@ -1800,14 +1817,109 @@ overhead as follows.
    im = np.arange(12).reshape(4, 3).astype(np.float64)
    print(ndimage.geometric_transform(im, callback))
 
-.. seealso::
 
-   The functions that support low-level callback arguments are:
-   
-   `generic_filter`, `generic_filter1d`, `geometric_transform`
+.. rubric:: cffi
+
+With cffi_, you can interface with a C function residing in a shared
+library (DLL). First, we need to write the shared library, which we do
+in C --- this example is for Linux/OSX:
+
+.. code:: c
+
+   /*
+     example.c
+     Needs to be compiled with "gcc -std=c99 -shared -fPIC -o example.so example.c"
+     or similar
+    */
+
+   #include <stdint.h>
+
+   int
+   _transform(intptr_t *output_coordinates, double *input_coordinates,
+              int output_rank, int input_rank, void *user_data)
+   {
+       int i;
+       double shift = *(double *)user_data;
+
+       for (i = 0; i < input_rank; i++) {
+           input_coordinates[i] = output_coordinates[i] - shift;
+       }
+       return 1;
+   }
+
+The Python code calling the library is:
+
+.. code:: python
+
+   import os
+   import numpy as np
+   from scipy import ndimage, LowLevelCallable
+   import cffi
+
+   # Construct the FFI object, and copypaste the function declaration
+   ffi = cffi.FFI()
+   ffi.cdef("""
+   int _transform(intptr_t *output_coordinates, double *input_coordinates,
+                  int output_rank, int input_rank, void *user_data);
+   """)
+
+   # Open library
+   lib = ffi.dlopen(os.path.abspath("example.so"))
+
+   # Do the function call
+   user_data = ffi.new('double *', 0.5)
+   callback = LowLevelCallable(lib._transform, user_data)
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   print(ndimage.geometric_transform(im, callback))
+
+You can find more information in the cffi_ documentation.
+
+.. rubric:: ctypes
+
+With *ctypes*, the C code and the compilation of the so/DLL is as for
+cffi above.  The Python code is different:
+
+.. code:: python
+
+   # script.py
+
+   import os
+   import ctypes
+   import numpy as np
+   from scipy import ndimage, LowLevelCallable
+
+   # ctypes does not have a builtin intptr_t/npy_intp type,
+   # so we need to define one
+   intp_base = {
+       ctypes.sizeof(ctypes.c_long): ctypes.c_long,
+       ctypes.sizeof(ctypes.c_int): ctypes.c_int,
+   }[ctypes.sizeof(ctypes.c_voidp)]
+
+   class c_intptr_t(intp_base):
+       pass
+
+   lib = ctypes.CDLL(os.path.abspath('example.so'))
+   lib._transform.argtypes = [
+       ctypes.POINTER(c_intptr_t),
+       ctypes.POINTER(ctypes.c_double),
+       ctypes.c_int,
+       ctypes.c_int,
+       ctypes.c_voidp]
+   lib._transform.restype = ctypes.c_int
+
+   shift = 0.5
+
+   user_data = ctypes.c_double(shift)
+   ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
+   callback = LowLevelCallable(lib._transform, ptr)
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   print(ndimage.geometric_transform(im, callback))
+
+You can find more information in the ctypes_ documentation.
 
 
-.. rubric:: References
+References
+----------
 
 .. [1] M. Unser, "Splines: A Perfect Fit for Signal and Image
        Processing," IEEE Signal Processing Magazine, vol. 16, no. 6, pp.

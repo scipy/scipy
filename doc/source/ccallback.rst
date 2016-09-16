@@ -22,4 +22,9 @@ ctypes, cffi, Cython, or contained in Python `PyCapsule` objects.
 
    Functions accepting low-level callables:
 
-   `scipy.integrate.quad`, `scipy.ndimage.generic_filter`, `scipy.ndimage.generic_filter1d`
+   `scipy.integrate.quad`, `scipy.ndimage.generic_filter`, `scipy.ndimage.generic_filter1d`,
+   `scipy.ndimage.geometric_transform`
+
+   Usage examples:
+
+   :ref:`ndimage-ccallbacks`, :ref:`quad-callbacks`

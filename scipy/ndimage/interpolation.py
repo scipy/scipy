@@ -195,12 +195,14 @@ def geometric_transform(input, mapping, output_shape=None,
 
     Notes
     -----
-    This function also accepts low-level callback functions with
-    the following signature and wrapped in `scipy.LowLevelCallable`:
+    This function also accepts low-level callback functions with one
+    the following signatures and wrapped in `scipy.LowLevelCallable`:
 
     .. code:: c
 
        int mapping(npy_intp *output_coordinates, double *input_coordinates, 
+                   int output_rank, int input_rank, void *user_data)
+       int mapping(intptr_t *output_coordinates, double *input_coordinates, 
                    int output_rank, int input_rank, void *user_data)
 
     The calling function iterates over the elements of the output array,
