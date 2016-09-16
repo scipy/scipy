@@ -549,7 +549,12 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     controlled by the parameter :math:`q_{v}`
 
     .. math::
-        g_{q_{v}}(\Delta x(t)) \propto \frac{\left[T_{q_{v}}(t) \right]^{-\frac{D}{3-q_{v}}}}{ \left[{1+(q_{v}-1)\frac{(\Delta x(t))^{2}} {\left[T_{q_{v}}(t)\right]^{\frac{2}{3-q_{v}}}}}\right]^{ \frac{1}{q_{v}-1}+\frac{D-1}{2}}}
+
+        g_{q_{v}}(\\Delta x(t)) \\propto \\frac{ \\
+        \\left[T_{q_{v}}(t) \\right]^{-\\frac{D}{3-q_{v}}}}{ \\
+        \\left[{1+(q_{v}-1)\\frac{(\Delta x(t))^{2}} { \\
+        \\left[T_{q_{v}}(t)\\right]^{\\frac{2}{3-q_{v}}}}}\\right]^{ \\
+        \\frac{1}{q_{v}-1}+\\frac{D-1}{2}}}
 
     Where :math:`t` is the artificial time. This visiting distribution is used
     to generate a trial jump distance :math:`\Delta x(t)` of variable
@@ -559,18 +564,23 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     function, the acceptance probability is computed as follows:
 
     .. math::
-        p_{q_{a}} = \min{\{1,\left[1-(1-q_{a}) \beta \Delta E \right]^{ \frac{1}{1-q_{a}}}\}}
+
+        p_{q_{a}} = \min{\{1,\\left[1-(1-q_{a}) \\beta \\Delta E \\right]^{ \\
+        \\frac{1}{1-q_{a}}}\\}}
 
     Where :math:`q_{a}` is a parameter. For :math:`q_{a}<1`, zero acceptance
     probability is assigned to the cases where
 
     .. math::
-        [1-(1-q_{a}) \beta \Delta E] < 0
+
+        [1-(1-q_{a}) \\beta \\Delta E] < 0
 
     The artificial temperature :math:`T_{q_{v}}(t)` is decreased according to
 
-    ..math::
-    T_{q_{v}}(t) = T_{q_{v}}(1) \frac{2^{q_{v}-1}-1}{\left( 1+t\right)^{q_{v}-1}-1}
+    .. math::
+
+        T_{q_{v}}(t) = T_{q_{v}}(1) \\frac{2^{q_{v}-1}-1}{\\left( \\
+        1 + t\\right)^{q_{v}-1}-1}
 
     .. versionadded:: 0.19.0
 
