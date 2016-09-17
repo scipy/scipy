@@ -1077,7 +1077,7 @@ cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_incbi "incbi"(npy_double, npy_double, npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_lbeta "lbeta"(npy_double, npy_double)nogil
-from orthogonal_eval cimport binom as _func_binom
+from _orthogonal_eval cimport binom as _func_binom
 ctypedef double _proto_binom_t(double, double) nogil
 cdef _proto_binom_t *_proto_binom_t_var = &_func_binom
 from _boxcox cimport boxcox as _func_boxcox
@@ -1135,127 +1135,127 @@ cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_erf "erf"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_erfc "erfc"(npy_double)nogil
-from orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
+from _orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
 ctypedef double _proto_eval_chebyc_double__t(double, double) nogil
 cdef _proto_eval_chebyc_double__t *_proto_eval_chebyc_double__t_var = &_func_eval_chebyc[double]
-from orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
+from _orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
 ctypedef double complex _proto_eval_chebyc_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyc_double_complex__t *_proto_eval_chebyc_double_complex__t_var = &_func_eval_chebyc[double_complex]
-from orthogonal_eval cimport eval_chebyc_l as _func_eval_chebyc_l
+from _orthogonal_eval cimport eval_chebyc_l as _func_eval_chebyc_l
 ctypedef double _proto_eval_chebyc_l_t(long, double) nogil
 cdef _proto_eval_chebyc_l_t *_proto_eval_chebyc_l_t_var = &_func_eval_chebyc_l
-from orthogonal_eval cimport eval_chebys as _func_eval_chebys
+from _orthogonal_eval cimport eval_chebys as _func_eval_chebys
 ctypedef double _proto_eval_chebys_double__t(double, double) nogil
 cdef _proto_eval_chebys_double__t *_proto_eval_chebys_double__t_var = &_func_eval_chebys[double]
-from orthogonal_eval cimport eval_chebys as _func_eval_chebys
+from _orthogonal_eval cimport eval_chebys as _func_eval_chebys
 ctypedef double complex _proto_eval_chebys_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebys_double_complex__t *_proto_eval_chebys_double_complex__t_var = &_func_eval_chebys[double_complex]
-from orthogonal_eval cimport eval_chebys_l as _func_eval_chebys_l
+from _orthogonal_eval cimport eval_chebys_l as _func_eval_chebys_l
 ctypedef double _proto_eval_chebys_l_t(long, double) nogil
 cdef _proto_eval_chebys_l_t *_proto_eval_chebys_l_t_var = &_func_eval_chebys_l
-from orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
+from _orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
 ctypedef double _proto_eval_chebyt_double__t(double, double) nogil
 cdef _proto_eval_chebyt_double__t *_proto_eval_chebyt_double__t_var = &_func_eval_chebyt[double]
-from orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
+from _orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
 ctypedef double complex _proto_eval_chebyt_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyt_double_complex__t *_proto_eval_chebyt_double_complex__t_var = &_func_eval_chebyt[double_complex]
-from orthogonal_eval cimport eval_chebyt_l as _func_eval_chebyt_l
+from _orthogonal_eval cimport eval_chebyt_l as _func_eval_chebyt_l
 ctypedef double _proto_eval_chebyt_l_t(long, double) nogil
 cdef _proto_eval_chebyt_l_t *_proto_eval_chebyt_l_t_var = &_func_eval_chebyt_l
-from orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
+from _orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
 ctypedef double _proto_eval_chebyu_double__t(double, double) nogil
 cdef _proto_eval_chebyu_double__t *_proto_eval_chebyu_double__t_var = &_func_eval_chebyu[double]
-from orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
+from _orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
 ctypedef double complex _proto_eval_chebyu_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyu_double_complex__t *_proto_eval_chebyu_double_complex__t_var = &_func_eval_chebyu[double_complex]
-from orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
+from _orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
 ctypedef double _proto_eval_chebyu_l_t(long, double) nogil
 cdef _proto_eval_chebyu_l_t *_proto_eval_chebyu_l_t_var = &_func_eval_chebyu_l
-from orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
+from _orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
 ctypedef double _proto_eval_gegenbauer_double__t(double, double, double) nogil
 cdef _proto_eval_gegenbauer_double__t *_proto_eval_gegenbauer_double__t_var = &_func_eval_gegenbauer[double]
-from orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
+from _orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
 ctypedef double complex _proto_eval_gegenbauer_double_complex__t(double, double, double complex) nogil
 cdef _proto_eval_gegenbauer_double_complex__t *_proto_eval_gegenbauer_double_complex__t_var = &_func_eval_gegenbauer[double_complex]
-from orthogonal_eval cimport eval_gegenbauer_l as _func_eval_gegenbauer_l
+from _orthogonal_eval cimport eval_gegenbauer_l as _func_eval_gegenbauer_l
 ctypedef double _proto_eval_gegenbauer_l_t(long, double, double) nogil
 cdef _proto_eval_gegenbauer_l_t *_proto_eval_gegenbauer_l_t_var = &_func_eval_gegenbauer_l
-from orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
+from _orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
 ctypedef double _proto_eval_genlaguerre_double__t(double, double, double) nogil
 cdef _proto_eval_genlaguerre_double__t *_proto_eval_genlaguerre_double__t_var = &_func_eval_genlaguerre[double]
-from orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
+from _orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
 ctypedef double complex _proto_eval_genlaguerre_double_complex__t(double, double, double complex) nogil
 cdef _proto_eval_genlaguerre_double_complex__t *_proto_eval_genlaguerre_double_complex__t_var = &_func_eval_genlaguerre[double_complex]
-from orthogonal_eval cimport eval_genlaguerre_l as _func_eval_genlaguerre_l
+from _orthogonal_eval cimport eval_genlaguerre_l as _func_eval_genlaguerre_l
 ctypedef double _proto_eval_genlaguerre_l_t(long, double, double) nogil
 cdef _proto_eval_genlaguerre_l_t *_proto_eval_genlaguerre_l_t_var = &_func_eval_genlaguerre_l
-from orthogonal_eval cimport eval_hermite as _func_eval_hermite
+from _orthogonal_eval cimport eval_hermite as _func_eval_hermite
 ctypedef double _proto_eval_hermite_t(long, double) nogil
 cdef _proto_eval_hermite_t *_proto_eval_hermite_t_var = &_func_eval_hermite
-from orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
+from _orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
 ctypedef double _proto_eval_hermitenorm_t(long, double) nogil
 cdef _proto_eval_hermitenorm_t *_proto_eval_hermitenorm_t_var = &_func_eval_hermitenorm
-from orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
+from _orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
 ctypedef double _proto_eval_jacobi_double__t(double, double, double, double) nogil
 cdef _proto_eval_jacobi_double__t *_proto_eval_jacobi_double__t_var = &_func_eval_jacobi[double]
-from orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
+from _orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
 ctypedef double complex _proto_eval_jacobi_double_complex__t(double, double, double, double complex) nogil
 cdef _proto_eval_jacobi_double_complex__t *_proto_eval_jacobi_double_complex__t_var = &_func_eval_jacobi[double_complex]
-from orthogonal_eval cimport eval_jacobi_l as _func_eval_jacobi_l
+from _orthogonal_eval cimport eval_jacobi_l as _func_eval_jacobi_l
 ctypedef double _proto_eval_jacobi_l_t(long, double, double, double) nogil
 cdef _proto_eval_jacobi_l_t *_proto_eval_jacobi_l_t_var = &_func_eval_jacobi_l
-from orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
+from _orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
 ctypedef double _proto_eval_laguerre_double__t(double, double) nogil
 cdef _proto_eval_laguerre_double__t *_proto_eval_laguerre_double__t_var = &_func_eval_laguerre[double]
-from orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
+from _orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
 ctypedef double complex _proto_eval_laguerre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_laguerre_double_complex__t *_proto_eval_laguerre_double_complex__t_var = &_func_eval_laguerre[double_complex]
-from orthogonal_eval cimport eval_laguerre_l as _func_eval_laguerre_l
+from _orthogonal_eval cimport eval_laguerre_l as _func_eval_laguerre_l
 ctypedef double _proto_eval_laguerre_l_t(long, double) nogil
 cdef _proto_eval_laguerre_l_t *_proto_eval_laguerre_l_t_var = &_func_eval_laguerre_l
-from orthogonal_eval cimport eval_legendre as _func_eval_legendre
+from _orthogonal_eval cimport eval_legendre as _func_eval_legendre
 ctypedef double _proto_eval_legendre_double__t(double, double) nogil
 cdef _proto_eval_legendre_double__t *_proto_eval_legendre_double__t_var = &_func_eval_legendre[double]
-from orthogonal_eval cimport eval_legendre as _func_eval_legendre
+from _orthogonal_eval cimport eval_legendre as _func_eval_legendre
 ctypedef double complex _proto_eval_legendre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_legendre_double_complex__t *_proto_eval_legendre_double_complex__t_var = &_func_eval_legendre[double_complex]
-from orthogonal_eval cimport eval_legendre_l as _func_eval_legendre_l
+from _orthogonal_eval cimport eval_legendre_l as _func_eval_legendre_l
 ctypedef double _proto_eval_legendre_l_t(long, double) nogil
 cdef _proto_eval_legendre_l_t *_proto_eval_legendre_l_t_var = &_func_eval_legendre_l
-from orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
+from _orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
 ctypedef double _proto_eval_sh_chebyt_double__t(double, double) nogil
 cdef _proto_eval_sh_chebyt_double__t *_proto_eval_sh_chebyt_double__t_var = &_func_eval_sh_chebyt[double]
-from orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
+from _orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
 ctypedef double complex _proto_eval_sh_chebyt_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_chebyt_double_complex__t *_proto_eval_sh_chebyt_double_complex__t_var = &_func_eval_sh_chebyt[double_complex]
-from orthogonal_eval cimport eval_sh_chebyt_l as _func_eval_sh_chebyt_l
+from _orthogonal_eval cimport eval_sh_chebyt_l as _func_eval_sh_chebyt_l
 ctypedef double _proto_eval_sh_chebyt_l_t(long, double) nogil
 cdef _proto_eval_sh_chebyt_l_t *_proto_eval_sh_chebyt_l_t_var = &_func_eval_sh_chebyt_l
-from orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
+from _orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
 ctypedef double _proto_eval_sh_chebyu_double__t(double, double) nogil
 cdef _proto_eval_sh_chebyu_double__t *_proto_eval_sh_chebyu_double__t_var = &_func_eval_sh_chebyu[double]
-from orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
+from _orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
 ctypedef double complex _proto_eval_sh_chebyu_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_chebyu_double_complex__t *_proto_eval_sh_chebyu_double_complex__t_var = &_func_eval_sh_chebyu[double_complex]
-from orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
+from _orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
 ctypedef double _proto_eval_sh_chebyu_l_t(long, double) nogil
 cdef _proto_eval_sh_chebyu_l_t *_proto_eval_sh_chebyu_l_t_var = &_func_eval_sh_chebyu_l
-from orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
+from _orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
 ctypedef double _proto_eval_sh_jacobi_double__t(double, double, double, double) nogil
 cdef _proto_eval_sh_jacobi_double__t *_proto_eval_sh_jacobi_double__t_var = &_func_eval_sh_jacobi[double]
-from orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
+from _orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
 ctypedef double complex _proto_eval_sh_jacobi_double_complex__t(double, double, double, double complex) nogil
 cdef _proto_eval_sh_jacobi_double_complex__t *_proto_eval_sh_jacobi_double_complex__t_var = &_func_eval_sh_jacobi[double_complex]
-from orthogonal_eval cimport eval_sh_jacobi_l as _func_eval_sh_jacobi_l
+from _orthogonal_eval cimport eval_sh_jacobi_l as _func_eval_sh_jacobi_l
 ctypedef double _proto_eval_sh_jacobi_l_t(long, double, double, double) nogil
 cdef _proto_eval_sh_jacobi_l_t *_proto_eval_sh_jacobi_l_t_var = &_func_eval_sh_jacobi_l
-from orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
+from _orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
 ctypedef double _proto_eval_sh_legendre_double__t(double, double) nogil
 cdef _proto_eval_sh_legendre_double__t *_proto_eval_sh_legendre_double__t_var = &_func_eval_sh_legendre[double]
-from orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
+from _orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
 ctypedef double complex _proto_eval_sh_legendre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_legendre_double_complex__t *_proto_eval_sh_legendre_double_complex__t_var = &_func_eval_sh_legendre[double_complex]
-from orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
+from _orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
 ctypedef double _proto_eval_sh_legendre_l_t(long, double) nogil
 cdef _proto_eval_sh_legendre_l_t *_proto_eval_sh_legendre_l_t_var = &_func_eval_sh_legendre_l
 cdef extern from "_ufuncs_defs.h":
