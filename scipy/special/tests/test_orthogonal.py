@@ -1,10 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (TestCase, assert_array_almost_equal,
+from numpy.testing import (assert_array_almost_equal,
                            assert_almost_equal, assert_allclose, assert_raises,
                            run_module_suite)
 
-from scipy._lib.six import xrange
+from scipy._lib.six import xrange, with_metaclass
+from scipy.special._testutils import suppress_warnings, DecoratorMeta
 import numpy as np
 from numpy import array, sqrt
 import scipy.special.orthogonal as orth
@@ -12,7 +13,9 @@ from scipy.special import gamma
 from scipy import integrate
 
 
-class TestCheby(TestCase):
+class TestCheby(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
     def test_chebyc(self):
         C0 = orth.chebyc(0)
         C1 = orth.chebyc(1)
@@ -75,7 +78,8 @@ class TestCheby(TestCase):
         assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
 
-class TestGegenbauer(TestCase):
+class TestGegenbauer(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
 
     def test_gegenbauer(self):
         a = 5*np.random.random() - 0.5
@@ -99,7 +103,9 @@ class TestGegenbauer(TestCase):
                                                0,15*orth.poch(a,3),0])/15.0,11)
 
 
-class TestHermite(TestCase):
+class TestHermite(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
     def test_hermite(self):
         H0 = orth.hermite(0)
         H1 = orth.hermite(1)
@@ -138,7 +144,8 @@ class TestHermite(TestCase):
         assert_array_almost_equal(H5.c,he5.c,13)
 
 
-class _test_sh_legendre(TestCase):
+class _test_sh_legendre(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
 
     def test_sh_legendre(self):
         # P*_n(x) = P_n(2x-1)
@@ -163,7 +170,8 @@ class _test_sh_legendre(TestCase):
         assert_array_almost_equal(Ps5.c,pse5.c,12)
 
 
-class _test_sh_chebyt(TestCase):
+class _test_sh_chebyt(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
 
     def test_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
@@ -188,7 +196,8 @@ class _test_sh_chebyt(TestCase):
         assert_array_almost_equal(Ts5.c,tse5.c,12)
 
 
-class _test_sh_chebyu(TestCase):
+class _test_sh_chebyu(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
 
     def test_sh_chebyu(self):
         # U*_n(x) = U_n(2x-1)
@@ -213,7 +222,9 @@ class _test_sh_chebyu(TestCase):
         assert_array_almost_equal(Us5.c,use5.c,11)
 
 
-class _test_sh_jacobi(TestCase):
+class _test_sh_jacobi(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
     def test_sh_jacobi(self):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
         conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)
@@ -242,7 +253,9 @@ class _test_sh_jacobi(TestCase):
         assert_array_almost_equal(G5.c,ge5.c,13)
 
 
-class TestCall(object):
+class TestCall(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
     def test_call(self):
         poly = []
         for n in xrange(5):
@@ -415,7 +428,7 @@ def test_js_roots():
 def test_h_roots():
     rootf = orth.h_roots
     evalf = orth.eval_hermite
-    weightf = orth.hermite(5).weight_func
+    weightf = lambda x: np.exp(-x**2)
 
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 5)
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 25, atol=1e-13)
@@ -472,7 +485,7 @@ def test_h_roots_asy():
 def test_he_roots():
     rootf = orth.he_roots
     evalf = orth.eval_hermitenorm
-    weightf = orth.hermitenorm(5).weight_func
+    weightf = lambda x: np.exp(-x**2/2)
 
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 5)
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 25, atol=1e-13)
@@ -535,7 +548,7 @@ def test_cg_roots():
     assert_raises(ValueError, orth.cg_roots, 3, -.75)
 
 def test_t_roots():
-    weightf = orth.chebyt(5).weight_func
+    weightf = lambda x: 1.0/np.sqrt(1 - x**2)
     verify_gauss_quad(orth.t_roots, orth.eval_chebyt, weightf, -1., 1., 5)
     verify_gauss_quad(orth.t_roots, orth.eval_chebyt, weightf, -1., 1., 25)
     verify_gauss_quad(orth.t_roots, orth.eval_chebyt, weightf, -1., 1., 100)
@@ -552,7 +565,7 @@ def test_t_roots():
     assert_raises(ValueError, orth.t_roots, 3.3)
 
 def test_u_roots():
-    weightf = orth.chebyu(5).weight_func
+    weightf = lambda x: np.sqrt(1 - x**2)
     verify_gauss_quad(orth.u_roots, orth.eval_chebyu, weightf, -1., 1., 5)
     verify_gauss_quad(orth.u_roots, orth.eval_chebyu, weightf, -1., 1., 25)
     verify_gauss_quad(orth.u_roots, orth.eval_chebyu, weightf, -1., 1., 100)
@@ -569,7 +582,7 @@ def test_u_roots():
     assert_raises(ValueError, orth.u_roots, 3.3)
 
 def test_c_roots():
-    weightf = orth.chebyc(5).weight_func
+    weightf = lambda x: 1.0/np.sqrt(1 - x**2/4)
     verify_gauss_quad(orth.c_roots, orth.eval_chebyc, weightf, -2., 2., 5)
     verify_gauss_quad(orth.c_roots, orth.eval_chebyc, weightf, -2., 2., 25)
     verify_gauss_quad(orth.c_roots, orth.eval_chebyc, weightf, -2., 2., 100)
@@ -586,7 +599,7 @@ def test_c_roots():
     assert_raises(ValueError, orth.c_roots, 3.3)
 
 def test_s_roots():
-    weightf = orth.chebys(5).weight_func
+    weightf = lambda x: np.sqrt(1 - x**2/4)
     verify_gauss_quad(orth.s_roots, orth.eval_chebys, weightf, -2., 2., 5)
     verify_gauss_quad(orth.s_roots, orth.eval_chebys, weightf, -2., 2., 25)
     verify_gauss_quad(orth.s_roots, orth.eval_chebys, weightf, -2., 2., 100)
@@ -603,7 +616,7 @@ def test_s_roots():
     assert_raises(ValueError, orth.s_roots, 3.3)
 
 def test_ts_roots():
-    weightf = orth.sh_chebyt(5).weight_func
+    weightf = lambda x: 1.0/np.sqrt(x - x**2)
     verify_gauss_quad(orth.ts_roots, orth.eval_sh_chebyt, weightf, 0., 1., 5)
     verify_gauss_quad(orth.ts_roots, orth.eval_sh_chebyt, weightf, 0., 1., 25)
     verify_gauss_quad(orth.ts_roots, orth.eval_sh_chebyt, weightf, 0., 1.,
@@ -621,7 +634,7 @@ def test_ts_roots():
     assert_raises(ValueError, orth.ts_roots, 3.3)
 
 def test_us_roots():
-    weightf = orth.sh_chebyu(5).weight_func
+    weightf = lambda x: np.sqrt(x - x**2)
     verify_gauss_quad(orth.us_roots, orth.eval_sh_chebyu, weightf, 0., 1., 5)
     verify_gauss_quad(orth.us_roots, orth.eval_sh_chebyu, weightf, 0., 1., 25)
     verify_gauss_quad(orth.us_roots, orth.eval_sh_chebyu, weightf, 0., 1.,
@@ -639,7 +652,7 @@ def test_us_roots():
     assert_raises(ValueError, orth.us_roots, 3.3)
 
 def test_p_roots():
-    weightf = orth.legendre(5).weight_func
+    weightf = lambda x: 1
     verify_gauss_quad(orth.p_roots, orth.eval_legendre, weightf, -1., 1., 5)
     verify_gauss_quad(orth.p_roots, orth.eval_legendre, weightf, -1., 1.,
                       25, atol=1e-13)
@@ -658,7 +671,7 @@ def test_p_roots():
     assert_raises(ValueError, orth.p_roots, 3.3)
 
 def test_ps_roots():
-    weightf = orth.sh_legendre(5).weight_func
+    weightf = lambda x: 1
     verify_gauss_quad(orth.ps_roots, orth.eval_sh_legendre, weightf, 0., 1., 5)
     verify_gauss_quad(orth.ps_roots, orth.eval_sh_legendre, weightf, 0., 1.,
                       25, atol=1e-13)
@@ -677,7 +690,7 @@ def test_ps_roots():
     assert_raises(ValueError, orth.ps_roots, 3.3)
 
 def test_l_roots():
-    weightf = orth.laguerre(5).weight_func
+    weightf = lambda x: np.exp(-x)
     verify_gauss_quad(orth.l_roots, orth.eval_laguerre, weightf, 0., np.inf, 5)
     verify_gauss_quad(orth.l_roots, orth.eval_laguerre, weightf, 0., np.inf,
                       25, atol=1e-13)

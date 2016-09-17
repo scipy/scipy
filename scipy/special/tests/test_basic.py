@@ -38,9 +38,11 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipk, zeta
 
-from scipy.special._testutils import assert_tol_equal, with_special_errors, \
-     assert_func_equal
+from scipy.special._testutils import (
+    assert_tol_equal, with_special_errors, assert_func_equal,
+    suppress_warnings, DecoratorMeta)
 
+from scipy._lib.six import with_metaclass
 from scipy._lib._version import NumpyVersion
 
 import math
@@ -1063,7 +1065,9 @@ class TestAiry(TestCase):
              -6.7812944460, -7.9401786892, -9.0195833588], rtol=1e-10)
 
 
-class TestAssocLaguerre(TestCase):
+class TestAssocLaguerre(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
     def test_assoc_laguerre(self):
         a1 = special.genlaguerre(11,1)
         a2 = special.assoc_laguerre(.2,11,1)
@@ -2344,6 +2348,7 @@ class TestBessel(TestCase):
         o1ker = special.kve(1,.1)
         assert_almost_equal(o1ke,o1ker,8)
 
+    @suppress_warnings
     def test_jacobi(self):
         a = 5*np.random.random() - 1
         b = 5*np.random.random() - 1
@@ -2735,7 +2740,9 @@ class TestBessel(TestCase):
         assert_almost_equal(x,y,10)
 
 
-class TestLaguerre(TestCase):
+class TestLaguerre(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
     def test_laguerre(self):
         lag0 = special.laguerre(0)
         lag1 = special.laguerre(1)
@@ -2763,7 +2770,9 @@ class TestLaguerre(TestCase):
 
 
 # Base polynomials come from Abrahmowitz and Stegan
-class TestLegendre(TestCase):
+class TestLegendre(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
     def test_legendre(self):
         leg0 = special.legendre(0)
         leg1 = special.legendre(1)

@@ -94,6 +94,9 @@ Functions::
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+import functools
+
 # Scipy imports.
 import numpy as np
 from numpy import (any, exp, inf, pi, sqrt, floor, sin, cos, around,
@@ -121,6 +124,30 @@ __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
 
 # For backward compatibility
 poch = cephes.poch
+
+
+# Deprecate orthopoly1d
+_MESSAGE = """\
+{poly} is deprecated in Scipy 0.19. If you wish to evaluate this
+polynomial use {evalfunc}, and if you wish to compute its roots and
+quadrature weights use {quadfunc}.
+"""
+
+class _DeprecateOrthopoly1d(object):
+    def __init__(self, evalfunc, quadfunc):
+        self.kwds = {'evalfunc': evalfunc, 'quadfunc': quadfunc}
+
+    def __call__(self, f):
+        self.kwds['poly'] = f.__name__
+        message = _MESSAGE.format(**self.kwds)
+
+        @functools.wraps(f)
+        def wrapper(*args, **kwds):
+            warnings.warn(message, DeprecationWarning)
+            return f(*args, **kwds)
+
+        wrapper.__doc__ = message + "\n" + wrapper.__doc__
+        return wrapper
 
 
 class orthopoly1d(np.poly1d):
@@ -272,6 +299,7 @@ def j_roots(n, alpha, beta, mu=False):
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
+@_DeprecateOrthopoly1d('eval_jacobi', 'j_roots')
 def jacobi(n, alpha, beta, monic=False):
     r"""Jacobi polynomial.
 
@@ -377,6 +405,8 @@ def js_roots(n, p1, q1, mu=False):
     else:
         return x, w
 
+
+@_DeprecateOrthopoly1d('eval_sh_jacobi', 'js_roots')
 def sh_jacobi(n, p, q, monic=False):
     r"""Shifted Jacobi polynomial.
 
@@ -490,6 +520,7 @@ def la_roots(n, alpha, mu=False):
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
+@_DeprecateOrthopoly1d('eval_genlaguerre', 'la_roots')
 def genlaguerre(n, alpha, monic=False):
     r"""Generalized (associated) Laguerre polynomial.
 
@@ -588,6 +619,7 @@ def l_roots(n, mu=False):
     return la_roots(n, 0.0, mu=mu)
 
 
+@_DeprecateOrthopoly1d('eval_laguerre', 'l_roots')
 def laguerre(n, monic=False):
     r"""Laguerre polynomial.
 
@@ -1077,6 +1109,7 @@ def _h_roots_asy(n):
     return nodes, weights
 
 
+@_DeprecateOrthopoly1d('eval_hermite', 'h_roots')
 def hermite(n, monic=False):
     r"""Physicist's Hermite polynomial.
 
@@ -1192,6 +1225,7 @@ def he_roots(n, mu=False):
             return nodes, weights
 
 
+@_DeprecateOrthopoly1d('eval_hermitenorm', 'he_roots')
 def hermitenorm(n, monic=False):
     r"""Normalized (probabilist's) Hermite polynomial.
 
@@ -1300,6 +1334,7 @@ def cg_roots(n, alpha, mu=False):
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
+@_DeprecateOrthopoly1d('eval_gegenbauer', 'cg_roots')
 def gegenbauer(n, alpha, monic=False):
     r"""Gegenbauer (ultraspherical) polynomial.
 
@@ -1391,6 +1426,7 @@ def t_roots(n, mu=False):
         return x, w
 
 
+@_DeprecateOrthopoly1d('eval_chebyt', 't_roots')
 def chebyt(n, monic=False):
     r"""Chebyshev polynomial of the first kind.
 
@@ -1485,6 +1521,7 @@ def u_roots(n, mu=False):
         return x, w
 
 
+@_DeprecateOrthopoly1d('eval_chebyu', 'u_roots')
 def chebyu(n, monic=False):
     r"""Chebyshev polynomial of the second kind.
 
@@ -1569,6 +1606,7 @@ def c_roots(n, mu=False):
         return x, w
 
 
+@_DeprecateOrthopoly1d('eval_chebyc', 'c_roots')
 def chebyc(n, monic=False):
     r"""Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
 
@@ -1666,6 +1704,7 @@ def s_roots(n, mu=False):
         return x, w
 
 
+@_DeprecateOrthopoly1d('eval_chebys', 's_roots')
 def chebys(n, monic=False):
     r"""Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
 
@@ -1759,6 +1798,7 @@ def ts_roots(n, mu=False):
     return ((xw[0] + 1) / 2,) + xw[1:]
 
 
+@_DeprecateOrthopoly1d('eval_sh_chebyt', 'ts_roots')
 def sh_chebyt(n, monic=False):
     r"""Shifted Chebyshev polynomial of the first kind.
 
@@ -1837,6 +1877,7 @@ def us_roots(n, mu=False):
         return x, w
 
 
+@_DeprecateOrthopoly1d('eval_sh_chebyu', 'us_roots')
 def sh_chebyu(n, monic=False):
     r"""Shifted Chebyshev polynomial of the second kind.
 
@@ -1916,6 +1957,7 @@ def p_roots(n, mu=False):
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
+@_DeprecateOrthopoly1d('eval_legendre', 'p_roots')
 def legendre(n, monic=False):
     r"""Legendre polynomial.
 
@@ -2011,6 +2053,8 @@ def ps_roots(n, mu=False):
     else:
         return x, w
 
+
+@_DeprecateOrthopoly1d('eval_sh_legendre', 'ps_roots')
 def sh_legendre(n, monic=False):
     r"""Shifted Legendre polynomial.
 

@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from numpy.testing import assert_, assert_allclose
 import scipy.special.orthogonal as orth
@@ -57,7 +59,9 @@ class TestPolys(object):
                 x = x_range[0] + (x_range[1] - x_range[0])*np.random.rand(nx)
                 x[0] = x_range[0]  # always include domain start point
                 x[1] = x_range[1]  # always include domain end point
-                poly = np.poly1d(cls(*p))
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    poly = np.poly1d(cls(*p))
                 z = np.c_[np.tile(p, (nx,1)), x, poly(x)]
                 dataset.append(z)
 

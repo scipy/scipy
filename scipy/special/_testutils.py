@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import warnings
+import functools
 
 from distutils.version import LooseVersion
 
@@ -16,14 +17,26 @@ __all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
 
 
 #------------------------------------------------------------------------------
-# Check if a module is present to be used in tests
+# Useful decorators
 #------------------------------------------------------------------------------
+
+def suppress_warnings(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kwds):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = f(*args, **kwds)
+        return res
+
+    return wrapper
+
 
 class MissingModule(object):
     def __init__(self, name):
         self.name = name
 
 
+# Check if a module is present to be used in tests
 def check_version(module, min_ver):
     if type(module) == MissingModule:
         return dec.skipif(True, "{} is not installed".format(module.name))
