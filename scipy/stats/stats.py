@@ -378,7 +378,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     """
     Returns an array of the modal (most common) value in the passed array.
 
-    If there is more than one such value, only the first is returned.
+    If there is more than one such value, only the smallest is returned.
     The bin-count for the modal bins is also returned.
 
     Parameters
