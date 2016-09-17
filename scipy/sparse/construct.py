@@ -726,6 +726,19 @@ def random(m, n, density=0.01, format='coo', dtype=None,
            [  0.,   0.,   0.,   0.],
            [  0.,   0.,  36.,   0.]])
 
+    >>> from scipy.sparse import random
+    >>> from scipy.stats import rv_continuous
+    >>> class CustomDistribution(rv_continuous):
+    ...     def _rvs(self, *args, **kwargs):
+    ...         return self._random_state.randn(*self._size)
+    >>> X = CustomDistribution(seed=2906)
+    >>> Y = X()  # get a frozen version of the distribution
+    >>> S = random(3, 4, density=0.25, random_state=2906, data_rvs=Y.rvs)
+    >>> S.A
+    array([[ 0.        ,  1.9467163 ,  0.13569738, -0.81205367],
+           [ 0.        ,  0.        ,  0.        ,  0.        ],
+           [ 0.        ,  0.        ,  0.        ,  0.        ]])
+
     Notes
     -----
     Only float types are supported for now.
