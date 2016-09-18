@@ -66,6 +66,8 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+`scipy.spatial.distance.squareform` now returns arrays of the same dtype as
+the input, instead of always float64.
 
 
 Other changes
