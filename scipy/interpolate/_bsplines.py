@@ -70,6 +70,7 @@ class BSpline(object):
     derivative
     antiderivative
     integrate
+    construct_fast
 
     Notes
     -----
@@ -225,7 +226,7 @@ class BSpline(object):
             return tck[j]
 
     @classmethod
-    def _construct_fast(cls, t, c, k, extrapolate=True, axis=0):
+    def construct_fast(cls, t, c, k, extrapolate=True, axis=0):
         """Construct a spline without making checks.
 
         Accepts same parameters as the regular constructor. Input arrays
@@ -298,10 +299,11 @@ class BSpline(object):
 
         """
         k = len(t) - 2
+        t = _as_float_array(t)
         t = np.r_[(t[0]-1,) * k, t, (t[-1]+1,) * k]
         c = np.zeros_like(t)
         c[k] = 1.
-        return cls(t, c, k, extrapolate)
+        return cls.construct_fast(t, c, k, extrapolate)
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
@@ -380,7 +382,7 @@ class BSpline(object):
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = _fitpack_impl.splder((self.t, c, self.k), nu)
-        return self._construct_fast(*tck, extrapolate=self.extrapolate,
+        return self.construct_fast(*tck, extrapolate=self.extrapolate,
                                     axis=self.axis)
 
     def antiderivative(self, nu=1):
@@ -407,7 +409,7 @@ class BSpline(object):
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = _fitpack_impl.splantider((self.t, c, self.k), nu)
-        return self._construct_fast(*tck, extrapolate=self.extrapolate,
+        return self.construct_fast(*tck, extrapolate=self.extrapolate,
                                     axis=self.axis)
 
     def integrate(self, a, b, extrapolate=None):
@@ -724,7 +726,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
     c = np.ascontiguousarray(c.reshape((nt,) + y.shape[1:]))
-    return BSpline._construct_fast(t, c, k, axis=axis)
+    return BSpline.construct_fast(t, c, k, axis=axis)
 
 
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
@@ -881,5 +883,5 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
                          check_finite=check_finite)
 
     c = np.ascontiguousarray(c)
-    return BSpline._construct_fast(t, c, k, axis=axis)
+    return BSpline.construct_fast(t, c, k, axis=axis)
 

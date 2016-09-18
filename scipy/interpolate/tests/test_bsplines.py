@@ -509,7 +509,7 @@ def _make_random_spline(n=35, k=3):
     np.random.seed(123)
     t = np.sort(np.random.random(n+k+1))
     c = np.random.random(n)
-    return BSpline._construct_fast(t, c, k)
+    return BSpline.construct_fast(t, c, k)
 
 
 def _make_multiples(b):
