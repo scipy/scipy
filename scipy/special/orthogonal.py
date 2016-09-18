@@ -94,6 +94,7 @@ Functions::
 
 from __future__ import division, print_function, absolute_import
 
+import sys
 import warnings
 import functools
 
@@ -128,13 +129,52 @@ __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
 poch = cephes.poch
 
 
+# -----------------------------------------------------------------------------
 # Deprecate orthopoly1d
+# -----------------------------------------------------------------------------
+
+def _trim(docstring):
+    """Taken from PEP-257:
+
+    https://www.python.org/dev/peps/pep-0257/#handling-docstring-indentation
+
+    Used here to work around
+
+    https://github.com/numpy/numpy/issues/8058
+
+    """
+    if not docstring:
+        return ''
+    # Convert tabs to spaces (following the normal Python rules)
+    # and split into a list of lines:
+    lines = docstring.expandtabs().splitlines()
+    # Determine minimum indentation (first line doesn't count):
+    indent = np.inf
+    for line in lines[1:]:
+        stripped = line.lstrip()
+        if stripped:
+            indent = min(indent, len(line) - len(stripped))
+    # Remove indentation (first line is special):
+    trimmed = [lines[0].strip()]
+    if indent < np.inf:
+        for line in lines[1:]:
+            trimmed.append(line[indent:].rstrip())
+    # Strip off trailing and leading blank lines:
+    while trimmed and not trimmed[-1]:
+        trimmed.pop()
+    while trimmed and not trimmed[0]:
+        trimmed.pop(0)
+    # Return a single string:
+    return '\n'.join(trimmed)
+
+
 _MESSAGE = """\
 `{poly}` is deprecated in Scipy 0.19.
 
 If you wish to evaluate this polynomial use `{evalfunc}`, and if you
 wish to compute its roots and quadrature weights use `{quadfunc}`.
 """
+
 
 class _DeprecateOrthopoly1d(object):
     def __init__(self, evalfunc, quadfunc):
@@ -149,7 +189,7 @@ class _DeprecateOrthopoly1d(object):
             warnings.warn(message, DeprecationWarning)
             return f(*args, **kwds)
 
-        wrapper.__doc__ = message + "\n" + wrapper.__doc__
+        wrapper.__doc__ = message + "\n" + _trim(wrapper.__doc__)
         return wrapper
 
 
@@ -2129,12 +2169,14 @@ _rootfunc_pairs = [('roots_legendre', 'p_roots'),
                    ('roots_gegenbauer', 'cg_roots'),
                    ('roots_hermite', 'h_roots')]
 
+_modattrs = globals()
 for newfunstr, oldfunstr in _rootfunc_pairs:
-    modattrs = globals()
-    newfun = modattrs[newfunstr]
+    newfun = _modattrs[newfunstr]
+    # Workaround for https://github.com/numpy/numpy/issues/8058
+    newfun.__doc__ = _trim(newfun.__doc__)
     # Though these functions are deprecated in 0.19, there are no
     # plans to remove them (at least for a very long time).
-    modattrs[oldfunstr] = np.deprecate(newfun,
+    _modattrs[oldfunstr] = np.deprecate(newfun,
                                        old_name=oldfunstr,
                                        new_name=newfunstr)
     __all__.append(oldfunstr)
