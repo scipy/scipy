@@ -464,7 +464,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     Returns
     -------
-    peaks_indices : list
+    peaks_indices : ndarray
         Indices of the locations in the `vector` where peaks were found.
         The list is sorted.
 
