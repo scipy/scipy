@@ -1,5 +1,4 @@
-"""
-========================================
+"""========================================
 Special functions (:mod:`scipy.special`)
 ========================================
 
@@ -374,7 +373,7 @@ Ellipsoidal Harmonics
 Orthogonal polynomials
 ----------------------
 
-The following functions evaluate values of orthogonal polynomials:
+The following functions evaluate orthogonal polynomials:
 
 .. autosummary::
    :toctree: generated/
@@ -396,41 +395,8 @@ The following functions evaluate values of orthogonal polynomials:
    eval_sh_chebyu
    eval_sh_jacobi
 
-The functions below, in turn, return the polynomial coefficients in
-:class:`~.orthopoly1d` objects, which function similarly as :ref:`numpy.poly1d`.
-The :class:`~.orthopoly1d` class also has an attribute ``weights`` which returns
-the roots, weights, and total weights for the appropriate form of Gaussian
-quadrature.  These are returned in an ``n x 3`` array with roots in the first
-column, weights in the second column, and total weights in the final column.
-Note that :class:`~.orthopoly1d` objects are converted to ``poly1d`` when doing
-arithmetic, and lose information of the original orthogonal polynomial.
-
-.. autosummary::
-   :toctree: generated/
-
-   legendre    -- [+]Legendre polynomial.
-   chebyt      -- [+]Chebyshev polynomial of the first kind.
-   chebyu      -- [+]Chebyshev polynomial of the second kind.
-   chebyc      -- [+]Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
-   chebys      -- [+]Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
-   jacobi      -- [+]Jacobi polynomial.
-   laguerre    -- [+]Laguerre polynomial.
-   genlaguerre -- [+]Generalized (associated) Laguerre polynomial.
-   hermite     -- [+]Physicist's Hermite polynomial.
-   hermitenorm -- [+]Normalized (probabilist's) Hermite polynomial.
-   gegenbauer  -- [+]Gegenbauer (Ultraspherical) polynomial.
-   sh_legendre -- [+]Shifted Legendre polynomial.
-   sh_chebyt   -- [+]Shifted Chebyshev polynomial.
-   sh_chebyu   -- [+]Shifted Chebyshev polynomial.
-   sh_jacobi   -- [+]Shifted Jacobi polynomial.
-
-.. warning::
-
-   Computing values of high-order polynomials (around ``order > 20``) using
-   polynomial coefficients is numerically unstable. To evaluate polynomial
-   values, the ``eval_*`` functions should be used instead.
-
-Roots and weights for orthogonal polynomials
+The following functions compute roots and quadrature weights for
+orthogonal polynomials:
 
 .. autosummary::
    :toctree: generated/
@@ -450,6 +416,50 @@ Roots and weights for orthogonal polynomials
    ts_roots
    u_roots
    us_roots
+
+The following functions evaluate the weight functions of orthogonal
+polynomials:
+
+.. autosummary::
+   :toctree: generated/
+
+   weight_legendre
+   weight_chebyt
+   weight_chebyu
+   weight_chebyc
+   weight_chebys
+   weight_jacobi
+   weight_laguerre
+   weight_genlaguerre
+   weight_hermite
+   weight_hermitenorm
+   weight_gegenbauer
+   weight_sh_legendre
+   weight_sh_chebyt
+   weight_sh_chebyu
+   weight_sh_jacobi
+
+The following functions provide an old interface for accessing
+orthogonal-polynomial functionality and are deprecated in Scipy 0.19:
+
+.. autosummary::
+   :toctree: generated/
+
+   legendre
+   chebyt
+   chebyu
+   chebyc
+   chebys
+   jacobi
+   laguerre
+   genlaguerre
+   hermite
+   hermitenorm
+   gegenbauer
+   sh_legendre
+   sh_chebyt
+   sh_chebyu
+   sh_jacobi
 
 
 Hypergeometric Functions

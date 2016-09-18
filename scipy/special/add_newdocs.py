@@ -5761,3 +5761,461 @@ add_newdoc("scipy.special", "_cospi",
     """
     Internal function, do not use.
     """)
+
+add_newdoc("scipy.special", "weight_jacobi",
+    r"""
+    weight_jacobi(alpha, beta, x, out=None)
+
+    Weight function for Gauss-Jacobi quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x)^\alpha(1 + x)^\beta.
+
+    Parameters
+    ----------
+    alpha : array_like
+        Must have ``alpha > -1``
+    beta : array_like
+        Must have ``beta > -1``
+    x : array like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function.
+
+    See Also
+    --------
+    eval_jacobi : evaluate Jacobi polynomials
+    j_roots : roots and quadrature weights of Jacobi polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weight_sh_jacobi",
+    r"""
+    weight_sh_jacobi(p, q, x, out=None)
+
+    Weight function for shifted Gauss-Jacobi quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x)^{p - q}x^{q - 1}.
+
+    Parameters
+    ----------
+    p : array_like
+        Must have ``p - q > -1``
+    q : array_like
+        Must have ``q > 0``
+    x : array_like
+        Must have ``0 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_sh_jacobi : evaluate shifted Jacobi polynomials
+    js_roots : roots and quadrature weights of shifted Jacobi polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weight_gegenbauer",
+    r"""
+    weight_gegenbauer(alpha, x, out=None)
+
+    Weight function for Gauss-Gegenbauer (ultraspherical) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2)^{\alpha - 1/2}.
+
+    Parameters
+    ----------
+    alpha : array_like
+        Must have ``alpha > -1/2``
+    x : array_like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_gegenbauer : evaluate Gegenbauer polynomials
+    cg_roots : roots and quadrature weights of Gegenbauer polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weight_chebyt",
+    r"""
+    weight_chebyt(x, out=None)
+
+    Weight function for Gauss-Chebychev (of the first kind) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2)^{-1/2}.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_chebyt : evaluate Chebychev polynomials of the first kind
+    t_roots : roots and quadrature weights of Chebychev polynomials of
+              the first kind
+
+    """)
+
+add_newdoc("scipy.special", "weight_chebyu",
+    r"""
+    weight_chebyu(x, out=None)
+
+    Weight function for Gauss-Chebychev (of the second kind) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2)^{1/2}.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_chebyu : evaluate Chebychev polynomials of the second kind
+    u_roots : roots and quadrature weights of Chebychev polynomials of
+              the second kind
+
+    """)
+
+add_newdoc("scipy.special", "weight_chebyc",
+    r"""
+    weight_chebyc(x, out=None)
+
+    Weight function for Gauss-Chebychev (of the first kind) quadrature
+    on [-2, 2].
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2/4)^{-1/2}.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-2 <= x <= 2``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_chebyc : evaluate Chebychev polynomials of the first kind
+    c_roots : roots and quadrature weights of Chebychev polynomials of
+              the first kind
+
+    """)
+
+add_newdoc("scipy.special", "weight_chebys",
+    r"""
+    weight_chebys(x, out=None)
+
+    Weight function for Gauss-Chebychev (of the second kind) quadrature
+    on [-2, 2].
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2/4)^{1/2}.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-2 <= x <= 2``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_chebyc : evaluate Chebychev polynomials of the second kind
+    s_roots : roots and quadrature weights of Chebychev polynomials of
+              the second kind
+
+    """)
+
+add_newdoc("scipy.special", "weight_sh_chebyt",
+    r"""
+    weight_sh_chebyt(x, out=None)
+
+    Weight function for shifted Gauss-Chebychev (first kind) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (x - x^2)^{-1/2}
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``0 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_sh_chebyt : evaluate shifted Chebychev polynomials of the
+                     first kind
+    ts_roots : roots and quadrature weights of shifted Chebychev
+              polynomials of the first kind
+
+    """)
+
+add_newdoc("scipy.special", "weight_sh_chebyu",
+    r"""
+    weight_sh_chebyu(x, out=None)
+
+    Weight function for shifted Gauss-Chebychev (second kind) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (x - x^2)^{1/2}
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``0 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_sh_chebyu : evaluate shifted Chebychev polynomials of the
+                     second kind
+    us_roots : roots and quadrature weights of shifted Chebychev
+               polynomials of the second kind
+
+    """)
+
+
+add_newdoc("scipy.special", "weight_legendre",
+    r"""
+    weight_legendre(x, out=None)
+
+    Weight function for Gauss-Legendre quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = 1
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_legendre : evaluate Legendre polynomials.
+    p_roots : roots and quadrature weights of Legendre polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weight_sh_legendre",
+    r"""
+    weight_sh_legendre(x, out=None)
+
+    Weight function for shifted Gauss-Legendre quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = 1
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``0 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_sh_legendre : evaluate shifted Legendre polynomials.
+    ps_roots : roots and quadrature weights of shifted Legendre
+               polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weight_genlaguerre",
+    r"""
+    weight_genlaguerre(alpha, x, out=None)
+
+    Weight function for generalized Gauss-Laguerre quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = e^{-x}x^\alpha
+
+    Parameters
+    ----------
+    alpha : array_like
+        Must have ``alpha > -1``
+    x : array_like
+        Must have ``x >= 0``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_genlaguerre : evaluate shifted Legendre polynomials.
+    la_roots : roots and quadrature weights of generalized Laguerre
+               polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weight_laguerre",
+    r"""
+    weight_laguerre(x, out=None)
+
+    Weight function for Gauss-Laguerre quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = e^{-x}
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``x >= 0``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_laguerre : evaluate Laguerre polynomials.
+    l_roots : roots and quadrature weights of Laguerre polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weight_hermite",
+    r"""
+    weight_hermite(x, out=None)
+
+    Weight function for Gauss-Hermite (physicist's) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = e^{-x^2}
+
+    Parameters
+    ----------
+    x : array_like
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_hermite : evaluate Hermite polynomials.
+    h_roots : roots and quadrature weights of Hermite polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weight_hermitenorm",
+    r"""
+    weight_hermitenorm(x, out=None)
+
+    Weight function for Gauss-Hermite (probabilists's) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = e^{-x^2/2}
+
+    Parameters
+    ----------
+    x : array_like
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_hermitenorm : evaluate Hermite polynomials.
+    he_roots : roots and quadrature weights of Hermite polynomials
+
+    """)

@@ -128,9 +128,10 @@ poch = cephes.poch
 
 # Deprecate orthopoly1d
 _MESSAGE = """\
-{poly} is deprecated in Scipy 0.19. If you wish to evaluate this
-polynomial use {evalfunc}, and if you wish to compute its roots and
-quadrature weights use {quadfunc}.
+{poly} is deprecated in Scipy 0.19.
+
+If you wish to evaluate this polynomial use {evalfunc}, and if you
+wish to compute its roots and quadrature weights use {quadfunc}.
 """
 
 class _DeprecateOrthopoly1d(object):

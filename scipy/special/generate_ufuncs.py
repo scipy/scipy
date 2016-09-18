@@ -134,6 +134,21 @@ eval_genlaguerre -- eval_genlaguerre[double]: ddd->d, eval_genlaguerre[double co
 eval_laguerre --    eval_laguerre[double]: dd->d,     eval_laguerre[double complex]: dD->D,     eval_laguerre_l:ld->d -- _orthogonal_eval.pxd
 eval_hermite  -- eval_hermite: ld->d                       -- _orthogonal_eval.pxd
 eval_hermitenorm -- eval_hermitenorm: ld->d                -- _orthogonal_eval.pxd
+weight_jacobi -- weight_jacobi: ddd->d                     -- _orthogonal_weight.pxd
+weight_sh_jacobi -- weight_sh_jacobi: ddd->d               -- _orthogonal_weight.pxd
+weight_gegenbauer -- weight_gegenbauer: dd->d              -- _orthogonal_weight.pxd
+weight_chebyt -- weight_chebyt: d->d                       -- _orthogonal_weight.pxd
+weight_chebyu -- weight_chebyu: d->d                       -- _orthogonal_weight.pxd
+weight_chebyc -- weight_chebyc: d->d                       -- _orthogonal_weight.pxd
+weight_chebys -- weight_chebys: d->d                       -- _orthogonal_weight.pxd
+weight_sh_chebyt -- weight_sh_chebyt: d->d                 -- _orthogonal_weight.pxd
+weight_sh_chebyu -- weight_sh_chebyu: d->d                 -- _orthogonal_weight.pxd
+weight_legendre -- weight_legendre: d->d                   -- _orthogonal_weight.pxd
+weight_sh_legendre -- weight_sh_legendre: d->d             -- _orthogonal_weight.pxd
+weight_genlaguerre -- weight_genlaguerre: dd->d            -- _orthogonal_weight.pxd
+weight_laguerre -- weight_laguerre: d->d                   -- _orthogonal_weight.pxd
+weight_hermite -- weight_hermite: d->d                     -- _orthogonal_weight.pxd
+weight_hermitenorm -- weight_hermitenorm: d->d             -- _orthogonal_weight.pxd
 exp10 -- exp10: d->d                                       -- cephes.h
 exp2 -- exp2: d->d                                         -- cephes.h
 gamma -- Gamma: d->d, cgamma: D->D                         -- cephes.h, _loggamma.pxd

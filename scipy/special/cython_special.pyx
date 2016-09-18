@@ -933,6 +933,66 @@ Available Functions
 
         double tklmbda(double, double)
 
+- :py:func:`~scipy.special.weight_chebyc`::
+
+        double weight_chebyc(double)
+
+- :py:func:`~scipy.special.weight_chebys`::
+
+        double weight_chebys(double)
+
+- :py:func:`~scipy.special.weight_chebyt`::
+
+        double weight_chebyt(double)
+
+- :py:func:`~scipy.special.weight_chebyu`::
+
+        double weight_chebyu(double)
+
+- :py:func:`~scipy.special.weight_gegenbauer`::
+
+        double weight_gegenbauer(double, double)
+
+- :py:func:`~scipy.special.weight_genlaguerre`::
+
+        double weight_genlaguerre(double, double)
+
+- :py:func:`~scipy.special.weight_hermite`::
+
+        double weight_hermite(double)
+
+- :py:func:`~scipy.special.weight_hermitenorm`::
+
+        double weight_hermitenorm(double)
+
+- :py:func:`~scipy.special.weight_jacobi`::
+
+        double weight_jacobi(double, double, double)
+
+- :py:func:`~scipy.special.weight_laguerre`::
+
+        double weight_laguerre(double)
+
+- :py:func:`~scipy.special.weight_legendre`::
+
+        double weight_legendre(double)
+
+- :py:func:`~scipy.special.weight_sh_chebyt`::
+
+        double weight_sh_chebyt(double)
+
+- :py:func:`~scipy.special.weight_sh_chebyu`::
+
+        double weight_sh_chebyu(double)
+
+- :py:func:`~scipy.special.weight_sh_jacobi`::
+
+        double weight_sh_jacobi(double, double, double)
+
+- :py:func:`~scipy.special.weight_sh_legendre`::
+
+        double weight_sh_legendre(double)
+
 - :py:func:`~scipy.special.wofz`::
 
         double complex wofz(double complex)
@@ -1654,6 +1714,51 @@ cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_tandg "tandg"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_tukeylambdacdf "tukeylambdacdf"(npy_double, npy_double)nogil
+from _orthogonal_weight cimport weight_chebyc as _func_weight_chebyc
+ctypedef double _proto_weight_chebyc_t(double) nogil
+cdef _proto_weight_chebyc_t *_proto_weight_chebyc_t_var = &_func_weight_chebyc
+from _orthogonal_weight cimport weight_chebys as _func_weight_chebys
+ctypedef double _proto_weight_chebys_t(double) nogil
+cdef _proto_weight_chebys_t *_proto_weight_chebys_t_var = &_func_weight_chebys
+from _orthogonal_weight cimport weight_chebyt as _func_weight_chebyt
+ctypedef double _proto_weight_chebyt_t(double) nogil
+cdef _proto_weight_chebyt_t *_proto_weight_chebyt_t_var = &_func_weight_chebyt
+from _orthogonal_weight cimport weight_chebyu as _func_weight_chebyu
+ctypedef double _proto_weight_chebyu_t(double) nogil
+cdef _proto_weight_chebyu_t *_proto_weight_chebyu_t_var = &_func_weight_chebyu
+from _orthogonal_weight cimport weight_gegenbauer as _func_weight_gegenbauer
+ctypedef double _proto_weight_gegenbauer_t(double, double) nogil
+cdef _proto_weight_gegenbauer_t *_proto_weight_gegenbauer_t_var = &_func_weight_gegenbauer
+from _orthogonal_weight cimport weight_genlaguerre as _func_weight_genlaguerre
+ctypedef double _proto_weight_genlaguerre_t(double, double) nogil
+cdef _proto_weight_genlaguerre_t *_proto_weight_genlaguerre_t_var = &_func_weight_genlaguerre
+from _orthogonal_weight cimport weight_hermite as _func_weight_hermite
+ctypedef double _proto_weight_hermite_t(double) nogil
+cdef _proto_weight_hermite_t *_proto_weight_hermite_t_var = &_func_weight_hermite
+from _orthogonal_weight cimport weight_hermitenorm as _func_weight_hermitenorm
+ctypedef double _proto_weight_hermitenorm_t(double) nogil
+cdef _proto_weight_hermitenorm_t *_proto_weight_hermitenorm_t_var = &_func_weight_hermitenorm
+from _orthogonal_weight cimport weight_jacobi as _func_weight_jacobi
+ctypedef double _proto_weight_jacobi_t(double, double, double) nogil
+cdef _proto_weight_jacobi_t *_proto_weight_jacobi_t_var = &_func_weight_jacobi
+from _orthogonal_weight cimport weight_laguerre as _func_weight_laguerre
+ctypedef double _proto_weight_laguerre_t(double) nogil
+cdef _proto_weight_laguerre_t *_proto_weight_laguerre_t_var = &_func_weight_laguerre
+from _orthogonal_weight cimport weight_legendre as _func_weight_legendre
+ctypedef double _proto_weight_legendre_t(double) nogil
+cdef _proto_weight_legendre_t *_proto_weight_legendre_t_var = &_func_weight_legendre
+from _orthogonal_weight cimport weight_sh_chebyt as _func_weight_sh_chebyt
+ctypedef double _proto_weight_sh_chebyt_t(double) nogil
+cdef _proto_weight_sh_chebyt_t *_proto_weight_sh_chebyt_t_var = &_func_weight_sh_chebyt
+from _orthogonal_weight cimport weight_sh_chebyu as _func_weight_sh_chebyu
+ctypedef double _proto_weight_sh_chebyu_t(double) nogil
+cdef _proto_weight_sh_chebyu_t *_proto_weight_sh_chebyu_t_var = &_func_weight_sh_chebyu
+from _orthogonal_weight cimport weight_sh_jacobi as _func_weight_sh_jacobi
+ctypedef double _proto_weight_sh_jacobi_t(double, double, double) nogil
+cdef _proto_weight_sh_jacobi_t *_proto_weight_sh_jacobi_t_var = &_func_weight_sh_jacobi
+from _orthogonal_weight cimport weight_sh_legendre as _func_weight_sh_legendre
+ctypedef double _proto_weight_sh_legendre_t(double) nogil
+cdef _proto_weight_sh_legendre_t *_proto_weight_sh_legendre_t_var = &_func_weight_sh_legendre
 from _xlogy cimport xlog1py as _func_xlog1py
 ctypedef double _proto_xlog1py_double__t(double, double) nogil
 cdef _proto_xlog1py_double__t *_proto_xlog1py_double__t_var = &_func_xlog1py[double]
@@ -3267,6 +3372,66 @@ cpdef double tandg(double x0) nogil:
 cpdef double tklmbda(double x0, double x1) nogil:
     """See the documentation for scipy.special.tklmbda"""
     return _func_tukeylambdacdf(x0, x1)
+
+cpdef double weight_chebyc(double x0) nogil:
+    """See the documentation for scipy.special.weight_chebyc"""
+    return _func_weight_chebyc(x0)
+
+cpdef double weight_chebys(double x0) nogil:
+    """See the documentation for scipy.special.weight_chebys"""
+    return _func_weight_chebys(x0)
+
+cpdef double weight_chebyt(double x0) nogil:
+    """See the documentation for scipy.special.weight_chebyt"""
+    return _func_weight_chebyt(x0)
+
+cpdef double weight_chebyu(double x0) nogil:
+    """See the documentation for scipy.special.weight_chebyu"""
+    return _func_weight_chebyu(x0)
+
+cpdef double weight_gegenbauer(double x0, double x1) nogil:
+    """See the documentation for scipy.special.weight_gegenbauer"""
+    return _func_weight_gegenbauer(x0, x1)
+
+cpdef double weight_genlaguerre(double x0, double x1) nogil:
+    """See the documentation for scipy.special.weight_genlaguerre"""
+    return _func_weight_genlaguerre(x0, x1)
+
+cpdef double weight_hermite(double x0) nogil:
+    """See the documentation for scipy.special.weight_hermite"""
+    return _func_weight_hermite(x0)
+
+cpdef double weight_hermitenorm(double x0) nogil:
+    """See the documentation for scipy.special.weight_hermitenorm"""
+    return _func_weight_hermitenorm(x0)
+
+cpdef double weight_jacobi(double x0, double x1, double x2) nogil:
+    """See the documentation for scipy.special.weight_jacobi"""
+    return _func_weight_jacobi(x0, x1, x2)
+
+cpdef double weight_laguerre(double x0) nogil:
+    """See the documentation for scipy.special.weight_laguerre"""
+    return _func_weight_laguerre(x0)
+
+cpdef double weight_legendre(double x0) nogil:
+    """See the documentation for scipy.special.weight_legendre"""
+    return _func_weight_legendre(x0)
+
+cpdef double weight_sh_chebyt(double x0) nogil:
+    """See the documentation for scipy.special.weight_sh_chebyt"""
+    return _func_weight_sh_chebyt(x0)
+
+cpdef double weight_sh_chebyu(double x0) nogil:
+    """See the documentation for scipy.special.weight_sh_chebyu"""
+    return _func_weight_sh_chebyu(x0)
+
+cpdef double weight_sh_jacobi(double x0, double x1, double x2) nogil:
+    """See the documentation for scipy.special.weight_sh_jacobi"""
+    return _func_weight_sh_jacobi(x0, x1, x2)
+
+cpdef double weight_sh_legendre(double x0) nogil:
+    """See the documentation for scipy.special.weight_sh_legendre"""
+    return _func_weight_sh_legendre(x0)
 
 cpdef double complex wofz(double complex x0) nogil:
     """See the documentation for scipy.special.wofz"""
