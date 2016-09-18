@@ -712,7 +712,7 @@ class _PPolyBase(object):
         if not self.c.flags.c_contiguous:
             self.c = self.c.copy()
 
-    def extend(self, c, x):
+    def extend(self, c, x, right=None):
         """
         Add additional breakpoints and coefficients to the polynomial.
 
@@ -726,7 +726,14 @@ class _PPolyBase(object):
             Additional breakpoints. Must be sorted in the same order as
             `self.x` and either to the right or to the left of the current
             breakpoints.
+        right
+            Deprecated argument. Has no effect.
+
+            .. deprecated:: 0.19
         """
+        if right is not None:
+            warnings.warn("`right` is deprecated and will be removed.")
+
         c = np.asarray(c)
         x = np.asarray(x)
 
@@ -1505,7 +1512,10 @@ class BPoly(_PPolyBase):
         else:
             return ib(b) - ib(a)
 
-    def extend(self, c, x):
+    def extend(self, c, x, right):
+        if right is not None:
+            warnings.warn("`right` is deprecated and will be removed.")
+
         k = max(self.c.shape[0], c.shape[0])
         self.c = self._raise_degree(self.c, k - self.c.shape[0])
         c = self._raise_degree(c, k - c.shape[0])
