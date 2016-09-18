@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array, sqrt
-from numpy.testing import (assert_array_almost_equal,
+from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose, assert_raises,
                            run_module_suite)
 
@@ -12,6 +12,54 @@ from scipy.special import gamma
 from scipy import integrate
 from scipy._lib.six import xrange, with_metaclass
 from scipy.special._testutils import suppress_warnings, DecoratorMeta
+
+
+class TestLaguerre(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
+    def test_laguerre(self):
+        lag0 = sc.laguerre(0)
+        lag1 = sc.laguerre(1)
+        lag2 = sc.laguerre(2)
+        lag3 = sc.laguerre(3)
+        lag4 = sc.laguerre(4)
+        lag5 = sc.laguerre(5)
+        assert_array_almost_equal(lag0.c,[1],13)
+        assert_array_almost_equal(lag1.c,[-1,1],13)
+        assert_array_almost_equal(lag2.c,array([1,-4,2])/2.0,13)
+        assert_array_almost_equal(lag3.c,array([-1,9,-18,6])/6.0,13)
+        assert_array_almost_equal(lag4.c,array([1,-16,72,-96,24])/24.0,13)
+        assert_array_almost_equal(lag5.c,array([-1,25,-200,600,-600,120])/120.0,13)
+
+    def test_genlaguerre(self):
+        k = 5*np.random.random() - 0.9
+        lag0 = sc.genlaguerre(0,k)
+        lag1 = sc.genlaguerre(1,k)
+        lag2 = sc.genlaguerre(2,k)
+        lag3 = sc.genlaguerre(3,k)
+        assert_equal(lag0.c,[1])
+        assert_equal(lag1.c,[-1,k+1])
+        assert_almost_equal(lag2.c,array([1,-2*(k+2),(k+1.)*(k+2.)])/2.0)
+        assert_almost_equal(lag3.c,array([-1,3*(k+3),-3*(k+2)*(k+3),(k+1)*(k+2)*(k+3)])/6.0)
+
+
+# Base polynomials come from Abrahmowitz and Stegan
+class TestLegendre(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
+    def test_legendre(self):
+        leg0 = sc.legendre(0)
+        leg1 = sc.legendre(1)
+        leg2 = sc.legendre(2)
+        leg3 = sc.legendre(3)
+        leg4 = sc.legendre(4)
+        leg5 = sc.legendre(5)
+        assert_equal(leg0.c, [1])
+        assert_equal(leg1.c, [1,0])
+        assert_almost_equal(leg2.c, array([3,0,-1])/2.0, decimal=13)
+        assert_almost_equal(leg3.c, array([5,0,-3,0])/2.0)
+        assert_almost_equal(leg4.c, array([35,0,-30,0,3])/8.0)
+        assert_almost_equal(leg5.c, array([63,0,-70,0,15,0])/8.0)
 
 
 class TestCheby(with_metaclass(DecoratorMeta, object)):
@@ -309,8 +357,8 @@ def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
         rtol = 1e-6 if 1e-6 < resI[1] else resI[1] * 10
         assert_allclose(resI[0], resG, rtol=rtol)
 
-def test_j_roots():
-    rf = lambda a, b: lambda n, mu: sc.j_roots(n, a, b, mu)
+def test_roots_jacobi():
+    rf = lambda a, b: lambda n, mu: sc.roots_jacobi(n, a, b, mu)
     ef = lambda a, b: lambda n, x: sc.eval_jacobi(n, a, b, x)
     wf = lambda a, b: lambda x: (1 - x)**a * (1 + x)**b
 
@@ -349,33 +397,33 @@ def test_j_roots():
         100, atol=1e-13)
 
     # when alpha == beta == 0, P_n^{a,b}(x) == P_n(x)
-    xj, wj = sc.j_roots(6, 0.0, 0.0)
-    xl, wl = sc.p_roots(6)
+    xj, wj = sc.roots_jacobi(6, 0.0, 0.0)
+    xl, wl = sc.roots_legendre(6)
     assert_allclose(xj, xl, 1e-14, 1e-14)
     assert_allclose(wj, wl, 1e-14, 1e-14)
 
     # when alpha == beta != 0, P_n^{a,b}(x) == C_n^{alpha+0.5}(x)
-    xj, wj = sc.j_roots(6, 4.0, 4.0)
-    xc, wc = sc.cg_roots(6, 4.5)
+    xj, wj = sc.roots_jacobi(6, 4.0, 4.0)
+    xc, wc = sc.roots_gegenbauer(6, 4.5)
     assert_allclose(xj, xc, 1e-14, 1e-14)
     assert_allclose(wj, wc, 1e-14, 1e-14)
 
-    x, w = sc.j_roots(5, 2, 3, False)
-    y, v, m = sc.j_roots(5, 2, 3, True)
+    x, w = sc.roots_jacobi(5, 2, 3, False)
+    y, v, m = sc.roots_jacobi(5, 2, 3, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(wf(2,3), -1, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.j_roots, 0, 1, 1)
-    assert_raises(ValueError, sc.j_roots, 3.3, 1, 1)
-    assert_raises(ValueError, sc.j_roots, 3, -2, 1)
-    assert_raises(ValueError, sc.j_roots, 3, 1, -2)
-    assert_raises(ValueError, sc.j_roots, 3, -2, -2)
+    assert_raises(ValueError, sc.roots_jacobi, 0, 1, 1)
+    assert_raises(ValueError, sc.roots_jacobi, 3.3, 1, 1)
+    assert_raises(ValueError, sc.roots_jacobi, 3, -2, 1)
+    assert_raises(ValueError, sc.roots_jacobi, 3, 1, -2)
+    assert_raises(ValueError, sc.roots_jacobi, 3, -2, -2)
 
 def test_js_roots():
-    rf = lambda a, b: lambda n, mu: sc.js_roots(n, a, b, mu)
+    rf = lambda a, b: lambda n, mu: sc.roots_sh_jacobi(n, a, b, mu)
     ef = lambda a, b: lambda n, x: sc.eval_sh_jacobi(n, a, b, x)
     wf = lambda a, b: lambda x: (1. - x)**(a - b) * (x)**(b - 1.)
 
@@ -412,22 +460,22 @@ def test_js_roots():
     vgq(rf(68.9, 2.25), ef(68.9, 2.25), wf(68.9, 2.25), 0., 1.,
         100, atol=1e-12)
 
-    x, w = sc.js_roots(5, 3, 2, False)
-    y, v, m = sc.js_roots(5, 3, 2, True)
+    x, w = sc.roots_sh_jacobi(5, 3, 2, False)
+    y, v, m = sc.roots_sh_jacobi(5, 3, 2, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(wf(3,2), 0, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.js_roots, 0, 1, 1)
-    assert_raises(ValueError, sc.js_roots, 3.3, 1, 1)
-    assert_raises(ValueError, sc.js_roots, 3, 1, 2)    # p - q <= -1
-    assert_raises(ValueError, sc.js_roots, 3, 2, -1)   # q <= 0
-    assert_raises(ValueError, sc.js_roots, 3, -2, -1)  # both
+    assert_raises(ValueError, sc.roots_sh_jacobi, 0, 1, 1)
+    assert_raises(ValueError, sc.roots_sh_jacobi, 3.3, 1, 1)
+    assert_raises(ValueError, sc.roots_sh_jacobi, 3, 1, 2)    # p - q <= -1
+    assert_raises(ValueError, sc.roots_sh_jacobi, 3, 2, -1)   # q <= 0
+    assert_raises(ValueError, sc.roots_sh_jacobi, 3, -2, -1)  # both
 
 def test_h_roots():
-    rootf = sc.h_roots
+    rootf = sc.roots_hermite
     evalf = sc.eval_hermite
     weightf = sc.weight_hermite
 
@@ -436,8 +484,8 @@ def test_h_roots():
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 100, atol=1e-12)
 
     # Golub-Welsch branch
-    x, w = sc.h_roots(5, False)
-    y, v, m = sc.h_roots(5, True)
+    x, w = sc.roots_hermite(5, False)
+    y, v, m = sc.roots_hermite(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
@@ -445,14 +493,14 @@ def test_h_roots():
     assert_allclose(m, muI, rtol=muI_err)
 
     # Asymptotic branch (switch over at n >= 150)
-    x, w = sc.h_roots(200, False)
-    y, v, m = sc.h_roots(200, True)
+    x, w = sc.roots_hermite(200, False)
+    y, v, m = sc.roots_hermite(200, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
     assert_allclose(sum(v), m, 1e-14, 1e-14)
 
-    assert_raises(ValueError, sc.h_roots, 0)
-    assert_raises(ValueError, sc.h_roots, 3.3)
+    assert_raises(ValueError, sc.roots_hermite, 0)
+    assert_raises(ValueError, sc.roots_hermite, 3.3)
 
 def test_h_roots_asy():
     # Recursion for Hermite functions
@@ -484,7 +532,7 @@ def test_h_roots_asy():
     test(5000, atol=1e-12)
 
 def test_he_roots():
-    rootf = sc.he_roots
+    rootf = sc.roots_hermitenorm
     evalf = sc.eval_hermitenorm
     weightf = sc.weight_hermitenorm
 
@@ -492,19 +540,19 @@ def test_he_roots():
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 25, atol=1e-13)
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 100, atol=1e-12)
 
-    x, w = sc.he_roots(5, False)
-    y, v, m = sc.he_roots(5, True)
+    x, w = sc.roots_hermitenorm(5, False)
+    y, v, m = sc.roots_hermitenorm(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, -np.inf, np.inf)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.he_roots, 0)
-    assert_raises(ValueError, sc.he_roots, 3.3)
+    assert_raises(ValueError, sc.roots_hermitenorm, 0)
+    assert_raises(ValueError, sc.roots_hermitenorm, 3.3)
 
 def test_cg_roots():
-    rootf = lambda a: lambda n, mu: sc.cg_roots(n, a, mu)
+    rootf = lambda a: lambda n, mu: sc.roots_gegenbauer(n, a, mu)
     evalf = lambda a: lambda n, x: sc.eval_gegenbauer(n, a, x)
     weightf = lambda a: lambda x: sc.weight_gegenbauer(a, x)
 
@@ -536,181 +584,181 @@ def test_cg_roots():
     vgq(rootf(0), sc.eval_chebyt, weightf(0), -1., 1., 25)
     vgq(rootf(0), sc.eval_chebyt, weightf(0), -1., 1., 100)
 
-    x, w = sc.cg_roots(5, 2, False)
-    y, v, m = sc.cg_roots(5, 2, True)
+    x, w = sc.roots_gegenbauer(5, 2, False)
+    y, v, m = sc.roots_gegenbauer(5, 2, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf(2), -1, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.cg_roots, 0, 2)
-    assert_raises(ValueError, sc.cg_roots, 3.3, 2)
-    assert_raises(ValueError, sc.cg_roots, 3, -.75)
+    assert_raises(ValueError, sc.roots_gegenbauer, 0, 2)
+    assert_raises(ValueError, sc.roots_gegenbauer, 3.3, 2)
+    assert_raises(ValueError, sc.roots_gegenbauer, 3, -.75)
 
 def test_t_roots():
     weightf = sc.weight_chebyt
-    verify_gauss_quad(sc.t_roots, sc.eval_chebyt, weightf, -1., 1., 5)
-    verify_gauss_quad(sc.t_roots, sc.eval_chebyt, weightf, -1., 1., 25)
-    verify_gauss_quad(sc.t_roots, sc.eval_chebyt, weightf, -1., 1., 100)
+    verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 5)
+    verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 25)
+    verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 100)
 
-    x, w = sc.t_roots(5, False)
-    y, v, m = sc.t_roots(5, True)
+    x, w = sc.roots_chebyt(5, False)
+    y, v, m = sc.roots_chebyt(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, -1, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.t_roots, 0)
-    assert_raises(ValueError, sc.t_roots, 3.3)
+    assert_raises(ValueError, sc.roots_chebyt, 0)
+    assert_raises(ValueError, sc.roots_chebyt, 3.3)
 
 def test_u_roots():
     weightf = sc.weight_chebyu
-    verify_gauss_quad(sc.u_roots, sc.eval_chebyu, weightf, -1., 1., 5)
-    verify_gauss_quad(sc.u_roots, sc.eval_chebyu, weightf, -1., 1., 25)
-    verify_gauss_quad(sc.u_roots, sc.eval_chebyu, weightf, -1., 1., 100)
+    verify_gauss_quad(sc.roots_chebyu, sc.eval_chebyu, weightf, -1., 1., 5)
+    verify_gauss_quad(sc.roots_chebyu, sc.eval_chebyu, weightf, -1., 1., 25)
+    verify_gauss_quad(sc.roots_chebyu, sc.eval_chebyu, weightf, -1., 1., 100)
 
-    x, w = sc.u_roots(5, False)
-    y, v, m = sc.u_roots(5, True)
+    x, w = sc.roots_chebyu(5, False)
+    y, v, m = sc.roots_chebyu(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, -1, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.u_roots, 0)
-    assert_raises(ValueError, sc.u_roots, 3.3)
+    assert_raises(ValueError, sc.roots_chebyu, 0)
+    assert_raises(ValueError, sc.roots_chebyu, 3.3)
 
 def test_c_roots():
     weightf = sc.weight_chebyc
-    verify_gauss_quad(sc.c_roots, sc.eval_chebyc, weightf, -2., 2., 5)
-    verify_gauss_quad(sc.c_roots, sc.eval_chebyc, weightf, -2., 2., 25)
-    verify_gauss_quad(sc.c_roots, sc.eval_chebyc, weightf, -2., 2., 100)
+    verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 5)
+    verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 25)
+    verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 100)
 
-    x, w = sc.c_roots(5, False)
-    y, v, m = sc.c_roots(5, True)
+    x, w = sc.roots_chebyc(5, False)
+    y, v, m = sc.roots_chebyc(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, -2, 2)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.c_roots, 0)
-    assert_raises(ValueError, sc.c_roots, 3.3)
+    assert_raises(ValueError, sc.roots_chebyc, 0)
+    assert_raises(ValueError, sc.roots_chebyc, 3.3)
 
 def test_s_roots():
     weightf = sc.weight_chebys
-    verify_gauss_quad(sc.s_roots, sc.eval_chebys, weightf, -2., 2., 5)
-    verify_gauss_quad(sc.s_roots, sc.eval_chebys, weightf, -2., 2., 25)
-    verify_gauss_quad(sc.s_roots, sc.eval_chebys, weightf, -2., 2., 100)
+    verify_gauss_quad(sc.roots_chebys, sc.eval_chebys, weightf, -2., 2., 5)
+    verify_gauss_quad(sc.roots_chebys, sc.eval_chebys, weightf, -2., 2., 25)
+    verify_gauss_quad(sc.roots_chebys, sc.eval_chebys, weightf, -2., 2., 100)
 
-    x, w = sc.s_roots(5, False)
-    y, v, m = sc.s_roots(5, True)
+    x, w = sc.roots_chebys(5, False)
+    y, v, m = sc.roots_chebys(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, -2, 2)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.s_roots, 0)
-    assert_raises(ValueError, sc.s_roots, 3.3)
+    assert_raises(ValueError, sc.roots_chebys, 0)
+    assert_raises(ValueError, sc.roots_chebys, 3.3)
 
 def test_ts_roots():
     weightf = sc.weight_sh_chebyt
-    verify_gauss_quad(sc.ts_roots, sc.eval_sh_chebyt, weightf, 0., 1., 5)
-    verify_gauss_quad(sc.ts_roots, sc.eval_sh_chebyt, weightf, 0., 1., 25)
-    verify_gauss_quad(sc.ts_roots, sc.eval_sh_chebyt, weightf, 0., 1.,
+    verify_gauss_quad(sc.roots_sh_chebyt, sc.eval_sh_chebyt, weightf, 0., 1., 5)
+    verify_gauss_quad(sc.roots_sh_chebyt, sc.eval_sh_chebyt, weightf, 0., 1., 25)
+    verify_gauss_quad(sc.roots_sh_chebyt, sc.eval_sh_chebyt, weightf, 0., 1.,
                       100, atol=1e-13)
 
-    x, w = sc.ts_roots(5, False)
-    y, v, m = sc.ts_roots(5, True)
+    x, w = sc.roots_sh_chebyt(5, False)
+    y, v, m = sc.roots_sh_chebyt(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, 0, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.ts_roots, 0)
-    assert_raises(ValueError, sc.ts_roots, 3.3)
+    assert_raises(ValueError, sc.roots_sh_chebyt, 0)
+    assert_raises(ValueError, sc.roots_sh_chebyt, 3.3)
 
 def test_us_roots():
     weightf = sc.weight_sh_chebyu
-    verify_gauss_quad(sc.us_roots, sc.eval_sh_chebyu, weightf, 0., 1., 5)
-    verify_gauss_quad(sc.us_roots, sc.eval_sh_chebyu, weightf, 0., 1., 25)
-    verify_gauss_quad(sc.us_roots, sc.eval_sh_chebyu, weightf, 0., 1.,
+    verify_gauss_quad(sc.roots_sh_chebyu, sc.eval_sh_chebyu, weightf, 0., 1., 5)
+    verify_gauss_quad(sc.roots_sh_chebyu, sc.eval_sh_chebyu, weightf, 0., 1., 25)
+    verify_gauss_quad(sc.roots_sh_chebyu, sc.eval_sh_chebyu, weightf, 0., 1.,
                       100, atol=1e-13)
 
-    x, w = sc.us_roots(5, False)
-    y, v, m = sc.us_roots(5, True)
+    x, w = sc.roots_sh_chebyu(5, False)
+    y, v, m = sc.roots_sh_chebyu(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, 0, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.us_roots, 0)
-    assert_raises(ValueError, sc.us_roots, 3.3)
+    assert_raises(ValueError, sc.roots_sh_chebyu, 0)
+    assert_raises(ValueError, sc.roots_sh_chebyu, 3.3)
 
 def test_p_roots():
     weightf = sc.weight_legendre
-    verify_gauss_quad(sc.p_roots, sc.eval_legendre, weightf, -1., 1., 5)
-    verify_gauss_quad(sc.p_roots, sc.eval_legendre, weightf, -1., 1.,
+    verify_gauss_quad(sc.roots_legendre, sc.eval_legendre, weightf, -1., 1., 5)
+    verify_gauss_quad(sc.roots_legendre, sc.eval_legendre, weightf, -1., 1.,
                       25, atol=1e-13)
-    verify_gauss_quad(sc.p_roots, sc.eval_legendre, weightf, -1., 1.,
+    verify_gauss_quad(sc.roots_legendre, sc.eval_legendre, weightf, -1., 1.,
                       100, atol=1e-12)
 
-    x, w = sc.p_roots(5, False)
-    y, v, m = sc.p_roots(5, True)
+    x, w = sc.roots_legendre(5, False)
+    y, v, m = sc.roots_legendre(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, -1, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.p_roots, 0)
-    assert_raises(ValueError, sc.p_roots, 3.3)
+    assert_raises(ValueError, sc.roots_legendre, 0)
+    assert_raises(ValueError, sc.roots_legendre, 3.3)
 
 def test_ps_roots():
     weightf = sc.weight_sh_legendre
-    verify_gauss_quad(sc.ps_roots, sc.eval_sh_legendre, weightf, 0., 1., 5)
-    verify_gauss_quad(sc.ps_roots, sc.eval_sh_legendre, weightf, 0., 1.,
+    verify_gauss_quad(sc.roots_sh_legendre, sc.eval_sh_legendre, weightf, 0., 1., 5)
+    verify_gauss_quad(sc.roots_sh_legendre, sc.eval_sh_legendre, weightf, 0., 1.,
                       25, atol=1e-13)
-    verify_gauss_quad(sc.ps_roots, sc.eval_sh_legendre, weightf, 0., 1.,
+    verify_gauss_quad(sc.roots_sh_legendre, sc.eval_sh_legendre, weightf, 0., 1.,
                       100, atol=1e-12)
 
-    x, w = sc.ps_roots(5, False)
-    y, v, m = sc.ps_roots(5, True)
+    x, w = sc.roots_sh_legendre(5, False)
+    y, v, m = sc.roots_sh_legendre(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, 0, 1)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.ps_roots, 0)
-    assert_raises(ValueError, sc.ps_roots, 3.3)
+    assert_raises(ValueError, sc.roots_sh_legendre, 0)
+    assert_raises(ValueError, sc.roots_sh_legendre, 3.3)
 
 def test_l_roots():
     weightf = sc.weight_laguerre
-    verify_gauss_quad(sc.l_roots, sc.eval_laguerre, weightf, 0., np.inf, 5)
-    verify_gauss_quad(sc.l_roots, sc.eval_laguerre, weightf, 0., np.inf,
+    verify_gauss_quad(sc.roots_laguerre, sc.eval_laguerre, weightf, 0., np.inf, 5)
+    verify_gauss_quad(sc.roots_laguerre, sc.eval_laguerre, weightf, 0., np.inf,
                       25, atol=1e-13)
-    verify_gauss_quad(sc.l_roots, sc.eval_laguerre, weightf, 0., np.inf,
+    verify_gauss_quad(sc.roots_laguerre, sc.eval_laguerre, weightf, 0., np.inf,
                       100, atol=1e-12)
 
-    x, w = sc.l_roots(5, False)
-    y, v, m = sc.l_roots(5, True)
+    x, w = sc.roots_laguerre(5, False)
+    y, v, m = sc.roots_laguerre(5, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf, 0, np.inf)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.l_roots, 0)
-    assert_raises(ValueError, sc.l_roots, 3.3)
+    assert_raises(ValueError, sc.roots_laguerre, 0)
+    assert_raises(ValueError, sc.roots_laguerre, 3.3)
 
 def test_la_roots():
-    rootf = lambda a: lambda n, mu: sc.la_roots(n, a, mu)
+    rootf = lambda a: lambda n, mu: sc.roots_genlaguerre(n, a, mu)
     evalf = lambda a: lambda n, x: sc.eval_genlaguerre(n, a, x)
     weightf = lambda a: lambda x: sc.weight_genlaguerre(a, x)
 
@@ -735,17 +783,17 @@ def test_la_roots():
     vgq(rootf(50), evalf(50), weightf(50), 0., np.inf, 25, atol=1e-13)
     vgq(rootf(50), evalf(50), weightf(50), 0., np.inf, 100, rtol=1e-14, atol=2e-13)
 
-    x, w = sc.la_roots(5, 2, False)
-    y, v, m = sc.la_roots(5, 2, True)
+    x, w = sc.roots_genlaguerre(5, 2, False)
+    y, v, m = sc.roots_genlaguerre(5, 2, True)
     assert_allclose(x, y, 1e-14, 1e-14)
     assert_allclose(w, v, 1e-14, 1e-14)
 
     muI, muI_err = integrate.quad(weightf(2.), 0., np.inf)
     assert_allclose(m, muI, rtol=muI_err)
 
-    assert_raises(ValueError, sc.la_roots, 0, 2)
-    assert_raises(ValueError, sc.la_roots, 3.3, 2)
-    assert_raises(ValueError, sc.la_roots, 3, -1.1)
+    assert_raises(ValueError, sc.roots_genlaguerre, 0, 2)
+    assert_raises(ValueError, sc.roots_genlaguerre, 3.3, 2)
+    assert_raises(ValueError, sc.roots_genlaguerre, 3, -1.1)
 
 
 if __name__ == "__main__":

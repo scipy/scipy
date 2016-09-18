@@ -401,21 +401,21 @@ orthogonal polynomials:
 .. autosummary::
    :toctree: generated/
 
-   c_roots
-   cg_roots
-   h_roots
-   he_roots
-   j_roots
-   js_roots
-   l_roots
-   la_roots
-   p_roots
-   ps_roots
-   s_roots
-   t_roots
-   ts_roots
-   u_roots
-   us_roots
+   roots_legendre
+   roots_chebyt
+   roots_chebyu
+   roots_chebyc
+   roots_chebys
+   roots_jacobi
+   roots_laguerre
+   roots_genlaguerre
+   roots_hermite
+   roots_hermitenorm
+   roots_gegenbauer
+   roots_sh_legendre
+   roots_sh_chebyt
+   roots_sh_chebyu
+   roots_sh_jacobi
 
 The following functions evaluate the weight functions of orthogonal
 polynomials:
@@ -460,6 +460,22 @@ orthogonal-polynomial functionality and are deprecated in Scipy 0.19:
    sh_chebyt
    sh_chebyu
    sh_jacobi
+
+   c_roots
+   cg_roots
+   h_roots
+   he_roots
+   j_roots
+   js_roots
+   l_roots
+   la_roots
+   p_roots
+   ps_roots
+   s_roots
+   t_roots
+   ts_roots
+   u_roots
+   us_roots
 
 
 Hypergeometric Functions
