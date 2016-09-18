@@ -5791,7 +5791,7 @@ add_newdoc("scipy.special", "weight_jacobi",
     See Also
     --------
     eval_jacobi : evaluate Jacobi polynomials
-    j_roots : roots and quadrature weights of Jacobi polynomials
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
 
     """)
 
@@ -5824,7 +5824,7 @@ add_newdoc("scipy.special", "weight_sh_jacobi",
     See Also
     --------
     eval_sh_jacobi : evaluate shifted Jacobi polynomials
-    js_roots : roots and quadrature weights of shifted Jacobi polynomials
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi polynomials
 
     """)
 
@@ -5855,7 +5855,7 @@ add_newdoc("scipy.special", "weight_gegenbauer",
     See Also
     --------
     eval_gegenbauer : evaluate Gegenbauer polynomials
-    cg_roots : roots and quadrature weights of Gegenbauer polynomials
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer polynomials
 
     """)
 
@@ -5884,8 +5884,8 @@ add_newdoc("scipy.special", "weight_chebyt",
     See Also
     --------
     eval_chebyt : evaluate Chebychev polynomials of the first kind
-    t_roots : roots and quadrature weights of Chebychev polynomials of
-              the first kind
+    roots_chebyt : roots and quadrature weights of Chebychev polynomials of
+                   the first kind
 
     """)
 
@@ -5914,8 +5914,8 @@ add_newdoc("scipy.special", "weight_chebyu",
     See Also
     --------
     eval_chebyu : evaluate Chebychev polynomials of the second kind
-    u_roots : roots and quadrature weights of Chebychev polynomials of
-              the second kind
+    roots_chebyu : roots and quadrature weights of Chebychev polynomials of
+                   the second kind
 
     """)
 
@@ -5945,8 +5945,8 @@ add_newdoc("scipy.special", "weight_chebyc",
     See Also
     --------
     eval_chebyc : evaluate Chebychev polynomials of the first kind
-    c_roots : roots and quadrature weights of Chebychev polynomials of
-              the first kind
+    roots_chebyc : roots and quadrature weights of Chebychev polynomials of
+                   the first kind
 
     """)
 
@@ -5975,9 +5975,9 @@ add_newdoc("scipy.special", "weight_chebys",
 
     See Also
     --------
-    eval_chebyc : evaluate Chebychev polynomials of the second kind
-    s_roots : roots and quadrature weights of Chebychev polynomials of
-              the second kind
+    eval_chebys : evaluate Chebychev polynomials of the second kind
+    roots_chebys : roots and quadrature weights of Chebychev polynomials of
+                   the second kind
 
     """)
 
@@ -6007,8 +6007,8 @@ add_newdoc("scipy.special", "weight_sh_chebyt",
     --------
     eval_sh_chebyt : evaluate shifted Chebychev polynomials of the
                      first kind
-    ts_roots : roots and quadrature weights of shifted Chebychev
-              polynomials of the first kind
+    roots_sh_chebyt : roots and quadrature weights of shifted Chebychev
+                      polynomials of the first kind
 
     """)
 
@@ -6038,8 +6038,8 @@ add_newdoc("scipy.special", "weight_sh_chebyu",
     --------
     eval_sh_chebyu : evaluate shifted Chebychev polynomials of the
                      second kind
-    us_roots : roots and quadrature weights of shifted Chebychev
-               polynomials of the second kind
+    roots_sh_chebyu : roots and quadrature weights of shifted Chebychev
+                      polynomials of the second kind
 
     """)
 
@@ -6069,7 +6069,7 @@ add_newdoc("scipy.special", "weight_legendre",
     See Also
     --------
     eval_legendre : evaluate Legendre polynomials.
-    p_roots : roots and quadrature weights of Legendre polynomials
+    roots_legendre : roots and quadrature weights of Legendre polynomials
 
     """)
 
@@ -6098,8 +6098,8 @@ add_newdoc("scipy.special", "weight_sh_legendre",
     See Also
     --------
     eval_sh_legendre : evaluate shifted Legendre polynomials.
-    ps_roots : roots and quadrature weights of shifted Legendre
-               polynomials
+    roots_sh_legendre : roots and quadrature weights of shifted Legendre
+                        polynomials
 
     """)
 
@@ -6130,8 +6130,8 @@ add_newdoc("scipy.special", "weight_genlaguerre",
     See Also
     --------
     eval_genlaguerre : evaluate shifted Legendre polynomials.
-    la_roots : roots and quadrature weights of generalized Laguerre
-               polynomials
+    roots_genlaguerre : roots and quadrature weights of generalized Laguerre
+                        polynomials
 
     """)
 
@@ -6160,7 +6160,7 @@ add_newdoc("scipy.special", "weight_laguerre",
     See Also
     --------
     eval_laguerre : evaluate Laguerre polynomials.
-    l_roots : roots and quadrature weights of Laguerre polynomials
+    roots_laguerre : roots and quadrature weights of Laguerre polynomials
 
     """)
 
@@ -6188,7 +6188,7 @@ add_newdoc("scipy.special", "weight_hermite",
     See Also
     --------
     eval_hermite : evaluate Hermite polynomials.
-    h_roots : roots and quadrature weights of Hermite polynomials
+    roots_hermite : roots and quadrature weights of Hermite polynomials
 
     """)
 
@@ -6216,6 +6216,6 @@ add_newdoc("scipy.special", "weight_hermitenorm",
     See Also
     --------
     eval_hermitenorm : evaluate Hermite polynomials.
-    he_roots : roots and quadrature weights of Hermite polynomials
+    roots_hermitenorm : roots and quadrature weights of Hermite polynomials
 
     """)
