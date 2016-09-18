@@ -217,14 +217,7 @@ class BSpline(object):
         return iter((self.t, self.c, self.k))
 
     def __getitem__(self, j):
-        # Support tuple-like indexing and slicing
-        # cf http://docs.python.org/2.3/whatsnew/section-slices.html
-        tck = (self.t, self.c, self.k)
-        if isinstance(j, slice):
-            indices = j.indices(3)
-            return tuple(tck[i] for i in range(*indices))
-        else:
-            return tck[j]
+        return (self.t, self.c, self.k)[j]
 
     @classmethod
     def construct_fast(cls, t, c, k, extrapolate=True, axis=0):
