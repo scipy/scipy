@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond
 
-from .basic import solve
+from .basic import solve, solve_triangular
 from .lapack import get_lapack_funcs
 from .decomp_schur import schur
 from .decomp_lu import lu
@@ -313,11 +313,12 @@ def solve_discrete_are(a, b, q, r):
     The DARE is defined as
 
     .. math::
+        
         X = A'XA - (A'XB) (R+B'XB)^{-1} (B'XA) + Q
 
     The limitations for a solution to exist are :
         
-        * All eigenvalues of ..math:`A` outside the unit disc, should be 
+        * All eigenvalues of :math:`A` outside the unit disc, should be 
           controllable. 
 
         * The associated symplectic pencil (See Notes), should have 
@@ -337,8 +338,13 @@ def solve_discrete_are(a, b, q, r):
     Returns
     -------
     x : ndarray
-        Solution to the discrete algebraic Riccati equation. If a solution
-        could not be found an empty array is returned.
+        Solution to the discrete algebraic Riccati equation.
+        
+    Raises
+    ------
+    LinAlgError
+        For cases where the stable subspace of the pencil could not be 
+        isolated. See Notes section and the references for details. 
 
     See Also
     --------
@@ -347,7 +353,8 @@ def solve_discrete_are(a, b, q, r):
     Notes
     -----
     The equation is solved by forming the extended symplectic matrix pencil, 
-    as described in [1]_, .. math:`H - \lambda J` given by the block matrices
+    as described in [1]_, :math:`H - \lambda J` given by the block 
+    matrices::
         
     
            [  A   0   B ]             [ I   0   B ] 
@@ -357,8 +364,8 @@ def solve_discrete_are(a, b, q, r):
     and using a QZ decomposition method.
     
     In this algorithm, the fail conditions are linked to the symmetrycity 
-    of the product .. math:`U_2 U_1^{-1}` and condition number of 
-    .. math:`U_1`. Here, .. math:`U` is the 2m-by-m matrix that holds the 
+    of the product :math:`U_2 U_1^{-1}` and condition number of 
+    :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the 
     eigenvectors spanning the stable subspace with 2m rows and partitioned 
     into two m-row matrices. See [1]_ and [2]_ for more details.
     
@@ -378,10 +385,10 @@ def solve_discrete_are(a, b, q, r):
        
     """
     
-    a = _asarray_validated(a)
-    b = _asarray_validated(b)
-    q = _asarray_validated(q)
-    r = _asarray_validated(r)
+    a = np.atleast_2d(_asarray_validated(a))
+    b = np.atleast_2d(_asarray_validated(b))
+    q = np.atleast_2d(_asarray_validated(q))
+    r = np.atleast_2d(_asarray_validated(r))
     
     # Get the correct data types otherwise Numpy complains about pushing 
     # complex numbers into real arrays.
@@ -445,10 +452,15 @@ def solve_discrete_are(a, b, q, r):
     up, ul, uu = lu(u00)
 
     if 1/cond(uu) < np.spacing(1.):
-        return np.array([[]])
+        raise LinAlgError('Failed to find a finite solution.')
     
-    x = solve(ul.conj().T, 
-                  solve(uu.conj().T, u10.conj().T)).conj().T.dot(up.conj().T)
+    # Exploit the triangular structure
+    x = solve_triangular(ul.conj().T,
+                         solve_triangular(uu.conj().T, 
+                                          u10.conj().T,
+                                          lower=True),
+                         unit_diagonal=True,
+                         ).conj().T.dot(up.conj().T)
 
     # Check the deviation from symmetry for success
     u_sym = u00.conj().T.dot(u10)
@@ -456,6 +468,7 @@ def solve_discrete_are(a, b, q, r):
     sym_threshold = np.max(np.spacing([1000., norm(u_sym, 1)]))
 
     if np.max(np.abs(u_sym)) > sym_threshold:
-        return np.array([[]])
+        raise LinAlgError('The associated symplectic pencil has eigenvalues'
+                          'too close to the unit circle')
     
     return (x + x.conj().T)/2
