@@ -133,8 +133,6 @@ class TestSolveContinuousARE(TestCase):
         for case in self.cases:
             self.check_case(case[0], case[1], case[2], case[3])
 
-
-
 def test_solve_discrete_are():
 
     cases = [
