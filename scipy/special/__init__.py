@@ -373,6 +373,11 @@ Ellipsoidal Harmonics
 Orthogonal polynomials
 ----------------------
 
+Scipy supports evaluation, finding roots and quadrature weights, and
+evaluating weight functions of common families of orthogonal
+polynomials. For a general introduction to orthogonal polynomials see
+the :ref:`tutorial <special-orthogonal-polynomials>`.
+
 The following functions evaluate orthogonal polynomials:
 
 .. autosummary::
