@@ -7,8 +7,6 @@ from numpy.testing import TestCase, rand, run_module_suite, assert_raises, \
     assert_equal, assert_almost_equal, assert_array_almost_equal, assert_, \
     assert_allclose
 
-from numpy.testing.noseclasses import KnownFailureTest
-    
 from scipy.linalg import solve_sylvester, solve_lyapunov, \
     solve_discrete_lyapunov, solve_continuous_are, solve_discrete_are
 
@@ -134,8 +132,7 @@ class TestSolveContinuousARE(TestCase):
             self.check_case(case[0], case[1], case[2], case[3])
 
 
-
-def test_solve_discrete_are():
+class TestSolveDiscreteARE(TestCase):
 
     cases = [
         # Darex examples taken from (with default parameters):
@@ -146,67 +143,54 @@ def test_solve_discrete_are():
         # [2] T. GUDMUNDSSON, C. KENNEY, A.J. LAUB: 'Scaling of the 
         #     Discrete-Time Algebraic Riccati Equation to Enhance Stability 
         #     of the Schur Solution Method', IEEE Trans.Aut.Cont., vol.37(4) 
-        #
-        # The format of the data is (a, b, q, r, knownfailure), where
-        # knownfailure is None if the test passes or a string
-        # indicating the reason for failure.
-        #
+        # 
         # Complex a; real b, q, r
         (np.array([[2, 1-2j], [0, -3j]]),
          np.array([[0,], [1,]]),
          np.array([[1, 0], [0, 2]]),
-         np.array([[1,],]),
-         None),
+         np.array([[1,],])),
         # Real a, q, r; complex b
         (np.array([[2, 1], [0, -1]]),
          np.array([[-2j,], [1j,]]),
          np.array([[1, 0], [0, 2]]),
-         np.array([[1,],]),
-         None),
+         np.array([[1,],])),
         # Real a, b; complex q, r 
         (np.array([[3, 1], [0, -1]]),
          np.array([[1, 2], [1, 3]]),
          np.array([[1, 1+1j], [1-1j, 2]]),
-         np.array([[2, -2j], [2j, 3]]),
-         None),
+         np.array([[2, -2j], [2j, 3]])),
         # User-reported 
         (np.array([[0.63399379, 0.54906824, 0.76253406],
                    [0.5404729, 0.53745766, 0.08731853],
                    [0.27524045, 0.84922129, 0.4681622]]),
          np.array([[0.96861695],[0.05532739],[0.78934047]]),
          np.eye(3),
-         np.eye(1),
-         None),
+         np.eye(1)),
         # darex #1
         (np.array([[4, 3],[-4.5, -3.5]]),
          np.array([[1],[-1]]),
          np.array([[9, 6],[6, 4]]),
-         np.array([[1]]),
-         None),
+         np.array([[1]])),
         # darex #2
         (np.array([[0.9512, 0],[0, 0.9048]]),
          np.array([[4.877, 4.877],[-1.1895, 3.569]]),
          np.array([[0.005, 0],[0, 0.02]]),
-         np.array([[1/3, 0],[0, 3]]),
-         None),
+         np.array([[1/3, 0],[0, 3]])),
         # darex #3
         (np.array([[2, -1],[1, 0]]),
          np.array([[1],[0]]),
          np.array([[0, 0],[0, 1]]),
-         np.array([[0]]),
-         None),
+         np.array([[0]])),
         # darex #4 (skipped the gen. Ric. term S)
         (np.array([[0, 1],[0, -1]]),
          np.array([[1, 0],[2, 1]]),
          np.array([[-4, -4],[-4, 7]]) * (1/11),
-         np.array([[9, 3],[3, 1]]),
-         None),
+         np.array([[9, 3],[3, 1]])),
         # darex #5
         (np.array([[0, 1],[0, 0]]),
          np.array([[0],[1]]),
          np.array([[1, 2],[2, 4]]),
-         np.array([[1]]),
-         None),
+         np.array([[1]])),
         # darex #6
         (np.array([[0.998, 0.067, 0, 0],
                    [-.067, 0.998, 0, 0],
@@ -220,8 +204,7 @@ def test_solve_discrete_are():
                    [0, 0.744, 0.205, 0],
                    [0, 0.205, 0.589, 0],
                    [-0.244, 0, 0, 1.048]]),
-         np.eye(2),
-         None),
+         np.eye(2)),
         # darex #7
         (np.array([[0.984750, -.079903, 0.0009054, -.0010765],
                    [0.041588, 0.998990, -.0358550, 0.0126840],
@@ -232,8 +215,7 @@ def test_solve_discrete_are():
                    [-1.198440, -4.1378e-4],
                    [-3.192700, 9.2535e-4]]),
          np.eye(4)*1e-2,
-         np.eye(2),
-         None),
+         np.eye(2)),
         # darex #8
         (np.array([[-0.6000000, -2.2000000, -3.6000000, -5.4000180],
                    [1.0000000, 0.6000000, 0.8000000, 3.3999820],
@@ -247,8 +229,7 @@ def test_solve_discrete_are():
                    [1, 2, 2, 5],
                    [3, 2, 6, 11],
                    [6, 5, 11, 22]]),
-         np.eye(4),
-         None),
+         np.eye(4)),
         # darex #9
         (np.array([[95.4070, 1.9643, 0.3597, 0.0673, 0.0190],
                     [40.8490, 41.3170, 16.0840, 4.4679, 1.1971],
@@ -261,8 +242,7 @@ def test_solve_discrete_are():
                    [3.6076, -6.6000],
                    [0.4617, -0.9148]]) * 0.01,
          np.eye(5),
-         np.eye(2),
-         None),
+         np.eye(2)),
         # darex #10
         (np.kron(np.eye(2),np.diag([1,1],k=1)),
          np.kron(np.eye(2),np.array([[0],[0],[1]])),
@@ -272,8 +252,7 @@ def test_solve_discrete_are():
                [0, 0, 0, 1, -1, 0],
                [0, 0, 0, -1, 1, 0],
                [0, 0, 0, 0, 0, 0]]),
-         np.array([[3, 0],[0, 1]]),
-         None),
+         np.array([[3, 0],[0, 1]])),
         # darex #11
         (0.001 * np.array(
          [[870.1, 135.0, 11.59, .5014, -37.22, .3484, 0, 4.242, 7.249],
@@ -295,44 +274,36 @@ def test_solve_discrete_are():
                [1.9710, -15.5400, 6.9370],
                [3.7730, -30.2800, 14.6900]]) * 0.001,
          np.diag([50, 0, 0, 0, 50, 0, 0, 0, 0]),
-         np.eye(3),
-         None),
-        # darex #12
-        (np.array([[0, 1e6],[0, 0]]),
-         np.array([[0],[1]]),
-         np.eye(2),
-         np.array([[1]]),
-         "Bad accuracy"),
-        # darex #13
-        (np.array([[16, 10, -2],
-                  [10, 13, -8],
-                  [-2, -8, 7]]) * (1/9),
-         np.eye(3),
-         1e6 * np.eye(3),
-         1e6 * np.eye(3),
-         "Fails"),
-        # darex #14
-        (np.array([[1 - 1/1e8, 0, 0, 0],
-                  [1, 0, 0, 0],
-                  [0, 1, 0, 0],
-                  [0, 0, 1, 0]]),
-         np.array([[1e-08],[0],[0],[0]]),
-         np.diag([0, 0, 0, 1]),
-         np.array([[0.25]]),
-         "Bad accuracy"),
-        # darex #15
-        (np.eye(100,k=1),
-         np.flipud(np.eye(100,1)),
-         np.eye(100),
-         np.array([[1]]),
-         "Fails")
+         np.eye(3)),
+        ## darex #12
+        #(np.array([[0, 1e6],[0, 0]]),
+        # np.array([[0],[1]]),
+        # np.eye(2),
+        # np.array([[1]])),
+        ## darex #13
+        #(np.array([[16, 10, -2],
+        #           [10, 13, -8],
+        #           [-2, -8, 7]]) * (1/9),
+        # np.eye(3),
+        # 1e6 * np.eye(3),
+        # 1e6 * np.eye(3)),
+        ## darex #14
+        #(np.array([[1 - 1/1e8, 0, 0, 0],
+        #           [1, 0, 0, 0],
+        #           [0, 1, 0, 0],
+        #           [0, 0, 1, 0]]),
+        # np.array([[1e-08],[0],[0],[0]]),
+        # np.diag([0, 0, 0, 1]),
+        # np.array([[0.25]])),
+        ## darex #15
+        #(np.eye(100,k=1),
+        # np.flipud(np.eye(100,1)),
+        # np.eye(100),
+        # np.array([[1]]))
         ]
 
-    def _test_factory(case):
+    def check_case(self, a, b, q, r):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
-        a, b, q, r, knownfailure = case
-        if knownfailure:
-            raise KnownFailureTest(knownfailure)
 
         x = solve_discrete_are(a, b, q, r)
         res = a.conj().T.dot(x.dot(a)) - x + q
@@ -341,8 +312,9 @@ def test_solve_discrete_are():
                     )
         assert_array_almost_equal(res,np.zeros_like(res))
 
-    for case in cases:
-        yield _test_factory, case
+    def test_cases(self):
+        for case in self.cases:
+            self.check_case(case[0], case[1], case[2], case[3])
 
 
 class TestSolveSylvester(TestCase):
