@@ -144,6 +144,26 @@ Hermite (Physicist's)                `eval_hermite`     `roots_hermite`     `wei
 Hermite (Probabilist's)              `eval_hermitenorm` `roots_hermitenorm` `weight_hermitenorm`
 ==================================== ================== =================== ====================
 
+As an example of using these functions, suppose that we wished to
+compute the Laplace transform of :math:`\sin(x)`:
+
+.. math::
+
+   \int_0^\infty e^{-sx}\sin(x)dx
+
+at :math:`s = 1`. This looks like integrating :math:`\sin(x)` against
+the Laguerre weight function :math:`w(x) = e^{-x}`, so we do:
+   
+.. code::
+
+   >>> import scipy.special as sc
+   >>> x, w = sc.roots_laguerre(20)
+   >>> np.sum(np.sin(x)*w)
+   >>> np.sum(np.sin(x)*w)
+   0.49999999999998251
+
+The exact answer is :math:`1/2`.
+
 References
 ----------
 
