@@ -112,9 +112,6 @@ from . import specfun
 __all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
            'jacobi', 'laguerre', 'genlaguerre', 'hermite', 'hermitenorm',
            'gegenbauer', 'sh_legendre', 'sh_chebyt', 'sh_chebyu', 'sh_jacobi',
-           'p_roots', 'ps_roots', 'j_roots', 'js_roots', 'l_roots', 'la_roots',
-           'he_roots', 'ts_roots', 'us_roots', 's_roots',
-           't_roots', 'u_roots', 'c_roots', 'cg_roots', 'h_roots',
            'roots_legendre', 'roots_chebyt', 'roots_chebyu', 'roots_chebyc',
            'roots_chebys', 'roots_jacobi', 'roots_laguerre', 'roots_genlaguerre',
            'roots_hermite', 'roots_hermitenorm', 'roots_gegenbauer',
@@ -2140,3 +2137,4 @@ for newfunstr, oldfunstr in _rootfunc_pairs:
     modattrs[oldfunstr] = np.deprecate(newfun,
                                        old_name=oldfunstr,
                                        new_name=newfunstr)
+    __all__.append(oldfunstr)
