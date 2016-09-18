@@ -4686,7 +4686,15 @@ cdef char ufunc_eval_chebyc_types[15]
 cdef char *ufunc_eval_chebyc_doc = (
     "eval_chebyc(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev C polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a\n"
+    "point. \n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyc : roots and quadrature weights of Chebychev\n"
+    "               polynomials of the first kind on [-2, 2]\n"
+    "weights_chebyc : weight function for Chebychev polynomials of the\n"
+    "                 first kind on [-2, 2]")
 ufunc_eval_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebyc_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4731,7 +4739,15 @@ cdef char ufunc_eval_chebys_types[15]
 cdef char *ufunc_eval_chebys_doc = (
     "eval_chebys(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev S polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a\n"
+    "point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebys : roots and quadrature weights of Chebychev\n"
+    "               polynomials of the second kind on [-2, 2]\n"
+    "weight_chebys : weight function for Chebychev polynomials of the\n"
+    "                second kind on [-2, 2]")
 ufunc_eval_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebys_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4776,8 +4792,17 @@ cdef char ufunc_eval_chebyt_types[15]
 cdef char *ufunc_eval_chebyt_doc = (
     "eval_chebyt(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev T polynomial at a point.\n"
+    "Evaluate Chebyshev polynomial of the first kind at a point.\n"
     "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyt : roots and quadrature weights of Chebychev\n"
+    "               polynomials of the first kind\n"
+    "weight_chebyt : weight function for Chebychev polynomials of the\n"
+    "                first kind\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
     "This routine is numerically stable for `x` in ``[-1, 1]`` at least\n"
     "up to order ``10000``.")
 ufunc_eval_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
@@ -4824,7 +4849,14 @@ cdef char ufunc_eval_chebyu_types[15]
 cdef char *ufunc_eval_chebyu_doc = (
     "eval_chebyu(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev U polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the second kind at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyu : roots and quadrature weights of Chebychev\n"
+    "               polynomials of the second kind\n"
+    "weight_chebyu : weight function for Chebychev polynomials of the\n"
+    "                second kind")
 ufunc_eval_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4869,7 +4901,12 @@ cdef char ufunc_eval_gegenbauer_types[20]
 cdef char *ufunc_eval_gegenbauer_doc = (
     "eval_gegenbauer(n, alpha, x, out=None)\n"
     "\n"
-    "Evaluate Gegenbauer polynomial at a point.")
+    "Evaluate Gegenbauer polynomial at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_gegenbauer : roots and quadrature weights of Gegenbauer polynomials\n"
+    "weight_gegenbauer : weight function for Gegenbauer polynomials")
 ufunc_eval_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
 ufunc_eval_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_eval_gegenbauer_loops[2] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
@@ -4919,7 +4956,14 @@ cdef char ufunc_eval_genlaguerre_types[20]
 cdef char *ufunc_eval_genlaguerre_doc = (
     "eval_genlaguerre(n, alpha, x, out=None)\n"
     "\n"
-    "Evaluate generalized Laguerre polynomial at a point.")
+    "Evaluate generalized Laguerre polynomial at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_genlaguerre : roots and quadrature weights of generalized\n"
+    "                    Laguerre polynomials\n"
+    "weight_genlaguerre : weight function for generalized Laguerre\n"
+    "                     polynomials")
 ufunc_eval_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
 ufunc_eval_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_eval_genlaguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
@@ -4969,7 +5013,14 @@ cdef char ufunc_eval_hermite_types[3]
 cdef char *ufunc_eval_hermite_doc = (
     "eval_hermite(n, x, out=None)\n"
     "\n"
-    "Evaluate Hermite polynomial at a point.")
+    "Evaluate physicist's Hermite polynomial at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_hermite : roots and quadrature weights of physicist's\n"
+    "                Hermite polynomials\n"
+    "weight_hermite : weight function for physicist's Hermite\n"
+    "                 polynomials")
 ufunc_eval_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermite_types[0] = <char>NPY_LONG
 ufunc_eval_hermite_types[1] = <char>NPY_DOUBLE
@@ -4986,7 +5037,15 @@ cdef char ufunc_eval_hermitenorm_types[3]
 cdef char *ufunc_eval_hermitenorm_doc = (
     "eval_hermitenorm(n, x, out=None)\n"
     "\n"
-    "Evaluate normalized Hermite polynomial at a point.")
+    "Evaluate probabilist's (normalized)  Hermite polynomial at a\n"
+    "point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_hermitenorm : roots and quadrature weights of probabilist's\n"
+    "                    Hermite polynomials\n"
+    "weight_hermitenorm : weight function for probabilist's Hermite\n"
+    "                     polynomials")
 ufunc_eval_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermitenorm_types[0] = <char>NPY_LONG
 ufunc_eval_hermitenorm_types[1] = <char>NPY_DOUBLE
@@ -5003,7 +5062,12 @@ cdef char ufunc_eval_jacobi_types[25]
 cdef char *ufunc_eval_jacobi_doc = (
     "eval_jacobi(n, alpha, beta, x, out=None)\n"
     "\n"
-    "Evaluate Jacobi polynomial at a point.")
+    "Evaluate Jacobi polynomial at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_jacobi : roots and quadrature weights of Jacobi polynomials\n"
+    "weight_jacobi : weight function for Jacobi polynomials")
 ufunc_eval_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
 ufunc_eval_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_eval_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
@@ -5058,7 +5122,13 @@ cdef char ufunc_eval_laguerre_types[15]
 cdef char *ufunc_eval_laguerre_doc = (
     "eval_laguerre(n, x, out=None)\n"
     "\n"
-    "Evaluate Laguerre polynomial at a point.")
+    "Evaluate Laguerre polynomial at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_laguerre : roots and quadrature weights of Laguerre\n"
+    "                 polynomials\n"
+    "weight_laguerre : weight function for Laguerre polynomials")
 ufunc_eval_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_laguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5103,7 +5173,13 @@ cdef char ufunc_eval_legendre_types[15]
 cdef char *ufunc_eval_legendre_doc = (
     "eval_legendre(n, x, out=None)\n"
     "\n"
-    "Evaluate Legendre polynomial at a point.")
+    "Evaluate Legendre polynomial at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_legendre : roots and quadrature weights of Legendre\n"
+    "                 polynomials\n"
+    "weight_sh_legendre : weight function for Legendre polynomials")
 ufunc_eval_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5148,7 +5224,15 @@ cdef char ufunc_eval_sh_chebyt_types[15]
 cdef char *ufunc_eval_sh_chebyt_doc = (
     "eval_sh_chebyt(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Chebyshev T polynomial at a point.")
+    "Evaluate shifted Chebyshev polynomial of the first kind at a\n"
+    "point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_chebyt : roots and quadrature weights of shifted Chebychev\n"
+    "                  polynomials of the first kind\n"
+    "weight_sh_chebyt : weight function for shifted Chebychev\n"
+    "                   polynomials of the first kind")
 ufunc_eval_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_chebyt_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5193,7 +5277,15 @@ cdef char ufunc_eval_sh_chebyu_types[15]
 cdef char *ufunc_eval_sh_chebyu_doc = (
     "eval_sh_chebyu(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Chebyshev U polynomial at a point.")
+    "Evaluate shifted Chebyshev polynomial of the second kind at a\n"
+    "point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_chebyu : roots and quadrature weights of shifted\n"
+    "                  Chebychev polynomials of the second kind\n"
+    "weight_sh_chebyu : weight function for shifted Chebychev\n"
+    "                   polynomials of the second kind")
 ufunc_eval_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5238,7 +5330,12 @@ cdef char ufunc_eval_sh_jacobi_types[25]
 cdef char *ufunc_eval_sh_jacobi_doc = (
     "eval_sh_jacobi(n, p, q, x, out=None)\n"
     "\n"
-    "Evaluate shifted Jacobi polynomial at a point.")
+    "Evaluate shifted Jacobi polynomial at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi polynomials\n"
+    "weight_sh_jacobi : weight function for shifted Jacobi polynomials")
 ufunc_eval_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
 ufunc_eval_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_eval_sh_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
@@ -5293,7 +5390,14 @@ cdef char ufunc_eval_sh_legendre_types[15]
 cdef char *ufunc_eval_sh_legendre_doc = (
     "eval_sh_legendre(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Legendre polynomial at a point.")
+    "Evaluate shifted Legendre polynomial at a point.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_legendre : roots and quadrature weights of shifted\n"
+    "                    Legendre polynomials\n"
+    "weight_sh_legendre : weight function for shifted Legendre\n"
+    "                     polynomials")
 ufunc_eval_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -12253,8 +12357,8 @@ cdef char *ufunc_weight_chebyc_doc = (
     "See Also\n"
     "--------\n"
     "eval_chebyc : evaluate Chebychev polynomials of the first kind\n"
-    "c_roots : roots and quadrature weights of Chebychev polynomials of\n"
-    "          the first kind")
+    "roots_chebyc : roots and quadrature weights of Chebychev polynomials of\n"
+    "               the first kind")
 ufunc_weight_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_chebyc_types[0] = <char>NPY_FLOAT
@@ -12297,9 +12401,9 @@ cdef char *ufunc_weight_chebys_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "eval_chebyc : evaluate Chebychev polynomials of the second kind\n"
-    "s_roots : roots and quadrature weights of Chebychev polynomials of\n"
-    "          the second kind")
+    "eval_chebys : evaluate Chebychev polynomials of the second kind\n"
+    "roots_chebys : roots and quadrature weights of Chebychev polynomials of\n"
+    "               the second kind")
 ufunc_weight_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_chebys_types[0] = <char>NPY_FLOAT
@@ -12342,8 +12446,8 @@ cdef char *ufunc_weight_chebyt_doc = (
     "See Also\n"
     "--------\n"
     "eval_chebyt : evaluate Chebychev polynomials of the first kind\n"
-    "t_roots : roots and quadrature weights of Chebychev polynomials of\n"
-    "          the first kind")
+    "roots_chebyt : roots and quadrature weights of Chebychev polynomials of\n"
+    "               the first kind")
 ufunc_weight_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_chebyt_types[0] = <char>NPY_FLOAT
@@ -12386,8 +12490,8 @@ cdef char *ufunc_weight_chebyu_doc = (
     "See Also\n"
     "--------\n"
     "eval_chebyu : evaluate Chebychev polynomials of the second kind\n"
-    "u_roots : roots and quadrature weights of Chebychev polynomials of\n"
-    "          the second kind")
+    "roots_chebyu : roots and quadrature weights of Chebychev polynomials of\n"
+    "               the second kind")
 ufunc_weight_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_chebyu_types[0] = <char>NPY_FLOAT
@@ -12432,7 +12536,7 @@ cdef char *ufunc_weight_gegenbauer_doc = (
     "See Also\n"
     "--------\n"
     "eval_gegenbauer : evaluate Gegenbauer polynomials\n"
-    "cg_roots : roots and quadrature weights of Gegenbauer polynomials")
+    "roots_gegenbauer : roots and quadrature weights of Gegenbauer polynomials")
 ufunc_weight_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_weight_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_weight_gegenbauer_types[0] = <char>NPY_FLOAT
@@ -12479,8 +12583,8 @@ cdef char *ufunc_weight_genlaguerre_doc = (
     "See Also\n"
     "--------\n"
     "eval_genlaguerre : evaluate shifted Legendre polynomials.\n"
-    "la_roots : roots and quadrature weights of generalized Laguerre\n"
-    "           polynomials")
+    "roots_genlaguerre : roots and quadrature weights of generalized Laguerre\n"
+    "                    polynomials")
 ufunc_weight_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_weight_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_weight_genlaguerre_types[0] = <char>NPY_FLOAT
@@ -12524,7 +12628,7 @@ cdef char *ufunc_weight_hermite_doc = (
     "See Also\n"
     "--------\n"
     "eval_hermite : evaluate Hermite polynomials.\n"
-    "h_roots : roots and quadrature weights of Hermite polynomials")
+    "roots_hermite : roots and quadrature weights of Hermite polynomials")
 ufunc_weight_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_hermite_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_hermite_types[0] = <char>NPY_FLOAT
@@ -12566,7 +12670,7 @@ cdef char *ufunc_weight_hermitenorm_doc = (
     "See Also\n"
     "--------\n"
     "eval_hermitenorm : evaluate Hermite polynomials.\n"
-    "he_roots : roots and quadrature weights of Hermite polynomials")
+    "roots_hermitenorm : roots and quadrature weights of Hermite polynomials")
 ufunc_weight_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_hermitenorm_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_hermitenorm_types[0] = <char>NPY_FLOAT
@@ -12613,7 +12717,7 @@ cdef char *ufunc_weight_jacobi_doc = (
     "See Also\n"
     "--------\n"
     "eval_jacobi : evaluate Jacobi polynomials\n"
-    "j_roots : roots and quadrature weights of Jacobi polynomials")
+    "roots_jacobi : roots and quadrature weights of Jacobi polynomials")
 ufunc_weight_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_weight_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_weight_jacobi_types[0] = <char>NPY_FLOAT
@@ -12660,7 +12764,7 @@ cdef char *ufunc_weight_laguerre_doc = (
     "See Also\n"
     "--------\n"
     "eval_laguerre : evaluate Laguerre polynomials.\n"
-    "l_roots : roots and quadrature weights of Laguerre polynomials")
+    "roots_laguerre : roots and quadrature weights of Laguerre polynomials")
 ufunc_weight_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_laguerre_types[0] = <char>NPY_FLOAT
@@ -12703,7 +12807,7 @@ cdef char *ufunc_weight_legendre_doc = (
     "See Also\n"
     "--------\n"
     "eval_legendre : evaluate Legendre polynomials.\n"
-    "p_roots : roots and quadrature weights of Legendre polynomials")
+    "roots_legendre : roots and quadrature weights of Legendre polynomials")
 ufunc_weight_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_legendre_types[0] = <char>NPY_FLOAT
@@ -12747,8 +12851,8 @@ cdef char *ufunc_weight_sh_chebyt_doc = (
     "--------\n"
     "eval_sh_chebyt : evaluate shifted Chebychev polynomials of the\n"
     "                 first kind\n"
-    "ts_roots : roots and quadrature weights of shifted Chebychev\n"
-    "          polynomials of the first kind")
+    "roots_sh_chebyt : roots and quadrature weights of shifted Chebychev\n"
+    "                  polynomials of the first kind")
 ufunc_weight_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_sh_chebyt_types[0] = <char>NPY_FLOAT
@@ -12792,8 +12896,8 @@ cdef char *ufunc_weight_sh_chebyu_doc = (
     "--------\n"
     "eval_sh_chebyu : evaluate shifted Chebychev polynomials of the\n"
     "                 second kind\n"
-    "us_roots : roots and quadrature weights of shifted Chebychev\n"
-    "           polynomials of the second kind")
+    "roots_sh_chebyu : roots and quadrature weights of shifted Chebychev\n"
+    "                  polynomials of the second kind")
 ufunc_weight_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_sh_chebyu_types[0] = <char>NPY_FLOAT
@@ -12840,7 +12944,7 @@ cdef char *ufunc_weight_sh_jacobi_doc = (
     "See Also\n"
     "--------\n"
     "eval_sh_jacobi : evaluate shifted Jacobi polynomials\n"
-    "js_roots : roots and quadrature weights of shifted Jacobi polynomials")
+    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi polynomials")
 ufunc_weight_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_weight_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
 ufunc_weight_sh_jacobi_types[0] = <char>NPY_FLOAT
@@ -12887,8 +12991,8 @@ cdef char *ufunc_weight_sh_legendre_doc = (
     "See Also\n"
     "--------\n"
     "eval_sh_legendre : evaluate shifted Legendre polynomials.\n"
-    "ps_roots : roots and quadrature weights of shifted Legendre\n"
-    "           polynomials")
+    "roots_sh_legendre : roots and quadrature weights of shifted Legendre\n"
+    "                    polynomials")
 ufunc_weight_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_weight_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_weight_sh_legendre_types[0] = <char>NPY_FLOAT

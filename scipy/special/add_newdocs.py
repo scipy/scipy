@@ -1396,6 +1396,11 @@ add_newdoc("scipy.special", "eval_jacobi",
     eval_jacobi(n, alpha, beta, x, out=None)
 
     Evaluate Jacobi polynomial at a point.
+
+    See Also
+    --------
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
+    weight_jacobi : weight function for Jacobi polynomials
     """)
 
 add_newdoc("scipy.special", "eval_sh_jacobi",
@@ -1403,6 +1408,11 @@ add_newdoc("scipy.special", "eval_sh_jacobi",
     eval_sh_jacobi(n, p, q, x, out=None)
 
     Evaluate shifted Jacobi polynomial at a point.
+
+    See Also
+    --------
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi polynomials
+    weight_sh_jacobi : weight function for shifted Jacobi polynomials
     """)
 
 add_newdoc("scipy.special", "eval_gegenbauer",
@@ -1410,14 +1420,28 @@ add_newdoc("scipy.special", "eval_gegenbauer",
     eval_gegenbauer(n, alpha, x, out=None)
 
     Evaluate Gegenbauer polynomial at a point.
+
+    See Also
+    --------
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer polynomials
+    weight_gegenbauer : weight function for Gegenbauer polynomials
     """)
 
 add_newdoc("scipy.special", "eval_chebyt",
     """
     eval_chebyt(n, x, out=None)
 
-    Evaluate Chebyshev T polynomial at a point.
+    Evaluate Chebyshev polynomial of the first kind at a point.
 
+    See Also
+    --------
+    roots_chebyt : roots and quadrature weights of Chebychev
+                   polynomials of the first kind
+    weight_chebyt : weight function for Chebychev polynomials of the
+                    first kind
+
+    Notes
+    -----
     This routine is numerically stable for `x` in ``[-1, 1]`` at least
     up to order ``10000``.
     """)
@@ -1426,35 +1450,74 @@ add_newdoc("scipy.special", "eval_chebyu",
     """
     eval_chebyu(n, x, out=None)
 
-    Evaluate Chebyshev U polynomial at a point.
+    Evaluate Chebyshev polynomial of the second kind at a point.
+
+    See Also
+    --------
+    roots_chebyu : roots and quadrature weights of Chebychev
+                   polynomials of the second kind
+    weight_chebyu : weight function for Chebychev polynomials of the
+                    second kind
     """)
 
 add_newdoc("scipy.special", "eval_chebys",
     """
     eval_chebys(n, x, out=None)
 
-    Evaluate Chebyshev S polynomial at a point.
+    Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a
+    point.
+
+    See Also
+    --------
+    roots_chebys : roots and quadrature weights of Chebychev
+                   polynomials of the second kind on [-2, 2]
+    weight_chebys : weight function for Chebychev polynomials of the
+                    second kind on [-2, 2]
     """)
 
 add_newdoc("scipy.special", "eval_chebyc",
     """
     eval_chebyc(n, x, out=None)
 
-    Evaluate Chebyshev C polynomial at a point.
+    Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a
+    point. 
+
+    See Also
+    --------
+    roots_chebyc : roots and quadrature weights of Chebychev
+                   polynomials of the first kind on [-2, 2]
+    weights_chebyc : weight function for Chebychev polynomials of the
+                     first kind on [-2, 2]
     """)
 
 add_newdoc("scipy.special", "eval_sh_chebyt",
     """
     eval_sh_chebyt(n, x, out=None)
 
-    Evaluate shifted Chebyshev T polynomial at a point.
+    Evaluate shifted Chebyshev polynomial of the first kind at a
+    point.
+
+    See Also
+    --------
+    roots_sh_chebyt : roots and quadrature weights of shifted Chebychev
+                      polynomials of the first kind
+    weight_sh_chebyt : weight function for shifted Chebychev
+                       polynomials of the first kind
     """)
 
 add_newdoc("scipy.special", "eval_sh_chebyu",
     """
     eval_sh_chebyu(n, x, out=None)
 
-    Evaluate shifted Chebyshev U polynomial at a point.
+    Evaluate shifted Chebyshev polynomial of the second kind at a
+    point.
+
+    See Also
+    --------
+    roots_sh_chebyu : roots and quadrature weights of shifted
+                      Chebychev polynomials of the second kind
+    weight_sh_chebyu : weight function for shifted Chebychev
+                       polynomials of the second kind
     """)
 
 add_newdoc("scipy.special", "eval_legendre",
@@ -1462,6 +1525,12 @@ add_newdoc("scipy.special", "eval_legendre",
     eval_legendre(n, x, out=None)
 
     Evaluate Legendre polynomial at a point.
+
+    See Also
+    --------
+    roots_legendre : roots and quadrature weights of Legendre
+                     polynomials
+    weight_sh_legendre : weight function for Legendre polynomials
     """)
 
 add_newdoc("scipy.special", "eval_sh_legendre",
@@ -1469,6 +1538,13 @@ add_newdoc("scipy.special", "eval_sh_legendre",
     eval_sh_legendre(n, x, out=None)
 
     Evaluate shifted Legendre polynomial at a point.
+
+    See Also
+    --------
+    roots_sh_legendre : roots and quadrature weights of shifted
+                        Legendre polynomials
+    weight_sh_legendre : weight function for shifted Legendre
+                         polynomials
     """)
 
 add_newdoc("scipy.special", "eval_genlaguerre",
@@ -1476,27 +1552,55 @@ add_newdoc("scipy.special", "eval_genlaguerre",
     eval_genlaguerre(n, alpha, x, out=None)
 
     Evaluate generalized Laguerre polynomial at a point.
+
+    See Also
+    --------
+    roots_genlaguerre : roots and quadrature weights of generalized
+                        Laguerre polynomials
+    weight_genlaguerre : weight function for generalized Laguerre
+                         polynomials
     """)
 
 add_newdoc("scipy.special", "eval_laguerre",
      """
-    eval_laguerre(n, x, out=None)
+     eval_laguerre(n, x, out=None)
 
-    Evaluate Laguerre polynomial at a point.
-    """)
+     Evaluate Laguerre polynomial at a point.
+
+     See Also
+     --------
+     roots_laguerre : roots and quadrature weights of Laguerre
+                      polynomials
+     weight_laguerre : weight function for Laguerre polynomials
+     """)
 
 add_newdoc("scipy.special", "eval_hermite",
     """
     eval_hermite(n, x, out=None)
 
-    Evaluate Hermite polynomial at a point.
+    Evaluate physicist's Hermite polynomial at a point.
+
+    See Also
+    --------
+    roots_hermite : roots and quadrature weights of physicist's
+                    Hermite polynomials
+    weight_hermite : weight function for physicist's Hermite
+                     polynomials
     """)
 
 add_newdoc("scipy.special", "eval_hermitenorm",
     """
     eval_hermitenorm(n, x, out=None)
 
-    Evaluate normalized Hermite polynomial at a point.
+    Evaluate probabilist's (normalized)  Hermite polynomial at a
+    point.
+
+    See Also
+    --------
+    roots_hermitenorm : roots and quadrature weights of probabilist's
+                        Hermite polynomials
+    weight_hermitenorm : weight function for probabilist's Hermite
+                         polynomials
     """)
 
 add_newdoc("scipy.special", "exp1",
