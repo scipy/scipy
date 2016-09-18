@@ -8,6 +8,7 @@ from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded)
 from . import _bspl
 from . import _fitpack_impl
+from . import _fitpack as _dierckx
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
 
@@ -466,6 +467,12 @@ class BSpline(object):
             # shrink the integration interval, if needed
             a = max(a, self.t[self.k])
             b = min(b, self.t[-self.k - 1])
+
+            if self.c.ndim == 1:
+                # fast path: use FITPACK's routine (cf _fitpack_impl.splint)
+                t, c, k = self.tck
+                aint, wrk = _dierckx._splint(t, c, k, a, b)
+                return aint
 
         # prepare t & c
         self._ensure_c_contiguous()
