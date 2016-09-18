@@ -48,8 +48,6 @@ DataFiles: tests
         misc/tests/data/*.png,
         spatial/tests/data/*.txt,
         special/tests/data/*.npz,
-        weave/scxx/*.h,
-        weave/scxx/*.cpp,
         linalg/cython_blas.pxd,
         linalg/cython_lapack.pxd
 

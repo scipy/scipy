@@ -67,7 +67,6 @@ Subpackage          Description
 :mod:`spatial`      Spatial data structures and algorithms
 :mod:`special`      Special functions
 :mod:`stats`        Statistical distributions and functions
-:mod:`weave`        C/C++ integration
 ==================  ======================================================
 
 Scipy sub-packages need to be imported separately, for example::

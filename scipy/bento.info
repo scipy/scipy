@@ -34,4 +34,3 @@ Library:
         special,
         stats,
         ndimage,
-        weave
