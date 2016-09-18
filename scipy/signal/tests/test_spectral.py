@@ -46,10 +46,12 @@ class TestPeriodogram(TestCase):
     def test_real_spectrum(self):
         x = np.zeros(16)
         x[0] = 1
-        f, p = periodogram(x, scaling='spectrum')
-        g, q = periodogram(x, scaling='density')
-        assert_allclose(f, np.linspace(0, 0.5, 9))
-        assert_allclose(p, q/16.0)
+        fs = 16.0
+        window = 'hann'
+        f, p = periodogram(x, fs=fs, window=window, scaling='spectrum')
+        g, q = periodogram(x, fs=fs, window=window, scaling='density')
+        assert_allclose(f, np.linspace(0, 0.5*fs, 9))
+        assert_allclose(p, q*fs)
 
     def test_integer_even(self):
         x = np.zeros(16, dtype=int)
@@ -250,11 +252,11 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, nperseg=8, scaling='spectrum')
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
-                      0.02083333])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        fs = 16.0
+        f, p = welch(x, fs=fs, nperseg=8, scaling='spectrum')
+        g, q = welch(x, fs=fs, nperseg=8, scaling='density')
+        assert_allclose(f, np.linspace(0, 0.5*fs, 5))
+        assert_allclose(p, q*fs)
 
     def test_integer_onesided_even(self):
         x = np.zeros(16, dtype=int)
@@ -532,11 +534,11 @@ class TestCSD:
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = csd(x, x, nperseg=8, scaling='spectrum')
-        assert_allclose(f, np.linspace(0, 0.5, 5))
-        q = np.array([0.015625, 0.02864583, 0.04166667, 0.04166667,
-                      0.02083333])
-        assert_allclose(p, q, atol=1e-7, rtol=1e-7)
+        fs = 16.0
+        f, p = csd(x, x, fs=fs, nperseg=8, scaling='spectrum')
+        g, q = csd(x, x, fs=fs, nperseg=8, scaling='density')
+        assert_allclose(f, np.linspace(0, 0.5*fs, 5))
+        assert_allclose(p, q*fs)
 
     def test_integer_onesided_even(self):
         x = np.zeros(16, dtype=int)
