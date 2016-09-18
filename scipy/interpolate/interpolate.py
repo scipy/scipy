@@ -1512,14 +1512,11 @@ class BPoly(_PPolyBase):
         else:
             return ib(b) - ib(a)
 
-    def extend(self, c, x, right):
-        if right is not None:
-            warnings.warn("`right` is deprecated and will be removed.")
-
+    def extend(self, c, x, right=None):
         k = max(self.c.shape[0], c.shape[0])
         self.c = self._raise_degree(self.c, k - self.c.shape[0])
         c = self._raise_degree(c, k - c.shape[0])
-        return _PPolyBase.extend(self, c, x)
+        return _PPolyBase.extend(self, c, x, right)
     extend.__doc__ = _PPolyBase.extend.__doc__
 
     @classmethod
