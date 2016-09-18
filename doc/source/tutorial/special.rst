@@ -156,9 +156,8 @@ the Laguerre weight function :math:`w(x) = e^{-x}`, so we do:
    
 .. code::
 
-   >>> import scipy.special as sc
-   >>> x, w = sc.roots_laguerre(20)
-   >>> np.sum(np.sin(x)*w)
+   >>> from scipy.special import roots_laguerre
+   >>> x, w = roots_laguerre(20)
    >>> np.sum(np.sin(x)*w)
    0.49999999999998251
 

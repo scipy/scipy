@@ -57,11 +57,40 @@ compute the coeficients of a second-order IIR peak (resonant) filter.
 The functions `scipy.sparse.save_npz` and `scipy.sparse.load_npz` were added,
 providing simple serialization for some sparse formats.
 
+`scipy.special` improvements
+----------------------------
+
+The new family of functions `scipy.special.weight_*` calculate the
+weight functions of orthogonal polynomials. For example,
+`scipy.special.weight_jacobi` computes the weight function of Jacobi
+polynomials.
 
 Deprecated features
 ===================
 
+The functions `scipy.special.legendre`, `scipy.special.chebyt`,
+`scipy.special.chebyu`, `scipy.special.chebyc`,
+`scipy.special.chebys`, `scipy.special.jacobi`,
+`scipy.special.laguerre`, `scipy.special.genlaguerre`,
+`scipy.special.hermite`, `scipy.special.hermitenorm`,
+`scipy.special.gegenbauer`, `scipy.special.sh_legendre`,
+`scipy.special.sh_chebyt`, `scipy.special.sh_chebyu`, and
+`scipy.special.sh_jacobi` have been deprecated and their functionality
+has been split into separate functions. For example if you want to
+evaluate Jacobi polynomials then you should use `eval_jacobi`. If you
+want to get roots and quadrature weights of Jacobi polynomials you
+should use `roots_jacobi`. If you want to get the weight function of
+Jacobi polynomials you should use `weight_jacobi`.
 
+The old family of functions `scipy.special.*_roots` for calculating
+the roots and weights of orthogonal polynomials has been deprecated,
+and new versions have been created that are consistent with naming
+conventions for orthogonal polynomials elsewhere in the module. For
+example, the old function `scipy.special.j_roots` for getting the
+roots and quadrature weights of Jacobi polynomials should now be
+accessed though `scipy.special.roots_jacobi`. Note that although the
+`scipy.special.*_roots` functions are deprecated, there are currently
+no plans to remove them.
 
 Backwards incompatible changes
 ==============================
