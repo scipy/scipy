@@ -1396,11 +1396,11 @@ def squareform(X, force="no", checks=True):
     X : ndarray
         Either a condensed or redundant distance matrix.
     force : str, optional
-        As with MATLAB(TM), if force is equal to 'tovector' or 'tomatrix',
-        the input will be treated as a distance matrix or distance vector
-        respectively.
+        As with MATLAB(TM), if force is equal to ``'tovector'`` or
+        ``'tomatrix'``, the input will be treated as a distance matrix or
+        distance vector respectively.
     checks : bool, optional
-        If `checks` is set to False, no checks will be made for matrix
+        If set to False, no checks will be made for matrix
         symmetry nor zero diagonals. This is useful if it is known that
         ``X - X.T1`` is small and ``diag(X)`` is close to zero.
         These values are ignored any way so they do not disrupt the
@@ -1415,24 +1415,26 @@ def squareform(X, force="no", checks=True):
 
     Notes
     -----
-
     1. v = squareform(X)
 
        Given a square d-by-d symmetric distance matrix X,
-       ``v=squareform(X)`` returns a ``d * (d-1) / 2`` (or
-       `${n \\choose 2}$`) sized vector v.
+       ``v = squareform(X)`` returns a ``d * (d-1) / 2`` (or
+       :math:`{n \\choose 2}`) sized vector v.
 
-      v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)] is the distance
+      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` is the distance
       between points i and j. If X is non-square or asymmetric, an error
       is returned.
 
     2. X = squareform(v)
 
-      Given a d*(d-1)/2 sized v for some integer d>=2 encoding distances
-      as described, X=squareform(v) returns a d by d distance matrix X. The
-      X[i, j] and X[j, i] values are set to
-      v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)] and all
+      Given a ``d*(d-1)/2`` sized v for some integer ``d >= 2`` encoding
+      distances as described, ``X = squareform(v)`` returns a d by d distance
+      matrix X.  The ``X[i, j]`` and ``X[j, i]`` values are set to
+      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` and all
       diagonal elements are zero.
+
+    In Scipy 0.19.0, ``squareform`` stopped casting all input types to
+    float64, and started returning arrays of the same dtype as the input.
 
     """
 
