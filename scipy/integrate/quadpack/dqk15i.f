@@ -20,7 +20,7 @@ c
 c           parameters
 c            on entry
 c              f      - double precision
-c                       fuction subprogram defining the integrand
+c                       function subprogram defining the integrand
 c                       function f(x). the actual name for f needs to be
 c                       declared e x t e r n a l in the calling program.
 c

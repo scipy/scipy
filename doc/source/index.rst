@@ -36,6 +36,14 @@ maintenance activities and policies.
    hacking
    dev/index
 
+To get an overview of where help or new features are desired or planned, see
+the roadmap:
+
+.. toctree::
+   :maxdepth: 1
+
+   roadmap
+
 API Reference
 -------------
 

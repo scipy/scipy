@@ -12978,7 +12978,7 @@ C
 C       ========================================================
 C       Purpose: Compute Jacobian elliptic functions sn u, cn u
 C                and dn u
-C       Input  : u   --- Argument of Jacobian elliptic fuctions
+C       Input  : u   --- Argument of Jacobian elliptic functions
 C                Hk  --- Modulus k ( 0 ≤ k ≤ 1 )
 C       Output : ESN --- sn u
 C                ECN --- cn u

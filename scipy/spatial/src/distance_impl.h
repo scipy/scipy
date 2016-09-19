@@ -459,32 +459,54 @@ pdist_weighted_minkowski(const double *X, double *dm, npy_intp m, npy_intp n,
 }
 
 static NPY_INLINE void
-dist_to_squareform_from_vector(double *M, const double *v, npy_intp n)
+dist_to_squareform_from_vector_generic(char *M, const char *v, npy_intp n,
+                                       npy_intp s)
 {
-    double *it, *it2;
+    char *it1 = M + s;
+    char *it2;
     npy_intp i, j;
 
-    for (i = 0; i < n - 1; i++) {
-        it  = M + (i * n) + i + 1;
-        it2 = M + (i+1)*n + i;
-        for (j = i + 1; j < n; j++, it++, it2 += n, v++) {
-            *it = *v;
+    for (i = 1; i < n; i++) {
+        memcpy(it1, v, (n - i) * s);
+        it1 += (n + 1) * s;
+
+        it2 = M + i * (n + 1) * s - s;
+        for (j = i; j < n; j++) {
+            memcpy(it2, v, s);
+            v += s;
+            it2 += n*s;
+        }
+    }
+}
+
+static NPY_INLINE void
+dist_to_squareform_from_vector_double(double *M, const double *v, npy_intp n)
+{
+    double *it1 = M + 1;
+    double *it2;
+    npy_intp i, j;
+
+    for (i = 1; i < n; i++, it1 += n+1) {
+        memcpy(it1, v, (n - i) * sizeof(double));
+
+        it2 = M + i * (n + 1) - 1;
+        for (j = i; j < n; j++, v++, it2 += n) {
             *it2 = *v;
         }
     }
 }
 
 static NPY_INLINE void
-dist_to_vector_from_squareform(const double *M, double *v, npy_intp n)
+dist_to_vector_from_squareform(const char *M, char *v, npy_intp n, npy_intp s)
 {
-    const double *cit;
-    npy_intp i, j;
+    const char *cit = M + s;
+    npy_intp i, len;
 
-    for (i = 0; i < n - 1; i++) {
-        cit = M + (i * n) + i + 1;
-        for (j = i + 1; j < n; j++, v++, cit++) {
-            *v = *cit;
-        }
+    for (i = 1; i < n; i++) {
+        len = (n - i) * s;
+        memcpy(v, cit, len);
+        v += len;
+        cit += (n + 1) * s;
     }
 }
 
