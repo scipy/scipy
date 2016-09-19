@@ -394,31 +394,27 @@ def solve_discrete_are(a, b, q, r):
     # complex numbers into real arrays.
     r_or_c = complex if np.iscomplexobj(b) else float
 
-    for ind, x in enumerate((a,q,r)):
-        if np.iscomplexobj(x):
+    for ind, mat in enumerate((a,q,r)):
+        if np.iscomplexobj(mat):
             r_or_c = complex
             
-        if not np.equal(*x.shape):
+        if not np.equal(*mat.shape):
             raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
     
     # Shape consistency checks
     m, n = b.shape
-
     if m != a.shape[0]:
         raise ValueError("Matrix a and b should have the same number of rows.")
-        
     if m != q.shape[0]:
         raise ValueError("Matrix a and q should have the same shape.")
-            
     if n != r.shape[0]:
         raise ValueError("Matrix b and r should have the same number of cols.")
-    
-    # Check if the data is (sufficiently) hermitian
-    if norm(q - q.conj().T,1) > np.spacing(norm(q,1))*100:
-        raise ValueError("Matrix q should be symmetric/hermitian.")
 
-    if norm(r - r.conj().T,1) > np.spacing(norm(r,1))*100:
-        raise ValueError("Matrix r should be symmetric/hermitian.")
+    # Check if the data matrices q, r are (sufficiently) hermitian
+    for ind, mat in enumerate((q,r)):
+        if norm(mat - mat.conj().T,1) > np.spacing(norm(mat,1))*100:
+            raise ValueError("Matrix {} should be symmetric/hermitian."
+                             "".format("qr"[ind]))
 
     # Form the matrix pencil        
     H = np.zeros((2*m + n, 2*m + n), dtype = r_or_c)
@@ -446,7 +442,7 @@ def solve_discrete_are(a, b, q, r):
     
     # Get the relevant parts of the stable subspace basis
     u00 = u[:m, :m]
-    u10 = u[m:2*m, :m]
+    u10 = u[m:, :m]
     
     # Solve via back-substituion after checking the condition of u00 
     up, ul, uu = lu(u00)
@@ -464,7 +460,7 @@ def solve_discrete_are(a, b, q, r):
 
     # Check the deviation from symmetry for success
     u_sym = u00.conj().T.dot(u10)
-    u_sym -= u_sym.conj().T
+    u_sym = u_sym - u_sym.conj().T
     sym_threshold = np.max(np.spacing([1000., norm(u_sym, 1)]))
 
     if np.max(np.abs(u_sym)) > sym_threshold:
