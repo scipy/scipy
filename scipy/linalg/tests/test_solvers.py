@@ -167,7 +167,7 @@ def test_solve_discrete_are():
          np.array([[1, 1+1j], [1-1j, 2]]),
          np.array([[2, -2j], [2j, 3]]),
          None),
-        # User-reported 
+        # User-reported gh-2251 (Trac #1732)
         (np.array([[0.63399379, 0.54906824, 0.76253406],
                    [0.5404729, 0.53745766, 0.08731853],
                    [0.27524045, 0.84922129, 0.4681622]]),
@@ -300,7 +300,7 @@ def test_solve_discrete_are():
          np.array([[0],[1]]),
          np.eye(2),
          np.array([[1]]),
-         "Bad accuracy"),
+         "Bad absolute accuracy"),
         # darex #13
         (np.array([[16, 10, -2],
                   [10, 13, -8],
@@ -308,7 +308,7 @@ def test_solve_discrete_are():
          np.eye(3),
          1e6 * np.eye(3),
          1e6 * np.eye(3),
-         "Fails"),
+         "Fails to find a valid solution"),
         # darex #14
         (np.array([[1 - 1/1e8, 0, 0, 0],
                   [1, 0, 0, 0],
@@ -317,13 +317,13 @@ def test_solve_discrete_are():
          np.array([[1e-08],[0],[0],[0]]),
          np.diag([0, 0, 0, 1]),
          np.array([[0.25]]),
-         "Bad accuracy"),
+         "Bad absolute accuracy"),
         # darex #15
         (np.eye(100,k=1),
          np.flipud(np.eye(100,1)),
          np.eye(100),
          np.array([[1]]),
-         "Fails")
+         "Fails to find a valid solution")
         ]
 
     def _test_factory(case):
