@@ -1305,7 +1305,6 @@ def hermitenorm(n, monic=False):
 
     Notes
     -----
-
     The polynomials :math:`He_n` are orthogonal over :math:`(-\infty,
     \infty)` with weight function :math:`e^{-x^2/2}`.
 
