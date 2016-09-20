@@ -54,7 +54,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC="numpy==1.7.2"
+        - NUMPYSPEC="numpy==1.8.2"
         - USE_SDIST=1
     - python: 2.7
       env:

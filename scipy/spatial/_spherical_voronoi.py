@@ -15,10 +15,6 @@ import numpy as np
 import numpy.matlib
 import scipy
 import itertools
-from scipy._lib._version import NumpyVersion
-
-# Whether Numpy has stacked matrix linear algebra
-HAS_NUMPY_VEC_DET = (NumpyVersion(np.__version__) >= '1.8.0')
 
 __all__ = ['SphericalVoronoi']
 
@@ -50,16 +46,10 @@ def calc_circumcenters(tetrahedrons):
     dy = np.delete(d, 2, axis=2)
     dz = np.delete(d, 3, axis=2)
 
-    if HAS_NUMPY_VEC_DET:
-        dx = np.linalg.det(dx)
-        dy = -np.linalg.det(dy)
-        dz = np.linalg.det(dz)
-        a = np.linalg.det(a)
-    else:
-        dx = np.array([np.linalg.det(m) for m in dx])
-        dy = -np.array([np.linalg.det(m) for m in dy])
-        dz = np.array([np.linalg.det(m) for m in dz])
-        a = np.array([np.linalg.det(m) for m in a])
+    dx = np.linalg.det(dx)
+    dy = -np.linalg.det(dy)
+    dz = np.linalg.det(dz)
+    a = np.linalg.det(a)
 
     nominator = np.vstack((dx, dy, dz))
     denominator = 2*a
