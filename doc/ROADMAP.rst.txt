@@ -259,7 +259,13 @@ things are done in `interpolate`), and eliminate any duplication.
 *Continuous-Time Linear Systems*: remove `lsim2`, `impulse2`, `step2`.  Make
 `lsim`, `impulse` and `step` "just work" for any input system.  Improve
 performance of ltisys (less internal transformations between different
-representations).
+representations). Fill gaps in lti system conversion functions.
+
+*Second Order Sections*: Make SOS filtering equally capable as existing
+methods. This includes ltisys objects, an `lfiltic` equivalent, and numerically
+stable conversions to and from other filter representations. SOS filters could
+be considered as the default filtering method for ltisys objects, for their
+numerical stability.
 
 *Wavelets*: what's there now doesn't make much sense.  Continous wavelets
 only at the moment - decide whether to completely rewrite or remove them.
