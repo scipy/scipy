@@ -319,11 +319,11 @@ def test_solve_discrete_are():
          np.array([[0.25]]),
          "Bad absolute accuracy"),
         # darex #15
-        (np.eye(100,k=1),
-         np.flipud(np.eye(100,1)),
+        (np.eye(100, k=1),
+         np.flipud(np.eye(100, 1)),
          np.eye(100),
          np.array([[1]]),
-         "Fails to find a valid solution")
+         None)
         ]
 
     def _test_factory(case):
