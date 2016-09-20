@@ -65,7 +65,8 @@ class GenSARunner(object):
         self.know_real = False
         self.real_threshold = -np.inf
         # Maximum duration time of execution as a stopping criterion
-        self.maxtime = 3600
+        # Default is unlimited duration
+        self.maxtime = np.inf
         # Maximum number of function call that can be used a stopping criterion
         self.maxfuncall = 1e7
         # Maximum number of step (main iteration)  that ca be used as
@@ -245,7 +246,9 @@ class GenSARunner(object):
                 self._step_record += 1
                 self._temp_qa = self._temp / float(i + 1)
                 self._index_no_emini_update += 1
-                # Maximum number of iterations reached
+                # break out of both for-loop and while loop because, annealing
+                # and eventually re-anneling reached maximum number of
+                # iteration set.
                 if self._step_record == self.maxsteps:
                     tolowtemp = False
                     break
@@ -265,8 +268,8 @@ class GenSARunner(object):
                         self._xmini = np.array(temp)
                         self._emini = np.array(etemp)
                         self._index_no_emini_update = 0
-                if self._index_no_emini_update >= \
-                    self._index_tol_emini_update - 1:
+                if self._index_no_emini_update >= (
+                        self._index_tol_emini_update - 1):
                     self._emini_markov = np.array(self._ls_energy(
                         self._xmini_markov))
                     self._index_no_emini_update = 0
@@ -476,7 +479,7 @@ class GenSARunner(object):
         return res
 
 def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
-        acceptparam=-5.0, maxtime=3600, maxcall=1e7, args=(), seed=None):
+        acceptparam=-5.0, maxcall=1e7, args=(), seed=None):
     """
     Find the global minimum of a function using the Generalized Simulated
     Annealing algorithm
@@ -493,7 +496,7 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
         ``len(bounds)`` is used to determine the number of parameters in ``x``.
-    niter : integer, optional
+    niter : int, optional
         The number of gensa iterations
     T : float, optional
         Initial value for temperature. The higher the initial temperature, the
@@ -506,9 +509,7 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
         smaller the probability of acceptance. It has to be any negative value.
-    maxtime : integer, optional
-        Time limit for running the algorithm in seconds
-    maxcall : integer, optional
+    maxcall : int, optional
         Soft limit for the number of objective function calls. If the
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
@@ -542,7 +543,7 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     Annealing) and FSA (Fast Simulated Annealing) to find the neighborhood of
     minima, then calls a local method (lbfgsb) to find their exact value.
     GenSA can process complicated and high dimension non-linear objective
-    functions with a large number of local minima as described by Muller
+    functions with a large number of local minima as described by Mullen
     paper [6]_.
 
     GSA uses a distorted Cauchy-Lorentz visiting distribution, with it shape
@@ -610,8 +611,8 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 
     >>> from scipy.optimize import gensa
-    >>> func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
-            + 10 * np.size(x)
+    >>> func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x)) +
+    ...    10 * np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
     >>> ret = gensa(func, None, bounds=(zip(lw, up)))
@@ -622,24 +623,10 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     gr.temp_start = T
     gr.qv = visitparam
     gr.qa = acceptparam
-    gr.maxtime = maxtime
     gr.maxfuncall = maxcall
     gr.maxsteps = niter
     gr.initialize()
     gr.start_search()
     return gr.result
 
-
-def main():
-    func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
-        + 10 * np.size(x)
-    dim = 10
-    lw = np.array([-5.12] * dim)
-    up = np.array([5.12] * dim)
-    ret = gensa(func, None, (zip(lw, up)))
-    print("global minimum: xmin = {0}, f(xmin) = {1}".format(
-        ret.x, ret.fun))
-
-if __name__ == '__main__':
-    main()
 

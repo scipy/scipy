@@ -98,7 +98,7 @@ Global Optimization
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
-   gensa - Generalized Simulated Annealing
+   gensa - Generalized Simulated Annealing global optimizer
 
 Rosenbrock function
 -------------------

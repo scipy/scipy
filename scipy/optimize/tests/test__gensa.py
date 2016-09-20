@@ -5,15 +5,16 @@ from scipy.optimize import _gensa
 from scipy.optimize._gensa import GenSARunner
 import numpy as np
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
-                           assert_almost_equal, assert_raises)
+                           assert_almost_equal, assert_raises,
+                           assert_array_less)
 
 
 class TestGenSA(TestCase):
 
     def setUp(self):
         # Using Rastrigin function for performing tests
-        self.func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x))\
-                + 10 * np.size(x)
+        self.func = lambda x: np.sum(x * x - 10 * np.cos(
+            2 * np.pi * x)) + 10 * np.size(x)
         self.weirdfunc = lambda x: 1e15
         self.ld_bounds = [(-5.12, 5.12)] * 2
         self.hd_bounds = self.ld_bounds * 5
@@ -36,8 +37,8 @@ class TestGenSA(TestCase):
         # distribution, and as no 1st and higher moments (no mean defined,
         # no variance defined).
         # Check that big tails values are generated
-        assert(np.min(values) < 1e-10)
-        assert(np.max(values) > 1e+10)
+        assert_array_less(np.min(values), 1e-10)
+        assert_array_less(1e+10, np.max(values))
 
     def test_high_dim(self):
         ret = _gensa.gensa(self.func, None, self.hd_bounds)
@@ -62,13 +63,6 @@ class TestGenSA(TestCase):
     def test_max_reinit(self):
         assert_raises(ValueError, _gensa.gensa, *(self.weirdfunc,
             None, self.ld_bounds))
-
-    def test__check_stopping_cond(self):
-        gr = GenSARunner(self.func, None, self.hd_bounds)
-        gr.maxtime = 0.5
-        gr.initialize()
-        gr.start_search()
-        assert(gr._message[0].startswith('Time'))
 
     def test_reproduce(self):
         seed = 1234
