@@ -124,25 +124,25 @@ The following functions are available for evaluating orthogonal
 polynomials, getting their roots and associated weights, and
 evaluating their weight functions.
 
-==================================== ================== =================== ====================
+==================================== ================== =================== =======================
 Name                                 Evaluation         Roots and weights   Weight function
-==================================== ================== =================== ====================
-Jacobi                               `eval_jacobi`      `roots_jacobi`      `weight_jacobi`
-Shifted Jacobi                       `eval_sh_jacobi`   `roots_sh_jacobi`   `weight_sh_jacobi`
-Ultraspherical (Gegenbauer)          `eval_gegenbauer`  `roots_gegenbauer`  `weight_gegenbauer`
-Chebyshev of the first kind          `eval_chebyt`      `roots_chebyt`      `weight_chebyt`
-Chebyshev of the second kind         `eval_chebyu`      `roots_chebyu`      `weight_chebyu`
-Chebyshev of the first kind          `eval_chebyc`      `roots_chebyc`      `weight_chebyc`
-Chebyshev of the second kind         `eval_chebys`      `roots_chebys`      `weight_chebys`
-Shifted Chebyshev of the first kind  `eval_sh_chebyt`   `roots_sh_chebyt`   `weight_sh_chebyt`
-Shifted Chebyshev of the second kind `eval_sh_chebyu`   `roots_sh_chebyu`   `weight_sh_chebyu`
-Legendre (Spherical)                 `eval_legendre`    `roots_legendre`    `weight_legendre`
-Shifted Legendre                     `eval_sh_legendre` `roots_sh_legendre` `weight_sh_legendre`
-Generalized Laguerre                 `eval_genlaguerre` `roots_genlaguerre` `weight_genlaguerre`
-Laguerre                             `eval_laguerre`    `roots_laguerre`    `weight_laguerre`
-Hermite (Physicist's)                `eval_hermite`     `roots_hermite`     `weight_hermite`
-Hermite (Probabilist's)              `eval_hermitenorm` `roots_hermitenorm` `weight_hermitenorm`
-==================================== ================== =================== ====================
+==================================== ================== =================== =======================
+Jacobi                               `eval_jacobi`      `roots_jacobi`      `weightfun_jacobi`
+Shifted Jacobi                       `eval_sh_jacobi`   `roots_sh_jacobi`   `weightfun_sh_jacobi`
+Ultraspherical (Gegenbauer)          `eval_gegenbauer`  `roots_gegenbauer`  `weightfun_gegenbauer`
+Chebyshev of the first kind          `eval_chebyt`      `roots_chebyt`      `weightfun_chebyt`
+Chebyshev of the second kind         `eval_chebyu`      `roots_chebyu`      `weightfun_chebyu`
+Chebyshev of the first kind          `eval_chebyc`      `roots_chebyc`      `weightfun_chebyc`
+Chebyshev of the second kind         `eval_chebys`      `roots_chebys`      `weightfun_chebys`
+Shifted Chebyshev of the first kind  `eval_sh_chebyt`   `roots_sh_chebyt`   `weightfun_sh_chebyt`
+Shifted Chebyshev of the second kind `eval_sh_chebyu`   `roots_sh_chebyu`   `weightfun_sh_chebyu`
+Legendre (Spherical)                 `eval_legendre`    `roots_legendre`    `weightfun_legendre`
+Shifted Legendre                     `eval_sh_legendre` `roots_sh_legendre` `weightfun_sh_legendre`
+Generalized Laguerre                 `eval_genlaguerre` `roots_genlaguerre` `weightfun_genlaguerre`
+Laguerre                             `eval_laguerre`    `roots_laguerre`    `weightfun_laguerre`
+Hermite (Physicist's)                `eval_hermite`     `roots_hermite`     `weightfun_hermite`
+Hermite (Probabilist's)              `eval_hermitenorm` `roots_hermitenorm` `weightfun_hermitenorm`
+==================================== ================== =================== =======================
 
 As an example of using these functions, suppose that we wished to
 compute the Laplace transform of :math:`\sin(x)`:

@@ -477,7 +477,7 @@ def test_roots_sh_jacobi():
 def test_roots_hermite():
     rootf = sc.roots_hermite
     evalf = sc.eval_hermite
-    weightf = sc.weight_hermite
+    weightf = sc.weightfun_hermite
 
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 5)
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 25, atol=1e-13)
@@ -534,7 +534,7 @@ def test_h_roots_asy():
 def test_roots_hermitenorm():
     rootf = sc.roots_hermitenorm
     evalf = sc.eval_hermitenorm
-    weightf = sc.weight_hermitenorm
+    weightf = sc.weightfun_hermitenorm
 
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 5)
     verify_gauss_quad(rootf, evalf, weightf, -np.inf, np.inf, 25, atol=1e-13)
@@ -554,7 +554,7 @@ def test_roots_hermitenorm():
 def test_roots_gegenbauer():
     rootf = lambda a: lambda n, mu: sc.roots_gegenbauer(n, a, mu)
     evalf = lambda a: lambda n, x: sc.eval_gegenbauer(n, a, x)
-    weightf = lambda a: lambda x: sc.weight_gegenbauer(a, x)
+    weightf = lambda a: lambda x: sc.weightfun_gegenbauer(a, x)
 
     vgq = verify_gauss_quad
     vgq(rootf(-0.25), evalf(-0.25), weightf(-0.25), -1., 1., 5)
@@ -597,7 +597,7 @@ def test_roots_gegenbauer():
     assert_raises(ValueError, sc.roots_gegenbauer, 3, -.75)
 
 def test_roots_chebyt():
-    weightf = sc.weight_chebyt
+    weightf = sc.weightfun_chebyt
     verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 5)
     verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 25)
     verify_gauss_quad(sc.roots_chebyt, sc.eval_chebyt, weightf, -1., 1., 100)
@@ -614,7 +614,7 @@ def test_roots_chebyt():
     assert_raises(ValueError, sc.roots_chebyt, 3.3)
 
 def test_roots_chebyu():
-    weightf = sc.weight_chebyu
+    weightf = sc.weightfun_chebyu
     verify_gauss_quad(sc.roots_chebyu, sc.eval_chebyu, weightf, -1., 1., 5)
     verify_gauss_quad(sc.roots_chebyu, sc.eval_chebyu, weightf, -1., 1., 25)
     verify_gauss_quad(sc.roots_chebyu, sc.eval_chebyu, weightf, -1., 1., 100)
@@ -631,7 +631,7 @@ def test_roots_chebyu():
     assert_raises(ValueError, sc.roots_chebyu, 3.3)
 
 def test_roots_chebyc():
-    weightf = sc.weight_chebyc
+    weightf = sc.weightfun_chebyc
     verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 5)
     verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 25)
     verify_gauss_quad(sc.roots_chebyc, sc.eval_chebyc, weightf, -2., 2., 100)
@@ -648,7 +648,7 @@ def test_roots_chebyc():
     assert_raises(ValueError, sc.roots_chebyc, 3.3)
 
 def test_roots_chebys():
-    weightf = sc.weight_chebys
+    weightf = sc.weightfun_chebys
     verify_gauss_quad(sc.roots_chebys, sc.eval_chebys, weightf, -2., 2., 5)
     verify_gauss_quad(sc.roots_chebys, sc.eval_chebys, weightf, -2., 2., 25)
     verify_gauss_quad(sc.roots_chebys, sc.eval_chebys, weightf, -2., 2., 100)
@@ -665,7 +665,7 @@ def test_roots_chebys():
     assert_raises(ValueError, sc.roots_chebys, 3.3)
 
 def test_roots_sh_chebyt():
-    weightf = sc.weight_sh_chebyt
+    weightf = sc.weightfun_sh_chebyt
     verify_gauss_quad(sc.roots_sh_chebyt, sc.eval_sh_chebyt, weightf, 0., 1., 5)
     verify_gauss_quad(sc.roots_sh_chebyt, sc.eval_sh_chebyt, weightf, 0., 1., 25)
     verify_gauss_quad(sc.roots_sh_chebyt, sc.eval_sh_chebyt, weightf, 0., 1.,
@@ -683,7 +683,7 @@ def test_roots_sh_chebyt():
     assert_raises(ValueError, sc.roots_sh_chebyt, 3.3)
 
 def test_roots_sh_chebyu():
-    weightf = sc.weight_sh_chebyu
+    weightf = sc.weightfun_sh_chebyu
     verify_gauss_quad(sc.roots_sh_chebyu, sc.eval_sh_chebyu, weightf, 0., 1., 5)
     verify_gauss_quad(sc.roots_sh_chebyu, sc.eval_sh_chebyu, weightf, 0., 1., 25)
     verify_gauss_quad(sc.roots_sh_chebyu, sc.eval_sh_chebyu, weightf, 0., 1.,
@@ -701,7 +701,7 @@ def test_roots_sh_chebyu():
     assert_raises(ValueError, sc.roots_sh_chebyu, 3.3)
 
 def test_roots_legendre():
-    weightf = sc.weight_legendre
+    weightf = sc.weightfun_legendre
     verify_gauss_quad(sc.roots_legendre, sc.eval_legendre, weightf, -1., 1., 5)
     verify_gauss_quad(sc.roots_legendre, sc.eval_legendre, weightf, -1., 1.,
                       25, atol=1e-13)
@@ -720,7 +720,7 @@ def test_roots_legendre():
     assert_raises(ValueError, sc.roots_legendre, 3.3)
 
 def test_roots_sh_legendre():
-    weightf = sc.weight_sh_legendre
+    weightf = sc.weightfun_sh_legendre
     verify_gauss_quad(sc.roots_sh_legendre, sc.eval_sh_legendre, weightf, 0., 1., 5)
     verify_gauss_quad(sc.roots_sh_legendre, sc.eval_sh_legendre, weightf, 0., 1.,
                       25, atol=1e-13)
@@ -739,7 +739,7 @@ def test_roots_sh_legendre():
     assert_raises(ValueError, sc.roots_sh_legendre, 3.3)
 
 def test_roots_laguerre():
-    weightf = sc.weight_laguerre
+    weightf = sc.weightfun_laguerre
     verify_gauss_quad(sc.roots_laguerre, sc.eval_laguerre, weightf, 0., np.inf, 5)
     verify_gauss_quad(sc.roots_laguerre, sc.eval_laguerre, weightf, 0., np.inf,
                       25, atol=1e-13)
@@ -760,7 +760,7 @@ def test_roots_laguerre():
 def test_roots_genlaguerre():
     rootf = lambda a: lambda n, mu: sc.roots_genlaguerre(n, a, mu)
     evalf = lambda a: lambda n, x: sc.eval_genlaguerre(n, a, x)
-    weightf = lambda a: lambda x: sc.weight_genlaguerre(a, x)
+    weightf = lambda a: lambda x: sc.weightfun_genlaguerre(a, x)
 
     vgq = verify_gauss_quad
     vgq(rootf(-0.5), evalf(-0.5), weightf(-0.5), 0., np.inf, 5)

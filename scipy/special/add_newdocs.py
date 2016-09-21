@@ -1429,7 +1429,7 @@ add_newdoc("scipy.special", "eval_jacobi",
     See Also
     --------
     roots_jacobi : roots and quadrature weights of Jacobi polynomials
-    weight_jacobi : weight function for Jacobi polynomials
+    weightfun_jacobi : weight function for Jacobi polynomials
     hyp2f1 : Gauss hypergeometric function
     """)
 
@@ -1465,8 +1465,10 @@ add_newdoc("scipy.special", "eval_sh_jacobi",
 
     See Also
     --------
-    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi polynomials
-    weight_sh_jacobi : weight function for shifted Jacobi polynomials
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
+    weightfun_sh_jacobi : weight function for shifted Jacobi
+                          polynomials
     eval_jacobi : evaluate Jacobi polynomials
     """)
 
@@ -1505,8 +1507,9 @@ add_newdoc("scipy.special", "eval_gegenbauer",
 
     See Also
     --------
-    roots_gegenbauer : roots and quadrature weights of Gegenbauer polynomials
-    weight_gegenbauer : weight function for Gegenbauer polynomials
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
+    weightfun_gegenbauer : weight function for Gegenbauer polynomials
     hyp2f1 : Gauss hypergeometric function
     """)
 
@@ -1544,8 +1547,8 @@ add_newdoc("scipy.special", "eval_chebyt",
     --------
     roots_chebyt : roots and quadrature weights of Chebyshev
                    polynomials of the first kind
-    weight_chebyt : weight function for Chebyshev polynomials of the
-                    first kind
+    weightfun_chebyt : weight function for Chebyshev polynomials of
+                       the first kind
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     hyp2f1 : Gauss hypergeometric function
 
@@ -1589,8 +1592,8 @@ add_newdoc("scipy.special", "eval_chebyu",
     --------
     roots_chebyu : roots and quadrature weights of Chebyshev
                    polynomials of the second kind
-    weight_chebyu : weight function for Chebyshev polynomials of the
-                    second kind
+    weightfun_chebyu : weight function for Chebyshev polynomials of
+                       the second kind
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
     hyp2f1 : Gauss hypergeometric function
     """)
@@ -1627,8 +1630,8 @@ add_newdoc("scipy.special", "eval_chebys",
     --------
     roots_chebys : roots and quadrature weights of Chebyshev
                    polynomials of the second kind on [-2, 2]
-    weight_chebys : weight function for Chebyshev polynomials of the
-                    second kind on [-2, 2]
+    weightfun_chebys : weight function for Chebyshev polynomials of
+                       the second kind on [-2, 2]
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
@@ -1701,8 +1704,8 @@ add_newdoc("scipy.special", "eval_sh_chebyt",
     --------
     roots_sh_chebyt : roots and quadrature weights of shifted Chebychev
                       polynomials of the first kind
-    weight_sh_chebyt : weight function for shifted Chebychev
-                       polynomials of the first kind
+    weightfun_sh_chebyt : weight function for shifted Chebychev
+                          polynomials of the first kind
     eval_chebyt : evalaute Chebyshev polynomials of the first kind
     """)
 
@@ -1738,8 +1741,8 @@ add_newdoc("scipy.special", "eval_sh_chebyu",
     --------
     roots_sh_chebyu : roots and quadrature weights of shifted
                       Chebychev polynomials of the second kind
-    weight_sh_chebyu : weight function for shifted Chebychev
-                       polynomials of the second kind
+    weightfun_sh_chebyu : weight function for shifted Chebychev
+                          polynomials of the second kind
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
@@ -1777,7 +1780,7 @@ add_newdoc("scipy.special", "eval_legendre",
     --------
     roots_legendre : roots and quadrature weights of Legendre
                      polynomials
-    weight_sh_legendre : weight function for Legendre polynomials
+    weightfun_sh_legendre : weight function for Legendre polynomials
     hyp2f1 : Gauss hypergeometric function
     """)
 
@@ -1812,8 +1815,8 @@ add_newdoc("scipy.special", "eval_sh_legendre",
     --------
     roots_sh_legendre : roots and quadrature weights of shifted
                         Legendre polynomials
-    weight_sh_legendre : weight function for shifted Legendre
-                         polynomials
+    weightfun_sh_legendre : weight function for shifted Legendre
+                            polynomials
     eval_legendre : evaluate Legendre polynomials
     """)
 
@@ -1855,8 +1858,8 @@ add_newdoc("scipy.special", "eval_genlaguerre",
     --------
     roots_genlaguerre : roots and quadrature weights of generalized
                         Laguerre polynomials
-    weight_genlaguerre : weight function for generalized Laguerre
-                         polynomials
+    weightfun_genlaguerre : weight function for generalized Laguerre
+                            polynomials
     hyp1f1 : confluent hypergeometric function
     """)
 
@@ -1894,7 +1897,7 @@ add_newdoc("scipy.special", "eval_laguerre",
      --------
      roots_laguerre : roots and quadrature weights of Laguerre
                       polynomials
-     weight_laguerre : weight function for Laguerre polynomials
+     weightfun_laguerre : weight function for Laguerre polynomials
      """)
 
 add_newdoc("scipy.special", "eval_hermite",
@@ -1927,8 +1930,8 @@ add_newdoc("scipy.special", "eval_hermite",
     --------
     roots_hermite : roots and quadrature weights of physicist's
                     Hermite polynomials
-    weight_hermite : weight function for physicist's Hermite
-                     polynomials
+    weightfun_hermite : weight function for physicist's Hermite
+                        polynomials
     """)
 
 add_newdoc("scipy.special", "eval_hermitenorm",
@@ -1962,8 +1965,8 @@ add_newdoc("scipy.special", "eval_hermitenorm",
     --------
     roots_hermitenorm : roots and quadrature weights of probabilist's
                         Hermite polynomials
-    weight_hermitenorm : weight function for probabilist's Hermite
-                         polynomials
+    weightfun_hermitenorm : weight function for probabilist's Hermite
+                            polynomials
     """)
 
 add_newdoc("scipy.special", "exp1",
@@ -6229,9 +6232,9 @@ add_newdoc("scipy.special", "_cospi",
     Internal function, do not use.
     """)
 
-add_newdoc("scipy.special", "weight_jacobi",
+add_newdoc("scipy.special", "weightfun_jacobi",
     r"""
-    weight_jacobi(alpha, beta, x, out=None)
+    weightfun_jacobi(alpha, beta, x, out=None)
 
     Weight function for Gauss-Jacobi quadrature.
 
@@ -6262,9 +6265,9 @@ add_newdoc("scipy.special", "weight_jacobi",
 
     """)
 
-add_newdoc("scipy.special", "weight_sh_jacobi",
+add_newdoc("scipy.special", "weightfun_sh_jacobi",
     r"""
-    weight_sh_jacobi(p, q, x, out=None)
+    weightfun_sh_jacobi(p, q, x, out=None)
 
     Weight function for shifted Gauss-Jacobi quadrature.
 
@@ -6291,13 +6294,14 @@ add_newdoc("scipy.special", "weight_sh_jacobi",
     See Also
     --------
     eval_sh_jacobi : evaluate shifted Jacobi polynomials
-    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi polynomials
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
 
     """)
 
-add_newdoc("scipy.special", "weight_gegenbauer",
+add_newdoc("scipy.special", "weightfun_gegenbauer",
     r"""
-    weight_gegenbauer(alpha, x, out=None)
+    weightfun_gegenbauer(alpha, x, out=None)
 
     Weight function for Gauss-Gegenbauer (ultraspherical) quadrature.
 
@@ -6322,13 +6326,14 @@ add_newdoc("scipy.special", "weight_gegenbauer",
     See Also
     --------
     eval_gegenbauer : evaluate Gegenbauer polynomials
-    roots_gegenbauer : roots and quadrature weights of Gegenbauer polynomials
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
 
     """)
 
-add_newdoc("scipy.special", "weight_chebyt",
+add_newdoc("scipy.special", "weightfun_chebyt",
     r"""
-    weight_chebyt(x, out=None)
+    weightfun_chebyt(x, out=None)
 
     Weight function for Gauss-Chebychev (of the first kind) quadrature.
 
@@ -6356,9 +6361,9 @@ add_newdoc("scipy.special", "weight_chebyt",
 
     """)
 
-add_newdoc("scipy.special", "weight_chebyu",
+add_newdoc("scipy.special", "weightfun_chebyu",
     r"""
-    weight_chebyu(x, out=None)
+    weightfun_chebyu(x, out=None)
 
     Weight function for Gauss-Chebychev (of the second kind) quadrature.
 
@@ -6386,9 +6391,9 @@ add_newdoc("scipy.special", "weight_chebyu",
 
     """)
 
-add_newdoc("scipy.special", "weight_chebyc",
+add_newdoc("scipy.special", "weightfun_chebyc",
     r"""
-    weight_chebyc(x, out=None)
+    weightfun_chebyc(x, out=None)
 
     Weight function for Gauss-Chebychev (of the first kind) quadrature
     on [-2, 2].
@@ -6417,9 +6422,9 @@ add_newdoc("scipy.special", "weight_chebyc",
 
     """)
 
-add_newdoc("scipy.special", "weight_chebys",
+add_newdoc("scipy.special", "weightfun_chebys",
     r"""
-    weight_chebys(x, out=None)
+    weightfun_chebys(x, out=None)
 
     Weight function for Gauss-Chebychev (of the second kind) quadrature
     on [-2, 2].
@@ -6448,9 +6453,9 @@ add_newdoc("scipy.special", "weight_chebys",
 
     """)
 
-add_newdoc("scipy.special", "weight_sh_chebyt",
+add_newdoc("scipy.special", "weightfun_sh_chebyt",
     r"""
-    weight_sh_chebyt(x, out=None)
+    weightfun_sh_chebyt(x, out=None)
 
     Weight function for shifted Gauss-Chebychev (first kind) quadrature.
 
@@ -6479,9 +6484,9 @@ add_newdoc("scipy.special", "weight_sh_chebyt",
 
     """)
 
-add_newdoc("scipy.special", "weight_sh_chebyu",
+add_newdoc("scipy.special", "weightfun_sh_chebyu",
     r"""
-    weight_sh_chebyu(x, out=None)
+    weightfun_sh_chebyu(x, out=None)
 
     Weight function for shifted Gauss-Chebychev (second kind) quadrature.
 
@@ -6511,9 +6516,9 @@ add_newdoc("scipy.special", "weight_sh_chebyu",
     """)
 
 
-add_newdoc("scipy.special", "weight_legendre",
+add_newdoc("scipy.special", "weightfun_legendre",
     r"""
-    weight_legendre(x, out=None)
+    weightfun_legendre(x, out=None)
 
     Weight function for Gauss-Legendre quadrature.
 
@@ -6521,7 +6526,7 @@ add_newdoc("scipy.special", "weight_legendre",
 
     .. math::
 
-        w(x) = 1
+        w(x) = 1.
 
     Parameters
     ----------
@@ -6540,9 +6545,9 @@ add_newdoc("scipy.special", "weight_legendre",
 
     """)
 
-add_newdoc("scipy.special", "weight_sh_legendre",
+add_newdoc("scipy.special", "weightfun_sh_legendre",
     r"""
-    weight_sh_legendre(x, out=None)
+    weightfun_sh_legendre(x, out=None)
 
     Weight function for shifted Gauss-Legendre quadrature.
 
@@ -6570,9 +6575,9 @@ add_newdoc("scipy.special", "weight_sh_legendre",
 
     """)
 
-add_newdoc("scipy.special", "weight_genlaguerre",
+add_newdoc("scipy.special", "weightfun_genlaguerre",
     r"""
-    weight_genlaguerre(alpha, x, out=None)
+    weightfun_genlaguerre(alpha, x, out=None)
 
     Weight function for generalized Gauss-Laguerre quadrature.
 
@@ -6602,9 +6607,9 @@ add_newdoc("scipy.special", "weight_genlaguerre",
 
     """)
 
-add_newdoc("scipy.special", "weight_laguerre",
+add_newdoc("scipy.special", "weightfun_laguerre",
     r"""
-    weight_laguerre(x, out=None)
+    weightfun_laguerre(x, out=None)
 
     Weight function for Gauss-Laguerre quadrature.
 
@@ -6631,9 +6636,9 @@ add_newdoc("scipy.special", "weight_laguerre",
 
     """)
 
-add_newdoc("scipy.special", "weight_hermite",
+add_newdoc("scipy.special", "weightfun_hermite",
     r"""
-    weight_hermite(x, out=None)
+    weightfun_hermite(x, out=None)
 
     Weight function for Gauss-Hermite (physicist's) quadrature.
 
@@ -6659,9 +6664,9 @@ add_newdoc("scipy.special", "weight_hermite",
 
     """)
 
-add_newdoc("scipy.special", "weight_hermitenorm",
+add_newdoc("scipy.special", "weightfun_hermitenorm",
     r"""
-    weight_hermitenorm(x, out=None)
+    weightfun_hermitenorm(x, out=None)
 
     Weight function for Gauss-Hermite (probabilists's) quadrature.
 
@@ -6683,6 +6688,7 @@ add_newdoc("scipy.special", "weight_hermitenorm",
     See Also
     --------
     eval_hermitenorm : evaluate Hermite polynomials.
-    roots_hermitenorm : roots and quadrature weights of Hermite polynomials
+    roots_hermitenorm : roots and quadrature weights of Hermite
+                        polynomials
 
     """)

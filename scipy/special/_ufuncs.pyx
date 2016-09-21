@@ -1945,51 +1945,51 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_tandg "tandg"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_tukeylambdacdf "tukeylambdacdf"(double, double) nogil
-from _orthogonal_weight cimport weight_chebyc as _func_weight_chebyc
-ctypedef double _proto_weight_chebyc_t(double) nogil
-cdef _proto_weight_chebyc_t *_proto_weight_chebyc_t_var = &_func_weight_chebyc
-from _orthogonal_weight cimport weight_chebys as _func_weight_chebys
-ctypedef double _proto_weight_chebys_t(double) nogil
-cdef _proto_weight_chebys_t *_proto_weight_chebys_t_var = &_func_weight_chebys
-from _orthogonal_weight cimport weight_chebyt as _func_weight_chebyt
-ctypedef double _proto_weight_chebyt_t(double) nogil
-cdef _proto_weight_chebyt_t *_proto_weight_chebyt_t_var = &_func_weight_chebyt
-from _orthogonal_weight cimport weight_chebyu as _func_weight_chebyu
-ctypedef double _proto_weight_chebyu_t(double) nogil
-cdef _proto_weight_chebyu_t *_proto_weight_chebyu_t_var = &_func_weight_chebyu
-from _orthogonal_weight cimport weight_gegenbauer as _func_weight_gegenbauer
-ctypedef double _proto_weight_gegenbauer_t(double, double) nogil
-cdef _proto_weight_gegenbauer_t *_proto_weight_gegenbauer_t_var = &_func_weight_gegenbauer
-from _orthogonal_weight cimport weight_genlaguerre as _func_weight_genlaguerre
-ctypedef double _proto_weight_genlaguerre_t(double, double) nogil
-cdef _proto_weight_genlaguerre_t *_proto_weight_genlaguerre_t_var = &_func_weight_genlaguerre
-from _orthogonal_weight cimport weight_hermite as _func_weight_hermite
-ctypedef double _proto_weight_hermite_t(double) nogil
-cdef _proto_weight_hermite_t *_proto_weight_hermite_t_var = &_func_weight_hermite
-from _orthogonal_weight cimport weight_hermitenorm as _func_weight_hermitenorm
-ctypedef double _proto_weight_hermitenorm_t(double) nogil
-cdef _proto_weight_hermitenorm_t *_proto_weight_hermitenorm_t_var = &_func_weight_hermitenorm
-from _orthogonal_weight cimport weight_jacobi as _func_weight_jacobi
-ctypedef double _proto_weight_jacobi_t(double, double, double) nogil
-cdef _proto_weight_jacobi_t *_proto_weight_jacobi_t_var = &_func_weight_jacobi
-from _orthogonal_weight cimport weight_laguerre as _func_weight_laguerre
-ctypedef double _proto_weight_laguerre_t(double) nogil
-cdef _proto_weight_laguerre_t *_proto_weight_laguerre_t_var = &_func_weight_laguerre
-from _orthogonal_weight cimport weight_legendre as _func_weight_legendre
-ctypedef double _proto_weight_legendre_t(double) nogil
-cdef _proto_weight_legendre_t *_proto_weight_legendre_t_var = &_func_weight_legendre
-from _orthogonal_weight cimport weight_sh_chebyt as _func_weight_sh_chebyt
-ctypedef double _proto_weight_sh_chebyt_t(double) nogil
-cdef _proto_weight_sh_chebyt_t *_proto_weight_sh_chebyt_t_var = &_func_weight_sh_chebyt
-from _orthogonal_weight cimport weight_sh_chebyu as _func_weight_sh_chebyu
-ctypedef double _proto_weight_sh_chebyu_t(double) nogil
-cdef _proto_weight_sh_chebyu_t *_proto_weight_sh_chebyu_t_var = &_func_weight_sh_chebyu
-from _orthogonal_weight cimport weight_sh_jacobi as _func_weight_sh_jacobi
-ctypedef double _proto_weight_sh_jacobi_t(double, double, double) nogil
-cdef _proto_weight_sh_jacobi_t *_proto_weight_sh_jacobi_t_var = &_func_weight_sh_jacobi
-from _orthogonal_weight cimport weight_sh_legendre as _func_weight_sh_legendre
-ctypedef double _proto_weight_sh_legendre_t(double) nogil
-cdef _proto_weight_sh_legendre_t *_proto_weight_sh_legendre_t_var = &_func_weight_sh_legendre
+from _orthogonal_weightfun cimport weightfun_chebyc as _func_weightfun_chebyc
+ctypedef double _proto_weightfun_chebyc_t(double) nogil
+cdef _proto_weightfun_chebyc_t *_proto_weightfun_chebyc_t_var = &_func_weightfun_chebyc
+from _orthogonal_weightfun cimport weightfun_chebys as _func_weightfun_chebys
+ctypedef double _proto_weightfun_chebys_t(double) nogil
+cdef _proto_weightfun_chebys_t *_proto_weightfun_chebys_t_var = &_func_weightfun_chebys
+from _orthogonal_weightfun cimport weightfun_chebyt as _func_weightfun_chebyt
+ctypedef double _proto_weightfun_chebyt_t(double) nogil
+cdef _proto_weightfun_chebyt_t *_proto_weightfun_chebyt_t_var = &_func_weightfun_chebyt
+from _orthogonal_weightfun cimport weightfun_chebyu as _func_weightfun_chebyu
+ctypedef double _proto_weightfun_chebyu_t(double) nogil
+cdef _proto_weightfun_chebyu_t *_proto_weightfun_chebyu_t_var = &_func_weightfun_chebyu
+from _orthogonal_weightfun cimport weightfun_gegenbauer as _func_weightfun_gegenbauer
+ctypedef double _proto_weightfun_gegenbauer_t(double, double) nogil
+cdef _proto_weightfun_gegenbauer_t *_proto_weightfun_gegenbauer_t_var = &_func_weightfun_gegenbauer
+from _orthogonal_weightfun cimport weightfun_genlaguerre as _func_weightfun_genlaguerre
+ctypedef double _proto_weightfun_genlaguerre_t(double, double) nogil
+cdef _proto_weightfun_genlaguerre_t *_proto_weightfun_genlaguerre_t_var = &_func_weightfun_genlaguerre
+from _orthogonal_weightfun cimport weightfun_hermite as _func_weightfun_hermite
+ctypedef double _proto_weightfun_hermite_t(double) nogil
+cdef _proto_weightfun_hermite_t *_proto_weightfun_hermite_t_var = &_func_weightfun_hermite
+from _orthogonal_weightfun cimport weightfun_hermitenorm as _func_weightfun_hermitenorm
+ctypedef double _proto_weightfun_hermitenorm_t(double) nogil
+cdef _proto_weightfun_hermitenorm_t *_proto_weightfun_hermitenorm_t_var = &_func_weightfun_hermitenorm
+from _orthogonal_weightfun cimport weightfun_jacobi as _func_weightfun_jacobi
+ctypedef double _proto_weightfun_jacobi_t(double, double, double) nogil
+cdef _proto_weightfun_jacobi_t *_proto_weightfun_jacobi_t_var = &_func_weightfun_jacobi
+from _orthogonal_weightfun cimport weightfun_laguerre as _func_weightfun_laguerre
+ctypedef double _proto_weightfun_laguerre_t(double) nogil
+cdef _proto_weightfun_laguerre_t *_proto_weightfun_laguerre_t_var = &_func_weightfun_laguerre
+from _orthogonal_weightfun cimport weightfun_legendre as _func_weightfun_legendre
+ctypedef double _proto_weightfun_legendre_t(double) nogil
+cdef _proto_weightfun_legendre_t *_proto_weightfun_legendre_t_var = &_func_weightfun_legendre
+from _orthogonal_weightfun cimport weightfun_sh_chebyt as _func_weightfun_sh_chebyt
+ctypedef double _proto_weightfun_sh_chebyt_t(double) nogil
+cdef _proto_weightfun_sh_chebyt_t *_proto_weightfun_sh_chebyt_t_var = &_func_weightfun_sh_chebyt
+from _orthogonal_weightfun cimport weightfun_sh_chebyu as _func_weightfun_sh_chebyu
+ctypedef double _proto_weightfun_sh_chebyu_t(double) nogil
+cdef _proto_weightfun_sh_chebyu_t *_proto_weightfun_sh_chebyu_t_var = &_func_weightfun_sh_chebyu
+from _orthogonal_weightfun cimport weightfun_sh_jacobi as _func_weightfun_sh_jacobi
+ctypedef double _proto_weightfun_sh_jacobi_t(double, double, double) nogil
+cdef _proto_weightfun_sh_jacobi_t *_proto_weightfun_sh_jacobi_t_var = &_func_weightfun_sh_jacobi
+from _orthogonal_weightfun cimport weightfun_sh_legendre as _func_weightfun_sh_legendre
+ctypedef double _proto_weightfun_sh_legendre_t(double) nogil
+cdef _proto_weightfun_sh_legendre_t *_proto_weightfun_sh_legendre_t_var = &_func_weightfun_sh_legendre
 from _xlogy cimport xlog1py as _func_xlog1py
 ctypedef double _proto_xlog1py_double__t(double, double) nogil
 cdef _proto_xlog1py_double__t *_proto_xlog1py_double__t_var = &_func_xlog1py[double]
@@ -4789,8 +4789,8 @@ cdef char *ufunc_eval_chebys_doc = (
     "--------\n"
     "roots_chebys : roots and quadrature weights of Chebyshev\n"
     "               polynomials of the second kind on [-2, 2]\n"
-    "weight_chebys : weight function for Chebyshev polynomials of the\n"
-    "                second kind on [-2, 2]\n"
+    "weightfun_chebys : weight function for Chebyshev polynomials of\n"
+    "                   the second kind on [-2, 2]\n"
     "eval_chebyu : evaluate Chebyshev polynomials of the second kind")
 ufunc_eval_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -4866,8 +4866,8 @@ cdef char *ufunc_eval_chebyt_doc = (
     "--------\n"
     "roots_chebyt : roots and quadrature weights of Chebyshev\n"
     "               polynomials of the first kind\n"
-    "weight_chebyt : weight function for Chebyshev polynomials of the\n"
-    "                first kind\n"
+    "weightfun_chebyt : weight function for Chebyshev polynomials of\n"
+    "                   the first kind\n"
     "eval_chebyu : evaluate Chebyshev polynomials of the second kind\n"
     "hyp2f1 : Gauss hypergeometric function\n"
     "\n"
@@ -4949,8 +4949,8 @@ cdef char *ufunc_eval_chebyu_doc = (
     "--------\n"
     "roots_chebyu : roots and quadrature weights of Chebyshev\n"
     "               polynomials of the second kind\n"
-    "weight_chebyu : weight function for Chebyshev polynomials of the\n"
-    "                second kind\n"
+    "weightfun_chebyu : weight function for Chebyshev polynomials of\n"
+    "                   the second kind\n"
     "eval_chebyt : evaluate Chebyshev polynomials of the first kind\n"
     "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
@@ -5028,8 +5028,9 @@ cdef char *ufunc_eval_gegenbauer_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "roots_gegenbauer : roots and quadrature weights of Gegenbauer polynomials\n"
-    "weight_gegenbauer : weight function for Gegenbauer polynomials\n"
+    "roots_gegenbauer : roots and quadrature weights of Gegenbauer\n"
+    "                   polynomials\n"
+    "weightfun_gegenbauer : weight function for Gegenbauer polynomials\n"
     "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
 ufunc_eval_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -5114,8 +5115,8 @@ cdef char *ufunc_eval_genlaguerre_doc = (
     "--------\n"
     "roots_genlaguerre : roots and quadrature weights of generalized\n"
     "                    Laguerre polynomials\n"
-    "weight_genlaguerre : weight function for generalized Laguerre\n"
-    "                     polynomials\n"
+    "weightfun_genlaguerre : weight function for generalized Laguerre\n"
+    "                        polynomials\n"
     "hyp1f1 : confluent hypergeometric function")
 ufunc_eval_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
 ufunc_eval_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
@@ -5192,8 +5193,8 @@ cdef char *ufunc_eval_hermite_doc = (
     "--------\n"
     "roots_hermite : roots and quadrature weights of physicist's\n"
     "                Hermite polynomials\n"
-    "weight_hermite : weight function for physicist's Hermite\n"
-    "                 polynomials")
+    "weightfun_hermite : weight function for physicist's Hermite\n"
+    "                    polynomials")
 ufunc_eval_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermite_types[0] = <char>NPY_LONG
 ufunc_eval_hermite_types[1] = <char>NPY_DOUBLE
@@ -5237,8 +5238,8 @@ cdef char *ufunc_eval_hermitenorm_doc = (
     "--------\n"
     "roots_hermitenorm : roots and quadrature weights of probabilist's\n"
     "                    Hermite polynomials\n"
-    "weight_hermitenorm : weight function for probabilist's Hermite\n"
-    "                     polynomials")
+    "weightfun_hermitenorm : weight function for probabilist's Hermite\n"
+    "                        polynomials")
 ufunc_eval_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermitenorm_types[0] = <char>NPY_LONG
 ufunc_eval_hermitenorm_types[1] = <char>NPY_DOUBLE
@@ -5289,7 +5290,7 @@ cdef char *ufunc_eval_jacobi_doc = (
     "See Also\n"
     "--------\n"
     "roots_jacobi : roots and quadrature weights of Jacobi polynomials\n"
-    "weight_jacobi : weight function for Jacobi polynomials\n"
+    "weightfun_jacobi : weight function for Jacobi polynomials\n"
     "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
 ufunc_eval_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
@@ -5375,7 +5376,7 @@ cdef char *ufunc_eval_laguerre_doc = (
     "--------\n"
     "roots_laguerre : roots and quadrature weights of Laguerre\n"
     "                 polynomials\n"
-    "weight_laguerre : weight function for Laguerre polynomials")
+    "weightfun_laguerre : weight function for Laguerre polynomials")
 ufunc_eval_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_laguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5450,7 +5451,7 @@ cdef char *ufunc_eval_legendre_doc = (
     "--------\n"
     "roots_legendre : roots and quadrature weights of Legendre\n"
     "                 polynomials\n"
-    "weight_sh_legendre : weight function for Legendre polynomials\n"
+    "weightfun_sh_legendre : weight function for Legendre polynomials\n"
     "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -5524,8 +5525,8 @@ cdef char *ufunc_eval_sh_chebyt_doc = (
     "--------\n"
     "roots_sh_chebyt : roots and quadrature weights of shifted Chebychev\n"
     "                  polynomials of the first kind\n"
-    "weight_sh_chebyt : weight function for shifted Chebychev\n"
-    "                   polynomials of the first kind\n"
+    "weightfun_sh_chebyt : weight function for shifted Chebychev\n"
+    "                      polynomials of the first kind\n"
     "eval_chebyt : evalaute Chebyshev polynomials of the first kind")
 ufunc_eval_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -5599,8 +5600,8 @@ cdef char *ufunc_eval_sh_chebyu_doc = (
     "--------\n"
     "roots_sh_chebyu : roots and quadrature weights of shifted\n"
     "                  Chebychev polynomials of the second kind\n"
-    "weight_sh_chebyu : weight function for shifted Chebychev\n"
-    "                   polynomials of the second kind\n"
+    "weightfun_sh_chebyu : weight function for shifted Chebychev\n"
+    "                      polynomials of the second kind\n"
     "eval_chebyu : evaluate Chebyshev polynomials of the second kind")
 ufunc_eval_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -5674,8 +5675,10 @@ cdef char *ufunc_eval_sh_jacobi_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi polynomials\n"
-    "weight_sh_jacobi : weight function for shifted Jacobi polynomials\n"
+    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi\n"
+    "                  polynomials\n"
+    "weightfun_sh_jacobi : weight function for shifted Jacobi\n"
+    "                      polynomials\n"
     "eval_jacobi : evaluate Jacobi polynomials")
 ufunc_eval_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
 ufunc_eval_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
@@ -5758,8 +5761,8 @@ cdef char *ufunc_eval_sh_legendre_doc = (
     "--------\n"
     "roots_sh_legendre : roots and quadrature weights of shifted\n"
     "                    Legendre polynomials\n"
-    "weight_sh_legendre : weight function for shifted Legendre\n"
-    "                     polynomials\n"
+    "weightfun_sh_legendre : weight function for shifted Legendre\n"
+    "                        polynomials\n"
     "eval_legendre : evaluate Legendre polynomials")
 ufunc_eval_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -12691,12 +12694,12 @@ ufunc_tklmbda_data[0] = &ufunc_tklmbda_ptr[2*0]
 ufunc_tklmbda_data[1] = &ufunc_tklmbda_ptr[2*1]
 tklmbda = np.PyUFunc_FromFuncAndData(ufunc_tklmbda_loops, ufunc_tklmbda_data, ufunc_tklmbda_types, 2, 2, 1, 0, "tklmbda", ufunc_tklmbda_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_chebyc_loops[2]
-cdef void *ufunc_weight_chebyc_ptr[4]
-cdef void *ufunc_weight_chebyc_data[2]
-cdef char ufunc_weight_chebyc_types[4]
-cdef char *ufunc_weight_chebyc_doc = (
-    "weight_chebyc(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_chebyc_loops[2]
+cdef void *ufunc_weightfun_chebyc_ptr[4]
+cdef void *ufunc_weightfun_chebyc_data[2]
+cdef char ufunc_weightfun_chebyc_types[4]
+cdef char *ufunc_weightfun_chebyc_doc = (
+    "weightfun_chebyc(x, out=None)\n"
     "\n"
     "Weight function for Gauss-Chebychev (of the first kind) quadrature\n"
     "on [-2, 2].\n"
@@ -12722,26 +12725,26 @@ cdef char *ufunc_weight_chebyc_doc = (
     "eval_chebyc : evaluate Chebychev polynomials of the first kind\n"
     "roots_chebyc : roots and quadrature weights of Chebychev polynomials of\n"
     "               the first kind")
-ufunc_weight_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_chebyc_types[0] = <char>NPY_FLOAT
-ufunc_weight_chebyc_types[1] = <char>NPY_FLOAT
-ufunc_weight_chebyc_types[2] = <char>NPY_DOUBLE
-ufunc_weight_chebyc_types[3] = <char>NPY_DOUBLE
-ufunc_weight_chebyc_ptr[2*0] = <void*>_func_weight_chebyc
-ufunc_weight_chebyc_ptr[2*0+1] = <void*>(<char*>"weight_chebyc")
-ufunc_weight_chebyc_ptr[2*1] = <void*>_func_weight_chebyc
-ufunc_weight_chebyc_ptr[2*1+1] = <void*>(<char*>"weight_chebyc")
-ufunc_weight_chebyc_data[0] = &ufunc_weight_chebyc_ptr[2*0]
-ufunc_weight_chebyc_data[1] = &ufunc_weight_chebyc_ptr[2*1]
-weight_chebyc = np.PyUFunc_FromFuncAndData(ufunc_weight_chebyc_loops, ufunc_weight_chebyc_data, ufunc_weight_chebyc_types, 2, 1, 1, 0, "weight_chebyc", ufunc_weight_chebyc_doc, 0)
+ufunc_weightfun_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_chebyc_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_chebyc_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_chebyc_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyc_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyc_ptr[2*0] = <void*>_func_weightfun_chebyc
+ufunc_weightfun_chebyc_ptr[2*0+1] = <void*>(<char*>"weightfun_chebyc")
+ufunc_weightfun_chebyc_ptr[2*1] = <void*>_func_weightfun_chebyc
+ufunc_weightfun_chebyc_ptr[2*1+1] = <void*>(<char*>"weightfun_chebyc")
+ufunc_weightfun_chebyc_data[0] = &ufunc_weightfun_chebyc_ptr[2*0]
+ufunc_weightfun_chebyc_data[1] = &ufunc_weightfun_chebyc_ptr[2*1]
+weightfun_chebyc = np.PyUFunc_FromFuncAndData(ufunc_weightfun_chebyc_loops, ufunc_weightfun_chebyc_data, ufunc_weightfun_chebyc_types, 2, 1, 1, 0, "weightfun_chebyc", ufunc_weightfun_chebyc_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_chebys_loops[2]
-cdef void *ufunc_weight_chebys_ptr[4]
-cdef void *ufunc_weight_chebys_data[2]
-cdef char ufunc_weight_chebys_types[4]
-cdef char *ufunc_weight_chebys_doc = (
-    "weight_chebys(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_chebys_loops[2]
+cdef void *ufunc_weightfun_chebys_ptr[4]
+cdef void *ufunc_weightfun_chebys_data[2]
+cdef char ufunc_weightfun_chebys_types[4]
+cdef char *ufunc_weightfun_chebys_doc = (
+    "weightfun_chebys(x, out=None)\n"
     "\n"
     "Weight function for Gauss-Chebychev (of the second kind) quadrature\n"
     "on [-2, 2].\n"
@@ -12767,26 +12770,26 @@ cdef char *ufunc_weight_chebys_doc = (
     "eval_chebys : evaluate Chebychev polynomials of the second kind\n"
     "roots_chebys : roots and quadrature weights of Chebychev polynomials of\n"
     "               the second kind")
-ufunc_weight_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_chebys_types[0] = <char>NPY_FLOAT
-ufunc_weight_chebys_types[1] = <char>NPY_FLOAT
-ufunc_weight_chebys_types[2] = <char>NPY_DOUBLE
-ufunc_weight_chebys_types[3] = <char>NPY_DOUBLE
-ufunc_weight_chebys_ptr[2*0] = <void*>_func_weight_chebys
-ufunc_weight_chebys_ptr[2*0+1] = <void*>(<char*>"weight_chebys")
-ufunc_weight_chebys_ptr[2*1] = <void*>_func_weight_chebys
-ufunc_weight_chebys_ptr[2*1+1] = <void*>(<char*>"weight_chebys")
-ufunc_weight_chebys_data[0] = &ufunc_weight_chebys_ptr[2*0]
-ufunc_weight_chebys_data[1] = &ufunc_weight_chebys_ptr[2*1]
-weight_chebys = np.PyUFunc_FromFuncAndData(ufunc_weight_chebys_loops, ufunc_weight_chebys_data, ufunc_weight_chebys_types, 2, 1, 1, 0, "weight_chebys", ufunc_weight_chebys_doc, 0)
+ufunc_weightfun_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_chebys_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_chebys_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_chebys_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_chebys_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_chebys_ptr[2*0] = <void*>_func_weightfun_chebys
+ufunc_weightfun_chebys_ptr[2*0+1] = <void*>(<char*>"weightfun_chebys")
+ufunc_weightfun_chebys_ptr[2*1] = <void*>_func_weightfun_chebys
+ufunc_weightfun_chebys_ptr[2*1+1] = <void*>(<char*>"weightfun_chebys")
+ufunc_weightfun_chebys_data[0] = &ufunc_weightfun_chebys_ptr[2*0]
+ufunc_weightfun_chebys_data[1] = &ufunc_weightfun_chebys_ptr[2*1]
+weightfun_chebys = np.PyUFunc_FromFuncAndData(ufunc_weightfun_chebys_loops, ufunc_weightfun_chebys_data, ufunc_weightfun_chebys_types, 2, 1, 1, 0, "weightfun_chebys", ufunc_weightfun_chebys_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_chebyt_loops[2]
-cdef void *ufunc_weight_chebyt_ptr[4]
-cdef void *ufunc_weight_chebyt_data[2]
-cdef char ufunc_weight_chebyt_types[4]
-cdef char *ufunc_weight_chebyt_doc = (
-    "weight_chebyt(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_chebyt_loops[2]
+cdef void *ufunc_weightfun_chebyt_ptr[4]
+cdef void *ufunc_weightfun_chebyt_data[2]
+cdef char ufunc_weightfun_chebyt_types[4]
+cdef char *ufunc_weightfun_chebyt_doc = (
+    "weightfun_chebyt(x, out=None)\n"
     "\n"
     "Weight function for Gauss-Chebychev (of the first kind) quadrature.\n"
     "\n"
@@ -12811,26 +12814,26 @@ cdef char *ufunc_weight_chebyt_doc = (
     "eval_chebyt : evaluate Chebychev polynomials of the first kind\n"
     "roots_chebyt : roots and quadrature weights of Chebychev polynomials of\n"
     "               the first kind")
-ufunc_weight_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_chebyt_types[0] = <char>NPY_FLOAT
-ufunc_weight_chebyt_types[1] = <char>NPY_FLOAT
-ufunc_weight_chebyt_types[2] = <char>NPY_DOUBLE
-ufunc_weight_chebyt_types[3] = <char>NPY_DOUBLE
-ufunc_weight_chebyt_ptr[2*0] = <void*>_func_weight_chebyt
-ufunc_weight_chebyt_ptr[2*0+1] = <void*>(<char*>"weight_chebyt")
-ufunc_weight_chebyt_ptr[2*1] = <void*>_func_weight_chebyt
-ufunc_weight_chebyt_ptr[2*1+1] = <void*>(<char*>"weight_chebyt")
-ufunc_weight_chebyt_data[0] = &ufunc_weight_chebyt_ptr[2*0]
-ufunc_weight_chebyt_data[1] = &ufunc_weight_chebyt_ptr[2*1]
-weight_chebyt = np.PyUFunc_FromFuncAndData(ufunc_weight_chebyt_loops, ufunc_weight_chebyt_data, ufunc_weight_chebyt_types, 2, 1, 1, 0, "weight_chebyt", ufunc_weight_chebyt_doc, 0)
+ufunc_weightfun_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_chebyt_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_chebyt_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_chebyt_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyt_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyt_ptr[2*0] = <void*>_func_weightfun_chebyt
+ufunc_weightfun_chebyt_ptr[2*0+1] = <void*>(<char*>"weightfun_chebyt")
+ufunc_weightfun_chebyt_ptr[2*1] = <void*>_func_weightfun_chebyt
+ufunc_weightfun_chebyt_ptr[2*1+1] = <void*>(<char*>"weightfun_chebyt")
+ufunc_weightfun_chebyt_data[0] = &ufunc_weightfun_chebyt_ptr[2*0]
+ufunc_weightfun_chebyt_data[1] = &ufunc_weightfun_chebyt_ptr[2*1]
+weightfun_chebyt = np.PyUFunc_FromFuncAndData(ufunc_weightfun_chebyt_loops, ufunc_weightfun_chebyt_data, ufunc_weightfun_chebyt_types, 2, 1, 1, 0, "weightfun_chebyt", ufunc_weightfun_chebyt_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_chebyu_loops[2]
-cdef void *ufunc_weight_chebyu_ptr[4]
-cdef void *ufunc_weight_chebyu_data[2]
-cdef char ufunc_weight_chebyu_types[4]
-cdef char *ufunc_weight_chebyu_doc = (
-    "weight_chebyu(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_chebyu_loops[2]
+cdef void *ufunc_weightfun_chebyu_ptr[4]
+cdef void *ufunc_weightfun_chebyu_data[2]
+cdef char ufunc_weightfun_chebyu_types[4]
+cdef char *ufunc_weightfun_chebyu_doc = (
+    "weightfun_chebyu(x, out=None)\n"
     "\n"
     "Weight function for Gauss-Chebychev (of the second kind) quadrature.\n"
     "\n"
@@ -12855,26 +12858,26 @@ cdef char *ufunc_weight_chebyu_doc = (
     "eval_chebyu : evaluate Chebychev polynomials of the second kind\n"
     "roots_chebyu : roots and quadrature weights of Chebychev polynomials of\n"
     "               the second kind")
-ufunc_weight_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_chebyu_types[0] = <char>NPY_FLOAT
-ufunc_weight_chebyu_types[1] = <char>NPY_FLOAT
-ufunc_weight_chebyu_types[2] = <char>NPY_DOUBLE
-ufunc_weight_chebyu_types[3] = <char>NPY_DOUBLE
-ufunc_weight_chebyu_ptr[2*0] = <void*>_func_weight_chebyu
-ufunc_weight_chebyu_ptr[2*0+1] = <void*>(<char*>"weight_chebyu")
-ufunc_weight_chebyu_ptr[2*1] = <void*>_func_weight_chebyu
-ufunc_weight_chebyu_ptr[2*1+1] = <void*>(<char*>"weight_chebyu")
-ufunc_weight_chebyu_data[0] = &ufunc_weight_chebyu_ptr[2*0]
-ufunc_weight_chebyu_data[1] = &ufunc_weight_chebyu_ptr[2*1]
-weight_chebyu = np.PyUFunc_FromFuncAndData(ufunc_weight_chebyu_loops, ufunc_weight_chebyu_data, ufunc_weight_chebyu_types, 2, 1, 1, 0, "weight_chebyu", ufunc_weight_chebyu_doc, 0)
+ufunc_weightfun_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_chebyu_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_chebyu_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_chebyu_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyu_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyu_ptr[2*0] = <void*>_func_weightfun_chebyu
+ufunc_weightfun_chebyu_ptr[2*0+1] = <void*>(<char*>"weightfun_chebyu")
+ufunc_weightfun_chebyu_ptr[2*1] = <void*>_func_weightfun_chebyu
+ufunc_weightfun_chebyu_ptr[2*1+1] = <void*>(<char*>"weightfun_chebyu")
+ufunc_weightfun_chebyu_data[0] = &ufunc_weightfun_chebyu_ptr[2*0]
+ufunc_weightfun_chebyu_data[1] = &ufunc_weightfun_chebyu_ptr[2*1]
+weightfun_chebyu = np.PyUFunc_FromFuncAndData(ufunc_weightfun_chebyu_loops, ufunc_weightfun_chebyu_data, ufunc_weightfun_chebyu_types, 2, 1, 1, 0, "weightfun_chebyu", ufunc_weightfun_chebyu_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_gegenbauer_loops[2]
-cdef void *ufunc_weight_gegenbauer_ptr[4]
-cdef void *ufunc_weight_gegenbauer_data[2]
-cdef char ufunc_weight_gegenbauer_types[6]
-cdef char *ufunc_weight_gegenbauer_doc = (
-    "weight_gegenbauer(alpha, x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_gegenbauer_loops[2]
+cdef void *ufunc_weightfun_gegenbauer_ptr[4]
+cdef void *ufunc_weightfun_gegenbauer_data[2]
+cdef char ufunc_weightfun_gegenbauer_types[6]
+cdef char *ufunc_weightfun_gegenbauer_doc = (
+    "weightfun_gegenbauer(alpha, x, out=None)\n"
     "\n"
     "Weight function for Gauss-Gegenbauer (ultraspherical) quadrature.\n"
     "\n"
@@ -12899,29 +12902,30 @@ cdef char *ufunc_weight_gegenbauer_doc = (
     "See Also\n"
     "--------\n"
     "eval_gegenbauer : evaluate Gegenbauer polynomials\n"
-    "roots_gegenbauer : roots and quadrature weights of Gegenbauer polynomials")
-ufunc_weight_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_weight_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_weight_gegenbauer_types[0] = <char>NPY_FLOAT
-ufunc_weight_gegenbauer_types[1] = <char>NPY_FLOAT
-ufunc_weight_gegenbauer_types[2] = <char>NPY_FLOAT
-ufunc_weight_gegenbauer_types[3] = <char>NPY_DOUBLE
-ufunc_weight_gegenbauer_types[4] = <char>NPY_DOUBLE
-ufunc_weight_gegenbauer_types[5] = <char>NPY_DOUBLE
-ufunc_weight_gegenbauer_ptr[2*0] = <void*>_func_weight_gegenbauer
-ufunc_weight_gegenbauer_ptr[2*0+1] = <void*>(<char*>"weight_gegenbauer")
-ufunc_weight_gegenbauer_ptr[2*1] = <void*>_func_weight_gegenbauer
-ufunc_weight_gegenbauer_ptr[2*1+1] = <void*>(<char*>"weight_gegenbauer")
-ufunc_weight_gegenbauer_data[0] = &ufunc_weight_gegenbauer_ptr[2*0]
-ufunc_weight_gegenbauer_data[1] = &ufunc_weight_gegenbauer_ptr[2*1]
-weight_gegenbauer = np.PyUFunc_FromFuncAndData(ufunc_weight_gegenbauer_loops, ufunc_weight_gegenbauer_data, ufunc_weight_gegenbauer_types, 2, 2, 1, 0, "weight_gegenbauer", ufunc_weight_gegenbauer_doc, 0)
+    "roots_gegenbauer : roots and quadrature weights of Gegenbauer\n"
+    "                   polynomials")
+ufunc_weightfun_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_weightfun_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_weightfun_gegenbauer_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_gegenbauer_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_gegenbauer_types[2] = <char>NPY_FLOAT
+ufunc_weightfun_gegenbauer_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_gegenbauer_types[4] = <char>NPY_DOUBLE
+ufunc_weightfun_gegenbauer_types[5] = <char>NPY_DOUBLE
+ufunc_weightfun_gegenbauer_ptr[2*0] = <void*>_func_weightfun_gegenbauer
+ufunc_weightfun_gegenbauer_ptr[2*0+1] = <void*>(<char*>"weightfun_gegenbauer")
+ufunc_weightfun_gegenbauer_ptr[2*1] = <void*>_func_weightfun_gegenbauer
+ufunc_weightfun_gegenbauer_ptr[2*1+1] = <void*>(<char*>"weightfun_gegenbauer")
+ufunc_weightfun_gegenbauer_data[0] = &ufunc_weightfun_gegenbauer_ptr[2*0]
+ufunc_weightfun_gegenbauer_data[1] = &ufunc_weightfun_gegenbauer_ptr[2*1]
+weightfun_gegenbauer = np.PyUFunc_FromFuncAndData(ufunc_weightfun_gegenbauer_loops, ufunc_weightfun_gegenbauer_data, ufunc_weightfun_gegenbauer_types, 2, 2, 1, 0, "weightfun_gegenbauer", ufunc_weightfun_gegenbauer_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_genlaguerre_loops[2]
-cdef void *ufunc_weight_genlaguerre_ptr[4]
-cdef void *ufunc_weight_genlaguerre_data[2]
-cdef char ufunc_weight_genlaguerre_types[6]
-cdef char *ufunc_weight_genlaguerre_doc = (
-    "weight_genlaguerre(alpha, x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_genlaguerre_loops[2]
+cdef void *ufunc_weightfun_genlaguerre_ptr[4]
+cdef void *ufunc_weightfun_genlaguerre_data[2]
+cdef char ufunc_weightfun_genlaguerre_types[6]
+cdef char *ufunc_weightfun_genlaguerre_doc = (
+    "weightfun_genlaguerre(alpha, x, out=None)\n"
     "\n"
     "Weight function for generalized Gauss-Laguerre quadrature.\n"
     "\n"
@@ -12948,28 +12952,28 @@ cdef char *ufunc_weight_genlaguerre_doc = (
     "eval_genlaguerre : evaluate shifted Legendre polynomials.\n"
     "roots_genlaguerre : roots and quadrature weights of generalized Laguerre\n"
     "                    polynomials")
-ufunc_weight_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
-ufunc_weight_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
-ufunc_weight_genlaguerre_types[0] = <char>NPY_FLOAT
-ufunc_weight_genlaguerre_types[1] = <char>NPY_FLOAT
-ufunc_weight_genlaguerre_types[2] = <char>NPY_FLOAT
-ufunc_weight_genlaguerre_types[3] = <char>NPY_DOUBLE
-ufunc_weight_genlaguerre_types[4] = <char>NPY_DOUBLE
-ufunc_weight_genlaguerre_types[5] = <char>NPY_DOUBLE
-ufunc_weight_genlaguerre_ptr[2*0] = <void*>_func_weight_genlaguerre
-ufunc_weight_genlaguerre_ptr[2*0+1] = <void*>(<char*>"weight_genlaguerre")
-ufunc_weight_genlaguerre_ptr[2*1] = <void*>_func_weight_genlaguerre
-ufunc_weight_genlaguerre_ptr[2*1+1] = <void*>(<char*>"weight_genlaguerre")
-ufunc_weight_genlaguerre_data[0] = &ufunc_weight_genlaguerre_ptr[2*0]
-ufunc_weight_genlaguerre_data[1] = &ufunc_weight_genlaguerre_ptr[2*1]
-weight_genlaguerre = np.PyUFunc_FromFuncAndData(ufunc_weight_genlaguerre_loops, ufunc_weight_genlaguerre_data, ufunc_weight_genlaguerre_types, 2, 2, 1, 0, "weight_genlaguerre", ufunc_weight_genlaguerre_doc, 0)
+ufunc_weightfun_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_weightfun_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_weightfun_genlaguerre_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_genlaguerre_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_genlaguerre_types[2] = <char>NPY_FLOAT
+ufunc_weightfun_genlaguerre_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_genlaguerre_types[4] = <char>NPY_DOUBLE
+ufunc_weightfun_genlaguerre_types[5] = <char>NPY_DOUBLE
+ufunc_weightfun_genlaguerre_ptr[2*0] = <void*>_func_weightfun_genlaguerre
+ufunc_weightfun_genlaguerre_ptr[2*0+1] = <void*>(<char*>"weightfun_genlaguerre")
+ufunc_weightfun_genlaguerre_ptr[2*1] = <void*>_func_weightfun_genlaguerre
+ufunc_weightfun_genlaguerre_ptr[2*1+1] = <void*>(<char*>"weightfun_genlaguerre")
+ufunc_weightfun_genlaguerre_data[0] = &ufunc_weightfun_genlaguerre_ptr[2*0]
+ufunc_weightfun_genlaguerre_data[1] = &ufunc_weightfun_genlaguerre_ptr[2*1]
+weightfun_genlaguerre = np.PyUFunc_FromFuncAndData(ufunc_weightfun_genlaguerre_loops, ufunc_weightfun_genlaguerre_data, ufunc_weightfun_genlaguerre_types, 2, 2, 1, 0, "weightfun_genlaguerre", ufunc_weightfun_genlaguerre_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_hermite_loops[2]
-cdef void *ufunc_weight_hermite_ptr[4]
-cdef void *ufunc_weight_hermite_data[2]
-cdef char ufunc_weight_hermite_types[4]
-cdef char *ufunc_weight_hermite_doc = (
-    "weight_hermite(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_hermite_loops[2]
+cdef void *ufunc_weightfun_hermite_ptr[4]
+cdef void *ufunc_weightfun_hermite_data[2]
+cdef char ufunc_weightfun_hermite_types[4]
+cdef char *ufunc_weightfun_hermite_doc = (
+    "weightfun_hermite(x, out=None)\n"
     "\n"
     "Weight function for Gauss-Hermite (physicist's) quadrature.\n"
     "\n"
@@ -12992,26 +12996,26 @@ cdef char *ufunc_weight_hermite_doc = (
     "--------\n"
     "eval_hermite : evaluate Hermite polynomials.\n"
     "roots_hermite : roots and quadrature weights of Hermite polynomials")
-ufunc_weight_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_hermite_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_hermite_types[0] = <char>NPY_FLOAT
-ufunc_weight_hermite_types[1] = <char>NPY_FLOAT
-ufunc_weight_hermite_types[2] = <char>NPY_DOUBLE
-ufunc_weight_hermite_types[3] = <char>NPY_DOUBLE
-ufunc_weight_hermite_ptr[2*0] = <void*>_func_weight_hermite
-ufunc_weight_hermite_ptr[2*0+1] = <void*>(<char*>"weight_hermite")
-ufunc_weight_hermite_ptr[2*1] = <void*>_func_weight_hermite
-ufunc_weight_hermite_ptr[2*1+1] = <void*>(<char*>"weight_hermite")
-ufunc_weight_hermite_data[0] = &ufunc_weight_hermite_ptr[2*0]
-ufunc_weight_hermite_data[1] = &ufunc_weight_hermite_ptr[2*1]
-weight_hermite = np.PyUFunc_FromFuncAndData(ufunc_weight_hermite_loops, ufunc_weight_hermite_data, ufunc_weight_hermite_types, 2, 1, 1, 0, "weight_hermite", ufunc_weight_hermite_doc, 0)
+ufunc_weightfun_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_hermite_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_hermite_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_hermite_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_hermite_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_hermite_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_hermite_ptr[2*0] = <void*>_func_weightfun_hermite
+ufunc_weightfun_hermite_ptr[2*0+1] = <void*>(<char*>"weightfun_hermite")
+ufunc_weightfun_hermite_ptr[2*1] = <void*>_func_weightfun_hermite
+ufunc_weightfun_hermite_ptr[2*1+1] = <void*>(<char*>"weightfun_hermite")
+ufunc_weightfun_hermite_data[0] = &ufunc_weightfun_hermite_ptr[2*0]
+ufunc_weightfun_hermite_data[1] = &ufunc_weightfun_hermite_ptr[2*1]
+weightfun_hermite = np.PyUFunc_FromFuncAndData(ufunc_weightfun_hermite_loops, ufunc_weightfun_hermite_data, ufunc_weightfun_hermite_types, 2, 1, 1, 0, "weightfun_hermite", ufunc_weightfun_hermite_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_hermitenorm_loops[2]
-cdef void *ufunc_weight_hermitenorm_ptr[4]
-cdef void *ufunc_weight_hermitenorm_data[2]
-cdef char ufunc_weight_hermitenorm_types[4]
-cdef char *ufunc_weight_hermitenorm_doc = (
-    "weight_hermitenorm(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_hermitenorm_loops[2]
+cdef void *ufunc_weightfun_hermitenorm_ptr[4]
+cdef void *ufunc_weightfun_hermitenorm_data[2]
+cdef char ufunc_weightfun_hermitenorm_types[4]
+cdef char *ufunc_weightfun_hermitenorm_doc = (
+    "weightfun_hermitenorm(x, out=None)\n"
     "\n"
     "Weight function for Gauss-Hermite (probabilists's) quadrature.\n"
     "\n"
@@ -13033,27 +13037,28 @@ cdef char *ufunc_weight_hermitenorm_doc = (
     "See Also\n"
     "--------\n"
     "eval_hermitenorm : evaluate Hermite polynomials.\n"
-    "roots_hermitenorm : roots and quadrature weights of Hermite polynomials")
-ufunc_weight_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_hermitenorm_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_hermitenorm_types[0] = <char>NPY_FLOAT
-ufunc_weight_hermitenorm_types[1] = <char>NPY_FLOAT
-ufunc_weight_hermitenorm_types[2] = <char>NPY_DOUBLE
-ufunc_weight_hermitenorm_types[3] = <char>NPY_DOUBLE
-ufunc_weight_hermitenorm_ptr[2*0] = <void*>_func_weight_hermitenorm
-ufunc_weight_hermitenorm_ptr[2*0+1] = <void*>(<char*>"weight_hermitenorm")
-ufunc_weight_hermitenorm_ptr[2*1] = <void*>_func_weight_hermitenorm
-ufunc_weight_hermitenorm_ptr[2*1+1] = <void*>(<char*>"weight_hermitenorm")
-ufunc_weight_hermitenorm_data[0] = &ufunc_weight_hermitenorm_ptr[2*0]
-ufunc_weight_hermitenorm_data[1] = &ufunc_weight_hermitenorm_ptr[2*1]
-weight_hermitenorm = np.PyUFunc_FromFuncAndData(ufunc_weight_hermitenorm_loops, ufunc_weight_hermitenorm_data, ufunc_weight_hermitenorm_types, 2, 1, 1, 0, "weight_hermitenorm", ufunc_weight_hermitenorm_doc, 0)
+    "roots_hermitenorm : roots and quadrature weights of Hermite\n"
+    "                    polynomials")
+ufunc_weightfun_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_hermitenorm_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_hermitenorm_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_hermitenorm_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_hermitenorm_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_hermitenorm_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_hermitenorm_ptr[2*0] = <void*>_func_weightfun_hermitenorm
+ufunc_weightfun_hermitenorm_ptr[2*0+1] = <void*>(<char*>"weightfun_hermitenorm")
+ufunc_weightfun_hermitenorm_ptr[2*1] = <void*>_func_weightfun_hermitenorm
+ufunc_weightfun_hermitenorm_ptr[2*1+1] = <void*>(<char*>"weightfun_hermitenorm")
+ufunc_weightfun_hermitenorm_data[0] = &ufunc_weightfun_hermitenorm_ptr[2*0]
+ufunc_weightfun_hermitenorm_data[1] = &ufunc_weightfun_hermitenorm_ptr[2*1]
+weightfun_hermitenorm = np.PyUFunc_FromFuncAndData(ufunc_weightfun_hermitenorm_loops, ufunc_weightfun_hermitenorm_data, ufunc_weightfun_hermitenorm_types, 2, 1, 1, 0, "weightfun_hermitenorm", ufunc_weightfun_hermitenorm_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_jacobi_loops[2]
-cdef void *ufunc_weight_jacobi_ptr[4]
-cdef void *ufunc_weight_jacobi_data[2]
-cdef char ufunc_weight_jacobi_types[8]
-cdef char *ufunc_weight_jacobi_doc = (
-    "weight_jacobi(alpha, beta, x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_jacobi_loops[2]
+cdef void *ufunc_weightfun_jacobi_ptr[4]
+cdef void *ufunc_weightfun_jacobi_data[2]
+cdef char ufunc_weightfun_jacobi_types[8]
+cdef char *ufunc_weightfun_jacobi_doc = (
+    "weightfun_jacobi(alpha, beta, x, out=None)\n"
     "\n"
     "Weight function for Gauss-Jacobi quadrature.\n"
     "\n"
@@ -13081,30 +13086,30 @@ cdef char *ufunc_weight_jacobi_doc = (
     "--------\n"
     "eval_jacobi : evaluate Jacobi polynomials\n"
     "roots_jacobi : roots and quadrature weights of Jacobi polynomials")
-ufunc_weight_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_weight_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
-ufunc_weight_jacobi_types[0] = <char>NPY_FLOAT
-ufunc_weight_jacobi_types[1] = <char>NPY_FLOAT
-ufunc_weight_jacobi_types[2] = <char>NPY_FLOAT
-ufunc_weight_jacobi_types[3] = <char>NPY_FLOAT
-ufunc_weight_jacobi_types[4] = <char>NPY_DOUBLE
-ufunc_weight_jacobi_types[5] = <char>NPY_DOUBLE
-ufunc_weight_jacobi_types[6] = <char>NPY_DOUBLE
-ufunc_weight_jacobi_types[7] = <char>NPY_DOUBLE
-ufunc_weight_jacobi_ptr[2*0] = <void*>_func_weight_jacobi
-ufunc_weight_jacobi_ptr[2*0+1] = <void*>(<char*>"weight_jacobi")
-ufunc_weight_jacobi_ptr[2*1] = <void*>_func_weight_jacobi
-ufunc_weight_jacobi_ptr[2*1+1] = <void*>(<char*>"weight_jacobi")
-ufunc_weight_jacobi_data[0] = &ufunc_weight_jacobi_ptr[2*0]
-ufunc_weight_jacobi_data[1] = &ufunc_weight_jacobi_ptr[2*1]
-weight_jacobi = np.PyUFunc_FromFuncAndData(ufunc_weight_jacobi_loops, ufunc_weight_jacobi_data, ufunc_weight_jacobi_types, 2, 3, 1, 0, "weight_jacobi", ufunc_weight_jacobi_doc, 0)
+ufunc_weightfun_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_weightfun_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_weightfun_jacobi_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_jacobi_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_jacobi_types[2] = <char>NPY_FLOAT
+ufunc_weightfun_jacobi_types[3] = <char>NPY_FLOAT
+ufunc_weightfun_jacobi_types[4] = <char>NPY_DOUBLE
+ufunc_weightfun_jacobi_types[5] = <char>NPY_DOUBLE
+ufunc_weightfun_jacobi_types[6] = <char>NPY_DOUBLE
+ufunc_weightfun_jacobi_types[7] = <char>NPY_DOUBLE
+ufunc_weightfun_jacobi_ptr[2*0] = <void*>_func_weightfun_jacobi
+ufunc_weightfun_jacobi_ptr[2*0+1] = <void*>(<char*>"weightfun_jacobi")
+ufunc_weightfun_jacobi_ptr[2*1] = <void*>_func_weightfun_jacobi
+ufunc_weightfun_jacobi_ptr[2*1+1] = <void*>(<char*>"weightfun_jacobi")
+ufunc_weightfun_jacobi_data[0] = &ufunc_weightfun_jacobi_ptr[2*0]
+ufunc_weightfun_jacobi_data[1] = &ufunc_weightfun_jacobi_ptr[2*1]
+weightfun_jacobi = np.PyUFunc_FromFuncAndData(ufunc_weightfun_jacobi_loops, ufunc_weightfun_jacobi_data, ufunc_weightfun_jacobi_types, 2, 3, 1, 0, "weightfun_jacobi", ufunc_weightfun_jacobi_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_laguerre_loops[2]
-cdef void *ufunc_weight_laguerre_ptr[4]
-cdef void *ufunc_weight_laguerre_data[2]
-cdef char ufunc_weight_laguerre_types[4]
-cdef char *ufunc_weight_laguerre_doc = (
-    "weight_laguerre(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_laguerre_loops[2]
+cdef void *ufunc_weightfun_laguerre_ptr[4]
+cdef void *ufunc_weightfun_laguerre_data[2]
+cdef char ufunc_weightfun_laguerre_types[4]
+cdef char *ufunc_weightfun_laguerre_doc = (
+    "weightfun_laguerre(x, out=None)\n"
     "\n"
     "Weight function for Gauss-Laguerre quadrature.\n"
     "\n"
@@ -13128,26 +13133,26 @@ cdef char *ufunc_weight_laguerre_doc = (
     "--------\n"
     "eval_laguerre : evaluate Laguerre polynomials.\n"
     "roots_laguerre : roots and quadrature weights of Laguerre polynomials")
-ufunc_weight_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_laguerre_types[0] = <char>NPY_FLOAT
-ufunc_weight_laguerre_types[1] = <char>NPY_FLOAT
-ufunc_weight_laguerre_types[2] = <char>NPY_DOUBLE
-ufunc_weight_laguerre_types[3] = <char>NPY_DOUBLE
-ufunc_weight_laguerre_ptr[2*0] = <void*>_func_weight_laguerre
-ufunc_weight_laguerre_ptr[2*0+1] = <void*>(<char*>"weight_laguerre")
-ufunc_weight_laguerre_ptr[2*1] = <void*>_func_weight_laguerre
-ufunc_weight_laguerre_ptr[2*1+1] = <void*>(<char*>"weight_laguerre")
-ufunc_weight_laguerre_data[0] = &ufunc_weight_laguerre_ptr[2*0]
-ufunc_weight_laguerre_data[1] = &ufunc_weight_laguerre_ptr[2*1]
-weight_laguerre = np.PyUFunc_FromFuncAndData(ufunc_weight_laguerre_loops, ufunc_weight_laguerre_data, ufunc_weight_laguerre_types, 2, 1, 1, 0, "weight_laguerre", ufunc_weight_laguerre_doc, 0)
+ufunc_weightfun_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_laguerre_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_laguerre_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_laguerre_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_laguerre_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_laguerre_ptr[2*0] = <void*>_func_weightfun_laguerre
+ufunc_weightfun_laguerre_ptr[2*0+1] = <void*>(<char*>"weightfun_laguerre")
+ufunc_weightfun_laguerre_ptr[2*1] = <void*>_func_weightfun_laguerre
+ufunc_weightfun_laguerre_ptr[2*1+1] = <void*>(<char*>"weightfun_laguerre")
+ufunc_weightfun_laguerre_data[0] = &ufunc_weightfun_laguerre_ptr[2*0]
+ufunc_weightfun_laguerre_data[1] = &ufunc_weightfun_laguerre_ptr[2*1]
+weightfun_laguerre = np.PyUFunc_FromFuncAndData(ufunc_weightfun_laguerre_loops, ufunc_weightfun_laguerre_data, ufunc_weightfun_laguerre_types, 2, 1, 1, 0, "weightfun_laguerre", ufunc_weightfun_laguerre_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_legendre_loops[2]
-cdef void *ufunc_weight_legendre_ptr[4]
-cdef void *ufunc_weight_legendre_data[2]
-cdef char ufunc_weight_legendre_types[4]
-cdef char *ufunc_weight_legendre_doc = (
-    "weight_legendre(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_legendre_loops[2]
+cdef void *ufunc_weightfun_legendre_ptr[4]
+cdef void *ufunc_weightfun_legendre_data[2]
+cdef char ufunc_weightfun_legendre_types[4]
+cdef char *ufunc_weightfun_legendre_doc = (
+    "weightfun_legendre(x, out=None)\n"
     "\n"
     "Weight function for Gauss-Legendre quadrature.\n"
     "\n"
@@ -13171,26 +13176,26 @@ cdef char *ufunc_weight_legendre_doc = (
     "--------\n"
     "eval_legendre : evaluate Legendre polynomials.\n"
     "roots_legendre : roots and quadrature weights of Legendre polynomials")
-ufunc_weight_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_legendre_types[0] = <char>NPY_FLOAT
-ufunc_weight_legendre_types[1] = <char>NPY_FLOAT
-ufunc_weight_legendre_types[2] = <char>NPY_DOUBLE
-ufunc_weight_legendre_types[3] = <char>NPY_DOUBLE
-ufunc_weight_legendre_ptr[2*0] = <void*>_func_weight_legendre
-ufunc_weight_legendre_ptr[2*0+1] = <void*>(<char*>"weight_legendre")
-ufunc_weight_legendre_ptr[2*1] = <void*>_func_weight_legendre
-ufunc_weight_legendre_ptr[2*1+1] = <void*>(<char*>"weight_legendre")
-ufunc_weight_legendre_data[0] = &ufunc_weight_legendre_ptr[2*0]
-ufunc_weight_legendre_data[1] = &ufunc_weight_legendre_ptr[2*1]
-weight_legendre = np.PyUFunc_FromFuncAndData(ufunc_weight_legendre_loops, ufunc_weight_legendre_data, ufunc_weight_legendre_types, 2, 1, 1, 0, "weight_legendre", ufunc_weight_legendre_doc, 0)
+ufunc_weightfun_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_legendre_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_legendre_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_legendre_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_legendre_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_legendre_ptr[2*0] = <void*>_func_weightfun_legendre
+ufunc_weightfun_legendre_ptr[2*0+1] = <void*>(<char*>"weightfun_legendre")
+ufunc_weightfun_legendre_ptr[2*1] = <void*>_func_weightfun_legendre
+ufunc_weightfun_legendre_ptr[2*1+1] = <void*>(<char*>"weightfun_legendre")
+ufunc_weightfun_legendre_data[0] = &ufunc_weightfun_legendre_ptr[2*0]
+ufunc_weightfun_legendre_data[1] = &ufunc_weightfun_legendre_ptr[2*1]
+weightfun_legendre = np.PyUFunc_FromFuncAndData(ufunc_weightfun_legendre_loops, ufunc_weightfun_legendre_data, ufunc_weightfun_legendre_types, 2, 1, 1, 0, "weightfun_legendre", ufunc_weightfun_legendre_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_sh_chebyt_loops[2]
-cdef void *ufunc_weight_sh_chebyt_ptr[4]
-cdef void *ufunc_weight_sh_chebyt_data[2]
-cdef char ufunc_weight_sh_chebyt_types[4]
-cdef char *ufunc_weight_sh_chebyt_doc = (
-    "weight_sh_chebyt(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_sh_chebyt_loops[2]
+cdef void *ufunc_weightfun_sh_chebyt_ptr[4]
+cdef void *ufunc_weightfun_sh_chebyt_data[2]
+cdef char ufunc_weightfun_sh_chebyt_types[4]
+cdef char *ufunc_weightfun_sh_chebyt_doc = (
+    "weightfun_sh_chebyt(x, out=None)\n"
     "\n"
     "Weight function for shifted Gauss-Chebychev (first kind) quadrature.\n"
     "\n"
@@ -13216,26 +13221,26 @@ cdef char *ufunc_weight_sh_chebyt_doc = (
     "                 first kind\n"
     "roots_sh_chebyt : roots and quadrature weights of shifted Chebychev\n"
     "                  polynomials of the first kind")
-ufunc_weight_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_sh_chebyt_types[0] = <char>NPY_FLOAT
-ufunc_weight_sh_chebyt_types[1] = <char>NPY_FLOAT
-ufunc_weight_sh_chebyt_types[2] = <char>NPY_DOUBLE
-ufunc_weight_sh_chebyt_types[3] = <char>NPY_DOUBLE
-ufunc_weight_sh_chebyt_ptr[2*0] = <void*>_func_weight_sh_chebyt
-ufunc_weight_sh_chebyt_ptr[2*0+1] = <void*>(<char*>"weight_sh_chebyt")
-ufunc_weight_sh_chebyt_ptr[2*1] = <void*>_func_weight_sh_chebyt
-ufunc_weight_sh_chebyt_ptr[2*1+1] = <void*>(<char*>"weight_sh_chebyt")
-ufunc_weight_sh_chebyt_data[0] = &ufunc_weight_sh_chebyt_ptr[2*0]
-ufunc_weight_sh_chebyt_data[1] = &ufunc_weight_sh_chebyt_ptr[2*1]
-weight_sh_chebyt = np.PyUFunc_FromFuncAndData(ufunc_weight_sh_chebyt_loops, ufunc_weight_sh_chebyt_data, ufunc_weight_sh_chebyt_types, 2, 1, 1, 0, "weight_sh_chebyt", ufunc_weight_sh_chebyt_doc, 0)
+ufunc_weightfun_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_sh_chebyt_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_sh_chebyt_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_sh_chebyt_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_chebyt_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_chebyt_ptr[2*0] = <void*>_func_weightfun_sh_chebyt
+ufunc_weightfun_sh_chebyt_ptr[2*0+1] = <void*>(<char*>"weightfun_sh_chebyt")
+ufunc_weightfun_sh_chebyt_ptr[2*1] = <void*>_func_weightfun_sh_chebyt
+ufunc_weightfun_sh_chebyt_ptr[2*1+1] = <void*>(<char*>"weightfun_sh_chebyt")
+ufunc_weightfun_sh_chebyt_data[0] = &ufunc_weightfun_sh_chebyt_ptr[2*0]
+ufunc_weightfun_sh_chebyt_data[1] = &ufunc_weightfun_sh_chebyt_ptr[2*1]
+weightfun_sh_chebyt = np.PyUFunc_FromFuncAndData(ufunc_weightfun_sh_chebyt_loops, ufunc_weightfun_sh_chebyt_data, ufunc_weightfun_sh_chebyt_types, 2, 1, 1, 0, "weightfun_sh_chebyt", ufunc_weightfun_sh_chebyt_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_sh_chebyu_loops[2]
-cdef void *ufunc_weight_sh_chebyu_ptr[4]
-cdef void *ufunc_weight_sh_chebyu_data[2]
-cdef char ufunc_weight_sh_chebyu_types[4]
-cdef char *ufunc_weight_sh_chebyu_doc = (
-    "weight_sh_chebyu(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_sh_chebyu_loops[2]
+cdef void *ufunc_weightfun_sh_chebyu_ptr[4]
+cdef void *ufunc_weightfun_sh_chebyu_data[2]
+cdef char ufunc_weightfun_sh_chebyu_types[4]
+cdef char *ufunc_weightfun_sh_chebyu_doc = (
+    "weightfun_sh_chebyu(x, out=None)\n"
     "\n"
     "Weight function for shifted Gauss-Chebychev (second kind) quadrature.\n"
     "\n"
@@ -13261,26 +13266,26 @@ cdef char *ufunc_weight_sh_chebyu_doc = (
     "                 second kind\n"
     "roots_sh_chebyu : roots and quadrature weights of shifted Chebychev\n"
     "                  polynomials of the second kind")
-ufunc_weight_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_sh_chebyu_types[0] = <char>NPY_FLOAT
-ufunc_weight_sh_chebyu_types[1] = <char>NPY_FLOAT
-ufunc_weight_sh_chebyu_types[2] = <char>NPY_DOUBLE
-ufunc_weight_sh_chebyu_types[3] = <char>NPY_DOUBLE
-ufunc_weight_sh_chebyu_ptr[2*0] = <void*>_func_weight_sh_chebyu
-ufunc_weight_sh_chebyu_ptr[2*0+1] = <void*>(<char*>"weight_sh_chebyu")
-ufunc_weight_sh_chebyu_ptr[2*1] = <void*>_func_weight_sh_chebyu
-ufunc_weight_sh_chebyu_ptr[2*1+1] = <void*>(<char*>"weight_sh_chebyu")
-ufunc_weight_sh_chebyu_data[0] = &ufunc_weight_sh_chebyu_ptr[2*0]
-ufunc_weight_sh_chebyu_data[1] = &ufunc_weight_sh_chebyu_ptr[2*1]
-weight_sh_chebyu = np.PyUFunc_FromFuncAndData(ufunc_weight_sh_chebyu_loops, ufunc_weight_sh_chebyu_data, ufunc_weight_sh_chebyu_types, 2, 1, 1, 0, "weight_sh_chebyu", ufunc_weight_sh_chebyu_doc, 0)
+ufunc_weightfun_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_sh_chebyu_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_sh_chebyu_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_sh_chebyu_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_chebyu_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_chebyu_ptr[2*0] = <void*>_func_weightfun_sh_chebyu
+ufunc_weightfun_sh_chebyu_ptr[2*0+1] = <void*>(<char*>"weightfun_sh_chebyu")
+ufunc_weightfun_sh_chebyu_ptr[2*1] = <void*>_func_weightfun_sh_chebyu
+ufunc_weightfun_sh_chebyu_ptr[2*1+1] = <void*>(<char*>"weightfun_sh_chebyu")
+ufunc_weightfun_sh_chebyu_data[0] = &ufunc_weightfun_sh_chebyu_ptr[2*0]
+ufunc_weightfun_sh_chebyu_data[1] = &ufunc_weightfun_sh_chebyu_ptr[2*1]
+weightfun_sh_chebyu = np.PyUFunc_FromFuncAndData(ufunc_weightfun_sh_chebyu_loops, ufunc_weightfun_sh_chebyu_data, ufunc_weightfun_sh_chebyu_types, 2, 1, 1, 0, "weightfun_sh_chebyu", ufunc_weightfun_sh_chebyu_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_sh_jacobi_loops[2]
-cdef void *ufunc_weight_sh_jacobi_ptr[4]
-cdef void *ufunc_weight_sh_jacobi_data[2]
-cdef char ufunc_weight_sh_jacobi_types[8]
-cdef char *ufunc_weight_sh_jacobi_doc = (
-    "weight_sh_jacobi(p, q, x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_sh_jacobi_loops[2]
+cdef void *ufunc_weightfun_sh_jacobi_ptr[4]
+cdef void *ufunc_weightfun_sh_jacobi_data[2]
+cdef char ufunc_weightfun_sh_jacobi_types[8]
+cdef char *ufunc_weightfun_sh_jacobi_doc = (
+    "weightfun_sh_jacobi(p, q, x, out=None)\n"
     "\n"
     "Weight function for shifted Gauss-Jacobi quadrature.\n"
     "\n"
@@ -13307,31 +13312,32 @@ cdef char *ufunc_weight_sh_jacobi_doc = (
     "See Also\n"
     "--------\n"
     "eval_sh_jacobi : evaluate shifted Jacobi polynomials\n"
-    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi polynomials")
-ufunc_weight_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
-ufunc_weight_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
-ufunc_weight_sh_jacobi_types[0] = <char>NPY_FLOAT
-ufunc_weight_sh_jacobi_types[1] = <char>NPY_FLOAT
-ufunc_weight_sh_jacobi_types[2] = <char>NPY_FLOAT
-ufunc_weight_sh_jacobi_types[3] = <char>NPY_FLOAT
-ufunc_weight_sh_jacobi_types[4] = <char>NPY_DOUBLE
-ufunc_weight_sh_jacobi_types[5] = <char>NPY_DOUBLE
-ufunc_weight_sh_jacobi_types[6] = <char>NPY_DOUBLE
-ufunc_weight_sh_jacobi_types[7] = <char>NPY_DOUBLE
-ufunc_weight_sh_jacobi_ptr[2*0] = <void*>_func_weight_sh_jacobi
-ufunc_weight_sh_jacobi_ptr[2*0+1] = <void*>(<char*>"weight_sh_jacobi")
-ufunc_weight_sh_jacobi_ptr[2*1] = <void*>_func_weight_sh_jacobi
-ufunc_weight_sh_jacobi_ptr[2*1+1] = <void*>(<char*>"weight_sh_jacobi")
-ufunc_weight_sh_jacobi_data[0] = &ufunc_weight_sh_jacobi_ptr[2*0]
-ufunc_weight_sh_jacobi_data[1] = &ufunc_weight_sh_jacobi_ptr[2*1]
-weight_sh_jacobi = np.PyUFunc_FromFuncAndData(ufunc_weight_sh_jacobi_loops, ufunc_weight_sh_jacobi_data, ufunc_weight_sh_jacobi_types, 2, 3, 1, 0, "weight_sh_jacobi", ufunc_weight_sh_jacobi_doc, 0)
+    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi\n"
+    "                  polynomials")
+ufunc_weightfun_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_weightfun_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_weightfun_sh_jacobi_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_sh_jacobi_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_sh_jacobi_types[2] = <char>NPY_FLOAT
+ufunc_weightfun_sh_jacobi_types[3] = <char>NPY_FLOAT
+ufunc_weightfun_sh_jacobi_types[4] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_jacobi_types[5] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_jacobi_types[6] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_jacobi_types[7] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_jacobi_ptr[2*0] = <void*>_func_weightfun_sh_jacobi
+ufunc_weightfun_sh_jacobi_ptr[2*0+1] = <void*>(<char*>"weightfun_sh_jacobi")
+ufunc_weightfun_sh_jacobi_ptr[2*1] = <void*>_func_weightfun_sh_jacobi
+ufunc_weightfun_sh_jacobi_ptr[2*1+1] = <void*>(<char*>"weightfun_sh_jacobi")
+ufunc_weightfun_sh_jacobi_data[0] = &ufunc_weightfun_sh_jacobi_ptr[2*0]
+ufunc_weightfun_sh_jacobi_data[1] = &ufunc_weightfun_sh_jacobi_ptr[2*1]
+weightfun_sh_jacobi = np.PyUFunc_FromFuncAndData(ufunc_weightfun_sh_jacobi_loops, ufunc_weightfun_sh_jacobi_data, ufunc_weightfun_sh_jacobi_types, 2, 3, 1, 0, "weightfun_sh_jacobi", ufunc_weightfun_sh_jacobi_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_weight_sh_legendre_loops[2]
-cdef void *ufunc_weight_sh_legendre_ptr[4]
-cdef void *ufunc_weight_sh_legendre_data[2]
-cdef char ufunc_weight_sh_legendre_types[4]
-cdef char *ufunc_weight_sh_legendre_doc = (
-    "weight_sh_legendre(x, out=None)\n"
+cdef np.PyUFuncGenericFunction ufunc_weightfun_sh_legendre_loops[2]
+cdef void *ufunc_weightfun_sh_legendre_ptr[4]
+cdef void *ufunc_weightfun_sh_legendre_data[2]
+cdef char ufunc_weightfun_sh_legendre_types[4]
+cdef char *ufunc_weightfun_sh_legendre_doc = (
+    "weightfun_sh_legendre(x, out=None)\n"
     "\n"
     "Weight function for shifted Gauss-Legendre quadrature.\n"
     "\n"
@@ -13356,19 +13362,19 @@ cdef char *ufunc_weight_sh_legendre_doc = (
     "eval_sh_legendre : evaluate shifted Legendre polynomials.\n"
     "roots_sh_legendre : roots and quadrature weights of shifted Legendre\n"
     "                    polynomials")
-ufunc_weight_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc_weight_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc_weight_sh_legendre_types[0] = <char>NPY_FLOAT
-ufunc_weight_sh_legendre_types[1] = <char>NPY_FLOAT
-ufunc_weight_sh_legendre_types[2] = <char>NPY_DOUBLE
-ufunc_weight_sh_legendre_types[3] = <char>NPY_DOUBLE
-ufunc_weight_sh_legendre_ptr[2*0] = <void*>_func_weight_sh_legendre
-ufunc_weight_sh_legendre_ptr[2*0+1] = <void*>(<char*>"weight_sh_legendre")
-ufunc_weight_sh_legendre_ptr[2*1] = <void*>_func_weight_sh_legendre
-ufunc_weight_sh_legendre_ptr[2*1+1] = <void*>(<char*>"weight_sh_legendre")
-ufunc_weight_sh_legendre_data[0] = &ufunc_weight_sh_legendre_ptr[2*0]
-ufunc_weight_sh_legendre_data[1] = &ufunc_weight_sh_legendre_ptr[2*1]
-weight_sh_legendre = np.PyUFunc_FromFuncAndData(ufunc_weight_sh_legendre_loops, ufunc_weight_sh_legendre_data, ufunc_weight_sh_legendre_types, 2, 1, 1, 0, "weight_sh_legendre", ufunc_weight_sh_legendre_doc, 0)
+ufunc_weightfun_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_sh_legendre_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_sh_legendre_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_sh_legendre_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_legendre_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_legendre_ptr[2*0] = <void*>_func_weightfun_sh_legendre
+ufunc_weightfun_sh_legendre_ptr[2*0+1] = <void*>(<char*>"weightfun_sh_legendre")
+ufunc_weightfun_sh_legendre_ptr[2*1] = <void*>_func_weightfun_sh_legendre
+ufunc_weightfun_sh_legendre_ptr[2*1+1] = <void*>(<char*>"weightfun_sh_legendre")
+ufunc_weightfun_sh_legendre_data[0] = &ufunc_weightfun_sh_legendre_ptr[2*0]
+ufunc_weightfun_sh_legendre_data[1] = &ufunc_weightfun_sh_legendre_ptr[2*1]
+weightfun_sh_legendre = np.PyUFunc_FromFuncAndData(ufunc_weightfun_sh_legendre_loops, ufunc_weightfun_sh_legendre_data, ufunc_weightfun_sh_legendre_types, 2, 1, 1, 0, "weightfun_sh_legendre", ufunc_weightfun_sh_legendre_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_wofz_loops[2]
 cdef void *ufunc_wofz_ptr[4]

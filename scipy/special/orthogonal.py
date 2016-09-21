@@ -318,7 +318,7 @@ def roots_jacobi(n, alpha, beta, mu=False):
     See Also
     --------
     eval_jacobi : evaluate Jacobi polynomials
-    weight_jacobi : weight function for Jacobi polynomials
+    weightfun_jacobi : weight function for Jacobi polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -351,7 +351,8 @@ def roots_jacobi(n, alpha, beta, mu=False):
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
-@_DeprecateOrthopoly1d('eval_jacobi', 'roots_jacobi', 'weight_jacobi')
+@_DeprecateOrthopoly1d('eval_jacobi', 'roots_jacobi',
+                       'weightfun_jacobi')
 def jacobi(n, alpha, beta, monic=False):
     r"""Jacobi polynomial.
 
@@ -443,7 +444,8 @@ def roots_sh_jacobi(n, p, q, mu=False):
     See Also
     --------
     eval_sh_jacobi : evaluate shifted Jacobi polynomials
-    weight_sh_jacobi : weight function for shifted Jacobi polynomials
+    weightfun_sh_jacobi : weight function for shifted Jacobi
+                          polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -461,7 +463,7 @@ def roots_sh_jacobi(n, p, q, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_sh_jacobi', 'roots_sh_jacobi',
-                       'weight_sh_jacobi')
+                       'weightfun_sh_jacobi')
 def sh_jacobi(n, p, q, monic=False):
     r"""Shifted Jacobi polynomial.
 
@@ -549,8 +551,8 @@ def roots_genlaguerre(n, alpha, mu=False):
     See Also
     --------
     eval_genlaguerre : evaluate generalized Laguerre polynomials
-    weight_genlaguerre : weight function for generalized Laguerre
-                         polynomials
+    weightfun_genlaguerre : weight function for generalized Laguerre
+                            polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -579,7 +581,7 @@ def roots_genlaguerre(n, alpha, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_genlaguerre', 'roots_genlaguerre',
-                       'weight_genlaguerre')
+                       'weightfun_genlaguerre')
 def genlaguerre(n, alpha, monic=False):
     r"""Generalized (associated) Laguerre polynomial.
 
@@ -672,7 +674,7 @@ def roots_laguerre(n, mu=False):
     See Also
     --------
     eval_laguerre : evaluate Laguerre polynomials
-    weight_laguerre : weight function for Laguerre polynomials
+    weightfun_laguerre : weight function for Laguerre polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     numpy.polynomial.laguerre.laggauss : similar NumPy function
@@ -681,7 +683,7 @@ def roots_laguerre(n, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_laguerre', 'roots_laguerre',
-                       'weight_laguerre')
+                       'weightfun_laguerre')
 def laguerre(n, monic=False):
     r"""Laguerre polynomial.
 
@@ -770,11 +772,11 @@ def roots_hermite(n, mu=False):
     See Also
     --------
     eval_hermite : evaluate physicist's Hermite polynomials
-    weight_hermite : weight function for physicist's Hermite
-                     polynomials
+    weightfun_hermite : weight function for physicist's Hermite
+                        polynomials
     eval_hermitenorm : evaluate probabilist's Hermite polynomials
-    weight_hermitenorm : weight function for probabilist's Hermite
-                         polynomials
+    weightfun_hermitenorm : weight function for probabilist's Hermite
+                            polynomials
     roots_hermitenorm : roots and quadrature weights for probabilist's
                         Hermite polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
@@ -1178,7 +1180,8 @@ def _h_roots_asy(n):
     return nodes, weights
 
 
-@_DeprecateOrthopoly1d('eval_hermite', 'roots_hermite', 'weight_hermite')
+@_DeprecateOrthopoly1d('eval_hermite', 'roots_hermite',
+                       'weightfun_hermite')
 def hermite(n, monic=False):
     r"""Physicist's Hermite polynomial.
 
@@ -1269,11 +1272,11 @@ def roots_hermitenorm(n, mu=False):
     See Also
     --------
     eval_hermitenorm : evaluate probabilist's Hermite polynomials
-    weight_hermitenorm : weight function for probabilist's Hermite
-                         polynomials
+    weightfun_hermitenorm : weight function for probabilist's Hermite
+                            polynomials
     eval_hermite : evaluate physicist's Hermite polynomials
-    weight_hermite : weight function for physicist's Hermite
-                     polynomials
+    weightfun_hermite : weight function for physicist's Hermite
+                        polynomials
     roots_hermite : roots and quadrature weights for physicist's
                     Hermite polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
@@ -1303,7 +1306,7 @@ def roots_hermitenorm(n, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_hermitenorm', 'roots_hermitenorm',
-                       'weight_hermitenorm')
+                       'weightfun_hermitenorm')
 def hermitenorm(n, monic=False):
     r"""Normalized (probabilist's) Hermite polynomial.
 
@@ -1387,7 +1390,7 @@ def roots_gegenbauer(n, alpha, mu=False):
     See Also
     --------
     eval_gegenbauer : evaluate Gegenbauer polynomials
-    weight_gegenbauer : weight function for Gegenbauer polynomials
+    weightfun_gegenbauer : weight function for Gegenbauer polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -1414,7 +1417,7 @@ def roots_gegenbauer(n, alpha, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_gegenbauer', 'roots_gegenbauer',
-                       'weight_gegenbauer')
+                       'weightfun_gegenbauer')
 def gegenbauer(n, alpha, monic=False):
     r"""Gegenbauer (ultraspherical) polynomial.
 
@@ -1491,8 +1494,8 @@ def roots_chebyt(n, mu=False):
     See Also
     --------
     eval_chebyt : evaluate Chebychev polynomials of the first kind
-    weight_chebyt : weight function for Chebychev polynomials of the
-                    first kind
+    weightfun_chebyt : weight function for Chebychev polynomials of
+                       the first kind
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     numpy.polynomial.chebyshev.chebgauss : similar NumPy function
@@ -1509,7 +1512,8 @@ def roots_chebyt(n, mu=False):
         return x, w
 
 
-@_DeprecateOrthopoly1d('eval_chebyt', 'roots_chebyt', 'weight_chebyt')
+@_DeprecateOrthopoly1d('eval_chebyt', 'roots_chebyt',
+                       'weightfun_chebyt')
 def chebyt(n, monic=False):
     r"""Chebyshev polynomial of the first kind.
 
@@ -1590,8 +1594,8 @@ def roots_chebyu(n, mu=False):
     See Also
     --------
     eval_chebyu : evaluate Chebychev polynomials of the second kind
-    weight_chebyu : weight function for Chebychev polynomials of the
-                    second kind
+    weightfun_chebyu : weight function for Chebychev polynomials of
+                       the second kind
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -1607,7 +1611,8 @@ def roots_chebyu(n, mu=False):
         return x, w
 
 
-@_DeprecateOrthopoly1d('eval_chebyu', 'roots_chebyu', 'weight_chebyu')
+@_DeprecateOrthopoly1d('eval_chebyu', 'roots_chebyu',
+                       'weightfun_chebyu')
 def chebyu(n, monic=False):
     r"""Chebyshev polynomial of the second kind.
 
@@ -1681,8 +1686,8 @@ def roots_chebyc(n, mu=False):
     --------
     eval_chebyc : evaluate Chebychev polynomials of the first kind on
                   [-2, 2]
-    weight_chebyc : weight function for Chebychev polynomials of the
-                    first kind on [-2, 2]
+    weightfun_chebyc : weight function for Chebychev polynomials of
+                       the first kind on [-2, 2]
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -1696,7 +1701,8 @@ def roots_chebyc(n, mu=False):
         return x, w
 
 
-@_DeprecateOrthopoly1d('eval_chebyc', 'roots_chebyc', 'weight_chebyc')
+@_DeprecateOrthopoly1d('eval_chebyc', 'roots_chebyc',
+                       'weightfun_chebyc')
 def chebyc(n, monic=False):
     r"""Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
 
@@ -1783,8 +1789,8 @@ def roots_chebys(n, mu=False):
     --------
     eval_chebys : evaluate Chebychev polynomials of the second kind on
                   [-2, 2]
-    weight_chebys : weight function for Chebychev polynomials of the
-                    second kind on [-2, 2]
+    weightfun_chebys : weight function for Chebychev polynomials of
+                       the second kind on [-2, 2]
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -1798,7 +1804,8 @@ def roots_chebys(n, mu=False):
         return x, w
 
 
-@_DeprecateOrthopoly1d('eval_chebys', 'roots_chebys', 'weight_chebys')
+@_DeprecateOrthopoly1d('eval_chebys', 'roots_chebys',
+                       'weightfun_chebys')
 def chebys(n, monic=False):
     r"""Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
 
@@ -1887,8 +1894,8 @@ def roots_sh_chebyt(n, mu=False):
     --------
     eval_sh_chebyt : evaluate shifted Chebychev polynomials of the
                      first kind
-    weight_sh_chebyt : weight function for shifted Chebychev
-                       polynomials of the first kind
+    weightfun_sh_chebyt : weight function for shifted Chebychev
+                          polynomials of the first kind
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -1897,7 +1904,7 @@ def roots_sh_chebyt(n, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_sh_chebyt', 'roots_sh_chebyt',
-                       'weight_sh_chebyt')
+                       'weightfun_sh_chebyt')
 def sh_chebyt(n, monic=False):
     r"""Shifted Chebyshev polynomial of the first kind.
 
@@ -1965,8 +1972,8 @@ def roots_sh_chebyu(n, mu=False):
     --------
     eval_sh_chebyu : evaluate shifted Chebychev polynomials of the
                      second kind
-    weight_sh_chebyu : weight function for shifted Chebychev
-                       polynomials of the second kind
+    weightfun_sh_chebyu : weight function for shifted Chebychev
+                          polynomials of the second kind
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -1981,7 +1988,7 @@ def roots_sh_chebyu(n, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_sh_chebyu', 'roots_sh_chebyu',
-                       'weight_sh_chebyu')
+                       'weightfun_sh_chebyu')
 def sh_chebyu(n, monic=False):
     r"""Shifted Chebyshev polynomial of the second kind.
 
@@ -2045,7 +2052,7 @@ def roots_legendre(n, mu=False):
     See Also
     --------
     eval_legendre : evaluate Legendre polynomials
-    weight_legendre : weight function for Legendre polynomials
+    weightfun_legendre : weight function for Legendre polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian qaudrature
     numpy.polynomial.legendre.leggauss : similar NumPy function
@@ -2064,7 +2071,7 @@ def roots_legendre(n, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_legendre', 'roots_legendre',
-                       'weight_legendre')
+                       'weightfun_legendre')
 def legendre(n, monic=False):
     r"""Legendre polynomial.
 
@@ -2150,8 +2157,8 @@ def roots_sh_legendre(n, mu=False):
     See Also
     --------
     eval_sh_legendre : evaluate shifted Legendre polynomials
-    weight_sh_legendre : weight function for shifted Legendre
-                         polynomials
+    weightfun_sh_legendre : weight function for shifted Legendre
+                            polynomials
     scipy.integrate.quadrature : adaptive Gaussian quadrature
     scipy.integrate.fixed_quad : Gaussian quadrature
     """
@@ -2165,7 +2172,7 @@ def roots_sh_legendre(n, mu=False):
 
 
 @_DeprecateOrthopoly1d('eval_sh_legendre', 'roots_sh_legendre',
-                       'weight_sh_legendre')
+                       'weightfun_sh_legendre')
 def sh_legendre(n, monic=False):
     r"""Shifted Legendre polynomial.
 

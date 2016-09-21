@@ -428,24 +428,25 @@ polynomials:
 .. autosummary::
    :toctree: generated/
 
-   weight_legendre
-   weight_chebyt
-   weight_chebyu
-   weight_chebyc
-   weight_chebys
-   weight_jacobi
-   weight_laguerre
-   weight_genlaguerre
-   weight_hermite
-   weight_hermitenorm
-   weight_gegenbauer
-   weight_sh_legendre
-   weight_sh_chebyt
-   weight_sh_chebyu
-   weight_sh_jacobi
+   weightfun_legendre
+   weightfun_chebyt
+   weightfun_chebyu
+   weightfun_chebyc
+   weightfun_chebys
+   weightfun_jacobi
+   weightfun_laguerre
+   weightfun_genlaguerre
+   weightfun_hermite
+   weightfun_hermitenorm
+   weightfun_gegenbauer
+   weightfun_sh_legendre
+   weightfun_sh_chebyt
+   weightfun_sh_chebyu
+   weightfun_sh_jacobi
 
 The following functions provide an old interface for accessing
-orthogonal-polynomial functionality and are deprecated in Scipy 0.19:
+orthogonal-polynomial functionality and are deprecated as of Scipy
+0.19:
 
 .. autosummary::
    :toctree: generated/

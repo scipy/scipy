@@ -60,10 +60,10 @@ providing simple serialization for some sparse formats.
 `scipy.special` improvements
 ----------------------------
 
-The new family of functions `scipy.special.weight_*` calculate the
+The new family of functions `scipy.special.weightfun_*` calculate the
 weight functions of orthogonal polynomials. For example,
-`scipy.special.weight_jacobi` computes the weight function of Jacobi
-polynomials.
+`scipy.special.weightfun_jacobi` computes the weight function of
+Jacobi polynomials.
 
 Deprecated features
 ===================
@@ -77,14 +77,15 @@ The functions `scipy.special.legendre`, `scipy.special.chebyt`,
 `scipy.special.sh_chebyt`, `scipy.special.sh_chebyu`, and
 `scipy.special.sh_jacobi` have been deprecated and their functionality
 has been split into separate functions. For example if you want to
-evaluate Jacobi polynomials then you should use `eval_jacobi`. If you
-want to get roots and quadrature weights of Jacobi polynomials you
-should use `roots_jacobi`. If you want to get the weight function of
-Jacobi polynomials you should use `weight_jacobi`.
+evaluate Jacobi polynomials then you should use
+`scipy.special.eval_jacobi`. If you want to get roots and quadrature
+weights of Jacobi polynomials you should use
+`scipy.special.roots_jacobi`. If you want to get the weight function
+of Jacobi polynomials you should use `scipy.special.weightfun_jacobi`.
 
-The old family of functions `scipy.special.*_roots` for calculating
-the roots and weights of orthogonal polynomials has been deprecated,
-and new versions have been created that are consistent with naming
+The family of functions `scipy.special.*_roots` for calculating the
+roots and weights of orthogonal polynomials has been deprecated, and
+new versions have been created that are consistent with naming
 conventions for orthogonal polynomials elsewhere in the module. For
 example, the old function `scipy.special.j_roots` for getting the
 roots and quadrature weights of Jacobi polynomials should now be
