@@ -26,7 +26,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         Array in which to find the relative extrema.
     comparator : callable
         Function to use to compare two data points.
-        Should take 2 numbers as arguments.
+        Should take two arrays as arguments.
     axis : int, optional
         Axis over which to select from `data`.  Default is 0.
     order : int, optional
@@ -187,7 +187,7 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         Array in which to find the relative extrema.
     comparator : callable
         Function to use to compare two data points.
-        Should take 2 numbers as arguments.
+        Should take two arrays as arguments.
     axis : int, optional
         Axis over which to select from `data`.  Default is 0.
     order : int, optional
