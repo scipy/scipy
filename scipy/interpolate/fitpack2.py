@@ -1529,7 +1529,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         (0, pi).
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
-        Coordinates must be given in radians, and must lie within (0, 2pi).
+        Coordinates must be given in radians, and must lie within (-pi, pi).
     r : array_like
         2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional
