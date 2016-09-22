@@ -78,11 +78,12 @@ This integral can be evaluated by using the following code:
 
 >>> from scipy.integrate import quad
 >>> def integrand(x, a, b):
-...     return (a * x**2) + b
+...     return a*x**2 + b
 >>> a = 2
 >>> b = 1
 >>> I = quad(integrand, 0, 1, args=(a,b))
->>> I = (2.0, 2.220446049250313e-14)
+>>> I
+(1.6666666666666667, 1.8503717077085944e-14)
 
 
 Infinite inputs are also allowed in :obj:`quad` by using :math:`\pm`
