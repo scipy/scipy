@@ -238,6 +238,7 @@ Checklist before submitting a PR
   - Are there unit tests with good code coverage?
   - Do all public function have docstrings including examples?
   - Is the code style correct (PEP8, pyflakes)
+  - Is the commit message `formatted correctly`_?
   - Is the new functionality tagged with ``.. versionadded:: X.Y.Z`` (with
     X.Y.Z the version number of the next release - can be found in setup.py)?
   - Is the new functionality mentioned in the release notes of the next
@@ -439,6 +440,8 @@ various assert functions.
 .. _statsmodels: http://statsmodels.sourceforge.net/
 
 .. _testing guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
+
+.. _formatted correctly: http://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message
 
 .. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
