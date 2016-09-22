@@ -76,6 +76,11 @@ a list.
 Other changes
 =============
 
+SciPy wheels will now report their dependency on ``numpy`` on all platforms.
+This change was made because Numpy wheels are available, and because the pip
+upgrade behavior is finally changing for the better (use
+``--upgrade-strategy=only-if-needed`` for ``pip >= 8.2``; that behavior will
+become the default in the next major version of ``pip``).
 
 
 
