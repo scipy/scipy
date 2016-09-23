@@ -543,8 +543,7 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     Annealing) and FSA (Fast Simulated Annealing) to find the neighborhood of
     minima, then calls a local method (lbfgsb) to find their exact value.
     GenSA can process complicated and high dimension non-linear objective
-    functions with a large number of local minima as described by Mullen
-    paper [6]_.
+    functions with a large number of local minima as described by [6]_.
 
     GSA uses a distorted Cauchy-Lorentz visiting distribution, with it shape
     controlled by the parameter :math:`q_{v}`
