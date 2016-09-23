@@ -2,7 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.optimize import brentq, OptimizeResult
+from scipy.optimize import OptimizeResult
 
 
 EPS = np.finfo(float).eps
@@ -170,4 +170,5 @@ def solve_event_equation(event, sol, x, x_new):
     root : float
         Found solution.
     """
+    from scipy.optimize import brentq
     return brentq(lambda t: event(t, sol(t)), x, x_new, xtol=4 * EPS)
