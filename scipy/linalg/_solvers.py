@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond
 
-from .basic import solve, solve_triangular
+from .basic import solve, solve_triangular, balance
 from .lapack import get_lapack_funcs
 from .decomp_schur import schur
 from .decomp_lu import lu
@@ -317,7 +317,7 @@ def solve_discrete_are(a, b, q, r, balanced=True):
 
     The limitations for a solution to exist are :
         
-        * All eigenvalues of ..math:`A` outside the unit disc, should be 
+        * All eigenvalues of :math:`A` outside the unit disc, should be 
           controllable. 
 
         * The associated symplectic pencil (See Notes), should have 
@@ -356,7 +356,7 @@ def solve_discrete_are(a, b, q, r, balanced=True):
     Notes
     -----
     The equation is solved by forming the extended symplectic matrix pencil, 
-    as described in [1]_, .. math:`H - \lambda J` given by the block matrices
+    as described in [1]_, :math:`H - \lambda J` given by the block matrices
         
     
            [  A   0   B ]             [ I   0   B ] 
@@ -366,8 +366,8 @@ def solve_discrete_are(a, b, q, r, balanced=True):
     and using a QZ decomposition method.
     
     In this algorithm, the fail conditions are linked to the symmetrycity 
-    of the product .. math:`U_2 U_1^{-1}` and condition number of 
-    .. math:`U_1`. Here, .. math:`U` is the 2m-by-m matrix that holds the 
+    of the product :math:`U_2 U_1^{-1}` and condition number of 
+    :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the 
     eigenvectors spanning the stable subspace with 2m rows and partitioned 
     into two m-row matrices. See [1]_ and [2]_ for more details.
     
