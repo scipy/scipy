@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh']
+           'pinv', 'pinv2', 'pinvh', 'balance']
 
 import warnings
 import numpy as np
@@ -1125,3 +1125,146 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         return B, len(psigma_diag)
     else:
         return B
+
+def balance(A, permute=True, scale=True, separate = False,
+                 silent=False, overwrite_a=False, scaled_block=False):
+    """
+    A wrapper around LAPACK's xGEBAL routine family for matrix balancing. 
+    
+    The balancing tries to equalize the row and column 1-norms by applying 
+    a similarity transformation such that the magnitude variation of the 
+    matrix entries is reflected to the scaling matrices. This is particularly 
+    useful for eigenvalue and matrix decompositions and often automatically 
+    performed. Hence, this function provides a convenience for manually 
+    balancing. 
+        
+    Moreover, if turned on, the matrix is first permuted to isolate the upper 
+    triangular parts of the matrix and only the remaining part is scaled. 
+    
+    The balanced matrix satisfies the following equality 
+    
+    .. math::
+         
+                        B = T^{-1} A T 
+
+    The algorithm is based on the well-known technique of [1]_ and has 
+    been modified to account for special cases. See [2]_ for details
+    which have been implemented since LAPACK v3.5.0. 
+    
+    
+    Parameters
+    ----------
+    A : (n, n) array_like
+        Square data matrix for the balancing.
+        
+    permute : bool
+        The selector to define whether permutation of A is also performed
+        prior to scaling.
+    
+    scale : bool
+        The selector to turn on and off the scaling. If False, the matrix 
+        will not be scaled. 
+        
+    separate : bool
+        This switches from returning a full matrix of the transformation
+        to a tuple of two separate 1D permutation and scaling arrays.
+
+    scaled_block : bool
+        If true, adds a tuple of the range of the scaled (sub)block to 
+        the output arguments. Technically, this is the range defined by the 
+        `ILO` and `IHI` values of `xGEBAL` (see LAPACK documentation)
+        
+    silent : bool
+        If set to True then the info code reported by xGEBAL is appended 
+        to the returned arguments. In case of a LAPACK error, the exception 
+        is also silenced.
+    
+    overwrite_a : bool
+        This is passed to xGEBAL directly. Essentially, overwrites the result
+        to the data. It might increase the space efficiency. See LAPACK manual 
+        for details. This is False by default. 
+
+    Returns
+    -------
+
+    ba : (n, n) array
+        Balanced matrix 
+    
+    T : (n, n) array
+        A possibly permuted diagonal matrix whose nonzero entries are 
+        integer powers of 2 to avoid numerical truncation errors. 
+    
+    s, p : (n,) array
+        If `separate` keyword is set to True then instead of the matrix `T`,
+        the scaling and the permutation vector is given. 
+        
+    c : tuple
+        If `scaled_block` is set to True then this argument holds the start 
+        and the end position of the scaled subblock. The indices obey the 
+        Python slicing rules (first inclusive, second exclusive). 
+        
+    info_code: int
+        If `silent` is set to True the appended info code from LAPACK.
+
+    .. versionadded:: 0.19.0
+    
+    References
+    ----------
+    .. [1] : B.N. Parlett and C. Reinsch, "Balancing a Matrix for 
+       Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik, 
+       Vol.13(4), 1969, DOI:10.1007/BF02165404
+       
+    .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and 
+       eigenvector computation", 2014, Available online: 
+       http://arxiv.org/abs/1401.5766
+       
+    """
+
+    A = np.atleast_2d(_asarray_validated(A,check_finite=True))
+
+    if not np.equal(*A.shape):
+        raise ValueError('The data matrix for balancing should be square.')
+    
+    gebal = get_lapack_funcs(('gebal'),(A,))
+    ba, lo, hi, ps, info = gebal(A, scale=scale, permute=permute, 
+                                     overwrite_a=overwrite_a)
+
+    if info < 0:
+        if not silent:
+            raise ValueError('xGEBAL exited with the "illegal value in'
+                             'argument number {}."'.format(-info))
+        
+    # Separate the permutations from the scalings and then convert to int
+    scaling = np.ones_like(ps, dtype=float)
+    scaling[lo:hi+1] = ps[lo:hi+1]
+    
+    # gebal uses 1-indexing 
+    ps = ps.astype(int, copy=False) - 1 
+    n = A.shape[0]
+    perm = np.arange(n)
+    
+    # LAPACK permutes with the ordering n --> hi, then 0--> lo
+    if hi < n:
+        for ind, x in enumerate(ps[hi+1:][::-1], 1):
+            if n-ind == x:
+                continue
+            perm[[x,n-ind]] = perm[[n-ind,x]]
+    
+    if lo > 0:
+        for ind, x in enumerate(ps[:lo]):
+            if ind == x:
+                continue
+            perm[[x,ind]] = perm[[ind,x]]
+
+    if separate:
+        output_args = (ba, scaling, perm)
+    else:
+        output_args = (ba, np.diag(scaling)[perm,:])
+
+    if scaled_block:
+        output_args += ((lo,hi+1),)
+        
+    if silent:
+        output_args += (info,)
+        
+    return output_args

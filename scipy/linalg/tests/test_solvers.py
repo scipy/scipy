@@ -149,25 +149,25 @@ def test_solve_discrete_are():
         # knownfailure is None if the test passes or a string
         # indicating the reason for failure.
         #
-        # Complex a; real b, q, r
+        # TEST CASE 0 : Complex a; real b, q, r
         (np.array([[2, 1-2j], [0, -3j]]),
          np.array([[0,], [1,]]),
          np.array([[1, 0], [0, 2]]),
          np.array([[1,],]),
          None),
-        # Real a, q, r; complex b
+        # TEST CASE 1 :Real a, q, r; complex b
         (np.array([[2, 1], [0, -1]]),
          np.array([[-2j,], [1j,]]),
          np.array([[1, 0], [0, 2]]),
          np.array([[1,],]),
          None),
-        # Real a, b; complex q, r 
+        # TEST CASE 2 : Real a, b; complex q, r 
         (np.array([[3, 1], [0, -1]]),
          np.array([[1, 2], [1, 3]]),
          np.array([[1, 1+1j], [1-1j, 2]]),
          np.array([[2, -2j], [2j, 3]]),
          None),
-        # User-reported gh-2251 (Trac #1732)
+        # TEST CASE 3 : User-reported gh-2251 (Trac #1732)
         (np.array([[0.63399379, 0.54906824, 0.76253406],
                    [0.5404729, 0.53745766, 0.08731853],
                    [0.27524045, 0.84922129, 0.4681622]]),
@@ -175,37 +175,37 @@ def test_solve_discrete_are():
          np.eye(3),
          np.eye(1),
          None),
-        # darex #1
+        # TEST CASE 4 : darex #1
         (np.array([[4, 3],[-4.5, -3.5]]),
          np.array([[1],[-1]]),
          np.array([[9, 6],[6, 4]]),
          np.array([[1]]),
          None),
-        # darex #2
+        # TEST CASE 5 : darex #2
         (np.array([[0.9512, 0],[0, 0.9048]]),
          np.array([[4.877, 4.877],[-1.1895, 3.569]]),
          np.array([[0.005, 0],[0, 0.02]]),
          np.array([[1/3, 0],[0, 3]]),
          None),
-        # darex #3
+        # TEST CASE 6 : darex #3
         (np.array([[2, -1],[1, 0]]),
          np.array([[1],[0]]),
          np.array([[0, 0],[0, 1]]),
          np.array([[0]]),
          None),
-        # darex #4 (skipped the gen. Ric. term S)
+        # TEST CASE 7 : darex #4 (skipped the gen. Ric. term S)
         (np.array([[0, 1],[0, -1]]),
          np.array([[1, 0],[2, 1]]),
          np.array([[-4, -4],[-4, 7]]) * (1/11),
          np.array([[9, 3],[3, 1]]),
          None),
-        # darex #5
+        # TEST CASE 8 : darex #5
         (np.array([[0, 1],[0, 0]]),
          np.array([[0],[1]]),
          np.array([[1, 2],[2, 4]]),
          np.array([[1]]),
          None),
-        # darex #6
+        # TEST CASE 9 : darex #6
         (np.array([[0.998, 0.067, 0, 0],
                    [-.067, 0.998, 0, 0],
                    [0, 0, 0.998, 0.153],
@@ -220,7 +220,7 @@ def test_solve_discrete_are():
                    [-0.244, 0, 0, 1.048]]),
          np.eye(2),
          None),
-        # darex #7
+        # TEST CASE 10 : darex #7
         (np.array([[0.984750, -.079903, 0.0009054, -.0010765],
                    [0.041588, 0.998990, -.0358550, 0.0126840],
                    [-.546620, 0.044916, -.3299100, 0.1931800],
@@ -232,7 +232,7 @@ def test_solve_discrete_are():
          np.eye(4)*1e-2,
          np.eye(2),
          None),
-        # darex #8
+        # TEST CASE 11 : darex #8
         (np.array([[-0.6000000, -2.2000000, -3.6000000, -5.4000180],
                    [1.0000000, 0.6000000, 0.8000000, 3.3999820],
                    [0.0000000, 1.0000000, 1.8000000, 3.7999820],
@@ -247,7 +247,7 @@ def test_solve_discrete_are():
                    [6, 5, 11, 22]]),
          np.eye(4),
          None),
-        # darex #9
+        # TEST CASE 12 : darex #9
         (np.array([[95.4070, 1.9643, 0.3597, 0.0673, 0.0190],
                     [40.8490, 41.3170, 16.0840, 4.4679, 1.1971],
                    [12.2170, 26.3260, 36.1490, 15.9300, 12.3830],
@@ -261,7 +261,7 @@ def test_solve_discrete_are():
          np.eye(5),
          np.eye(2),
          None),
-        # darex #10
+        # TEST CASE 13 : darex #10
         (np.kron(np.eye(2),np.diag([1,1],k=1)),
          np.kron(np.eye(2),np.array([[0],[0],[1]])),
          np.array([[1, 1, 0, 0, 0, 0],
@@ -272,7 +272,7 @@ def test_solve_discrete_are():
                [0, 0, 0, 0, 0, 0]]),
          np.array([[3, 0],[0, 1]]),
          None),
-        # darex #11
+        # TEST CASE 14 : darex #11
         (0.001 * np.array(
          [[870.1, 135.0, 11.59, .5014, -37.22, .3484, 0, 4.242, 7.249],
          [76.55, 897.4, 12.72, 0.5504, -40.16, .3743, 0, 4.53, 7.499],
@@ -295,21 +295,21 @@ def test_solve_discrete_are():
          np.diag([50, 0, 0, 0, 50, 0, 0, 0, 0]),
          np.eye(3),
          None),
-        # darex #12
+        # TEST CASE 15 : darex #12 - numerically least accurate example
         (np.array([[0, 1e6],[0, 0]]),
          np.array([[0],[1]]),
          np.eye(2),
          np.array([[1]]),
-         "Bad absolute accuracy"),
-        # darex #13
+         None),
+        # TEST CASE 16 : darex #13
         (np.array([[16, 10, -2],
                   [10, 13, -8],
                   [-2, -8, 7]]) * (1/9),
          np.eye(3),
          1e6 * np.eye(3),
          1e6 * np.eye(3),
-         "Fails to find a valid solution"),
-        # darex #14
+         None),
+        # TEST CASE 17 : darex #14
         (np.array([[1 - 1/1e8, 0, 0, 0],
                   [1, 0, 0, 0],
                   [0, 1, 0, 0],
@@ -317,16 +317,27 @@ def test_solve_discrete_are():
          np.array([[1e-08],[0],[0],[0]]),
          np.diag([0, 0, 0, 1]),
          np.array([[0.25]]),
-         "Bad absolute accuracy"),
-        # darex #15
-        (np.eye(100, k=1),
-         np.flipud(np.eye(100, 1)),
+         None),
+        # TEST CASE 18 : darex #15
+        (np.eye(100,k=1),
+         np.flipud(np.eye(100,1)),
          np.eye(100),
          np.array([[1]]),
          None)
         ]
 
-    def _test_factory(case):
+    # Makes the the minimum precision requirements customized to the test.
+    # Here numbers represent the number of decimals that agrees with zero
+    # matrix when the solution x is plugged in to the equation. 
+    #
+    # res = array([[8e-3,1e-16],[1e-16,1e-20]]) --> min_decimal[k] = 2
+    #
+    # If the test is failing use "None" for that entry.
+    # 
+    min_decimal = (12, 14, 14, 14, 13, 16, 18, 15, 15, 13,
+                   14, 13, 13, 14, 12, 2, 5, 7, 10)
+        
+    def _test_factory(case,dec):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
@@ -337,11 +348,10 @@ def test_solve_discrete_are():
         res -= a.conj().T.dot(x.dot(b)).dot(
                     solve(r+b.conj().T.dot(x.dot(b)),b.conj().T).dot(x.dot(a))
                     )
-        assert_array_almost_equal(res,np.zeros_like(res))
+        assert_array_almost_equal(res,np.zeros_like(res),decimal=dec)
 
-    for case in cases:
-        yield _test_factory, case
-
+    for ind, case in enumerate(cases):
+        yield _test_factory, case, min_decimal[ind]
 
 class TestSolveSylvester(TestCase):
 
@@ -396,5 +406,6 @@ class TestSolveSylvester(TestCase):
         x = solve_sylvester(a, b, c)
         assert_array_almost_equal(x, np.array([1.0, 1.0]).reshape(-1,1))
 
+        
 if __name__ == "__main__":
     run_module_suite()

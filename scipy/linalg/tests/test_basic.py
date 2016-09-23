@@ -33,7 +33,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
         solve_banded, solveh_banded, solve_triangular, solve_circulant,
-        circulant, LinAlgError)
+        circulant, LinAlgError, block_diag, balance)
 
 from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
@@ -1333,6 +1333,59 @@ class TestSolveCirculant(TestCase):
         x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)
         assert_equal(x.shape, (4, 2, 3))
         assert_allclose(x, expected)
+
+class TestBalance(TestCase):
+    
+    def test_string_arg(self):
+        assert_raises(ValueError, balance, 'Some string for fail')
+        
+    def test_infnan_arg(self):
+        assert_raises(ValueError, balance, np.array([[1,2],[3,np.inf]]))
+        assert_raises(ValueError, balance, np.array([[1,2],[3,np.nan]]))        
+        
+    def test_scaling(self):
+        x = np.array([-9, -3, 4])
+        _, y = balance(np.array([[1, 0, 1e-4],[1, 1, 1e-2],[1e4, 1e2, 1]]))
+        assert_allclose(np.log2(np.diag(y)),x)
+    
+    def test_scaling_order(self):
+        A = np.array([[1, 0, 1e-4],[1, 1, 1e-2],[1e4, 1e2, 1]])
+        x, y = balance(A)
+        assert_allclose(solve(y,A).dot(y),x)
+
+    def test_separate(self):
+        x = np.array([-9, -3, 4])
+        _, y, z = balance(np.array([[1, 0, 1e-4],[1, 1, 1e-2],[1e4, 1e2, 1]]),
+                       separate=1)
+        assert_allclose(np.log2(y), x)
+        assert_allclose(z,np.arange(3))
+        
+    def test_permutation(self):
+        A = block_diag(np.ones((2,2)),np.tril(np.ones((2,2))),np.ones((3,3)))
+        x, y, z = balance(A, separate=1)
+        assert_allclose(y,np.ones_like(y))
+        assert_allclose(z,np.array([0,1,6,5,4,3,2]))
+    
+    def test_perm_and_scaling(self):
+        A = np.array([[0., 0., 0., 0., 0.000002],
+                   [0., 0., 0., 0., 0.],
+                   [2., 2., 0., 0., 0.],
+                   [2., 2., 0., 0., 0.],
+                   [0., 0., 0.000002, 0., 0.]])
+
+        x, y = balance(A)
+        x, s, p = balance(A, separate=1)
+        assert_allclose(y,np.diag(s)[p,:])
+
+    def test_optional_kwargs(self):
+        A = np.array([[0., 0., 0., 0., 0.000002],
+           [0., 0., 0., 0., 0.],
+           [2., 2., 0., 0., 0.],
+           [2., 2., 0., 0., 0.],
+           [0., 0., 0.000002, 0., 0.]])
+        x, t, blocks, info_code = balance(A, silent=1,scaled_block=1)
+        assert_equal(blocks,(1,4))
+        assert_equal(info_code,0)
 
 
 if __name__ == "__main__":

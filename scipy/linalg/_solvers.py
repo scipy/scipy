@@ -306,19 +306,18 @@ def solve_continuous_are(a, b, q, r):
     return np.dot(u21, u11i)
 
 
-def solve_discrete_are(a, b, q, r):
+def solve_discrete_are(a, b, q, r, balanced=True):
     """
     Solves the discrete algebraic Riccati equation (DARE).
 
     The DARE is defined as
 
     .. math::
-        
         X = A'XA - (A'XB) (R+B'XB)^{-1} (B'XA) + Q
 
     The limitations for a solution to exist are :
         
-        * All eigenvalues of :math:`A` outside the unit disc, should be 
+        * All eigenvalues of ..math:`A` outside the unit disc, should be 
           controllable. 
 
         * The associated symplectic pencil (See Notes), should have 
@@ -334,17 +333,21 @@ def solve_discrete_are(a, b, q, r):
         Input
     r : (N, N) array_like
         Square matrix
+    balanced : bool
+        The boolean that indicates whether a balancing step is performed 
+        on the data. The default is set to True. If the data has numerical 
+        noise, turning off the balancing might help. 
 
     Returns
     -------
-    x : ndarray
-        Solution to the discrete algebraic Riccati equation.
-        
+    x : (M, M) array
+        Solution to the discrete algebraic Riccati equation. 
+
     Raises
     ------
     LinAlgError
         For cases where the stable subspace of the pencil could not be 
-        isolated. See Notes section and the references for details. 
+        isolated. See Notes section and the references for details.         
 
     See Also
     --------
@@ -353,8 +356,7 @@ def solve_discrete_are(a, b, q, r):
     Notes
     -----
     The equation is solved by forming the extended symplectic matrix pencil, 
-    as described in [1]_, :math:`H - \lambda J` given by the block 
-    matrices::
+    as described in [1]_, .. math:`H - \lambda J` given by the block matrices
         
     
            [  A   0   B ]             [ I   0   B ] 
@@ -364,12 +366,16 @@ def solve_discrete_are(a, b, q, r):
     and using a QZ decomposition method.
     
     In this algorithm, the fail conditions are linked to the symmetrycity 
-    of the product :math:`U_2 U_1^{-1}` and condition number of 
-    :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the 
+    of the product .. math:`U_2 U_1^{-1}` and condition number of 
+    .. math:`U_1`. Here, .. math:`U` is the 2m-by-m matrix that holds the 
     eigenvectors spanning the stable subspace with 2m rows and partitioned 
     into two m-row matrices. See [1]_ and [2]_ for more details.
     
-
+    In order to improve the QZ decomposition accuracy, the pencil goes 
+    through a balancing step where the sum of absolute values of 
+    :math:`H` and :math:`J` entries (after removing the diagonal entries of 
+    the sum) is balanced following the recipe given in [3]_. 
+    
     .. versionadded:: 0.11.0
 
     References
@@ -378,17 +384,20 @@ def solve_discrete_are(a, b, q, r):
        Riccati Equations.", SIAM Journal on Scientific and Statistical 
        Computing, Vol.2(2), DOI: 10.1137/0902010
        
-    .. [2] Alan J Laub, "A Schur Method for Solving Algebraic Riccati 
+    .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati 
        Equations.", Massachusetts Institute of Technology. Laboratory for 
        Information and Decision Systems. LIDS-R ; 859. Available online :
        http://hdl.handle.net/1721.1/1301
        
+    .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001, 
+       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993 
+       
     """
     
-    a = np.atleast_2d(_asarray_validated(a))
-    b = np.atleast_2d(_asarray_validated(b))
-    q = np.atleast_2d(_asarray_validated(q))
-    r = np.atleast_2d(_asarray_validated(r))
+    a = np.atleast_2d(_asarray_validated(a,check_finite=True))
+    b = np.atleast_2d(_asarray_validated(b,check_finite=True))
+    q = np.atleast_2d(_asarray_validated(q,check_finite=True))
+    r = np.atleast_2d(_asarray_validated(r,check_finite=True))
     
     # Get the correct data types otherwise Numpy complains about pushing 
     # complex numbers into real arrays.
@@ -429,10 +438,29 @@ def solve_discrete_are(a, b, q, r):
     J[m:2*m, m:2*m] = a.conj().T
     J[2*m:, m:2*m] = -b.conj().T
 
+    if balanced:
+        # xGEBAL does not remove the diagonals before scaling. Also 
+        # to avoid destroying the Symplectic structure, we follow Ref.3
+        M = np.abs(H) + np.abs(J)
+        M[np.diag_indices_from(M)] = 0.
+        _, sca, _ = balance(M,separate=1,permute=0)
+        # do we need to bother? 
+        if not np.allclose(sca,np.ones_like(sca)):
+            # Now impose diag(D,inv(D)) from Benner where D is 
+            # square root of s_i/s_(n+i) for i=0,.... 
+            sca = np.log2(sca)
+            # Banker's Rounding!!
+            s = np.round((sca[m:2*m] - sca[:m])/2)
+            sca = 2 ** np.r_[s, -s, sca[2*m:]]
+            # Elementwise multiplication via broadcasting. 
+            elwisescale = sca[:, None] * np.reciprocal(sca)
+            H *= elwisescale
+            J *= elwisescale
+
     # Deflate the pencil by the R column ala Ref. [1]
-    q_of_qr, _ = qr(H[:,-n:])
-    H = q_of_qr[:,n:].conj().T.dot(H[:,:2*m])
-    J = q_of_qr[:,n:].conj().T.dot(J[:,:2*m])
+    q_of_qr, _ = qr(H[:, -n:])
+    H = q_of_qr[:, n:].conj().T.dot(H[:, :2*m])
+    J = q_of_qr[:, n:].conj().T.dot(J[:, :2*m])
     
     # Decide on which output type is needed for QZ 
     out_str = 'real' if r_or_c == float else 'complex'
@@ -457,6 +485,8 @@ def solve_discrete_are(a, b, q, r):
                                           lower=True),
                          unit_diagonal=True,
                          ).conj().T.dot(up.conj().T)
+    if balanced:
+        x *= sca[:m, None] * sca[:m]
 
     # Check the deviation from symmetry for success
     u_sym = u00.conj().T.dot(u10)
