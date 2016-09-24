@@ -1344,9 +1344,8 @@ class TestBalance(TestCase):
         assert_raises(ValueError, balance, np.array([[1,2],[3,np.nan]]))        
         
     def test_scaling(self):
-        x = np.array([0,5])
-        _, y = balance(np.array([[1000,1],[1000,0]]))
-        assert_allclose(np.log2(np.diag(y)),x)
+        _, y = balance(np.array([[1000, 1], [1000, 0]]))
+        assert_allclose(int(np.diff(np.log2(np.diag(y)))), 5)
     
     def test_scaling_order(self):
         A = np.array([[1, 0, 1e-4],[1, 1, 1e-2],[1e4, 1e2, 1]])
@@ -1354,9 +1353,8 @@ class TestBalance(TestCase):
         assert_allclose(solve(y,A).dot(y),x)
 
     def test_separate(self):
-        x = np.array([0,5])
-        _, y, z = balance(np.array([[1000,1],[1000,0]]),separate=1)
-        assert_allclose(np.log2(y), x)
+        _, y, z = balance(np.array([[1000, 1], [1000, 0]]), separate=1)
+        assert_equal(int(np.diff(np.log2(y))), 5)
         assert_allclose(z,np.arange(2))
         
     def test_permutation(self):
