@@ -34,6 +34,10 @@ class lil_matrix(spmatrix, IndexMixin):
         lil_matrix((M, N), [dtype])
             to construct an empty matrix with shape (M, N)
             dtype is optional, defaulting to dtype='d'.
+            
+        lil_matrix((data, rows), shape=(M, N))
+            where the ``data[k,:]`` stores the data entries for
+            row indices ``rows[k]``    
 
     Attributes
     ----------
@@ -111,7 +115,19 @@ class lil_matrix(spmatrix, IndexMixin):
                     self.rows[i] = []
                     self.data[i] = []
             else:
-                raise TypeError('unrecognized lil_matrix constructor usage')
+                try:
+                    # Try interpreting it as (data, rows)
+                    data, rows = arg1
+                except:
+                    raise ValueError('unrecognized form for lil_matrix constructor')
+                else:
+                    if shape is None:
+                        raise ValueError('expected a shape argument')
+                    self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
+                    self.rows = np.atleast_1d(np.array(arg1[1],
+                                                          dtype=get_index_dtype(maxval=max(shape)),
+                                                          copy=copy))
+                    self.shape = shape
         else:
             # assume A is dense
             try:

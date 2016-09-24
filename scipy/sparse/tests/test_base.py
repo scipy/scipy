@@ -3762,7 +3762,13 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
 class TestLIL(sparse_test_class(minmax=False)):
     spmatrix = lil_matrix
     math_dtypes = [np.int_, np.float_, np.complex_]
-
+    
+    def test_init(self):
+        data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
+        rows = np.array([0, 1, 2, 3])
+        A = lil_matrix((data, rows), shape=(4, 4)).toarray()
+        assert_equal(A[0,0],1)
+        
     def test_dot(self):
         A = matrix(zeros((10,10)))
         A[0,3] = 10
