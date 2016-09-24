@@ -4,11 +4,11 @@ from numpy.testing import dec
 
 from scipy._lib._testutils import xslow
 from scipy.special._testutils import MissingModule, check_version
-from scipy.special._mptestutils import (Arg, mp_assert_allclose,
-                                        assert_mpmath_equal)
-from scipy.special._precompute.gammainc_asy import (compute_g, compute_alpha,
-                                                    compute_d)
-from scipy.special._precompute.gammainc_data import gammainc
+from scipy.special._mptestutils import (
+    Arg, IntArg, mp_assert_allclose, assert_mpmath_equal)
+from scipy.special._precompute.gammainc_asy import (
+    compute_g, compute_alpha, compute_d)
+from scipy.special._precompute.gammainc_data import gammainc, gammaincc
 
 try:
     import sympy
@@ -93,4 +93,21 @@ def test_gammainc():
     assert_mpmath_equal(gammainc,
                         lambda a, x: mp.gammainc(a, b=x, regularized=True),
                         [Arg(0, 100, inclusive_a=False), Arg(0, 100)],
+                        nan_ok=False, rtol=1e-17, n=50, dps=50)
+
+
+@check_version(mp, '0.19')
+def test_gammaincc():
+    # Quick check that the gammaincc in
+    # special._precompute.gammainc_data agrees with mpmath's
+    # gammainc.
+    assert_mpmath_equal(lambda a, x: gammaincc(a, x, dps=1000),
+                        lambda a, x: mp.gammainc(a, a=x, regularized=True),
+                        [Arg(20, 100), Arg(20, 100)],
+                        nan_ok=False, rtol=1e-17, n=50, dps=1000)
+
+    # Test the fast integer path
+    assert_mpmath_equal(gammaincc,
+                        lambda a, x: mp.gammainc(a, a=x, regularized=True),
+                        [IntArg(1, 100), Arg(0, 100)],
                         nan_ok=False, rtol=1e-17, n=50, dps=50)

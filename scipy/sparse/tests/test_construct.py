@@ -168,8 +168,7 @@ class TestConstructUtils(TestCase):
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], (6, 5)))
         cases.append(([a[:2],c,b[:3]], [-4,2,-1], None))
         cases.append(([], [-4,2,-1], None))
-        cases.append(([1], [-4], (4, 4)))
-        cases.append(([a[:0]], [-1], (1, 2)))
+        cases.append(([1], [-5], (4, 4)))
         cases.append(([a], 0, None))
 
         for d, o, shape in cases:
@@ -218,6 +217,10 @@ class TestConstructUtils(TestCase):
         for k in range(-5, 6):
             assert_equal(construct.diags(d, k).toarray(),
                          construct.diags([d], [k]).toarray())
+
+    def test_diags_empty(self):
+        x = construct.diags([])
+        assert_equal(x.shape, (0, 0))
 
     def test_identity(self):
         assert_equal(construct.identity(1).toarray(), [[1]])

@@ -6,7 +6,10 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
-import numbers
+from scipy._lib._util import check_random_state
+from scipy._lib.six import xrange
+import warnings
+
 
 __all__ = ['differential_evolution']
 
@@ -17,7 +20,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            maxiter=1000, popsize=15, tol=0.01,
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
-                           init='latinhypercube'):
+                           init='latinhypercube', atol=0):
     """Finds the global minimum of a multivariate function.
     Differential Evolution is stochastic in nature (does not use gradient
     methods) to find the minimium, and can search large areas of candidate
@@ -64,10 +67,10 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals.
     tol : float, optional
-        When the mean of the population energies, multiplied by tol,
-        divided by the standard deviation of the population energies
-        is greater than 1 the solving process terminates:
-        ``convergence = mean(pop) * tol / stdev(pop) > 1``
+        Relative tolerance for convergence, the solving stops when
+        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        where and `atol` and `tol` are the absolute and relative tolerance
+        respectively.
     mutation : float or tuple(float, float), optional
         The mutation constant. In the literature this is also known as
         differential weight, being denoted by F.
@@ -114,6 +117,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         maximize coverage of the available parameter space. 'random' initializes
         the population randomly - this has the drawback that clustering can
         occur, preventing the whole of parameter space being covered.
+    atol : float, optional
+        Absolute tolerance for convergence, the solving stops when
+        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        where and `atol` and `tol` are the absolute and relative tolerance
+        respectively.
 
     Returns
     -------
@@ -201,8 +209,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          recombination=recombination,
                                          seed=seed, polish=polish,
                                          callback=callback,
-                                         disp=disp,
-                                         init=init)
+                                         disp=disp, init=init, atol=atol)
     return solver.solve()
 
 
@@ -249,10 +256,10 @@ class DifferentialEvolutionSolver(object):
         A multiplier for setting the total population size.  The population has
         ``popsize * len(x)`` individuals.
     tol : float, optional
-        When the mean of the population energies, multiplied by tol,
-        divided by the standard deviation of the population energies
-        is greater than 1 the solving process terminates:
-        ``convergence = mean(pop) * tol / stdev(pop) > 1``
+        Relative tolerance for convergence, the solving stops when
+        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        where and `atol` and `tol` are the absolute and relative tolerance
+        respectively.
     mutation : float or tuple(float, float), optional
         The mutation constant. In the literature this is also known as
         differential weight, being denoted by F.
@@ -298,6 +305,11 @@ class DifferentialEvolutionSolver(object):
 
             - 'latinhypercube'
             - 'random'
+    atol : float, optional
+        Absolute tolerance for convergence, the solving stops when
+        ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
+        where and `atol` and `tol` are the absolute and relative tolerance
+        respectively.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -316,7 +328,7 @@ class DifferentialEvolutionSolver(object):
                  strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
-                 init='latinhypercube'):
+                 init='latinhypercube', atol=0):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -328,7 +340,9 @@ class DifferentialEvolutionSolver(object):
 
         self.callback = callback
         self.polish = polish
-        self.tol = tol
+
+        # relative and absolute tolerances for convergence
+        self.tol, self.atol = tol, atol
 
         # Mutation constant should be in [0, 2). If specified as a sequence
         # then dithering is performed.
@@ -376,7 +390,7 @@ class DifferentialEvolutionSolver(object):
 
         self.parameter_count = np.size(self.limits, 1)
 
-        self.random_number_generator = _make_random_gen(seed)
+        self.random_number_generator = check_random_state(seed)
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
@@ -497,7 +511,7 @@ class DifferentialEvolutionSolver(object):
             self._calculate_population_energies()
 
         # do the optimisation.
-        for nit in range(1, self.maxiter + 1):
+        for nit in xrange(1, self.maxiter + 1):
             # evolve the population by a generation
             try:
                 next(self)
@@ -511,8 +525,7 @@ class DifferentialEvolutionSolver(object):
                       % (nit,
                          self.population_energies[0]))
 
-            # stop when the fractional s.d. of the population is less than tol
-            # of the mean energy
+            # should the solver terminate?
             convergence = self.convergence
 
             if (self.callback and
@@ -524,7 +537,10 @@ class DifferentialEvolutionSolver(object):
                                   'by returning True')
                 break
 
-            if convergence < self.tol or warning_flag:
+            intol = (np.std(self.population_energies) <=
+                     self.atol +
+                     self.tol * np.abs(np.mean(self.population_energies)))
+            if warning_flag or intol:
                 break
 
         else:
@@ -770,20 +786,3 @@ class DifferentialEvolutionSolver(object):
         idxs = idxs[:number_samples]
         return idxs
 
-
-def _make_random_gen(seed):
-    """Turn seed into a np.random.RandomState instance
-
-    If seed is None, return the RandomState singleton used by np.random.
-    If seed is an int, return a new RandomState instance seeded with seed.
-    If seed is already a RandomState instance, return it.
-    Otherwise raise ValueError.
-    """
-    if seed is None or seed is np.random:
-        return np.random.mtrand._rand
-    if isinstance(seed, (numbers.Integral, np.integer)):
-        return np.random.RandomState(seed)
-    if isinstance(seed, np.random.RandomState):
-        return seed
-    raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
-                     ' instance' % seed)

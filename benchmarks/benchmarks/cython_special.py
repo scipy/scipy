@@ -41,36 +41,34 @@ class _CythonSpecialMeta(type):
         param_names = ['N', 'api']
 
         def get_time_func(name, args):
-            py_func = getattr(cython_special, '_bench_{}_py'.format(name))
-            cy_func = getattr(cython_special, '_bench_{}_cy'.format(name))
 
-            m = re.match('^(.*)_[dDl]+$', name)
-            np_func = getattr(special, m.group(1))
-
-            @with_attributes(params=[(args,)] + params, param_names=['argument'] + param_names)
-            def func(self, args, N, api):
+            @with_attributes(params=[(name,), (args,)] + params,
+                             param_names=['name', 'argument'] + param_names)
+            def func(self, name, args, N, api):
                 if api == 'python':
-                    py_func(N, *args)
+                    self.py_func(N, *args)
                 elif api == 'numpy':
-                    np_func(*self.obj)
+                    self.np_func(*self.obj)
                 else:
-                    cy_func(N, *args)
+                    self.cy_func(N, *args)
 
             func.__name__ = 'time_' + name
             return func
 
-        for name in dir(cython_special):
-            m = re.match('^_bench_(.*)_cy$', name)
-            if m:
-                name = m.group(1)
-                func = get_time_func(name, FUNC_ARGS[name])
-                dct[func.__name__] = func
+        for name in FUNC_ARGS.keys():
+            func = get_time_func(name, FUNC_ARGS[name])
+            dct[func.__name__] = func
 
         return type.__new__(cls, cls_name, bases, dct)
 
 
 class CythonSpecial(six.with_metaclass(_CythonSpecialMeta)):
-    def setup(self, args, N, api):
+    def setup(self, name, args, N, api):
+        self.py_func = getattr(cython_special, '_bench_{}_py'.format(name))
+        self.cy_func = getattr(cython_special, '_bench_{}_cy'.format(name))
+        m = re.match('^(.*)_[dDl]+$', name)
+        self.np_func = getattr(special, m.group(1))
+
         self.obj = []
         for arg in args:
             self.obj.append(arg*np.ones(N))

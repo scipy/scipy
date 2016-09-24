@@ -492,7 +492,9 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     scipy.special : for coefficients and roots of orthogonal polynomials
 
     """
-    return nquad(func, [lambda x: [gfun(x), hfun(x)], [a, b]], args=args)
+    def temp_ranges(*args):
+        return [gfun(args[0]), hfun(args[0])]
+    return nquad(func, [temp_ranges, [a, b]], args=args)
 
 
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,

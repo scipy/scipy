@@ -942,9 +942,9 @@ def distance_matrix(x, y, p=2, threshold=1000000):
     Parameters
     ----------
     x : (M, K) array_like
-        TODO: description needed
+        Matrix of M vectors in K dimensions.
     y : (N, K) array_like
-        TODO: description needed
+        Matrix of N vectors in K dimensions.
     p : float, 1 <= p <= infinity
         Which Minkowski p-norm to use.
     threshold : positive int
@@ -954,7 +954,8 @@ def distance_matrix(x, y, p=2, threshold=1000000):
     Returns
     -------
     result : (M, N) ndarray
-        Distance matrix.
+        Matrix containing the distance from every vector in `x` to every vector
+        in `y`.
 
     Examples
     --------

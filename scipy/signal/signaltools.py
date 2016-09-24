@@ -1508,6 +1508,10 @@ def hilbert(x, N=None, axis=-1):
     xa : ndarray
         Analytic signal of `x`, of each 1-D array along `axis`
 
+    See Also
+    --------
+    scipy.fftpack.hilbert : Return Hilbert transform of a periodic sequence x.
+
     Notes
     -----
     The analytic signal ``x_a(t)`` of signal ``x(t)`` is:
@@ -2207,6 +2211,7 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape[axis] = len(W)
         W.shape = newshape
         X = X * W
+        W.shape = (Nx,)
     sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
     newshape[axis] = num
@@ -3198,8 +3203,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
     >>> from scipy import signal
     >>> b, a = signal.ellip(13, 0.009, 80, 0.05, output='ba')
     >>> sos = signal.ellip(13, 0.009, 80, 0.05, output='sos')
-    >>> x = np.zeros(700)
-    >>> x[0] = 1.
+    >>> x = signal.unit_impulse(700)
     >>> y_tf = signal.lfilter(b, a, x)
     >>> y_sos = signal.sosfilt(sos, x)
     >>> plt.plot(y_tf, 'r', label='TF')

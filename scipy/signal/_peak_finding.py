@@ -26,7 +26,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         Array in which to find the relative extrema.
     comparator : callable
         Function to use to compare two data points.
-        Should take 2 numbers as arguments.
+        Should take two arrays as arguments.
     axis : int, optional
         Axis over which to select from `data`.  Default is 0.
     order : int, optional
@@ -187,7 +187,7 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         Array in which to find the relative extrema.
     comparator : callable
         Function to use to compare two data points.
-        Should take 2 numbers as arguments.
+        Should take two arrays as arguments.
     axis : int, optional
         Axis over which to select from `data`.  Default is 0.
     order : int, optional
@@ -464,7 +464,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     Returns
     -------
-    peaks_indices : list
+    peaks_indices : ndarray
         Indices of the locations in the `vector` where peaks were found.
         The list is sorted.
 
@@ -504,6 +504,8 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ([32], array([ 1.6]), array([ 0.9995736]))
 
     """
+    widths = np.asarray(widths)
+
     if gap_thresh is None:
         gap_thresh = np.ceil(widths[0])
     if max_distances is None:
@@ -515,5 +517,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    min_snr=min_snr, noise_perc=noise_perc)
-    max_locs = [x[1][0] for x in filtered]
-    return sorted(max_locs)
+    max_locs = np.asarray([x[1][0] for x in filtered])
+    max_locs.sort()
+
+    return max_locs

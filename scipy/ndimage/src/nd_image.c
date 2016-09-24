@@ -334,9 +334,17 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
                                         "extra_keywords must be a dictionary");
         goto exit;
     }
-    if (NpyCapsule_Check(fnc)) {
-        func = NpyCapsule_AsVoidPtr(fnc);
-        data = NpyCapsule_GetDesc(fnc);
+    if (PyCapsule_CheckExact(fnc)) {
+        func = PyCapsule_GetPointer(fnc, NULL);
+        data = PyCapsule_GetContext(fnc);
+    } else if (NpyCapsule_Check(fnc)) {
+	/*
+	 * NpyCapsules are PyCObjects in Py2k and PyCapsules in Py3k,
+	 * so this check is redundant in Py3k but lets the user pass
+	 * in PyCObects in Py2k.
+	 */
+	func = NpyCapsule_AsVoidPtr(fnc);
+	data = NpyCapsule_GetDesc(fnc);
     } else if (PyCallable_Check(fnc)) {
         cbdata.function = fnc;
         cbdata.extra_arguments = extra_arguments;
@@ -412,9 +420,17 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
                                         "extra_keywords must be a dictionary");
         goto exit;
     }
-    if (NpyCapsule_Check(fnc)) {
-        func = NpyCapsule_AsVoidPtr(fnc);
-        data = NpyCapsule_GetDesc(fnc);
+    if (PyCapsule_CheckExact(fnc)) {
+        func = PyCapsule_GetPointer(fnc, NULL);
+        data = PyCapsule_GetContext(fnc);
+    } else if (NpyCapsule_Check(fnc)) {
+	/*
+	 * NpyCapsules are PyCObjects in Py2k and PyCapsules in Py3k,
+	 * so this check is redundant in Py3k but lets the user pass
+	 * in PyCObects in Py2k.
+	 */
+	func = NpyCapsule_AsVoidPtr(fnc);
+	data = NpyCapsule_GetDesc(fnc);
     } else if (PyCallable_Check(fnc)) {
         cbdata.function = fnc;
         cbdata.extra_arguments = extra_arguments;
@@ -573,9 +589,17 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
                                             "extra_keywords must be a dictionary");
             goto exit;
         }
-        if (NpyCapsule_Check(fnc)) {
-            func = NpyCapsule_AsVoidPtr(fnc);
-            data = NpyCapsule_GetDesc(fnc);
+        if (PyCapsule_CheckExact(fnc)) {
+	    func = PyCapsule_GetPointer(fnc, NULL);
+            data = PyCapsule_GetContext(fnc);
+	} else if (NpyCapsule_Check(fnc)) {
+	    /*
+	     * NpyCapsules are PyCObjects in Py2k and PyCapsules in Py3k,
+	     * so this check is redundant in Py3k but lets the user pass
+	     * in PyCObects in Py2k.
+	     */
+	    func = NpyCapsule_AsVoidPtr(fnc);
+	    data = NpyCapsule_GetDesc(fnc);
         } else if (PyCallable_Check(fnc)) {
             func = Py_Map;
             cbdata.function = fnc;

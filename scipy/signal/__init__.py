@@ -145,6 +145,8 @@ Matlab-style IIR filter design
    ellip -- Elliptic (Cauer)
    ellipord
    bessel -- Bessel (no order selection available -- try butterod)
+   iirnotch      -- Design second-order IIR notch digital filter.
+   iirpeak       -- Design second-order IIR peak (resonant) digital filter.
 
 Continuous-Time Linear Systems
 ==============================
@@ -199,19 +201,20 @@ LTI Representations
    sos2tf        -- second-order sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
    place_poles   -- pole placement.
-   
+
 Waveforms
 =========
 
 .. autosummary::
    :toctree: generated/
 
-   chirp       -- Frequency swept cosine signal, with several freq functions.
-   gausspulse  -- Gaussian modulated sinusoid
-   max_len_seq -- Maximum length sequence
-   sawtooth    -- Periodic sawtooth
-   square      -- Square wave
-   sweep_poly  -- Frequency swept cosine signal; freq is arbitrary polynomial
+   chirp        -- Frequency swept cosine signal, with several freq functions.
+   gausspulse   -- Gaussian modulated sinusoid
+   max_len_seq  -- Maximum length sequence
+   sawtooth     -- Periodic sawtooth
+   square       -- Square wave
+   sweep_poly   -- Frequency swept cosine signal; freq is arbitrary polynomial
+   unit_impulse -- Discrete unit impulse
 
 Window functions
 ================

@@ -22,11 +22,40 @@ This release requires Python 2.7 or 3.4-3.5 and NumPy 1.7.1 or greater.
 New features
 ============
 
+`scipy.ndimage` improvements
+----------------------------
+
+The callback function C API supports PyCapsules in Python 2.7
+
+`scipy.optimize` improvements
+-----------------------------
+
+The `scipy.optimize.basinhopping` global minimizer obtained a new keyword,
+`seed`, which can be used to seed the random number generator and obtain
+repeatable minimizations.
+
+The keyword `sigma` in `scipy.optimize.curve_fit` was overloaded to also accept
+the covariance matrix of errors in the data.
+
 `scipy.signal` improvements
 ---------------------------
 
 The function `scipy.signal.sosfreqz` was added to compute the frequency
 response from second-order sections.
+
+The function `scipy.signal.unit_impulse` was added to conveniently
+generate an impulse function.
+
+The function `scipy.signal.irrnotch` was added to design second-order
+IIR notch filters that can be used to remove a frequency component from
+a signal. The dual function  `scipy.signal.irrpeak` was added to
+compute the coeficients of a second-order IIR peak (resonant) filter.
+
+`scipy.sparse` improvements
+---------------------------
+
+The functions `scipy.sparse.save_npz` and `scipy.sparse.load_npz` were added,
+providing simple serialization for some sparse formats.
 
 
 Deprecated features
@@ -37,11 +66,21 @@ Deprecated features
 Backwards incompatible changes
 ==============================
 
+`scipy.spatial.distance.squareform` now returns arrays of the same dtype as
+the input, instead of always float64.
+
+The function `scipy.signal.find_peaks_cwt()` now returns an array instead of
+a list.
 
 
 Other changes
 =============
 
+SciPy wheels will now report their dependency on ``numpy`` on all platforms.
+This change was made because Numpy wheels are available, and because the pip
+upgrade behavior is finally changing for the better (use
+``--upgrade-strategy=only-if-needed`` for ``pip >= 8.2``; that behavior will
+become the default in the next major version of ``pip``).
 
 
 

@@ -404,6 +404,11 @@ add_newdoc("scipy.special", "binom",
     binom(n, k)
 
     Binomial coefficient
+
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
+    
     """)
 
 add_newdoc("scipy.special", "btdtria",
@@ -1800,29 +1805,67 @@ add_newdoc("scipy.special", "gamma",
     """)
 
 add_newdoc("scipy.special", "gammainc",
-    """
+    r"""
     gammainc(a, x)
 
-    Incomplete gamma function
+    Regularized lower incomplete gamma function.
 
-    Defined as::
+    Defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        \frac{1}{\Gamma(a)} \int_0^x t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
+    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where
+    `gammaincc` is the regularized upper incomplete gamma function.
+
+    Notes
+    -----
+    The implementation largely follows that of [1]_.
+
+    See also
+    --------
+    gammaincc : regularized upper incomplete gamma function
+    gammaincinv : inverse to ``gammainc`` versus ``x``
+    gammainccinv : inverse to ``gammaincc`` versus ``x``
+        
+    References
+    ----------
+    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammaincc",
-    """
+    r"""
     gammaincc(a, x)
 
-    Complemented incomplete gamma integral
+    Regularized upper incomplete gamma function.
 
-    Defined as::
+    Defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a, x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        \frac{1}{\Gamma(a)} \int_x^\infty t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
+    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where `gammainc`
+    is the regularized lower incomplete gamma function.
+
+    Notes
+    -----
+    The implementation largely follows that of [1]_.
+
+    See also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse to ``gammainc`` versus ``x``
+    gammainccinv : inverse to ``gammaincc`` versus ``x``
+        
+    References
+    ----------
+    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammainccinv",
@@ -2621,6 +2664,11 @@ add_newdoc("scipy.special", "i1e",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    """)
+
+add_newdoc("scipy.special", "_igam_fac",
+    """
+    Internal function, do not use.
     """)
 
 add_newdoc("scipy.special", "it2i0k0",
@@ -3551,11 +3599,26 @@ add_newdoc("scipy.special", "kve",
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     """)
 
+add_newdoc("scipy.special", "_lanczos_sum_expg_scaled",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_lgam1p",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("scipy.special", "log1p",
     """
     log1p(x)
 
     Calculates log(1+x) for use when `x` is near zero
+    """)
+
+add_newdoc("scipy.special", "_log1pmx",
+    """
+    Internal function, do not use.
     """)
 
 add_newdoc('scipy.special', 'logit',
@@ -5632,17 +5695,32 @@ add_newdoc("scipy.special", "loggamma",
     r"""
     loggamma(z, out=None)
 
-    Principal branch of the logarithm of the Gamma function. It is
-    defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
-    extended to the complex plane by analytic continuation. The
-    implementation here is based on [hare1997]_.
+    Principal branch of the logarithm of the Gamma function.
 
-    The function has a single branch cut on the negative real axis and
-    is taken to be continuous when approaching the axis from
-    above. Note that it is not generally true that
-    :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real parts of
-    the functions do agree. The benefit of not defining ``loggamma``
-    as :math:`\log(\Gamma(z))` is that the latter function has a
+    Defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
+    extended to the complex plane by analytic continuation. The
+    function has a single branch cut on the negative real axis.
+
+    .. versionadded:: 0.18.0
+
+    Parameters
+    ----------
+    z : array-like
+        Values in the complex plain at which to compute ``loggamma``
+    out : ndarray, optional
+        Output array for computed values of ``loggamma``
+
+    Returns
+    -------
+    loggamma : ndarray
+        Values of ``loggamma`` at z.
+
+    Notes
+    -----
+    It is not generally true that :math:`\log\Gamma(z) =
+    \log(\Gamma(z))`, though the real parts of the functions do
+    agree. The benefit of not defining ``loggamma`` as
+    :math:`\log(\Gamma(z))` is that the latter function has a
     complicated branch cut structure whereas ``loggamma`` is analytic
     except for on the negative real axis.
 
@@ -5660,19 +5738,7 @@ add_newdoc("scipy.special", "loggamma",
     errors will introduce small spurious imaginary components in
     ``exp(loggamma(x))``.
 
-    .. versionadded:: 0.18.0
-
-    Parameters
-    ----------
-    z : array-like
-        Values in the complex plain at which to compute ``loggamma``
-    out : ndarray, optional
-        Output array for computed values of ``loggamma``
-
-    Returns
-    -------
-    loggamma : ndarray
-        Values of ``loggamma`` at z.
+    The implementation here is based on [hare1997]_.
 
     See also
     --------

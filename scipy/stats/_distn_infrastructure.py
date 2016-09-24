@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import string_types, exec_
+from scipy._lib.six import string_types, exec_, PY3
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
@@ -18,7 +18,7 @@ from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state, _lazywhere, _lazyselect
 from scipy._lib._util import _valarray as valarray
 
-from scipy.special import (comb, chndtr, entr, kl_div, xlogy, ive)
+from scipy.special import (comb, chndtr, entr, rel_entr, kl_div, xlogy, ive)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -39,12 +39,11 @@ import numpy as np
 
 from ._constants import _XMAX
 
-try:
-    from new import instancemethod
-except ImportError:
-    # Python 3
+if PY3:
     def instancemethod(func, obj, cls):
         return types.MethodType(func, obj)
+else:
+    instancemethod = types.MethodType
 
 
 # These are the docstring parts used for substitution in specific
@@ -2496,7 +2495,7 @@ def entropy(pk, qk=None, base=None):
         if len(qk) != len(pk):
             raise ValueError("qk and pk must have same length.")
         qk = 1.0*qk / np.sum(qk, axis=0)
-        vec = kl_div(pk, qk)
+        vec = rel_entr(pk, qk)
     S = np.sum(vec, axis=0)
     if base is not None:
         S /= log(base)

@@ -55,11 +55,17 @@ For data on a grid:
    RegularGridInterpolator
    RectBivariateSpline
 
-.. seealso:: `scipy.ndimage.interpolation.map_coordinates`
+.. seealso::
+
+    `scipy.ndimage.map_coordinates`
 
 Tensor product polynomials:
 
+.. autosummary::
+   :toctree: generated/
+
    NdPPoly
+
 
 1-D Splines
 ===========
@@ -129,8 +135,8 @@ Additional tools
 
 .. seealso::
 
-   `scipy.ndimage.interpolation.map_coordinates`,
-   `scipy.ndimage.interpolation.spline_filter`,
+   `scipy.ndimage.map_coordinates`,
+   `scipy.ndimage.spline_filter`,
    `scipy.signal.resample`,
    `scipy.signal.bspline`,
    `scipy.signal.gauss_spline`,

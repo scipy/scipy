@@ -37,10 +37,92 @@ def _truncate(w, needed):
         return w
 
 
+def _cos_win(M, a, sym=True):
+    r"""
+    Generic weighted sum of cosine terms window
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window
+    a : array_like
+        Sequence of weighting coefficients. This uses the convention of being
+        centered on the origin, so these will typically all be positive
+        numbers, not alternating sign.
+    sym : bool, optional
+        When True (default), generates a symmetric window, for use in filter
+        design.
+        When False, generates a periodic window, for use in spectral analysis.
+
+    References
+    ----------
+    .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
+           Transactions on Acoustics, Speech, and Signal Processing, vol. 29,
+           no. 1, pp. 84-91, Feb 1981. doi: 10.1109/TASSP.1981.1163506
+    .. [2] Heinzel G. et al., "Spectrum and spectral density estimation by the
+           Discrete Fourier transform (DFT), including a comprehensive list of
+           window functions and some new flat-top windows", February 15, 2002
+           https://holometer.fnal.gov/GH_FFT.pdf
+
+    Examples
+    --------
+    Heinzel describes a flat-top window named "HFT90D" with formula: [2]_
+
+    .. math::  w_j = 1 - 1.942604 \cos(z) + 1.340318 \cos(2z)
+               - 0.440811 \cos(3z) + 0.043097 \cos(4z)
+
+    where
+
+    .. math::  z = \frac{2 \pi j}{N}, j = 0...N - 1
+
+    Since this uses the convention of starting at the origin, to reproduce the
+    window, we need to convert every other coefficient to a positive number:
+
+    >>> HFT90D = [1, 1.942604, 1.340318, 0.440811, 0.043097]
+
+    The paper states that the highest sidelobe is at -90.2 dB.  Reproduce
+    Figure 42 by plotting the window and its frequency response, and confirm
+    the sidelobe level in red:
+
+    >>> from scipy import signal
+    >>> from scipy.fftpack import fft, fftshift
+    >>> import matplotlib.pyplot as plt
+
+    >>> window = signal._cos_win(1000, HFT90D, sym=False)
+    >>> plt.plot(window)
+    >>> plt.title("HFT90D window")
+    >>> plt.ylabel("Amplitude")
+    >>> plt.xlabel("Sample")
+
+    >>> plt.figure()
+    >>> A = fft(window, 10000) / (len(window)/2.0)
+    >>> freq = np.linspace(-0.5, 0.5, len(A))
+    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> plt.plot(freq, response)
+    >>> plt.axis([-50/1000, 50/1000, -140, 0])
+    >>> plt.title("Frequency response of the HFT90D window")
+    >>> plt.ylabel("Normalized magnitude [dB]")
+    >>> plt.xlabel("Normalized frequency [cycles per sample]")
+    >>> plt.axhline(-90.2, color='red')
+
+    """
+    if _len_guards(M):
+        return np.ones(M)
+    M, needs_trunc = _extend(M, sym)
+
+    fac = np.linspace(-np.pi, np.pi, M)
+    w = np.zeros(M)
+    for k in range(len(a)):
+        w += a[k] * np.cos(k * fac)
+
+    return _truncate(w, needs_trunc)
+
+
 def boxcar(M, sym=True):
     """Return a boxcar or rectangular window.
 
-    Included for completeness, this is equivalent to no window at all.
+    Also known as a rectangular window or Dirichlet window, this is equivalent
+    to no window at all.
 
     Parameters
     ----------
@@ -108,6 +190,10 @@ def triang(M, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
 
+    See Also
+    --------
+    bartlett : A triangular window that touches zero
+
     Examples
     --------
     Plot the window and its frequency response:
@@ -166,6 +252,11 @@ def parzen(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
+
+    References
+    ----------
+    .. [1] E. Parzen, "Mathematical Considerations in the Estimation of
+           Spectra", Technometrics,  Vol. 3, No. 2 (May, 1961), pp. 167-190
 
     Examples
     --------
@@ -293,6 +384,12 @@ def blackman(M, sym=True):
 
     .. math::  w(n) = 0.42 - 0.5 \cos(2\pi n/M) + 0.08 \cos(4\pi n/M)
 
+    The "exact Blackman" window was designed to null out the third and fourth
+    sidelobes, but has discontinuities at the boundaries, resulting in a
+    6 dB/oct fall-off.  This window is an approximation of the "exact" window,
+    which does not null the sidelobes as well, but is smooth at the edges,
+    improving the fall-off rate to 18 dB/oct. [3]_
+
     Most references to the Blackman window come from the signal processing
     literature, where it is used as one of many windowing functions for
     smoothing values.  It is also known as an apodization (which means
@@ -307,6 +404,9 @@ def blackman(M, sym=True):
            spectra, Dover Publications, New York.
     .. [2] Oppenheim, A.V., and R.W. Schafer. Discrete-Time Signal Processing.
            Upper Saddle River, NJ: Prentice-Hall, 1999, pp. 468-471.
+    .. [3] Harris, Fredric J. (Jan 1978). "On the use of Windows for Harmonic
+           Analysis with the Discrete Fourier Transform". Proceedings of the
+           IEEE 66 (1): 51-83. doi:10.1109/PROC.1978.10837
 
     Examples
     --------
@@ -338,15 +438,15 @@ def blackman(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    w = (0.42 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1)) +
-         0.08 * np.cos(4.0 * np.pi * n / (M - 1)))
+    w = _cos_win(M, [0.42, 0.50, 0.08])
 
     return _truncate(w, needs_trunc)
 
 
 def nuttall(M, sym=True):
     """Return a minimum 4-term Blackman-Harris window according to Nuttall.
+
+    This variation is called "Nuttall4c" by Heinzel. [2]_
 
     Parameters
     ----------
@@ -363,6 +463,16 @@ def nuttall(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
+
+    References
+    ----------
+    .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
+           Transactions on Acoustics, Speech, and Signal Processing, vol. 29,
+           no. 1, pp. 84-91, Feb 1981. doi: 10.1109/TASSP.1981.1163506
+    .. [2] Heinzel G. et al., "Spectrum and spectral density estimation by the
+           Discrete Fourier transform (DFT), including a comprehensive list of
+           window functions and some new flat-top windows", February 15, 2002
+           https://holometer.fnal.gov/GH_FFT.pdf
 
     Examples
     --------
@@ -393,11 +503,7 @@ def nuttall(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    a = [0.3635819, 0.4891775, 0.1365995, 0.0106411]
-    n = np.arange(0, M)
-    fac = n * 2 * np.pi / (M - 1.0)
-    w = (a[0] - a[1] * np.cos(fac) +
-         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac))
+    w = _cos_win(M, [0.3635819, 0.4891775, 0.1365995, 0.0106411])
 
     return _truncate(w, needs_trunc)
 
@@ -450,11 +556,7 @@ def blackmanharris(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    a = [0.35875, 0.48829, 0.14128, 0.01168]
-    n = np.arange(0, M)
-    fac = n * 2 * np.pi / (M - 1.0)
-    w = (a[0] - a[1] * np.cos(fac) +
-         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac))
+    w = _cos_win(M, [0.35875, 0.48829, 0.14128, 0.01168])
 
     return _truncate(w, needs_trunc)
 
@@ -477,6 +579,20 @@ def flattop(M, sym=True):
     w : ndarray
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
+
+    Notes
+    -----
+    Flat top windows are used for taking accurate measurements of signal
+    amplitude in the frequency domain, with minimal scalloping error from the
+    center of a frequency bin to its edges, compared to others.  This is a
+    5th-order cosine window, with the 5 terms optimized to make the main lobe
+    maximally flat. [1]_
+
+    References
+    ----------
+    .. [1] D'Antona, Gabriele, and A. Ferrero, "Digital Signal Processing for
+           Measurement Systems", Springer Media, 2006, p. 70
+           doi: 10.1007/0-387-28666-7
 
     Examples
     --------
@@ -507,12 +623,8 @@ def flattop(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    a = [0.2156, 0.4160, 0.2781, 0.0836, 0.0069]
-    n = np.arange(0, M)
-    fac = n * 2 * np.pi / (M - 1.0)
-    w = (a[0] - a[1] * np.cos(fac) +
-         a[2] * np.cos(2 * fac) - a[3] * np.cos(3 * fac) +
-         a[4] * np.cos(4 * fac))
+    a = [0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368]
+    w = _cos_win(M, a)
 
     return _truncate(w, needs_trunc)
 
@@ -542,6 +654,10 @@ def bartlett(M, sym=True):
         The triangular window, with the first and last samples equal to zero
         and the maximum value normalized to 1 (though the value 1 does not
         appear if `M` is even and `sym` is True).
+
+    See Also
+    --------
+    triang : A triangular window that does not touch zero at the ends
 
     Notes
     -----
@@ -693,8 +809,7 @@ def hann(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    w = 0.5 - 0.5 * np.cos(2.0 * np.pi * n / (M - 1))
+    w = _cos_win(M, [0.5, 0.5])
 
     return _truncate(w, needs_trunc)
 
@@ -919,8 +1034,7 @@ def hamming(M, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    n = np.arange(0, M)
-    w = 0.54 - 0.46 * np.cos(2.0 * np.pi * n / (M - 1))
+    w = _cos_win(M, [0.54, 0.46])
 
     return _truncate(w, needs_trunc)
 
@@ -969,8 +1083,8 @@ def kaiser(M, beta, sym=True):
     maximizes the energy in the main lobe of the window relative to total
     energy.
 
-    The Kaiser can approximate many other windows by varying the beta
-    parameter.
+    The Kaiser can approximate other windows by varying the beta parameter.
+    (Some literature uses alpha = beta/pi.) [4]_
 
     ====  =======================
     beta  Window shape
@@ -984,7 +1098,7 @@ def kaiser(M, beta, sym=True):
     A beta value of 14 is probably a good starting point. Note that as beta
     gets large, the window narrows, and so the number of samples needs to be
     large enough to sample the increasingly narrow spike, otherwise NaNs will
-    get returned.
+    be returned.
 
     Most references to the Kaiser window come from the signal processing
     literature, where it is used as one of many windowing functions for
@@ -1001,6 +1115,9 @@ def kaiser(M, beta, sym=True):
            University of Alberta Press, 1975, pp. 177-178.
     .. [3] Wikipedia, "Window function",
            http://en.wikipedia.org/wiki/Window_function
+    .. [4] F. J. Harris, "On the use of windows for harmonic analysis with the
+           discrete Fourier transform," Proceedings of the IEEE, vol. 66,
+           no. 1, pp. 51-83, Jan. 1978. doi: 10.1109/PROC.1978.10837
 
     Examples
     --------
@@ -1322,6 +1439,15 @@ def slepian(M, width, sym=True):
     -------
     w : ndarray
         The window, with the maximum value always normalized to 1
+
+    References
+    ----------
+    .. [1] D. Slepian & H. O. Pollak: "Prolate spheroidal wave functions,
+           Fourier analysis and uncertainty-I," Bell Syst. Tech. J., vol.40,
+           pp.43-63, 1961. https://archive.org/details/bstj40-1-43
+    .. [2] H. J. Landau & H. O. Pollak: "Prolate spheroidal wave functions,
+           Fourier analysis and uncertainty-II," Bell Syst. Tech. J. , vol.40,
+           pp.65-83, 1961. https://archive.org/details/bstj40-1-65
 
     Examples
     --------

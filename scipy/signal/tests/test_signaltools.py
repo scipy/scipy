@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
 import sys
@@ -533,6 +534,11 @@ class TestResample(TestCase):
         # Other degenerate conditions
         assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
+
+        # test for issue #6505 - should not modify window.shape when axis ≠ 0
+        sig2 = np.tile(np.arange(160), (2,1))
+        signal.resample(sig2, num, axis=-1, window=win)
+        assert_(win.shape == (160,))
 
     def test_fft(self):
         # Test FFT-based resampling

@@ -7,6 +7,7 @@ import numpy as np
 from numpy import cos, sin
 import scipy.optimize
 import collections
+from scipy._lib._util import check_random_state
 
 __all__ = ['basinhopping']
 
@@ -248,12 +249,20 @@ class RandomDisplacement(object):
     Add a random displacement of maximum size, stepsize, to the coordinates
 
     update x inplace
+
+    Parameters
+    ----------
+    stepsize : float, optional
+        stepsize
+    random_state : None or `np.random.RandomState` instance, optional
+        The random number generator that generates the displacements
     """
-    def __init__(self, stepsize=0.5):
+    def __init__(self, stepsize=0.5, random_state=None):
         self.stepsize = stepsize
+        self.random_state = check_random_state(random_state)
 
     def __call__(self, x):
-        x += np.random.uniform(-self.stepsize, self.stepsize, np.shape(x))
+        x += self.random_state.uniform(-self.stepsize, self.stepsize, np.shape(x))
         return x
 
 
@@ -276,13 +285,19 @@ class MinimizerWrapper(object):
 class Metropolis(object):
     """
     Metropolis acceptance criterion
+
+    Parameters
+    ----------
+    random_state : None or `np.random.RandomState` object
+        Random number generator used for acceptance test
     """
-    def __init__(self, T):
+    def __init__(self, T, random_state=None):
         self.beta = 1.0 / T
+        self.random_state = check_random_state(random_state)
 
     def accept_reject(self, energy_new, energy_old):
         w = min(1.0, np.exp(-(energy_new - energy_old) * self.beta))
-        rand = np.random.rand()
+        rand = self.random_state.rand()
         return w >= rand
 
     def __call__(self, **kwargs):
@@ -295,7 +310,8 @@ class Metropolis(object):
 
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
-                 callback=None, interval=50, disp=False, niter_success=None):
+                 callback=None, interval=50, disp=False, niter_success=None,
+                 seed=None):
     """
     Find the global minimum of a function using the basin-hopping algorithm
 
@@ -357,7 +373,18 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
-
+    seed : int or `np.random.RandomState`, optional
+        If `seed` is not specified the `np.RandomState` singleton is used.
+        If `seed` is an int, a new `np.random.RandomState` instance is used,
+        seeded with seed.
+        If `seed` is already a `np.random.RandomState instance`, then that
+        `np.random.RandomState` instance is used.
+        Specify `seed` for repeatable minimizations. The random numbers
+        generated with this seed only affect the default Metropolis
+        `accept_test` and the default `take_step`. If you supply your own
+        `take_step` and `accept_test`, and these functions use random
+        number generation, then those functions are responsible for the state
+        of their random number generator.
 
     Returns
     -------
@@ -564,6 +591,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     """
     x0 = np.array(x0)
 
+    # set up the np.random.RandomState generator
+    rng = check_random_state(seed)
+
     # set up minimizer
     if minimizer_kwargs is None:
         minimizer_kwargs = dict()
@@ -583,7 +613,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
             take_step_wrapped = take_step
     else:
         # use default
-        displace = RandomDisplacement(stepsize=stepsize)
+        displace = RandomDisplacement(stepsize=stepsize, random_state=rng)
         take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
                                              verbose=disp)
 
@@ -595,7 +625,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     else:
         accept_tests = []
     # use default
-    metropolis = Metropolis(T)
+    metropolis = Metropolis(T, random_state=rng)
     accept_tests.append(metropolis)
 
     if niter_success is None:

@@ -297,9 +297,9 @@ Gamma and Related Functions
    gammaln      -- Log of the absolute value of the Gamma function.
    loggamma     -- Principal branch of the logarithm of the Gamma function.
    gammasgn     -- Sign of the gamma function.
-   gammainc     -- Incomplete gamma integral.
+   gammainc     -- Regularized lower incomplete gamma function.
    gammaincinv  -- Inverse of gammainc.
-   gammaincc    -- Complemented incomplete gamma integral.
+   gammaincc    -- Regularized upper incomplete gamma function.
    gammainccinv -- Inverse of gammaincc.
    beta         -- Beta function.
    betaln       -- Log of the absolute value of the beta function.
@@ -408,21 +408,21 @@ arithmetic, and lose information of the original orthogonal polynomial.
 .. autosummary::
    :toctree: generated/
 
-   legendre    -- [+]Legendre polynomial P_n(x) (lpn -- for function).
-   chebyt      -- [+]Chebyshev polynomial T_n(x)
-   chebyu      -- [+]Chebyshev polynomial U_n(x)
-   chebyc      -- [+]Chebyshev polynomial C_n(x)
-   chebys      -- [+]Chebyshev polynomial S_n(x)
-   jacobi      -- [+]Jacobi polynomial P^(alpha,beta)_n(x)
-   laguerre    -- [+]Laguerre polynomial, L_n(x)
-   genlaguerre -- [+]Generalized (Associated) Laguerre polynomial, L^alpha_n(x)
-   hermite     -- [+]Hermite polynomial H_n(x)
-   hermitenorm -- [+]Normalized Hermite polynomial, He_n(x)
-   gegenbauer  -- [+]Gegenbauer (Ultraspherical) polynomials, C^(alpha)_n(x)
-   sh_legendre -- [+]shifted Legendre polynomial, P*_n(x)
-   sh_chebyt   -- [+]shifted Chebyshev polynomial, T*_n(x)
-   sh_chebyu   -- [+]shifted Chebyshev polynomial, U*_n(x)
-   sh_jacobi   -- [+]shifted Jacobi polynomial, J*_n(x) = G^(p,q)_n(x)
+   legendre    -- [+]Legendre polynomial.
+   chebyt      -- [+]Chebyshev polynomial of the first kind.
+   chebyu      -- [+]Chebyshev polynomial of the second kind.
+   chebyc      -- [+]Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
+   chebys      -- [+]Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
+   jacobi      -- [+]Jacobi polynomial.
+   laguerre    -- [+]Laguerre polynomial.
+   genlaguerre -- [+]Generalized (associated) Laguerre polynomial.
+   hermite     -- [+]Physicist's Hermite polynomial.
+   hermitenorm -- [+]Normalized (probabilist's) Hermite polynomial.
+   gegenbauer  -- [+]Gegenbauer (Ultraspherical) polynomial.
+   sh_legendre -- [+]Shifted Legendre polynomial.
+   sh_chebyt   -- [+]Shifted Chebyshev polynomial.
+   sh_chebyu   -- [+]Shifted Chebyshev polynomial.
+   sh_jacobi   -- [+]Shifted Jacobi polynomial.
 
 .. warning::
 
