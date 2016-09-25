@@ -256,6 +256,7 @@ def single(y):
     See Also
     --------
     linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='single', metric='euclidean')
@@ -275,12 +276,13 @@ def complete(y):
     -------
     Z : ndarray
         A linkage matrix containing the hierarchical clustering. See
-        the ``linkage`` function documentation for more information
+        the `linkage` function documentation for more information
         on its structure.
 
     See Also
     --------
-    linkage
+    linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='complete', metric='euclidean')
@@ -300,12 +302,13 @@ def average(y):
     -------
     Z : ndarray
         A linkage matrix containing the hierarchical clustering. See
-        the ``linkage`` function documentation for more information
+        the `linkage` function documentation for more information
         on its structure.
 
     See Also
     --------
     linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='average', metric='euclidean')
@@ -334,6 +337,7 @@ def weighted(y):
     See Also
     --------
     linkage : for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='weighted', metric='euclidean')
@@ -357,7 +361,7 @@ def centroid(y):
     2. ``Z = centroid(X)``
 
        Performs centroid/UPGMC linkage on the observation matrix ``X``
-       using Euclidean distance as the distance metric. See ``linkage``
+       using Euclidean distance as the distance metric. See `linkage`
        for more information on the return structure and algorithm.
 
     Parameters
@@ -374,7 +378,7 @@ def centroid(y):
     -------
     Z : ndarray
         A linkage matrix containing the hierarchical clustering. See
-        the ``linkage`` function documentation for more information
+        the `linkage` function documentation for more information
         on its structure.
 
     See Also
@@ -403,7 +407,7 @@ def median(y):
      2. ``Z = median(X)``
 
         Performs median/WPGMC linkage on the observation matrix ``X``
-        using Euclidean distance as the distance metric. See linkage
+        using Euclidean distance as the distance metric. See `linkage`
         for more information on the return structure and algorithm.
 
     Parameters
@@ -412,7 +416,7 @@ def median(y):
         A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
-        ``pdist`` returns. Alternatively, a collection of
+        ``pdist`` returns.  Alternatively, a collection of
         m observation vectors in n dimensions may be passed as
         a m by n array.
 
@@ -424,6 +428,7 @@ def median(y):
     See Also
     --------
     linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='median', metric='euclidean')
@@ -454,7 +459,7 @@ def ward(y):
         A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
-        ``pdist`` returns. Alternatively, a collection of
+        ``pdist`` returns.  Alternatively, a collection of
         m observation vectors in n dimensions may be passed as
         a m by n array.
 
@@ -466,6 +471,7 @@ def ward(y):
     See Also
     --------
     linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='ward', metric='euclidean')
@@ -616,10 +622,9 @@ def linkage(y, method='single', metric='euclidean'):
         for full descriptions.
     metric : str or function, optional
         The distance metric to use in the case that y is a collection of
-        observation vectors; ignored otherwise. See the ``distance.pdist``
+        observation vectors; ignored otherwise. See the ``pdist``
         function for a list of valid distance metrics. A custom distance
-        function can also be used. See the ``distance.pdist`` function for
-        details.
+        function can also be used.
 
     Returns
     -------
@@ -643,11 +648,16 @@ def linkage(y, method='single', metric='euclidean'):
        these distances are in fact Euclidean, otherwise the produced result
        will be incorrect.
 
+    See Also
+    --------
+    scipy.spatial.distance.pdist : pairwise distance metrics
+
     References
     ----------
     .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
            algorithms", `arXiv:1109.2378v1 <http://arxiv.org/abs/1109.2378v1>`_
            , 2011.
+
     """
     if method not in _LINKAGE_METHODS:
         raise ValueError("Invalid method: {0}".format(method))
@@ -851,7 +861,6 @@ class ClusterNode:
             The pre-order traversal.
 
         """
-
         # Do a preorder traversal, caching the result. To avoid having to do
         # recursion, we'll store the previous index we've visited in a vector.
         n = self.count
@@ -1044,13 +1053,14 @@ def to_tree(Z, rd=False):
 
     Examples
     --------
+    >>> from scipy.cluster import hierarchy
     >>> x = np.random.rand(10).reshape(5, 2)
     >>> Z = hierarchy.linkage(x)
     >>> hierarchy.to_tree(Z)
-    <scipy.cluster.hierarchy.ClusterNode object at ...>
+    <scipy.cluster.hierarchy.ClusterNode object at ...
     >>> rootnode, nodelist = hierarchy.to_tree(Z, rd=True)
     >>> rootnode
-    <scipy.cluster.hierarchy.ClusterNode object at ...>
+    <scipy.cluster.hierarchy.ClusterNode object at ...
     >>> len(nodelist)
     9
 
@@ -1137,7 +1147,7 @@ def cophenet(Z, Y=None):
     Returns
     -------
     c : ndarray
-        The cophentic correlation distance (if ``y`` is passed).
+        The cophentic correlation distance (if ``Y`` is passed).
     d : ndarray
         The cophenetic distance matrix in condensed form. The
         :math:`ij` th entry is the cophenetic distance between
@@ -1174,10 +1184,7 @@ def cophenet(Z, Y=None):
 
 def inconsistent(Z, d=2):
     r"""
-    Calculates inconsistency statistics on a linkage.
-
-    Note: This function behaves similarly to the MATLAB(TM)
-    inconsistent function.
+    Calculates inconsistency statistics on a linkage matrix.
 
     Parameters
     ----------
@@ -1200,6 +1207,11 @@ def inconsistent(Z, d=2):
         inconsistency coefficient,
 
         .. math:: \frac{\mathtt{Z[i,2]} - \mathtt{R[i,0]}} {R[i,1]}
+
+    Notes
+    -----
+    This function behaves similarly to the MATLAB(TM) ``inconsistent``
+    function.
 
     """
     Z = np.asarray(Z, order='c')
@@ -1231,9 +1243,9 @@ def from_mlab_linkage(Z):
      * the indices are converted from ``1..N`` to ``0..(N-1)`` form,
        and
 
-     * a fourth column Z[:,3] is added where Z[i,3] is represents the
+     * a fourth column ``Z[:,3]`` is added where ``Z[i,3]`` represents the
        number of original observations (leaves) in the non-singleton
-       cluster i.
+       cluster ``i``.
 
     This function is useful when loading in linkages from legacy data
     files generated by MATLAB.
@@ -1246,7 +1258,7 @@ def from_mlab_linkage(Z):
     Returns
     -------
     ZS : ndarray
-        A linkage matrix compatible with this library.
+        A linkage matrix compatible with ``scipy.cluster.hierarchy``.
 
     """
     Z = np.asarray(Z, dtype=np.double, order='c')
@@ -1285,7 +1297,7 @@ def to_mlab_linkage(Z):
     Parameters
     ----------
     Z : ndarray
-        A linkage matrix generated by this library.
+        A linkage matrix generated by ``scipy.cluster.hierarchy``.
 
     Returns
     -------
@@ -1338,7 +1350,7 @@ def is_monotonic(Z):
 def is_valid_im(R, warning=False, throw=False, name=None):
     """Returns True if the inconsistency matrix passed is valid.
 
-    It must be a :math:`n` by 4 numpy array of doubles. The standard
+    It must be a :math:`n` by 4 array of doubles. The standard
     deviations ``R[:,1]`` must be nonnegative. The link counts
     ``R[:,2]`` must be positive and no greater than :math:`n-1`.
 
@@ -1428,8 +1440,8 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         When True, throws a Python exception if the linkage
         matrix passed is invalid.
     name : str, optional
-           This string refers to the variable name of the invalid
-           linkage matrix.
+        This string refers to the variable name of the invalid
+        linkage matrix.
 
     Returns
     -------
@@ -1566,7 +1578,7 @@ def correspond(Z, Y):
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """
     Forms flat clusters from the hierarchical clustering defined by
-    the linkage matrix ``Z``.
+    the given linkage matrix.
 
     Parameters
     ----------
@@ -1633,8 +1645,8 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     Returns
     -------
     fcluster : ndarray
-        An array of length n. T[i] is the flat cluster number to
-        which original observation i belongs.
+        An array of length ``n``. ``T[i]`` is the flat cluster number to
+        which original observation ``i`` belongs.
 
     """
     Z = np.asarray(Z, order='c')
@@ -1685,8 +1697,9 @@ def fclusterdata(X, t, criterion='inconsistent',
     and forms flat clusters using the inconsistency method with `t` as the
     cut-off threshold.
 
-    A one-dimensional array T of length n is returned. T[i] is the index
-    of the flat cluster to which the original observation i belongs.
+    A one-dimensional array ``T`` of length ``n`` is returned. ``T[i]`` is
+    the index of the flat cluster to which the original observation ``i``
+    belongs.
 
     Parameters
     ----------
@@ -1700,7 +1713,7 @@ def fclusterdata(X, t, criterion='inconsistent',
         cluster formation algorithms. See `fcluster` for descriptions.
     metric : str, optional
         The distance metric for calculating pairwise distances. See
-        `distance.pdist` for descriptions and linkage to verify
+        ``distance.pdist`` for descriptions and linkage to verify
         compatibility with the linkage method.
     depth : int, optional
         The maximum depth for the inconsistency calculation. See
@@ -1719,9 +1732,13 @@ def fclusterdata(X, t, criterion='inconsistent',
         A vector of length n. T[i] is the flat cluster number to
         which original observation i belongs.
 
+    See Also
+    --------
+    scipy.spatial.distance.pdist : pairwise distance metrics
+
     Notes
     -----
-    This function is similar to the MATLAB function clusterdata.
+    This function is similar to the MATLAB function ``clusterdata``.
 
     """
     X = np.asarray(X, order='c', dtype=np.double)
@@ -1751,7 +1768,7 @@ def leaves_list(Z):
     ----------
     Z : ndarray
         The hierarchical clustering encoded as a matrix.  `Z` is
-        a linkage matrix.  See ``linkage`` for more information.
+        a linkage matrix.  See `linkage` for more information.
 
     Returns
     -------
@@ -2731,7 +2748,7 @@ def maxinconsts(Z, R):
     ----------
     Z : ndarray
         The hierarchical clustering encoded as a matrix. See
-        ``linkage`` for more information.
+        `linkage` for more information.
     R : ndarray
         The inconsistency matrix.
 
@@ -2829,7 +2846,7 @@ def leaders(Z, T):
     ----------
     Z : ndarray
         The hierarchical clustering encoded as a matrix. See
-        ``linkage`` for more information.
+        `linkage` for more information.
     T : ndarray
         The flat cluster assignment vector.
 
