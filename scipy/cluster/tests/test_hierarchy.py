@@ -138,36 +138,6 @@ class TestInconsistent(object):
                         hierarchy_test_data.inconsistent_ytdist[depth])
 
 
-class TestLinkageTies(object):
-    _expectations = {
-        'single': np.array([[0, 1, 1.41421356, 2],
-                            [2, 3, 1.41421356, 3]]),
-        'complete': np.array([[0, 1, 1.41421356, 2],
-                              [2, 3, 2.82842712, 3]]),
-        'average': np.array([[0, 1, 1.41421356, 2],
-                             [2, 3, 2.12132034, 3]]),
-        'weighted': np.array([[0, 1, 1.41421356, 2],
-                              [2, 3, 2.12132034, 3]]),
-        'centroid': np.array([[0, 1, 1.41421356, 2],
-                              [2, 3, 2.12132034, 3]]),
-        'median': np.array([[0, 1, 1.41421356, 2],
-                            [2, 3, 2.12132034, 3]]),
-        'ward': np.array([[0, 1, 1.41421356, 2],
-                          [2, 3, 2.44948974, 3]]),
-    }
-
-    def test_linkage_ties(self):
-        for method in ['single', 'complete', 'average', 'weighted',
-                       'centroid', 'median', 'ward']:
-            yield self.check_linkage_ties, method
-
-    def check_linkage_ties(self, method):
-        X = np.array([[-1, -1], [0, 0], [1, 1]])
-        Z = linkage(X, method=method)
-        expectedZ = self._expectations[method]
-        assert_allclose(Z, expectedZ, atol=1e-06)
-
-
 class TestCopheneticDistance(object):
     def test_linkage_cophenet_tdist_Z(self):
         # Tests cophenet(Z) on tdist data set.
