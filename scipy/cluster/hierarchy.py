@@ -474,7 +474,7 @@ def ward(y):
 def linkage(y, method='single', metric='euclidean'):
     """
     Performs hierarchical/agglomerative clustering.
-    
+
     The input y may be either a 1d compressed distance matrix
     or a 2d array of observation vectors.
 
@@ -690,8 +690,23 @@ class ClusterNode:
     Leaf nodes correspond to original observations, while non-leaf nodes
     correspond to non-singleton clusters.
 
-    The to_tree function converts a matrix returned by the linkage
+    The `to_tree` function converts a matrix returned by the linkage
     function into an easy-to-use tree representation.
+
+    All parameter names are also attributes.
+
+    Parameters
+    ----------
+    id : int
+        The node id.
+    left : ClusterNode instance, optional
+        The left child tree node.
+    right : ClusterNode instance, optional
+        The right child tree node.
+    dist : float, optional
+        Distance for this cluster in the linkage matrix.
+    count : int, optional
+        The number of samples in this cluster.
 
     See Also
     --------
@@ -825,9 +840,10 @@ class ClusterNode:
         ----------
         func : function
             Applied to each leaf ClusterNode object in the pre-order traversal.
-            Given the i'th leaf node in the pre-ordeR traversal ``n[i]``, the
-            result of func(n[i]) is stored in L[i]. If not provided, the index
-            of the original observation to which the node corresponds is used.
+            Given the ``i``-th leaf node in the pre-order traversal ``n[i]``, the
+            result of ``func(n[i])`` is stored in ``L[i]``. If not provided,
+            the index of the original observation to which the node
+            corresponds is used.
 
         Returns
         -------
@@ -984,39 +1000,59 @@ def cut_tree(Z, n_clusters=None, height=None):
 
 def to_tree(Z, rd=False):
     """
-    Converts a hierarchical clustering encoded in the matrix ``Z`` (by
-    linkage) into an easy-to-use tree object.
+    Converts a linkage matrix into an easy-to-use tree object.
 
-    The reference r to the root ClusterNode object is returned.
+    The reference to the root `ClusterNode` object is returned (by default).
 
-    Each ClusterNode object has a left, right, dist, id, and count
-    attribute. The left and right attributes point to ClusterNode objects
-    that were combined to generate the cluster. If both are None then
-    the ClusterNode object is a leaf node, its count must be 1, and its
-    distance is meaningless but set to 0.
+    Each `ClusterNode` object has a ``left``, ``right``, ``dist``, ``id``,
+    and ``count`` attribute. The left and right attributes point to
+    ClusterNode objects that were combined to generate the cluster.
+    If both are None then the `ClusterNode` object is a leaf node, its count
+    must be 1, and its distance is meaningless but set to 0.
 
-    Note: This function is provided for the convenience of the library
+    *Note: This function is provided for the convenience of the library
     user. ClusterNodes are not used as input to any of the functions in this
-    library.
+    library.*
 
     Parameters
     ----------
     Z : ndarray
-        The linkage matrix in proper form (see the ``linkage``
+        The linkage matrix in proper form (see the `linkage`
         function documentation).
     rd : bool, optional
-        When False, a reference to the root ClusterNode object is
-        returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
-        reference to the root node while ``d`` is a dictionary
-        mapping cluster ids to ClusterNode references. If a cluster id is
-        less than n, then it corresponds to a singleton cluster
-        (leaf node). See ``linkage`` for more information on the
-        assignment of cluster ids to clusters.
+        When False (default), a reference to the root `ClusterNode` object is
+        returned.  Otherwise, a tuple ``(r, d)`` is returned. ``r`` is a
+        reference to the root node while ``d`` is a list of `ClusterNode`
+        objects - one per original entry in the linkage matrix plus entries
+        for all clustering steps.  If a cluster id is
+        less than the number of samples ``n`` in the data that the linkage
+        matrix describes, then it corresponds to a singleton cluster (leaf
+        node).
+        See `linkage` for more information on the assignment of cluster ids
+        to clusters.
 
     Returns
     -------
-    L : list
-        The pre-order traversal.
+    tree : ClusterNode or tuple (ClusterNode, list of ClusterNode)
+        If ``rd`` is False, a `ClusterNode`.
+        If ``rd`` is True, a list of length ``2*n - 1``, with ``n`` the number
+        of samples.  See the description of `rd` above for more details.
+
+    See Also
+    --------
+    linkage, is_valid_linkage, ClusterNode
+
+    Examples
+    --------
+    >>> x = np.random.rand(10).reshape(5, 2)
+    >>> Z = hierarchy.linkage(x)
+    >>> hierarchy.to_tree(Z)
+    <scipy.cluster.hierarchy.ClusterNode object at ...>
+    >>> rootnode, nodelist = hierarchy.to_tree(Z, rd=True)
+    >>> rootnode
+    <scipy.cluster.hierarchy.ClusterNode object at ...>
+    >>> len(nodelist)
+    9
 
     """
     Z = np.asarray(Z, order='c')
@@ -1046,7 +1082,7 @@ def to_tree(Z, rd=False):
                               'is used before it is formed. See row %d, '
                               'column 1') % fj)
         nd = ClusterNode(i + n, d[fi], d[fj], Z[i, 2])
-        #          ^ id   ^ left ^ right ^ dist
+        #                 ^ id   ^ left ^ right ^ dist
         if Z[i, 3] != nd.count:
             raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '
                               'incorrect.') % i)
