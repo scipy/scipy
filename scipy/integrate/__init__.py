@@ -49,8 +49,24 @@ Integrators of ODE systems
    ode           -- Integrate ODE using VODE and ZVODE routines.
    complex_ode   -- Convert a complex-valued ODE to real-valued and integrate.
    solve_bvp     -- Solve a boundary value problem for a system of ODEs.
-   solve_ivp     -- Alternative routine for ODE integration with capabilities
-                    similar to MATLAB.
+
+
+New Suite of ODE Solvers
+-------------------------
+
+These solvers are implemented as individual classes which can be used directly
+(low-level usage) or through a convenience function.
+
+.. autosummary::
+   :toctree: generated/
+
+   solve_ivp     -- Convenient function for ODE integration.
+   RK23          -- Explicit Runge-Kutta solver of order 3(2).
+   RK45          -- Explicit Runge-Kutta solver of order 5(4).
+   Radau         -- Implicit Runge-Kutta solver of order 5.
+   BDF           -- Implicit multi-step variable order (1 to 5) solver.
+   DenseOutput   -- Local interpolant for computing a dense output.
+   OdeSolution   -- Class which represents a continuous ODE solution.
 """
 from __future__ import division, print_function, absolute_import
 
@@ -59,7 +75,8 @@ from .odepack import *
 from .quadpack import *
 from ._ode import *
 from ._bvp import solve_bvp
-from ._py import solve_ivp
+from ._py import (solve_ivp, OdeSolution, DenseOutput,
+                  RK23, RK45, Radau, BDF)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester

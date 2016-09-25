@@ -1,186 +1,261 @@
 from __future__ import division, print_function, absolute_import
-
-import numpy as np
 from numpy.testing import (assert_, assert_allclose, run_module_suite,
-                           assert_equal, assert_raises)
-from scipy.integrate import solve_ivp
+                           assert_equal)
+import numpy as np
+from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
+from scipy.integrate import DenseOutput, OdeSolution
 
 
-def fun_rational(x, y):
-    return np.array([y[1] / x,
-                     y[1] * (y[0] + 2 * y[1] - 1) / (x * (y[0] - 1))])
+def fun_rational(t, y):
+    return np.array([y[1] / t,
+                     y[1] * (y[0] + 2 * y[1] - 1) / (t * (y[0] - 1))])
 
 
-def jac_rational(x, y):
+def jac_rational(t, y):
     return np.array([
-        [0, 1 / x],
-        [-2 * y[1] ** 2 / (x * (y[0] - 1) ** 2),
-         (y[0] + 4 * y[1] - 1) / (x * (y[0] - 1))]
+        [0, 1 / t],
+        [-2 * y[1] ** 2 / (t * (y[0] - 1) ** 2),
+         (y[0] + 4 * y[1] - 1) / (t * (y[0] - 1))]
     ])
 
 
-def sol_rational(x):
-    return np.vstack((x / (x + 10), 10 * x / (x + 10)**2))
+def sol_rational(t):
+    return np.vstack((t / (t + 10), 10 * t / (t + 10) ** 2))
 
 
-def event_rational_1(x, y):
+def event_rational_1(t, y):
     return y[0] - y[1] ** 0.7
 
 
-def event_rational_2(x, y):
+def event_rational_2(t, y):
     return y[1] ** 0.6 - y[0]
 
 
-def event_rational_3(x, y):
-    return x - 7.4
+def event_rational_3(t, y):
+    return t - 7.4
 
 
 def compute_error(y, y_true, rtol, atol):
-    e = (y - y_true) / (atol + rtol * y_true)
+    e = (y - y_true) / (atol + rtol * np.abs(y_true))
     return np.sqrt(np.sum(e**2, axis=0) / e.shape[0])
 
 
 def test_integration():
     rtol = 1e-3
     atol = 1e-6
-    for method in ['RK23', 'RK45', 'Radau']:
-        for x_span in ([5, 9], [5, 1]):
-            res = solve_ivp(fun_rational, x_span, [1/3, 2/9], rtol=rtol,
-                            atol=atol, method=method)
-            assert_equal(res.x[0], x_span[0])
-            assert_equal(res.x[-1], x_span[-1])
-            assert_(res.x_events is None)
+    y0 = [1/3, 2/9]
+    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+        for t_span in ([5, 9], [5, 1]):
+            res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
+                            atol=atol, method=method, dense_output=True)
+            assert_equal(res.t[0], t_span[0])
+            assert_(res.t_events is None)
             assert_(res.success)
             assert_equal(res.status, 0)
 
-            y_true = sol_rational(res.x)
+            y_true = sol_rational(res.t)
             e = compute_error(res.y, y_true, rtol, atol)
-            assert_(np.all(e < 0.2))
+            assert_(np.all(e < 5))
 
-            xc = np.linspace(*x_span)
-            yc_true = sol_rational(xc)
-            yc = res.sol(xc)
+            tc = np.linspace(*t_span)
+            yc_true = sol_rational(tc)
+            yc = res.sol(tc)
 
             e = compute_error(yc, yc_true, rtol, atol)
-            assert_(np.all(e < 0.2))
+            assert_(np.all(e < 5))
 
-            assert_allclose(res.sol(res.x), res.y, rtol=1e-15, atol=1e-15)
+            assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
 
 def test_events():
-    event_rational_3.terminate = True
+    event_rational_3.terminal = True
 
-    for method in ['RK23', 'RK45', 'Radau']:
+    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
         res = solve_ivp(fun_rational, [5, 8], [1/3, 2/9], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
-        assert_equal(res.x_events[0].size, 1)
-        assert_equal(res.x_events[1].size, 1)
-        assert_(5.3 < res.x_events[0][0] < 5.7)
-        assert_(7.3 < res.x_events[1][0] < 7.7)
+        assert_equal(res.t_events[0].size, 1)
+        assert_equal(res.t_events[1].size, 1)
+        assert_(5.3 < res.t_events[0][0] < 5.7)
+        assert_(7.3 < res.t_events[1][0] < 7.7)
 
         event_rational_1.direction = 1
         event_rational_2.direction = 1
         res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
-        assert_equal(res.x_events[0].size, 1)
-        assert_equal(res.x_events[1].size, 0)
-        assert_(5.3 < res.x_events[0][0] < 5.7)
+        assert_equal(res.t_events[0].size, 1)
+        assert_equal(res.t_events[1].size, 0)
+        assert_(5.3 < res.t_events[0][0] < 5.7)
 
         event_rational_1.direction = -1
         event_rational_2.direction = -1
         res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
-        assert_equal(res.x_events[0].size, 0)
-        assert_equal(res.x_events[1].size, 1)
-        assert_(7.3 < res.x_events[1][0] < 7.7)
+        assert_equal(res.t_events[0].size, 0)
+        assert_equal(res.t_events[1].size, 1)
+        assert_(7.3 < res.t_events[1][0] < 7.7)
 
         event_rational_1.direction = 0
         event_rational_2.direction = 0
 
         res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
                         events=(event_rational_1, event_rational_2,
-                                event_rational_3))
+                                event_rational_3), dense_output=True)
         assert_equal(res.status, 1)
-        assert_equal(res.x_events[0].size, 1)
-        assert_equal(res.x_events[1].size, 0)
-        assert_equal(res.x_events[2].size, 1)
-        assert_(5.3 < res.x_events[0][0] < 5.7)
-        assert_(7.3 < res.x_events[2][0] < 7.5)
+        assert_equal(res.t_events[0].size, 1)
+        assert_equal(res.t_events[1].size, 0)
+        assert_equal(res.t_events[2].size, 1)
+        assert_(5.3 < res.t_events[0][0] < 5.7)
+        assert_(7.3 < res.t_events[2][0] < 7.5)
 
         # Also test that termination by event doesn't break interpolants.
-        xc = np.linspace(res.x[0], res.x[-1])
-        yc_true = sol_rational(xc)
-        yc = res.sol(xc)
+        tc = np.linspace(res.t[0], res.t[-1])
+        yc_true = sol_rational(tc)
+        yc = res.sol(tc)
         e = compute_error(yc, yc_true, 1e-3, 1e-6)
-        assert_(np.all(e < 0.2))
+        assert_(np.all(e < 5))
 
     # Test in backward direction.
     event_rational_1.direction = 0
     event_rational_2.direction = 0
-    for method in ['RK23', 'RK45', 'Radau']:
+    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
         res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
-        assert_equal(res.x_events[0].size, 1)
-        assert_equal(res.x_events[1].size, 1)
-        assert_(5.3 < res.x_events[0][0] < 5.7)
-        assert_(7.3 < res.x_events[1][0] < 7.7)
+        assert_equal(res.t_events[0].size, 1)
+        assert_equal(res.t_events[1].size, 1)
+        assert_(5.3 < res.t_events[0][0] < 5.7)
+        assert_(7.3 < res.t_events[1][0] < 7.7)
 
         event_rational_1.direction = -1
         event_rational_2.direction = -1
         res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
-        assert_equal(res.x_events[0].size, 1)
-        assert_equal(res.x_events[1].size, 0)
-        assert_(5.3 < res.x_events[0][0] < 5.7)
+        assert_equal(res.t_events[0].size, 1)
+        assert_equal(res.t_events[1].size, 0)
+        assert_(5.3 < res.t_events[0][0] < 5.7)
 
         event_rational_1.direction = 1
         event_rational_2.direction = 1
         res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
-        assert_equal(res.x_events[0].size, 0)
-        assert_equal(res.x_events[1].size, 1)
-        assert_(7.3 < res.x_events[1][0] < 7.7)
+        assert_equal(res.t_events[0].size, 0)
+        assert_equal(res.t_events[1].size, 1)
+        assert_(7.3 < res.t_events[1][0] < 7.7)
 
         event_rational_1.direction = 0
         event_rational_2.direction = 0
 
         res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
                         events=(event_rational_1, event_rational_2,
-                                event_rational_3))
+                                event_rational_3), dense_output=True)
         assert_equal(res.status, 1)
-        assert_equal(res.x_events[0].size, 0)
-        assert_equal(res.x_events[1].size, 1)
-        assert_equal(res.x_events[2].size, 1)
-        assert_(7.3 < res.x_events[1][0] < 7.7)
-        assert_(7.3 < res.x_events[2][0] < 7.5)
+        assert_equal(res.t_events[0].size, 0)
+        assert_equal(res.t_events[1].size, 1)
+        assert_equal(res.t_events[2].size, 1)
+        assert_(7.3 < res.t_events[1][0] < 7.7)
+        assert_(7.3 < res.t_events[2][0] < 7.5)
 
         # Also test that termination by event doesn't break interpolants.
-        xc = np.linspace(res.x[-1], res.x[0])
-        yc_true = sol_rational(xc)
-        yc = res.sol(xc)
+        tc = np.linspace(res.t[-1], res.t[0])
+        yc_true = sol_rational(tc)
+        yc = res.sol(tc)
         e = compute_error(yc, yc_true, 1e-3, 1e-6)
-        assert_(np.all(e < 0.2))
+        assert_(np.all(e < 5))
 
 
-def test_parameters_validation():
-    assert_raises(ValueError, solve_ivp, fun_rational, [1, 2], [0, 0],
-                  method='M')
-    assert_raises(ValueError, solve_ivp, fun_rational, [1, 1], [0, 0])
-    assert_raises(ValueError, solve_ivp, fun_rational, [1, 2], [[0, 0]])
-    assert_raises(ValueError, solve_ivp, lambda x, y: np.zeros(3), [1, 2],
-                  [0, 0])
-    assert_raises(ValueError, solve_ivp, fun_rational, [1, 2], [0, 0],
-                  M=np.identity(2), method='RK23')
-    assert_raises(ValueError, solve_ivp, fun_rational, [1, 2], [0, 0],
-                  method='Radau', jac=lambda x, y: np.identity(3))
-    assert_raises(ValueError, solve_ivp, fun_rational, [1, 2], [0, 0],
-                  method='Radau', jac=np.identity(3))
+def test_max_step():
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [1/3, 2/9]
+    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+        for t_span in ([5, 9], [5, 1]):
+            res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
+                            max_step=0.5, atol=atol, method=method,
+                            dense_output=True)
+            assert_equal(res.t[0], t_span[0])
+            assert_equal(res.t[-1], t_span[-1])
+            assert_(np.all(np.abs(np.diff(res.t)) <= 0.5))
+            assert_(res.t_events is None)
+            assert_(res.success)
+            assert_equal(res.status, 0)
+
+            y_true = sol_rational(res.t)
+            e = compute_error(res.y, y_true, rtol, atol)
+            assert_(np.all(e < 5))
+
+            tc = np.linspace(*t_span)
+            yc_true = sol_rational(tc)
+            yc = res.sol(tc)
+
+            e = compute_error(yc, yc_true, rtol, atol)
+            assert_(np.all(e < 5))
+
+            assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+
+
+def test_classes():
+    y0 = [1 / 3, 2 / 9]
+    for cls in [RK23, RK45, Radau, BDF]:
+        solver = cls(fun_rational, 5, y0, np.inf)
+        assert_equal(solver.n, 2)
+        assert_equal(solver.status, 'started')
+        assert_equal(solver.t_crit, np.inf)
+        assert_equal(solver.direction, 1)
+        assert_equal(solver.t, 5)
+        assert_equal(solver.y, y0)
+        assert_(solver.step_size is None)
+
+        status, message = solver.step()
+        assert_equal(status, 'running')
+        assert_equal(message, None)
+        assert_equal(solver.n, 2)
+        assert_equal(solver.status, 'running')
+        assert_equal(solver.t_crit, np.inf)
+        assert_equal(solver.direction, 1)
+        assert_(solver.t > 5)
+        assert_(not np.all(np.equal(solver.y, y0)))
+        assert_(solver.step_size > 0)
+
+        status, message = solver.step(max_step=1e-20)
+        assert_equal(status, 'failed')
+        assert_equal(solver.status, 'failed')
+
+
+class ConstDenseOutput(DenseOutput):
+    def __init__(self, t_old, t, c):
+        super(ConstDenseOutput, self).__init__(t_old, t)
+        self.c = c
+
+    def _call_impl(self, t):
+        if t.ndim == 0:
+            return self.c
+        else:
+            y = np.empty_like(t)
+            y.fill(self.c)
+            y = np.atleast_2d(y)
+
+        return y
+
+
+def test_OdeSolution():
+    ts = np.array([0, 2, 5], dtype=float)
+    s1 = ConstDenseOutput(ts[0], ts[1], -1)
+    s2 = ConstDenseOutput(ts[1], ts[2], 1)
+
+    sol = OdeSolution(ts, [s1, s2])
+
+    assert_equal(sol(-1), -1)
+    assert_equal(sol(1), -1)
+    assert_equal(sol(3), 1)
+    assert_equal(sol(6), 1)
+
+    assert_equal(sol([6, -2, 1.5, 4.5, 2.5, 5.5]),
+                 np.array([[1, -1, -1, 1, 1, 1]]))
 
 
 if __name__ == '__main__':

@@ -1,10 +1,8 @@
-"""Explicit Runge-Kutta methods."""
 from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from .common import select_initial_step, get_active_events, handle_events, norm
+from .base import OdeSolver, DenseOutput
+from .common import select_initial_step, norm
 
-# Algorithm parameters.
 
 # Multiply steps computed from asymptotic behaviour of errors by this.
 SAFETY = 0.9
@@ -12,61 +10,8 @@ SAFETY = 0.9
 MAX_FACTOR = 5  # Maximum allowed increase in a step size.
 MIN_FACTOR = 0.2  # Minimum allowed decrease in a step size.
 
-# Butcher tables. See `rk_step` for explanation.
 
-# Bogacki–Shampine scheme.
-C23 = np.array([1/2, 3/4])
-A23 = [np.array([1/2]),
-       np.array([0, 3/4])]
-B23 = np.array([2/9, 1/3, 4/9])
-# Coefficients for estimation errors. The difference between B's for lower
-# and higher order accuracy methods.
-E23 = np.array([5/72, -1/12, -1/9, 1/8])
-
-# Dormand–Prince scheme.
-C45 = np.array([1/5, 3/10, 4/5, 8/9, 1])
-A45 = [np.array([1/5]),
-       np.array([3/40, 9/40]),
-       np.array([44/45, -56/15, 32/9]),
-       np.array([19372/6561, -25360/2187, 64448/6561, -212/729]),
-       np.array([9017/3168, -355/33, 46732/5247, 49/176, -5103/18656])]
-B45 = np.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84])
-E45 = np.array([-71/57600, 0, 71/16695, -71/1920, 17253/339200, -22/525, 1/40])
-
-# Coefficients to compute y(x + 0.5 * h) from RK stages with a 4-rd order
-# accuracy. Then it can be used for quartic interpolation with a 4-rd order
-# accuracy.
-M45 = np.array([613/3072, 0, 125/159, -125/1536, 8019/54272, -11/96, 1/16])
-
-
-def prepare_method(method, n, s):
-    """Choose appropriate matrices for a RK method.
-
-    See `rk_step` for the explanation of returned matrices.
-    """
-    if method == 'RK45':
-        A = A45
-        B = B45
-        C = C45
-        E = E45
-        M = M45
-        K = np.empty((7, n))
-        order = 5
-    elif method == 'RK23':
-        A = A23
-        B = B23
-        C = C23
-        E = E23
-        M = None
-        order = 3
-        K = np.empty((4, n))
-    else:
-        raise ValueError("`method` must be 'RK45' or 'RK23'.")
-
-    return A, B, C, E, M, K, order
-
-
-def rk_step(fun, x, y, f, h, A, B, C, E, K):
+def rk_step(fun, t, y, f, h, A, B, C, E, K):
     """Perform a single Runge-Kutta step.
 
     This function computes a prediction of an explicit Runge-Kutta method and
@@ -78,7 +23,7 @@ def rk_step(fun, x, y, f, h, A, B, C, E, K):
     ----------
     fun : callable
         Right-hand side of the system.
-    x : float
+    t : float
         Current value of the independent variable.
     y : ndarray, shape (n,)
         Current value of the solution.
@@ -121,10 +66,10 @@ def rk_step(fun, x, y, f, h, A, B, C, E, K):
     K[0] = f
     for s, (a, c) in enumerate(zip(A, C)):
         dy = np.dot(K[:s + 1].T, a) * h
-        K[s + 1] = fun(x + c * h, y + dy)
+        K[s + 1] = fun(t + c * h, y + dy)
 
     y_new = y + h * np.dot(K[:-1].T, B)
-    f_new = fun(x + h, y_new)
+    f_new = fun(t + h, y_new)
 
     K[-1] = f_new
     error = np.dot(K.T, E) * h
@@ -132,219 +77,245 @@ def rk_step(fun, x, y, f, h, A, B, C, E, K):
     return y_new, f_new, error
 
 
-def create_spline(x, y, f, ym):
-    """Create a cubic or quartic spline given values and derivatives.
+class RungeKutta(OdeSolver):
+    """Base class for explicit Runge-Kutta methods."""
+    C = NotImplemented
+    A = NotImplemented
+    B = NotImplemented
+    E = NotImplemented
+    P = NotImplemented
+    order = NotImplemented
+    n_stages = NotImplemented
+
+    def __init__(self, fun, t0, y0, t_crit, rtol=1e-3, atol=1e-6):
+        super(RungeKutta, self).__init__(fun, t0, y0, t_crit)
+        self.t_old = None
+        self.y_old = None
+        self.rtol = rtol
+        self.atol = atol
+        self.f = self.fun(self.t, self.y)
+        self.h_abs = select_initial_step(
+            self.fun, self.t, self.y, self.f, self.direction,
+            self.order, self.rtol, self.atol)
+        self.K = np.empty((self.n_stages + 1, self.n))
+
+    def _step_impl(self, max_step):
+        rtol = self.rtol
+        atol = self.atol
+        h_abs = min(self.h_abs, max_step)
+        order = self.order
+        t = self.t
+        y = self.y
+
+        step_accepted = False
+        while not step_accepted:
+            h = h_abs * self.direction
+            t_new = t + h
+
+            if self.direction * (t_new - self.t_crit) > 0:
+                t_new = self.t_crit
+
+            if t_new == t:  # h is less than spacing between numbers.
+                return False, self.TOO_SMALL_STEP
+
+            h = t_new - t
+            h_abs = np.abs(h)
+
+            y_new, f_new, error = rk_step(self.fun, t, y, self.f, h, self.A,
+                                          self.B, self.C, self.E, self.K)
+            scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
+            error_norm = norm(error / scale)
+
+            if error_norm < 1:
+                h_abs *= min(MAX_FACTOR,
+                             max(1, SAFETY * error_norm ** (-1 / (order + 1))))
+                step_accepted = True
+            else:
+                h_abs *= max(MIN_FACTOR,
+                             SAFETY * error_norm ** (-1 / (order + 1)))
+
+        self.t_old = t
+        self.y_old = y
+
+        self.t = t_new
+        self.y = y_new
+        self.step_size = np.abs(t_new - t)
+
+        self.h_abs = h_abs
+        self.f = f_new
+
+        return True, None
+
+    def _dense_output_impl(self):
+        Q = self.K.T.dot(self.P)
+        return RkDenseOutput(self.t_old, self.t, self.y_old, Q)
+
+
+class RK23(RungeKutta):
+    """Explicit Runge-Kutta method of order 3(2).
+
+    The Bogacki-Shamping pair of formulas is used [1]_. The error is controlled
+    assuming 2nd order accuracy, but steps are taken using a 3rd oder accurate
+    formulas (local extrapolation is done). A cubic Hermit polynomial is used
+    for the dense output.
 
     Parameters
     ----------
-    x : ndarray, shape (n_points,)
-        Values of the independent variable.
-    y : ndarray, shape (n_points, n)
-        Values of the dependent variable at `x`.
-    f : ndarray, shape (n_points, n)
-        Values of the derivatives of `y` evaluated at `x`.
-    ym : ndarray with shape (n_points, n) or None
-        Values of the dependent variables at middle points between values
-        of `x`. If None, a cubic spline will be constructed, and a quartic
-        spline otherwise.
+    fun : callable
+        Right-hand side of the system. The calling signature is ``fun(t, y)``.
+        Here ``t`` is a scalar, and ``y`` is ndarray with shape (n,). It
+        must return an array_like with shape (n,).
+    t0 : float
+        Initial time.
+    y0 : array_like, shape (n,)
+        Initial state.
+    t_crit : float
+        Boundary time --- the integration won't continue beyond it. It also
+        determines the direction of the integration.
+    rtol, atol : float and array_like, optional
+        Relative and absolute tolerances. The solver keeps the local error
+        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
+        relative accuracy (number of correct digits). But if a component of `y`
+        is approximately below `atol` then the error only needs to fall within
+        the same `atol` threshold, and the number of correct digits is not
+        guaranteed. If components of y have different scales, it might be
+        beneficial to set different `atol` values for different components by
+        passing array_like with shape (n,) for `atol`. Default values are
+        1e-3 for `rtol` and 1e-6 for `atol`.
 
-    Returns
-    -------
-    sol : PPoly
-        Constructed spline as a PPoly instance.
+    Attributes
+    ----------
+    n : int
+        Number of equations.
+    status : string
+        Current status of the solver.
+    t_crit : float
+        Boundary time.
+    direction : -1 or +1
+        Integration direction.
+    t : float
+        Current time.
+    y : ndarray, shape (n,)
+        Current state.
+    step_size : float or None
+        Size of the last taken step. None if not steps were made yet.
+
+    References
+    ----------
+    .. [1] P. Bogacki, L.F. Shampine, "A 3(2) Pair of Runge-Kutta Formulas",
+           Appl. Math. Lett. Vol. 2, No. 4. pp. 321-325, 1989.
     """
-    from scipy.interpolate import PPoly
-
-    if x[-1] < x[0]:
-        x = x[::-1]
-        y = y[::-1]
-        if ym is not None:
-            ym = ym[::-1]
-        f = f[::-1]
-
-    h = np.diff(x)
-
-    y0 = y[:-1]
-    y1 = y[1:]
-    f0 = f[:-1]
-    f1 = f[1:]
-
-    n_points, n = y.shape
-    h = h[:, None]
-    if ym is None:
-        c = np.empty((4, n_points - 1, n))
-        slope = (y1 - y0) / h
-        t = (f0 + f1 - 2 * slope) / h
-        c[0] = t / h
-        c[1] = (slope - f0) / h - t
-        c[2] = f0
-        c[3] = y0
-    else:
-        c = np.empty((5, n_points - 1, n))
-        c[0] = (-8 * y0 - 8 * y1 + 16 * ym) / h**4 + (- 2 * f0 + 2 * f1) / h**3
-        c[1] = (18 * y0 + 14 * y1 - 32 * ym) / h**3 + (5 * f0 - 3 * f1) / h**2
-        c[2] = (-11 * y0 - 5 * y1 + 16 * ym) / h**2 + (-4 * f0 + f1) / h
-        c[3] = f0
-        c[4] = y0
-
-    c = np.rollaxis(c, 2)
-    return PPoly(c, x, extrapolate=True, axis=1)
+    order = 2
+    n_stages = 3
+    C = np.array([1/2, 3/4])
+    A = [np.array([1/2]),
+         np.array([0, 3/4])]
+    B = np.array([2/9, 1/3, 4/9])
+    E = np.array([5/72, -1/12, -1/9, 1/8])
+    P = np.array([[1, -4 / 3, 5 / 9],
+                  [0, 1, -2/3],
+                  [0, 4/3, -8/9],
+                  [0, -1, 1]])
 
 
-def create_spline_one_step(x, x_new, y, y_new, f, f_new, ym):
-    """Create a spline for a single step.
+class RK45(RungeKutta):
+    """Explicit Runge-Kutta method of order 5(4).
+
+    The Dormand-Prince pair of formulas is used [1]_. The error is controlled
+    assuming 4th order accuracy, but steps are taken using a 5th
+    oder accurate formula (local extrapolation is done). A quartic
+    interpolation polynomial is used for the dense output [2]_.
 
     Parameters
     ----------
-    x, x_new : float
-        Previous and new values of the independed variable.
-    y, y_new : float
-        Previous and new values of the dependent variable.
-    f, f_new : float
-        Previous and new values of the derivative of the dependent variable.
-    ym : float or None
-        Value of the dependent variable at the middle point between `x` and
-        `x_new`. If provided the quartic spline is constructed, if None
-        the cubic spline is constructed.
+    fun : callable
+        Right-hand side of the system. The calling signature is ``fun(t, y)``.
+        Here ``t`` is a scalar, and ``y`` is ndarray with shape (n,). It
+        must return an array_like with shape (n,).
+    t0 : float
+        Initial value of the independent variable.
+    y0 : array_like, shape (n,)
+        Initial values of the dependent variable.
+    t_crit : float
+        Boundary time --- the integration won't continue beyond it. It also
+        determines the direction of the integration.
+    rtol, atol : float and array_like, optional
+        Relative and absolute tolerances. The solver keeps the local error
+        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
+        relative accuracy (number of correct digits). But if a component of `y`
+        is approximately below `atol` then the error only needs to fall within
+        the same `atol` threshold, and the number of correct digits is not
+        guaranteed. If components of y have different scales, it might be
+        beneficial to set different `atol` values for different components by
+        passing array_like with shape (n,) for `atol`. Default values are
+        1e-3 for `rtol` and 1e-6 for `atol`.
 
-    Returns
-    -------
-    sol : PPoly
-        Constructed spline as a PPoly instance.
+    Attributes
+    ----------
+    n : int
+        Number of equations.
+    status : string
+        Current status of the solver.
+    t_crit : float
+        Boundary time.
+    direction : -1 or +1
+        Integration direction.
+    t : float
+        Current time.
+    y : ndarray, shape (n,)
+        Current state.
+    step_size : float or None
+        Size of the last taken step. None if not steps were made yet.
+
+    References
+    ----------
+    .. [1] J. R. Dormand, P. J. Prince, "A family of embedded Runge-Kutta
+           formulae", Journal of Computational and Applied Mathematics, Vol. 6,
+           No. 1, pp. 19-26, 1980.
+    .. [2] L. W. Shampine, "Some Practical Runge-Kutta Formulas", Mathematics
+           of Computation,, Vol. 46, No. 173, pp. 135-150, 1986.
     """
-    from scipy.interpolate import PPoly
 
-    if x_new < x:
-        x0, x1 = x_new, x
-        y0, y1 = y_new, y
-        f0, f1 = f_new, f
-    else:
-        x0, x1 = x, x_new
-        y0, y1 = y, y_new
-        f0, f1 = f, f_new
-
-    h = x1 - x0
-    n = y.shape[0]
-    if ym is None:
-        c = np.empty((4, 1, n), dtype=y.dtype)
-        slope = (y1 - y0) / h
-        t = (f0 + f1 - 2 * slope) / h
-        c[0] = t / h
-        c[1] = (slope - f0) / h - t
-        c[2] = f0
-        c[3] = y0
-    else:
-        c = np.empty((5, 1, n), dtype=y.dtype)
-        c[0] = (-8 * y0 - 8 * y1 + 16 * ym) / h**4 + (- 2 * f0 + 2 * f1) / h**3
-        c[1] = (18 * y0 + 14 * y1 - 32 * ym) / h**3 + (5 * f0 - 3 * f1) / h**2
-        c[2] = (-11 * y0 - 5 * y1 + 16 * ym) / h**2 + (-4 * f0 + f1) / h
-        c[3] = f0
-        c[4] = y0
-
-    c = np.rollaxis(c, 2)
-    return PPoly(c, [x0, x1], extrapolate=True, axis=1)
+    order = 4
+    n_stages = 6
+    C = np.array([1/5, 3/10, 4/5, 8/9, 1])
+    A = [np.array([1/5]),
+         np.array([3/40, 9/40]),
+         np.array([44/45, -56/15, 32/9]),
+         np.array([19372/6561, -25360/2187, 64448/6561, -212/729]),
+         np.array([9017/3168, -355/33, 46732/5247, 49/176, -5103/18656])]
+    B = np.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84])
+    E = np.array([-71/57600, 0, 71/16695, -71/1920, 17253/339200, -22/525,
+                  1/40])
+    P = np.array([[1, -183 / 64, 37 / 12, -145 / 128],
+                  [0, 0, 0, 0],
+                  [0, 1500/371, -1000/159, 1000/371],
+                  [0, -125/32, 125/12, -375/64],
+                  [0, 9477/3392, -729/106, 25515/6784],
+                  [0, -11/7, 11/3, -55/28],
+                  [0, 3/2, -4, 5/2]])
 
 
-def rk(fun, a, b, ya, fa, rtol, atol, max_step, method,
-       events, is_terminal, direction):
-    """Integrate an ODE by an explicit Runge-Kutta method."""
-    s = np.sign(b - a)
+class RkDenseOutput(DenseOutput):
+    def __init__(self, t_old, t, y_old, Q):
+        super(RkDenseOutput, self).__init__(t_old, t)
+        self.h = t - t_old
+        self.Q = Q
+        self.order = Q.shape[1] - 1
+        self.y_old = y_old
 
-    A, B, C, E, M, K, order = prepare_method(method, ya.shape[0], s)
-
-    h_abs = select_initial_step(fun, a, b, ya, fa, order, rtol, atol)
-
-    x = a
-    y = ya
-    f = fa
-
-    ys = [y]
-    xs = [x]
-    fs = [f]
-    if order == 3:
-        yms = None
-    else:
-        yms = []
-
-    if events is not None:
-        g = [event(x, y) for event in events]
-        x_events = [[] for _ in range(len(events))]
-    else:
-        x_events = None
-
-    status = None
-    while status is None:
-        h_abs = min(h_abs, max_step)
-
-        d = abs(b - x)
-        if h_abs > d:
-            status = 0
-            h_abs = d
-            x_new = b
-            h = h_abs * s
+    def _call_impl(self, t):
+        x = (t - self.t_old) / self.h
+        if t.ndim == 0:
+            p = np.tile(x, self.order + 1)
+            p = np.cumprod(p)
         else:
-            h = h_abs * s
-            x_new = x + h
-            if x_new == x:  # h less than spacing between numbers.
-                status = -1
-
-        y_new, f_new, error = rk_step(fun, x, y, f, h, A, B, C, E, K)
-        scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
-        error_norm = norm(error / scale)
-
-        if error_norm > 1:
-            h_abs *= max(MIN_FACTOR, SAFETY * error_norm**(-1/order))
-            status = None
-            continue
-
-        if M is not None:
-            ym = y + 0.5 * h * np.dot(K.T, M)
+            p = np.tile(x, (self.order + 1, 1))
+            p = np.cumprod(p, axis=0)
+        y = self.h * np.dot(self.Q, p)
+        if y.ndim == 2:
+            y += self.y_old[:, None]
         else:
-            ym = None
+            y += self.y_old
 
-        if events is not None:
-            g_new = [event(x_new, y_new) for event in events]
-            active_events = get_active_events(g, g_new, direction)
-            g = g_new
-            if active_events.size > 0:
-                sol = create_spline_one_step(x, x_new, y, y_new, f, f_new, ym)
-                root_indices, roots, terminate = handle_events(
-                    sol, events, active_events, is_terminal, x, x_new)
-
-                for e, xe in zip(root_indices, roots):
-                    x_events[e].append(xe)
-
-                if terminate:
-                    status = 1
-                    x_new = roots[-1]
-                    y_new = sol(x_new)
-                    if ym is not None:
-                        ym = sol(0.5 * (x + x_new))
-                    f_new = fun(x_new, y_new)
-
-        x = x_new
-        y = y_new
-        f = f_new
-        ys.append(y)
-        xs.append(x)
-        fs.append(f)
-        if ym is not None:
-            yms.append(ym)
-
-        with np.errstate(divide='ignore'):
-            h_abs *= min(MAX_FACTOR, max(1, SAFETY * error_norm**(-1/order)))
-
-    xs = np.asarray(xs)
-    ys = np.asarray(ys)
-    fs = np.asarray(fs)
-    if yms is not None:
-        yms = np.asarray(yms)
-
-    sol = create_spline(xs, ys, fs, yms)
-
-    if x_events:
-        x_events = [np.asarray(xe) for xe in x_events]
-        if len(x_events) == 1:
-            x_events = x_events[0]
-
-    return status, sol, xs, ys.T, fs.T, x_events
+        return y
