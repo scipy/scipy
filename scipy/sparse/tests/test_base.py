@@ -3764,8 +3764,8 @@ class TestLIL(sparse_test_class(minmax=False)):
     math_dtypes = [np.int_, np.float_, np.complex_]
     
     def test_init(self):
-        data = np.array([[1, 2, 3, 4]]).repeat(3, axis=0)
-        rows = np.array([0, 1, 2, 3])
+        data = np.array([[1,2,3], [], [], []])
+        rows = np.array([[0,1,2], [], [], []])
         A = lil_matrix((data, rows), shape=(4, 4))
         assert_equal(A[0,0],1)
         

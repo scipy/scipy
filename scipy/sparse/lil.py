@@ -37,7 +37,7 @@ class lil_matrix(spmatrix, IndexMixin):
             
         lil_matrix((data, rows), shape=(M, N))
             where the ``data[k,:]`` stores the data entries for
-            row indices ``rows[k]``    
+            row indices ``rows[k,:]``    
 
     Attributes
     ----------
@@ -123,10 +123,8 @@ class lil_matrix(spmatrix, IndexMixin):
                 else:
                     if shape is None:
                         raise ValueError('expected a shape argument')
-                    self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
-                    self.rows = np.atleast_1d(np.array(arg1[1],
-                                                          dtype=get_index_dtype(maxval=max(shape)),
-                                                          copy=copy))
+                    self.data = arg1[0]
+                    self.rows = arg1[1]
                     self.shape = shape
         else:
             # assume A is dense
