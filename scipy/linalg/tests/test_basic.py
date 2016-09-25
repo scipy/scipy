@@ -1353,13 +1353,13 @@ class TestBalance(TestCase):
         assert_allclose(solve(y,A).dot(y),x)
 
     def test_separate(self):
-        _, y, z = balance(np.array([[1000, 1], [1000, 0]]), separate=1)
+        _, (y, z) = balance(np.array([[1000, 1], [1000, 0]]), separate=1)
         assert_equal(int(np.diff(np.log2(y))), 5)
         assert_allclose(z,np.arange(2))
         
     def test_permutation(self):
         A = block_diag(np.ones((2,2)),np.tril(np.ones((2,2))),np.ones((3,3)))
-        x, y, z = balance(A, separate=1)
+        x, (y, z) = balance(A, separate=1)
         assert_allclose(y,np.ones_like(y))
         assert_allclose(z,np.array([0,1,6,5,4,3,2]))
     
@@ -1371,18 +1371,8 @@ class TestBalance(TestCase):
                    [0., 0., 0.000002, 0., 0.]])
 
         x, y = balance(A)
-        x, s, p = balance(A, separate=1)
+        x, (s, p) = balance(A, separate=1)
         assert_allclose(y,np.diag(s)[p,:])
-
-    def test_optional_kwargs(self):
-        A = np.array([[0., 0., 0., 0., 0.000002],
-           [0., 0., 0., 0., 0.],
-           [2., 2., 0., 0., 0.],
-           [2., 2., 0., 0., 0.],
-           [0., 0., 0.000002, 0., 0.]])
-        x, t, blocks, info_code = balance(A, silent=1,scaled_block=1)
-        assert_equal(blocks,(1,4))
-        assert_equal(info_code,0)
 
 
 if __name__ == "__main__":

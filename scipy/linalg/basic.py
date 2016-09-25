@@ -1126,8 +1126,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
     else:
         return B
 
-def balance(A, permute=True, scale=True, separate = False,
-                 silent=False, overwrite_a=False, scaled_block=False):
+def balance(A, permute=True, scale=True, separate = False, overwrite_a=False):
     """
     A wrapper around LAPACK's xGEBAL routine family for matrix balancing. 
     
@@ -1151,34 +1150,19 @@ def balance(A, permute=True, scale=True, separate = False,
     been modified to account for special cases. See [2]_ for details
     which have been implemented since LAPACK v3.5.0. 
     
-    
     Parameters
     ----------
     A : (n, n) array_like
         Square data matrix for the balancing.
-        
     permute : bool
         The selector to define whether permutation of A is also performed
         prior to scaling.
-    
     scale : bool
         The selector to turn on and off the scaling. If False, the matrix 
         will not be scaled. 
-        
     separate : bool
         This switches from returning a full matrix of the transformation
         to a tuple of two separate 1D permutation and scaling arrays.
-
-    scaled_block : bool
-        If true, adds a tuple of the range of the scaled (sub)block to 
-        the output arguments. Technically, this is the range defined by the 
-        `ILO` and `IHI` values of `xGEBAL` (see LAPACK documentation)
-        
-    silent : bool
-        If set to True then the info code reported by xGEBAL is appended 
-        to the returned arguments. In case of a LAPACK error, the exception 
-        is also silenced.
-    
     overwrite_a : bool
         This is passed to xGEBAL directly. Essentially, overwrites the result
         to the data. It might increase the space efficiency. See LAPACK manual 
@@ -1186,25 +1170,14 @@ def balance(A, permute=True, scale=True, separate = False,
 
     Returns
     -------
-
-    ba : (n, n) array
+    B : (n, n) array
         Balanced matrix 
-    
     T : (n, n) array
         A possibly permuted diagonal matrix whose nonzero entries are 
         integer powers of 2 to avoid numerical truncation errors. 
-    
     s, p : (n,) array
-        If `separate` keyword is set to True then instead of the matrix `T`,
-        the scaling and the permutation vector is given. 
-        
-    c : tuple
-        If `scaled_block` is set to True then this argument holds the start 
-        and the end position of the scaled subblock. The indices obey the 
-        Python slicing rules (first inclusive, second exclusive). 
-        
-    info_code: int
-        If `silent` is set to True the appended info code from LAPACK.
+        If ``separate`` keyword is set to True then instead of the matrix 
+        ``T`` above, the scaling and the permutation vector is given. 
 
     .. versionadded:: 0.19.0
     
@@ -1226,12 +1199,11 @@ def balance(A, permute=True, scale=True, separate = False,
         raise ValueError('The data matrix for balancing should be square.')
     
     gebal = get_lapack_funcs(('gebal'),(A,))
-    ba, lo, hi, ps, info = gebal(A, scale=scale, permute=permute, 
+    B, lo, hi, ps, info = gebal(A, scale=scale, permute=permute, 
                                      overwrite_a=overwrite_a)
 
     if info < 0:
-        if not silent:
-            raise ValueError('xGEBAL exited with the "illegal value in'
+        raise ValueError('xGEBAL exited with the "illegal value in'
                              'argument number {}."'.format(-info))
         
     # Separate the permutations from the scalings and then convert to int
@@ -1257,14 +1229,6 @@ def balance(A, permute=True, scale=True, separate = False,
             perm[[x,ind]] = perm[[ind,x]]
 
     if separate:
-        output_args = (ba, scaling, perm)
-    else:
-        output_args = (ba, np.diag(scaling)[perm,:])
+        return B, (scaling, perm)
 
-    if scaled_block:
-        output_args += ((lo,hi+1),)
-        
-    if silent:
-        output_args += (info,)
-        
-    return output_args
+    return B, np.diag(scaling)[perm,:]

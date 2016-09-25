@@ -11,7 +11,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.linalg import inv, LinAlgError, norm, cond
+from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
 from .basic import solve, solve_triangular, balance
 from .lapack import get_lapack_funcs
@@ -232,7 +232,7 @@ def solve_discrete_lyapunov(a, q, method=None):
 
 def solve_continuous_are(a, b, q, r):
     """
-    Solves the continuous algebraic Riccati equation (CARE).
+    Solves the continuous-time algebraic Riccati equation (CARE).
 
     The CARE is defined as
 
@@ -306,14 +306,15 @@ def solve_continuous_are(a, b, q, r):
     return np.dot(u21, u11i)
 
 
-def solve_discrete_are(a, b, q, r, balanced=True):
+def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     """
-    Solves the discrete algebraic Riccati equation (DARE).
+    Solves the discrete-time algebraic Riccati equation (DARE).
 
     The DARE is defined as
 
     .. math::
-        X = A'XA - (A'XB) (R+B'XB)^{-1} (B'XA) + Q
+
+          A'XA - X - (A'XB) (R+B'XB)^{-1} (B'XA) + Q = 0
 
     The limitations for a solution to exist are :
         
@@ -322,6 +323,16 @@ def solve_discrete_are(a, b, q, r, balanced=True):
 
         * The associated symplectic pencil (See Notes), should have 
           eigenvalues sufficiently away from the unit circle. 
+    
+    Moreover, if ``e`` or ``s`` is not precisely ``None``, then the 
+    generalized version of DARE
+    
+    .. math::
+
+          A'XA - E'XE - (A'XB+S) (R+B'XB)^{-1} (B'XA+S') + Q = 0
+
+    is solved. When omitted, ``e`` is assumed to be the identity and ``s`` 
+    is assumed to be zero matrix.
     
     Parameters
     ----------
@@ -333,10 +344,13 @@ def solve_discrete_are(a, b, q, r, balanced=True):
         Input
     r : (N, N) array_like
         Square matrix
+    e : (M, M) array_like, optional
+        Nonsingular square matrix
+    s : (M, N) array_like, optional
+        Input
     balanced : bool
         The boolean that indicates whether a balancing step is performed 
-        on the data. The default is set to True. If the data has numerical 
-        noise, turning off the balancing might help. 
+        on the data. The default is set to True. 
 
     Returns
     -------
@@ -356,12 +370,12 @@ def solve_discrete_are(a, b, q, r, balanced=True):
     Notes
     -----
     The equation is solved by forming the extended symplectic matrix pencil, 
-    as described in [1]_, :math:`H - \lambda J` given by the block matrices
+    as described in [1]_, :math:`H - \lambda J` given by the block matrices ::
         
     
-           [  A   0   B ]             [ I   0   B ] 
-           [ -Q   I   0 ] - \lambda * [ 0  A^T  0 ]
-           [  0   0   R ]             [ 0 -B^T  0 ]
+           [  A   0   B ]             [ E   0   B ] 
+           [ -Q  E^T -S ] - \lambda * [ 0  A^T  0 ]
+           [ S^T  0   R ]             [ 0 -B^T  0 ]
         
     and using a QZ decomposition method.
     
@@ -373,8 +387,10 @@ def solve_discrete_are(a, b, q, r, balanced=True):
     
     In order to improve the QZ decomposition accuracy, the pencil goes 
     through a balancing step where the sum of absolute values of 
-    :math:`H` and :math:`J` entries (after removing the diagonal entries of 
-    the sum) is balanced following the recipe given in [3]_. 
+    :math:`H` and :math:`J` rows/cols (after removing the diagonal entries)
+    is balanced following the recipe given in [3]_. If the data has small
+    numerical noise, balancing may amplify their effects and some clean up
+    is required. 
     
     .. versionadded:: 0.11.0
 
@@ -398,7 +414,7 @@ def solve_discrete_are(a, b, q, r, balanced=True):
     b = np.atleast_2d(_asarray_validated(b,check_finite=True))
     q = np.atleast_2d(_asarray_validated(q,check_finite=True))
     r = np.atleast_2d(_asarray_validated(r,check_finite=True))
-    
+
     # Get the correct data types otherwise Numpy complains about pushing 
     # complex numbers into real arrays.
     r_or_c = complex if np.iscomplexobj(b) else float
@@ -425,16 +441,40 @@ def solve_discrete_are(a, b, q, r, balanced=True):
             raise ValueError("Matrix {} should be symmetric/hermitian."
                              "".format("qr"[ind]))
 
+    # Check if the generalized case is required with omitted arguments
+    # perform late shape checking etc. 
+    generalized_case = e is not None or s is not None
+    e_is_I_or_None = True
+    if generalized_case:
+        if e is not None:
+            e = np.atleast_2d(_asarray_validated(e,check_finite=True))
+            if not np.equal(*e.shape):
+                raise ValueError("Matrix e should be square.")
+            if m != e.shape[0]:
+                raise ValueError("Matrix a and e should have the same shape.")
+            # numpy.linalg.cond doesn't check for exact zeros and
+            # emits a runtime warning. Hence the following manual check.
+            min_sv = svd(e, compute_uv=False)[-1]
+            if min_sv == 0. or min_sv < np.spacing(1.)*norm(e,1):
+                raise ValueError('Matrix e is numerically singular')
+            e_is_I_or_None = False
+        if s is not None:
+            s = np.atleast_2d(_asarray_validated(s, check_finite=True))
+            if s.shape != b.shape:
+                raise ValueError("Matrix b and s should have the same shape.")
+
     # Form the matrix pencil        
     H = np.zeros((2*m + n, 2*m + n), dtype = r_or_c)
     H[:m, :m] = a
     H[:m, 2*m:] = b
     H[m:2*m, :m] = -q
-    H[m:2*m, m:2*m] = np.eye(m)
+    H[m:2*m, m:2*m] = np.eye(m) if e is None else e.T
+    H[m:2*m, 2*m:] = 0. if s is None else -s
+    H[2*m:, :m] = 0. if s is None else s.T
     H[2*m:, 2*m:] = r
 
     J = np.zeros_like(H, dtype = r_or_c)
-    J[:m, :m] = np.eye(m)
+    J[:m, :m] = np.eye(m) if e is None else e
     J[m:2*m, m:2*m] = a.conj().T
     J[2*m:, m:2*m] = -b.conj().T
 
@@ -443,7 +483,7 @@ def solve_discrete_are(a, b, q, r, balanced=True):
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
         M[np.diag_indices_from(M)] = 0.
-        _, sca, _ = balance(M,separate=1,permute=0)
+        _, (sca, _) = balance(M,separate=1,permute=0)
         # do we need to bother? 
         if not np.allclose(sca,np.ones_like(sca)):
             # Now impose diag(D,inv(D)) from Benner where D is 
@@ -469,6 +509,8 @@ def solve_discrete_are(a, b, q, r, balanced=True):
                     overwrite_b=True, check_finite=False, output=out_str)
     
     # Get the relevant parts of the stable subspace basis
+    if not e_is_I_or_None:
+        u, _ = qr(np.vstack((e.dot(u[:m, :m]),u[m:, :m])))
     u00 = u[:m, :m]
     u10 = u[m:, :m]
     
@@ -498,3 +540,4 @@ def solve_discrete_are(a, b, q, r, balanced=True):
                           'too close to the unit circle')
     
     return (x + x.conj().T)/2
+
