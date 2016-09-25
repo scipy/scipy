@@ -385,7 +385,7 @@ cdef from_pointer_representation(double[:, :] Z, double[:] Lambda, int[:] Pi,
         The number of observations.
     """
     cdef int i, current_leaf, pi
-    cdef np.intp_t[:] sorted_idx = np.argsort(Lambda)
+    cdef np.intp_t[:] sorted_idx = np.argsort(Lambda, kind='merge')
     cdef int[:] node_ids = np.ndarray(n, dtype=np.intc)
 
     for i in range(n):
@@ -1029,7 +1029,7 @@ def slink(double[:] dists, int n):
                 M[Pi[j]] = min(M[Pi[j]], M[j])
 
         for j in range(i):
-            if Lambda[j] >= Lambda[Pi[j]]:
+            if Lambda[j] > Lambda[Pi[j]]:
                 Pi[j] = i
 
     from_pointer_representation(Z, Lambda, Pi, n)
