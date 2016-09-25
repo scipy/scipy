@@ -867,7 +867,7 @@ def mst_single_linkage(double[:] dists, int n):
     Z_arr = np.empty((n - 1, 4))
     cdef double[:, :] Z = Z_arr
 
-    # Which clusters were already merged.
+    # Which nodes were already merged.
     cdef int[:] merged = np.zeros(n, dtype=np.intc)
 
     cdef double[:] D = np.empty(n)
