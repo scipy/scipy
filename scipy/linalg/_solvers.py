@@ -317,23 +317,23 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
           A'XA - X - (A'XB) (R+B'XB)^{-1} (B'XA) + Q = 0
 
     The limitations for a solution to exist are :
-        
-        * All eigenvalues of :math:`A` outside the unit disc, should be 
-          controllable. 
 
-        * The associated symplectic pencil (See Notes), should have 
-          eigenvalues sufficiently away from the unit circle. 
-    
-    Moreover, if ``e`` or ``s`` is not precisely ``None``, then the 
+        * All eigenvalues of :math:`A` outside the unit disc, should be
+          controllable.
+
+        * The associated symplectic pencil (See Notes), should have
+          eigenvalues sufficiently away from the unit circle.
+
+    Moreover, if ``e`` and ``s`` are not both precisely ``None``, then the
     generalized version of DARE
-    
+
     .. math::
 
           A'XA - E'XE - (A'XB+S) (R+B'XB)^{-1} (B'XA+S') + Q = 0
 
-    is solved. When omitted, ``e`` is assumed to be the identity and ``s`` 
-    is assumed to be zero matrix.
-    
+    is solved. When omitted, ``e`` is assumed to be the identity and ``s``
+    is assumed to be the zero matrix.
+
     Parameters
     ----------
     a : (M, M) array_like
@@ -354,14 +354,14 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     Returns
     -------
-    x : (M, M) array
+    x : (M, M) ndarray
         Solution to the discrete algebraic Riccati equation. 
 
     Raises
     ------
     LinAlgError
         For cases where the stable subspace of the pencil could not be 
-        isolated. See Notes section and the references for details.         
+        isolated. See Notes section and the references for details.     
 
     See Also
     --------
@@ -409,68 +409,19 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
        SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993 
        
     """
-    
-    a = np.atleast_2d(_asarray_validated(a,check_finite=True))
-    b = np.atleast_2d(_asarray_validated(b,check_finite=True))
-    q = np.atleast_2d(_asarray_validated(q,check_finite=True))
-    r = np.atleast_2d(_asarray_validated(r,check_finite=True))
 
-    # Get the correct data types otherwise Numpy complains about pushing 
-    # complex numbers into real arrays.
-    r_or_c = complex if np.iscomplexobj(b) else float
+    # Validate input arguments
+    a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
+                                                     a, b, q, r, e, s, 'dare')
 
-    for ind, mat in enumerate((a,q,r)):
-        if np.iscomplexobj(mat):
-            r_or_c = complex
-            
-        if not np.equal(*mat.shape):
-            raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
-    
-    # Shape consistency checks
-    m, n = b.shape
-    if m != a.shape[0]:
-        raise ValueError("Matrix a and b should have the same number of rows.")
-    if m != q.shape[0]:
-        raise ValueError("Matrix a and q should have the same shape.")
-    if n != r.shape[0]:
-        raise ValueError("Matrix b and r should have the same number of cols.")
-
-    # Check if the data matrices q, r are (sufficiently) hermitian
-    for ind, mat in enumerate((q,r)):
-        if norm(mat - mat.conj().T,1) > np.spacing(norm(mat,1))*100:
-            raise ValueError("Matrix {} should be symmetric/hermitian."
-                             "".format("qr"[ind]))
-
-    # Check if the generalized case is required with omitted arguments
-    # perform late shape checking etc. 
-    generalized_case = e is not None or s is not None
-    e_is_I_or_None = True
-    if generalized_case:
-        if e is not None:
-            e = np.atleast_2d(_asarray_validated(e,check_finite=True))
-            if not np.equal(*e.shape):
-                raise ValueError("Matrix e should be square.")
-            if m != e.shape[0]:
-                raise ValueError("Matrix a and e should have the same shape.")
-            # numpy.linalg.cond doesn't check for exact zeros and
-            # emits a runtime warning. Hence the following manual check.
-            min_sv = svd(e, compute_uv=False)[-1]
-            if min_sv == 0. or min_sv < np.spacing(1.)*norm(e,1):
-                raise ValueError('Matrix e is numerically singular')
-            e_is_I_or_None = False
-        if s is not None:
-            s = np.atleast_2d(_asarray_validated(s, check_finite=True))
-            if s.shape != b.shape:
-                raise ValueError("Matrix b and s should have the same shape.")
-
-    # Form the matrix pencil        
-    H = np.zeros((2*m + n, 2*m + n), dtype = r_or_c)
+    # Form the matrix pencil     
+    H = np.zeros((2*m+n, 2*m+n), dtype = r_or_c)
     H[:m, :m] = a
     H[:m, 2*m:] = b
     H[m:2*m, :m] = -q
-    H[m:2*m, m:2*m] = np.eye(m) if e is None else e.T
+    H[m:2*m, m:2*m] = np.eye(m) if e is None else e.conj().T
     H[m:2*m, 2*m:] = 0. if s is None else -s
-    H[2*m:, :m] = 0. if s is None else s.T
+    H[2*m:, :m] = 0. if s is None else s.conj().T
     H[2*m:, 2*m:] = r
 
     J = np.zeros_like(H, dtype = r_or_c)
@@ -489,7 +440,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
             # Now impose diag(D,inv(D)) from Benner where D is 
             # square root of s_i/s_(n+i) for i=0,.... 
             sca = np.log2(sca)
-            # Banker's Rounding!!
+            # NOTE: Py3 uses "Bankers Rounding: round to the nearest even" !!
             s = np.round((sca[m:2*m] - sca[:m])/2)
             sca = 2 ** np.r_[s, -s, sca[2*m:]]
             # Elementwise multiplication via broadcasting. 
@@ -497,7 +448,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
             H *= elwisescale
             J *= elwisescale
 
-    # Deflate the pencil by the R column ala Ref. [1]
+    # Deflate the pencil by the R column ala Ref.1
     q_of_qr, _ = qr(H[:, -n:])
     H = q_of_qr[:, n:].conj().T.dot(H[:, :2*m])
     J = q_of_qr[:, n:].conj().T.dot(J[:, :2*m])
@@ -505,12 +456,15 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     # Decide on which output type is needed for QZ 
     out_str = 'real' if r_or_c == float else 'complex'
     
-    _, _, _, _, _, u = ordqz(H, J, sort = 'iuc', overwrite_a=True, 
-                    overwrite_b=True, check_finite=False, output=out_str)
+    _, _, _, _, _, u = ordqz(H, J, sort = 'iuc', 
+                             overwrite_a=True,
+                             overwrite_b=True, 
+                             check_finite=False, 
+                             output=out_str)
     
     # Get the relevant parts of the stable subspace basis
-    if not e_is_I_or_None:
-        u, _ = qr(np.vstack((e.dot(u[:m, :m]),u[m:, :m])))
+    if gen_are:
+        u, _ = qr(np.vstack((e.dot(u[:m, :m]), u[m:, :m])))
     u00 = u[:m, :m]
     u10 = u[m:, :m]
     
@@ -541,3 +495,110 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     
     return (x + x.conj().T)/2
 
+
+def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
+    """
+    A helper function to validate the arguments supplied to the 
+    Riccati equation solvers. Any discrepancy found in the input 
+    matrices leads to a ``ValueError`` exception. 
+    
+    Essentialy, it performs:
+
+        - a check whether the input is free of NaN and Infs. 
+        - a pass for the data through ``numpy.atleast_2d()`` 
+        - squareness check of the relevant arrays,        
+        - shape consistency check of the arrays,
+        - singularity check of the relevant arrays,
+        - symmetricity check of the relevant matrices,
+        - a check whether the regular or the generalized version is asked.
+
+    This function is used by ``solve_continuous_are`` and 
+    ``solve_discrete_are``. 
+    
+    Parameters
+    ----------
+    a, b, q, r, e, s : array_like
+        Input data
+    eq_type : str
+        Accepted arguments are 'care' and 'dare'.
+    
+    Returns
+    -------    
+    a, b, q, r, e, s : ndarray
+        Regularized input data
+    m, n : int
+        shape of the problem 
+    r_or_c : type
+        Data type of the problem, returns float or complex
+    gen_or_not : bool
+        Type of the equation, True for generalized and False for regular ARE.
+
+    """
+
+    if not eq_type.lower() in ('dare', 'care'):
+        raise ValueError("Equation type unknown. "
+                         "Only 'care' and 'dare' is understood")
+    
+    a = np.atleast_2d(_asarray_validated(a, check_finite=True))
+    b = np.atleast_2d(_asarray_validated(b, check_finite=True))
+    q = np.atleast_2d(_asarray_validated(q, check_finite=True))
+    r = np.atleast_2d(_asarray_validated(r, check_finite=True))
+
+    # Get the correct data types otherwise Numpy complains 
+    # about pushing complex numbers into real arrays.
+    r_or_c = complex if np.iscomplexobj(b) else float
+
+    for ind, mat in enumerate((a, q, r)):
+        if np.iscomplexobj(mat):
+            r_or_c = complex
+            
+        if not np.equal(*mat.shape):
+            raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
+    
+    # Shape consistency checks
+    m, n = b.shape
+    if m != a.shape[0]:
+        raise ValueError("Matrix a and b should have the same number of rows.")
+    if m != q.shape[0]:
+        raise ValueError("Matrix a and q should have the same shape.")
+    if n != r.shape[0]:
+        raise ValueError("Matrix b and r should have the same number of cols.")
+
+    # Check if the data matrices q, r are (sufficiently) hermitian
+    for ind, mat in enumerate((q, r)):
+        if norm(mat - mat.conj().T, 1) > np.spacing(norm(mat, 1))*100:
+            raise ValueError("Matrix {} should be symmetric/hermitian."
+                             "".format("qr"[ind]))
+        
+    # Continuous time ARE should have a nonsingular r matrix. 
+    if eq_type == 'care':
+        min_sv = svd(r, compute_uv=False)[-1]
+        if min_sv == 0. or min_sv < np.spacing(1.)*norm(r, 1):
+            raise ValueError('Matrix r is numerically singular.')
+        
+    # Check if the generalized case is required with omitted arguments
+    # perform late shape checking etc. 
+    generalized_case = e is not None or s is not None
+
+    if generalized_case:
+        if e is not None:
+            e = np.atleast_2d(_asarray_validated(e, check_finite=True))
+            if not np.equal(*e.shape):
+                raise ValueError("Matrix e should be square.")
+            if m != e.shape[0]:
+                raise ValueError("Matrix a and e should have the same shape.")
+            # numpy.linalg.cond doesn't check for exact zeros and
+            # emits a runtime warning. Hence the following manual check.
+            min_sv = svd(e, compute_uv=False)[-1]
+            if min_sv == 0. or min_sv < np.spacing(1.) * norm(e, 1):
+                raise ValueError('Matrix e is numerically singular.')
+            if np.iscomplexobj(e):
+                r_or_c = complex
+        if s is not None:
+            s = np.atleast_2d(_asarray_validated(s, check_finite=True))
+            if s.shape != b.shape:
+                raise ValueError("Matrix b and s should have the same shape.")
+            if np.iscomplexobj(s):
+                r_or_c = complex
+
+    return a, b, q, r, e, s, m, n, r_or_c, generalized_case

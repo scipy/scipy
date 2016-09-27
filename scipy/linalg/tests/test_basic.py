@@ -1340,30 +1340,35 @@ class TestBalance(TestCase):
         assert_raises(ValueError, balance, 'Some string for fail')
         
     def test_infnan_arg(self):
-        assert_raises(ValueError, balance, np.array([[1,2],[3,np.inf]]))
-        assert_raises(ValueError, balance, np.array([[1,2],[3,np.nan]]))        
+        assert_raises(ValueError, balance, np.array([[1, 2],[3, np.inf]]))
+        assert_raises(ValueError, balance, np.array([[1, 2],[3, np.nan]]))        
         
     def test_scaling(self):
         _, y = balance(np.array([[1000, 1], [1000, 0]]))
+        # Pre/post LAPACK 3.5.0 gives the same result up to an offset
+        # since in each case col norm is x1000 greater and 
+        # 1000 / 32 ~= 1 * 32 hence balanced with 2 ** 5.
         assert_allclose(int(np.diff(np.log2(np.diag(y)))), 5)
     
     def test_scaling_order(self):
         A = np.array([[1, 0, 1e-4],[1, 1, 1e-2],[1e4, 1e2, 1]])
         x, y = balance(A)
-        assert_allclose(solve(y,A).dot(y),x)
+        assert_allclose(solve(y,A).dot(y), x)
 
     def test_separate(self):
         _, (y, z) = balance(np.array([[1000, 1], [1000, 0]]), separate=1)
         assert_equal(int(np.diff(np.log2(y))), 5)
-        assert_allclose(z,np.arange(2))
+        assert_allclose(z, np.arange(2))
         
     def test_permutation(self):
-        A = block_diag(np.ones((2,2)),np.tril(np.ones((2,2))),np.ones((3,3)))
+        A = block_diag(np.ones((2, 2)), np.tril(np.ones((2, 2))),
+                                                       np.ones((3, 3)))
         x, (y, z) = balance(A, separate=1)
-        assert_allclose(y,np.ones_like(y))
-        assert_allclose(z,np.array([0,1,6,5,4,3,2]))
+        assert_allclose(y, np.ones_like(y))
+        assert_allclose(z, np.array([0, 1, 6, 5, 4, 3, 2]))
     
     def test_perm_and_scaling(self):
+        # Matrix with its diagonal removed
         A = np.array([[0., 0., 0., 0., 0.000002],
                    [0., 0., 0., 0., 0.],
                    [2., 2., 0., 0., 0.],
@@ -1372,7 +1377,7 @@ class TestBalance(TestCase):
 
         x, y = balance(A)
         x, (s, p) = balance(A, separate=1)
-        assert_allclose(y,np.diag(s)[p,:])
+        assert_allclose(y,np.diag(s)[p, :])
 
 
 if __name__ == "__main__":

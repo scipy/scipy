@@ -326,7 +326,7 @@ def test_solve_discrete_are():
          None)
         ]
 
-    # Makes the the minimum precision requirements customized to the test.
+    # Makes the minimum precision requirements customized to the test.
     # Here numbers represent the number of decimals that agrees with zero
     # matrix when the solution x is plugged in to the equation. 
     #
@@ -346,12 +346,64 @@ def test_solve_discrete_are():
         x = solve_discrete_are(a, b, q, r)
         res = a.conj().T.dot(x.dot(a)) - x + q
         res -= a.conj().T.dot(x.dot(b)).dot(
-                    solve(r+b.conj().T.dot(x.dot(b)),b.conj().T).dot(x.dot(a))
+                    solve(r+b.conj().T.dot(x.dot(b)), b.conj().T).dot(x.dot(a))
                     )
-        assert_array_almost_equal(res,np.zeros_like(res),decimal=dec)
+        assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
         yield _test_factory, case, min_decimal[ind]
+
+def solve_generalized_discrete_are():
+    cases = [
+        # Two random examples differ by s term
+        # in the absence of any literature for demanding examples.
+        (np.array([[2.769230e-01, 8.234578e-01, 9.502220e-01],
+                   [4.617139e-02, 6.948286e-01, 3.444608e-02],
+                   [9.713178e-02, 3.170995e-01, 4.387444e-01]]),
+        np.array([[3.815585e-01, 1.868726e-01],
+                  [7.655168e-01, 4.897644e-01],
+                  [7.951999e-01, 4.455862e-01]]),
+        np.eye(3),
+        np.eye(2),
+        np.array([[6.463130e-01, 2.760251e-01, 1.626117e-01],
+                  [7.093648e-01, 6.797027e-01, 1.189977e-01],
+                  [7.546867e-01, 6.550980e-01, 4.983641e-01]]),
+        np.zeros((3, 2)),
+        None),
+        (np.array([[2.769230e-01, 8.234578e-01, 9.502220e-01],
+                   [4.617139e-02, 6.948286e-01, 3.444608e-02],
+                   [9.713178e-02, 3.170995e-01, 4.387444e-01]]),
+        np.array([[3.815585e-01, 1.868726e-01],
+                  [7.655168e-01, 4.897644e-01],
+                  [7.951999e-01, 4.455862e-01]]),
+        np.eye(3),
+        np.eye(2),
+        np.array([[6.463130e-01, 2.760251e-01, 1.626117e-01],
+                  [7.093648e-01, 6.797027e-01, 1.189977e-01],
+                  [7.546867e-01, 6.550980e-01, 4.983641e-01]]),
+        np.ones((3, 2)),
+        None)
+        ]
+
+    min_decimal = (11, 11)
+        
+    def _test_factory(case,dec):
+        """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
+        a, b, q, r, e, s, knownfailure = case
+        if knownfailure:
+            raise KnownFailureTest(knownfailure)
+
+        x = solve_discrete_are(a, b, q, r, e, s)
+        res = a.conj().T.dot(x.dot(a)) - e.conj().T.dot(x.dot(e)) + q
+        res -= (a.conj().T.dot(x.dot(b)) + s).dot(
+                    solve(r+b.conj().T.dot(x.dot(b)), 
+                          (b.conj().T.dot(x.dot(a)) + s.conj().T)
+                          )
+                )
+        assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
+
+    for ind, case in enumerate(cases):
+        yield _test_factory, case, min_decimal[ind]             
 
 class TestSolveSylvester(TestCase):
 
