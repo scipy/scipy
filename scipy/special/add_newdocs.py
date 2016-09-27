@@ -1403,9 +1403,10 @@ add_newdoc("scipy.special", "eval_jacobi",
     .. math::
 
         P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
-          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - z)/2).
+          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - z)/2)
 
-    When :math:`n` is an integer the result is a polynomial of degree
+    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree
     :math:`n`.
 
     Parameters
@@ -1444,7 +1445,7 @@ add_newdoc("scipy.special", "eval_sh_jacobi",
     .. math::
 
         G_n^{(p, q)}(x)
-          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
+          = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
 
     where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
 
@@ -1548,6 +1549,7 @@ add_newdoc("scipy.special", "eval_chebyt",
     chebyu : Chebychev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     hyp2f1 : Gauss hypergeometric function
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
 
     Notes
     -----
@@ -1663,6 +1665,7 @@ add_newdoc("scipy.special", "eval_chebyc",
     c_roots : roots and quadrature weights of Chebyshev polynomials of
               the first kind on [-2, 2]
     chebyc : Chebyshev polynomial object
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     eval_chebyt : evaluate Chebycshev polynomials of the first kind
     """)
 
@@ -1700,6 +1703,7 @@ add_newdoc("scipy.special", "eval_sh_chebyt",
                polynomials of the first kind
     sh_chebyt : shifted Chebyshev polynomial object
     eval_chebyt : evalaute Chebyshev polynomials of the first kind
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     """)
 
 add_newdoc("scipy.special", "eval_sh_chebyu",
@@ -1773,6 +1777,7 @@ add_newdoc("scipy.special", "eval_legendre",
     p_roots : roots and quadrature weights of Legendre polynomials
     legendre : Legendre polynomial object
     hyp2f1 : Gauss hypergeometric function
+    numpy.polynomial.legendre.Legendre : Legendre series
     """)
 
 add_newdoc("scipy.special", "eval_sh_legendre",
@@ -1808,6 +1813,7 @@ add_newdoc("scipy.special", "eval_sh_legendre",
                polynomials
     sh_legendre : shifted Legendre polynomial object
     eval_legendre : evaluate Legendre polynomials
+    numpy.polynomial.legendre.Legendre : Legendre series
     """)
 
 add_newdoc("scipy.special", "eval_genlaguerre",
@@ -1825,7 +1831,8 @@ add_newdoc("scipy.special", "eval_genlaguerre",
           {}_1F_1(-n, \alpha + 1, x).
 
     When :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`.
+    :math:`n`. The Laguerre polynomials are the special case where
+    :math:`\alpha = 0`.
 
     Parameters
     ----------
@@ -1850,6 +1857,7 @@ add_newdoc("scipy.special", "eval_genlaguerre",
                polynomials
     genlaguerre : generalized Laguerre polynomial object
     hyp1f1 : confluent hypergeometric function
+    eval_laguerre : evaluate Laguerre polynomials
     """)
 
 add_newdoc("scipy.special", "eval_laguerre",
@@ -1886,7 +1894,8 @@ add_newdoc("scipy.special", "eval_laguerre",
      --------
      l_roots : roots and quadrature weights of Laguerre polynomials
      laguerre : Laguerre polynomial object
-     weightfun_laguerre : weight function for Laguerre polynomials
+     numpy.polynomial.laguerre.Laguerre : Laguerre series
+     eval_genlaguerre : evaluate generalized Laguerre polynomials
      """)
 
 add_newdoc("scipy.special", "eval_hermite",
@@ -1899,7 +1908,7 @@ add_newdoc("scipy.special", "eval_hermite",
 
     .. math::
 
-        H_n(x) = (-1)^ne^{x^2}\frac{d^n}{dx^n}e^{-x^2};
+        H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
 
     :math:`H_n` is a polynomial of degree :math:`n`.
 
@@ -1913,13 +1922,15 @@ add_newdoc("scipy.special", "eval_hermite",
     Returns
     -------
     H : ndarray
-        values of the Hermite polynomial
+        Values of the Hermite polynomial
 
     See Also
     --------
     h_roots : roots and quadrature weights of physicist's Hermite
               polynomials
-    hermite : Hermite polynomial object
+    hermite : physicist's Hermite polynomial object
+    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
+    eval_hermitenorm : evaluate Probabilist's Hermite polynomials
     """)
 
 add_newdoc("scipy.special", "eval_hermitenorm",
@@ -1933,7 +1944,7 @@ add_newdoc("scipy.special", "eval_hermitenorm",
 
     .. math::
 
-        He_n(x) = (-1)^ne^{x^2/2}\frac{d^n}{dx^n}e^{-x^2/2};
+        He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
 
     :math:`He_n` is a polynomial of degree :math:`n`.
 
@@ -1953,7 +1964,9 @@ add_newdoc("scipy.special", "eval_hermitenorm",
     --------
     he_roots : roots and quadrature weights of probabilist's
                Hermite polynomials
-    hermitenorm : Hermite polynomial object
+    hermitenorm : probabilist's Hermite polynomial object
+    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
+    eval_hermite : evaluate physicist's Hermite polynomials
     """)
 
 add_newdoc("scipy.special", "exp1",
