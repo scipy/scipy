@@ -1368,7 +1368,7 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_incbi "incbi"(double, double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_lbeta "lbeta"(double, double) nogil
-from orthogonal_eval cimport binom as _func_binom
+from _orthogonal_eval cimport binom as _func_binom
 ctypedef double _proto_binom_t(double, double) nogil
 cdef _proto_binom_t *_proto_binom_t_var = &_func_binom
 from _boxcox cimport boxcox as _func_boxcox
@@ -1426,127 +1426,127 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_erf "erf"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_erfc "erfc"(double) nogil
-from orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
+from _orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
 ctypedef double _proto_eval_chebyc_double__t(double, double) nogil
 cdef _proto_eval_chebyc_double__t *_proto_eval_chebyc_double__t_var = &_func_eval_chebyc[double]
-from orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
+from _orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
 ctypedef double complex _proto_eval_chebyc_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyc_double_complex__t *_proto_eval_chebyc_double_complex__t_var = &_func_eval_chebyc[double_complex]
-from orthogonal_eval cimport eval_chebyc_l as _func_eval_chebyc_l
+from _orthogonal_eval cimport eval_chebyc_l as _func_eval_chebyc_l
 ctypedef double _proto_eval_chebyc_l_t(long, double) nogil
 cdef _proto_eval_chebyc_l_t *_proto_eval_chebyc_l_t_var = &_func_eval_chebyc_l
-from orthogonal_eval cimport eval_chebys as _func_eval_chebys
+from _orthogonal_eval cimport eval_chebys as _func_eval_chebys
 ctypedef double _proto_eval_chebys_double__t(double, double) nogil
 cdef _proto_eval_chebys_double__t *_proto_eval_chebys_double__t_var = &_func_eval_chebys[double]
-from orthogonal_eval cimport eval_chebys as _func_eval_chebys
+from _orthogonal_eval cimport eval_chebys as _func_eval_chebys
 ctypedef double complex _proto_eval_chebys_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebys_double_complex__t *_proto_eval_chebys_double_complex__t_var = &_func_eval_chebys[double_complex]
-from orthogonal_eval cimport eval_chebys_l as _func_eval_chebys_l
+from _orthogonal_eval cimport eval_chebys_l as _func_eval_chebys_l
 ctypedef double _proto_eval_chebys_l_t(long, double) nogil
 cdef _proto_eval_chebys_l_t *_proto_eval_chebys_l_t_var = &_func_eval_chebys_l
-from orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
+from _orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
 ctypedef double _proto_eval_chebyt_double__t(double, double) nogil
 cdef _proto_eval_chebyt_double__t *_proto_eval_chebyt_double__t_var = &_func_eval_chebyt[double]
-from orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
+from _orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
 ctypedef double complex _proto_eval_chebyt_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyt_double_complex__t *_proto_eval_chebyt_double_complex__t_var = &_func_eval_chebyt[double_complex]
-from orthogonal_eval cimport eval_chebyt_l as _func_eval_chebyt_l
+from _orthogonal_eval cimport eval_chebyt_l as _func_eval_chebyt_l
 ctypedef double _proto_eval_chebyt_l_t(long, double) nogil
 cdef _proto_eval_chebyt_l_t *_proto_eval_chebyt_l_t_var = &_func_eval_chebyt_l
-from orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
+from _orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
 ctypedef double _proto_eval_chebyu_double__t(double, double) nogil
 cdef _proto_eval_chebyu_double__t *_proto_eval_chebyu_double__t_var = &_func_eval_chebyu[double]
-from orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
+from _orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
 ctypedef double complex _proto_eval_chebyu_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyu_double_complex__t *_proto_eval_chebyu_double_complex__t_var = &_func_eval_chebyu[double_complex]
-from orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
+from _orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
 ctypedef double _proto_eval_chebyu_l_t(long, double) nogil
 cdef _proto_eval_chebyu_l_t *_proto_eval_chebyu_l_t_var = &_func_eval_chebyu_l
-from orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
+from _orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
 ctypedef double _proto_eval_gegenbauer_double__t(double, double, double) nogil
 cdef _proto_eval_gegenbauer_double__t *_proto_eval_gegenbauer_double__t_var = &_func_eval_gegenbauer[double]
-from orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
+from _orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
 ctypedef double complex _proto_eval_gegenbauer_double_complex__t(double, double, double complex) nogil
 cdef _proto_eval_gegenbauer_double_complex__t *_proto_eval_gegenbauer_double_complex__t_var = &_func_eval_gegenbauer[double_complex]
-from orthogonal_eval cimport eval_gegenbauer_l as _func_eval_gegenbauer_l
+from _orthogonal_eval cimport eval_gegenbauer_l as _func_eval_gegenbauer_l
 ctypedef double _proto_eval_gegenbauer_l_t(long, double, double) nogil
 cdef _proto_eval_gegenbauer_l_t *_proto_eval_gegenbauer_l_t_var = &_func_eval_gegenbauer_l
-from orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
+from _orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
 ctypedef double _proto_eval_genlaguerre_double__t(double, double, double) nogil
 cdef _proto_eval_genlaguerre_double__t *_proto_eval_genlaguerre_double__t_var = &_func_eval_genlaguerre[double]
-from orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
+from _orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
 ctypedef double complex _proto_eval_genlaguerre_double_complex__t(double, double, double complex) nogil
 cdef _proto_eval_genlaguerre_double_complex__t *_proto_eval_genlaguerre_double_complex__t_var = &_func_eval_genlaguerre[double_complex]
-from orthogonal_eval cimport eval_genlaguerre_l as _func_eval_genlaguerre_l
+from _orthogonal_eval cimport eval_genlaguerre_l as _func_eval_genlaguerre_l
 ctypedef double _proto_eval_genlaguerre_l_t(long, double, double) nogil
 cdef _proto_eval_genlaguerre_l_t *_proto_eval_genlaguerre_l_t_var = &_func_eval_genlaguerre_l
-from orthogonal_eval cimport eval_hermite as _func_eval_hermite
+from _orthogonal_eval cimport eval_hermite as _func_eval_hermite
 ctypedef double _proto_eval_hermite_t(long, double) nogil
 cdef _proto_eval_hermite_t *_proto_eval_hermite_t_var = &_func_eval_hermite
-from orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
+from _orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
 ctypedef double _proto_eval_hermitenorm_t(long, double) nogil
 cdef _proto_eval_hermitenorm_t *_proto_eval_hermitenorm_t_var = &_func_eval_hermitenorm
-from orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
+from _orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
 ctypedef double _proto_eval_jacobi_double__t(double, double, double, double) nogil
 cdef _proto_eval_jacobi_double__t *_proto_eval_jacobi_double__t_var = &_func_eval_jacobi[double]
-from orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
+from _orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
 ctypedef double complex _proto_eval_jacobi_double_complex__t(double, double, double, double complex) nogil
 cdef _proto_eval_jacobi_double_complex__t *_proto_eval_jacobi_double_complex__t_var = &_func_eval_jacobi[double_complex]
-from orthogonal_eval cimport eval_jacobi_l as _func_eval_jacobi_l
+from _orthogonal_eval cimport eval_jacobi_l as _func_eval_jacobi_l
 ctypedef double _proto_eval_jacobi_l_t(long, double, double, double) nogil
 cdef _proto_eval_jacobi_l_t *_proto_eval_jacobi_l_t_var = &_func_eval_jacobi_l
-from orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
+from _orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
 ctypedef double _proto_eval_laguerre_double__t(double, double) nogil
 cdef _proto_eval_laguerre_double__t *_proto_eval_laguerre_double__t_var = &_func_eval_laguerre[double]
-from orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
+from _orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
 ctypedef double complex _proto_eval_laguerre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_laguerre_double_complex__t *_proto_eval_laguerre_double_complex__t_var = &_func_eval_laguerre[double_complex]
-from orthogonal_eval cimport eval_laguerre_l as _func_eval_laguerre_l
+from _orthogonal_eval cimport eval_laguerre_l as _func_eval_laguerre_l
 ctypedef double _proto_eval_laguerre_l_t(long, double) nogil
 cdef _proto_eval_laguerre_l_t *_proto_eval_laguerre_l_t_var = &_func_eval_laguerre_l
-from orthogonal_eval cimport eval_legendre as _func_eval_legendre
+from _orthogonal_eval cimport eval_legendre as _func_eval_legendre
 ctypedef double _proto_eval_legendre_double__t(double, double) nogil
 cdef _proto_eval_legendre_double__t *_proto_eval_legendre_double__t_var = &_func_eval_legendre[double]
-from orthogonal_eval cimport eval_legendre as _func_eval_legendre
+from _orthogonal_eval cimport eval_legendre as _func_eval_legendre
 ctypedef double complex _proto_eval_legendre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_legendre_double_complex__t *_proto_eval_legendre_double_complex__t_var = &_func_eval_legendre[double_complex]
-from orthogonal_eval cimport eval_legendre_l as _func_eval_legendre_l
+from _orthogonal_eval cimport eval_legendre_l as _func_eval_legendre_l
 ctypedef double _proto_eval_legendre_l_t(long, double) nogil
 cdef _proto_eval_legendre_l_t *_proto_eval_legendre_l_t_var = &_func_eval_legendre_l
-from orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
+from _orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
 ctypedef double _proto_eval_sh_chebyt_double__t(double, double) nogil
 cdef _proto_eval_sh_chebyt_double__t *_proto_eval_sh_chebyt_double__t_var = &_func_eval_sh_chebyt[double]
-from orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
+from _orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
 ctypedef double complex _proto_eval_sh_chebyt_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_chebyt_double_complex__t *_proto_eval_sh_chebyt_double_complex__t_var = &_func_eval_sh_chebyt[double_complex]
-from orthogonal_eval cimport eval_sh_chebyt_l as _func_eval_sh_chebyt_l
+from _orthogonal_eval cimport eval_sh_chebyt_l as _func_eval_sh_chebyt_l
 ctypedef double _proto_eval_sh_chebyt_l_t(long, double) nogil
 cdef _proto_eval_sh_chebyt_l_t *_proto_eval_sh_chebyt_l_t_var = &_func_eval_sh_chebyt_l
-from orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
+from _orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
 ctypedef double _proto_eval_sh_chebyu_double__t(double, double) nogil
 cdef _proto_eval_sh_chebyu_double__t *_proto_eval_sh_chebyu_double__t_var = &_func_eval_sh_chebyu[double]
-from orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
+from _orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
 ctypedef double complex _proto_eval_sh_chebyu_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_chebyu_double_complex__t *_proto_eval_sh_chebyu_double_complex__t_var = &_func_eval_sh_chebyu[double_complex]
-from orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
+from _orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
 ctypedef double _proto_eval_sh_chebyu_l_t(long, double) nogil
 cdef _proto_eval_sh_chebyu_l_t *_proto_eval_sh_chebyu_l_t_var = &_func_eval_sh_chebyu_l
-from orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
+from _orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
 ctypedef double _proto_eval_sh_jacobi_double__t(double, double, double, double) nogil
 cdef _proto_eval_sh_jacobi_double__t *_proto_eval_sh_jacobi_double__t_var = &_func_eval_sh_jacobi[double]
-from orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
+from _orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
 ctypedef double complex _proto_eval_sh_jacobi_double_complex__t(double, double, double, double complex) nogil
 cdef _proto_eval_sh_jacobi_double_complex__t *_proto_eval_sh_jacobi_double_complex__t_var = &_func_eval_sh_jacobi[double_complex]
-from orthogonal_eval cimport eval_sh_jacobi_l as _func_eval_sh_jacobi_l
+from _orthogonal_eval cimport eval_sh_jacobi_l as _func_eval_sh_jacobi_l
 ctypedef double _proto_eval_sh_jacobi_l_t(long, double, double, double) nogil
 cdef _proto_eval_sh_jacobi_l_t *_proto_eval_sh_jacobi_l_t_var = &_func_eval_sh_jacobi_l
-from orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
+from _orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
 ctypedef double _proto_eval_sh_legendre_double__t(double, double) nogil
 cdef _proto_eval_sh_legendre_double__t *_proto_eval_sh_legendre_double__t_var = &_func_eval_sh_legendre[double]
-from orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
+from _orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
 ctypedef double complex _proto_eval_sh_legendre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_legendre_double_complex__t *_proto_eval_sh_legendre_double_complex__t_var = &_func_eval_sh_legendre[double_complex]
-from orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
+from _orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
 ctypedef double _proto_eval_sh_legendre_l_t(long, double) nogil
 cdef _proto_eval_sh_legendre_l_t *_proto_eval_sh_legendre_l_t_var = &_func_eval_sh_legendre_l
 cdef extern from "_ufuncs_defs.h":
@@ -1945,6 +1945,51 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_tandg "tandg"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_tukeylambdacdf "tukeylambdacdf"(double, double) nogil
+from _orthogonal_weightfun cimport weightfun_chebyc as _func_weightfun_chebyc
+ctypedef double _proto_weightfun_chebyc_t(double) nogil
+cdef _proto_weightfun_chebyc_t *_proto_weightfun_chebyc_t_var = &_func_weightfun_chebyc
+from _orthogonal_weightfun cimport weightfun_chebys as _func_weightfun_chebys
+ctypedef double _proto_weightfun_chebys_t(double) nogil
+cdef _proto_weightfun_chebys_t *_proto_weightfun_chebys_t_var = &_func_weightfun_chebys
+from _orthogonal_weightfun cimport weightfun_chebyt as _func_weightfun_chebyt
+ctypedef double _proto_weightfun_chebyt_t(double) nogil
+cdef _proto_weightfun_chebyt_t *_proto_weightfun_chebyt_t_var = &_func_weightfun_chebyt
+from _orthogonal_weightfun cimport weightfun_chebyu as _func_weightfun_chebyu
+ctypedef double _proto_weightfun_chebyu_t(double) nogil
+cdef _proto_weightfun_chebyu_t *_proto_weightfun_chebyu_t_var = &_func_weightfun_chebyu
+from _orthogonal_weightfun cimport weightfun_gegenbauer as _func_weightfun_gegenbauer
+ctypedef double _proto_weightfun_gegenbauer_t(double, double) nogil
+cdef _proto_weightfun_gegenbauer_t *_proto_weightfun_gegenbauer_t_var = &_func_weightfun_gegenbauer
+from _orthogonal_weightfun cimport weightfun_genlaguerre as _func_weightfun_genlaguerre
+ctypedef double _proto_weightfun_genlaguerre_t(double, double) nogil
+cdef _proto_weightfun_genlaguerre_t *_proto_weightfun_genlaguerre_t_var = &_func_weightfun_genlaguerre
+from _orthogonal_weightfun cimport weightfun_hermite as _func_weightfun_hermite
+ctypedef double _proto_weightfun_hermite_t(double) nogil
+cdef _proto_weightfun_hermite_t *_proto_weightfun_hermite_t_var = &_func_weightfun_hermite
+from _orthogonal_weightfun cimport weightfun_hermitenorm as _func_weightfun_hermitenorm
+ctypedef double _proto_weightfun_hermitenorm_t(double) nogil
+cdef _proto_weightfun_hermitenorm_t *_proto_weightfun_hermitenorm_t_var = &_func_weightfun_hermitenorm
+from _orthogonal_weightfun cimport weightfun_jacobi as _func_weightfun_jacobi
+ctypedef double _proto_weightfun_jacobi_t(double, double, double) nogil
+cdef _proto_weightfun_jacobi_t *_proto_weightfun_jacobi_t_var = &_func_weightfun_jacobi
+from _orthogonal_weightfun cimport weightfun_laguerre as _func_weightfun_laguerre
+ctypedef double _proto_weightfun_laguerre_t(double) nogil
+cdef _proto_weightfun_laguerre_t *_proto_weightfun_laguerre_t_var = &_func_weightfun_laguerre
+from _orthogonal_weightfun cimport weightfun_legendre as _func_weightfun_legendre
+ctypedef double _proto_weightfun_legendre_t(double) nogil
+cdef _proto_weightfun_legendre_t *_proto_weightfun_legendre_t_var = &_func_weightfun_legendre
+from _orthogonal_weightfun cimport weightfun_sh_chebyt as _func_weightfun_sh_chebyt
+ctypedef double _proto_weightfun_sh_chebyt_t(double) nogil
+cdef _proto_weightfun_sh_chebyt_t *_proto_weightfun_sh_chebyt_t_var = &_func_weightfun_sh_chebyt
+from _orthogonal_weightfun cimport weightfun_sh_chebyu as _func_weightfun_sh_chebyu
+ctypedef double _proto_weightfun_sh_chebyu_t(double) nogil
+cdef _proto_weightfun_sh_chebyu_t *_proto_weightfun_sh_chebyu_t_var = &_func_weightfun_sh_chebyu
+from _orthogonal_weightfun cimport weightfun_sh_jacobi as _func_weightfun_sh_jacobi
+ctypedef double _proto_weightfun_sh_jacobi_t(double, double, double) nogil
+cdef _proto_weightfun_sh_jacobi_t *_proto_weightfun_sh_jacobi_t_var = &_func_weightfun_sh_jacobi
+from _orthogonal_weightfun cimport weightfun_sh_legendre as _func_weightfun_sh_legendre
+ctypedef double _proto_weightfun_sh_legendre_t(double) nogil
+cdef _proto_weightfun_sh_legendre_t *_proto_weightfun_sh_legendre_t_var = &_func_weightfun_sh_legendre
 from _xlogy cimport xlog1py as _func_xlog1py
 ctypedef double _proto_xlog1py_double__t(double, double) nogil
 cdef _proto_xlog1py_double__t *_proto_xlog1py_double__t_var = &_func_xlog1py[double]
@@ -4641,7 +4686,37 @@ cdef char ufunc_eval_chebyc_types[15]
 cdef char *ufunc_eval_chebyc_doc = (
     "eval_chebyc(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev C polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a\n"
+    "point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    S_n(x) = T_n(x/2)\n"
+    "\n"
+    "where :math:`T_n` is a Chebyshev polynomial of the first kind.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `eval_chebyt`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "C : ndarray\n"
+    "    Values of the Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyc : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the first kind on [-2, 2]\n"
+    "weights_chebyc : weight function for Chebyshev polynomials of the\n"
+    "                 first kind on [-2, 2]\n"
+    "eval_chebyt : evaluate Chebycshev polynomials of the first kind")
 ufunc_eval_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebyc_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4686,7 +4761,37 @@ cdef char ufunc_eval_chebys_types[15]
 cdef char *ufunc_eval_chebys_doc = (
     "eval_chebys(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev S polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a\n"
+    "point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    S_n(x) = U_n(x/2)\n"
+    "\n"
+    "where :math:`U_n` is a Chebyshev polynomial of the second kind.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `eval_chebyu`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "S : ndarray\n"
+    "    Values of the Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebys : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the second kind on [-2, 2]\n"
+    "weightfun_chebys : weight function for Chebyshev polynomials of\n"
+    "                   the second kind on [-2, 2]\n"
+    "eval_chebyu : evaluate Chebyshev polynomials of the second kind")
 ufunc_eval_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebys_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4731,8 +4836,43 @@ cdef char ufunc_eval_chebyt_types[15]
 cdef char *ufunc_eval_chebyt_doc = (
     "eval_chebyt(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev T polynomial at a point.\n"
+    "Evaluate Chebyshev polynomial of the first kind at a point.\n"
     "\n"
+    "The Chebyshev polynomials of the first kind can be defined via the\n"
+    "Gauss hypergeometric function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "T : ndarray\n"
+    "    Values of the Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyt : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the first kind\n"
+    "weightfun_chebyt : weight function for Chebyshev polynomials of\n"
+    "                   the first kind\n"
+    "eval_chebyu : evaluate Chebyshev polynomials of the second kind\n"
+    "hyp2f1 : Gauss hypergeometric function\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
     "This routine is numerically stable for `x` in ``[-1, 1]`` at least\n"
     "up to order ``10000``.")
 ufunc_eval_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
@@ -4779,7 +4919,40 @@ cdef char ufunc_eval_chebyu_types[15]
 cdef char *ufunc_eval_chebyu_doc = (
     "eval_chebyu(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev U polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the second kind at a point.\n"
+    "\n"
+    "The Chebyshev polynomials of the second kind can be defined via\n"
+    "the Gauss hypergeometric function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "U : ndarray\n"
+    "    Values of the Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyu : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the second kind\n"
+    "weightfun_chebyu : weight function for Chebyshev polynomials of\n"
+    "                   the second kind\n"
+    "eval_chebyt : evaluate Chebyshev polynomials of the first kind\n"
+    "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4824,7 +4997,41 @@ cdef char ufunc_eval_gegenbauer_types[20]
 cdef char *ufunc_eval_gegenbauer_doc = (
     "eval_gegenbauer(n, alpha, x, out=None)\n"
     "\n"
-    "Evaluate Gegenbauer polynomial at a point.")
+    "Evaluate Gegenbauer polynomial at a point.\n"
+    "\n"
+    "The Gegenbauer polynomials can be defined via the Gauss\n"
+    "hypergeometric function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    C_n^{(\\alpha)} = \\frac{(2\\alpha)_n}{\\Gamma(n + 1)}\n"
+    "      {}_2F_1(-n, 2\\alpha + n; \\alpha + 1/2; (1 - z)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "alpha : array_like\n"
+    "    Parameter\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Gegenbauer polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "C : ndarray\n"
+    "    Value of the Gegenbauer polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_gegenbauer : roots and quadrature weights of Gegenbauer\n"
+    "                   polynomials\n"
+    "weightfun_gegenbauer : weight function for Gegenbauer polynomials\n"
+    "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
 ufunc_eval_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_eval_gegenbauer_loops[2] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
@@ -4874,7 +5081,43 @@ cdef char ufunc_eval_genlaguerre_types[20]
 cdef char *ufunc_eval_genlaguerre_doc = (
     "eval_genlaguerre(n, alpha, x, out=None)\n"
     "\n"
-    "Evaluate generalized Laguerre polynomial at a point.")
+    "Evaluate generalized Laguerre polynomial at a point.\n"
+    "\n"
+    "The generalized Laguerre polynomials can be defined via the\n"
+    "confluent hypergeometric function :math:`{}_1F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    L_n^{(\\alpha)}(x) = \\binom{n + \\alpha}{n}\n"
+    "      {}_1F_1(-n, \\alpha + 1, x).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer the result is\n"
+    "    determined via the relation to the confluent hypergeometric\n"
+    "    function.\n"
+    "alpha : array_like\n"
+    "    Parameter; must have ``alpha > -1``\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the generalized Laguerre\n"
+    "    polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "L : ndarray\n"
+    "    Values of the generalized Laguerre polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_genlaguerre : roots and quadrature weights of generalized\n"
+    "                    Laguerre polynomials\n"
+    "weightfun_genlaguerre : weight function for generalized Laguerre\n"
+    "                        polynomials\n"
+    "hyp1f1 : confluent hypergeometric function")
 ufunc_eval_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
 ufunc_eval_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_eval_genlaguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
@@ -4924,7 +5167,34 @@ cdef char ufunc_eval_hermite_types[3]
 cdef char *ufunc_eval_hermite_doc = (
     "eval_hermite(n, x, out=None)\n"
     "\n"
-    "Evaluate Hermite polynomial at a point.")
+    "Evaluate physicist's Hermite polynomial at a point.\n"
+    "\n"
+    "Defined by\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    H_n(x) = (-1)^ne^{x^2}\\frac{d^n}{dx^n}e^{-x^2};\n"
+    "\n"
+    ":math:`H_n` is a polynomial of degree :math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Hermite polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "H : ndarray\n"
+    "    values of the Hermite polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_hermite : roots and quadrature weights of physicist's\n"
+    "                Hermite polynomials\n"
+    "weightfun_hermite : weight function for physicist's Hermite\n"
+    "                    polynomials")
 ufunc_eval_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermite_types[0] = <char>NPY_LONG
 ufunc_eval_hermite_types[1] = <char>NPY_DOUBLE
@@ -4941,7 +5211,35 @@ cdef char ufunc_eval_hermitenorm_types[3]
 cdef char *ufunc_eval_hermitenorm_doc = (
     "eval_hermitenorm(n, x, out=None)\n"
     "\n"
-    "Evaluate normalized Hermite polynomial at a point.")
+    "Evaluate probabilist's (normalized) Hermite polynomial at a\n"
+    "point.\n"
+    "\n"
+    "Defined by\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    He_n(x) = (-1)^ne^{x^2/2}\\frac{d^n}{dx^n}e^{-x^2/2};\n"
+    "\n"
+    ":math:`He_n` is a polynomial of degree :math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Hermite polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "He : ndarray\n"
+    "    Values of the Hermite polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_hermitenorm : roots and quadrature weights of probabilist's\n"
+    "                    Hermite polynomials\n"
+    "weightfun_hermitenorm : weight function for probabilist's Hermite\n"
+    "                        polynomials")
 ufunc_eval_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermitenorm_types[0] = <char>NPY_LONG
 ufunc_eval_hermitenorm_types[1] = <char>NPY_DOUBLE
@@ -4958,7 +5256,42 @@ cdef char ufunc_eval_jacobi_types[25]
 cdef char *ufunc_eval_jacobi_doc = (
     "eval_jacobi(n, alpha, beta, x, out=None)\n"
     "\n"
-    "Evaluate Jacobi polynomial at a point.")
+    "Evaluate Jacobi polynomial at a point.\n"
+    "\n"
+    "The Jacobi polynomials can be defined via the Gauss hypergeometric\n"
+    "function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    P_n^{(\\alpha, \\beta)}(x) = \\frac{(\\alpha + 1)_n}{\\Gamma(n + 1)}\n"
+    "      {}_2F_1(-n, 1 + \\alpha + \\beta + n; \\alpha + 1; (1 - z)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "alpha : array_like\n"
+    "    Parameter\n"
+    "beta : array_like\n"
+    "    Parameter\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "P : ndarray\n"
+    "    Values of the Jacobi polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_jacobi : roots and quadrature weights of Jacobi polynomials\n"
+    "weightfun_jacobi : weight function for Jacobi polynomials\n"
+    "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
 ufunc_eval_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_eval_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
@@ -5013,7 +5346,37 @@ cdef char ufunc_eval_laguerre_types[15]
 cdef char *ufunc_eval_laguerre_doc = (
     "eval_laguerre(n, x, out=None)\n"
     "\n"
-    "Evaluate Laguerre polynomial at a point.")
+    "Evaluate Laguerre polynomial at a point.\n"
+    "\n"
+    "The Laguerre polynomials can be defined via the confluent\n"
+    "hypergeometric function :math:`{}_1F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    L_n(x) = {}_1F_1(-n, 1, x).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer the result is\n"
+    "    determined via the relation to the confluent hypergeometric\n"
+    "    function.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Laguerre polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "L : ndarray\n"
+    "    Values of the Laguerre polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_laguerre : roots and quadrature weights of Laguerre\n"
+    "                 polynomials\n"
+    "weightfun_laguerre : weight function for Laguerre polynomials")
 ufunc_eval_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_laguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5058,7 +5421,38 @@ cdef char ufunc_eval_legendre_types[15]
 cdef char *ufunc_eval_legendre_doc = (
     "eval_legendre(n, x, out=None)\n"
     "\n"
-    "Evaluate Legendre polynomial at a point.")
+    "Evaluate Legendre polynomial at a point.\n"
+    "\n"
+    "The Legendre polynomials can be defined via the Gauss\n"
+    "hypergeometric function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Legendre polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "P : ndarray\n"
+    "    Values of the Legendre polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_legendre : roots and quadrature weights of Legendre\n"
+    "                 polynomials\n"
+    "weightfun_sh_legendre : weight function for Legendre polynomials\n"
+    "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5103,7 +5497,37 @@ cdef char ufunc_eval_sh_chebyt_types[15]
 cdef char *ufunc_eval_sh_chebyt_doc = (
     "eval_sh_chebyt(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Chebyshev T polynomial at a point.")
+    "Evaluate shifted Chebyshev polynomial of the first kind at a\n"
+    "point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    T_n^*(x) = T_n(2x - 1)\n"
+    "\n"
+    "where :math:`T_n` is a Chebyshev polynomial of the first kind.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `eval_chebyt`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the shifted Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "T : ndarray\n"
+    "    Value of the shifted Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_chebyt : roots and quadrature weights of shifted Chebychev\n"
+    "                  polynomials of the first kind\n"
+    "weightfun_sh_chebyt : weight function for shifted Chebychev\n"
+    "                      polynomials of the first kind\n"
+    "eval_chebyt : evalaute Chebyshev polynomials of the first kind")
 ufunc_eval_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_chebyt_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5148,7 +5572,37 @@ cdef char ufunc_eval_sh_chebyu_types[15]
 cdef char *ufunc_eval_sh_chebyu_doc = (
     "eval_sh_chebyu(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Chebyshev U polynomial at a point.")
+    "Evaluate shifted Chebyshev polynomial of the second kind at a\n"
+    "point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    U_n^*(x) = U_n(2x - 1)\n"
+    "\n"
+    "where :math:`U_n` is a Chebyshev polynomial of the first kind.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `eval_chebyu`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the shifted Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "U : ndarray\n"
+    "    Value of the shifted Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_chebyu : roots and quadrature weights of shifted\n"
+    "                  Chebychev polynomials of the second kind\n"
+    "weightfun_sh_chebyu : weight function for shifted Chebychev\n"
+    "                      polynomials of the second kind\n"
+    "eval_chebyu : evaluate Chebyshev polynomials of the second kind")
 ufunc_eval_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5193,7 +5647,39 @@ cdef char ufunc_eval_sh_jacobi_types[25]
 cdef char *ufunc_eval_sh_jacobi_doc = (
     "eval_sh_jacobi(n, p, q, x, out=None)\n"
     "\n"
-    "Evaluate shifted Jacobi polynomial at a point.")
+    "Evaluate shifted Jacobi polynomial at a point.\n"
+    "\n"
+    "Defined by\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    G_n^{(p, q)}(x) \n"
+    "      = \\binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),\n"
+    "\n"
+    "where :math:`P_n^{(\\cdot, \\cdot)}` is the n-th Jacobi polynomial.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : int\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `binom` and `eval_jacobi`.\n"
+    "p : float\n"
+    "    Parameter\n"
+    "q : float\n"
+    "    Parameter\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "G : ndarray\n"
+    "    Values of the shifted Jacobi polynomial.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi\n"
+    "                  polynomials\n"
+    "weightfun_sh_jacobi : weight function for shifted Jacobi\n"
+    "                      polynomials\n"
+    "eval_jacobi : evaluate Jacobi polynomials")
 ufunc_eval_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
 ufunc_eval_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_eval_sh_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
@@ -5248,7 +5734,36 @@ cdef char ufunc_eval_sh_legendre_types[15]
 cdef char *ufunc_eval_sh_legendre_doc = (
     "eval_sh_legendre(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Legendre polynomial at a point.")
+    "Evaluate shifted Legendre polynomial at a point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    P_n^*(x) = P_n(2x - 1)\n"
+    "\n"
+    "where :math:`P_n` is a Legendre polynomial.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the value is\n"
+    "    determined via the relation to `eval_legendre`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the shifted Legendre polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "P : ndarray\n"
+    "    Values of the shifted Legendre polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_legendre : roots and quadrature weights of shifted\n"
+    "                    Legendre polynomials\n"
+    "weightfun_sh_legendre : weight function for shifted Legendre\n"
+    "                        polynomials\n"
+    "eval_legendre : evaluate Legendre polynomials")
 ufunc_eval_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -12178,6 +12693,688 @@ ufunc_tklmbda_ptr[2*1+1] = <void*>(<char*>"tklmbda")
 ufunc_tklmbda_data[0] = &ufunc_tklmbda_ptr[2*0]
 ufunc_tklmbda_data[1] = &ufunc_tklmbda_ptr[2*1]
 tklmbda = np.PyUFunc_FromFuncAndData(ufunc_tklmbda_loops, ufunc_tklmbda_data, ufunc_tklmbda_types, 2, 2, 1, 0, "tklmbda", ufunc_tklmbda_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_chebyc_loops[2]
+cdef void *ufunc_weightfun_chebyc_ptr[4]
+cdef void *ufunc_weightfun_chebyc_data[2]
+cdef char ufunc_weightfun_chebyc_types[4]
+cdef char *ufunc_weightfun_chebyc_doc = (
+    "weightfun_chebyc(x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Chebychev (of the first kind) quadrature\n"
+    "on [-2, 2].\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (1 - x^2/4)^{-1/2}.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``-2 <= x <= 2``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_chebyc : evaluate Chebychev polynomials of the first kind\n"
+    "roots_chebyc : roots and quadrature weights of Chebychev polynomials of\n"
+    "               the first kind")
+ufunc_weightfun_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_chebyc_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_chebyc_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_chebyc_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyc_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyc_ptr[2*0] = <void*>_func_weightfun_chebyc
+ufunc_weightfun_chebyc_ptr[2*0+1] = <void*>(<char*>"weightfun_chebyc")
+ufunc_weightfun_chebyc_ptr[2*1] = <void*>_func_weightfun_chebyc
+ufunc_weightfun_chebyc_ptr[2*1+1] = <void*>(<char*>"weightfun_chebyc")
+ufunc_weightfun_chebyc_data[0] = &ufunc_weightfun_chebyc_ptr[2*0]
+ufunc_weightfun_chebyc_data[1] = &ufunc_weightfun_chebyc_ptr[2*1]
+weightfun_chebyc = np.PyUFunc_FromFuncAndData(ufunc_weightfun_chebyc_loops, ufunc_weightfun_chebyc_data, ufunc_weightfun_chebyc_types, 2, 1, 1, 0, "weightfun_chebyc", ufunc_weightfun_chebyc_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_chebys_loops[2]
+cdef void *ufunc_weightfun_chebys_ptr[4]
+cdef void *ufunc_weightfun_chebys_data[2]
+cdef char ufunc_weightfun_chebys_types[4]
+cdef char *ufunc_weightfun_chebys_doc = (
+    "weightfun_chebys(x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Chebychev (of the second kind) quadrature\n"
+    "on [-2, 2].\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (1 - x^2/4)^{1/2}.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``-2 <= x <= 2``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_chebys : evaluate Chebychev polynomials of the second kind\n"
+    "roots_chebys : roots and quadrature weights of Chebychev polynomials of\n"
+    "               the second kind")
+ufunc_weightfun_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_chebys_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_chebys_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_chebys_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_chebys_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_chebys_ptr[2*0] = <void*>_func_weightfun_chebys
+ufunc_weightfun_chebys_ptr[2*0+1] = <void*>(<char*>"weightfun_chebys")
+ufunc_weightfun_chebys_ptr[2*1] = <void*>_func_weightfun_chebys
+ufunc_weightfun_chebys_ptr[2*1+1] = <void*>(<char*>"weightfun_chebys")
+ufunc_weightfun_chebys_data[0] = &ufunc_weightfun_chebys_ptr[2*0]
+ufunc_weightfun_chebys_data[1] = &ufunc_weightfun_chebys_ptr[2*1]
+weightfun_chebys = np.PyUFunc_FromFuncAndData(ufunc_weightfun_chebys_loops, ufunc_weightfun_chebys_data, ufunc_weightfun_chebys_types, 2, 1, 1, 0, "weightfun_chebys", ufunc_weightfun_chebys_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_chebyt_loops[2]
+cdef void *ufunc_weightfun_chebyt_ptr[4]
+cdef void *ufunc_weightfun_chebyt_data[2]
+cdef char ufunc_weightfun_chebyt_types[4]
+cdef char *ufunc_weightfun_chebyt_doc = (
+    "weightfun_chebyt(x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Chebychev (of the first kind) quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (1 - x^2)^{-1/2}.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``-1 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_chebyt : evaluate Chebychev polynomials of the first kind\n"
+    "roots_chebyt : roots and quadrature weights of Chebychev polynomials of\n"
+    "               the first kind")
+ufunc_weightfun_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_chebyt_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_chebyt_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_chebyt_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyt_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyt_ptr[2*0] = <void*>_func_weightfun_chebyt
+ufunc_weightfun_chebyt_ptr[2*0+1] = <void*>(<char*>"weightfun_chebyt")
+ufunc_weightfun_chebyt_ptr[2*1] = <void*>_func_weightfun_chebyt
+ufunc_weightfun_chebyt_ptr[2*1+1] = <void*>(<char*>"weightfun_chebyt")
+ufunc_weightfun_chebyt_data[0] = &ufunc_weightfun_chebyt_ptr[2*0]
+ufunc_weightfun_chebyt_data[1] = &ufunc_weightfun_chebyt_ptr[2*1]
+weightfun_chebyt = np.PyUFunc_FromFuncAndData(ufunc_weightfun_chebyt_loops, ufunc_weightfun_chebyt_data, ufunc_weightfun_chebyt_types, 2, 1, 1, 0, "weightfun_chebyt", ufunc_weightfun_chebyt_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_chebyu_loops[2]
+cdef void *ufunc_weightfun_chebyu_ptr[4]
+cdef void *ufunc_weightfun_chebyu_data[2]
+cdef char ufunc_weightfun_chebyu_types[4]
+cdef char *ufunc_weightfun_chebyu_doc = (
+    "weightfun_chebyu(x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Chebychev (of the second kind) quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (1 - x^2)^{1/2}.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``-1 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_chebyu : evaluate Chebychev polynomials of the second kind\n"
+    "roots_chebyu : roots and quadrature weights of Chebychev polynomials of\n"
+    "               the second kind")
+ufunc_weightfun_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_chebyu_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_chebyu_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_chebyu_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyu_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_chebyu_ptr[2*0] = <void*>_func_weightfun_chebyu
+ufunc_weightfun_chebyu_ptr[2*0+1] = <void*>(<char*>"weightfun_chebyu")
+ufunc_weightfun_chebyu_ptr[2*1] = <void*>_func_weightfun_chebyu
+ufunc_weightfun_chebyu_ptr[2*1+1] = <void*>(<char*>"weightfun_chebyu")
+ufunc_weightfun_chebyu_data[0] = &ufunc_weightfun_chebyu_ptr[2*0]
+ufunc_weightfun_chebyu_data[1] = &ufunc_weightfun_chebyu_ptr[2*1]
+weightfun_chebyu = np.PyUFunc_FromFuncAndData(ufunc_weightfun_chebyu_loops, ufunc_weightfun_chebyu_data, ufunc_weightfun_chebyu_types, 2, 1, 1, 0, "weightfun_chebyu", ufunc_weightfun_chebyu_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_gegenbauer_loops[2]
+cdef void *ufunc_weightfun_gegenbauer_ptr[4]
+cdef void *ufunc_weightfun_gegenbauer_data[2]
+cdef char ufunc_weightfun_gegenbauer_types[6]
+cdef char *ufunc_weightfun_gegenbauer_doc = (
+    "weightfun_gegenbauer(alpha, x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Gegenbauer (ultraspherical) quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (1 - x^2)^{\\alpha - 1/2}.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "alpha : array_like\n"
+    "    Must have ``alpha > -1/2``\n"
+    "x : array_like\n"
+    "    Must have ``-1 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_gegenbauer : evaluate Gegenbauer polynomials\n"
+    "roots_gegenbauer : roots and quadrature weights of Gegenbauer\n"
+    "                   polynomials")
+ufunc_weightfun_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_weightfun_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_weightfun_gegenbauer_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_gegenbauer_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_gegenbauer_types[2] = <char>NPY_FLOAT
+ufunc_weightfun_gegenbauer_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_gegenbauer_types[4] = <char>NPY_DOUBLE
+ufunc_weightfun_gegenbauer_types[5] = <char>NPY_DOUBLE
+ufunc_weightfun_gegenbauer_ptr[2*0] = <void*>_func_weightfun_gegenbauer
+ufunc_weightfun_gegenbauer_ptr[2*0+1] = <void*>(<char*>"weightfun_gegenbauer")
+ufunc_weightfun_gegenbauer_ptr[2*1] = <void*>_func_weightfun_gegenbauer
+ufunc_weightfun_gegenbauer_ptr[2*1+1] = <void*>(<char*>"weightfun_gegenbauer")
+ufunc_weightfun_gegenbauer_data[0] = &ufunc_weightfun_gegenbauer_ptr[2*0]
+ufunc_weightfun_gegenbauer_data[1] = &ufunc_weightfun_gegenbauer_ptr[2*1]
+weightfun_gegenbauer = np.PyUFunc_FromFuncAndData(ufunc_weightfun_gegenbauer_loops, ufunc_weightfun_gegenbauer_data, ufunc_weightfun_gegenbauer_types, 2, 2, 1, 0, "weightfun_gegenbauer", ufunc_weightfun_gegenbauer_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_genlaguerre_loops[2]
+cdef void *ufunc_weightfun_genlaguerre_ptr[4]
+cdef void *ufunc_weightfun_genlaguerre_data[2]
+cdef char ufunc_weightfun_genlaguerre_types[6]
+cdef char *ufunc_weightfun_genlaguerre_doc = (
+    "weightfun_genlaguerre(alpha, x, out=None)\n"
+    "\n"
+    "Weight function for generalized Gauss-Laguerre quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = e^{-x}x^\\alpha\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "alpha : array_like\n"
+    "    Must have ``alpha > -1``\n"
+    "x : array_like\n"
+    "    Must have ``x >= 0``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_genlaguerre : evaluate shifted Legendre polynomials.\n"
+    "roots_genlaguerre : roots and quadrature weights of generalized Laguerre\n"
+    "                    polynomials")
+ufunc_weightfun_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_weightfun_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_weightfun_genlaguerre_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_genlaguerre_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_genlaguerre_types[2] = <char>NPY_FLOAT
+ufunc_weightfun_genlaguerre_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_genlaguerre_types[4] = <char>NPY_DOUBLE
+ufunc_weightfun_genlaguerre_types[5] = <char>NPY_DOUBLE
+ufunc_weightfun_genlaguerre_ptr[2*0] = <void*>_func_weightfun_genlaguerre
+ufunc_weightfun_genlaguerre_ptr[2*0+1] = <void*>(<char*>"weightfun_genlaguerre")
+ufunc_weightfun_genlaguerre_ptr[2*1] = <void*>_func_weightfun_genlaguerre
+ufunc_weightfun_genlaguerre_ptr[2*1+1] = <void*>(<char*>"weightfun_genlaguerre")
+ufunc_weightfun_genlaguerre_data[0] = &ufunc_weightfun_genlaguerre_ptr[2*0]
+ufunc_weightfun_genlaguerre_data[1] = &ufunc_weightfun_genlaguerre_ptr[2*1]
+weightfun_genlaguerre = np.PyUFunc_FromFuncAndData(ufunc_weightfun_genlaguerre_loops, ufunc_weightfun_genlaguerre_data, ufunc_weightfun_genlaguerre_types, 2, 2, 1, 0, "weightfun_genlaguerre", ufunc_weightfun_genlaguerre_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_hermite_loops[2]
+cdef void *ufunc_weightfun_hermite_ptr[4]
+cdef void *ufunc_weightfun_hermite_data[2]
+cdef char ufunc_weightfun_hermite_types[4]
+cdef char *ufunc_weightfun_hermite_doc = (
+    "weightfun_hermite(x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Hermite (physicist's) quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = e^{-x^2}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_hermite : evaluate Hermite polynomials.\n"
+    "roots_hermite : roots and quadrature weights of Hermite polynomials")
+ufunc_weightfun_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_hermite_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_hermite_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_hermite_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_hermite_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_hermite_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_hermite_ptr[2*0] = <void*>_func_weightfun_hermite
+ufunc_weightfun_hermite_ptr[2*0+1] = <void*>(<char*>"weightfun_hermite")
+ufunc_weightfun_hermite_ptr[2*1] = <void*>_func_weightfun_hermite
+ufunc_weightfun_hermite_ptr[2*1+1] = <void*>(<char*>"weightfun_hermite")
+ufunc_weightfun_hermite_data[0] = &ufunc_weightfun_hermite_ptr[2*0]
+ufunc_weightfun_hermite_data[1] = &ufunc_weightfun_hermite_ptr[2*1]
+weightfun_hermite = np.PyUFunc_FromFuncAndData(ufunc_weightfun_hermite_loops, ufunc_weightfun_hermite_data, ufunc_weightfun_hermite_types, 2, 1, 1, 0, "weightfun_hermite", ufunc_weightfun_hermite_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_hermitenorm_loops[2]
+cdef void *ufunc_weightfun_hermitenorm_ptr[4]
+cdef void *ufunc_weightfun_hermitenorm_data[2]
+cdef char ufunc_weightfun_hermitenorm_types[4]
+cdef char *ufunc_weightfun_hermitenorm_doc = (
+    "weightfun_hermitenorm(x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Hermite (probabilists's) quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = e^{-x^2/2}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_hermitenorm : evaluate Hermite polynomials.\n"
+    "roots_hermitenorm : roots and quadrature weights of Hermite\n"
+    "                    polynomials")
+ufunc_weightfun_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_hermitenorm_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_hermitenorm_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_hermitenorm_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_hermitenorm_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_hermitenorm_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_hermitenorm_ptr[2*0] = <void*>_func_weightfun_hermitenorm
+ufunc_weightfun_hermitenorm_ptr[2*0+1] = <void*>(<char*>"weightfun_hermitenorm")
+ufunc_weightfun_hermitenorm_ptr[2*1] = <void*>_func_weightfun_hermitenorm
+ufunc_weightfun_hermitenorm_ptr[2*1+1] = <void*>(<char*>"weightfun_hermitenorm")
+ufunc_weightfun_hermitenorm_data[0] = &ufunc_weightfun_hermitenorm_ptr[2*0]
+ufunc_weightfun_hermitenorm_data[1] = &ufunc_weightfun_hermitenorm_ptr[2*1]
+weightfun_hermitenorm = np.PyUFunc_FromFuncAndData(ufunc_weightfun_hermitenorm_loops, ufunc_weightfun_hermitenorm_data, ufunc_weightfun_hermitenorm_types, 2, 1, 1, 0, "weightfun_hermitenorm", ufunc_weightfun_hermitenorm_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_jacobi_loops[2]
+cdef void *ufunc_weightfun_jacobi_ptr[4]
+cdef void *ufunc_weightfun_jacobi_data[2]
+cdef char ufunc_weightfun_jacobi_types[8]
+cdef char *ufunc_weightfun_jacobi_doc = (
+    "weightfun_jacobi(alpha, beta, x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Jacobi quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (1 - x)^\\alpha(1 + x)^\\beta.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "alpha : array_like\n"
+    "    Must have ``alpha > -1``\n"
+    "beta : array_like\n"
+    "    Must have ``beta > -1``\n"
+    "x : array like\n"
+    "    Must have ``-1 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_jacobi : evaluate Jacobi polynomials\n"
+    "roots_jacobi : roots and quadrature weights of Jacobi polynomials")
+ufunc_weightfun_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_weightfun_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_weightfun_jacobi_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_jacobi_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_jacobi_types[2] = <char>NPY_FLOAT
+ufunc_weightfun_jacobi_types[3] = <char>NPY_FLOAT
+ufunc_weightfun_jacobi_types[4] = <char>NPY_DOUBLE
+ufunc_weightfun_jacobi_types[5] = <char>NPY_DOUBLE
+ufunc_weightfun_jacobi_types[6] = <char>NPY_DOUBLE
+ufunc_weightfun_jacobi_types[7] = <char>NPY_DOUBLE
+ufunc_weightfun_jacobi_ptr[2*0] = <void*>_func_weightfun_jacobi
+ufunc_weightfun_jacobi_ptr[2*0+1] = <void*>(<char*>"weightfun_jacobi")
+ufunc_weightfun_jacobi_ptr[2*1] = <void*>_func_weightfun_jacobi
+ufunc_weightfun_jacobi_ptr[2*1+1] = <void*>(<char*>"weightfun_jacobi")
+ufunc_weightfun_jacobi_data[0] = &ufunc_weightfun_jacobi_ptr[2*0]
+ufunc_weightfun_jacobi_data[1] = &ufunc_weightfun_jacobi_ptr[2*1]
+weightfun_jacobi = np.PyUFunc_FromFuncAndData(ufunc_weightfun_jacobi_loops, ufunc_weightfun_jacobi_data, ufunc_weightfun_jacobi_types, 2, 3, 1, 0, "weightfun_jacobi", ufunc_weightfun_jacobi_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_laguerre_loops[2]
+cdef void *ufunc_weightfun_laguerre_ptr[4]
+cdef void *ufunc_weightfun_laguerre_data[2]
+cdef char ufunc_weightfun_laguerre_types[4]
+cdef char *ufunc_weightfun_laguerre_doc = (
+    "weightfun_laguerre(x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Laguerre quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = e^{-x}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``x >= 0``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_laguerre : evaluate Laguerre polynomials.\n"
+    "roots_laguerre : roots and quadrature weights of Laguerre polynomials")
+ufunc_weightfun_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_laguerre_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_laguerre_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_laguerre_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_laguerre_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_laguerre_ptr[2*0] = <void*>_func_weightfun_laguerre
+ufunc_weightfun_laguerre_ptr[2*0+1] = <void*>(<char*>"weightfun_laguerre")
+ufunc_weightfun_laguerre_ptr[2*1] = <void*>_func_weightfun_laguerre
+ufunc_weightfun_laguerre_ptr[2*1+1] = <void*>(<char*>"weightfun_laguerre")
+ufunc_weightfun_laguerre_data[0] = &ufunc_weightfun_laguerre_ptr[2*0]
+ufunc_weightfun_laguerre_data[1] = &ufunc_weightfun_laguerre_ptr[2*1]
+weightfun_laguerre = np.PyUFunc_FromFuncAndData(ufunc_weightfun_laguerre_loops, ufunc_weightfun_laguerre_data, ufunc_weightfun_laguerre_types, 2, 1, 1, 0, "weightfun_laguerre", ufunc_weightfun_laguerre_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_legendre_loops[2]
+cdef void *ufunc_weightfun_legendre_ptr[4]
+cdef void *ufunc_weightfun_legendre_data[2]
+cdef char ufunc_weightfun_legendre_types[4]
+cdef char *ufunc_weightfun_legendre_doc = (
+    "weightfun_legendre(x, out=None)\n"
+    "\n"
+    "Weight function for Gauss-Legendre quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = 1\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``-1 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_legendre : evaluate Legendre polynomials.\n"
+    "roots_legendre : roots and quadrature weights of Legendre polynomials")
+ufunc_weightfun_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_legendre_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_legendre_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_legendre_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_legendre_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_legendre_ptr[2*0] = <void*>_func_weightfun_legendre
+ufunc_weightfun_legendre_ptr[2*0+1] = <void*>(<char*>"weightfun_legendre")
+ufunc_weightfun_legendre_ptr[2*1] = <void*>_func_weightfun_legendre
+ufunc_weightfun_legendre_ptr[2*1+1] = <void*>(<char*>"weightfun_legendre")
+ufunc_weightfun_legendre_data[0] = &ufunc_weightfun_legendre_ptr[2*0]
+ufunc_weightfun_legendre_data[1] = &ufunc_weightfun_legendre_ptr[2*1]
+weightfun_legendre = np.PyUFunc_FromFuncAndData(ufunc_weightfun_legendre_loops, ufunc_weightfun_legendre_data, ufunc_weightfun_legendre_types, 2, 1, 1, 0, "weightfun_legendre", ufunc_weightfun_legendre_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_sh_chebyt_loops[2]
+cdef void *ufunc_weightfun_sh_chebyt_ptr[4]
+cdef void *ufunc_weightfun_sh_chebyt_data[2]
+cdef char ufunc_weightfun_sh_chebyt_types[4]
+cdef char *ufunc_weightfun_sh_chebyt_doc = (
+    "weightfun_sh_chebyt(x, out=None)\n"
+    "\n"
+    "Weight function for shifted Gauss-Chebychev (first kind) quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (x - x^2)^{-1/2}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``0 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_sh_chebyt : evaluate shifted Chebychev polynomials of the\n"
+    "                 first kind\n"
+    "roots_sh_chebyt : roots and quadrature weights of shifted Chebychev\n"
+    "                  polynomials of the first kind")
+ufunc_weightfun_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_sh_chebyt_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_sh_chebyt_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_sh_chebyt_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_chebyt_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_chebyt_ptr[2*0] = <void*>_func_weightfun_sh_chebyt
+ufunc_weightfun_sh_chebyt_ptr[2*0+1] = <void*>(<char*>"weightfun_sh_chebyt")
+ufunc_weightfun_sh_chebyt_ptr[2*1] = <void*>_func_weightfun_sh_chebyt
+ufunc_weightfun_sh_chebyt_ptr[2*1+1] = <void*>(<char*>"weightfun_sh_chebyt")
+ufunc_weightfun_sh_chebyt_data[0] = &ufunc_weightfun_sh_chebyt_ptr[2*0]
+ufunc_weightfun_sh_chebyt_data[1] = &ufunc_weightfun_sh_chebyt_ptr[2*1]
+weightfun_sh_chebyt = np.PyUFunc_FromFuncAndData(ufunc_weightfun_sh_chebyt_loops, ufunc_weightfun_sh_chebyt_data, ufunc_weightfun_sh_chebyt_types, 2, 1, 1, 0, "weightfun_sh_chebyt", ufunc_weightfun_sh_chebyt_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_sh_chebyu_loops[2]
+cdef void *ufunc_weightfun_sh_chebyu_ptr[4]
+cdef void *ufunc_weightfun_sh_chebyu_data[2]
+cdef char ufunc_weightfun_sh_chebyu_types[4]
+cdef char *ufunc_weightfun_sh_chebyu_doc = (
+    "weightfun_sh_chebyu(x, out=None)\n"
+    "\n"
+    "Weight function for shifted Gauss-Chebychev (second kind) quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (x - x^2)^{1/2}\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``0 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_sh_chebyu : evaluate shifted Chebychev polynomials of the\n"
+    "                 second kind\n"
+    "roots_sh_chebyu : roots and quadrature weights of shifted Chebychev\n"
+    "                  polynomials of the second kind")
+ufunc_weightfun_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_sh_chebyu_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_sh_chebyu_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_sh_chebyu_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_chebyu_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_chebyu_ptr[2*0] = <void*>_func_weightfun_sh_chebyu
+ufunc_weightfun_sh_chebyu_ptr[2*0+1] = <void*>(<char*>"weightfun_sh_chebyu")
+ufunc_weightfun_sh_chebyu_ptr[2*1] = <void*>_func_weightfun_sh_chebyu
+ufunc_weightfun_sh_chebyu_ptr[2*1+1] = <void*>(<char*>"weightfun_sh_chebyu")
+ufunc_weightfun_sh_chebyu_data[0] = &ufunc_weightfun_sh_chebyu_ptr[2*0]
+ufunc_weightfun_sh_chebyu_data[1] = &ufunc_weightfun_sh_chebyu_ptr[2*1]
+weightfun_sh_chebyu = np.PyUFunc_FromFuncAndData(ufunc_weightfun_sh_chebyu_loops, ufunc_weightfun_sh_chebyu_data, ufunc_weightfun_sh_chebyu_types, 2, 1, 1, 0, "weightfun_sh_chebyu", ufunc_weightfun_sh_chebyu_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_sh_jacobi_loops[2]
+cdef void *ufunc_weightfun_sh_jacobi_ptr[4]
+cdef void *ufunc_weightfun_sh_jacobi_data[2]
+cdef char ufunc_weightfun_sh_jacobi_types[8]
+cdef char *ufunc_weightfun_sh_jacobi_doc = (
+    "weightfun_sh_jacobi(p, q, x, out=None)\n"
+    "\n"
+    "Weight function for shifted Gauss-Jacobi quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = (1 - x)^{p - q}x^{q - 1}.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "p : array_like\n"
+    "    Must have ``p - q > -1``\n"
+    "q : array_like\n"
+    "    Must have ``q > 0``\n"
+    "x : array_like\n"
+    "    Must have ``0 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_sh_jacobi : evaluate shifted Jacobi polynomials\n"
+    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi\n"
+    "                  polynomials")
+ufunc_weightfun_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
+ufunc_weightfun_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_ddd_d
+ufunc_weightfun_sh_jacobi_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_sh_jacobi_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_sh_jacobi_types[2] = <char>NPY_FLOAT
+ufunc_weightfun_sh_jacobi_types[3] = <char>NPY_FLOAT
+ufunc_weightfun_sh_jacobi_types[4] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_jacobi_types[5] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_jacobi_types[6] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_jacobi_types[7] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_jacobi_ptr[2*0] = <void*>_func_weightfun_sh_jacobi
+ufunc_weightfun_sh_jacobi_ptr[2*0+1] = <void*>(<char*>"weightfun_sh_jacobi")
+ufunc_weightfun_sh_jacobi_ptr[2*1] = <void*>_func_weightfun_sh_jacobi
+ufunc_weightfun_sh_jacobi_ptr[2*1+1] = <void*>(<char*>"weightfun_sh_jacobi")
+ufunc_weightfun_sh_jacobi_data[0] = &ufunc_weightfun_sh_jacobi_ptr[2*0]
+ufunc_weightfun_sh_jacobi_data[1] = &ufunc_weightfun_sh_jacobi_ptr[2*1]
+weightfun_sh_jacobi = np.PyUFunc_FromFuncAndData(ufunc_weightfun_sh_jacobi_loops, ufunc_weightfun_sh_jacobi_data, ufunc_weightfun_sh_jacobi_types, 2, 3, 1, 0, "weightfun_sh_jacobi", ufunc_weightfun_sh_jacobi_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_weightfun_sh_legendre_loops[2]
+cdef void *ufunc_weightfun_sh_legendre_ptr[4]
+cdef void *ufunc_weightfun_sh_legendre_data[2]
+cdef char ufunc_weightfun_sh_legendre_types[4]
+cdef char *ufunc_weightfun_sh_legendre_doc = (
+    "weightfun_sh_legendre(x, out=None)\n"
+    "\n"
+    "Weight function for shifted Gauss-Legendre quadrature.\n"
+    "\n"
+    "Defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    w(x) = 1\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Must have ``0 <= x <= 1``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "w : ndarray\n"
+    "    Value of the weight function\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "eval_sh_legendre : evaluate shifted Legendre polynomials.\n"
+    "roots_sh_legendre : roots and quadrature weights of shifted Legendre\n"
+    "                    polynomials")
+ufunc_weightfun_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_weightfun_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_weightfun_sh_legendre_types[0] = <char>NPY_FLOAT
+ufunc_weightfun_sh_legendre_types[1] = <char>NPY_FLOAT
+ufunc_weightfun_sh_legendre_types[2] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_legendre_types[3] = <char>NPY_DOUBLE
+ufunc_weightfun_sh_legendre_ptr[2*0] = <void*>_func_weightfun_sh_legendre
+ufunc_weightfun_sh_legendre_ptr[2*0+1] = <void*>(<char*>"weightfun_sh_legendre")
+ufunc_weightfun_sh_legendre_ptr[2*1] = <void*>_func_weightfun_sh_legendre
+ufunc_weightfun_sh_legendre_ptr[2*1+1] = <void*>(<char*>"weightfun_sh_legendre")
+ufunc_weightfun_sh_legendre_data[0] = &ufunc_weightfun_sh_legendre_ptr[2*0]
+ufunc_weightfun_sh_legendre_data[1] = &ufunc_weightfun_sh_legendre_ptr[2*1]
+weightfun_sh_legendre = np.PyUFunc_FromFuncAndData(ufunc_weightfun_sh_legendre_loops, ufunc_weightfun_sh_legendre_data, ufunc_weightfun_sh_legendre_types, 2, 1, 1, 0, "weightfun_sh_legendre", ufunc_weightfun_sh_legendre_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_wofz_loops[2]
 cdef void *ufunc_wofz_ptr[4]

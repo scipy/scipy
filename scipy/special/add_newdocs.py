@@ -1392,111 +1392,581 @@ add_newdoc("scipy.special", "erfcx",
     """)
 
 add_newdoc("scipy.special", "eval_jacobi",
-    """
+    r"""
     eval_jacobi(n, alpha, beta, x, out=None)
 
     Evaluate Jacobi polynomial at a point.
+
+    The Jacobi polynomials can be defined via the Gauss hypergeometric
+    function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - z)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    alpha : array_like
+        Parameter
+    beta : array_like
+        Parameter
+    x : array_like
+        Points at which to evaluate the polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the Jacobi polynomial
+
+    See Also
+    --------
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
+    weightfun_jacobi : weight function for Jacobi polynomials
+    hyp2f1 : Gauss hypergeometric function
     """)
 
 add_newdoc("scipy.special", "eval_sh_jacobi",
-    """
+    r"""
     eval_sh_jacobi(n, p, q, x, out=None)
 
     Evaluate shifted Jacobi polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        G_n^{(p, q)}(x) 
+          = \binom{2n + p - 1}{n}^{-1}P_n^{(p - q, q - 1)}(2x - 1),
+
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `binom` and `eval_jacobi`.
+    p : float
+        Parameter
+    q : float
+        Parameter
+
+    Returns
+    -------
+    G : ndarray
+        Values of the shifted Jacobi polynomial.
+
+    See Also
+    --------
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
+    weightfun_sh_jacobi : weight function for shifted Jacobi
+                          polynomials
+    eval_jacobi : evaluate Jacobi polynomials
     """)
 
 add_newdoc("scipy.special", "eval_gegenbauer",
-    """
+    r"""
     eval_gegenbauer(n, alpha, x, out=None)
 
     Evaluate Gegenbauer polynomial at a point.
+
+    The Gegenbauer polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        C_n^{(\alpha)} = \frac{(2\alpha)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    alpha : array_like
+        Parameter
+    x : array_like
+        Points at which to evaluate the Gegenbauer polynomial
+
+    Returns
+    -------
+    C : ndarray
+        Value of the Gegenbauer polynomial
+
+    See Also
+    --------
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
+    weightfun_gegenbauer : weight function for Gegenbauer polynomials
+    hyp2f1 : Gauss hypergeometric function
     """)
 
 add_newdoc("scipy.special", "eval_chebyt",
-    """
+    r"""
     eval_chebyt(n, x, out=None)
 
-    Evaluate Chebyshev T polynomial at a point.
+    Evaluate Chebyshev polynomial of the first kind at a point.
 
+    The Chebyshev polynomials of the first kind can be defined via the
+    Gauss hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    T : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyt : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind
+    weightfun_chebyt : weight function for Chebyshev polynomials of
+                       the first kind
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
+    hyp2f1 : Gauss hypergeometric function
+
+    Notes
+    -----
     This routine is numerically stable for `x` in ``[-1, 1]`` at least
     up to order ``10000``.
     """)
 
 add_newdoc("scipy.special", "eval_chebyu",
-    """
+    r"""
     eval_chebyu(n, x, out=None)
 
-    Evaluate Chebyshev U polynomial at a point.
+    Evaluate Chebyshev polynomial of the second kind at a point.
+
+    The Chebyshev polynomials of the second kind can be defined via
+    the Gauss hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    U : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyu : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind
+    weightfun_chebyu : weight function for Chebyshev polynomials of
+                       the second kind
+    eval_chebyt : evaluate Chebyshev polynomials of the first kind
+    hyp2f1 : Gauss hypergeometric function
     """)
 
 add_newdoc("scipy.special", "eval_chebys",
-    """
+    r"""
     eval_chebys(n, x, out=None)
 
-    Evaluate Chebyshev S polynomial at a point.
+    Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        S_n(x) = U_n(x/2)
+
+    where :math:`U_n` is a Chebyshev polynomial of the second kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyu`.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    S : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebys : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind on [-2, 2]
+    weightfun_chebys : weight function for Chebyshev polynomials of
+                       the second kind on [-2, 2]
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
 add_newdoc("scipy.special", "eval_chebyc",
-    """
+    r"""
     eval_chebyc(n, x, out=None)
 
-    Evaluate Chebyshev C polynomial at a point.
+    Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        S_n(x) = T_n(x/2)
+
+    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyt`.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    C : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyc : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind on [-2, 2]
+    weights_chebyc : weight function for Chebyshev polynomials of the
+                     first kind on [-2, 2]
+    eval_chebyt : evaluate Chebycshev polynomials of the first kind
     """)
 
 add_newdoc("scipy.special", "eval_sh_chebyt",
-    """
+    r"""
     eval_sh_chebyt(n, x, out=None)
 
-    Evaluate shifted Chebyshev T polynomial at a point.
+    Evaluate shifted Chebyshev polynomial of the first kind at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        T_n^*(x) = T_n(2x - 1)
+
+    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyt`.
+    x : array_like
+        Points at which to evaluate the shifted Chebyshev polynomial
+
+    Returns
+    -------
+    T : ndarray
+        Value of the shifted Chebyshev polynomial
+
+    See Also
+    --------
+    roots_sh_chebyt : roots and quadrature weights of shifted Chebychev
+                      polynomials of the first kind
+    weightfun_sh_chebyt : weight function for shifted Chebychev
+                          polynomials of the first kind
+    eval_chebyt : evalaute Chebyshev polynomials of the first kind
     """)
 
 add_newdoc("scipy.special", "eval_sh_chebyu",
-    """
+    r"""
     eval_sh_chebyu(n, x, out=None)
 
-    Evaluate shifted Chebyshev U polynomial at a point.
+    Evaluate shifted Chebyshev polynomial of the second kind at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        U_n^*(x) = U_n(2x - 1)
+
+    where :math:`U_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyu`.
+    x : array_like
+        Points at which to evaluate the shifted Chebyshev polynomial
+
+    Returns
+    -------
+    U : ndarray
+        Value of the shifted Chebyshev polynomial
+
+    See Also
+    --------
+    roots_sh_chebyu : roots and quadrature weights of shifted
+                      Chebychev polynomials of the second kind
+    weightfun_sh_chebyu : weight function for shifted Chebychev
+                          polynomials of the second kind
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
 add_newdoc("scipy.special", "eval_legendre",
-    """
+    r"""
     eval_legendre(n, x, out=None)
 
     Evaluate Legendre polynomial at a point.
+
+    The Legendre polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Legendre polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the Legendre polynomial
+
+    See Also
+    --------
+    roots_legendre : roots and quadrature weights of Legendre
+                     polynomials
+    weightfun_sh_legendre : weight function for Legendre polynomials
+    hyp2f1 : Gauss hypergeometric function
     """)
 
 add_newdoc("scipy.special", "eval_sh_legendre",
-    """
+    r"""
     eval_sh_legendre(n, x, out=None)
 
     Evaluate shifted Legendre polynomial at a point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        P_n^*(x) = P_n(2x - 1)
+
+    where :math:`P_n` is a Legendre polynomial.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the value is
+        determined via the relation to `eval_legendre`.
+    x : array_like
+        Points at which to evaluate the shifted Legendre polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the shifted Legendre polynomial
+
+    See Also
+    --------
+    roots_sh_legendre : roots and quadrature weights of shifted
+                        Legendre polynomials
+    weightfun_sh_legendre : weight function for shifted Legendre
+                            polynomials
+    eval_legendre : evaluate Legendre polynomials
     """)
 
 add_newdoc("scipy.special", "eval_genlaguerre",
-    """
+    r"""
     eval_genlaguerre(n, alpha, x, out=None)
 
     Evaluate generalized Laguerre polynomial at a point.
+
+    The generalized Laguerre polynomials can be defined via the
+    confluent hypergeometric function :math:`{}_1F_1` as
+
+    .. math::
+
+        L_n^{(\alpha)}(x) = \binom{n + \alpha}{n}
+          {}_1F_1(-n, \alpha + 1, x).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the confluent hypergeometric
+        function.
+    alpha : array_like
+        Parameter; must have ``alpha > -1``
+    x : array_like
+        Points at which to evaluate the generalized Laguerre
+        polynomial
+
+    Returns
+    -------
+    L : ndarray
+        Values of the generalized Laguerre polynomial
+
+    See Also
+    --------
+    roots_genlaguerre : roots and quadrature weights of generalized
+                        Laguerre polynomials
+    weightfun_genlaguerre : weight function for generalized Laguerre
+                            polynomials
+    hyp1f1 : confluent hypergeometric function
     """)
 
 add_newdoc("scipy.special", "eval_laguerre",
-     """
-    eval_laguerre(n, x, out=None)
+     r"""
+     eval_laguerre(n, x, out=None)
 
-    Evaluate Laguerre polynomial at a point.
-    """)
+     Evaluate Laguerre polynomial at a point.
+
+     The Laguerre polynomials can be defined via the confluent
+     hypergeometric function :math:`{}_1F_1` as
+
+     .. math::
+
+         L_n(x) = {}_1F_1(-n, 1, x).
+
+     When :math:`n` is an integer the result is a polynomial of degree
+     :math:`n`.
+
+     Parameters
+     ----------
+     n : array_like
+         Degree of the polynomial. If not an integer the result is
+         determined via the relation to the confluent hypergeometric
+         function.
+     x : array_like
+         Points at which to evaluate the Laguerre polynomial
+
+     Returns
+     -------
+     L : ndarray
+         Values of the Laguerre polynomial
+
+     See Also
+     --------
+     roots_laguerre : roots and quadrature weights of Laguerre
+                      polynomials
+     weightfun_laguerre : weight function for Laguerre polynomials
+     """)
 
 add_newdoc("scipy.special", "eval_hermite",
-    """
+    r"""
     eval_hermite(n, x, out=None)
 
-    Evaluate Hermite polynomial at a point.
+    Evaluate physicist's Hermite polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        H_n(x) = (-1)^ne^{x^2}\frac{d^n}{dx^n}e^{-x^2};
+
+    :math:`H_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+
+    Returns
+    -------
+    H : ndarray
+        values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermite : roots and quadrature weights of physicist's
+                    Hermite polynomials
+    weightfun_hermite : weight function for physicist's Hermite
+                        polynomials
     """)
 
 add_newdoc("scipy.special", "eval_hermitenorm",
-    """
+    r"""
     eval_hermitenorm(n, x, out=None)
 
-    Evaluate normalized Hermite polynomial at a point.
+    Evaluate probabilist's (normalized) Hermite polynomial at a
+    point.
+
+    Defined by
+
+    .. math::
+
+        He_n(x) = (-1)^ne^{x^2/2}\frac{d^n}{dx^n}e^{-x^2/2};
+
+    :math:`He_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+
+    Returns
+    -------
+    He : ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermitenorm : roots and quadrature weights of probabilist's
+                        Hermite polynomials
+    weightfun_hermitenorm : weight function for probabilist's Hermite
+                            polynomials
     """)
 
 add_newdoc("scipy.special", "exp1",
@@ -5760,4 +6230,465 @@ add_newdoc("scipy.special", "_sinpi",
 add_newdoc("scipy.special", "_cospi",
     """
     Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "weightfun_jacobi",
+    r"""
+    weightfun_jacobi(alpha, beta, x, out=None)
+
+    Weight function for Gauss-Jacobi quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x)^\alpha(1 + x)^\beta.
+
+    Parameters
+    ----------
+    alpha : array_like
+        Must have ``alpha > -1``
+    beta : array_like
+        Must have ``beta > -1``
+    x : array like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function.
+
+    See Also
+    --------
+    eval_jacobi : evaluate Jacobi polynomials
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_sh_jacobi",
+    r"""
+    weightfun_sh_jacobi(p, q, x, out=None)
+
+    Weight function for shifted Gauss-Jacobi quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x)^{p - q}x^{q - 1}.
+
+    Parameters
+    ----------
+    p : array_like
+        Must have ``p - q > -1``
+    q : array_like
+        Must have ``q > 0``
+    x : array_like
+        Must have ``0 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_sh_jacobi : evaluate shifted Jacobi polynomials
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_gegenbauer",
+    r"""
+    weightfun_gegenbauer(alpha, x, out=None)
+
+    Weight function for Gauss-Gegenbauer (ultraspherical) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2)^{\alpha - 1/2}.
+
+    Parameters
+    ----------
+    alpha : array_like
+        Must have ``alpha > -1/2``
+    x : array_like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_gegenbauer : evaluate Gegenbauer polynomials
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_chebyt",
+    r"""
+    weightfun_chebyt(x, out=None)
+
+    Weight function for Gauss-Chebychev (of the first kind) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2)^{-1/2}.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_chebyt : evaluate Chebychev polynomials of the first kind
+    roots_chebyt : roots and quadrature weights of Chebychev polynomials of
+                   the first kind
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_chebyu",
+    r"""
+    weightfun_chebyu(x, out=None)
+
+    Weight function for Gauss-Chebychev (of the second kind) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2)^{1/2}.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_chebyu : evaluate Chebychev polynomials of the second kind
+    roots_chebyu : roots and quadrature weights of Chebychev polynomials of
+                   the second kind
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_chebyc",
+    r"""
+    weightfun_chebyc(x, out=None)
+
+    Weight function for Gauss-Chebychev (of the first kind) quadrature
+    on [-2, 2].
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2/4)^{-1/2}.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-2 <= x <= 2``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_chebyc : evaluate Chebychev polynomials of the first kind
+    roots_chebyc : roots and quadrature weights of Chebychev polynomials of
+                   the first kind
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_chebys",
+    r"""
+    weightfun_chebys(x, out=None)
+
+    Weight function for Gauss-Chebychev (of the second kind) quadrature
+    on [-2, 2].
+
+    Defined as
+
+    .. math::
+
+        w(x) = (1 - x^2/4)^{1/2}.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-2 <= x <= 2``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_chebys : evaluate Chebychev polynomials of the second kind
+    roots_chebys : roots and quadrature weights of Chebychev polynomials of
+                   the second kind
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_sh_chebyt",
+    r"""
+    weightfun_sh_chebyt(x, out=None)
+
+    Weight function for shifted Gauss-Chebychev (first kind) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (x - x^2)^{-1/2}
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``0 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_sh_chebyt : evaluate shifted Chebychev polynomials of the
+                     first kind
+    roots_sh_chebyt : roots and quadrature weights of shifted Chebychev
+                      polynomials of the first kind
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_sh_chebyu",
+    r"""
+    weightfun_sh_chebyu(x, out=None)
+
+    Weight function for shifted Gauss-Chebychev (second kind) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = (x - x^2)^{1/2}
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``0 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_sh_chebyu : evaluate shifted Chebychev polynomials of the
+                     second kind
+    roots_sh_chebyu : roots and quadrature weights of shifted Chebychev
+                      polynomials of the second kind
+
+    """)
+
+
+add_newdoc("scipy.special", "weightfun_legendre",
+    r"""
+    weightfun_legendre(x, out=None)
+
+    Weight function for Gauss-Legendre quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = 1.
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``-1 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_legendre : evaluate Legendre polynomials.
+    roots_legendre : roots and quadrature weights of Legendre polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_sh_legendre",
+    r"""
+    weightfun_sh_legendre(x, out=None)
+
+    Weight function for shifted Gauss-Legendre quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = 1
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``0 <= x <= 1``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_sh_legendre : evaluate shifted Legendre polynomials.
+    roots_sh_legendre : roots and quadrature weights of shifted Legendre
+                        polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_genlaguerre",
+    r"""
+    weightfun_genlaguerre(alpha, x, out=None)
+
+    Weight function for generalized Gauss-Laguerre quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = e^{-x}x^\alpha
+
+    Parameters
+    ----------
+    alpha : array_like
+        Must have ``alpha > -1``
+    x : array_like
+        Must have ``x >= 0``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_genlaguerre : evaluate shifted Legendre polynomials.
+    roots_genlaguerre : roots and quadrature weights of generalized Laguerre
+                        polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_laguerre",
+    r"""
+    weightfun_laguerre(x, out=None)
+
+    Weight function for Gauss-Laguerre quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = e^{-x}
+
+    Parameters
+    ----------
+    x : array_like
+        Must have ``x >= 0``
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_laguerre : evaluate Laguerre polynomials.
+    roots_laguerre : roots and quadrature weights of Laguerre polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_hermite",
+    r"""
+    weightfun_hermite(x, out=None)
+
+    Weight function for Gauss-Hermite (physicist's) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = e^{-x^2}
+
+    Parameters
+    ----------
+    x : array_like
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_hermite : evaluate Hermite polynomials.
+    roots_hermite : roots and quadrature weights of Hermite polynomials
+
+    """)
+
+add_newdoc("scipy.special", "weightfun_hermitenorm",
+    r"""
+    weightfun_hermitenorm(x, out=None)
+
+    Weight function for Gauss-Hermite (probabilists's) quadrature.
+
+    Defined as
+
+    .. math::
+
+        w(x) = e^{-x^2/2}
+
+    Parameters
+    ----------
+    x : array_like
+
+    Returns
+    -------
+    w : ndarray
+        Value of the weight function
+
+    See Also
+    --------
+    eval_hermitenorm : evaluate Hermite polynomials.
+    roots_hermitenorm : roots and quadrature weights of Hermite
+                        polynomials
+
     """)

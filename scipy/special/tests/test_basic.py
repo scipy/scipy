@@ -38,9 +38,11 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipk, zeta
 
-from scipy.special._testutils import assert_tol_equal, with_special_errors, \
-     assert_func_equal
+from scipy.special._testutils import (
+    assert_tol_equal, with_special_errors, assert_func_equal,
+    suppress_warnings, DecoratorMeta)
 
+from scipy._lib.six import with_metaclass
 from scipy._lib._version import NumpyVersion
 
 import math
@@ -1063,7 +1065,9 @@ class TestAiry(TestCase):
              -6.7812944460, -7.9401786892, -9.0195833588], rtol=1e-10)
 
 
-class TestAssocLaguerre(TestCase):
+class TestAssocLaguerre(with_metaclass(DecoratorMeta, object)):
+    decorators = [(suppress_warnings, None)]
+
     def test_assoc_laguerre(self):
         a1 = special.genlaguerre(11,1)
         a2 = special.assoc_laguerre(.2,11,1)
@@ -2344,6 +2348,7 @@ class TestBessel(TestCase):
         o1ker = special.kve(1,.1)
         assert_almost_equal(o1ke,o1ker,8)
 
+    @suppress_warnings
     def test_jacobi(self):
         a = 5*np.random.random() - 1
         b = 5*np.random.random() - 1
@@ -2733,50 +2738,6 @@ class TestBessel(TestCase):
         y = (special.iv(0,2) + special.iv(2,2))/2
         x = special.ivp(1,2)
         assert_almost_equal(x,y,10)
-
-
-class TestLaguerre(TestCase):
-    def test_laguerre(self):
-        lag0 = special.laguerre(0)
-        lag1 = special.laguerre(1)
-        lag2 = special.laguerre(2)
-        lag3 = special.laguerre(3)
-        lag4 = special.laguerre(4)
-        lag5 = special.laguerre(5)
-        assert_array_almost_equal(lag0.c,[1],13)
-        assert_array_almost_equal(lag1.c,[-1,1],13)
-        assert_array_almost_equal(lag2.c,array([1,-4,2])/2.0,13)
-        assert_array_almost_equal(lag3.c,array([-1,9,-18,6])/6.0,13)
-        assert_array_almost_equal(lag4.c,array([1,-16,72,-96,24])/24.0,13)
-        assert_array_almost_equal(lag5.c,array([-1,25,-200,600,-600,120])/120.0,13)
-
-    def test_genlaguerre(self):
-        k = 5*np.random.random() - 0.9
-        lag0 = special.genlaguerre(0,k)
-        lag1 = special.genlaguerre(1,k)
-        lag2 = special.genlaguerre(2,k)
-        lag3 = special.genlaguerre(3,k)
-        assert_equal(lag0.c,[1])
-        assert_equal(lag1.c,[-1,k+1])
-        assert_almost_equal(lag2.c,array([1,-2*(k+2),(k+1.)*(k+2.)])/2.0)
-        assert_almost_equal(lag3.c,array([-1,3*(k+3),-3*(k+2)*(k+3),(k+1)*(k+2)*(k+3)])/6.0)
-
-
-# Base polynomials come from Abrahmowitz and Stegan
-class TestLegendre(TestCase):
-    def test_legendre(self):
-        leg0 = special.legendre(0)
-        leg1 = special.legendre(1)
-        leg2 = special.legendre(2)
-        leg3 = special.legendre(3)
-        leg4 = special.legendre(4)
-        leg5 = special.legendre(5)
-        assert_equal(leg0.c, [1])
-        assert_equal(leg1.c, [1,0])
-        assert_almost_equal(leg2.c, array([3,0,-1])/2.0, decimal=13)
-        assert_almost_equal(leg3.c, array([5,0,-3,0])/2.0)
-        assert_almost_equal(leg4.c, array([35,0,-30,0,3])/8.0)
-        assert_almost_equal(leg5.c, array([63,0,-70,0,15,0])/8.0)
 
 
 class TestLambda(TestCase):

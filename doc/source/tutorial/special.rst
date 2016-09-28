@@ -21,7 +21,8 @@ write the function in either C, Fortran, or Python. Look in the source
 code of the library for examples of each of these kinds of functions.
 
 Bessel functions of real order(:func:`jn`, :func:`jn_zeros`)
---------------------------------------------------------------------------
+------------------------------------------------------------
+
 Bessel functions are a family of solutions to Bessel's differential equation
 with real or complex order alpha:
 
@@ -57,3 +58,115 @@ drum head anchored at the edge:
 
 ..   :caption: Vibrating drum head using
 ..             :obj:`scipy.special.jn`
+
+.. _special-orthogonal-polynomials:
+   
+Orthogonal Polynomials
+----------------------
+
+A family of polynomials :math:`p_n` defined on an interval :math:`(a,
+b)` is orthogonal if
+
+.. math::
+
+   \int_a^b p_m(x)p_n(x)w(x)dx = 0
+
+for :math:`m \ne n`. The function :math:`w(x) \geq 0` is called the
+weight function. Orthogonal polynomials are primarily used for
+quadrature and approximating functions. Users interested in
+approximating functions should investigate `numpy.polynomial`. Scipy
+provides functions for evaluating orthogonal polynomials as well as
+functions related to using them in quadrature.
+
+Orthogonal polynomials are useful in quadrature because of the
+following result: let :math:`x_k` be the roots of an orthogonal
+polynomial :math:`p_n`, and define weights
+
+.. math::
+
+   w_k = \int_a^b \frac{p_n(x)}{(x - x_k)p_n'(x_k)}w(x)dx.
+
+Then the quadrature rule
+
+.. math::
+
+   \int_a^b f(x)w(x)dx \approx \sum_{k = 1}^n w_kf(x_k)
+
+integrates polynomials up to degree :math:`2n - 1` exactly. Because of
+this result it is of interest to calculate the roots of orthogonal
+polynomials and the weights associated with them. The interested
+reader can consult section 3.5(v) in [dlmf]_ for more information.
+
+The following table summarizes the properties of the orthogonal
+polynomials supported by Scipy. It is largely reproduced from [as]_.
+
+==================================== ============================= ========================= =================================== ==========================
+Name                                 Notation                      Interval                  Weight                              Remarks
+==================================== ============================= ========================= =================================== ==========================
+Jacobi                               :math:`P_n^{(\alpha, \beta)}` :math:`(-1, 1)`           :math:`(1 - x)^\alpha(1 + x)^\beta` :math:`\alpha, \beta > -1`
+Shifted Jacobi                       :math:`G_n(p, q, x)`          :math:`(0, 1)`            :math:`(1 - x)^{p - q}x^{q - 1}`    :math:`p - q > -1, q > 0`
+Ultraspherical (Gegenbauer)          :math:`C_n^{(\alpha)}(x)`     :math:`(-1, 1)`           :math:`(1 - x^2)^{\alpha - 1/2}`    :math:`\alpha > -1/2`
+Chebyshev of the first kind          :math:`T_n(x)`                :math:`(-1, 1)`           :math:`(1 - x^2)^{-1/2}`
+Chebyshev of the second kind         :math:`U_n(x)`                :math:`(-1, 1)`           :math:`(1 - x^2)^{1/2}`
+Chebyshev of the first kind          :math:`C_n(x)`                :math:`(-2, 2)`           :math:`(1 - x^2/4)^{-1/2}`
+Chebyshev of the second kind         :math:`S_n(x)`                :math:`(-2, 2)`           :math:`(1 - x^2/4)^{1/2}`
+Shifted Chebyshev of the first kind  :math:`T_n^*(x)`              :math:`(0, 1)`            :math:`(x - x^2)^{-1/2}`
+Shifted Chebyshev of the second kind :math:`U_n^*(x)`              :math:`(0, 1)`            :math:`(x - x^2)^{1/2}`
+Legendre (Spherical)                 :math:`P_n(x)`                :math:`(-1, 1)`           :math:`1`
+Shifted Legendre                     :math:`P_n^*(x)`              :math:`(0, 1)`            :math:`1`
+Generalized Laguerre                 :math:`L_n^{(\alpha)}(x)`     :math:`(0, \infty)`       :math:`e^{-x}x^\alpha`              :math:`\alpha > -1`
+Laguerre                             :math:`L_n(x)`                :math:`(0, \infty)`       :math:`e^{-x}`
+Hermite (Physicist's)                :math:`H_n(x)`                :math:`(-\infty, \infty)` :math:`e^{-x^2}`
+Hermite (Probabilist's)              :math:`He_n(x)`               :math:`(-\infty, \infty)` :math:`e^{-x^2/2}`
+==================================== ============================= ========================= =================================== ==========================
+
+The following functions are available for evaluating orthogonal
+polynomials, getting their roots and associated weights, and
+evaluating their weight functions.
+
+==================================== ================== =================== =======================
+Name                                 Evaluation         Roots and weights   Weight function
+==================================== ================== =================== =======================
+Jacobi                               `eval_jacobi`      `roots_jacobi`      `weightfun_jacobi`
+Shifted Jacobi                       `eval_sh_jacobi`   `roots_sh_jacobi`   `weightfun_sh_jacobi`
+Ultraspherical (Gegenbauer)          `eval_gegenbauer`  `roots_gegenbauer`  `weightfun_gegenbauer`
+Chebyshev of the first kind          `eval_chebyt`      `roots_chebyt`      `weightfun_chebyt`
+Chebyshev of the second kind         `eval_chebyu`      `roots_chebyu`      `weightfun_chebyu`
+Chebyshev of the first kind          `eval_chebyc`      `roots_chebyc`      `weightfun_chebyc`
+Chebyshev of the second kind         `eval_chebys`      `roots_chebys`      `weightfun_chebys`
+Shifted Chebyshev of the first kind  `eval_sh_chebyt`   `roots_sh_chebyt`   `weightfun_sh_chebyt`
+Shifted Chebyshev of the second kind `eval_sh_chebyu`   `roots_sh_chebyu`   `weightfun_sh_chebyu`
+Legendre (Spherical)                 `eval_legendre`    `roots_legendre`    `weightfun_legendre`
+Shifted Legendre                     `eval_sh_legendre` `roots_sh_legendre` `weightfun_sh_legendre`
+Generalized Laguerre                 `eval_genlaguerre` `roots_genlaguerre` `weightfun_genlaguerre`
+Laguerre                             `eval_laguerre`    `roots_laguerre`    `weightfun_laguerre`
+Hermite (Physicist's)                `eval_hermite`     `roots_hermite`     `weightfun_hermite`
+Hermite (Probabilist's)              `eval_hermitenorm` `roots_hermitenorm` `weightfun_hermitenorm`
+==================================== ================== =================== =======================
+
+As an example of using these functions, suppose that we wished to
+compute the Laplace transform of :math:`\sin(x)`:
+
+.. math::
+
+   \int_0^\infty e^{-sx}\sin(x)dx
+
+at :math:`s = 1`. This looks like integrating :math:`\sin(x)` against
+the Laguerre weight function :math:`w(x) = e^{-x}`, so we do:
+   
+.. code::
+
+   >>> from scipy.special import roots_laguerre
+   >>> x, w = roots_laguerre(20)
+   >>> np.sum(np.sin(x)*w)
+   0.49999999999998251
+
+The exact answer is :math:`1/2`.
+
+References
+----------
+
+.. [dlmf] NIST, "Digital Library of Mathematical Functions",
+	  http://dlmf.nist.gov/
+.. [as] Abramowitz, Stegun, "Handbook of Mathematical Functions",
+	National Bureau of Standards, 1964.

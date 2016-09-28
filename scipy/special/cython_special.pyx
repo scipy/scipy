@@ -933,6 +933,66 @@ Available Functions
 
         double tklmbda(double, double)
 
+- :py:func:`~scipy.special.weightfun_chebyc`::
+
+        double weightfun_chebyc(double)
+
+- :py:func:`~scipy.special.weightfun_chebys`::
+
+        double weightfun_chebys(double)
+
+- :py:func:`~scipy.special.weightfun_chebyt`::
+
+        double weightfun_chebyt(double)
+
+- :py:func:`~scipy.special.weightfun_chebyu`::
+
+        double weightfun_chebyu(double)
+
+- :py:func:`~scipy.special.weightfun_gegenbauer`::
+
+        double weightfun_gegenbauer(double, double)
+
+- :py:func:`~scipy.special.weightfun_genlaguerre`::
+
+        double weightfun_genlaguerre(double, double)
+
+- :py:func:`~scipy.special.weightfun_hermite`::
+
+        double weightfun_hermite(double)
+
+- :py:func:`~scipy.special.weightfun_hermitenorm`::
+
+        double weightfun_hermitenorm(double)
+
+- :py:func:`~scipy.special.weightfun_jacobi`::
+
+        double weightfun_jacobi(double, double, double)
+
+- :py:func:`~scipy.special.weightfun_laguerre`::
+
+        double weightfun_laguerre(double)
+
+- :py:func:`~scipy.special.weightfun_legendre`::
+
+        double weightfun_legendre(double)
+
+- :py:func:`~scipy.special.weightfun_sh_chebyt`::
+
+        double weightfun_sh_chebyt(double)
+
+- :py:func:`~scipy.special.weightfun_sh_chebyu`::
+
+        double weightfun_sh_chebyu(double)
+
+- :py:func:`~scipy.special.weightfun_sh_jacobi`::
+
+        double weightfun_sh_jacobi(double, double, double)
+
+- :py:func:`~scipy.special.weightfun_sh_legendre`::
+
+        double weightfun_sh_legendre(double)
+
 - :py:func:`~scipy.special.wofz`::
 
         double complex wofz(double complex)
@@ -1077,7 +1137,7 @@ cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_incbi "incbi"(npy_double, npy_double, npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_lbeta "lbeta"(npy_double, npy_double)nogil
-from orthogonal_eval cimport binom as _func_binom
+from _orthogonal_eval cimport binom as _func_binom
 ctypedef double _proto_binom_t(double, double) nogil
 cdef _proto_binom_t *_proto_binom_t_var = &_func_binom
 from _boxcox cimport boxcox as _func_boxcox
@@ -1135,127 +1195,127 @@ cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_erf "erf"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_erfc "erfc"(npy_double)nogil
-from orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
+from _orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
 ctypedef double _proto_eval_chebyc_double__t(double, double) nogil
 cdef _proto_eval_chebyc_double__t *_proto_eval_chebyc_double__t_var = &_func_eval_chebyc[double]
-from orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
+from _orthogonal_eval cimport eval_chebyc as _func_eval_chebyc
 ctypedef double complex _proto_eval_chebyc_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyc_double_complex__t *_proto_eval_chebyc_double_complex__t_var = &_func_eval_chebyc[double_complex]
-from orthogonal_eval cimport eval_chebyc_l as _func_eval_chebyc_l
+from _orthogonal_eval cimport eval_chebyc_l as _func_eval_chebyc_l
 ctypedef double _proto_eval_chebyc_l_t(long, double) nogil
 cdef _proto_eval_chebyc_l_t *_proto_eval_chebyc_l_t_var = &_func_eval_chebyc_l
-from orthogonal_eval cimport eval_chebys as _func_eval_chebys
+from _orthogonal_eval cimport eval_chebys as _func_eval_chebys
 ctypedef double _proto_eval_chebys_double__t(double, double) nogil
 cdef _proto_eval_chebys_double__t *_proto_eval_chebys_double__t_var = &_func_eval_chebys[double]
-from orthogonal_eval cimport eval_chebys as _func_eval_chebys
+from _orthogonal_eval cimport eval_chebys as _func_eval_chebys
 ctypedef double complex _proto_eval_chebys_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebys_double_complex__t *_proto_eval_chebys_double_complex__t_var = &_func_eval_chebys[double_complex]
-from orthogonal_eval cimport eval_chebys_l as _func_eval_chebys_l
+from _orthogonal_eval cimport eval_chebys_l as _func_eval_chebys_l
 ctypedef double _proto_eval_chebys_l_t(long, double) nogil
 cdef _proto_eval_chebys_l_t *_proto_eval_chebys_l_t_var = &_func_eval_chebys_l
-from orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
+from _orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
 ctypedef double _proto_eval_chebyt_double__t(double, double) nogil
 cdef _proto_eval_chebyt_double__t *_proto_eval_chebyt_double__t_var = &_func_eval_chebyt[double]
-from orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
+from _orthogonal_eval cimport eval_chebyt as _func_eval_chebyt
 ctypedef double complex _proto_eval_chebyt_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyt_double_complex__t *_proto_eval_chebyt_double_complex__t_var = &_func_eval_chebyt[double_complex]
-from orthogonal_eval cimport eval_chebyt_l as _func_eval_chebyt_l
+from _orthogonal_eval cimport eval_chebyt_l as _func_eval_chebyt_l
 ctypedef double _proto_eval_chebyt_l_t(long, double) nogil
 cdef _proto_eval_chebyt_l_t *_proto_eval_chebyt_l_t_var = &_func_eval_chebyt_l
-from orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
+from _orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
 ctypedef double _proto_eval_chebyu_double__t(double, double) nogil
 cdef _proto_eval_chebyu_double__t *_proto_eval_chebyu_double__t_var = &_func_eval_chebyu[double]
-from orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
+from _orthogonal_eval cimport eval_chebyu as _func_eval_chebyu
 ctypedef double complex _proto_eval_chebyu_double_complex__t(double, double complex) nogil
 cdef _proto_eval_chebyu_double_complex__t *_proto_eval_chebyu_double_complex__t_var = &_func_eval_chebyu[double_complex]
-from orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
+from _orthogonal_eval cimport eval_chebyu_l as _func_eval_chebyu_l
 ctypedef double _proto_eval_chebyu_l_t(long, double) nogil
 cdef _proto_eval_chebyu_l_t *_proto_eval_chebyu_l_t_var = &_func_eval_chebyu_l
-from orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
+from _orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
 ctypedef double _proto_eval_gegenbauer_double__t(double, double, double) nogil
 cdef _proto_eval_gegenbauer_double__t *_proto_eval_gegenbauer_double__t_var = &_func_eval_gegenbauer[double]
-from orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
+from _orthogonal_eval cimport eval_gegenbauer as _func_eval_gegenbauer
 ctypedef double complex _proto_eval_gegenbauer_double_complex__t(double, double, double complex) nogil
 cdef _proto_eval_gegenbauer_double_complex__t *_proto_eval_gegenbauer_double_complex__t_var = &_func_eval_gegenbauer[double_complex]
-from orthogonal_eval cimport eval_gegenbauer_l as _func_eval_gegenbauer_l
+from _orthogonal_eval cimport eval_gegenbauer_l as _func_eval_gegenbauer_l
 ctypedef double _proto_eval_gegenbauer_l_t(long, double, double) nogil
 cdef _proto_eval_gegenbauer_l_t *_proto_eval_gegenbauer_l_t_var = &_func_eval_gegenbauer_l
-from orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
+from _orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
 ctypedef double _proto_eval_genlaguerre_double__t(double, double, double) nogil
 cdef _proto_eval_genlaguerre_double__t *_proto_eval_genlaguerre_double__t_var = &_func_eval_genlaguerre[double]
-from orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
+from _orthogonal_eval cimport eval_genlaguerre as _func_eval_genlaguerre
 ctypedef double complex _proto_eval_genlaguerre_double_complex__t(double, double, double complex) nogil
 cdef _proto_eval_genlaguerre_double_complex__t *_proto_eval_genlaguerre_double_complex__t_var = &_func_eval_genlaguerre[double_complex]
-from orthogonal_eval cimport eval_genlaguerre_l as _func_eval_genlaguerre_l
+from _orthogonal_eval cimport eval_genlaguerre_l as _func_eval_genlaguerre_l
 ctypedef double _proto_eval_genlaguerre_l_t(long, double, double) nogil
 cdef _proto_eval_genlaguerre_l_t *_proto_eval_genlaguerre_l_t_var = &_func_eval_genlaguerre_l
-from orthogonal_eval cimport eval_hermite as _func_eval_hermite
+from _orthogonal_eval cimport eval_hermite as _func_eval_hermite
 ctypedef double _proto_eval_hermite_t(long, double) nogil
 cdef _proto_eval_hermite_t *_proto_eval_hermite_t_var = &_func_eval_hermite
-from orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
+from _orthogonal_eval cimport eval_hermitenorm as _func_eval_hermitenorm
 ctypedef double _proto_eval_hermitenorm_t(long, double) nogil
 cdef _proto_eval_hermitenorm_t *_proto_eval_hermitenorm_t_var = &_func_eval_hermitenorm
-from orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
+from _orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
 ctypedef double _proto_eval_jacobi_double__t(double, double, double, double) nogil
 cdef _proto_eval_jacobi_double__t *_proto_eval_jacobi_double__t_var = &_func_eval_jacobi[double]
-from orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
+from _orthogonal_eval cimport eval_jacobi as _func_eval_jacobi
 ctypedef double complex _proto_eval_jacobi_double_complex__t(double, double, double, double complex) nogil
 cdef _proto_eval_jacobi_double_complex__t *_proto_eval_jacobi_double_complex__t_var = &_func_eval_jacobi[double_complex]
-from orthogonal_eval cimport eval_jacobi_l as _func_eval_jacobi_l
+from _orthogonal_eval cimport eval_jacobi_l as _func_eval_jacobi_l
 ctypedef double _proto_eval_jacobi_l_t(long, double, double, double) nogil
 cdef _proto_eval_jacobi_l_t *_proto_eval_jacobi_l_t_var = &_func_eval_jacobi_l
-from orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
+from _orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
 ctypedef double _proto_eval_laguerre_double__t(double, double) nogil
 cdef _proto_eval_laguerre_double__t *_proto_eval_laguerre_double__t_var = &_func_eval_laguerre[double]
-from orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
+from _orthogonal_eval cimport eval_laguerre as _func_eval_laguerre
 ctypedef double complex _proto_eval_laguerre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_laguerre_double_complex__t *_proto_eval_laguerre_double_complex__t_var = &_func_eval_laguerre[double_complex]
-from orthogonal_eval cimport eval_laguerre_l as _func_eval_laguerre_l
+from _orthogonal_eval cimport eval_laguerre_l as _func_eval_laguerre_l
 ctypedef double _proto_eval_laguerre_l_t(long, double) nogil
 cdef _proto_eval_laguerre_l_t *_proto_eval_laguerre_l_t_var = &_func_eval_laguerre_l
-from orthogonal_eval cimport eval_legendre as _func_eval_legendre
+from _orthogonal_eval cimport eval_legendre as _func_eval_legendre
 ctypedef double _proto_eval_legendre_double__t(double, double) nogil
 cdef _proto_eval_legendre_double__t *_proto_eval_legendre_double__t_var = &_func_eval_legendre[double]
-from orthogonal_eval cimport eval_legendre as _func_eval_legendre
+from _orthogonal_eval cimport eval_legendre as _func_eval_legendre
 ctypedef double complex _proto_eval_legendre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_legendre_double_complex__t *_proto_eval_legendre_double_complex__t_var = &_func_eval_legendre[double_complex]
-from orthogonal_eval cimport eval_legendre_l as _func_eval_legendre_l
+from _orthogonal_eval cimport eval_legendre_l as _func_eval_legendre_l
 ctypedef double _proto_eval_legendre_l_t(long, double) nogil
 cdef _proto_eval_legendre_l_t *_proto_eval_legendre_l_t_var = &_func_eval_legendre_l
-from orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
+from _orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
 ctypedef double _proto_eval_sh_chebyt_double__t(double, double) nogil
 cdef _proto_eval_sh_chebyt_double__t *_proto_eval_sh_chebyt_double__t_var = &_func_eval_sh_chebyt[double]
-from orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
+from _orthogonal_eval cimport eval_sh_chebyt as _func_eval_sh_chebyt
 ctypedef double complex _proto_eval_sh_chebyt_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_chebyt_double_complex__t *_proto_eval_sh_chebyt_double_complex__t_var = &_func_eval_sh_chebyt[double_complex]
-from orthogonal_eval cimport eval_sh_chebyt_l as _func_eval_sh_chebyt_l
+from _orthogonal_eval cimport eval_sh_chebyt_l as _func_eval_sh_chebyt_l
 ctypedef double _proto_eval_sh_chebyt_l_t(long, double) nogil
 cdef _proto_eval_sh_chebyt_l_t *_proto_eval_sh_chebyt_l_t_var = &_func_eval_sh_chebyt_l
-from orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
+from _orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
 ctypedef double _proto_eval_sh_chebyu_double__t(double, double) nogil
 cdef _proto_eval_sh_chebyu_double__t *_proto_eval_sh_chebyu_double__t_var = &_func_eval_sh_chebyu[double]
-from orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
+from _orthogonal_eval cimport eval_sh_chebyu as _func_eval_sh_chebyu
 ctypedef double complex _proto_eval_sh_chebyu_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_chebyu_double_complex__t *_proto_eval_sh_chebyu_double_complex__t_var = &_func_eval_sh_chebyu[double_complex]
-from orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
+from _orthogonal_eval cimport eval_sh_chebyu_l as _func_eval_sh_chebyu_l
 ctypedef double _proto_eval_sh_chebyu_l_t(long, double) nogil
 cdef _proto_eval_sh_chebyu_l_t *_proto_eval_sh_chebyu_l_t_var = &_func_eval_sh_chebyu_l
-from orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
+from _orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
 ctypedef double _proto_eval_sh_jacobi_double__t(double, double, double, double) nogil
 cdef _proto_eval_sh_jacobi_double__t *_proto_eval_sh_jacobi_double__t_var = &_func_eval_sh_jacobi[double]
-from orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
+from _orthogonal_eval cimport eval_sh_jacobi as _func_eval_sh_jacobi
 ctypedef double complex _proto_eval_sh_jacobi_double_complex__t(double, double, double, double complex) nogil
 cdef _proto_eval_sh_jacobi_double_complex__t *_proto_eval_sh_jacobi_double_complex__t_var = &_func_eval_sh_jacobi[double_complex]
-from orthogonal_eval cimport eval_sh_jacobi_l as _func_eval_sh_jacobi_l
+from _orthogonal_eval cimport eval_sh_jacobi_l as _func_eval_sh_jacobi_l
 ctypedef double _proto_eval_sh_jacobi_l_t(long, double, double, double) nogil
 cdef _proto_eval_sh_jacobi_l_t *_proto_eval_sh_jacobi_l_t_var = &_func_eval_sh_jacobi_l
-from orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
+from _orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
 ctypedef double _proto_eval_sh_legendre_double__t(double, double) nogil
 cdef _proto_eval_sh_legendre_double__t *_proto_eval_sh_legendre_double__t_var = &_func_eval_sh_legendre[double]
-from orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
+from _orthogonal_eval cimport eval_sh_legendre as _func_eval_sh_legendre
 ctypedef double complex _proto_eval_sh_legendre_double_complex__t(double, double complex) nogil
 cdef _proto_eval_sh_legendre_double_complex__t *_proto_eval_sh_legendre_double_complex__t_var = &_func_eval_sh_legendre[double_complex]
-from orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
+from _orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
 ctypedef double _proto_eval_sh_legendre_l_t(long, double) nogil
 cdef _proto_eval_sh_legendre_l_t *_proto_eval_sh_legendre_l_t_var = &_func_eval_sh_legendre_l
 cdef extern from "_ufuncs_defs.h":
@@ -1654,6 +1714,51 @@ cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_tandg "tandg"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_tukeylambdacdf "tukeylambdacdf"(npy_double, npy_double)nogil
+from _orthogonal_weightfun cimport weightfun_chebyc as _func_weightfun_chebyc
+ctypedef double _proto_weightfun_chebyc_t(double) nogil
+cdef _proto_weightfun_chebyc_t *_proto_weightfun_chebyc_t_var = &_func_weightfun_chebyc
+from _orthogonal_weightfun cimport weightfun_chebys as _func_weightfun_chebys
+ctypedef double _proto_weightfun_chebys_t(double) nogil
+cdef _proto_weightfun_chebys_t *_proto_weightfun_chebys_t_var = &_func_weightfun_chebys
+from _orthogonal_weightfun cimport weightfun_chebyt as _func_weightfun_chebyt
+ctypedef double _proto_weightfun_chebyt_t(double) nogil
+cdef _proto_weightfun_chebyt_t *_proto_weightfun_chebyt_t_var = &_func_weightfun_chebyt
+from _orthogonal_weightfun cimport weightfun_chebyu as _func_weightfun_chebyu
+ctypedef double _proto_weightfun_chebyu_t(double) nogil
+cdef _proto_weightfun_chebyu_t *_proto_weightfun_chebyu_t_var = &_func_weightfun_chebyu
+from _orthogonal_weightfun cimport weightfun_gegenbauer as _func_weightfun_gegenbauer
+ctypedef double _proto_weightfun_gegenbauer_t(double, double) nogil
+cdef _proto_weightfun_gegenbauer_t *_proto_weightfun_gegenbauer_t_var = &_func_weightfun_gegenbauer
+from _orthogonal_weightfun cimport weightfun_genlaguerre as _func_weightfun_genlaguerre
+ctypedef double _proto_weightfun_genlaguerre_t(double, double) nogil
+cdef _proto_weightfun_genlaguerre_t *_proto_weightfun_genlaguerre_t_var = &_func_weightfun_genlaguerre
+from _orthogonal_weightfun cimport weightfun_hermite as _func_weightfun_hermite
+ctypedef double _proto_weightfun_hermite_t(double) nogil
+cdef _proto_weightfun_hermite_t *_proto_weightfun_hermite_t_var = &_func_weightfun_hermite
+from _orthogonal_weightfun cimport weightfun_hermitenorm as _func_weightfun_hermitenorm
+ctypedef double _proto_weightfun_hermitenorm_t(double) nogil
+cdef _proto_weightfun_hermitenorm_t *_proto_weightfun_hermitenorm_t_var = &_func_weightfun_hermitenorm
+from _orthogonal_weightfun cimport weightfun_jacobi as _func_weightfun_jacobi
+ctypedef double _proto_weightfun_jacobi_t(double, double, double) nogil
+cdef _proto_weightfun_jacobi_t *_proto_weightfun_jacobi_t_var = &_func_weightfun_jacobi
+from _orthogonal_weightfun cimport weightfun_laguerre as _func_weightfun_laguerre
+ctypedef double _proto_weightfun_laguerre_t(double) nogil
+cdef _proto_weightfun_laguerre_t *_proto_weightfun_laguerre_t_var = &_func_weightfun_laguerre
+from _orthogonal_weightfun cimport weightfun_legendre as _func_weightfun_legendre
+ctypedef double _proto_weightfun_legendre_t(double) nogil
+cdef _proto_weightfun_legendre_t *_proto_weightfun_legendre_t_var = &_func_weightfun_legendre
+from _orthogonal_weightfun cimport weightfun_sh_chebyt as _func_weightfun_sh_chebyt
+ctypedef double _proto_weightfun_sh_chebyt_t(double) nogil
+cdef _proto_weightfun_sh_chebyt_t *_proto_weightfun_sh_chebyt_t_var = &_func_weightfun_sh_chebyt
+from _orthogonal_weightfun cimport weightfun_sh_chebyu as _func_weightfun_sh_chebyu
+ctypedef double _proto_weightfun_sh_chebyu_t(double) nogil
+cdef _proto_weightfun_sh_chebyu_t *_proto_weightfun_sh_chebyu_t_var = &_func_weightfun_sh_chebyu
+from _orthogonal_weightfun cimport weightfun_sh_jacobi as _func_weightfun_sh_jacobi
+ctypedef double _proto_weightfun_sh_jacobi_t(double, double, double) nogil
+cdef _proto_weightfun_sh_jacobi_t *_proto_weightfun_sh_jacobi_t_var = &_func_weightfun_sh_jacobi
+from _orthogonal_weightfun cimport weightfun_sh_legendre as _func_weightfun_sh_legendre
+ctypedef double _proto_weightfun_sh_legendre_t(double) nogil
+cdef _proto_weightfun_sh_legendre_t *_proto_weightfun_sh_legendre_t_var = &_func_weightfun_sh_legendre
 from _xlogy cimport xlog1py as _func_xlog1py
 ctypedef double _proto_xlog1py_double__t(double, double) nogil
 cdef _proto_xlog1py_double__t *_proto_xlog1py_double__t_var = &_func_xlog1py[double]
@@ -3267,6 +3372,66 @@ cpdef double tandg(double x0) nogil:
 cpdef double tklmbda(double x0, double x1) nogil:
     """See the documentation for scipy.special.tklmbda"""
     return _func_tukeylambdacdf(x0, x1)
+
+cpdef double weightfun_chebyc(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_chebyc"""
+    return _func_weightfun_chebyc(x0)
+
+cpdef double weightfun_chebys(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_chebys"""
+    return _func_weightfun_chebys(x0)
+
+cpdef double weightfun_chebyt(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_chebyt"""
+    return _func_weightfun_chebyt(x0)
+
+cpdef double weightfun_chebyu(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_chebyu"""
+    return _func_weightfun_chebyu(x0)
+
+cpdef double weightfun_gegenbauer(double x0, double x1) nogil:
+    """See the documentation for scipy.special.weightfun_gegenbauer"""
+    return _func_weightfun_gegenbauer(x0, x1)
+
+cpdef double weightfun_genlaguerre(double x0, double x1) nogil:
+    """See the documentation for scipy.special.weightfun_genlaguerre"""
+    return _func_weightfun_genlaguerre(x0, x1)
+
+cpdef double weightfun_hermite(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_hermite"""
+    return _func_weightfun_hermite(x0)
+
+cpdef double weightfun_hermitenorm(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_hermitenorm"""
+    return _func_weightfun_hermitenorm(x0)
+
+cpdef double weightfun_jacobi(double x0, double x1, double x2) nogil:
+    """See the documentation for scipy.special.weightfun_jacobi"""
+    return _func_weightfun_jacobi(x0, x1, x2)
+
+cpdef double weightfun_laguerre(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_laguerre"""
+    return _func_weightfun_laguerre(x0)
+
+cpdef double weightfun_legendre(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_legendre"""
+    return _func_weightfun_legendre(x0)
+
+cpdef double weightfun_sh_chebyt(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_sh_chebyt"""
+    return _func_weightfun_sh_chebyt(x0)
+
+cpdef double weightfun_sh_chebyu(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_sh_chebyu"""
+    return _func_weightfun_sh_chebyu(x0)
+
+cpdef double weightfun_sh_jacobi(double x0, double x1, double x2) nogil:
+    """See the documentation for scipy.special.weightfun_sh_jacobi"""
+    return _func_weightfun_sh_jacobi(x0, x1, x2)
+
+cpdef double weightfun_sh_legendre(double x0) nogil:
+    """See the documentation for scipy.special.weightfun_sh_legendre"""
+    return _func_weightfun_sh_legendre(x0)
 
 cpdef double complex wofz(double complex x0) nogil:
     """See the documentation for scipy.special.wofz"""

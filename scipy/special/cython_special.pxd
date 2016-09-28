@@ -221,6 +221,21 @@ cpdef double stdtrit(double x0, double x1) nogil
 cpdef double struve(double x0, double x1) nogil
 cpdef double tandg(double x0) nogil
 cpdef double tklmbda(double x0, double x1) nogil
+cpdef double weightfun_chebyc(double x0) nogil
+cpdef double weightfun_chebys(double x0) nogil
+cpdef double weightfun_chebyt(double x0) nogil
+cpdef double weightfun_chebyu(double x0) nogil
+cpdef double weightfun_gegenbauer(double x0, double x1) nogil
+cpdef double weightfun_genlaguerre(double x0, double x1) nogil
+cpdef double weightfun_hermite(double x0) nogil
+cpdef double weightfun_hermitenorm(double x0) nogil
+cpdef double weightfun_jacobi(double x0, double x1, double x2) nogil
+cpdef double weightfun_laguerre(double x0) nogil
+cpdef double weightfun_legendre(double x0) nogil
+cpdef double weightfun_sh_chebyt(double x0) nogil
+cpdef double weightfun_sh_chebyu(double x0) nogil
+cpdef double weightfun_sh_jacobi(double x0, double x1, double x2) nogil
+cpdef double weightfun_sh_legendre(double x0) nogil
 cpdef double complex wofz(double complex x0) nogil
 cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) nogil
 cpdef Dd_number_t xlogy(Dd_number_t x0, Dd_number_t x1) nogil
