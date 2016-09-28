@@ -38,7 +38,8 @@ class GenSARunner(object):
         completely specify the objective function.
 
     """
-    def __init__(self, fun, x0, bounds, args=(), seed=None):
+    def __init__(self, fun, x0, bounds, args=(), seed=None,
+            temp_start=5230, qv=2.62, qa=-5.0, maxfun=1e7, maxsteps=500):
         self.fun = fun
         self.args = args
         if x0 is not None and not len(x0) == len(bounds):
@@ -68,19 +69,19 @@ class GenSARunner(object):
         # Default is unlimited duration
         self.maxtime = np.inf
         # Maximum number of function call that can be used a stopping criterion
-        self.maxfuncall = 1e7
+        self.maxfuncall = maxfun
         # Maximum number of step (main iteration)  that ca be used as
         # stopping criterion
-        self.maxsteps = 500
+        self.maxsteps = maxsteps
         # Minimum value of annealing temperature reached to perform
         # re-annealing
         self.temp_restart = 0.1
         # Visiting distribution parameter
-        self.qv = 2.62
+        self.qv = qv
         # Acceptance parameter value
-        self.qa = -5.0
+        self.qa = qa
         # Initial temperature value for annealing
-        self.temp_start = 5230
+        self.temp_start = temp_start
         # Not yet implemented contraint function that would be used in the
         # future
         self.has_constraint = False
@@ -106,8 +107,9 @@ class GenSARunner(object):
         self._emini_unchanged = True
         self._index_no_emini_update = 0
         self._temp_qa = 0
+        self._initialize()
 
-    def initialize(self):
+    def _initialize(self):
         """
         Random coordinate generation in case given initial coordinates
         are giving invalid objective value
@@ -478,8 +480,8 @@ class GenSARunner(object):
         res.nit = self._step_record
         return res
 
-def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
-        acceptparam=-5.0, maxcall=1e7, args=(), seed=None):
+def gensa(func, x0, bounds, maxiter=500, initial_temp=5230., visit=2.62,
+        accept=-5.0, maxfun=1e7, args=(), seed=None):
     """
     Find the global minimum of a function using the Generalized Simulated
     Annealing algorithm
@@ -491,25 +493,29 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         ``f(x, *args)``, where ``x`` is the argument in the form of a 1-D array
         and ``args`` is a  tuple of any additional fixed parameters needed to
         completely specify the function.
+    x0 : ndarray
+        The starting coordinates. If ``None`` is provided, initial
+        coordinates are automatically generated.
     bounds : sequence
         Bounds for variables.  ``(min, max)`` pairs for each element in ``x``,
         defining the lower and upper bounds for the optimizing argument of
         `func`. It is required to have ``len(bounds) == len(x)``.
         ``len(bounds)`` is used to determine the number of parameters in ``x``.
-    niter : int, optional
-        The number of gensa iterations
-    T : float, optional
-        Initial value for temperature. The higher the initial temperature, the
-        the higher the probability of hill-climbing for the initial iterations.
-    visitparam : float, optional
-        Parameter for visiting distribution. Higher value means the
-        visiting distribution has a heavier tail which makes the
-        algorithm jump to a farer region. The value range is ]0; 3]
-    acceptparam : float, optional
+    maxiter : int, optional
+        The maximum number of gensa iterations
+    initial_temp : float, optional
+        The initial temperature, use higher values to facilitates a wider
+        search of the energy landscape, allowing gensa to escape local minima
+        that it is trapped in.
+    visit : float, optional
+        Parameter for visiting distribution. Higher values give the visiting
+        distribution a heavier tail, this makes the algorithm jump to a more
+        distant region. The value range is (0, 3]
+    accept : float, optional
         Parameter for acceptance distribution. It is used to control the
         probability of acceptance. The lower the acceptance parameter, the
         smaller the probability of acceptance. It has to be any negative value.
-    maxcall : int, optional
+    maxfun : int, optional
         Soft limit for the number of objective function calls. If the
         algorithm is in the middle of a local search, this number will be
         exceeded, the algorithm will stop just after the local search is
@@ -545,7 +551,7 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     GenSA can process complicated and high dimension non-linear objective
     functions with a large number of local minima as described by [6]_.
 
-    GSA uses a distorted Cauchy-Lorentz visiting distribution, with it shape
+    GSA uses a distorted Cauchy-Lorentz visiting distribution, with its shape
     controlled by the parameter :math:`q_{v}`
 
     .. math::
@@ -568,8 +574,8 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
         p_{q_{a}} = \min{\{1,\\left[1-(1-q_{a}) \\beta \\Delta E \\right]^{ \\
         \\frac{1}{1-q_{a}}}\\}}
 
-    Where :math:`q_{a}` is a parameter. For :math:`q_{a}<1`, zero acceptance
-    probability is assigned to the cases where
+    Where :math:`q_{a}` is a acceptance parameter. For :math:`q_{a}<1`, zero
+    acceptance probability is assigned to the cases where
 
     .. math::
 
@@ -618,14 +624,8 @@ def gensa(func, x0, bounds, niter=500, T=5230., visitparam=2.62,
     >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
     ...    ret.x, ret.fun))
     """
-    gr = GenSARunner(func, x0, bounds, args, seed)
-    gr.temp_start = T
-    gr.qv = visitparam
-    gr.qa = acceptparam
-    gr.maxfuncall = maxcall
-    gr.maxsteps = niter
-    gr.initialize()
+    gr = GenSARunner(func, x0, bounds, args, seed, temp_start=initial_temp,
+            qv = visit, qa = accept, maxfun=maxfun, maxsteps=maxiter)
     gr.start_search()
     return gr.result
-
 

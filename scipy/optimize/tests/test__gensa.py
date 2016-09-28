@@ -79,6 +79,3 @@ class TestGenSA(TestCase):
         assert_raises(ValueError, _gensa.gensa, *(self.func,
             None, wrong_bounds))
 
-
-
-
