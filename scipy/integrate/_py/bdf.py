@@ -7,7 +7,7 @@ from scipy.optimize._numdiff import approx_derivative
 
 
 MAX_ORDER = 5
-NEWTON_MAXITER = 7
+NEWTON_MAXITER = 4
 MIN_FACTOR = 0.2
 MAX_FACTOR = 10
 
