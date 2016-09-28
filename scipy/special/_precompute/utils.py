@@ -1,5 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 try:
     import mpmath as mp
 except ImportError:
@@ -9,7 +11,11 @@ except ImportError:
         pass
 
 try:
-    from sympy.abc import x
+    # Can remove when sympy #11255 is resolved; see
+    # https://github.com/sympy/sympy/issues/11255
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        from sympy.abc import x
 except ImportError:
     pass
 

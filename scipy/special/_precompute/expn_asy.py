@@ -10,11 +10,16 @@ Sources
 from __future__ import division, print_function, absolute_import
 
 import os
+import warnings
 
 try:
-    import sympy
-    from sympy import Poly
-    x = sympy.symbols('x')
+    # Can remove when sympy #11255 is resolved; see
+    # https://github.com/sympy/sympy/issues/11255
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        import sympy
+        from sympy import Poly
+        x = sympy.symbols('x')
 except ImportError:
     pass
 
