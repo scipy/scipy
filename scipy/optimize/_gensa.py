@@ -36,7 +36,34 @@ class GenSARunner(object):
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
-
+    seed : int or `np.random.RandomState`, optional
+        If `seed` is not specified the `np.RandomState` singleton is used.
+        If `seed` is an int, a new `np.random.RandomState` instance is used,
+        seeded with seed.
+        If `seed` is already a `np.random.RandomState instance`, then that
+        `np.random.RandomState` instance is used.
+        Specify `seed` for repeatable minimizations. The random numbers
+        generated with this seed only affect the visiting distribution
+        function and new coordinates generation.
+    temp_start : float, optional
+        The initial temperature, use higher values to facilitates a wider
+        search of the energy landscape, allowing gensa to escape local minima
+        that it is trapped in.
+    qv : float, optional
+        Parameter for visiting distribution. Higher values give the visiting
+        distribution a heavier tail, this makes the algorithm jump to a more
+        distant region. The value range is (0, 3]
+    qa : float, optional
+        Parameter for acceptance distribution. It is used to control the
+        probability of acceptance. The lower the acceptance parameter, the
+        smaller the probability of acceptance. It has to be any negative value.
+    maxfun : int, optional
+        Soft limit for the number of objective function calls. If the
+        algorithm is in the middle of a local search, this number will be
+        exceeded, the algorithm will stop just after the local search is
+        done.
+    maxsteps : int, optional
+        The maximum number of gensa iterations will perform.
     """
     def __init__(self, fun, x0, bounds, args=(), seed=None,
             temp_start=5230, qv=2.62, qa=-5.0, maxfun=1e7, maxsteps=500):
@@ -587,6 +614,8 @@ def gensa(func, x0, bounds, maxiter=500, initial_temp=5230., visit=2.62,
 
         T_{q_{v}}(t) = T_{q_{v}}(1) \\frac{2^{q_{v}-1}-1}{\\left( \\
         1 + t\\right)^{q_{v}-1}-1}
+
+    Where :math:`q_{v}` is the visiting parameter.
 
     .. versionadded:: 0.19.0
 
