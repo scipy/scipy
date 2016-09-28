@@ -117,8 +117,10 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     """
     format = 'bsr'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None,
+                 canonicalize=True):
         _data_matrix.__init__(self)
+        needs_sum_duplicates = False
 
         if isspmatrix(arg1):
             if isspmatrix_bsr(arg1) and copy:
@@ -154,7 +156,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             elif len(arg1) == 2:
                 # (data,(row,col)) format
                 from .coo import coo_matrix
-                self._set_self(coo_matrix(arg1, dtype=dtype).tobsr(blocksize=blocksize))
+                coo = coo_matrix(arg1, dtype=dtype, copy=copy,
+                                 canonicalize=canonicalize)
+                self._set_self(coo.tobsr(blocksize=blocksize))
 
             elif len(arg1) == 3:
                 # (data,indices,indptr) format
@@ -171,7 +175,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
-                self.data = np.array(data, copy=copy, dtype=getdtype(dtype, data))
+                self.data = np.array(data, copy=copy,
+                                     dtype=getdtype(dtype, data))
+                needs_sum_duplicates = bool(canonicalize)
             else:
                 raise ValueError('unrecognized bsr_matrix constructor usage')
         else:
@@ -210,6 +216,32 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             self.data = self.data.astype(dtype)
 
         self.check_format(full_check=False)
+
+        if needs_sum_duplicates:
+            self.sort_indices()
+            R, C = self.blocksize
+            M, N = self.shape
+
+            # port of _sparsetools.csr_sum_duplicates
+            n_row = M // R
+            nnz = 0
+            row_end = 0
+            for i in range(n_row):
+                jj = row_end
+                row_end = self.indptr[i+1]
+                while jj < row_end:
+                    j = self.indices[jj]
+                    x = self.data[jj]
+                    jj += 1
+                    while jj < row_end and self.indices[jj] == j:
+                        x += self.data[jj]
+                        jj += 1
+                    self.indices[nnz] = j
+                    self.data[nnz] = x
+                    nnz += 1
+                self.indptr[i+1] = nnz
+
+            self.prune()  # nnz may have changed
 
     def check_format(self, full_check=True):
         """check whether the matrix format is valid
@@ -407,7 +439,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         # TODO eliminate zeros
 
-        return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C))
+        return bsr_matrix((data,indices,indptr),shape=(M,N),blocksize=(R,C),
+                          copy=False, canonicalize=False)
 
     ######################
     # Conversion methods #
@@ -473,7 +506,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
             data = data.copy()
 
         from .coo import coo_matrix
-        return coo_matrix((data,(row,col)), shape=self.shape)
+        return coo_matrix((data,(row,col)), shape=self.shape, copy=False,
+                          canonicalize=False)
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -487,7 +521,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         if self.nnz == 0:
             return bsr_matrix((N, M), blocksize=(C, R),
-                              dtype=self.dtype, copy=copy)
+                              dtype=self.dtype, copy=copy, canonicalize=False)
 
         indptr = np.empty(N//C + 1, dtype=self.indptr.dtype)
         indices = np.empty(NBLK, dtype=self.indices.dtype)
@@ -498,7 +532,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                       indptr, indices, data.ravel())
 
         return bsr_matrix((data, indices, indptr),
-                          shape=(N, M), copy=copy)
+                          shape=(N, M), copy=copy, canonicalize=False)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -523,39 +557,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         _sparsetools.csr_eliminate_zeros(M//R, N//C, self.indptr,
                                          self.indices, mask)
         self.prune()
-
-    def sum_duplicates(self):
-        """Eliminate duplicate matrix entries by adding them together
-
-        The is an *in place* operation
-        """
-        if self.has_canonical_format:
-            return
-        self.sort_indices()
-        R, C = self.blocksize
-        M, N = self.shape
-
-        # port of _sparsetools.csr_sum_duplicates
-        n_row = M // R
-        nnz = 0
-        row_end = 0
-        for i in range(n_row):
-            jj = row_end
-            row_end = self.indptr[i+1]
-            while jj < row_end:
-                j = self.indices[jj]
-                x = self.data[jj]
-                jj += 1
-                while jj < row_end and self.indices[jj] == j:
-                    x += self.data[jj]
-                    jj += 1
-                self.indices[nnz] = j
-                self.data[nnz] = x
-                nnz += 1
-            self.indptr[i+1] = nnz
-
-        self.prune()  # nnz may have changed
-        self.has_canonical_format = True
 
     def sort_indices(self):
         """Sort the indices of this matrix *in place*
@@ -646,11 +647,11 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         (i.e. .indptr and .indices) are copied.
         """
         if copy:
-            return self.__class__((data,self.indices.copy(),self.indptr.copy()),
-                                   shape=self.shape,dtype=data.dtype)
+            arg1 = (data, self.indices.copy(), self.indptr.copy())
         else:
-            return self.__class__((data,self.indices,self.indptr),
-                                   shape=self.shape,dtype=data.dtype)
+            arg1 = (data, self.indices, self.indptr)
+        return self.__class__(arg1, shape=self.shape, dtype=data.dtype,
+                              copy=False, canonicalize=False)
 
 #    # these functions are used by the parent class
 #    # to remove redudancy between bsc_matrix and bsr_matrix

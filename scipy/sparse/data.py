@@ -29,13 +29,8 @@ class _data_matrix(spmatrix):
         self.data.dtype = newtype
     dtype = property(fget=_get_dtype, fset=_set_dtype)
 
-    def _deduped_data(self):
-        if hasattr(self, 'sum_duplicates'):
-            self.sum_duplicates()
-        return self.data
-
     def __abs__(self):
-        return self._with_data(abs(self._deduped_data()))
+        return self._with_data(abs(self.data))
 
     def _real(self):
         return self._with_data(self.data.real)
@@ -65,7 +60,7 @@ class _data_matrix(spmatrix):
             return NotImplemented
 
     def astype(self, t):
-        return self._with_data(self._deduped_data().astype(t))
+        return self._with_data(self.data.astype(t))
 
     def conj(self):
         return self._with_data(self.data.conj())
@@ -74,7 +69,7 @@ class _data_matrix(spmatrix):
         return self._with_data(self.data.copy(), copy=True)
 
     def count_nonzero(self):
-        return np.count_nonzero(self._deduped_data())
+        return np.count_nonzero(self.data)
 
     count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
 
@@ -91,7 +86,7 @@ class _data_matrix(spmatrix):
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
 
-        data = self._deduped_data()
+        data = self.data
         if dtype is not None:
             data = data.astype(dtype)
         return self._with_data(data ** n)
@@ -136,7 +131,6 @@ class _minmax_mixin(object):
         M = self.shape[1 - axis]
 
         mat = self.tocsc() if axis == 0 else self.tocsr()
-        mat.sum_duplicates()
 
         major_index, value = mat._minor_reduce(min_or_max)
         not_full = np.diff(mat.indptr)[major_index] < N
@@ -148,11 +142,13 @@ class _minmax_mixin(object):
 
         from . import coo_matrix
         if axis == 0:
-            return coo_matrix((value, (np.zeros(len(value)), major_index)),
-                              dtype=self.dtype, shape=(1, M))
+            indices = (np.zeros(len(value)), major_index)
+            shape = (1, M)
         else:
-            return coo_matrix((value, (major_index, np.zeros(len(value)))),
-                              dtype=self.dtype, shape=(M, 1))
+            indices = (major_index, np.zeros(len(value)))
+            shape = (M, 1)
+        return coo_matrix((value, indices), dtype=self.dtype, shape=shape,
+                          copy=False, canonicalize=False)
 
     def _min_or_max(self, axis, out, min_or_max):
         if out is not None:
@@ -168,7 +164,7 @@ class _minmax_mixin(object):
             zero = self.dtype.type(0)
             if self.nnz == 0:
                 return zero
-            m = min_or_max.reduce(self._deduped_data().ravel())
+            m = min_or_max.reduce(self.data.ravel())
             if self.nnz != np.product(self.shape):
                 m = min_or_max(zero, m)
             return m

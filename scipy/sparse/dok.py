@@ -476,9 +476,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         idx_dtype = get_index_dtype(maxval=max(self.shape))
         data = np.asarray(_list(self.values()), dtype=self.dtype)
         indices = np.asarray(_list(self.keys()), dtype=idx_dtype).T
-        A = coo_matrix((data, indices), shape=self.shape, dtype=self.dtype)
-        A.has_canonical_format = True
-        return A
+        return coo_matrix((data, indices), shape=self.shape, dtype=self.dtype,
+                          copy=False, canonicalize=False)
 
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 

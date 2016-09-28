@@ -137,8 +137,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
         M, N = self.shape
 
         from .csc import csc_matrix
-        return csc_matrix((self.data, self.indices,
-                           self.indptr), shape=(N, M), copy=copy)
+        return csc_matrix((self.data, self.indices, self.indptr), shape=(N, M),
+                          copy=copy, canonicalize=False)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -146,7 +146,6 @@ class csr_matrix(_cs_matrix, IndexMixin):
         from .lil import lil_matrix
         lil = lil_matrix(self.shape,dtype=self.dtype)
 
-        self.sum_duplicates()
         ptr,ind,dat = self.indptr,self.indices,self.data
         rows, data = lil.rows, lil.data
 
@@ -184,7 +183,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
                   data)
 
         from .csc import csc_matrix
-        A = csc_matrix((data, indices, indptr), shape=self.shape)
+        A = csc_matrix((data, indices, indptr), shape=self.shape, copy=False,
+                       canonicalize=False)
         A.has_sorted_indices = True
         return A
 
@@ -199,7 +199,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
         elif blocksize == (1,1):
             arg1 = (self.data.reshape(-1,1,1),self.indices,self.indptr)
-            return bsr_matrix(arg1, shape=self.shape, copy=copy)
+            return bsr_matrix(arg1, shape=self.shape, copy=copy,
+                              canonicalize=False)
 
         else:
             R,C = blocksize
@@ -222,7 +223,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
                       self.data,
                       indptr, indices, data.ravel())
 
-            return bsr_matrix((data,indices,indptr), shape=self.shape)
+            return bsr_matrix((data,indices,indptr), shape=self.shape,
+                              canonicalize=False)
 
     tobsr.__doc__ = spmatrix.tobsr.__doc__
 
@@ -277,7 +279,8 @@ class csr_matrix(_cs_matrix, IndexMixin):
             data = np.ones(len(indices), dtype=self.dtype)
             shape = (len(indices),N)
 
-            return csr_matrix((data,indices,indptr), shape=shape)
+            return csr_matrix((data,indices,indptr), shape=shape, copy=False,
+                              canonicalize=False)
 
         row, col = self._unpack_index(key)
 
@@ -404,7 +407,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
             shape = (1, int(np.ceil(float(stop - start) / stride)))
 
             row_slice = csr_matrix((row_data, row_indices, row_indptr),
-                                   shape=shape)
+                                   shape=shape, copy=False, canonicalize=False)
 
         return row_slice
 

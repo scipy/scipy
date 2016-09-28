@@ -21,8 +21,10 @@ from .sputils import (upcast, upcast_char, to_native, isdense, isshape,
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     """base matrix class for compressed row and column oriented matrices"""
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False,
+                 canonicalize=True):
         _data_matrix.__init__(self)
+        needs_sum_duplicates = False
 
         if isspmatrix(arg1):
             if arg1.format == self.format and copy:
@@ -47,8 +49,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 if len(arg1) == 2:
                     # (data, ij) format
                     from .coo import coo_matrix
-                    other = self.__class__(coo_matrix(arg1, shape=shape))
-                    self._set_self(other)
+                    coo = coo_matrix(arg1, shape=shape, copy=copy,
+                                     canonicalize=canonicalize)
+                    self._set_self(self.__class__(coo))
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -63,6 +66,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
+                    needs_sum_duplicates = bool(canonicalize)
                 else:
                     raise ValueError("unrecognized %s_matrix constructor usage" %
                             self.format)
@@ -95,6 +99,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.data = np.asarray(self.data, dtype=dtype)
 
         self.check_format(full_check=False)
+
+        if needs_sum_duplicates:
+            self.sort_indices()
+            M, N = self._swap(self.shape)
+            _sparsetools.csr_sum_duplicates(M, N, self.indptr, self.indices,
+                                            self.data)
+            self.prune()
 
     def getnnz(self, axis=None):
         if axis is None:
@@ -187,7 +198,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         #    warn('Indices were not in sorted order.  Sorting indices.')
         #    self.sort_indices()
         #    assert(self.has_sorted_indices())
-        # TODO check for duplicates?
 
     #######################
     # Boolean comparisons #
@@ -197,8 +207,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Scalar version of self._binopt, for cases in which no new nonzeros
         are added. Produces a new spmatrix in canonical form.
         """
-        self.sum_duplicates()
         res = self._with_data(op(self.data, other), copy=True)
+        res.sort_indices()
         res.eliminate_zeros()
         return res
 
@@ -505,7 +515,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            other.data,
            indptr, indices, data)
 
-        return self.__class__((data,indices,indptr),shape=(M,N))
+        return self.__class__((data,indices,indptr), shape=(M,N), copy=False,
+                              canonicalize=False)
 
     def diagonal(self):
         """Returns the main diagonal of the matrix
@@ -531,10 +542,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 other_arr = self.__class__(other_arr)
                 return self._binopt(other_arr, op_name)
             else:
-                self.sum_duplicates()
                 new_data = npop(self.data, np.asarray(other))
                 mat = self.__class__((new_data, self.indices, self.indptr),
-                                     dtype=new_data.dtype, shape=self.shape)
+                                     dtype=new_data.dtype, shape=self.shape,
+                                     copy=False, canonicalize=False)
                 return mat
         elif isdense(other):
             return npop(self.todense(), other)
@@ -584,8 +595,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _minor_reduce(self, ufunc):
         """Reduce nonzeros with a ufunc over the minor axis when non-empty
-
-        Warning: this does not call sum_duplicates()
 
         Returns
         -------
@@ -714,7 +723,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                               n_samples, i, j, offsets)
         if ret == 1:
             # rinse and repeat
-            self.sum_duplicates()
+            self.sort_indices()
             _sparsetools.csr_sample_offsets(M, N, self.indptr,
                                             self.indices, n_samples, i, j,
                                             offsets)
@@ -752,7 +761,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                               n_samples, i, j, offsets)
         if ret == 1:
             # rinse and repeat
-            self.sum_duplicates()
+            self.sort_indices()
             _sparsetools.csr_sample_offsets(M, N, self.indptr,
                                             self.indices, n_samples, i, j,
                                             offsets)
@@ -896,7 +905,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         data, indices, indptr = aux[2], aux[1], aux[0]
         shape = self._swap((i1 - i0, j1 - j0))
 
-        return self.__class__((data, indices, indptr), shape=shape)
+        return self.__class__((data, indices, indptr), shape=shape, copy=False,
+                              canonicalize=False)
 
     ######################
     # Conversion methods #
@@ -904,14 +914,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def tocoo(self, copy=True):
         major_dim, minor_dim = self._swap(self.shape)
-        minor_indices = self.indices
+        minor_indices = np.array(self.indices, copy=copy)
         major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
-        row, col = self._swap((major_indices, minor_indices))
+        row_col = self._swap((major_indices, minor_indices))
 
         from .coo import coo_matrix
-        return coo_matrix((self.data, (row, col)), self.shape, copy=copy,
-                          dtype=self.dtype)
+        return coo_matrix((self.data, row_col), self.shape, copy=copy,
+                          dtype=self.dtype, canonicalize=False)
 
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
@@ -932,51 +942,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         _sparsetools.csr_eliminate_zeros(M, N, self.indptr, self.indices,
                                          self.data)
         self.prune()  # nnz may have changed
-
-    def __get_has_canonical_format(self):
-        """Determine whether the matrix has sorted indices and no duplicates
-
-        Returns
-            - True: if the above applies
-            - False: otherwise
-
-        has_canonical_format implies has_sorted_indices, so if the latter flag
-        is False, so will the former be; if the former is found True, the
-        latter flag is also set.
-        """
-
-        # first check to see if result was cached
-        if not getattr(self, '_has_sorted_indices', True):
-            # not sorted => not canonical
-            self._has_canonical_format = False
-        elif not hasattr(self, '_has_canonical_format'):
-            self.has_canonical_format = _sparsetools.csr_has_canonical_format(
-                len(self.indptr) - 1, self.indptr, self.indices)
-        return self._has_canonical_format
-
-    def __set_has_canonical_format(self, val):
-        self._has_canonical_format = bool(val)
-        if val:
-            self.has_sorted_indices = True
-
-    has_canonical_format = property(fget=__get_has_canonical_format,
-                                    fset=__set_has_canonical_format)
-
-    def sum_duplicates(self):
-        """Eliminate duplicate matrix entries by adding them together
-
-        The is an *in place* operation
-        """
-        if self.has_canonical_format:
-            return
-        self.sort_indices()
-
-        M, N = self._swap(self.shape)
-        _sparsetools.csr_sum_duplicates(M, N, self.indptr, self.indices,
-                                        self.data)
-
-        self.prune()  # nnz may have changed
-        self.has_canonical_format = True
 
     def __get_sorted(self):
         """Determine whether the matrix has sorted indices
@@ -1044,11 +1009,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         (i.e. .indptr and .indices) are copied.
         """
         if copy:
-            return self.__class__((data,self.indices.copy(),self.indptr.copy()),
-                                   shape=self.shape,dtype=data.dtype)
+            arg1 = (data, self.indices.copy(), self.indptr.copy())
         else:
-            return self.__class__((data,self.indices,self.indptr),
-                                   shape=self.shape,dtype=data.dtype)
+            arg1 = (data, self.indices, self.indptr)
+        return self.__class__(arg1, shape=self.shape, dtype=data.dtype,
+                              copy=False, canonicalize=False)
 
     def _binopt(self, other, op):
         """apply the binary operation fn to two sparse matrices."""
@@ -1087,9 +1052,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             indices = indices.copy()
             data = data.copy()
 
-        A = self.__class__((data, indices, indptr), shape=self.shape)
-
-        return A
+        return self.__class__((data, indices, indptr), shape=self.shape,
+                              copy=False, canonicalize=False)
 
     def _divide_sparse(self, other):
         """

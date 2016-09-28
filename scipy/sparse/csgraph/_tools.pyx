@@ -192,7 +192,7 @@ def csgraph_to_dense(csgraph, null_value=0):
     >>> data = np.array([2, 3])
     >>> indices = np.array([1, 1])
     >>> indptr = np.array([0, 2, 2])
-    >>> M = csr_matrix((data, indices, indptr), shape=(2, 2))
+    >>> M = csr_matrix((data,indices,indptr), shape=(2,2), canonicalize=False)
     >>> M.toarray()
     array([[0, 5],
            [0, 0]])

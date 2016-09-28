@@ -69,21 +69,18 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     Advantages of the COO format
         - facilitates fast conversion among sparse formats
-        - permits duplicate entries (see example)
-        - very fast conversion to and from CSR/CSC formats
+        - permits duplicate entries in construction (see example)
 
     Disadvantages of the COO format
-        - does not directly support:
-            + arithmetic operations
-            + slicing
+        - does not directly support slicing and some arithmetic operations
 
     Intended Usage
         - COO is a fast format for constructing sparse matrices
         - Once a matrix has been constructed, convert to CSR or
           CSC format for fast arithmetic and matrix vector operations
-        - By default when converting to CSR or CSC format, duplicate (i,j)
-          entries will be summed together.  This facilitates efficient
-          construction of finite element matrices and the like. (see example)
+        - When constructed, duplicate (i,j) entries will be summed together.
+          This facilitates efficient construction of finite element matrices
+          and the like. (see example)
 
     Examples
     --------
@@ -115,8 +112,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     """
     format = 'coo'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
+    def __init__(self, arg1, shape=None, dtype=None, copy=False,
+                 canonicalize=True):
         _data_matrix.__init__(self)
+        needs_sum_duplicates = False
 
         if isinstance(arg1, tuple):
             if isshape(arg1):
@@ -126,7 +125,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.row = np.array([], dtype=idx_dtype)
                 self.col = np.array([], dtype=idx_dtype)
                 self.data = np.array([], getdtype(dtype, default=float))
-                self.has_canonical_format = True
             else:
                 try:
                     obj, (row, col) = arg1
@@ -149,24 +147,17 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.row = np.array(row, copy=copy, dtype=idx_dtype)
                 self.col = np.array(col, copy=copy, dtype=idx_dtype)
                 self.data = np.array(obj, copy=copy)
-                self.has_canonical_format = False
+                needs_sum_duplicates = bool(canonicalize)
 
         else:
             if isspmatrix(arg1):
-                if isspmatrix_coo(arg1) and copy:
-                    self.row = arg1.row.copy()
-                    self.col = arg1.col.copy()
-                    self.data = arg1.data.copy()
-                    self.shape = arg1.shape
-                else:
-                    coo = arg1.tocoo()
-                    self.row = coo.row
-                    self.col = coo.col
-                    self.data = coo.data
-                    self.shape = coo.shape
-                self.has_canonical_format = False
+                coo = arg1.tocoo(copy=copy)
+                self.row = coo.row
+                self.col = coo.col
+                self.data = coo.data
+                self.shape = coo.shape
             else:
-                #dense argument
+                # dense argument
                 M = np.atleast_2d(np.asarray(arg1))
 
                 if M.ndim != 2:
@@ -176,12 +167,24 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
                 self.row, self.col = M.nonzero()
                 self.data = M[self.row, self.col]
-                self.has_canonical_format = True
 
         if dtype is not None:
             self.data = self.data.astype(dtype, copy=False)
 
         self._check()
+
+        if needs_sum_duplicates and len(self.data) > 0:
+            order = np.lexsort((self.row, self.col))
+            row = self.row[order]
+            col = self.col[order]
+            data = self.data[order]
+            unique_mask = ((row[1:] != row[:-1]) |
+                           (col[1:] != col[:-1]))
+            unique_mask = np.append(True, unique_mask)
+            self.row = row[unique_mask]
+            self.col = col[unique_mask]
+            unique_inds, = np.nonzero(unique_mask)
+            self.data = np.add.reduceat(data, unique_inds, dtype=self.dtype)
 
     def getnnz(self, axis=None):
         if axis is None:
@@ -243,7 +246,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         M, N = self.shape
         return coo_matrix((self.data, (self.col, self.row)),
-                          shape=(N, M), copy=copy)
+                          shape=(N, M), copy=copy, canonicalize=False)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -283,7 +286,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            self.sum_duplicates()
             idx_dtype = get_index_dtype((self.col, self.row),
                                         maxval=max(self.nnz, M))
             row = self.row.astype(idx_dtype, copy=False)
@@ -296,7 +298,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             coo_tocsr(N, M, self.nnz, col, row, self.data,
                       indptr, indices, data)
 
-            return csc_matrix((data, indices, indptr), shape=self.shape)
+            return csc_matrix((data, indices, indptr), shape=self.shape,
+                              copy=False, canonicalize=False)
 
     def tocsr(self, copy=False):
         """Convert this matrix to Compressed Sparse Row format
@@ -323,7 +326,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            self.sum_duplicates()
             idx_dtype = get_index_dtype((self.row, self.col),
                                         maxval=max(self.nnz, N))
             row = self.row.astype(idx_dtype, copy=False)
@@ -336,7 +338,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             coo_tocsr(M, N, self.nnz, row, col, self.data,
                       indptr, indices, data)
 
-            return csr_matrix((data, indices, indptr), shape=self.shape)
+            return csr_matrix((data, indices, indptr), shape=self.shape,
+                              copy=False, canonicalize=False)
 
     def tocoo(self, copy=False):
         if copy:
@@ -349,7 +352,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def todia(self, copy=False):
         from .dia import dia_matrix
 
-        self.sum_duplicates()
         ks = self.col - self.row  # the diagonal for each nonzero
         diags, diag_idx = np.unique(ks, return_inverse=True)
 
@@ -372,7 +374,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def todok(self, copy=False):
         from .dok import dok_matrix
 
-        self.sum_duplicates()
         dok = dok_matrix((self.shape), dtype=self.dtype)
         dok.update(izip(izip(self.row,self.col),self.data))
 
@@ -383,16 +384,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
     def diagonal(self):
         diag = np.zeros(min(self.shape), dtype=self.dtype)
         diag_mask = self.row == self.col
-
-        if self.has_canonical_format:
-            row = self.row[diag_mask]
-            data = self.data[diag_mask]
-        else:
-            row, _, data = self._sum_duplicates(self.row[diag_mask],
-                                                self.col[diag_mask],
-                                                self.data[diag_mask])
-        diag[row] = data
-
+        diag[self.row[diag_mask]] = self.data[diag_mask]
         return diag
 
     diagonal.__doc__ = _data_matrix.diagonal.__doc__
@@ -431,7 +423,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.row = np.concatenate((self.row[keep], new_row))
         self.col = np.concatenate((self.col[keep], new_col))
         self.data = np.concatenate((self.data[keep], new_data))
-        self.has_canonical_format = False
 
     # needed by _data_matrix
     def _with_data(self,data,copy=True):
@@ -440,39 +431,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         (i.e. .row and .col) are copied.
         """
         if copy:
-            return coo_matrix((data, (self.row.copy(), self.col.copy())),
-                                   shape=self.shape, dtype=data.dtype)
+            indices = (self.row.copy(), self.col.copy())
         else:
-            return coo_matrix((data, (self.row, self.col)),
-                                   shape=self.shape, dtype=data.dtype)
-
-    def sum_duplicates(self):
-        """Eliminate duplicate matrix entries by adding them together
-
-        This is an *in place* operation
-        """
-        if self.has_canonical_format:
-            return
-        summed = self._sum_duplicates(self.row, self.col, self.data)
-        self.row, self.col, self.data = summed
-        self.has_canonical_format = True
-
-    def _sum_duplicates(self, row, col, data):
-        # Assumes (data, row, col) not in canonical format.
-        if len(data) == 0:
-            return row, col, data
-        order = np.lexsort((row, col))
-        row = row[order]
-        col = col[order]
-        data = data[order]
-        unique_mask = ((row[1:] != row[:-1]) |
-                       (col[1:] != col[:-1]))
-        unique_mask = np.append(True, unique_mask)
-        row = row[unique_mask]
-        col = col[unique_mask]
-        unique_inds, = np.nonzero(unique_mask)
-        data = np.add.reduceat(data, unique_inds, dtype=self.dtype)
-        return row, col, data
+            indices = (self.row, self.col)
+        return coo_matrix((data, indices), shape=self.shape, dtype=data.dtype,
+                          copy=False, canonicalize=False)
 
     def eliminate_zeros(self):
         """Remove zero entries from the matrix

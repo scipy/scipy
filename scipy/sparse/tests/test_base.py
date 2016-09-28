@@ -3418,6 +3418,18 @@ class TestCSR(sparse_test_class()):
         assert_array_equal(csr.shape, (3,6))
         assert_(np.issubdtype(csr.dtype, int))
 
+    def test_test_constructor7(self):
+        # contains duplicate indices
+        indices = np.array([0, 0])
+        data = np.array([1, 1])
+        indptr = np.array([0, 2])
+
+        M = csr_matrix((data, indices, indptr))
+        assert_equal(M.nnz, 1)
+        assert_array_equal(M.indices, [0])
+        assert_array_equal(M.data, [2])
+        assert_array_equal(M.indptr, [0, 1])
+
     def test_sort_indices(self):
         data = arange(5)
         indices = array([7, 2, 1, 5, 4])
@@ -3482,10 +3494,11 @@ class TestCSR(sparse_test_class()):
         unsorted_inds = np.array([1, 0])
         data = np.array([1, 1])
         indptr = np.array([0, 2])
-        M = csr_matrix((data, sorted_inds, indptr)).copy()
+        M = csr_matrix((data, sorted_inds, indptr), canonicalize=False)
         assert_equal(True, M.has_sorted_indices)
 
-        M = csr_matrix((data, unsorted_inds, indptr)).copy()
+        M = csr_matrix((data, unsorted_inds, indptr), copy=True,
+                       canonicalize=False)
         assert_equal(False, M.has_sorted_indices)
 
         # set by sorting
@@ -3493,7 +3506,8 @@ class TestCSR(sparse_test_class()):
         assert_equal(True, M.has_sorted_indices)
         assert_array_equal(M.indices, sorted_inds)
 
-        M = csr_matrix((data, unsorted_inds, indptr)).copy()
+        M = csr_matrix((data, unsorted_inds, indptr), copy=True,
+                       canonicalize=False)
         # set manually (although underlyingly unsorted)
         M.has_sorted_indices = True
         assert_equal(True, M.has_sorted_indices)
@@ -3502,34 +3516,6 @@ class TestCSR(sparse_test_class()):
         # ensure sort bypassed when has_sorted_indices == True
         M.sort_indices()
         assert_array_equal(M.indices, unsorted_inds)
-
-    def test_has_canonical_format(self):
-        "Ensure has_canonical_format memoizes state for sum_duplicates"
-
-        M = csr_matrix((np.array([2]), np.array([0]), np.array([0, 1])))
-        assert_equal(True, M.has_canonical_format)
-
-        indices = np.array([0, 0])  # contains duplicate
-        data = np.array([1, 1])
-        indptr = np.array([0, 2])
-
-        M = csr_matrix((data, indices, indptr)).copy()
-        assert_equal(False, M.has_canonical_format)
-
-        # set by deduplicating
-        M.sum_duplicates()
-        assert_equal(True, M.has_canonical_format)
-        assert_equal(1, len(M.indices))
-
-        M = csr_matrix((data, indices, indptr)).copy()
-        # set manually (although underlyingly duplicated)
-        M.has_canonical_format = True
-        assert_equal(True, M.has_canonical_format)
-        assert_equal(2, len(M.indices))  # unaffected content
-
-        # ensure deduplication bypassed when has_canonical_format == True
-        M.sum_duplicates()
-        assert_equal(2, len(M.indices))  # unaffected content
 
     def test_scalar_idx_dtype(self):
         # Check that index dtype takes into account all parameters
@@ -3959,8 +3945,8 @@ class TestCOO(sparse_test_class(getset=False,
         coo = coo_matrix((data,(row,col)),(3,3))
 
         mat = matrix([[4,-1,0],[0,0,9],[-3,7,0]])
-
         assert_array_equal(mat,coo.todense())
+        assert_equal(coo.nnz, 6)
 
     def test_constructor3(self):
         # empty matrix
@@ -3993,19 +3979,6 @@ class TestCOO(sparse_test_class(getset=False,
         zeros = [[0, 0]]
         dia = coo_matrix(zeros).todia()
         assert_array_equal(dia.A, zeros)
-
-    def test_sum_duplicates(self):
-        coo = coo_matrix((4,3))
-        coo.sum_duplicates()
-        coo = coo_matrix(([1,2], ([1,0], [1,0])))
-        coo.sum_duplicates()
-        assert_array_equal(coo.A, [[2,0],[0,1]])
-        coo = coo_matrix(([1,2], ([1,1], [1,1])))
-        coo.sum_duplicates()
-        assert_array_equal(coo.A, [[0,0],[0,3]])
-        assert_array_equal(coo.row, [1])
-        assert_array_equal(coo.col, [1])
-        assert_array_equal(coo.data, [3])
 
     def test_todok_duplicates(self):
         coo = coo_matrix(([1,1,1,1], ([0,2,2,0], [0,1,1,0])))
@@ -4191,47 +4164,13 @@ class TestBSR(sparse_test_class(getset=False,
             x + x
 
 
-#------------------------------------------------------------------------------
-# Tests for non-canonical representations (with duplicates, unsorted indices)
-#------------------------------------------------------------------------------
-
-def _same_sum_duplicate(data, *inds, **kwargs):
-    """Duplicates entries to produce the same matrix"""
-    indptr = kwargs.pop('indptr', None)
-    if np.issubdtype(data.dtype, np.bool_) or \
-       np.issubdtype(data.dtype, np.unsignedinteger):
-        if indptr is None:
-            return (data,) + inds
-        else:
-            return (data,) + inds + (indptr,)
-
-    zeros_pos = (data == 0).nonzero()
-
-    # duplicate data
-    data = data.repeat(2, axis=0)
-    data[::2] -= 1
-    data[1::2] = 1
-
-    # don't spoil all explicit zeros
-    if zeros_pos[0].size > 0:
-        pos = tuple(p[0] for p in zeros_pos)
-        pos1 = (2*pos[0],) + pos[1:]
-        pos2 = (2*pos[0]+1,) + pos[1:]
-        data[pos1] = 0
-        data[pos2] = 0
-
-    inds = tuple(indices.repeat(2) for indices in inds)
-
-    if indptr is None:
-        return (data,) + inds
-    else:
-        return (data,) + inds + (indptr * 2,)
-
-
+# -----------------------------------------------------------------------------
+# Tests for non-canonical representations (unsorted indices, explicit zeros)
+# -----------------------------------------------------------------------------
 class _NonCanonicalMixin(object):
     def spmatrix(self, D, **kwargs):
         """Replace D with a non-canonical equivalent: containing
-        duplicate elements and explicit zeros"""
+        unsorted indices and explicit zeros"""
         construct = super(_NonCanonicalMixin, self).spmatrix
         M = construct(D, **kwargs)
 
@@ -4246,6 +4185,7 @@ class _NonCanonicalMixin(object):
         arg1 = self._arg1_for_noncanonical(M)
         if 'shape' not in kwargs:
             kwargs['shape'] = M.shape
+        kwargs['canonicalize'] = False
         NC = construct(arg1, **kwargs)
 
         # check that result is valid
@@ -4285,8 +4225,7 @@ class _NonCanonicalMixin(object):
 class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
     def _arg1_for_noncanonical(self, M):
         """Return non-canonical constructor arg1 equivalent to M"""
-        data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
-                                                    indptr=M.indptr)
+        data, indices, indptr = M.data, M.indices, M.indptr
         # unsorted
         for start, stop in izip(indptr, indptr[1:]):
             indices[start:stop] = indices[start:stop][::-1].copy()
@@ -4334,21 +4273,13 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
 class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
     def _arg1_for_noncanonical(self, M):
         """Return non-canonical constructor arg1 equivalent to M"""
-        data, row, col = _same_sum_duplicate(M.data, M.row, M.col)
-        return data, (row, col)
+        return M.data, (M.row, M.col)
 
     def _insert_explicit_zero(self, M, i, j):
         M.data = np.r_[M.data.dtype.type(0), M.data]
         M.row = np.r_[M.row.dtype.type(i), M.row]
         M.col = np.r_[M.col.dtype.type(j), M.col]
         return M
-
-    def test_setdiag_noncanonical(self):
-        m = self.spmatrix(np.eye(3))
-        m.sum_duplicates()
-        m.setdiag([3, 2], k=1)
-        m.sum_duplicates()
-        assert_(np.all(np.diff(m.col) >= 0))
 
 
 class Test64Bit(object):

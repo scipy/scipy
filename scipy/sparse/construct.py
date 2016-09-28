@@ -260,13 +260,15 @@ def eye(m, n=None, k=0, dtype=float, format=None):
             indices = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
             cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
-            return cls((data,indices,indptr),(n,n))
+            return cls((data,indices,indptr), shape=(n,n), copy=False,
+                       canonicalize=False)
         elif format == 'coo':
             idx_dtype = get_index_dtype(maxval=n)
             row = np.arange(n, dtype=idx_dtype)
             col = np.arange(n, dtype=idx_dtype)
             data = np.ones(n, dtype=dtype)
-            return coo_matrix((data,(row,col)),(n,n))
+            return coo_matrix((data,(row,col)), shape=(n,n), copy=False,
+                              canonicalize=False)
 
     diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
     return spdiags(diags, k, m, n).asformat(format)
@@ -351,7 +353,8 @@ def kron(A, B, format=None):
         data = data.reshape(-1,B.nnz) * B.data
         data = data.reshape(-1)
 
-        return coo_matrix((data,(row,col)), shape=output_shape).asformat(format)
+        return coo_matrix((data, (row,col)), shape=output_shape, copy=False,
+                          canonicalize=False).asformat(format)
 
 
 def kronsum(A, B, format=None):
@@ -419,10 +422,12 @@ def _compressed_sparse_stack(blocks, axis):
     indptr = np.concatenate(indptr)
     if axis == 0:
         return csr_matrix((data, indices, indptr),
-                          shape=(sum_dim, constant_dim))
+                          shape=(sum_dim, constant_dim), copy=False,
+                          canonicalize=False)
     else:
         return csc_matrix((data, indices, indptr),
-                          shape=(constant_dim, sum_dim))
+                          shape=(constant_dim, sum_dim), copy=False,
+                          canonicalize=False)
 
 
 def hstack(blocks, format=None, dtype=None):
@@ -605,7 +610,8 @@ def bmat(blocks, format=None, dtype=None):
         col[idx] = B.col + col_offsets[j]
         nnz += B.nnz
 
-    return coo_matrix((data, (row, col)), shape=shape).asformat(format)
+    return coo_matrix((data, (row, col)), shape=shape, copy=False,
+                      canonicalize=False).asformat(format)
 
 
 def block_diag(mats, format=None, dtype=None):
@@ -759,7 +765,8 @@ greater than %d - this is not supported on this machine
     j = np.floor(ind * 1. / m).astype(tp)
     i = (ind - j * m).astype(tp)
     vals = data_rvs(k).astype(dtype)
-    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format)
+    return coo_matrix((vals, (i, j)), shape=(m, n), copy=False,
+                      canonicalize=False).asformat(format)
 
 
 def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):

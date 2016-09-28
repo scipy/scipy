@@ -118,8 +118,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
         M, N = self.shape
 
         from .csr import csr_matrix
-        return csr_matrix((self.data, self.indices,
-                           self.indptr), (N, M), copy=copy)
+        return csr_matrix((self.data, self.indices, self.indptr), (N, M),
+                          copy=copy, canonicalize=False)
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
@@ -153,7 +153,8 @@ class csc_matrix(_cs_matrix, IndexMixin):
                   data)
 
         from .csr import csr_matrix
-        A = csr_matrix((data, indices, indptr), shape=self.shape)
+        A = csr_matrix((data, indices, indptr), shape=self.shape,
+                       copy=False, canonicalize=False)
         A.has_sorted_indices = True
         return A
 

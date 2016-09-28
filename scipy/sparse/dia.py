@@ -338,7 +338,7 @@ class dia_matrix(_data_matrix):
         indices = row.T[mask.T].astype(idx_dtype, copy=False)
         data = self.data.T[mask.T]
         return csc_matrix((data, indices, indptr), shape=self.shape,
-                          dtype=self.dtype)
+                          dtype=self.dtype, copy=False, canonicalize=True)
 
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
@@ -357,9 +357,8 @@ class dia_matrix(_data_matrix):
         data = self.data[mask]
 
         from .coo import coo_matrix
-        A = coo_matrix((data,(row,col)), shape=self.shape, dtype=self.dtype)
-        A.has_canonical_format = True
-        return A
+        return coo_matrix((data,(row,col)), shape=self.shape, dtype=self.dtype,
+                          copy=False, canonicalize=False)
 
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 

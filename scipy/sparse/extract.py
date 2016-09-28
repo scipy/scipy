@@ -35,8 +35,7 @@ def find(A):
 
     """
 
-    A = coo_matrix(A, copy=True)
-    A.sum_duplicates()
+    A = coo_matrix(A, copy=False)
     # remove explicit zeros
     nz_mask = A.data != 0
     return A.row[nz_mask], A.col[nz_mask], A.data[nz_mask]
@@ -168,4 +167,5 @@ def _masked_coo(A, mask):
     row = A.row[mask]
     col = A.col[mask]
     data = A.data[mask]
-    return coo_matrix((data, (row, col)), shape=A.shape, dtype=A.dtype)
+    return coo_matrix((data, (row, col)), shape=A.shape, dtype=A.dtype,
+                      copy=False, canonicalize=False)

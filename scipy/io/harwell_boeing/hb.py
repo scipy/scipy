@@ -327,7 +327,8 @@ def _read_hb_data(content, header):
 
     try:
         return csc_matrix((val, ind-1, ptr-1),
-                          shape=(header.nrows, header.ncols))
+                          shape=(header.nrows, header.ncols),
+                          copy=False, canonicalize=False)
     except ValueError as e:
         raise e
 
