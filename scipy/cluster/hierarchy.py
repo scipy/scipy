@@ -628,10 +628,10 @@ def linkage(y, method='single', metric='euclidean'):
 
     Notes
     -----
-    1. For method 'single' an optimized algorithm called SLINK is implemented,
-       which has :math:`O(n^2)` time complexity.
+    1. For method 'single' an optimized algorithm based on minimum spanning
+       tree is implemented. It has time complexity :math:`O(n^2)`.
        For methods 'complete', 'average', 'weighted' and 'ward' an algorithm
-       called nearest-neighbors chain is implemented, which too has time
+       called nearest-neighbors chain is implemented. It also has time
        complexity :math:`O(n^2)`.
        For other methods a naive algorithm is implemented with :math:`O(n^3)`
        time complexity.
@@ -676,7 +676,7 @@ def linkage(y, method='single', metric='euclidean'):
     n = int(distance.num_obs_y(y))
     method_code = _LINKAGE_METHODS[method]
     if method == 'single':
-        return _hierarchy.slink(y, n)
+        return _hierarchy.mst_single_linkage(y, n)
     elif method in ['complete', 'average', 'weighted', 'ward']:
         return _hierarchy.nn_chain(y, n, method_code)
     else:
