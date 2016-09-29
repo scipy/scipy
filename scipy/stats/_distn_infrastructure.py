@@ -66,11 +66,11 @@ _doc_logpdf = """\
     Log of the probability density function.
 """
 _doc_pmf = """\
-``pmf(x, %(shapes)s, loc=0, scale=1)``
+``pmf(k, %(shapes)s, loc=0, scale=1)``
     Probability mass function.
 """
 _doc_logpmf = """\
-``logpmf(x, %(shapes)s, loc=0, scale=1)``
+``logpmf(k, %(shapes)s, loc=0, scale=1)``
     Log of the probability mass function.
 """
 _doc_cdf = """\
@@ -265,6 +265,11 @@ _doc_disc_methods = ['rvs', 'pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf',
                      'mean', 'var', 'std', 'interval']
 for obj in _doc_disc_methods:
     docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
+
+_doc_disc_methods_err_varname = ['cdf', 'logcdf', 'sf', 'logsf']
+for obj in _doc_disc_methods_err_varname :
+    docdict_discrete[obj] = docdict_discrete[obj].replace('(x, ', '(k, ')
+
 docdict_discrete.pop('pdf')
 docdict_discrete.pop('logpdf')
 
