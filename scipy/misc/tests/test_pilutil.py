@@ -12,6 +12,7 @@ from numpy.testing import (assert_equal, dec, decorate_methods,
                            assert_array_equal)
 
 from scipy import misc
+from numpy.ma.testutils import assert_mask_equal
 
 try:
     import PIL.Image
@@ -79,6 +80,14 @@ class TestPILUtil(TestCase):
         actual = misc.bytescale(a, cmin=3, cmax=6, low=100, high=200)
         expected = [100, 100, 100, 100, 133, 167, 200, 200, 200, 200]
         assert_equal(actual, expected)
+
+    def test_bytescale_mask(self):
+        a = np.ma.MaskedArray(data=[1, 2, 3], mask=[False, False, True])
+        actual = misc.bytescale(a)
+        expected = [0, 255, 3]
+        assert_equal(expected, actual)
+        assert_mask_equal(a.mask, actual.mask)
+        self.assertTrue(isinstance(actual, np.ma.MaskedArray))
 
     def test_imsave(self):
         picdir = os.path.join(datapath, "data")
