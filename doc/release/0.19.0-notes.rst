@@ -69,6 +69,8 @@ Backwards incompatible changes
 `scipy.spatial.distance.squareform` now returns arrays of the same dtype as
 the input, instead of always float64.
 
+`scipy.special.errprint` now returns a boolean.
+
 The function `scipy.signal.find_peaks_cwt()` now returns an array instead of
 a list.
 

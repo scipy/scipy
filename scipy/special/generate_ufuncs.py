@@ -377,26 +377,39 @@ def errprint(inflag=None):
     \"\"\"
     errprint(inflag=None)
 
-    Sets or returns the error printing flag for special functions.
+    Set or return the error printing flag for special functions.
 
     Parameters
     ----------
     inflag : bool, optional
         Whether warnings concerning evaluation of special functions in
-        scipy.special are shown. If omitted, no change is made to the
-        current setting.
+        ``scipy.special`` are shown. If omitted, no change is made to
+        the current setting.
 
     Returns
     -------
-    old_flag
+    old_flag : bool
         Previous value of the error flag
+
+    Examples
+    --------
+    Turn on error printing.
+
+    >>> import scipy.special as sc
+    >>> print(sc.bdtr(-1, 10, 0.3))
+    nan
+    >>> sc.errprint(True)
+    False
+    >>> print(sc.bdtr(-1, 10, 0.3))
+    __main__:1: SpecialFunctionWarning: scipy.special/bdtr: domain error
+    nan
 
     \"\"\"
     if inflag is not None:
         scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
-        return sf_error.set_print(int(bool(inflag)))
+        return bool(sf_error.set_print(int(bool(inflag))))
     else:
-        return sf_error.get_print()
+        return bool(sf_error.get_print())
 """
 
 UFUNCS_EXTRA_CODE_BOTTOM = """\
