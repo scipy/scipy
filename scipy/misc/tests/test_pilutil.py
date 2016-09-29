@@ -89,6 +89,12 @@ class TestPILUtil(TestCase):
         assert_mask_equal(a.mask, actual.mask)
         self.assertTrue(isinstance(actual, np.ma.MaskedArray))
 
+    def test_bytescale_rounding(self):
+        a = np.array([-0.5, 0.5, 1.5, 2.5, 3.5])
+        actual = misc.bytescale(a, cmin=0, cmax=10, low=0, high=10)
+        expected = [0, 1, 2, 3, 4]
+        assert_equal(actual, expected)
+
     def test_imsave(self):
         picdir = os.path.join(datapath, "data")
         for png in glob.iglob(picdir + "/*.png"):

@@ -97,7 +97,7 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     bytedata = (data - cmin) * scale + low
     bytedata[bytedata > high] = high
     bytedata[bytedata < low] = low
-    return bytedata.round().astype(uint8)
+    return (bytedata + 0.5).astype(uint8)
 
 
 def imread(name, flatten=False, mode=None):
