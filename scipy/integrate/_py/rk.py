@@ -7,8 +7,8 @@ from .common import select_initial_step, norm
 # Multiply steps computed from asymptotic behaviour of errors by this.
 SAFETY = 0.9
 
-MAX_FACTOR = 5  # Maximum allowed increase in a step size.
 MIN_FACTOR = 0.2  # Minimum allowed decrease in a step size.
+MAX_FACTOR = 10  # Maximum allowed increase in a step size.
 
 
 def rk_step(fun, t, y, f, h, A, B, C, E, K):
@@ -98,25 +98,36 @@ class RungeKutta(OdeSolver):
             self.fun, self.t, self.y, self.f, self.direction,
             self.order, self.rtol, self.atol)
         self.K = np.empty((self.n_stages + 1, self.n))
+        self.step_size = None
 
     def _step_impl(self, max_step):
-        rtol = self.rtol
-        atol = self.atol
-        h_abs = min(self.h_abs, max_step)
-        order = self.order
         t = self.t
         y = self.y
 
+        rtol = self.rtol
+        atol = self.atol
+
+        min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
+
+        if self.h_abs > max_step:
+            h_abs = max_step
+        elif self.h_abs < min_step:
+            h_abs = min_step
+        else:
+            h_abs = self.h_abs
+
+        order = self.order
         step_accepted = False
+
         while not step_accepted:
+            if h_abs < min_step:
+                return False, self.TOO_SMALL_STEP
+
             h = h_abs * self.direction
             t_new = t + h
 
             if self.direction * (t_new - self.t_crit) > 0:
                 t_new = self.t_crit
-
-            if t_new == t:  # h is less than spacing between numbers.
-                return False, self.TOO_SMALL_STEP
 
             h = t_new - t
             h_abs = np.abs(h)
@@ -287,13 +298,19 @@ class RK45(RungeKutta):
     B = np.array([35/384, 0, 500/1113, 125/192, -2187/6784, 11/84])
     E = np.array([-71/57600, 0, 71/16695, -71/1920, 17253/339200, -22/525,
                   1/40])
-    P = np.array([[1, -183 / 64, 37 / 12, -145 / 128],
-                  [0, 0, 0, 0],
-                  [0, 1500/371, -1000/159, 1000/371],
-                  [0, -125/32, 125/12, -375/64],
-                  [0, 9477/3392, -729/106, 25515/6784],
-                  [0, -11/7, 11/3, -55/28],
-                  [0, 3/2, -4, 5/2]])
+    # Corresponds to the optimum value of c_6 from [2]_.
+    P = np.array([
+        [1, -8048581381/2820520608, 8663915743/2820520608,
+         -12715105075/11282082432],
+        [0, 0, 0, 0],
+        [0, 131558114200/32700410799, -68118460800/10900136933,
+         87487479700/32700410799],
+        [0, -1754552775/470086768, 14199869525/1410260304,
+         -10690763975/1880347072],
+        [0, 127303824393/49829197408, -318862633887/49829197408,
+         701980252875 / 199316789632],
+        [0, -282668133/205662961, 2019193451/616988883, -1453857185/822651844],
+        [0, 40617522/29380423, -110615467/29380423, 69997945/29380423]])
 
 
 class RkDenseOutput(DenseOutput):

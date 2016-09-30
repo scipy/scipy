@@ -173,3 +173,104 @@ class OdeSolution(object):
         ys = ys[:, reverse]
 
         return ys
+
+
+def num_jac(fun, t, y, f, threshold, factor=None):
+    """Finite differences Jacobian approximation tailored for ODE solvers.
+
+    This function computes finite difference approximation to the Jacobian
+    matrix of `fun` with respect to `y` using forward differences.
+    The Jacobian matrix has shape (n, n) and its element (i, j) is equal to
+    ``d f_i / d y_j``.
+
+    A special feature of this function is the ability to correct the step
+    size from iteration to iteration. The main idea is to keep the finite
+    difference significantly separated from its round-off error which
+    approximately equals ``EPS * np.abs(f)``. It reduces a possibility of a
+    huge error and assures that the estimated derivative are reasonably close
+    to the true values (i.e. the finite difference approximation is at least
+    qualitatively reflects the structure of the true Jacobian).
+
+    Parameters
+    ----------
+    fun : callable
+        Right-hand side of the system.
+    t : float
+        Current time.
+    y : ndarray, shape (n,)
+        Current state.
+    f : ndarray, shape (n,)
+        Value of the right hand side at (t, y).
+    threshold : float
+        Threshold for `y` value used for computing the step size as
+        ``factor * np.maximum(np.abs(y), threshold)``. Typically the value of
+        absolute tolerance (atol) for a solver should be passed as `threshold`.
+    factor : ndarray with shape (n,) or None
+        Factor to use for computing the step size. Pass None for the very
+        evaluation, then use the value returned from this function.
+
+    Returns
+    -------
+    J : ndarray, shape (n, n)
+        Jacobian matrix.
+    step_size : ndarray, shape (n,)
+        Suggested step size for the next evaluation.
+    """
+    y = np.asarray(y)
+    n = y.shape[0]
+
+    if factor is None:
+        factor = np.ones(n) * EPS ** 0.5
+
+    # Direct the step as ODE dictates, hoping that such step won't lead to
+    # a problematic region.
+    f_sign = 2 * (f >= 0).astype(float) - 1
+    y_scale = f_sign * np.maximum(threshold, np.abs(y))
+    h = factor * y_scale
+    h = (y + h) - y
+
+    # Make sure that the step is not 0 to start with. Not likely it will be
+    # executed often.
+    for i in np.nonzero(h == 0)[0]:
+        while h[i] == 0:
+            factor[i] *= 10
+            h[i] = (y[i] + factor[i] * y_scale[i]) - y[i]
+
+    h_vecs = np.diag(h)
+    J = np.empty((n, n))
+    for i in range(n):
+        f_new = fun(t, y + h_vecs[i])
+        diff = f_new - f
+        max_ind = np.argmax(np.abs(diff))
+
+        max_diff = np.abs(diff[max_ind])
+        scale = max(np.abs(f_new[max_ind]), np.abs(f[max_ind]))
+
+        # Difference is suspiciously small. Try a 10x step.
+        if max_diff < EPS ** 0.875 * scale:
+            new_factor = 10 * factor[i]
+            h_new = (y[i] + new_factor * y_scale[i]) - y[i]
+            h_vecs[i, i] = h_new
+            f_new = fun(t, y + h_vecs[i])
+            diff_new = f_new - f
+            max_ind = np.argmax(np.abs(diff_new))
+            max_diff_new = np.abs(diff_new[max_ind])
+            scale_new = max(np.abs(f_new[max_ind]), np.abs(f[max_ind]))
+
+            if max_diff * scale_new < scale * max_diff_new:
+                factor[i] = new_factor
+                h[i] = h_new
+                diff = diff_new
+                scale = scale_new
+                max_diff = max_diff_new
+
+        J[:, i] = diff / h[i]
+
+        # Adjust factor based on the difference compared to the scale.
+        if max_diff < EPS ** 0.75 * scale:
+            factor[i] *= 10
+        elif max_diff > EPS ** 0.25 * scale:
+            factor[i] *= 0.1
+
+    factor = np.maximum(factor, 1e3 * EPS)
+    return J, factor

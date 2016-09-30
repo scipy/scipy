@@ -1,13 +1,10 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from .common import select_initial_step, norm, EPS
+from .common import select_initial_step, norm, num_jac, EPS
 from .base import OdeSolver, DenseOutput
-from scipy.optimize._numdiff import approx_derivative
 
 S6 = 6 ** 0.5
-
-ORDER = 4
 
 # Butcher tableau. A is not used directly, see below.
 C = np.array([(4 - S6) / 10, (4 + S6) / 10, 1])
@@ -41,13 +38,13 @@ P = np.array([
 ])
 
 
-NEWTON_MAXITER = 7  # Maximum number of Newton iterations.
+NEWTON_MAXITER = 6  # Maximum number of Newton iterations.
 MIN_FACTOR = 0.2  # Minimum allowed decrease in a step size.
 MAX_FACTOR = 10  # Maximum allowed increase in a step size.
 
 
-def solve_collocation_system(fun, t, y, h, Z0, scale, tol, LU_real,
-                             LU_complex):
+def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
+                             LU_real, LU_complex):
     """Solve the collocation system.
 
     Parameters
@@ -55,21 +52,21 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol, LU_real,
     fun : callable
         Right-hand side of the system.
     t : float
-        Current value of the independent variable.
+        Current time.
     y : ndarray, shape (n,)
-        Current value of the dependent variable.
+        Current state.
     h : float
         Step to try.
-    J : ndarray, shape (n, n)
-        Jacobian of `fun` with respect to `y`.
     Z0 : ndarray, shape (3, n)
-        Initial guess for the solution.
+        Initial guess for the solution. It determines new values of `y` at
+        ``t + h * C`` as ``y + Z0``, where ``C`` is the Radau method constants.
     scale : float
         Problem tolerance scale, i.e. ``rtol * abs(y) + atol``.
     tol : float
-        Tolerance to which solve the system.
+        Tolerance to which solve the system. This value is compared with
+        the normalized by `scale` error.
     LU_real, LU_complex
-        LU decompositions of the system Jacobian.
+        LU decompositions of the system Jacobians.
 
     Returns
     -------
@@ -79,12 +76,8 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol, LU_real,
         Number of completed iterations.
     Z : ndarray, shape (3, n)
         Found solution.
-    f_new : ndarray, shape (3, n)
-        Value of `fun(x + h, y(x + h))`.
     rate : float
         The rate of convergence.
-    LU_real, LU_complex : tuple
-        Computed LU decompositions.
     """
     n = y.shape[0]
     M_real = MU_REAL / h
@@ -98,9 +91,13 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol, LU_real,
 
     dW_norm_old = None
     dW = np.empty_like(W)
+    converged = False
     for k in range(NEWTON_MAXITER):
         for i in range(3):
             F[i] = fun(t + ch[i], y + Z[i])
+
+        if not np.all(np.isfinite(F)):
+            break
 
         f_real = F.T.dot(TI_REAL) - M_real * W[0]
         f_complex = F.T.dot(TI_COMPLEX) - M_complex * (W[1] + 1j * W[2])
@@ -118,27 +115,25 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol, LU_real,
         else:
             rate = None
 
-        if (rate is not None and (rate > 1 or
+        if (rate is not None and (rate >= 1 or
                 rate ** (NEWTON_MAXITER - k) / (1 - rate) * dW_norm > tol)):
-            converged = False
             break
 
         W += dW
         Z = T.dot(W)
 
-        if rate is not None and rate / (1 - rate) * dW_norm < tol:
+        if (dW_norm == 0 or
+                rate is not None and rate / (1 - rate) * dW_norm < tol):
             converged = True
             break
 
         dW_norm_old = dW_norm
-    else:
-        converged = False
 
-    return converged, k + 1, Z, F[-1], rate
+    return converged, k + 1, Z, rate
 
 
 def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
-    """Predict by which factor to increase the step size.
+    """Predict by which factor to increase/decrease the step size.
 
     The algorithm is described in [1]_.
 
@@ -158,7 +153,7 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
 
     Notes
     -----
-    If `h_abs_old` and `error_norm_old` are both not None then a two-step
+    If `h_abs_old` and `error_norm_old` are both not None and then a two-step
     algorithm is used, otherwise a one-step algorithm is used.
 
     References
@@ -166,14 +161,13 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
     .. [1] E. Hairer, S. P. Norsett G. Wanner, "Solving Ordinary Differential
            Equations II: Stiff and Differential-Algebraic Problems", Sec. IV.8.
     """
-    with np.errstate(divide='ignore'):
-        if error_norm_old is None or h_abs_old is None or error_norm == 0:
-            multiplier = 1
-        else:
-            multiplier = h_abs / h_abs_old * (error_norm_old /
-                                              error_norm) ** (1/ORDER)
+    if error_norm_old is None or h_abs_old is None or error_norm == 0:
+        multiplier = 1
+    else:
+        multiplier = h_abs / h_abs_old * (error_norm_old / error_norm) ** 0.25
 
-        factor = min(1, multiplier) * error_norm ** (-1/ORDER)
+    with np.errstate(divide='ignore'):
+        factor = min(1, multiplier) * error_norm ** -0.25
 
     return factor
 
@@ -252,15 +246,18 @@ class Radau(OdeSolver):
         self.rtol = rtol
         self.atol = atol
         self.f = self.fun(self.t, self.y)
+        # Select initial step assuming the same order which is used to control
+        # the error.
         self.h_abs = select_initial_step(
             self.fun, self.t, self.y, self.f, self.direction,
-            ORDER, self.rtol, self.atol)
+            3, self.rtol, self.atol)
         self.h_abs_old = None
         self.error_norm_old = None
 
         self.newton_tol = max(10 * EPS / rtol, min(0.03, rtol ** 0.5))
         self.sol = None
 
+        self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac)
         self.current_jac = True
         self.LU_real = None
@@ -271,14 +268,16 @@ class Radau(OdeSolver):
         fun = self.fun
         t0 = self.t
         y0 = self.y
+        f0 = self.f
 
         if jac is None:
-            def jac_wrapped(t, y):
-                return approx_derivative(lambda z: fun(t, z),
-                                         y, method='2-point')
-            J = jac_wrapped(t0, y0)
+            def jac_wrapped(t, y, f):
+                J, self.jac_factor = num_jac(fun, t, y, f, self.atol,
+                                             self.jac_factor)
+                return J
+            J = jac_wrapped(t0, y0, f0)
         elif callable(jac):
-            def jac_wrapped(t, y):
+            def jac_wrapped(t, y, _=None):
                 return np.asarray(jac(t, y), dtype=float)
             J = jac_wrapped(t0, y0)
             if J.shape != (self.n, self.n):
@@ -302,8 +301,14 @@ class Radau(OdeSolver):
 
         atol = self.atol
         rtol = self.rtol
+
+        min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
         if self.h_abs > max_step:
             h_abs = max_step
+            h_abs_old = None
+            error_norm_old = None
+        elif self.h_abs < min_step:
+            h_abs = min_step
             h_abs_old = None
             error_norm_old = None
         else:
@@ -324,14 +329,14 @@ class Radau(OdeSolver):
         step_accepted = False
         message = None
         while not step_accepted:
+            if h_abs < min_step:
+                return False, self.TOO_SMALL_STEP
+
             h = h_abs * self.direction
             t_new = t + h
 
             if self.direction * (t_new - self.t_crit) > 0:
                 t_new = self.t_crit
-
-            if t_new == t:  # h is less than spacing between numbers.
-                return False, self.TOO_SMALL_STEP
 
             h = t_new - t
             h_abs = np.abs(h)
@@ -348,14 +353,13 @@ class Radau(OdeSolver):
                 LU_complex = lu_factor(MU_COMPLEX / h * I - J,
                                        overwrite_a=True)
 
-            converged, n_iter, Z, f_new, rate = \
-                solve_collocation_system(
+            converged, n_iter, Z, rate = solve_collocation_system(
                     self.fun, t, y, h, Z0, scale, self.newton_tol,
                     LU_real, LU_complex)
 
             if not converged:
                 if not current_jac:
-                    J = self.jac(t, y)
+                    J = self.jac(t, y, f)
                     current_jac = True
                 else:
                     h_abs *= 0.5
@@ -398,8 +402,9 @@ class Radau(OdeSolver):
             LU_real = None
             LU_complex = None
 
+        f_new = self.fun(t_new, y_new)
         if recompute_jac:
-            J = jac(t_new, y_new)
+            J = jac(t_new, y_new, f_new)
             current_jac = True
         elif jac is not None:
             current_jac = False
@@ -415,9 +420,9 @@ class Radau(OdeSolver):
 
         self.t = t_new
         self.y = y_new
+        self.f = f_new
         self.step_size = np.abs(t_new - t)
 
-        self.f = f_new
         self.Z = Z
 
         self.LU_real = LU_real

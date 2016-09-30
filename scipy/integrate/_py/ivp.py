@@ -1,4 +1,5 @@
 from __future__ import division, print_function, absolute_import
+from warnings import warn
 import numpy as np
 from .bdf import BDF
 from .radau import Radau
@@ -140,6 +141,22 @@ def find_active_events(g, g_new, direction):
             either & (direction == 0))
 
     return np.nonzero(mask)[0]
+
+
+def validate_tol(rtol, atol, n):
+    """Validate tolerance values."""
+    if rtol < 100 * EPS:
+        warn("`rtol` is too low, setting to {}".format(100 * EPS))
+        rtol = 100 * EPS
+
+    atol = np.asarray(atol)
+    if atol.ndim > 0 and atol.shape != (n,):
+        raise ValueError("`atol` has wrong shape.")
+
+    if np.any(atol < 0):
+        raise ValueError("`atol` must be positive.")
+
+    return rtol, atol
 
 
 def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
@@ -296,6 +313,8 @@ def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
     y0 = np.atleast_1d(y0)
     if y0.ndim != 1:
         raise ValueError("`y0` must be 1-dimensional.")
+
+    rtol, atol = validate_tol(rtol, atol, y0.shape[0])
 
     if method == 'RK23':
         solver = RK23(fun, t0, y0, tf, rtol, atol)

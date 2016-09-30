@@ -1,9 +1,8 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from .common import select_initial_step, norm, EPS
+from .common import select_initial_step, norm, EPS, num_jac
 from .base import OdeSolver, DenseOutput
-from scipy.optimize._numdiff import approx_derivative
 
 
 MAX_ORDER = 5
@@ -32,8 +31,12 @@ def solve_corrector_system(fun, t_new, y_predict, c, psi, LU, scale, tol):
     d = 0
     y = y_predict.copy()
     dy_norm_old = None
+    converged = False
     for k in range(NEWTON_MAXITER):
         f = fun(t_new, y)
+        if not np.all(np.isfinite(f)):
+            break
+
         res = c * f - psi - d
         dy = lu_solve(LU, res, overwrite_b=True)
         dy_norm = norm(dy / scale)
@@ -43,21 +46,19 @@ def solve_corrector_system(fun, t_new, y_predict, c, psi, LU, scale, tol):
         else:
             rate = dy_norm / dy_norm_old
 
-        if (rate is not None and (rate > 1 or
+        if (rate is not None and (rate >= 1 or
                 rate ** (NEWTON_MAXITER - k) / (1 - rate) * dy_norm > tol)):
-            converged = False
             break
 
         y += dy
         d += dy
 
-        if rate is not None and rate / (1 - rate) * dy_norm < tol:
+        if (dy_norm == 0 or
+                rate is not None and rate / (1 - rate) * dy_norm < tol):
             converged = True
             break
 
         dy_norm_old = dy_norm
-    else:
-        converged = False
 
     return converged, k + 1, y, d
 
@@ -144,6 +145,7 @@ class BDF(OdeSolver):
 
         self.newton_tol = max(10 * EPS / rtol, min(0.03, rtol ** 0.5))
 
+        self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac)
 
         kappa = np.array([0, -0.1850, -1/9, -0.0823, -0.0415, 0])
@@ -168,11 +170,13 @@ class BDF(OdeSolver):
 
         if jac is None:
             def jac_wrapped(t, y):
-                return approx_derivative(lambda z: fun(t, z),
-                                         y, method='2-point')
+                f = self.fun(t, y)
+                J, self.jac_factor = num_jac(fun, t, y, f, self.atol,
+                                             self.jac_factor)
+                return J
             J = jac_wrapped(t0, y0)
         elif callable(jac):
-            def jac_wrapped(t, y):
+            def jac_wrapped(t, y, _=None):
                 return np.asarray(jac(t, y), dtype=float)
             J = jac_wrapped(t0, y0)
             if J.shape != (self.n, self.n):
@@ -194,10 +198,17 @@ class BDF(OdeSolver):
         y = self.y
         D = self.D
 
+        min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
         if self.h_abs > max_step:
             h_abs = max_step
             factor = max_step / self.h_abs
             change_D(D, self.order, factor)
+            self.n_equal_steps = 0
+        elif self.h_abs < min_step:
+            h_abs = min_step
+            factor = min_step / self.h_abs
+            change_D(D, self.order, factor)
+            self.n_equal_steps = 0
         else:
             h_abs = self.h_abs
 
@@ -217,6 +228,9 @@ class BDF(OdeSolver):
 
         step_accepted = False
         while not step_accepted:
+            if h_abs < min_step:
+                return False, self.TOO_SMALL_STEP
+
             h = h_abs * self.direction
             t_new = t + h
 
@@ -229,9 +243,6 @@ class BDF(OdeSolver):
 
             h = t_new - t
             h_abs = np.abs(h)
-
-            if t_new == t:  # h is less than spacing between numbers.
-                return False, self.TOO_SMALL_STEP
 
             if LU is None:
                 LU = lu_factor(I - h / alpha[order] * J, overwrite_a=True)

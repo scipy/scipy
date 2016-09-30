@@ -4,6 +4,7 @@ from numpy.testing import (assert_, assert_allclose, run_module_suite,
 import numpy as np
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
 from scipy.integrate import DenseOutput, OdeSolution
+from scipy.integrate._py.common import num_jac
 
 
 def fun_rational(t, y):
@@ -256,6 +257,33 @@ def test_OdeSolution():
 
     assert_equal(sol([6, -2, 1.5, 4.5, 2.5, 5.5]),
                  np.array([[1, -1, -1, 1, 1, 1]]))
+
+
+def test_numjac():
+    def fun(t, y):
+        return np.array([
+            -0.04 * y[0] + 1e4 * y[1] * y[2],
+            0.04 * y[0] - 1e4 * y[1] * y[2] - 3e7 * y[1] ** 2,
+            3e7 * y[1] ** 2
+        ])
+
+    def jac(t, y):
+        return np.array([
+            [-0.04, 1e4 * y[2], 1e4 * y[1]],
+            [0.04, -1e4 * y[2] - 6e7 * y[1], -1e4 * y[1]],
+            [0, 6e7 * y[1], 0]
+        ])
+
+    t = 1
+    y = np.array([1, 0, 0])
+    J_true = jac(t, y)
+    threshold = 1e-5
+
+    J_num, factor = num_jac(fun, t, y, fun(t, y), threshold, None)
+    assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
+
+    J_num, factor = num_jac(fun, t, y, fun(t, y), threshold, factor)
+    assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
 
 
 if __name__ == '__main__':
