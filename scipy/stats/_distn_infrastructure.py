@@ -267,7 +267,7 @@ for obj in _doc_disc_methods:
     docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
 
 _doc_disc_methods_err_varname = ['cdf', 'logcdf', 'sf', 'logsf']
-for obj in _doc_disc_methods_err_varname :
+for obj in _doc_disc_methods_err_varname:
     docdict_discrete[obj] = docdict_discrete[obj].replace('(x, ', '(k, ')
 
 docdict_discrete.pop('pdf')
