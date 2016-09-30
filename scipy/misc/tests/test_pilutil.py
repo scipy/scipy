@@ -9,7 +9,7 @@ import glob
 
 from numpy.testing import (assert_equal, dec, decorate_methods,
                            TestCase, run_module_suite, assert_allclose,
-                           assert_array_equal)
+                           assert_array_equal, assert_raises)
 
 from scipy import misc
 from numpy.ma.testutils import assert_mask_equal
@@ -93,6 +93,24 @@ class TestPILUtil(TestCase):
         a = np.array([-0.5, 0.5, 1.5, 2.5, 3.5])
         actual = misc.bytescale(a, cmin=0, cmax=10, low=0, high=10)
         expected = [0, 1, 2, 3, 4]
+        assert_equal(actual, expected)
+
+    def test_bytescale_low_greaterthan_high(self):
+        with assert_raises(ValueError):
+            misc.bytescale(np.arange(3), low=10, high=5)
+
+    def test_bytescale_low_lessthan_0(self):
+        with assert_raises(ValueError):
+            misc.bytescale(np.arange(3), low=-1)
+
+    def test_bytescale_high_greaterthan_255(self):
+        with assert_raises(ValueError):
+            misc.bytescale(np.arange(3), high=256)
+
+    def test_bytescale_low_equals_high(self):
+        a = np.arange(3)
+        actual = misc.bytescale(a, low=10, high=10)
+        expected = [10, 10, 10]
         assert_equal(actual, expected)
 
     def test_imsave(self):
