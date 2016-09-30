@@ -476,6 +476,7 @@ class DTRunner(doctest.DocTestRunner):
 
 class Checker(doctest.OutputChecker):
     obj_pattern = re.compile('at 0x[0-9a-fA-F]+>')
+    int_pattern = re.compile('^[0-9]+L?$')
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
@@ -511,6 +512,11 @@ class Checker(doctest.OutputChecker):
         # ignore comments (e.g. signal.freqresp)
         if want.lstrip().startswith("#"):
             return True
+
+        # python 2 long integers are equal to python 3 integers
+        if self.int_pattern.match(want) and self.int_pattern.match(got):
+            if want.rstrip("L\r\n") == got.rstrip("L\r\n"):
+                return True
 
         # try the standard doctest
         try:
