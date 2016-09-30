@@ -911,9 +911,9 @@ class Test_HalfspaceIntersection(object):
         truths = np.zeros((arr1.shape[0],), dtype=bool)
         for l1 in arr1:
             indexes = np.where((abs(arr2 - l1) < rtol).all(axis=1))[0]
-            assert(indexes.shape == (1,))
+            assert_equal(indexes.shape, (1,))
             truths[indexes[0]] = True
-        assert(truths.all())
+        assert_(truths.all())
 
     def test_cube_halfspace_intersection(self):
         halfspaces = np.array([[-1.0, 0.0, 0.0],
@@ -940,7 +940,7 @@ class Test_HalfspaceIntersection(object):
 
         points = itertools.permutations([0., 0., 0.5, -0.5])
         for point in points:
-            assert(np.sum((hs.intersections == point).all(axis=1)) == 1)
+            assert_equal(np.sum((hs.intersections == point).all(axis=1)), 1)
 
     def test_wrong_feasible_point(self):
         halfspaces = np.array([[-1.0, 0.0, 0.0],
