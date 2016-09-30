@@ -395,14 +395,20 @@ def errprint(inflag=None):
     --------
     Turn on error printing.
 
+    >>> import warnings
     >>> import scipy.special as sc
-    >>> print(sc.bdtr(-1, 10, 0.3))
+    >>> sc.bdtr(-1, 10, 0.3)
     nan
     >>> sc.errprint(True)
     False
-    >>> print(sc.bdtr(-1, 10, 0.3))
-    __main__:1: SpecialFunctionWarning: scipy.special/bdtr: domain error
+    >>> with warnings.catch_warnings(record=True) as w:
+    ...     sc.bdtr(-1, 10, 0.3)
+    ...
     nan
+    >>> len(w)
+    1
+    >>> w[0].message
+    SpecialFunctionWarning('scipy.special/bdtr: domain error',)
 
     \"\"\"
     if inflag is not None:
