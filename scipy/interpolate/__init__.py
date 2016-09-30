@@ -124,6 +124,17 @@ Low-level interface to FITPACK functions:
    bisplrep
    bisplev
 
+Rational interpolation
+======================
+
+.. autosummary::
+   :toctree: generated/
+
+   floater_hormann
+   lsq_rational
+   RationalBarycentricInterpolation
+   RationalInterpolationWarning
+
 Additional tools
 ================
 
@@ -176,6 +187,8 @@ from .polyint import *
 from ._cubic import *
 
 from .ndgriddata import *
+
+from ._ratinterp import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
