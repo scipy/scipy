@@ -934,9 +934,18 @@ class Test_HalfspaceIntersection(object):
         ineqs = np.genfromtxt(fname)
         halfspaces = -np.hstack((ineqs[:, 1:], ineqs[:, :1]))
 
-        hs = qhull.HalfspaceIntersection(halfspaces, np.array([0., 0., 0., 0.]))
+        feas_point = np.array([0., 0., 0., 0.])
+        hs = qhull.HalfspaceIntersection(halfspaces, feas_point)
 
         assert_equal(hs.intersections.shape, (24, 4))
+
+        assert_almost_equal(hs.dual_volume, 32.0)
+        assert_equal(len(hs.dual_facets), 24)
+        for facet in hs.dual_facets:
+            assert_equal(len(facet), 6)
+
+        dists = halfspaces[:, -1] + halfspaces[:, :-1].dot(feas_point)
+        self.assert_unordered_allclose((halfspaces[:, :-1].T/dists).T, hs.dual_points)
 
         points = itertools.permutations([0., 0., 0.5, -0.5])
         for point in points:
