@@ -475,7 +475,7 @@ cdef class _Qhull:
     @cython.final
     def add_points(self, points):
         cdef int j
-        cdef realT *p
+        cdef realT *p, *q
         cdef facetT *facet
         cdef double bestdist
         cdef boolT isoutside
@@ -510,8 +510,10 @@ cdef class _Qhull:
                 qh_setdelaunay(self._qh, arr.shape[1], arr.shape[0], <realT*>arr.data)
 
             p = <realT*>arr.data
+            q = NULL
             if self._is_halfspaces:
                 p = qh_sethalfspace_all(self._qh, arr.shape[1], arr.shape[0], p, self._qh.feasible_point)
+                q = p
 
             for j in xrange(arr.shape[0]):
                 facet = qh_findbestfacet(self._qh, p, 0, &bestdist, &isoutside)
@@ -527,6 +529,9 @@ cdef class _Qhull:
                     p += arr.shape[1] - 1
                 else:
                     p += arr.shape[1]
+
+            if self._is_halfspaces:
+                stdlib.free(q)
 
             qh_check_maxout(self._qh)
             self._qh[0].hasTriangulation = 0
