@@ -729,6 +729,17 @@ cdef class _Qhull:
     @cython.boundscheck(False)
     @cython.cdivision(True)
     def get_hull_points(self):
+        """Returns all points currently contained in Qhull.
+        It is equivalent to retrieving the input in most cases, except in
+        halfspace mode, where the points are in fact the points of the dual
+        hull.
+
+        Returns
+        -------
+        points: array of double, shape (nrpoints, ndim)
+            The array of points contained in Qhull.
+
+        """
         cdef vertexT *vertex
         cdef int i, j, numpoints, point_ndim
         cdef np.ndarray[np.npy_double, ndim=2] points
@@ -764,6 +775,16 @@ cdef class _Qhull:
     @cython.boundscheck(False)
     @cython.cdivision(True)
     def get_hull_facets(self):
+        """Returns the facets contained in the current Qhull.
+        This function does not assume that the hull is simplicial,
+        meaning that facets will have different number of vertices.
+        It is thus less efficient but more general than get_simplex_facet_array.
+
+        Returns
+        -------
+        facets: list of lists of ints
+            The indices of the vertices forming each facet.
+        """
         cdef facetT *facet
         cdef vertexT* vertex
         cdef int i, j, numfacets, facet_ndim
