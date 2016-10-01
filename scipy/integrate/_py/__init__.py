@@ -6,4 +6,5 @@ from .rk import RK23, RK45
 from .radau import Radau
 from .bdf import BDF
 from .common import OdeSolution
-from .base import DenseOutput
+from .base import DenseOutput, OdeSolver
+

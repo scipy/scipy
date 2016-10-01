@@ -1,14 +1,21 @@
 from __future__ import division, print_function, absolute_import
-from warnings import warn
 import numpy as np
 from .bdf import BDF
 from .radau import Radau
 from .rk import RK23, RK45
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
+from .base import OdeSolver
 
 
-METHODS = ['RK23', 'RK45', 'Radau', 'BDF']
+METHODS = {'RK23': RK23,
+           'RK45': RK45,
+           'Radau': Radau,
+           'BDF': BDF}
+
+
+MESSAGE = {0: "The solver successfully reached the interval end.",
+           1: "A termination event occurred."}
 
 
 class OdeResult(OptimizeResult):
@@ -143,24 +150,8 @@ def find_active_events(g, g_new, direction):
     return np.nonzero(mask)[0]
 
 
-def validate_tol(rtol, atol, n):
-    """Validate tolerance values."""
-    if rtol < 100 * EPS:
-        warn("`rtol` is too low, setting to {}".format(100 * EPS))
-        rtol = 100 * EPS
-
-    atol = np.asarray(atol)
-    if atol.ndim > 0 and atol.shape != (n,):
-        raise ValueError("`atol` has wrong shape.")
-
-    if np.any(atol < 0):
-        raise ValueError("`atol` must be positive.")
-
-    return rtol, atol
-
-
-def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
-              dense_output=False, max_step=np.inf, jac=None, events=None):
+def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
+              max_step=np.inf, events=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ODEs given an initial
@@ -183,17 +174,7 @@ def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
         integrates until it reaches t=tf.
     y0 : array_like, shape (n,)
         Initial state.
-    rtol, atol : float and array_like, optional
-        Relative and absolute tolerances. The solver keeps the local error
-        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
-        relative accuracy (number of correct digits). But if a component of `y`
-        is approximately below `atol` then the error only needs to fall within
-        the same `atol` threshold, and the number of correct digits is not
-        guaranteed. If components of y have different scales, it might be
-        beneficial to set different `atol` values for different components by
-        passing array_like with shape (n,) for `atol`. Default values are
-        1e-3 for `rtol` and 1e-6 for `atol`.
-    method : string, optional
+    method : string or `OdeSolver`, optional
         Integration method to use:
 
             * 'RK45' (default): Explicit Runge-Kutta method of order 5(4) [1]_.
@@ -220,25 +201,13 @@ def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
         'Radau' or 'BDF' for stiff problems [7]_. If not sure, first try to run
         'RK45' and if it does unusual many iterations or diverges then your
         problem is likely to be stiff and you should use 'Radau' or 'BDF'.
+
+        You can also pass an arbitrary instance of `OdeSolver`.
     dense_output : bool, optional
         Whether to compute a continuous solution. Default is False.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. step is not
         bounded and determined solely by the solver.
-    jac : array_like, callable or None, optional
-        Jacobian matrix of the right-hand side of the system with respect to
-        `y`, required only by 'Radau' and 'BDF' methods. The Jacobian matrix
-        has shape (n, n) and its element (i, j) is equal to ``d f_i / d y_j``.
-        There are 3 ways to define the Jacobian:
-
-            * If array_like, then the Jacobian is assumed to be constant.
-            * If callable, then the Jacobian is assumed to depend on both
-              t and y, and will be called as ``jac(t, y)`` as necessary.
-            * If None (default), then the Jacobian will be approximated by
-              finite differences.
-
-        It is generally recommended to provided the Jacobian rather than
-        relying on finite difference approximation.
     events : callable, list of callables or None, optional
         Events to track. Events are defined by functions which take
         a zero value at a point of an event. Each function must have a
@@ -256,6 +225,33 @@ def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
 
         You can assign attributes like ``event.terminal = True`` to any
         function in Python. If None (default), events won't be tracked.
+    options
+        Options passed to a chosen solver constructor. All options available
+        for already implemented solvers are listed below.
+    rtol, atol : float and array_like, optional
+        Relative and absolute tolerances. The solver keeps the local error
+        estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
+        relative accuracy (number of correct digits). But if a component of `y`
+        is approximately below `atol` then the error only needs to fall within
+        the same `atol` threshold, and the number of correct digits is not
+        guaranteed. If components of y have different scales, it might be
+        beneficial to set different `atol` values for different components by
+        passing array_like with shape (n,) for `atol`. Default values are
+        1e-3 for `rtol` and 1e-6 for `atol`.
+    jac : array_like, callable or None, optional
+        Jacobian matrix of the right-hand side of the system with respect to
+        `y`, required only by 'Radau' and 'BDF' methods. The Jacobian matrix
+        has shape (n, n) and its element (i, j) is equal to ``d f_i / d y_j``.
+        There are 3 ways to define the Jacobian:
+
+            * If array_like, then the Jacobian is assumed to be constant.
+            * If callable, then the Jacobian is assumed to depend on both
+              t and y, and will be called as ``jac(t, y)`` as necessary.
+            * If None (default), then the Jacobian will be approximated by
+              finite differences.
+
+        It is generally recommended to provided the Jacobian rather than
+        relying on finite difference approximation.
 
     Returns
     -------
@@ -303,27 +299,18 @@ def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
     .. [7] `Stiff equation <https://en.wikipedia.org/wiki/Stiff_equation>`_ on
            Wikipedia.
     """
-    if method not in METHODS:
-        raise ValueError("`method` must be one of {}.".format(METHODS))
+    if not isinstance(method, OdeSolver) and method not in METHODS:
+        raise ValueError("`method` must be one of {} or OdeSolver instance."
+                         .format(METHODS))
 
     t0, tf = float(t_span[0]), float(t_span[1])
     if t0 == tf:
         raise ValueError("Initial and final times must be distinct.")
 
-    y0 = np.atleast_1d(y0)
-    if y0.ndim != 1:
-        raise ValueError("`y0` must be 1-dimensional.")
+    if not isinstance(method, OdeSolver):
+        method = METHODS[method]
 
-    rtol, atol = validate_tol(rtol, atol, y0.shape[0])
-
-    if method == 'RK23':
-        solver = RK23(fun, t0, y0, tf, rtol, atol)
-    elif method == 'RK45':
-        solver = RK45(fun, t0, y0, tf, rtol, atol)
-    elif method == 'Radau':
-        solver = Radau(fun, t0, y0, tf, rtol, atol, jac)
-    elif method == 'BDF':
-        solver = BDF(fun, t0, y0, tf, rtol, atol, jac)
+    solver = method(fun, t0, y0, tf, **options)
 
     ts = [t0]
     ys = [y0]
@@ -337,9 +324,12 @@ def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
     else:
         t_events = None
 
+    status = 0
+    message = None
     while solver.status != 'finished':
-        status, message = solver.step(max_step)
-        if status == 'failed':
+        message = solver.step(max_step)
+        if solver.status == 'failed':
+            status = -1
             break
 
         t = solver.t
@@ -374,14 +364,7 @@ def solve_ivp(fun, t_span, y0, rtol=1e-3, atol=1e-6, method='RK45',
                     break
             g = g_new
 
-    if status == 'finished':
-        status = 0
-        message = "The solver successfully reached the interval end."
-    elif status == 'running':
-        status = 1
-        message = "A termination event occurred."
-    elif status == 'failed':
-        status = -1
+    message = MESSAGE.get(status, message)
 
     if t_events is not None:
         t_events = [np.asarray(xe) for xe in t_events]

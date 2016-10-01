@@ -65,6 +65,7 @@ These solvers are implemented as individual classes which can be used directly
    RK45          -- Explicit Runge-Kutta solver of order 5(4).
    Radau         -- Implicit Runge-Kutta solver of order 5.
    BDF           -- Implicit multi-step variable order (1 to 5) solver.
+   OdeSolver     -- Base class for ODE solvers.
    DenseOutput   -- Local interpolant for computing a dense output.
    OdeSolution   -- Class which represents a continuous ODE solution.
 """
@@ -76,7 +77,7 @@ from .quadpack import *
 from ._ode import *
 from ._bvp import solve_bvp
 from ._py import (solve_ivp, OdeSolution, DenseOutput,
-                  RK23, RK45, Radau, BDF)
+                  OdeSolver, RK23, RK45, Radau, BDF)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester

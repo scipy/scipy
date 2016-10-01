@@ -3,7 +3,54 @@ import numpy as np
 
 
 class OdeSolver(object):
-    """Base class for ODE solvers."""
+    """Base class for ODE solvers.
+
+    In order to implement a new solver you need to follow the guidelines:
+
+        1. A constructor must accept parameters presented in the base class
+           (listed below) followed by any other parameters specific to a
+           solver.
+        2. A solver must implement a private method
+           `_step_impl(self, max_step=np.inf)` which propagates a solver one
+           step further. It must return tuple ``(success, message)``, where
+           ``success`` is a boolean indicating whether a step was successful
+           and ``message`` is a string containing description of a failure if
+           a step failed or None otherwise.
+        3. A solver must implement a private method `_dense_output_impl(self)`
+           which returns `DenseOutput` object covering the last taken step.
+        4. A solver must expose attributes listed below in Attributes section.
+
+    Parameters
+    ----------
+    fun : callable
+        Right-hand side of the system. The calling signature is ``fun(t, y)``.
+        Here ``t`` is a scalar, and ``y`` is ndarray with shape (n,). It
+        must return an array_like with shape (n,).
+    t0 : float
+        Initial time.
+    y0 : array_like, shape (n,)
+        Initial state.
+    t_crit : float
+        Boundary time --- the integration won't continue beyond it. It also
+        determines the direction of the integration.
+
+    Attributes
+    ----------
+    n : int
+        Number of equations.
+    status : string
+        Current status of the solver.
+    t_crit : float
+        Boundary time.
+    direction : -1 or +1
+        Integration direction.
+    t : float
+        Current time.
+    y : ndarray, shape (n,)
+        Current state.
+    step_size : float or None
+        Size of the last taken step. None if not steps were made yet.
+    """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     def __init__(self, fun, t0, y0, t_crit):
@@ -34,11 +81,10 @@ class OdeSolver(object):
 
         Returns
         -------
-        status : {'running', 'failed', 'finished'}
-            Solver status after the step was taken. Further steps are possible
-            only if ``status='running'``.
         message : string or None
-            Reason for failure if `status`  is 'failed', None otherwise.
+            Report from the solver. Typically a reason for failure if
+            `solve.status` is 'failed' after the step was taken or None
+            otherwise.
         """
         if max_step <= 0:
             raise ValueError("`max_step` must be positive.")
@@ -56,7 +102,7 @@ class OdeSolver(object):
         else:
             self.status = 'running'
 
-        return self.status, message
+        return message
 
     def dense_output(self):
         """Compute a local interpolant over the last step.

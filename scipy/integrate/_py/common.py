@@ -1,8 +1,25 @@
 from __future__ import division, print_function, absolute_import
+import warnings as warn
 import numpy as np
 
 
 EPS = np.finfo(float).eps
+
+
+def validate_tol(rtol, atol, n):
+    """Validate tolerance values."""
+    if rtol < 100 * EPS:
+        warn("`rtol` is too low, setting to {}".format(100 * EPS))
+        rtol = 100 * EPS
+
+    atol = np.asarray(atol)
+    if atol.ndim > 0 and atol.shape != (n,):
+        raise ValueError("`atol` has wrong shape.")
+
+    if np.any(atol < 0):
+        raise ValueError("`atol` must be positive.")
+
+    return rtol, atol
 
 
 def norm(x):

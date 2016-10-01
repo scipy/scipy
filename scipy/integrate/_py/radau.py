@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from .common import select_initial_step, norm, num_jac, EPS
+from .common import validate_tol, select_initial_step, norm, num_jac, EPS
 from .base import OdeSolver, DenseOutput
 
 S6 = 6 ** 0.5
@@ -243,8 +243,7 @@ class Radau(OdeSolver):
         super(Radau, self).__init__(fun, t0, y0, t_crit)
         self.t_old = None
         self.y_old = None
-        self.rtol = rtol
-        self.atol = atol
+        self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         self.f = self.fun(self.t, self.y)
         # Select initial step assuming the same order which is used to control
         # the error.

@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from .common import select_initial_step, norm, EPS, num_jac
+from .common import validate_tol, select_initial_step, norm, EPS, num_jac
 from .base import OdeSolver, DenseOutput
 
 
@@ -134,8 +134,7 @@ class BDF(OdeSolver):
         super(BDF, self).__init__(fun, t0, y0, t_crit)
         self.t_old = None
         self.y_old = None
-        self.rtol = rtol
-        self.atol = atol
+        self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
         self.h_abs = select_initial_step(
             self.fun, self.t, self.y, f, self.direction,

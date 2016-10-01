@@ -211,20 +211,19 @@ def test_classes():
         assert_equal(solver.y, y0)
         assert_(solver.step_size is None)
 
-        status, message = solver.step()
-        assert_equal(status, 'running')
+        message = solver.step()
+        assert_equal(solver.status, 'running')
         assert_equal(message, None)
         assert_equal(solver.n, 2)
-        assert_equal(solver.status, 'running')
         assert_equal(solver.t_crit, np.inf)
         assert_equal(solver.direction, 1)
         assert_(solver.t > 5)
         assert_(not np.all(np.equal(solver.y, y0)))
         assert_(solver.step_size > 0)
 
-        status, message = solver.step(max_step=1e-20)
-        assert_equal(status, 'failed')
+        message = solver.step(max_step=1e-20)
         assert_equal(solver.status, 'failed')
+        assert_("step size is less" in message)
 
 
 class ConstDenseOutput(DenseOutput):
