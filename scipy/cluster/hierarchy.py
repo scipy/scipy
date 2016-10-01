@@ -185,7 +185,6 @@ _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
                     'median': 4, 'ward': 5, 'weighted': 6}
 _EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
 
-
 __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
            'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
@@ -2075,9 +2074,6 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
           ``Z[n-p-2:end]`` in ``Z``. All other non-singleton clusters are
           contracted into leaf nodes.
 
-        ``'mlab'``
-          This corresponds to MATLAB(TM) behavior. (not implemented yet)
-
         ``'level'/'mtica'``
           No more than ``p`` levels of the dendrogram tree are displayed.
           This corresponds to Mathematica(TM) behavior.
@@ -2302,6 +2298,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         raise TypeError('The second argument must be a number')
 
     if truncate_mode not in ('lastp', 'mlab', 'mtica', 'level', 'none', None):
+        # 'mlab' and 'mtica' are kept working for backwards compat.
         raise ValueError('Invalid truncation mode.')
 
     if truncate_mode == 'lastp' or truncate_mode == 'mlab':
@@ -2488,7 +2485,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         # If the node is a leaf node but corresponds to a non-single cluster,
         # its label is either the empty string or the number of original
         # observations belonging to cluster i.
-        if 2 * n - p > i >= n:
+        if 2*n - p > i >= n:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
@@ -2514,12 +2511,10 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                         leaf_label_func, i, labels)
             return (iv + 5.0, 10.0, 0.0, 0.0)
     elif truncate_mode in ('mlab',):
-        pass
+        msg = "Mode 'mlab' is deprecated in scipy 0.19.0 (it never worked)."
+        warnings.warn(msg, DeprecationWarning)
 
     # Otherwise, only truncate if we have a leaf node.
-    #
-    # If the truncate_mode is mlab, the linkage has been modified
-    # with the truncated tree.
     #
     # Only place leaves if they correspond to original observations.
     if i < n:
