@@ -1429,7 +1429,7 @@ add_newdoc("scipy.special", "eval_jacobi",
 
     See Also
     --------
-    j_roots : roots and quadrature weights of Jacobi polynomials
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
     jacobi : Jacobi polynomial object
     hyp2f1 : Gauss hypergeometric function
     """)
@@ -1466,8 +1466,8 @@ add_newdoc("scipy.special", "eval_sh_jacobi",
 
     See Also
     --------
-    js_roots : roots and quadrature weights of shifted Jacobi
-               polynomials
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
     sh_jacobi : shifted Jacobi polynomial object
     eval_jacobi : evaluate Jacobi polynomials
     """)
@@ -1507,7 +1507,8 @@ add_newdoc("scipy.special", "eval_gegenbauer",
 
     See Also
     --------
-    cg_roots : roots and quadrature weights of Gegenbauer polynomials
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
     gegenbauer : Gegenbauer polynomial object
     hyp2f1 : Gauss hypergeometric function
     """)
@@ -1544,8 +1545,8 @@ add_newdoc("scipy.special", "eval_chebyt",
 
     See Also
     --------
-    t_roots : roots and quadrature weights of Chebyshev polynomials of
-              the first kind
+    roots_chebyt : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind
     chebyu : Chebychev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     hyp2f1 : Gauss hypergeometric function
@@ -1589,8 +1590,8 @@ add_newdoc("scipy.special", "eval_chebyu",
 
     See Also
     --------
-    u_roots : roots and quadrature weights of Chebyshev polynomials of
-              the second kind
+    roots_chebyu : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind
     chebyu : Chebyshev polynomial object
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
     hyp2f1 : Gauss hypergeometric function
@@ -1626,8 +1627,8 @@ add_newdoc("scipy.special", "eval_chebys",
 
     See Also
     --------
-    s_roots : roots and quadrature weights of Chebyshev polynomials of
-              the second kind on [-2, 2]
+    roots_chebys : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind on [-2, 2]
     chebys : Chebyshev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
@@ -1662,8 +1663,8 @@ add_newdoc("scipy.special", "eval_chebyc",
 
     See Also
     --------
-    c_roots : roots and quadrature weights of Chebyshev polynomials of
-              the first kind on [-2, 2]
+    roots_chebyc : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind on [-2, 2]
     chebyc : Chebyshev polynomial object
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     eval_chebyt : evaluate Chebycshev polynomials of the first kind
@@ -1699,8 +1700,8 @@ add_newdoc("scipy.special", "eval_sh_chebyt",
 
     See Also
     --------
-    ts_roots : roots and quadrature weights of shifted Chebychev
-               polynomials of the first kind
+    roots_sh_chebyt : roots and quadrature weights of shifted
+                      Chebyshev polynomials of the first kind
     sh_chebyt : shifted Chebyshev polynomial object
     eval_chebyt : evalaute Chebyshev polynomials of the first kind
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
@@ -1736,8 +1737,8 @@ add_newdoc("scipy.special", "eval_sh_chebyu",
 
     See Also
     --------
-    us_roots : roots and quadrature weights of shifted Chebychev
-               polynomials of the second kind
+    roots_sh_chebyu : roots and quadrature weights of shifted
+                      Chebychev polynomials of the second kind
     sh_chebyu : shifted Chebyshev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
@@ -1774,7 +1775,8 @@ add_newdoc("scipy.special", "eval_legendre",
 
     See Also
     --------
-    p_roots : roots and quadrature weights of Legendre polynomials
+    roots_legendre : roots and quadrature weights of Legendre
+                     polynomials
     legendre : Legendre polynomial object
     hyp2f1 : Gauss hypergeometric function
     numpy.polynomial.legendre.Legendre : Legendre series
@@ -1809,8 +1811,8 @@ add_newdoc("scipy.special", "eval_sh_legendre",
 
     See Also
     --------
-    ps_roots : roots and quadrature weights of shifted Legendre
-               polynomials
+    roots_sh_legendre : roots and quadrature weights of shifted
+                        Legendre polynomials
     sh_legendre : shifted Legendre polynomial object
     eval_legendre : evaluate Legendre polynomials
     numpy.polynomial.legendre.Legendre : Legendre series
@@ -1853,8 +1855,8 @@ add_newdoc("scipy.special", "eval_genlaguerre",
 
     See Also
     --------
-    la_roots : roots and quadrature weights of generalized Laguerre
-               polynomials
+    roots_genlaguerre : roots and quadrature weights of generalized
+                        Laguerre polynomials
     genlaguerre : generalized Laguerre polynomial object
     hyp1f1 : confluent hypergeometric function
     eval_laguerre : evaluate Laguerre polynomials
@@ -1892,7 +1894,8 @@ add_newdoc("scipy.special", "eval_laguerre",
 
      See Also
      --------
-     l_roots : roots and quadrature weights of Laguerre polynomials
+     roots_laguerre : roots and quadrature weights of Laguerre
+                      polynomials
      laguerre : Laguerre polynomial object
      numpy.polynomial.laguerre.Laguerre : Laguerre series
      eval_genlaguerre : evaluate generalized Laguerre polynomials
@@ -1926,8 +1929,8 @@ add_newdoc("scipy.special", "eval_hermite",
 
     See Also
     --------
-    h_roots : roots and quadrature weights of physicist's Hermite
-              polynomials
+    roots_hermite : roots and quadrature weights of physicist's
+                    Hermite polynomials
     hermite : physicist's Hermite polynomial object
     numpy.polynomial.hermite.Hermite : Physicist's Hermite series
     eval_hermitenorm : evaluate Probabilist's Hermite polynomials
@@ -1962,8 +1965,8 @@ add_newdoc("scipy.special", "eval_hermitenorm",
 
     See Also
     --------
-    he_roots : roots and quadrature weights of probabilist's
-               Hermite polynomials
+    roots_hermitenorm : roots and quadrature weights of probabilist's
+                        Hermite polynomials
     hermitenorm : probabilist's Hermite polynomial object
     numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
     eval_hermite : evaluate physicist's Hermite polynomials

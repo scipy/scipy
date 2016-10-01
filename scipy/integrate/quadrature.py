@@ -7,7 +7,7 @@ import warnings
 # trapz is a public function for scipy.integrate,
 # even though it's actually a numpy function.
 from numpy import trapz
-from scipy.special.orthogonal import p_roots
+from scipy.special import roots_legendre
 from scipy.special import gammaln
 from scipy._lib.six import xrange
 
@@ -19,16 +19,17 @@ class AccuracyWarning(Warning):
     pass
 
 
-def _cached_p_roots(n):
+def _cached_roots_legendre(n):
     """
-    Cache p_roots results to speed up calls of the fixed_quad function.
+    Cache roots_legendre results to speed up calls of the fixed_quad
+    function.
     """
-    if n in _cached_p_roots.cache:
-        return _cached_p_roots.cache[n]
+    if n in _cached_roots_legendre.cache:
+        return _cached_roots_legendre.cache[n]
 
-    _cached_p_roots.cache[n] = p_roots(n)
-    return _cached_p_roots.cache[n]
-_cached_p_roots.cache = dict()
+    _cached_roots_legendre.cache[n] = roots_legendre(n)
+    return _cached_roots_legendre.cache[n]
+_cached_roots_legendre.cache = dict()
 
 
 def fixed_quad(func, a, b, args=(), n=5):
@@ -73,7 +74,7 @@ def fixed_quad(func, a, b, args=(), n=5):
     odeint : ODE integrator
 
     """
-    x, w = _cached_p_roots(n)
+    x, w = _cached_roots_legendre(n)
     x = np.real(x)
     if np.isinf(a) or np.isinf(b):
         raise ValueError("Gaussian quadrature is only available for "
