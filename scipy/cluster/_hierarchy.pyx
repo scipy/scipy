@@ -672,7 +672,7 @@ def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
     return result  # -1 means success here
 
 
-def linkage(double[:] dists, int n, int method):
+def linkage(double[:] dists, np.npy_int64 n, int method):
     """
     Perform hierarchy clustering.
 
