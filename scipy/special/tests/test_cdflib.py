@@ -35,10 +35,7 @@ from scipy.special._mptestutils import (
 try:
     import mpmath
 except ImportError:
-    try:
-        import sympy.mpmath as mpmath
-    except ImportError:
-        mpmath = MissingModule('mpmath')
+    mpmath = MissingModule('mpmath')
 
 
 class ProbArg(object):

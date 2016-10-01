@@ -25,10 +25,7 @@ from scipy.special._ufuncs import (
 try:
     import mpmath
 except ImportError:
-    try:
-        import sympy.mpmath as mpmath
-    except ImportError:
-        mpmath = MissingModule('mpmath')
+    mpmath = MissingModule('mpmath')
 
 
 # ------------------------------------------------------------------------------

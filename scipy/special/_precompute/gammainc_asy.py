@@ -16,10 +16,7 @@ from scipy.special._precompute.utils import lagrange_inversion
 try:
     import mpmath as mp
 except ImportError:
-    try:
-        import sympy.mpmath as mp
-    except ImportError:
-        pass
+    pass
 
 
 def compute_a(n):

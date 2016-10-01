@@ -24,10 +24,7 @@ from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
 try:
     import mpmath
 except ImportError:
-    try:
-        import sympy.mpmath as mpmath
-    except ImportError:
-        mpmath = None
+    mpmath = None
 
 
 def mpmath_check(min_ver):

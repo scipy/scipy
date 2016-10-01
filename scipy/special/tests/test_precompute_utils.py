@@ -14,10 +14,7 @@ except ImportError:
 try:
     import mpmath as mp
 except ImportError:
-    try:
-        from sympy import mpmath as mp
-    except ImportError:
-        mp = MissingModule('mpmath')
+    mp = MissingModule('mpmath')
 
 
 class TestInversion(with_metaclass(DecoratorMeta, object)):

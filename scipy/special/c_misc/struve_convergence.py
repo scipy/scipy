@@ -36,11 +36,7 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-try:
-    import mpmath
-except:
-    from sympy import mpmath
+import mpmath
 
 
 def err_metric(a, b, atol=1e-290):

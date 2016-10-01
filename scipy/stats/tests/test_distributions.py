@@ -538,7 +538,7 @@ class TestLogser(TestCase):
     def test_pmf_small_p(self):
         m = stats.logser.pmf(4, 1e-20)
         # The expected value was computed using mpmath:
-        #   >>> from sympy import mpmath
+        #   >>> import mpmath
         #   >>> mpmath.mp.dps = 64
         #   >>> k = 4
         #   >>> p = mpmath.mpf('1e-20')
@@ -552,7 +552,7 @@ class TestLogser(TestCase):
     def test_mean_small_p(self):
         m = stats.logser.mean(1e-8)
         # The expected mean was computed using mpmath:
-        #   >>> from sympy import mpmath
+        #   >>> import mpmath
         #   >>> mpmath.dps = 60
         #   >>> p = mpmath.mpf('1e-8')
         #   >>> float(-p / ((1 - p)*mpmath.log(1 - p)))
@@ -2954,7 +2954,7 @@ def test_genextreme_entropy():
 def test_genextreme_sf_isf():
     # Expected values were computed using mpmath:
     #
-    #    from sympy import mpmath
+    #    import mpmath
     #
     #    def mp_genextreme_sf(x, xi, mu=0, sigma=1):
     #        # Formula from wikipedia, which has a sign convention for xi that
@@ -2999,7 +2999,7 @@ def test_burr12_ppf_small_arg():
     prob = 1e-16
     quantile = stats.burr12.ppf(prob, 2, 3)
     # The expected quantile was computed using mpmath:
-    #   >>> from sympy import mpmath
+    #   >>> import mpmath
     #   >>> prob = mpmath.mpf('1e-16')
     #   >>> c = mpmath.mpf(2)
     #   >>> d = mpmath.mpf(3)
