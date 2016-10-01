@@ -112,6 +112,12 @@ REFGUIDE_ALL_SKIPLIST = [
     r'scipy\.linalg\.lapack\.[sdczi].*',
 ]
 
+# these names are not required to be in an autosummary:: listing
+# despite being in ALL
+REFGUIDE_AUTOSUMMARY_SKIPLIST = [
+    r'scipy\.special\..*_roots' # old aliases for scipy.special.*_roots
+]
+
 
 HAVE_MATPLOTLIB = False
 
@@ -207,7 +213,11 @@ def compare(all_dict, others, names, module_name):
     only_all = set()
     for name in all_dict:
         if name not in names:
-            only_all.add(name)
+            for pat in REFGUIDE_AUTOSUMMARY_SKIPLIST:
+                if re.match(pat, module_name + '.' + name):
+                    break
+            else:
+                only_all.add(name)
 
     only_ref = set()
     missing = set()
