@@ -2045,11 +2045,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     The dendrogram illustrates how each cluster is
     composed by drawing a U-shaped link between a non-singleton
-    cluster and its children. The height of the top of the U-link is
-    the distance between its children clusters. It is also the
+    cluster and its children.  The top of the U-link indicates a
+    cluster merge.  The two legs of the U-link indicate which clusters
+    were merged.  The length of the two legs of the U-link represents
+    the distance between the child clusters.  It is also the
     cophenetic distance between original observations in the two
-    children clusters. It is expected that the distances in Z[:,2] be
-    monotonic, otherwise crossings appear in the dendrogram.
+    children clusters.
 
     Parameters
     ----------
@@ -2065,18 +2066,21 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         large. Truncation is used to condense the dendrogram. There
         are several modes:
 
-        ``None/'none'``
-          No truncation is performed (Default).
+        ``None``
+          No truncation is performed (default).
+          Note: ``'none'`` is an alias for ``None`` that's kept for
+          backward compatibility.
 
         ``'lastp'``
-          The last ``p`` non-singleton formed in the linkage are the only
-          non-leaf nodes in the linkage; they correspond to rows
+          The last ``p`` non-singleton clusters formed in the linkage are the
+          only non-leaf nodes in the linkage; they correspond to rows
           ``Z[n-p-2:end]`` in ``Z``. All other non-singleton clusters are
           contracted into leaf nodes.
 
-        ``'level'/'mtica'``
+        ``'level'``
           No more than ``p`` levels of the dendrogram tree are displayed.
-          This corresponds to Mathematica(TM) behavior.
+          Note: ``'mtica'`` is an alias for ``'level'`` that's kept for
+          backward compatibility.
 
     color_threshold : double, optional
         For brevity, let :math:`t` be the ``color_threshold``.
@@ -2248,6 +2252,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     --------
     linkage, set_link_color_palette
 
+    Notes
+    -----
+    It is expected that the distances in ``Z[:,2]`` be monotonic, otherwise
+    crossings appear in the dendrogram.
+
     Examples
     --------
     >>> from scipy.cluster import hierarchy
@@ -2305,7 +2314,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         if p > n or p == 0:
             p = n
 
-    if truncate_mode == 'mtica' or truncate_mode == 'level':
+    if truncate_mode == 'mtica':
+        # 'mtica' is an alias
+        truncate_mode = 'level'
+
+    if truncate_mode == 'level':
         if p <= 0:
             p = np.inf
 
@@ -2482,7 +2495,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         raise ValueError("Invalid root cluster index i.")
 
     if truncate_mode == 'lastp':
-        # If the node is a leaf node but corresponds to a non-single cluster,
+        # If the node is a leaf node but corresponds to a non-singleton cluster,
         # its label is either the empty string or the number of original
         # observations belonging to cluster i.
         if 2*n - p > i >= n:
@@ -2497,7 +2510,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
                                         leaf_label_func, i, labels)
             return (iv + 5.0, 10.0, 0.0, 0.0)
-    elif truncate_mode in ('mtica', 'level'):
+    elif truncate_mode == 'level':
         if i > n and level > p:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
