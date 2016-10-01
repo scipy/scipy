@@ -417,7 +417,7 @@ def _kmeans(obs, guess, thresh=1e-5):
 
     code_book = np.array(guess, copy=True)
     avg_dist = []
-    diff = thresh+1.
+    diff = np.inf
     while diff > thresh:
         nc = code_book.shape[0]
         # compute membership and distances between obs and code_book
