@@ -4686,8 +4686,8 @@ cdef char *ufunc_eval_chebyc_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "c_roots : roots and quadrature weights of Chebyshev polynomials of\n"
-    "          the first kind on [-2, 2]\n"
+    "roots_chebyc : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the first kind on [-2, 2]\n"
     "chebyc : Chebyshev polynomial object\n"
     "numpy.polynomial.chebyshev.Chebyshev : Chebyshev series\n"
     "eval_chebyt : evaluate Chebycshev polynomials of the first kind")
@@ -4761,8 +4761,8 @@ cdef char *ufunc_eval_chebys_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "s_roots : roots and quadrature weights of Chebyshev polynomials of\n"
-    "          the second kind on [-2, 2]\n"
+    "roots_chebys : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the second kind on [-2, 2]\n"
     "chebys : Chebyshev polynomial object\n"
     "eval_chebyu : evaluate Chebyshev polynomials of the second kind")
 ufunc_eval_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
@@ -4837,8 +4837,8 @@ cdef char *ufunc_eval_chebyt_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "t_roots : roots and quadrature weights of Chebyshev polynomials of\n"
-    "          the first kind\n"
+    "roots_chebyt : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the first kind\n"
     "chebyu : Chebychev polynomial object\n"
     "eval_chebyu : evaluate Chebyshev polynomials of the second kind\n"
     "hyp2f1 : Gauss hypergeometric function\n"
@@ -4920,8 +4920,8 @@ cdef char *ufunc_eval_chebyu_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "u_roots : roots and quadrature weights of Chebyshev polynomials of\n"
-    "          the second kind\n"
+    "roots_chebyu : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the second kind\n"
     "chebyu : Chebyshev polynomial object\n"
     "eval_chebyt : evaluate Chebyshev polynomials of the first kind\n"
     "hyp2f1 : Gauss hypergeometric function")
@@ -5000,7 +5000,8 @@ cdef char *ufunc_eval_gegenbauer_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "cg_roots : roots and quadrature weights of Gegenbauer polynomials\n"
+    "roots_gegenbauer : roots and quadrature weights of Gegenbauer\n"
+    "                   polynomials\n"
     "gegenbauer : Gegenbauer polynomial object\n"
     "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
@@ -5085,8 +5086,8 @@ cdef char *ufunc_eval_genlaguerre_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "la_roots : roots and quadrature weights of generalized Laguerre\n"
-    "           polynomials\n"
+    "roots_genlaguerre : roots and quadrature weights of generalized\n"
+    "                    Laguerre polynomials\n"
     "genlaguerre : generalized Laguerre polynomial object\n"
     "hyp1f1 : confluent hypergeometric function\n"
     "eval_laguerre : evaluate Laguerre polynomials")
@@ -5163,8 +5164,8 @@ cdef char *ufunc_eval_hermite_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "h_roots : roots and quadrature weights of physicist's Hermite\n"
-    "          polynomials\n"
+    "roots_hermite : roots and quadrature weights of physicist's\n"
+    "                Hermite polynomials\n"
     "hermite : physicist's Hermite polynomial object\n"
     "numpy.polynomial.hermite.Hermite : Physicist's Hermite series\n"
     "eval_hermitenorm : evaluate Probabilist's Hermite polynomials")
@@ -5209,8 +5210,8 @@ cdef char *ufunc_eval_hermitenorm_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "he_roots : roots and quadrature weights of probabilist's\n"
-    "           Hermite polynomials\n"
+    "roots_hermitenorm : roots and quadrature weights of probabilist's\n"
+    "                    Hermite polynomials\n"
     "hermitenorm : probabilist's Hermite polynomial object\n"
     "numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series\n"
     "eval_hermite : evaluate physicist's Hermite polynomials")
@@ -5264,7 +5265,7 @@ cdef char *ufunc_eval_jacobi_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "j_roots : roots and quadrature weights of Jacobi polynomials\n"
+    "roots_jacobi : roots and quadrature weights of Jacobi polynomials\n"
     "jacobi : Jacobi polynomial object\n"
     "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
@@ -5349,7 +5350,8 @@ cdef char *ufunc_eval_laguerre_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "l_roots : roots and quadrature weights of Laguerre polynomials\n"
+    "roots_laguerre : roots and quadrature weights of Laguerre\n"
+    "                 polynomials\n"
     "laguerre : Laguerre polynomial object\n"
     "numpy.polynomial.laguerre.Laguerre : Laguerre series\n"
     "eval_genlaguerre : evaluate generalized Laguerre polynomials")
@@ -5425,7 +5427,8 @@ cdef char *ufunc_eval_legendre_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "p_roots : roots and quadrature weights of Legendre polynomials\n"
+    "roots_legendre : roots and quadrature weights of Legendre\n"
+    "                 polynomials\n"
     "legendre : Legendre polynomial object\n"
     "hyp2f1 : Gauss hypergeometric function\n"
     "numpy.polynomial.legendre.Legendre : Legendre series")
@@ -5499,8 +5502,8 @@ cdef char *ufunc_eval_sh_chebyt_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "ts_roots : roots and quadrature weights of shifted Chebychev\n"
-    "           polynomials of the first kind\n"
+    "roots_sh_chebyt : roots and quadrature weights of shifted\n"
+    "                  Chebyshev polynomials of the first kind\n"
     "sh_chebyt : shifted Chebyshev polynomial object\n"
     "eval_chebyt : evalaute Chebyshev polynomials of the first kind\n"
     "numpy.polynomial.chebyshev.Chebyshev : Chebyshev series")
@@ -5574,8 +5577,8 @@ cdef char *ufunc_eval_sh_chebyu_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "us_roots : roots and quadrature weights of shifted Chebychev\n"
-    "           polynomials of the second kind\n"
+    "roots_sh_chebyu : roots and quadrature weights of shifted\n"
+    "                  Chebychev polynomials of the second kind\n"
     "sh_chebyu : shifted Chebyshev polynomial object\n"
     "eval_chebyu : evaluate Chebyshev polynomials of the second kind")
 ufunc_eval_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
@@ -5650,8 +5653,8 @@ cdef char *ufunc_eval_sh_jacobi_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "js_roots : roots and quadrature weights of shifted Jacobi\n"
-    "           polynomials\n"
+    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi\n"
+    "                  polynomials\n"
     "sh_jacobi : shifted Jacobi polynomial object\n"
     "eval_jacobi : evaluate Jacobi polynomials")
 ufunc_eval_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
@@ -5733,8 +5736,8 @@ cdef char *ufunc_eval_sh_legendre_doc = (
     "\n"
     "See Also\n"
     "--------\n"
-    "ps_roots : roots and quadrature weights of shifted Legendre\n"
-    "           polynomials\n"
+    "roots_sh_legendre : roots and quadrature weights of shifted\n"
+    "                    Legendre polynomials\n"
     "sh_legendre : shifted Legendre polynomial object\n"
     "eval_legendre : evaluate Legendre polynomials\n"
     "numpy.polynomial.legendre.Legendre : Legendre series")
