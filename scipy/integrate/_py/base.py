@@ -2,9 +2,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
-STATUS = ['started', 'running', 'failed', 'finished']
-
-
 class OdeSolver(object):
     """Base class for ODE solvers."""
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
