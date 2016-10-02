@@ -2405,14 +2405,14 @@ def vectorstrength(events, period):
     van Hemmen, JL, Longtin, A, and Vollmayr, AN. Testing resonating vector
         strength: Auditory system, electric fish, and noise.
         Chaos 21, 047508 (2011);
-        doi: 10.1063/1.3670512
+        :doi:`10.1063/1.3670512`.
     van Hemmen, JL.  Vector strength after Goldberg, Brown, and von Mises:
         biological and mathematical perspectives.  Biol Cybern.
-        2013 Aug;107(4):385-96. doi: 10.1007/s00422-013-0561-7.
+        2013 Aug;107(4):385-96. :doi:`10.1007/s00422-013-0561-7`.
     van Hemmen, JL and Vollmayr, AN.  Resonating vector strength: what happens
         when we vary the "probing" frequency while keeping the spike times
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
-        doi: 10.1007/s00422-013-0560-8
+        :doi:`10.1007/s00422-013-0560-8`.
     '''
     events = asarray(events)
     period = asarray(period)
