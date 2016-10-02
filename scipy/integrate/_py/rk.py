@@ -202,14 +202,14 @@ class RK23(RungeKutta):
         Current status of the solver: 'running', 'finished' or 'failed'.
     t_crit : float
         Boundary time.
-    direction : -1 or +1
-        Integration direction.
+    direction : float
+        Integration direction: +1 or -1.
     t : float
         Current time.
-    y : ndarray, shape (n,)
+    y : ndarray
         Current state.
-    step_size : float or None
-        Size of the last taken step. None if no steps were made yet.
+    step_size : float
+        Size of the last successful step. None if no steps were made yet.
 
     References
     ----------
@@ -266,17 +266,17 @@ class RK45(RungeKutta):
     n : int
         Number of equations.
     status : string
-        Current status of the solver.
+        Current status of the solver: 'running', 'finished' or 'failed'.
     t_crit : float
         Boundary time.
-    direction : -1 or +1
-        Integration direction.
+    direction : float
+        Integration direction: +1 or -1.
     t : float
         Current time.
-    y : ndarray, shape (n,)
+    y : ndarray
         Current state.
-    step_size : float or None
-        Size of the last taken step. None if no steps were made yet.
+    step_size : float
+        Size of the last successful step. None if no steps were made yet.
 
     References
     ----------
