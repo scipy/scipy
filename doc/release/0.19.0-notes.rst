@@ -44,6 +44,9 @@ cython to improve performance
 `SphericalVoronoi` can handle > 200 k points (at least 10 million) & has
 improved performance
 
+The function `scipy.spatial.distance.directed_hausdorff` was
+added to calculate the directed Hausdorff distance.
+
 `scipy.ndimage` improvements
 ----------------------------
 

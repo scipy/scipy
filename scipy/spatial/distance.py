@@ -17,6 +17,7 @@ stored in a rectangular array.
    pdist   -- pairwise distances between observation vectors.
    cdist   -- distances between two collections of observation vectors
    squareform -- convert distance matrix to a condensed one and vice versa
+   directed_hausdorff -- directed Hausdorff distance between arrays
 
 Predicates for checking the validity of distance matrices, both
 condensed and redundant. Also contained in this module are functions
@@ -84,6 +85,7 @@ __all__ = [
     'correlation',
     'cosine',
     'dice',
+    'directed_hausdorff',
     'euclidean',
     'hamming',
     'is_valid_dm',
@@ -115,8 +117,8 @@ from scipy._lib.six import callable, string_types
 from scipy._lib.six import xrange
 
 from . import _distance_wrap
+from . import _hausdorff
 from ..linalg import norm
-
 
 def _copy_array_if_base_present(a):
     """
@@ -144,6 +146,67 @@ def _validate_vector(u, dtype=None):
         raise ValueError("Input vector should be 1-D.")
     return u
 
+def directed_hausdorff(u, v):
+    """
+    Computes the directed Hausdorff distance between N-dimensional
+    point sets using a Euclidean metric.
+    
+    .. versionadded:: 0.19.0
+
+    Parameters
+    ----------
+    u : (M,N) ndarray
+        Input array.
+    v : (O,N) ndarray
+        Input array.
+
+    Returns
+    -------
+    d : double
+        The directed Hausdorff distance between arrays `u` and `v`.
+
+    Notes
+    ----------
+    Uses the early break technique and the random sampling approach described
+    by [Taha2015]_. Although worst-case performance is polynomial (as with the
+    brute force algorithm), this is exceedingly unlikely in practice, and
+    almost-linear time complexity performance can normally be expected for the
+    average case.
+
+    References
+    ----------
+    
+    .. [Taha2015] Taha and Hanbury (2015) An efficient algorithm
+                          for calculating the exact Hausdorff distance.
+                          IEEE Transactions On Pattern Analysis And
+                          Machine Intelligence 37: 2153-63. 
+
+    Examples
+    --------
+    Find the directed Hausdorff distance between
+    two 2-D arrays of coordinates:
+
+    >>> from scipy.spatial.distance import directed_hausdorff
+    >>> u = np.array([(35.0456, -85.2672),
+    ...               (35.1174, -89.9711),
+    ...               (35.9728, -83.9422)])
+    >>> v = np.array([(22.0456, 12.2672),
+    ...               (95.1174, 89.9711),
+    ...               (5.4567, 4.9422)])
+    >>> directed_hausdorff(u,v)
+    99.43988958853485
+
+    Find the general (symmetric) Hausdorff
+    distance between two 2-D arrays of 
+    coordinates:
+    
+    >>> max(directed_hausdorff(u,v),
+            directed_hausdorff(v,u))
+    183.69518128151867
+
+    """
+    dist = _hausdorff.directed_hausdorff(u,v)
+    return dist
 
 def minkowski(u, v, p):
     """
