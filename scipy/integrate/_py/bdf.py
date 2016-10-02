@@ -123,7 +123,7 @@ class BDF(OdeSolver):
     y : ndarray, shape (n,)
         Current state.
     step_size : float or None
-        Size of the last step. None if none steps were made yet.
+        Size of the last step. None if no steps were made yet.
 
     References
     ----------

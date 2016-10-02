@@ -13,12 +13,13 @@ class OdeSolver(object):
         2. A solver must implement a private method
            `_step_impl(self, max_step=np.inf)` which propagates a solver one
            step further. It must return tuple ``(success, message)``, where
-           ``success`` is a boolean indicating whether a step was successful
+           ``success`` is a boolean indicating whether a step was successful,
            and ``message`` is a string containing description of a failure if
            a step failed or None otherwise.
         3. A solver must implement a private method `_dense_output_impl(self)`
-           which returns `DenseOutput` object covering the last taken step.
-        4. A solver must expose attributes listed below in Attributes section.
+           which returns `DenseOutput` object covering the last successful
+           step.
+        4. A solver must have attributes listed below in Attributes section.
 
     Parameters
     ----------
@@ -49,7 +50,7 @@ class OdeSolver(object):
     y : ndarray, shape (n,)
         Current state.
     step_size : float or None
-        Size of the last taken step. None if not steps were made yet.
+        Size of the last successful step. None if no steps were made yet.
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 

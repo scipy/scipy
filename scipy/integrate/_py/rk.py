@@ -99,7 +99,6 @@ class RungeKutta(OdeSolver):
             self.fun, self.t, self.y, self.f, self.direction,
             self.order, self.rtol, self.atol)
         self.K = np.empty((self.n_stages + 1, self.n))
-        self.step_size = None
 
     def _step_impl(self, max_step):
         t = self.t
@@ -210,7 +209,7 @@ class RK23(RungeKutta):
     y : ndarray, shape (n,)
         Current state.
     step_size : float or None
-        Size of the last taken step. None if not steps were made yet.
+        Size of the last taken step. None if no steps were made yet.
 
     References
     ----------
@@ -277,7 +276,7 @@ class RK45(RungeKutta):
     y : ndarray, shape (n,)
         Current state.
     step_size : float or None
-        Size of the last taken step. None if not steps were made yet.
+        Size of the last taken step. None if no steps were made yet.
 
     References
     ----------
