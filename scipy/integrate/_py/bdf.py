@@ -37,8 +37,7 @@ def solve_corrector_system(fun, t_new, y_predict, c, psi, LU, scale, tol):
         if not np.all(np.isfinite(f)):
             break
 
-        res = c * f - psi - d
-        dy = lu_solve(LU, res, overwrite_b=True)
+        dy = lu_solve(LU, c * f - psi - d, overwrite_b=True)
         dy_norm = norm(dy / scale)
 
         if dy_norm_old is None:
@@ -69,8 +68,8 @@ class BDF(OdeSolver):
     This is a variable order method with the order varying automatically from
     1 to 5. The general framework of the BDF algorithm is described in [1]_.
     This class implements a quasi-constant step size approach as explained
-    in [2]_. The error estimation for the constant step BDF is derived in
-    [3]_. Accuracy enhancement using modified formulas (NDF) [2]_ is also
+    in [2]_. The error estimation strategy for the constant step BDF is derived
+    in [3]_. An accuracy enhancement using modified formulas (NDF) [2]_ is also
     implemented.
 
     Parameters
@@ -98,8 +97,8 @@ class BDF(OdeSolver):
         1e-3 for `rtol` and 1e-6 for `atol`.
     jac : array_like, callable or None, optional
         Jacobian matrix of the right-hand side of the system with respect to
-        `y`. The Jacobian matrix has shape (n, n) and its element (i, j) is
-        equal to ``d f_i / d y_j``. There are 3 ways to define the Jacobian:
+        y. The Jacobian matrix has shape (n, n) and its element (i, j) is
+        equal to d f_i / d y_j. There are 3 ways to define the Jacobian:
 
             * If array_like, then the Jacobian is assumed to be constant.
             * If callable, then the Jacobian is assumed to depend on both
@@ -155,8 +154,7 @@ class BDF(OdeSolver):
         self.jac, self.J = self._validate_jac(jac)
 
         kappa = np.array([0, -0.1850, -1/9, -0.0823, -0.0415, 0])
-        self.gamma = np.hstack((0,
-                                np.cumsum(1 / np.arange(1, MAX_ORDER + 1))))
+        self.gamma = np.hstack((0, np.cumsum(1 / np.arange(1, MAX_ORDER + 1))))
         self.alpha = (1 - kappa) * self.gamma
         self.error_const = kappa * self.gamma + 1 / np.arange(1, MAX_ORDER + 2)
 
@@ -176,13 +174,12 @@ class BDF(OdeSolver):
 
         if jac is None:
             def jac_wrapped(t, y):
-                f = self.fun(t, y)
-                J, self.jac_factor = num_jac(fun, t, y, f, self.atol,
-                                             self.jac_factor)
+                J, self.jac_factor = num_jac(fun, t, y, self.fun(t, y),
+                                             self.atol, self.jac_factor)
                 return J
             J = jac_wrapped(t0, y0)
         elif callable(jac):
-            def jac_wrapped(t, y, _=None):
+            def jac_wrapped(t, y):
                 return np.asarray(jac(t, y), dtype=float)
             J = jac_wrapped(t0, y0)
             if J.shape != (self.n, self.n):
@@ -222,12 +219,11 @@ class BDF(OdeSolver):
         rtol = self.rtol
         order = self.order
 
-        I = np.identity(self.n)
-
         alpha = self.alpha
         gamma = self.gamma
         error_const = self.error_const
 
+        I = np.identity(self.n)
         J = self.J
         LU = self.LU
         current_jac = self.jac is None
@@ -250,33 +246,40 @@ class BDF(OdeSolver):
             h = t_new - t
             h_abs = np.abs(h)
 
-            if LU is None:
-                LU = lu_factor(I - h / alpha[order] * J, overwrite_a=True)
-
             t_new = t + h
             y_predict = np.sum(D[:order + 1], axis=0)
 
             scale = atol + rtol * np.abs(y_predict)
-            c = h / alpha[order]
             psi = np.dot(D[1: order + 1].T, gamma[1: order + 1]) / alpha[order]
 
-            converged, n_iter, y, d = solve_corrector_system(
-                self.fun, t_new, y_predict, c, psi, LU, scale, self.newton_tol)
+            converged = False
+            c = h / alpha[order]
+            while not converged:
+                if LU is None:
+                    LU = lu_factor(I - c * J, overwrite_a=True)
 
-            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (
-                2 * NEWTON_MAXITER + n_iter)
+                converged, n_iter, y, d = solve_corrector_system(
+                    self.fun, t_new, y_predict, c, psi, LU, scale,
+                    self.newton_tol)
+
+                if not converged:
+                    if not current_jac:
+                        J = self.jac(t_new, y_predict)
+                        LU = None
+                        current_jac = True
+                    else:
+                        break
 
             if not converged:
-                if not current_jac:
-                    J = self.jac(t_new, y_predict)
-                    current_jac = True
-                else:
-                    factor = 0.5
-                    h_abs *= factor
-                    change_D(D, order, factor)
-                    self.n_equal_steps = 0
+                factor = 0.5
+                h_abs *= factor
+                change_D(D, order, factor)
+                self.n_equal_steps = 0
                 LU = None
                 continue
+
+            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER +
+                                                       n_iter)
 
             scale = atol + rtol * np.abs(y)
             error = error_const[order] * d
@@ -288,6 +291,8 @@ class BDF(OdeSolver):
                 h_abs *= factor
                 change_D(D, order, factor)
                 self.n_equal_steps = 0
+                # As we didn't have problems with convergence, we don't
+                # reset LU here.
             else:
                 step_accepted = True
 
@@ -351,8 +356,6 @@ class BDF(OdeSolver):
 class BdfDenseOutput(DenseOutput):
     def __init__(self, t_old, t, h, order, D):
         super(BdfDenseOutput, self).__init__(t_old, t)
-        self.t_old = t_old
-        self.t = t
         self.order = order
         self.t_shift = self.t - h * np.arange(self.order)
         self.denom = h * (1 + np.arange(self.order))
