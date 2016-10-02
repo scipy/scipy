@@ -46,26 +46,45 @@ def errprint(inflag=None):
     """
     errprint(inflag=None)
 
-    Sets or returns the error printing flag for special functions.
+    Set or return the error printing flag for special functions.
 
     Parameters
     ----------
     inflag : bool, optional
         Whether warnings concerning evaluation of special functions in
-        scipy.special are shown. If omitted, no change is made to the
-        current setting.
+        ``scipy.special`` are shown. If omitted, no change is made to
+        the current setting.
 
     Returns
     -------
-    old_flag
+    old_flag : bool
         Previous value of the error flag
+
+    Examples
+    --------
+    Turn on error printing.
+
+    >>> import warnings
+    >>> import scipy.special as sc
+    >>> sc.bdtr(-1, 10, 0.3)
+    nan
+    >>> sc.errprint(True)
+    False
+    >>> with warnings.catch_warnings(record=True) as w:
+    ...     sc.bdtr(-1, 10, 0.3)
+    ...
+    nan
+    >>> len(w)
+    1
+    >>> w[0].message
+    SpecialFunctionWarning('scipy.special/bdtr: domain error',)
 
     """
     if inflag is not None:
         scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
-        return sf_error.set_print(int(bool(inflag)))
+        return bool(sf_error.set_print(int(bool(inflag))))
     else:
-        return sf_error.get_print()
+        return bool(sf_error.get_print())
 cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
