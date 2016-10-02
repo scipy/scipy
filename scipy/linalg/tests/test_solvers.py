@@ -551,7 +551,7 @@ def test_solve_generalized_continuous_are():
         if knownfailure:
             raise KnownFailureTest(knownfailure)
 
-        x = solve_discrete_are(a, b, q, r, e, s)
+        x = solve_continuous_are(a, b, q, r, e, s)
         res = a.conj().T.dot(x.dot(e)) + e.conj().T.dot(x.dot(a)) + q
         out_fact = e.conj().dot(x).dot(b) + s
         res -= out_fact.dot(solve(np.atleast_2d(r), out_fact.conj().T))

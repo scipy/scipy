@@ -357,7 +357,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
         M[np.diag_indices_from(M)] = 0.
-        _, (sca, _) = balance(M,separate=1,permute=0)
+        _, (sca, _) = balance(M,separate=1, permute=0)
         # do we need to bother? 
         if not np.allclose(sca,np.ones_like(sca)):
             # Now impose diag(D,inv(D)) from Benner where D is 
@@ -545,7 +545,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
         M[np.diag_indices_from(M)] = 0.
-        _, (sca, _) = balance(M,separate=1,permute=0)
+        _, (sca, _) = balance(M,separate=1, permute=0)
         # do we need to bother? 
         if not np.allclose(sca,np.ones_like(sca)):
             # Now impose diag(D,inv(D)) from Benner where D is 
