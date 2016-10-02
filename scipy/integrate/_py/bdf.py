@@ -67,9 +67,11 @@ class BDF(OdeSolver):
     """Implicit method based on Backward Differentiation Formulas.
 
     This is a variable order method with the order varying automatically from
-    1 to 5. An implementation approach follows the one described in [1]_. A
-    quasi-constant step size scheme is used and accuracy enhancement by NDF
-    modification is also implemented.
+    1 to 5. The general framework of the BDF algorithm is described in [1]_.
+    This class implements a quasi-constant step size approach as explained
+    in [2]_. The error estimation for the constant step BDF is derived in
+    [3]_. Accuracy enhancement using modified formulas (NDF) [2]_ is also
+    implemented.
 
     Parameters
     ----------
@@ -127,8 +129,13 @@ class BDF(OdeSolver):
 
     References
     ----------
-    .. [1] L. F. Shampine, M. W. Reichelt, "THE MATLAB ODE SUITE", SIAM J. SCI.
+    .. [1] G. D. Byrne, A. C. Hindmarsh, "A Polyalgorithm for the Numerical
+           Solution of Ordinary Differential Equations", ACM Transactions on
+           Mathematical Software, Vol. 1, No. 1, pp. 71-96, March 1975.
+    .. [2] L. F. Shampine, M. W. Reichelt, "THE MATLAB ODE SUITE", SIAM J. SCI.
            COMPUTE., Vol. 18, No. 1, pp. 1-22, January 1997.
+    .. [3] E. Hairer, G. Wanner, "Solving Ordinary Differential Equations I:
+           Nonstiff Problems", Sec. III.2.
     """
     def __init__(self, fun, t0, y0, t_crit, rtol=1e-3, atol=1e-6, jac=None):
         super(BDF, self).__init__(fun, t0, y0, t_crit)
