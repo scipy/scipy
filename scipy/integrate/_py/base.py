@@ -2,6 +2,18 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
+def check_arguments(fun, y0):
+    y0 = np.asarray(y0, dtype=float)
+
+    if y0.ndim != 1:
+        raise ValueError("`y0` must be 1-dimensional.")
+
+    def fun_wrapped(t, y):
+        return np.asarray(fun(t, y))
+
+    return fun_wrapped, y0
+
+
 class OdeSolver(object):
     """Base class for ODE solvers.
 
@@ -55,12 +67,8 @@ class OdeSolver(object):
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     def __init__(self, fun, t0, y0, t_crit):
-        def fun_wrapped(t, y):
-            return np.atleast_1d(fun(t, y))
-
-        self.fun = fun_wrapped
         self.t = t0
-        self.y = np.asarray(y0)
+        self.fun, self.y = check_arguments(fun, y0)
         self.t_crit = t_crit
 
         if self.t == self.t_crit:
