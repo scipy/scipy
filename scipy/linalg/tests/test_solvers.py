@@ -600,7 +600,7 @@ def test_solve_generalized_discrete_are():
         if knownfailure:
             raise KnownFailureTest(knownfailure)
 
-        x = solve_continuous_are(a, b, q, r, e, s)
+        x = solve_discrete_are(a, b, q, r, e, s)
         res = a.conj().T.dot(x.dot(a)) - e.conj().T.dot(x.dot(e)) + q
         res -= (a.conj().T.dot(x.dot(b)) + s).dot(
                     solve(r+b.conj().T.dot(x.dot(b)), 
