@@ -1182,14 +1182,15 @@ def balance(A, permute=True, scale=True, separate = False, overwrite_a=False):
     Notes
     -----
 
-    This algorithm is particularly useful for eigenvalue and matrix 
-    decompositions and often automatically performed internally. 
+    This algorithm is particularly useful for eigenvalue and matrix
+    decompositions and in many cases it is already called by various
+    LAPACK routines. 
     
-    The algorithm is based on the well-known technique of [1]_ and has 
+    The algorithm is based on the well-known technique of [1]_ and has
     been modified to account for special cases. See [2]_ for details
     which have been implemented since LAPACK v3.5.0. Before this version
-    there are corner cases where balancing can actually worsen the 
-    conditioning. See [3]_ for such examples. 
+    there are corner cases where balancing can actually worsen the
+    conditioning. See [3]_ for such examples.
 
     Examples
     --------
