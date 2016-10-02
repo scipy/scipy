@@ -543,7 +543,7 @@ def test_solve_generalized_continuous_are():
         None)
         ]
 
-    min_decimal = (11, 11)
+    min_decimal = (10, 10)
         
     def _test_factory(case,dec):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
@@ -552,7 +552,7 @@ def test_solve_generalized_continuous_are():
             raise KnownFailureTest(knownfailure)
 
         x = solve_discrete_are(a, b, q, r, e, s)
-        res = a.conj().T.dot(x.dot(a)) - e.conj().T.dot(x.dot(e)) + q
+        res = a.conj().T.dot(x.dot(e)) + e.conj().T.dot(x.dot(a)) + q
         out_fact = e.conj().dot(x).dot(b) + s
         res -= out_fact.dot(solve(np.atleast_2d(r), out_fact.conj().T))
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
