@@ -99,7 +99,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.levy_stable',
     'scipy.special.sinc', # comes from numpy
     'scipy.misc.who', # comes from numpy
-    'weave.rst',  # tutorial for a deprecated module
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
