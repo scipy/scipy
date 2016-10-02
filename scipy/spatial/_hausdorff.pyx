@@ -34,8 +34,8 @@ def directed_hausdorff(np.ndarray[np.float64_t, ndim =2] ar1,
     # performance of the algorithm
     np.random.shuffle(ar1)
     np.random.shuffle(ar2)
-                                                                                                                                                                                                     
-    cmax = 0 
+
+    cmax = 0
     for i in range(N1):
         break_occurred = 0
         cmin = np.inf

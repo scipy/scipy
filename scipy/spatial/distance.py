@@ -148,11 +148,10 @@ def _validate_vector(u, dtype=None):
 
 def directed_hausdorff(u, v):
     """
-    Computes the directed Hausdorff distance between N-dimensional
-    point sets using a Euclidean metric.
-    
-    .. versionadded:: 0.19.0
+    Computes the directed Hausdorff distance between two N-D arrays.
 
+    Distance between pairs are calculated using a Euclidean metric.
+    
     Parameters
     ----------
     u : (M,N) ndarray
@@ -162,50 +161,57 @@ def directed_hausdorff(u, v):
 
     Returns
     -------
-    d : double
+    d : float
         The directed Hausdorff distance between arrays `u` and `v`.
 
     Notes
     ----------
-    Uses the early break technique and the random sampling approach described
-    by [Taha2015]_. Although worst-case performance is polynomial (as with the
-    brute force algorithm), this is exceedingly unlikely in practice, and
-    almost-linear time complexity performance can normally be expected for the
-    average case.
+    Uses the early break technique and the random sampling approach
+    described by [1]_. Although worst-case performance is polynomial
+    (as with the brute force algorithm), this is exceedingly unlikely
+    in practice, and almost-linear time complexity performance can
+    normally be expected for the average case.
+
+    .. versionadded:: 0.19.0
 
     References
     ----------
-    
-    .. [Taha2015] Taha and Hanbury (2015) An efficient algorithm
-                          for calculating the exact Hausdorff distance.
-                          IEEE Transactions On Pattern Analysis And
-                          Machine Intelligence 37: 2153-63. 
+
+    .. [1] A. A. Taha and A. Hanbury, "An efficient algorithm for
+       calculating the exact Hausdorff distance." IEEE Transactions On
+       Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
+       2015.
 
     Examples
     --------
-    Find the directed Hausdorff distance between
-    two 2-D arrays of coordinates:
+    Find the directed Hausdorff distance between two 2-D arrays of
+    coordinates:
 
     >>> from scipy.spatial.distance import directed_hausdorff
-    >>> u = np.array([(35.0456, -85.2672),
-    ...               (35.1174, -89.9711),
-    ...               (35.9728, -83.9422)])
-    >>> v = np.array([(22.0456, 12.2672),
-    ...               (95.1174, 89.9711),
-    ...               (5.4567, 4.9422)])
-    >>> directed_hausdorff(u,v)
-    99.43988958853485
+    >>> u = np.array([(1.0, 0.0),
+    ...               (0.0, 1.0),
+    ...               (-1.0, 0.0),
+    ...               (0.0, -1.0)])
+    >>> v = np.array([(2.0, 0.0),
+    ...               (0.0, 2.0),
+    ...               (-2.0, 0.0),
+    ...               (0.0, -4.0)])
 
-    Find the general (symmetric) Hausdorff
-    distance between two 2-D arrays of 
-    coordinates:
-    
-    >>> max(directed_hausdorff(u,v),
-            directed_hausdorff(v,u))
-    183.69518128151867
+    >>> directed_hausdorff(u, v)
+    2.23606797749979
+    >>> directed_hausdorff(v, u)
+    3.0
+
+    Find the general (symmetric) Hausdorff distance between two 2-D
+    arrays of coordinates:
+
+    >>> max(directed_hausdorff(u, v), directed_hausdorff(v, u))
+    3.0
 
     """
-    dist = _hausdorff.directed_hausdorff(u,v)
+    u = np.asarray(u, dtype=np.float64, order='c')
+    v = np.asarray(v, dtype=np.float64, order='c')
+    dist = _hausdorff.directed_hausdorff(u, v)
     return dist
 
 def minkowski(u, v, p):
