@@ -443,6 +443,17 @@ class TestMoments(TestCase):
         attributes = ('mode', 'count')
         check_named_results(a1_res, attributes, ma=True)
 
+    def test_mode_modifies_input(self):
+        # regression test for gh-6428: mode(..., axis=None) may not modify
+        # the input array
+        im = np.zeros((100, 100))
+        im[:50, :] += 1
+        im[:, :50] += 1
+        cp = im.copy()
+        a = mstats.mode(im, None)
+        assert_equal(im, cp)    
+
+
 class TestPercentile(TestCase):
     def setUp(self):
         self.a1 = [3,4,5,10,-3,-5,6]
