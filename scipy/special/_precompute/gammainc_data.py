@@ -29,10 +29,7 @@ from scipy.special._mptestutils import mpf2float
 try:
     import mpmath as mp
 except ImportError:
-    try:
-        import sympy.mpmath as mp
-    except ImportError:
-        pass
+    pass
 
 
 def gammainc(a, x, dps=50, maxterms=10**8):

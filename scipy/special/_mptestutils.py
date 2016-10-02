@@ -12,10 +12,7 @@ from scipy.special._testutils import assert_func_equal
 try:
     import mpmath
 except ImportError:
-    try:
-        import sympy.mpmath as mpmath
-    except ImportError:
-        pass
+    pass
 
 
 # ------------------------------------------------------------------------------

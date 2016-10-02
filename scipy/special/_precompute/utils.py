@@ -5,10 +5,7 @@ import warnings
 try:
     import mpmath as mp
 except ImportError:
-    try:
-        import sympy.mpmath as mp
-    except ImportError:
-        pass
+    pass
 
 try:
     # Can remove when sympy #11255 is resolved; see
