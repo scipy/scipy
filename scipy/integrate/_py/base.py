@@ -40,7 +40,7 @@ class OdeSolver(object):
     n : int
         Number of equations.
     status : string
-        Current status of the solver.
+        Current status of the solver: 'running', 'finished' or 'failed'.
     t_crit : float
         Boundary time.
     direction : -1 or +1
@@ -68,7 +68,7 @@ class OdeSolver(object):
 
         self.direction = np.sign(t_crit - t0)
         self.n = self.y.shape[0]
-        self.status = 'started'
+        self.status = 'running'
         self.step_size = None
 
     def step(self, max_step=np.inf):
@@ -90,7 +90,7 @@ class OdeSolver(object):
         if max_step <= 0:
             raise ValueError("`max_step` must be positive.")
 
-        if self.status in ['failed', 'finished']:
+        if self.status != 'running':
             raise RuntimeError("Attempt to step on a failed or finished "
                                "solver.")
 
@@ -100,8 +100,6 @@ class OdeSolver(object):
             self.status = 'failed'
         elif self.direction * (self.t - self.t_crit) >= 0:
             self.status = 'finished'
-        else:
-            self.status = 'running'
 
         return message
 
@@ -111,11 +109,11 @@ class OdeSolver(object):
         Returns
         -------
         sol : `DenseOutput`
-            Local interpolant over the last step.
+            Local interpolant over the last successful step.
         """
-        if self.status not in ['running', 'finished']:
+        if self.step_size is None:
             raise RuntimeError("Dense output is available after a successful "
-                               "step was taken.")
+                               "step was made.")
 
         return self._dense_output_impl()
 

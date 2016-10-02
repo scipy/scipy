@@ -221,7 +221,7 @@ class Radau(OdeSolver):
     n : int
         Number of equations.
     status : string
-        Current status of the solver.
+        Current status of the solver: 'running', 'finished' or 'failed'.
     t_crit : float
         Boundary time.
     direction : -1 or +1

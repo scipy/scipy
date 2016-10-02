@@ -204,7 +204,7 @@ def test_classes():
     for cls in [RK23, RK45, Radau, BDF]:
         solver = cls(fun_rational, 5, y0, np.inf)
         assert_equal(solver.n, 2)
-        assert_equal(solver.status, 'started')
+        assert_equal(solver.status, 'running')
         assert_equal(solver.t_crit, np.inf)
         assert_equal(solver.direction, 1)
         assert_equal(solver.t, 5)
