@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 from numpy.testing import (assert_, assert_allclose, run_module_suite,
-                           assert_equal)
+                           assert_equal, assert_raises)
 import numpy as np
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
 from scipy.integrate import DenseOutput, OdeSolution
@@ -210,6 +210,7 @@ def test_classes():
         assert_equal(solver.t, 5)
         assert_equal(solver.y, y0)
         assert_(solver.step_size is None)
+        assert_raises(RuntimeError, solver.dense_output)
 
         message = solver.step()
         assert_equal(solver.status, 'running')
@@ -221,9 +222,12 @@ def test_classes():
         assert_(not np.all(np.equal(solver.y, y0)))
         assert_(solver.step_size > 0)
 
+        assert_raises(ValueError, solver.step, max_step=-1)
+
         message = solver.step(max_step=1e-20)
         assert_equal(solver.status, 'failed')
         assert_("step size is less" in message)
+        assert_raises(RuntimeError, solver.step)
 
 
 class ConstDenseOutput(DenseOutput):
