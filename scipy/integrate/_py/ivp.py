@@ -289,8 +289,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
            of Computation,, Vol. 46, No. 173, pp. 135-150, 1986.
     .. [3] P. Bogacki, L.F. Shampine, "A 3(2) Pair of Runge-Kutta Formulas",
            Appl. Math. Lett. Vol. 2, No. 4. pp. 321-325, 1989.
-    .. [4] E. Hairer, G. Wanner, "Solving Ordinary Differential Equations I:
-           Nonstiff Problems", Sec. III.1.
+    .. [4] E. Hairer, G. Wanner, "Solving Ordinary Differential Equations II:
+           Stiff and Differential-Algebraic Problems", Sec. IV.8.
     .. [5] `Backward Differentiation Formula
             <https://en.wikipedia.org/wiki/Backward_differentiation_formula>`_
             on Wikipedia.
