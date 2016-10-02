@@ -79,7 +79,7 @@ Functions::
 .. [townsend.trogdon.olver-2014]
    Townsend, A. and Trogdon, T. and Olver, S. (2014)
    *Fast computation of Gauss quadrature nodes and
-   weights on the whole real line*. ArXiv 1410.5286.
+   weights on the whole real line*. :arXiv:`1410.5286`.
 
 .. [townsend.trogdon.olver-2015]
    Townsend, A. and Trogdon, T. and Olver, S. (2015)
@@ -685,7 +685,7 @@ def h_roots(n, mu=False):
     .. [townsend.trogdon.olver-2014]
        Townsend, A. and Trogdon, T. and Olver, S. (2014)
        *Fast computation of Gauss quadrature nodes and
-       weights on the whole real line*. ArXiv 1410.5286.
+       weights on the whole real line*. :arXiv:`1410.5286`.
 
     .. [townsend.trogdon.olver-2015]
        Townsend, A. and Trogdon, T. and Olver, S. (2015)
@@ -1054,7 +1054,7 @@ def _h_roots_asy(n):
     .. [townsend.trogdon.olver-2014]
        Townsend, A. and Trogdon, T. and Olver, S. (2014)
        *Fast computation of Gauss quadrature nodes and
-       weights on the whole real line*. ArXiv 1410.5286.
+       weights on the whole real line*. :arXiv:`1410.5286`.
 
     .. [townsend.trogdon.olver-2015]
        Townsend, A. and Trogdon, T. and Olver, S. (2015)
