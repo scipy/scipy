@@ -30,9 +30,21 @@ def doi_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     return [pnode], []
 
 
+def arxiv_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
+    text = utils.unescape(text)
+    has_explicit_title, title, part = split_explicit_title(text)
+    full_url = 'https://arxiv.org/abs/' + part
+    if not has_explicit_title:
+        title = 'arXiv:' + part
+    pnode = nodes.reference(title, title, internal=False, refuri=full_url)
+    return [pnode], []
+
+
 def setup_link_role(app):
     app.add_role('doi', doi_role)
     app.add_role('DOI', doi_role)
+    app.add_role('arXiv', arxiv_role)
+    app.add_role('arxiv', arxiv_role)
 
 
 def setup(app):
