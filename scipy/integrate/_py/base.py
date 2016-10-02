@@ -91,8 +91,8 @@ class OdeSolver(object):
         Returns
         -------
         message : string or None
-            Report from the solver. Typically a reason for failure if
-            `solve.status` is 'failed' after the step was taken or None
+            Report from the solver. Typically a reason for the failure if
+            `self.status` is 'failed' after the step was taken or None
             otherwise.
         """
         if max_step <= 0:
@@ -112,7 +112,7 @@ class OdeSolver(object):
         return message
 
     def dense_output(self):
-        """Compute a local interpolant over the last step.
+        """Compute a local interpolant over the last successful step.
 
         Returns
         -------
@@ -133,7 +133,7 @@ class OdeSolver(object):
 
 
 class DenseOutput(object):
-    """Local interpolator over the last step taken by an ODE solver.
+    """Local interpolant over the last successful step made by an ODE solver.
 
     It interpolates between `t_min` and `t_max` (see Attributes below).
     Evaluation outside this interval is not forbidden, but the accuracy is not
@@ -160,7 +160,7 @@ class DenseOutput(object):
 
         Returns
         -------
-        y : ndarray, shape (n_states,) or (n_states, n_points)
+        y : ndarray, shape (n,) or (n, n_points)
             Computed values. Shape depends on whether `t` was a scalar or a
             1-d array.
         """
