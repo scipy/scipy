@@ -188,8 +188,8 @@ add_newdoc("scipy.special", "airye",
 
         eAi  = Ai  * exp(2.0/3.0*z*sqrt(z))
         eAip = Aip * exp(2.0/3.0*z*sqrt(z))
-        eBi  = Bi  * exp(-abs((2.0/3.0*z*sqrt(z)).real))
-        eBip = Bip * exp(-abs((2.0/3.0*z*sqrt(z)).real))
+        eBi  = Bi  * exp(-abs(2.0/3.0*(z*sqrt(z)).real))
+        eBip = Bip * exp(-abs(2.0/3.0*(z*sqrt(z)).real))
 
     Parameters
     ----------
