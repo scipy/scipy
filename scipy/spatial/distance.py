@@ -1323,7 +1323,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                                      "are required." % (m, n, n + 1))
                 V = np.atleast_2d(np.cov(X.T))
                 VI = _convert_to_double(np.linalg.inv(V).T.copy())
-            # (u-v)V^(-1)(u-v)^T
+            # sqrt((u-v)V^(-1)(u-v)^T)
             _distance_wrap.pdist_mahalanobis_wrap(X, VI, dm)
         elif metric == 'test_euclidean':
             dm = pdist(X, euclidean)
@@ -1342,7 +1342,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             else:
                 VI = np.asarray(VI, order='c')
             VI = _copy_array_if_base_present(VI)
-            # (u-v)V^(-1)(u-v)^T
+            # sqrt((u-v)V^(-1)(u-v)^T)
             dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
         elif metric == 'test_canberra':
             dm = pdist(X, canberra)
@@ -2122,7 +2122,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 V = np.atleast_2d(np.cov(X.T))
                 del X
                 VI = np.linalg.inv(V).T.copy()
-            # (u-v)V^(-1)(u-v)^T
+            # sqrt((u-v)V^(-1)(u-v)^T)
             _distance_wrap.cdist_mahalanobis_wrap(XA, XB, VI, dm)
         elif metric == 'test_euclidean':
             dm = cdist(XA, XB, euclidean)
@@ -2146,7 +2146,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             else:
                 VI = np.asarray(VI, order='c')
             VI = _copy_array_if_base_present(VI)
-            # (u-v)V^(-1)(u-v)^T
+            # sqrt((u-v)V^(-1)(u-v)^T)
             dm = cdist(XA, XB, (lambda u, v: mahalanobis(u, v, VI)))
         elif metric == 'test_canberra':
             dm = cdist(XA, XB, canberra)
