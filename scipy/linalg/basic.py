@@ -1253,13 +1253,13 @@ def balance(A, permute=True, scale=True, separate = False, overwrite_a=False):
         for ind, x in enumerate(ps[hi+1:][::-1], 1):
             if n-ind == x:
                 continue
-            perm[[x,n-ind]] = perm[[n-ind, x]]
+            perm[[x, n-ind]] = perm[[n-ind, x]]
     
     if lo > 0:
         for ind, x in enumerate(ps[:lo]):
             if ind == x:
                 continue
-            perm[[x,ind]] = perm[[ind,x]]
+            perm[[x, ind]] = perm[[ind, x]]
 
     if separate:
         return B, (scaling, perm)

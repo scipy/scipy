@@ -303,7 +303,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     and using a QZ decomposition method.
 
-    In this algorithm, the fail conditions are linked to the symmetrycity
+    In this algorithm, the fail conditions are linked to the symmetry
     of the product :math:`U_2 U_1^{-1}` and condition number of
     :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the
     eigenvectors spanning the stable subspace with 2m rows and partitioned
@@ -460,19 +460,19 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     s : (M, N) array_like, optional
         Input
     balanced : bool
-        The boolean that indicates whether a balancing step is performed 
-        on the data. The default is set to True. 
+        The boolean that indicates whether a balancing step is performed
+        on the data. The default is set to True.
 
     Returns
     -------
     x : (M, M) ndarray
-        Solution to the discrete algebraic Riccati equation. 
+        Solution to the discrete algebraic Riccati equation.
 
     Raises
     ------
     LinAlgError
-        For cases where the stable subspace of the pencil could not be 
-        isolated. See Notes section and the references for details.     
+        For cases where the stable subspace of the pencil could not be
+        isolated. See Notes section and the references for details.
 
     See Also
     --------
@@ -490,35 +490,35 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
         
     and using a QZ decomposition method.
     
-    In this algorithm, the fail conditions are linked to the symmetrycity 
-    of the product :math:`U_2 U_1^{-1}` and condition number of 
+    In this algorithm, the fail conditions are linked to the symmetry 
+    of the product :math:`U_2 U_1^{-1}` and condition number of
     :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the 
-    eigenvectors spanning the stable subspace with 2m rows and partitioned 
+    eigenvectors spanning the stable subspace with 2m rows and partitioned
     into two m-row matrices. See [1]_ and [2]_ for more details.
-    
-    In order to improve the QZ decomposition accuracy, the pencil goes 
-    through a balancing step where the sum of absolute values of 
+
+    In order to improve the QZ decomposition accuracy, the pencil goes
+    through a balancing step where the sum of absolute values of
     :math:`H` and :math:`J` rows/cols (after removing the diagonal entries)
     is balanced following the recipe given in [3]_. If the data has small
     numerical noise, balancing may amplify their effects and some clean up
-    is required. 
-    
+    is required.
+
     .. versionadded:: 0.11.0
 
     References
     ----------
-    .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving 
-       Riccati Equations.", SIAM Journal on Scientific and Statistical 
+    .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving
+       Riccati Equations.", SIAM Journal on Scientific and Statistical
        Computing, Vol.2(2), DOI: 10.1137/0902010
-       
-    .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati 
-       Equations.", Massachusetts Institute of Technology. Laboratory for 
+
+    .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati
+       Equations.", Massachusetts Institute of Technology. Laboratory for
        Information and Decision Systems. LIDS-R ; 859. Available online :
        http://hdl.handle.net/1721.1/1301
-       
-    .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001, 
+
+    .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
        SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993 
-       
+
     """
 
     # Validate input arguments
@@ -613,8 +613,8 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     A helper function to validate the arguments supplied to the 
     Riccati equation solvers. Any discrepancy found in the input 
     matrices leads to a ``ValueError`` exception. 
-    
-    Essentialy, it performs:
+
+    Essentially, it performs:
 
         - a check whether the input is free of NaN and Infs. 
         - a pass for the data through ``numpy.atleast_2d()`` 
@@ -626,7 +626,7 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
 
     This function is used by ``solve_continuous_are`` and 
     ``solve_discrete_are``. 
-    
+
     Parameters
     ----------
     a, b, q, r, e, s : array_like
