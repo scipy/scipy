@@ -655,8 +655,7 @@ def linkage(y, method='single', metric='euclidean'):
     References
     ----------
     .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
-           algorithms", `arXiv:1109.2378v1 <http://arxiv.org/abs/1109.2378v1>`_
-           , 2011.
+           algorithms", :arXiv:`1109.2378v1`.
 
     """
     if method not in _LINKAGE_METHODS:

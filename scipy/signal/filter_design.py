@@ -3607,8 +3607,7 @@ def besselap(N, norm='phase'):
     .. [1] C.R. Bond, "Bessel Filter Constants",
            http://www.crbond.com/papers/bsf.pdf
     .. [2] Campos and Calderon, "Approximate closed-form formulas for the
-           zeros of the Bessel Polynomials", arXiv:1105.0957 [math-ph],
-           http://arxiv.org/abs/1105.0957
+           zeros of the Bessel Polynomials", :arXiv:`1105.0957`.
     .. [3] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
            Characteristics", Proceedings of the Institution of Electrical
            Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
@@ -3617,7 +3616,7 @@ def besselap(N, norm='phase'):
            April 1973
     .. [5] Ehrlich, "A modified Newton method for polynomials", Communications
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
-           DOI:10.1145/363067.363115
+           :DOI:`10.1145/363067.363115`
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998, http://www.rane.com/note147.html
 
