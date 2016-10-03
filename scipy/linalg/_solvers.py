@@ -238,7 +238,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     .. math::
 
-          XA + A'X - X B R^(-1) B'X + Q = 0
+          XA + A'X - X B R^{-1} B'X + Q = 0
 
     The limitations for a solution to exist are :
 
@@ -253,7 +253,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     .. math::
 
-          E'XA + A'XE − (E'XB + S) R^{−1} (B'XE + S') + Q = 0
+          E'XA + A'XE - (E'XB + S) R^{-1} (B'XE + S') + Q = 0
 
     is solved. When omitted, ``e`` is assumed to be the identity and ``s``
     is assumed to be the zero matrix with sizes compatible with ``a`` and

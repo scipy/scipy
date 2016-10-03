@@ -553,7 +553,7 @@ def test_solve_generalized_continuous_are():
 
         x = solve_continuous_are(a, b, q, r, e, s)
         res = a.conj().T.dot(x.dot(e)) + e.conj().T.dot(x.dot(a)) + q
-        out_fact = e.conj().dot(x).dot(b) + s
+        out_fact = e.conj().T.dot(x).dot(b) + s
         res -= out_fact.dot(solve(np.atleast_2d(r), out_fact.conj().T))
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
