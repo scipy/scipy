@@ -292,6 +292,13 @@ class TestKMean(TestCase):
         assert_raises(ValueError, kmeans2, X, 0)
         assert_raises(ValueError, kmeans2, X, np.array([]))
 
+    def test_kmeans_large_thres(self):
+        # Regression test for gh-1774
+        x = np.array([1,2,3,4,10], dtype=float)
+        res = kmeans(x, 1, thresh=1e16)
+        assert_allclose(res[0], np.array([4.]))
+        assert_allclose(res[1], 2.3999999999999999)
+
 
 if __name__ == "__main__":
     run_module_suite()
