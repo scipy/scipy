@@ -229,6 +229,47 @@ On one quad-core computer the serial method took 1.29 seconds and the
 parallel method took 0.29 seconds.
 
 
+Functions not in :mod:`scipy.special`
+-------------------------------------
+
+.. highlight:: python
+
+Some functions are not included in special because they are
+straightforward to implement with existing functions in NumPy and
+SciPy. To prevent reinventing the wheel, this section provides
+implementations of several such functions which hopefully illustrate
+how to handle similar functions. In all examples NumPy is imported as
+``np`` and special is imported as ``sc``.
+
+The `binary entropy function`_::
+
+  def binary_entropy(x):
+      return -(sc.xlogy(x, x) + sc.xlog1py(1 - x, -x))/np.log(2)
+
+The `Heaviside step function`_::
+
+  def heaviside(x):
+      return 0.5*(np.sign(x) + 1)
+
+A similar idea can also be used to get a step function on [0, 1]::
+
+  def step(x):
+      return 0.5*(np.sign(x) + np.sign(1 - x))
+
+Translating and scaling can be used to get an arbitrary step function.
+
+The `ramp function`_::
+
+  def ramp(x):
+      return np.maximum(0, x)
+
+
 .. _Cython documentation: http://docs.cython.org/en/latest/src/reference/compilation.html
 
 .. _here: http://docs.cython.org/en/latest/src/userguide/parallelism.html#compiling
+
+.. _`binary entropy function`: https://en.wikipedia.org/wiki/Binary_entropy_function
+
+.. _`Heaviside step function`: https://stackoverflow.com/questions/15121048/does-a-heaviside-step-function-exist
+
+.. _`ramp function`: https://en.wikipedia.org/wiki/Ramp_function
