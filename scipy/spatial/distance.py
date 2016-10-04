@@ -150,7 +150,7 @@ def directed_hausdorff(u, v):
     """
     Computes the directed Hausdorff distance between two N-D arrays.
 
-    Distance between pairs are calculated using a Euclidean metric.
+    Distances between pairs are calculated using a Euclidean metric.
     
     Parameters
     ----------
