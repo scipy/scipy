@@ -167,10 +167,14 @@ def directed_hausdorff(u, v):
     Notes
     ----------
     Uses the early break technique and the random sampling approach
-    described by [1]_. Although worst-case performance is polynomial
-    (as with the brute force algorithm), this is exceedingly unlikely
-    in practice, and almost-linear time complexity performance can
-    normally be expected for the average case.
+    described by [1]_. Although worst-case performance is O(m * o)
+    (as with the brute force algorithm), this is unlikely in practice
+    as the input data would have to require the algorithm to explore
+    every single point interaction, and after the algorithm shuffles
+    the input points at that. The best case performance is O(m), which
+    is satisfied by selecting an inner loop distance that is less than
+    cmax and leads to an early break as often as possible. The authors
+    have formally shown that the average runtime is closer to O(m).
 
     .. versionadded:: 0.19.0
 
