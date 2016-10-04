@@ -18,10 +18,9 @@
 /**********************************************************************/
 
 /*
-  Permission to relicense under the BSD license obtained by  
-  Piers Lawrence.
+  Also published as ACM TOMS 917; relicensed as BSD by the author.
 
-  Copyright (C) Association for Computing Machinery, Inc.
+  Copyright (C) Piers Lawrence.
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
