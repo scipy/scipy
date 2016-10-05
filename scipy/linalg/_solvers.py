@@ -238,7 +238,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     .. math::
 
-          XA + A'X - X B R^{-1} B'X + Q = 0
+          X A + A^H X - X B R^{-1} B^H X + Q = 0
 
     The limitations for a solution to exist are :
 
@@ -253,7 +253,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
     .. math::
 
-          E'XA + A'XE - (E'XB + S) R^{-1} (B'XE + S') + Q = 0
+          E^HXA + A^HXE - (E^HXB + S) R^{-1} (B^HXE + S^H) + Q = 0
 
     is solved. When omitted, ``e`` is assumed to be the identity and ``s``
     is assumed to be the zero matrix with sizes compatible with ``a`` and
@@ -298,8 +298,8 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     as described in [1]_, :math:`H - \lambda J` given by the block matrices ::
 
         [ A    0    B ]             [ E   0    0 ]
-        [-Q  -A.T  -S ] - \lambda * [ 0  E.T   0 ]
-        [ S.T B.T   R ]             [ 0   0    0 ]
+        [-Q  -A^H  -S ] - \lambda * [ 0  E^H   0 ]
+        [ S^H B^H   R ]             [ 0   0    0 ]
 
     and using a QZ decomposition method.
 
@@ -425,7 +425,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     .. math::
 
-          A'XA - X - (A'XB) (R+B'XB)^{-1} (B'XA) + Q = 0
+          A^HXA - X - (A^HXB) (R + B^HXB)^{-1} (B^HXA) + Q = 0
 
     The limitations for a solution to exist are :
 
@@ -440,7 +440,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     .. math::
 
-          A'XA - E'XE - (A'XB+S) (R+B'XB)^{-1} (B'XA+S') + Q = 0
+          A^HXA - E^HXE - (A^HXB+S) (R+B^HXB)^{-1} (B^HXA+S^H) + Q = 0
 
     is solved. When omitted, ``e`` is assumed to be the identity and ``s``
     is assumed to be the zero matrix.
@@ -485,8 +485,8 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
         
     
            [  A   0   B ]             [ E   0   B ] 
-           [ -Q  E^T -S ] - \lambda * [ 0  A^T  0 ]
-           [ S^T  0   R ]             [ 0 -B^T  0 ]
+           [ -Q  E^H -S ] - \lambda * [ 0  A^H  0 ]
+           [ S^H  0   R ]             [ 0 -B^H  0 ]
         
     and using a QZ decomposition method.
     
