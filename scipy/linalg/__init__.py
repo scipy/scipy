@@ -38,7 +38,7 @@ Basics
    tril - Construct a lower-triangular matrix from a given matrix
    triu - Construct an upper-triangular matrix from a given matrix
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
-   balance - Balance matrix entries with a diagonal similarity transformation
+   matrix_balance - Balance matrix entries with a similarity transformation
    LinAlgError
 
 Eigenvalue Problems

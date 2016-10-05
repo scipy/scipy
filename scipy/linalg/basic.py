@@ -1202,7 +1202,7 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     >>> from scipy import linalg
     >>> x = np.array([[1,2,0], [9,1,0.01], [1,2,10*np.pi]])
 
-    >>> y, permscale = linalg.balance(x)
+    >>> y, permscale = linalg.matrix_balance(x)
     >>> np.abs(x).sum(axis=0) / np.abs(x).sum(axis=1)
     array([ 3.66666667,  0.4995005 ,  0.91312162])
 
