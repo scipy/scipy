@@ -1,4 +1,4 @@
-#include "wright.h"
+#include "wright.hh"
 
 /**********************************************************************/
 /* wrightomega is the simple routine for evaluating the wright omega  */
@@ -78,19 +78,52 @@
 /* Output: returns 0 on sucessful exit.                               */
 /**********************************************************************/
 
+#include <cmath>
+#include <cfloat>
+#include <cfenv>
+
+extern "C" {
+#include <numpy/npy_math.h>
+}
+
+using std::complex;
+
+/*
+ * Use numpy's versions since std:: versions only available in C++11
+ */
+#define sc_copysign npy_copysign
+#define Inf NPY_INFINITY
+#define NaN NPY_NAN
+/*
+ * portable isnan/isinf; in cmath only available in C++11 and npy_math
+ * versions don't work well (they get undef'd by cmath, see gh-5689)
+ * Implementation based on npy_math.h
+ */
+#define sc_isnan(x) ((x) != (x))
+#ifdef _MSC_VER
+    #define sc_isfinite(x) _finite((x))
+#else
+    #define sc_isfinite(x) !sc_isnan((x) + (-x))
+#endif
+#define sc_isinf(x) (!sc_isfinite(x) && !sc_isnan(x))
+
+#define TWOITERTOL DBL_EPSILON
+
+const complex<double> I(0.0, 1.0);
+
 int
-wrightomega_ext(double complex z,double complex *w,\
-                double complex *e,double complex *r,    \
-                double complex *cond)
+wright::wrightomega_ext(complex<double> z, complex<double> *w,
+			complex<double> *e, complex<double> *r,
+			complex<double> *cond)
 {
-  double pi=M_PI,s=1.0;
+  double pi=NPY_PI,s=1.0;
   double x,y,ympi,yppi,near;
-  double complex pz,wp1,t;
+  complex<double> pz,wp1,t;
 
 
   /* extract real and imaginary parts of z */
-  x=creal(z);
-  y=cimag(z);
+  x=real(z);
+  y=imag(z);
   
   /* compute if we are near the branch cuts */
   ympi=y-pi;
@@ -101,17 +134,17 @@ wrightomega_ext(double complex z,double complex *w,\
   /*****************************/
   /* NaN output for NaN input  */
   /*****************************/
-  if(isnan(x) || isnan(y))
+  if(sc_isnan(x) || sc_isnan(y))
     {
-      *w = 0.0/0.0 + 0.0/0.0*I;
-      *e = 0.0 + 0.0*I;
-      *r = 0.0 + 0.0*I;
+      *w = NaN + NaN*I;
+      *e = NaN + NaN*I;
+      *r = NaN + NaN*I;
       return 0;
     }
   /*********************************/
   /* Signed zeros between branches */
   /*********************************/
-  else if(isinf(x) && (x < 0.0) && (-pi < y) && (y<= pi))
+  else if(sc_isinf(x) && (x < 0.0) && (-pi < y) && (y<= pi))
     {
       if( fabs(y) <= pi/2.0)
         {
@@ -138,7 +171,7 @@ wrightomega_ext(double complex z,double complex *w,\
   /**************************/
   /* Asymptotic for large z */
   /**************************/
-  else if(isinf(x) || isinf(y))
+  else if(sc_isinf(x) || sc_isinf(y))
     {
       *w = x + I*y;
       *e = 0.0 + 0.0*I;
@@ -165,7 +198,7 @@ wrightomega_ext(double complex z,double complex *w,\
   /**********************************/
   if ((-2.0<x && x<=1.0 && 1.0<y && y< 2.0*pi))
     {
-      pz=conj(csqrt(conj(2*(z+1-I*pi))));
+      pz=conj(sqrt(conj(2.0*(z+1.0-I*pi))));
       *w=-1.0+(I+(1.0/3.0+(-1.0/36.0*I+(1.0/270.0+1.0/4320.0*I*pz)*pz)*pz)*pz)*pz;
     }
   /**********************************/
@@ -174,7 +207,7 @@ wrightomega_ext(double complex z,double complex *w,\
   /**********************************/
   else if ((-2.0<x && x<=1.0 && -2.0*pi<y && y<-1.0))
     {
-      pz=conj(csqrt(conj(2*(z+1.0+I*pi))));
+      pz=conj(sqrt(conj(2.0*(z+1.0+I*pi))));
       *w=-1.0+(-I+(1.0/3.0+(1.0/36.0*I+(1.0/270.0-1.0/4320.0*I*pz)*pz)*pz)*pz)*pz;
     }
   /*********************************/
@@ -183,7 +216,7 @@ wrightomega_ext(double complex z,double complex *w,\
   /*********************************/
   else if (x <= -2.0 && -pi < y && y <= pi)
     {
-      pz=cexp(z);
+      pz=exp(z);
       *w=(1.0+(-1.0+(3.0/2.0+(-8.0/3.0+125.0/24.0*pz)*pz)*pz)*pz)*pz;
     }
   /**********************/
@@ -203,17 +236,17 @@ wrightomega_ext(double complex z,double complex *w,\
   else if (x<=-0.105e1 && pi<y && y-pi<=-0.75e0*(x+0.1e1))
     {
       t=z-I*pi;
-      pz=clog(-t);
+      pz=log(-t);
       *w=((1.0+(-3.0/2.0+1.0/3.0*pz)*pz)*pz+((-1.0+1.0/2.0*pz)*pz+(pz+(-pz+t)*t)*t)*t)/(t*t*t);
     }
   /***************************/
   /* Region 6: Bottom wing   */
-  /* Negative log esries     */
+  /* Negative log series     */
   /***************************/
   else if (x<=-0.105e1 && 0.75e0*(x+0.1e1)< y+pi && y+pi<=0.0e0)
     {
       t=z+I*pi;
-      pz=clog(-t);
+      pz=log(-t);
       *w=((1.0+(-3.0/2.0+1.0/3.0*pz)*pz)*pz+((-1.0+1.0/2.0*pz)*pz+(pz+(-pz+t)*t)*t)*t)/(t*t*t);
     }
   /************************************/
@@ -222,7 +255,7 @@ wrightomega_ext(double complex z,double complex *w,\
   /************************************/
   else
     {
-      pz=clog(z);
+      pz=log(z);
       *w=((1.0+(-3.0/2.0+1.0/3.0*pz)*pz)*pz+((-1.0+1.0/2.0*pz)*pz+(pz+(-pz+z)*z)*z)*z)/(z*z*z);
     }
 
@@ -271,7 +304,7 @@ wrightomega_ext(double complex z,double complex *w,\
   /* Iteration one */
   /*****************/
   *w=s**w;
-  *r=z-s**w-clog(*w);
+  *r=z-s**w-log(*w);
   wp1=s**w+1.0;
   *e=*r/wp1*(2.0*wp1*(wp1+2.0/3.0**r)-*r)/(2.0*wp1*(wp1+2.0/3.0**r)-2.0**r);
   *w=*w*(1.0+*e);
@@ -279,9 +312,9 @@ wrightomega_ext(double complex z,double complex *w,\
   /*****************/
   /* Iteration two */
   /*****************/
-  if(cabs((2.0**w**w-8.0**w-1.0)*pow(cabs(*r),4.0)) >= TWOITERTOL*72.0*pow(cabs(wp1),6.0) )
+  if(abs((2.0**w**w-8.0**w-1.0)*pow(abs(*r),4.0)) >= TWOITERTOL*72.0*pow(abs(wp1),6.0) )
     {
-      *r=z-s**w-clog(*w);
+      *r=z-s**w-log(*w);
       wp1=s**w+1.0;
       *e=*r/wp1*(2.0*wp1*(wp1+2.0/3.0**r)-*r)/(2.0*wp1*(wp1+2.0/3.0**r)-2.0**r);
       *w=*w*(1.0+*e);
@@ -303,10 +336,10 @@ wrightomega_ext(double complex z,double complex *w,\
   return 0;
 }
 
-double complex
-wrightomega(double complex z)
+complex<double>
+wright::wrightomega(complex<double> z)
 {
-  double complex w,e,r;
+  complex<double> w,e,r;
   wrightomega_ext(z,&w,&e,&r,NULL);
   return w;
 }
