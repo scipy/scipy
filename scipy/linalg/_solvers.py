@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
-from .basic import solve, solve_triangular, balance
+from .basic import solve, solve_triangular, matrix_balance
 from .lapack import get_lapack_funcs
 from .decomp_schur import schur
 from .decomp_lu import lu
@@ -353,20 +353,20 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
         J = block_diag(np.eye(2*m), np.zeros_like(r, dtype=r_or_c))
 
     if balanced:
-        # xGEBAL does not remove the diagonals before scaling. Also 
+        # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
         M[np.diag_indices_from(M)] = 0.
-        _, (sca, _) = balance(M,separate=1, permute=0)
-        # do we need to bother? 
-        if not np.allclose(sca,np.ones_like(sca)):
-            # Now impose diag(D,inv(D)) from Benner where D is 
-            # square root of s_i/s_(n+i) for i=0,.... 
+        _, (sca, _) = matrix_balance(M, separate=1, permute=0)
+        # do we need to bother?
+        if not np.allclose(sca, np.ones_like(sca)):
+            # Now impose diag(D,inv(D)) from Benner where D is
+            # square root of s_i/s_(n+i) for i=0,....
             sca = np.log2(sca)
             # NOTE: Py3 uses "Bankers Rounding: round to the nearest even" !!
             s = np.round((sca[m:2*m] - sca[:m])/2)
             sca = 2 ** np.r_[s, -s, sca[2*m:]]
-            # Elementwise multiplication via broadcasting. 
+            # Elementwise multiplication via broadcasting.
             elwisescale = sca[:, None] * np.reciprocal(sca)
             H *= elwisescale
             J *= elwisescale
@@ -480,19 +480,18 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
     Notes
     -----
-    The equation is solved by forming the extended symplectic matrix pencil, 
+    The equation is solved by forming the extended symplectic matrix pencil,
     as described in [1]_, :math:`H - \lambda J` given by the block matrices ::
-        
-    
-           [  A   0   B ]             [ E   0   B ] 
+
+           [  A   0   B ]             [ E   0   B ]
            [ -Q  E^H -S ] - \lambda * [ 0  A^H  0 ]
            [ S^H  0   R ]             [ 0 -B^H  0 ]
-        
+
     and using a QZ decomposition method.
-    
-    In this algorithm, the fail conditions are linked to the symmetry 
+
+    In this algorithm, the fail conditions are linked to the symmetry
     of the product :math:`U_2 U_1^{-1}` and condition number of
-    :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the 
+    :math:`U_1`. Here, :math:`U` is the 2m-by-m matrix that holds the
     eigenvectors spanning the stable subspace with 2m rows and partitioned
     into two m-row matrices. See [1]_ and [2]_ for more details.
 
@@ -517,7 +516,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
        http://hdl.handle.net/1721.1/1301
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
-       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993 
+       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
 
     """
 
@@ -525,8 +524,8 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     a, b, q, r, e, s, m, n, r_or_c, gen_are = _are_validate_args(
                                                      a, b, q, r, e, s, 'dare')
 
-    # Form the matrix pencil     
-    H = np.zeros((2*m+n, 2*m+n), dtype = r_or_c)
+    # Form the matrix pencil
+    H = np.zeros((2*m+n, 2*m+n), dtype=r_or_c)
     H[:m, :m] = a
     H[:m, 2*m:] = b
     H[m:2*m, :m] = -q
@@ -535,26 +534,26 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     H[2*m:, :m] = 0. if s is None else s.conj().T
     H[2*m:, 2*m:] = r
 
-    J = np.zeros_like(H, dtype = r_or_c)
+    J = np.zeros_like(H, dtype=r_or_c)
     J[:m, :m] = np.eye(m) if e is None else e
     J[m:2*m, m:2*m] = a.conj().T
     J[2*m:, m:2*m] = -b.conj().T
 
     if balanced:
-        # xGEBAL does not remove the diagonals before scaling. Also 
+        # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
         M[np.diag_indices_from(M)] = 0.
-        _, (sca, _) = balance(M,separate=1, permute=0)
-        # do we need to bother? 
-        if not np.allclose(sca,np.ones_like(sca)):
-            # Now impose diag(D,inv(D)) from Benner where D is 
-            # square root of s_i/s_(n+i) for i=0,.... 
+        _, (sca, _) = matrix_balance(M, separate=1, permute=0)
+        # do we need to bother?
+        if not np.allclose(sca, np.ones_like(sca)):
+            # Now impose diag(D,inv(D)) from Benner where D is
+            # square root of s_i/s_(n+i) for i=0,....
             sca = np.log2(sca)
             # NOTE: Py3 uses "Bankers Rounding: round to the nearest even" !!
             s = np.round((sca[m:2*m] - sca[:m])/2)
             sca = 2 ** np.r_[s, -s, sca[2*m:]]
-            # Elementwise multiplication via broadcasting. 
+            # Elementwise multiplication via broadcasting.
             elwisescale = sca[:, None] * np.reciprocal(sca)
             H *= elwisescale
             J *= elwisescale
@@ -563,31 +562,31 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     q_of_qr, _ = qr(H[:, -n:])
     H = q_of_qr[:, n:].conj().T.dot(H[:, :2*m])
     J = q_of_qr[:, n:].conj().T.dot(J[:, :2*m])
-    
-    # Decide on which output type is needed for QZ 
+
+    # Decide on which output type is needed for QZ
     out_str = 'real' if r_or_c == float else 'complex'
-    
-    _, _, _, _, _, u = ordqz(H, J, sort = 'iuc', 
+
+    _, _, _, _, _, u = ordqz(H, J, sort='iuc',
                              overwrite_a=True,
-                             overwrite_b=True, 
-                             check_finite=False, 
+                             overwrite_b=True,
+                             check_finite=False,
                              output=out_str)
-    
+
     # Get the relevant parts of the stable subspace basis
     if gen_are:
         u, _ = qr(np.vstack((e.dot(u[:m, :m]), u[m:, :m])))
     u00 = u[:m, :m]
     u10 = u[m:, :m]
-    
-    # Solve via back-substituion after checking the condition of u00 
+
+    # Solve via back-substituion after checking the condition of u00
     up, ul, uu = lu(u00)
 
     if 1/cond(uu) < np.spacing(1.):
         raise LinAlgError('Failed to find a finite solution.')
-    
+
     # Exploit the triangular structure
     x = solve_triangular(ul.conj().T,
-                         solve_triangular(uu.conj().T, 
+                         solve_triangular(uu.conj().T,
                                           u10.conj().T,
                                           lower=True),
                          unit_diagonal=True,
@@ -604,28 +603,28 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     if norm(u_sym, 1) > sym_threshold:
         raise LinAlgError('The associated symplectic pencil has eigenvalues'
                           'too close to the unit circle')
-    
+
     return (x + x.conj().T)/2
 
 
 def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     """
-    A helper function to validate the arguments supplied to the 
-    Riccati equation solvers. Any discrepancy found in the input 
-    matrices leads to a ``ValueError`` exception. 
+    A helper function to validate the arguments supplied to the
+    Riccati equation solvers. Any discrepancy found in the input
+    matrices leads to a ``ValueError`` exception.
 
     Essentially, it performs:
 
-        - a check whether the input is free of NaN and Infs. 
-        - a pass for the data through ``numpy.atleast_2d()`` 
-        - squareness check of the relevant arrays,        
+        - a check whether the input is free of NaN and Infs.
+        - a pass for the data through ``numpy.atleast_2d()``
+        - squareness check of the relevant arrays,
         - shape consistency check of the arrays,
         - singularity check of the relevant arrays,
         - symmetricity check of the relevant matrices,
         - a check whether the regular or the generalized version is asked.
 
-    This function is used by ``solve_continuous_are`` and 
-    ``solve_discrete_are``. 
+    This function is used by ``solve_continuous_are`` and
+    ``solve_discrete_are``.
 
     Parameters
     ----------
@@ -635,11 +634,11 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
         Accepted arguments are 'care' and 'dare'.
 
     Returns
-    -------    
+    -------
     a, b, q, r, e, s : ndarray
         Regularized input data
     m, n : int
-        shape of the problem 
+        shape of the problem
     r_or_c : type
         Data type of the problem, returns float or complex
     gen_or_not : bool
@@ -650,23 +649,23 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
     if not eq_type.lower() in ('dare', 'care'):
         raise ValueError("Equation type unknown. "
                          "Only 'care' and 'dare' is understood")
-    
+
     a = np.atleast_2d(_asarray_validated(a, check_finite=True))
     b = np.atleast_2d(_asarray_validated(b, check_finite=True))
     q = np.atleast_2d(_asarray_validated(q, check_finite=True))
     r = np.atleast_2d(_asarray_validated(r, check_finite=True))
 
-    # Get the correct data types otherwise Numpy complains 
+    # Get the correct data types otherwise Numpy complains
     # about pushing complex numbers into real arrays.
     r_or_c = complex if np.iscomplexobj(b) else float
 
     for ind, mat in enumerate((a, q, r)):
         if np.iscomplexobj(mat):
             r_or_c = complex
-            
+
         if not np.equal(*mat.shape):
             raise ValueError("Matrix {} should be square.".format("aqr"[ind]))
-    
+
     # Shape consistency checks
     m, n = b.shape
     if m != a.shape[0]:
@@ -681,15 +680,15 @@ def _are_validate_args(a, b, q, r, e, s, eq_type='care'):
         if norm(mat - mat.conj().T, 1) > np.spacing(norm(mat, 1))*100:
             raise ValueError("Matrix {} should be symmetric/hermitian."
                              "".format("qr"[ind]))
-        
-    # Continuous time ARE should have a nonsingular r matrix. 
+
+    # Continuous time ARE should have a nonsingular r matrix.
     if eq_type == 'care':
         min_sv = svd(r, compute_uv=False)[-1]
         if min_sv == 0. or min_sv < np.spacing(1.)*norm(r, 1):
             raise ValueError('Matrix r is numerically singular.')
-        
+
     # Check if the generalized case is required with omitted arguments
-    # perform late shape checking etc. 
+    # perform late shape checking etc.
     generalized_case = e is not None or s is not None
 
     if generalized_case:
