@@ -1751,6 +1751,16 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             rtol=5e-10,
                             ignore_inf_sign=True)
 
+    def test_wrightomega(self):
+        def mp_wrightomega(z):
+            z = mpmath.mpc(z)
+            unwind = mpmath.ceil((z.imag - mpmath.pi)/(2*mpmath.pi))
+            return mpmath.lambertw(mpmath.exp(z), unwind)
+
+        assert_mpmath_equal(sc.wrightomega,
+                            mp_wrightomega,
+                            [ComplexArg()], nan_ok=True)
+
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,
                             exception_to_nan(mpmath.zeta),
