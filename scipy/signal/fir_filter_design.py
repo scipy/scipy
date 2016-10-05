@@ -817,9 +817,9 @@ def _dhtm(mag):
     midpt = len(mag) // 2
     sig[1:midpt] = 1
     sig[midpt+1:] = -1
-    recon = ifft(mag * np.exp(fft(sig * ifft(np.log(np.abs(mag))))))
-    if np.isrealobj(mag):
-        recon = recon.real
+    # eventually if we want to support complex filters, we will need a
+    # np.abs() on the mag inside the log, and should remove the .real
+    recon = ifft(mag * np.exp(fft(sig * ifft(np.log(mag))))).real
     return recon
 
 
@@ -832,7 +832,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
         Linear-phase FIR filter coefficients.
     method : {'hilbert', 'homomorphic'}
         The method to use:
-            
+
             'homomorphic' (default)
                 This method [4]_ [5]_ works best with filters with an
                 odd number of taps, and the resulting minimum phase filter
@@ -862,21 +862,20 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
 
     Notes
     -----
-    Both the Hilbert [1]_ or homomorphic [4]_ [5]_ methods require
-    selection of an FFT length to estimate the for the complex cepstrum
-    of the filter.
+    Both the Hilbert [1]_ or homomorphic [4]_ [5]_ methods require selection
+    of an FFT length to estimate the complex cepstrum of the filter.
 
     In the case of the Hilbert method, the deviation from the ideal
     spectrum ``epsilon`` is related to the number of stopband zeros
     ``n_stop`` and FFT length ``n_fft`` as::
-        
+
         epsilon = 2. * n_stop / n_fft
 
     For example, with 100 stopband zeros and a FFT length of 2048,
     ``epsilon = 0.0976``. If we conservatively assume that the number of
     stopband zeros is one less than the filter length, we can take the FFT
     length to be the next power of 2 that satisfies ``epsilon=0.01`` as::
-        
+
         n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
 
     This gives reasonable results for both the Hilbert and homomorphic
@@ -885,7 +884,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     Alternative implementations exist for creating minimum-phase filters,
     including zero inversion [2]_ and spectral factorization [3]_ [4]_.
     For more information, see:
-    
+
         http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters
 
     Examples
@@ -897,7 +896,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     >>> freq = [0, 0.2, 0.3, 1.0]
     >>> desired = [1, 0]
     >>> h_linear = remez(151, freq, desired, Hz=2.)
-    
+
     Convert it to minimum phase:
 
     >>> h_min_hom = minimum_phase(h_linear, method='homomorphic')
@@ -954,7 +953,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     n_half = len(h) // 2
     if not np.allclose(h[-n_half:][::-1], h[:n_half]):
         warnings.warn('h does not appear to by symmetric, conversion may '
-                      'fail')
+                      'fail', RuntimeWarning)
     if not isinstance(method, string_types) or method not in \
             ('homomorphic', 'hilbert',):
         raise ValueError('method must be "homomorphic" or "hilbert", got %r'
