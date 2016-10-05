@@ -12716,6 +12716,72 @@ ufunc_wofz_data[0] = &ufunc_wofz_ptr[2*0]
 ufunc_wofz_data[1] = &ufunc_wofz_ptr[2*1]
 wofz = np.PyUFunc_FromFuncAndData(ufunc_wofz_loops, ufunc_wofz_data, ufunc_wofz_types, 2, 1, 1, 0, "wofz", ufunc_wofz_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_wrightomega_loops[2]
+cdef void *ufunc_wrightomega_ptr[4]
+cdef void *ufunc_wrightomega_data[2]
+cdef char ufunc_wrightomega_types[4]
+cdef char *ufunc_wrightomega_doc = (
+    "wrightomega(z, out=None)\n"
+    "\n"
+    "Wright Omega function.\n"
+    "\n"
+    "Defined as the solution to\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    \\omega + \\log(\\omega) = z\n"
+    "\n"
+    "where :math:`\\log` is the principal branch of the complex logarithm.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "z : array_like\n"
+    "    Points at which to evaluate the Wright Omega function\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "omega : ndarray\n"
+    "    Values of the Wright Omega function\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    ".. versionadded:: 0.19.0\n"
+    "\n"
+    "The function can also be defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    \\omega(z) = W_{K(z)}(e^z)\n"
+    "\n"
+    "where :math:`K(z) = \\lceil (\\Im(z) - \\pi)/(2\\pi) \\rceil` is the\n"
+    "unwinding number and :math:`W` is the Lambert W function.\n"
+    "\n"
+    "The implementation here is taken from [1]_.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "lambertw : The Lambert W function\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Lawrence, Corless, and Jeffrey, \"Algorithm 917: Complex\n"
+    "       Double-Precision Evaluation of the Wright :math:`\\omega`\n"
+    "       Function.\" ACM Transactions on Mathematical Software,\n"
+    "       2012. :doi:`10.1145/2168773.2168779`.")
+ufunc_wrightomega_loops[0] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc_wrightomega_loops[1] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
+ufunc_wrightomega_types[0] = <char>NPY_CFLOAT
+ufunc_wrightomega_types[1] = <char>NPY_CFLOAT
+ufunc_wrightomega_types[2] = <char>NPY_CDOUBLE
+ufunc_wrightomega_types[3] = <char>NPY_CDOUBLE
+ufunc_wrightomega_ptr[2*0] = <void*>scipy.special._ufuncs_cxx._export_wrightomega
+ufunc_wrightomega_ptr[2*0+1] = <void*>(<char*>"wrightomega")
+ufunc_wrightomega_ptr[2*1] = <void*>scipy.special._ufuncs_cxx._export_wrightomega
+ufunc_wrightomega_ptr[2*1+1] = <void*>(<char*>"wrightomega")
+ufunc_wrightomega_data[0] = &ufunc_wrightomega_ptr[2*0]
+ufunc_wrightomega_data[1] = &ufunc_wrightomega_ptr[2*1]
+wrightomega = np.PyUFunc_FromFuncAndData(ufunc_wrightomega_loops, ufunc_wrightomega_data, ufunc_wrightomega_types, 2, 1, 1, 0, "wrightomega", ufunc_wrightomega_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_xlog1py_loops[4]
 cdef void *ufunc_xlog1py_ptr[8]
 cdef void *ufunc_xlog1py_data[4]

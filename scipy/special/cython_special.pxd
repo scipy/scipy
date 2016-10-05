@@ -222,6 +222,7 @@ cpdef double struve(double x0, double x1) nogil
 cpdef double tandg(double x0) nogil
 cpdef double tklmbda(double x0, double x1) nogil
 cpdef double complex wofz(double complex x0) nogil
+cpdef double complex wrightomega(double complex x0) nogil
 cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) nogil
 cpdef Dd_number_t xlogy(Dd_number_t x0, Dd_number_t x1) nogil
 cpdef double y0(double x0) nogil
