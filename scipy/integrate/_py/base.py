@@ -71,10 +71,7 @@ class OdeSolver(object):
         self.fun, self.y = check_arguments(fun, y0)
         self.t_crit = t_crit
 
-        if self.t == self.t_crit:
-            raise ValueError("Initial `t` coincides with `t_crit`.")
-
-        self.direction = np.sign(t_crit - t0)
+        self.direction = np.sign(t_crit - t0) if t_crit != t0 else 1
         self.n = self.y.shape[0]
         self.status = 'running'
         self.step_size = None
@@ -102,7 +99,19 @@ class OdeSolver(object):
             raise RuntimeError("Attempt to step on a failed or finished "
                                "solver.")
 
-        success, message = self._step_impl(max_step)
+        if self.n == 0 or self.t == self.t_crit:
+            # Handle corner cases of empty solver and no integration
+            t = self.t
+            t_max = self.t + self.direction * max_step
+            t_new = min(t_max, self.t_crit) if self.direction == 1 else max(t_max, self.t_crit)
+            self.t_old = t
+            self.t = t_new
+            self.step_size = np.abs(t_new - t)
+
+            success = True
+            message = None
+        else:
+            success, message = self._step_impl(max_step)
 
         if not success:
             self.status = 'failed'
@@ -123,7 +132,11 @@ class OdeSolver(object):
             raise RuntimeError("Dense output is available after a successful "
                                "step was made.")
 
-        return self._dense_output_impl()
+        if self.n == 0 or self.t == self.t_old:
+            # Handle corner cases of empty solver and no integration
+            return ConstantDenseOutput(self.y, self.t_old, self.t)
+        else:
+            return self._dense_output_impl()
 
     def _step_impl(self, max_step):
         raise NotImplementedError
@@ -171,3 +184,12 @@ class DenseOutput(object):
 
     def _call_impl(self, t):
         raise NotImplementedError
+
+
+class ConstantDenseOutput(DenseOutput):
+    def __init__(self, value, t_old, t):
+        super(ConstantDenseOutput, self).__init__(t_old, t)
+        self.value = value
+
+    def _call_impl(self, t):
+        return self.value

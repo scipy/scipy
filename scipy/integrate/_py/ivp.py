@@ -304,8 +304,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
                          .format(METHODS))
 
     t0, tf = float(t_span[0]), float(t_span[1])
-    if t0 == tf:
-        raise ValueError("Initial and final times must be distinct.")
 
     if not isinstance(method, OdeSolver):
         method = METHODS[method]

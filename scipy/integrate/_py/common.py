@@ -116,7 +116,7 @@ class OdeSolution(object):
     """
     def __init__(self, ts, interpolants):
         d = np.diff(ts)
-        if not (np.all(d > 0) or np.all(d < 0)):
+        if not (np.all(d >= 0) or np.all(d <= 0)):
             raise ValueError("`ts` must be strictly increasing or decreasing.")
 
         ts = np.asarray(ts)
@@ -127,7 +127,7 @@ class OdeSolution(object):
 
         self.ts = ts
         self.interpolants = interpolants
-        if ts[-1] > ts[0]:
+        if ts[-1] >= ts[0]:
             self.t_min = ts[0]
             self.t_max = ts[-1]
             self.ascending = True

@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 from numpy.testing import (assert_, assert_allclose, run_module_suite,
-                           assert_equal, assert_raises)
+                           assert_equal, assert_raises, assert_no_warnings)
 import numpy as np
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
 from scipy.integrate import DenseOutput, OdeSolution
@@ -197,6 +197,23 @@ def test_max_step():
             assert_(np.all(e < 5))
 
             assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+
+
+def test_no_integration():
+    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+        sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3], method=method, dense_output=True)
+        assert_equal(sol.sol(4), [2, 3])
+
+
+def test_empty():
+    def fun(t, y):
+        return np.zeros((0,))
+
+    ic = np.zeros((0,))
+
+    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+        sol = assert_no_warnings(solve_ivp, fun, [0, 10], ic, method=method, dense_output=True)
+        assert_equal(sol.sol(10), np.zeros((0,)))
 
 
 def test_classes():
