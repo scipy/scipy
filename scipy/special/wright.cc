@@ -67,9 +67,11 @@
 /*                                                                    */
 /*   e  --  double complex*                                           */
 /*          Pointer to the last update step in the iterative scheme.  */
+/*          NULL if the iterative scheme is not used.                 */
 /*                                                                    */
 /*   r  --  double complex*                                           */
 /*          Pointer to penultimate residual r_k = z - w_k - log(w_k)  */
+/*          NULL if the iterative scheme is not used.                 */
 /*                                                                    */
 /*   cond  --  double complex*                                        */
 /*         Pointer to the condition number estimate. If NULL the      */
@@ -81,6 +83,7 @@
 #include <Python.h>
 extern "C" {
 #include <numpy/npy_math.h>
+#include "sf_error.h"
 #include "_c99compat.h"
 #include "_round.h"
 }
@@ -103,7 +106,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
 {
   double pi=NPY_PI,s=1.0;
   double x,y,ympi,yppi,near;
-  complex<double> pz,wp1,t;
+  complex<double> pz,wp1,t,fac;
 
 
   /* extract real and imaginary parts of z */
@@ -203,6 +206,18 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
     {
       pz=exp(z);
       *w=(1.0+(-1.0+(3.0/2.0+(-8.0/3.0+125.0/24.0*pz)*pz)*pz)*pz)*pz;
+      if (*w == 0.0)
+	{
+	  sf_error("wrightomega", SF_ERROR_UNDERFLOW, "underflow in exponential series");
+	  /* Skip the iterative scheme because it computes log(*w) */
+	  e = NULL;
+	  r = NULL;
+	  if (cond != NULL)
+	    {
+	      *cond = z/(1.0+*w);
+	    }
+	  return 0;
+	}
     }
   /**********************/
   /* Region 4: Mushroom */
@@ -222,7 +237,24 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
     {
       t=z-I*pi;
       pz=log(-t);
-      *w=((1.0+(-3.0/2.0+1.0/3.0*pz)*pz)*pz+((-1.0+1.0/2.0*pz)*pz+(pz+(-pz+t)*t)*t)*t)/(t*t*t);
+      *w = t - pz;
+      fac = pz/t;
+      *w += fac;
+      fac /= t;
+      *w += fac*(0.5*pz - 1.0);
+      fac /= t;
+      *w += fac*(pz*pz/3.0 - 3.0*pz/2.0 + 1.0);
+      if (abs(z) > 1e50)
+	/* Series is accurate and the iterative scheme could overflow */
+	{
+	  e = NULL;
+	  r = NULL;
+	  if (cond != NULL)
+	    {
+	      *cond = z/(1.0+*w);
+	    }
+	  return 0;
+	}
     }
   /***************************/
   /* Region 6: Bottom wing   */
@@ -232,7 +264,26 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
     {
       t=z+I*pi;
       pz=log(-t);
-      *w=((1.0+(-3.0/2.0+1.0/3.0*pz)*pz)*pz+((-1.0+1.0/2.0*pz)*pz+(pz+(-pz+t)*t)*t)*t)/(t*t*t);
+      t=z-I*pi;
+      pz=log(-t);
+      *w = t - pz;
+      fac = pz/t;
+      *w += fac;
+      fac /= t;
+      *w += fac*(0.5*pz - 1.0);
+      fac /= t;
+      *w += fac*(pz*pz/3.0 - 3.0*pz/2.0 + 1.0);
+      if (abs(z) > 1e50)
+	/* Series is accurate and the iterative scheme could overflow */
+	{
+	  e = NULL;
+	  r = NULL;
+	  if (cond != NULL)
+	    {
+	      *cond = z/(1.0+*w);
+	    }
+	  return 0;
+	}
     }
   /************************************/
   /* Region 7: Everywhere else        */
@@ -241,7 +292,24 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   else
     {
       pz=log(z);
-      *w=((1.0+(-3.0/2.0+1.0/3.0*pz)*pz)*pz+((-1.0+1.0/2.0*pz)*pz+(pz+(-pz+z)*z)*z)*z)/(z*z*z);
+      *w = z - pz;
+      fac = pz/z;
+      *w += fac;
+      fac /= z;
+      *w += fac*(0.5*pz - 1.0);
+      fac /= z;
+      *w += fac*(pz*pz/3.0 - 3.0*pz/2.0 + 1.0);
+      if (abs(z) > 1e50)
+	/* Series is accurate and the iterative scheme could overflow */
+	{
+	  e = NULL;
+	  r = NULL;
+	  if (cond != NULL)
+	    {
+	      *cond = z/(1.0+*w);
+	    }
+	  return 0;
+	}
     }
 
   /**********************************/

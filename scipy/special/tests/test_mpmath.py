@@ -1759,7 +1759,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
 
         assert_mpmath_equal(sc.wrightomega,
                             mp_wrightomega,
-                            [ComplexArg()], nan_ok=True)
+                            [ComplexArg()], nan_ok=False)
 
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,
