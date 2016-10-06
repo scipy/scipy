@@ -83,7 +83,7 @@
 
 extern "C" {
 #include <numpy/npy_math.h>
-#include "_nonfinite.h"
+#include "_c99compat.h"
 #include "_round.h"
 }
 
