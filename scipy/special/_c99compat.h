@@ -7,6 +7,9 @@
 #ifndef C99COMPAT_H
 #define C99COMPAT_H
 
+#include <Python.h>
+#include <numpy/numpyconfig.h>
+
 
 int
 sc_signbit(double x)

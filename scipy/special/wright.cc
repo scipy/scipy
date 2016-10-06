@@ -78,14 +78,15 @@
 /* Output: returns 0 on sucessful exit.                               */
 /**********************************************************************/
 
-#include <cmath>
-#include <cfloat>
-
+#include <Python.h>
 extern "C" {
 #include <numpy/npy_math.h>
 #include "_c99compat.h"
 #include "_round.h"
 }
+
+#include <cmath>
+#include <cfloat>
 
 using std::complex;
 
