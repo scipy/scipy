@@ -380,6 +380,19 @@ class TestCdist(TestCase):
         Y2 = cdist(X1, X2, 'test_sokalsneath')
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
+    def test_cdist_custom_notdouble(self):
+        class myclass(object):
+            pass
+
+        def dummy_metric(x, y):
+            if not isinstance(x[0], myclass) or not isinstance(y[0], myclass):
+                raise ValueError("Type has been changed")
+            return 1.123
+        data = np.array([[myclass()]], dtype=object)
+        cdist_y = cdist(data, data, metric=dummy_metric)
+        right_y = 1.123
+        assert_equal(cdist_y, right_y, verbose=verbose > 2)
+
 
 class TestPdist(TestCase):
 
@@ -1136,6 +1149,19 @@ class TestPdist(TestCase):
         pdist_y = pdist(([3.3], [3.4]), "canberra")
         right_y = 0.01492537
         _assert_within_tol(pdist_y, right_y, eps, verbose > 2)
+
+    def test_pdist_custom_notdouble(self):
+        class myclass(object):
+            pass
+
+        def dummy_metric(x, y):
+            if not isinstance(x[0], myclass) or not isinstance(y[0], myclass):
+                raise ValueError("Type has been changed")
+            return 1.123
+        data = np.array([[myclass()], [myclass()]], dtype=object)
+        pdist_y = pdist(data, metric=dummy_metric)
+        right_y = 1.123
+        assert_equal(pdist_y, right_y, verbose=verbose > 2)
 
 
 def within_tol(a, b, tol):

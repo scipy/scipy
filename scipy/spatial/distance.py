@@ -1217,19 +1217,21 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         if metric == minkowski:
             def dfun(u, v):
                 return minkowski(u, v, p)
+            X = _convert_to_double(X)
         elif metric == wminkowski:
             def dfun(u, v):
                 return wminkowski(u, v, p, w)
+            X = _convert_to_double(X)
         elif metric == seuclidean:
             def dfun(u, v):
                 return seuclidean(u, v, V)
+            X = _convert_to_double(X)
         elif metric == mahalanobis:
             def dfun(u, v):
                 return mahalanobis(u, v, V)
+            X = _convert_to_double(X)
         else:
             dfun = metric
-
-        X = _convert_to_double(X)
 
         k = 0
         for i in xrange(0, m - 1):
@@ -1994,8 +1996,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     XB = np.asarray(XB, order='c')
 
     # The C code doesn't do striding.
-    XA = _copy_array_if_base_present(_convert_to_double(XA))
-    XB = _copy_array_if_base_present(_convert_to_double(XB))
+    XA = _copy_array_if_base_present(XA)
+    XB = _copy_array_if_base_present(XB)
 
     s = XA.shape
     sB = XB.shape
