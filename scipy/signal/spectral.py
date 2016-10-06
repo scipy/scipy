@@ -17,7 +17,8 @@ __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
 
 
 def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
-                return_onesided=True, scaling='density', axis=-1):
+                return_onesided=True, scaling='density', axis=-1,
+                return_std=False):
     """
     Estimate power spectral density using a periodogram.
 
@@ -50,6 +51,11 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     axis : int, optional
         Axis along which the periodogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
+    return_std : bool, optional
+        If True, return the standard deviation of the estimates.
+
+        .. versionadded:: 0.19
+
 
     Returns
     -------
@@ -138,11 +144,12 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
         nfft = None
 
     return welch(x, fs, window, nperseg, 0, nfft, detrend, return_onesided,
-                 scaling, axis)
+                 scaling, axis, return_std)
 
 
 def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
-          detrend='constant', return_onesided=True, scaling='density', axis=-1):
+          detrend='constant', return_onesided=True, scaling='density',
+          axis=-1, return_std=False):
     """
     Estimate power spectral density using Welch's method.
 
@@ -186,6 +193,10 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     axis : int, optional
         Axis along which the periodogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
+    return_std : bool, optional
+        If True, return the standard deviation of the estimates.
+
+        .. versionadded:: 0.19
 
     Returns
     -------
@@ -193,6 +204,9 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         Array of sample frequencies.
     Pxx : ndarray
         Power spectral density or power spectrum of x.
+    Pxx_std : ndarray
+        The standard deviation of the estimates (across windows).
+        Only returned if `return_std` is True.
 
     See Also
     --------
@@ -269,14 +283,15 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
     """
 
-    freqs, Pxx = csd(x, x, fs, window, nperseg, noverlap, nfft, detrend,
-                     return_onesided, scaling, axis)
-
-    return freqs, Pxx.real
+    out = csd(x, x, fs, window, nperseg, noverlap, nfft, detrend,
+              return_onesided, scaling, axis, return_std)
+    out = (out[0],) + tuple([out_.real for out_ in out[1:]])
+    return out
 
 
 def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
-        detrend='constant', return_onesided=True, scaling='density', axis=-1):
+        detrend='constant', return_onesided=True, scaling='density', axis=-1,
+        return_std=False):
     """
     Estimate the cross power spectral density, Pxy, using Welch's method.
 
@@ -318,6 +333,11 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     axis : int, optional
         Axis along which the CSD is computed for both inputs; the default is
         over the last axis (i.e. ``axis=-1``).
+    return_std : bool, optional
+        If True, return the standard deviation of the estimates.
+
+        .. versionadded:: 0.19
+
 
     Returns
     -------
@@ -325,6 +345,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         Array of sample frequencies.
     Pxy : ndarray
         Cross spectral density or cross power spectrum of x,y.
+    Pxy_std : ndarray
+        The standard deviation of the estimates (across windows).
+        Only returned if `return_std` is True.
 
     See Also
     --------
@@ -393,14 +416,18 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
         if Pxy.shape[-1] > 1:
+            if return_std:
+                Pxy_std = np.std(Pxy, axis=-1)
             Pxy = Pxy.mean(axis=-1)
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
+            if return_std:
+                Pxy_std = np.zeros_like(Pxy)
+    out = (freqs, Pxy) + ((Pxy_std,) if return_std else ())
+    return out
 
-    return freqs, Pxy
 
-
-def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
+def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=256, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """
@@ -512,8 +539,8 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
         noverlap = nperseg // 8
 
     freqs, time, Pxy = _spectral_helper(x, x, fs, window, nperseg, noverlap,
-                                        nfft, detrend, return_onesided, scaling,
-                                        axis, mode=mode)
+                                        nfft, detrend, return_onesided,
+                                        scaling, axis, mode=mode)
 
     return freqs, time, Pxy
 
@@ -555,8 +582,8 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
         function, it takes a segment and returns a detrended segment.
         If `detrend` is False, no detrending is done.  Defaults to 'constant'.
     axis : int, optional
-        Axis along which the coherence is computed for both inputs; the default is
-        over the last axis (i.e. ``axis=-1``).
+        Axis along which the coherence is computed for both inputs; the
+        default is over the last axis (i.e. ``axis=-1``).
 
     Returns
     -------
@@ -630,9 +657,9 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
 
 def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
-                    noverlap=None, nfft=None, detrend='constant',
-                    return_onesided=True, scaling='spectrum', axis=-1,
-                    mode='psd'):
+                     noverlap=None, nfft=None, detrend='constant',
+                     return_onesided=True, scaling='spectrum', axis=-1,
+                     mode='psd'):
     """
     Calculate various forms of windowed FFTs for PSD, CSD, etc.
 
@@ -724,9 +751,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
     x = np.asarray(x)
     if not same_data:
         y = np.asarray(y)
-        outdtype = np.result_type(x,y,np.complex64)
+        outdtype = np.result_type(x, y, np.complex64)
     else:
-        outdtype = np.result_type(x,np.complex64)
+        outdtype = np.result_type(x, np.complex64)
 
     if not same_data:
         # Check if we can broadcast the outer axes together
@@ -816,7 +843,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
         if win.shape[0] != nperseg:
             raise ValueError('window must have length of nperseg')
 
-    if np.result_type(win,np.complex64) != outdtype:
+    if np.result_type(win, np.complex64) != outdtype:
         win = win.astype(outdtype)
 
     if mode == 'psd':
@@ -870,12 +897,14 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
     result *= scale
     if sides == 'onesided':
         if nfft % 2:
-            result[...,1:] *= 2
+            result[..., 1:] *= 2
         else:
             # Last point is unpaired Nyquist freq point, don't double
-            result[...,1:-1] *= 2
+            result[..., 1:-1] *= 2
 
-    t = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1, nperseg - noverlap)/float(fs)
+    t = np.arange(nperseg/2,
+                  x.shape[-1] - nperseg/2 + 1,
+                  nperseg - noverlap) / float(fs)
 
     if sides != 'twosided' and not nfft % 2:
         # get the last value correctly, it is negative otherwise
