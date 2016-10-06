@@ -80,36 +80,20 @@
 
 #include <cmath>
 #include <cfloat>
-#include <cfenv>
 
 extern "C" {
 #include <numpy/npy_math.h>
+#include "_nonfinite.h"
+#include "_round.h"
 }
 
 using std::complex;
 
-/*
- * Use numpy's versions since std:: versions only available in C++11
- */
-#define sc_copysign npy_copysign
-#define Inf NPY_INFINITY
 #define NaN NPY_NAN
-/*
- * portable isnan/isinf; in cmath only available in C++11 and npy_math
- * versions don't work well (they get undef'd by cmath, see gh-5689)
- * Implementation based on npy_math.h
- */
-#define sc_isnan(x) ((x) != (x))
-#ifdef _MSC_VER
-    #define sc_isfinite(x) _finite((x))
-#else
-    #define sc_isfinite(x) !sc_isnan((x) + (-x))
-#endif
-#define sc_isinf(x) (!sc_isfinite(x) && !sc_isnan(x))
-
 #define TWOITERTOL DBL_EPSILON
 
 const complex<double> I(0.0, 1.0);
+
 
 int
 wright::wrightomega_ext(complex<double> z, complex<double> *w,
@@ -268,35 +252,26 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
       if (fabs(ympi) <= near)
         {
           /* Recompute ympi with directed rounding */
-          fesetround(FE_UPWARD);
-          ympi = y-pi;
+          ympi = add_round_up(y, -pi);
           
           if( ympi <= 0.0)
             {
-              fesetround(FE_DOWNWARD);
-              ympi = y-pi;
+              ympi = add_round_down(y, -pi);
             }
           
           z = x + I*ympi;
-
-          /* Return rounding to default */
-          fesetround(FE_TONEAREST);
         }
       else
         {
           /* Recompute yppi with directed rounding */
-          fesetround(FE_UPWARD);
-          yppi = y + pi;
+          yppi = add_round_up(y, pi);
           
           if( yppi <= 0.0)
             {
-              fesetround(FE_DOWNWARD);
-              yppi = y + pi;
+              yppi = add_round_down(y, pi);
             }
           
           z = x + I*yppi;
-          /* Return rounding to default */
-          fesetround(FE_TONEAREST);
         }
     }
   
