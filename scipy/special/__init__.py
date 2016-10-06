@@ -17,21 +17,14 @@ noted.
 Error handling
 ==============
 
-Errors are handled by returning nans, or other appropriate values.
-Some of the special function routines will emit warnings when an error
-occurs.  By default this is disabled.  To enable such messages use
-``errprint(1)``, and to disable such messages use ``errprint(0)``.
-
-Example:
-
-    >>> print scipy.special.bdtr(-1,10,0.3)
-    >>> scipy.special.errprint(1)
-    >>> print scipy.special.bdtr(-1,10,0.3)
+Errors are handled by returning NaNs or other appropriate values.
+Some of the special function routines can emit warnings when an error
+occurs. By default this is disabled; to enable it use `errprint`.
 
 .. autosummary::
    :toctree: generated/
 
-   errprint
+   errprint               -- Set or return the error printing flag for special functions.
    SpecialFunctionWarning -- Warning that can be issued with ``errprint(True)``
 
 Available functions

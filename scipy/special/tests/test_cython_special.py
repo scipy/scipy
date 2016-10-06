@@ -1,9 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 from itertools import product
 
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_allclose
 from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy import special
@@ -328,13 +327,3 @@ def test_cython_api():
 
     for param in params:
         yield check, param
-
-
-def test_errprint():
-    flag = cython_special.errprint(1)
-    try:
-        with warnings.catch_warnings(record=True) as w:
-            cython_special.loggamma(0)
-            assert_(w[-1].category is special.SpecialFunctionWarning)
-    finally:
-        cython_special.errprint(flag)

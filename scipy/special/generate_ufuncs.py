@@ -372,31 +372,60 @@ UFUNCS_EXTRA_CODE = """\
 cimport scipy.special._ufuncs_cxx
 """
 
-ERRPRINT_CODE = """\
+UFUNCS_ERRPRINT_CODE = """\
 def errprint(inflag=None):
     \"\"\"
     errprint(inflag=None)
 
-    Sets or returns the error printing flag for special functions.
+    Set or return the error printing flag for special functions.
 
     Parameters
     ----------
     inflag : bool, optional
         Whether warnings concerning evaluation of special functions in
-        scipy.special are shown. If omitted, no change is made to the
-        current setting.
+        ``scipy.special`` are shown. If omitted, no change is made to
+        the current setting.
 
     Returns
     -------
-    old_flag
+    old_flag : bool
         Previous value of the error flag
+
+    Examples
+    --------
+    Turn on error printing.
+
+    >>> import warnings
+    >>> import scipy.special as sc
+    >>> sc.bdtr(-1, 10, 0.3)
+    nan
+    >>> sc.errprint(True)
+    False
+    >>> with warnings.catch_warnings(record=True) as w:
+    ...     sc.bdtr(-1, 10, 0.3)
+    ...
+    nan
+    >>> len(w)
+    1
+    >>> w[0].message
+    SpecialFunctionWarning('scipy.special/bdtr: domain error',)
 
     \"\"\"
     if inflag is not None:
         scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
-        return sf_error.set_print(int(bool(inflag)))
+        return bool(sf_error.set_print(int(bool(inflag))))
     else:
-        return sf_error.get_print()
+        return bool(sf_error.get_print())
+"""
+
+CYTHON_SPECIAL_ERRPRINT_CODE = """\
+def errprint(inflag=None):
+    \"\"\"See the documentation for scipy.special.errprint\"\"\"
+    if inflag is not None:
+        scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
+        return bool(sf_error.set_print(int(bool(inflag))))
+    else:
+        return bool(sf_error.get_print())
 """
 
 UFUNCS_EXTRA_CODE_BOTTOM = """\
@@ -1580,7 +1609,7 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
         f.write("\n")
         f.write(UFUNCS_EXTRA_CODE)
         f.write("\n")
-        f.write(ERRPRINT_CODE)
+        f.write(UFUNCS_ERRPRINT_CODE)
         f.write(toplevel)
         f.write(UFUNCS_EXTRA_CODE_BOTTOM)
 
@@ -1669,7 +1698,7 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         header = header.replace("FUNCLIST", "\n".join(doc))
         f.write(header)
         f.write("\n")
-        f.write(ERRPRINT_CODE)
+        f.write(CYTHON_SPECIAL_ERRPRINT_CODE)
         f.write("\n")
         f.write("\n".join(defs))
         f.write("\n\n")
