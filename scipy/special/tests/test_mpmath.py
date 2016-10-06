@@ -580,6 +580,42 @@ def test_dn_quarter_period():
     dataset = np.asarray(dataset)
 
     FuncData(dn, dataset, (0, 1), 2, rtol=1e-10).check()
+
+
+# ------------------------------------------------------------------------------
+# Wright Omega
+# ------------------------------------------------------------------------------
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_branch():
+    def mp_wrightomega(z):
+        with mpmath.workdps(25):
+            z = mpmath.mpc(z)
+            unwind = mpmath.ceil((z.imag - mpmath.pi)/(2*mpmath.pi))
+            res = mpmath.lambertw(mpmath.exp(z), unwind)
+        return res
+
+    x = -np.logspace(10, 0, 25)
+    picut_above = [np.nextafter(np.pi, np.inf)]
+    picut_below = [np.nextafter(np.pi, -np.inf)]
+    npicut_above = [np.nextafter(-np.pi, np.inf)]
+    npicut_below = [np.nextafter(-np.pi, -np.inf)]
+    for i in range(50):
+        picut_above.append(np.nextafter(picut_above[-1], np.inf))
+        picut_below.append(np.nextafter(picut_below[-1], -np.inf))
+        npicut_above.append(np.nextafter(npicut_above[-1], np.inf))
+        npicut_below.append(np.nextafter(npicut_below[-1], -np.inf))
+    y = np.hstack((picut_above, picut_below, npicut_above, npicut_below))
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(mp_wrightomega(z0))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-7).check()
     
 
 # ------------------------------------------------------------------------------
@@ -1759,7 +1795,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
 
         assert_mpmath_equal(sc.wrightomega,
                             mp_wrightomega,
-                            [ComplexArg()], nan_ok=False)
+                            [ComplexArg()], rtol=1e-9, nan_ok=False)
 
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,
