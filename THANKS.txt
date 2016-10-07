@@ -164,6 +164,7 @@ Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
 Antonio Ribeiro for implementing irrnotch and iirpeak functions.
 Ilhan Polat for bug fixes on Riccati solvers.
+Sebastiano Vigna for code in the stats package related to Kendall's tau.
 
 Institutions
 ------------
