@@ -177,7 +177,7 @@ from . import distributions
 from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
-from ._stats import _kendall_condis
+from ._stats import _kendall_dis
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -3441,8 +3441,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
-    strong disagreement.  This is the tau-b version of Kendall's tau which
-    accounts for ties.
+    strong disagreement.  This is the 1945 "tau-b" version of Kendall's
+    tau, which can accounts for ties and which reduces to the 1938 "tau-a"
+    version in absence of ties.
 
     Parameters
     ----------
@@ -3450,15 +3451,13 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         Arrays of rankings, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
     initial_lexsort : bool, optional
-        Whether to use lexsort or quicksort as the sorting method for the
-        initial sort of the inputs. Default is lexsort (True), for which
-        `kendalltau` is of complexity O(n log(n)). If False, the complexity is
-        O(n^2), but with a smaller pre-factor (so quicksort may be faster for
-        small arrays).
+        Unused (deprecated).
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        values. Default is 'propagate'. Note that if the input contains nan
+        'omit' delegates to mstats_basic.kendalltau(), which has a different
+        implementation.
 
     Returns
     -------
@@ -3486,9 +3485,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     References
     ----------
+    Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
+    Vol. 30, No. 1/2, pp. 81-93, 1938.
+    Maurice G. Kendall, "The treatment of ties in ranking problems",
+    Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
     W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
     Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
     No. 314, Part 1, pp. 436-439, 1966.
+    Gottfried E. Noether, "Elements of Nonparametric Statistics", John Wiley &
+    Sons, 1967.
 
     Examples
     --------
@@ -3543,19 +3548,22 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     x, y = x[perm], y[perm]
     x = np.r_[True, x[1:] != x[:-1]].cumsum(dtype=np.intp)
 
-    con, dis = _kendall_condis(x, y)  # concordant & discordant pairs
+    dis = _kendall_dis(x, y)  # discordant pairs
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
-    xtie = count_rank_tie(x) - ntie      # ties only in x
-    ytie = count_rank_tie(y) - ntie      # ties only in y
+    xtie = count_rank_tie(x)             # ties in x
+    ytie = count_rank_tie(y)             # ties in y
 
-    if con + dis + xtie == 0 or con + dis + ytie == 0:
-        return KendalltauResult(np.nan, np.nan)
+    tot = (size * (size - 1)) // 2
 
-    tau = (con - dis) / np.sqrt(con + dis + xtie) / np.sqrt(con + dis + ytie)
+    if xtie == tot or ytie == tot:
+         return KendalltauResult(np.nan, np.nan)
+
+    # Limit range to fix computational errors
+    tau = min(1., max(-1., (tot - xtie - ytie + ntie - 2 * dis) / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)))
 
     # what follows reproduces the ending of Gary Strangman's original
     # stats.kendalltau() in SciPy
