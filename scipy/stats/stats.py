@@ -3560,7 +3560,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     tot = (size * (size - 1)) // 2
 
     if xtie == tot or ytie == tot:
-         return KendalltauResult(np.nan, np.nan)
+        return KendalltauResult(np.nan, np.nan)
 
     # Limit range to fix computational errors
     tau = min(1., max(-1., (tot - xtie - ytie + ntie - 2 * dis) / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)))
