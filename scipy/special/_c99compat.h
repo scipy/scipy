@@ -7,41 +7,6 @@
 #ifndef C99COMPAT_H
 #define C99COMPAT_H
 
-#include <Python.h>
-#include <numpy/numpyconfig.h>
-
-
-int
-sc_signbit(double x)
-{
-    union
-    {
-        double d;
-        short s[4];
-        int i[2];
-    } u;
-
-    u.d = x;
-
-#if NPY_SIZEOF_INT == 4
-
-#ifdef WORDS_BIGENDIAN /* defined in pyconfig.h */
-    return u.i[0] < 0;
-#else
-    return u.i[1] < 0;
-#endif
-
-#else  /* NPY_SIZEOF_INT != 4 */
-
-#ifdef WORDS_BIGENDIAN
-    return u.s[0] < 0;
-#else
-    return u.s[3] < 0;
-#endif
-
-#endif  /* NPY_SIZEOF_INT */
-}
-
 
 #define sc_isnan(x) ((x) != (x))
 #ifdef _MSC_VER

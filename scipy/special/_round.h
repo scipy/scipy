@@ -23,7 +23,7 @@ double add_round_up(double a, double b)
      * e = err(a + b).
      */
     s = a + b;
-    if (sc_isinf(s) && sc_signbit(s) != 0) {
+    if (sc_isinf(s) && s < 0) {
 	/* The sum is -oo; round up */
 	return npy_nextafter(s, NPY_INFINITY);
     }
@@ -46,7 +46,7 @@ double add_round_down(double a, double b)
     double s, e, v;
 
     s = a + b;
-    if (sc_isinf(s) && sc_signbit(s) == 0) {
+    if (sc_isinf(s) && s > 0) {
 	return npy_nextafter(s, -NPY_INFINITY);
     }
     v = s - a;
