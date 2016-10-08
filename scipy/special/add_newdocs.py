@@ -897,7 +897,7 @@ add_newdoc("scipy.special", "chdtri",
 
 add_newdoc("scipy.special", "chdtriv",
     """
-    chdtri(p, x)
+    chdtriv(p, x)
 
     Inverse to `chdtr` vs `v`
 

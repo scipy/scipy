@@ -3794,7 +3794,7 @@ cdef void *ufunc_chdtriv_ptr[4]
 cdef void *ufunc_chdtriv_data[2]
 cdef char ufunc_chdtriv_types[6]
 cdef char *ufunc_chdtriv_doc = (
-    "chdtri(p, x)\n"
+    "chdtriv(p, x)\n"
     "\n"
     "Inverse to `chdtr` vs `v`\n"
     "\n"
