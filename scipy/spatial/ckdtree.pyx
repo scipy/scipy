@@ -503,13 +503,13 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             self.boxsize_data = None
         else:
             boxsize_arr = np.empty(2 * self.m, dtype=np.float64)
-            boxsize_arr[:] = boxsize
+            boxsize_arr[:self.m] = boxsize
             boxsize_arr[self.m:] = 0.5 * boxsize_arr[:self.m]
             # FIXME: how to use a matching del if new is used?
             self.boxsize_data = boxsize_arr
             self.raw_boxsize_data = <np.float64_t*> np.PyArray_DATA(boxsize_arr)
             self.boxsize = boxsize_arr[:self.m].copy()
-            if (self.data >= self.boxsize[None, :]).any():
+            if (self.data >= self.boxsize[None, self.boxsize > 0]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
             if (self.data < 0).any():
                 raise ValueError("Negative input data are outside of the periodic box.")
