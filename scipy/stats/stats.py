@@ -3489,11 +3489,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     Vol. 30, No. 1/2, pp. 81-93, 1938.
     Maurice G. Kendall, "The treatment of ties in ranking problems",
     Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
-    W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
-    Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
-    No. 314, Part 1, pp. 436-439, 1966.
     Gottfried E. Noether, "Elements of Nonparametric Statistics", John Wiley &
     Sons, 1967.
+    Peter M. Fenwick, "A new data structure for cumulative frequency tables",
+    Software: Practice and Experience, Vol. 24, No. 3, pp. 327-336, 1994.
 
     Examples
     --------
