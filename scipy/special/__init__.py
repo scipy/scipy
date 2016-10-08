@@ -158,18 +158,6 @@ Spherical Bessel Functions
    spherical_in -- Modified spherical Bessel function of the first kind, in(z)
    spherical_kn -- Modified spherical Bessel function of the second kind, kn(z)
 
-These are not universal functions:
-
-.. autosummary::
-   :toctree: generated/
-
-   sph_jn   -- [+]Sequence of spherical Bessel functions, jn(z)
-   sph_yn   -- [+]Sequence of spherical Bessel functions, yn(z)
-   sph_jnyn -- [+]Sequence of spherical Bessel functions, jn(z) and yn(z)
-   sph_in   -- [+]Sequence of spherical Bessel functions, in(z)
-   sph_kn   -- [+]Sequence of spherical Bessel functions, kn(z)
-   sph_inkn -- [+]Sequence of spherical Bessel functions, in(z) and kn(z)
-
 Riccati-Bessel Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
