@@ -377,6 +377,28 @@ The following functions evaluate values of orthogonal polynomials:
    eval_sh_chebyu   -- Evaluate shifted Chebyshev polynomial of the second kind at a point.
    eval_sh_jacobi   -- Evaluate shifted Jacobi polynomial at a point.
 
+The following functions compute roots and quadrature weights for
+orthogonal polynomials:
+
+.. autosummary::
+   :toctree: generated/
+
+   roots_legendre    -- Gauss-Legendre quadrature.
+   roots_chebyt      -- Gauss-Chebyshev (first kind) quadrature.
+   roots_chebyu      -- Gauss-Chebyshev (second kind) quadrature.
+   roots_chebyc      -- Gauss-Chebyshev (first kind) quadrature.
+   roots_chebys      -- Gauss-Chebyshev (second kind) quadrature.
+   roots_jacobi      -- Gauss-Jacobi quadrature.
+   roots_laguerre    -- Gauss-Laguerre quadrature.
+   roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
+   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
+   roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
+   roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.
+   roots_sh_chebyt   -- Gauss-Chebyshev (first kind, shifted) quadrature.
+   roots_sh_chebyu   -- Gauss-Chebyshev (second kind, shifted) quadrature.
+   roots_sh_jacobi   -- Gauss-Jacobi (shifted) quadrature.
+
 The functions below, in turn, return the polynomial coefficients in
 :class:`~.orthopoly1d` objects, which function similarly as :ref:`numpy.poly1d`.
 The :class:`~.orthopoly1d` class also has an attribute ``weights`` which returns
@@ -410,27 +432,6 @@ arithmetic, and lose information of the original orthogonal polynomial.
    Computing values of high-order polynomials (around ``order > 20``) using
    polynomial coefficients is numerically unstable. To evaluate polynomial
    values, the ``eval_*`` functions should be used instead.
-
-Roots and weights for orthogonal polynomials
-
-.. autosummary::
-   :toctree: generated/
-
-   c_roots  -- Gauss-Chebyshev (first kind) quadrature.
-   cg_roots -- Gauss-Gegenbauer quadrature.
-   h_roots  -- Gauss-Hermite (physicst's) quadrature.
-   he_roots -- Gauss-Hermite (statistician's) quadrature.
-   j_roots  -- Gauss-Jacobi quadrature.
-   js_roots -- Gauss-Jacobi (shifted) quadrature.
-   l_roots  -- Gauss-Laguerre quadrature.
-   la_roots -- Gauss-generalized Laguerre quadrature.
-   p_roots  -- Gauss-Legendre quadrature.
-   ps_roots -- Gauss-Legendre (shifted) quadrature.
-   s_roots  -- Gauss-Chebyshev (second kind) quadrature.
-   t_roots  -- Gauss-Chebyshev (first kind) quadrature.
-   ts_roots -- Gauss-Chebyshev (first kind, shifted) quadrature.
-   u_roots  -- Gauss-Chebyshev (second kind) quadrature.
-   us_roots -- Gauss-Chebyshev (second kind, shifted) quadrature.
 
 
 Hypergeometric Functions

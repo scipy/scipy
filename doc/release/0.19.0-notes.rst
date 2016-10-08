@@ -57,6 +57,16 @@ compute the coeficients of a second-order IIR peak (resonant) filter.
 The functions `scipy.sparse.save_npz` and `scipy.sparse.load_npz` were added,
 providing simple serialization for some sparse formats.
 
+`scipy.special` improvements
+----------------------------
+
+The names of orthogonal polynomial root functions have been changed to
+be consistent with other functions relating to orthogonal
+polynomials. For example, `scipy.special.j_roots` has been renamed
+`scipy.special.roots_jacobi` for consistency with the related
+functions `scipy.special.jacobi` and `scipy.special.eval_jacobi`. To
+preserve back-compatibility the old names have been left as aliases.
+
 
 Deprecated features
 ===================
