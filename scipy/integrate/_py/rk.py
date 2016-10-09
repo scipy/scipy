@@ -89,7 +89,6 @@ class RungeKutta(OdeSolver):
 
     def __init__(self, fun, t0, y0, t_crit, rtol=1e-3, atol=1e-6):
         super(RungeKutta, self).__init__(fun, t0, y0, t_crit)
-        self.t_old = None
         self.y_old = None
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         self.rtol = rtol

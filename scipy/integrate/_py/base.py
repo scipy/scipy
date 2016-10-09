@@ -61,12 +61,15 @@ class OdeSolver(object):
         Current time.
     y : ndarray
         Current state.
+    t_old : float
+        Time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     def __init__(self, fun, t0, y0, t_crit):
+        self.t_old = None
         self.t = t0
         self.fun, self.y = check_arguments(fun, y0)
         self.t_crit = t_crit
