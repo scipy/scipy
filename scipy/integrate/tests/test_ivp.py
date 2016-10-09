@@ -215,6 +215,10 @@ def test_empty():
         sol = assert_no_warnings(solve_ivp, fun, [0, 10], ic, method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
 
+    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+        sol = assert_no_warnings(solve_ivp, fun, [0, np.inf], ic, method=method, dense_output=True)
+        assert_equal(sol.sol(10), np.zeros((0,)))
+
 
 def test_classes():
     y0 = [1 / 3, 2 / 9]
