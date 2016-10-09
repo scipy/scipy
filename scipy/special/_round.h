@@ -1,36 +1,20 @@
 /*
  * Functions for adding two double precision numbers with rounding to
  * infinity or rounding to negative infinity without using <fenv.h>.
- *
- * References
- * ----------
- * [1] Hida, Li, Bailey, "Library for Double-Double and Quad-Double
- *     Arithmetic."
  */
 #ifndef ROUND_H
 #define ROUND_H
 
 #include <numpy/npy_math.h>
-#include "_c99compat.h"
+#include "c_misc/double2.h"
 
 
 double add_round_up(double a, double b)
 {
-    double s, e, v;
+    double s, err;
 
-    /*
-     * Use Algorithm 4 in [1] to compute s = fl(a + b) and 
-     * e = err(a + b).
-     */
-    s = a + b;
-    if (sc_isinf(s) && s < 0) {
-	/* The sum is -oo; round up */
-	return npy_nextafter(s, NPY_INFINITY);
-    }
-    v = s - a;
-    e = (a - (s - v)) + (b - v);
-
-    if (e > 0) {
+    s = double_sum_err(a, b, &err);
+    if (err > 0) {
 	/* fl(a + b) rounded down */
 	return npy_nextafter(s, NPY_INFINITY);
     }
@@ -43,22 +27,38 @@ double add_round_up(double a, double b)
 
 double add_round_down(double a, double b)
 {
-    double s, e, v;
+    double s, err;
 
-    s = a + b;
-    if (sc_isinf(s) && s > 0) {
-	return npy_nextafter(s, -NPY_INFINITY);
-    }
-    v = s - a;
-    e = (a - (s - v)) + (b - v);
-
-    if (e < 0) {
+    s = double_sum_err(a, b, &err);
+    if (err < 0) {
 	return npy_nextafter(s, -NPY_INFINITY);
     }
     else {
 	return s;
     }
 }
+
+
+/* Helper code for testing _round.h. */
+#if __STDC_VERSION__ >= 199901L
+/* We have C99 */
+#include <fenv.h>
+#else
+
+int fesetround(int round)
+{
+    return -1;
+}
+
+int fegetround()
+{
+    return -1;
+}
+
+#define FE_UPWARD -1
+#define FE_DOWNWARD -1
+
+#endif
 
 
 #endif /* _round.h */
