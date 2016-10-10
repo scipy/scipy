@@ -3442,7 +3442,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
     strong disagreement.  This is the 1945 "tau-b" version of Kendall's
-    tau [2]_, which can accounts for ties and which reduces to the 1938 "tau-a"
+    tau [2]_, which can account for ties and which reduces to the 1938 "tau-a"
     version [1]_ in absence of ties.
 
     Parameters
@@ -3486,14 +3486,14 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     References
     ----------
     .. [1] Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
-    Vol. 30, No. 1/2, pp. 81-93, 1938.
+           Vol. 30, No. 1/2, pp. 81-93, 1938.
     .. [2] Maurice G. Kendall, "The treatment of ties in ranking problems",
-    Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
+           Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
     .. [3] Gottfried E. Noether, "Elements of Nonparametric Statistics", John
-    Wiley & Sons, 1967.
+           Wiley & Sons, 1967.
     .. [4] Peter M. Fenwick, "A new data structure for cumulative frequency
-    tables", Software: Practice and Experience, Vol. 24, No. 3, pp. 327-336,
-    1994.
+           tables", Software: Practice and Experience, Vol. 24, No. 3,
+           pp. 327-336, 1994.
 
     Examples
     --------
