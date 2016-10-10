@@ -150,7 +150,7 @@ def find_active_events(g, g_new, direction):
     return np.nonzero(mask)[0]
 
 
-def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
+def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               max_step=np.inf, events=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
@@ -205,6 +205,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
         You can also pass an arbitrary instance of `OdeSolver`.
     dense_output : bool, optional
         Whether to compute a continuous solution. Default is False.
+    t_eval : array_like or None, optional
+        Times at which to store the computed solution, must be sorted and lie
+        within `t_span`. If None (default), use points selected by a solver.
     max_step : float, optional
         Maximum allowed step size. Default is np.inf, i.e. step is not
         bounded and determined solely by the solver.
@@ -257,7 +260,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
     -------
     Bunch object with the following fields defined:
     t : ndarray, shape (n_points,)
-        Time points at which the solver made steps.
+        Time points.
     y : ndarray, shape (n, n_points)
         Solution values at `t`.
     sol : `OdeSolution` or None
@@ -305,13 +308,32 @@ def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
 
     t0, tf = float(t_span[0]), float(t_span[1])
 
+    if t_eval is not None:
+        t_eval = np.asarray(t_eval)
+        if t_eval.ndim != 1:
+            raise ValueError("`t_eval` must be 1-dimensional.")
+
+        if np.any(t_eval < min(t0, tf)) or np.any(t_eval > max(t0, tf)):
+            raise ValueError("Values in `t_eval` are not within `t_span`")
+
+        d = np.diff(t_eval)
+        if tf > t0 and np.any(d <= 0) or tf < t0 and np.any(d >= 0):
+            raise ValueError("Values in `t_eval` are not properly sorted.")
+        t_eval_i = 0
+        n_eval = t_eval.shape[0]
+
     if not isinstance(method, OdeSolver):
         method = METHODS[method]
 
     solver = method(fun, t0, y0, tf, **options)
 
-    ts = [t0]
-    ys = [y0]
+    if t_eval is None:
+        ts = [t0]
+        ys = [y0]
+    else:
+        ts = []
+        ys = []
+
     interpolants = []
 
     events, is_terminal, event_dir = prepare_events(events)
@@ -322,19 +344,20 @@ def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
     else:
         t_events = None
 
-    status = 0
-    message = None
-    while solver.status != 'finished':
+    status = None
+    s = solver.direction
+    while status is None:
         message = solver.step(max_step)
-        if solver.status == 'failed':
+
+        if solver.status == 'finished':
+            status = 0
+        elif solver.status == 'failed':
             status = -1
             break
 
+        t_old = solver.t_old
         t = solver.t
         y = solver.y
-
-        ts.append(t)
-        ys.append(y)
 
         if dense_output:
             sol = solver.dense_output()
@@ -349,26 +372,54 @@ def solve_ivp(fun, t_span, y0, method='RK45', dense_output=False,
                 if sol is None:
                     sol = solver.dense_output()
                 root_indices, roots, terminate = handle_events(
-                    sol, events, active_events, is_terminal, ts[-2], ts[-1])
+                    sol, events, active_events, is_terminal, t_old, t)
 
                 for e, te in zip(root_indices, roots):
                     t_events[e].append(te)
 
                 if terminate:
                     status = 1
-                    t_term = roots[-1]
-                    ts[-1] = t_term
-                    ys[-1] = sol(t_term)
-                    break
+                    t = roots[-1]
+                    y = sol(t)
             g = g_new
+
+        if t_eval is None:
+            ts.append(t)
+            ys.append(y)
+        else:
+            if sol is None:
+                sol = solver.dense_output()
+
+            t_step = []
+
+            while t_eval_i < n_eval and s * (t_eval[t_eval_i] - t_old) < 0:
+                t_eval_i += 1
+
+            while t_eval_i < n_eval and s * (t_eval[t_eval_i] - t) < 0:
+                t_step.append(t_eval[t_eval_i])
+                t_eval_i += 1
+
+            # This should be handled in the next iteration, but this iteration
+            # is the last so we need to save this t.
+            if (status is not None and
+                    t_eval_i < n_eval and t_eval[t_eval_i] == t):
+                t_step.append(t)
+
+            if t_step:
+                ts.append(t_step)
+                ys.append(sol(t_step))
 
     message = MESSAGE.get(status, message)
 
     if t_events is not None:
         t_events = [np.asarray(xe) for xe in t_events]
 
-    ts = np.array(ts)
-    ys = np.array(ys).T
+    if t_eval is None:
+        ts = np.array(ts)
+        ys = np.vstack(ys).T
+    else:
+        ts = np.hstack(ts)
+        ys = np.hstack(ys)
 
     if dense_output:
         sol = OdeSolution(ts, interpolants)
