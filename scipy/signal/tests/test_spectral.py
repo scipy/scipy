@@ -475,6 +475,28 @@ class TestWelch(TestCase):
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
+    def test_window_correction(self):
+        A = 20
+        fs = 1e4
+        nperseg = fs//10
+        fsig = 300
+        ii = int(fsig*nperseg//fs)  # Freq index of fsig
+
+        tt = np.arange(fs)/fs
+        x = A*np.sin(2*np.pi*fsig*tt)
+
+        for window in ['hann', 'bartlett', ('tukey', 0.1), 'flattop']:
+            _, p_spec = welch(x, fs=fs, nperseg=nperseg, window=window,
+                              scaling='spectrum')
+            freq, p_dens = welch(x, fs=fs, nperseg=nperseg, window=window,
+                                 scaling='density')
+
+            # Check peak height at signal frequency for 'spectrum'
+            assert_allclose(p_spec[ii], A**2/2.0)
+            # Check integrated spectrum RMS for 'density'
+            assert_allclose(np.sqrt(np.trapz(p_dens, freq)), A*np.sqrt(2)/2,
+                            rtol=1e-3)
+
 class TestCSD:
     def test_pad_shorter_x(self):
         x = np.zeros(8)
