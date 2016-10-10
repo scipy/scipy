@@ -3442,8 +3442,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
     strong disagreement.  This is the 1945 "tau-b" version of Kendall's
-    tau, which can accounts for ties and which reduces to the 1938 "tau-a"
-    version in absence of ties.
+    tau [2], which can accounts for ties and which reduces to the 1938 "tau-a"
+    version [1] in absence of ties.
 
     Parameters
     ----------
@@ -3485,14 +3485,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     References
     ----------
-    Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
+    [1] Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
     Vol. 30, No. 1/2, pp. 81-93, 1938.
-    Maurice G. Kendall, "The treatment of ties in ranking problems",
+    [2] Maurice G. Kendall, "The treatment of ties in ranking problems",
     Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
-    Gottfried E. Noether, "Elements of Nonparametric Statistics", John Wiley &
-    Sons, 1967.
-    Peter M. Fenwick, "A new data structure for cumulative frequency tables",
-    Software: Practice and Experience, Vol. 24, No. 3, pp. 327-336, 1994.
+    [3] Gottfried E. Noether, "Elements of Nonparametric Statistics", John 
+    Wiley & Sons, 1967.
+    [4] Peter M. Fenwick, "A new data structure for cumulative frequency 
+    tables", Software: Practice and Experience, Vol. 24, No. 3, pp. 327-336,
+    1994.
 
     Examples
     --------
@@ -3561,8 +3562,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     if xtie == tot or ytie == tot:
         return KendalltauResult(np.nan, np.nan)
 
+    # Note that the numerator gives exactly concordances minus discordances
+    tau = (tot - xtie - ytie + ntie
+        - 2 * dis) / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
     # Limit range to fix computational errors
-    tau = min(1., max(-1., (tot - xtie - ytie + ntie - 2 * dis) / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)))
+    tau = min(1., max(-1., tau))
 
     # what follows reproduces the ending of Gary Strangman's original
     # stats.kendalltau() in SciPy
