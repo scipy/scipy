@@ -204,7 +204,7 @@ def test_t_eval():
     atol = 1e-6
     y0 = [1/3, 2/9]
     for t_span in ([5, 9], [5, 1]):
-        t_eval = np.linspace(*t_span, 10)
+        t_eval = np.linspace(t_span[0], t_span[1], 10)
         res = solve_ivp(fun_rational, t_span, y0, rtol=rtol, atol=atol,
                         t_eval=t_eval)
         assert_equal(res.t, t_eval)
@@ -263,7 +263,8 @@ def test_t_eval():
 
 def test_no_integration():
     for method in ['RK23', 'RK45', 'Radau', 'BDF']:
-        sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3], method=method, dense_output=True)
+        sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3],
+                        method=method, dense_output=True)
         assert_equal(sol.sol(4), [2, 3])
 
 
@@ -271,14 +272,16 @@ def test_empty():
     def fun(t, y):
         return np.zeros((0,))
 
-    ic = np.zeros((0,))
+    y0 = np.zeros((0,))
 
     for method in ['RK23', 'RK45', 'Radau', 'BDF']:
-        sol = assert_no_warnings(solve_ivp, fun, [0, 10], ic, method=method, dense_output=True)
+        sol = assert_no_warnings(solve_ivp, fun, [0, 10], y0,
+                                 method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
 
     for method in ['RK23', 'RK45', 'Radau', 'BDF']:
-        sol = assert_no_warnings(solve_ivp, fun, [0, np.inf], ic, method=method, dense_output=True)
+        sol = assert_no_warnings(solve_ivp, fun, [0, np.inf], y0,
+                                 method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
 
 
@@ -345,7 +348,7 @@ def test_OdeSolution():
                  np.array([[1, -1, -1, 1, 1, 1]]))
 
 
-def test_numjac():
+def test_num_jac():
     def fun(t, y):
         return np.array([
             -0.04 * y[0] + 1e4 * y[1] * y[2],
