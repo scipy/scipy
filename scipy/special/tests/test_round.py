@@ -9,10 +9,10 @@ from scipy.special import _test_round
 @dec.skipif(not _test_round.have_fenv())
 def test_add_round_up():
     np.random.seed(1234)
-    _test_round.test_add_round(-1e307, 1e307, 10**5, 'up')
+    _test_round.test_add_round(10**5, 'up')
 
 
 @dec.skipif(not _test_round.have_fenv())
 def test_add_round_down():
     np.random.seed(1234)
-    _test_round.test_add_round(-1e307, 1e306, 10**5, 'down')
+    _test_round.test_add_round(10**5, 'down')

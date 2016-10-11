@@ -129,8 +129,8 @@ def configuration(parent_package='',top_path=None):
 
     # testing for _round.h
     config.add_extension('_test_round',
-                         sources=['_test_round.c', '_round.h',
-                                  'c_misc/double2.h'],
+                         sources=['_test_round.c'],
+                         depends=['_round.h', 'c_misc/double2.h'],
                          include_dirs=[numpy.get_include()],
                          extra_info=get_info('npymath'))
 

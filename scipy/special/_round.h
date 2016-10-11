@@ -6,12 +6,17 @@
 #define ROUND_H
 
 #include <numpy/npy_math.h>
+#include "_c99compat.h"
 #include "c_misc/double2.h"
 
 
 double add_round_up(double a, double b)
 {
     double s, err;
+
+    if (sc_isnan(a) || sc_isnan(b)) {
+	return NPY_NAN;
+    }
 
     s = double_sum_err(a, b, &err);
     if (err > 0) {
@@ -28,6 +33,10 @@ double add_round_up(double a, double b)
 double add_round_down(double a, double b)
 {
     double s, err;
+
+    if (sc_isnan(a) || sc_isnan(b)) {
+	return NPY_NAN;
+    }
 
     s = double_sum_err(a, b, &err);
     if (err < 0) {
