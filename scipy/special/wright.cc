@@ -242,8 +242,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
     {
       t=z+I*pi;
       pz=log(-t);
-      t=z-I*pi;
-      pz=log(-t);
       *w = t - pz;
       fac = pz/t;
       *w += fac;

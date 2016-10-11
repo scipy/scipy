@@ -616,7 +616,7 @@ def test_wrightomega_branch():
         dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
     dataset = np.asarray(dataset)
 
-    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-7).check()
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-8).check()
 
 
 @dec.slow
@@ -647,10 +647,10 @@ def test_wrightomega_region2():
 
     dataset = []
     for z0 in z:
-        dataset.append((z0, complex(_mpmath_wrightomega(z0, 100))))
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
     dataset = np.asarray(dataset)
 
-    FuncData(sc.wrightomega, dataset, 0, 1, rtol=5e-6).check()
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
     
 
 # ------------------------------------------------------------------------------
@@ -1825,7 +1825,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_wrightomega(self):
         assert_mpmath_equal(sc.wrightomega,
                             lambda z: _mpmath_wrightomega(z, 25),
-                            [ComplexArg()], rtol=1e-9, nan_ok=False)
+                            [ComplexArg()], rtol=1e-14, nan_ok=False)
 
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,
