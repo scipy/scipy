@@ -65,14 +65,6 @@
 /*   w  --  double complex*                                           */
 /*          Pointer to return value of Wrightomega(z).                */
 /*                                                                    */
-/*   e  --  double complex*                                           */
-/*          Pointer to the last update step in the iterative scheme.  */
-/*          NULL if the iterative scheme is not used.                 */
-/*                                                                    */
-/*   r  --  double complex*                                           */
-/*          Pointer to penultimate residual r_k = z - w_k - log(w_k)  */
-/*          NULL if the iterative scheme is not used.                 */
-/*                                                                    */
 /*   cond  --  double complex*                                        */
 /*         Pointer to the condition number estimate. If NULL the      */
 /*         condition number is not calculated.                        */
@@ -101,12 +93,11 @@ const complex<double> I(0.0, 1.0);
 
 int
 wright::wrightomega_ext(complex<double> z, complex<double> *w,
-			complex<double> *e, complex<double> *r,
 			complex<double> *cond)
 {
-  double pi=NPY_PI,s=1.0;
-  double x,y,ympi,yppi,near;
-  complex<double> pz,wp1,t,fac;
+  double pi = NPY_PI, s = 1.0;
+  double x, y, ympi, yppi, near;
+  complex<double> e, r, pz, wp1, t, fac;
 
 
   /* extract real and imaginary parts of z */
@@ -125,8 +116,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   if(sc_isnan(x) || sc_isnan(y))
     {
       *w = NaN + NaN*I;
-      *e = NaN + NaN*I;
-      *r = NaN + NaN*I;
       return 0;
     }
   /*********************************/
@@ -151,9 +140,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
         {
           *w += -1.0*0.0*I;
         }
-
-      *e = 0.0 + 0.0*I;
-      *r = 0.0 + 0.0*I;
       return 0;
     }
   /**************************/
@@ -162,8 +148,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   else if(sc_isinf(x) || sc_isinf(y))
     {
       *w = x + I*y;
-      *e = 0.0 + 0.0*I;
-      *r = 0.0 + 0.0*I;
       return 0;
     }
 
@@ -173,8 +157,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   if((x==-1.0) && (fabs(y)==pi))
     {
       *w = -1.0 + 0.0*I;
-      *e = 0.0 + 0.0*I;
-      *r = 0.0 + 0.0*I;
       return 0;
     }
 
@@ -210,8 +192,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
 	{
 	  sf_error("wrightomega", SF_ERROR_UNDERFLOW, "underflow in exponential series");
 	  /* Skip the iterative scheme because it computes log(*w) */
-	  e = NULL;
-	  r = NULL;
 	  if (cond != NULL)
 	    {
 	      *cond = z/(1.0+*w);
@@ -247,8 +227,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
       if (abs(z) > 1e50)
 	/* Series is accurate and the iterative scheme could overflow */
 	{
-	  e = NULL;
-	  r = NULL;
 	  if (cond != NULL)
 	    {
 	      *cond = z/(1.0+*w);
@@ -276,8 +254,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
       if (abs(z) > 1e50)
 	/* Series is accurate and the iterative scheme could overflow */
 	{
-	  e = NULL;
-	  r = NULL;
 	  if (cond != NULL)
 	    {
 	      *cond = z/(1.0+*w);
@@ -302,8 +278,6 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
       if (abs(z) > 1e50)
 	/* Series is accurate and the iterative scheme could overflow */
 	{
-	  e = NULL;
-	  r = NULL;
 	  if (cond != NULL)
 	    {
 	      *cond = z/(1.0+*w);
@@ -348,20 +322,20 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /* Iteration one */
   /*****************/
   *w=s**w;
-  *r=z-s**w-log(*w);
+  r=z-s**w-log(*w);
   wp1=s**w+1.0;
-  *e=*r/wp1*(2.0*wp1*(wp1+2.0/3.0**r)-*r)/(2.0*wp1*(wp1+2.0/3.0**r)-2.0**r);
-  *w=*w*(1.0+*e);
+  e=r/wp1*(2.0*wp1*(wp1+2.0/3.0*r)-r)/(2.0*wp1*(wp1+2.0/3.0*r)-2.0*r);
+  *w=*w*(1.0+e);
   
   /*****************/
   /* Iteration two */
   /*****************/
-  if(abs((2.0**w**w-8.0**w-1.0)*pow(abs(*r),4.0)) >= TWOITERTOL*72.0*pow(abs(wp1),6.0) )
+  if(abs((2.0**w**w-8.0**w-1.0)*pow(abs(r),4.0)) >= TWOITERTOL*72.0*pow(abs(wp1),6.0) )
     {
-      *r=z-s**w-log(*w);
+      r=z-s**w-log(*w);
       wp1=s**w+1.0;
-      *e=*r/wp1*(2.0*wp1*(wp1+2.0/3.0**r)-*r)/(2.0*wp1*(wp1+2.0/3.0**r)-2.0**r);
-      *w=*w*(1.0+*e);
+      e=r/wp1*(2.0*wp1*(wp1+2.0/3.0*r)-r)/(2.0*wp1*(wp1+2.0/3.0*r)-2.0*r);
+      *w=*w*(1.0+e);
     }
 
   /***********************/
@@ -383,7 +357,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
 complex<double>
 wright::wrightomega(complex<double> z)
 {
-  complex<double> w,e,r;
-  wrightomega_ext(z,&w,&e,&r,NULL);
+  complex<double> w;
+  wrightomega_ext(z,&w,NULL);
   return w;
 }
