@@ -125,7 +125,7 @@ script:
         python setup.py sdist
         # Move out of source directory to avoid finding local scipy
         pushd dist
-        pip install scipy*
+        pip install scipy* -v
         popd
         USE_WHEEL_BUILD="--no-build"
     fi
