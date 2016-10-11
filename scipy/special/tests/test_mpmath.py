@@ -586,16 +586,17 @@ def test_dn_quarter_period():
 # Wright Omega
 # ------------------------------------------------------------------------------
 
+def _mpmath_wrightomega(z, dps):
+    with mpmath.workdps(dps):
+        z = mpmath.mpc(z)
+        unwind = mpmath.ceil((z.imag - mpmath.pi)/(2*mpmath.pi))
+        res = mpmath.lambertw(mpmath.exp(z), unwind)
+    return res
+
+
 @dec.slow
 @check_version(mpmath, '0.19')
 def test_wrightomega_branch():
-    def mp_wrightomega(z):
-        with mpmath.workdps(25):
-            z = mpmath.mpc(z)
-            unwind = mpmath.ceil((z.imag - mpmath.pi)/(2*mpmath.pi))
-            res = mpmath.lambertw(mpmath.exp(z), unwind)
-        return res
-
     x = -np.logspace(10, 0, 25)
     picut_above = [np.nextafter(np.pi, np.inf)]
     picut_below = [np.nextafter(np.pi, -np.inf)]
@@ -612,10 +613,44 @@ def test_wrightomega_branch():
 
     dataset = []
     for z0 in z:
-        dataset.append((z0, complex(mp_wrightomega(z0))))
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
     dataset = np.asarray(dataset)
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-7).check()
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_region1():
+    # This region gets less coverage in the TestSystematic test
+    x = np.linspace(-2, 1)
+    y = np.linspace(1, 2*np.pi)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_region2():
+    # This region gets less coverage in the TestSystematic test
+    x = np.linspace(-2, 1)
+    y = np.linspace(-2*np.pi, -1)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 100))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=5e-6).check()
     
 
 # ------------------------------------------------------------------------------
@@ -1788,13 +1823,8 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             ignore_inf_sign=True)
 
     def test_wrightomega(self):
-        def mp_wrightomega(z):
-            z = mpmath.mpc(z)
-            unwind = mpmath.ceil((z.imag - mpmath.pi)/(2*mpmath.pi))
-            return mpmath.lambertw(mpmath.exp(z), unwind)
-
         assert_mpmath_equal(sc.wrightomega,
-                            mp_wrightomega,
+                            lambda z: _mpmath_wrightomega(z, 25),
                             [ComplexArg()], rtol=1e-9, nan_ok=False)
 
     def test_zeta(self):
