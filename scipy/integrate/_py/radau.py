@@ -230,6 +230,8 @@ class Radau(OdeSolver):
         Current time.
     y : ndarray
         Current state.
+    t_old : float
+        End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
 

@@ -123,6 +123,8 @@ class BDF(OdeSolver):
         Current time.
     y : ndarray
         Current state.
+    t_old : float
+        End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
 
@@ -138,7 +140,6 @@ class BDF(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_crit, rtol=1e-3, atol=1e-6, jac=None):
         super(BDF, self).__init__(fun, t0, y0, t_crit)
-        self.t_old = None
         self.y_old = None
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)

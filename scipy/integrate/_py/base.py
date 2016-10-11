@@ -62,7 +62,7 @@ class OdeSolver(object):
     y : ndarray
         Current state.
     t_old : float
-        Time of the last successful step. None if no steps were made yet.
+        End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
     """
@@ -75,7 +75,7 @@ class OdeSolver(object):
         self.t_crit = t_crit
 
         self.direction = np.sign(t_crit - t0) if t_crit != t0 else 1
-        self.n = self.y.shape[0]
+        self.n = self.y.size
         self.status = 'running'
         self.step_size = None
 
@@ -133,7 +133,7 @@ class OdeSolver(object):
         sol : `DenseOutput`
             Local interpolant over the last successful step.
         """
-        if self.step_size is None:
+        if self.t_old is None:
             raise RuntimeError("Dense output is available after a successful "
                                "step was made.")
 

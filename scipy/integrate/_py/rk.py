@@ -207,6 +207,8 @@ class RK23(RungeKutta):
         Current time.
     y : ndarray
         Current state.
+    t_old : float
+        End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
 
@@ -274,6 +276,8 @@ class RK45(RungeKutta):
         Current time.
     y : ndarray
         Current state.
+    t_old : float
+        End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
 
