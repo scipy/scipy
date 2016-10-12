@@ -9,7 +9,7 @@ from numpy.testing.decorators import knownfailureif
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
-         sproot, splint, spalde, insert)
+         sproot, splint, insert)
 import scipy.linalg as sl
 
 from scipy.interpolate._bsplines import _not_a_knot, _augknt
@@ -585,8 +585,6 @@ class TestInterop(object):
         x1 = np.arange(3*4*5).reshape((3, 4, 5))
         assert_raises(ValueError, splprep, x1)
         assert_raises(ValueError, _impl.splprep, x1)
-
-        # TODO: illustrate the transposes here (cf TestInteropSplPrep, also deduplicate)
 
     def test_sproot(self):
         b, b2 = self.b, self.b2

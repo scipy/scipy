@@ -73,10 +73,9 @@ Tensor product polynomials:
 .. autosummary::
    :toctree: generated/
 
-   UnivariateSpline
-   InterpolatedUnivariateSpline
-   LSQUnivariateSpline
-
+   BSpline
+   make_interp_spline
+   make_lsq_spline
 
 Functional interface to FITPACK functions:
 
@@ -93,14 +92,15 @@ Functional interface to FITPACK functions:
    splantider
    insert
 
-An alternative set of univariate spline routines:
+Object-oriented FITPACK interface:
 
 .. autosummary::
     :toctree: generated/
 
-   BSpline
-   make_interp_spline
-   make_lsq_spline
+   UnivariateSpline
+   InterpolatedUnivariateSpline
+   LSQUnivariateSpline
+
 
 
 2-D Splines

@@ -10,7 +10,7 @@ __all__ = ['interp1d', 'interp2d', 'spline', 'spleval', 'splmake', 'spltopp',
 import itertools
 
 from numpy import (shape, sometrue, array, transpose, searchsorted,
-                   ones, logical_or, atleast_1d, atleast_2d, ravel,
+                   ones, atleast_1d, atleast_2d, ravel,
                    dot, poly1d, asarray, intp)
 import numpy as np
 import scipy.linalg
@@ -30,7 +30,7 @@ from .polyint import _Interpolator1D
 from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
-from ._bsplines import BSpline, make_interp_spline
+from ._bsplines import make_interp_spline
 
 def reduce_sometrue(a):
     all = a
