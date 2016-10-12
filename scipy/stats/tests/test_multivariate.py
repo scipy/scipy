@@ -938,6 +938,30 @@ class TestMultinomial(TestCase):
         val2 = binom.pmf(6, 14, 0.1)
         assert_allclose(val1, val2, rtol=1e-8)
 
+    def test_R(self):
+        # test against the values produced by this R code
+        # (https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Multinom.html)
+        # X <- t(as.matrix(expand.grid(0:3, 0:3))); X <- X[, colSums(X) <= 3]
+        # X <- rbind(X, 3:3 - colSums(X)); dimnames(X) <- list(letters[1:3], NULL)
+        # X
+        # apply(X, 2, function(x) dmultinom(x, prob = c(1,2,5)))
+
+        n, p = 3, [1./8, 2./8, 5./8]
+        r_vals = {(0, 0, 3): 0.244140625, (1, 0, 2): 0.146484375,
+                  (2, 0, 1): 0.029296875, (3, 0, 0): 0.001953125,
+                  (0, 1, 2): 0.292968750, (1, 1, 1): 0.117187500,
+                  (2, 1, 0): 0.011718750, (0, 2, 1): 0.117187500,
+                  (1, 2, 0): 0.023437500, (0, 3, 0): 0.015625000}
+        for x in r_vals:
+            assert_allclose(multinomial.pmf(x, n, p), r_vals[x], atol=1e-14)
+
+    def test_rvs_np(self):
+        # test that .rvs agrees w/numpy
+        sc_rvs = multinomial.rvs(3, [1/4.]*3, size=7, random_state=123)
+        rndm = np.random.RandomState(123)
+        np_rvs = rndm.multinomial(3, [1/4.]*3, size=7)
+        assert_equal(sc_rvs, np_rvs)
+
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))
         assert_allclose(vals0, 1, rtol=1e-8)
