@@ -140,12 +140,16 @@ class OdeSolver(object):
             if not np.isfinite(self.t) or self.direction * (self.t - self.t_crit) >= 0:
                 self.status = 'finished'
         else:
+            t = self.t
             success, message = self._step_impl(max_step)
 
             if not success:
                 self.status = 'failed'
-            elif self.direction * (self.t - self.t_crit) >= 0:
-                self.status = 'finished'
+            else:
+                self.t_old = t
+                self.step_size = np.abs(self.t - self.t_old)
+                if self.direction * (self.t - self.t_crit) >= 0:
+                    self.status = 'finished'
 
         return message
 

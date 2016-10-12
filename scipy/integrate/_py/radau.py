@@ -427,13 +427,11 @@ class Radau(OdeSolver):
         h_abs *= factor
         self.h_abs = h_abs
 
-        self.t_old = t
         self.y_old = y
 
         self.t = t_new
         self.y = y_new
         self.f = f_new
-        self.step_size = np.abs(t_new - t)
 
         self.Z = Z
 
@@ -442,6 +440,7 @@ class Radau(OdeSolver):
         self.current_jac = current_jac
         self.J = J
 
+        self.t_old = t
         self.sol = self._compute_dense_output()
 
         return step_accepted, message

@@ -144,12 +144,10 @@ class RungeKutta(OdeSolver):
                 h_abs *= max(MIN_FACTOR,
                              SAFETY * error_norm ** (-1 / (order + 1)))
 
-        self.t_old = t
         self.y_old = y
 
         self.t = t_new
         self.y = y_new
-        self.step_size = np.abs(t_new - t)
 
         self.h_abs = h_abs
         self.f = f_new

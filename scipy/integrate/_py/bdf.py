@@ -311,12 +311,10 @@ class BDF(OdeSolver):
 
         self.n_equal_steps += 1
 
-        self.t_old = t
         self.y_old = y
 
         self.t = t_new
         self.y = y
-        self.step_size = np.abs(t_new - t)
 
         self.h_abs = h_abs
         self.J = J
