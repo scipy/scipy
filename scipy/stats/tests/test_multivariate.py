@@ -994,21 +994,24 @@ class TestMultinomial(TestCase):
         assert_allclose(cov5, cov6, rtol=1e-8)
 
     def test_entropy(self):
+        # this is equivalent to a binomial distribution with n=2, so the
+        # entropy .77899774929 is easily computed "by hand"
         ent0 = multinomial.entropy(2, [.2, .8])
-        assert_allclose(ent0, .77899774929, rtol=1e-8)
+        assert_allclose(ent0, binom.entropy(2, .2), rtol=1e-8)
 
     def test_entropy_broadcasting(self):
         ent0 = multinomial.entropy([2, 3], [.2, .3])
-        assert_allclose(ent0, [.77899774929, .9738733720538], rtol=1e-8)
+        assert_allclose(ent0, [binom.entropy(2, .2), binom.entropy(3, .2)],
+                rtol=1e-8)
 
         ent1 = multinomial.entropy([7, 8], [[.3, .7], [.4, .6]])
-        assert_allclose(ent1, [1.5926972553219099, 1.7402828220188056],
+        assert_allclose(ent1, [binom.entropy(7, .3), binom.entropy(8, .4)],
                 rtol=1e-8)
 
         ent2 = multinomial.entropy([[7], [8]], [[.3, .7], [.4, .6]])
         assert_allclose(ent2,
-                [[1.5926972553219099, 1.6720354911697495],
-                 [1.662929193566484, 1.7402828220188054]],
+                [[binom.entropy(7, .3), binom.entropy(7, .4)],
+                 [binom.entropy(8, .3), binom.entropy(8, .4)]],
                 rtol=1e-8)
 
     def test_mean(self):
