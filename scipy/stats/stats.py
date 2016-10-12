@@ -3562,7 +3562,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     if xtie == tot or ytie == tot:
         return KendalltauResult(np.nan, np.nan)
 
-    # Note that the numerator gives exactly concordances minus discordances
+    # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
+    #               = con + dis + xtie + ytie - ntie
     tau = (tot - xtie - ytie + ntie
         - 2 * dis) / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
     # Limit range to fix computational errors
