@@ -2730,12 +2730,7 @@ def trimboth(a, proportiontocut, axis=0):
     if (lowercut >= uppercut):
         raise ValueError("Proportion too big.")
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
@@ -2790,12 +2785,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         lowercut = int(proportiontocut * nobs)
         uppercut = nobs
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     return atmp[lowercut:uppercut]
 
@@ -2863,12 +2853,7 @@ def trim_mean(a, proportiontocut, axis=0):
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)

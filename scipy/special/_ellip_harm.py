@@ -103,11 +103,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     return _ellip_harm(h2, k2, n, p, s, signm, signn)
 
 
-# np.vectorize does not work on Cython functions on Numpy < 1.8, so a wrapper is needed
-def _ellip_harm_2_vec(h2, k2, n, p, s):
-    return _ellipsoid(h2, k2, n, p, s)
-
-_ellip_harm_2_vec = np.vectorize(_ellip_harm_2_vec, otypes='d')
+_ellip_harm_2_vec = np.vectorize(_ellipsoid, otypes='d')
 
 
 def ellip_harm_2(h2, k2, n, p, s):

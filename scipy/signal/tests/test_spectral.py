@@ -192,7 +192,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q, atol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -203,7 +202,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
@@ -431,7 +429,6 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -444,7 +441,6 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
@@ -758,7 +754,6 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -771,7 +766,6 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j

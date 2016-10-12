@@ -743,9 +743,7 @@ greater than %d - this is not supported on this machine
 
     # Use the algorithm from python's random.sample for k < mn/3.
     if mn < 3*k:
-        # We should use this line, but choice is only available in numpy >= 1.7
-        # ind = random_state.choice(mn, size=k, replace=False)
-        ind = random_state.permutation(mn)[:k]
+        ind = random_state.choice(mn, size=k, replace=False)
     else:
         ind = np.empty(k, dtype=tp)
         selected = set()

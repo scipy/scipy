@@ -355,12 +355,12 @@ def setup_package():
     try:
         import numpy
     except ImportError:  # We do not have numpy installed
-        build_requires = ['numpy>=1.7.1']
+        build_requires = ['numpy>=1.8.2']
     else:
         # If we're building a wheel, assume there already exist numpy wheels
         # for this platform, so it is safe to add numpy to build requirements.
         # See gh-5184.
-        build_requires = (['numpy>=1.7.1'] if 'bdist_wheel' in sys.argv[1:]
+        build_requires = (['numpy>=1.8.2'] if 'bdist_wheel' in sys.argv[1:]
                           else [])
 
     metadata = dict(

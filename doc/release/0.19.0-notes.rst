@@ -15,7 +15,7 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.20.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.7 or 3.4-3.5 and NumPy 1.7.1 or greater.
+This release requires Python 2.7 or 3.4-3.5 and NumPy 1.8.2 or greater.
 
 
 
