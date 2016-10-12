@@ -146,7 +146,6 @@ class BDF(OdeSolver):
     """
     def __init__(self, fun, t0, y0, t_crit, rtol=1e-3, atol=1e-6, jac=None):
         super(BDF, self).__init__(fun, t0, y0, t_crit)
-        self.y_old = None
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
         self.h_abs = select_initial_step(
@@ -310,8 +309,6 @@ class BDF(OdeSolver):
                 step_accepted = True
 
         self.n_equal_steps += 1
-
-        self.y_old = y
 
         self.t = t_new
         self.y = y
