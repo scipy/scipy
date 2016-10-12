@@ -32,6 +32,16 @@ class OdeSolver(object):
            which returns `DenseOutput` object covering the last successful
            step.
         4. A solver must have attributes listed below in Attributes section.
+        5. Use `fun(self, t, y)` method for the system rhs evaluation, this
+           way the number of functions evaluations (`nfev`) will be tracked
+           automatically.
+        6. If a solver uses Jacobian and LU decompositions, it should track
+           the number of Jacobian evaluations (`njev`) and the number of LU
+           factorizations (`nlu`).
+        7. By convention a function evaluations used to compute a finite
+           difference approximation of the Jacobian should not be counted in
+           `nfev`, thus use `_fun(self, t, y)` method when computing a finite
+           difference approximation of the Jacobian.
 
     Parameters
     ----------
@@ -65,19 +75,33 @@ class OdeSolver(object):
         End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
+    nfev : int
+        Number of the system rhs evaluations.
+    njev : int
+        Number of the Jacobian evaluations.
+    nlu : int
+        Number of LU decompositions of the Jacobian.
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
     def __init__(self, fun, t0, y0, t_crit):
         self.t_old = None
         self.t = t0
-        self.fun, self.y = check_arguments(fun, y0)
+        self._fun, self.y = check_arguments(fun, y0)
         self.t_crit = t_crit
 
         self.direction = np.sign(t_crit - t0) if t_crit != t0 else 1
         self.n = self.y.size
         self.status = 'running'
         self.step_size = None
+
+        self.nfev = 0
+        self.njev = 0
+        self.nlu = 0
+
+    def fun(self, t, y):
+        self.nfev += 1
+        return self._fun(t, y)
 
     def step(self, max_step=np.inf):
         """Perform one integration step.

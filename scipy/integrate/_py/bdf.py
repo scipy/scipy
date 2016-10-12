@@ -127,6 +127,12 @@ class BDF(OdeSolver):
         End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
+    nfev : int
+        Number of the system rhs evaluations.
+    njev : int
+        Number of the Jacobian evaluations.
+    nlu : int
+        Number of LU decompositions of the Jacobian.
 
     References
     ----------
@@ -168,19 +174,25 @@ class BDF(OdeSolver):
         self.n_equal_steps = 0
         self.LU = None
 
+    def _lu(self, *args, **kwargs):
+        self.nlu += 1
+        return lu_factor(*args, **kwargs)
+
     def _validate_jac(self, jac):
-        fun = self.fun
+        fun = self._fun
         t0 = self.t
         y0 = self.y
 
         if jac is None:
             def jac_wrapped(t, y):
-                J, self.jac_factor = num_jac(fun, t, y, self.fun(t, y),
+                self.njev += 1
+                J, self.jac_factor = num_jac(fun, t, y, fun(t, y),
                                              self.atol, self.jac_factor)
                 return J
             J = jac_wrapped(t0, y0)
         elif callable(jac):
             def jac_wrapped(t, y):
+                self.njev += 1
                 return np.asarray(jac(t, y), dtype=float)
             J = jac_wrapped(t0, y0)
             if J.shape != (self.n, self.n):
@@ -257,7 +269,7 @@ class BDF(OdeSolver):
             c = h / alpha[order]
             while not converged:
                 if LU is None:
-                    LU = lu_factor(I - c * J, overwrite_a=True)
+                    LU = self._lu(I - c * J, overwrite_a=True)
 
                 converged, n_iter, y, d = solve_corrector_system(
                     self.fun, t_new, y_predict, c, psi, LU, scale,

@@ -270,6 +270,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Contains arrays with times at each a corresponding event was detected,
         the length of the list equals to the number of events. None if `events`
         was None.
+    nfev : int
+        Number of the system rhs evaluations.
+    njev : int
+        Number of the Jacobian evaluations.
+    nlu : int
+        Number of LU decompositions of the Jacobian.
     status : int
         Reason for algorithm termination:
 
@@ -423,5 +429,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     else:
         sol = None
 
-    return OdeResult(t=ts, y=ys, sol=sol, t_events=t_events,
-                     status=status, message=message, success=status >= 0)
+    return OdeResult(t=ts, y=ys, sol=sol, t_events=t_events, nfev=solver.nfev,
+                     njev=solver.njev, nlu=solver.nlu, status=status,
+                     message=message, success=status >= 0)

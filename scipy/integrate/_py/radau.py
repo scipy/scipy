@@ -234,6 +234,12 @@ class Radau(OdeSolver):
         End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
+    nfev : int
+        Number of the system rhs evaluations.
+    njev : int
+        Number of the Jacobian evaluations.
+    nlu : int
+        Number of LU decompositions of the Jacobian.
 
     References
     ----------
@@ -264,20 +270,27 @@ class Radau(OdeSolver):
         self.LU_complex = None
         self.Z = None
 
+    def _lu(self, *args, **kwargs):
+        self.nlu += 1
+        return lu_factor(*args, **kwargs)
+
     def _validate_jac(self, jac):
-        fun = self.fun
         t0 = self.t
         y0 = self.y
-        f0 = self.f
 
         if jac is None:
+            fun = self._fun
+            f0 = self.f
+
             def jac_wrapped(t, y, f):
+                self.njev += 1
                 J, self.jac_factor = num_jac(fun, t, y, f, self.atol,
                                              self.jac_factor)
                 return J
             J = jac_wrapped(t0, y0, f0)
         elif callable(jac):
             def jac_wrapped(t, y, _=None):
+                self.njev += 1
                 return np.asarray(jac(t, y), dtype=float)
             J = jac_wrapped(t0, y0)
             if J.shape != (self.n, self.n):
@@ -349,9 +362,8 @@ class Radau(OdeSolver):
             scale = atol + np.abs(y) * rtol
 
             if LU_real is None or LU_complex is None:
-                LU_real = lu_factor(MU_REAL / h * I - J, overwrite_a=True)
-                LU_complex = lu_factor(MU_COMPLEX / h * I - J,
-                                       overwrite_a=True)
+                LU_real = self._lu(MU_REAL / h * I - J, overwrite_a=True)
+                LU_complex = self._lu(MU_COMPLEX / h * I - J, overwrite_a=True)
 
             converged, n_iter, Z, rate = solve_collocation_system(
                     self.fun, t, y, h, Z0, scale, self.newton_tol,

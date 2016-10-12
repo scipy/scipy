@@ -54,6 +54,15 @@ def test_integration():
             assert_(res.success)
             assert_equal(res.status, 0)
 
+            assert_(res.nfev < 40)
+
+            if method in ['RK23', 'RK45']:
+                assert_equal(res.njev, 0)
+                assert_equal(res.nlu, 0)
+            else:
+                assert_(res.njev < 3)
+                assert_(res.nlu < 10)
+
             y_true = sol_rational(res.t)
             e = compute_error(res.y, y_true, rtol, atol)
             assert_(np.all(e < 5))
@@ -296,6 +305,9 @@ def test_classes():
         assert_equal(solver.t, 5)
         assert_equal(solver.y, y0)
         assert_(solver.step_size is None)
+        assert_(solver.nfev > 0)
+        assert_(solver.njev >= 0)
+        assert_(solver.nlu >= 0)
         assert_raises(RuntimeError, solver.dense_output)
 
         message = solver.step()
@@ -307,6 +319,9 @@ def test_classes():
         assert_(solver.t > 5)
         assert_(not np.all(np.equal(solver.y, y0)))
         assert_(solver.step_size > 0)
+        assert_(solver.nfev > 0)
+        assert_(solver.njev >= 0)
+        assert_(solver.nlu >= 0)
 
         assert_raises(ValueError, solver.step, max_step=-1)
 

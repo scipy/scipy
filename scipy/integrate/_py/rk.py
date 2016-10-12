@@ -211,6 +211,12 @@ class RK23(RungeKutta):
         End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
+    nfev : int
+        Number of the system rhs evaluations.
+    njev : int
+        Number of the Jacobian evaluations.
+    nlu : int
+        Number of LU decompositions of the Jacobian.
 
     References
     ----------
@@ -280,6 +286,12 @@ class RK45(RungeKutta):
         End time of the last successful step. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
+    nfev : int
+        Number of the system rhs evaluations.
+    njev : int
+        Number of the Jacobian evaluations.
+    nlu : int
+        Number of LU decompositions of the Jacobian.
 
     References
     ----------
