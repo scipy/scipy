@@ -24,6 +24,8 @@ from scipy._lib._gcutils import assert_deallocated
 
 from scipy.integrate import nquad
 
+from scipy.special import binom
+
 
 class TestInterp2D(TestCase):
     def test_interp2d(self):
@@ -729,8 +731,8 @@ class TestPPolyCommon(TestCase):
             pp = cls(c[:,:9], x[:10])
             pp.extend(c[:,9:], x[10:])
 
-            pp2 = cls(c[:,10:], x[10:])
-            pp2.extend(c[:,:10], x[:10], right=False)
+            pp2 = cls(c[:, 10:], x[10:])
+            pp2.extend(c[:, :10], x[:10])
 
             pp3 = cls(c, x)
 
@@ -763,6 +765,27 @@ class TestPPolyCommon(TestCase):
 
             assert_allclose(pp1(xi1), pp_comb(xi1))
             assert_allclose(pp2(xi2), pp_comb(xi2))
+
+    def test_extend_descending(self):
+        np.random.seed(0)
+
+        order = 3
+        x = np.sort(np.random.uniform(0, 10, 20))
+        c = np.random.rand(order + 1, x.shape[0] - 1, 2, 3)
+
+        for cls in (PPoly, BPoly):
+            p = cls(c, x)
+
+            p1 = cls(c[:, :9], x[:10])
+            p1.extend(c[:, 9:], x[10:])
+
+            p2 = cls(c[:, 10:], x[10:])
+            p2.extend(c[:, :10], x[:10])
+
+            assert_array_equal(p1.c, p.c)
+            assert_array_equal(p1.x, p.x)
+            assert_array_equal(p2.c, p.c)
+            assert_array_equal(p2.x, p.x)
 
     def test_shape(self):
         np.random.seed(1234)
@@ -891,6 +914,55 @@ class TestPPoly(TestCase):
 
         assert_allclose(p(1.3, 1), 2 * 0.3 + 2)
         assert_allclose(p(-0.3, 1), 8 * (0.7 - 0.5) + 5)
+
+    def test_descending(self):
+        def binom_matrix(power):
+            n = np.arange(power + 1).reshape(-1, 1)
+            k = np.arange(power + 1)
+            B = binom(n, k)
+            return B[::-1, ::-1]
+
+        np.random.seed(0)
+
+        power = 3
+        for m in [10, 20, 30]:
+            x = np.sort(np.random.uniform(0, 10, m + 1))
+            ca = np.random.uniform(-2, 2, size=(power + 1, m))
+
+            h = np.diff(x)
+            h_powers = h[None, :] ** np.arange(power + 1)[::-1, None]
+            B = binom_matrix(power)
+            cap = ca * h_powers
+            cdp = np.dot(B.T, cap)
+            cd = cdp / h_powers
+
+            pa = PPoly(ca, x, extrapolate=True)
+            pd = PPoly(cd[:, ::-1], x[::-1], extrapolate=True)
+
+            x_test = np.random.uniform(-10, 20, 100)
+            assert_allclose(pa(x_test), pd(x_test), rtol=1e-13)
+            assert_allclose(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
+
+            pa_d = pa.derivative()
+            pd_d = pd.derivative()
+
+            assert_allclose(pa_d(x_test), pd_d(x_test), rtol=1e-13)
+
+            # Antiderivatives won't be equal because fixing continuity is
+            # done in the reverse order, but surely the differences should be
+            # equal.
+            pa_i = pa.antiderivative()
+            pd_i = pd.antiderivative()
+            for a, b in np.random.uniform(-10, 20, (5, 2)):
+                int_a = pa.integrate(a, b)
+                int_d = pd.integrate(a, b)
+                assert_allclose(int_a, int_d, rtol=1e-13)
+                assert_allclose(pa_i(b) - pa_i(a), pd_i(b) - pd_i(a),
+                                rtol=1e-13)
+
+            roots_d = pd.roots()
+            roots_a = pa.roots()
+            assert_allclose(roots_a, np.sort(roots_d), rtol=1e-12)
 
     def test_multi_shape(self):
         c = np.random.rand(6, 2, 1, 2, 3)
@@ -1323,6 +1395,40 @@ class TestBPoly(TestCase):
 
         assert_allclose(bp(3.4, 1), -6 * 0.6)
         assert_allclose(bp(-1.3, 1), 2 * (0.7/2))
+
+    def test_descending(self):
+        np.random.seed(0)
+
+        power = 3
+        for m in [10, 20, 30]:
+            x = np.sort(np.random.uniform(0, 10, m + 1))
+            ca = np.random.uniform(-0.1, 0.1, size=(power + 1, m))
+            # We need only to flip coefficients to get it right!
+            cd = ca[::-1].copy()
+
+            pa = BPoly(ca, x, extrapolate=True)
+            pd = BPoly(cd[:, ::-1], x[::-1], extrapolate=True)
+
+            x_test = np.random.uniform(-10, 20, 100)
+            assert_allclose(pa(x_test), pd(x_test), rtol=1e-13)
+            assert_allclose(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
+
+            pa_d = pa.derivative()
+            pd_d = pd.derivative()
+
+            assert_allclose(pa_d(x_test), pd_d(x_test), rtol=1e-13)
+
+            # Antiderivatives won't be equal because fixing continuity is
+            # done in the reverse order, but surely the differences should be
+            # equal.
+            pa_i = pa.antiderivative()
+            pd_i = pd.antiderivative()
+            for a, b in np.random.uniform(-10, 20, (5, 2)):
+                int_a = pa.integrate(a, b)
+                int_d = pd.integrate(a, b)
+                assert_allclose(int_a, int_d, rtol=1e-12)
+                assert_allclose(pa_i(b) - pa_i(a), pd_i(b) - pd_i(a),
+                                rtol=1e-12)
 
     def test_multi_shape(self):
         c = np.random.rand(6, 2, 1, 2, 3)

@@ -99,7 +99,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.levy_stable',
     'scipy.special.sinc', # comes from numpy
     'scipy.misc.who', # comes from numpy
-    'weave.rst',  # tutorial for a deprecated module
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -111,6 +110,12 @@ REFGUIDE_ALL_SKIPLIST = [
     r'scipy\.spatial\.distance',
     r'scipy\.linalg\.blas\.[sdczi].*',
     r'scipy\.linalg\.lapack\.[sdczi].*',
+]
+
+# these names are not required to be in an autosummary:: listing
+# despite being in ALL
+REFGUIDE_AUTOSUMMARY_SKIPLIST = [
+    r'scipy\.special\..*_roots' # old aliases for scipy.special.*_roots
 ]
 
 
@@ -208,7 +213,11 @@ def compare(all_dict, others, names, module_name):
     only_all = set()
     for name in all_dict:
         if name not in names:
-            only_all.add(name)
+            for pat in REFGUIDE_AUTOSUMMARY_SKIPLIST:
+                if re.match(pat, module_name + '.' + name):
+                    break
+            else:
+                only_all.add(name)
 
     only_ref = set()
     missing = set()
@@ -288,7 +297,7 @@ def validate_rst_syntax(text, name, dots=True):
         'mod', 'currentmodule', 'autosummary', 'data',
         'obj', 'versionadded', 'versionchanged', 'module', 'class',
         'ref', 'func', 'toctree', 'moduleauthor',
-        'sectionauthor', 'codeauthor', 'eq',
+        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
     ])
 
     # Run through docutils
@@ -476,6 +485,7 @@ class DTRunner(doctest.DocTestRunner):
 
 class Checker(doctest.OutputChecker):
     obj_pattern = re.compile('at 0x[0-9a-fA-F]+>')
+    int_pattern = re.compile('^[0-9]+L?$')
     vanilla = doctest.OutputChecker()
     rndm_markers = {'# random', '# Random', '#random', '#Random', "# may vary"}
     stopwords = {'plt.', '.hist', '.show', '.ylim', '.subplot(',
@@ -511,6 +521,11 @@ class Checker(doctest.OutputChecker):
         # ignore comments (e.g. signal.freqresp)
         if want.lstrip().startswith("#"):
             return True
+
+        # python 2 long integers are equal to python 3 integers
+        if self.int_pattern.match(want) and self.int_pattern.match(got):
+            if want.rstrip("L\r\n") == got.rstrip("L\r\n"):
+                return True
 
         # try the standard doctest
         try:

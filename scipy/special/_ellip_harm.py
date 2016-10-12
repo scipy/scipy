@@ -71,7 +71,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
        re-discovery: open-source implementations of
        ellipsoidal harmonics for problems in potential theory",
        Comput. Sci. Disc. 5, 014006 (2012)
-       doi:10.1088/1749-4699/5/1/014006
+       :doi:`10.1088/1749-4699/5/1/014006`.
     .. [3] David J.and Dechambre P, "Computation of Ellipsoidal
        Gravity Field Harmonics for small solar system bodies"
        pp. 30-36, 2000

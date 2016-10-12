@@ -352,17 +352,17 @@ class spmatrix(object):
                 raise ValueError('dimension mismatch')
             return self._mul_sparse_matrix(other)
 
+        # If it's a list or whatever, treat it like a matrix
+        other_a = np.asanyarray(other)
+
+        if other_a.ndim == 0 and other_a.dtype == np.object_:
+            # Not interpretable as an array; return NotImplemented so that
+            # other's __rmul__ can kick in if that's implemented.
+            return NotImplemented
+
         try:
             other.shape
         except AttributeError:
-            # If it's a list or whatever, treat it like a matrix
-            other_a = np.asanyarray(other)
-
-            if other_a.ndim == 0 and other_a.dtype == np.object_:
-                # Not interpretable as an array; return NotImplemented so that
-                # other's __rmul__ can kick in if that's implemented.
-                return NotImplemented
-
             other = other_a
 
         if other.ndim == 1 or other.ndim == 2 and other.shape[1] == 1:
@@ -394,6 +394,7 @@ class spmatrix(object):
                 result = np.asmatrix(result)
 
             return result
+
         else:
             raise ValueError('could not interpret dimensions')
 

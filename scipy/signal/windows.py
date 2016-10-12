@@ -58,7 +58,7 @@ def _cos_win(M, a, sym=True):
     ----------
     .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
            Transactions on Acoustics, Speech, and Signal Processing, vol. 29,
-           no. 1, pp. 84-91, Feb 1981. doi: 10.1109/TASSP.1981.1163506
+           no. 1, pp. 84-91, Feb 1981. :doi:`10.1109/TASSP.1981.1163506`.
     .. [2] Heinzel G. et al., "Spectrum and spectral density estimation by the
            Discrete Fourier transform (DFT), including a comprehensive list of
            window functions and some new flat-top windows", February 15, 2002
@@ -406,7 +406,7 @@ def blackman(M, sym=True):
            Upper Saddle River, NJ: Prentice-Hall, 1999, pp. 468-471.
     .. [3] Harris, Fredric J. (Jan 1978). "On the use of Windows for Harmonic
            Analysis with the Discrete Fourier Transform". Proceedings of the
-           IEEE 66 (1): 51-83. doi:10.1109/PROC.1978.10837
+           IEEE 66 (1): 51-83. :doi:`10.1109/PROC.1978.10837`.
 
     Examples
     --------
@@ -468,7 +468,7 @@ def nuttall(M, sym=True):
     ----------
     .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
            Transactions on Acoustics, Speech, and Signal Processing, vol. 29,
-           no. 1, pp. 84-91, Feb 1981. doi: 10.1109/TASSP.1981.1163506
+           no. 1, pp. 84-91, Feb 1981. :doi:`10.1109/TASSP.1981.1163506`.
     .. [2] Heinzel G. et al., "Spectrum and spectral density estimation by the
            Discrete Fourier transform (DFT), including a comprehensive list of
            window functions and some new flat-top windows", February 15, 2002
@@ -592,7 +592,7 @@ def flattop(M, sym=True):
     ----------
     .. [1] D'Antona, Gabriele, and A. Ferrero, "Digital Signal Processing for
            Measurement Systems", Springer Media, 2006, p. 70
-           doi: 10.1007/0-387-28666-7
+           :doi:`10.1007/0-387-28666-7`.
 
     Examples
     --------
@@ -845,7 +845,7 @@ def tukey(M, alpha=0.5, sym=True):
     ----------
     .. [1] Harris, Fredric J. (Jan 1978). "On the use of Windows for Harmonic
            Analysis with the Discrete Fourier Transform". Proceedings of the
-           IEEE 66 (1): 51-83. doi:10.1109/PROC.1978.10837
+           IEEE 66 (1): 51-83. :doi:`10.1109/PROC.1978.10837`
     .. [2] Wikipedia, "Window function",
            http://en.wikipedia.org/wiki/Window_function#Tukey_window
 
@@ -1117,7 +1117,7 @@ def kaiser(M, beta, sym=True):
            http://en.wikipedia.org/wiki/Window_function
     .. [4] F. J. Harris, "On the use of windows for harmonic analysis with the
            discrete Fourier transform," Proceedings of the IEEE, vol. 66,
-           no. 1, pp. 51-83, Jan. 1978. doi: 10.1109/PROC.1978.10837
+           no. 1, pp. 51-83, Jan. 1978. :doi:`10.1109/PROC.1978.10837`.
 
     Examples
     --------

@@ -3206,10 +3206,10 @@ class TestSpherical(TestCase):
             warnings.simplefilter("ignore", DeprecationWarning)
             sy1 = special.sph_yn(2,.2)[0][2]
             sy2 = special.sph_yn(0,.2)[0][0]
+            sy3 = special.sph_yn(1,.2)[1][1]
             sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3  # correct derivative value
         assert_almost_equal(sy1,-377.52483,5)  # previous values in the system
         assert_almost_equal(sy2,-4.9003329,5)
-        sy3 = special.sph_yn(1,.2)[1][1]
         assert_almost_equal(sy3,sphpy,4)  # compare correct derivative val. (correct =-system val).
 
 

@@ -180,7 +180,7 @@ class FortranFile(object):
     def read_ints(self, dtype='i4'):
         """
         Reads a record of a given type from the file, defaulting to an integer
-        type (INTEGER*4 in Fortran)
+        type (``INTEGER*4`` in Fortran).
 
         Parameters
         ----------
@@ -203,7 +203,7 @@ class FortranFile(object):
     def read_reals(self, dtype='f8'):
         """
         Reads a record of a given type from the file, defaulting to a floating
-        point number (real*8 in Fortran)
+        point number (``real*8`` in Fortran).
 
         Parameters
         ----------

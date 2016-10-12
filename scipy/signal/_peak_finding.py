@@ -265,7 +265,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     References
     ----------
     Bioinformatics (2006) 22 (17): 2059-2065.
-    doi: 10.1093/bioinformatics/btl355
+    :doi:`10.1093/bioinformatics/btl355`
     http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
 
     Examples
@@ -384,7 +384,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065. doi: 10.1093/bioinformatics/btl355
+    Bioinformatics (2006) 22 (17): 2059-2065. :doi:`10.1093/bioinformatics/btl355`
     http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
 
     """
@@ -491,7 +491,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     References
     ----------
     .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
-        doi: 10.1093/bioinformatics/btl355
+        :doi:`10.1093/bioinformatics/btl355`
         http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
 
     Examples

@@ -669,8 +669,9 @@ class _PPolyBase(object):
             raise ValueError("polynomial must be at least of order 0")
         if self.c.shape[1] != self.x.size-1:
             raise ValueError("number of coefficients != len(x)-1")
-        if np.any(self.x[1:] - self.x[:-1] < 0):
-            raise ValueError("x-coordinates are not in increasing order")
+        dx = np.diff(self.x)
+        if not (np.all(dx >= 0) or np.all(dx <= 0)):
+            raise ValueError("`x` must be strictly increasing or decreasing.")
 
         dtype = self._get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dtype)
@@ -711,23 +712,28 @@ class _PPolyBase(object):
         if not self.c.flags.c_contiguous:
             self.c = self.c.copy()
 
-    def extend(self, c, x, right=True):
+    def extend(self, c, x, right=None):
         """
         Add additional breakpoints and coefficients to the polynomial.
 
         Parameters
         ----------
         c : ndarray, size (k, m, ...)
-            Additional coefficients for polynomials in intervals
-            ``self.x[-1] <= x < x_right[0]``, ``x_right[0] <= x < x_right[1]``,
-            ..., ``x_right[m-2] <= x < x_right[m-1]``
+            Additional coefficients for polynomials in intervals. Note that
+            the first additional interval will be formed using one of the
+            `self.x` end points.
         x : ndarray, size (m,)
-            Additional breakpoints. Must be sorted and either to
-            the right or to the left of the current breakpoints.
-        right : bool, optional
-            Whether the new intervals are to the right or to the left
-            of the current intervals.
+            Additional breakpoints. Must be sorted in the same order as
+            `self.x` and either to the right or to the left of the current
+            breakpoints.
+        right
+            Deprecated argument. Has no effect.
+
+            .. deprecated:: 0.19
         """
+        if right is not None:
+            warnings.warn("`right` is deprecated and will be removed.")
+
         c = np.asarray(c)
         x = np.asarray(x)
 
@@ -739,15 +745,38 @@ class _PPolyBase(object):
             raise ValueError("x and c have incompatible sizes")
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
             raise ValueError("c and self.c have incompatible shapes")
-        if right:
-            if x[0] < self.x[-1]:
-                raise ValueError("new x are not to the right of current ones")
-        else:
-            if x[-1] > self.x[0]:
-                raise ValueError("new x are not to the left of current ones")
 
         if c.size == 0:
             return
+
+        dx = np.diff(x)
+        if not (np.all(dx >= 0) or np.all(dx <= 0)):
+            raise ValueError("`x` is not sorted.")
+
+        if self.x[-1] >= self.x[0]:
+            if not x[-1] >= x[0]:
+                raise ValueError("`x` is in the different order "
+                                 "than `self.x`.")
+
+            if x[0] >= self.x[-1]:
+                action = 'append'
+            elif x[-1] <= self.x[0]:
+                action = 'prepend'
+            else:
+                raise ValueError("`x` is neither on the left or on the right "
+                                 "from `self.x`.")
+        else:
+            if not x[-1] <= x[0]:
+                raise ValueError("`x` is in the different order "
+                                 "than `self.x`.")
+
+            if x[0] <= self.x[-1]:
+                action = 'append'
+            elif x[-1] >= self.x[0]:
+                action = 'prepend'
+            else:
+                raise ValueError("`x` is neither on the left or on the right "
+                                 "from `self.x`.")
 
         dtype = self._get_dtype(c.dtype)
 
@@ -755,11 +784,11 @@ class _PPolyBase(object):
         c2 = np.zeros((k2, self.c.shape[1] + c.shape[1]) + self.c.shape[2:],
                       dtype=dtype)
 
-        if right:
+        if action == 'append':
             c2[k2-self.c.shape[0]:, :self.c.shape[1]] = self.c
             c2[k2-c.shape[0]:, self.c.shape[1]:] = c
             self.x = np.r_[self.x, x]
-        else:
+        elif action == 'prepend':
             c2[k2-self.c.shape[0]:, :c.shape[1]] = c
             c2[k2-c.shape[0]:, c.shape[1]:] = self.c
             self.x = np.r_[x, self.x]
@@ -824,20 +853,20 @@ class PPoly(_PPolyBase):
     """
     Piecewise polynomial in terms of coefficients and breakpoints
 
-    The polynomial in the ith interval is ``x[i] <= xp < x[i+1]``::
+    The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
+    local power basis::
 
         S = sum(c[m, i] * (xp - x[i])**(k-m) for m in range(k+1))
 
-    where ``k`` is the degree of the polynomial. This representation
-    is the local power basis.
+    where ``k`` is the degree of the polynomial.
 
     Parameters
     ----------
     c : ndarray, shape (k, m, ...)
         Polynomial coefficients, order `k` and `m` intervals
     x : ndarray, shape (m+1,)
-        Polynomial breakpoints. These must be sorted in
-        increasing order.
+        Polynomial breakpoints. Must be sorted in either increasing or
+        decreasing order.
     extrapolate : bool or 'periodic', optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
@@ -1224,16 +1253,16 @@ class PPoly(_PPolyBase):
 class BPoly(_PPolyBase):
     """Piecewise polynomial in terms of coefficients and breakpoints.
 
-    The polynomial in the ``i``-th interval ``x[i] <= xp < x[i+1]`` is written
-    in the Bernstein polynomial basis::
+    The polynomial between ``x[i]`` and ``x[i + 1]`` is written in the
+    Bernstein polynomial basis::
 
         S = sum(c[a, i] * b(a, k; x) for a in range(k+1)),
 
     where ``k`` is the degree of the polynomial, and::
 
-        b(a, k; x) = binom(k, a) * t**k * (1 - t)**(k - a),
+        b(a, k; x) = binom(k, a) * t**a * (1 - t)**(k - a),
 
-    with ``t = (x - x[i]) / (x[i+1] - x[i])`` and ``binom`` is a binomial
+    with ``t = (x - x[i]) / (x[i+1] - x[i])`` and ``binom`` is the binomial
     coefficient.
 
     Parameters
@@ -1241,8 +1270,8 @@ class BPoly(_PPolyBase):
     c : ndarray, shape (k, m, ...)
         Polynomial coefficients, order `k` and `m` intervals
     x : ndarray, shape (m+1,)
-        Polynomial breakpoints. These must be sorted in
-        increasing order.
+        Polynomial breakpoints. Must be sorted in either increasing or
+        decreasing order.
     extrapolate : bool, optional
         If bool, determines whether to extrapolate to out-of-bounds points
         based on first and last intervals, or to return NaNs. If 'periodic',
@@ -1287,7 +1316,7 @@ class BPoly(_PPolyBase):
       http://www.idav.ucdavis.edu/education/CAGDNotes/Bernstein-Polynomials.pdf
 
     .. [3] E. H. Doha, A. H. Bhrawy, and M. A. Saker, Boundary Value Problems,
-         vol 2011, article ID 829546, doi:10.1155/2011/829543
+         vol 2011, article ID 829546, :doi:`10.1155/2011/829543`.
 
     Examples
     --------
@@ -1483,7 +1512,7 @@ class BPoly(_PPolyBase):
         else:
             return ib(b) - ib(a)
 
-    def extend(self, c, x, right=True):
+    def extend(self, c, x, right=None):
         k = max(self.c.shape[0], c.shape[0])
         self.c = self._raise_degree(self.c, k - self.c.shape[0])
         c = self._raise_degree(c, k - c.shape[0])
