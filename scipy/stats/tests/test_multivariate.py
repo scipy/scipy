@@ -26,6 +26,7 @@ from scipy.stats import dirichlet, beta
 from scipy.stats import wishart, multinomial, invwishart, chi2, invgamma
 from scipy.stats import norm
 from scipy.stats import ks_2samp
+from scipy.stats import binom
 
 from scipy.integrate import romb
 
@@ -927,6 +928,15 @@ class TestMultinomial(TestCase):
 
         vals3 = multinomial.logpmf([3, 4], 0, [-2, 3])
         assert_allclose(vals3, np.NAN, rtol=1e-8)
+
+    def test_reduces_binomial(self):
+        val1 = multinomial.logpmf((3, 4), 7, (0.3, 0.7))
+        val2 = binom.logpmf(3, 7, 0.3)
+        assert_allclose(val1, val2, rtol=1e-8)
+
+        val1 = multinomial.pmf((6, 8), 14, (0.1, 0.9))
+        val2 = binom.pmf(6, 14, 0.1)
+        assert_allclose(val1, val2, rtol=1e-8)
 
     def test_pmf(self):
         vals0 = multinomial.pmf((5,), 5, (1,))

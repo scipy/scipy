@@ -2743,6 +2743,16 @@ class multinomial_gen(multi_rv_generic):
     >>> rv.pmf([1, 3, 4])
     0.042000000000000072
 
+    The multinomial distribution for :math:`k=2` is identical to the
+    corresponding binomial distribution (tiny numerical differences
+    notwithstanding):
+
+    >>> from scipy.stats import binom
+    >>> multinomial.pmf([3, 4], 7, [0.4, 0.6])
+    0.29030399999999973
+    >>> binom.pmf(3, 7, 0.4)
+    0.29030400000000012 
+
     The functions `pmf`, `logpmf`, `entropy`, and `cov` support broadcasting,
     under the convention that the vector parameters (`x` and `p`) are
     interpreted as if each row along the last axis is a single object. For
@@ -2775,6 +2785,11 @@ class multinomial_gen(multi_rv_generic):
     Currently, `rvs` does not support broadcasting. Instead, the first element
     of `n` and the first vector in `p` are used to choose the distribution from
     which to sample. The current behavior should not be relied on.
+
+    See also
+    --------
+    scipy.stats.binom : The binomial distribution.
+    numpy.random.multinomial : Sampling from the multinomial distribution.
     """
 
     def __init__(self, seed=None):
