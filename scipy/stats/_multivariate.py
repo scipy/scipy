@@ -35,17 +35,6 @@ random_state : None or int or np.random.RandomState instance, optional
     Default is None.
 """
 
-def argsreduce(cond, *args):
-
-    def extract_for_arg(arg):
-        arg_len = arg.shape[-1]
-        cond_expand = np.ones(cond.shape + (arg_len,), dtype=np.bool_)
-        cond_ = cond_expand & cond[:, np.newaxis]
-        result = np.extract(cond_, arg*cond_expand)
-        return result.reshape(result.size // arg_len, arg_len)
-
-    return map(extract_for_arg, args)
-
 def _squeeze_output(out):
     """
     Remove single-dimensional entries from array and convert to scalar,
