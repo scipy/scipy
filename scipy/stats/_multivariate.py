@@ -2716,8 +2716,7 @@ class multinomial_gen(multi_rv_generic):
 
     .. math::
 
-        f(x) = \begin{pmatrix} n \\ x_1, \ldots, x_k \end{pmatrix}
-        p_1^{x_1} \cdots p_k^{x_k},
+        f(x) = \frac{n!}{x_1! \cdots x_k!} p_1^{x_1} \cdots p_k^{x_k},
 
     supported on :math:`x=(x_1, \ldots, x_k)` where each :math:`x_i` is a
     nonnegative integer and their sum is :math:`n`.
@@ -2737,7 +2736,7 @@ class multinomial_gen(multi_rv_generic):
     notwithstanding):
 
     >>> from scipy.stats import binom
-    >>> multinomial.pmf([3, 4], 7, [0.4, 0.6])
+    >>> multinomial.pmf([3, 4], n=7, p=[0.4, 0.6])
     0.29030399999999973
     >>> binom.pmf(3, 7, 0.4)
     0.29030400000000012 
@@ -2747,17 +2746,22 @@ class multinomial_gen(multi_rv_generic):
     interpreted as if each row along the last axis is a single object. For
     instance:
 
-    >>> multinomial.pmf([[3, 4], [3, 5]], [7, 8], [.3, .7])
+    >>> multinomial.pmf([[3, 4], [3, 5]], n=[7, 8], p=[.3, .7])
     array([0.2268945,  0.25412184])
 
     Here, `x.shape == (2, 2)`, `n.shape == (2,)`, and `p.shape == (2,)`, but
-    following the rules mentioned above they follow numpy's broadcasting rules
-    as if the rows `[3, 4]` and `[3, 5]` in `x` and `[.3, .7]` in `p` were a
-    single object, and as if we had `x.shape = (2,)`, `n.shape = (2,)`, and
-    `p.shape = (,)`.
+    following the rules mentioned above they behave as if the rows `[3, 4]` and
+    `[3, 5]` in `x` and `[.3, .7]` in `p` were a single object, and as if we
+    had `x.shape = (2,)`, `n.shape = (2,)`, and `p.shape = (1,)`. To
+    obtain the individual elements without broadcasting, we would do this:
 
-    This broadcasting also works for `cov`, where the output objects
-    are square matrices of size `p.shape[-1]`. For example:
+    >>> multinomial.pmf([3, 4], n=7, p=[.3, .7])
+    0.2268945
+    >>> multinomial.pmf([3, 5], 8, p=[.3, .7])
+    0.25412184
+
+    This broadcasting also works for `cov`, where the output objects are square
+    matrices of size `p.shape[-1]`. For example:
 
     >>> multinomial.cov([4, 5], [[.3, .7], [.4, .6]])
     array([[[ 0.84, -0.84],
@@ -2765,11 +2769,12 @@ class multinomial_gen(multi_rv_generic):
            [[ 1.2 , -1.2 ],
             [-1.2 ,  1.2 ]]])
 
-    In this example, `n.shape == (2,)` and `p.shape == (2, 2)`, and
-    following the rules above, these broadcast as if
-    `p.shape == (2,)`. Thus the result should also be of shape
-    `(2,), but since each output is a :math:`2 \times 2` matrix, the result
-    in fact has shape `(2, 2, 2)`.
+    In this example, `n.shape == (2,)` and `p.shape == (2, 2)`, and following
+    the rules above, these broadcast as if `p.shape == (2,)`. Thus the result
+    should also be of shape `(2,), but since each output is a :math:`2 \times
+    2` matrix, the result in fact has shape `(2, 2, 2)`, where `result[0]` is
+    equal to `multinomial.cov(n=4, p=[.3, .7])` and `result[1]` is equal to
+    `multinomial.cov(n=5, p=[.4, .6])`.
 
     Currently, `rvs` does not support broadcasting. Instead, the first element
     of `n` and the first vector in `p` are used to choose the distribution from
@@ -2795,6 +2800,9 @@ class multinomial_gen(multi_rv_generic):
         return multinomial_frozen(n, p, seed)
 
     def _process_parameters(self, n, p):
+        """
+        Find boolean arrays indicating where n and p give invalid values.
+        """
         p = np.array(p, dtype=np.float64, copy=True)
         p[...,-1] = 1. - p[...,:-1].sum(axis=-1)
 
@@ -2811,8 +2819,7 @@ class multinomial_gen(multi_rv_generic):
 
     def _process_quantiles(self, x, n, p):
         """
-        Adjust quantiles array so that last axis labels the components of
-        each data point.
+        Find boolean arrays indicating where x is out of the domain.
         """
         xx = np.asarray(x, dtype=np.int)
 
@@ -2824,7 +2831,7 @@ class multinomial_gen(multi_rv_generic):
                 "received %d, but expected %d." % (xx.shape[-1], p.shape[-1]))
 
         # true for x out of the domain
-        cond = np.any(np.floor(x) != xx, axis=-1)
+        cond = np.any(xx != x, axis=-1)
         cond |= np.any(xx < 0, axis=-1)
         cond = cond | (np.sum(xx, axis=-1) != n)
 
