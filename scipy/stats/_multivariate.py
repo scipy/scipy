@@ -2685,8 +2685,6 @@ class multinomial_gen(multi_rv_generic):
     r"""
     A multinomial random variable.
 
-    .. versionadded:: 0.19.0
-
     Methods
     -------
     ``pmf(x, n, p)``
@@ -2723,6 +2721,8 @@ class multinomial_gen(multi_rv_generic):
 
     supported on :math:`x=(x_1, \ldots, x_k)` where each :math:`x_i` is a
     nonnegative integer and their sum is :math:`n`.
+
+    .. versionadded:: 0.19.0
 
     Examples
     --------
