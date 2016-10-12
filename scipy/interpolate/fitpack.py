@@ -576,7 +576,7 @@ def insert(x, tck, m=1, per=0):
     """
     if isinstance(tck, BSpline):
 
-        t, c, k = tck
+        t, c, k = tck.tck
 
         # FITPACK expects the interpolation axis to be last, so roll it over
         # NB: if c array is 1D, transposes are no-ops

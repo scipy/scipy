@@ -170,7 +170,7 @@ class TestBSpline(TestCase):
     def test_endpoints(self):
         # base interval is closed
         b = _make_random_spline()
-        t, _, k = b
+        t, _, k = b.tck
         tm, tp = t[k], t[-k-1]
         for extrap in (True, False):
             assert_allclose(b([tm, tp], extrap),
@@ -201,7 +201,7 @@ class TestBSpline(TestCase):
     def test_default_extrap(self):
         # BSpline defaults to extrapolate=True
         b = _make_random_spline()
-        t, _, k = b
+        t, _, k = b.tck
         xx = [t[0] - 1, t[-1] + 1]
         yy = b(xx)
         assert_(not np.all(np.isnan(yy)))
@@ -361,50 +361,6 @@ class TestBSpline(TestCase):
                        BSpline(t, c, k, axis=axis).antiderivative(),
                        BSpline(t, c, k, axis=axis).antiderivative(2)]:
                 assert_equal(b1.axis, b.axis)
-
-    ### Test the tuple interface: for backwards-compatible interoperability
-    ### with spl* functions, a BSpline instance needs to behave as a
-    ### tuple (t, c, k). Specifically, support unpacking and indexing/slicing.
-
-    def test_unpacking(self):
-        # BSpline object unpacks into a tck-tuple, if asked
-        n, k = 11, 3
-        t = np.arange(n+k+1)
-        c = np.random.random(n)
-        b = BSpline(t, c, k)
-
-        tt, cc, kk = b
-        assert_allclose(t, tt, atol=1e-15)
-        assert_allclose(c, cc, atol=1e-15)
-        assert_equal(k, kk)
-
-        def wrong_unpacking(spl):
-            t, = spl
-        assert_raises(ValueError, wrong_unpacking, b)
-
-    def test_indexing(self):
-        b = _make_random_spline()
-        t, c, k = b.tck
-        assert_allclose(b[0], t, atol=1e-15)
-        assert_allclose(b[1], c, atol=1e-15)
-        assert_equal(b[2], k)
-
-        assert_equal(b[-1], k)
-        assert_allclose(b[-2], c, atol=1e-15)
-        assert_allclose(b[-3], t, atol=1e-15)
-
-        def wrong_index(idx):
-            b[idx]
-        assert_raises(IndexError, wrong_index, 3)
-        assert_raises(IndexError, wrong_index, -4)
-
-    def test_slicing(self):
-        b = _make_random_spline()
-        tck = b.tck
-        assert_equal(b[:], tck[:])
-        assert_equal(b[1:], tck[1:])
-        assert_equal(b[:-1], tck[:-1])
-        assert_equal(b[1:9], tck[1:9])
 
 
 def test_knots_multiplicity():
@@ -732,7 +688,6 @@ class TestInterop(object):
                         bn2(xx), atol=1e-15)
         assert_(isinstance(bn2, BSpline))
         assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
-
 
 class TestInterp(TestCase):
     #
