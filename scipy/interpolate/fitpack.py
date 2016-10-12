@@ -3,6 +3,8 @@ from __future__ import print_function, division, absolute_import
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
+import warnings
+
 import numpy as np
 
 from ._fitpack_impl import bisplrep, bisplev
@@ -146,16 +148,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     """
     res = _impl.splprep(x, w, u, ub, ue, k, task, s, t, full_output, nest, per,
                         quiet)
-
-    if full_output:
-        tcku, fp, ier, mesg = res
-        (t, c, k), u = tcku
-        spl = BSpline(t, c, k, axis=1)
-        return (spl, u), fp, ier, mesg
-    else:
-        (t, c, k), u = res
-        spl = BSpline(t, c, k, axis=1)
-        return spl, u
+    return res
 
 
 def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
@@ -285,14 +278,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
 
     """
     res = _impl.splrep(x, y, w, xb, xe, k, task, s, t, full_output, per, quiet)
-
-    if full_output:
-        tck, fp, ier, mesg = res
-        spl = BSpline(*tck)
-        return spl, fp, ier, mesg
-    else:
-        spl = BSpline(*res)
-        return spl
+    return res
 
 
 def splev(x, tck, der=0, ext=0):
@@ -309,7 +295,7 @@ def splev(x, tck, der=0, ext=0):
         An array of points at which to return the value of the smoothed
         spline or its derivatives.  If `tck` was returned from `splprep`,
         then the parameter values, u should be given.
-    tck : BSpline object or a 3-tuple
+    tck : 3-tuple or a BSpline object
         If a tuple, then it should be a sequence of length 3 returned by
         `splrep` or `splprep` containing the knots, coefficients, and degree
         of the spline. (Also see Notes.)
@@ -337,7 +323,7 @@ def splev(x, tck, der=0, ext=0):
     Notes
     -----
     Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using the `BSpline` objects.
+    prefer using `BSpline` objects.
 
     See Also
     --------
@@ -356,13 +342,19 @@ def splev(x, tck, der=0, ext=0):
 
     """
     if isinstance(tck, BSpline):
-        t, c, k = tck
+        if tck.c.ndim > 1:
+            mesg = ("Calling splev() with BSpline objects with c.ndim > 1 is "
+                   "not recommended. Use BSpline.__call__(x) instead.")
+            warnings.warn(mesg, DeprecationWarning)
 
-        # fitpack interpolates along the last axis
-        sh = tuple(range(c.ndim))
-        c = c.transpose(sh[1:] + (0,))  # roll the first axis
-        res = _impl.splev(x, (t, c, k), der, ext)
-        return res
+        # remap the out-of-bounds behavior
+        try:
+            extrapolate = {0: True, }[ext]
+        except KeyError:
+            raise ValueError("Extrapolation mode %s is not supported "
+                             "by BSpline." % ext)
+
+        return tck(x, der, extrapolate=extrapolate)
     else:
         return _impl.splev(x, tck, der, ext)
 
@@ -375,7 +367,7 @@ def splint(a, b, tck, full_output=0):
     ----------
     a, b : float
         The end-points of the integration interval.
-    tck : BSpline instance or a tuple
+    tck : tuple or a BSpline instance
         If a tuple, then it should be a sequence of length 3, containing the
         vector of knots, the B-spline coefficients, and the degree of the
         spline (see `splev`).
@@ -414,12 +406,16 @@ def splint(a, b, tck, full_output=0):
 
     """
     if isinstance(tck, BSpline):
-        t, c, k = tck
+        if tck.c.ndim > 1:
+            mesg = ("Calling splint() with BSpline objects with c.ndim > 1 is "
+                   "not recommended. Use BSpline.integrate() instead.")
+            warnings.warn(mesg, DeprecationWarning)
 
-        # FITPACK expects the interpolation axis to be last, so roll it over
-        sh = tuple(range(c.ndim))
-        c = c.transpose(sh[1:] + (0,))
-        return _impl.splint(a, b, (t, c, k), full_output)
+        if full_output != 0:
+            mesg = ("full_output = %s is not supported. Proceeding as if "
+                    "full_output = 0" % full_output)
+
+        return tck.integrate(a, b, extrapolate=False)
     else:
         return _impl.splint(a, b, tck, full_output)
 
@@ -433,7 +429,7 @@ def sproot(tck, mest=10):
 
     Parameters
     ----------
-    tck : BSpline object or a tck-tuple
+    tck : tuple or a BSpline object
         If a tuple, then it should be a sequence of length 3, containing the
         vector of knots, the B-spline coefficients, and the degree of the
         spline.
@@ -470,9 +466,14 @@ def sproot(tck, mest=10):
 
     """
     if isinstance(tck, BSpline):
-        t, c, k = tck
+        if tck.c.ndim > 1:
+            mesg = ("Calling sproot() with BSpline objects with c.ndim > 1 is "
+                    "not recommended.")
+            warnings.warn(mesg, DeprecationWarning)
 
-        # FITPACK expects the interpolation axis to be last, so roll it over.
+        t, c, k = tck.tck
+
+        # _impl.sproot expects the interpolation axis to be last, so roll it.
         # NB: This transpose is a no-op if c is 1D.
         sh = tuple(range(c.ndim))
         c = c.transpose(sh[1:] + (0,))
@@ -493,10 +494,9 @@ def spalde(x, tck):
     x : array_like
         A point or a set of points at which to evaluate the derivatives.
         Note that ``t(k) <= x <= t(n-k+1)`` must hold for each `x`.
-    tck : `BSpline` instance or a tuple
-        If a tuple, then it should be a sequence of length 3, containing the
-        vector of knots, the B-spline coefficients, and the degree of the
-        spline (see `splev`).
+    tck : tuple
+        A tuple ``(t, c, k)``, containing the vector of knots, the B-spline
+        coefficients, and the degree of the spline (see `splev`).
 
     Returns
     -------
@@ -519,23 +519,8 @@ def spalde(x, tck):
        Numerical Analysis, Oxford University Press, 1993.
 
     """
-    t, c, k = tck
     if isinstance(tck, BSpline):
-        t, c, k = tck
-
-        # FITPACK expects the interpolation axis to be last, so roll it over
-        sh = tuple(range(c.ndim))
-        c = c.transpose(sh[1:] + (0,))
-        res = _impl.spalde(x, (t, c, k))
-
-        # _impl.spalde *appends* the axes: (...) --> (..., x.size, k+1)
-        # where (...) is c.shape[1:].
-        # roll the two new axes over to front
-        res = np.asarray(res)
-        res_sh = tuple(range(res.ndim))
-        tr = res_sh[c.ndim - 1:] + res_sh[:c.ndim - 1]
-        res = res.transpose(tr)
-        return res
+        raise TypeError("spalde does not accept BSpline instances.")
     else:
         return _impl.spalde(x, tck)
 

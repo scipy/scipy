@@ -1,3 +1,7 @@
+from __future__ import division, absolute_import, print_function
+
+import warnings
+
 import numpy as np
 from numpy.testing import (run_module_suite, TestCase, assert_equal,
         assert_allclose, assert_raises, assert_)
@@ -551,60 +555,53 @@ class TestInterop(object):
         xnew, b, b2 = self.xnew, self.b, self.b2
 
         # check that splev works with 1D array of coefficients
+        # for array and scalar `x`
         assert_allclose(splev(xnew, b),
                         b(xnew), atol=1e-15, rtol=1e-15)
+        assert_allclose(splev(xnew, b.tck),
+                        b(xnew), atol=1e-15, rtol=1e-15)
+        assert_allclose([splev(x, b) for x in xnew],
+                        b(xnew), atol=1e-15, rtol=1e-15)
 
-        # scalar `x` is handled
-        ynew = [splev(x, b) for x in xnew]
-        assert_allclose(ynew, b(xnew), atol=1e-15, rtol=1e-15)
+        # With n-D coefficients, there's a quirck:
+        # splev(x, BSpline) is equivalent to BSpline(x)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            assert_allclose(splev(xnew, b2),
+                            b2(xnew), atol=1e-15, rtol=1e-15)
 
-        # with n-D coefficients, there's a quirck.
-        # If everything is done with splrep/splprep and splev, there are no
-        # issues: it's consistent and backwards compatible.
-        # (see also test_splrep and test_splprep below; also TestInteropSplPrep)
-        # Constructing a BSpline instance and __call__-ing it is also fine.
-        # But if the two are mixed, some transposing is necessary:
-        # * FITPACK defaults to interpolating along the last axis,
-        # * BSpline defaults to interpolating along the first axis
-        #   (but this is configurable using the .axis attribute)
-        res_splev, res_b2 = splev(xnew, b2), b2(xnew)
-
-        assert_equal(np.shape(res_b2), (xnew.size,) + b2.c.shape[1:])
-        assert_equal(np.shape(res_splev), b2.c.shape[1:] + (xnew.size,))
-
-        # check also values
-        sh = tuple(range(1, res_b2.ndim)) + (0,)
-        assert_allclose(res_b2.transpose(sh), res_splev, atol=1e-15)
-
-        # Here's the relation between using a BSpline object and
-        # its tck-tuple representation:
-        c2r = b2.c.transpose(sh)  # make interp axis last
-        res_tck = splev(xnew, (b2.t, c2r, b2.k))
-        assert_allclose(res_tck, res_splev, atol=1e-15)
+        # However, splev(x, BSpline.tck) needs some transposes. This is because
+        # BSpline interpolates along the first axis, while the legacy FITPACK
+        # wrapper does list(map(...)) which effectively interpolates along the
+        # last axis. Like so:
+        sh = tuple(range(1, b2.c.ndim)) + (0,)   # sh = (1, 2, 0)
+        cc = b2.c.transpose(sh)
+        tck = (b2.t, cc, b2.k)
+        assert_allclose(splev(xnew, tck),
+                        b2(xnew).transpose(sh), atol=1e-15, rtol=1e-15)
 
     def test_splrep(self):
         x, y = self.xx, self.yy
-        # test that "new" splrep is equivalent to the "old" one
-        b = splrep(x, y)
+        # test that "new" splrep is equivalent to _impl.splrep
+        tck = splrep(x, y)
         t, c, k = _impl.splrep(x, y)
-        assert_allclose(b.t, t, atol=1e-15)
-        assert_allclose(b.c, c, atol=1e-15)
-        assert_equal(b.k, k)
+        assert_allclose(tck[0], t, atol=1e-15)
+        assert_allclose(tck[1], c, atol=1e-15)
+        assert_equal(tck[2], k)
 
         # also cover the `full_output=True` branch
-        b_f, _, _, _ = splrep(x, y, full_output=True)
-        assert_allclose(b_f.t, t, atol=1e-15)
-        assert_allclose(b_f.c, c, atol=1e-15)
-        assert_equal(b_f.k, k)
+        tck_f, _, _, _ = splrep(x, y, full_output=True)
+        assert_allclose(tck_f[0], t, atol=1e-15)
+        assert_allclose(tck_f[1], c, atol=1e-15)
+        assert_equal(tck_f[2], k)
 
         # test that the result of splrep roundtrips with splev:
         # evaluate the spline on the original `x` points
-        yy = splev(x, b)
-        yy1 = splev(x, (t, c, k))
+        yy = splev(x, tck)
         assert_allclose(y, yy, atol=1e-15)
-        assert_allclose(y, yy1, atol=1e-15)
 
-        # ... and also __call__ is consistent with splev:
+        # ... and also it roundtrips if wrapped in a BSpline
+        b = BSpline(*tck)
         assert_allclose(y, b(x), atol=1e-15)
 
         # test that both "old" and "new" splrep raise for an n-D ``y`` array
@@ -633,6 +630,8 @@ class TestInterop(object):
         assert_raises(ValueError, splprep, x1)
         assert_raises(ValueError, _impl.splprep, x1)
 
+        # TODO: illustrate the transposes here (cf TestInteropSplPrep, also deduplicate)
+
     def test_sproot(self):
         b, b2 = self.b, self.b2
         roots = np.array([0.5, 1.5, 2.5, 3.5])*np.pi
@@ -641,8 +640,10 @@ class TestInterop(object):
         assert_allclose(sproot((b.t, b.c, b.k)), roots, atol=1e-7, rtol=1e-7)
 
         # ... and deals with trailing dimensions if coef array is n-D
-        r = sproot(b2, mest=50)
-        r = np.asarray(r)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            r = sproot(b2, mest=50)
+            r = np.asarray(r)
 
         assert_equal(r.shape, (3, 2, 4))
         assert_allclose(r - roots, 0, atol=1e-12)
@@ -655,39 +656,24 @@ class TestInterop(object):
 
     def test_splint(self):
         # test that splint accepts BSpline objects
-        b, tck, b2 = self.b, self.tck, self.b2
-        assert_allclose(splint(0, 1, b), splint(0, 1, tck), atol=1e-14)
-        assert_allclose(splint(0, 1, b), b.integrate(0, 1), atol=1e-14)
+        b, b2 = self.b, self.b2
+        assert_allclose(splint(0, 1, b), 
+                        splint(0, 1, b.tck), atol=1e-14)
+        assert_allclose(splint(0, 1, b),
+                        b.integrate(0, 1), atol=1e-14)
 
         # ... and deals with n-D arrays of coefficients
-        assert_allclose(splint(0, 1, b2), b2.integrate(0, 1), atol=1e-14)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            assert_allclose(splint(0, 1, b2),
+                            b2.integrate(0, 1), atol=1e-14)
 
         # and the legacy behavior is preserved for a tck tuple w/ n-D coef
         c2r = b2.c.transpose(1, 2, 0)
         integr = np.asarray(splint(0, 1, (b2.t, c2r, b2.k)))
         assert_equal(integr.shape, (3, 2))
-        assert_equal(integr, splint(0, 1, b))
-
-    def test_spalde(self):
-        b, b2 = self.b, self.b2
-
-        # spalde handles 1D coefficient arrays
-        x0 = [0, np.pi/2., np.pi]
-        assert_allclose(spalde(x0, b),
-                        spalde(x0, self.tck), atol=1e-15)
-
-        # and is equivalent to `k` repeated calls to splev
-        res = np.array([[splev(x, b, j) for j in range(b.k+1)] for x in x0])
-        assert_allclose(res, spalde(x0, b), atol=1e-15)
-
-        # for n-D coefs, the equivalence still holds
-        # for `x` being a scalar
-        res = np.array([splev(x0[0], b2, j) for j in range(b2.k+1)])
-        assert_allclose(res, spalde(x0[0], b2), atol=1e-15)
-
-        # and for `x` being an array
-        res = np.array([[splev(x, b2, j) for j in range(b2.k+1)] for x in x0])
-        assert_allclose(res, spalde(x0, b2), atol=1e-15)
+        assert_allclose(integr,
+                        splint(0, 1, b), atol=1e-14)
 
     def test_splder(self):
         for b in [self.b, self.b2]:
@@ -722,86 +708,30 @@ class TestInterop(object):
                 assert_(isinstance(tck_d, tuple))  # back-compat: tck in and out
 
     def test_insert(self):
-        b, b2 = self.b, self.b2
+        b, b2, xx = self.b, self.b2, self.xx
 
         j = b.t.size // 2
         tn = 0.5*(b.t[j] + b.t[j+1])
 
-        bn, bn1 = insert(tn, b), insert(tn, (b.t, b.c, b.k))
-        assert_allclose(splev(self.xx, bn),
-                        splev(self.xx, bn1), atol=1e-15)
+        bn, tck_n = insert(tn, b), insert(tn, (b.t, b.c, b.k))
+        assert_allclose(splev(xx, bn),
+                        splev(xx, tck_n), atol=1e-15)
         assert_(isinstance(bn, BSpline))
-        assert_(isinstance(bn1, tuple))   # back-compat: tck in, tck out
+        assert_(isinstance(tck_n, tuple))   # back-compat: tck in, tck out
 
         # for n-D array of coefficients, BSpline.c needs to be transposed
-        # after that, the results are equivalent
+        # after that, the results are equivalent.
         sh = tuple(range(b2.c.ndim))
         c_ = b2.c.transpose(sh[1:] + (0,))
-        bn3 = insert(tn, (b2.t, c_, b2.k))
+        tck_n2 = insert(tn, (b2.t, c_, b2.k))
 
         bn2 = insert(tn, b2)
 
-        assert_allclose(splev(self.xx, bn2),
-                        splev(self.xx, bn3), atol=1e-15)
+        # need a transpose for comparing the results, cf test_splev
+        assert_allclose(np.asarray(splev(xx, tck_n2)).transpose(2, 0, 1),
+                        bn2(xx), atol=1e-15)
         assert_(isinstance(bn2, BSpline))
-        assert_(isinstance(bn3, tuple))   # back-compat: tck in, tck out
-
-
-class TestInteropSplPrep(TestCase):
-    # test and fix the equivalence of splev(x, b) and b.__call__(x)
-    # where `b` is produced by splPrep.
-    xx = np.linspace(0, 2.*np.pi, 21)
-    ys, yc = np.sin(xx), np.cos(xx)
-    b, u = splprep([xx, ys, yc], s=0)
-
-    unew = np.linspace(u[0], u[-1], 11)
-
-    def test_splev(self):
-        # b(x) == splev(x, b)
-        assert_allclose(self.b(self.u),
-                        [self.xx, self.ys, self.yc], atol=1e-15)
-        assert_allclose(self.b(self.u),
-                        splev(self.u, self.b), atol=1e-15)
-
-    def test_splev_ext(self):
-        # splev's out-of-bounds options are richer that BSpline's. Test that
-        # they work with BSpline objects
-        tck_i, u_i = _impl.splprep([self.xx, self.ys, self.yc], s=0)
-        for ext in [0, 1, 3]:
-            assert_allclose(splev([-2, 2], self.b, ext=ext),
-                            _impl.splev([-2, 2], tck_i, ext=ext), atol=1e-15)
-
-        assert_raises(ValueError, splev, [-2, 2], self.b, **dict(ext=2))
-
-    def test_splint(self):
-        assert_allclose(self.b.integrate(0, 1),
-                        splint(0, 1, self.b), atol=1e-15)
-
-    def test_sproot(self):
-        roots = sproot(self.b)   # these are u-s
-        for j, u in enumerate(roots):
-            assert_allclose(splev(u, self.b)[j], 0, atol=1e-13)
-
-    ## _impl.spder, splantider did not work with the result of _impl.splprep
-    ## anyway, so do not test them, keep it as a possible enhancement.
-    ## In scipy 0.16.1: 
-    ## >>> splder(tck)
-    ## TypeError: unsupported operand type(s) for -: 'list' and 'list'
-    ## >>> splder((t, c[0], k)
-    ## ValueError: operands could not be broadcast together
-
-    def test_spalde(self):
-        all_der = np.array([splev(0.1, self.b, j) for j in range(self.b.k+1)])
-        assert_allclose(spalde(0.1, self.b), all_der, atol=1e-12)
-
-        # also test array args
-        all_der = np.array([[splev(x, self.b, j) for j in range(self.b.k+1)]
-                                                 for x in self.u])
-        assert_allclose(spalde(self.u, self.b), all_der, atol=1e-12)
-
-    def insert(self):
-        b1 = insert(0.1, self.b)
-        assert_allclose(b1(self.unew), splev(self.unew, b1), atol=1e-15)
+        assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
 
 
 class TestInterp(TestCase):
