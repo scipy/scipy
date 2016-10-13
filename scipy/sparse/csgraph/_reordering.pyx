@@ -4,6 +4,7 @@
 
 import numpy as np
 cimport numpy as np
+from warnings import warn
 from scipy.sparse import (csc_matrix, isspmatrix, isspmatrix_coo, 
                         isspmatrix_csc, isspmatrix_csr,
                         SparseEfficiencyWarning)
