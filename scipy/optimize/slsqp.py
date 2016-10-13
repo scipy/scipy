@@ -433,8 +433,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", feval[0])
         print("            Gradient evaluations:", geval[0])
 
-    return OptimizeResult(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
-                          njev=geval[0], status=int(mode),
+    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
+                          nfev=feval[0], njev=geval[0], status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
 
 
