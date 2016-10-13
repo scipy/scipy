@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.random import random_integers
 from numpy.testing import assert_
 
 cdef extern from "_round.h":
@@ -31,15 +30,25 @@ def have_fenv():
     return have_setround
 
 
+def random_double(size):
+    # This code is a little hacky to work around some issues:
+    # - randint doesn't have a dtype keyword until 1.11
+    #   and the default type of randint is np.int
+    # - Something like
+    #   >>> low = np.iinfo(np.int).min
+    #   >>> high = np.iinfo(np.int).max + 1
+    #   >>> np.random.randint(low=low, high=high)
+    #   fails in NumPy 1.10.4 (note that the 'high' value in randint
+    #   is exclusive); this is fixed in 1.11.
+    x = np.random.randint(low=0, high=2**16, size=4*size)
+    return x.astype(np.uint16).view(np.float64)
+
+
 def test_add_round(size, mode):
     cdef:
         int i, old_round, status
-        double[:] sample1 = random_integers(low=np.iinfo(np.int64).min,
-                                            high=np.iinfo(np.int64).max,
-                                            size=size).view(np.float64)
-        double[:] sample2 = random_integers(low=np.iinfo(np.int64).min,
-                                            high=np.iinfo(np.int64).max,
-                                            size=size).view(np.float64)
+        double[:] sample1 = random_double(size)
+        double[:] sample2 = random_double(size)
         double res, std
 
     nfail = 0
