@@ -2079,6 +2079,8 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
         ``'level'``
           No more than ``p`` levels of the dendrogram tree are displayed.
+          A "level" includes all nodes with ``p`` merges from the last merge.
+
           Note: ``'mtica'`` is an alias for ``'level'`` that's kept for
           backward compatibility.
 
