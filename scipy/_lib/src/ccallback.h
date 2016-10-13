@@ -119,6 +119,7 @@
 
 
 #include <Python.h>
+#include <setjmp.h>
 
 #define CCALLBACK_DEFAULTS 0x0
 #define CCALLBACK_OBTAIN   0x1
