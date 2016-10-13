@@ -115,7 +115,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /*****************************/
   if(sc_isnan(x) || sc_isnan(y))
     {
-      *w = NaN + NaN*I;
+      *w = complex<double>(NaN, NaN);
       return 0;
     }
   /*********************************/
@@ -123,22 +123,27 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /*********************************/
   else if(sc_isinf(x) && (x < 0.0) && (-pi < y) && (y<= pi))
     {
-      if( fabs(y) <= pi/2.0)
+      if (fabs(y) <= pi/2.0)
         {
-          *w = +0.0;
-        }
+	  if (y >= 0)
+	    {
+	      *w = complex<double>(0.0, 0.0);
+	    }
+	  else
+	    {
+	      *w = complex<double>(0.0, -0.0);
+	    }
+	}
       else
         {
-          *w = -0.0;
-        }
-      
-      if(y>=0)
-        {
-          *w += 0.0*I;
-        }
-      else
-        {
-          *w += -1.0*0.0*I;
+	  if (y >= 0)
+	    {
+	      *w = complex<double>(-0.0, 0.0);
+	    }
+	  else
+	    {
+	      *w = complex<double>(-0.0, -0.0);
+	    }
         }
       return 0;
     }
@@ -147,7 +152,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /**************************/
   else if(sc_isinf(x) || sc_isinf(y))
     {
-      *w = x + I*y;
+      *w = complex<double>(x, y);
       return 0;
     }
 
@@ -156,7 +161,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /******************************************/
   if((x==-1.0) && (fabs(y)==pi))
     {
-      *w = -1.0 + 0.0*I;
+      *w = complex<double>(-1.0, 0.0);
       return 0;
     }
 
