@@ -58,6 +58,10 @@ def lambertw(z, k=0, tol=1e-8):
 
     The definition, implementation and choice of branches is based on [2]_.
 
+    See Also
+    --------
+    wrightomega : the Wright Omega function
+
     References
     ----------
     .. [1] http://en.wikipedia.org/wiki/Lambert_W_function

@@ -192,10 +192,7 @@ def test_imread_4bit():
     with open(filename, 'rb') as f:
         im = misc.imread(f)
     assert_equal(im.dtype, np.uint8)
-    # When the oldest supported version of numpy is 1.7, the following
-    # line can be change to
-    #   j, i = np.meshgrid(np.arange(12), np.arange(31), indexing='ij')
-    j, i = [k.T for k in np.meshgrid(np.arange(12), np.arange(31))]
+    j, i = np.meshgrid(np.arange(12), np.arange(31), indexing='ij')
     expected = 17*(np.maximum(j, i) % 16).astype(np.uint8)
     assert_equal(im, expected)
 

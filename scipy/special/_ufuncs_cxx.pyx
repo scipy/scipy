@@ -72,4 +72,7 @@ cdef void *_export_faddeeva_ndtr = <void*>_func_faddeeva_ndtr
 cdef extern from "_ufuncs_cxx_defs.h":
     cdef double complex _func_faddeeva_w "faddeeva_w"(double complex) nogil
 cdef void *_export_faddeeva_w = <void*>_func_faddeeva_w
+cdef extern from "_ufuncs_cxx_defs.h":
+    cdef double complex _func_wrightomega "wrightomega"(double complex) nogil
+cdef void *_export_wrightomega = <void*>_func_wrightomega
 # distutils: language = c++

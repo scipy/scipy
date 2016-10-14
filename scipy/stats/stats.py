@@ -177,7 +177,7 @@ from . import distributions
 from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
-from ._stats import _kendall_condis
+from ._stats import _kendall_dis
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -2730,12 +2730,7 @@ def trimboth(a, proportiontocut, axis=0):
     if (lowercut >= uppercut):
         raise ValueError("Proportion too big.")
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
@@ -2790,12 +2785,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         lowercut = int(proportiontocut * nobs)
         uppercut = nobs
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     return atmp[lowercut:uppercut]
 
@@ -2863,12 +2853,7 @@ def trim_mean(a, proportiontocut, axis=0):
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
@@ -3441,8 +3426,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
-    strong disagreement.  This is the tau-b version of Kendall's tau which
-    accounts for ties.
+    strong disagreement.  This is the 1945 "tau-b" version of Kendall's
+    tau [2]_, which can account for ties and which reduces to the 1938 "tau-a"
+    version [1]_ in absence of ties.
 
     Parameters
     ----------
@@ -3450,15 +3436,13 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         Arrays of rankings, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
     initial_lexsort : bool, optional
-        Whether to use lexsort or quicksort as the sorting method for the
-        initial sort of the inputs. Default is lexsort (True), for which
-        `kendalltau` is of complexity O(n log(n)). If False, the complexity is
-        O(n^2), but with a smaller pre-factor (so quicksort may be faster for
-        small arrays).
+        Unused (deprecated).
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        values. Default is 'propagate'. Note that if the input contains nan
+        'omit' delegates to mstats_basic.kendalltau(), which has a different
+        implementation.
 
     Returns
     -------
@@ -3475,7 +3459,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     Notes
     -----
-    The definition of Kendall's tau that is used is::
+    The definition of Kendall's tau that is used is [2]_::
 
       tau = (P - Q) / sqrt((P + Q + T) * (P + Q + U))
 
@@ -3486,9 +3470,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     References
     ----------
-    W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
-    Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
-    No. 314, Part 1, pp. 436-439, 1966.
+    .. [1] Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
+           Vol. 30, No. 1/2, pp. 81-93, 1938.
+    .. [2] Maurice G. Kendall, "The treatment of ties in ranking problems",
+           Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
+    .. [3] Gottfried E. Noether, "Elements of Nonparametric Statistics", John
+           Wiley & Sons, 1967.
+    .. [4] Peter M. Fenwick, "A new data structure for cumulative frequency
+           tables", Software: Practice and Experience, Vol. 24, No. 3,
+           pp. 327-336, 1994.
 
     Examples
     --------
@@ -3543,19 +3533,26 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     x, y = x[perm], y[perm]
     x = np.r_[True, x[1:] != x[:-1]].cumsum(dtype=np.intp)
 
-    con, dis = _kendall_condis(x, y)  # concordant & discordant pairs
+    dis = _kendall_dis(x, y)  # discordant pairs
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
-    xtie = count_rank_tie(x) - ntie      # ties only in x
-    ytie = count_rank_tie(y) - ntie      # ties only in y
+    xtie = count_rank_tie(x)             # ties in x
+    ytie = count_rank_tie(y)             # ties in y
 
-    if con + dis + xtie == 0 or con + dis + ytie == 0:
+    tot = (size * (size - 1)) // 2
+
+    if xtie == tot or ytie == tot:
         return KendalltauResult(np.nan, np.nan)
 
-    tau = (con - dis) / np.sqrt(con + dis + xtie) / np.sqrt(con + dis + ytie)
+    # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
+    #               = con + dis + xtie + ytie - ntie
+    tau = (tot - xtie - ytie + ntie
+        - 2 * dis) / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
+    # Limit range to fix computational errors
+    tau = min(1., max(-1., tau))
 
     # what follows reproduces the ending of Gary Strangman's original
     # stats.kendalltau() in SciPy

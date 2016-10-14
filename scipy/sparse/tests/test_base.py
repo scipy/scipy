@@ -396,16 +396,15 @@ class _TestCommon:
             assert_array_equal((-1 < datsp).todense(), -1 < dat)
             assert_array_equal((-2 < datsp).todense(), -2 < dat)
 
-            if NumpyVersion(np.__version__) >= '1.8.0':
-                # data
-                dat = self.dat_dtypes[dtype]
-                datsp = self.datsp_dtypes[dtype]
-                dat2 = dat.copy()
-                dat2[:,0] = 0
-                datsp2 = self.spmatrix(dat2)
+            # data
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
 
-                # dense rhs
-                assert_array_equal(dat < datsp2, datsp < dat2)
+            # dense rhs
+            assert_array_equal(dat < datsp2, datsp < dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -462,16 +461,15 @@ class _TestCommon:
             assert_array_equal((-1 > datsp).todense(), -1 > dat)
             assert_array_equal((-2 > datsp).todense(), -2 > dat)
 
-            if NumpyVersion(np.__version__) >= '1.8.0':
-                # data
-                dat = self.dat_dtypes[dtype]
-                datsp = self.datsp_dtypes[dtype]
-                dat2 = dat.copy()
-                dat2[:,0] = 0
-                datsp2 = self.spmatrix(dat2)
+            # data
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
 
-                # dense rhs
-                assert_array_equal(dat > datsp2, datsp > dat2)
+            # dense rhs
+            assert_array_equal(dat > datsp2, datsp > dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -523,16 +521,15 @@ class _TestCommon:
             assert_array_equal((-1 <= datsp).todense(), -1 <= dat)
             assert_array_equal((-2 <= datsp).todense(), -2 <= dat)
 
-            if NumpyVersion(np.__version__) >= '1.8.0':
-                # data
-                dat = self.dat_dtypes[dtype]
-                datsp = self.datsp_dtypes[dtype]
-                dat2 = dat.copy()
-                dat2[:,0] = 0
-                datsp2 = self.spmatrix(dat2)
+            # data
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
 
-                # dense rhs
-                assert_array_equal(dat <= datsp2, datsp <= dat2)
+            # dense rhs
+            assert_array_equal(dat <= datsp2, datsp <= dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -585,16 +582,15 @@ class _TestCommon:
             assert_array_equal((-1 >= datsp).todense(), -1 >= dat)
             assert_array_equal((-2 >= datsp).todense(), -2 >= dat)
 
-            if NumpyVersion(np.__version__) >= '1.8.0':
-                # dense data
-                dat = self.dat_dtypes[dtype]
-                datsp = self.datsp_dtypes[dtype]
-                dat2 = dat.copy()
-                dat2[:,0] = 0
-                datsp2 = self.spmatrix(dat2)
+            # dense data
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
 
-                # dense rhs
-                assert_array_equal(dat >= datsp2, datsp >= dat2)
+            # dense rhs
+            assert_array_equal(dat >= datsp2, datsp >= dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))

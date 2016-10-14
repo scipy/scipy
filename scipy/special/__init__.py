@@ -566,6 +566,15 @@ Combinatorics
    comb -- [+]The number of combinations of N things taken k at a time.
    perm -- [+]Permutations of N things taken k at a time, i.e., k-permutations of N.
 
+Lambert W and Related Functions
+-------------------------------
+
+.. autosummary::
+    :toctree: generated/
+
+   lambertw      -- Lambert W function.
+   wrightomega   -- Wright Omega function.
+
 Other Special Functions
 -----------------------
 

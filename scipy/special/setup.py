@@ -88,7 +88,8 @@ def configuration(parent_package='',top_path=None):
 
     # Extension _ufuncs_cxx
     ufuncs_cxx_src = ['_ufuncs_cxx.cxx', 'sf_error.c',
-                      '_faddeeva.cxx', 'Faddeeva.cc']
+                      '_faddeeva.cxx', 'Faddeeva.cc',
+                      '_wright.cxx', 'wright.cc']
     ufuncs_cxx_dep = (headers + ufuncs_cxx_src + cephes_src
                       + ['*.hh'])
     config.add_extension('_ufuncs_cxx',
@@ -125,6 +126,13 @@ def configuration(parent_package='',top_path=None):
     # combinatorics
     config.add_extension('_comb',
                          sources=['_comb.c'])
+
+    # testing for _round.h
+    config.add_extension('_test_round',
+                         sources=['_test_round.c'],
+                         depends=['_round.h', 'c_misc/double2.h'],
+                         include_dirs=[numpy.get_include()],
+                         extra_info=get_info('npymath'))
 
     config.add_data_files('tests/*.py')
     config.add_data_files('tests/data/README')
