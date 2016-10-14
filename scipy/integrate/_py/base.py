@@ -93,11 +93,17 @@ class OdeSolver(object):
         self.direction = np.sign(t_crit - t0) if t_crit != t0 else 1
         self.n = self.y.size
         self.status = 'running'
-        self.step_size = None
 
         self.nfev = 0
         self.njev = 0
         self.nlu = 0
+
+    @property
+    def step_size(self):
+        if self.t_old is None:
+            return None
+        else:
+            return np.abs(self.t - self.t_old)
 
     def fun(self, t, y):
         self.nfev += 1
@@ -123,7 +129,6 @@ class OdeSolver(object):
             t_new = self.t_crit
             self.t_old = t
             self.t = t_new
-            self.step_size = np.abs(t_new - t)
 
             message = None
 
@@ -137,7 +142,6 @@ class OdeSolver(object):
                 self.status = 'failed'
             else:
                 self.t_old = t
-                self.step_size = np.abs(self.t - self.t_old)
                 if self.direction * (self.t - self.t_crit) >= 0:
                     self.status = 'finished'
 
