@@ -27,6 +27,7 @@ Contents
    minimum_spanning_tree -- construct the minimum spanning tree of a graph
    reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
    maximum_bipartite_matching -- compute permutation to make diagonal zero free
+   structural_rank -- compute the structural rank of a graph
    NegativeCycleError
 
 .. autosummary::
