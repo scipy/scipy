@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from .common import validate_tol, select_initial_step, norm, EPS, num_jac
+from .common import validate_max_step, validate_tol, select_initial_step, norm, EPS, num_jac
 from .base import OdeSolver, DenseOutput
 
 
@@ -144,8 +144,9 @@ class BDF(OdeSolver):
     .. [3] E. Hairer, G. Wanner, "Solving Ordinary Differential Equations I:
            Nonstiff Problems", Sec. III.2.
     """
-    def __init__(self, fun, t0, y0, t_crit, rtol=1e-3, atol=1e-6, jac=None):
+    def __init__(self, fun, t0, y0, t_crit, max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None):
         super(BDF, self).__init__(fun, t0, y0, t_crit)
+        self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
         self.h_abs = select_initial_step(
@@ -208,11 +209,12 @@ class BDF(OdeSolver):
 
         return jac_wrapped, J
 
-    def _step_impl(self, max_step):
+    def _step_impl(self):
         t = self.t
         y = self.y
         D = self.D
 
+        max_step = self.max_step
         min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
         if self.h_abs > max_step:
             h_abs = max_step

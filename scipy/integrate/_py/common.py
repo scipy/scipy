@@ -6,6 +6,12 @@ import numpy as np
 EPS = np.finfo(float).eps
 
 
+def validate_max_step(max_step):
+    if max_step <= 0:
+        raise ValueError("`max_step` must be positive.")
+    return max_step
+
+
 def validate_tol(rtol, atol, n):
     """Validate tolerance values."""
     if rtol < 100 * EPS:

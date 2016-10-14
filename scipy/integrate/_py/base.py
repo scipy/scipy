@@ -103,14 +103,8 @@ class OdeSolver(object):
         self.nfev += 1
         return self._fun(t, y)
 
-    def step(self, max_step=np.inf):
+    def step(self):
         """Perform one integration step.
-
-        Parameters
-        ----------
-        max_step : float, optional
-            Maximum allowed step size. Default is np.inf, i.e. the step is not
-            bounded and determined solely by the solver.
 
         Returns
         -------
@@ -119,9 +113,6 @@ class OdeSolver(object):
             `self.status` is 'failed' after the step was taken or None
             otherwise.
         """
-        if max_step <= 0:
-            raise ValueError("`max_step` must be positive.")
-
         if self.status != 'running':
             raise RuntimeError("Attempt to step on a failed or finished "
                                "solver.")
@@ -129,8 +120,7 @@ class OdeSolver(object):
         if self.n == 0 or self.t == self.t_crit:
             # Handle corner cases of empty solver and no integration
             t = self.t
-            t_max = self.t + self.direction * max_step
-            t_new = min(t_max, self.t_crit) if self.direction == 1 else max(t_max, self.t_crit)
+            t_new = self.t_crit
             self.t_old = t
             self.t = t_new
             self.step_size = np.abs(t_new - t)
@@ -141,7 +131,7 @@ class OdeSolver(object):
                 self.status = 'finished'
         else:
             t = self.t
-            success, message = self._step_impl(max_step)
+            success, message = self._step_impl()
 
             if not success:
                 self.status = 'failed'
@@ -171,7 +161,7 @@ class OdeSolver(object):
         else:
             return self._dense_output_impl()
 
-    def _step_impl(self, max_step):
+    def _step_impl(self):
         raise NotImplementedError
 
     def _dense_output_impl(self):

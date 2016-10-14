@@ -151,7 +151,7 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              max_step=np.inf, events=None, **options):
+              events=None, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ODEs given an initial
@@ -208,9 +208,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     t_eval : array_like or None, optional
         Times at which to store the computed solution, must be sorted and lie
         within `t_span`. If None (default), use points selected by a solver.
-    max_step : float, optional
-        Maximum allowed step size. Default is np.inf, i.e. step is not
-        bounded and determined solely by the solver.
     events : callable, list of callables or None, optional
         Events to track. Events are defined by functions which take
         a zero value at a point of an event. Each function must have a
@@ -231,6 +228,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     options
         Options passed to a chosen solver constructor. All options available
         for already implemented solvers are listed below.
+    max_step : float, optional
+        Maximum allowed step size. Default is np.inf, i.e. step is not
+        bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
@@ -308,7 +308,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     .. [7] `Stiff equation <https://en.wikipedia.org/wiki/Stiff_equation>`_ on
            Wikipedia.
     """
-    if not isinstance(method, OdeSolver) and method not in METHODS:
+    if method not in METHODS and not issubclass(method, OdeSolver):
         raise ValueError("`method` must be one of {} or OdeSolver instance."
                          .format(METHODS))
 
@@ -328,7 +328,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         t_eval_i = 0
         n_eval = t_eval.shape[0]
 
-    if not isinstance(method, OdeSolver):
+    if isinstance(method, str):
         method = METHODS[method]
 
     solver = method(fun, t0, y0, tf, **options)
@@ -353,7 +353,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     status = None
     s = solver.direction
     while status is None:
-        message = solver.step(max_step)
+        message = solver.step()
 
         if solver.status == 'finished':
             status = 0

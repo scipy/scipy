@@ -182,7 +182,7 @@ def test_max_step():
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
-    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+    for method in [RK23, RK45, Radau, BDF]:
         for t_span in ([5, 9], [5, 1]):
             res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
                             max_step=0.5, atol=atol, method=method,
@@ -206,6 +206,14 @@ def test_max_step():
             assert_(np.all(e < 5))
 
             assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+
+            assert_raises(ValueError, method, fun_rational, t_span[0], y0, t_span[1], max_step=-1)
+
+            solver = method(fun_rational, t_span[0], y0, t_span[1], rtol=rtol, atol=atol, max_step=1e-20)
+            message = solver.step()
+            assert_equal(solver.status, 'failed')
+            assert_("step size is less" in message)
+            assert_raises(RuntimeError, solver.step)
 
 
 def test_t_eval():
@@ -322,13 +330,6 @@ def test_classes():
         assert_(solver.nfev > 0)
         assert_(solver.njev >= 0)
         assert_(solver.nlu >= 0)
-
-        assert_raises(ValueError, solver.step, max_step=-1)
-
-        message = solver.step(max_step=1e-20)
-        assert_equal(solver.status, 'failed')
-        assert_("step size is less" in message)
-        assert_raises(RuntimeError, solver.step)
 
 
 class ConstDenseOutput(DenseOutput):
