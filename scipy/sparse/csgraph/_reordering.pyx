@@ -278,7 +278,12 @@ def structural_rank(graph):
         The structural rank of the sparse graph.
 
     .. versionadded:: 0.19.0
-
+    
+    References
+    ----------
+    .. [1] http://www.mathworks.com/help/matlab/ref/sprank.html
+    
+    .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
     """
     if not isspmatrix:
         raise TypeError('Input must be a sparse matrix')
