@@ -60,20 +60,6 @@ class TestPILUtil(TestCase):
         im2 = misc.imresize(im, (30, 60), interp='lanczos')
         assert_equal(im2.shape, (30, 60))
 
-    def test_bytescale(self):
-        x = np.array([0, 1, 2], np.uint8)
-        y = np.array([0, 1, 2])
-        assert_equal(misc.bytescale(x), x)
-        assert_equal(misc.bytescale(y), [0, 127, 255])
-
-    def test_bytescale_keywords(self):
-        x = np.array([40, 60, 120, 200, 300, 500])
-        res_lowhigh = misc.bytescale(x, low=10, high=143)
-        assert_equal(res_lowhigh, [10, 16, 33, 56, 85, 143])
-        res_cmincmax = misc.bytescale(x, cmin=60, cmax=300)
-        assert_equal(res_cmincmax, [0, 0, 64, 149, 255, 255])
-        assert_equal(misc.bytescale(np.array([3, 3, 3]), low=4), [4, 4, 4])
-
     def test_imsave(self):
         picdir = os.path.join(datapath, "data")
         for png in glob.iglob(picdir + "/*.png"):
@@ -100,6 +86,133 @@ class TestPILUtil(TestCase):
                 shutil.rmtree(tmpdir)
 
 decorate_methods(TestPILUtil, _pilskip)
+
+
+class Test_bytescale(TestCase):
+    @classmethod
+    def setUpClass(cls):
+
+        # straight out of the scipy.misc.bytescale docstring
+        cls.img = np.array([[91.06794177, 3.39058326, 84.4221549],
+                            [73.88003259, 80.91433048, 4.88878881],
+                            [51.53875334, 34.45808177, 27.5873488]])
+
+    def assertArrayEquals(self, actual, expected):
+        '''
+        Assert that two arrays are equal and have the same data type
+        '''
+        assert_array_equal(actual, expected)
+        self.assertEquals(actual.dtype, expected.dtype)
+
+    def assertValidOutput(self, inputArray, outputArray, cmin=None, cmax=None,
+                          high=255, low=0):
+        '''
+        Assert that every array element is properly scaled based on cmin, cmax,
+        low, and high parameters used. It's like an independent check that the
+        scaling is being done right.
+        '''
+        def scale(val):
+            '''
+            perform the scaling of a single element
+            '''
+            inrange = cmax - cmin
+            outrange = high - low
+            scaledVal = int(round(outrange * (val - cmin) / inrange + low))
+            scaledVal = max((low, scaledVal))
+            scaledVal = min((high, scaledVal))
+            return scaledVal
+
+        if cmin is None:
+            cmin = inputArray.min()
+        if cmax is None:
+            cmax = inputArray.max()
+        assert cmax > cmin
+        assert high >= low
+
+        for inVal, outVal in zip(inputArray.ravel(), outputArray.ravel()):
+            expected = scale(inVal)
+            self.assertEqual(outVal, expected)
+
+    def test_bytescale_low1_high255(self):
+        # Testing misc.bytescale with low and high params
+        low = 1
+        high = 255
+
+        out = misc.bytescale(self.img, high=high, low=low)
+
+        self.assertValidOutput(self.img, out, low=low, high=high)
+        self.assertEquals(out.min(), low)
+        self.assertEquals(out.max(), high)
+
+    def test_bytescale_cmin5_cmax85(self):
+        # Testing misc.bytescale with cmin and cmax params
+        cmin = 5
+        cmax = 85
+
+        out = misc.bytescale(self.img, cmin=cmin, cmax=cmax)
+
+        self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax)
+
+    def test_bytescale_cmincmax_lowhigh(self):
+        # Testing misc.bytescale with cmin, cmax, low and high params
+        cmin = 5
+        cmax = 85
+        high = 255
+        low = 1
+
+        out = misc.bytescale(self.img, cmin=cmin, cmax=cmax,
+                             high=high, low=low)
+
+        self.assertValidOutput(self.img, out, cmin=cmin, cmax=cmax,
+                               high=high, low=low)
+        self.assertEquals(out.min(), low)
+        self.assertEquals(out.max(), high)
+
+    def test_bytescale(self):
+        x = np.array([0, 1, 2], np.uint8)
+        y = np.array([0, 1, 2])
+        assert_equal(misc.bytescale(x), x)
+        assert_equal(misc.bytescale(y), [0, 128, 255])
+
+    def test_bytescale_keywords(self):
+        x = np.array([40, 60, 120, 200, 300, 500])
+        res_lowhigh = misc.bytescale(x, low=10, high=143)
+        assert_equal(res_lowhigh, [10, 16, 33, 56, 85, 143])
+        res_cmincmax = misc.bytescale(x, cmin=60, cmax=300)
+        assert_equal(res_cmincmax, [0, 0, 64, 149, 255, 255])
+        assert_equal(misc.bytescale(np.array([3, 3, 3]), low=4), [4, 4, 4])
+
+    def test_bytescale_cmin_equals_cmax(self):
+        # Undefined scaling (cmin==cmax), so don't scale
+        actual = misc.bytescale(np.array([3, 3, 3]))
+        expected = [3, 3, 3]
+        assert_equal(actual, expected)
+
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2)
+        expected = [1, 2, 3]
+        assert_equal(actual, expected)
+
+        # Undefined scaling (cmin==cmax), but low is given. Cap lower bounds
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, low=4)
+        expected = [4, 4, 4]
+        assert_equal(actual, expected)
+
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, low=2)
+        expected = [2, 2, 3]
+        assert_equal(actual, expected)
+
+        # Undefined scaling (cmin==cmax), but high is given. Cap upper bounds
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, high=0)
+        expected = [0, 0, 0]
+        assert_equal(actual, expected)
+
+        actual = misc.bytescale(np.array([1, 2, 3]), cmin=2, cmax=2, high=2)
+        expected = [1, 2, 2]
+        assert_equal(actual, expected)
+
+    def test_cmax_lessthan_cmin(self):
+        with self.assertRaises(ValueError):
+            misc.bytescale(np.arange(5), cmin=2, cmax=1)
 
 
 def tst_fromimage(filename, irange, shape):

@@ -29,6 +29,47 @@ __all__ = ['fromimage', 'toimage', 'imsave', 'imread', 'bytescale',
            'imrotate', 'imresize', 'imshow', 'imfilter']
 
 
+def _scale(data, low, high, cmin=None, cmax=None):
+    """
+    Scales an array from an input range of [cmin, cmax] to an output range of 
+    [low, high]. If cmin and cmax are equal, no scaling is applied as this 
+    scaling is undefined.
+
+    Parameters
+    ----------
+    data : ndarray
+        Input numpy array.
+    low : scalar
+        Scale cmin value to `low`.
+    high : scalar
+        Scale cmax value to `high`.
+    cmin : scalar, optional
+        Bias scaling of small values. Default is ``data.min()``.
+    cmax : scalar, optional
+        Bias scaling of large values. Default is ``data.max()``.
+
+    Returns
+    -------
+    array : ndarray
+        The scaled array.
+
+    """
+    if high < low:
+        raise ValueError("`high` should be larger than or equal to `low`.")
+
+    if cmin is None:
+        cmin = data.min()
+    if cmax is None:
+        cmax = data.max()
+
+    if cmax < cmin:
+        raise ValueError("`cmax` should be larger than or equal to `cmin`.")
+    elif cmax == cmin:  # this scaling is undefined, so don't apply any scaling
+        return data
+
+    return (data * 1.0 - cmin) * (high - low) / (cmax - cmin) + low
+
+
 # Returns a byte-scaled image
 def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     """
@@ -59,6 +100,17 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     Examples
     --------
     >>> from scipy.misc import bytescale
+    >>> a = np.arange(10)
+    >>> a
+    array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    >>> bytescale(a)
+    array([  0,  28,  57,  85, 113, 142, 170, 198, 227, 255], dtype=uint8)
+    >>> bytescale(a, cmin=3, cmax=6)
+    array([  0,   0,   0,   0,  85, 170, 255, 255, 255, 255], dtype=uint8)
+    >>> bytescale(a, low=100, high=200)
+    array([100, 111, 122, 133, 144, 156, 167, 178, 189, 200], dtype=uint8)
+    >>> bytescale(a, cmin=3, cmax=6, low=100, high=200)
+    array([100, 100, 100, 100, 133, 167, 200, 200, 200, 200], dtype=uint8)
     >>> img = np.array([[ 91.06794177,   3.39058326,  84.4221549 ],
     ...                 [ 73.88003259,  80.91433048,   4.88878881],
     ...                 [ 51.53875334,  34.45808177,  27.5873488 ]])
@@ -79,25 +131,10 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     if data.dtype == uint8:
         return data
 
-    if high < low:
-        raise ValueError("`high` should be larger than `low`.")
-
-    if cmin is None:
-        cmin = data.min()
-    if cmax is None:
-        cmax = data.max()
-
-    cscale = cmax - cmin
-    if cscale < 0:
-        raise ValueError("`cmax` should be larger than `cmin`.")
-    elif cscale == 0:
-        cscale = 1
-
-    scale = float(high - low) / cscale
-    bytedata = (data * 1.0 - cmin) * scale + 0.4999
-    bytedata[bytedata > high] = high
-    bytedata[bytedata < 0] = 0
-    return cast[uint8](bytedata) + cast[uint8](low)
+    scaled_data = _scale(data, low, high, cmin, cmax)
+    scaled_data[scaled_data > high] = high
+    scaled_data[scaled_data < low] = low
+    return cast[uint8](scaled_data.round())
 
 
 def imread(name, flatten=False, mode=None):
