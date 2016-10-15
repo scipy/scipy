@@ -61,6 +61,13 @@ matrix:
         - TESTMODE=full
         - COVERAGE=--coverage
         - NUMPYSPEC=numpy
+  allow_failures:
+    - python: 2.7
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@master"
+
 addons:
   apt:
     packages:
