@@ -509,7 +509,12 @@ class netcdf_file(object):
             # Handle rec vars with shape[0] < nrecs.
             if self._recs > len(var.data):
                 shape = (self._recs,) + var.data.shape[1:]
-                var.data.resize(shape)
+                # Resize in-place does not always work since 
+                # the array might not be single-segment                              
+                try:
+                    var.data.resize(shape)
+                except ValueError:
+                    var.data = np.resize(var.data, shape).astype(var.data.dtype)
 
             pos0 = pos = self.fp.tell()
             for rec in var.data:
@@ -847,7 +852,8 @@ class netcdf_variable(object):
         # Store user defined attributes in a separate dict,
         # so we can save them to file later.
         try:
-            self._attributes[attr] = value
+            if not attr == "data":
+                self._attributes[attr] = value
         except AttributeError:
             pass
         self.__dict__[attr] = value
@@ -980,7 +986,12 @@ class netcdf_variable(object):
                 recs = rec_index + 1
             if recs > len(self.data):
                 shape = (recs,) + self._shape[1:]
-                self.data.resize(shape)
+                # Resize in-place does not always work since 
+                # the array might not be single-segment                              
+                try:
+                    self.data.resize(shape)
+                except ValueError:
+                    self.data = np.resize(self.data, shape).astype(self.data.dtype)
         self.data[index] = data
 
     def _get_missing_value(self):
