@@ -2752,8 +2752,8 @@ class multinomial_gen(multi_rv_generic):
     Here, `x.shape == (2, 2)`, `n.shape == (2,)`, and `p.shape == (2,)`, but
     following the rules mentioned above they behave as if the rows `[3, 4]` and
     `[3, 5]` in `x` and `[.3, .7]` in `p` were a single object, and as if we
-    had `x.shape = (2,)`, `n.shape = (2,)`, and `p.shape = (1,)`. To
-    obtain the individual elements without broadcasting, we would do this:
+    had `x.shape = (2,)`, `n.shape = (2,)`, and `p.shape = (1,)`. To obtain the
+    individual elements without broadcasting, we would do this:
 
     >>> multinomial.pmf([3, 4], n=7, p=[.3, .7])
     0.2268945
@@ -2776,10 +2776,6 @@ class multinomial_gen(multi_rv_generic):
     equal to `multinomial.cov(n=4, p=[.3, .7])` and `result[1]` is equal to
     `multinomial.cov(n=5, p=[.4, .6])`.
 
-    Currently, `rvs` does not support broadcasting. Instead, the first element
-    of `n` and the first vector in `p` are used to choose the distribution from
-    which to sample. The current behavior should not be relied on.
-
     See also
     --------
     scipy.stats.binom : The binomial distribution.
@@ -2801,8 +2797,10 @@ class multinomial_gen(multi_rv_generic):
 
     def _process_parameters(self, n, p):
         """
-        Find boolean arrays indicating where n and p give invalid values.
-        """
+        Return: n, p, npcond.
+
+        n and p are 
+       """
         p = np.array(p, dtype=np.float64, copy=True)
         p[...,-1] = 1. - p[...,:-1].sum(axis=-1)
 
@@ -2981,7 +2979,7 @@ class multinomial_gen(multi_rv_generic):
 
         return self._checkresult(term1 + term2, npcond, np.nan)
 
-    def rvs(self, n, p, size=1, random_state=None):
+    def rvs(self, n, p, size=None, random_state=None):
         """
         Draw random samples from a Multinomial distribution.
 
@@ -3002,17 +3000,9 @@ class multinomial_gen(multi_rv_generic):
         %(_doc_callparams_note)s
         """
         n, p, npcond = self._process_parameters(n, p)
-
-        # we don't support broadcasting yet
-        if n.ndim != 0:
-            raise ValueError("n must be 0 dimensional (rvs does not support "
-                    "broadcasting)")
-        if p.ndim != 1:
-            raise ValueError("p must be 1 dimensional (rvs does not support "
-                    "broadcasting)")
-
         random_state = self._get_random_state(random_state)
         return random_state.multinomial(n, p, size)
+
 
 multinomial = multinomial_gen()
 
