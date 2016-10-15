@@ -930,6 +930,8 @@ class TestMultinomial(TestCase):
         assert_allclose(vals3, np.NAN, rtol=1e-8)
 
     def test_reduces_binomial(self):
+        # test that the multinomial pmf reduces to the binomial pmf in the 2d
+        # case
         val1 = multinomial.logpmf((3, 4), 7, (0.3, 0.7))
         val2 = binom.logpmf(3, 7, 0.3)
         assert_allclose(val1, val2, rtol=1e-8)

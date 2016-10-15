@@ -2660,7 +2660,7 @@ p : array_like
 _multinomial_doc_callparams_note = \
 """`n` should be a positive integer. Each element of `p` should be in the
 interval :math:`[0,1]` and the elements should sum to 1. If they do not sum to
-1, the last element of the `p` array is not used and instead interpreted as the
+1, the last element of the `p` array is not used and is replaced with the
 remaining probability left over from the earlier elements.
 """
 
@@ -2739,7 +2739,7 @@ class multinomial_gen(multi_rv_generic):
     >>> multinomial.pmf([3, 4], n=7, p=[0.4, 0.6])
     0.29030399999999973
     >>> binom.pmf(3, 7, 0.4)
-    0.29030400000000012 
+    0.29030400000000012
 
     The functions `pmf`, `logpmf`, `entropy`, and `cov` support broadcasting,
     under the convention that the vector parameters (`x` and `p`) are
@@ -2752,7 +2752,7 @@ class multinomial_gen(multi_rv_generic):
     Here, `x.shape == (2, 2)`, `n.shape == (2,)`, and `p.shape == (2,)`, but
     following the rules mentioned above they behave as if the rows `[3, 4]` and
     `[3, 5]` in `x` and `[.3, .7]` in `p` were a single object, and as if we
-    had `x.shape = (2,)`, `n.shape = (2,)`, and `p.shape = (1,)`. To obtain the
+    had `x.shape = (2,)`, `n.shape = (2,)`, and `p.shape = ()`. To obtain the
     individual elements without broadcasting, we would do this:
 
     >>> multinomial.pmf([3, 4], n=7, p=[.3, .7])
@@ -2771,7 +2771,7 @@ class multinomial_gen(multi_rv_generic):
 
     In this example, `n.shape == (2,)` and `p.shape == (2, 2)`, and following
     the rules above, these broadcast as if `p.shape == (2,)`. Thus the result
-    should also be of shape `(2,), but since each output is a :math:`2 \times
+    should also be of shape `(2,)`, but since each output is a :math:`2 \times
     2` matrix, the result in fact has shape `(2, 2, 2)`, where `result[0]` is
     equal to `multinomial.cov(n=4, p=[.3, .7])` and `result[1]` is equal to
     `multinomial.cov(n=5, p=[.4, .6])`.
@@ -2797,9 +2797,10 @@ class multinomial_gen(multi_rv_generic):
 
     def _process_parameters(self, n, p):
         """
-        Return: n, p, npcond.
+        Return: n_, p_, npcond.
 
-        n and p are 
+        n_ and p_ are arrays of the correct shape; npcond is a boolean array
+        flagging values out of the domain.
        """
         p = np.array(p, dtype=np.float64, copy=True)
         p[...,-1] = 1. - p[...,:-1].sum(axis=-1)
@@ -2817,7 +2818,10 @@ class multinomial_gen(multi_rv_generic):
 
     def _process_quantiles(self, x, n, p):
         """
-        Find boolean arrays indicating where x is out of the domain.
+        Return: x_, xcond.
+
+        x_ is an int array; xcond is a boolean array flagging values out of the
+        domain.
         """
         xx = np.asarray(x, dtype=np.int)
 
@@ -2924,7 +2928,7 @@ class multinomial_gen(multi_rv_generic):
 
     def cov(self, n, p):
         """
-        Covariance matrix of the Multinomial distribution
+        Covariance matrix of the multinomial distribution.
 
         Parameters
         ----------
@@ -2948,7 +2952,14 @@ class multinomial_gen(multi_rv_generic):
 
     def entropy(self, n, p):
         """
-        Compute the entropy of the Multinomial distribution.
+        Compute the entropy of the multinomial distribution.
+
+        The entropy is computed using this expression:
+
+        .. math::
+
+            f(x) = - \log n! - n\sum_{i=1}^k p_i \log p_i +
+            \sum_{i=1}^k \sum_{x=0}^n \binom n x p_i^x(1-p_i)^{n-x} \log x!
 
         Parameters
         ----------
