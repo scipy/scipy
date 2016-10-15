@@ -204,6 +204,28 @@ class TestExpM(TestCase):
         atol = 100 * tiny
         assert_(not np.allclose(A_expm_logm_perturbed, A, rtol=rtol, atol=atol))
 
+    def test_regression_ell_typo(self):
+        # This is a regression test for a typo in the _ell() function
+        # which was causing a lower-order pade approximation in some cases.
+        # The hardcoded output matrix was computed with mpmath
+        # using 50 decimal digits of precision (mpmath.dps = 50).
+        A = np.array([
+            [-5.3447e-03, 4.7433e-03, -5.1448e-03, 3.4088e-03],
+            [-3.1107e-05, -3.7081e-03, 2.8692e-03, -7.6581e-04],
+            [-8.4611e-03, -6.5633e-03, 1.1284e-02, 4.3239e-04],
+            [-3.9341e-03, 2.9821e-03, -1.1657e-05, 3.9240e-03]])
+        actual = expm(A)
+        desired = np.array([
+            [0.9946845481839301506, 0.0047438550520396294968,
+             -0.0051533751926669778276, 0.0034034749410438158712],
+            [-0.000041610993607810567755, 0.99628810815128765466,
+             0.0028802086120878781991, -0.0007653341372984243671],
+            [-0.0084871318566100209524, -0.0066077450676178522276,
+             1.0113603002904907324, 0.00042375140929817032339],
+            [-0.0039313475627484797265, 0.0029731138185985972119,
+             2.6931676072838083642e-6, 1.0039238565367516465]])
+        assert_allclose(actual, desired, rtol=1e-15)
+
     def test_burkardt_1(self):
         # This matrix is diagonal.
         # The calculation of the matrix exponential is simple.

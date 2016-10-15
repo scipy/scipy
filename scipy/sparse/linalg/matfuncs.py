@@ -18,6 +18,7 @@ import numpy as np
 
 import scipy.misc
 from scipy.linalg.basic import solve, solve_triangular
+from scipy.special import betaln, gammaln
 
 from scipy.sparse.base import isspmatrix
 from scipy.sparse.construct import eye as speye
@@ -89,7 +90,7 @@ def _onenorm_matrix_power_nnm(A, p):
     M = A.T
     for i in range(p):
         v = M.dot(v)
-    return max(v)
+    return v.max()
 
 
 def _onenorm(A):
@@ -586,6 +587,9 @@ def _expm(A, use_exact_onenorm):
     # Core of expm, separated to allow testing exact and approximate
     # algorithms.
 
+    # This is for caching.
+    ell_helper = _EllHelper(A)
+
     # Avoid indiscriminate asarray() to allow sparse or other strange arrays.
     if isinstance(A, (list, tuple)):
         A = np.asarray(A)
@@ -616,22 +620,22 @@ def _expm(A, use_exact_onenorm):
 
     # Try Pade order 3.
     eta_1 = max(h.d4_loose, h.d6_loose)
-    if eta_1 < 1.495585217958292e-002 and _ell(h.A, 3) == 0:
+    if eta_1 < 1.495585217958292e-002 and ell_helper.ell(3) == 0:
         U, V = h.pade3()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade order 5.
     eta_2 = max(h.d4_tight, h.d6_loose)
-    if eta_2 < 2.539398330063230e-001 and _ell(h.A, 5) == 0:
+    if eta_2 < 2.539398330063230e-001 and ell_helper.ell(5) == 0:
         U, V = h.pade5()
         return _solve_P_Q(U, V, structure=structure)
 
     # Try Pade orders 7 and 9.
     eta_3 = max(h.d6_tight, h.d8_loose)
-    if eta_3 < 9.504178996162932e-001 and _ell(h.A, 7) == 0:
+    if eta_3 < 9.504178996162932e-001 and ell_helper.ell(7) == 0:
         U, V = h.pade7()
         return _solve_P_Q(U, V, structure=structure)
-    if eta_3 < 2.097847961257068e+000 and _ell(h.A, 9) == 0:
+    if eta_3 < 2.097847961257068e+000 and ell_helper.ell(9) == 0:
         U, V = h.pade9()
         return _solve_P_Q(U, V, structure=structure)
 
@@ -640,7 +644,10 @@ def _expm(A, use_exact_onenorm):
     eta_5 = min(eta_3, eta_4)
     theta_13 = 4.25
     s = max(int(np.ceil(np.log2(eta_5 / theta_13))), 0)
-    s = s + _ell(2**-s * h.A, 13)
+    if s:
+        s = s + _ell(2**-s * h.A, 13)
+    else:
+        s = ell_helper.ell(13)
     U, V = h.pade13_scaled(s)
     X = _solve_P_Q(U, V, structure=structure)
     if structure == UPPER_TRIANGULAR:
@@ -789,7 +796,38 @@ def _fragment_2_1(X, T, s):
     return X
 
 
-def _ell(A, m):
+class _EllHelper(object):
+    # Track abs(A) and matrix-vector products like
+    # np.linalg.matrix_power(np.absolute(A), p).dot(np.ones(n, 1)).
+    # Requires an ell 'access pattern' with constant A and
+    # strictly increasing values of m.
+    def __init__(self, A):
+        if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
+            raise ValueError('expected A to be like a square matrix')
+        self.A = A
+        self.n = A.shape[1]
+        self.A_abs = np.absolute(A)
+        self.A_onenorm = _onenorm(A)
+        self.p_prev = 0
+        self.v_prev = np.ones((self.n, 1), dtype=float)
+
+    def onenorm_power_abs(self, p):
+        # One-norm of matrix power of entrywise absolute value matrix.
+        # np.linalg.matrix_power(np.absolute(A), p).dot(np.ones(n)).
+        gap = p - self.p_prev
+        if gap < 1:
+            raise ValueError('expected strictly increasing p, but observed '
+                             '%s followed by %s' % (self.p_prev, p))
+        for i in range(gap):
+            self.p_prev += 1
+            self.v_prev = self.A_abs.dot(self.v_prev)
+        return self.v_prev.max()
+
+    def ell(self, m):
+        return _ell(None, m, self.A_onenorm, self.onenorm_power_abs(2*m + 1))
+
+
+def _ell(A, m, A_onenorm=None, A_onenorm_power_abs=None):
     """
     A helper function for expm_2009.
 
@@ -799,6 +837,11 @@ def _ell(A, m):
         A linear operator whose norm of power we care about.
     m : int
         The power of the linear operator
+    A_onenorm : float, optional
+        1-norm of A
+    A_onenorm_power_abs : float, optional
+        1-norm of the 2*m + 1 matrix power of the matrix of absolute values
+        of entries of A.
 
     Returns
     -------
@@ -806,28 +849,35 @@ def _ell(A, m):
         A value related to a bound.
 
     """
-    if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
-        raise ValueError('expected A to be like a square matrix')
-
-    p = 2*m + 1
-
-    # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
-    # They are coefficients of terms of a generating function series expansion.
-    choose_2p_p = scipy.misc.comb(2*p, p, exact=True)
-    abs_c_recip = float(choose_2p_p * math.factorial(2*p + 1))
-
-    # This is explained after Eq. (1.2) of the 2009 expm paper.
-    # It is the "unit roundoff" of IEEE double precision arithmetic.
-    u = 2**-53
-
-    # Compute the one-norm of matrix power p of abs(A).
-    A_abs_onenorm = _onenorm_matrix_power_nnm(abs(A), p)
+    if A_onenorm_power_abs is None:
+        A_onenorm_power_abs = _onenorm_matrix_power_nnm(np.absolute(A), 2*m + 1)
 
     # Treat zero norm as a special case.
-    if not A_abs_onenorm:
+    # TODO check that this is appropriate
+    # Returning zero means a low-order pade approximation is more likely
+    # to be used.
+    if not A_onenorm_power_abs:
         return 0
 
-    alpha = A_abs_onenorm / (_onenorm(A) * abs_c_recip)
-    log2_alpha_div_u = np.log2(alpha/u)
-    value = int(np.ceil(log2_alpha_div_u / (2 * m)))
+    if A_onenorm is None:
+        A_onenorm = _onenorm(A)
+
+    # This is the log of the absolute value of the first
+    # structurally nonzero coefficient in the Maclaurin series
+    # of log(pade(m, x) / exp(x)) where pade(m, x) is the mth order pade
+    # approximation of exp(x).  Everything else being equal,
+    # if the approximation is good then the log ratio will be small
+    # with the first structurally nonzero coefficient near zero.
+    # In that case the log of the absolute value of the coefficient will be
+    # negative or small.
+    # Some explanation is given near equation (3.1) in the 2009 paper,
+    # and between equations (2.1) and (2.6) of the 2005 paper.
+    log_abs_c = betaln(m+1, m+1) - gammaln(2*m + 1)
+
+    # This notation is explained after Eq. (1.2) of the 2009 paper.
+    log2_u = -53
+
+    log2_abs_c = log_abs_c / np.log(2)
+    log2_norm_ratio = np.log2(A_onenorm_power_abs) - np.log2(A_onenorm)
+    value = int(np.ceil((log2_abs_c + log2_norm_ratio - log2_u) / (2*m)))
     return max(value, 0)
