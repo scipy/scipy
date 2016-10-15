@@ -143,7 +143,8 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
 
 
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
-          detrend='constant', return_onesided=True, scaling='density', axis=-1):
+          detrend='constant', return_onesided=True, scaling='density',
+          axis=-1):
     """
     Estimate power spectral density using Welch's method.
 
@@ -523,8 +524,8 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
         noverlap = nperseg // 8
 
     freqs, time, Sxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
-                                        nfft, detrend, return_onesided, scaling,
-                                        axis, mode='psd')
+                                        nfft, detrend, return_onesided,
+                                        scaling, axis, mode='psd')
 
     return freqs, time, Sxx
 
@@ -610,7 +611,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
     step = nperseg - noverlap
     binsums = np.sum((win[ii*step:(ii+1)*step] for ii in range(nperseg//step)),
-                      axis=0)
+                     axis=0)
 
     if nperseg % step != 0:
         binsums[:nperseg % step] += win[-(nperseg % step):]
@@ -781,9 +782,9 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         Otherwise, ``nperseg=Zxx.shape[freq_axis]``.
     noverlap : int, optional
         Number of points to overlap between segments. If ``None``, half of the
-        segment length. Defaults to ``None``. When specified, the COLA constraint
-        must be met (see Notes below), and should match the parameter used to
-        generate the STFT.
+        segment length. Defaults to ``None``. When specified, the COLA
+        constraint must be met (see Notes below), and should match the
+        parameter used to generate the STFT.
     nfft : int, optional
         Number of FFT points corresponding to each STFT segment. This parameter
         must be specified if the STFT was padded via ``nfft > nperseg``. If
@@ -1038,8 +1039,8 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         function, it takes a segment and returns a detrended segment.
         If `detrend` is False, no detrending is done.  Defaults to 'constant'.
     axis : int, optional
-        Axis along which the coherence is computed for both inputs; the default is
-        over the last axis (i.e. ``axis=-1``).
+        Axis along which the coherence is computed for both inputs; the default
+        is over the last axis (i.e. ``axis=-1``).
 
     Returns
     -------
@@ -1112,10 +1113,10 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     return freqs, Cxy
 
 
-def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
-                    noverlap=None, nfft=None, detrend='constant',
-                    return_onesided=True, scaling='spectrum', axis=-1,
-                    mode='psd', padded=False, centered=False):
+def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
+                     nfft=None, detrend='constant', return_onesided=True,
+                     scaling='spectrum', axis=-1, mode='psd', padded=False,
+                     centered=False):
     """
     Calculate various forms of windowed FFTs for PSD, CSD, etc.
 
@@ -1216,9 +1217,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
     x = np.asarray(x)
     if not same_data:
         y = np.asarray(y)
-        outdtype = np.result_type(x,y,np.complex64)
+        outdtype = np.result_type(x, y, np.complex64)
     else:
-        outdtype = np.result_type(x,np.complex64)
+        outdtype = np.result_type(x, np.complex64)
 
     if not same_data:
         # Check if we can broadcast the outer axes together
@@ -1329,8 +1330,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
     if return_onesided is True:
         if np.iscomplexobj(x):
             sides = 'twosided'
-            warnings.warn('Input data is complex, switching to return_onesided='
-                          'False')
+            warnings.warn('Input data is complex, switching to '
+                          'return_onesided=False')
         else:
             sides = 'onesided'
             if not same_data:
@@ -1360,10 +1361,10 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
     result *= scale
     if sides == 'onesided' and mode == 'psd':
         if nfft % 2:
-            result[...,1:] *= 2
+            result[..., 1:] *= 2
         else:
             # Last point is unpaired Nyquist freq point, don't double
-            result[...,1:-1] *= 2
+            result[..., 1:-1] *= 2
 
     time = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1,
                      nperseg - noverlap)/float(fs)
