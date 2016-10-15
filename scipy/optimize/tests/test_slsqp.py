@@ -4,7 +4,8 @@ Unit test for SLSQP optimization.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_, assert_array_almost_equal, TestCase,
-                           assert_allclose, assert_equal, run_module_suite)
+                           assert_allclose, assert_equal, run_module_suite,
+                           assert_raises)
 import numpy as np
 
 from scipy._lib._testutils import knownfailure_overridable
@@ -304,6 +305,11 @@ class TestSLSQP(TestCase):
     def test_integer_bounds(self):
         # This should not raise an exception
         fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
+
+    def test_obj_must_return_scalar(self):
+        # If objective function does not return a scalar, raises ValueError
+        with assert_raises(ValueError):
+            fmin_slsqp(lambda x: [0, 1], [1,2,3])
 
     def test_callback(self):
         # Minimize, method='SLSQP': unbounded, approximated jacobian. Check for callback
