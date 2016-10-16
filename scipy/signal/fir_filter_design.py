@@ -807,11 +807,11 @@ def _dhtm(mag):
     Parameters
     ----------
     mag : ndarray
-        The magnitude spectrum. Should be an even number, and
-        preferably fast for FFT/IFFT.
+        The magnitude spectrum. Should be 1D with an even length, and
+        preferably a fast length for FFT/IFFT.
     """
     # Adapted based on code by Niranjan Damera-Venkata,
-    # Brian L. Evans and Shawn R. McCaslin
+    # Brian L. Evans and Shawn R. McCaslin (see refs for `minimum_phase`)
     sig = np.zeros(len(mag))
     # Leave Nyquist and DC at 0, knowing np.abs(fftfreq(N)[midpt]) == 0.5
     midpt = len(mag) // 2
@@ -947,7 +947,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     """  # noqa
     h = np.asarray(h)
     if np.iscomplexobj(h):
-        raise ValueError('Complex filters not supported yet')
+        raise ValueError('Complex filters not supported')
     if h.ndim != 1 or h.size <= 2:
         raise ValueError('h must be 1D and at least 2 samples long')
     n_half = len(h) // 2
