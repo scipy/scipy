@@ -1,14 +1,14 @@
 Deciding on new features
 ========================
 The general decision rule to accept a proposed new feature has so far
-been generally conditional on:
+been conditional on:
 
 1. The method is applicable in many fields and "generally agreed" to
    be useful,
 2. Fits the topic of the submodule, and does not require extensive
    support frameworks to operate,
 3. The implementation looks sound and unlikely to need much tweaking in
-   the future, and
+   the future (e.g., limited expected maintenance burden), and
 4. Someone wants to do it.
 
 Although it's difficult to give hard rules on what "generally useful
