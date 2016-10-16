@@ -569,14 +569,14 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
     reconstruction.
 
     Some examples of windows that satisfy COLA:
-        - Rectangular window at 0% & 50% overlap
-        - Bartlett window at overlap of 1/2, 3/4, 5/6, 7/8, ...
-        - Hann window at 50% & 75% overlap
+        - Rectangular window at overlap of 0, 1/2, 2/3, 3/4, ...
+        - Bartlett window at overlap of 1/2, 3/4, 5/6, ...
+        - Hann window at 1/2, 2/3, 3/4, ...
         - Any Blackman family window at 2/3 overlap
         - Any window with ``noverlap = nperseg-1``
 
-    A very comprehensive of other windows may be found in [2]_, wherein the
-    COLA condition is satisfied when the "Amplitude Flatness" is unity.
+    A very comprehensive list of other windows may be found in [2]_, wherein
+    the COLA condition is satisfied when the "Amplitude Flatness" is unity.
 
     .. versionadded:: 0.18.0
 
@@ -589,6 +589,38 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
            including a comprehensive list of window functions and some new
            at-top windows", 2002,
            http://hdl.handle.net/11858/00-001M-0000-0013-557A-5
+
+    Examples
+    --------
+    >>> from scipy import signal
+
+    Confirm COLA condition for rectangular window of 75% (3/4) overlap:
+
+    >>> signal.check_COLA(signal.boxcar(100), 100, 75)
+    True
+
+    COLA is not true for 25% (1/4) overlap, though:
+
+    >>> signal.check_COLA(signal.boxcar(100), 100, 25)
+    False
+
+    "Symmetrical" Hann window (for filter design) is not COLA:
+
+    >>> signal.check_COLA(signal.hann(120, sym=True), 120, 60)
+    False
+
+    "Periodic" or "DFT-even" Hann window (for FFT analysis) is COLA for
+    overlap of 1/2, 2/3, 3/4, etc.:
+
+    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 60)
+    True
+
+    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 80)
+    True
+
+    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 90)
+    True
+
     """
 
     nperseg = int(nperseg)
