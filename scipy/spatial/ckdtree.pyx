@@ -509,9 +509,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             self.boxsize_data = boxsize_arr
             self.raw_boxsize_data = <np.float64_t*> np.PyArray_DATA(boxsize_arr)
             self.boxsize = boxsize_arr[:self.m].copy()
-            if (self.data >= self.boxsize[None, self.boxsize > 0]).any():
+            periodic_mask = self.boxsize > 0
+            if ((self.data >= self.boxsize[None, :])[:, periodic_mask]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
-            if (self.data < 0).any():
+            if ((self.data < 0)[:, periodic_mask]).any():
                 raise ValueError("Negative input data are outside of the periodic box.")
 
         self.maxes = np.ascontiguousarray(np.amax(self.data,axis=0), dtype=np.float64)

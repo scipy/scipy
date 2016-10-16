@@ -22,6 +22,29 @@ struct BoxDist1D {
          *
          * We will fix the convention later.
          * */
+        if (NPY_UNLIKELY(full <= 0)) {
+            /* A non-periodic dimension */
+            /* \/     */
+            if(max <= 0 || min >= 0) {
+                /* do not pass though 0 */
+                min = dabs(min);
+                max = dabs(max);
+                if(min < max) {
+                    *realmin = min;
+                    *realmax = max;
+                } else {
+                    *realmin = max;
+                    *realmax = min;
+                }
+            } else {
+                min = dabs(min);
+                max = dabs(max);
+                *realmax = fmax(max, min);
+                *realmin = 0;
+            }
+            /* done with non-periodic dimension */
+            return;
+        }
         if(max <= 0 || min >= 0) {
             /* do not pass through 0 */
             min = dabs(min);
