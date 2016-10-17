@@ -22,23 +22,27 @@ class OdeSolver(object):
         1. A constructor must accept parameters presented in the base class
            (listed below) followed by any other parameters specific to a
            solver.
-        2. A solver must implement a private method
+        2. A constructor must accept arbitrary extraneous arguments
+           ``**extraneous``, but warn that these arguments are irrelevant
+           using `common.warn_extraneous` function. Do not pass these arguments
+           to the base class.
+        3. A solver must implement a private method
            `_step_impl(self, max_step=np.inf)` which propagates a solver one
            step further. It must return tuple ``(success, message)``, where
            ``success`` is a boolean indicating whether a step was successful,
            and ``message`` is a string containing description of a failure if
            a step failed or None otherwise.
-        3. A solver must implement a private method `_dense_output_impl(self)`
+        4. A solver must implement a private method `_dense_output_impl(self)`
            which returns `DenseOutput` object covering the last successful
            step.
-        4. A solver must have attributes listed below in Attributes section.
-        5. Use `fun(self, t, y)` method for the system rhs evaluation, this
+        5. A solver must have attributes listed below in Attributes section.
+        6. Use `fun(self, t, y)` method for the system rhs evaluation, this
            way the number of functions evaluations (`nfev`) will be tracked
            automatically.
-        6. If a solver uses Jacobian and LU decompositions, it should track
+        7. If a solver uses Jacobian and LU decompositions, it should track
            the number of Jacobian evaluations (`njev`) and the number of LU
            factorizations (`nlu`).
-        7. By convention a function evaluations used to compute a finite
+        8. By convention a function evaluations used to compute a finite
            difference approximation of the Jacobian should not be counted in
            `nfev`, thus use `_fun(self, t, y)` method when computing a finite
            difference approximation of the Jacobian.

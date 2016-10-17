@@ -1,5 +1,5 @@
 from __future__ import division, print_function, absolute_import
-import warnings as warn
+from warnings import warn
 import numpy as np
 
 
@@ -10,6 +10,12 @@ def validate_max_step(max_step):
     if max_step <= 0:
         raise ValueError("`max_step` must be positive.")
     return max_step
+
+
+def warn_extraneous(extraneous):
+    if extraneous:
+        warn("The following arguments have no effect for a chosen solver: {}."
+             .format(", ".join("`{}`".format(x) for x in extraneous)))
 
 
 def validate_tol(rtol, atol, n):

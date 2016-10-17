@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
-from .common import validate_max_step, validate_tol, select_initial_step, norm, num_jac, EPS
+from .common import (validate_max_step, validate_tol, select_initial_step,
+                     norm, num_jac, EPS, warn_extraneous)
 from .base import OdeSolver, DenseOutput
 
 S6 = 6 ** 0.5
@@ -246,8 +247,9 @@ class Radau(OdeSolver):
     .. [1] E. Hairer, G. Wanner, "Solving Ordinary Differential Equations II:
            Stiff and Differential-Algebraic Problems", Sec. IV.8.
     """
-
-    def __init__(self, fun, t0, y0, t_crit, max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None):
+    def __init__(self, fun, t0, y0, t_crit, max_step=np.inf,
+                 rtol=1e-3, atol=1e-6, jac=None, **extraneous):
+        warn_extraneous(extraneous)
         super(Radau, self).__init__(fun, t0, y0, t_crit)
         self.y_old = None
         self.max_step = validate_max_step(max_step)

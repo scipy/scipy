@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from .base import OdeSolver, DenseOutput
-from .common import validate_max_step, validate_tol, select_initial_step, norm
+from .common import (validate_max_step, validate_tol, select_initial_step,
+                     norm, warn_extraneous)
 
 
 # Multiply steps computed from asymptotic behaviour of errors by this.
@@ -87,7 +88,9 @@ class RungeKutta(OdeSolver):
     order = NotImplemented
     n_stages = NotImplemented
 
-    def __init__(self, fun, t0, y0, t_crit, max_step=np.inf, rtol=1e-3, atol=1e-6):
+    def __init__(self, fun, t0, y0, t_crit, max_step=np.inf,
+                 rtol=1e-3, atol=1e-6, **extraneous):
+        warn_extraneous(extraneous)
         super(RungeKutta, self).__init__(fun, t0, y0, t_crit)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
