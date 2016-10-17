@@ -105,6 +105,27 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                      'gesv|posv' % -info)
 
 
+def solve_x(a, b):
+    """
+    Options to be added
+
+    overwrite_a=False, overwrite_b=False,
+    check_finite=True, transposed=False,
+    factored=True, left_factor=None, right_factor=None
+
+    Documentation of solver that will use ?GESVX driver
+
+    This is a very early preliminary test version to see if the
+    Fortran binding is functional.
+
+    """
+#    a1 = _asarray_validated(a, check_finite=check_finite)
+#    b1 = _asarray_validated(b, check_finite=check_finite)
+    gesvx = get_lapack_funcs(('gesvx',), (a, b))
+
+    return gesvx(a, b, trans='N', fact='E', equed='R')
+
+
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
                      overwrite_b=False, debug=False, check_finite=True):
     """

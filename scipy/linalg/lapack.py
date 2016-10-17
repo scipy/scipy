@@ -150,6 +150,11 @@ All functions
    cgesv
    zgesv
 
+   sgesv
+   dgesv
+   cgesv
+   zgesv
+
    sgetrf
    dgetrf
    cgetrf

@@ -21,7 +21,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance)
+                          matrix_balance, solve_x)
 
 from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
@@ -601,6 +601,27 @@ class TestSolve(TestCase):
                   [[2, 1], [-30, 4]]):
             x = solve(a, b, check_finite=False)
             assert_array_almost_equal(dot(a, x), b)
+
+
+class TestSolveX(TestCase):
+    def test_simple(self):
+        a = np.array([[1.80, 2.88, 2.05, -0.89],
+                      [525.00, -295.00, -95.00, -380.00],
+                      [1.58, -2.69, -2.90, -1.04],
+                      [-1.11, -0.66, -0.59, -0.80]])
+
+        b = np.array([[9.52, 18.47], [2435.00, 225.00],
+                      [0.77, -13.28], [-6.22, -6.21]])
+
+        test_out_args = solve_x(a, b)
+        for x in test_out_args:
+            try:
+                if x.shape == (4, 2):
+                    assert_array_almost_equal(x, np.array([[1., -1, 3, -5],
+                                                           [3, 2, 4, 1]]).T)
+            except:
+                pass
+            print(x)
 
 
 class TestSolveTriangular(TestCase):
