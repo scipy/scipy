@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #
 # Author: Damian Eads
 # Date: April 17, 2008
