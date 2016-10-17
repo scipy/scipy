@@ -542,14 +542,14 @@ interface
 
    end subroutine <prefix>gesv
 
-   subroutine <prefix>gesvx(fact,trans,a,af,piv,equed,r,c,b,x,rcond,ferr,berr,work,iwork,info)
+   subroutine <prefix>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,piv,equed,r,c,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
 
    ! Solve A * X = B using LU decomposition
    ! The expert driver of ?GESV with condition number,
    ! backward/forward error estimates.
 
-     callstatement (*f2py_func)(fact,trans,n,nrhs,a,lda,af,&ldaf,piv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,&iwork,&info)
-     callprotoargument char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,int* ,char*,<ctype>*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,<ctype>*,int*
+     callstatement (*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,piv,equed,r,c,b,&ldb,x,&ldx,rcond,ferr,berr,work,iwork,info)
+     callprotoargument char*,char*,int*,int*,<ftype>*,int*,<ftype>*,int*,int*,char*,<ftype>,<ftype>,<ftype>*,int*,<ftype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ftype>*,<ftype>*,int*
 
      character optional,intent(in),check(*fact=='F'||*fact=='N'||*fact=='E'):: fact='N'
      character optional,intent(in),check(*trans=='N'||*trans=='T'||*trans=='C'):: trans='N'
