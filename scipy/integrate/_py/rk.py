@@ -89,9 +89,9 @@ class RungeKutta(OdeSolver):
     n_stages = NotImplemented
 
     def __init__(self, fun, t0, y0, t_crit, max_step=np.inf,
-                 rtol=1e-3, atol=1e-6, **extraneous):
+                 rtol=1e-3, atol=1e-6, vectorized=False, **extraneous):
         warn_extraneous(extraneous)
-        super(RungeKutta, self).__init__(fun, t0, y0, t_crit)
+        super(RungeKutta, self).__init__(fun, t0, y0, t_crit, vectorized)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -174,8 +174,12 @@ class RK23(RungeKutta):
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar, and ``y`` is ndarray with shape (n,). It
-        must return an array_like with shape (n,).
+        Here ``t`` is a scalar and there are two options for ndarray ``y``.
+        It can either have shape (n,), then ``fun`` must return array_like with
+        shape (n,). Or alternatively it can have shape (n, n_points), then
+        ``fun`` must return array_like with shape (n, n_points) (each column
+        corresponds to a single column in ``y``). The choice between the two
+        options is determined by `vectorized` argument (see below).
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -196,6 +200,8 @@ class RK23(RungeKutta):
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
+    vectorized : bool, optional
+        Whether `fun` is implemented in a vectorized fashion. Default is False.
 
     Attributes
     ----------
@@ -252,8 +258,12 @@ class RK45(RungeKutta):
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar, and ``y`` is ndarray with shape (n,). It
-        must return an array_like with shape (n,).
+        Here ``t`` is a scalar and there are two options for ndarray ``y``.
+        It can either have shape (n,), then ``fun`` must return array_like with
+        shape (n,). Or it can have shape (n, n_points), then ``fun`` must
+        return array_like with shape (n, n_points) (each column corresponds
+        to a single column in ``y``). The choice between the two options is
+        determined by `vectorized` argument (see below).
     t0 : float
         Initial value of the independent variable.
     y0 : array_like, shape (n,)
@@ -274,6 +284,8 @@ class RK45(RungeKutta):
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
+    vectorized : bool, optional
+        Whether `fun` is implemented in a vectorized fashion. Default is False.
 
     Attributes
     ----------

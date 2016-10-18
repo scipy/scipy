@@ -20,8 +20,7 @@ class OdeSolver(object):
     In order to implement a new solver you need to follow the guidelines:
 
         1. A constructor must accept parameters presented in the base class
-           (listed below) followed by any other parameters specific to a
-           solver.
+           (listed below) along with any other parameters specific to a solver.
         2. A constructor must accept arbitrary extraneous arguments
            ``**extraneous``, but warn that these arguments are irrelevant
            using `common.warn_extraneous` function. Do not pass these arguments
@@ -44,15 +43,20 @@ class OdeSolver(object):
            factorizations (`nlu`).
         8. By convention a function evaluations used to compute a finite
            difference approximation of the Jacobian should not be counted in
-           `nfev`, thus use `_fun(self, t, y)` method when computing a finite
-           difference approximation of the Jacobian.
+           `nfev`, thus use `fun_single(self, t, y)` or
+           `fun_vectorized(self, t, y)` when computing a finite difference
+           approximation of the Jacobian.
 
     Parameters
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar, and ``y`` is ndarray with shape (n,). It
-        must return an array_like with shape (n,).
+        Here ``t`` is a scalar and there are two options for ndarray ``y``.
+        It can either have shape (n,), then ``fun`` must return array_like with
+        shape (n,). Or alternatively it can have shape (n, n_points), then
+        ``fun`` must return array_like with shape (n, n_points) (each column
+        corresponds to a single column in ``y``). The choice between the two
+        options is determined by `vectorized` argument (see below).
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -60,6 +64,8 @@ class OdeSolver(object):
     t_crit : float
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
+    vectorized : bool
+        Whether `fun` is implemented in a vectorized fashion.
 
     Attributes
     ----------
@@ -88,11 +94,28 @@ class OdeSolver(object):
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
-    def __init__(self, fun, t0, y0, t_crit):
+    def __init__(self, fun, t0, y0, t_crit, vectorized):
         self.t_old = None
         self.t = t0
         self._fun, self.y = check_arguments(fun, y0)
         self.t_crit = t_crit
+        self.vectorized = vectorized
+
+        if vectorized:
+            def fun_single(t, y):
+                return self._fun(t, y[:, None]).ravel()
+            fun_vectorized = self._fun
+        else:
+            fun_single = self._fun
+
+            def fun_vectorized(t, y):
+                f = np.empty_like(y)
+                for i, yi in enumerate(y.T):
+                    f[:, i] = self._fun(t, yi)
+                return f
+
+        self.fun_single = fun_single
+        self.fun_vectorized = fun_vectorized
 
         self.direction = np.sign(t_crit - t0) if t_crit != t0 else 1
         self.n = self.y.size
@@ -102,16 +125,16 @@ class OdeSolver(object):
         self.njev = 0
         self.nlu = 0
 
+    def fun(self, t, y):
+        self.nfev += 1
+        return self.fun_single(t, y)
+
     @property
     def step_size(self):
         if self.t_old is None:
             return None
         else:
             return np.abs(self.t - self.t_old)
-
-    def fun(self, t, y):
-        self.nfev += 1
-        return self._fun(t, y)
 
     def step(self):
         """Perform one integration step.

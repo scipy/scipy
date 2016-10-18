@@ -204,7 +204,7 @@ class OdeSolution(object):
         return ys
 
 
-def num_jac(fun, t, y, f, threshold, factor=None):
+def num_jac(fun, t, y, f, threshold, factor):
     """Finite differences Jacobian approximation tailored for ODE solvers.
 
     This function computes finite difference approximation to the Jacobian
@@ -223,7 +223,7 @@ def num_jac(fun, t, y, f, threshold, factor=None):
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system.
+        Right-hand side of the system implemented in a vectorized fashion.
     t : float
         Current time.
     y : ndarray, shape (n,)
@@ -242,11 +242,13 @@ def num_jac(fun, t, y, f, threshold, factor=None):
     -------
     J : ndarray, shape (n, n)
         Jacobian matrix.
-    step_size : ndarray, shape (n,)
-        Suggested step size for the next evaluation.
+    factor : ndarray, shape (n,)
+        Suggested `factor` for the next evaluation.
     """
     y = np.asarray(y)
     n = y.shape[0]
+    if n == 0:
+        return np.empty((0, 0)), factor
 
     if factor is None:
         factor = np.ones(n) * EPS ** 0.5
@@ -266,40 +268,40 @@ def num_jac(fun, t, y, f, threshold, factor=None):
             h[i] = (y[i] + factor[i] * y_scale[i]) - y[i]
 
     h_vecs = np.diag(h)
-    J = np.empty((n, n))
-    for i in range(n):
-        f_new = fun(t, y + h_vecs[i])
-        diff = f_new - f
-        max_ind = np.argmax(np.abs(diff))
+    f_new = fun(t, y[:, None] + h_vecs)
+    diff = f_new - f[:, None]
+    max_ind = np.argmax(np.abs(diff), axis=0)
+    j = np.arange(n)
+    max_diff = np.abs(diff[max_ind, j])
+    scale = np.maximum(np.abs(f[max_ind]), np.abs(f_new[max_ind, j]))
 
-        max_diff = np.abs(diff[max_ind])
-        scale = max(np.abs(f_new[max_ind]), np.abs(f[max_ind]))
+    diff_too_small = max_diff < EPS ** 0.875 * scale
+    if np.any(diff_too_small):
+        ind, = np.nonzero(diff_too_small)
+        new_factor = 10 * factor[ind]
+        h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
+        h_vecs[ind, ind] = h_new
+        f_new = fun(t, y[:, None] + h_vecs[:, ind])
+        diff_new = f_new - f[:, None]
+        max_ind = np.argmax(np.abs(diff_new), axis=0)
+        j = np.arange(ind.shape[0])
+        max_diff_new = np.abs(diff_new[max_ind, j])
+        scale_new = np.maximum(np.abs(f[max_ind]), np.abs(f_new[max_ind, j]))
 
-        # Difference is suspiciously small. Try a 10x step.
-        if max_diff < EPS ** 0.875 * scale:
-            new_factor = 10 * factor[i]
-            h_new = (y[i] + new_factor * y_scale[i]) - y[i]
-            h_vecs[i, i] = h_new
-            f_new = fun(t, y + h_vecs[i])
-            diff_new = f_new - f
-            max_ind = np.argmax(np.abs(diff_new))
-            max_diff_new = np.abs(diff_new[max_ind])
-            scale_new = max(np.abs(f_new[max_ind]), np.abs(f[max_ind]))
+        update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
+        if np.any(update):
+            update, = np.where(update)
+            update_ind = ind[update]
+            factor[update_ind] = new_factor[update]
+            h[update_ind] = h_new[update]
+            diff[:, update_ind] = diff_new[:, update]
+            scale[update_ind] = scale_new[update]
+            max_diff[update_ind] = max_diff_new[update]
 
-            if max_diff * scale_new < scale * max_diff_new:
-                factor[i] = new_factor
-                h[i] = h_new
-                diff = diff_new
-                scale = scale_new
-                max_diff = max_diff_new
+    diff /= h
 
-        J[:, i] = diff / h[i]
-
-        # Adjust factor based on the difference compared to the scale.
-        if max_diff < EPS ** 0.75 * scale:
-            factor[i] *= 10
-        elif max_diff > EPS ** 0.25 * scale:
-            factor[i] *= 0.1
-
+    factor[max_diff < EPS ** 0.75 * scale] *= 10
+    factor[max_diff > EPS ** 0.25 * scale] *= 0.1
     factor = np.maximum(factor, 1e3 * EPS)
-    return J, factor
+
+    return diff, factor

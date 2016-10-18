@@ -15,6 +15,11 @@ def fun_rational(t, y):
                      y[1] * (y[0] + 2 * y[1] - 1) / (t * (y[0] - 1))])
 
 
+def fun_rational_vectorized(t, y):
+    return np.vstack((y[1] / t,
+                      y[1] * (y[0] + 2 * y[1] - 1) / (t * (y[0] - 1))))
+
+
 def jac_rational(t, y):
     return np.array([
         [0, 1 / t],
@@ -59,14 +64,20 @@ def test_integration():
 
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        for method, t_span, jac in product(
+        for vectorized, method, t_span, jac in product(
+                [False, True],
                 ['RK23', 'RK45', 'Radau', 'BDF'],
                 [[5, 9], [5, 1]],
                 [None, jac_rational, jac_rational_sparse]):
 
-            res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
+            if vectorized:
+                fun = fun_rational_vectorized
+            else:
+                fun = fun_rational
+
+            res = solve_ivp(fun, t_span, y0, rtol=rtol,
                             atol=atol, method=method, dense_output=True,
-                            jac=jac)
+                            jac=jac, vectorized=vectorized)
             assert_equal(res.t[0], t_span[0])
             assert_(res.t_events is None)
             assert_(res.success)
@@ -386,7 +397,7 @@ def test_OdeSolution():
 
 def test_num_jac():
     def fun(t, y):
-        return np.array([
+        return np.vstack([
             -0.04 * y[0] + 1e4 * y[1] * y[2],
             0.04 * y[0] - 1e4 * y[1] * y[2] - 3e7 * y[1] ** 2,
             3e7 * y[1] ** 2
@@ -403,11 +414,12 @@ def test_num_jac():
     y = np.array([1, 0, 0])
     J_true = jac(t, y)
     threshold = 1e-5
+    f = fun(t, y).ravel()
 
-    J_num, factor = num_jac(fun, t, y, fun(t, y), threshold, None)
+    J_num, factor = num_jac(fun, t, y, f, threshold, None)
     assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
 
-    J_num, factor = num_jac(fun, t, y, fun(t, y), threshold, factor)
+    J_num, factor = num_jac(fun, t, y, f, threshold, factor)
     assert_allclose(J_num, J_true, rtol=1e-5, atol=1e-5)
 
 

@@ -151,7 +151,7 @@ def find_active_events(g, g_new, direction):
 
 
 def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
-              events=None, **options):
+              events=None, vectorized=False, **options):
     """Solve an initial value problem for a system of ODEs.
 
     This function numerically integrates a system of ODEs given an initial
@@ -167,8 +167,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     ----------
     fun : callable
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar, and ``y`` is ndarray with shape (n,). It
-        must return an array_like with shape (n,).
+        Here ``t`` is a scalar and there are two options for ndarray ``y``.
+        It can either have shape (n,), then ``fun`` must return array_like with
+        shape (n,). Or alternatively it can have shape (n, n_points), then
+        ``fun`` must return array_like with shape (n, n_points) (each column
+        corresponds to a single column in ``y``). The choice between the two
+        options is determined by `vectorized` argument (see below). The
+        vectorized implementation allows faster finite difference Jacobian
+        estimation.
     t_span : 2-tuple of floats
         Interval of integration (t0, tf). The solver starts with t=t0 and
         integrates until it reaches t=tf.
@@ -225,6 +231,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         You can assign attributes like ``event.terminal = True`` to any
         function in Python. If None (default), events won't be tracked.
+    vectorized : bool, optional
+        Whether `fun` is implemented in a vectorized fashion. Default is False.
     options
         Options passed to a chosen solver constructor. All options available
         for already implemented solvers are listed below.
@@ -331,7 +339,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     if isinstance(method, str):
         method = METHODS[method]
 
-    solver = method(fun, t0, y0, tf, **options)
+    solver = method(fun, t0, y0, tf, vectorized=vectorized, **options)
 
     if t_eval is None:
         ts = [t0]
