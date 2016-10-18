@@ -86,6 +86,9 @@ class BDF(OdeSolver):
     t_crit : float
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
+    max_step : float, optional
+        Maximum allowed step size. Default is np.inf, i.e. the step is not
+        bounded and determined solely by the solver.
     rtol, atol : float and array_like, optional
         Relative and absolute tolerances. The solver keeps the local error
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a

@@ -136,7 +136,8 @@ class OdeSolver(object):
 
             message = None
 
-            if not np.isfinite(self.t) or self.direction * (self.t - self.t_crit) >= 0:
+            if (not np.isfinite(self.t)
+                    or self.direction * (self.t - self.t_crit) >= 0):
                 self.status = 'finished'
         else:
             t = self.t

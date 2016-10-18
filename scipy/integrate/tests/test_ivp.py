@@ -207,9 +207,11 @@ def test_max_step():
 
             assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
 
-            assert_raises(ValueError, method, fun_rational, t_span[0], y0, t_span[1], max_step=-1)
+            assert_raises(ValueError, method, fun_rational, t_span[0], y0,
+                          t_span[1], max_step=-1)
 
-            solver = method(fun_rational, t_span[0], y0, t_span[1], rtol=rtol, atol=atol, max_step=1e-20)
+            solver = method(fun_rational, t_span[0], y0, t_span[1], rtol=rtol,
+                            atol=atol, max_step=1e-20)
             message = solver.step()
             assert_equal(solver.status, 'failed')
             assert_("step size is less" in message)
