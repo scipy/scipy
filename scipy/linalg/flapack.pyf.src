@@ -548,28 +548,28 @@ interface
    ! The expert driver of ?GESV with condition number,
    ! backward/forward error estimates.
 
-     callstatement {(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,piv,&equed,&r,&c,b,&ldb,&x,&ldx,rcond,ferr,berr,&work,&iwork,&info);}
-     callprotoargument char*,char*,int*,int*,<ftype>*,int*,<ftype>*,int*,int*,char*,<ftype>*,<ftype>*,<ftype>*,int*,<ftype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ftype>*,<ftype>*,int*
+     callstatement (*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,piv,&equed,&r,&c,b,&ldb,&x,&ldx,rcond,ferr,berr,&work,&iwork,&info);
+     callprotoargument char*,char*,int*,int*,<ftype>*,int*,<ftype>*,int*,int*,char*,<ftype2>*,<ftype2>*,<ftype>*,int*,<ftype>*,int*,<ftype2>*,<ftype2>*,<ftype2>*,<ftype>*,<ftype>*,int*
 
      character optional,intent(in),check(*fact=='F'||*fact=='N'||*fact=='E'):: fact='N'
      character optional,intent(in),check(*trans=='N'||*trans=='T'||*trans=='C'):: trans='N'
      integer depend(a),intent(hide):: n = shape(a,0)
      integer depend(b),intent(hide):: nrhs = shape(b,1)
-     <ftype> dimension(n,n),check(shape(a,0)=shape(a,1)),intent(in,out,copy) :: a
-     integer depend(a),intent(hide):: lda = shape(a,0)
-     <ftype> dimension(n,n),intent(in,out) :: af
+     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy):: a
+     integer depend(a),intent(hide)::lda = shape(a,0)
+     <ftype> dimension(n,n),intent(in,out):: af
      integer depend(af),intent(hide):: ldaf = shape(af,0)
-     integer dimension(n),depend(n),intent(in,out) :: piv
+     integer dimension(n),depend(n),intent(in,out):: piv
      charater optional,intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
-     <ftype2> dimension(n),depend(n),intent(in,out) :: r
-     <ftype2> dimension(n),depend(n),intent(in,out) :: c
-     <ftype> dimension(n,nrhs),intent(in,out,copy) :: b
+     <ftype2> dimension(n),depend(n),intent(in,out):: r
+     <ftype2> dimension(n),depend(n),intent(in,out):: c
+     <ftype> dimension(n,nrhs),intent(in,out,copy):: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
-     <ftype2> dimension(n,nrhs),depend(n,nrhs),intent(out) :: x
+     <ftype> dimension(n,nrhs),depend(n,nrhs),intent(out) :: x
      integer depend(n),intent(hide):: ldx = n
      <ftype2> intent(out) :: rcond
-     <ftype> dimension(nrhs),depend(nrhs),intent(out) :: ferr
-     <ftype> dimension(nrhs),depend(nrhs),intent(out) :: berr
+     <ftype2> dimension(nrhs),depend(nrhs),intent(out) :: ferr
+     <ftype2> dimension(nrhs),depend(nrhs),intent(out) :: berr
      <ftype> dimension(4*n),depend(n),intent(hide,cache) :: work
      integer dimension(n),depend(n),intent(hide,cache) :: iwork
      integer intent(out) :: info
