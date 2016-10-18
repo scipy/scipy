@@ -548,7 +548,7 @@ interface
    ! The expert driver of ?GESV with condition number,
    ! backward/forward error estimates.
 
-     callstatement (*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,piv,equed,r,c,b,&ldb,x,&ldx,rcond,ferr,berr,work,iwork,info)
+     callstatement (*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,piv,&equed,&r,&c,b,&ldb,&x,&ldx,rcond,ferr,berr,&work,&iwork,&info)
      callprotoargument char*,char*,int*,int*,<ftype>*,int*,<ftype>*,int*,int*,char*,<ftype>,<ftype>,<ftype>*,int*,<ftype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ftype>*,<ftype>*,int*
 
      character optional,intent(in),check(*fact=='F'||*fact=='N'||*fact=='E'):: fact='N'
@@ -560,10 +560,10 @@ interface
      <ftype> dimension(n,n),intent(in,out) :: af
      integer depend(af),intent(hide):: ldaf = shape(af,0)
      integer dimension(n),depend(n),intent(in,out) :: piv
-     charater intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
+     charater optional,intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
      <ftype2> dimension(n),depend(n),intent(in,out) :: r
      <ftype2> dimension(n),depend(n),intent(in,out) :: c
-     <ftype> dimension(n,nrhs),depend(n,nrhs),intent(in,out,copy) :: b
+     <ftype> dimension(n,nrhs),intent(in,out,copy) :: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
      <ftype2> dimension(n,nrhs),depend(n,nrhs),intent(out) :: x
      integer depend(n),intent(hide):: ldx = n
