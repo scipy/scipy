@@ -436,8 +436,7 @@ class Radau(OdeSolver):
                 2 * NEWTON_MAXITER + n_iter)
 
             if rejected and error_norm > 1:
-                error = lu_solve(LU_real, self.fun(t, y + error) + ZE,
-                                 overwrite_b=True)
+                error = self.solve_lu(LU_real, self.fun(t, y + error) + ZE)
                 error_norm = norm(error / scale)
 
             if error_norm > 1:
