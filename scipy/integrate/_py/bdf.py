@@ -1,6 +1,8 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
+from scipy.sparse import issparse, csc_matrix, eye
+from scipy.sparse.linalg import splu
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, EPS, num_jac, warn_extraneous)
 from .base import OdeSolver, DenseOutput
@@ -28,7 +30,8 @@ def change_D(D, order, factor):
     D[:order + 1] = np.dot(RU.T, D[:order + 1])
 
 
-def solve_corrector_system(fun, t_new, y_predict, c, psi, LU, scale, tol):
+def solve_corrector_system(fun, t_new, y_predict, c, psi, LU, solve_lu,
+                           scale, tol):
     d = 0
     y = y_predict.copy()
     dy_norm_old = None
@@ -38,7 +41,7 @@ def solve_corrector_system(fun, t_new, y_predict, c, psi, LU, scale, tol):
         if not np.all(np.isfinite(f)):
             break
 
-        dy = lu_solve(LU, c * f - psi - d, overwrite_b=True)
+        dy = solve_lu(LU, c * f - psi - d)
         dy_norm = norm(dy / scale)
 
         if dy_norm_old is None:
@@ -165,6 +168,30 @@ class BDF(OdeSolver):
 
         self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac)
+        if self.jac is not None:
+            if issparse(self.J):
+                def lu(A):
+                    self.nlu += 1
+                    return splu(A)
+            else:
+                def lu(A):
+                    self.nlu += 1
+                    return lu_factor(A, overwrite_a=True)
+        else:
+            lu = None
+
+        if issparse(self.J):
+            I = eye(self.n, format='csc')
+            def solve_lu(LU, b):
+                return LU.solve(b)
+        else:
+            I = np.identity(self.n)
+            def solve_lu(LU, b):
+                return lu_solve(LU, b, overwrite_b=True)
+
+        self.lu = lu
+        self.solve_lu = solve_lu
+        self.I = I
 
         kappa = np.array([0, -0.1850, -1/9, -0.0823, -0.0415, 0])
         self.gamma = np.hstack((0, np.cumsum(1 / np.arange(1, MAX_ORDER + 1))))
@@ -180,10 +207,6 @@ class BDF(OdeSolver):
         self.n_equal_steps = 0
         self.LU = None
 
-    def _lu(self, *args, **kwargs):
-        self.nlu += 1
-        return lu_factor(*args, **kwargs)
-
     def _validate_jac(self, jac):
         fun = self._fun
         t0 = self.t
@@ -197,16 +220,30 @@ class BDF(OdeSolver):
                 return J
             J = jac_wrapped(t0, y0)
         elif callable(jac):
-            def jac_wrapped(t, y):
-                self.njev += 1
-                return np.asarray(jac(t, y), dtype=float)
-            J = jac_wrapped(t0, y0)
+            J = jac(t0, y0)
+            self.njev = 1
+            if issparse(J):
+                J = csc_matrix(J)
+                def jac_wrapped(t, y):
+                    self.njev += 1
+                    return csc_matrix(jac(t, y), dtype=float)
+
+            else:
+                J = np.asarray(J, dtype=float)
+                def jac_wrapped(t, y):
+                    self.njev += 1
+                    return np.asarray(jac(t, y), dtype=float)
+
             if J.shape != (self.n, self.n):
                 raise ValueError(
                     "`jac` return is expected to have shape {}, but actually "
                     "has {}.".format((self.n, self.n), J.shape))
         else:
-            J = np.asarray(jac, dtype=float)
+            if issparse(jac):
+                J = csc_matrix(jac)
+            else:
+                J = np.asarray(jac, dtype=float)
+
             if J.shape != (self.n, self.n):
                 raise ValueError("`jac` is expected to have shape {}, but "
                                  "actually has {}."
@@ -243,7 +280,6 @@ class BDF(OdeSolver):
         gamma = self.gamma
         error_const = self.error_const
 
-        I = np.identity(self.n)
         J = self.J
         LU = self.LU
         current_jac = self.jac is None
@@ -276,11 +312,11 @@ class BDF(OdeSolver):
             c = h / alpha[order]
             while not converged:
                 if LU is None:
-                    LU = self._lu(I - c * J, overwrite_a=True)
+                    LU = self.lu(self.I - c * J)
 
                 converged, n_iter, y, d = solve_corrector_system(
-                    self.fun, t_new, y_predict, c, psi, LU, scale,
-                    self.newton_tol)
+                    self.fun, t_new, y_predict, c, psi, LU, self.solve_lu,
+                    scale, self.newton_tol)
 
                 if not converged:
                     if not current_jac:

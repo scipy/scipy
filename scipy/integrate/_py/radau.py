@@ -1,6 +1,8 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
+from scipy.sparse import csc_matrix, issparse, eye
+from scipy.sparse.linalg import splu
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, num_jac, EPS, warn_extraneous)
 from .base import OdeSolver, DenseOutput
@@ -45,7 +47,7 @@ MAX_FACTOR = 10  # Maximum allowed increase in a step size.
 
 
 def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
-                             LU_real, LU_complex):
+                             LU_real, LU_complex, solve_lu):
     """Solve the collocation system.
 
     Parameters
@@ -103,8 +105,8 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
         f_real = F.T.dot(TI_REAL) - M_real * W[0]
         f_complex = F.T.dot(TI_COMPLEX) - M_complex * (W[1] + 1j * W[2])
 
-        dW_real = lu_solve(LU_real, f_real, overwrite_b=True)
-        dW_complex = lu_solve(LU_complex, f_complex, overwrite_b=True)
+        dW_real = solve_lu(LU_real, f_real)
+        dW_complex = solve_lu(LU_complex, f_complex)
 
         dW[0] = dW_real
         dW[1] = dW_complex.real
@@ -271,14 +273,35 @@ class Radau(OdeSolver):
 
         self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac)
+        if self.jac is not None:
+            if issparse(self.J):
+                def lu(A):
+                    self.nlu += 1
+                    return splu(A)
+            else:
+                def lu(A):
+                    self.nlu += 1
+                    return lu_factor(A, overwrite_a=True)
+        else:
+            lu = None
+
+        if issparse(self.J):
+            I = eye(self.n, format='csc')
+            def solve_lu(LU, b):
+                return LU.solve(b)
+        else:
+            I = np.identity(self.n)
+            def solve_lu(LU, b):
+                return lu_solve(LU, b, overwrite_b=True)
+
+        self.lu = lu
+        self.solve_lu = solve_lu
+        self.I = I
+
         self.current_jac = True
         self.LU_real = None
         self.LU_complex = None
         self.Z = None
-
-    def _lu(self, *args, **kwargs):
-        self.nlu += 1
-        return lu_factor(*args, **kwargs)
 
     def _validate_jac(self, jac):
         t0 = self.t
@@ -295,16 +318,30 @@ class Radau(OdeSolver):
                 return J
             J = jac_wrapped(t0, y0, f0)
         elif callable(jac):
-            def jac_wrapped(t, y, _=None):
-                self.njev += 1
-                return np.asarray(jac(t, y), dtype=float)
-            J = jac_wrapped(t0, y0)
+            J = jac(t0, y0)
+            self.njev = 1
+            if issparse(J):
+                J = csc_matrix(J)
+                def jac_wrapped(t, y, _=None):
+                    self.njev += 1
+                    return csc_matrix(jac(t, y), dtype=float)
+
+            else:
+                J = np.asarray(J, dtype=float)
+                def jac_wrapped(t, y, _=None):
+                    self.njev += 1
+                    return np.asarray(jac(t, y), dtype=float)
+
             if J.shape != (self.n, self.n):
                 raise ValueError(
                     "`jac` return is expected to have shape {}, but actually "
                     "has {}.".format((self.n, self.n), J.shape))
         else:
-            J = np.asarray(jac, dtype=float)
+            if issparse(jac):
+                J = csc_matrix(jac)
+            else:
+                J = np.asarray(jac, dtype=float)
+
             if J.shape != (self.n, self.n):
                 raise ValueError("`jac` is expected to have shape {}, but "
                                  "actually has {}."
@@ -343,8 +380,6 @@ class Radau(OdeSolver):
         current_jac = self.current_jac
         jac = self.jac
 
-        I = np.identity(self.n)
-
         rejected = False
         step_accepted = False
         message = None
@@ -369,12 +404,12 @@ class Radau(OdeSolver):
             scale = atol + np.abs(y) * rtol
 
             if LU_real is None or LU_complex is None:
-                LU_real = self._lu(MU_REAL / h * I - J, overwrite_a=True)
-                LU_complex = self._lu(MU_COMPLEX / h * I - J, overwrite_a=True)
+                LU_real = self.lu(MU_REAL / h * self.I - J)
+                LU_complex = self.lu(MU_COMPLEX / h * self.I - J)
 
             converged, n_iter, Z, rate = solve_collocation_system(
                     self.fun, t, y, h, Z0, scale, self.newton_tol,
-                    LU_real, LU_complex)
+                    LU_real, LU_complex, self.solve_lu)
 
             if not converged:
                 if not current_jac:
@@ -388,7 +423,7 @@ class Radau(OdeSolver):
 
             y_new = y + Z[-1]
             ZE = Z.T.dot(E) / h
-            error = lu_solve(LU_real, f + ZE, overwrite_b=True)
+            error = self.solve_lu(LU_real, f + ZE)
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = norm(error / scale)
             safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (

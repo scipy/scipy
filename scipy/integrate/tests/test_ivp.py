@@ -1,10 +1,13 @@
 from __future__ import division, print_function, absolute_import
+from itertools import product
+import warnings
 from numpy.testing import (assert_, assert_allclose, run_module_suite,
                            assert_equal, assert_raises, assert_no_warnings)
 import numpy as np
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
 from scipy.integrate import DenseOutput, OdeSolution
 from scipy.integrate._py.common import num_jac
+from scipy.sparse import csr_matrix
 
 
 def fun_rational(t, y):
@@ -14,6 +17,14 @@ def fun_rational(t, y):
 
 def jac_rational(t, y):
     return np.array([
+        [0, 1 / t],
+        [-2 * y[1] ** 2 / (t * (y[0] - 1) ** 2),
+         (y[0] + 4 * y[1] - 1) / (t * (y[0] - 1))]
+    ])
+
+
+def jac_rational_sparse(t, y):
+    return csr_matrix([
         [0, 1 / t],
         [-2 * y[1] ** 2 / (t * (y[0] - 1) ** 2),
          (y[0] + 4 * y[1] - 1) / (t * (y[0] - 1))]
@@ -45,10 +56,17 @@ def test_integration():
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
-    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
-        for t_span in ([5, 9], [5, 1]):
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        for method, t_span, jac in product(
+                ['RK23', 'RK45', 'Radau', 'BDF'],
+                [[5, 9], [5, 1]],
+                [None, jac_rational, jac_rational_sparse]):
+
             res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
-                            atol=atol, method=method, dense_output=True)
+                            atol=atol, method=method, dense_output=True,
+                            jac=jac)
             assert_equal(res.t[0], t_span[0])
             assert_(res.t_events is None)
             assert_(res.success)
@@ -60,8 +78,8 @@ def test_integration():
                 assert_equal(res.njev, 0)
                 assert_equal(res.nlu, 0)
             else:
-                assert_(res.njev < 3)
-                assert_(res.nlu < 10)
+                assert_(0 < res.njev < 3)
+                assert_(0 < res.nlu < 10)
 
             y_true = sol_rational(res.t)
             e = compute_error(res.y, y_true, rtol, atol)
