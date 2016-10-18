@@ -307,6 +307,7 @@ class TestSLSQP(TestCase):
         fmin_slsqp(lambda z: z**2 - 1, [0], bounds=[[0, 1]], iprint=0)
 
     def test_obj_must_return_scalar(self):
+        # Regression test for Github Issue #5433
         # If objective function does not return a scalar, raises ValueError
         with assert_raises(ValueError):
             fmin_slsqp(lambda x: [0, 1], [1,2,3])
