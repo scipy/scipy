@@ -548,7 +548,7 @@ interface
    ! The expert driver of ?GESV with condition number,
    ! backward/forward error estimates.
 
-     callstatement (*f2py_func)(a,&lda,b,&ldb,&n,&nrhs,x,&ldx,trans,fact,af,&ldaf,piv,r,c,rcond,ferr,berr,equed,&work,&iwork,&info);
+     callstatement (*f2py_func)(a,&lda,b,&ldb,&n,&nrhs,x,&ldx,trans,fact,af,&ldaf,piv,&r,&c,rcond,ferr,berr,equed,&work,&iwork,&info);
      callprotoargument <ftype>*,int*,<ftype>*,int*,int*,int*,<ftype>*,int*,char*,char*,<ftype>*,int*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,char*,<ftype>*,<ftype>*,int*
 
      <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=as):: a
