@@ -560,17 +560,17 @@ interface
      <ftype> dimension(n,n),intent(in,out):: af
      integer depend(af),intent(hide):: ldaf = shape(af,0)
      integer dimension(n),depend(n),intent(in,out):: piv
-     charater intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
-     <ctypereal> dimension(n),depend(n),intent(in,out):: r
-     <ctypereal> dimension(n),depend(n),intent(in,out):: c
+     character intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
+     <ctypereal> intent(in,out),dimension(n),depend(n):: r
+     <ctypereal> intent(in,out),dimension(n),depend(n):: c
      <ftype> dimension(n,nrhs),intent(in,out,copy):: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
-     <ftype> dimension(n,nrhs),depend(n,nrhs),intent(out) :: x
+     <ftype> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
      integer depend(n),intent(hide):: ldx = n
-     <ctypereal> intent(out) :: rcond
-     <ctypereal> dimension(nrhs),depend(nrhs),intent(out) :: ferr
-     <ctypereal> dimension(nrhs),depend(nrhs),intent(out) :: berr
-     <ftype> dimension(4*n),depend(n),intent(hide,cache) :: work
+     <ctypereal> intent(out):: rcond
+     <ctypereal> intent(out),dimension(nrhs),depend(nrhs):: ferr
+     <ctypereal> intent(out),dimension(nrhs),depend(nrhs):: berr
+     <ftype> dimension(4*n),depend(n),intent(hide,cache):: work
      integer dimension(n),depend(n),intent(hide,cache) :: iwork
      integer intent(out) :: info
 
