@@ -324,7 +324,8 @@ def test_cython_api():
             for pt in pts:
                 pyval = pyfunc(*pt)
                 cyval = cy_spec_func(*pt)
-                assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
+                assert_allclose(cyval, pyval, equal_nan=True,
+                                err_msg="{} {} {}".format(pt, typecodes, signature))
 
     for param in params:
         yield check, param

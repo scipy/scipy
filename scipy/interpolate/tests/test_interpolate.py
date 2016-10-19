@@ -2609,7 +2609,7 @@ class TestInterpN(TestCase):
 
             v2 = interpn(points, values, sample,
                          method=method, bounds_error=False)
-            assert_allclose(v1, v2.reshape(v1.shape))
+            assert_allclose(v1, v2.reshape(v1.shape), equal_nan=True)
 
     def test_nonscalar_values(self):
         # Verify that non-scalar valued values also works

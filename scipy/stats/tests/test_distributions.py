@@ -1802,7 +1802,7 @@ class TestFrozen(TestCase):
         gm_val = gm.expect(func, lb=1, ub=2, conditional=True)
         gamma_val = stats.gamma.expect(func, args=(2,), loc=3, scale=4,
                                        lb=1, ub=2, conditional=True)
-        assert_allclose(gm_val, gamma_val)
+        assert_allclose(gm_val, gamma_val, equal_nan=True)
 
         p = stats.poisson(3, loc=4)
         p_val = p.expect(func)

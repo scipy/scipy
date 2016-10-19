@@ -2259,7 +2259,7 @@ class TestOrdQZ(TestCase):
                 x[azero & bzero] = np.nan
                 x[~azero & bzero] = np.inf
                 x[~bzero] = alpha[~bzero]/beta[~bzero]
-                assert_allclose(expected_eigvals, x)
+                assert_allclose(expected_eigvals, x, equal_nan=True)
 
 
 class TestOrdQZWorkspaceSize(TestCase):

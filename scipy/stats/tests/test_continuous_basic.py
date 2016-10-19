@@ -406,8 +406,8 @@ def check_vecentropy(distfn, args):
 def check_loc_scale(distfn, arg, m, v, msg):
     loc, scale = 10.0, 10.0
     mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
-    npt.assert_allclose(m*scale + loc, mt)
-    npt.assert_allclose(v*scale*scale, vt)
+    npt.assert_allclose(m*scale + loc, mt, equal_nan=True)
+    npt.assert_allclose(v*scale*scale, vt, equal_nan=True)
 
 
 def check_ppf_private(distfn, arg, msg):
