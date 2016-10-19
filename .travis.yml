@@ -61,7 +61,7 @@ matrix:
         - TESTMODE=full
         - COVERAGE=--coverage
         - NUMPYSPEC=numpy
-    - python: 3.6
+    - python: 3.6-dev
       env:
         - TESTMODE=fast
         - COVERAGE=
