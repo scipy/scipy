@@ -549,10 +549,10 @@ interface
    ! backward/forward error estimates.
 
      callstatement (*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,piv,&equed,&r,&c,b,&ldb,&x,&ldx,rcond,ferr,berr,&work,&iwork,&info);
-     callprotoargument char*,char*,int*,int*,<ftype>*,int*,<ftype>*,int*,int*,char*,<ftype2>*,<ftype2>*,<ftype>*,int*,<ftype>*,int*,<ftype2>*,<ftype2>*,<ftype2>*,<ftype>*,<ftype>*,int*
+     callprotoargument char*,char*,int*,int*,<ftype>*,int*,<ftype>*,int*,int*,char*,<ctypereal>*,<ctypereal>*,<ftype>*,int*,<ftype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ftype>*,<ftype>*,int*
 
-     character optional,intent(in),check(*fact=='F'||*fact=='N'||*fact=='E'):: fact='N'
-     character optional,intent(in),check(*trans=='N'||*trans=='T'||*trans=='C'):: trans='N'
+     character intent(in),check(*fact=='F'||*fact=='N'||*fact=='E'):: fact
+     character intent(in),check(*trans=='N'||*trans=='T'||*trans=='C'):: trans
      integer depend(a),intent(hide):: n = shape(a,0)
      integer depend(b),intent(hide):: nrhs = shape(b,1)
      <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy):: a
@@ -560,16 +560,16 @@ interface
      <ftype> dimension(n,n),intent(in,out):: af
      integer depend(af),intent(hide):: ldaf = shape(af,0)
      integer dimension(n),depend(n),intent(in,out):: piv
-     charater optional,intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
-     <ftype2> dimension(n),depend(n),intent(in,out):: r
-     <ftype2> dimension(n),depend(n),intent(in,out):: c
+     charater intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
+     <ctypereal> dimension(n),depend(n),intent(in,out):: r
+     <ctypereal> dimension(n),depend(n),intent(in,out):: c
      <ftype> dimension(n,nrhs),intent(in,out,copy):: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
      <ftype> dimension(n,nrhs),depend(n,nrhs),intent(out) :: x
      integer depend(n),intent(hide):: ldx = n
-     <ftype2> intent(out) :: rcond
-     <ftype2> dimension(nrhs),depend(nrhs),intent(out) :: ferr
-     <ftype2> dimension(nrhs),depend(nrhs),intent(out) :: berr
+     <ctypereal> intent(out) :: rcond
+     <ctypereal> dimension(nrhs),depend(nrhs),intent(out) :: ferr
+     <ctypereal> dimension(nrhs),depend(nrhs),intent(out) :: berr
      <ftype> dimension(4*n),depend(n),intent(hide,cache) :: work
      integer dimension(n),depend(n),intent(hide,cache) :: iwork
      integer intent(out) :: info
