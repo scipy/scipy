@@ -548,7 +548,7 @@ interface
    ! The expert driver of ?GESV with condition number,
    ! backward/forward error estimates.
 
-     callstatement (*f2py_func)(a,&lda,b,&ldb,&n,&nrhs,&x,&ldx,trans,fact,af,&ldaf,piv,&r,&c,&rcond,&ferr,&berr,&equed,&work,&iwork,&info);
+     callstatement (*f2py_func)(a,&lda,b,&ldb,&n,&nrhs,x,&ldx,trans,fact,af,&ldaf,piv,r,c,rcond,ferr,berr,equed,&work,&iwork,&info);
      callprotoargument <ftype>*,int*,<ftype>*,int*,int*,int*,<ftype>*,int*,char*,char*,<ftype>*,int*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,char*,<ftype>*,<ftype>*,int*
 
      <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=as):: a
@@ -566,9 +566,9 @@ interface
      integer dimension(n),depend(n),intent(in,out):: piv
      <ctypereal> intent(in,out,out=rs),dimension(n),depend(n):: r
      <ctypereal> intent(in,out,out=cs),dimension(n),depend(n):: c
-     <ctypereal> intent(out,out=rcond):: rcond
-     <ctypereal> intent(out,out=ferr),dimension(nrhs),depend(nrhs):: ferr
-     <ctypereal> intent(out,out=berr),dimension(nrhs),depend(nrhs):: berr
+     <ctypereal> intent(out):: rcond
+     <ctypereal> intent(out),dimension(nrhs),depend(nrhs):: ferr
+     <ctypereal> intent(out),dimension(nrhs),depend(nrhs):: berr
      character intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
      <ftype> dimension(4*n),depend(n),intent(hide,cache):: work
      integer dimension(n),depend(n),intent(hide,cache) :: iwork
