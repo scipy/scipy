@@ -991,13 +991,6 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
             raise ValueError('window must have length of {0}'.format(nperseg))
-    if np.result_type(win, Zxx) != Zxx.dtype:
-        win = win.astype(Zxx.dtype)
-
-    # Initialize output and normalization arrays
-    outputlength = nperseg + (nseg-1)*nstep
-    x = np.zeros(list(Zxx.shape[:-2])+[outputlength], dtype=Zxx.dtype)
-    norm = np.zeros(outputlength)
 
     if input_onesided:
         ifunc = np.fft.irfft
@@ -1005,6 +998,15 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         ifunc = fftpack.ifft
 
     xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
+
+    # Initialize output and normalization arrays
+    outputlength = nperseg + (nseg-1)*nstep
+    x = np.zeros(list(Zxx.shape[:-2])+[outputlength], dtype=xsubs.dtype)
+    norm = np.zeros(outputlength, dtype=xsubs.dtype)
+
+    if np.result_type(win, xsubs) != xsubs.dtype:
+        win = win.astype(xsubs.dtype)
+
     xsubs *= win.sum()  # This takes care of the 'spectrum' scaling
 
     # Construct the output from the ifft segments
@@ -1020,6 +1022,9 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     # Remove odd extension points
     if centered:
         x = x[..., nperseg//2:-(nperseg//2)]
+
+    if input_onesided:
+        x = x.real
 
     # Put axes back
     if x.ndim > 1:
