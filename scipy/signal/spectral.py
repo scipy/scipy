@@ -789,7 +789,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     >>> mod = 500*np.cos(2*np.pi*0.25*time)
     >>> carrier = amp * np.sin(2*np.pi*3e3*time + mod)
     >>> noise = np.random.normal(scale=np.sqrt(noise_power),
-    >>>                          size=time.shape)
+    ...                          size=time.shape)
     >>> noise *= np.exp(-time/5)
     >>> x = carrier + noise
 
@@ -924,7 +924,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> time = np.arange(N) / float(fs)
     >>> carrier = amp * np.sin(2*np.pi*50*time)
     >>> noise = np.random.normal(scale=np.sqrt(noise_power),
-    >>>                          size=time.shape)
+    ...                          size=time.shape)
     >>> x = carrier + noise
 
     Compute the STFT, and plot its magnitude
@@ -959,6 +959,14 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     # Make sure input is an ndarray of appropriate complex dtype
     Zxx = np.asarray(Zxx) + 0j
+    freq_axis = int(freq_axis)
+    time_axis = int(time_axis)
+
+    if Zxx.ndim < 2:
+        raise ValueError('Input stft must be at least 2d!')
+
+    if freq_axis == time_axis:
+        raise ValueError('Must specify differing time and frequency axes!')
 
     nseg = Zxx.shape[time_axis]
 
@@ -1000,24 +1008,16 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
                          'COLA constraint.')
 
     # Rearrange axes if neccessary
-    freq_axis = int(freq_axis)
-    time_axis = int(time_axis)
-    if freq_axis == time_axis:
-        raise ValueError('Must specify differing time and frequency axes!')
-
-    if Zxx.ndim >= 2:
-        if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
-            # Turn negative indices to positive for the call to transpose
-            if freq_axis < 0:
-                freq_axis = Zxx.ndim + freq_axis
-            if time_axis < 0:
-                time = Zxx.ndim + time_axis
-            zouter = list(range(Zxx.ndim))
-            for ax in sorted([time_axis, freq_axis], reverse=True):
-                zouter.pop(ax)
-            Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
-    else:
-        raise ValueError('Input stft must be at least 2d!')
+    if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
+        # Turn negative indices to positive for the call to transpose
+        if freq_axis < 0:
+            freq_axis = Zxx.ndim + freq_axis
+        if time_axis < 0:
+            time = Zxx.ndim + time_axis
+        zouter = list(range(Zxx.ndim))
+        for ax in sorted([time_axis, freq_axis], reverse=True):
+            zouter.pop(ax)
+        Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
 
     # Get window as array
     if isinstance(window, string_types) or type(window) is tuple:

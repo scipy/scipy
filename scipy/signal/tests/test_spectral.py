@@ -2,14 +2,14 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-from numpy.testing import (assert_, run_module_suite, TestCase,
+from numpy.testing import (assert_, run_module_suite, TestCase, dec,
                            assert_allclose, assert_array_equal, assert_equal,
-                           assert_array_almost_equal_nulp, dec, assert_raises,
+                           assert_array_almost_equal_nulp, assert_raises,
                            assert_approx_equal)
 from scipy import signal, fftpack
-from scipy._lib._version import NumpyVersion
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
                           spectrogram, stft, istft, check_COLA)
+from scipy.signal.spectral import _spectral_helper
 
 
 class TestPeriodogram(TestCase):
@@ -991,6 +991,35 @@ class TestLombscargle(TestCase):
 
 
 class TestSTFT(TestCase):
+    def test_input_validation(self):
+        assert_raises(ValueError, check_COLA, 'hann', -10, 0)
+        assert_raises(ValueError, check_COLA, 'hann', 10, 20)
+        assert_raises(ValueError, check_COLA, np.ones((2,2)), 10, 0)
+        assert_raises(ValueError, check_COLA, np.ones(20), 10, 0)
+
+        x = np.empty(1024)
+        z = stft(x)
+
+        assert_raises(ValueError, stft, x, window=np.ones((2,2)))
+        assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)
+        assert_raises(ValueError, stft, x, nperseg=-256)
+        assert_raises(ValueError, stft, x, nperseg=256, noverlap=1024)
+        assert_raises(ValueError, stft, x, nperseg=256, nfft=8)
+
+        assert_raises(ValueError, istft, x)  # Not 2d
+        assert_raises(ValueError, istft, z, window=np.ones((2,2)))
+        assert_raises(ValueError, istft, z, window=np.ones(10), nperseg=256)
+        assert_raises(ValueError, istft, z, nperseg=-256)
+        assert_raises(ValueError, istft, z, nperseg=256, noverlap=1024)
+        assert_raises(ValueError, istft, z, nperseg=256, nfft=8)
+        assert_raises(ValueError, istft, z, nperseg=256, noverlap=0,
+                      window='hann')  # Doesn't meet COLA
+        assert_raises(ValueError, istft, z, time_axis=0, freq_axis=0)
+
+        assert_raises(ValueError, _spectral_helper, x, x, mode='foo')
+        assert_raises(ValueError, _spectral_helper, x[:512], x[512:],
+                      mode='stft')
+
     def test_check_COLA(self):
         settings = [
                     ('boxcar', 10, 0),
@@ -1074,8 +1103,32 @@ class TestSTFT(TestCase):
                            window=window, centered=True)
 
             msg = '{0}, {1}'.format(window, noverlap)
-            assert_allclose(t, tr.real, err_msg=msg)
-            assert_allclose(x, xr.real, err_msg=msg)
+            assert_allclose(t, tr, err_msg=msg)
+            assert_allclose(x, xr, err_msg=msg)
+
+    # Needs complex rfft from fftpack, see gh-2487 + gh-6058
+    @dec.knownfailureif(True)
+    def test_roundtrip_float32(self):
+        np.random.seed(1234)
+
+        settings = [('hann', 1024, 256, 128)]
+
+        for window, N, nperseg, noverlap in settings:
+            t = np.arange(N)
+            x = 10*np.random.randn(t.size)
+            x = x.astype(np.float32)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=False,
+                            centered=True)
+
+            tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
+                           window=window, centered=True)
+
+            msg = '{0}, {1}'.format(window, noverlap)
+            assert_allclose(t, t, err_msg=msg)
+            assert_allclose(x, xr, err_msg=msg, rtol=1e-4)
+            assert_(x.dtype == xr.dtype)
 
     def test_roundtrip_complex(self):
         np.random.seed(1234)
@@ -1103,6 +1156,20 @@ class TestSTFT(TestCase):
             msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
+
+        # Check that asking for onesided switches to twosided
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                            window=window, detrend=None, padded=False,
+                            centered=True, return_onesided=True)
+
+        tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
+                       window=window, centered=True, input_onesided=False)
+
+        msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
+        assert_allclose(t, tr, err_msg=msg)
+        assert_allclose(x, xr, err_msg=msg)
 
     def test_roundtrip_padded_signal(self):
         np.random.seed(1234)
@@ -1142,10 +1209,12 @@ class TestSTFT(TestCase):
             x = 10*np.random.randn(t.size)
             xc = x*np.exp(1j*np.pi/4)
 
+            # real signal
             _, _, z = stft(x, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
                             window=window, detrend=None, padded=True,
                             centered=True)
 
+            # complex signal
             _, _, zc = stft(xc, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
                             window=window, detrend=None, padded=True,
                             centered=True, return_onesided=False)
