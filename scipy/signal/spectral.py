@@ -8,7 +8,7 @@ from scipy import fftpack
 from . import signaltools
 from .windows import get_window
 from ._spectral import lombscargle
-from ._arraytools import odd_ext
+from ._arraytools import even_ext
 import warnings
 
 from scipy._lib.six import string_types
@@ -671,7 +671,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
 
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
-         detrend=False, return_onesided=True, padded=True, centered=True,
+         detrend=False, return_onesided=True, centered=True, padded=True,
          axis=-1):
     """
     Compute the Short Time Fourier Transform (STFT).
@@ -710,17 +710,19 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         `False` return a two-sided spectrum. Note that for complex
         data, a two-sided spectrum is always returned. Defaults to
         `True`.
-    padded : bool, optional
-        Specifies whether the input signal is zero-padded to make the
-        signal fit exactly into an integer number of window segments, so
-        that all of the signal is included in the output. Default to
-        `True`.
     centered : bool, optional
-        Specifies whether the input signal is padded via odd extension,
+        Specifies whether the input signal is padded via even extension,
         to center the first window segment on the first input point.
-        This has the benefit of enabling reconstruction of the first
-        data point when the employed window function starts at zero.
-        Defaults to `True.`
+        I.e. ``[1, 2, 3, 4]`` is extended to ``[2, 1, 2, 3, 4, 3]``
+        for ``nperseg=3``. This has the benefit of enabling
+        reconstruction of the first data point when the employed window
+        function starts at zero. Defaults to `True.`
+    padded : bool, optional
+        Specifies whether the input signal is zero-padded at the end to
+        make the signal fit exactly into an integer number of window
+        segments, so that all of the signal is included in the output.
+        Default to `True`. Padding occurs after centering, if both
+        `centered` and `padded` are `True`, as is the default.
     axis : int, optional
         Axis along which the STFT is computed; the default is over the
         last axis (i.e. ``axis=-1``).
@@ -857,7 +859,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         `numpy.fft.rfft`. If `False`, interpret the input as a a
         two-sided FFT. Defaults to `True`.
     centered : bool, optional
-        Specifies whether the input signal was padded via odd extension,
+        Specifies whether the input signal was padded via even extension,
         by using ``centered=True`` in `stft`. Defaults to `True`.
     time_axis : int, optional
         Where the time segments of the STFT is located; the default is
@@ -1054,7 +1056,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     # Divide out normalization where non-tiny
     x /= np.where(norm > 1e-10, norm, 1.0)
 
-    # Remove odd extension points
+    # Remove extension points
     if centered:
         x = x[..., nperseg//2:-(nperseg//2)]
 
@@ -1252,7 +1254,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         that all of the signal is included in the output. Defaults to
         `False`.
     centered : bool, optional
-        Specifies whether the input signal is padded via odd extension,
+        Specifies whether the input signal is padded via even extension,
         to center the first window segment on the first input point.
         This has the benefit of enabling reconstruction of the first
         data point when the employed window function starts at zero.
@@ -1361,10 +1363,18 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         raise ValueError('noverlap must be less than nperseg.')
     nstep = nperseg - noverlap
 
+    # Padding occurs after centering, so that the extended signal ends
+    # in zeros, instead of introducing an impulse at the end.
+    # I.e. if x = [..., 3, 2]
+    # center then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
+    # pad then center -> [..., 3, 2, 0, 0, 0, 2, 3]
+
     if centered:
-        x = odd_ext(x, nperseg//2, axis=-1)
+        # Even extension means first window doesn't get distorted by a
+        # shift in the DC signal level as much when x[0] != 0
+        x = even_ext(x, nperseg//2, axis=-1)
         if not same_data:
-            y = odd_ext(y, nperseg//2, axis=-1)
+            y = even_ext(y, nperseg//2, axis=-1)
 
     if padded:
         # Pad to integer number of windowed segments
