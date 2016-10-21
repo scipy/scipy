@@ -84,8 +84,9 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
 
     Returns
     -------
-    b : a `BSpline` instance representing the interpolating or smoothing spline
-        approximation of the curve sampled at the original points, `x`.
+    tck : tuple
+        (t,c,k) a tuple containing the vector of knots, the B-spline
+        coefficients, and the degree of the spline.
     u : array
         An array of the values of the parameter.
     fp : float
@@ -121,8 +122,8 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     And interpolate:
 
     >>> from scipy.interpolate import splprep, splev
-    >>> spl, u = splprep([x, y], s=0)
-    >>> new_points = splev(u, spl)
+    >>> tck, u = splprep([x, y], s=0)
+    >>> new_points = splev(u, tck)
 
     Notice that (i) we force interpolation by using `s=0`,
     (ii) the parameterization, ``u``, is generated automatically.
@@ -213,8 +214,9 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
 
     Returns
     -------
-    b : a `BSpline` instance representing the interpolating or smoothing spline
-        approximation of the curve sampled at the original points `x` and `y`.
+    tck : tuple
+        A tuple (t,c,k) containing the vector of knots, the B-spline
+        coefficients, and the degree of the spline.
     fp : array, optional
         The weighted sum of squared residuals of the spline approximation.
     ier : int, optional

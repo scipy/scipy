@@ -77,7 +77,7 @@ Tensor product polynomials:
    make_interp_spline
    make_lsq_spline
 
-Functional interface to FITPACK functions:
+Functional interface to FITPACK routines:
 
 .. autosummary::
    :toctree: generated/
