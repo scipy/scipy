@@ -73,12 +73,11 @@ Tensor product polynomials:
 .. autosummary::
    :toctree: generated/
 
-   UnivariateSpline
-   InterpolatedUnivariateSpline
-   LSQUnivariateSpline
+   BSpline
+   make_interp_spline
+   make_lsq_spline
 
-
-Functional interface to FITPACK functions:
+Functional interface to FITPACK routines:
 
 .. autosummary::
    :toctree: generated/
@@ -92,6 +91,16 @@ Functional interface to FITPACK functions:
    splder
    splantider
    insert
+
+Object-oriented FITPACK interface:
+
+.. autosummary::
+    :toctree: generated/
+
+   UnivariateSpline
+   InterpolatedUnivariateSpline
+   LSQUnivariateSpline
+
 
 
 2-D Splines
@@ -176,6 +185,8 @@ from .polyint import *
 from ._cubic import *
 
 from .ndgriddata import *
+
+from ._bsplines import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
