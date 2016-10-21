@@ -2741,27 +2741,28 @@ class multinomial_gen(multi_rv_generic):
     >>> binom.pmf(3, 7, 0.4)
     0.29030400000000012
 
-    The functions `pmf`, `logpmf`, `entropy`, and `cov` support broadcasting,
-    under the convention that the vector parameters (`x` and `p`) are
-    interpreted as if each row along the last axis is a single object. For
-    instance:
+    The functions ``pmf``, ``logpmf``, ``entropy``, and ``cov`` support
+    broadcasting, under the convention that the vector parameters (``x`` and
+    ``p``) are interpreted as if each row along the last axis is a single
+    object. For instance:
 
     >>> multinomial.pmf([[3, 4], [3, 5]], n=[7, 8], p=[.3, .7])
     array([0.2268945,  0.25412184])
 
-    Here, `x.shape == (2, 2)`, `n.shape == (2,)`, and `p.shape == (2,)`, but
-    following the rules mentioned above they behave as if the rows `[3, 4]` and
-    `[3, 5]` in `x` and `[.3, .7]` in `p` were a single object, and as if we
-    had `x.shape = (2,)`, `n.shape = (2,)`, and `p.shape = ()`. To obtain the
-    individual elements without broadcasting, we would do this:
+    Here, ``x.shape == (2, 2)``, ``n.shape == (2,)``, and ``p.shape == (2,)``,
+    but following the rules mentioned above they behave as if the rows
+    ``[3, 4]`` and ``[3, 5]`` in ``x`` and ``[.3, .7]`` in ``p`` were a single
+    object, and as if we had ``x.shape = (2,)``, ``n.shape = (2,)``, and
+    ``p.shape = ()``. To obtain the individual elements without broadcasting,
+    we would do this:
 
     >>> multinomial.pmf([3, 4], n=7, p=[.3, .7])
     0.2268945
     >>> multinomial.pmf([3, 5], 8, p=[.3, .7])
     0.25412184
 
-    This broadcasting also works for `cov`, where the output objects are square
-    matrices of size `p.shape[-1]`. For example:
+    This broadcasting also works for ``cov``, where the output objects are
+    square matrices of size ``p.shape[-1]``. For example:
 
     >>> multinomial.cov([4, 5], [[.3, .7], [.4, .6]])
     array([[[ 0.84, -0.84],
@@ -2769,12 +2770,12 @@ class multinomial_gen(multi_rv_generic):
            [[ 1.2 , -1.2 ],
             [-1.2 ,  1.2 ]]])
 
-    In this example, `n.shape == (2,)` and `p.shape == (2, 2)`, and following
-    the rules above, these broadcast as if `p.shape == (2,)`. Thus the result
-    should also be of shape `(2,)`, but since each output is a :math:`2 \times
-    2` matrix, the result in fact has shape `(2, 2, 2)`, where `result[0]` is
-    equal to `multinomial.cov(n=4, p=[.3, .7])` and `result[1]` is equal to
-    `multinomial.cov(n=5, p=[.4, .6])`.
+    In this example, ``n.shape == (2,)`` and ``p.shape == (2, 2)``, and
+    following the rules above, these broadcast as if ``p.shape == (2,)``.
+    Thus the result should also be of shape ``(2,)``, but since each output is
+    a :math:`2 \times 2` matrix, the result in fact has shape ``(2, 2, 2)``,
+    where ``result[0]`` is equal to ``multinomial.cov(n=4, p=[.3, .7])`` and
+    ``result[1]`` is equal to ``multinomial.cov(n=5, p=[.4, .6])``.
 
     See also
     --------
@@ -2951,7 +2952,7 @@ class multinomial_gen(multi_rv_generic):
         return self._checkresult(result, npcond, np.nan)
 
     def entropy(self, n, p):
-        """
+        r"""
         Compute the entropy of the multinomial distribution.
 
         The entropy is computed using this expression:
