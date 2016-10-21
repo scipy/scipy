@@ -173,6 +173,7 @@ class Cdist(Benchmark):
     param_names = ['num_points', 'metric']
 
     def setup(self, num_points, metric):
+        np.random.seed(123)
         self.points = np.random.random_sample((num_points, 3))
 
     def time_cdist(self, num_points, metric):
