@@ -96,7 +96,7 @@ def _sym_ortho(a, b):
 
 
 def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
-         iter_lim=None, show=False, calc_var=False):
+         iter_lim=None, show=False, calc_var=False, x0=None):
     """Find the least-squares solution to a large, sparse, linear system
     of equations.
 
@@ -145,6 +145,10 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
         Display an iteration log.
     calc_var : bool, optional
         Whether to estimate diagonals of ``(A'A + damp^2*I)^{-1}``.
+    x0 : array_like, shape (n,), optional
+        Initial guess of x, if None zeros are used.
+
+        .. versionadded:: 0.19.0
 
     Returns
     -------
@@ -298,27 +302,32 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
 
     """
     Set up the first vectors u and v for the bidiagonalization.
-    These satisfy  beta*u = b,  alfa*v = A'u.
+    These satisfy  beta*u = b - A*x,  alfa*v = A'*u.
     """
-    v = np.zeros(n)
     u = b
-    x = np.zeros(n)
-    alfa = 0
-    beta = np.linalg.norm(u)
-    w = np.zeros(n)
+    bnorm = np.linalg.norm(b)
+    if x0 is None:
+        x = np.zeros(n)
+        beta = bnorm.copy()
+    else:
+        x = np.asarray(x0)
+        u = u - A.matvec(x)
+        beta = np.linalg.norm(u)
 
     if beta > 0:
         u = (1/beta) * u
         v = A.rmatvec(u)
         alfa = np.linalg.norm(v)
+    else:
+        v = x.copy()
+        alfa = 0
 
     if alfa > 0:
         v = (1/alfa) * v
-        w = v.copy()
+    w = v.copy()
 
     rhobar = alfa
     phibar = beta
-    bnorm = beta
     rnorm = beta
     r1norm = rnorm
     r2norm = rnorm
