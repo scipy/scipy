@@ -3,7 +3,7 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 try:
-    from scipy.spatial import cKDTree, KDTree, SphericalVoronoi
+    from scipy.spatial import cKDTree, KDTree, SphericalVoronoi, distance
 except ImportError:
     pass
 
@@ -163,3 +163,20 @@ class SphericalVorSort(Benchmark):
         code.
         """
         self.sv.sort_vertices_of_regions()
+
+class Cdist(Benchmark):
+    params = ([10, 100, 1000, 5000], ['euclidean', 'minkowski', 'cityblock',
+    'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
+    'chebyshev', 'canberra', 'braycurtis', 'mahalanobis', 'yule', 'dice',
+    'kulsinski', 'rogerstanimoto', 'russellrao', 'sokalmichener',
+    'sokalsneath', 'wminkowski'])
+    param_names = ['num_points', 'metric']
+
+    def setup(self, num_points, metric):
+        self.points = np.random.random_sample((num_points, 3))
+
+    def time_cdist(self, num_points, metric):
+        """Time scipy.spatial.distance.cdist over a range of input data
+        sizes and metrics.
+        """
+        distance.cdist(self.points, self.points, metric)
