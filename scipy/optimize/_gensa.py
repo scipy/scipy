@@ -66,9 +66,11 @@ class GenSARunner(object):
         The maximum number of gensa iterations will perform.
     """
     def __init__(self, fun, x0, bounds, args=(), seed=None,
-            temp_start=5230, qv=2.62, qa=-5.0, maxfun=1e7, maxsteps=500):
+            temp_start=5230, qv=2.62, qa=-5.0, maxfun=1e7, maxsteps=500,
+            pure_sa=False):
         self.fun = fun
         self.args = args
+        self.pure_sa = pure_sa
         if x0 is not None and not len(x0) == len(bounds):
             raise ValueError('Bounds size does not match x0')
         lu = zip(*bounds)
@@ -289,7 +291,7 @@ class GenSARunner(object):
 
                 # Decision making for performing a local search
                 # based on the markov chain results
-                if not self._emini_unchanged:
+                if not self._emini_unchanged and not self.pure_sa:
                     temp = np.array(self._xmini)
                     etemp = self._ls_energy(temp)
                     temp = self._xbuffer
@@ -298,7 +300,7 @@ class GenSARunner(object):
                         self._emini = np.array(etemp)
                         self._index_no_emini_update = 0
                 if self._index_no_emini_update >= (
-                        self._index_tol_emini_update - 1):
+                        self._index_tol_emini_update - 1) and not self.pure_sa:
                     self._emini_markov = np.array(self._ls_energy(
                         self._xmini_markov))
                     self._index_no_emini_update = 0
@@ -317,7 +319,7 @@ class GenSARunner(object):
         """Check if the search has to be stopped
         """
         if self.know_real:
-            if self._emini <= self.realthreshold:
+            if self._emini <= self.real_threshold:
                 self._message = ["Known value for minimum reached"]
                 return True
         self._endtime = time.time()
@@ -332,6 +334,13 @@ class GenSARunner(object):
     def _stop_search(self):
         """Record time stamp when stop searching
         """
+        if self.pure_sa:
+            # In case of pure sa approach, doing ad LS at the end
+            temp = np.array(self._xmini)
+            etemp = self._ls_energy(temp)
+            temp = self._xbuffer
+            self._xmini = np.array(temp)
+            self._emini = np.array(etemp)
         self._endtime = time.time()
 
     def _coordin(self):
@@ -508,7 +517,7 @@ class GenSARunner(object):
         return res
 
 def gensa(func, x0, bounds, maxiter=500, initial_temp=5230., visit=2.62,
-        accept=-5.0, maxfun=1e7, args=(), seed=None):
+        accept=-5.0, maxfun=1e7, args=(), seed=None, pure_sa=False):
     """
     Find the global minimum of a function using the Generalized Simulated
     Annealing algorithm
@@ -654,7 +663,8 @@ def gensa(func, x0, bounds, maxiter=500, initial_temp=5230., visit=2.62,
     ...    ret.x, ret.fun))
     """
     gr = GenSARunner(func, x0, bounds, args, seed, temp_start=initial_temp,
-            qv = visit, qa = accept, maxfun=maxfun, maxsteps=maxiter)
+            qv = visit, qa = accept, maxfun=maxfun, maxsteps=maxiter,
+            pure_sa=pure_sa)
     gr.start_search()
     return gr.result
 
