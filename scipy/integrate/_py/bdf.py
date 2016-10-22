@@ -202,10 +202,12 @@ class BDF(OdeSolver):
 
         if issparse(self.J):
             I = eye(self.n, format='csc')
+
             def solve_lu(LU, b):
                 return LU.solve(b)
         else:
             I = np.identity(self.n)
+
             def solve_lu(LU, b):
                 return lu_solve(LU, b, overwrite_b=True)
 
@@ -251,12 +253,14 @@ class BDF(OdeSolver):
             self.njev = 1
             if issparse(J):
                 J = csc_matrix(J)
+
                 def jac_wrapped(t, y):
                     self.njev += 1
                     return csc_matrix(jac(t, y), dtype=float)
 
             else:
                 J = np.asarray(J, dtype=float)
+
                 def jac_wrapped(t, y):
                     self.njev += 1
                     return np.asarray(jac(t, y), dtype=float)
