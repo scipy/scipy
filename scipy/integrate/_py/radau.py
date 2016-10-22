@@ -3,6 +3,7 @@ import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import csc_matrix, issparse, eye
 from scipy.sparse.linalg import splu
+from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, num_jac, EPS, warn_extraneous)
 from .base import OdeSolver, DenseOutput
@@ -214,7 +215,7 @@ class Radau(OdeSolver):
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
-    jac : array_like, callable or None, optional
+    jac : {None, array_like, sparse matrix, callable}, optional
         Jacobian matrix of the right-hand side of the system with respect to
         `y`. The Jacobian matrix has shape (n, n) and its element (i, j) is
         equal to ``d f_i / d y_j``. There are 3 ways to define the Jacobian:
@@ -227,6 +228,13 @@ class Radau(OdeSolver):
 
         It is generally recommended to provided the Jacobian rather than
         relying on finite difference approximation.
+    jac_sparsity : {None, array_like, sparse matrix}, optional
+        Defines the sparsity structure of the Jacobian matrix for finite
+        difference estimation, its shape must be (n, n). If the Jacobian has
+        only few non-zero elements in *each* row, providing the sparsity
+        structure will greatly speed up the computations [2]_. A zero
+        entry means that a corresponding element in the Jacobian is identically
+        zero. If None (default), the Jacobian is assumed to be dense.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
 
@@ -259,10 +267,13 @@ class Radau(OdeSolver):
     ----------
     .. [1] E. Hairer, G. Wanner, "Solving Ordinary Differential Equations II:
            Stiff and Differential-Algebraic Problems", Sec. IV.8.
+    .. [2] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
+           sparse Jacobian matrices", Journal of the Institute of Mathematics
+           and its Applications, 13, pp. 117-120, 1974.
     """
     def __init__(self, fun, t0, y0, t_crit, max_step=np.inf,
-                 rtol=1e-3, atol=1e-6, jac=None, vectorized=False,
-                 **extraneous):
+                 rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
+                 vectorized=False, **extraneous):
         warn_extraneous(extraneous)
         super(Radau, self).__init__(fun, t0, y0, t_crit, vectorized)
         self.y_old = None
@@ -281,7 +292,7 @@ class Radau(OdeSolver):
         self.sol = None
 
         self.jac_factor = None
-        self.jac, self.J = self._validate_jac(jac)
+        self.jac, self.J = self._validate_jac(jac, jac_sparsity)
         if self.jac is not None:
             if issparse(self.J):
                 def lu(A):
@@ -312,15 +323,22 @@ class Radau(OdeSolver):
         self.LU_complex = None
         self.Z = None
 
-    def _validate_jac(self, jac):
+    def _validate_jac(self, jac, sparsity):
         t0 = self.t
         y0 = self.y
 
         if jac is None:
+            if sparsity is not None:
+                if issparse(sparsity):
+                    sparsity = csc_matrix(sparsity)
+                groups = group_columns(sparsity)
+                sparsity = (sparsity, groups)
+
             def jac_wrapped(t, y, f):
                 self.njev += 1
                 J, self.jac_factor = num_jac(self.fun_vectorized, t, y, f,
-                                             self.atol, self.jac_factor)
+                                             self.atol, self.jac_factor,
+                                             sparsity)
                 return J
             J = jac_wrapped(t0, y0, self.f)
         elif callable(jac):

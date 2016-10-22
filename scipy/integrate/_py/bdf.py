@@ -3,6 +3,7 @@ import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse import issparse, csc_matrix, eye
 from scipy.sparse.linalg import splu
+from scipy.optimize._numdiff import group_columns
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, EPS, num_jac, warn_extraneous)
 from .base import OdeSolver, DenseOutput
@@ -121,6 +122,13 @@ class BDF(OdeSolver):
 
         It is generally recommended to provided the Jacobian rather than
         relying on finite difference approximation.
+    jac_sparsity : {None, array_like, sparse matrix}, optional
+        Defines the sparsity structure of the Jacobian matrix for finite
+        difference estimation, its shape must be (n, n). If the Jacobian has
+        only few non-zero elements in *each* row, providing the sparsity
+        structure will greatly speed up the computations [4]_. A zero
+        entry means that a corresponding element in the Jacobian is identically
+        zero. If None (default), the Jacobian is assumed to be dense.
     vectorized : bool, optional
         Whether `fun` is implemented in a vectorized fashion. Default is False.
 
@@ -158,10 +166,13 @@ class BDF(OdeSolver):
            COMPUTE., Vol. 18, No. 1, pp. 1-22, January 1997.
     .. [3] E. Hairer, G. Wanner, "Solving Ordinary Differential Equations I:
            Nonstiff Problems", Sec. III.2.
+    .. [4] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
+           sparse Jacobian matrices", Journal of the Institute of Mathematics
+           and its Applications, 13, pp. 117-120, 1974.
     """
     def __init__(self, fun, t0, y0, t_crit, max_step=np.inf,
-                 rtol=1e-3, atol=1e-6, jac=None, vectorized=False,
-                 **extraneous):
+                 rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
+                 vectorized=False, **extraneous):
         warn_extraneous(extraneous)
         super(BDF, self).__init__(fun, t0, y0, t_crit, vectorized)
         self.max_step = validate_max_step(max_step)
@@ -176,7 +187,7 @@ class BDF(OdeSolver):
         self.newton_tol = max(10 * EPS / rtol, min(0.03, rtol ** 0.5))
 
         self.jac_factor = None
-        self.jac, self.J = self._validate_jac(jac)
+        self.jac, self.J = self._validate_jac(jac, jac_sparsity)
         if self.jac is not None:
             if issparse(self.J):
                 def lu(A):
@@ -216,16 +227,23 @@ class BDF(OdeSolver):
         self.n_equal_steps = 0
         self.LU = None
 
-    def _validate_jac(self, jac):
+    def _validate_jac(self, jac, sparsity):
         t0 = self.t
         y0 = self.y
 
         if jac is None:
+            if sparsity is not None:
+                if issparse(sparsity):
+                    sparsity = csc_matrix(sparsity)
+                groups = group_columns(sparsity)
+                sparsity = (sparsity, groups)
+
             def jac_wrapped(t, y):
                 self.njev += 1
                 f = self.fun_single(t, y)
                 J, self.jac_factor = num_jac(self.fun_vectorized, t, y, f,
-                                             self.atol, self.jac_factor)
+                                             self.atol, self.jac_factor,
+                                             sparsity)
                 return J
             J = jac_wrapped(t0, y0)
         elif callable(jac):

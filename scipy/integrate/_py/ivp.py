@@ -263,6 +263,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
 
         It is generally recommended to provided the Jacobian rather than
         relying on finite difference approximation.
+    jac_sparsity : {None, array_like, sparse matrix}, optional
+        Defines the sparsity structure of the Jacobian matrix for finite
+        difference estimation, its shape must be (n, n). If the Jacobian has
+        only few non-zero elements in *each* row, providing the sparsity
+        structure will greatly speed up the computations [8]_. A zero
+        entry means that a corresponding element in the Jacobian is identically
+        zero. If None (default), the Jacobian is assumed to be dense.
 
     Returns
     -------
@@ -315,6 +322,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
            COMPUTE., Vol. 18, No. 1, pp. 1-22, January 1997.
     .. [7] `Stiff equation <https://en.wikipedia.org/wiki/Stiff_equation>`_ on
            Wikipedia.
+    .. [8] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
+           sparse Jacobian matrices", Journal of the Institute of Mathematics
+           and its Applications, 13, pp. 117-120, 1974.
     """
     if method not in METHODS and not issubclass(method, OdeSolver):
         raise ValueError("`method` must be one of {} or OdeSolver instance."

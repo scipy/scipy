@@ -8,7 +8,7 @@ from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
 from scipy.integrate import DenseOutput, OdeSolution
 from scipy.integrate._py.common import num_jac
-from scipy.sparse import csr_matrix
+from scipy.sparse import coo_matrix, csc_matrix
 
 
 def fun_rational(t, y):
@@ -30,11 +30,70 @@ def jac_rational(t, y):
 
 
 def jac_rational_sparse(t, y):
-    return csr_matrix([
+    return csc_matrix([
         [0, 1 / t],
         [-2 * y[1] ** 2 / (t * (y[0] - 1) ** 2),
          (y[0] + 4 * y[1] - 1) / (t * (y[0] - 1))]
     ])
+
+
+def fun_medazko(t, y):
+    n = y.shape[0] // 2
+    k = 100
+    c = 4
+
+    phi = 2 if t <= 5 else 0
+    y = np.hstack((phi, 0, y, y[-2]))
+
+    d = 1 / n
+    j = np.arange(n) + 1
+    alpha = 2 * (j * d - 1) ** 3 / c ** 2
+    beta = (j * d - 1) ** 4 / c ** 2
+
+    j_2_p1 = 2 * j + 2
+    j_2_m3 = 2 * j - 2
+    j_2_m1 = 2 * j
+    j_2 = 2 * j + 1
+
+    f = np.empty(2 * n)
+    f[::2] = (alpha * (y[j_2_p1] - y[j_2_m3]) / (2 * d) +
+              beta * (y[j_2_m3] - 2 * y[j_2_m1] + y[j_2_p1]) / d ** 2 -
+              k * y[j_2_m1] * y[j_2])
+    f[1::2] = -k * y[j_2] * y[j_2_m1]
+
+    return f
+
+
+def medazko_sparsity(n):
+    cols = []
+    rows = []
+
+    i = np.arange(n) * 2
+
+    cols.append(i[1:])
+    rows.append(i[1:] - 2)
+
+    cols.append(i)
+    rows.append(i)
+
+    cols.append(i)
+    rows.append(i + 1)
+
+    cols.append(i[:-1])
+    rows.append(i[:-1] + 2)
+
+    i = np.arange(n) * 2 + 1
+
+    cols.append(i)
+    rows.append(i)
+
+    cols.append(i)
+    rows.append(i - 1)
+
+    cols = np.hstack(cols)
+    rows = np.hstack(rows)
+
+    return coo_matrix((np.ones_like(cols), (cols, rows)))
 
 
 def sol_rational(t):
@@ -105,6 +164,32 @@ def test_integration():
             assert_(np.all(e < 5))
 
             assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+
+
+def test_integration_sparse_difference():
+    n = 200
+    t_span = [0, 20]
+    y0 = np.zeros(2 * n)
+    y0[1::2] = 1
+    sparsity = medazko_sparsity(n)
+
+    for method in ['BDF', 'Radau']:
+        res = solve_ivp(fun_medazko, t_span, y0, method=method,
+                        jac_sparsity=sparsity)
+
+        assert_equal(res.t[0], t_span[0])
+        assert_(res.t_events is None)
+        assert_(res.success)
+        assert_equal(res.status, 0)
+
+        assert_allclose(res.y[78, -1], 0.233994e-3, rtol=1e-2)
+        assert_allclose(res.y[79, -1], 0, atol=1e-3)
+        assert_allclose(res.y[148, -1], 0.359561e-3, rtol=1e-2)
+        assert_allclose(res.y[149, -1], 0, atol=1e-3)
+        assert_allclose(res.y[198, -1], 0.117374129e-3, rtol=1e-2)
+        assert_allclose(res.y[199, -1], 0.6190807e-5, atol=1e-3)
+        assert_allclose(res.y[238, -1], 0, atol=1e-3)
+        assert_allclose(res.y[239, -1], 0.9999997, rtol=1e-2)
 
 
 def test_events():
