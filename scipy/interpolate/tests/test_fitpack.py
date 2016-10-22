@@ -8,7 +8,7 @@ from numpy.testing import (assert_equal, assert_allclose, assert_,
     assert_raises, assert_array_almost_equal)
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
-from scipy.interpolate._fitpack_impl import (splrep, splev, bisplrep, bisplev,
+from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
 
 

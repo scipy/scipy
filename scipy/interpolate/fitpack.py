@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 
-from ._fitpack_impl import bisplrep, bisplev
+from ._fitpack_impl import bisplrep, bisplev, dblint
 from . import _fitpack_impl as _impl
 from ._bsplines import BSpline
 
