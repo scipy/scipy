@@ -431,20 +431,27 @@ class Radau(OdeSolver):
 
             scale = atol + np.abs(y) * rtol
 
-            if LU_real is None or LU_complex is None:
-                LU_real = self.lu(MU_REAL / h * self.I - J)
-                LU_complex = self.lu(MU_COMPLEX / h * self.I - J)
+            converged = False
+            while not converged:
+                if LU_real is None or LU_complex is None:
+                    LU_real = self.lu(MU_REAL / h * self.I - J)
+                    LU_complex = self.lu(MU_COMPLEX / h * self.I - J)
 
-            converged, n_iter, Z, rate = solve_collocation_system(
+                converged, n_iter, Z, rate = solve_collocation_system(
                     self.fun, t, y, h, Z0, scale, self.newton_tol,
                     LU_real, LU_complex, self.solve_lu)
 
+                if not converged:
+                    if not current_jac:
+                        J = self.jac(t, y, f)
+                        current_jac = True
+                        LU_real = None
+                        LU_complex = None
+                    else:
+                        break
+
             if not converged:
-                if not current_jac:
-                    J = self.jac(t, y, f)
-                    current_jac = True
-                else:
-                    h_abs *= 0.5
+                h_abs *= 0.5
                 LU_real = None
                 LU_complex = None
                 continue
