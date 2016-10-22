@@ -31,7 +31,8 @@ __all__ = ['mvsdist',
            'boxcox_llf', 'boxcox', 'boxcox_normmax', 'boxcox_normplot',
            'shapiro', 'anderson', 'ansari', 'bartlett', 'levene', 'binom_test',
            'fligner', 'mood', 'wilcoxon', 'median_test',
-           'pdf_fromgamma', 'circmean', 'circvar', 'circstd', 'anderson_ksamp'
+           'pdf_fromgamma', 'circmean', 'circvar', 'circstd', 'anderson_ksamp',
+           'cmh', 
            ]
 
 
@@ -2808,6 +2809,71 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     C = cos(ang).mean(axis=axis)
     R = hypot(S, C)
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
+
+
+def cmh(observed, correction = True):
+    """
+    Perform the Cochran-Mantel-Haenszel test for repeated tests of independence
+    
+    The Cochran-Mantel-Haenszel (also known as CMH or Mantel-Haenszel test) is used 
+    to check if there is a consistent difference in proportions across replicates of the 
+    same experiment. [1]_
+    
+    Parameters
+    ----------
+    observed : array_like
+        A list of multiple 2x2 tables of independence
+    correction : bool
+        If true, apply Yate's correction for continuity
+    
+    Returns
+    -------
+    chi2 : float
+        The test statistic.
+    p : float
+        The p-value of the test.
+        
+    References
+    ----------
+    .. [1] McDonald, J. H., "Handbook of Biological Statistics", Sparky House Publishing, 
+           Baltimore, Maryland, U.S.A. 2014, Third Edition, pp. 95-101.
+           
+    Examples
+    --------
+    Example with 2 replicates with correction for continuity
+    
+    >>> from scipy.stats import cmh
+    >>> observed = np.array([[[125,12],[132,100]],[[136,16],[153,120]]])
+    >>> cmh(observed)
+    (96.315324806756934, 9.7968776282930529e-23)
+    
+    Perform the test without continuity correction
+    >>> cmh(observed, False)
+    (97.882098576424156, 4.4404998551063921e-23)      
+    """
+    observed = np.asarray(observed).reshape([-1, 4])
+    
+    replicates = observed.shape[0]
+    numerator = 0
+    demoninator = 0
+    
+    for x in range(replicates):
+        value = observed[x,:] # a, b, c, d = value[:]
+        n = value.sum()
+        # a - [(a + b) * (a + c)] / n
+        numerator += value[0] - ((value[0] + value[1]) * (value[0] + value[2])) / n
+        # (a + b)(a + c)(d + b)(d + c) / (n^3 - n^2)
+        demoninator += (value[0] + value[1]) * (value[0] + value[2]) * (value[3] + value[1]) * (value[3] + value[2]) / (n**3 - n**2)
+        
+    if correction:
+        numerator = abs(numerator) - 0.5
+    else:
+        numerator = abs(numerator)
+        
+    chi2 = numerator**2 / demoninator
+    p = distributions.chi2.sf(chi2, 1)
+    
+    return chi2, p
 
 
 # Tests to include (from R) -- some of these already in stats.

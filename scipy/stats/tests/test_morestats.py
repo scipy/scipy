@@ -1409,6 +1409,15 @@ class TestMedianTest(TestCase):
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
 
+class TestCMH(TestCase):
+	def test_cmh_correction(self):
+		chi2, p = stats.cmh([[[125,12],[132,100]],[[136,16],[153,120]]])
+		assert_approx_equal(chi2, 96.3153, significant = 4)
+		
+	
+	def test_cmh_without_correction(self):
+		chi2, p = stats.cmh([[[125,12],[132,100]],[[136,16],[153,120]]], False)
+		assert_approx_equal(chi2, 97.8821, significant = 4)	
 
 if __name__ == "__main__":
     run_module_suite()
