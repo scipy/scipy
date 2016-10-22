@@ -226,7 +226,7 @@ class RK23(RungeKutta):
     njev : int
         Number of the Jacobian evaluations.
     nlu : int
-        Number of LU decompositions of the Jacobian.
+        Number of LU decompositions.
 
     References
     ----------
@@ -310,7 +310,7 @@ class RK45(RungeKutta):
     njev : int
         Number of the Jacobian evaluations.
     nlu : int
-        Number of LU decompositions of the Jacobian.
+        Number of LU decompositions.
 
     References
     ----------

@@ -40,7 +40,7 @@ class OdeSolver(object):
            automatically.
         7. If a solver uses Jacobian and LU decompositions, it should track
            the number of Jacobian evaluations (`njev`) and the number of LU
-           factorizations (`nlu`).
+           decompositions (`nlu`).
         8. By convention a function evaluations used to compute a finite
            difference approximation of the Jacobian should not be counted in
            `nfev`, thus use `fun_single(self, t, y)` or
@@ -90,7 +90,7 @@ class OdeSolver(object):
     njev : int
         Number of the Jacobian evaluations.
     nlu : int
-        Number of LU decompositions of the Jacobian.
+        Number of LU decompositions.
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 

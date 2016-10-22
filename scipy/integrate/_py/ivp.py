@@ -290,7 +290,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     njev : int
         Number of the Jacobian evaluations.
     nlu : int
-        Number of LU decompositions of the Jacobian.
+        Number of LU decompositions.
     status : int
         Reason for algorithm termination:
 
