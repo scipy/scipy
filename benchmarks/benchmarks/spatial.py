@@ -165,7 +165,7 @@ class SphericalVorSort(Benchmark):
         self.sv.sort_vertices_of_regions()
 
 class Cdist(Benchmark):
-    params = ([10, 100, 1000, 5000], ['euclidean', 'minkowski', 'cityblock',
+    params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
     'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
     'chebyshev', 'canberra', 'braycurtis', 'mahalanobis', 'yule', 'dice',
     'kulsinski', 'rogerstanimoto', 'russellrao', 'sokalmichener',
