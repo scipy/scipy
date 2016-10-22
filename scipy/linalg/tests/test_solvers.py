@@ -277,7 +277,7 @@ def test_solve_continuous_are():
     #
     # If the test is failing use "None" for that entry.
     #
-    min_decimal = (14, 13, 14, 14, 11, 7, None, 5, 7, 14, 14,
+    min_decimal = (14, 12, 14, 14, 11, 7, None, 5, 7, 14, 14,
                    None, 10, 14, 13, 14, None, 12, None, None)
 
     def _test_factory(case, dec):
@@ -498,7 +498,7 @@ def test_solve_discrete_are():
     # If the test is failing use "None" for that entry.
     #
     min_decimal = (12, 14, 14, 14, 13, 16, 18, 15, 15, 13,
-                   14, 13, 13, 14, 12, 2, 5, 7, 10)
+                   14, 13, 13, 14, 12, 2, 5, 6, 10)
 
     def _test_factory(case, dec):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
