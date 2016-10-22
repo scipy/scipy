@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 from warnings import warn
 import numpy as np
-from scipy.sparse import find, csc_matrix, coo_matrix
+from scipy.sparse import find, coo_matrix
 
 
 EPS = np.finfo(float).eps

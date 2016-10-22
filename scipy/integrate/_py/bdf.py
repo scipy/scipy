@@ -260,6 +260,7 @@ class BDF(OdeSolver):
 
             else:
                 J = np.asarray(J, dtype=float)
+
                 def jac_wrapped(t, y):
                     self.njev += 1
                     return np.asarray(jac(t, y), dtype=float)

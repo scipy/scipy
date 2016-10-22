@@ -7,4 +7,3 @@ from .radau import Radau
 from .bdf import BDF
 from .common import OdeSolution
 from .base import DenseOutput, OdeSolver
-
