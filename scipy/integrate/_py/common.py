@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 from warnings import warn
 import numpy as np
+from scipy.sparse import find, csc_matrix, coo_matrix
 
 
 EPS = np.finfo(float).eps
@@ -204,7 +205,7 @@ class OdeSolution(object):
         return ys
 
 
-def num_jac(fun, t, y, f, threshold, factor):
+def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
     """Finite differences Jacobian approximation tailored for ODE solvers.
 
     This function computes finite difference approximation to the Jacobian
@@ -237,6 +238,8 @@ def num_jac(fun, t, y, f, threshold, factor):
     factor : ndarray with shape (n,) or None
         Factor to use for computing the step size. Pass None for the very
         evaluation, then use the value returned from this function.
+    sparsity : tuple (structure, groups) or None
+        Sparsity structure of the Jacobian.
 
     Returns
     -------
@@ -252,13 +255,14 @@ def num_jac(fun, t, y, f, threshold, factor):
 
     if factor is None:
         factor = np.ones(n) * EPS ** 0.5
+    else:
+        factor = factor.copy()
 
-    # Direct the step as ODE dictates, hoping that such step won't lead to
+    # Direct the step as ODE dictates, hoping that such a step won't lead to
     # a problematic region.
     f_sign = 2 * (f >= 0).astype(float) - 1
     y_scale = f_sign * np.maximum(threshold, np.abs(y))
-    h = factor * y_scale
-    h = (y + h) - y
+    h = (y + factor * y_scale) - y
 
     # Make sure that the step is not 0 to start with. Not likely it will be
     # executed often.
@@ -267,13 +271,23 @@ def num_jac(fun, t, y, f, threshold, factor):
             factor[i] *= 10
             h[i] = (y[i] + factor[i] * y_scale[i]) - y[i]
 
+    if sparsity is None:
+        return _dense_num_jac(fun, t, y, f, h, factor, y_scale)
+    else:
+        structure, groups = sparsity
+        return _sparse_num_jac(fun, t, y, f, h, factor, y_scale,
+                               structure, groups)
+
+
+def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
+    n = y.shape[0]
     h_vecs = np.diag(h)
     f_new = fun(t, y[:, None] + h_vecs)
     diff = f_new - f[:, None]
     max_ind = np.argmax(np.abs(diff), axis=0)
-    j = np.arange(n)
-    max_diff = np.abs(diff[max_ind, j])
-    scale = np.maximum(np.abs(f[max_ind]), np.abs(f_new[max_ind, j]))
+    r = np.arange(n)
+    max_diff = np.abs(diff[max_ind, r])
+    scale = np.maximum(np.abs(f[max_ind]), np.abs(f_new[max_ind, r]))
 
     diff_too_small = max_diff < EPS ** 0.875 * scale
     if np.any(diff_too_small):
@@ -284,9 +298,9 @@ def num_jac(fun, t, y, f, threshold, factor):
         f_new = fun(t, y[:, None] + h_vecs[:, ind])
         diff_new = f_new - f[:, None]
         max_ind = np.argmax(np.abs(diff_new), axis=0)
-        j = np.arange(ind.shape[0])
-        max_diff_new = np.abs(diff_new[max_ind, j])
-        scale_new = np.maximum(np.abs(f[max_ind]), np.abs(f_new[max_ind, j]))
+        r = np.arange(ind.shape[0])
+        max_diff_new = np.abs(diff_new[max_ind, r])
+        scale_new = np.maximum(np.abs(f[max_ind]), np.abs(f_new[max_ind, r]))
 
         update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
         if np.any(update):
@@ -299,6 +313,86 @@ def num_jac(fun, t, y, f, threshold, factor):
             max_diff[update_ind] = max_diff_new[update]
 
     diff /= h
+
+    factor[max_diff < EPS ** 0.75 * scale] *= 10
+    factor[max_diff > EPS ** 0.25 * scale] *= 0.1
+    factor = np.maximum(factor, 1e3 * EPS)
+
+    return diff, factor
+
+
+def _column_argmax_csc(A):
+    ret = np.empty(A.shape[1], dtype=int)
+    i = 0
+    for col in range(A.shape[1]):
+        j = A.indptr[col + 1]
+        a = np.argmax(A.data[i: j])
+        ret[col] = A.indices[i: j][a]
+        i = j
+    return ret
+
+
+def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
+    n = y.shape[0]
+    n_groups = np.max(groups) + 1
+    h_vecs = np.empty((n_groups, n))
+    for group in range(n_groups):
+        e = np.equal(group, groups)
+        h_vecs[group] = h * e
+    h_vecs = h_vecs.T
+
+    f_new = fun(t, y[:, None] + h_vecs)
+    df = f_new - f[:, None]
+
+    i, j, _ = find(structure)
+    diff = coo_matrix((df[i, groups[j]], (i, j)), shape=(n, n)).tocsc()
+    max_ind = _column_argmax_csc(abs(diff))
+    r = np.arange(n)
+    max_diff = np.asarray(np.abs(diff[max_ind, r])).ravel()
+    scale = np.maximum(np.abs(f[max_ind]),
+                       np.abs(f_new[max_ind, groups[r]]))
+
+    diff_too_small = max_diff < EPS ** 0.875 * scale
+    if np.any(diff_too_small):
+        ind, = np.nonzero(diff_too_small)
+        new_factor = 10 * factor[ind]
+        h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
+        h_new_all = np.zeros(n)
+        h_new_all[ind] = h_new
+
+        groups_unique = np.unique(groups[ind])
+        groups_map = np.empty(n_groups, dtype=int)
+        h_vecs = np.empty((groups_unique.shape[0], n))
+        for k, group in enumerate(groups_unique):
+            e = np.equal(group, groups)
+            h_vecs[k] = h_new_all * e
+            groups_map[group] = k
+        h_vecs = h_vecs.T
+
+        f_new = fun(t, y[:, None] + h_vecs)
+        df = f_new - f[:, None]
+        i, j, _ = find(structure[:, ind])
+        diff_new = coo_matrix((df[i, groups_map[groups[ind[j]]]],
+                               (i, j)), shape=(n, ind.shape[0])).tocsc()
+
+        max_ind_new = _column_argmax_csc(abs(diff_new))
+        r = np.arange(ind.shape[0])
+        max_diff_new = np.asarray(np.abs(diff_new[max_ind_new, r])).ravel()
+        scale_new = np.maximum(
+            np.abs(f[max_ind_new]),
+            np.abs(f_new[max_ind_new, groups_map[groups[ind]]]))
+
+        update = max_diff[ind] * scale_new < max_diff_new * scale[ind]
+        if np.any(update):
+            update, = np.where(update)
+            update_ind = ind[update]
+            factor[update_ind] = new_factor[update]
+            h[update_ind] = h_new[update]
+            diff[:, update_ind] = diff_new[:, update]
+            scale[update_ind] = scale_new[update]
+            max_diff[update_ind] = max_diff_new[update]
+
+    diff.data /= np.repeat(h, np.diff(diff.indptr))
 
     factor[max_diff < EPS ** 0.75 * scale] *= 10
     factor[max_diff > EPS ** 0.25 * scale] *= 0.1
