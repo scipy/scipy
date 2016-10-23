@@ -150,7 +150,7 @@ class OdeSolver(object):
         Returns
         -------
         message : string or None
-            Report from the solver. Typically a reason for the failure if
+            Report from the solver. Typically a reason for a failure if
             `self.status` is 'failed' after the step was taken or None
             otherwise.
         """
@@ -159,17 +159,11 @@ class OdeSolver(object):
                                "solver.")
 
         if self.n == 0 or self.t == self.t_crit:
-            # Handle corner cases of empty solver and no integration
-            t = self.t
-            t_new = self.t_crit
-            self.t_old = t
-            self.t = t_new
-
+            # Handle corner cases of empty solver and no integration.
+            self.t_old = self.t
+            self.t = self.t_crit
             message = None
-
-            if (not np.isfinite(self.t)
-                    or self.direction * (self.t - self.t_crit) >= 0):
-                self.status = 'finished'
+            self.status = 'finished'
         else:
             t = self.t
             success, message = self._step_impl()
@@ -196,8 +190,8 @@ class OdeSolver(object):
                                "step was made.")
 
         if self.n == 0 or self.t == self.t_old:
-            # Handle corner cases of empty solver and no integration
-            return ConstantDenseOutput(self.y, self.t_old, self.t)
+            # Handle corner cases of empty solver and no integration.
+            return ConstantDenseOutput(self.t_old, self.t, self.y)
         else:
             return self._dense_output_impl()
 
@@ -250,9 +244,14 @@ class DenseOutput(object):
 
 
 class ConstantDenseOutput(DenseOutput):
-    def __init__(self, value, t_old, t):
+    def __init__(self, t_old, t, value):
         super(ConstantDenseOutput, self).__init__(t_old, t)
         self.value = value
 
     def _call_impl(self, t):
-        return self.value
+        if t.ndim == 0:
+            return self.value
+        else:
+            ret = np.empty((self.value.shape[0], t.shape[0]))
+            ret[:] = self.value[:, None]
+            return ret

@@ -8,6 +8,7 @@ from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
 from scipy.integrate import DenseOutput, OdeSolution
 from scipy.integrate._py.common import num_jac
+from scipy.integrate._py.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
 
 
@@ -419,6 +420,16 @@ def test_empty():
         assert_equal(sol.sol(10), np.zeros((0,)))
 
 
+def test_ConstantDenseOutput():
+    sol = ConstantDenseOutput(0, 1, np.array([1, 2]))
+    assert_allclose(sol(1.5), [1, 2])
+    assert_allclose(sol([1, 1.5, 2]), [[1, 1, 1], [2, 2, 2]])
+
+    sol = ConstantDenseOutput(0, 1, np.array([]))
+    assert_allclose(sol(1.5), np.empty(0))
+    assert_allclose(sol([1, 1.5, 2]), np.empty((0, 3)))
+
+
 def test_classes():
     y0 = [1 / 3, 2 / 9]
     for cls in [RK23, RK45, Radau, BDF]:
@@ -449,33 +460,17 @@ def test_classes():
         assert_(solver.nlu >= 0)
 
 
-class ConstDenseOutput(DenseOutput):
-    def __init__(self, t_old, t, c):
-        super(ConstDenseOutput, self).__init__(t_old, t)
-        self.c = c
-
-    def _call_impl(self, t):
-        if t.ndim == 0:
-            return self.c
-        else:
-            y = np.empty_like(t)
-            y.fill(self.c)
-            y = np.atleast_2d(y)
-
-        return y
-
-
 def test_OdeSolution():
     ts = np.array([0, 2, 5], dtype=float)
-    s1 = ConstDenseOutput(ts[0], ts[1], -1)
-    s2 = ConstDenseOutput(ts[1], ts[2], 1)
+    s1 = ConstantDenseOutput(ts[0], ts[1], np.array([-1]))
+    s2 = ConstantDenseOutput(ts[1], ts[2], np.array([1]))
 
     sol = OdeSolution(ts, [s1, s2])
 
-    assert_equal(sol(-1), -1)
-    assert_equal(sol(1), -1)
-    assert_equal(sol(3), 1)
-    assert_equal(sol(6), 1)
+    assert_equal(sol(-1), [-1])
+    assert_equal(sol(1), [-1])
+    assert_equal(sol(3), [1])
+    assert_equal(sol(6), [1])
 
     assert_equal(sol([6, -2, 1.5, 4.5, 2.5, 5.5]),
                  np.array([[1, -1, -1, 1, 1, 1]]))
