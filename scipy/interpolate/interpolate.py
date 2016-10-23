@@ -32,11 +32,12 @@ from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline
 
+
 def reduce_sometrue(a):
-    all = a
-    while len(shape(all)) > 1:
-        all = sometrue(all, axis=0)
-    return all
+    _all = a
+    while len(shape(_all)) > 1:
+        _all = sometrue(_all, axis=0)
+    return _all
 
 
 def prod(x):
@@ -85,6 +86,7 @@ def lagrange(x, w):
 # !! Need to find argument for keeping initialize.  If it isn't
 # !! found, get rid of it!
 
+
 class interp2d(object):
     """
     interp2d(x, y, z, kind='linear', copy=True, bounds_error=False,
@@ -98,7 +100,7 @@ class interp2d(object):
 
     If `x` and `y` represent a regular grid, consider using
     RectBivariateSpline.
-    
+
     Note that calling `interp2d` with NaNs present in input values results in
     undefined behaviour.
 
@@ -181,7 +183,6 @@ class interp2d(object):
     >>> znew = f(xnew, ynew)
     >>> plt.plot(x, z[0, :], 'ro-', xnew, znew[0, :], 'b-')
     >>> plt.show()
-
     """
 
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
@@ -262,7 +263,6 @@ class interp2d(object):
         -------
         z : 2D array with shape (len(y), len(x))
             The interpolated values.
-
         """
 
         x = atleast_1d(x)
@@ -405,7 +405,6 @@ class interp1d(_Interpolator1D):
     >>> ynew = f(xnew)   # use interpolation function returned by `interp1d`
     >>> plt.plot(x, y, 'o', xnew, ynew, '-')
     >>> plt.show()
-
     """
 
     def __init__(self, x, y, kind='linear', axis=-1,
@@ -464,7 +463,8 @@ class interp1d(_Interpolator1D):
             # axis.
             minval = 2
             if kind == 'nearest':
-                # Do division before addition to prevent possible integer overflow
+                # Do division before addition to prevent possible integer
+                # overflow
                 self.x_bds = self.x / 2.0
                 self.x_bds = self.x_bds[1:] + self.x_bds[:-1]
 
@@ -621,10 +621,10 @@ class interp1d(_Interpolator1D):
         # !! Could provide more information about which values are out of bounds
         if self.bounds_error and below_bounds.any():
             raise ValueError("A value in x_new is below the interpolation "
-                "range.")
+                             "range.")
         if self.bounds_error and above_bounds.any():
             raise ValueError("A value in x_new is above the interpolation "
-                "range.")
+                             "range.")
 
         # !! Should we emit a warning if some values are out of bounds?
         # !! matlab does not.
@@ -908,7 +908,6 @@ class PPoly(_PPolyBase):
     unstable.  Precision problems can start to appear for orders
     larger than 20-30.
     """
-
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                         self.x, x, nu, bool(extrapolate), out)
@@ -944,7 +943,7 @@ class PPoly(_PPolyBase):
         if nu == 0:
             c2 = self.c.copy()
         else:
-            c2 = self.c[:-nu,:].copy()
+            c2 = self.c[:-nu, :].copy()
 
         if c2.shape[0] == 0:
             # derivative of order 0 is zero
@@ -961,7 +960,7 @@ class PPoly(_PPolyBase):
         """
         Construct a new piecewise polynomial representing the antiderivative.
 
-        Antiderivativative is also the indefinite integral of the function,
+        Antiderivative is also the indefinite integral of the function,
         and derivative is its inverse operation.
 
         Parameters
@@ -1239,7 +1238,7 @@ class PPoly(_PPolyBase):
 
         c = np.zeros_like(bp.c)
         for a in range(k+1):
-            factor = (-1)**(a) * comb(k, a) * bp.c[a]
+            factor = (-1)**a * comb(k, a) * bp.c[a]
             for s in range(a, k+1):
                 val = comb(k-a, s-a) * (-1)**s
                 c[k-s] += factor * val / dx[(slice(None),)+rest]**s
@@ -1437,9 +1436,9 @@ class BPoly(_PPolyBase):
         # constant to be zero; on an interval [x_j, x_{j+1}) with j>0,
         # the integration constant is then equal to the jump of the `bp` at x_j.
         # The latter is given by the coefficient of B_{n+1, n+1}
-        # *on the previous interval* (other B. polynomials are zero at the breakpoint)
-        # Finally, use the fact that BPs form a partition of unity.
-        c2[:,1:] += np.cumsum(c2[k,:], axis=0)[:-1]
+        # *on the previous interval* (other B. polynomials are zero at the
+        # breakpoint). Finally, use the fact that BPs form a partition of unity.
+        c2[:,1:] += np.cumsum(c2[k, :], axis=0)[:-1]
 
         if self.extrapolate == 'periodic':
             extrapolate = False
@@ -1650,14 +1649,17 @@ class BPoly(_PPolyBase):
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
                 if n1+n2 != n:
-                    raise ValueError("Point %g has %d derivatives, point %g"
-                            " has %d derivatives, but order %d requested" %
-                            (xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                    mesg = ("Point %g has %d derivatives, point %g"
+                            " has %d derivatives, but order %d requested" % (
+                               xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                    raise ValueError(mesg)
+
                 if not (n1 <= len(y1) and n2 <= len(y2)):
                     raise ValueError("`order` input incompatible with"
-                            " length y1 or y2.")
+                                     " length y1 or y2.")
 
-            b = BPoly._construct_from_derivatives(xi[i], xi[i+1], y1[:n1], y2[:n2])
+            b = BPoly._construct_from_derivatives(xi[i], xi[i+1],
+                                                  y1[:n1], y2[:n2])
             if len(b) < k:
                 b = BPoly._raise_degree(b, k - len(b))
             c.append(b)
@@ -2081,7 +2083,7 @@ class NdPPoly(object):
         """
         Construct a new piecewise polynomial representing the antiderivative.
 
-        Antiderivativative is also the indefinite integral of the function,
+        Antiderivative is also the indefinite integral of the function,
         and derivative is its inverse operation.
 
         Parameters
@@ -2146,11 +2148,11 @@ class NdPPoly(object):
             extrapolate = self.extrapolate
         else:
             extrapolate = bool(extrapolate)
-        
+
         ndim = len(self.x)
         axis = int(axis) % ndim
 
-        # Reuse 1D integration routines
+        # reuse 1D integration routines
         c = self.c
         swap = list(range(c.ndim))
         swap.insert(0, swap[axis])
@@ -2199,7 +2201,7 @@ class NdPPoly(object):
             extrapolate = self.extrapolate
         else:
             extrapolate = bool(extrapolate)
-        
+
         if not hasattr(ranges, '__len__') or len(ranges) != ndim:
             raise ValueError("Range not a sequence of correct length")
 
@@ -2270,7 +2272,7 @@ class RegularGridInterpolator(object):
     Evaluate a simple example function on the points of a 3D grid:
 
     >>> from scipy.interpolate import RegularGridInterpolator
-    >>> def f(x,y,z):
+    >>> def f(x, y, z):
     ...     return 2 * x**3 + 3 * y**2 - z
     >>> x = np.linspace(1, 4, 11)
     >>> y = np.linspace(4, 7, 22)
@@ -2340,7 +2342,7 @@ class RegularGridInterpolator(object):
             fill_value_dtype = np.asarray(fill_value).dtype
             if (hasattr(values, 'dtype') and not
                     np.can_cast(fill_value_dtype, values.dtype,
-                                        casting='same_kind')):
+                                casting='same_kind')):
                 raise ValueError("fill_value must be either 'None' or "
                                  "of a type compatible with values")
 
@@ -2394,9 +2396,13 @@ class RegularGridInterpolator(object):
 
         indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
         if method == "linear":
-            result = self._evaluate_linear(indices, norm_distances, out_of_bounds)
+            result = self._evaluate_linear(indices,
+                                           norm_distances,
+                                           out_of_bounds)
         elif method == "nearest":
-            result = self._evaluate_nearest(indices, norm_distances, out_of_bounds)
+            result = self._evaluate_nearest(indices,
+                                            norm_distances,
+                                            out_of_bounds)
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
 
@@ -2638,37 +2644,37 @@ def _dot0(a, b):
         return dot(a, b.transpose(axes))
 
 
-def _find_smoothest(xk, yk, order, conds=None, B=None):
+def _find_smoothest(xk, yk, order, B=None):
     # construct Bmatrix, and Jmatrix
     # e = J*c
     # minimize norm(e,2) given B*c=yk
     # if desired B can be given
     # conds is ignored
-    N = len(xk)-1
+    N = len(xk) - 1
     K = order
     if B is None:
         B = _fitpack._bsplmat(order, xk)
     J = _fitpack._bspldismat(order, xk)
     u, s, vh = scipy.linalg.svd(B)
     ind = K-1
-    V2 = vh[-ind:,:].T
-    V1 = vh[:-ind,:].T
-    A = dot(J.T,J)
-    tmp = dot(V2.T,A)
-    Q = dot(tmp,V2)
+    V2 = vh[-ind:, :].T
+    V1 = vh[:-ind, :].T
+    A = dot(J.T, J)
+    tmp = dot(V2.T, A)
+    Q = dot(tmp, V2)
     p = scipy.linalg.solve(Q, tmp)
-    tmp = dot(V2,p)
-    tmp = np.eye(N+K) - tmp
-    tmp = dot(tmp,V1)
-    tmp = dot(tmp,np.diag(1.0/s))
-    tmp = dot(tmp,u.T)
+    tmp = dot(V2, p)
+    tmp = np.eye(N + K) - tmp
+    tmp = dot(tmp, V1)
+    tmp = dot(tmp, np.diag(1.0/s))
+    tmp = dot(tmp, u.T)
     return _dot0(tmp, yk)
 
 
 def _setdiag(a, k, v):
     if not a.ndim == 2:
         raise ValueError("Input array should be 2-D.")
-    M,N = a.shape
+    M, N = a.shape
     if k > 0:
         start = k
         num = N - k
@@ -2687,52 +2693,52 @@ def _find_smoothest2(xk, yk):
     Np1 = N + 1
     # find pseudo-inverse of B directly.
     Bd = np.empty((Np1, N))
-    for k in range(-N,N):
-        if (k < 0):
+    for k in range(-N, N):
+        if k < 0:
             l = np.arange(-k, Np1)
             v = (l+k+1)
-            if ((k+1) % 2):
+            if (k+1) % 2:
                 v = -v
         else:
             l = np.arange(k,N)
             v = N - l
-            if ((k % 2)):
+            if k % 2:
                 v = -v
         _setdiag(Bd, k, v)
-    Bd /= (Np1)
+    Bd /= Np1
     V2 = np.ones((Np1,))
     V2[1::2] = -1
     V2 /= math.sqrt(Np1)
     dk = np.diff(xk)
     b = 2*np.diff(yk, axis=0)/dk
-    J = np.zeros((N-1,N+1))
+    J = np.zeros((N-1, N+1))
     idk = 1.0/dk
-    _setdiag(J,0,idk[:-1])
-    _setdiag(J,1,-idk[1:]-idk[:-1])
-    _setdiag(J,2,idk[1:])
-    A = dot(J.T,J)
-    val = dot(V2,dot(A,V2))
-    res1 = dot(np.outer(V2,V2)/val,A)
-    mk = dot(np.eye(Np1)-res1, _dot0(Bd,b))
+    _setdiag(J, 0, idk[:-1])
+    _setdiag(J, 1, -idk[1:] - idk[:-1])
+    _setdiag(J, 2, idk[1:])
+    A = dot(J.T, J)
+    val = dot(V2, dot(A, V2))
+    res1 = dot(np.outer(V2, V2)/val, A)
+    mk = dot(np.eye(Np1)-res1, _dot0(Bd, b))
     return mk
 
 
-def _get_spline2_Bb(xk, yk, kind, conds):
+def _get_spline2_Bb(xk, yk, kind):
     Np1 = len(xk)
-    dk = xk[1:]-xk[:-1]
+    dk = xk[1:] - xk[:-1]
     if kind == 'not-a-knot':
         # use banded-solver
-        nlu = (1,1)
-        B = ones((3,Np1))
-        alpha = 2*(yk[1:]-yk[:-1])/dk
-        zrs = np.zeros((1,)+yk.shape[1:])
-        row = (Np1-1)//2
-        b = np.concatenate((alpha[:row],zrs,alpha[row:]),axis=0)
-        B[0,row+2:] = 0
-        B[2,:(row-1)] = 0
-        B[0,row+1] = dk[row-1]
-        B[1,row] = -dk[row]-dk[row-1]
-        B[2,row-1] = dk[row]
+        nlu = (1, 1)
+        B = ones((3, Np1))
+        alpha = 2*(yk[1:] - yk[:-1])/dk
+        zrs = np.zeros((1,) + yk.shape[1:])
+        row = (Np1 - 1)//2
+        b = np.concatenate((alpha[:row], zrs, alpha[row:]), axis=0)
+        B[0, row+2:] = 0
+        B[2, :(row-1)] = 0
+        B[0, row+1] = dk[row-1]
+        B[1, row] = -dk[row] - dk[row-1]
+        B[2, row-1] = dk[row]
         return B, b, None, nlu
     else:
         raise NotImplementedError("quadratic %s is not available" % kind)
@@ -2751,14 +2757,14 @@ def _get_spline3_Bb(xk, yk, kind, conds):
 
         # the matrix to invert is (N-1,N-1)
         # use banded solver
-        beta = 2*(xk[2:]-xk[:-2])
-        alpha = xk[1:]-xk[:-1]
-        nlu = (1,1)
-        B = np.empty((3,Np1-2))
-        B[0,1:] = alpha[2:]
-        B[1,:] = beta
-        B[2,:-1] = alpha[1:-1]
-        dyk = yk[1:]-yk[:-1]
+        beta = 2*(xk[2:] - xk[:-2])
+        alpha = xk[1:] - xk[:-1]
+        nlu = (1, 1)
+        B = np.empty((3, Np1-2))
+        B[0, 1:] = alpha[2:]
+        B[1, :] = beta
+        B[2, :-1] = alpha[1:-1]
+        dyk = yk[1:] - yk[:-1]
         b = (dyk[1:]/alpha[1:] - dyk[:-1]/alpha[:-1])
         b *= 6
         b[0] -= m0
@@ -2767,14 +2773,14 @@ def _get_spline3_Bb(xk, yk, kind, conds):
         def append_func(mk):
             # put m0 and mN into the correct shape for
             #  concatenation
-            ma = array(m0,copy=0,ndmin=yk.ndim)
-            mb = array(mN,copy=0,ndmin=yk.ndim)
+            ma = array(m0, copy=0, ndmin=yk.ndim)
+            mb = array(mN, copy=0, ndmin=yk.ndim)
             if ma.shape[1:] != yk.shape[1:]:
-                ma = ma*(ones(yk.shape[1:])[np.newaxis,...])
+                ma = ma*(ones(yk.shape[1:])[np.newaxis, ...])
             if mb.shape[1:] != yk.shape[1:]:
-                mb = mb*(ones(yk.shape[1:])[np.newaxis,...])
-            mk = np.concatenate((ma,mk),axis=0)
-            mk = np.concatenate((mk,mb),axis=0)
+                mb = mb*(ones(yk.shape[1:])[np.newaxis, ...])
+            mk = np.concatenate((ma, mk), axis=0)
+            mk = np.concatenate((mk, mb), axis=0)
             return mk
 
         return B, b, append_func, nlu
@@ -2784,7 +2790,7 @@ def _get_spline3_Bb(xk, yk, kind, conds):
         if kind == 'endslope':
             # match slope of lagrange interpolating polynomial of
             # order 3 at end-points.
-            x0,x1,x2,x3 = xk[:4]
+            x0, x1, x2, x3 = xk[:4]
             sl_0 = (1./(x0-x1)+1./(x0-x2)+1./(x0-x3))*yk[0]
             sl_0 += (x0-x2)*(x0-x3)/((x1-x0)*(x1-x2)*(x1-x3))*yk[1]
             sl_0 += (x0-x1)*(x0-x3)/((x2-x0)*(x2-x1)*(x3-x2))*yk[2]
@@ -2801,30 +2807,30 @@ def _get_spline3_Bb(xk, yk, kind, conds):
             sl_0, sl_N = conds
 
         # Now set up the (N+1)x(N+1) system of equations
-        beta = np.r_[0,2*(xk[2:]-xk[:-2]),0]
-        alpha = xk[1:]-xk[:-1]
-        gamma = np.r_[0,alpha[1:]]
-        B = np.diag(alpha,k=-1) + np.diag(beta) + np.diag(gamma,k=1)
+        beta = np.r_[0, 2*(xk[2:]-xk[:-2]), 0]
+        alpha = xk[1:] - xk[:-1]
+        gamma = np.r_[0, alpha[1:]]
+        B = np.diag(alpha, k=-1) + np.diag(beta) + np.diag(gamma, k=1)
         d1 = alpha[0]
         dN = alpha[-1]
         if kind == 'not-a-knot':
             d2 = alpha[1]
             dN1 = alpha[-2]
-            B[0,:3] = [d2,-d1-d2,d1]
-            B[-1,-3:] = [dN,-dN1-dN,dN1]
+            B[0, :3] = [d2, -d1 - d2, d1]
+            B[-1, -3:] = [dN, -dN1 - dN, dN1]
         elif kind == 'runout':
-            B[0,:3] = [1,-2,1]
-            B[-1,-3:] = [1,-2,1]
+            B[0, :3] = [1, -2, 1]
+            B[-1, -3:] = [1, -2, 1]
         elif kind == 'parabolic':
-            B[0,:2] = [1,-1]
-            B[-1,-2:] = [-1,1]
+            B[0, :2] = [1, -1]
+            B[-1, -2:] = [-1, 1]
         elif kind == 'periodic':
-            raise NotImplementedError
+            raise NotImplementedError("")
         elif kind == 'symmetric':
-            raise NotImplementedError
+            raise NotImplementedError("")
         else:
-            B[0,:2] = [2*d1,d1]
-            B[-1,-2:] = [dN,2*dN]
+            B[0, :2] = [2*d1, d1]
+            B[-1, -2:] = [dN, 2*dN]
 
         # Set up RHS (b)
         b = np.empty((Np1,)+yk.shape[1:])
@@ -2838,7 +2844,7 @@ def _get_spline3_Bb(xk, yk, kind, conds):
         else:
             b[0] = (dyk[0]/d1 - sl_0)
             b[-1] = -(dyk[-1]/dN - sl_N)
-        b[1:-1,...] = (dyk[1:]/alpha[1:]-dyk[:-1]/alpha[:-1])
+        b[1:-1, ...] = (dyk[1:]/alpha[1:] - dyk[:-1]/alpha[:-1])
         b *= 6.0
         return B, b, None, None
     else:
@@ -2855,9 +2861,9 @@ def _find_user(xk, yk, order, conds, B):
     B = np.concatenate((B, lh), axis=0)
     w = np.concatenate((yk, rh), axis=0)
     M, N = B.shape
-    if (M > N):
+    if M > N:
         raise ValueError("over-specification of conditions")
-    elif (M < N):
+    elif M < N:
         return _find_smoothest(xk, yk, order, None, B)
     else:
         return scipy.linalg.solve(B, w)
@@ -2867,7 +2873,7 @@ def _find_user(xk, yk, order, conds, B):
 
 
 def _find_not_a_knot(xk, yk, order, conds, B):
-    raise NotImplementedError
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then ensure zero-valued second
@@ -2875,7 +2881,7 @@ def _find_not_a_knot(xk, yk, order, conds, B):
 
 
 def _find_natural(xk, yk, order, conds, B):
-    raise NotImplementedError
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then ensure zero-valued first
@@ -2883,12 +2889,12 @@ def _find_natural(xk, yk, order, conds, B):
 
 
 def _find_clamped(xk, yk, order, conds, B):
-    raise NotImplementedError
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 
 def _find_fixed(xk, yk, order, conds, B):
-    raise NotImplementedError
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then use coefficient periodicity
@@ -2896,26 +2902,26 @@ def _find_fixed(xk, yk, order, conds, B):
 
 
 def _find_periodic(xk, yk, order, conds, B):
-    raise NotImplementedError
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # Doesn't use conds
 
 
 def _find_symmetric(xk, yk, order, conds, B):
-    raise NotImplementedError
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # conds is a dictionary with multiple values
 
 
 def _find_mixed(xk, yk, order, conds, B):
-    raise NotImplementedError
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 
 @np.deprecate(message="splmake is deprecated in scipy 0.19.0, "
-        "use make_interp_spline instead.")
+                      "use make_interp_spline instead.")
 def splmake(xk, yk, order=3, kind='smoothest', conds=None):
     """
     Return a representation of a spline given data-points at internal knots
@@ -3003,32 +3009,31 @@ def spleval(xck, xnew, deriv=0):
     the spline.
 
     """
-    (xj,cvals,k) = xck
+    (xj, cvals, k) = xck
     oldshape = np.shape(xnew)
     xx = np.ravel(xnew)
     sh = cvals.shape[1:]
     res = np.empty(xx.shape + sh, dtype=cvals.dtype)
     for index in np.ndindex(*sh):
-        sl = (slice(None),)+index
+        sl = (slice(None),) + index
         if issubclass(cvals.dtype.type, np.complexfloating):
-            res[sl].real = _fitpack._bspleval(xx,xj,cvals.real[sl],k,deriv)
-            res[sl].imag = _fitpack._bspleval(xx,xj,cvals.imag[sl],k,deriv)
+            res[sl].real = _fitpack._bspleval(xx,xj, cvals.real[sl], k, deriv)
+            res[sl].imag = _fitpack._bspleval(xx,xj, cvals.imag[sl], k, deriv)
         else:
-            res[sl] = _fitpack._bspleval(xx,xj,cvals[sl],k,deriv)
+            res[sl] = _fitpack._bspleval(xx, xj, cvals[sl], k, deriv)
     res.shape = oldshape + sh
     return res
 
 
 @np.deprecate(message="spltopp is deprecated in scipy 0.19.0, "
-        "use PPoly.from_spline instead.")
+                      "use PPoly.from_spline instead.")
 def spltopp(xk, cvals, k):
-    """Return a piece-wise polynomial object from a fixed-spline tuple.
-    """
+    """Return a piece-wise polynomial object from a fixed-spline tuple."""
     return ppform.fromspline(xk, cvals, k)
 
 
 @np.deprecate(message="spline is deprecated in scipy 0.19.0, "
-        "use Bspline class instead.")
+                      "use Bspline class instead.")
 def spline(xk, yk, xnew, order=3, kind='smoothest', conds=None):
     """
     Interpolate a curve at new points using a spline fit
@@ -3052,4 +3057,4 @@ def spline(xk, yk, xnew, order=3, kind='smoothest', conds=None):
         An array of y values; the spline evaluated at the positions `xnew`.
 
     """
-    return spleval(splmake(xk,yk,order=order,kind=kind,conds=conds),xnew)
+    return spleval(splmake(xk, yk, order=order, kind=kind, conds=conds), xnew)
