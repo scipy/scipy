@@ -25,23 +25,30 @@ class OdeSolver(object):
            ``**extraneous``, but warn that these arguments are irrelevant
            using `common.warn_extraneous` function. Do not pass these arguments
            to the base class.
-        3. A solver must implement a private method
-           `_step_impl(self, max_step=np.inf)` which propagates a solver one
-           step further. It must return tuple ``(success, message)``, where
-           ``success`` is a boolean indicating whether a step was successful,
-           and ``message`` is a string containing description of a failure if
-           a step failed or None otherwise.
+        3. A solver must implement a private method `_step_impl(self)` which
+           propagates a solver one step further. It must return tuple
+           ``(success, message)``, where ``success`` is a boolean indicating
+           whether a step was successful, and ``message`` is a string
+           containing description of a failure if a step failed or None
+           otherwise.
         4. A solver must implement a private method `_dense_output_impl(self)`
            which returns `DenseOutput` object covering the last successful
            step.
         5. A solver must have attributes listed below in Attributes section.
+           Note that `step_size` is computed automatically from `t` and
+           `t_old`.
         6. Use `fun(self, t, y)` method for the system rhs evaluation, this
            way the number of functions evaluations (`nfev`) will be tracked
            automatically.
-        7. If a solver uses Jacobian and LU decompositions, it should track
-           the number of Jacobian evaluations (`njev`) and the number of LU
-           decompositions (`nlu`).
-        8. By convention a function evaluations used to compute a finite
+        7. For convenience a base class provides `fun_single(self, t, y)` and
+           `fun_vectorized(self, t, y)` for evaluating the rhs in
+           non-vectorized and vectorized fashions respectively (regardless of
+           how `fun` from the constructor is implemented). These calls don't
+           increment `nfev`.
+        8. If a solver uses a Jacobian matrix and LU decompositions, it should
+           track the number of Jacobian evaluations (`njev`) and the number of
+           LU decompositions (`nlu`).
+        9. By convention a function evaluations used to compute a finite
            difference approximation of the Jacobian should not be counted in
            `nfev`, thus use `fun_single(self, t, y)` or
            `fun_vectorized(self, t, y)` when computing a finite difference
