@@ -18,22 +18,20 @@ from libc.math cimport sqrt
 __all__ = ['directed_hausdorff']
 
 @cython.boundscheck(False)
-def directed_hausdorff(np.ndarray[np.float64_t, ndim =2] ar1,
-                       np.ndarray[np.float64_t, ndim =2] ar2):
+def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2):
 
-    cdef double cmax, cmin
+    cdef double cmax, cmin, d
     cdef int break_occurred
     cdef int N1 = ar1.shape[0]
     cdef int N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
-    cdef np.float64_t d
     cdef unsigned int i, j, k
 
     # shuffling the points in each array generally increases the likelihood of
     # an advantageous break in the inner search loop and never decreases the
     # performance of the algorithm
-    np.random.shuffle(ar1)
-    np.random.shuffle(ar2)
+    np.random.shuffle(np.asarray(ar1))
+    np.random.shuffle(np.asarray(ar2))
 
     cmax = 0
     for i in range(N1):
