@@ -160,8 +160,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         dy / dt = f(t, y)
         y(t0) = y0
 
-    Here t is a 1-dimensional independent variable (time), y(t) is a
-    n-dimensional vector-valued function (state) and y0 is an initial state.
+    Here t is a 1-dimensional independent variable (time), y(t) is an
+    n-dimensional vector-valued function (state) and an n-dimensional
+    vector-valued function f(t, y) determines a differential equation.
+    The goal is to find y(t) approximately satisfying a differential
+    equation, given an initial value y(t0)=y0.
 
     Parameters
     ----------
