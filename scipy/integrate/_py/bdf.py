@@ -147,11 +147,11 @@ class BDF(OdeSolver):
     y : ndarray
         Current state.
     t_old : float
-        End time of the last successful step. None if no steps were made yet.
+        Previous time. None if no steps were made yet.
     step_size : float
         Size of the last successful step. None if no steps were made yet.
     nfev : int
-        Number of the system rhs evaluations.
+        Number of the system's rhs evaluations.
     njev : int
         Number of the Jacobian evaluations.
     nlu : int
