@@ -121,6 +121,11 @@ class OdeSolver(object):
                     f[:, i] = self._fun(t, yi)
                 return f
 
+        def fun(t, y):
+            self.nfev += 1
+            return self.fun_single(t, y)
+
+        self.fun = fun
         self.fun_single = fun_single
         self.fun_vectorized = fun_vectorized
 
@@ -131,10 +136,6 @@ class OdeSolver(object):
         self.nfev = 0
         self.njev = 0
         self.nlu = 0
-
-    def fun(self, t, y):
-        self.nfev += 1
-        return self.fun_single(t, y)
 
     @property
     def step_size(self):
