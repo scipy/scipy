@@ -2824,9 +2824,9 @@ def _get_spline3_Bb(xk, yk, kind, conds):
             B[0, :2] = [1, -1]
             B[-1, -2:] = [-1, 1]
         elif kind == 'periodic':
-            raise NotImplementedError("""""")
+            raise NotImplementedError("")
         elif kind == 'symmetric':
-            raise NotImplementedError("""""")
+            raise NotImplementedError("")
         else:
             B[0, :2] = [2*d1, d1]
             B[-1, -2:] = [dN, 2*dN]
@@ -2872,7 +2872,7 @@ def _find_user(xk, yk, order, conds, B):
 
 
 def _find_not_a_knot(xk, yk, order, conds, B):
-    raise NotImplementedError("""""")
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then ensure zero-valued second
@@ -2880,7 +2880,7 @@ def _find_not_a_knot(xk, yk, order, conds, B):
 
 
 def _find_natural(xk, yk, order, conds, B):
-    raise NotImplementedError("""""")
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then ensure zero-valued first
@@ -2888,12 +2888,12 @@ def _find_natural(xk, yk, order, conds, B):
 
 
 def _find_clamped(xk, yk, order, conds, B):
-    raise NotImplementedError("""""")
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 
 def _find_fixed(xk, yk, order, conds, B):
-    raise NotImplementedError("""""")
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # If conds is None, then use coefficient periodicity
@@ -2901,21 +2901,21 @@ def _find_fixed(xk, yk, order, conds, B):
 
 
 def _find_periodic(xk, yk, order, conds, B):
-    raise NotImplementedError("""""")
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # Doesn't use conds
 
 
 def _find_symmetric(xk, yk, order, conds, B):
-    raise NotImplementedError("""""")
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 # conds is a dictionary with multiple values
 
 
 def _find_mixed(xk, yk, order, conds, B):
-    raise NotImplementedError("""""")
+    raise NotImplementedError("")
     return _find_user(xk, yk, order, conds, B)
 
 
