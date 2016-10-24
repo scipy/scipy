@@ -176,10 +176,12 @@ class RK23(RungeKutta):
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
         Here ``t`` is a scalar and there are two options for ndarray ``y``.
         It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, n_points), then
-        ``fun`` must return array_like with shape (n, n_points) (each column
-        corresponds to a single column in ``y``). The choice between the two
-        options is determined by `vectorized` argument (see below).
+        shape (n,). Or alternatively it can have shape (n, k), then ``fun``
+        must return array_like with shape (n, k), i.e. each column
+        corresponds to a single column in ``y``. The choice between the two
+        options is determined by `vectorized` argument (see below). The
+        vectorized implementation allows faster approximation of the Jacobian
+        by finite differences.
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -260,10 +262,12 @@ class RK45(RungeKutta):
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
         Here ``t`` is a scalar and there are two options for ndarray ``y``.
         It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or it can have shape (n, n_points), then ``fun`` must
-        return array_like with shape (n, n_points) (each column corresponds
-        to a single column in ``y``). The choice between the two options is
-        determined by `vectorized` argument (see below).
+        shape (n,). Or alternatively it can have shape (n, k), then ``fun``
+        must return array_like with shape (n, k), i.e. each column
+        corresponds to a single column in ``y``. The choice between the two
+        options is determined by `vectorized` argument (see below). The
+        vectorized implementation allows faster approximation of the Jacobian
+        by finite differences.
     t0 : float
         Initial value of the independent variable.
     y0 : array_like, shape (n,)

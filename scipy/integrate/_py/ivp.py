@@ -172,12 +172,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Right-hand side of the system. The calling signature is ``fun(t, y)``.
         Here ``t`` is a scalar and there are two options for ndarray ``y``.
         It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or alternatively it can have shape (n, n_points), then
-        ``fun`` must return array_like with shape (n, n_points) (each column
-        corresponds to a single column in ``y``). The choice between the two
+        shape (n,). Or alternatively it can have shape (n, k), then ``fun``
+        must return array_like with shape (n, k), i.e. each column
+        corresponds to a single column in ``y``. The choice between the two
         options is determined by `vectorized` argument (see below). The
-        vectorized implementation allows faster finite difference Jacobian
-        estimation.
+        vectorized implementation allows faster approximation of the Jacobian
+        by finite differences.
     t_span : 2-tuple of floats
         Interval of integration (t0, tf). The solver starts with t=t0 and
         integrates until it reaches t=tf.
@@ -252,23 +252,24 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
         1e-3 for `rtol` and 1e-6 for `atol`.
-    jac : array_like, callable or None, optional
+    jac : {None, array_like, sparse_matrix, callable}, optional
         Jacobian matrix of the right-hand side of the system with respect to
-        `y`, required only by 'Radau' and 'BDF' methods. The Jacobian matrix
+        y, required only by 'Radau' and 'BDF' methods. The Jacobian matrix
         has shape (n, n) and its element (i, j) is equal to ``d f_i / d y_j``.
         There are 3 ways to define the Jacobian:
 
-            * If array_like, then the Jacobian is assumed to be constant.
+            * If array_like or sparse_matrix, then the Jacobian is assumed to
+              be constant.
             * If callable, then the Jacobian is assumed to depend on both
               t and y, and will be called as ``jac(t, y)`` as necessary.
             * If None (default), then the Jacobian will be approximated by
               finite differences.
 
-        It is generally recommended to provided the Jacobian rather than
-        relying on finite difference approximation.
+        It is generally recommended to provide the Jacobian rather than
+        relying on a finite difference approximation.
     jac_sparsity : {None, array_like, sparse matrix}, optional
-        Defines the sparsity structure of the Jacobian matrix for finite
-        difference estimation, its shape must be (n, n). If the Jacobian has
+        Defines a sparsity structure of the Jacobian matrix for a finite
+        difference approximation, its shape must be (n, n). If the Jacobian has
         only few non-zero elements in *each* row, providing the sparsity
         structure will greatly speed up the computations [8]_. A zero
         entry means that a corresponding element in the Jacobian is identically
