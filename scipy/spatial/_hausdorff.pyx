@@ -25,13 +25,19 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2):
     cdef int N1 = ar1.shape[0]
     cdef int N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
-    cdef unsigned int i, j, k
+    cdef unsigned int i, j, k, i_store, j_store, i_ret, j_ret
+    cdef long[:] resort1, resort2
 
     # shuffling the points in each array generally increases the likelihood of
     # an advantageous break in the inner search loop and never decreases the
     # performance of the algorithm
+    np.random.seed(123)
     np.random.shuffle(np.asarray(ar1))
     np.random.shuffle(np.asarray(ar2))
+    resort1 = np.arange(N1)
+    resort2 = np.arange(N2)
+    np.random.shuffle(np.asarray(resort1))
+    np.random.shuffle(np.asarray(resort2))
 
     cmax = 0
     for i in range(N1):
@@ -48,6 +54,10 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2):
                 break
             if d < cmin:
                 cmin = d
+                i_store = i
+                j_store = j
         if cmin > cmax and cmin != np.inf and break_occurred == 0:
             cmax = cmin
-    return sqrt(cmax)
+            i_ret = i_store
+            j_ret = j_store
+    return (sqrt(cmax), resort1[i_ret], resort2[j_ret])

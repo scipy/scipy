@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import (TestCase,
-                           assert_almost_equal)
+                           assert_almost_equal,
+                           assert_array_equal)
 import scipy
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
@@ -37,15 +38,15 @@ class TestHausdorff(TestCase):
         # Ensure that the directed (asymmetric) Hausdorff distance is
         # actually asymmetric
 
-        forward = directed_hausdorff(self.path_1, self.path_2)
-        reverse = directed_hausdorff(self.path_2, self.path_1)
+        forward = directed_hausdorff(self.path_1, self.path_2)[0]
+        reverse = directed_hausdorff(self.path_2, self.path_1)[0]
         self.assertNotEqual(forward, reverse)
 
     def test_brute_force_comparison_forward(self):
         # Ensure that the algorithm for directed_hausdorff gives the
         # sameresult as the simple / brute force approach in the
         # forward direction.
-        actual = directed_hausdorff(self.path_1, self.path_2)
+        actual = directed_hausdorff(self.path_1, self.path_2)[0]
         # brute force over rows:
         expected = max(np.amin(distance.cdist(self.path_1, self.path_2),
                                axis=1))
@@ -55,7 +56,7 @@ class TestHausdorff(TestCase):
         # Ensure that the algorithm for directed_hausdorff gives the
         # same result as the simple / brute force approach in the
         # reverse direction.
-        actual = directed_hausdorff(self.path_2, self.path_1)
+        actual = directed_hausdorff(self.path_2, self.path_1)[0]
         # brute force over columns:
         expected = max(np.amin(distance.cdist(self.path_1, self.path_2), 
                                axis=0))
@@ -64,14 +65,14 @@ class TestHausdorff(TestCase):
     def test_degenerate_case(self):
         # The directed Hausdorff distance must be zero if both input
         # data arrays match.
-        actual = directed_hausdorff(self.path_1, self.path_1)
+        actual = directed_hausdorff(self.path_1, self.path_1)[0]
         assert_almost_equal(actual, 0.0, decimal=9)
 
     def test_2d_data_forward(self):
         # Ensure that 2D data is handled properly for a simple case
         # relative to brute force approach.
         actual = directed_hausdorff(self.path_1[..., :2],
-                                    self.path_2[..., :2])
+                                    self.path_2[..., :2])[0]
         expected = max(np.amin(distance.cdist(self.path_1[..., :2],
                                               self.path_2[..., :2]),
                                axis=1))
@@ -80,8 +81,17 @@ class TestHausdorff(TestCase):
     def test_4d_data_reverse(self):
         # Ensure that 4D data is handled properly for a simple case
         # relative to brute force approach.
-        actual = directed_hausdorff(self.path_2_4d, self.path_1_4d)
+        actual = directed_hausdorff(self.path_2_4d, self.path_1_4d)[0]
         # brute force over columns:
         expected = max(np.amin(distance.cdist(self.path_1_4d, self.path_2_4d), 
                                axis=0))
         assert_almost_equal(actual, expected, decimal=9)
+
+    def test_indices(self):
+        # Ensure that correct point indices are returned -- they should
+        # correspond to the Hausdorff pair
+        path_simple_1 = np.array([[0,0], [1,1]])
+        path_simple_2 = np.array([[0,0], [1,1], [4,100]])
+        actual = directed_hausdorff(path_simple_2, path_simple_1)[1:]
+        expected = (2, 1)
+        assert_array_equal(actual, expected)
