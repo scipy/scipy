@@ -1649,15 +1649,17 @@ class BPoly(_PPolyBase):
                 n2 = min(n - n1, len(y2))
                 n1 = min(n - n2, len(y2))
                 if n1+n2 != n:
-                    raise ValueError(
-                        "Point %g has %d derivatives, point %g"
-                        " has %d derivatives, but order %d requested" % (
-                            xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                    mesg = ("Point %g has %d derivatives, point %g"
+                            " has %d derivatives, but order %d requested" % (
+                               xi[i], len(y1), xi[i+1], len(y2), orders[i]))
+                    raise ValueError(mesg)
+
                 if not (n1 <= len(y1) and n2 <= len(y2)):
                     raise ValueError("`order` input incompatible with"
-                            " length y1 or y2.")
+                                     " length y1 or y2.")
 
-            b = BPoly._construct_from_derivatives(xi[i], xi[i+1], y1[:n1], y2[:n2])
+            b = BPoly._construct_from_derivatives(xi[i], xi[i+1],
+                                                  y1[:n1], y2[:n2])
             if len(b) < k:
                 b = BPoly._raise_degree(b, k - len(b))
             c.append(b)
@@ -1725,9 +1727,8 @@ class BPoly(_PPolyBase):
             raise ValueError('ya and yb have incompatible dimensions.')
 
         dta, dtb = ya.dtype, yb.dtype
-        if (np.issubdtype(dta, np.complexfloating) or np.issubdtype(
-                                                         dtb,
-                                                         np.complexfloating)):
+        if (np.issubdtype(dta, np.complexfloating) or
+               np.issubdtype(dtb, np.complexfloating)):
             dt = np.complex_
         else:
             dt = np.float_
