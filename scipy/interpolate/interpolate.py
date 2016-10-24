@@ -611,48 +611,38 @@ class interp1d(_Interpolator1D):
         return y_new
 
     def _call_nearest_left(self, x_new):
-        return self._call_nearest_left_right(x_new,
-                                             self.x,
-                                             self.y,
-                                             index_offset=-1)
+        return self._call_nearest_left_right(x_new, index_offset=-1)
 
     def _call_nearest_right(self, x_new):
-        return self._call_nearest_left_right(x_new,
-                                             self.x,
-                                             self.y,
-                                             index_offset=0)
+        return self._call_nearest_left_right(x_new, index_offset=0)
 
-    @staticmethod
-    def _call_nearest_left_right(xi, x, y, index_offset=-1):
+    def _call_nearest_left_right(self, x_new, index_offset=-1):
         """Nearest neighbour interpolation based on the left or right neighbour.
 
-        :param xi: the values where the interpolation will be done
-        :param x: The x values of the data points (i think they must be in
-         increasing order [not sure though])
-        :param y: The y values of the data points corresponding to x
+        :param x_new: the values where the interpolation will be done.
         :return: The interpolated y values
-        :param index_offset:
+        :param index_offset: -1 => nearest left neighbour interpolation,
+         0 => nearest right neighbour interpolation.
         """
 
-        # out of range values are not supported
-        assert xi.min() >= x.min()
-        assert xi.max() <= x.max()
+        x, y = self.x, self.y
 
-        yi = np.zeros(xi.size, 'f8')
+        yi = np.zeros(x_new.size, 'f8')
 
-        # the mask of the xi values that match values of x exactly, i.e. input
+        # the mask of the new values that match values of x exactly, i.e. input
         # values that do not need to be interpolated, just copy their
         # corresponding y values
-        mask_matching_exactly = np.in1d(xi, x)
+        mask_matching_exactly = np.in1d(x_new, x)
 
-        # setting the y interpolated values corresponding to xi that
+        # setting the y interpolated values corresponding to x_new that
         # have exactly matching values in x
-        yi[np.where(mask_matching_exactly)] = y[np.where(np.in1d(x, xi))]
+        yi[np.where(mask_matching_exactly)] = y[np.where(np.in1d(x, x_new))]
 
         # interpolating the non matching values
         inds_not_matching_exactly = np.where(~mask_matching_exactly)
         yi[inds_not_matching_exactly] = \
-            y[np.searchsorted(x, xi[inds_not_matching_exactly]) + index_offset]
+            y[np.searchsorted(x,
+                              x_new[inds_not_matching_exactly]) + index_offset]
 
         return yi
 
