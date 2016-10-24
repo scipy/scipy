@@ -230,6 +230,7 @@ class Cdist(Benchmark):
         """
         distance.cdist(self.points, self.points, metric)
 
+
 class ConvexHullBench(Benchmark):
     params = ([10, 100, 1000, 5000], [True, False])
     param_names = ['num_points', 'incremental']
@@ -244,6 +245,7 @@ class ConvexHullBench(Benchmark):
         """
         ConvexHull(self.points, incremental)
 
+
 class VoronoiBench(Benchmark):
     params = ([10, 100, 1000, 5000, 10000], [False, True])
     param_names = ['num_points', 'furthest_site']
@@ -255,3 +257,18 @@ class VoronoiBench(Benchmark):
     def time_voronoi_calculation(self, num_points, furthest_site):
         """Time conventional Voronoi diagram calculation."""
         Voronoi(self.points, furthest_site=furthest_site)
+
+class Hausdorff(Benchmark):
+    params = [10, 100, 1000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        np.random.seed(123)
+        self.points1 = np.random.random_sample((num_points, 3))
+        np.random.seed(71890)
+        self.points2 = np.random.random_sample((num_points, 3))
+
+    def time_directed_hausdorff(self, num_points):
+        # time directed_hausdorff code in 3 D
+        distance.directed_hausdorff(self.points1, self.points2)
+
