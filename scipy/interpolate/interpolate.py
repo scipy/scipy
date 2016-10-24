@@ -594,22 +594,19 @@ class interp1d(_Interpolator1D):
 
         return y_new
 
-    def _call_nearest(self, x_new, left=False, right=False):
+    def _call_nearest(self, x_new):
         """ Find nearest neighbour interpolated y_new = f(x_new)."""
 
-        if left is False and right is False:
-            # 1. Find where in the averaged data the values to interpolate
-            #    would be inserted.
-            #    Note: use side='left' (right) to searchsorted() to define the
-            #    halfway point to be nearest to the left (right) neighbour
-            x_new_indices = searchsorted(self.x_bds, x_new, side='left')
-
-            # 2. Clip x_new_indices so that they are within the range of x
-            # indices.
-            x_new_indices = x_new_indices.clip(0, len(self.x)-1).astype(intp)
-
-            # 3. Calculate the actual value for each entry in x_new.
-            y_new = self._y[x_new_indices]
+        # 1. Find where in the averaged data the values to interpolate
+        #    would be inserted.
+        #    Note: use side='left' (right) to searchsorted() to define the
+        #    halfway point to be nearest to the left (right) neighbour
+        x_new_indices = searchsorted(self.x_bds, x_new, side='left')
+        # 2. Clip x_new_indices so that they are within the range of x
+        # indices.
+        x_new_indices = x_new_indices.clip(0, len(self.x)-1).astype(intp)
+        # 3. Calculate the actual value for each entry in x_new.
+        y_new = self._y[x_new_indices]
 
         return y_new
 
