@@ -17,8 +17,8 @@ E = np.array([-13 - 7 * S6, -13 + 7 * S6, -1]) / 3
 # Eigendecomposition of A is done: A = T L T**-1. There is 1 real eigenvalue
 # and a complex conjugate pair. They are written below.
 MU_REAL = 3 + 3 ** (2 / 3) - 3 ** (1 / 3)
-MU_COMPLEX = 3 + 0.5 * (3 ** (1 / 3) - 3 ** (2 / 3)) - 0.5j * (
-    3 ** (5 / 6) + 3 ** (7 / 6))
+MU_COMPLEX = (3 + 0.5 * (3 ** (1 / 3) - 3 ** (2 / 3))
+              - 0.5j * (3 ** (5 / 6) + 3 ** (7 / 6)))
 
 # These are transformation matrices.
 T = np.array([
@@ -28,8 +28,7 @@ T = np.array([
 TI = np.array([
     [4.17871859155190428, 0.32768282076106237, 0.52337644549944951],
     [-4.17871859155190428, -0.32768282076106237, 0.47662355450055044],
-    [0.50287263494578682, -2.57192694985560522, 0.59603920482822492]
-])
+    [0.50287263494578682, -2.57192694985560522, 0.59603920482822492]])
 # This linear combinations are used in the algorithm.
 TI_REAL = TI[0]
 TI_COMPLEX = TI[1] + 1j * TI[2]
@@ -71,6 +70,9 @@ def solve_collocation_system(fun, t, y, h, Z0, scale, tol,
         the normalized by `scale` error.
     LU_real, LU_complex
         LU decompositions of the system Jacobians.
+    solve_lu : callable
+        Callable which solves a linear system given a LU decomposition. The
+        signature is ``solve_lu(LU, b)``.
 
     Returns
     -------
@@ -157,7 +159,7 @@ def predict_factor(h_abs, h_abs_old, error_norm, error_norm_old):
 
     Notes
     -----
-    If `h_abs_old` and `error_norm_old` are both not None and then a two-step
+    If `h_abs_old` and `error_norm_old` are both not None then a two-step
     algorithm is used, otherwise a one-step algorithm is used.
 
     References
@@ -306,15 +308,13 @@ class Radau(OdeSolver):
             lu = None
 
         if issparse(self.J):
-            I = eye(self.n, format='csc')
-
             def solve_lu(LU, b):
                 return LU.solve(b)
+            I = eye(self.n, format='csc')
         else:
-            I = np.identity(self.n)
-
             def solve_lu(LU, b):
                 return lu_solve(LU, b, overwrite_b=True)
+            I = np.identity(self.n)
 
         self.lu = lu
         self.solve_lu = solve_lu
@@ -361,9 +361,9 @@ class Radau(OdeSolver):
                     return np.asarray(jac(t, y), dtype=float)
 
             if J.shape != (self.n, self.n):
-                raise ValueError(
-                    "`jac` return is expected to have shape {}, but actually "
-                    "has {}.".format((self.n, self.n), J.shape))
+                raise ValueError("`jac` is expected to have shape {}, but "
+                                 "actually has {}."
+                                 .format((self.n, self.n), J.shape))
         else:
             if issparse(jac):
                 J = csc_matrix(jac)
@@ -442,13 +442,14 @@ class Radau(OdeSolver):
                     LU_real, LU_complex, self.solve_lu)
 
                 if not converged:
+                    if current_jac:
+                        break
+
                     if not current_jac:
                         J = self.jac(t, y, f)
                         current_jac = True
                         LU_real = None
                         LU_complex = None
-                    else:
-                        break
 
             if not converged:
                 h_abs *= 0.5
@@ -461,8 +462,8 @@ class Radau(OdeSolver):
             error = self.solve_lu(LU_real, f + ZE)
             scale = atol + np.maximum(np.abs(y), np.abs(y_new)) * rtol
             error_norm = norm(error / scale)
-            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (
-                2 * NEWTON_MAXITER + n_iter)
+            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER
+                                                       + n_iter)
 
             if rejected and error_norm > 1:
                 error = self.solve_lu(LU_real, self.fun(t, y + error) + ZE)
@@ -530,9 +531,9 @@ class Radau(OdeSolver):
 
 
 class RadauDenseOutput(DenseOutput):
-    def __init__(self, t_prev, t, y_old, Q):
-        super(RadauDenseOutput, self).__init__(t_prev, t)
-        self.h = t - t_prev
+    def __init__(self, t_old, t, y_old, Q):
+        super(RadauDenseOutput, self).__init__(t_old, t)
+        self.h = t - t_old
         self.Q = Q
         self.order = Q.shape[1] - 1
         self.y_old = y_old

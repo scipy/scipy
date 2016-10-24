@@ -16,6 +16,7 @@ MAX_FACTOR = 10
 
 
 def compute_R(order, factor):
+    """Compute the matrix for changing the differences array."""
     I = np.arange(1, order + 1)[:, None]
     J = np.arange(1, order + 1)
     M = np.zeros((order + 1, order + 1))
@@ -25,14 +26,16 @@ def compute_R(order, factor):
 
 
 def change_D(D, order, factor):
+    """Change differences array in-place when step size is changed."""
     R = compute_R(order, factor)
     U = compute_R(order, 1)
     RU = R.dot(U)
     D[:order + 1] = np.dot(RU.T, D[:order + 1])
 
 
-def solve_corrector_system(fun, t_new, y_predict, c, psi, LU, solve_lu,
-                           scale, tol):
+def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu,
+                     scale, tol):
+    """Solve the algebraic system resulting from BDF method."""
     d = 0
     y = y_predict.copy()
     dy_norm_old = None
@@ -201,15 +204,13 @@ class BDF(OdeSolver):
             lu = None
 
         if issparse(self.J):
-            I = eye(self.n, format='csc')
-
             def solve_lu(LU, b):
                 return LU.solve(b)
+            I = eye(self.n, format='csc')
         else:
-            I = np.identity(self.n)
-
             def solve_lu(LU, b):
                 return lu_solve(LU, b, overwrite_b=True)
+            I = np.identity(self.n)
 
         self.lu = lu
         self.solve_lu = solve_lu
@@ -257,7 +258,6 @@ class BDF(OdeSolver):
                 def jac_wrapped(t, y):
                     self.njev += 1
                     return csc_matrix(jac(t, y), dtype=float)
-
             else:
                 J = np.asarray(J, dtype=float)
 
@@ -266,9 +266,9 @@ class BDF(OdeSolver):
                     return np.asarray(jac(t, y), dtype=float)
 
             if J.shape != (self.n, self.n):
-                raise ValueError(
-                    "`jac` return is expected to have shape {}, but actually "
-                    "has {}.".format((self.n, self.n), J.shape))
+                raise ValueError("`jac` is expected to have shape {}, but "
+                                 "actually has {}."
+                                 .format((self.n, self.n), J.shape))
         else:
             if issparse(jac):
                 J = csc_matrix(jac)
@@ -285,20 +285,18 @@ class BDF(OdeSolver):
 
     def _step_impl(self):
         t = self.t
-        y = self.y
+        y_new = self.y
         D = self.D
 
         max_step = self.max_step
         min_step = 10 * np.abs(np.nextafter(t, self.direction * np.inf) - t)
         if self.h_abs > max_step:
             h_abs = max_step
-            factor = max_step / self.h_abs
-            change_D(D, self.order, factor)
+            change_D(D, self.order, max_step / self.h_abs)
             self.n_equal_steps = 0
         elif self.h_abs < min_step:
             h_abs = min_step
-            factor = min_step / self.h_abs
-            change_D(D, self.order, factor)
+            change_D(D, self.order, min_step / self.h_abs)
             self.n_equal_steps = 0
         else:
             h_abs = self.h_abs
@@ -325,8 +323,7 @@ class BDF(OdeSolver):
 
             if self.direction * (t_new - self.t_crit) > 0:
                 t_new = self.t_crit
-                factor = np.abs(t_new - t) / h_abs
-                change_D(D, order, factor)
+                change_D(D, order, np.abs(t_new - t) / h_abs)
                 self.n_equal_steps = 0
                 LU = None
 
@@ -345,17 +342,16 @@ class BDF(OdeSolver):
                 if LU is None:
                     LU = self.lu(self.I - c * J)
 
-                converged, n_iter, y, d = solve_corrector_system(
+                converged, n_iter, y_new, d = solve_bdf_system(
                     self.fun, t_new, y_predict, c, psi, LU, self.solve_lu,
                     scale, self.newton_tol)
 
                 if not converged:
-                    if not current_jac:
-                        J = self.jac(t_new, y_predict)
-                        LU = None
-                        current_jac = True
-                    else:
+                    if current_jac:
                         break
+                    J = self.jac(t_new, y_predict)
+                    LU = None
+                    current_jac = True
 
             if not converged:
                 factor = 0.5
@@ -365,10 +361,10 @@ class BDF(OdeSolver):
                 LU = None
                 continue
 
-            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER +
-                                                       n_iter)
+            safety = 0.9 * (2 * NEWTON_MAXITER + 1) / (2 * NEWTON_MAXITER
+                                                       + n_iter)
 
-            scale = atol + rtol * np.abs(y)
+            scale = atol + rtol * np.abs(y_new)
             error = error_const[order] * d
             error_norm = norm(error / scale)
 
@@ -386,16 +382,16 @@ class BDF(OdeSolver):
         self.n_equal_steps += 1
 
         self.t = t_new
-        self.y = y
+        self.y = y_new
 
         self.h_abs = h_abs
         self.J = J
         self.LU = LU
 
-        # Update divided differences. The principal relation here is
+        # Update differences. The principal relation here is
         # D^{j + 1} y_n = D^{j} y_n - D^{j} y_{n - 1}. Keep in mind that D
-        # contained divided difference for previous interpolating
-        # polynomial and d = D^{k + 1} y_n. Thus this elegant code follows.
+        # contained difference for previous interpolating polynomial and
+        # d = D^{k + 1} y_n. Thus this elegant code follows.
         D[order + 2] = d - D[order + 1]
         D[order + 1] = d
         for i in reversed(range(order + 1)):
