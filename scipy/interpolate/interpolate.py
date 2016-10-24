@@ -920,7 +920,7 @@ class PPoly(_PPolyBase):
         ----------
         nu : int, optional
             Order of derivative to evaluate. Default is 1, i.e. compute the
-            first derivative. If negative, the anti-derivative is returned.
+            first derivative. If negative, the antiderivative is returned.
 
         Returns
         -------
@@ -958,32 +958,32 @@ class PPoly(_PPolyBase):
 
     def antiderivative(self, nu=1):
         """
-        Construct a new piecewise polynomial representing the anti-derivative.
+        Construct a new piecewise polynomial representing the antiderivative.
 
-        Anti-derivative is also the indefinite integral of the function,
+        Antiderivative is also the indefinite integral of the function,
         and derivative is its inverse operation.
 
         Parameters
         ----------
         nu : int, optional
-            Order of anti-derivative to evaluate. Default is 1, i.e. compute
+            Order of antiderivative to evaluate. Default is 1, i.e. compute
             the first integral. If negative, the derivative is returned.
 
         Returns
         -------
         pp : PPoly
             Piecewise polynomial of order k2 = k + n representing
-            the anti-derivative of this polynomial.
+            the antiderivative of this polynomial.
 
         Notes
         -----
-        The anti-derivative returned by this function is continuous and
+        The antiderivative returned by this function is continuous and
         continuously differentiable to order n-1, up to floating point
         rounding error.
 
-        If anti-derivative is computed and ``self.extrapolate='periodic'``,
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
         it will be set to False for the returned instance. This is done because
-        the anti-derivative is no longer periodic and its correct evaluation
+        the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
         """
         if nu <= 0:
@@ -1346,7 +1346,7 @@ class BPoly(_PPolyBase):
         ----------
         nu : int, optional
             Order of derivative to evaluate. Default is 1, i.e. compute the
-            first derivative. If negative, the anti-derivative is returned.
+            first derivative. If negative, the antiderivative is returned.
 
         Returns
         -------
@@ -1393,25 +1393,25 @@ class BPoly(_PPolyBase):
 
     def antiderivative(self, nu=1):
         """
-        Construct a new piecewise polynomial representing the anti-derivative.
+        Construct a new piecewise polynomial representing the antiderivative.
 
         Parameters
         ----------
         nu : int, optional
-            Order of anti-derivative to evaluate. Default is 1, i.e. compute
+            Order of antiderivative to evaluate. Default is 1, i.e. compute
             the first integral. If negative, the derivative is returned.
 
         Returns
         -------
         bp : BPoly
             Piecewise polynomial of order k + nu representing the
-            anti-derivative of this polynomial.
+            antiderivative of this polynomial.
 
         Notes
         -----
-        If anti-derivative is computed and ``self.extrapolate='periodic'``,
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
         it will be set to False for the returned instance. This is done because
-        the anti-derivative is no longer periodic and its correct evaluation
+        the antiderivative is no longer periodic and its correct evaluation
         outside of the initially given x interval is difficult.
         """
         if nu <= 0:
@@ -2007,7 +2007,7 @@ class NdPPoly(object):
 
     def _antiderivative_inplace(self, nu, axis):
         """
-        Compute 1D anti-derivative along a selected dimension
+        Compute 1D antiderivative along a selected dimension
         May result to non-contiguous c array.
         """
         if nu <= 0:
@@ -2053,7 +2053,7 @@ class NdPPoly(object):
         ----------
         nu : ndim-tuple of int
             Order of derivatives to evaluate for each dimension.
-            If negative, the anti-derivative is returned.
+            If negative, the antiderivative is returned.
 
         Returns
         -------
@@ -2080,9 +2080,9 @@ class NdPPoly(object):
 
     def antiderivative(self, nu):
         """
-        Construct a new piecewise polynomial representing the anti-derivative.
+        Construct a new piecewise polynomial representing the antiderivative.
 
-        Anti-derivative is also the indefinite integral of the function,
+        Antiderivative is also the indefinite integral of the function,
         and derivative is its inverse operation.
 
         Parameters
@@ -2095,11 +2095,11 @@ class NdPPoly(object):
         -------
         pp : PPoly
             Piecewise polynomial of order k2 = k + n representing
-            the anti-derivative of this polynomial.
+            the antiderivative of this polynomial.
 
         Notes
         -----
-        The anti-derivative returned by this function is continuous and
+        The antiderivative returned by this function is continuous and
         continuously differentiable to order n-1, up to floating point
         rounding error.
 
