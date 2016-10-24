@@ -161,8 +161,10 @@ def directed_hausdorff(u, v):
 
     Returns
     -------
-    d : float
-        The directed Hausdorff distance between arrays `u` and `v`.
+    out : tuple
+        The directed Hausdorff distance between arrays `u` and `v`,
+        followed by indices of the Hausdorff pair in `u` and `v`,
+        respectively.
 
     Notes
     ----------
@@ -201,22 +203,28 @@ def directed_hausdorff(u, v):
     ...               (-2.0, 0.0),
     ...               (0.0, -4.0)])
 
-    >>> directed_hausdorff(u, v)
+    >>> directed_hausdorff(u, v)[0]
     2.23606797749979
-    >>> directed_hausdorff(v, u)
+    >>> directed_hausdorff(v, u)[0]
     3.0
 
     Find the general (symmetric) Hausdorff distance between two 2-D
     arrays of coordinates:
 
-    >>> max(directed_hausdorff(u, v), directed_hausdorff(v, u))
+    >>> max(directed_hausdorff(u, v)[0], directed_hausdorff(v, u)[0])
     3.0
+
+    Find the indices of the points that generate the Hausdorff distance
+    (the Hausdorff pair):
+
+    >>> directed_hausdorff(v, u)[1:]
+    (3, 3)
 
     """
     u = np.asarray(u, dtype=np.float64, order='c')
     v = np.asarray(v, dtype=np.float64, order='c')
-    dist = _hausdorff.directed_hausdorff(u, v)
-    return dist
+    result = _hausdorff.directed_hausdorff(u, v)
+    return result
 
 def minkowski(u, v, p):
     """
