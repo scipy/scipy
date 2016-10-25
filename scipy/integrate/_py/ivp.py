@@ -350,7 +350,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         t_eval_i = 0
         n_eval = t_eval.shape[0]
 
-    if isinstance(method, str):
+    if not callable(method):
         method = METHODS[method]
 
     solver = method(fun, t0, y0, tf, vectorized=vectorized, **options)
