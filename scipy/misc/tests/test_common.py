@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_equal, assert_)
 
-from scipy.misc import pade, logsumexp, face, ascent
+from scipy.misc import pade, logsumexp, face, ascent, inversefunc
 
 
 def test_pade_trivial():
@@ -170,3 +170,50 @@ def test_face():
 
 def test_ascent():
     assert_equal(ascent().shape, (512, 512))
+
+        
+def test_inversefunc_infinite():
+    accuracy=4
+    cube = lambda x: x**3
+    invcube = inversefunc(cube, accuracy=accuracy)
+    assert_array_almost_equal(invcube([-27,-8,-1,0,1, 8, 27,]),[-3,-2,-1,0,1,2,3], accuracy)
+    
+def test_inversefunc_vminclosed():
+    accuracy=4
+    square = lambda x: x**2
+    invsquare = inversefunc(square, vmin=0, accuracy=accuracy)
+    assert_array_almost_equal(invsquare([4,16,64]),[2,4,8],accuracy)
+    
+def test_inversefunc_vminopen():
+    accuracy=4
+    log = lambda x: np.log10(x)
+    invlog = inversefunc(log, vmin=0, vminopen=True)
+    assert_array_almost_equal(invlog([-2.,-3.]),[0.01,0.001],accuracy)
+    
+def test_inversefunc_vmaxclosed():
+    accuracy=4
+    square = lambda x: x**2
+    invsquare = inversefunc(square, vmax=0, accuracy=accuracy)
+    assert_array_almost_equal(invsquare([4,16,64]),[-2,-4,-8],accuracy)
+    
+def test_inversefunc_vmaxopen():
+    accuracy=4
+    log = lambda x: np.log10(-x)
+    invlog = inversefunc(log, vmax=0., vmaxopen=True)
+    assert_array_almost_equal(invlog([-2.,-3.]),[-0.01,-0.001],accuracy)
+
+def test_inversefunc_vminvmaxclosed():
+    accuracy=4
+    cos = lambda x: np.cos(x)
+    invcos = inversefunc(cos, vmin=0, vmax=np.pi)
+    assert_array_almost_equal(invcos([1,0,-1]),[0.,np.pi/2,np.pi],accuracy)
+
+def test_inversefunc_vminvmaxopen():
+    accuracy=4
+    tan = lambda x: np.tan(x)
+    invtan = inversefunc(tan, 
+                         vmin=-np.pi/2, 
+                         vmax=np.pi/2, 
+                         vminopen=True, 
+                         vmaxopen=True)
+    assert_array_almost_equal(invtan([1,0,-1]),[np.pi/4,0.,-np.pi/4],accuracy)
