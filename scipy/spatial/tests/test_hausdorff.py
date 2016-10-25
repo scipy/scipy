@@ -90,8 +90,8 @@ class TestHausdorff(TestCase):
     def test_indices(self):
         # Ensure that correct point indices are returned -- they should
         # correspond to the Hausdorff pair
-        path_simple_1 = np.array([[0,0], [1,1]])
-        path_simple_2 = np.array([[0,0], [1,1], [4,100]])
+        path_simple_1 = np.array([[-1,-12],[0,0], [1,1], [3,7], [1,2]])
+        path_simple_2 = np.array([[0,0], [1,1], [4,100], [10,9]])
         actual = directed_hausdorff(path_simple_2, path_simple_1)[1:]
-        expected = (2, 1)
+        expected = (2, 3)
         assert_array_equal(actual, expected)
