@@ -6,10 +6,23 @@ from numpy.testing import (assert_, assert_allclose, run_module_suite,
 import numpy as np
 from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
-from scipy.integrate import DenseOutput, OdeSolution
+from scipy.integrate import OdeSolution
 from scipy.integrate._py.common import num_jac
 from scipy.integrate._py.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
+
+
+def fun_linear(t, y):
+    return np.array([-y[0] - 5 * y[1], y[0] + y[1]])
+
+
+def jac_linear():
+    return np.array([[-1, -5], [1, 1]])
+
+
+def sol_linear(t):
+    return np.vstack((-5 * np.sin(2 * t),
+                      2 * np.cos(2 * t) + np.sin(2 * t)))
 
 
 def fun_rational(t, y):
@@ -36,6 +49,22 @@ def jac_rational_sparse(t, y):
         [-2 * y[1] ** 2 / (t * (y[0] - 1) ** 2),
          (y[0] + 4 * y[1] - 1) / (t * (y[0] - 1))]
     ])
+
+
+def sol_rational(t):
+    return np.vstack((t / (t + 10), 10 * t / (t + 10) ** 2))
+
+
+def event_rational_1(t, y):
+    return y[0] - y[1] ** 0.7
+
+
+def event_rational_2(t, y):
+    return y[1] ** 0.6 - y[0]
+
+
+def event_rational_3(t, y):
+    return t - 7.4
 
 
 def fun_medazko(t, y):
@@ -95,22 +124,6 @@ def medazko_sparsity(n):
     rows = np.hstack(rows)
 
     return coo_matrix((np.ones_like(cols), (cols, rows)))
-
-
-def sol_rational(t):
-    return np.vstack((t / (t + 10), 10 * t / (t + 10) ** 2))
-
-
-def event_rational_1(t, y):
-    return y[0] - y[1] ** 0.7
-
-
-def event_rational_2(t, y):
-    return y[1] ** 0.6 - y[0]
-
-
-def event_rational_3(t, y):
-    return t - 7.4
 
 
 def compute_error(y, y_true, rtol, atol):
@@ -191,6 +204,40 @@ def test_integration_sparse_difference():
         assert_allclose(res.y[199, -1], 0.6190807e-5, atol=1e-3)
         assert_allclose(res.y[238, -1], 0, atol=1e-3)
         assert_allclose(res.y[239, -1], 0.9999997, rtol=1e-2)
+
+
+def test_integration_const_jac():
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [0, 2]
+    t_span = [0, 2]
+    J = jac_linear()
+    J_sparse = csc_matrix(J)
+
+    for method, jac in product(['Radau', 'BDF'], [J, J_sparse]):
+        res = solve_ivp(fun_linear, t_span, y0, rtol=rtol, atol=atol,
+                        method=method, dense_output=True, jac=jac)
+        assert_equal(res.t[0], t_span[0])
+        assert_(res.t_events is None)
+        assert_(res.success)
+        assert_equal(res.status, 0)
+
+        assert_(res.nfev < 100)
+        assert_equal(res.njev, 0)
+        assert_(0 < res.nlu < 15)
+
+        y_true = sol_linear(res.t)
+        e = compute_error(res.y, y_true, rtol, atol)
+        assert_(np.all(e < 10))
+
+        tc = np.linspace(*t_span)
+        yc_true = sol_linear(tc)
+        yc = res.sol(tc)
+
+        e = compute_error(yc, yc_true, rtol, atol)
+        assert_(np.all(e < 15))
+
+        assert_allclose(res.sol(res.t), res.y, rtol=1e-14, atol=1e-14)
 
 
 def test_events():

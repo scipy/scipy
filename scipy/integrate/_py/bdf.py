@@ -193,25 +193,23 @@ class BDF(OdeSolver):
 
         self.jac_factor = None
         self.jac, self.J = self._validate_jac(jac, jac_sparsity)
-        if self.jac is not None:
-            if issparse(self.J):
-                def lu(A):
-                    self.nlu += 1
-                    return splu(A)
-            else:
-                def lu(A):
-                    self.nlu += 1
-                    return lu_factor(A, overwrite_a=True)
-        else:
-            lu = None
-
         if issparse(self.J):
+            def lu(A):
+                self.nlu += 1
+                return splu(A)
+
             def solve_lu(LU, b):
                 return LU.solve(b)
+
             I = eye(self.n, format='csc')
         else:
+            def lu(A):
+                self.nlu += 1
+                return lu_factor(A, overwrite_a=True)
+
             def solve_lu(LU, b):
                 return lu_solve(LU, b, overwrite_b=True)
+
             I = np.identity(self.n)
 
         self.lu = lu
