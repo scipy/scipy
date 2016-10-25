@@ -139,7 +139,7 @@ class orthopoly1d(np.poly1d):
             mu = mu / abs(kn)
             kn = 1.0
         self.__dict__['normcoef'] = mu
-        self.__dict__['coeffs'] *= kn
+        self.__dict__['coeffs'] *= float(kn)
 
         # Note: eval_func will be discarded on arithmetic
         self.__dict__['_eval_func'] = eval_func

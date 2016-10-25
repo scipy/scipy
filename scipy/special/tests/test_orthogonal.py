@@ -735,5 +735,10 @@ def test_roots_genlaguerre():
     assert_raises(ValueError, sc.roots_genlaguerre, 3, -1.1)
 
 
+def test_gh_6721():
+    # Regresssion test for gh_6721. This should not raise.
+    sc.chebyt(65)(0.2)
+
+
 if __name__ == "__main__":
     run_module_suite()
