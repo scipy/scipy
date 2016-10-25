@@ -664,14 +664,14 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         deriv_l_ords, deriv_l_vals = zip(*deriv_l)
     else:
         deriv_l_ords, deriv_l_vals = [], []
-    deriv_l_ords, deriv_l_vals = map(np.atleast_1d, (deriv_l_ords, deriv_l_vals))
+    deriv_l_ords, deriv_l_vals = np.atleast_1d(deriv_l_ords, deriv_l_vals)
     nleft = deriv_l_ords.shape[0]
 
     if deriv_r is not None:
         deriv_r_ords, deriv_r_vals = zip(*deriv_r)
     else:
         deriv_r_ords, deriv_r_vals = [], []
-    deriv_r_ords, deriv_r_vals = map(np.atleast_1d, (deriv_r_ords, deriv_r_vals))
+    deriv_r_ords, deriv_r_vals = np.atleast_1d(deriv_r_ords, deriv_r_vals)
     nright = deriv_r_ords.shape[0]
 
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
