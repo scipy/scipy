@@ -211,9 +211,9 @@ def test_inversefunc_vminvmaxclosed():
 def test_inversefunc_vminvmaxopen():
     accuracy=4
     tan = lambda x: np.tan(x)
-    invtan = inversefunc(tan, 
-                         vmin=-np.pi/2, 
-                         vmax=np.pi/2, 
-                         vminopen=True, 
+    invtan = inversefunc(tan,
+                         vmin=-np.pi/2,
+                         vmax=np.pi/2,
+                         vminopen=True,
                          vmaxopen=True)
     assert_array_almost_equal(invtan([1,0,-1]),[np.pi/4,0.,-np.pi/4],accuracy)

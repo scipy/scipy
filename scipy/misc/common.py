@@ -455,6 +455,11 @@ def inversefunc(f,vmin=None,vmax=None,vminopen=False,vmaxopen=False,accuracy=2):
         Inverse function of `f`. It can take scalars or ndarrays, and return
         objects of the same kind with the calculated inverse values.
 
+    Notes
+    -----
+
+    .. versionadded:: 0.19.0
+
     Examples
     --------
     >>> import scipy.misc
