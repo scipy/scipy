@@ -18,3 +18,4 @@ cdef extern from "sf_error.h":
      void check_fpe "sf_error_check_fpe" (char *func_name) nogil
      int set_print "sf_error_set_print" (int flag) nogil
      int get_print "sf_error_get_print" () nogil
+     sf_error_t get_errno "sf_error_get_errno" () nogil

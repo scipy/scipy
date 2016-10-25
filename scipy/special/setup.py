@@ -1,19 +1,14 @@
 #!/usr/bin/env python
-
 from __future__ import division, print_function, absolute_import
 
 import os
-import sys
 from os.path import join
+import sys
+from collections import defaultdict
 from distutils.sysconfig import get_python_inc
-import numpy
-from numpy.distutils.misc_util import get_numpy_include_dirs
 
-try:
-    from numpy.distutils.misc_util import get_info
-except ImportError:
-    raise ValueError("numpy >= 1.4 is required (detected %s from %s)" %
-                     (numpy.__version__, numpy.__file__))
+import numpy
+from numpy.distutils.misc_util import get_numpy_include_dirs, get_info
 
 
 def configuration(parent_package='',top_path=None):
@@ -99,6 +94,21 @@ def configuration(parent_package='',top_path=None):
                          define_macros=define_macros,
                          extra_info=get_info("npymath"))
 
+    # Extension _cython_special_cxx. This is a copy of _ufuncs_cxx but
+    # compiled with CYTHON_SPECIAL defined.
+    cython_special_cxx_src = ['_cython_special_cxx.cxx', 'sf_error.c',
+                              '_faddeeva.cxx', 'Faddeeva.cc',
+                              '_wright.cxx', 'wright.cc']
+    cython_special_cxx_dep = (headers + cython_special_cxx_src +
+                              cephes_src + ['*.hh'])
+    cython_special_cxx_macros = define_macros + [('CYTHON_SPECIAL', 1)]
+    config.add_extension('_cython_special_cxx',
+                         sources=cython_special_cxx_src,
+                         depends=cython_special_cxx_dep,
+                         include_dirs=[curdir],
+                         define_macros=cython_special_cxx_macros,
+                         extra_info=get_info("npymath"))
+
     cfg = dict(get_system_info('lapack_opt'))
     config.add_extension('_ellip_harm_2',
                          sources=['_ellip_harm_2.c', 'sf_error.c',],
@@ -108,20 +118,28 @@ def configuration(parent_package='',top_path=None):
     # Cython API
     config.add_data_files('cython_special.pxd')
     
-    cython_special_src = ['cython_special.c', 'sf_error.c', '_logit.c.src',
-                          "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
-    cython_special_dep = (headers + ufuncs_src + ufuncs_cxx_src + amos_src
-                          + c_misc_src + cephes_src + mach_src + cdf_src
+    cython_special_src = ['cython_special.c', 'sf_error.c',
+                          '_logit.c.src', "amos_wrappers.c",
+                          "cdf_wrappers.c", "specfun_wrappers.c"]
+    cython_special_dep = (headers + ufuncs_src +
+                          cython_special_cxx_src + amos_src +
+                          c_misc_src + cephes_src + mach_src + cdf_src
                           + specfun_src)
-    cfg.setdefault('include_dirs', []).extend([curdir] + inc_dirs + [numpy.get_include()])
-    cfg.setdefault('libraries', []).extend(['sc_amos','sc_c_misc','sc_cephes','sc_mach',
-                                            'sc_cdf', 'sc_specfun'])
-    cfg.setdefault('define_macros', []).extend(define_macros + [('CYTHON_SPECIAL', 1)])
+    cfg = defaultdict(list, get_system_info('lapack_opt'))
+    cfg['include_dirs'].extend([curdir] + inc_dirs + [numpy.get_include()])
+    cfg['libraries'].extend(['sc_amos','sc_c_misc','sc_cephes','sc_mach',
+                             'sc_cdf', 'sc_specfun'])
+    cfg['define_macros'].extend(define_macros + [('CYTHON_SPECIAL', 1)])
     config.add_extension('cython_special',
                          depends=cython_special_dep,
                          sources=cython_special_src,
                          extra_info=get_info("npymath"),
                          **cfg)
+
+    # Test error handling in the Cython API
+    config.add_extension('_test_sf_error',
+                         sources=['_test_sf_error.c'],
+                         depends=['cython_special.c'])
 
     # combinatorics
     config.add_extension('_comb',
