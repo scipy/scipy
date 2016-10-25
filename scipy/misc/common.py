@@ -484,10 +484,10 @@ def inversefunc(f, vmin=None, vmax=None,
     array([  4.31643739e-06,   1.57079633e+00,   3.14158845e+00])
     >>> tan = (lambda x: np.tan(x))
     >>> invtan = scipy.misc.inversefunc(tan,
-    >>>                                 vmin=-np.pi / 2,
-    >>>                                 vmax=np.pi / 2,
-    >>>                                 vminopen=True,
-    >>>                                 vmaxopen=True)
+    ...                                 vmin=-np.pi / 2,
+    ...                                 vmax=np.pi / 2,
+    ...                                 vminopen=True,
+    ...                                 vmaxopen=True)
     >>> invtan([1, 0, -1]) # Should give [pi / 4, 0, -pi / 4]
     array([ 0.78539955,  0.        , -0.78539955])
 
