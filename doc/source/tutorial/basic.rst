@@ -251,6 +251,8 @@ functions compute :math:`n!` and :math:`n!/k!(n-k)!` using either
 exact integer arithmetic (thanks to Python's Long integer object), or
 by using floating-point precision and the gamma function. Another
 function returns a common image used in image processing: :obj:`lena`.
+Also :obj:`inversefunc` can be used to calculate the numerical inverse
+of a function.
 
 Finally, two functions are provided that are useful for approximating
 derivatives of functions using discrete-differences. The function

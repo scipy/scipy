@@ -31,6 +31,7 @@ below are not available without it.
    imsave - Save an array to an image file [requires Pillow] 
    imshow - Simple showing of an image through an external viewer [requires Pillow]
    info - Get help information for a function, class, or module
+   inversefunc - Obtain the numerical inverse of a function
    lena - Get classic image processing example image Lena
    logsumexp - Compute the log of the sum of exponentials of input elements
    pade - Pade approximation to function as the ratio of two polynomials
