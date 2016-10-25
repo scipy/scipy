@@ -281,7 +281,8 @@ def structural_rank(graph):
     
     References
     ----------
-    .. [1] http://www.mathworks.com/help/matlab/ref/sprank.html
+    .. [1] I. S. Duff, "Computing the Structural Index", SIAM J. Alg. Disc. 
+            Meth., Vol. 7, 594 (1986).
     
     .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
     """
