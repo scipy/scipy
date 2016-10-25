@@ -5,7 +5,7 @@ Directed Hausdorff Code
 
 """
 #
-# Copyright (C)  Tyler Reddy and Richard Gowers, 2016
+# Copyright (C)  Tyler Reddy, Richard Gowers, and Max Linke, 2016
 #
 # Distributed under the same BSD license as Scipy.
 #
