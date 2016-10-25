@@ -180,7 +180,7 @@ def test_inversefunc_infinite():
                               [-3, -2, -1, 0, 1, 2, 3], accuracy)
 
 def test_inversefunc_vminclosed():
-    accuracy = 4
+    accuracy = 2
     square = (lambda x: x**2)
     invsquare = inversefunc(square, vmin=0, accuracy=accuracy)
     assert_array_almost_equal(invsquare([4, 16, 64]), [2, 4, 8], accuracy)
@@ -192,7 +192,7 @@ def test_inversefunc_vminopen():
     assert_array_almost_equal(invlog([-2., -3.]), [0.01, 0.001], accuracy)
 
 def test_inversefunc_vmaxclosed():
-    accuracy = 4
+    accuracy = 2
     square = (lambda x: x**2)
     invsquare = inversefunc(square, vmax=0, accuracy=accuracy)
     assert_array_almost_equal(invsquare([4, 16, 64]), [-2, -4, -8], accuracy)
