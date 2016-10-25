@@ -618,9 +618,14 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
             raise ValueError("Too much info for k=0.")
+        x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
-        c = y
-        return BSpline(t, c, k, axis=axis)
+        c = np.asarray(y)
+        if c.dtype == np.complex64:
+            c = c.astype(np.complex_)
+        elif c.dtype == np.float32:
+            c = c.astype(float)
+        return BSpline.construct_fast(t, c, k, axis=axis)
 
     # come up with a sensible knot vector, if needed
     if t is None:
