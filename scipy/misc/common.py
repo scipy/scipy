@@ -5,6 +5,8 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy
 import numpy as np
 from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
@@ -12,8 +14,9 @@ from numpy import (exp, log, asarray, arange, newaxis, hstack, product, array,
                    squeeze, amax, reshape, sign, broadcast_arrays)
 
 from scipy._lib._util import _asarray_validated
+from scipy.optimize import minimize_scalar
 
-__all__ = ['logsumexp', 'central_diff_weights', 'derivative', 'pade', 'lena',
+__all__ = ['logsumexp', 'inversefunc', 'central_diff_weights', 'derivative', 'pade', 'lena',
            'ascent', 'face']
 
 
@@ -137,6 +140,118 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         return out, sgn
     else:
         return out
+
+
+def inversefunc(f,vmin=None,vmax=None,vminopen=False,vmaxopen=False,accuracy=2):
+    r"""Obtain the inverse of a function.
+    
+    Returns a callable that calculates the numerical inverse of the function
+    `f`. In order for the enumerical inverse to exist in an interval, the 
+    input function must have monotonic behavior i.e. be a purely decreasing 
+    or purely increasing in that interval. By default the interval spans all
+    the real numbers, howevere it can be restricted with the `vmin` and `vmax`
+    arguments to [`vmin`, `vmax`],  (`vmin`, `vmax`],  [`vmin`, `vmax`) or  
+    (`vmin`, `vmax`) depending on `vminopen` and `vmaxopen`.
+    
+    Parameters
+    ----------
+    f : callable
+        Callable representing the function to be inverted, able to take a
+        ndarray or an scalar and return an object of the same kind with the 
+        evaluation of the function. The function must not diverge and have a 
+        monotonic behavior in the chosen interval.
+    vmin : float, optional
+        Lower side of the interval. Default None (-Inf).
+    vminopen : bool, optional
+        Whether the interval has an open end at `vmin`. Default False.  
+    vmax : float, optional
+        Higher side of the interval. It must be strictly larger than `vmin`. 
+        Default None (-Inf).
+    vminopen : bool, optional
+        Whether the interval has an open end at `vmax`. Default False.   
+    
+    Returns
+    -------
+    callable
+        Inverse function of `f`. It can take scalars or ndarrays, and return
+        objects of the same kind with the calculated inverse values.
+
+    Examples
+    --------
+    >>> a = [1, 2, 3]
+    >>> print [x + 3 for x in a]
+    [4, 5, 6]
+    >>> print "a\n\nb"
+    a
+    b
+    """
+
+    if vmin is not None:
+        vmin=float(vmin)
+    if vmax is not None:
+        vmax=float(vmax)
+    
+    if vmin is not None and vmax is not None:
+        if vmin >= vmax:
+            raise ValueError("vmin must be less than vmax")
+    
+    min_kwargs={}
+    constraint=None
+    
+    if vmin is not None and vmax is not None:
+        min_kwargs['method']='bounded'
+        min_kwargs['bounds']=(vmin,vmax)
+        if vminopen:
+            constraint=lambda x: (x-vmin>0)
+        if vmaxopen:
+            constraint=lambda x: (vmax-x>0)
+        if vminopen and vminopen:
+            constraint=lambda x: (vmax-x>0)*(x-vmin>0)
+    elif vmin is not None:
+        if vminopen:
+            constraint=lambda x: x-vmin>0
+        else:
+            constraint=lambda x: x-vmin>=0
+        min_kwargs['tol']=10.**(-accuracy)
+    elif vmax is not None:
+        if vmaxopen:
+            constraint=lambda x: vmax-x>0
+        else:
+            constraint=lambda x: vmax-x>=0
+        min_kwargs['tol']=10.**(-accuracy)
+
+    def inv(xin):
+        xin=np.asarray(xin)
+        shapein=xin.shape
+        xin=xin.flatten()
+        results=xin.copy()*np.nan
+        resultsmask=np.zeros(xin.shape,dtype=np.bool)
+        
+        for j in range(xin.size):
+            if constraint:    
+                optimizer=lambda x, j=j,f=f: ((((f(x)-xin[j]))**2).sum() 
+                                              if constraint(x) else np.inf)
+            else:
+                optimizer=lambda x, j=j,f=f: (((f(x)-xin[j]))**2).sum()
+            result=minimize_scalar(optimizer,**min_kwargs)
+            try:
+                results[j]=result.x
+                resultsmask[j]=result.success
+            except:
+                resultsmask[j]=False
+        if any(resultsmask==False):
+            warnings.warn("Trouble calculating inverse for values: "
+                          "%s" % str(xin[~resultsmask]),RuntimeWarning)
+        
+        try:
+            np.testing.assert_array_almost_equal(xin,f(results), decimal=accuracy)
+        except AssertionError:        
+            warnings.warn("Results obtained with less than %g "  
+                          "decimal digits of accuracy"
+                          %accuracy,RuntimeWarning)
+            
+        return results.reshape(shapein)
+    return inv
 
 
 def central_diff_weights(Np, ndiv=1):
