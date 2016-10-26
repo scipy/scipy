@@ -608,6 +608,18 @@ class TestInterp1D(object):
         ii = interp1d(x, x, kind='nearest')
         assert_array_almost_equal(ii(x), x)
 
+    def test_local_nans(self):
+        # check that for local interpolation kinds (slinear, zero) a single nan
+        # only affects its local neighborhood
+        x = np.arange(10).astype(float)
+        y = x.copy()
+        y[6] = np.nan
+        for kind in ('zero', 'slinear'):
+            ir = interp1d(x, y, kind=kind)
+            vals = ir([4.9, 7.0])
+            assert_(np.isfinite(vals).all())
+
+
 class TestLagrange(TestCase):
 
     def test_lagrange(self):
