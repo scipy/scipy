@@ -134,14 +134,9 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        interp1d(self.x10, self.y10, kind='linear')
-        interp1d(self.x10, self.y10, kind='cubic')
-        interp1d(self.x10, self.y10, kind='slinear')
-        interp1d(self.x10, self.y10, kind='quadratic')
-        interp1d(self.x10, self.y10, kind='zero')
-        interp1d(self.x10, self.y10, kind='nearest')
-        interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
-        interp1d(self.x10, self.y10, kind='linear', fill_value="extrapolate")
+        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic', 'cubic'):
+            interp1d(self.x10, self.y10, kind=kind)
+            interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
         interp1d(self.x10, self.y10, kind='linear',
                  fill_value=np.array([-1]))
@@ -163,11 +158,6 @@ class TestInterp1D(object):
                  fill_value=(np.ones(10), np.ones(10)))
         interp1d(self.x2, self.y210, kind='linear', axis=0,
                  fill_value=(np.ones(10), -1))
-
-        # extrapolation is only allowed for nearest & linear methods
-        for kind in ('cubic', 'slinear', 'zero', 'quadratic'):
-            assert_raises(ValueError, interp1d, self.x10, self.y10, kind=kind,
-                          fill_value="extrapolate")
 
         # x array must be 1D.
         assert_raises(ValueError, interp1d, self.x25, self.y10)
@@ -253,20 +243,24 @@ class TestInterp1D(object):
                                   interp10_y_2d_unsorted(self.x10))
 
     def test_linear(self):
+        for kind in ['linear', 'slinear']:
+            self._check_linear(kind)
+
+    def _check_linear(self, kind):
         # Check the actual implementation of linear interpolation.
-        interp10 = interp1d(self.x10, self.y10)
+        interp10 = interp1d(self.x10, self.y10, kind=kind)
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array([1.2]))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2.4, 5.6, 6.0]))
 
         # test fill_value="extrapolate"
-        extrapolator = interp1d(self.x10, self.y10, kind='linear',
+        extrapolator = interp1d(self.x10, self.y10, kind=kind,
                                 fill_value='extrapolate')
         assert_allclose(extrapolator([-1., 0, 9, 11]),
                         [-1, 0, 9, 11], rtol=1e-14)
 
-        opts = dict(kind='linear',
+        opts = dict(kind=kind,
                     fill_value='extrapolate',
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)

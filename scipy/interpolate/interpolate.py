@@ -375,7 +375,7 @@ class interp1d(_Interpolator1D):
 
           .. versionadded:: 0.17.0
         - If "extrapolate", then points outside the data range will be
-          extrapolated. ("nearest" and "linear" kinds only.)
+          extrapolated.
 
           .. versionadded:: 0.17.0
     assume_sorted : bool, optional
@@ -499,10 +499,6 @@ class interp1d(_Interpolator1D):
     def fill_value(self, fill_value):
         # extrapolation only works for nearest neighbor and linear methods
         if _do_extrapolate(fill_value):
-            if self._kind not in ('nearest', 'linear'):
-                raise ValueError("Extrapolation does not work with "
-                                 "kind=%s" % self._kind)
-
             if self.bounds_error:
                 raise ValueError("Cannot extrapolate and raise "
                                  "at the same time.")
