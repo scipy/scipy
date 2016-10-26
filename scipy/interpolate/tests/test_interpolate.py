@@ -619,6 +619,24 @@ class TestInterp1D(object):
             vals = ir([4.9, 7.0])
             assert_(np.isfinite(vals).all())
 
+    def test_spline_nans(self):
+        # Backwards compat: a single nan makes the whole spline interpolation
+        # return nans in an array of the correct shape. And it doesn't raise,
+        # just quiet nans because of backcompat.
+        x = np.arange(8).astype(float)
+        y = x.copy()
+        yn = y.copy()
+        yn[3] = np.nan
+
+        for kind in ['quadratic', 'cubic']:
+            ir = interp1d(x, y, kind=kind)
+            irn = interp1d(x, yn, kind=kind)
+            for xnew in (6, [1, 6], [[1, 6], [3, 5]]):
+                xnew = np.asarray(xnew)
+                out, outn = ir(x), irn(x)
+                assert_(np.isnan(outn).all())
+                assert_equal(out.shape, outn.shape)
+
 
 class TestLagrange(TestCase):
 

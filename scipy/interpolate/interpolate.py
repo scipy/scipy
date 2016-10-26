@@ -481,10 +481,30 @@ class interp1d(_Interpolator1D):
                     self._call = self.__class__._call_linear
         else:
             minval = order + 1
-            check_finite = True if order > 1 else False
-            self._spline = make_interp_spline(self.x, self._y, k=order,
-                                              check_finite=check_finite)
-            self._call = self.__class__._call_spline
+
+            rewrite_nan = False
+            xx, yy = self.x, self._y
+            if order > 1:
+                # Quadratic or cubic spline. If input contains even a single
+                # nan, then the output is all nans. We cannot just feed data
+                # with nans to make_interp_spline because it calls LAPACK.
+                # So, we make up a bogus x and y with no nans and use it
+                # to get the correct shape of the output, which we then fill
+                # with nans.
+                # For slinear or zero order spline, we just pass nans through.
+                if np.isnan(self.x).any():
+                    xx = np.linspace(min(self.x), max(self.x), len(self.x))
+                    rewrite_nan = True
+                if np.isnan(self._y).any():
+                    yy = np.ones_like(self._y)
+                    rewrite_nan = True
+
+            self._spline = make_interp_spline(xx, yy, k=order,
+                                              check_finite=False)
+            if rewrite_nan:
+                self._call = self.__class__._call_nan_spline
+            else:
+                self._call = self.__class__._call_spline
 
         if len(self.x) < minval:
             raise ValueError("x and y arrays must have at "
@@ -581,6 +601,11 @@ class interp1d(_Interpolator1D):
 
     def _call_spline(self, x_new):
         return self._spline(x_new)
+
+    def _call_nan_spline(self, x_new):
+        out = self._spline(x_new)
+        out[...] = np.nan
+        return out
 
     def _evaluate(self, x_new):
         # 1. Handle values in x_new that are outside of x.  Throw error,
