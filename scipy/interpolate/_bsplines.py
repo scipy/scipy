@@ -636,7 +636,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
-
     # come up with a sensible knot vector, if needed
     if t is None:
         if deriv_l is None and deriv_r is None:
@@ -660,18 +659,18 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     axis = axis % y.ndim
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
-    if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
+    if x.ndim != 1 or np.any(x[1:] <= x[:-1]):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
-    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+    if t.ndim != 1 or np.any(t[1:] < t[:-1]):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
         raise ValueError('x and y are incompatible.')
     if t.size < x.size + k + 1:
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
-    if k > 0 and np.any((x < t[k]) | (x > t[-k])):
+    if (x[0] < t[k]) or (x[-1] > t[-k]):
         raise ValueError('Out of bounds w/ x = %s.' % x)
 
     # Here : deriv_l, r = [(nu, value), ...]
