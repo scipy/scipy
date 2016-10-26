@@ -25,8 +25,41 @@ The module is usable from Cython via::
 Error Handling
 ==============
 
-Error handling works the same as in `scipy.special`; in particular
-error messages can be controlled by ``cython_special.errprint``.
+Errors are logged in a global error variable; the current error status
+can be queried by the function::
+
+   cython_special.error_t cython_special.get_errno()
+
+The possible return values are
+
+- ``cython_special.OK``: no error
+- ``cython_special.SINGULAR``: singularity encountered
+- ``cython_special.UNDERFLOW``: floating point underflow
+- ``cython_special.OVERFLOW``: floating point overflow
+- ``cython_special.SLOW``: too many iterations required
+- ``cython_special.LOSS``: loss of precision
+- ``cython_special.NO_RESULT``: no result obtained
+- ``cython_special.DOMAIN``: out of domain
+- ``cython_special.ARG``: invalid input parameter
+- ``cython_special.OTHER``: unclassified error
+
+After calling ``cython_special.get_errno`` the global error status is
+returned to ``cython_special.OK``. If the compiler used to compile
+SciPy supports OpenMP, then the error variable is threadsafe for
+OpenMP threads. In particular this covers uses of ``cython.parallel``,
+so for example the following code is safe::
+
+   cimport cython.parallel
+   cimport scipy.special.cython_special as sc
+
+   cdef int n
+   for n in parallel.prange(10):
+       sc.loggamma(<double>n)
+       if sc.get_errno() == sc.SINGULAR:
+           # do something
+
+Users can check whether OpenMP is supported by calling the function
+``cython_special.have_openmp``.
 
 Available Functions
 ===================
@@ -1002,22 +1035,38 @@ cdef extern from "numpy/npy_math.h":
     double NPY_NAN
 
 cimport sf_error
+
 cimport _complexstuff
-cimport scipy.special._ufuncs_cxx
+cimport scipy.special._cython_special_cxx
 from . import _ufuncs
+from . import _have_openmp
 
 ctypedef long double long_double
 ctypedef float complex float_complex
 ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
-def errprint(inflag=None):
-    """See the documentation for scipy.special.errprint"""
-    if inflag is not None:
-        scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
-        return bool(sf_error.set_print(int(bool(inflag))))
+cdef extern from "sf_errno.h":
+    sf_error.sf_error_t sf_errno
+
+# Wrap the sf_error version so that we can cpdef
+cpdef error_t get_errno() nogil:
+    return sf_error.get_errno()
+
+# Allow users to figure out whether we compiled with openmp
+def have_openmp():
+    return _have_openmp.have_openmp
+
+# Function that can raise every error for testing purposes
+cdef int _error_test_function(int n) nogil:
+    cdef sf_error.sf_error_t code
+
+    if n < 0 or n >= 10:
+        code = sf_error.OTHER
     else:
-        return bool(sf_error.get_print())
+        code = <sf_error.sf_error_t>n
+    sf_error.error("_error_test_function", code, NULL)
+    return 0
 
 cdef extern from "_ufuncs_defs.h":
     cdef npy_int _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
@@ -1891,9 +1940,9 @@ cpdef double cotdg(double x0) nogil:
 cpdef Dd_number_t dawsn(Dd_number_t x0) nogil:
     """See the documentation for scipy.special.dawsn"""
     if Dd_number_t is double:
-        return (<double(*)(double) nogil>scipy.special._ufuncs_cxx._export_faddeeva_dawsn)(x0)
+        return (<double(*)(double) nogil>scipy.special._cython_special_cxx._export_faddeeva_dawsn)(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_dawsn_complex)(x0)
+        return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_faddeeva_dawsn_complex)(x0)
     else:
         if Dd_number_t is double_complex:
             return NPY_NAN
@@ -1937,7 +1986,7 @@ cpdef Dd_number_t erf(Dd_number_t x0) nogil:
     if Dd_number_t is double:
         return _func_erf(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_erf)(x0)
+        return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_faddeeva_erf)(x0)
     else:
         if Dd_number_t is double_complex:
             return NPY_NAN
@@ -1949,7 +1998,7 @@ cpdef Dd_number_t erfc(Dd_number_t x0) nogil:
     if Dd_number_t is double:
         return _func_erfc(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfc)(x0)
+        return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_faddeeva_erfc)(x0)
     else:
         if Dd_number_t is double_complex:
             return NPY_NAN
@@ -1959,9 +2008,9 @@ cpdef Dd_number_t erfc(Dd_number_t x0) nogil:
 cpdef Dd_number_t erfcx(Dd_number_t x0) nogil:
     """See the documentation for scipy.special.erfcx"""
     if Dd_number_t is double:
-        return (<double(*)(double) nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfcx)(x0)
+        return (<double(*)(double) nogil>scipy.special._cython_special_cxx._export_faddeeva_erfcx)(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfcx_complex)(x0)
+        return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_faddeeva_erfcx_complex)(x0)
     else:
         if Dd_number_t is double_complex:
             return NPY_NAN
@@ -1971,9 +2020,9 @@ cpdef Dd_number_t erfcx(Dd_number_t x0) nogil:
 cpdef Dd_number_t erfi(Dd_number_t x0) nogil:
     """See the documentation for scipy.special.erfi"""
     if Dd_number_t is double:
-        return (<double(*)(double) nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfi)(x0)
+        return (<double(*)(double) nogil>scipy.special._cython_special_cxx._export_faddeeva_erfi)(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_erfi_complex)(x0)
+        return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_faddeeva_erfi_complex)(x0)
     else:
         if Dd_number_t is double_complex:
             return NPY_NAN
@@ -2689,7 +2738,7 @@ cpdef Dd_number_t log_ndtr(Dd_number_t x0) nogil:
     if Dd_number_t is double:
         return _func_log_ndtr(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_log_ndtr)(x0)
+        return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_faddeeva_log_ndtr)(x0)
     else:
         if Dd_number_t is double_complex:
             return NPY_NAN
@@ -2896,7 +2945,7 @@ cpdef Dd_number_t ndtr(Dd_number_t x0) nogil:
     if Dd_number_t is double:
         return _func_ndtr(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_ndtr)(x0)
+        return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_faddeeva_ndtr)(x0)
     else:
         if Dd_number_t is double_complex:
             return NPY_NAN
@@ -3257,11 +3306,11 @@ cpdef double tklmbda(double x0, double x1) nogil:
 
 cpdef double complex wofz(double complex x0) nogil:
     """See the documentation for scipy.special.wofz"""
-    return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_w)(x0)
+    return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_faddeeva_w)(x0)
 
 cpdef double complex wrightomega(double complex x0) nogil:
     """See the documentation for scipy.special.wrightomega"""
-    return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_wrightomega)(x0)
+    return (<double complex(*)(double complex) nogil>scipy.special._cython_special_cxx._export_wrightomega)(x0)
 
 cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) nogil:
     """See the documentation for scipy.special.xlog1py"""
