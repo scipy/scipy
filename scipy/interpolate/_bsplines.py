@@ -619,7 +619,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # special-case k=0 right away
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
-            raise ValueError("Too much info for k=0.")
+            raise ValueError("Too much info for k=0: t and bc_type can only "
+                             "be None.")
         x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
@@ -629,7 +630,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
     if k == 1 and t is None:
         if not (deriv_l is None and deriv_r is None):
-            raise ValueError("Too much info for k=1.")
+            raise ValueError("Too much info for k=1: bc_type can only be None.")
         x = _as_float_array(x, check_finite)
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
