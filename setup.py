@@ -200,38 +200,32 @@ CAN_USE_OPENMP = [
     'scipy.special._test_sf_error'
 ]
 
-from numpy.distutils.command.build_ext import build_ext
-class scipy_build_ext(build_ext):
-    """Subclass NumPy's build_ext so that we can use information about
-    the C compiler being used to detect whether we have openmp.
+def add_openmp_flags(build):
+    """Add OpenMP flags to the build_ext command."""
+    cflags, ldflags = get_openmp_flags(build.compiler)
+    if cflags is None and ldflags is None:
+        have_openmp = False
+    else:
+        have_openmp = True
+    fn = os.path.join("scipy", "special", "_have_openmp.py")
+    with open(fn, 'w') as f:
+        f.write("have_openmp = {}\n".format(have_openmp))
 
-    """
-    def build_extensions(self):
-        cflags, ldflags = get_openmp_flags(self.compiler)
-        if cflags is None and ldflags is None:
-            have_openmp = False
-        else:
-            have_openmp = True
-        fn = os.path.join("scipy", "special", "_have_openmp.py")
-        with open(fn, 'w') as f:
-            f.write("have_openmp = {}\n".format(have_openmp))
-
-        for extension in self.extensions:
-            if extension.name in CAN_USE_OPENMP:
-                if have_openmp:
-                    if extension.extra_compile_args:
-                        extension.extra_compile_args.extend(cflags)
-                    else:
-                        extension.extra_compile_args = cflags
-                    if extension.extra_link_args:
-                        extension.extra_link_args.extend(ldflags)
-                    else:
-                        extension.extra_link_args = ldflags
-                    if extension.define_macros:
-                        extension.define_macros.append(('HAVE_OPENMP', 1))
-                    else:
-                        extension.define_macros = [('HAVE_OPENMP', 1)]
-        build_ext.build_extensions(self)
+    for extension in build.extensions:
+        if extension.name in CAN_USE_OPENMP:
+            if have_openmp:
+                if extension.extra_compile_args:
+                    extension.extra_compile_args.extend(cflags)
+                else:
+                    extension.extra_compile_args = cflags
+                if extension.extra_link_args:
+                    extension.extra_link_args.extend(ldflags)
+                else:
+                    extension.extra_link_args = ldflags
+                if extension.define_macros:
+                    extension.define_macros.append(('HAVE_OPENMP', 1))
+                else:
+                    extension.define_macros = [('HAVE_OPENMP', 1)]
 
 
 OPENMP_TEST_FILE = """"\
@@ -427,8 +421,7 @@ def setup_package():
     # Rewrite the version file every time
     write_version_py()
 
-    cmdclass = {'sdist': sdist_checked,
-                'build_ext': scipy_build_ext}
+    cmdclass = {'sdist': sdist_checked}
     if HAVE_SPHINX:
         cmdclass['build_sphinx'] = ScipyBuildDoc
 
@@ -477,11 +470,19 @@ def setup_package():
 
     if run_build:
         from numpy.distutils.core import setup
+        from numpy.distutils.command.build_ext import build_ext
+        
+        class scipy_build_ext(build_ext):
+            def build_extensions(self):
+                add_openmp_flags(self)
+                build_ext.build_extensions(self)
+
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
             # Generate Cython sources, unless building from source release
             generate_cython()
 
+        metadata['cmdclass']['build_ext'] = scipy_build_ext
         metadata['configuration'] = configuration
     else:
         # Don't import numpy here - non-build actions are required to succeed
