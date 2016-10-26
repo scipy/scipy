@@ -21,6 +21,14 @@ def prod(x):
     return functools.reduce(operator.mul, x)
 
 
+def _get_dtype(dtype):
+    """Return np.complex128 for complex dtypes, np.float64 otherwise."""
+    if np.issubdtype(dtype, np.complexfloating):
+        return np.complex_
+    else:
+        return np.float_
+
+
 class BSpline(object):
     r"""Univariate spline in the B-spline basis.
 
@@ -197,14 +205,8 @@ class BSpline(object):
         if self.c.shape[0] < n:
             raise ValueError("Knots, coefficients and degree are inconsistent.")
 
-        dt = self._get_dtype(self.c.dtype)
+        dt = _get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dt)
-
-    def _get_dtype(self, dtype):
-        if np.issubdtype(dtype, np.complexfloating):
-            return np.complex_
-        else:
-            return np.float_
 
     @classmethod
     def construct_fast(cls, t, c, k, extrapolate=True, axis=0):
@@ -621,10 +623,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
         c = np.asarray(y)
-        if c.dtype == np.complex64:
-            c = c.astype(np.complex_)
-        elif c.dtype == np.float32:
-            c = c.astype(float)
+        c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
     # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
@@ -634,10 +633,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         x = _as_float_array(x, check_finite)
         t = np.r_[x[0], x, x[-1]]
         c = np.asarray(y)
-        if c.dtype == np.complex64:
-            c = c.astype(np.complex_)
-        elif c.dtype == np.float32:
-            c = c.astype(float)
+        c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
         return BSpline.construct_fast(t, c, k, axis=axis)
 
 

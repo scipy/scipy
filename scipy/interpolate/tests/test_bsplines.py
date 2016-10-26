@@ -807,12 +807,20 @@ class TestInterp(TestCase):
         assert_allclose([b(xx[0], 1), b(xx[-1], 1)],
                         [der_l[0][1], der_r[0][1]], atol=1e-14, rtol=1e-14)
 
+        # also test zero and first order
+        for k in (0, 1):
+            b = make_interp_spline(xx, yy, k=k)
+            assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
+
     def test_int_xy(self):
         x = np.arange(10).astype(np.int_)
         y = np.arange(10).astype(np.int_)
 
-        # cython chokes on "buffer type mismatch"
-        make_interp_spline(x, y, k=1)
+        # cython chokes on "buffer type mismatch" (construction) or
+        # "no matching signature found" (evaluation)
+        for k in (0, 1, 2, 3):
+            b = make_interp_spline(x, y, k=k)
+            b(x)
 
     def test_sliced_input(self):
         # cython code chokes on non C contiguous arrays
@@ -821,7 +829,8 @@ class TestInterp(TestCase):
         x = xx[::5]
         y = xx[::5]
 
-        make_interp_spline(x, y, k=1)
+        for k in (0, 1, 2, 3):
+            make_interp_spline(x, y, k=k)
 
     def test_check_finite(self):
         # check_finite defaults to True; nans and such trigger a ValueError
