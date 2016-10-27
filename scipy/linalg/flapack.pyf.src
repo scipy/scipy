@@ -542,39 +542,73 @@ interface
 
    end subroutine <prefix>gesv
 
-   subroutine <prefix>gesvx(a,lda,b,ldb,n,nrhs,x,ldx,trans,fact,af,ldaf,piv,r,c,rcond,ferr,berr,equed,work,iwork,info)
+   subroutine <prefix2>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,ipiv,equed,r,c,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
 
    ! Solve A * X = B using LU decomposition
-   ! The expert driver of ?GESV with condition number,
-   ! backward/forward error estimates.
+   ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
+   ! This part takes care of the data types, single and double reals (sgesvx and dgesvx)
 
-     callstatement (*f2py_func)(a,&lda,b,&ldb,&n,&nrhs,x,&ldx,trans,fact,af,&ldaf,piv,&r,&c,rcond,ferr,berr,equed,&work,&iwork,&info);
-     callprotoargument <ftype>*,int*,<ftype>*,int*,int*,int*,<ftype>*,int*,char*,char*,<ftype>*,int*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctypereal>*,char*,<ftype>*,<ftype>*,int*
+     callstatement {int i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+     callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
 
-     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=as):: a
-     integer depend(a),intent(hide):: lda = shape(a,0)
-     <ftype> dimension(n,nrhs),intent(in,out,copy,out=bs):: b
-     integer depend(b),intent(hide):: ldb = shape(b,0)
+     character optional,intent(in):: trans = "N"
+     character optional,intent(in):: fact = "E"
      integer depend(a),intent(hide):: n = shape(a,0)
      integer depend(b),intent(hide):: nrhs = shape(b,1)
-     <ftype> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
+     <ftype2> dimension(n,n),intent(in,out,copy,out=as):: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     <ftype2> optional,dimension(n,n),intent(in,out,out=lu):: af
+     integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
+     integer optional,dimension(n),depend(n),intent(in,out):: ipiv
+     character optional,intent(in,out):: equed = "B"
+     <ftype2> optional,dimension(n),depend(n),intent(in,out,out=rs):: r
+     <ftype2> optional,dimension(n),depend(n),intent(in,out,out=cs):: c
+     <ftype2> dimension(n,nrhs),intent(in,out,copy,out=bs):: b
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+     <ftype2> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
      integer depend(n),intent(hide):: ldx = n
-     character intent(in),check(*trans=='N'||*trans=='T'||*trans=='C'):: trans
-     character intent(in),check(*fact=='F'||*fact=='N'||*fact=='E'):: fact
-     <ftype> dimension(n,n),intent(in,out,out=lu):: af
-     integer depend(af),intent(hide):: ldaf = shape(af,0)
-     integer dimension(n),depend(n),intent(in,out):: piv
-     <ctypereal> intent(in,out,out=rs),dimension(n),depend(n):: r
-     <ctypereal> intent(in,out,out=cs),dimension(n),depend(n):: c
-     <ctypereal> intent(out):: rcond
-     <ctypereal> intent(out),dimension(nrhs),depend(nrhs):: ferr
-     <ctypereal> intent(out),dimension(nrhs),depend(nrhs):: berr
-     character intent(in,out),check(*equed=='R'||*equed=='N'||*equed=='C'||*equed=='B'):: equed
-     <ftype> dimension(4*n),depend(n),intent(hide,cache):: work
-     integer dimension(n),depend(n),intent(hide,cache) :: iwork
-     integer intent(out) :: info
+     <ftype2> intent(out):: rcond
+     <ftype2> intent(out),dimension(nrhs),depend(nrhs):: ferr
+     <ftype2> intent(out),dimension(nrhs),depend(nrhs):: berr
+     <ftype2> dimension(4*n),depend(n),intent(hide,cache):: work
+     integer intent(hide,cache),dimension(n),depend(n) :: iwork
+     integer intent(out):: info
 
-   end subroutine <prefix>gesvx
+   end subroutine <prefix2>gesvx
+
+   subroutine <prefix2c>gesvx(fact,trans,n,nrhs,a,lda,af,ldaf,ipiv,equed,r,c,b,ldb,x,ldx,rcond,ferr,berr,work,rwork,info)
+
+   ! Solve A * X = B using LU decomposition
+   ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
+   ! This part takes care of the data types, complex and double complex (cgesvx and zgesvx)
+
+     callstatement {int i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);for(i=0;i\<n;--ipiv[i++]);}
+     callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,int*
+
+     character optional,intent(in):: trans = "N"
+     character optional,intent(in):: fact = "E"
+     integer depend(a),intent(hide):: n = shape(a,0)
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     <ftype2c> dimension(n,n),intent(in,out,copy,out=as):: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     <ftype2c> optional,dimension(n,n),intent(in,out,out=lu):: af
+     integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
+     integer optional,dimension(n),depend(n),intent(in,out):: ipiv
+     character optional,intent(in,out):: equed = "B"
+     <ftype2> optional,dimension(n),depend(n),intent(in,out,out=rs):: r
+     <ftype2> optional,dimension(n),depend(n),intent(in,out,out=cs):: c
+     <ftype2c> dimension(n,nrhs),intent(in,out,copy,out=bs):: b
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+     <ftype2c> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
+     integer depend(n),intent(hide):: ldx = n
+     <ftype2> intent(out):: rcond
+     <ftype2> intent(out),dimension(nrhs),depend(nrhs):: ferr
+     <ftype2> intent(out),dimension(nrhs),depend(nrhs):: berr
+     <ftype2c> dimension(4*n),depend(n),intent(hide,cache):: work
+     <ftype2> intent(hide,cache),dimension(n),depend(n) :: rwork
+     integer intent(out):: info
+
+   end subroutine <prefix2c>gesvx
 
    subroutine <prefix>getrf(m,n,a,piv,info)
 
