@@ -24,6 +24,7 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...);
 void sf_error_check_fpe(const char *func_name);
 int sf_error_set_print(int flag);
 int sf_error_get_print(void);
+sf_error_t sf_error_get_errno(void);
 
 #ifdef __cplusplus
 }

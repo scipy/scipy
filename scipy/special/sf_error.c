@@ -1,7 +1,18 @@
+/*
+ * Control error handling for special functions. The code is somewhat
+ * convoluted since it has to support both special and cython_special,
+ * which have different error handling models. In particular, special
+ * invokes the usual Python warnings machinery whereas cython_special
+ * uses a global errno style variable.
+ */
 #include <stdlib.h>
 #include <stdarg.h>
 
 #include <Python.h>
+
+#ifdef HAVE_OPENMP
+#include <omp.h>
+#endif
 
 #include "sf_error.h"
 
@@ -19,24 +30,73 @@ const char *sf_error_messages[] = {
     NULL
 };
 
+extern int wrap_PyUFunc_getfperr(void);
+
+#ifdef CYTHON_SPECIAL
+/*
+ * Global variable for tracking errors in cython_special. It needs to
+ * be shared between the C functions and the C++ functions, so declare
+ * it extern here and put the actual declaration in cython_special. If
+ * we have openmp make it threadsafe for openmp threads. This includes
+ * uses like cython.parallel.
+ */
+extern sf_error_t sf_errno;
+#ifdef HAVE_OPENMP
+#pragma omp threadprivate(sf_errno)
+#endif
+
+#endif
+
+/*
+ * Control whether warnings are printed in special
+ */
 static int print_error_messages = 0;
 
-extern int wrap_PyUFunc_getfperr(void);
 
 int sf_error_set_print(int flag)
 {
+#ifdef CYTHON_SPECIAL
+    /* This is a noop in cython_special */
+    return -1;
+#else
     int old_flag = print_error_messages;
     print_error_messages = flag;
     return old_flag;
+#endif
 }
+
 
 int sf_error_get_print()
 {
+#ifdef CYTHON_SPECIAL
+    /* This is a noop in cython_special */
+    return -1;
+#else
     return print_error_messages;
+#endif
 }
+
+
+sf_error_t sf_error_get_errno() {
+#ifdef CYTHON_SPECIAL
+    sf_error_t old_errno = sf_errno;
+    sf_errno = SF_ERROR_OK;
+    return old_errno;
+#else
+    /* This is a noop in special; return an invalid value */
+    return SF_ERROR__LAST;
+#endif
+}
+
 
 void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
 {
+#ifdef CYTHON_SPECIAL
+    if (code < 0 || code >= 10) {
+	code = SF_ERROR_OTHER;
+    }
+    sf_errno = code;
+#else
     char msg[2048], info[1024];
     static PyObject *py_SpecialFunctionWarning = NULL;
     va_list ap;
@@ -91,23 +151,12 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
         }
 
         if (py_SpecialFunctionWarning != NULL) {
-            int res = PyErr_WarnEx(py_SpecialFunctionWarning, msg, 1);
+            PyErr_WarnEx(py_SpecialFunctionWarning, msg, 1);
             /*
              * For ufuncs the return value is ignored! We rely on the
              * fact that the Ufunc loop will call PyErr_Occurred()
              * later on.
              */
-#ifdef CYTHON_SPECIAL
-	    /*
-	     * For cython_special if an exception occurs while
-	     * processing the warning we ignore it. This is done
-	     * because the functions calling sf_error don't have a way
-	     * to clean up if sf_error fails.
-	     */
-	    if (res == -1) {
-		PyErr_Clear();
-	    }
-#endif
         }
 
     skip_warn:
@@ -115,7 +164,9 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
         PyGILState_Release(save);
 #endif
     }
+#endif /* CYTHON_SPECIAL */
 }
+
 
 #define UFUNC_FPE_DIVIDEBYZERO  1
 #define UFUNC_FPE_OVERFLOW      2

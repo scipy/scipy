@@ -23,7 +23,7 @@ import sys
 import subprocess
 import textwrap
 import warnings
-
+import tempfile
 
 if sys.version_info[:2] < (2, 6) or (3, 0) <= sys.version_info[0:2] < (3, 2):
     raise RuntimeError("Python version 2.6, 2.7 or >= 3.2 required.")
@@ -192,6 +192,83 @@ class sdist_checked(sdist):
     def run(self):
         check_submodules()
         sdist.run(self)
+
+
+CAN_USE_OPENMP = [
+    'scipy.special.cython_special',
+    'scipy.special._cython_special_cxx',
+    'scipy.special._test_sf_error'
+]
+
+def add_openmp_flags(build):
+    """Add OpenMP flags to the build_ext command."""
+    cflags, ldflags = get_openmp_flags(build.compiler)
+    if cflags is None and ldflags is None:
+        have_openmp = False
+    else:
+        have_openmp = True
+    fn = os.path.join("scipy", "special", "_have_openmp.py")
+    with open(fn, 'w') as f:
+        f.write("have_openmp = {}\n".format(have_openmp))
+
+    for extension in build.extensions:
+        if extension.name in CAN_USE_OPENMP:
+            if have_openmp:
+                if extension.extra_compile_args:
+                    extension.extra_compile_args.extend(cflags)
+                else:
+                    extension.extra_compile_args = cflags
+                if extension.extra_link_args:
+                    extension.extra_link_args.extend(ldflags)
+                else:
+                    extension.extra_link_args = ldflags
+                if extension.define_macros:
+                    extension.define_macros.append(('HAVE_OPENMP', 1))
+                else:
+                    extension.define_macros = [('HAVE_OPENMP', 1)]
+
+
+OPENMP_TEST_FILE = """"\
+#include "omp.h"
+
+int main(void)
+{
+  omp_get_thread_num();
+  return 0;
+}
+"""
+
+from distutils.ccompiler import CompileError
+def get_openmp_flags(compiler):
+    if compiler.compiler_type == 'cygwin':
+        cflags = ['-fopenmp']
+        ldflags = ['-fopenmp']
+    elif "intel" in compiler.compiler_type:
+        cflags = ['-openmp']
+        ldflags = ['-openmp']
+    elif compiler.compiler_type == 'ming32':
+        cflags = ['-fopenmp']
+        ldflags = ['-fopenmp']
+    elif compiler.compiler_type == 'msvc':
+        cflags = ['/openmp']
+        ldflags = ['/openmp']
+    elif compiler.compiler_type == 'unix':
+        cflags = ['-fopenmp']
+        ldflags = ['-fopenmp']
+    else:
+        cflags = None
+        ldflags = None
+
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.c') as f:
+        f.write(OPENMP_TEST_FILE)
+        try:
+            print(f.name)
+            compiler.compile([f.name], extra_preargs=cflags)
+        except CompileError:
+            cflags = None
+            ldflags = None
+
+    return cflags, ldflags
 
 
 def generate_cython():
@@ -393,11 +470,19 @@ def setup_package():
 
     if run_build:
         from numpy.distutils.core import setup
+        from numpy.distutils.command.build_ext import build_ext
+        
+        class scipy_build_ext(build_ext):
+            def build_extensions(self):
+                add_openmp_flags(self)
+                build_ext.build_extensions(self)
+
         cwd = os.path.abspath(os.path.dirname(__file__))
         if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
             # Generate Cython sources, unless building from source release
             generate_cython()
 
+        metadata['cmdclass']['build_ext'] = scipy_build_ext
         metadata['configuration'] = configuration
     else:
         # Don't import numpy here - non-build actions are required to succeed
