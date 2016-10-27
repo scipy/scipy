@@ -19,7 +19,7 @@ cdef linkage_distance_update *linkage_methods = [
     _single, _complete, _average, _centroid, _median, _ward, _weighted]
 
 
-cdef inline int condensed_index(int n, int i, int j):
+cdef inline np.int64_t condensed_index(np.int64_t n, np.int64_t i, np.int64_t j):
     """
     Calculate the condensed index of element (i, j) in an n x n condensed
     matrix.
@@ -694,7 +694,8 @@ def linkage(double[:] dists, np.npy_int64 n, int method):
     Z_arr = np.empty((n - 1, 4))
     cdef double[:, :] Z = Z_arr
 
-    cdef int i, j, k, x, y, i_start, nx, ny, ni, id_x, id_y, id_i
+    cdef int i, j, k, x, y, nx, ny, ni, id_x, id_y, id_i
+    cdef np.int64_t i_start 
     cdef double current_min
     # inter-cluster dists
     cdef double[:] D = np.ndarray(n * (n - 1) / 2, dtype=np.double)
