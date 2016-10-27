@@ -97,17 +97,6 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
              * fact that the Ufunc loop will call PyErr_Occurred()
              * later on.
              */
-#ifdef CYTHON_SPECIAL
-	    /*
-	     * For cython_special if an exception occurs while
-	     * processing the warning we ignore it. This is done
-	     * because the functions calling sf_error don't have a way
-	     * to clean up if sf_error fails.
-	     */
-	    if (res == -1) {
-		PyErr_Clear();
-	    }
-#endif
         }
 
     skip_warn:
