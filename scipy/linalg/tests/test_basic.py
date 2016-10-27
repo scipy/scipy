@@ -608,20 +608,33 @@ class TestSolveX(TestCase):
         a = np.array([[1.80, 2.88, 2.05, -0.89],
                       [525.00, -295.00, -95.00, -380.00],
                       [1.58, -2.69, -2.90, -1.04],
-                      [-1.11, -0.66, -0.59, -0.80]])
+                      [-1.11, -0.66, -0.59, 0.80]])
 
-        b = np.array([[9.52, 18.47], [2435.00, 225.00],
-                      [0.77, -13.28], [-6.22, -6.21]])
+        b = np.array([[9.52, 18.47],
+                      [2435.00, 225.00],
+                      [0.77, -13.28],
+                      [-6.22, -6.21]])
 
-        test_out_args = solve_x(a, b)
-        for x in test_out_args:
-            try:
-                if x.shape == (4, 2):
-                    assert_array_almost_equal(x, np.array([[1., -1, 3, -5],
-                                                           [3, 2, 4, 1]]).T)
-            except:
-                pass
-            print(x)
+        a_s, lu, piv, e, rs, cs, b_s, x, rcond, fer, ber, info = solve_x(a, b)
+        assert_array_almost_equal(x, np.array([[1., -1, 3, -5],
+                                               [3, 2, 4, 1]]).T)
+
+    def test_simple_complex(self):
+        a = np.array([[-1.34+2.55j, 0.28+3.17j, -6.39-2.20j, 0.72-0.92j],
+                      [-1.70-14.10j, 33.10-1.50j, -1.50+13.40j, 12.90+13.80j],
+                      [-3.29-2.39j, -1.91+4.42j, -0.14-1.35j, 1.72+1.35j],
+                      [2.41+0.39j, -0.56+1.47j, -0.83-0.69j, -1.96+0.67j]])
+
+        b = np.array([[26.26+51.78j, 31.32-6.70j],
+                      [64.30-86.80j, 158.60-14.20j],
+                      [-5.75+25.31j, -2.15+30.19j],
+                      [1.16+2.57j, -2.56+7.55j]])
+
+        a_s, lu, piv, e, rs, cs, b_s, x, rcond, fer, ber, info = solve_x(a, b)
+        assert_array_almost_equal(x, np. array([[1+1.j, -1-2.j],
+                                                [2-3.j, 5+1.j],
+                                                [-4-5.j, -3+4.j],
+                                                [6.j, 2-3.j]]))
 
 
 class TestSolveTriangular(TestCase):
