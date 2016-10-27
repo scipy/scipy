@@ -33,5 +33,4 @@ Library:
         spatial,
         special,
         stats,
-        ndimage,
-        weave
+        ndimage

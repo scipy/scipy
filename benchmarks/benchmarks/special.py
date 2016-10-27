@@ -3,7 +3,7 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 try:
-    from scipy.special import ai_zeros, bi_zeros, erf
+    from scipy.special import ai_zeros, bi_zeros, erf, expn
 except ImportError:
     pass
 
@@ -64,3 +64,14 @@ class Loggamma(Benchmark):
 
     def time_loggamma_asymptotic(self):
         loggamma(self.large_z)
+
+
+class Expn(Benchmark):
+
+    def setup(self):
+        n, x = np.arange(50, 500), np.logspace(0, 20, 100)
+        n, x = np.meshgrid(n, x)
+        self.n, self.x = n, x
+
+    def time_expn_large_n(self):
+        expn(self.n, self.x)

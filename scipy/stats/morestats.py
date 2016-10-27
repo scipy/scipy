@@ -20,7 +20,7 @@ from scipy import optimize
 from scipy import special
 from . import statlib
 from . import stats
-from .stats import find_repeats
+from .stats import find_repeats, _contains_nan
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -249,8 +249,8 @@ def kstat(data, n=2):
         k_{3} = \frac{ n^{2} } {(n-1) (n-2)} m_{3}
         k_{4} = \frac{ n^{2} [(n + 1)m_{4} - 3(n - 1) m^2_{2}]} {(n-1) (n-2) (n-3)}
 
-    where ``:math:\mu`` is the sample mean, ``:math:m_2`` is the sample
-    variance, and ``:math:m_i`` is the i-th sample central moment.
+    where :math:`\mu` is the sample mean, :math:`m_2` is the sample
+    variance, and :math:`m_i` is the i-th sample central moment.
 
     References
     ----------
@@ -1368,9 +1368,10 @@ def anderson(x, dist='norm'):
     ----------
     x : array_like
         array of sample data
-    dist : {'norm','expon','logistic','gumbel','extreme1'}, optional
+    dist : {'norm','expon','logistic','gumbel','gumbel_l', gumbel_r',
+        'extreme1'}, optional
         the type of distribution to test against.  The default is 'norm'
-        and 'extreme1' is a synonym for 'gumbel'
+        and 'extreme1', 'gumbel_l' and 'gumbel' are synonyms.
 
     Returns
     -------
@@ -1418,7 +1419,8 @@ def anderson(x, dist='norm'):
            pp. 591-595.
 
     """
-    if dist not in ['norm', 'expon', 'gumbel', 'extreme1', 'logistic']:
+    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
+                    'gumbel_r', 'extreme1', 'logistic']:
         raise ValueError("Invalid distribution; dist must be 'norm', "
                          "'expon', 'gumbel', 'extreme1' or 'logistic'.")
     y = sort(x)
@@ -1427,12 +1429,14 @@ def anderson(x, dist='norm'):
     if dist == 'norm':
         s = np.std(x, ddof=1, axis=0)
         w = (y - xbar) / s
-        z = distributions.norm.cdf(w)
+        logcdf = distributions.norm.logcdf(w)
+        logsf = distributions.norm.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_norm / (1.0 + 4.0/N - 25.0/N/N), 3)
     elif dist == 'expon':
         w = y / xbar
-        z = distributions.expon.cdf(w)
+        logcdf = distributions.expon.logcdf(w)
+        logsf = distributions.expon.logsf(w)
         sig = array([15, 10, 5, 2.5, 1])
         critical = around(_Avals_expon / (1.0 + 0.6/N), 3)
     elif dist == 'logistic':
@@ -1447,18 +1451,27 @@ def anderson(x, dist='norm'):
         sol0 = array([xbar, np.std(x, ddof=1, axis=0)])
         sol = optimize.fsolve(rootfunc, sol0, args=(x, N), xtol=1e-5)
         w = (y - sol[0]) / sol[1]
-        z = distributions.logistic.cdf(w)
+        logcdf = distributions.logistic.logcdf(w)
+        logsf = distributions.logistic.logsf(w)
         sig = array([25, 10, 5, 2.5, 1, 0.5])
         critical = around(_Avals_logistic / (1.0 + 0.25/N), 3)
-    else:  # (dist == 'gumbel') or (dist == 'extreme1'):
+    elif dist == 'gumbel_r':
+        xbar, s = distributions.gumbel_r.fit(x)
+        w = (y - xbar) / s
+        logcdf = distributions.gumbel_r.logcdf(w)
+        logsf = distributions.gumbel_r.logsf(w)
+        sig = array([25, 10, 5, 2.5, 1])
+        critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+    else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
-        z = distributions.gumbel_l.cdf(w)
+        logcdf = distributions.gumbel_l.logcdf(w)
+        logsf = distributions.gumbel_l.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
 
     i = arange(1, N + 1)
-    A2 = -N - np.sum((2*i - 1.0) / N * (log(z) + log(1 - z[::-1])), axis=0)
+    A2 = -N - np.sum((2*i - 1.0) / N * (logcdf + logsf[::-1]), axis=0)
 
     return AndersonResult(A2, critical, sig)
 
@@ -2458,6 +2471,10 @@ def median_test(*args, **kwds):
         Cressie-Read power divergence family to be used instead.  See
         `power_divergence` for details.
         Default is 1 (Pearson's chi-squared statistic).
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -2475,7 +2492,8 @@ def median_test(*args, **kwds):
         of the values below the grand median.  The table allows further
         analysis with, for example, `scipy.stats.chi2_contingency`, or with
         `scipy.stats.fisher_exact` if there are two samples, without having
-        to recompute the table.
+        to recompute the table.  If ``nan_policy`` is "propagate" and there
+        are nans in the input, the return value for ``table`` is ``None``.
 
     See Also
     --------
@@ -2554,6 +2572,7 @@ def median_test(*args, **kwds):
     ties = kwds.pop('ties', 'below')
     correction = kwds.pop('correction', True)
     lambda_ = kwds.pop('lambda_', None)
+    nan_policy = kwds.pop('nan_policy', 'propagate')
 
     if len(kwds) > 0:
         bad_kwd = kwds.keys()[0]
@@ -2580,11 +2599,24 @@ def median_test(*args, **kwds):
                              "samples must be one-dimensional sequences." %
                              (k + 1, d.ndim))
 
-    grand_median = np.median(np.concatenate(data))
+    cdata = np.concatenate(data)
+    contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
+    if contains_nan and nan_policy == 'propagate':
+        return np.nan, np.nan, np.nan, None
+
+    if contains_nan:
+        grand_median = np.median(cdata[~np.isnan(cdata)])
+    else:
+        grand_median = np.median(cdata)
+    # When the minimum version of numpy supported by scipy is 1.9.0,
+    # the above if/else statement can be replaced by the single line:
+    #     grand_median = np.nanmedian(cdata)
 
     # Create the contingency table.
     table = np.zeros((2, len(data)), dtype=np.int64)
     for k, sample in enumerate(data):
+        sample = sample[~np.isnan(sample)]
+
         nabove = count_nonzero(sample > grand_median)
         nbelow = count_nonzero(sample < grand_median)
         nequal = sample.size - (nabove + nbelow)
@@ -2699,11 +2731,14 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).sum(axis=axis)
     C = cos(ang).sum(axis=axis)
-    res = arctan2(S, C)*(high - low)/2.0/pi + low
-    mask = (S == .0) * (C == .0)
+    res = arctan2(S, C)
+    mask = res < 0
     if mask.ndim > 0:
-        res[mask] = np.nan
-    return res
+        res[mask] += 2*pi
+    elif mask:
+        res += 2*pi
+    return res*(high - low)/2.0/pi + low
+
 
 def circvar(samples, high=2*pi, low=0, axis=None):
     """

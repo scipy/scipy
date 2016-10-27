@@ -91,6 +91,7 @@ extern double i1 ( double x );
 extern double i1e ( double x );
 extern double igamc ( double a, double x );
 extern double igam ( double a, double x );
+extern double igam_fac( double a, double x );
 extern double igami ( double a, double y0 );
 
 extern double incbet ( double aa, double bb, double xx ); 
@@ -185,9 +186,11 @@ extern double cotdg ( double x );
 /*
 extern double tanh ( double x );
 */
-extern double log1p ( double x ); 
+extern double log1p ( double x );
+extern double log1pmx( double x );
 extern double expm1 ( double x ); 
 extern double cosm1 ( double x ); 
+extern double lgam1p ( double x );
 
 extern double yn ( int n, double x );
 extern double zeta ( double x, double q );
@@ -198,6 +201,8 @@ extern double smirnovi (int n, double p );
 extern double kolmogorov ( double x );
 extern double kolmogi ( double p );
 
+extern double lanczos_sum_expg_scaled( double x );
+  
 #ifdef __cplusplus
 }
 #endif

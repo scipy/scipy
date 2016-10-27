@@ -214,6 +214,11 @@ def hilbert(x, _cache=_cache):
     y : ndarray
         The transformed input.
 
+    See Also
+    --------
+    scipy.signal.hilbert : Compute the analytic signal, using the Hilbert
+                           transform.
+
     Notes
     -----
     If ``sum(x, axis=0) == 0`` then ``hilbert(ihilbert(x)) == x``.
@@ -222,7 +227,7 @@ def hilbert(x, _cache=_cache):
 
     The sign of the returned transform does not have a factor -1 that is more
     often than not found in the definition of the Hilbert transform.  Note also
-    that ``scipy.signal.hilbert`` does have an extra -1 factor compared to this
+    that `scipy.signal.hilbert` does have an extra -1 factor compared to this
     function.
 
     """

@@ -26,10 +26,10 @@
 extern double cephes_struve(double, double);
 
 extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
-extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
+extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*,int*);
 extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
-extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
+extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*,int*);
 extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
 extern void F_FUNC(e1xb,E1XB)(double*,double*);
 extern void F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
@@ -79,7 +79,7 @@ npy_cdouble clngamma_wrap( npy_cdouble z) {
 
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   npy_cdouble outz;
-  int l1, l0;
+  int l1, l0, isfer = 0;
  
  
   l0 = ((c == floor(c)) && (c < 0));
@@ -90,7 +90,18 @@ npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
     IMAG(outz) = 0.0;
     return outz;
   }
-  F_FUNC(hygfz, HYGFZ)(&a, &b, &c, &z, &outz);
+  F_FUNC(hygfz, HYGFZ)(&a, &b, &c, &z, &outz, &isfer);
+  if (isfer == 3) {
+    sf_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
+    REAL(outz) = NPY_INFINITY;
+    IMAG(outz) = 0.0;
+  } else if (isfer == 5) {
+    sf_error("chyp2f1", SF_ERROR_LOSS, NULL);
+  } else if (isfer != 0) {
+    sf_error("chyp2f1", isfer, NULL);
+    REAL(outz) = NPY_NAN;
+    IMAG(outz) = NPY_NAN;
+  }
   return outz;
 }
 
@@ -109,14 +120,21 @@ npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) {
 double hypU_wrap(double a, double b, double x) {
   double out;
   int md; /* method code --- not returned */
+  int isfer = 0;
 
-  F_FUNC(chgu,CHGU)(&a, &b, &x, &out, &md);
+  F_FUNC(chgu,CHGU)(&a, &b, &x, &out, &md, &isfer);
   if (out == 1e300) {
       sf_error("hypU", SF_ERROR_OVERFLOW, NULL);
       out = NPY_INFINITY;
   }
+  if (isfer == 6) {
+    sf_error("hypU", SF_ERROR_NO_RESULT, NULL);
+    out = NPY_NAN;
+  } else if (isfer != 0) {
+    sf_error("hypU", isfer, NULL);
+    out = NPY_NAN;
+  }
   return out;
-  
 }
 
 double hyp1f1_wrap(double a, double b, double x) {

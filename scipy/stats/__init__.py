@@ -72,6 +72,8 @@ Continuous distributions
    invweibull        -- Inverse Weibull
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
+   kappa4            -- Kappa 4 parameter
+   kappa3            -- Kappa 3 parameter
    ksone             -- Kolmogorov-Smirnov one-sided (no stats)
    kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
    laplace           -- Laplace
@@ -127,6 +129,7 @@ Multivariate distributions
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
+   multinomial           -- Multinomial distribution
    special_ortho_group   -- SO(N) group
    ortho_group           -- O(N) group
    random_correlation    -- random correlation matrices

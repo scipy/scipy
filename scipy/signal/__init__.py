@@ -9,12 +9,13 @@ Convolution
 .. autosummary::
    :toctree: generated/
 
-   convolve    -- N-dimensional convolution.
-   correlate   -- N-dimensional correlation.
-   fftconvolve -- N-dimensional convolution using the FFT.
-   convolve2d  -- 2-dimensional convolution (more options).
-   correlate2d -- 2-dimensional correlation (more options).
-   sepfir2d    -- Convolve with a 2-D separable FIR filter.
+   convolve           -- N-dimensional convolution.
+   correlate          -- N-dimensional correlation.
+   fftconvolve        -- N-dimensional convolution using the FFT.
+   convolve2d         -- 2-dimensional convolution (more options).
+   correlate2d        -- 2-dimensional correlation (more options).
+   sepfir2d           -- Convolve with a 2-D separable FIR filter.
+   choose_conv_method -- Chooses faster of FFT and direct convolution methods.
 
 B-splines
 =========
@@ -57,9 +58,10 @@ Filtering
    deconvolve    -- 1-d deconvolution using lfilter.
 
    sosfilt       -- 1-dimensional IIR digital linear filtering using
-                 -- a second-order-sections filter representation.
+                 -- a second-order sections filter representation.
    sosfilt_zi    -- Compute an initial state zi for the sosfilt function that
                  -- corresponds to the steady state of the step response.
+   sosfiltfilt   -- A forward-backward filter for second-order sections.
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
 
@@ -85,6 +87,7 @@ Filter design
                     -- response.
    freqs         -- Analog filter frequency response.
    freqz         -- Digital filter frequency response.
+   sosfreqz      -- Digital filter frequency response for SOS format filter.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
@@ -142,6 +145,8 @@ Matlab-style IIR filter design
    ellip -- Elliptic (Cauer)
    ellipord
    bessel -- Bessel (no order selection available -- try butterod)
+   iirnotch      -- Design second-order IIR notch digital filter.
+   iirpeak       -- Design second-order IIR peak (resonant) digital filter.
 
 Continuous-Time Linear Systems
 ==============================
@@ -192,23 +197,24 @@ LTI Representations
    zpk2ss        -- zero-pole-gain to state-space.
    ss2tf         -- state-pace to transfer function.
    ss2zpk        -- state-space to pole-zero-gain.
-   sos2zpk       -- second-order-sections to zero-pole-gain.
-   sos2tf        -- second-order-sections to transfer function.
+   sos2zpk       -- second-order sections to zero-pole-gain.
+   sos2tf        -- second-order sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
    place_poles   -- pole placement.
-   
+
 Waveforms
 =========
 
 .. autosummary::
    :toctree: generated/
 
-   chirp       -- Frequency swept cosine signal, with several freq functions.
-   gausspulse  -- Gaussian modulated sinusoid
-   max_len_seq -- Maximum length sequence
-   sawtooth    -- Periodic sawtooth
-   square      -- Square wave
-   sweep_poly  -- Frequency swept cosine signal; freq is arbitrary polynomial
+   chirp        -- Frequency swept cosine signal, with several freq functions.
+   gausspulse   -- Gaussian modulated sinusoid
+   max_len_seq  -- Maximum length sequence
+   sawtooth     -- Periodic sawtooth
+   square       -- Square wave
+   sweep_poly   -- Frequency swept cosine signal; freq is arbitrary polynomial
+   unit_impulse -- Discrete unit impulse
 
 Window functions
 ================

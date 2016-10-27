@@ -72,6 +72,58 @@ add_newdoc("scipy.special", "_lambertw",
     Internal function, use `lambertw` instead.
     """)
 
+add_newdoc("scipy.special", "wrightomega",
+    r"""
+    wrightomega(z, out=None)
+
+    Wright Omega function.
+
+    Defined as the solution to
+
+    .. math::
+
+        \omega + \log(\omega) = z
+
+    where :math:`\log` is the principal branch of the complex logarithm.
+
+    Parameters
+    ----------
+    z : array_like
+        Points at which to evaluate the Wright Omega function
+
+    Returns
+    -------
+    omega : ndarray
+        Values of the Wright Omega function
+
+    Notes
+    -----
+    .. versionadded:: 0.19.0
+
+    The function can also be defined as
+
+    .. math::
+
+        \omega(z) = W_{K(z)}(e^z)
+
+    where :math:`K(z) = \lceil (\Im(z) - \pi)/(2\pi) \rceil` is the
+    unwinding number and :math:`W` is the Lambert W function.
+
+    The implementation here is taken from [1]_.
+
+    See Also
+    --------
+    lambertw : The Lambert W function
+
+    References
+    ----------
+    .. [1] Lawrence, Corless, and Jeffrey, "Algorithm 917: Complex
+           Double-Precision Evaluation of the Wright :math:`\omega`
+           Function." ACM Transactions on Mathematical Software,
+           2012. :doi:`10.1145/2168773.2168779`.
+
+    """)
+
 add_newdoc("scipy.special", "airy",
     r"""
     airy(z)
@@ -404,6 +456,11 @@ add_newdoc("scipy.special", "binom",
     binom(n, k)
 
     Binomial coefficient
+
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
+    
     """)
 
 add_newdoc("scipy.special", "btdtria",
@@ -892,7 +949,7 @@ add_newdoc("scipy.special", "chdtri",
 
 add_newdoc("scipy.special", "chdtriv",
     """
-    chdtri(p, x)
+    chdtriv(p, x)
 
     Inverse to `chdtr` vs `v`
 
@@ -1387,111 +1444,584 @@ add_newdoc("scipy.special", "erfcx",
     """)
 
 add_newdoc("scipy.special", "eval_jacobi",
-    """
+    r"""
     eval_jacobi(n, alpha, beta, x, out=None)
 
     Evaluate Jacobi polynomial at a point.
+
+    The Jacobi polynomials can be defined via the Gauss hypergeometric
+    function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n^{(\alpha, \beta)}(x) = \frac{(\alpha + 1)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 1 + \alpha + \beta + n; \alpha + 1; (1 - z)/2)
+
+    where :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    alpha : array_like
+        Parameter
+    beta : array_like
+        Parameter
+    x : array_like
+        Points at which to evaluate the polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the Jacobi polynomial
+
+    See Also
+    --------
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
+    jacobi : Jacobi polynomial object
+    hyp2f1 : Gauss hypergeometric function
     """)
 
 add_newdoc("scipy.special", "eval_sh_jacobi",
-    """
+    r"""
     eval_sh_jacobi(n, p, q, x, out=None)
 
     Evaluate shifted Jacobi polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        G_n^{(p, q)}(x)
+          = \binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),
+
+    where :math:`P_n^{(\cdot, \cdot)}` is the n-th Jacobi polynomial.
+
+    Parameters
+    ----------
+    n : int
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `binom` and `eval_jacobi`.
+    p : float
+        Parameter
+    q : float
+        Parameter
+
+    Returns
+    -------
+    G : ndarray
+        Values of the shifted Jacobi polynomial.
+
+    See Also
+    --------
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
+    sh_jacobi : shifted Jacobi polynomial object
+    eval_jacobi : evaluate Jacobi polynomials
     """)
 
 add_newdoc("scipy.special", "eval_gegenbauer",
-    """
+    r"""
     eval_gegenbauer(n, alpha, x, out=None)
 
     Evaluate Gegenbauer polynomial at a point.
+
+    The Gegenbauer polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        C_n^{(\alpha)} = \frac{(2\alpha)_n}{\Gamma(n + 1)}
+          {}_2F_1(-n, 2\alpha + n; \alpha + 1/2; (1 - z)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    alpha : array_like
+        Parameter
+    x : array_like
+        Points at which to evaluate the Gegenbauer polynomial
+
+    Returns
+    -------
+    C : ndarray
+        Values of the Gegenbauer polynomial
+
+    See Also
+    --------
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
+    gegenbauer : Gegenbauer polynomial object
+    hyp2f1 : Gauss hypergeometric function
     """)
 
 add_newdoc("scipy.special", "eval_chebyt",
-    """
+    r"""
     eval_chebyt(n, x, out=None)
 
-    Evaluate Chebyshev T polynomial at a point.
+    Evaluate Chebyshev polynomial of the first kind at a point.
 
+    The Chebyshev polynomials of the first kind can be defined via the
+    Gauss hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    T : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyt : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind
+    chebyu : Chebychev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
+    hyp2f1 : Gauss hypergeometric function
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+
+    Notes
+    -----
     This routine is numerically stable for `x` in ``[-1, 1]`` at least
     up to order ``10000``.
     """)
 
 add_newdoc("scipy.special", "eval_chebyu",
-    """
+    r"""
     eval_chebyu(n, x, out=None)
 
-    Evaluate Chebyshev U polynomial at a point.
+    Evaluate Chebyshev polynomial of the second kind at a point.
+
+    The Chebyshev polynomials of the second kind can be defined via
+    the Gauss hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    U : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyu : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind
+    chebyu : Chebyshev polynomial object
+    eval_chebyt : evaluate Chebyshev polynomials of the first kind
+    hyp2f1 : Gauss hypergeometric function
     """)
 
 add_newdoc("scipy.special", "eval_chebys",
-    """
+    r"""
     eval_chebys(n, x, out=None)
 
-    Evaluate Chebyshev S polynomial at a point.
+    Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        S_n(x) = U_n(x/2)
+
+    where :math:`U_n` is a Chebyshev polynomial of the second kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyu`.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    S : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebys : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind on [-2, 2]
+    chebys : Chebyshev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
 add_newdoc("scipy.special", "eval_chebyc",
-    """
+    r"""
     eval_chebyc(n, x, out=None)
 
-    Evaluate Chebyshev C polynomial at a point.
+    Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        S_n(x) = T_n(x/2)
+
+    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyt`.
+    x : array_like
+        Points at which to evaluate the Chebyshev polynomial
+
+    Returns
+    -------
+    C : ndarray
+        Values of the Chebyshev polynomial
+
+    See Also
+    --------
+    roots_chebyc : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind on [-2, 2]
+    chebyc : Chebyshev polynomial object
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
+    eval_chebyt : evaluate Chebycshev polynomials of the first kind
     """)
 
 add_newdoc("scipy.special", "eval_sh_chebyt",
-    """
+    r"""
     eval_sh_chebyt(n, x, out=None)
 
-    Evaluate shifted Chebyshev T polynomial at a point.
+    Evaluate shifted Chebyshev polynomial of the first kind at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        T_n^*(x) = T_n(2x - 1)
+
+    where :math:`T_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyt`.
+    x : array_like
+        Points at which to evaluate the shifted Chebyshev polynomial
+
+    Returns
+    -------
+    T : ndarray
+        Values of the shifted Chebyshev polynomial
+
+    See Also
+    --------
+    roots_sh_chebyt : roots and quadrature weights of shifted
+                      Chebyshev polynomials of the first kind
+    sh_chebyt : shifted Chebyshev polynomial object
+    eval_chebyt : evalaute Chebyshev polynomials of the first kind
+    numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     """)
 
 add_newdoc("scipy.special", "eval_sh_chebyu",
-    """
+    r"""
     eval_sh_chebyu(n, x, out=None)
 
-    Evaluate shifted Chebyshev U polynomial at a point.
+    Evaluate shifted Chebyshev polynomial of the second kind at a
+    point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        U_n^*(x) = U_n(2x - 1)
+
+    where :math:`U_n` is a Chebyshev polynomial of the first kind.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to `eval_chebyu`.
+    x : array_like
+        Points at which to evaluate the shifted Chebyshev polynomial
+
+    Returns
+    -------
+    U : ndarray
+        Values of the shifted Chebyshev polynomial
+
+    See Also
+    --------
+    roots_sh_chebyu : roots and quadrature weights of shifted
+                      Chebychev polynomials of the second kind
+    sh_chebyu : shifted Chebyshev polynomial object
+    eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
 
 add_newdoc("scipy.special", "eval_legendre",
-    """
+    r"""
     eval_legendre(n, x, out=None)
 
     Evaluate Legendre polynomial at a point.
+
+    The Legendre polynomials can be defined via the Gauss
+    hypergeometric function :math:`{}_2F_1` as
+
+    .. math::
+
+        P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the result is
+        determined via the relation to the Gauss hypergeometric
+        function.
+    x : array_like
+        Points at which to evaluate the Legendre polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the Legendre polynomial
+
+    See Also
+    --------
+    roots_legendre : roots and quadrature weights of Legendre
+                     polynomials
+    legendre : Legendre polynomial object
+    hyp2f1 : Gauss hypergeometric function
+    numpy.polynomial.legendre.Legendre : Legendre series
     """)
 
 add_newdoc("scipy.special", "eval_sh_legendre",
-    """
+    r"""
     eval_sh_legendre(n, x, out=None)
 
     Evaluate shifted Legendre polynomial at a point.
+
+    These polynomials are defined as
+
+    .. math::
+
+        P_n^*(x) = P_n(2x - 1)
+
+    where :math:`P_n` is a Legendre polynomial.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer, the value is
+        determined via the relation to `eval_legendre`.
+    x : array_like
+        Points at which to evaluate the shifted Legendre polynomial
+
+    Returns
+    -------
+    P : ndarray
+        Values of the shifted Legendre polynomial
+
+    See Also
+    --------
+    roots_sh_legendre : roots and quadrature weights of shifted
+                        Legendre polynomials
+    sh_legendre : shifted Legendre polynomial object
+    eval_legendre : evaluate Legendre polynomials
+    numpy.polynomial.legendre.Legendre : Legendre series
     """)
 
 add_newdoc("scipy.special", "eval_genlaguerre",
-    """
+    r"""
     eval_genlaguerre(n, alpha, x, out=None)
 
     Evaluate generalized Laguerre polynomial at a point.
+
+    The generalized Laguerre polynomials can be defined via the
+    confluent hypergeometric function :math:`{}_1F_1` as
+
+    .. math::
+
+        L_n^{(\alpha)}(x) = \binom{n + \alpha}{n}
+          {}_1F_1(-n, \alpha + 1, x).
+
+    When :math:`n` is an integer the result is a polynomial of degree
+    :math:`n`. The Laguerre polynomials are the special case where
+    :math:`\alpha = 0`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial. If not an integer the result is
+        determined via the relation to the confluent hypergeometric
+        function.
+    alpha : array_like
+        Parameter; must have ``alpha > -1``
+    x : array_like
+        Points at which to evaluate the generalized Laguerre
+        polynomial
+
+    Returns
+    -------
+    L : ndarray
+        Values of the generalized Laguerre polynomial
+
+    See Also
+    --------
+    roots_genlaguerre : roots and quadrature weights of generalized
+                        Laguerre polynomials
+    genlaguerre : generalized Laguerre polynomial object
+    hyp1f1 : confluent hypergeometric function
+    eval_laguerre : evaluate Laguerre polynomials
     """)
 
 add_newdoc("scipy.special", "eval_laguerre",
-     """
-    eval_laguerre(n, x, out=None)
+     r"""
+     eval_laguerre(n, x, out=None)
 
-    Evaluate Laguerre polynomial at a point.
-    """)
+     Evaluate Laguerre polynomial at a point.
+
+     The Laguerre polynomials can be defined via the confluent
+     hypergeometric function :math:`{}_1F_1` as
+
+     .. math::
+
+         L_n(x) = {}_1F_1(-n, 1, x).
+
+     When :math:`n` is an integer the result is a polynomial of degree
+     :math:`n`.
+
+     Parameters
+     ----------
+     n : array_like
+         Degree of the polynomial. If not an integer the result is
+         determined via the relation to the confluent hypergeometric
+         function.
+     x : array_like
+         Points at which to evaluate the Laguerre polynomial
+
+     Returns
+     -------
+     L : ndarray
+         Values of the Laguerre polynomial
+
+     See Also
+     --------
+     roots_laguerre : roots and quadrature weights of Laguerre
+                      polynomials
+     laguerre : Laguerre polynomial object
+     numpy.polynomial.laguerre.Laguerre : Laguerre series
+     eval_genlaguerre : evaluate generalized Laguerre polynomials
+     """)
 
 add_newdoc("scipy.special", "eval_hermite",
-    """
+    r"""
     eval_hermite(n, x, out=None)
 
-    Evaluate Hermite polynomial at a point.
+    Evaluate physicist's Hermite polynomial at a point.
+
+    Defined by
+
+    .. math::
+
+        H_n(x) = (-1)^n e^{x^2} \frac{d^n}{dx^n} e^{-x^2};
+
+    :math:`H_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+
+    Returns
+    -------
+    H : ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermite : roots and quadrature weights of physicist's
+                    Hermite polynomials
+    hermite : physicist's Hermite polynomial object
+    numpy.polynomial.hermite.Hermite : Physicist's Hermite series
+    eval_hermitenorm : evaluate Probabilist's Hermite polynomials
     """)
 
 add_newdoc("scipy.special", "eval_hermitenorm",
-    """
+    r"""
     eval_hermitenorm(n, x, out=None)
 
-    Evaluate normalized Hermite polynomial at a point.
+    Evaluate probabilist's (normalized) Hermite polynomial at a
+    point.
+
+    Defined by
+
+    .. math::
+
+        He_n(x) = (-1)^n e^{x^2/2} \frac{d^n}{dx^n} e^{-x^2/2};
+
+    :math:`He_n` is a polynomial of degree :math:`n`.
+
+    Parameters
+    ----------
+    n : array_like
+        Degree of the polynomial
+    x : array_like
+        Points at which to evaluate the Hermite polynomial
+
+    Returns
+    -------
+    He : ndarray
+        Values of the Hermite polynomial
+
+    See Also
+    --------
+    roots_hermitenorm : roots and quadrature weights of probabilist's
+                        Hermite polynomials
+    hermitenorm : probabilist's Hermite polynomial object
+    numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
+    eval_hermite : evaluate physicist's Hermite polynomials
     """)
 
 add_newdoc("scipy.special", "exp1",
@@ -1800,29 +2330,67 @@ add_newdoc("scipy.special", "gamma",
     """)
 
 add_newdoc("scipy.special", "gammainc",
-    """
+    r"""
     gammainc(a, x)
 
-    Incomplete gamma function
+    Regularized lower incomplete gamma function.
 
-    Defined as::
+    Defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        \frac{1}{\Gamma(a)} \int_0^x t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
+    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where
+    `gammaincc` is the regularized upper incomplete gamma function.
+
+    Notes
+    -----
+    The implementation largely follows that of [1]_.
+
+    See also
+    --------
+    gammaincc : regularized upper incomplete gamma function
+    gammaincinv : inverse to ``gammainc`` versus ``x``
+    gammainccinv : inverse to ``gammaincc`` versus ``x``
+        
+    References
+    ----------
+    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammaincc",
-    """
+    r"""
     gammaincc(a, x)
 
-    Complemented incomplete gamma integral
+    Regularized upper incomplete gamma function.
 
-    Defined as::
+    Defined as
 
-        1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a, x)
+    .. math::
 
-    `a` must be positive and `x` must be >= 0.
+        \frac{1}{\Gamma(a)} \int_x^\infty t^{a - 1}e^{-t} dt
+
+    for :math:`a > 0` and :math:`x \geq 0`. The function satisfies the
+    relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where `gammainc`
+    is the regularized lower incomplete gamma function.
+
+    Notes
+    -----
+    The implementation largely follows that of [1]_.
+
+    See also
+    --------
+    gammainc : regularized lower incomplete gamma function
+    gammaincinv : inverse to ``gammainc`` versus ``x``
+    gammainccinv : inverse to ``gammaincc`` versus ``x``
+        
+    References
+    ----------
+    .. [1] Maddock et. al., "Incomplete Gamma Functions",
+       http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html
     """)
 
 add_newdoc("scipy.special", "gammainccinv",
@@ -2621,6 +3189,11 @@ add_newdoc("scipy.special", "i1e",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    """)
+
+add_newdoc("scipy.special", "_igam_fac",
+    """
+    Internal function, do not use.
     """)
 
 add_newdoc("scipy.special", "it2i0k0",
@@ -3551,11 +4124,26 @@ add_newdoc("scipy.special", "kve",
            TOMS Vol. 12 Issue 3, Sept. 1986, p. 265
     """)
 
+add_newdoc("scipy.special", "_lanczos_sum_expg_scaled",
+    """
+    Internal function, do not use.
+    """)
+
+add_newdoc("scipy.special", "_lgam1p",
+    """
+    Internal function, do not use.
+    """)
+
 add_newdoc("scipy.special", "log1p",
     """
     log1p(x)
 
     Calculates log(1+x) for use when `x` is near zero
+    """)
+
+add_newdoc("scipy.special", "_log1pmx",
+    """
+    Internal function, do not use.
     """)
 
 add_newdoc('scipy.special', 'logit',
@@ -4972,33 +5560,109 @@ add_newdoc("scipy.special", "round",
     """)
 
 add_newdoc("scipy.special", "shichi",
-    """
-    shichi(x)
+    r"""
+    shichi(x, out=None)
 
-    Hyperbolic sine and cosine integrals
+    Hyperbolic sine and cosine integrals.
+
+    The hyperbolic sine integral is
+
+    .. math::
+
+      \int_0^x \frac{\sinh{t}}{t}dt
+
+    and the hyperbolic cosine integral is
+
+    .. math::
+
+      \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
+
+    where :math:`\gamma` is Euler's constant and :math:`\log` is the
+    principle branch of the logarithm.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex points at which to compute the hyperbolic sine
+        and cosine integrals.
 
     Returns
     -------
-    shi
-        ``integral(sinh(t)/t, t=0..x)``
-    chi
-        ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``
-        where ``eul`` is Euler's constant.
+    si : ndarray
+        Hyperbolic sine integral at ``x``
+    ci : ndarray
+        Hyperbolic cosine integral at ``x``
+
+    Notes
+    -----
+    For real arguments with ``x < 0``, ``chi`` is the real part of the
+    hyperbolic cosine integral. For such points ``chi(x)`` and ``chi(x
+    + 0j)`` differ by a factor of ``1j*pi``.
+
+    For real arguments the function is computed by calling Cephes'
+    [1]_ *shichi* routine. For complex arguments the algorithm is based
+    on Mpmath's [2]_ *shi* and *chi* routines.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
     """)
 
 add_newdoc("scipy.special", "sici",
-    """
-    sici(x)
+    r"""
+    sici(x, out=None)
 
-    Sine and cosine integrals
+    Sine and cosine integrals.
+
+    The sine integral is
+
+    .. math::
+    
+      \int_0^x \frac{\sin{t}}{t}dt
+
+    and the cosine integral is
+
+    .. math::
+
+      \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
+
+    where :math:`\gamma` is Euler's constant and :math:`\log` is the
+    principle branch of the logarithm.
+
+    Parameters
+    ----------
+    x : array_like
+        Real or complex points at which to compute the sine and cosine
+        integrals.
 
     Returns
     -------
-    si
-        ``integral(sin(t)/t, t=0..x)``
-    ci
-        ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``
-        where ``eul`` is Euler's constant.
+    si : ndarray
+        Sine integral at ``x``
+    ci : ndarray
+        Cosine integral at ``x``
+
+    Notes
+    -----
+    For real arguments with ``x < 0``, ``ci`` is the real part of the
+    cosine integral. For such points ``ci(x)`` and ``ci(x + 0j)``
+    differ by a factor of ``1j*pi``.
+
+    For real arguments the function is computed by calling Cephes'
+    [1]_ *sici* routine. For complex arguments the algorithm is based
+    on Mpmath's [2]_ *si* and *ci* routines.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
     """)
 
 add_newdoc("scipy.special", "sindg",
@@ -5556,17 +6220,32 @@ add_newdoc("scipy.special", "loggamma",
     r"""
     loggamma(z, out=None)
 
-    Principal branch of the logarithm of the Gamma function. It is
-    defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
-    extended to the complex plane by analytic continuation. The
-    implementation here is based on [hare1997]_.
+    Principal branch of the logarithm of the Gamma function.
 
-    The function has a single branch cut on the negative real axis and
-    is taken to be continuous when approaching the axis from
-    above. Note that it is not generally true that
-    :math:`\log\Gamma(z) = \log(\Gamma(z))`, though the real parts of
-    the functions do agree. The benefit of not defining ``loggamma``
-    as :math:`\log(\Gamma(z))` is that the latter function has a
+    Defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
+    extended to the complex plane by analytic continuation. The
+    function has a single branch cut on the negative real axis.
+
+    .. versionadded:: 0.18.0
+
+    Parameters
+    ----------
+    z : array-like
+        Values in the complex plain at which to compute ``loggamma``
+    out : ndarray, optional
+        Output array for computed values of ``loggamma``
+
+    Returns
+    -------
+    loggamma : ndarray
+        Values of ``loggamma`` at z.
+
+    Notes
+    -----
+    It is not generally true that :math:`\log\Gamma(z) =
+    \log(\Gamma(z))`, though the real parts of the functions do
+    agree. The benefit of not defining ``loggamma`` as
+    :math:`\log(\Gamma(z))` is that the latter function has a
     complicated branch cut structure whereas ``loggamma`` is analytic
     except for on the negative real axis.
 
@@ -5584,19 +6263,7 @@ add_newdoc("scipy.special", "loggamma",
     errors will introduce small spurious imaginary components in
     ``exp(loggamma(x))``.
 
-    .. versionadded:: 0.18.0
-
-    Parameters
-    ----------
-    z : array-like
-        Values in the complex plain at which to compute ``loggamma``
-    out : ndarray, optional
-        Output array for computed values of ``loggamma``
-
-    Returns
-    -------
-    loggamma : ndarray
-        Values of ``loggamma`` at z.
+    The implementation here is based on [hare1997]_.
 
     See also
     --------

@@ -104,14 +104,28 @@ else:
 
     from scipy.version import version as __version__
     from scipy._lib._version import NumpyVersion as _NumpyVersion
-    if _NumpyVersion(__numpy_version__) < '1.7.1':
+    if _NumpyVersion(__numpy_version__) < '1.8.2':
         import warnings
-        warnings.warn("Numpy 1.7.1 or above is recommended for this version of "
+        warnings.warn("Numpy 1.8.2 or above is recommended for this version of "
                       "scipy (detected version %s)" % __numpy_version__,
                       UserWarning)
 
     del _NumpyVersion
 
     from numpy.testing import Tester
-    test = Tester().test
-    bench = Tester().bench
+
+    def test(*a, **kw):
+        # Nose never recurses into directories with underscores prefix, so we
+        # need to list those explicitly. Note that numpy.testing.Tester inserts
+        # the top-level package path determined from __file__ to argv unconditionally,
+        # so we only need to add the part that is not otherwise recursed into.
+        import os
+        underscore_modules = ['_lib']
+        base_dir = os.path.abspath(os.path.dirname(__file__))
+        underscore_paths = [os.path.join(base_dir, name) for name in underscore_modules]
+        kw['extra_argv'] = list(kw.get('extra_argv', [])) + underscore_paths
+        return test._tester.test(*a, **kw)
+    test._tester = Tester()
+    test.__doc__ = test._tester.test.__doc__
+    test.__test__ = False  # Prevent nose from treating test() as a test
+    bench = test._tester.bench

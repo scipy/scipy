@@ -78,11 +78,13 @@ This integral can be evaluated by using the following code:
 
 >>> from scipy.integrate import quad
 >>> def integrand(x, a, b):
-...     return a * x + b
+...     return a*x**2 + b
+...
 >>> a = 2
 >>> b = 1
 >>> I = quad(integrand, 0, 1, args=(a,b))
->>> I = (2.0, 2.220446049250313e-14)
+>>> I
+(1.6666666666666667, 1.8503717077085944e-14)
 
 
 Infinite inputs are also allowed in :obj:`quad` by using :math:`\pm`
@@ -101,9 +103,11 @@ is desired (and the fact that this integral can be computed as
     >>> from scipy.integrate import quad
     >>> def integrand(t, n, x):
     ...     return np.exp(-x*t) / t**n
+    ...
 
     >>> def expint(n, x):
     ...     return quad(integrand, 1, np.inf, args=(n, x))[0]
+    ...
 
     >>> vec_expint = np.vectorize(expint)
 
@@ -150,6 +154,7 @@ An example of using double integration to compute several values of
     >>> from scipy.integrate import quad, dblquad
     >>> def I(n):
     ...     return dblquad(lambda t, x: np.exp(-x*t)/t**n, 0, np.inf, lambda x: 1, lambda x: np.inf)
+    ...
 
     >>> print(I(4))
     (0.2500000000043577, 1.29830334693681e-08)
@@ -193,6 +198,7 @@ can be calculated as
 >>> N = 5
 >>> def f(t, x):
 ...    return np.exp(-x*t) / t**N
+...
 >>> integrate.nquad(f, [[1, np.inf],[0, np.inf]])
 (0.20000000000002294, 1.2239614263187945e-08)
 
@@ -213,10 +219,13 @@ can be evaluated by means of
 >>> from scipy import integrate
 >>> def f(x, y):
 ...     return x*y
+...
 >>> def bounds_y():
 ...     return [0, 0.5]
+...
 >>> def bounds_x(y):
 ...     return [0, 1-2*y]
+...
 >>> integrate.nquad(f, [bounds_x, bounds_y])
 (0.010416666666666668, 4.101620128472366e-16)
 
@@ -270,8 +279,10 @@ of order 2 or less.
 >>> import numpy as np
 >>> def f1(x):
 ...    return x**2
+...
 >>> def f2(x):
 ...    return x**3
+...
 >>> x = np.array([1,3,4])
 >>> y1 = f1(x)
 >>> from scipy.integrate import simps
@@ -446,9 +457,11 @@ usage of the *Dfun* option which allows the user to specify a gradient
     >>> y0 = [y0_0, y1_0]
     >>> def func(y, t):
     ...     return [t*y[1],y[0]]
+    ...
 
     >>> def gradient(y, t):
     ...     return [[0,t], [1,0]]
+    ...
 
     >>> x = np.arange(0, 4.0, 0.01)
     >>> t = x

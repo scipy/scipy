@@ -16,6 +16,7 @@ from _complexstuff cimport (
 from _trig cimport sinpi
 
 cdef extern from "numpy/npy_math.h":
+    int npy_signbit(double x) nogil
     double NPY_EULER
 
 cdef extern from "cephes.h":
@@ -105,7 +106,7 @@ cdef inline double complex loggamma(double complex z) nogil:
                 # log(pi/sin(pi*z)) didn't.
                 argterm += 2*M_PI
 
-        if iz >= 0:
+        if npy_signbit(iz) == 0:
             res += 1j*argterm
         else:
             res -= 1j*argterm

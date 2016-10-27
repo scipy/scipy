@@ -195,8 +195,12 @@ __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'to_mlab_linkage', 'to_tree', 'ward', 'weighted', 'distance']
 
 
+class ClusterWarning(UserWarning):
+    pass
+
+
 def _warning(s):
-    warnings.warn('scipy.cluster: %s' % s, stacklevel=3)
+    warnings.warn('scipy.cluster: %s' % s, ClusterWarning, stacklevel=3)
 
 
 def _copy_array_if_base_present(a):
@@ -252,6 +256,7 @@ def single(y):
     See Also
     --------
     linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='single', metric='euclidean')
@@ -271,12 +276,13 @@ def complete(y):
     -------
     Z : ndarray
         A linkage matrix containing the hierarchical clustering. See
-        the ``linkage`` function documentation for more information
+        the `linkage` function documentation for more information
         on its structure.
 
     See Also
     --------
-    linkage
+    linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='complete', metric='euclidean')
@@ -296,12 +302,13 @@ def average(y):
     -------
     Z : ndarray
         A linkage matrix containing the hierarchical clustering. See
-        the ``linkage`` function documentation for more information
+        the `linkage` function documentation for more information
         on its structure.
 
     See Also
     --------
     linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='average', metric='euclidean')
@@ -330,6 +337,7 @@ def weighted(y):
     See Also
     --------
     linkage : for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='weighted', metric='euclidean')
@@ -339,8 +347,8 @@ def centroid(y):
     """
     Performs centroid/UPGMC linkage.
 
-    See ``linkage`` for more information on the return structure
-    and algorithm.
+    See ``linkage`` for more information on the input matrix,
+    return structure, and algorithm.
 
     The following are common calling conventions:
 
@@ -353,13 +361,13 @@ def centroid(y):
     2. ``Z = centroid(X)``
 
        Performs centroid/UPGMC linkage on the observation matrix ``X``
-       using Euclidean distance as the distance metric. See ``linkage``
+       using Euclidean distance as the distance metric. See `linkage`
        for more information on the return structure and algorithm.
 
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
         ``pdist`` returns. Alternatively, a collection of
@@ -370,7 +378,7 @@ def centroid(y):
     -------
     Z : ndarray
         A linkage matrix containing the hierarchical clustering. See
-        the ``linkage`` function documentation for more information
+        the `linkage` function documentation for more information
         on its structure.
 
     See Also
@@ -399,16 +407,16 @@ def median(y):
      2. ``Z = median(X)``
 
         Performs median/WPGMC linkage on the observation matrix ``X``
-        using Euclidean distance as the distance metric. See linkage
+        using Euclidean distance as the distance metric. See `linkage`
         for more information on the return structure and algorithm.
 
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
-        ``pdist`` returns. Alternatively, a collection of
+        ``pdist`` returns.  Alternatively, a collection of
         m observation vectors in n dimensions may be passed as
         a m by n array.
 
@@ -420,6 +428,7 @@ def median(y):
     See Also
     --------
     linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='median', metric='euclidean')
@@ -427,7 +436,7 @@ def median(y):
 
 def ward(y):
     """
-    Performs Ward's linkage on a condensed or redundant distance matrix.
+    Performs Ward's linkage on a condensed distance matrix.
 
     See linkage for more information on the return structure
     and algorithm.
@@ -447,10 +456,10 @@ def ward(y):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed
+        A condensed distance matrix. A condensed
         distance matrix is a flat array containing the upper
         triangular of the distance matrix. This is the form that
-        ``pdist`` returns. Alternatively, a collection of
+        ``pdist`` returns.  Alternatively, a collection of
         m observation vectors in n dimensions may be passed as
         a m by n array.
 
@@ -462,6 +471,7 @@ def ward(y):
     See Also
     --------
     linkage: for advanced creation of hierarchical clusterings.
+    scipy.spatial.distance.pdist : pairwise distance metrics
 
     """
     return linkage(y, method='ward', metric='euclidean')
@@ -469,15 +479,18 @@ def ward(y):
 
 def linkage(y, method='single', metric='euclidean'):
     """
-    Performs hierarchical/agglomerative clustering on the condensed
-    distance matrix y.
+    Performs hierarchical/agglomerative clustering.
 
-    y must be a :math:`{n \\choose 2}` sized
+    The input y may be either a 1d compressed distance matrix
+    or a 2d array of observation vectors.
+
+    If y is a 1d compressed distance matrix,
+    then y must be a :math:`{n \\choose 2}` sized
     vector where n is the number of original observations paired
     in the distance matrix. The behavior of this function is very
     similar to the MATLAB linkage function.
 
-    An :math:`(n-1)` by 4  matrix ``Z`` is returned. At the
+    A :math:`(n-1)` by 4 matrix ``Z`` is returned. At the
     :math:`i`-th iteration, clusters with indices ``Z[i, 0]`` and
     ``Z[i, 1]`` are combined to form cluster :math:`n + i`. A
     cluster with an index less than :math:`n` corresponds to one of
@@ -598,20 +611,20 @@ def linkage(y, method='single', metric='euclidean'):
     Parameters
     ----------
     y : ndarray
-        A condensed or redundant distance matrix. A condensed distance matrix
+        A condensed distance matrix. A condensed distance matrix
         is a flat array containing the upper triangular of the distance matrix.
         This is the form that ``pdist`` returns. Alternatively, a collection of
         :math:`m` observation vectors in n dimensions may be passed as an
-        :math:`m` by :math:`n` array.
+        :math:`m` by :math:`n` array. All elements of `y` must be finite,
+        i.e. no NaNs or infs.
     method : str, optional
         The linkage algorithm to use. See the ``Linkage Methods`` section below
         for full descriptions.
     metric : str or function, optional
         The distance metric to use in the case that y is a collection of
-        observation vectors; ignored otherwise. See the ``distance.pdist``
+        observation vectors; ignored otherwise. See the ``pdist``
         function for a list of valid distance metrics. A custom distance
-        function can also be used. See the ``distance.pdist`` function for
-        details.
+        function can also be used.
 
     Returns
     -------
@@ -620,10 +633,10 @@ def linkage(y, method='single', metric='euclidean'):
 
     Notes
     -----
-    1. For method 'single' an optimized algorithm called SLINK is implemented,
-       which has :math:`O(n^2)` time complexity.
+    1. For method 'single' an optimized algorithm based on minimum spanning
+       tree is implemented. It has time complexity :math:`O(n^2)`.
        For methods 'complete', 'average', 'weighted' and 'ward' an algorithm
-       called nearest-neighbors chain is implemented, which too has time
+       called nearest-neighbors chain is implemented. It also has time
        complexity :math:`O(n^2)`.
        For other methods a naive algorithm is implemented with :math:`O(n^3)`
        time complexity.
@@ -635,11 +648,15 @@ def linkage(y, method='single', metric='euclidean'):
        these distances are in fact Euclidean, otherwise the produced result
        will be incorrect.
 
+    See Also
+    --------
+    scipy.spatial.distance.pdist : pairwise distance metrics
+
     References
     ----------
     .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
-           algorithms", `arXiv:1109.2378v1 <http://arxiv.org/abs/1109.2378v1>`_
-           , 2011.
+           algorithms", :arXiv:`1109.2378v1`.
+
     """
     if method not in _LINKAGE_METHODS:
         raise ValueError("Invalid method: {0}".format(method))
@@ -653,14 +670,22 @@ def linkage(y, method='single', metric='euclidean'):
         if method in _EUCLIDEAN_METHODS and metric != 'euclidean':
             raise ValueError("Method '{0}' requires the distance metric "
                              "to be Euclidean".format(method))
+        if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
+            if np.all(y >= 0) and np.allclose(y, y.T):
+                _warning('The symmetric non-negative hollow observation '
+                         'matrix looks suspiciously like an uncondensed '
+                         'distance matrix')
         y = distance.pdist(y, metric)
     else:
         raise ValueError("`y` must be 1 or 2 dimensional.")
 
+    if not np.all(np.isfinite(y)):
+        raise ValueError("`y` must contain only finite values.")
+
     n = int(distance.num_obs_y(y))
     method_code = _LINKAGE_METHODS[method]
     if method == 'single':
-        return _hierarchy.slink(y, n)
+        return _hierarchy.mst_single_linkage(y, n)
     elif method in ['complete', 'average', 'weighted', 'ward']:
         return _hierarchy.nn_chain(y, n, method_code)
     else:
@@ -674,8 +699,23 @@ class ClusterNode:
     Leaf nodes correspond to original observations, while non-leaf nodes
     correspond to non-singleton clusters.
 
-    The to_tree function converts a matrix returned by the linkage
+    The `to_tree` function converts a matrix returned by the linkage
     function into an easy-to-use tree representation.
+
+    All parameter names are also attributes.
+
+    Parameters
+    ----------
+    id : int
+        The node id.
+    left : ClusterNode instance, optional
+        The left child tree node.
+    right : ClusterNode instance, optional
+        The right child tree node.
+    dist : float, optional
+        Distance for this cluster in the linkage matrix.
+    count : int, optional
+        The number of samples in this cluster.
 
     See Also
     --------
@@ -809,9 +849,10 @@ class ClusterNode:
         ----------
         func : function
             Applied to each leaf ClusterNode object in the pre-order traversal.
-            Given the i'th leaf node in the pre-ordeR traversal ``n[i]``, the
-            result of func(n[i]) is stored in L[i]. If not provided, the index
-            of the original observation to which the node corresponds is used.
+            Given the ``i``-th leaf node in the pre-order traversal ``n[i]``, the
+            result of ``func(n[i])`` is stored in ``L[i]``. If not provided,
+            the index of the original observation to which the node
+            corresponds is used.
 
         Returns
         -------
@@ -819,7 +860,6 @@ class ClusterNode:
             The pre-order traversal.
 
         """
-
         # Do a preorder traversal, caching the result. To avoid having to do
         # recursion, we'll store the previous index we've visited in a vector.
         n = self.count
@@ -968,39 +1008,60 @@ def cut_tree(Z, n_clusters=None, height=None):
 
 def to_tree(Z, rd=False):
     """
-    Converts a hierarchical clustering encoded in the matrix ``Z`` (by
-    linkage) into an easy-to-use tree object.
+    Converts a linkage matrix into an easy-to-use tree object.
 
-    The reference r to the root ClusterNode object is returned.
+    The reference to the root `ClusterNode` object is returned (by default).
 
-    Each ClusterNode object has a left, right, dist, id, and count
-    attribute. The left and right attributes point to ClusterNode objects
-    that were combined to generate the cluster. If both are None then
-    the ClusterNode object is a leaf node, its count must be 1, and its
-    distance is meaningless but set to 0.
+    Each `ClusterNode` object has a ``left``, ``right``, ``dist``, ``id``,
+    and ``count`` attribute. The left and right attributes point to
+    ClusterNode objects that were combined to generate the cluster.
+    If both are None then the `ClusterNode` object is a leaf node, its count
+    must be 1, and its distance is meaningless but set to 0.
 
-    Note: This function is provided for the convenience of the library
+    *Note: This function is provided for the convenience of the library
     user. ClusterNodes are not used as input to any of the functions in this
-    library.
+    library.*
 
     Parameters
     ----------
     Z : ndarray
-        The linkage matrix in proper form (see the ``linkage``
+        The linkage matrix in proper form (see the `linkage`
         function documentation).
     rd : bool, optional
-        When False, a reference to the root ClusterNode object is
-        returned.  Otherwise, a tuple (r,d) is returned. ``r`` is a
-        reference to the root node while ``d`` is a dictionary
-        mapping cluster ids to ClusterNode references. If a cluster id is
-        less than n, then it corresponds to a singleton cluster
-        (leaf node). See ``linkage`` for more information on the
-        assignment of cluster ids to clusters.
+        When False (default), a reference to the root `ClusterNode` object is
+        returned.  Otherwise, a tuple ``(r, d)`` is returned. ``r`` is a
+        reference to the root node while ``d`` is a list of `ClusterNode`
+        objects - one per original entry in the linkage matrix plus entries
+        for all clustering steps.  If a cluster id is
+        less than the number of samples ``n`` in the data that the linkage
+        matrix describes, then it corresponds to a singleton cluster (leaf
+        node).
+        See `linkage` for more information on the assignment of cluster ids
+        to clusters.
 
     Returns
     -------
-    L : list
-        The pre-order traversal.
+    tree : ClusterNode or tuple (ClusterNode, list of ClusterNode)
+        If ``rd`` is False, a `ClusterNode`.
+        If ``rd`` is True, a list of length ``2*n - 1``, with ``n`` the number
+        of samples.  See the description of `rd` above for more details.
+
+    See Also
+    --------
+    linkage, is_valid_linkage, ClusterNode
+
+    Examples
+    --------
+    >>> from scipy.cluster import hierarchy
+    >>> x = np.random.rand(10).reshape(5, 2)
+    >>> Z = hierarchy.linkage(x)
+    >>> hierarchy.to_tree(Z)
+    <scipy.cluster.hierarchy.ClusterNode object at ...
+    >>> rootnode, nodelist = hierarchy.to_tree(Z, rd=True)
+    >>> rootnode
+    <scipy.cluster.hierarchy.ClusterNode object at ...
+    >>> len(nodelist)
+    9
 
     """
     Z = np.asarray(Z, order='c')
@@ -1030,7 +1091,7 @@ def to_tree(Z, rd=False):
                               'is used before it is formed. See row %d, '
                               'column 1') % fj)
         nd = ClusterNode(i + n, d[fi], d[fj], Z[i, 2])
-        #          ^ id   ^ left ^ right ^ dist
+        #                 ^ id   ^ left ^ right ^ dist
         if Z[i, 3] != nd.count:
             raise ValueError(('Corrupt matrix Z. The count Z[%d,3] is '
                               'incorrect.') % i)
@@ -1085,7 +1146,7 @@ def cophenet(Z, Y=None):
     Returns
     -------
     c : ndarray
-        The cophentic correlation distance (if ``y`` is passed).
+        The cophentic correlation distance (if ``Y`` is passed).
     d : ndarray
         The cophenetic distance matrix in condensed form. The
         :math:`ij` th entry is the cophenetic distance between
@@ -1122,10 +1183,7 @@ def cophenet(Z, Y=None):
 
 def inconsistent(Z, d=2):
     r"""
-    Calculates inconsistency statistics on a linkage.
-
-    Note: This function behaves similarly to the MATLAB(TM)
-    inconsistent function.
+    Calculates inconsistency statistics on a linkage matrix.
 
     Parameters
     ----------
@@ -1148,6 +1206,11 @@ def inconsistent(Z, d=2):
         inconsistency coefficient,
 
         .. math:: \frac{\mathtt{Z[i,2]} - \mathtt{R[i,0]}} {R[i,1]}
+
+    Notes
+    -----
+    This function behaves similarly to the MATLAB(TM) ``inconsistent``
+    function.
 
     """
     Z = np.asarray(Z, order='c')
@@ -1179,9 +1242,9 @@ def from_mlab_linkage(Z):
      * the indices are converted from ``1..N`` to ``0..(N-1)`` form,
        and
 
-     * a fourth column Z[:,3] is added where Z[i,3] is represents the
+     * a fourth column ``Z[:,3]`` is added where ``Z[i,3]`` represents the
        number of original observations (leaves) in the non-singleton
-       cluster i.
+       cluster ``i``.
 
     This function is useful when loading in linkages from legacy data
     files generated by MATLAB.
@@ -1194,7 +1257,7 @@ def from_mlab_linkage(Z):
     Returns
     -------
     ZS : ndarray
-        A linkage matrix compatible with this library.
+        A linkage matrix compatible with ``scipy.cluster.hierarchy``.
 
     """
     Z = np.asarray(Z, dtype=np.double, order='c')
@@ -1233,7 +1296,7 @@ def to_mlab_linkage(Z):
     Parameters
     ----------
     Z : ndarray
-        A linkage matrix generated by this library.
+        A linkage matrix generated by ``scipy.cluster.hierarchy``.
 
     Returns
     -------
@@ -1286,7 +1349,7 @@ def is_monotonic(Z):
 def is_valid_im(R, warning=False, throw=False, name=None):
     """Returns True if the inconsistency matrix passed is valid.
 
-    It must be a :math:`n` by 4 numpy array of doubles. The standard
+    It must be a :math:`n` by 4 array of doubles. The standard
     deviations ``R[:,1]`` must be nonnegative. The link counts
     ``R[:,2]`` must be positive and no greater than :math:`n-1`.
 
@@ -1376,8 +1439,8 @@ def is_valid_linkage(Z, warning=False, throw=False, name=None):
         When True, throws a Python exception if the linkage
         matrix passed is invalid.
     name : str, optional
-           This string refers to the variable name of the invalid
-           linkage matrix.
+        This string refers to the variable name of the invalid
+        linkage matrix.
 
     Returns
     -------
@@ -1514,7 +1577,7 @@ def correspond(Z, Y):
 def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     """
     Forms flat clusters from the hierarchical clustering defined by
-    the linkage matrix ``Z``.
+    the given linkage matrix.
 
     Parameters
     ----------
@@ -1581,8 +1644,8 @@ def fcluster(Z, t, criterion='inconsistent', depth=2, R=None, monocrit=None):
     Returns
     -------
     fcluster : ndarray
-        An array of length n. T[i] is the flat cluster number to
-        which original observation i belongs.
+        An array of length ``n``. ``T[i]`` is the flat cluster number to
+        which original observation ``i`` belongs.
 
     """
     Z = np.asarray(Z, order='c')
@@ -1633,8 +1696,9 @@ def fclusterdata(X, t, criterion='inconsistent',
     and forms flat clusters using the inconsistency method with `t` as the
     cut-off threshold.
 
-    A one-dimensional array T of length n is returned. T[i] is the index
-    of the flat cluster to which the original observation i belongs.
+    A one-dimensional array ``T`` of length ``n`` is returned. ``T[i]`` is
+    the index of the flat cluster to which the original observation ``i``
+    belongs.
 
     Parameters
     ----------
@@ -1648,7 +1712,7 @@ def fclusterdata(X, t, criterion='inconsistent',
         cluster formation algorithms. See `fcluster` for descriptions.
     metric : str, optional
         The distance metric for calculating pairwise distances. See
-        `distance.pdist` for descriptions and linkage to verify
+        ``distance.pdist`` for descriptions and linkage to verify
         compatibility with the linkage method.
     depth : int, optional
         The maximum depth for the inconsistency calculation. See
@@ -1667,9 +1731,13 @@ def fclusterdata(X, t, criterion='inconsistent',
         A vector of length n. T[i] is the flat cluster number to
         which original observation i belongs.
 
+    See Also
+    --------
+    scipy.spatial.distance.pdist : pairwise distance metrics
+
     Notes
     -----
-    This function is similar to the MATLAB function clusterdata.
+    This function is similar to the MATLAB function ``clusterdata``.
 
     """
     X = np.asarray(X, order='c', dtype=np.double)
@@ -1699,7 +1767,7 @@ def leaves_list(Z):
     ----------
     Z : ndarray
         The hierarchical clustering encoded as a matrix.  `Z` is
-        a linkage matrix.  See ``linkage`` for more information.
+        a linkage matrix.  See `linkage` for more information.
 
     Returns
     -------
@@ -2679,7 +2747,7 @@ def maxinconsts(Z, R):
     ----------
     Z : ndarray
         The hierarchical clustering encoded as a matrix. See
-        ``linkage`` for more information.
+        `linkage` for more information.
     R : ndarray
         The inconsistency matrix.
 
@@ -2777,7 +2845,7 @@ def leaders(Z, T):
     ----------
     Z : ndarray
         The hierarchical clustering encoded as a matrix. See
-        ``linkage`` for more information.
+        `linkage` for more information.
     T : ndarray
         The flat cluster assignment vector.
 

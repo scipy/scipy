@@ -12,7 +12,7 @@ import numpy as np
 
 from scipy._lib.six import xrange
 
-from .sputils import upcast, get_index_dtype
+from .sputils import upcast, get_index_dtype, isscalarlike
 
 from .csr import csr_matrix
 from .csc import csc_matrix
@@ -134,18 +134,15 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
            [ 0.,  0.,  0.,  0.]])
     """
     # if offsets is not a sequence, assume that there's only one diagonal
-    try:
-        iter(offsets)
-    except TypeError:
+    if isscalarlike(offsets):
         # now check that there's actually only one diagonal
-        try:
-            iter(diagonals[0])
-        except TypeError:
+        if len(diagonals) == 0 or isscalarlike(diagonals[0]):
             diagonals = [np.atleast_1d(diagonals)]
         else:
             raise ValueError("Different number of diagonals and offsets.")
     else:
         diagonals = list(map(np.atleast_1d, diagonals))
+
     offsets = np.atleast_1d(offsets)
 
     # Basic check
@@ -175,11 +172,8 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         offset = offsets[j]
         k = max(0, offset)
         length = min(m + offset, n - offset, K)
-        if length <= 0:
+        if length < 0:
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
-        diagonal = np.asarray(diagonal)
-        if diagonal.ndim == 0:
-            diagonal = diagonal[None]
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
         except ValueError:
@@ -749,9 +743,7 @@ greater than %d - this is not supported on this machine
 
     # Use the algorithm from python's random.sample for k < mn/3.
     if mn < 3*k:
-        # We should use this line, but choice is only available in numpy >= 1.7
-        # ind = random_state.choice(mn, size=k, replace=False)
-        ind = random_state.permutation(mn)[:k]
+        ind = random_state.choice(mn, size=k, replace=False)
     else:
         ind = np.empty(k, dtype=tp)
         selected = set()

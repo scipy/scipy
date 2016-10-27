@@ -54,6 +54,11 @@ distcont = [
     ['invweibull', (10.58,)],
     ['johnsonsb', (4.3172675099141058, 3.1837781130785063)],
     ['johnsonsu', (2.554395574161155, 2.2482281679651965)],
+    ['kappa4', (0.0, 0.0)],
+    ['kappa4', (-0.1, 0.1)],
+    ['kappa4', (0.0, 0.1)],
+    ['kappa4', (0.1, 0.0)],
+    ['kappa3', (1.0,)],
     ['ksone', (1000,)],  # replace 22 by 100 to avoid failing range, ticket 956
     ['kstwobign', ()],
     ['laplace', ()],

@@ -42,7 +42,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
          'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice']
+         'rice', 'kappa4', 'kappa3', 'truncnorm']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -79,7 +79,7 @@ def test_all_distributions():
             args = tuple(np.sort(np.random.random(nargs)))
         elif dist == 'triang':
             args = tuple(np.random.random(nargs))
-        elif dist == 'reciprocal':
+        elif dist == 'reciprocal' or dist == 'truncnorm':
             vals = np.random.random(nargs)
             vals[1] = vals[0] + 1.0
             args = tuple(vals)
@@ -535,6 +535,30 @@ class TestLogser(TestCase):
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_pmf_small_p(self):
+        m = stats.logser.pmf(4, 1e-20)
+        # The expected value was computed using mpmath:
+        #   >>> import mpmath
+        #   >>> mpmath.mp.dps = 64
+        #   >>> k = 4
+        #   >>> p = mpmath.mpf('1e-20')
+        #   >>> float(-(p**k)/k/mpmath.log(1-p))
+        #   2.5e-61
+        # It is also clear from noticing that for very small p,
+        # log(1-p) is approximately -p, and the formula becomes
+        #    p**(k-1) / k
+        assert_allclose(m, 2.5e-61)
+
+    def test_mean_small_p(self):
+        m = stats.logser.mean(1e-8)
+        # The expected mean was computed using mpmath:
+        #   >>> import mpmath
+        #   >>> mpmath.dps = 60
+        #   >>> p = mpmath.mpf('1e-8')
+        #   >>> float(-p / ((1 - p)*mpmath.log(1 - p)))
+        #   1.000000005
+        assert_allclose(m, 1.000000005)
+
 
 class TestPareto(TestCase):
     def test_stats(self):
@@ -730,6 +754,64 @@ class TestPearson3(TestCase):
         vals = stats.pearson3.cdf([-3, -2, -1, 0, 1], 0.1)
         assert_allclose(vals, [8.22563821e-04, 1.99860448e-02, 1.58550710e-01,
                                5.06649130e-01, 8.41442111e-01], atol=1e-6)
+
+
+class TestKappa4(TestCase):
+    def test_cdf_genpareto(self):
+        # h = 1 and k != 0 is generalized Pareto
+        x = [0.0, 0.1, 0.2, 0.5]
+        h = 1.0
+        for k in [-1.9, -1.0, -0.5, -0.2, -0.1, 0.1, 0.2, 0.5, 1.0,
+                  1.9]:
+            vals = stats.kappa4.cdf(x, h, k)
+            # shape parameter is opposite what is expected
+            vals_comp = stats.genpareto.cdf(x, -k)
+            assert_allclose(vals, vals_comp)
+
+    def test_cdf_genextreme(self):
+        # h = 0 and k != 0 is generalized extreme value
+        x = np.linspace(-5, 5, 10)
+        h = 0.0
+        k = np.linspace(-3, 3, 10)
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.genextreme.cdf(x, k)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_expon(self):
+        # h = 1 and k = 0 is exponential
+        x = np.linspace(0, 10, 10)
+        h = 1.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.expon.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_gumbel_r(self):
+        # h = 0 and k = 0 is gumbel_r
+        x = np.linspace(-5, 5, 10)
+        h = 0.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.gumbel_r.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_logistic(self):
+        # h = -1 and k = 0 is logistic
+        x = np.linspace(-5, 5, 10)
+        h = -1.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.logistic.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_uniform(self):
+        # h = 1 and k = 1 is uniform
+        x = np.linspace(-5, 5, 10)
+        h = 1.0
+        k = 1.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.uniform.cdf(x)
+        assert_allclose(vals, vals_comp)
 
 
 class TestPoisson(TestCase):
@@ -1901,7 +1983,7 @@ class TestNct(TestCase):
                           [0.00153078, 0.00291093, 0.00525206, 0.00900815]])
         assert_allclose(res, expected, rtol=1e-5)
 
-    def text_variance_gh_issue_2401(self):
+    def test_variance_gh_issue_2401(self):
         # Computation of the variance of a non-central t-distribution resulted
         # in a TypeError: ufunc 'isinf' not supported for the input types,
         # and the inputs could not be safely coerced to any supported types
@@ -2024,11 +2106,96 @@ class TestExponWeib(TestCase):
         assert_allclose(logp, expected)
 
 
-class TestWeibullMin(TestCase):
-    # gh-6217
+class TestWeibull(TestCase):
+
     def test_logpdf(self):
+        # gh-6217
         y = stats.weibull_min.logpdf(0, 1)
         assert_equal(y, 0)
+
+    def test_with_maxima_distrib(self):
+        # Tests for weibull_min and weibull_max.
+        # The expected values were computed using the symbolic algebra
+        # program 'maxima' with the package 'distrib', which has
+        # 'pdf_weibull' and 'cdf_weibull'.  The mapping between the
+        # scipy and maxima functions is as follows:
+        # -----------------------------------------------------------------
+        # scipy                              maxima
+        # ---------------------------------  ------------------------------
+        # weibull_min.pdf(x, a, scale=b)     pdf_weibull(x, a, b)
+        # weibull_min.logpdf(x, a, scale=b)  log(pdf_weibull(x, a, b))
+        # weibull_min.cdf(x, a, scale=b)     cdf_weibull(x, a, b)
+        # weibull_min.logcdf(x, a, scale=b)  log(cdf_weibull(x, a, b))
+        # weibull_min.sf(x, a, scale=b)      1 - cdf_weibull(x, a, b)
+        # weibull_min.logsf(x, a, scale=b)   log(1 - cdf_weibull(x, a, b))
+        #
+        # weibull_max.pdf(x, a, scale=b)     pdf_weibull(-x, a, b)
+        # weibull_max.logpdf(x, a, scale=b)  log(pdf_weibull(-x, a, b))
+        # weibull_max.cdf(x, a, scale=b)     1 - cdf_weibull(-x, a, b)
+        # weibull_max.logcdf(x, a, scale=b)  log(1 - cdf_weibull(-x, a, b))
+        # weibull_max.sf(x, a, scale=b)      cdf_weibull(-x, a, b)
+        # weibull_max.logsf(x, a, scale=b)   log(cdf_weibull(-x, a, b))
+        # -----------------------------------------------------------------
+        x = 1.5
+        a = 2.0
+        b = 3.0
+
+        # weibull_min
+
+        p = stats.weibull_min.pdf(x, a, scale=b)
+        assert_allclose(p, np.exp(-0.25)/3)
+
+        lp = stats.weibull_min.logpdf(x, a, scale=b)
+        assert_allclose(lp, -0.25 - np.log(3))
+
+        c = stats.weibull_min.cdf(x, a, scale=b)
+        assert_allclose(c, -special.expm1(-0.25))
+
+        lc = stats.weibull_min.logcdf(x, a, scale=b)
+        assert_allclose(lc, np.log(-special.expm1(-0.25)))
+
+        s = stats.weibull_min.sf(x, a, scale=b)
+        assert_allclose(s, np.exp(-0.25))
+
+        ls = stats.weibull_min.logsf(x, a, scale=b)
+        assert_allclose(ls, -0.25)
+
+        # Also test using a large value x, for which computing the survival
+        # function using the CDF would result in 0.
+        s = stats.weibull_min.sf(30, 2, scale=3)
+        assert_allclose(s, np.exp(-100))
+
+        ls = stats.weibull_min.logsf(30, 2, scale=3)
+        assert_allclose(ls, -100)
+
+        # weibull_max
+        x = -1.5
+
+        p = stats.weibull_max.pdf(x, a, scale=b)
+        assert_allclose(p, np.exp(-0.25)/3)
+
+        lp = stats.weibull_max.logpdf(x, a, scale=b)
+        assert_allclose(lp, -0.25 - np.log(3))
+
+        c = stats.weibull_max.cdf(x, a, scale=b)
+        assert_allclose(c, np.exp(-0.25))
+
+        lc = stats.weibull_max.logcdf(x, a, scale=b)
+        assert_allclose(lc, -0.25)
+
+        s = stats.weibull_max.sf(x, a, scale=b)
+        assert_allclose(s, -special.expm1(-0.25))
+
+        ls = stats.weibull_max.logsf(x, a, scale=b)
+        assert_allclose(ls, np.log(-special.expm1(-0.25)))
+
+        # Also test using a value of x close to 0, for which computing the
+        # survival function using the CDF would result in 0.
+        s = stats.weibull_max.sf(-1e-9, 2, scale=3)
+        assert_allclose(s, -special.expm1(-1/9000000000000000000))
+
+        ls = stats.weibull_max.logsf(-1e-9, 2, scale=3)
+        assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
 
 
 class TestRdist(TestCase):
@@ -2747,6 +2914,20 @@ def test_rayleigh_accuracy():
     assert_almost_equal(p, 9.0, decimal=15)
 
 
+def test_genextreme_give_no_warnings():
+    """regression test for gh-6219"""
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        p = stats.genextreme.cdf(.5, 0)
+        p = stats.genextreme.pdf(.5, 0)
+        p = stats.genextreme.ppf(.5, 0)
+        p = stats.genextreme.logpdf(-np.inf, 0.0)
+        number_of_warnings_thrown = len(w)
+        assert_equal(number_of_warnings_thrown, 0)
+
+
 def test_genextreme_entropy():
     # regression test for gh-5181
     euler_gamma = 0.5772156649015329
@@ -2773,7 +2954,7 @@ def test_genextreme_entropy():
 def test_genextreme_sf_isf():
     # Expected values were computed using mpmath:
     #
-    #    from sympy import mpmath
+    #    import mpmath
     #
     #    def mp_genextreme_sf(x, xi, mu=0, sigma=1):
     #        # Formula from wikipedia, which has a sign convention for xi that
@@ -2812,6 +2993,20 @@ def test_genextreme_sf_isf():
     assert_allclose(s, 0.00034218086528426593)
     x2 = stats.genextreme.isf(s, 0)
     assert_allclose(x2, x)
+
+
+def test_burr12_ppf_small_arg():
+    prob = 1e-16
+    quantile = stats.burr12.ppf(prob, 2, 3)
+    # The expected quantile was computed using mpmath:
+    #   >>> import mpmath
+    #   >>> prob = mpmath.mpf('1e-16')
+    #   >>> c = mpmath.mpf(2)
+    #   >>> d = mpmath.mpf(3)
+    #   >>> float(((1-q)**(-1/d) - 1)**(1/c))
+    #   5.7735026918962575e-09
+    assert_allclose(quantile, 5.7735026918962575e-09)
+
 
 if __name__ == "__main__":
     run_module_suite()

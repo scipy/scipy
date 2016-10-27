@@ -596,12 +596,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             Reduce result for nonzeros in each major_index
         """
         major_index = np.flatnonzero(np.diff(self.indptr))
-        if self.data.size == 0 and major_index.size == 0:
-            # Numpy < 1.8.0 don't handle empty arrays in reduceat
-            value = np.zeros_like(self.data)
-        else:
-            value = ufunc.reduceat(self.data,
-                                   downcast_intp_index(self.indptr[major_index]))
+        value = ufunc.reduceat(self.data,
+                               downcast_intp_index(self.indptr[major_index]))
         return major_index, value
 
     #######################
@@ -614,14 +610,37 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         i, j = self._index_to_arrays(i, j)
 
         if isspmatrix(x):
-            x = x.toarray()
+            broadcast_row = x.shape[0] == 1 and i.shape[0] != 1
+            broadcast_col = x.shape[1] == 1 and i.shape[1] != 1
+            if not ((broadcast_row or x.shape[0] == i.shape[0]) and
+                    (broadcast_col or x.shape[1] == i.shape[1])):
+                raise ValueError("shape mismatch in assignment")
 
-        # Make x and i into the same shape
-        x = np.asarray(x, dtype=self.dtype)
-        x, _ = np.broadcast_arrays(x, i)
+            # clear entries that will be overwritten
+            ci, cj = self._swap((i.ravel(), j.ravel()))
+            self._zero_many(ci, cj)
 
-        if x.shape != i.shape:
-            raise ValueError("shape mismatch in assignment")
+            x = x.tocoo()
+            r, c = x.row, x.col
+            x = np.asarray(x.data, dtype=self.dtype)
+            if broadcast_row:
+                r = np.repeat(np.arange(i.shape[0]), len(r))
+                c = np.tile(c, i.shape[0])
+                x = np.tile(x, i.shape[0])
+            if broadcast_col:
+                r = np.repeat(r, i.shape[1])
+                c = np.tile(np.arange(i.shape[1]), len(c))
+                x = np.repeat(x, i.shape[1])
+            # only assign entries in the new sparsity structure
+            i = i[r, c]
+            j = j[r, c]
+        else:
+            # Make x and i into the same shape
+            x = np.asarray(x, dtype=self.dtype)
+            x, _ = np.broadcast_arrays(x, i)
+
+            if x.shape != i.shape:
+                raise ValueError("shape mismatch in assignment")
 
         if np.size(x) == 0:
             return
@@ -658,11 +677,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self[i, j] = values
 
-    def _set_many(self, i, j, x):
-        """Sets value at each (i, j) to x
-
-        Here (i,j) index major and minor respectively.
-        """
+    def _prepare_indices(self, i, j):
         M, N = self._swap(self.shape)
 
         def check_bounds(indices, bound):
@@ -680,6 +695,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         i = np.asarray(i, dtype=self.indices.dtype)
         j = np.asarray(j, dtype=self.indices.dtype)
+        return i, j, M, N
+
+    def _set_many(self, i, j, x):
+        """Sets value at each (i, j) to x
+
+        Here (i,j) index major and minor respectively.
+        """
+        i, j, M, N = self._prepare_indices(i, j)
 
         n_samples = len(x)
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
@@ -711,6 +734,27 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             j = j[mask]
             j[j < 0] += N
             self._insert_many(i, j, x[mask])
+
+    def _zero_many(self, i, j):
+        """Sets value at each (i, j) to zero, preserving sparsity structure.
+
+        Here (i,j) index major and minor respectively.
+        """
+        i, j, M, N = self._prepare_indices(i, j)
+
+        n_samples = len(i)
+        offsets = np.empty(n_samples, dtype=self.indices.dtype)
+        ret = _sparsetools.csr_sample_offsets(M, N, self.indptr, self.indices,
+                                              n_samples, i, j, offsets)
+        if ret == 1:
+            # rinse and repeat
+            self.sum_duplicates()
+            _sparsetools.csr_sample_offsets(M, N, self.indptr,
+                                            self.indices, n_samples, i, j,
+                                            offsets)
+
+        # only assign zeros to the existing sparsity structure
+        self.data[offsets[offsets > -1]] = 0
 
     def _insert_many(self, i, j, x):
         """Inserts new nonzero at each (i, j) with value x
@@ -1054,10 +1098,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         if np.issubdtype(r.dtype, np.inexact):
             # Eldiv leaves entries outside the combined sparsity
-            # pattern empty, so they must be filled manually. They are
-            # always nan, so that the matrix is completely full.
+            # pattern empty, so they must be filled manually.
+            # Everything outside of other's sparsity is NaN, and everything
+            # inside it is either zero or defined by eldiv.
             out = np.empty(self.shape, dtype=self.dtype)
             out.fill(np.nan)
+            row, col = other.nonzero()
+            out[row, col] = 0
             r = r.tocoo()
             out[r.row, r.col] = r.data
             out = np.matrix(out)

@@ -283,8 +283,8 @@ cdef void _floyd_warshall(
     dist_matrix[dist_matrix == 0] = INFINITY
     dist_matrix.flat[::N + 1] = 0
     if not directed:
-        for i from 0 <= i < N:
-            for j from i + 1 <= j < N:
+        for i in range(N):
+            for j in range(i + 1, N):
                 if dist_matrix[j, i] <= dist_matrix[i, j]:
                     dist_matrix[i, j] = dist_matrix[j, i]
                 else:
@@ -310,21 +310,21 @@ cdef void _floyd_warshall(
     # In each loop, this finds the shortest path from point i
     #  to point j using intermediate nodes 0 ... k
     if store_predecessors:
-        for k from 0 <= k < N:
-            for i from 0 <= i < N:
+        for k in range(N):
+            for i in range(N):
                 if dist_matrix[i, k] == INFINITY:
                     continue
-                for j from 0 <= j < N:
+                for j in range(N):
                     d_ijk = dist_matrix[i, k] + dist_matrix[k, j]
                     if d_ijk < dist_matrix[i, j]:
                         dist_matrix[i, j] = d_ijk
                         predecessor_matrix[i, j] = predecessor_matrix[k, j]
     else:
-        for k from 0 <= k < N:
-            for i from 0 <= i < N:
+        for k in range(N):
+            for i in range(N):
                 if dist_matrix[i, k] == INFINITY:
                     continue
-                for j from 0 <= j < N:
+                for j in range(N):
                     d_ijk = dist_matrix[i, k] + dist_matrix[k, j]
                     if d_ijk < dist_matrix[i, j]:
                         dist_matrix[i, j] = d_ijk
@@ -490,10 +490,10 @@ cdef _dijkstra_directed(
     cdef FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                         sizeof(FibonacciNode))
 
-    for i from 0 <= i < Nind:
+    for i in range(Nind):
         j_source = source_indices[i]
 
-        for k from 0 <= k < N:
+        for k in range(N):
             initialize_node(&nodes[k], k)
 
         dist_matrix[i, j_source] = 0
@@ -504,7 +504,7 @@ cdef _dijkstra_directed(
             v = remove_min(&heap)
             v.state = SCANNED
 
-            for j from csr_indptr[v.index] <= j < csr_indptr[v.index + 1]:
+            for j in range(csr_indptr[v.index], csr_indptr[v.index + 1]):
                 j_current = csr_indices[j]
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
@@ -554,10 +554,10 @@ cdef _dijkstra_undirected(
     cdef FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                         sizeof(FibonacciNode))
 
-    for i from 0 <= i < Nind:
+    for i in range(Nind):
         j_source = source_indices[i]
 
-        for k from 0 <= k < N:
+        for k in range(N):
             initialize_node(&nodes[k], k)
 
         dist_matrix[i, j_source] = 0
@@ -568,7 +568,7 @@ cdef _dijkstra_undirected(
             v = remove_min(&heap)
             v.state = SCANNED
 
-            for j from csr_indptr[v.index] <= j < csr_indptr[v.index + 1]:
+            for j in range(csr_indptr[v.index], csr_indptr[v.index + 1]):
                 j_current = csr_indices[j]
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
@@ -586,7 +586,7 @@ cdef _dijkstra_undirected(
                             if return_pred:
                                 pred[i, j_current] = v.index
 
-            for j from csrT_indptr[v.index] <= j < csrT_indptr[v.index + 1]:
+            for j in range(csrT_indptr[v.index], csrT_indptr[v.index + 1]):
                 j_current = csrT_indices[j]
                 current_node = &nodes[j_current]
                 if current_node.state != SCANNED:
@@ -743,14 +743,14 @@ cdef int _bellman_ford_directed(
 
     cdef int return_pred = (pred.size > 0)
 
-    for i from 0 <= i < Nind:
+    for i in range(Nind):
         j_source = source_indices[i]
 
         # relax all edges N-1 times
-        for count from 0 <= count < N - 1:
-            for j from 0 <= j < N:
+        for count in range(N - 1):
+            for j in range(N):
                 d1 = dist_matrix[i, j]
-                for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+                for k in range(csr_indptr[j], csr_indptr[j + 1]):
                     w12 = csr_weights[k]
                     d2 = dist_matrix[i, csr_indices[k]]
                     if d1 + w12 < d2:
@@ -759,9 +759,9 @@ cdef int _bellman_ford_directed(
                             pred[i, csr_indices[k]] = j
 
         # check for negative-weight cycles
-        for j from 0 <= j < N:
+        for j in range(N):
             d1 = dist_matrix[i, j]
-            for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+            for k in range(csr_indptr[j], csr_indptr[j + 1]):
                 w12 = csr_weights[k]
                 d2 = dist_matrix[i, csr_indices[k]]
                 if d1 + w12 + DTYPE_EPS < d2:
@@ -785,14 +785,14 @@ cdef int _bellman_ford_undirected(
 
     cdef int return_pred = (pred.size > 0)
 
-    for i from 0 <= i < Nind:
+    for i in range(Nind):
         j_source = source_indices[i]
 
         # relax all edges N-1 times
-        for count from 0 <= count < N - 1:
-            for j from 0 <= j < N:
+        for count in range(N - 1):
+            for j in range(N):
                 d1 = dist_matrix[i, j]
-                for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+                for k in range(csr_indptr[j], csr_indptr[j + 1]):
                     w12 = csr_weights[k]
                     ind_k = csr_indices[k]
                     d2 = dist_matrix[i, ind_k]
@@ -806,9 +806,9 @@ cdef int _bellman_ford_undirected(
                             pred[i, j] = ind_k
 
         # check for negative-weight cycles
-        for j from 0 <= j < N:
+        for j in range(N):
             d1 = dist_matrix[i, j]
-            for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+            for k in range(csr_indptr[j], csr_indptr[j + 1]):
                 w12 = csr_weights[k]
                 d2 = dist_matrix[i, csr_indices[k]]
                 if abs(d2 - d1) > w12 + DTYPE_EPS:
@@ -977,8 +977,8 @@ cdef void _johnson_add_weights(
     # let w(u, v) = w(u, v) + h(u) - h(v)
     cdef unsigned int j, k, N = dist_array.shape[0]
 
-    for j from 0 <= j < N:
-        for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+    for j in range(N):
+        for k in range(csr_indptr[j], csr_indptr[j + 1]):
             csr_weights[k] += dist_array[j]
             csr_weights[k] -= dist_array[csr_indices[k]]
 
@@ -994,23 +994,23 @@ cdef int _johnson_directed(
     cdef DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
-    for count from 0 <= count < N:
-        for k from 0 <= k < N:
+    for count in range(N):
+        for k in range(N):
             if dist_array[k] < 0:
                 dist_array[k] = 0
 
-        for j from 0 <= j < N:
+        for j in range(N):
             d1 = dist_array[j]
-            for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+            for k in range(csr_indptr[j], csr_indptr[j + 1]):
                 w12 = csr_weights[k]
                 d2 = dist_array[csr_indices[k]]
                 if d1 + w12 < d2:
                     dist_array[csr_indices[k]] = d1 + w12
 
     # check for negative-weight cycles
-    for j from 0 <= j < N:
+    for j in range(N):
         d1 = dist_array[j]
-        for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+        for k in range(csr_indptr[j], csr_indptr[j + 1]):
             w12 = csr_weights[k]
             d2 = dist_array[csr_indices[k]]
             if d1 + w12 + DTYPE_EPS < d2:
@@ -1030,14 +1030,14 @@ cdef int _johnson_undirected(
     cdef DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
-    for count from 0 <= count < N:
-        for k from 0 <= k < N:
+    for count in range(N):
+        for k in range(N):
             if dist_array[k] < 0:
                 dist_array[k] = 0
 
-        for j from 0 <= j < N:
+        for j in range(N):
             d1 = dist_array[j]
-            for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+            for k in range(csr_indptr[j], csr_indptr[j + 1]):
                 w12 = csr_weights[k]
                 ind_k = csr_indices[k]
                 d2 = dist_array[ind_k]
@@ -1047,9 +1047,9 @@ cdef int _johnson_undirected(
                     dist_array[j] = d1 = d2 + w12
 
     # check for negative-weight cycles
-    for j from 0 <= j < N:
+    for j in range(N):
         d1 = dist_array[j]
-        for k from csr_indptr[j] <= k < csr_indptr[j + 1]:
+        for k in range(csr_indptr[j], csr_indptr[j + 1]):
             w12 = csr_weights[k]
             d2 = dist_array[csr_indices[k]]
             if abs(d2 - d1) > w12 + DTYPE_EPS:
@@ -1265,7 +1265,7 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
     heap.min_node = temp
 
     # re-link the heap
-    for i from 0 <= i < 100:
+    for i in range(100):
         heap.roots_by_rank[i] = NULL
 
     while temp:

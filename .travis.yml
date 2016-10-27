@@ -21,7 +21,7 @@ matrix:
         - REFGUIDE_CHECK=1
         - COVERAGE=
         - NPY_RELAXED_STRIDES_CHECKING=1
-        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.2"
+        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.4"
       addons:
         apt:
           packages:
@@ -54,7 +54,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC="numpy==1.7.2"
+        - NUMPYSPEC="numpy==1.8.2"
         - USE_SDIST=1
     - python: 2.7
       env:
@@ -93,11 +93,13 @@ before_install:
   - popd
   - export CPATH=$HOME/.local/include
   - export LIBRARY_PATH=$HOME/.local/lib
+  - export LD_LIBRARY_PATH=$HOME/.local/lib
   # End install gmpy2 dependencies
   # Speed up install by not compiling Cython
   - travis_retry pip install --install-option="--no-cython-compile" Cython==0.22
   - travis_retry pip install $NUMPYSPEC
-  - travis_retry pip install nose mpmath argparse Pillow codecov setuptools
+  - travis_retry pip install nose mpmath argparse Pillow codecov
+  - travis_retry pip install --upgrade pip setuptools
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
   - if [ "${USE_WHEEL}" == "1" ]; then pip install wheel; fi
@@ -112,17 +114,19 @@ script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
   - if [ "$NPY_RELAXED_STRIDES_CHECKING" == "1" ]; then python -c'import numpy as np; assert np.ones((10,1),order="C").flags.f_contiguous'; fi
+  # Test that mpmath actually uses gmpy2
+  - python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
   - |
     if [ "${USE_WHEEL}" == "1" ]; then
         # Need verbose output or TravisCI will terminate after 10 minutes
         pip wheel . -v
-        pip install wheelhouse/* -v
+        pip install scipy*.whl -v
         USE_WHEEL_BUILD="--no-build"
     elif [ "${USE_SDIST}" == "1" ]; then
         python setup.py sdist
         # Move out of source directory to avoid finding local scipy
         pushd dist
-        pip install scipy*
+        pip install scipy* -v
         popd
         USE_WHEEL_BUILD="--no-build"
     fi

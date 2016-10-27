@@ -7,6 +7,7 @@ from __future__ import division, print_function, absolute_import
 from scipy import special
 from scipy.special import entr, gammaln as gamln
 from scipy.misc import logsumexp
+from scipy._lib._numpy_compat import broadcast_to
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
@@ -141,13 +142,17 @@ class nbinom_gen(rv_discrete):
 
     Notes
     -----
-    The probability mass function for `nbinom` is::
+    Negative binomial distribution describes a sequence of i.i.d. Bernoulli 
+    trials, repeated until a predefined, non-random number of successes occurs.
 
-         nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
+    The probability mass function of the number of failures for `nbinom` is::
+
+       nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
 
     for ``k >= 0``.
 
-    `nbinom` takes ``n`` and ``p`` as shape parameters.
+    `nbinom` takes ``n`` and ``p`` as shape parameters where n is the number of
+    successes, whereas p is the probability of a single success.
 
     %(after_notes)s
 
@@ -310,8 +315,8 @@ class hypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N):
         cond = (M > 0) & (n >= 0) & (N >= 0)
         cond &= (n <= M) & (N <= M)
-        self.a = max(N-(M-n), 0)
-        self.b = min(n, N)
+        self.a = np.maximum(N-(M-n), 0)
+        self.b = np.minimum(n, N)
         return cond
 
     def _logpmf(self, k, M, n, N):
@@ -405,10 +410,10 @@ class logser_gen(rv_discrete):
         return (p > 0) & (p < 1)
 
     def _pmf(self, k, p):
-        return -np.power(p, k) * 1.0 / k / log(1 - p)
+        return -np.power(p, k) * 1.0 / k / special.log1p(-p)
 
     def _stats(self, p):
-        r = log(1 - p)
+        r = special.log1p(-p)
         mu = p / (p - 1.0) / r
         mu2p = -p / r / (p - 1.0)**2
         var = mu2p - mu*mu
@@ -505,16 +510,9 @@ class planck_gen(rv_discrete):
 
     """
     def _argcheck(self, lambda_):
-        if (lambda_ > 0):
-            self.a = 0
-            self.b = np.inf
-            return 1
-        elif (lambda_ < 0):
-            self.a = -np.inf
-            self.b = 0
-            return 1
-        else:
-            return 0
+        self.a = np.where(lambda_ > 0, 0, -np.inf)
+        self.b = np.where(lambda_ > 0, np.inf, 0)
+        return lambda_ != 0
 
     def _pmf(self, k, lambda_):
         fact = (1-exp(-lambda_))
@@ -643,15 +641,21 @@ class randint_gen(rv_discrete):
         g2 = -6.0/5.0 * (d*d + 1.0) / (d*d - 1.0)
         return mu, var, g1, g2
 
-    def _rvs(self, low, high=None):
-        """An array of *size* random integers >= ``low`` and < ``high``.
-
-        If ``high`` is ``None``, then range is >=0  and < low
-        """
-        return self._random_state.randint(low, high, self._size)
+    def _rvs(self, low, high):
+        """An array of *size* random integers >= ``low`` and < ``high``."""
+        if self._size is not None:
+            # Numpy's RandomState.randint() doesn't broadcast its arguments.
+            # Use `broadcast_to()` to extend the shapes of low and high
+            # up to self._size.  Then we can use the numpy.vectorize'd
+            # randint without needing to pass it a `size` argument.
+            low = broadcast_to(low, self._size)
+            high = broadcast_to(high, self._size)
+        randint = np.vectorize(self._random_state.randint, otypes=[np.int_])
+        return randint(low, high)
 
     def _entropy(self, low, high):
         return log(high - low)
+
 randint = randint_gen(name='randint', longname='A discrete uniform '
                       '(random integer)')
 

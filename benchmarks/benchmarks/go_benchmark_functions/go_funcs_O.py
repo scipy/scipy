@@ -46,8 +46,8 @@ class OddSquare(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0 * pi] * self.N,
-                           [5.0 * pi] * self.N)
+        self._bounds = list(zip([-5.0 * pi] * self.N,
+                           [5.0 * pi] * self.N))
         self.custom_bounds = ([-2.0, 4.0], [-2.0, 4.0])
         self.a = asarray([1, 1.3, 0.8, -0.4, -1.3, 1.6, -0.2, -0.6, 0.5, 1.4]
                          * 2)

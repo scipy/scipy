@@ -1318,7 +1318,7 @@ static PyObject *sigtools_median2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
                        PyArray_DIMS(a_image));
 	    break;
 	default:
-	  PYERR("2D median filter only supports Int8, Float32, and Float64.");
+	  PYERR("2D median filter only supports uint8, float32, and float64.");
 	}
     }
 

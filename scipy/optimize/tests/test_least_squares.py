@@ -336,6 +336,16 @@ class BaseMixin(object):
         assert_raises(ValueError, least_squares, fun_trivial, x0,
                       method=self.method)
 
+    def test_x0_complex_scalar(self):
+        x0 = 2.0 + 0.0*1j
+        assert_raises(ValueError, least_squares, fun_trivial, x0,
+                      method=self.method)
+
+    def test_x0_complex_array(self):
+        x0 = [1.0, 2.0 + 0.0*1j]
+        assert_raises(ValueError, least_squares, fun_trivial, x0,
+                      method=self.method)
+
     def test_bvp(self):
         # This test was introduced with fix #5556. It turned out that
         # dogbox solver had a bug with trust-region radius update, which

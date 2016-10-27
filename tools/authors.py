@@ -5,6 +5,9 @@ git-authors [OPTIONS] REV1..REV2
 
 List the authors who contributed within a given revision interval.
 
+To change the name mapping, edit .mailmap on the top-level of the
+repository.
+
 """
 # Author: Pauli Virtanen <pav@iki.fi>. This script is in the public domain.
 
@@ -14,126 +17,23 @@ import optparse
 import re
 import sys
 import os
+import io
 import subprocess
 
 try:
-    from scipy._lib.six import u, PY3
+    from scipy._lib.six import PY3
 except ImportError:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__),
                                     os.pardir, 'scipy', 'lib'))
-    from six import u, PY3
+    from six import PY3
 if PY3:
     stdout_b = sys.stdout.buffer
 else:
     stdout_b = sys.stdout
 
 
-NAME_MAP = {
-    u('87'): u('Han Genuit'),
-    u('aarchiba'): u('Anne Archibald'),
-    u('alex'): u('Alex Griffing'),
-    u('aman-thakral'): u('Aman Thakral'),
-    u('andbo'): u('Anders Bech Borchersen'),
-    u('Andreea_G'): u('Andreea Georgescu'),
-    u('Andreas H'): u('Andreas Hilboll'),
-    u('argriffing'): u('Alex Griffing'),
-    u('arichar6'): u('Steve Richardson'),
-    u('ArmstrongJ'): u('Jeff Armstrong'),
-    u('aw'): u('@chemelnucfin'),
-    u('axiru'): u('@axiru'),
-    u('Benny'): u('Benny Malengier'),
-    u('behzad nouri'): u('Behzad Nouri'),
-    u('bewithaman'): u('Aman Singh'),
-    u('brettrmurphy'): u('Brett R. Murphy'),
-    u('cel4'): u('@cel4'),
-    u('cgholke'): u('Christoph Gohlke'),
-    u('cgohlke'): u('Christoph Gohlke'),
-    u('chris.burns'): u('Chris Burns'),
-    u('Christolph Gohlke'): u('Christoph Gohlke'),
-    u('ckuster'): u('Christopher Kuster'),
-    u('Collin Stocks'): u('Collin RM Stocks'),
-    u('cnovak'): u('Clemens Novak'),
-    u('ctokheim'): u('Collin Tokheim'),
-    u('Daniel Smith'): u('Daniel B. Smith'),
-    u('Dapid'): u('David Menendez Hurtado'),
-    u('dellsystem'): u('Wendy Liu'),
-    u('Derek Homeir'): u('Derek Homeier'),
-    u('Derek Homier'): u('Derek Homeier'),
-    u('DSG User'): u('Max Bolingbroke'),
-    u('dhuard'): u('David Huard'),
-    u('dsimcha'): u('David Simcha'),
-    u('edschofield'): u('Ed Schofield'),
-    u('endolith'): u('@endolith'),
-    u('Endolith'): u('@endolith'),
-    u('e-q'): u('Eric Quintero'),
-    u('Eric89GXL'): u('Eric Larson'),
-    u('Gael varoquaux'): u('Gaël Varoquaux'),
-    u('giorgiop'): u('Giorgio Patrini'),
-    u('gotgenes'): u('Chris Lasher'),
-    u('Han'): u('Han Genuit'),
-    u('Helder'): u('Helder Cesar'),
-    u('HelmutAIT'): u('Helmut Toplitzer'),
-    u('honnorat'): u('Marc Honnorat'),
-    u('Horta'): u('Danilo Horta'),
-    u('I--P'): u('Irvin Probst'),
-    u('Jake Vanderplas'): u('Jacob Vanderplas'),
-    u('Jake VanderPlas'): u('Jacob Vanderplas'),
-    u('jamestwebber'): u('James T. Webber'),
-    u('jaimefrio'): u('Jaime Fernandez del Rio'),
-    u('Jaime'): u('Jaime Fernandez del Rio'),
-    u('janani'): u('Janani Padmanabhan'),
-    u('Janani'): u('Janani Padmanabhan'),
-    u('jor'): u('Joscha Reimer'),
-    u('jesseengel'): u('Jesse Engel'),
-    u('josef'): u('Josef Perktold'),
-    u('josef-pktd'): u('Josef Perktold'),
-    u('Josh'): u('Josh Wilson'),
-    u('kat'): u('Kat Huang'),
-    u('kshramt'): u('Amato Kasahara'),
-    u('Lars'): u('Lars Buitinck'),
-    u('ldamewood'): u('Liam Damewood'),
-    u('levelfour'): u('Fukumu Tsutsumi'),
-    u('lmwang'): u('Liming Wang'),
-    u('loluengo'): u('Lorenzo Luengo'),
-    u('lzkelley'): u('Luke Zoltan Kelley'),
-    u('mamrehn'): u('@mamrehn'),
-    u('manns'): u('Martin Manns'),
-    u('Mark'): u('Mark Wiebe'),
-    u('mdroe'): u('Michael Droettboom'),
-    u('maniteja123'): u('Maniteja Nandana'),
-    u('Matteo Visconti dOC'): u('Matteo Visconti'),
-    u('newman101'): u('Juha Remes'),
-    u('nicola montecchio'): u('Nicola Montecchio'),
-    u('nmoya'): u('Nikolas Moya'),
-    u('patricksnape'): u('Patrick Snape'),
-    u('pbrod'): u('Per Brodtkorb'),
-    u('Pete'): u('Pete Bunch'),
-    u('Perry'): u('Perry Lee'),
-    u('pierregm'): u('Pierre GM'),
-    u('plafl'): u('Pedro López-Adeva Fernández-Layos'),
-    u('polyatail'): u('Andrew Sczesnak'),
-    u('raphael'): u('Raphael Wettinger'),
-    u('raphaelw'): u('Raphael Wettinger'),
-    u('rgommers'): u('Ralf Gommers'),
-    u('RoyalTS'): u('Tobias Schmidt'),
-    u('Rupak'): u('Rupak Das'),
-    u('Sebascn'): u('Sebastian Skoupý'),
-    u('sebhaase'): u('Sebastian Haase'),
-    u('sumitbinnani'): u('Sumit Binnani'),
-    u('SytseK'): u('Sytse Knypstra'),
-    u('Takuya OSHIMA'): u('Takuya Oshima'),
-    u('terrycojones'): u('Terry Jones'),
-    u('tiagopereira'): u('Tiago M.D. Pereira'),
-    u('tonysyu'): u('Tony S. Yu'),
-    u('Travis E. Oliphant'): u('Travis Oliphant'),
-    u('vanpact'): u('Yves-Rémi Van Eycke'),
-    u('ubuntu'): u('Aldrian Obaja'),
-    u('wa03'): u('Josh Lawrence'),
-    u('warren.weckesser'): u('Warren Weckesser'),
-    u('weathergod'): u('Benjamin Root'),
-    u('wiredfool'): u('Eric Soroos'),
-    u('Zhenya'): u('Evgeni Burovski'),
-}
+MAILMAP_FILE = os.path.join(os.path.dirname(__file__), "..", ".mailmap")
+
 
 def main():
     p = optparse.OptionParser(__doc__.strip())
@@ -149,6 +49,8 @@ def main():
     except ValueError:
         p.error("argument is not a revision range")
 
+    NAME_MAP = load_name_map(MAILMAP_FILE)
+
     # Analyze log data
     all_authors = set()
     authors = set()
@@ -157,7 +59,7 @@ def main():
         line = line.strip().decode('utf-8')
 
         # Check the commit author name
-        m = re.match(u('^@@@([^@]*)@@@'), line)
+        m = re.match(u'^@@@([^@]*)@@@', line)
         if m:
             name = m.group(1)
             line = line[m.end():]
@@ -168,17 +70,17 @@ def main():
             names.add(name)
 
         # Look for "thanks to" messages in the commit log
-        m = re.search(u(r'([Tt]hanks to|[Cc]ourtesy of) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )'), line)
+        m = re.search(r'([Tt]hanks to|[Cc]ourtesy of) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
         if m:
             name = m.group(2)
-            if name not in (u('this'),):
+            if name not in (u'this',):
                 if disp:
                     stdout_b.write("    - Log   : %s\n" % line.strip().encode('utf-8'))
                 name = NAME_MAP.get(name, name)
                 names.add(name)
 
             line = line[m.end():].strip()
-            line = re.sub(u(r'^(and|, and|, ) '), u('Thanks to '), line)
+            line = re.sub(r'^(and|, and|, ) ', u'Thanks to ', line)
             analyze_line(line.encode('utf-8'), names)
 
     # Find all authors before the named range
@@ -193,18 +95,18 @@ def main():
 
     # Sort
     def name_key(fullname):
-        m = re.search(u(' [a-z ]*[A-Za-z-]+$'), fullname)
+        m = re.search(u' [a-z ]*[A-Za-z-]+$', fullname)
         if m:
             forename = fullname[:m.start()].strip()
             surname = fullname[m.start():].strip()
         else:
             forename = ""
             surname = fullname.strip()
-        if surname.startswith(u('van der ')):
+        if surname.startswith(u'van der '):
             surname = surname[8:]
-        if surname.startswith(u('de ')):
+        if surname.startswith(u'de '):
             surname = surname[3:]
-        if surname.startswith(u('von ')):
+        if surname.startswith(u'von '):
             surname = surname[4:]
         return (surname.lower(), forename.lower())
 
@@ -233,6 +135,30 @@ This list of names is automatically generated, and may not be fully complete.
 
     stdout_b.write(("\nNOTE: Check this list manually! It is automatically generated "
                     "and some names\n      may be missing.\n").encode('utf-8'))
+
+
+def load_name_map(filename):
+    name_map = {}
+
+    with io.open(filename, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith(u"#") or not line:
+                continue
+
+            m = re.match(u'^(.*?)\s*<(.*?)>(.*?)\s*<(.*?)>\s*$', line)
+            if not m:
+                print("Invalid line in .mailmap: '{!r}'".format(line), file=sys.stderr)
+                sys.exit(1)
+
+            new_name = m.group(1).strip()
+            old_name = m.group(3).strip()
+
+            if old_name and new_name:
+                name_map[old_name] = new_name
+
+    return name_map
+
 
 #------------------------------------------------------------------------------
 # Communicating with Git

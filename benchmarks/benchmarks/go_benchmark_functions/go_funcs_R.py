@@ -39,8 +39,8 @@ class Rana(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-500.000001] * self.N,
-                           [500.000001] * self.N)
+        self._bounds = list(zip([-500.000001] * self.N,
+                           [500.000001] * self.N))
 
         self.global_optimum = [[-300.3376, 500.]]
         self.fglob = -500.8021602966615
@@ -79,7 +79,7 @@ class Rastrigin(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = list(zip([-5.12] * self.N, [5.12] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -103,8 +103,8 @@ class Ratkowsky01(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0., 1., 0., 0.1],
-                           [1000, 20., 3., 6.])
+        self._bounds = list(zip([0., 1., 0., 0.1],
+                           [1000, 20., 3., 6.]))
         self.global_optimum = [[6.996415127e2, 5.2771253025, 7.5962938329e-1,
                                 1.2792483859]]
         self.fglob = 8.786404908e3
@@ -154,8 +154,8 @@ class Ratkowsky02(Benchmark):
     def __init__(self, dimensions=3):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([10, 0.5, 0.01],
-                           [200, 5., 0.5])
+        self._bounds = list(zip([10, 0.5, 0.01],
+                           [200, 5., 0.5]))
         self.global_optimum = [[7.2462237576e1, 2.6180768402, 6.7359200066e-2]]
         self.fglob = 8.0565229338
         self.a = asarray([8.93, 10.8, 18.59, 22.33, 39.35, 56.11, 61.73, 64.62,
@@ -196,7 +196,7 @@ class Ripple01(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.1 for _ in range(self.N)]]
         self.fglob = -2.2
@@ -237,7 +237,7 @@ class Ripple25(Benchmark):
 
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
-        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.1 for _ in range(self.N)]]
         self.fglob = -2.0
@@ -278,7 +278,7 @@ class Rosenbrock(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-30.] * self.N, [30.0] * self.N)
+        self._bounds = list(zip([-30.] * self.N, [30.0] * self.N))
         self.custom_bounds = [(-2, 2), (-2, 2)]
 
         self.global_optimum = [[1 for _ in range(self.N)]]
@@ -321,7 +321,7 @@ class RosenbrockModified(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
+        self._bounds = list(zip([-2.0] * self.N, [2.0] * self.N))
         self.custom_bounds = ([-1.0, 0.5], [-1.0, 1.0])
 
         self.global_optimum = [[-0.90955374, -0.95057172]]
@@ -359,8 +359,8 @@ class RotatedEllipse01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-500.0] * self.N,
-                           [500.0] * self.N)
+        self._bounds = list(zip([-500.0] * self.N,
+                           [500.0] * self.N))
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [[0.0, 0.0]]
@@ -397,8 +397,8 @@ class RotatedEllipse02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-500.0] * self.N,
-                           [500.0] * self.N)
+        self._bounds = list(zip([-500.0] * self.N,
+                           [500.0] * self.N))
         self.custom_bounds = ([-2.0, 2.0], [-2.0, 2.0])
 
         self.global_optimum = [[0.0, 0.0]]

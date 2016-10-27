@@ -506,6 +506,88 @@ class TestCurveFit(TestCase):
             # have to set rtol=1e-3.
             assert_allclose(popt, [2, 2], rtol=1e-3)
 
+    def test_maxfev_and_bounds(self):
+        # gh-6340: with no bounds, curve_fit accepts parameter maxfev (via leastsq)
+        # but with bounds, the parameter is `max_nfev` (via least_squares)
+        x = np.arange(0, 10)
+        y = 2*x
+        popt1, _ = curve_fit(lambda x,p: p*x, x, y, bounds=(0, 3), maxfev=100)
+        popt2, _ = curve_fit(lambda x,p: p*x, x, y, bounds=(0, 3), max_nfev=100)
+
+        assert_allclose(popt1, 2, atol=1e-14)
+        assert_allclose(popt2, 2, atol=1e-14)
+
+    def test_curvefit_simplecovariance(self):
+
+        def func(x, a, b):
+            return a * np.exp(-b*x)
+
+        def jac(x, a, b):
+            e = np.exp(-b*x)
+            return np.vstack((e, -a * x * e)).T
+
+        np.random.seed(0)
+        xdata = np.linspace(0, 4, 50)
+        y = func(xdata, 2.5, 1.3)
+        ydata = y + 0.2 * np.random.normal(size=len(xdata))
+
+        sigma = np.zeros(len(xdata)) + 0.2
+        covar = np.diag(sigma**2)
+
+        for jac1, jac2 in [(jac, jac), (None, None)]:
+            for absolute_sigma in [False, True]:
+                popt1, pcov1 = curve_fit(func, xdata, ydata, sigma=sigma,
+                        jac=jac1, absolute_sigma=absolute_sigma)
+                popt2, pcov2 = curve_fit(func, xdata, ydata, sigma=covar,
+                        jac=jac2, absolute_sigma=absolute_sigma)
+
+                assert_allclose(popt1, popt2, atol=1e-14)
+                assert_allclose(pcov1, pcov2, atol=1e-14)
+
+    def test_curvefit_covariance(self):
+
+        def funcp(x, a, b):
+            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+            return rotn.dot(a * np.exp(-b*x))
+
+        def jacp(x, a, b):
+            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+            e = np.exp(-b*x)
+            return rotn.dot(np.vstack((e, -a * x * e)).T)
+
+        def func(x, a, b):
+            return a * np.exp(-b*x)
+
+        def jac(x, a, b):
+            e = np.exp(-b*x)
+            return np.vstack((e, -a * x * e)).T
+
+        np.random.seed(0)
+        xdata = np.arange(1, 4)
+        y = func(xdata, 2.5, 1.0)
+        ydata = y + 0.2 * np.random.normal(size=len(xdata))
+        sigma = np.zeros(len(xdata)) + 0.2
+        covar = np.diag(sigma**2)
+        # Get a rotation matrix, and obtain ydatap = R ydata
+        # Chisq = ydata^T C^{-1} ydata
+        #       = ydata^T R^T R C^{-1} R^T R ydata
+        #       = ydatap^T Cp^{-1} ydatap
+        # Cp^{-1} = R C^{-1} R^T
+        # Cp      = R C R^T, since R^-1 = R^T
+        rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+        ydatap = rotn.dot(ydata)
+        covarp = rotn.dot(covar).dot(rotn.T)
+
+        for jac1, jac2 in [(jac, jacp), (None, None)]:
+            for absolute_sigma in [False, True]:
+                popt1, pcov1 = curve_fit(func, xdata, ydata, sigma=sigma,
+                        jac=jac1, absolute_sigma=absolute_sigma)
+                popt2, pcov2 = curve_fit(funcp, xdata, ydatap, sigma=covarp,
+                        jac=jac2, absolute_sigma=absolute_sigma)
+
+                assert_allclose(popt1, popt2, atol=1e-14)
+                assert_allclose(pcov1, pcov2, atol=1e-14)
+
 
 class TestFixedPoint(TestCase):
 

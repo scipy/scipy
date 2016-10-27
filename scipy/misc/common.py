@@ -26,8 +26,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         Input array.
     axis : None or int or tuple of ints, optional
         Axis or axes over which the sum is taken. By default `axis` is None,
-        and all elements are summed. Tuple of ints is not accepted if NumPy
-        version is lower than 1.7.0.
+        and all elements are summed.
 
         .. versionadded:: 0.11.0
     keepdims : bool, optional

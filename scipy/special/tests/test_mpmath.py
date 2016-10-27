@@ -11,22 +11,21 @@ from numpy import pi
 import scipy.special as sc
 from scipy._lib.six import with_metaclass
 from scipy._lib._testutils import knownfailure_overridable
-from scipy.special._testutils import (MissingModule, check_version, FuncData,
-                                      DecoratorMeta, assert_func_equal)
-from scipy.special._mptestutils import (Arg, FixedArg, ComplexArg, IntArg,
-                                        assert_mpmath_equal,
-                                        nonfunctional_tooslow, trace_args,
-                                        time_limited, exception_to_nan,
-                                        inf_to_nan)
-from scipy.special._ufuncs import _sinpi, _cospi
+from scipy.special._testutils import (
+    MissingModule, check_version, FuncData, DecoratorMeta,
+    assert_func_equal)
+from scipy.special._mptestutils import (
+    Arg, FixedArg, ComplexArg, IntArg, assert_mpmath_equal,
+    nonfunctional_tooslow, trace_args, time_limited, exception_to_nan,
+    inf_to_nan)
+from scipy.special._ufuncs import (
+    _sinpi, _cospi, _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
+    _igam_fac)
 
 try:
     import mpmath
 except ImportError:
-    try:
-        import sympy.mpmath as mpmath
-    except ImportError:
-        mpmath = MissingModule('mpmath')
+    mpmath = MissingModule('mpmath')
 
 
 # ------------------------------------------------------------------------------
@@ -44,6 +43,23 @@ def test_expi_complex():
 
     FuncData(sc.expi, dataset, 0, 1).check()
 
+
+# ------------------------------------------------------------------------------
+# expn
+# ------------------------------------------------------------------------------
+
+@check_version(mpmath, '0.19')
+def test_expn_large_n():
+    # Test the transition to the asymptotic regime of n.
+    dataset = []
+    for n in [50, 51]:
+        for x in np.logspace(0, 4, 200):
+            with mpmath.workdps(100):
+                dataset.append((n, x, float(mpmath.expint(n, x))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.expn, dataset, (0, 1), 2, rtol=1e-13).check()
+
 # ------------------------------------------------------------------------------
 # hyp0f1
 # ------------------------------------------------------------------------------
@@ -52,18 +68,24 @@ def test_expi_complex():
 @check_version(mpmath, '0.19')
 def test_hyp0f1_gh5764():
     # Do a small and somewhat systematic test that runs quickly
-    pts = []
+    dataset = []
     axis = [-99.5, -9.5, -0.5, 0.5, 9.5, 99.5]
     for v in axis:
         for x in axis:
             for y in axis:
-                pts.append((v, x + 1J*y))
-    std = np.array([complex(mpmath.hyp0f1(*p)) for p in pts])
-    # Can't use FuncData because v should be real and z complex
-    res = np.array([sc.hyp0f1(*p) for p in pts])
-    assert_allclose(res, std, atol=1e-13, rtol=1e-13)
+                z = x + 1j*y
+                # mpmath computes the answer correctly at dps ~ 17 but
+                # fails for 20 < dps < 120 (uses a different method);
+                # set the dps high enough that this isn't an issue
+                with mpmath.workdps(120):
+                    res = complex(mpmath.hyp0f1(v, z))
+                dataset.append((v, z, res))
+    dataset = np.array(dataset)
 
+    FuncData(lambda v, z: sc.hyp0f1(v.real, z), dataset, (0, 1), 2,
+             rtol=1e-13).check()
 
+    
 @check_version(mpmath, '0.19')
 def test_hyp0f1_gh_1609():
     # this is a regression test for gh-1609
@@ -459,8 +481,8 @@ def test_digamma_boundary():
 @dec.slow
 def test_gammainc_boundary():
     # Test the transition to the asymptotic series.
-    small = 25
-    a = np.linspace(0.5*0.7*small, 2*1.3*small, 100)
+    small = 20
+    a = np.linspace(0.5*small, 2*small, 50)
     x = a.copy()
     a, x = np.meshgrid(a, x)
     a, x = a.flatten(), x.flatten()
@@ -534,6 +556,102 @@ def test_cospi_zeros():
     dataset = np.array(dataset)
     FuncData(_cospi, dataset, 0, 1, rtol=2*eps).check()
 
+
+# ------------------------------------------------------------------------------
+# ellipj
+# ------------------------------------------------------------------------------
+
+@check_version(mpmath, '0.19')
+def test_dn_quarter_period():
+    def dn(u, m):
+        return sc.ellipj(u, m)[2]
+
+    def mpmath_dn(u, m):
+        return float(mpmath.ellipfun("dn", u=u, m=m))
+
+    m = np.linspace(0, 1, 20)
+    du = np.r_[-np.logspace(-1, -15, 10), 0, np.logspace(-15, -1, 10)]
+    dataset = []
+    for m0 in m:
+        u0 = float(mpmath.ellipk(m0))
+        for du0 in du:
+            p = u0 + du0
+            dataset.append((p, m0, mpmath_dn(p, m0)))
+    dataset = np.asarray(dataset)
+
+    FuncData(dn, dataset, (0, 1), 2, rtol=1e-10).check()
+
+
+# ------------------------------------------------------------------------------
+# Wright Omega
+# ------------------------------------------------------------------------------
+
+def _mpmath_wrightomega(z, dps):
+    with mpmath.workdps(dps):
+        z = mpmath.mpc(z)
+        unwind = mpmath.ceil((z.imag - mpmath.pi)/(2*mpmath.pi))
+        res = mpmath.lambertw(mpmath.exp(z), unwind)
+    return res
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_branch():
+    x = -np.logspace(10, 0, 25)
+    picut_above = [np.nextafter(np.pi, np.inf)]
+    picut_below = [np.nextafter(np.pi, -np.inf)]
+    npicut_above = [np.nextafter(-np.pi, np.inf)]
+    npicut_below = [np.nextafter(-np.pi, -np.inf)]
+    for i in range(50):
+        picut_above.append(np.nextafter(picut_above[-1], np.inf))
+        picut_below.append(np.nextafter(picut_below[-1], -np.inf))
+        npicut_above.append(np.nextafter(npicut_above[-1], np.inf))
+        npicut_below.append(np.nextafter(npicut_below[-1], -np.inf))
+    y = np.hstack((picut_above, picut_below, npicut_above, npicut_below))
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-8).check()
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_region1():
+    # This region gets less coverage in the TestSystematic test
+    x = np.linspace(-2, 1)
+    y = np.linspace(1, 2*np.pi)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_region2():
+    # This region gets less coverage in the TestSystematic test
+    x = np.linspace(-2, 1)
+    y = np.linspace(-2*np.pi, -1)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
+    
 
 # ------------------------------------------------------------------------------
 # Systematic tests
@@ -817,6 +935,15 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         # check asymptotic series cross-over
         assert_mpmath_equal(chi, mpmath.chi, [FixedArg([88 - 1e-9, 88, 88 + 1e-9])])
 
+    def test_chi_complex(self):
+        def chi(z):
+            return sc.shichi(z)[1]
+        # chi oscillates as Im[z] -> +- inf, so limit range
+        assert_mpmath_equal(chi,
+                            mpmath.chi,
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
+                            rtol=1e-12)
+
     def test_ci(self):
         def ci(x):
             return sc.sici(x)[1]
@@ -824,6 +951,15 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(ci,
                             mpmath.ci,
                             [Arg(-1e8, 1e8)])
+
+    def test_ci_complex(self):
+        def ci(z):
+            return sc.sici(z)[1]
+        # ci oscillates as Re[z] -> +- inf, so limit range
+        assert_mpmath_equal(ci,
+                            mpmath.ci,
+                            [ComplexArg(complex(-1e8, -np.inf), complex(1e8, np.inf))],
+                            rtol=1e-8)
 
     def test_cospi(self):
         # Without the extra factor of 2 in the relative tolerance as
@@ -857,7 +993,26 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_e1(self):
         assert_mpmath_equal(sc.exp1,
                             mpmath.e1,
-                            [Arg()])
+                            [Arg()], rtol=1e-14)
+
+    def test_e1_complex(self):
+        # E_1 oscillates as Im[z] -> +- inf, so limit range
+        assert_mpmath_equal(sc.exp1,
+                            mpmath.e1,
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
+                            rtol=1e-11)
+
+        # Check cross-over region
+        assert_mpmath_equal(sc.exp1,
+                            mpmath.e1,
+                            (np.linspace(-50, 50, 171)[:, None] +
+                             np.r_[0, np.logspace(-3, 2, 61),
+                                   -np.logspace(-3, 2, 11)]*1j).ravel(),
+                            rtol=1e-11)
+        assert_mpmath_equal(sc.exp1,
+                            mpmath.e1,
+                            (np.linspace(-50, -35, 10000) + 0j),
+                            rtol=1e-11)
 
     def test_exprel(self):
         assert_mpmath_equal(sc.exprel,
@@ -879,24 +1034,10 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             lambda x: mpmath.log(x+1),
                             [ComplexArg()], dps=60)
 
-    def test_e1_complex(self):
-        # E_1 oscillates as Im[z] -> +- inf, so limit range
-        assert_mpmath_equal(sc.exp1,
-                            mpmath.e1,
-                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
-                            rtol=1e-11)
-
-        # Check cross-over region
-        assert_mpmath_equal(sc.exp1,
-                            mpmath.e1,
-                            (np.linspace(-50, 50, 171)[:, None] +
-                             np.r_[0, np.logspace(-3, 2, 61),
-                                   -np.logspace(-3, 2, 11)]*1j).ravel(),
-                            rtol=1e-11)
-        assert_mpmath_equal(sc.exp1,
-                            mpmath.e1,
-                            (np.linspace(-50, -35, 10000) + 0j),
-                            rtol=1e-11)
+    def test_log1pmx(self):
+        assert_mpmath_equal(_log1pmx,
+                            lambda x: mpmath.log(x + 1) - x,
+                            [Arg()], dps=60, rtol=1e-14)
 
     def test_ei(self):
         assert_mpmath_equal(sc.expi,
@@ -962,27 +1103,34 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             ignore_inf_sign=True)
 
     def test_ellipfun_sn(self):
+        def sn(u, m):
+            # mpmath doesn't get the zero at u = 0--fix that
+            if u == 0:
+                return 0
+            else:
+                return mpmath.ellipfun("sn", u=u, m=m)
+        
         # Oscillating function --- limit range of first argument; the
         # loss of precision there is an expected numerical feature
         # rather than an actual bug
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[0],
-                            lambda u, m: mpmath.ellipfun("sn", u=u, m=m),
+                            sn,
                             [Arg(-1e6, 1e6), Arg(a=0, b=1)],
-                            atol=1e-20)
+                            rtol=1e-8)
 
     def test_ellipfun_cn(self):
         # see comment in ellipfun_sn
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[1],
                             lambda u, m: mpmath.ellipfun("cn", u=u, m=m),
                             [Arg(-1e6, 1e6), Arg(a=0, b=1)],
-                            atol=1e-20)
+                            rtol=1e-8)
 
     def test_ellipfun_dn(self):
         # see comment in ellipfun_sn
         assert_mpmath_equal(lambda u, m: sc.ellipj(u, m)[2],
                             lambda u, m: mpmath.ellipfun("dn", u=u, m=m),
                             [Arg(-1e6, 1e6), Arg(a=0, b=1)],
-                            atol=1e-20)
+                            rtol=1e-8)
 
     def test_erf(self):
         assert_mpmath_equal(sc.erf,
@@ -997,7 +1145,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_erfc(self):
         assert_mpmath_equal(sc.erfc,
                             exception_to_nan(lambda z: mpmath.erfc(z)),
-                            [Arg()])
+                            [Arg()], rtol=1e-13)
 
     def test_erfc_complex(self):
         assert_mpmath_equal(sc.erfc,
@@ -1040,12 +1188,12 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             mpmath.eulernum,
                             [IntArg(1, 10000)], n=10000)
 
-    @knownfailure_overridable("spurious(?) inf for negative x")
     def test_expint(self):
         assert_mpmath_equal(sc.expn,
-                            exception_to_nan(mpmath.expint),
-                            [IntArg(0, 100), Arg()])
-
+                            mpmath.expint,
+                            [IntArg(0, 200), Arg(0, np.inf)],
+                            rtol=1e-13, dps=160)
+        
     def test_fresnels(self):
         def fresnels(x):
             return sc.fresnel(x)[0]
@@ -1077,14 +1225,13 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [Arg(0, 1e4, inclusive_a=False), Arg(0, 1e4)],
                             nan_ok=False, rtol=1e-11)
 
-    @knownfailure_overridable()
     def test_gammaincc(self):
         # Larger arguments are tested in test_data.py:test_local
         assert_mpmath_equal(sc.gammaincc,
                             lambda z, a: mpmath.gammainc(z, a=a, regularized=True),
                             [Arg(0, 1e4, inclusive_a=False), Arg(0, 1e4)],
-                             nan_ok=False, rtol=1e-10)
-
+                            nan_ok=False, rtol=1e-11)
+        
     def test_gammaln(self):
         # The real part of loggamma is log(|gamma(z)|).
         def f(z):
@@ -1187,7 +1334,6 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         # (similar to what is implemented for Bessel I here).
 
     def test_hyp0f1_complex(self):
-        KW = dict(maxprec=400, maxterms=1500)
         assert_mpmath_equal(lambda a, z: sc.hyp0f1(a.real, z),
                             exception_to_nan(lambda a, x: mpmath.hyp0f1(a, x, **HYPERKW)),
                             [Arg(-25, 25), ComplexArg(complex(-120, -120), complex(120, 120))])
@@ -1252,6 +1398,15 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(sc.hyperu,
                             exception_to_nan(lambda a, b, x: mpmath.hyperu(a, b, x, **HYPERKW)),
                             [Arg(), Arg(), Arg()])
+
+    def test_igam_fac(self):
+        def mp_igam_fac(a, x):
+            return mpmath.power(x, a)*mpmath.exp(-x)/mpmath.gamma(a)
+
+        assert_mpmath_equal(_igam_fac,
+                            mp_igam_fac,
+                            [Arg(0, 1e14, inclusive_a=False), Arg(0, 1e14)],
+                            rtol=1e-10)
 
     def test_j0(self):
         # The Bessel function at large arguments is j0(x) ~ cos(x + phi)/sqrt(x)
@@ -1328,6 +1483,20 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
                             lambda x, k: mpmath.lambertw(x, int(k)),
                             [Arg(), IntArg(0, 10)])
+
+    def test_lanczos_sum_expg_scaled(self):
+        maxgamma = 171.624376956302725
+        e = np.exp(1)
+        g = 6.024680040776729583740234375
+        
+        def gamma(x):
+            tmp = x + g - 0.5
+            return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
+        
+        assert_mpmath_equal(gamma,
+                            mpmath.gamma,
+                            [Arg(0, maxgamma, inclusive_a=False)],
+                            rtol=1e-13)
 
     @nonfunctional_tooslow
     def test_legendre(self):
@@ -1475,6 +1644,20 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [IntArg(0, 100), IntArg(0, 100), ComplexArg()],
                             n=100)
 
+    def test_lgam1p(self):
+        def param_filter(x):
+            # Filter the poles
+            return np.where((np.floor(x) == x) & (x <= 0), False, True)
+        
+        def mp_lgam1p(z):
+            # The real part of loggamma is log(|gamma(z)|)
+            return mpmath.loggamma(1 + z).real
+        
+        assert_mpmath_equal(_lgam1p,
+                            mp_lgam1p,
+                            [Arg()], rtol=1e-13, dps=100,
+                            param_filter=param_filter)
+        
     def test_loggamma(self):
         assert_mpmath_equal(sc.loggamma,
                             exception_to_nan(lambda x: mpmath.loggamma(x, **HYPERKW)),
@@ -1564,10 +1747,28 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         # check asymptotic series cross-over
         assert_mpmath_equal(shi, mpmath.shi, [FixedArg([88 - 1e-9, 88, 88 + 1e-9])])
 
+    def test_shi_complex(self):
+        def shi(z):
+            return sc.shichi(z)[0]
+        # shi oscillates as Im[z] -> +- inf, so limit range
+        assert_mpmath_equal(shi,
+                            mpmath.shi,
+                            [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
+                            rtol=1e-12)
+        
     def test_si(self):
         def si(x):
             return sc.sici(x)[0]
         assert_mpmath_equal(si, mpmath.si, [Arg()])
+
+    def test_si_complex(self):
+        def si(z):
+            return sc.sici(z)[0]
+        # si oscillates as Re[z] -> +- inf, so limit range
+        assert_mpmath_equal(si,
+                            mpmath.si,
+                            [ComplexArg(complex(-1e8, -np.inf), complex(1e8, np.inf))],
+                            rtol=1e-12)
 
     def test_spence(self):
         # mpmath uses a different convention for the dilogarithm
@@ -1620,6 +1821,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [Arg(-1e4, 1e4), Arg(0, 1e4)],
                             rtol=5e-10,
                             ignore_inf_sign=True)
+
+    def test_wrightomega(self):
+        assert_mpmath_equal(sc.wrightomega,
+                            lambda z: _mpmath_wrightomega(z, 25),
+                            [ComplexArg()], rtol=1e-14, nan_ok=False)
 
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,

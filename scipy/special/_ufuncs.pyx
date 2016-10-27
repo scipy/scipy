@@ -46,26 +46,45 @@ def errprint(inflag=None):
     """
     errprint(inflag=None)
 
-    Sets or returns the error printing flag for special functions.
+    Set or return the error printing flag for special functions.
 
     Parameters
     ----------
     inflag : bool, optional
         Whether warnings concerning evaluation of special functions in
-        scipy.special are shown. If omitted, no change is made to the
-        current setting.
+        ``scipy.special`` are shown. If omitted, no change is made to
+        the current setting.
 
     Returns
     -------
-    old_flag
+    old_flag : bool
         Previous value of the error flag
+
+    Examples
+    --------
+    Turn on error printing.
+
+    >>> import warnings
+    >>> import scipy.special as sc
+    >>> sc.bdtr(-1, 10, 0.3)
+    nan
+    >>> sc.errprint(True)
+    False
+    >>> with warnings.catch_warnings(record=True) as w:
+    ...     sc.bdtr(-1, 10, 0.3)
+    ...
+    nan
+    >>> len(w)
+    1
+    >>> w[0].message
+    SpecialFunctionWarning('scipy.special/bdtr: domain error',)
 
     """
     if inflag is not None:
         scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
-        return sf_error.set_print(int(bool(inflag)))
+        return bool(sf_error.set_print(int(bool(inflag))))
     else:
-        return sf_error.get_print()
+        return bool(sf_error.get_print())
 cdef void loop_D_DD__As_DD_D(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
     cdef np.npy_intp i, n = dims[0]
     cdef void *func = (<void**>data)[0]
@@ -1250,9 +1269,17 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_lgam "lgam"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double complex _func_clngamma_wrap "clngamma_wrap"(double complex) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_igam_fac "igam_fac"(double, double) nogil
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
 cdef _proto_lambertw_scalar_t *_proto_lambertw_scalar_t_var = &_func_lambertw_scalar
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_lanczos_sum_expg_scaled "lanczos_sum_expg_scaled"(double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_lgam1p "lgam1p"(double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_log1pmx "log1pmx"(double) nogil
 from _trig cimport sinpi as _func_sinpi
 ctypedef double _proto_sinpi_double__t(double) nogil
 cdef _proto_sinpi_double__t *_proto_sinpi_double__t_var = &_func_sinpi[double]
@@ -1894,8 +1921,14 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_round "round"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_shichi "shichi"(double, double *, double *) nogil
+from _sici cimport cshichi as _func_cshichi
+ctypedef int _proto_cshichi_t(double complex, double complex *, double complex *) nogil
+cdef _proto_cshichi_t *_proto_cshichi_t_var = &_func_cshichi
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_sici "sici"(double, double *, double *) nogil
+from _sici cimport csici as _func_csici
+ctypedef int _proto_csici_t(double complex, double complex *, double complex *) nogil
+cdef _proto_csici_t *_proto_csici_t_var = &_func_csici
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_sindg "sindg"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2070,6 +2103,28 @@ ufunc__gammaln_data[2] = &ufunc__gammaln_ptr[2*2]
 ufunc__gammaln_data[3] = &ufunc__gammaln_ptr[2*3]
 _gammaln = np.PyUFunc_FromFuncAndData(ufunc__gammaln_loops, ufunc__gammaln_data, ufunc__gammaln_types, 4, 1, 1, 0, "_gammaln", ufunc__gammaln_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc__igam_fac_loops[2]
+cdef void *ufunc__igam_fac_ptr[4]
+cdef void *ufunc__igam_fac_data[2]
+cdef char ufunc__igam_fac_types[6]
+cdef char *ufunc__igam_fac_doc = (
+    "Internal function, do not use.")
+ufunc__igam_fac_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__igam_fac_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__igam_fac_types[0] = <char>NPY_FLOAT
+ufunc__igam_fac_types[1] = <char>NPY_FLOAT
+ufunc__igam_fac_types[2] = <char>NPY_FLOAT
+ufunc__igam_fac_types[3] = <char>NPY_DOUBLE
+ufunc__igam_fac_types[4] = <char>NPY_DOUBLE
+ufunc__igam_fac_types[5] = <char>NPY_DOUBLE
+ufunc__igam_fac_ptr[2*0] = <void*>_func_igam_fac
+ufunc__igam_fac_ptr[2*0+1] = <void*>(<char*>"_igam_fac")
+ufunc__igam_fac_ptr[2*1] = <void*>_func_igam_fac
+ufunc__igam_fac_ptr[2*1+1] = <void*>(<char*>"_igam_fac")
+ufunc__igam_fac_data[0] = &ufunc__igam_fac_ptr[2*0]
+ufunc__igam_fac_data[1] = &ufunc__igam_fac_ptr[2*1]
+_igam_fac = np.PyUFunc_FromFuncAndData(ufunc__igam_fac_loops, ufunc__igam_fac_data, ufunc__igam_fac_types, 2, 2, 1, 0, "_igam_fac", ufunc__igam_fac_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc__lambertw_loops[1]
 cdef void *ufunc__lambertw_ptr[2]
 cdef void *ufunc__lambertw_data[1]
@@ -2085,6 +2140,66 @@ ufunc__lambertw_ptr[2*0] = <void*>_func_lambertw_scalar
 ufunc__lambertw_ptr[2*0+1] = <void*>(<char*>"_lambertw")
 ufunc__lambertw_data[0] = &ufunc__lambertw_ptr[2*0]
 _lambertw = np.PyUFunc_FromFuncAndData(ufunc__lambertw_loops, ufunc__lambertw_data, ufunc__lambertw_types, 1, 3, 1, 0, "_lambertw", ufunc__lambertw_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__lanczos_sum_expg_scaled_loops[2]
+cdef void *ufunc__lanczos_sum_expg_scaled_ptr[4]
+cdef void *ufunc__lanczos_sum_expg_scaled_data[2]
+cdef char ufunc__lanczos_sum_expg_scaled_types[4]
+cdef char *ufunc__lanczos_sum_expg_scaled_doc = (
+    "Internal function, do not use.")
+ufunc__lanczos_sum_expg_scaled_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__lanczos_sum_expg_scaled_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__lanczos_sum_expg_scaled_types[0] = <char>NPY_FLOAT
+ufunc__lanczos_sum_expg_scaled_types[1] = <char>NPY_FLOAT
+ufunc__lanczos_sum_expg_scaled_types[2] = <char>NPY_DOUBLE
+ufunc__lanczos_sum_expg_scaled_types[3] = <char>NPY_DOUBLE
+ufunc__lanczos_sum_expg_scaled_ptr[2*0] = <void*>_func_lanczos_sum_expg_scaled
+ufunc__lanczos_sum_expg_scaled_ptr[2*0+1] = <void*>(<char*>"_lanczos_sum_expg_scaled")
+ufunc__lanczos_sum_expg_scaled_ptr[2*1] = <void*>_func_lanczos_sum_expg_scaled
+ufunc__lanczos_sum_expg_scaled_ptr[2*1+1] = <void*>(<char*>"_lanczos_sum_expg_scaled")
+ufunc__lanczos_sum_expg_scaled_data[0] = &ufunc__lanczos_sum_expg_scaled_ptr[2*0]
+ufunc__lanczos_sum_expg_scaled_data[1] = &ufunc__lanczos_sum_expg_scaled_ptr[2*1]
+_lanczos_sum_expg_scaled = np.PyUFunc_FromFuncAndData(ufunc__lanczos_sum_expg_scaled_loops, ufunc__lanczos_sum_expg_scaled_data, ufunc__lanczos_sum_expg_scaled_types, 2, 1, 1, 0, "_lanczos_sum_expg_scaled", ufunc__lanczos_sum_expg_scaled_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__lgam1p_loops[2]
+cdef void *ufunc__lgam1p_ptr[4]
+cdef void *ufunc__lgam1p_data[2]
+cdef char ufunc__lgam1p_types[4]
+cdef char *ufunc__lgam1p_doc = (
+    "Internal function, do not use.")
+ufunc__lgam1p_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__lgam1p_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__lgam1p_types[0] = <char>NPY_FLOAT
+ufunc__lgam1p_types[1] = <char>NPY_FLOAT
+ufunc__lgam1p_types[2] = <char>NPY_DOUBLE
+ufunc__lgam1p_types[3] = <char>NPY_DOUBLE
+ufunc__lgam1p_ptr[2*0] = <void*>_func_lgam1p
+ufunc__lgam1p_ptr[2*0+1] = <void*>(<char*>"_lgam1p")
+ufunc__lgam1p_ptr[2*1] = <void*>_func_lgam1p
+ufunc__lgam1p_ptr[2*1+1] = <void*>(<char*>"_lgam1p")
+ufunc__lgam1p_data[0] = &ufunc__lgam1p_ptr[2*0]
+ufunc__lgam1p_data[1] = &ufunc__lgam1p_ptr[2*1]
+_lgam1p = np.PyUFunc_FromFuncAndData(ufunc__lgam1p_loops, ufunc__lgam1p_data, ufunc__lgam1p_types, 2, 1, 1, 0, "_lgam1p", ufunc__lgam1p_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__log1pmx_loops[2]
+cdef void *ufunc__log1pmx_ptr[4]
+cdef void *ufunc__log1pmx_data[2]
+cdef char ufunc__log1pmx_types[4]
+cdef char *ufunc__log1pmx_doc = (
+    "Internal function, do not use.")
+ufunc__log1pmx_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc__log1pmx_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc__log1pmx_types[0] = <char>NPY_FLOAT
+ufunc__log1pmx_types[1] = <char>NPY_FLOAT
+ufunc__log1pmx_types[2] = <char>NPY_DOUBLE
+ufunc__log1pmx_types[3] = <char>NPY_DOUBLE
+ufunc__log1pmx_ptr[2*0] = <void*>_func_log1pmx
+ufunc__log1pmx_ptr[2*0+1] = <void*>(<char*>"_log1pmx")
+ufunc__log1pmx_ptr[2*1] = <void*>_func_log1pmx
+ufunc__log1pmx_ptr[2*1+1] = <void*>(<char*>"_log1pmx")
+ufunc__log1pmx_data[0] = &ufunc__log1pmx_ptr[2*0]
+ufunc__log1pmx_data[1] = &ufunc__log1pmx_ptr[2*1]
+_log1pmx = np.PyUFunc_FromFuncAndData(ufunc__log1pmx_loops, ufunc__log1pmx_data, ufunc__log1pmx_types, 2, 1, 1, 0, "_log1pmx", ufunc__log1pmx_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__sinpi_loops[4]
 cdef void *ufunc__sinpi_ptr[8]
@@ -3162,7 +3277,11 @@ cdef char ufunc_binom_types[6]
 cdef char *ufunc_binom_doc = (
     "binom(n, k)\n"
     "\n"
-    "Binomial coefficient")
+    "Binomial coefficient\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "comb : The number of combinations of N things taken k at a time.")
 ufunc_binom_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_binom_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_binom_types[0] = <char>NPY_FLOAT
@@ -3675,7 +3794,7 @@ cdef void *ufunc_chdtriv_ptr[4]
 cdef void *ufunc_chdtriv_data[2]
 cdef char ufunc_chdtriv_types[6]
 cdef char *ufunc_chdtriv_doc = (
-    "chdtri(p, x)\n"
+    "chdtriv(p, x)\n"
     "\n"
     "Inverse to `chdtr` vs `v`\n"
     "\n"
@@ -4541,7 +4660,37 @@ cdef char ufunc_eval_chebyc_types[15]
 cdef char *ufunc_eval_chebyc_doc = (
     "eval_chebyc(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev C polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a\n"
+    "point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    S_n(x) = T_n(x/2)\n"
+    "\n"
+    "where :math:`T_n` is a Chebyshev polynomial of the first kind.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `eval_chebyt`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "C : ndarray\n"
+    "    Values of the Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyc : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the first kind on [-2, 2]\n"
+    "chebyc : Chebyshev polynomial object\n"
+    "numpy.polynomial.chebyshev.Chebyshev : Chebyshev series\n"
+    "eval_chebyt : evaluate Chebycshev polynomials of the first kind")
 ufunc_eval_chebyc_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebyc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebyc_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4586,7 +4735,36 @@ cdef char ufunc_eval_chebys_types[15]
 cdef char *ufunc_eval_chebys_doc = (
     "eval_chebys(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev S polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a\n"
+    "point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    S_n(x) = U_n(x/2)\n"
+    "\n"
+    "where :math:`U_n` is a Chebyshev polynomial of the second kind.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `eval_chebyu`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "S : ndarray\n"
+    "    Values of the Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebys : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the second kind on [-2, 2]\n"
+    "chebys : Chebyshev polynomial object\n"
+    "eval_chebyu : evaluate Chebyshev polynomials of the second kind")
 ufunc_eval_chebys_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebys_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebys_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4631,8 +4809,43 @@ cdef char ufunc_eval_chebyt_types[15]
 cdef char *ufunc_eval_chebyt_doc = (
     "eval_chebyt(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev T polynomial at a point.\n"
+    "Evaluate Chebyshev polynomial of the first kind at a point.\n"
     "\n"
+    "The Chebyshev polynomials of the first kind can be defined via the\n"
+    "Gauss hypergeometric function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    T_n(x) = {}_2F_1(n, -n; 1/2; (1 - x)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "T : ndarray\n"
+    "    Values of the Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyt : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the first kind\n"
+    "chebyu : Chebychev polynomial object\n"
+    "eval_chebyu : evaluate Chebyshev polynomials of the second kind\n"
+    "hyp2f1 : Gauss hypergeometric function\n"
+    "numpy.polynomial.chebyshev.Chebyshev : Chebyshev series\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
     "This routine is numerically stable for `x` in ``[-1, 1]`` at least\n"
     "up to order ``10000``.")
 ufunc_eval_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
@@ -4679,7 +4892,39 @@ cdef char ufunc_eval_chebyu_types[15]
 cdef char *ufunc_eval_chebyu_doc = (
     "eval_chebyu(n, x, out=None)\n"
     "\n"
-    "Evaluate Chebyshev U polynomial at a point.")
+    "Evaluate Chebyshev polynomial of the second kind at a point.\n"
+    "\n"
+    "The Chebyshev polynomials of the second kind can be defined via\n"
+    "the Gauss hypergeometric function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    U_n(x) = (n + 1) {}_2F_1(-n, n + 2; 3/2; (1 - x)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "U : ndarray\n"
+    "    Values of the Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_chebyu : roots and quadrature weights of Chebyshev\n"
+    "               polynomials of the second kind\n"
+    "chebyu : Chebyshev polynomial object\n"
+    "eval_chebyt : evaluate Chebyshev polynomials of the first kind\n"
+    "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4724,7 +4969,41 @@ cdef char ufunc_eval_gegenbauer_types[20]
 cdef char *ufunc_eval_gegenbauer_doc = (
     "eval_gegenbauer(n, alpha, x, out=None)\n"
     "\n"
-    "Evaluate Gegenbauer polynomial at a point.")
+    "Evaluate Gegenbauer polynomial at a point.\n"
+    "\n"
+    "The Gegenbauer polynomials can be defined via the Gauss\n"
+    "hypergeometric function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    C_n^{(\\alpha)} = \\frac{(2\\alpha)_n}{\\Gamma(n + 1)}\n"
+    "      {}_2F_1(-n, 2\\alpha + n; \\alpha + 1/2; (1 - z)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "alpha : array_like\n"
+    "    Parameter\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Gegenbauer polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "C : ndarray\n"
+    "    Values of the Gegenbauer polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_gegenbauer : roots and quadrature weights of Gegenbauer\n"
+    "                   polynomials\n"
+    "gegenbauer : Gegenbauer polynomial object\n"
+    "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_gegenbauer_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
 ufunc_eval_gegenbauer_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_eval_gegenbauer_loops[2] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
@@ -4774,7 +5053,44 @@ cdef char ufunc_eval_genlaguerre_types[20]
 cdef char *ufunc_eval_genlaguerre_doc = (
     "eval_genlaguerre(n, alpha, x, out=None)\n"
     "\n"
-    "Evaluate generalized Laguerre polynomial at a point.")
+    "Evaluate generalized Laguerre polynomial at a point.\n"
+    "\n"
+    "The generalized Laguerre polynomials can be defined via the\n"
+    "confluent hypergeometric function :math:`{}_1F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    L_n^{(\\alpha)}(x) = \\binom{n + \\alpha}{n}\n"
+    "      {}_1F_1(-n, \\alpha + 1, x).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`. The Laguerre polynomials are the special case where\n"
+    ":math:`\\alpha = 0`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer the result is\n"
+    "    determined via the relation to the confluent hypergeometric\n"
+    "    function.\n"
+    "alpha : array_like\n"
+    "    Parameter; must have ``alpha > -1``\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the generalized Laguerre\n"
+    "    polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "L : ndarray\n"
+    "    Values of the generalized Laguerre polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_genlaguerre : roots and quadrature weights of generalized\n"
+    "                    Laguerre polynomials\n"
+    "genlaguerre : generalized Laguerre polynomial object\n"
+    "hyp1f1 : confluent hypergeometric function\n"
+    "eval_laguerre : evaluate Laguerre polynomials")
 ufunc_eval_genlaguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ldd__As_ldd_d
 ufunc_eval_genlaguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_ddd__As_fff_f
 ufunc_eval_genlaguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_ddD__As_ffF_F
@@ -4824,7 +5140,35 @@ cdef char ufunc_eval_hermite_types[3]
 cdef char *ufunc_eval_hermite_doc = (
     "eval_hermite(n, x, out=None)\n"
     "\n"
-    "Evaluate Hermite polynomial at a point.")
+    "Evaluate physicist's Hermite polynomial at a point.\n"
+    "\n"
+    "Defined by\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    H_n(x) = (-1)^n e^{x^2} \\frac{d^n}{dx^n} e^{-x^2};\n"
+    "\n"
+    ":math:`H_n` is a polynomial of degree :math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Hermite polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "H : ndarray\n"
+    "    Values of the Hermite polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_hermite : roots and quadrature weights of physicist's\n"
+    "                Hermite polynomials\n"
+    "hermite : physicist's Hermite polynomial object\n"
+    "numpy.polynomial.hermite.Hermite : Physicist's Hermite series\n"
+    "eval_hermitenorm : evaluate Probabilist's Hermite polynomials")
 ufunc_eval_hermite_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermite_types[0] = <char>NPY_LONG
 ufunc_eval_hermite_types[1] = <char>NPY_DOUBLE
@@ -4841,7 +5185,36 @@ cdef char ufunc_eval_hermitenorm_types[3]
 cdef char *ufunc_eval_hermitenorm_doc = (
     "eval_hermitenorm(n, x, out=None)\n"
     "\n"
-    "Evaluate normalized Hermite polynomial at a point.")
+    "Evaluate probabilist's (normalized) Hermite polynomial at a\n"
+    "point.\n"
+    "\n"
+    "Defined by\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    He_n(x) = (-1)^n e^{x^2/2} \\frac{d^n}{dx^n} e^{-x^2/2};\n"
+    "\n"
+    ":math:`He_n` is a polynomial of degree :math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Hermite polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "He : ndarray\n"
+    "    Values of the Hermite polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_hermitenorm : roots and quadrature weights of probabilist's\n"
+    "                    Hermite polynomials\n"
+    "hermitenorm : probabilist's Hermite polynomial object\n"
+    "numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series\n"
+    "eval_hermite : evaluate physicist's Hermite polynomials")
 ufunc_eval_hermitenorm_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_hermitenorm_types[0] = <char>NPY_LONG
 ufunc_eval_hermitenorm_types[1] = <char>NPY_DOUBLE
@@ -4858,7 +5231,43 @@ cdef char ufunc_eval_jacobi_types[25]
 cdef char *ufunc_eval_jacobi_doc = (
     "eval_jacobi(n, alpha, beta, x, out=None)\n"
     "\n"
-    "Evaluate Jacobi polynomial at a point.")
+    "Evaluate Jacobi polynomial at a point.\n"
+    "\n"
+    "The Jacobi polynomials can be defined via the Gauss hypergeometric\n"
+    "function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    P_n^{(\\alpha, \\beta)}(x) = \\frac{(\\alpha + 1)_n}{\\Gamma(n + 1)}\n"
+    "      {}_2F_1(-n, 1 + \\alpha + \\beta + n; \\alpha + 1; (1 - z)/2)\n"
+    "\n"
+    "where :math:`(\\cdot)_n` is the Pochhammer symbol; see `poch`. When\n"
+    ":math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "alpha : array_like\n"
+    "    Parameter\n"
+    "beta : array_like\n"
+    "    Parameter\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "P : ndarray\n"
+    "    Values of the Jacobi polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_jacobi : roots and quadrature weights of Jacobi polynomials\n"
+    "jacobi : Jacobi polynomial object\n"
+    "hyp2f1 : Gauss hypergeometric function")
 ufunc_eval_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
 ufunc_eval_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_eval_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
@@ -4913,7 +5322,39 @@ cdef char ufunc_eval_laguerre_types[15]
 cdef char *ufunc_eval_laguerre_doc = (
     "eval_laguerre(n, x, out=None)\n"
     "\n"
-    "Evaluate Laguerre polynomial at a point.")
+    "Evaluate Laguerre polynomial at a point.\n"
+    "\n"
+    "The Laguerre polynomials can be defined via the confluent\n"
+    "hypergeometric function :math:`{}_1F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    L_n(x) = {}_1F_1(-n, 1, x).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer the result is\n"
+    "    determined via the relation to the confluent hypergeometric\n"
+    "    function.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Laguerre polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "L : ndarray\n"
+    "    Values of the Laguerre polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_laguerre : roots and quadrature weights of Laguerre\n"
+    "                 polynomials\n"
+    "laguerre : Laguerre polynomial object\n"
+    "numpy.polynomial.laguerre.Laguerre : Laguerre series\n"
+    "eval_genlaguerre : evaluate generalized Laguerre polynomials")
 ufunc_eval_laguerre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_laguerre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_laguerre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -4958,7 +5399,39 @@ cdef char ufunc_eval_legendre_types[15]
 cdef char *ufunc_eval_legendre_doc = (
     "eval_legendre(n, x, out=None)\n"
     "\n"
-    "Evaluate Legendre polynomial at a point.")
+    "Evaluate Legendre polynomial at a point.\n"
+    "\n"
+    "The Legendre polynomials can be defined via the Gauss\n"
+    "hypergeometric function :math:`{}_2F_1` as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    P_n(x) = {}_2F_1(-n, n + 1; 1; (1 - x)/2).\n"
+    "\n"
+    "When :math:`n` is an integer the result is a polynomial of degree\n"
+    ":math:`n`.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to the Gauss hypergeometric\n"
+    "    function.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the Legendre polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "P : ndarray\n"
+    "    Values of the Legendre polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_legendre : roots and quadrature weights of Legendre\n"
+    "                 polynomials\n"
+    "legendre : Legendre polynomial object\n"
+    "hyp2f1 : Gauss hypergeometric function\n"
+    "numpy.polynomial.legendre.Legendre : Legendre series")
 ufunc_eval_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5003,7 +5476,37 @@ cdef char ufunc_eval_sh_chebyt_types[15]
 cdef char *ufunc_eval_sh_chebyt_doc = (
     "eval_sh_chebyt(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Chebyshev T polynomial at a point.")
+    "Evaluate shifted Chebyshev polynomial of the first kind at a\n"
+    "point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    T_n^*(x) = T_n(2x - 1)\n"
+    "\n"
+    "where :math:`T_n` is a Chebyshev polynomial of the first kind.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `eval_chebyt`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the shifted Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "T : ndarray\n"
+    "    Values of the shifted Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_chebyt : roots and quadrature weights of shifted\n"
+    "                  Chebyshev polynomials of the first kind\n"
+    "sh_chebyt : shifted Chebyshev polynomial object\n"
+    "eval_chebyt : evalaute Chebyshev polynomials of the first kind\n"
+    "numpy.polynomial.chebyshev.Chebyshev : Chebyshev series")
 ufunc_eval_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_chebyt_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5048,7 +5551,36 @@ cdef char ufunc_eval_sh_chebyu_types[15]
 cdef char *ufunc_eval_sh_chebyu_doc = (
     "eval_sh_chebyu(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Chebyshev U polynomial at a point.")
+    "Evaluate shifted Chebyshev polynomial of the second kind at a\n"
+    "point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    U_n^*(x) = U_n(2x - 1)\n"
+    "\n"
+    "where :math:`U_n` is a Chebyshev polynomial of the first kind.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `eval_chebyu`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the shifted Chebyshev polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "U : ndarray\n"
+    "    Values of the shifted Chebyshev polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_chebyu : roots and quadrature weights of shifted\n"
+    "                  Chebychev polynomials of the second kind\n"
+    "sh_chebyu : shifted Chebyshev polynomial object\n"
+    "eval_chebyu : evaluate Chebyshev polynomials of the second kind")
 ufunc_eval_sh_chebyu_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyu_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_chebyu_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5093,7 +5625,38 @@ cdef char ufunc_eval_sh_jacobi_types[25]
 cdef char *ufunc_eval_sh_jacobi_doc = (
     "eval_sh_jacobi(n, p, q, x, out=None)\n"
     "\n"
-    "Evaluate shifted Jacobi polynomial at a point.")
+    "Evaluate shifted Jacobi polynomial at a point.\n"
+    "\n"
+    "Defined by\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    G_n^{(p, q)}(x)\n"
+    "      = \\binom{2n + p - 1}{n}^{-1} P_n^{(p - q, q - 1)}(2x - 1),\n"
+    "\n"
+    "where :math:`P_n^{(\\cdot, \\cdot)}` is the n-th Jacobi polynomial.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : int\n"
+    "    Degree of the polynomial. If not an integer, the result is\n"
+    "    determined via the relation to `binom` and `eval_jacobi`.\n"
+    "p : float\n"
+    "    Parameter\n"
+    "q : float\n"
+    "    Parameter\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "G : ndarray\n"
+    "    Values of the shifted Jacobi polynomial.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_jacobi : roots and quadrature weights of shifted Jacobi\n"
+    "                  polynomials\n"
+    "sh_jacobi : shifted Jacobi polynomial object\n"
+    "eval_jacobi : evaluate Jacobi polynomials")
 ufunc_eval_sh_jacobi_loops[0] = <np.PyUFuncGenericFunction>loop_d_lddd__As_lddd_d
 ufunc_eval_sh_jacobi_loops[1] = <np.PyUFuncGenericFunction>loop_d_dddd__As_ffff_f
 ufunc_eval_sh_jacobi_loops[2] = <np.PyUFuncGenericFunction>loop_D_dddD__As_fffF_F
@@ -5148,7 +5711,36 @@ cdef char ufunc_eval_sh_legendre_types[15]
 cdef char *ufunc_eval_sh_legendre_doc = (
     "eval_sh_legendre(n, x, out=None)\n"
     "\n"
-    "Evaluate shifted Legendre polynomial at a point.")
+    "Evaluate shifted Legendre polynomial at a point.\n"
+    "\n"
+    "These polynomials are defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    P_n^*(x) = P_n(2x - 1)\n"
+    "\n"
+    "where :math:`P_n` is a Legendre polynomial.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "n : array_like\n"
+    "    Degree of the polynomial. If not an integer, the value is\n"
+    "    determined via the relation to `eval_legendre`.\n"
+    "x : array_like\n"
+    "    Points at which to evaluate the shifted Legendre polynomial\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "P : ndarray\n"
+    "    Values of the shifted Legendre polynomial\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "roots_sh_legendre : roots and quadrature weights of shifted\n"
+    "                    Legendre polynomials\n"
+    "sh_legendre : shifted Legendre polynomial object\n"
+    "eval_legendre : evaluate Legendre polynomials\n"
+    "numpy.polynomial.legendre.Legendre : Legendre series")
 ufunc_eval_sh_legendre_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_legendre_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_eval_sh_legendre_loops[2] = <np.PyUFuncGenericFunction>loop_D_dD__As_fF_F
@@ -5790,13 +6382,32 @@ cdef char ufunc_gammainc_types[6]
 cdef char *ufunc_gammainc_doc = (
     "gammainc(a, x)\n"
     "\n"
-    "Incomplete gamma function\n"
+    "Regularized lower incomplete gamma function.\n"
     "\n"
-    "Defined as::\n"
+    "Defined as\n"
     "\n"
-    "    1 / gamma(a) * integral(exp(-t) * t**(a-1), t=0..x)\n"
+    ".. math::\n"
     "\n"
-    "`a` must be positive and `x` must be >= 0.")
+    "    \\frac{1}{\\Gamma(a)} \\int_0^x t^{a - 1}e^{-t} dt\n"
+    "\n"
+    "for :math:`a > 0` and :math:`x \\geq 0`. The function satisfies the\n"
+    "relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where\n"
+    "`gammaincc` is the regularized upper incomplete gamma function.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "The implementation largely follows that of [1]_.\n"
+    "\n"
+    "See also\n"
+    "--------\n"
+    "gammaincc : regularized upper incomplete gamma function\n"
+    "gammaincinv : inverse to ``gammainc`` versus ``x``\n"
+    "gammainccinv : inverse to ``gammaincc`` versus ``x``\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Maddock et. al., \"Incomplete Gamma Functions\",\n"
+    "   http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html")
 ufunc_gammainc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_gammainc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_gammainc_types[0] = <char>NPY_FLOAT
@@ -5820,13 +6431,32 @@ cdef char ufunc_gammaincc_types[6]
 cdef char *ufunc_gammaincc_doc = (
     "gammaincc(a, x)\n"
     "\n"
-    "Complemented incomplete gamma integral\n"
+    "Regularized upper incomplete gamma function.\n"
     "\n"
-    "Defined as::\n"
+    "Defined as\n"
     "\n"
-    "    1 / gamma(a) * integral(exp(-t) * t**(a-1), t=x..inf) = 1 - gammainc(a, x)\n"
+    ".. math::\n"
     "\n"
-    "`a` must be positive and `x` must be >= 0.")
+    "    \\frac{1}{\\Gamma(a)} \\int_x^\\infty t^{a - 1}e^{-t} dt\n"
+    "\n"
+    "for :math:`a > 0` and :math:`x \\geq 0`. The function satisfies the\n"
+    "relation ``gammainc(a, x) + gammaincc(a, x) = 1`` where `gammainc`\n"
+    "is the regularized lower incomplete gamma function.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "The implementation largely follows that of [1]_.\n"
+    "\n"
+    "See also\n"
+    "--------\n"
+    "gammainc : regularized lower incomplete gamma function\n"
+    "gammaincinv : inverse to ``gammainc`` versus ``x``\n"
+    "gammainccinv : inverse to ``gammaincc`` versus ``x``\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Maddock et. al., \"Incomplete Gamma Functions\",\n"
+    "   http://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/sf_gamma/igamma.html")
 ufunc_gammaincc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_gammaincc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_gammaincc_types[0] = <char>NPY_FLOAT
@@ -8796,17 +9426,32 @@ cdef char ufunc_loggamma_types[4]
 cdef char *ufunc_loggamma_doc = (
     "loggamma(z, out=None)\n"
     "\n"
-    "Principal branch of the logarithm of the Gamma function. It is\n"
-    "defined to be :math:`\\log(\\Gamma(x))` for :math:`x > 0` and\n"
-    "extended to the complex plane by analytic continuation. The\n"
-    "implementation here is based on [hare1997]_.\n"
+    "Principal branch of the logarithm of the Gamma function.\n"
     "\n"
-    "The function has a single branch cut on the negative real axis and\n"
-    "is taken to be continuous when approaching the axis from\n"
-    "above. Note that it is not generally true that\n"
-    ":math:`\\log\\Gamma(z) = \\log(\\Gamma(z))`, though the real parts of\n"
-    "the functions do agree. The benefit of not defining ``loggamma``\n"
-    "as :math:`\\log(\\Gamma(z))` is that the latter function has a\n"
+    "Defined to be :math:`\\log(\\Gamma(x))` for :math:`x > 0` and\n"
+    "extended to the complex plane by analytic continuation. The\n"
+    "function has a single branch cut on the negative real axis.\n"
+    "\n"
+    ".. versionadded:: 0.18.0\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "z : array-like\n"
+    "    Values in the complex plain at which to compute ``loggamma``\n"
+    "out : ndarray, optional\n"
+    "    Output array for computed values of ``loggamma``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "loggamma : ndarray\n"
+    "    Values of ``loggamma`` at z.\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "It is not generally true that :math:`\\log\\Gamma(z) =\n"
+    "\\log(\\Gamma(z))`, though the real parts of the functions do\n"
+    "agree. The benefit of not defining ``loggamma`` as\n"
+    ":math:`\\log(\\Gamma(z))` is that the latter function has a\n"
     "complicated branch cut structure whereas ``loggamma`` is analytic\n"
     "except for on the negative real axis.\n"
     "\n"
@@ -8824,19 +9469,7 @@ cdef char *ufunc_loggamma_doc = (
     "errors will introduce small spurious imaginary components in\n"
     "``exp(loggamma(x))``.\n"
     "\n"
-    ".. versionadded:: 0.18.0\n"
-    "\n"
-    "Parameters\n"
-    "----------\n"
-    "z : array-like\n"
-    "    Values in the complex plain at which to compute ``loggamma``\n"
-    "out : ndarray, optional\n"
-    "    Output array for computed values of ``loggamma``\n"
-    "\n"
-    "Returns\n"
-    "-------\n"
-    "loggamma : ndarray\n"
-    "    Values of ``loggamma`` at z.\n"
+    "The implementation here is based on [hare1997]_.\n"
     "\n"
     "See also\n"
     "--------\n"
@@ -11465,69 +12098,173 @@ ufunc_round_data[0] = &ufunc_round_ptr[2*0]
 ufunc_round_data[1] = &ufunc_round_ptr[2*1]
 round = np.PyUFunc_FromFuncAndData(ufunc_round_loops, ufunc_round_data, ufunc_round_types, 2, 1, 1, 0, "round", ufunc_round_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_shichi_loops[2]
-cdef void *ufunc_shichi_ptr[4]
-cdef void *ufunc_shichi_data[2]
-cdef char ufunc_shichi_types[6]
+cdef np.PyUFuncGenericFunction ufunc_shichi_loops[4]
+cdef void *ufunc_shichi_ptr[8]
+cdef void *ufunc_shichi_data[4]
+cdef char ufunc_shichi_types[12]
 cdef char *ufunc_shichi_doc = (
-    "shichi(x)\n"
+    "shichi(x, out=None)\n"
     "\n"
-    "Hyperbolic sine and cosine integrals\n"
+    "Hyperbolic sine and cosine integrals.\n"
+    "\n"
+    "The hyperbolic sine integral is\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "  \\int_0^x \\frac{\\sinh{t}}{t}dt\n"
+    "\n"
+    "and the hyperbolic cosine integral is\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "  \\gamma + \\log(x) + \\int_0^x \\frac{\\cosh{t} - 1}{t} dt\n"
+    "\n"
+    "where :math:`\\gamma` is Euler's constant and :math:`\\log` is the\n"
+    "principle branch of the logarithm.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Real or complex points at which to compute the hyperbolic sine\n"
+    "    and cosine integrals.\n"
     "\n"
     "Returns\n"
     "-------\n"
-    "shi\n"
-    "    ``integral(sinh(t)/t, t=0..x)``\n"
-    "chi\n"
-    "    ``eul + ln x + integral((cosh(t)-1)/t, t=0..x)``\n"
-    "    where ``eul`` is Euler's constant.")
+    "si : ndarray\n"
+    "    Hyperbolic sine integral at ``x``\n"
+    "ci : ndarray\n"
+    "    Hyperbolic cosine integral at ``x``\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "For real arguments with ``x < 0``, ``chi`` is the real part of the\n"
+    "hyperbolic cosine integral. For such points ``chi(x)`` and ``chi(x\n"
+    "+ 0j)`` differ by a factor of ``1j*pi``.\n"
+    "\n"
+    "For real arguments the function is computed by calling Cephes'\n"
+    "[1]_ *shichi* routine. For complex arguments the algorithm is based\n"
+    "on Mpmath's [2]_ *shi* and *chi* routines.\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Cephes Mathematical Functions Library,\n"
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Fredrik Johansson and others.\n"
+    "       \"mpmath: a Python library for arbitrary-precision floating-point arithmetic\"\n"
+    "       (Version 0.19) http://mpmath.org/")
 ufunc_shichi_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_shichi_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
+ufunc_shichi_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_F_FF
+ufunc_shichi_loops[3] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_D_DD
 ufunc_shichi_types[0] = <char>NPY_FLOAT
 ufunc_shichi_types[1] = <char>NPY_FLOAT
 ufunc_shichi_types[2] = <char>NPY_FLOAT
 ufunc_shichi_types[3] = <char>NPY_DOUBLE
 ufunc_shichi_types[4] = <char>NPY_DOUBLE
 ufunc_shichi_types[5] = <char>NPY_DOUBLE
+ufunc_shichi_types[6] = <char>NPY_CFLOAT
+ufunc_shichi_types[7] = <char>NPY_CFLOAT
+ufunc_shichi_types[8] = <char>NPY_CFLOAT
+ufunc_shichi_types[9] = <char>NPY_CDOUBLE
+ufunc_shichi_types[10] = <char>NPY_CDOUBLE
+ufunc_shichi_types[11] = <char>NPY_CDOUBLE
 ufunc_shichi_ptr[2*0] = <void*>_func_shichi
 ufunc_shichi_ptr[2*0+1] = <void*>(<char*>"shichi")
 ufunc_shichi_ptr[2*1] = <void*>_func_shichi
 ufunc_shichi_ptr[2*1+1] = <void*>(<char*>"shichi")
+ufunc_shichi_ptr[2*2] = <void*>_func_cshichi
+ufunc_shichi_ptr[2*2+1] = <void*>(<char*>"shichi")
+ufunc_shichi_ptr[2*3] = <void*>_func_cshichi
+ufunc_shichi_ptr[2*3+1] = <void*>(<char*>"shichi")
 ufunc_shichi_data[0] = &ufunc_shichi_ptr[2*0]
 ufunc_shichi_data[1] = &ufunc_shichi_ptr[2*1]
-shichi = np.PyUFunc_FromFuncAndData(ufunc_shichi_loops, ufunc_shichi_data, ufunc_shichi_types, 2, 1, 2, 0, "shichi", ufunc_shichi_doc, 0)
+ufunc_shichi_data[2] = &ufunc_shichi_ptr[2*2]
+ufunc_shichi_data[3] = &ufunc_shichi_ptr[2*3]
+shichi = np.PyUFunc_FromFuncAndData(ufunc_shichi_loops, ufunc_shichi_data, ufunc_shichi_types, 4, 1, 2, 0, "shichi", ufunc_shichi_doc, 0)
 
-cdef np.PyUFuncGenericFunction ufunc_sici_loops[2]
-cdef void *ufunc_sici_ptr[4]
-cdef void *ufunc_sici_data[2]
-cdef char ufunc_sici_types[6]
+cdef np.PyUFuncGenericFunction ufunc_sici_loops[4]
+cdef void *ufunc_sici_ptr[8]
+cdef void *ufunc_sici_data[4]
+cdef char ufunc_sici_types[12]
 cdef char *ufunc_sici_doc = (
-    "sici(x)\n"
+    "sici(x, out=None)\n"
     "\n"
-    "Sine and cosine integrals\n"
+    "Sine and cosine integrals.\n"
+    "\n"
+    "The sine integral is\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "  \\int_0^x \\frac{\\sin{t}}{t}dt\n"
+    "\n"
+    "and the cosine integral is\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "  \\gamma + \\log(x) + \\int_0^x \\frac{\\cos{t} - 1}{t}dt\n"
+    "\n"
+    "where :math:`\\gamma` is Euler's constant and :math:`\\log` is the\n"
+    "principle branch of the logarithm.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Real or complex points at which to compute the sine and cosine\n"
+    "    integrals.\n"
     "\n"
     "Returns\n"
     "-------\n"
-    "si\n"
-    "    ``integral(sin(t)/t, t=0..x)``\n"
-    "ci\n"
-    "    ``eul + ln x + integral((cos(t) - 1)/t, t=0..x)``\n"
-    "    where ``eul`` is Euler's constant.")
+    "si : ndarray\n"
+    "    Sine integral at ``x``\n"
+    "ci : ndarray\n"
+    "    Cosine integral at ``x``\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "For real arguments with ``x < 0``, ``ci`` is the real part of the\n"
+    "cosine integral. For such points ``ci(x)`` and ``ci(x + 0j)``\n"
+    "differ by a factor of ``1j*pi``.\n"
+    "\n"
+    "For real arguments the function is computed by calling Cephes'\n"
+    "[1]_ *sici* routine. For complex arguments the algorithm is based\n"
+    "on Mpmath's [2]_ *si* and *ci* routines.\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Cephes Mathematical Functions Library,\n"
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Fredrik Johansson and others.\n"
+    "       \"mpmath: a Python library for arbitrary-precision floating-point arithmetic\"\n"
+    "       (Version 0.19) http://mpmath.org/")
 ufunc_sici_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_f_ff
 ufunc_sici_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dd_As_d_dd
+ufunc_sici_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_F_FF
+ufunc_sici_loops[3] = <np.PyUFuncGenericFunction>loop_i_D_DD_As_D_DD
 ufunc_sici_types[0] = <char>NPY_FLOAT
 ufunc_sici_types[1] = <char>NPY_FLOAT
 ufunc_sici_types[2] = <char>NPY_FLOAT
 ufunc_sici_types[3] = <char>NPY_DOUBLE
 ufunc_sici_types[4] = <char>NPY_DOUBLE
 ufunc_sici_types[5] = <char>NPY_DOUBLE
+ufunc_sici_types[6] = <char>NPY_CFLOAT
+ufunc_sici_types[7] = <char>NPY_CFLOAT
+ufunc_sici_types[8] = <char>NPY_CFLOAT
+ufunc_sici_types[9] = <char>NPY_CDOUBLE
+ufunc_sici_types[10] = <char>NPY_CDOUBLE
+ufunc_sici_types[11] = <char>NPY_CDOUBLE
 ufunc_sici_ptr[2*0] = <void*>_func_sici
 ufunc_sici_ptr[2*0+1] = <void*>(<char*>"sici")
 ufunc_sici_ptr[2*1] = <void*>_func_sici
 ufunc_sici_ptr[2*1+1] = <void*>(<char*>"sici")
+ufunc_sici_ptr[2*2] = <void*>_func_csici
+ufunc_sici_ptr[2*2+1] = <void*>(<char*>"sici")
+ufunc_sici_ptr[2*3] = <void*>_func_csici
+ufunc_sici_ptr[2*3+1] = <void*>(<char*>"sici")
 ufunc_sici_data[0] = &ufunc_sici_ptr[2*0]
 ufunc_sici_data[1] = &ufunc_sici_ptr[2*1]
-sici = np.PyUFunc_FromFuncAndData(ufunc_sici_loops, ufunc_sici_data, ufunc_sici_types, 2, 1, 2, 0, "sici", ufunc_sici_doc, 0)
+ufunc_sici_data[2] = &ufunc_sici_ptr[2*2]
+ufunc_sici_data[3] = &ufunc_sici_ptr[2*3]
+sici = np.PyUFunc_FromFuncAndData(ufunc_sici_loops, ufunc_sici_data, ufunc_sici_types, 4, 1, 2, 0, "sici", ufunc_sici_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_sindg_loops[2]
 cdef void *ufunc_sindg_ptr[4]
@@ -11978,6 +12715,72 @@ ufunc_wofz_ptr[2*1+1] = <void*>(<char*>"wofz")
 ufunc_wofz_data[0] = &ufunc_wofz_ptr[2*0]
 ufunc_wofz_data[1] = &ufunc_wofz_ptr[2*1]
 wofz = np.PyUFunc_FromFuncAndData(ufunc_wofz_loops, ufunc_wofz_data, ufunc_wofz_types, 2, 1, 1, 0, "wofz", ufunc_wofz_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_wrightomega_loops[2]
+cdef void *ufunc_wrightomega_ptr[4]
+cdef void *ufunc_wrightomega_data[2]
+cdef char ufunc_wrightomega_types[4]
+cdef char *ufunc_wrightomega_doc = (
+    "wrightomega(z, out=None)\n"
+    "\n"
+    "Wright Omega function.\n"
+    "\n"
+    "Defined as the solution to\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    \\omega + \\log(\\omega) = z\n"
+    "\n"
+    "where :math:`\\log` is the principal branch of the complex logarithm.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "z : array_like\n"
+    "    Points at which to evaluate the Wright Omega function\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "omega : ndarray\n"
+    "    Values of the Wright Omega function\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    ".. versionadded:: 0.19.0\n"
+    "\n"
+    "The function can also be defined as\n"
+    "\n"
+    ".. math::\n"
+    "\n"
+    "    \\omega(z) = W_{K(z)}(e^z)\n"
+    "\n"
+    "where :math:`K(z) = \\lceil (\\Im(z) - \\pi)/(2\\pi) \\rceil` is the\n"
+    "unwinding number and :math:`W` is the Lambert W function.\n"
+    "\n"
+    "The implementation here is taken from [1]_.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "lambertw : The Lambert W function\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Lawrence, Corless, and Jeffrey, \"Algorithm 917: Complex\n"
+    "       Double-Precision Evaluation of the Wright :math:`\\omega`\n"
+    "       Function.\" ACM Transactions on Mathematical Software,\n"
+    "       2012. :doi:`10.1145/2168773.2168779`.")
+ufunc_wrightomega_loops[0] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
+ufunc_wrightomega_loops[1] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
+ufunc_wrightomega_types[0] = <char>NPY_CFLOAT
+ufunc_wrightomega_types[1] = <char>NPY_CFLOAT
+ufunc_wrightomega_types[2] = <char>NPY_CDOUBLE
+ufunc_wrightomega_types[3] = <char>NPY_CDOUBLE
+ufunc_wrightomega_ptr[2*0] = <void*>scipy.special._ufuncs_cxx._export_wrightomega
+ufunc_wrightomega_ptr[2*0+1] = <void*>(<char*>"wrightomega")
+ufunc_wrightomega_ptr[2*1] = <void*>scipy.special._ufuncs_cxx._export_wrightomega
+ufunc_wrightomega_ptr[2*1+1] = <void*>(<char*>"wrightomega")
+ufunc_wrightomega_data[0] = &ufunc_wrightomega_ptr[2*0]
+ufunc_wrightomega_data[1] = &ufunc_wrightomega_ptr[2*1]
+wrightomega = np.PyUFunc_FromFuncAndData(ufunc_wrightomega_loops, ufunc_wrightomega_data, ufunc_wrightomega_types, 2, 1, 1, 0, "wrightomega", ufunc_wrightomega_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_xlog1py_loops[4]
 cdef void *ufunc_xlog1py_ptr[8]

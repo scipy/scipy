@@ -199,7 +199,7 @@ class TestDifferentialEvolutionSolver(TestCase):
         # test that the getter property method for the best solution works.
         solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
         result = solver.solve()
-        assert_equal(result.x, solver.x)
+        assert_almost_equal(result.x, solver.x)
 
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
@@ -344,20 +344,6 @@ class TestDifferentialEvolutionSolver(TestCase):
                                              maxiter=1)
 
         solver.solve()
-
-    def test__make_random_gen(self):
-        # If seed is None, return the RandomState singleton used by np.random.
-        # If seed is an int, return a new RandomState instance seeded with seed.
-        # If seed is already a RandomState instance, return it.
-        # Otherwise raise ValueError.
-        rsi = _differentialevolution._make_random_gen(1)
-        assert_equal(type(rsi), np.random.RandomState)
-        rsi = _differentialevolution._make_random_gen(rsi)
-        assert_equal(type(rsi), np.random.RandomState)
-        rsi = _differentialevolution._make_random_gen(None)
-        assert_equal(type(rsi), np.random.RandomState)
-        self.assertRaises(
-            ValueError, _differentialevolution._make_random_gen, 'a')
 
     def test_gh_4511_regression(self):
         # This modification of the differential evolution docstring example

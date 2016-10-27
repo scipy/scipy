@@ -6,10 +6,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
-           'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh']
-
 import warnings
 import numpy as np
 
@@ -19,6 +15,10 @@ from .misc import LinAlgError, _datacopied
 from .decomp import _asarray_validated
 from . import decomp, decomp_svd
 from ._solve_toeplitz import levinson
+
+__all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
+           'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
+           'pinv', 'pinv2', 'pinvh', 'matrix_balance']
 
 
 # Linear equations
@@ -101,8 +101,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         return x
     if info > 0:
         raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal gesv|posv' %
-                     -info)
+    raise ValueError('illegal value in %d-th argument of internal '
+                     'gesv|posv' % -info)
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
@@ -230,7 +230,7 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if a1.shape[-1] == 1:
-        b2 = np.array(b1, copy=overwrite_b)
+        b2 = np.array(b1, copy=(not overwrite_b))
         b2 /= a1[1, 0]
         return b2
     if l == u == 1:
@@ -251,8 +251,8 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         return x
     if info > 0:
         raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal gbsv/gtsv' %
-                     -info)
+    raise ValueError('illegal value in %d-th argument of internal '
+                     'gbsv/gtsv' % -info)
 
 
 def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
@@ -330,8 +330,8 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     if info > 0:
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal pbsv' %
-                         -info)
+        raise ValueError('illegal value in %d-th argument of internal '
+                         'pbsv' % -info)
     return x
 
 
@@ -660,14 +660,14 @@ def inv(a, overwrite_a=False, check_finite=True):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
     #XXX: I found no advantage or disadvantage of using finv.
-##     finv, = get_flinalg_funcs(('inv',),(a1,))
-##     if finv is not None:
-##         a_inv,info = finv(a1,overwrite_a=overwrite_a)
-##         if info==0:
-##             return a_inv
-##         if info>0: raise LinAlgError, "singular matrix"
-##         if info<0: raise ValueError,\
-##            'illegal value in %d-th argument of internal inv.getrf|getri'%(-info)
+#     finv, = get_flinalg_funcs(('inv',),(a1,))
+#     if finv is not None:
+#         a_inv,info = finv(a1,overwrite_a=overwrite_a)
+#         if info==0:
+#             return a_inv
+#         if info>0: raise LinAlgError, "singular matrix"
+#         if info<0: raise ValueError('illegal value in %d-th argument of '
+#                                     'internal inv.getrf|getri'%(-info))
     getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
                                                   'getri_lwork'),
                                                  (a1,))
@@ -691,7 +691,7 @@ def inv(a, overwrite_a=False, check_finite=True):
     return inv_a
 
 
-### Determinant
+# Determinant
 
 def det(a, overwrite_a=False, check_finite=True):
     """
@@ -750,7 +750,8 @@ def det(a, overwrite_a=False, check_finite=True):
                          'det.getrf' % -info)
     return a_det
 
-### Linear Least Squares
+# Linear Least Squares
+
 
 class LstsqLapackError(LinAlgError):
     pass
@@ -837,7 +838,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         raise ValueError('LAPACK driver "%s" is not found' % driver)
 
     lapack_func, lapack_lwork = get_lapack_funcs((driver,
-                                        '%s_lwork' % driver), (a1, b1))
+                                                 '%s_lwork' % driver),
+                                                 (a1, b1))
     real_data = True if (lapack_func.dtype.kind == 'f') else False
 
     if m < n:
@@ -872,22 +874,22 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
                     # size of the iwork array in query mode.  This bug was
                     # fixed in LAPACK 3.2.2, released July 21, 2010.
                     mesg = ("internal gelsd driver lwork query error, "
-                           "required iwork dimension not returned. "
-                           "This is likely the result of LAPACK bug "
-                           "0038, fixed in LAPACK 3.2.2 (released "
-                           "July 21, 2010). ")
-                    
+                            "required iwork dimension not returned. "
+                            "This is likely the result of LAPACK bug "
+                            "0038, fixed in LAPACK 3.2.2 (released "
+                            "July 21, 2010). ")
+
                     if lapack_driver is None:
                         # restart with gelss
                         lstsq.default_lapack_driver = 'gelss'
                         mesg += "Falling back to 'gelss' driver."
                         warnings.warn(mesg, RuntimeWarning)
                         return lstsq(a, b, cond, overwrite_a, overwrite_b,
-                                    check_finite, lapack_driver='gelss')
+                                     check_finite, lapack_driver='gelss')
 
                     # can't proceed, bail out
-                    mesg += ("Use a different lapack_driver when calling lstsq "
-                            "or upgrade LAPACK.")
+                    mesg += ("Use a different lapack_driver when calling lstsq"
+                             " or upgrade LAPACK.")
                     raise LstsqLapackError(mesg)
 
                 x, s, rank, info = lapack_func(a1, b1, lwork,
@@ -901,7 +903,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             raise LinAlgError("SVD did not converge in Linear Least Squares")
         if info < 0:
             raise ValueError('illegal value in %d-th argument of internal %s'
-                                                    % (-info, lapack_driver))
+                             % (-info, lapack_driver))
         resids = np.asarray([], dtype=x.dtype)
         if m > n:
             x1 = x[:n]
@@ -912,9 +914,9 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
 
     elif driver == 'gelsy':
         lwork = _compute_lwork(lapack_lwork, m, n, nrhs, cond)
-        jptv = np.zeros((a1.shape[1],1), dtype=np.int32)
+        jptv = np.zeros((a1.shape[1], 1), dtype=np.int32)
         v, x, j, rank, info = lapack_func(a1, b1, jptv, cond,
-                                           lwork, False, False)
+                                          lwork, False, False)
         if info < 0:
             raise ValueError("illegal value in %d-th argument of internal "
                              "gelsy" % -info)
@@ -923,6 +925,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
             x = x1
         return x, np.array([], x.dtype), rank, None
 lstsq.default_lapack_driver = 'gelsd'
+
 
 def pinv(a, cond=None, rcond=None, return_rank=False, check_finite=True):
     """
@@ -1125,3 +1128,145 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
         return B, len(psigma_diag)
     else:
         return B
+
+
+def matrix_balance(A, permute=True, scale=True, separate=False,
+                   overwrite_a=False):
+    """
+    A wrapper around LAPACK's xGEBAL routine family for matrix balancing.
+
+    The balancing tries to equalize the row and column 1-norms by applying
+    a similarity transformation such that the magnitude variation of the
+    matrix entries is reflected to the scaling matrices.
+
+    Moreover, if enabled, the matrix is first permuted to isolate the upper
+    triangular parts of the matrix and, again if scaling is also enabled,
+    only the remaining subblocks are subjected to scaling.
+
+    The balanced matrix satisfies the following equality
+
+    .. math::
+
+                        B = T^{-1} A T
+
+    The scaling coefficients are approximated to the nearest power of 2
+    to avoid round-off errors.
+
+    Parameters
+    ----------
+    A : (n, n) array_like
+        Square data matrix for the balancing.
+    permute : bool, optional
+        The selector to define whether permutation of A is also performed
+        prior to scaling.
+    scale : bool, optional
+        The selector to turn on and off the scaling. If False, the matrix
+        will not be scaled.
+    separate : bool, optional
+        This switches from returning a full matrix of the transformation
+        to a tuple of two separate 1D permutation and scaling arrays.
+    overwrite_a : bool, optional
+        This is passed to xGEBAL directly. Essentially, overwrites the result
+        to the data. It might increase the space efficiency. See LAPACK manual
+        for details. This is False by default.
+
+    Returns
+    -------
+    B : (n, n) ndarray
+        Balanced matrix
+    T : (n, n) ndarray
+        A possibly permuted diagonal matrix whose nonzero entries are
+        integer powers of 2 to avoid numerical truncation errors.
+    scale, perm : (n,) ndarray
+        If ``separate`` keyword is set to True then instead of the array
+        ``T`` above, the scaling and the permutation vector is given
+        separately without allocating the full array ``T``.
+
+    .. versionadded:: 0.19.0
+
+    Notes
+    -----
+
+    This algorithm is particularly useful for eigenvalue and matrix
+    decompositions and in many cases it is already called by various
+    LAPACK routines.
+
+    The algorithm is based on the well-known technique of [1]_ and has
+    been modified to account for special cases. See [2]_ for details
+    which have been implemented since LAPACK v3.5.0. Before this version
+    there are corner cases where balancing can actually worsen the
+    conditioning. See [3]_ for such examples.
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> x = np.array([[1,2,0], [9,1,0.01], [1,2,10*np.pi]])
+
+    >>> y, permscale = linalg.matrix_balance(x)
+    >>> np.abs(x).sum(axis=0) / np.abs(x).sum(axis=1)
+    array([ 3.66666667,  0.4995005 ,  0.91312162])
+
+    >>> np.abs(y).sum(axis=0) / np.abs(y).sum(axis=1) # 1-norms approx. equal
+    array([ 1.10625   ,  0.90547703,  1.00011878])
+
+    >>> permscale  # only powers of 2 (0.5 == 2^(-1))
+    array([[  0.5,   0. ,   0. ],
+           [  0. ,   1. ,   0. ],
+           [  0. ,   0. ,  16. ]])
+
+    References
+    ----------
+    .. [1] : B.N. Parlett and C. Reinsch, "Balancing a Matrix for
+       Calculation of Eigenvalues and Eigenvectors", Numerische Mathematik,
+       Vol.13(4), 1969, DOI:10.1007/BF02165404
+
+    .. [2] : R. James, J. Langou, B.R. Lowery, "On matrix balancing and
+       eigenvector computation", 2014, Available online:
+       http://arxiv.org/abs/1401.5766
+
+    .. [3] :  D.S. Watkins. A case where balancing is harmful.
+       Electron. Trans. Numer. Anal, Vol.23, 2006.
+
+    """
+
+    A = np.atleast_2d(_asarray_validated(A, check_finite=True))
+
+    if not np.equal(*A.shape):
+        raise ValueError('The data matrix for balancing should be square.')
+
+    gebal = get_lapack_funcs(('gebal'), (A,))
+    B, lo, hi, ps, info = gebal(A, scale=scale, permute=permute,
+                                overwrite_a=overwrite_a)
+
+    if info < 0:
+        raise ValueError('xGEBAL exited with the internal error '
+                         '"illegal value in argument number {}.". See '
+                         'LAPACK documentation for the xGEBAL error codes.'
+                         ''.format(-info))
+
+    # Separate the permutations from the scalings and then convert to int
+    scaling = np.ones_like(ps, dtype=float)
+    scaling[lo:hi+1] = ps[lo:hi+1]
+
+    # gebal uses 1-indexing
+    ps = ps.astype(int, copy=False) - 1
+    n = A.shape[0]
+    perm = np.arange(n)
+
+    # LAPACK permutes with the ordering n --> hi, then 0--> lo
+    if hi < n:
+        for ind, x in enumerate(ps[hi+1:][::-1], 1):
+            if n-ind == x:
+                continue
+            perm[[x, n-ind]] = perm[[n-ind, x]]
+
+    if lo > 0:
+        for ind, x in enumerate(ps[:lo]):
+            if ind == x:
+                continue
+            perm[[x, ind]] = perm[[ind, x]]
+
+    if separate:
+        return B, (scaling, perm)
+
+    return B, np.diag(scaling)[perm, :]

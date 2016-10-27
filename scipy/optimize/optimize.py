@@ -30,7 +30,7 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 import numpy
-from scipy._lib.six import callable
+from scipy._lib.six import callable, xrange
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
@@ -415,10 +415,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     -------
     disp : bool
         Set to True to print convergence messages.
-    maxiter : int
-        Maximum number of iterations to perform.
-    maxfev : int
-        Maximum number of function evaluations to make.
+    maxiter, maxfev : int
+        Maximum allowed number of iterations and function evaluations.
+        Will default to ``N*200``, where ``N`` is the number of
+        variables, if neither `maxiter` or `maxfev` is set. If both
+        `maxiter` and `maxfev` are set, minimization will stop at the
+        first reached.
     initial_simplex : array_like of shape (N + 1, N)
         Initial simplex. If given, overrides `x0`.
         ``initial_simplex[j,:]`` should contain the coordinates of
@@ -430,6 +432,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fatol : number, optional
         Absolute error in func(xopt) between iterations that is acceptable for
         convergence.
+
     """
     if 'ftol' in unknown_options:
         warnings.warn("ftol is deprecated for Nelder-Mead,"
@@ -490,10 +493,22 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if retall:
         allvecs = [sim[0]]
 
-    if maxiter is None:
+    # If neither are set, then set both to default
+    if maxiter is None and maxfun is None:
         maxiter = N * 200
-    if maxfun is None:
         maxfun = N * 200
+    elif maxiter is None:
+        # Convert remaining Nones, to np.inf, unless the other is np.inf, in
+        # which case use the default to avoid unbounded iteration
+        if maxfun == np.inf:
+            maxiter = N * 200
+        else:
+            maxiter = np.inf
+    elif maxfun is None:
+        if maxiter == np.inf:
+            maxfun = N * 200
+        else:
+            maxfun = np.inf
 
     one2np1 = list(range(1, N + 1))
     fsim = numpy.zeros((N + 1,), float)
@@ -1431,12 +1446,30 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     epsilon = eps
     retall = return_all
 
+    def terminate(warnflag, msg):
+        if disp:
+            print(msg)
+            print("         Current function value: %f" % old_fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % fcalls[0])
+            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Hessian evaluations: %d" % hcalls)
+        fval = old_fval
+        result = OptimizeResult(fun=fval, jac=gfk, nfev=fcalls[0],
+                                njev=gcalls[0], nhev=hcalls, status=warnflag,
+                                success=(warnflag == 0), message=msg, x=xk,
+                                nit=k)
+        if retall:
+            result['allvecs'] = allvecs
+        return result
+
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
     gcalls, fprime = wrap_function(fprime, args)
     hcalls = 0
     if maxiter is None:
         maxiter = len(x0)*200
+    cg_maxiter = 20*len(x0)
 
     xtol = len(x0) * avextol
     update = [2 * xtol]
@@ -1447,8 +1480,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     old_fval = f(x0)
     old_old_fval = None
     float64eps = numpy.finfo(numpy.float64).eps
-    warnflag = 0
-    while (numpy.add.reduce(numpy.abs(update)) > xtol) and (k < maxiter):
+    while numpy.add.reduce(numpy.abs(update)) > xtol:
+        if k >= maxiter:
+            msg = "Warning: " + _status_message['maxiter']
+            return terminate(1, msg)
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
@@ -1465,9 +1500,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             A = fhess(*(xk,) + args)
             hcalls = hcalls + 1
 
-        k2 = 0
-        cg_maxiter = 20*len(x0)
-        while (numpy.add.reduce(numpy.abs(ri)) > termcond) and (k2 < cg_maxiter):
+        for k2 in xrange(cg_maxiter):
+            if numpy.add.reduce(numpy.abs(ri)) <= termcond:
+                break
             if fhess is None:
                 if fhess_p is None:
                     Ap = approx_fhess_p(xk, psupi, fprime, epsilon)
@@ -1496,11 +1531,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             psupi = -ri + betai * psupi
             i = i + 1
             dri0 = dri1          # update numpy.dot(ri,ri) for next time.
-            k2 += 1
-
-        if k2 >= cg_maxiter:
+        else:
             # curvature keeps increasing, bail out
-            break
+            msg = ("Warning: CG iterations didn't converge.  The Hessian is not "
+                   "positive definite.")
+            return terminate(3, msg)
 
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
@@ -1511,8 +1546,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                                           old_fval, old_old_fval)
         except _LineSearchError:
             # Line search failed to find a better solution.
-            warnflag = 2
-            break
+            msg = "Warning: " + _status_message['pr_loss']
+            return terminate(2, msg)
 
         update = alphak * pk
         xk = xk + update        # upcast if necessary
@@ -1521,55 +1556,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if retall:
             allvecs.append(xk)
         k += 1
-
-    fval = old_fval
-    if warnflag == 2:
-        msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
-    elif k >= maxiter:
-        warnflag = 1
-        msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
-    elif k2 >= cg_maxiter:
-        warnflag = 3
-        msg = ("Warning: CG iterations didn't converge.  The Hessian is not "
-              "positive definite.")
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
-
-    result = OptimizeResult(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
-                            nhev=hcalls, status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk,
-                            nit=k)
-    if retall:
-        result['allvecs'] = allvecs
-    return result
+        return terminate(0, msg)
 
 
 def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
@@ -2100,7 +2089,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")
 
-    _gR = 0.61803399
+    _gR = 0.61803399  # golden ratio conjugate: 2.0/(1.0+sqrt(5.0))
     _gC = 1.0 - _gR
     x3 = xc
     x0 = xa
@@ -2170,7 +2159,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         Number of function evaluations made.
 
     """
-    _gold = 1.618034
+    _gold = 1.618034  # golden ratio: (1.0+sqrt(5.0))/2.0
     _verysmall_num = 1e-21
     fa = func(*(xa,) + args)
     fb = func(*(xb,) + args)
@@ -2384,10 +2373,12 @@ def _minimize_powell(func, x0, args=(), callback=None,
         Relative error in solution `xopt` acceptable for convergence.
     ftol : float
         Relative error in ``fun(xopt)`` acceptable for convergence.
-    maxiter : int
-        Maximum number of iterations to perform.
-    maxfev : int
-        Maximum number of function evaluations to make.
+    maxiter, maxfev : int
+        Maximum allowed number of iterations and function evaluations.
+        Will default to ``N*1000``, where ``N`` is the number of
+        variables, if neither `maxiter` or `maxfev` is set. If both
+        `maxiter` and `maxfev` are set, minimization will stop at the
+        first reached.
     direc : ndarray
         Initial set of direction vectors for the Powell method.
 
@@ -2402,10 +2393,22 @@ def _minimize_powell(func, x0, args=(), callback=None,
     if retall:
         allvecs = [x]
     N = len(x)
-    if maxiter is None:
+    # If neither are set, then set both to default
+    if maxiter is None and maxfun is None:
         maxiter = N * 1000
-    if maxfun is None:
         maxfun = N * 1000
+    elif maxiter is None:
+        # Convert remaining Nones, to np.inf, unless the other is np.inf, in
+        # which case use the default to avoid unbounded iteration
+        if maxfun == np.inf:
+            maxiter = N * 1000
+        else:
+            maxiter = np.inf
+    elif maxfun is None:
+        if maxiter == np.inf:
+            maxfun = N * 1000
+        else:
+            maxfun = np.inf
 
     if direc is None:
         direc = eye(N, dtype=float)

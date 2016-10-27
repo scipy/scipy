@@ -11,6 +11,7 @@ from numpy.testing.nosetester import import_nose
 
 from scipy._lib._version import NumpyVersion
 
+
 if NumpyVersion(np.__version__) > '1.7.0.dev':
     _assert_warns = np.testing.assert_warns
 else:
@@ -72,3 +73,135 @@ def assert_raises_regex(exception_class, expected_regexp,
 
     return funcname(exception_class, expected_regexp, callable_obj,
                     *args, **kwargs)
+
+
+if NumpyVersion(np.__version__) >= '1.10.0':
+    from numpy import broadcast_to
+else:
+    # Definition of `broadcast_to` from numpy 1.10.0.
+
+    def _maybe_view_as_subclass(original_array, new_array):
+        if type(original_array) is not type(new_array):
+            # if input was an ndarray subclass and subclasses were OK,
+            # then view the result as that subclass.
+            new_array = new_array.view(type=type(original_array))
+            # Since we have done something akin to a view from original_array, we
+            # should let the subclass finalize (if it has it implemented, i.e., is
+            # not None).
+            if new_array.__array_finalize__:
+                new_array.__array_finalize__(original_array)
+        return new_array
+
+    def _broadcast_to(array, shape, subok, readonly):
+        shape = tuple(shape) if np.iterable(shape) else (shape,)
+        array = np.array(array, copy=False, subok=subok)
+        if not shape and array.shape:
+            raise ValueError('cannot broadcast a non-scalar to a scalar array')
+        if any(size < 0 for size in shape):
+            raise ValueError('all elements of broadcast shape must be non-'
+                             'negative')
+        broadcast = np.nditer(
+            (array,), flags=['multi_index', 'refs_ok', 'zerosize_ok'],
+            op_flags=['readonly'], itershape=shape, order='C').itviews[0]
+        result = _maybe_view_as_subclass(array, broadcast)
+        if not readonly and array.flags.writeable:
+            result.flags.writeable = True
+        return result
+
+    def broadcast_to(array, shape, subok=False):
+        return _broadcast_to(array, shape, subok=subok, readonly=True)
+
+
+if NumpyVersion(np.__version__) >= '1.9.0':
+    from numpy import unique
+else:
+    # the return_counts keyword was added in 1.9.0
+    def unique(ar, return_index=False, return_inverse=False, return_counts=False):
+        """
+        Find the unique elements of an array.
+
+        Returns the sorted unique elements of an array. There are three optional
+        outputs in addition to the unique elements: the indices of the input array
+        that give the unique values, the indices of the unique array that
+        reconstruct the input array, and the number of times each unique value
+        comes up in the input array.
+
+        Parameters
+        ----------
+        ar : array_like
+            Input array. This will be flattened if it is not already 1-D.
+        return_index : bool, optional
+            If True, also return the indices of `ar` that result in the unique
+            array.
+        return_inverse : bool, optional
+            If True, also return the indices of the unique array that can be used
+            to reconstruct `ar`.
+        return_counts : bool, optional
+            If True, also return the number of times each unique value comes up
+            in `ar`.
+
+            .. versionadded:: 1.9.0
+
+        Returns
+        -------
+        unique : ndarray
+            The sorted unique values.
+        unique_indices : ndarray, optional
+            The indices of the first occurrences of the unique values in the
+            (flattened) original array. Only provided if `return_index` is True.
+        unique_inverse : ndarray, optional
+            The indices to reconstruct the (flattened) original array from the
+            unique array. Only provided if `return_inverse` is True.
+        unique_counts : ndarray, optional
+            The number of times each of the unique values comes up in the
+            original array. Only provided if `return_counts` is True.
+
+            .. versionadded:: 1.9.0
+
+        Notes
+        -----
+        Taken over from numpy 1.12.0-dev (c8408bf9c).  Omitted examples,
+        see numpy documentation for those.
+
+        """
+        ar = np.asanyarray(ar).flatten()
+
+        optional_indices = return_index or return_inverse
+        optional_returns = optional_indices or return_counts
+
+        if ar.size == 0:
+            if not optional_returns:
+                ret = ar
+            else:
+                ret = (ar,)
+                if return_index:
+                    ret += (np.empty(0, np.bool),)
+                if return_inverse:
+                    ret += (np.empty(0, np.bool),)
+                if return_counts:
+                    ret += (np.empty(0, np.intp),)
+            return ret
+
+        if optional_indices:
+            perm = ar.argsort(kind='mergesort' if return_index else 'quicksort')
+            aux = ar[perm]
+        else:
+            ar.sort()
+            aux = ar
+        flag = np.concatenate(([True], aux[1:] != aux[:-1]))
+
+        if not optional_returns:
+            ret = aux[flag]
+        else:
+            ret = (aux[flag],)
+            if return_index:
+                ret += (perm[flag],)
+            if return_inverse:
+                iflag = np.cumsum(flag) - 1
+                inv_idx = np.empty(ar.shape, dtype=np.intp)
+                inv_idx[perm] = iflag
+                ret += (inv_idx,)
+            if return_counts:
+                idx = np.concatenate(np.nonzero(flag) + ([ar.size],))
+                ret += (np.diff(idx),)
+        return ret
