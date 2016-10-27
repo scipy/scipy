@@ -314,6 +314,7 @@ cdef class _Qhull:
     cdef qhT *_qh
 
     cdef list _point_arrays
+    cdef list _dual_point_arrays
     cdef _QhullMessageStream _messages
 
     cdef public bytes options
@@ -400,6 +401,7 @@ cdef class _Qhull:
             self._is_halfspaces = 0
 
         self._point_arrays = [points]
+        self._dual_point_arrays = []
         self.options = b" ".join(option_set)
         self.mode_option = mode_option
         self.furthest_site = furthest_site
@@ -473,7 +475,7 @@ cdef class _Qhull:
                 axis=0)
 
     @cython.final
-    def add_points(self, points):
+    def add_points(self, points, interior_point=None):
         cdef int j
         cdef realT *p
         cdef facetT *facet
@@ -492,6 +494,11 @@ cdef class _Qhull:
         if self._is_delaunay:
             arr = np.empty((points.shape[0], self.ndim+1), dtype=np.double)
             arr[:,:-1] = points
+        elif self._is_halfspaces:
+            #Store the halfspaces in _points and the dual points in _dual_points later
+            self._point_arrays.append(np.array(points, copy=True))
+            dists = points[:, :-1].dot(interior_point)+points[:, -1]
+            arr = np.array(-points[:, :-1]/dists, dtype=np.double, order="C", copy=True)
         else:
             arr = np.array(points, dtype=np.double, order="C", copy=True)
 
@@ -510,8 +517,6 @@ cdef class _Qhull:
                 qh_setdelaunay(self._qh, arr.shape[1], arr.shape[0], <realT*>arr.data)
 
             p = <realT*>arr.data
-            if self._is_halfspaces:
-                p = qh_sethalfspace_all(self._qh, arr.shape[1], arr.shape[0], p, self._qh.feasible_point)
 
             for j in xrange(arr.shape[0]):
                 facet = qh_findbestfacet(self._qh, p, 0, &bestdist, &isoutside)
@@ -523,15 +528,15 @@ cdef class _Qhull:
                     # maintain the point IDs
                     qh_setappend(self._qh, &self._qh[0].other_points, p)
 
-                if self._is_halfspaces:
-                    p += arr.shape[1] - 1
-                else:
-                    p += arr.shape[1]
+                p += arr.shape[1]
 
             qh_check_maxout(self._qh)
             self._qh[0].hasTriangulation = 0
 
-            self._point_arrays.append(arr)
+            if self._is_halfspaces:
+                self._dual_point_arrays.append(arr)
+            else:
+                self._point_arrays.append(arr)
             self.numpoints += arr.shape[0]
         finally:
             self._qh[0].NOerrexit = 1
@@ -1682,7 +1687,7 @@ class _QhullUser(object):
                     qhull.close()
             return
 
-        self._qhull.add_points(points)
+        self._qhull.add_points(points, interior_point)
         self._update(self._qhull)
 
 class Delaunay(_QhullUser):
