@@ -146,7 +146,7 @@ def _validate_vector(u, dtype=None):
         raise ValueError("Input vector should be 1-D.")
     return u
 
-def directed_hausdorff(u, v):
+def directed_hausdorff(u, v, seed=0):
     """
     Computes the directed Hausdorff distance between two N-D arrays.
 
@@ -158,6 +158,9 @@ def directed_hausdorff(u, v):
         Input array.
     v : (O,N) ndarray
         Input array.
+    seed : int or None
+        Local `RandomState` seed. Deafult is 0, a random shuffling of
+        u and v that guarantees reproducibility.
 
     Returns
     -------
@@ -223,7 +226,7 @@ def directed_hausdorff(u, v):
     """
     u = np.asarray(u, dtype=np.float64, order='c')
     v = np.asarray(v, dtype=np.float64, order='c')
-    result = _hausdorff.directed_hausdorff(u, v)
+    result = _hausdorff.directed_hausdorff(u, v, seed)
     return result
 
 def minkowski(u, v, p):

@@ -18,7 +18,7 @@ from libc.math cimport sqrt
 __all__ = ['directed_hausdorff']
 
 @cython.boundscheck(False)
-def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2):
+def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 
     cdef double cmax, cmin, d
     cdef int break_occurred
@@ -32,10 +32,11 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2):
     # shuffling the points in each array generally increases the likelihood of
     # an advantageous break in the inner search loop and never decreases the
     # performance of the algorithm
+    rng = np.random.RandomState(seed)
     resort1 = np.arange(N1)
     resort2 = np.arange(N2)
-    np.random.shuffle(resort1)
-    np.random.shuffle(resort2)
+    rng.shuffle(resort1)
+    rng.shuffle(resort2)
     ar1 = np.asarray(ar1)[resort1]
     ar2 = np.asarray(ar2)[resort2]
 
