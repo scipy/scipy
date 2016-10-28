@@ -181,7 +181,7 @@ def solve_x(a, b, trans='N', fact='E', equed='B', af=None,
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
-    gesvx = get_lapack_funcs(('gesvx',), (a1, b1))
+    gesvx = get_lapack_funcs(('gesvx'), (a1, b1))
 
     a_s, lu, piv, equed, rs, cs, b_s, x, rcond, ferr, berr, info = gesvx(
                     a=a1, b=b1, trans=trans, fact=fact, equed=equed, af=af,
