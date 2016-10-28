@@ -144,13 +144,13 @@ interpolate
 Needed:
 
   - Both fitpack and fitpack2 interfaces will be kept.
-  - splmake should go; is different spline representation, we need exactly one
+  - splmake is deprecated; is different spline representation, we need exactly one
   - interp1d/interp2d are somewhat ugly but widely used, so we keep them.
 
 
 Ideas for new features:
 
-  - Transparent B-splines and their usage in the interpolation routines is needed.
+  - Spline fitting routines with better user control.
   - Integration and differentiation and arithmetic routines for splines
   - Transparent tensor-product splines.
   - NURBS support.

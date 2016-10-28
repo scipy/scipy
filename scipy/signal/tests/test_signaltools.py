@@ -193,9 +193,10 @@ class TestConvolve(_TestConvolve):
 
         # This is really a test that convolving two large integers goes to the
         # direct method even if they're in the fft method.
-        for n in [10, 20, 50, 51, 52, 53, 54, 60, 63]:
-            fft = convolve([2**n], [2**n], method='fft')
-            direct = convolve([2**n], [2**n], method='direct')
+        for n in [10, 20, 50, 51, 52, 53, 54, 60, 62]:
+            z = np.array([2**n], dtype=np.int64)
+            fft = convolve(z, z, method='fft')
+            direct = convolve(z, z, method='direct')
 
             # this is the case when integer precision gets to us
             # issue #6076 has more detail, hopefully more tests after resolved
@@ -668,7 +669,7 @@ class TestCSpline1DEval(TestCase):
         ynew = signal.cspline1d_eval(cy, xnew)
 
         assert_equal(ynew.dtype, y.dtype)
-        
+
 class TestOrderFilt(TestCase):
 
     def test_basic(self):
@@ -1575,7 +1576,7 @@ def test_choose_conv_method():
                 h = x.copy()
                 assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
-        x = np.array([2**51], dtype=int)
+        x = np.array([2**51], dtype=np.int64)
         h = x.copy()
         assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 

@@ -238,7 +238,7 @@ def least_squares(
         jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
-    Given the residuals f(x) (an m-dimensional function of n variables) and
+    Given the residuals f(x) (an m-dimensional function of n real variables) and
     the loss function rho(s) (a scalar function), `least_squares` finds a
     local minimum of the cost function F(x)::
 
@@ -735,6 +735,9 @@ def least_squares(
 
     if max_nfev is not None and max_nfev <= 0:
         raise ValueError("`max_nfev` must be None or positive integer.")
+
+    if np.iscomplexobj(x0):
+        raise ValueError("`x0` must be real.")
 
     x0 = np.atleast_1d(x0).astype(float)
 
