@@ -1,10 +1,12 @@
 import numpy as np
 from numpy.testing import (TestCase,
                            assert_almost_equal,
-                           assert_array_equal)
+                           assert_array_equal,
+                           assert_equal)
 import scipy
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
+from scipy._lib._util import check_random_state
 
 class TestHausdorff(TestCase):
     # Test various properties of the directed Hausdorff code.
@@ -95,3 +97,13 @@ class TestHausdorff(TestCase):
         actual = directed_hausdorff(path_simple_2, path_simple_1)[1:]
         expected = (2, 3)
         assert_array_equal(actual, expected)
+
+    def test_random_state(self):
+        # ensure that the global random state is not modified because
+        # the directed Hausdorff algorithm uses randomization
+        rs = check_random_state(None)
+        old_global_state = rs.get_state()
+        directed_hausdorff(self.path_1, self.path_2)
+        rs2 = check_random_state(None)
+        new_global_state = rs2.get_state()
+        assert_equal(new_global_state, old_global_state)
