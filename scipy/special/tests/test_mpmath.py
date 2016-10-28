@@ -1490,7 +1490,6 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         g = 6.024680040776729583740234375
         
         def gamma(x):
-            tmp = x + g - 0.5
             return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
         
         assert_mpmath_equal(gamma,

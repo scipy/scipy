@@ -9,9 +9,9 @@ import warnings
 import numpy as np
 import math
 from scipy._lib.six import xrange
-from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
-                   where, mgrid, sin, place, issubdtype, extract,
-                   less, inexact, nan, zeros, atleast_1d, sinc)
+from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
+                   imag, sqrt, where, mgrid, sin, place, issubdtype,
+                   extract, less, inexact, nan, zeros, sinc)
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, _zeta, hankel1, hankel2, yv, kv, _gammaln,
                       ndtri, errprint, poch, binom, hyp0f1)
