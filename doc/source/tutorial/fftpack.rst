@@ -44,7 +44,7 @@ and the inverse transform is defined as follows
 
 .. math::
 
-    x[n] = \frac{1}{N} \sum_{n=0}^{N-1} e^{2 \pi j \frac{k n}{N} } y[k] \, .
+    x[n] = \frac{1}{N} \sum_{k=0}^{N-1} e^{2 \pi j \frac{k n}{N} } y[k] \, .
 
 These transforms can be calculated by means of :func:`fft` and :func:`ifft`,
 respectively as shown in the following example.
