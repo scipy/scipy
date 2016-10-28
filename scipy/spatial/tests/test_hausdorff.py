@@ -107,3 +107,24 @@ class TestHausdorff(TestCase):
         rs2 = check_random_state(None)
         new_global_state = rs2.get_state()
         assert_equal(new_global_state, old_global_state)
+
+    def test_random_state_None(self):
+        # check that a seed value of None does not alter global random
+        # state
+        rs = check_random_state(None)
+        old_global_state = rs.get_state()
+        directed_hausdorff(self.path_1, self.path_2, None)
+        rs2 = check_random_state(None)
+        new_global_state = rs2.get_state()
+        assert_equal(new_global_state, old_global_state)
+
+    def test_random_state_int(self):
+        # check that a seed value of int does not alter global random
+        # state
+        integer = 27870671
+        rs = check_random_state(None)
+        old_global_state = rs.get_state()
+        directed_hausdorff(self.path_1, self.path_2, integer)
+        rs2 = check_random_state(None)
+        new_global_state = rs2.get_state()
+        assert_equal(new_global_state, old_global_state)
