@@ -671,7 +671,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=1.):
     ----------
     .. [1] Ivan Selesnick, Linear-Phase Fir Filter Design By Least Squares.
            OpenStax CNX. Aug 9, 2005.
-           http://cnx.org/contents/eb1ecb35-03a9-4610-ba87-41cd771c95f2@7
+           http://cnx.org/contents/6x7LNQOp@7/Linear-Phase-Fir-Filter-Design
 
     Examples
     --------

@@ -217,7 +217,7 @@ def jnjnp_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt > 1200):
@@ -246,7 +246,7 @@ def jnyn_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(nt) and isscalar(n)):
@@ -272,7 +272,7 @@ def jn_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     return jnyn_zeros(n, nt)[0]
@@ -292,7 +292,7 @@ def jnp_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     return jnyn_zeros(n, nt)[1]
@@ -312,7 +312,7 @@ def yn_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     return jnyn_zeros(n, nt)[2]
@@ -332,7 +332,7 @@ def ynp_zeros(n, nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     return jnyn_zeros(n, nt)[3]
@@ -364,7 +364,7 @@ def y0_zeros(nt, complex=False):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -400,7 +400,7 @@ def y1_zeros(nt, complex=False):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -436,7 +436,7 @@ def y1p_zeros(nt, complex=False):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -484,7 +484,7 @@ def jvp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            http://dlmf.nist.gov/10.6.E7
 
@@ -517,7 +517,7 @@ def yvp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            http://dlmf.nist.gov/10.6.E7
 
@@ -571,7 +571,7 @@ def kvp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            http://dlmf.nist.gov/10.29.E5
 
@@ -605,7 +605,7 @@ def ivp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 6.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            http://dlmf.nist.gov/10.29.E5
 
@@ -638,7 +638,7 @@ def h1vp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            http://dlmf.nist.gov/10.6.E7
 
@@ -671,7 +671,7 @@ def h2vp(v, z, n=1):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 5.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            http://dlmf.nist.gov/10.6.E7
 
@@ -715,7 +715,7 @@ def sph_jn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -764,7 +764,7 @@ def sph_yn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -819,7 +819,7 @@ def sph_jnyn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -869,7 +869,7 @@ def sph_in(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -918,7 +918,7 @@ def sph_kn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -973,7 +973,7 @@ def sph_inkn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 8.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -1028,7 +1028,7 @@ def riccati_jn(n, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            http://dlmf.nist.gov/10.51.E1
 
@@ -1081,7 +1081,7 @@ def riccati_yn(n, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions.
            http://dlmf.nist.gov/10.51.E1
 
@@ -1117,7 +1117,7 @@ def erf_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1132,7 +1132,7 @@ def fresnelc_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1147,7 +1147,7 @@ def fresnels_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1162,7 +1162,7 @@ def fresnel_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
@@ -1249,7 +1249,7 @@ def mathieu_even_coef(m, q):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/28.4#i
 
@@ -1308,7 +1308,7 @@ def mathieu_odd_coef(m, q):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(m) and isscalar(q)):
@@ -1378,7 +1378,7 @@ def lpmn(m, n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/14.3
 
@@ -1462,7 +1462,7 @@ def clpmn(m, n, z, type=3):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/14.21
 
@@ -1524,7 +1524,7 @@ def lqmn(m, n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(m) or (m < 0):
@@ -1554,7 +1554,7 @@ def bernoulli(n):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(n) or (n < 0):
@@ -1574,7 +1574,7 @@ def euler(n):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(n) or (n < 0):
@@ -1599,7 +1599,7 @@ def lpn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -1627,7 +1627,7 @@ def lqn(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -1674,7 +1674,7 @@ def ai_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     kf = 1
@@ -1712,7 +1712,7 @@ def bi_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     kf = 2
@@ -1749,7 +1749,7 @@ def lmbda(v, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     .. [2] Jahnke, E. and Emde, F. "Tables of Functions with Formulae and
            Curves" (4th ed.), Dover, 1945
     """
@@ -1792,7 +1792,7 @@ def pbdv_seq(v, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 13.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(v) and isscalar(x)):
@@ -1829,7 +1829,7 @@ def pbvv_seq(v, x):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 13.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(v) and isscalar(x)):
@@ -1866,7 +1866,7 @@ def pbdn_seq(n, z):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996, chapter 13.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(n) and isscalar(z)):
@@ -1888,7 +1888,7 @@ def ber_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1903,7 +1903,7 @@ def bei_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1918,7 +1918,7 @@ def ker_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1941,7 +1941,7 @@ def berp_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1956,7 +1956,7 @@ def beip_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1971,7 +1971,7 @@ def kerp_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -1986,7 +1986,7 @@ def keip_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -2004,7 +2004,7 @@ def kelvin_zeros(nt):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
@@ -2030,7 +2030,7 @@ def pro_cv_seq(m, n, c):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):
@@ -2054,7 +2054,7 @@ def obl_cv_seq(m, n, c):
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """
     if not (isscalar(m) and isscalar(n) and isscalar(c)):

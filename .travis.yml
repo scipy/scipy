@@ -106,6 +106,8 @@ before_install:
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.2.3
+        # linkchecker is currently broken with requests 2.10.0 so force an earlier version
+        travis_retry pip install requests==2.9.2 linkchecker
     fi
   - python -V
   - popd
@@ -132,7 +134,16 @@ script:
     fi
   - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD |& tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
-  - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
+  - |
+    if [ "${REFGUIDE_CHECK}" == "1" ]; then
+        python runtests.py -g --refguide-check
+        # linkchecker
+        tmpfile=`mktemp`
+        echo "cd doc" >> $tmpfile
+        echo "make linkcheck &> linkcheck.log" >> $tmpfile
+        travis_wait python runtests.py --shell $tmpfile
+        ! grep -s --color "\[broken\]" doc/build/linkcheck/output.txt
+    fi
 after_success:
   # Upload development docs, using deploy key from travis-ci encrypted file
   # https://developer.github.com/guides/managing-deploy-keys/

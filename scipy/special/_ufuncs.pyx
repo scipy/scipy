@@ -2562,7 +2562,7 @@ cdef char *ufunc_airy_doc = (
     "       http://www.netlib.org/cephes/index.html\n"
     ".. [2] Donald E. Amos, \"AMOS, A Portable Package for Bessel Functions\n"
     "       of a Complex Argument and Nonnegative Order\",\n"
-    "       http://netlib.org/amos/.org/amos/")
+    "       http://netlib.org/amos/")
 ufunc_airy_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_f_ffff
 ufunc_airy_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_d_dddd
 ufunc_airy_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DDDD_As_F_FFFF
@@ -7961,7 +7961,7 @@ cdef char *ufunc_it2struve0_doc = (
     "----------\n"
     ".. [1] Zhang, Shanjie and Jin, Jianming. \"Computation of Special\n"
     "       Functions\", John Wiley and Sons, 1996.\n"
-    "       http://jin.ece.illinois.edu/specfunc.html")
+    "       https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html")
 ufunc_it2struve0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_it2struve0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_it2struve0_types[0] = <char>NPY_FLOAT
@@ -8015,7 +8015,7 @@ cdef char *ufunc_itairy_doc = (
     "\n"
     ".. [1] Zhang, Shanjie and Jin, Jianming. \"Computation of Special\n"
     "       Functions\", John Wiley and Sons, 1996.\n"
-    "       http://jin.ece.illinois.edu/specfunc.html")
+    "       https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html")
 ufunc_itairy_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_f_ffff
 ufunc_itairy_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_d_dddd
 ufunc_itairy_types[0] = <char>NPY_FLOAT
@@ -8129,7 +8129,7 @@ cdef char *ufunc_itmodstruve0_doc = (
     "----------\n"
     ".. [1] Zhang, Shanjie and Jin, Jianming. \"Computation of Special\n"
     "       Functions\", John Wiley and Sons, 1996.\n"
-    "       http://jin.ece.illinois.edu/specfunc.html")
+    "       https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html")
 ufunc_itmodstruve0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_itmodstruve0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_itmodstruve0_types[0] = <char>NPY_FLOAT
@@ -8179,7 +8179,7 @@ cdef char *ufunc_itstruve0_doc = (
     "----------\n"
     ".. [1] Zhang, Shanjie and Jin, Jianming. \"Computation of Special\n"
     "       Functions\", John Wiley and Sons, 1996.\n"
-    "       http://jin.ece.illinois.edu/specfunc.html")
+    "       https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html")
 ufunc_itstruve0_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_itstruve0_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_itstruve0_types[0] = <char>NPY_FLOAT

@@ -445,7 +445,7 @@ various assert functions.
 
 .. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
-.. _bug report http://scipy.org/bug-report.html
+.. _bug report: http://scipy.org/bug-report.html
 
 .. _PEP8: http://www.python.org/dev/peps/pep-0008/
 
@@ -455,13 +455,13 @@ various assert functions.
 
 .. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
-.. _SciPy Roadmap http://docs.scipy.org/doc/scipy/reference/roadmap.html
+.. _SciPy Roadmap: https://scipy.github.io/devdocs/roadmap.html
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
 
-.. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
+.. _maintainers: https://docs.scipy.org/doc/scipy/reference/dev/index.html#decision-making-process
 
 .. _issue list: https://github.com/scipy/scipy/issues
 
@@ -477,7 +477,7 @@ various assert functions.
 
 .. _SciPy Central: http://scipy-central.org/
 
-.. _license compatibility: https://www.scipy.org/License_Compatibility
+.. _license compatibility: https://scipy.github.io/old-wiki/pages/License_Compatibility.html
 
 .. _doctest: http://www.doughellmann.com/PyMOTW/doctest/
 

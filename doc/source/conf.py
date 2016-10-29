@@ -294,6 +294,18 @@ if not use_matplotlib_plot_directive:
     matplotlib.rcParams.update(plot_rcparams)
 
 # -----------------------------------------------------------------------------
+# Linkcheck
+# -----------------------------------------------------------------------------
+
+# in seconds
+linkcheck_timeout = 300
+# github links have a weird behavior
+linkchek_ignore = [
+    r'https://github.com/scipy/scipy/pull/\d+',
+    r'https://github.com/scipy/scipy/issues/\d+'
+]
+
+# -----------------------------------------------------------------------------
 # Source code links
 # -----------------------------------------------------------------------------
 
