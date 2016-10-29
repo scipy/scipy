@@ -1981,7 +1981,7 @@ class NdPPoly(object):
             return self._antiderivative_inplace(-nu, axis)
 
         ndim = len(self.x)
-        axis = axis % ndim
+        axis %= ndim
 
         # reduce order
         if nu == 0:
