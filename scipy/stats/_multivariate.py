@@ -3524,8 +3524,114 @@ class random_correlation_gen(multi_rv_generic):
 random_correlation = random_correlation_gen()
 
 
+_nig_doc_default_callparams = """\
+loc : scalar, optional
+    Mean of the distribution (default zero)
+variance_scale : positive scalar, optional
+    Scale on normal distribution prior (default one)
+shape : positive scalar, optional
+    Shape of the distribution (default one)
+scale : positive scalar, optional
+    Scale on inverse gamma distribution prior (default one)
+"""
+
+_nig_doc_callparams_note = \
+    """The parameters `loc` and `variance_scale` serves as the
+    hyperparameters for normal distribution which models the
+    unknown mean. The parameters `shape` and `scale` serves as
+    the hyperparameters for inverse gamma distribution which
+    models the unknown variance.
+    """
+
+_nig_doc_frozen_callparams = ""
+
+_nig_doc_frozen_callparams_note = \
+    """See class definition for a detailed description of parameters."""
+
+nig_docdict_params = {
+    '_nig_doc_default_callparams': _nig_doc_default_callparams,
+    '_nig_doc_callparams_note': _nig_doc_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+nig_docdict_noparams = {
+    '_nig_doc_default_callparams': _nig_doc_frozen_callparams,
+    '_nig_doc_callparams_note': _nig_doc_frozen_callparams_note,
+    '_doc_random_state': _doc_random_state
+}
+
+
 class normal_invgamma_gen(multi_rv_generic):
-    
+    r"""
+    A normal inverse gamma random variable.
+
+    Methods
+    -------
+    ``pdf(x, sig2, loc=0, variance_scale=1, shape=1, scale=1)``
+        Probability density function.
+    ``logpdf(x, sig2, loc=0, variance_scale=1, shape=1, scale=1)``
+        Log of the probability density function.
+    ``rvs(loc=0, variance_scale=1, shape=1, scale=1, size=1, random_state=None)``
+        Draw random samples from normal and inverse gamma distribution.
+    ``mean(loc=0, variance_scale=1, shape=1, scale=1)``
+        Mean of the random variates.
+    ``mode(loc=0, variance_scale=1, shape=1, scale=1)``
+        Mode of the random variates.
+
+    Parameters
+    ----------
+    x : array
+            One-dimensional array.
+    sig2 : array
+            One-dimensional array.
+    %(_nig_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    Alternatively, the object may be called (as a function) to fix the
+    loc, variance_scale, shape, scale parameters, returning a "frozen"
+    normal inverse gamma random variable:
+
+    rv = normal_invgamma(loc=0, variance_scale=1, shape=1, scale=1)
+        - Frozen object with the same methods but holding the given
+          loc, variance_scale, shape, scale.
+
+    Notes
+    -----
+    %(_nig_doc_callparams_note)s
+
+    The probability density function for `normal_invgamma` is
+
+    .. math::
+
+        f(x,\sigma^2) = \frac {1} {\sigma\sqrt{2\pi\nu} } \, \frac{\beta^\alpha}
+                        {\Gamma(\alpha)} \, \left( \frac{1}{\sigma^2} \right)^
+                        {\alpha + 1}\exp \left( \frac { -\beta}{\sigma^2} -
+                        \frac{(x - \mu)^2} {2\sigma^2\nu}  \right),
+
+    where :math:`\mu` is the loc, :math:`\nu` the variance scale,
+    :math:`\alpha` the shape, :math:`\beta` the scale and :math:`x` and
+    `\sigma^2` takes values.
+
+    .. versionadded:: 0.19.0
+
+    Examples
+    --------
+    >>> import matplotlib.pyplot as plt
+    >>> from mpl_toolkits.mplot3d import axes3d
+    >>> from scipy.stats import normal_invgamma
+    >>> x = np.linspace(0, 5, 10, endpoint=False)
+    >>> sig2 = np.linspace(5, 10, 10, endpoint=False)
+    >>> z = normal_invgamma.pdf(x, sig2, loc=2,
+                                    variance_scale=3, shape=5, scale=2); z
+    array([  5.15655226e-06,   3.07181064e-06,   1.87273568e-06,
+         1.16664399e-06,   7.41424234e-07,   4.79916138e-07,
+         3.15923431e-07,   2.11211796e-07,   1.43229349e-07,
+         9.84088858e-08])
+    >>> fig = plt.figure()
+    >>> ax = fig.add_subplot(111, projection='3d')
+    >>> ax.plot_surface(x, sig2, z)
+
+    """   
     def __init__(self, seed=None):
         super(normal_invgamma_gen, self).__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, nig_docdict_params)
@@ -3698,6 +3804,43 @@ normal_invgamma = normal_invgamma_gen()
 
 
 class normal_invgamma_frozen(multi_rv_frozen):
+    """
+    Create a frozen normal inverse gamma distribution.
+
+    Parameters
+    ----------
+    loc : float, optional
+        Mean of the distribution (default zero)
+    variance_scale : positive float, optional
+        Scale on normal distribution prior (default one)
+    shape : positive float, optional
+        Shape of the distribution (default one)
+    scale : positive float, optional
+        Scale on inverse gamma distribution prior (default one)
+    seed : None or int or np.random.RandomState instance, optional
+        This parameter defines the RandomState object to use for drawing
+        random variates.
+        If None (or np.random), the global np.random state is used.
+        If integer, it is used to seed the local RandomState instance
+        Default is None.
+
+    Examples
+    --------
+    When called with the default parameters, this will create a 2D random
+    variable with loc 0, variance_scale 1, shape 1, scale 1:
+
+    >>> from scipy.stats import normal_invgamma
+    >>> r = normal_invgamma()
+    >>> r.loc
+    0
+    >>> r.variance_scale
+    1
+    >>> r.shape
+    1
+    >>> r.scale
+    1
+
+    """
     def __init__(self, loc=0, variance_scale=1, shape=1, scale=1, seed=None):
         
         self._dist = normal_invgamma_gen(seed)
