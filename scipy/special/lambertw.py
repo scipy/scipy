@@ -7,7 +7,7 @@ def lambertw(z, k=0, tol=1e-8):
     r"""
     lambertw(z, k=0, tol=1e-8)
 
-    Lambert W function [1]_.
+    Lambert W function.
 
     The Lambert W function `W(z)` is defined as the inverse function
     of ``w * exp(w)``. In other words, the value of ``W(z)`` is
