@@ -25,8 +25,8 @@ The module is usable from Cython via::
 Error Handling
 ==============
 
-Error handling works the same as in `scipy.special`; in particular
-error messages can be controlled by ``cython_special.errprint``.
+Functions can indicate an error by returning ``nan``; however they
+cannot emit warnings like their counterparts in ``scipy.special``.
 
 Available Functions
 ===================
@@ -1010,14 +1010,6 @@ ctypedef long double long_double
 ctypedef float complex float_complex
 ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
-
-def errprint(inflag=None):
-    """See the documentation for scipy.special.errprint"""
-    if inflag is not None:
-        scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
-        return bool(sf_error.set_print(int(bool(inflag))))
-    else:
-        return bool(sf_error.get_print())
 
 cdef extern from "_ufuncs_defs.h":
     cdef npy_int _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil

@@ -371,9 +371,7 @@ cdef int _set_errprint(int flag) nogil:
 
 UFUNCS_EXTRA_CODE = """\
 cimport scipy.special._ufuncs_cxx
-"""
 
-UFUNCS_ERRPRINT_CODE = """\
 def errprint(inflag=None):
     \"\"\"
     errprint(inflag=None)
@@ -412,16 +410,6 @@ def errprint(inflag=None):
     SpecialFunctionWarning('scipy.special/bdtr: domain error',)
 
     \"\"\"
-    if inflag is not None:
-        scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
-        return bool(sf_error.set_print(int(bool(inflag))))
-    else:
-        return bool(sf_error.get_print())
-"""
-
-CYTHON_SPECIAL_ERRPRINT_CODE = """\
-def errprint(inflag=None):
-    \"\"\"See the documentation for scipy.special.errprint\"\"\"
     if inflag is not None:
         scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
         return bool(sf_error.set_print(int(bool(inflag))))
@@ -469,8 +457,8 @@ The module is usable from Cython via::
 Error Handling
 ==============
 
-Error handling works the same as in `scipy.special`; in particular
-error messages can be controlled by ``cython_special.errprint``.
+Functions can indicate an error by returning ``nan``; however they
+cannot emit warnings like their counterparts in ``scipy.special``.
 
 Available Functions
 ===================
@@ -1609,8 +1597,6 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
         f.write(UFUNCS_EXTRA_CODE_COMMON)
         f.write("\n")
         f.write(UFUNCS_EXTRA_CODE)
-        f.write("\n")
-        f.write(UFUNCS_ERRPRINT_CODE)
         f.write(toplevel)
         f.write(UFUNCS_EXTRA_CODE_BOTTOM)
 
@@ -1698,8 +1684,6 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         header = CYTHON_SPECIAL_PYX
         header = header.replace("FUNCLIST", "\n".join(doc))
         f.write(header)
-        f.write("\n")
-        f.write(CYTHON_SPECIAL_ERRPRINT_CODE)
         f.write("\n")
         f.write("\n".join(defs))
         f.write("\n\n")
