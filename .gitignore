@@ -50,6 +50,8 @@ _configtest.c
 
 # Python files #
 ################
+# dev directory
+scipy-dev
 # setup.py working directory
 build
 # sphinx build directory
