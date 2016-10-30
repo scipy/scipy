@@ -310,7 +310,13 @@ class TestSLSQP(TestCase):
         # Regression test for Github Issue #5433
         # If objective function does not return a scalar, raises ValueError
         with assert_raises(ValueError):
-            fmin_slsqp(lambda x: [0, 1], [1,2,3])
+            fmin_slsqp(lambda x: [0, 1], [1, 2, 3])
+
+    def test_obj_returns_scalar_in_list(self):
+        # Test for Github Issue #5433 and PR #6691
+        # Objective function should be able to return length-1 Python list
+        #  containing the scalar
+        fmin_slsqp(lambda x: [0], [1, 2, 3])
 
     def test_callback(self):
         # Minimize, method='SLSQP': unbounded, approximated jacobian. Check for callback
