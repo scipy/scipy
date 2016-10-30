@@ -365,7 +365,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Compute objective function
             try:
-                fx = float(func(x))
+                fx = float(np.asarray(func(x)))
             except:
                 raise ValueError("Objective function must return a scalar")
             # Compute the constraints
