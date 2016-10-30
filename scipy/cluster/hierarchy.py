@@ -444,14 +444,11 @@ def ward(y):
     The following are common calling conventions:
 
     1. ``Z = ward(y)``
-       Performs Ward's linkage on the condensed distance matrix ``Z``. See
-       linkage for more information on the return structure and
-       algorithm.
+       Performs Ward's linkage on the condensed distance matrix ``y``.
 
     2. ``Z = ward(X)``
        Performs Ward's linkage on the observation matrix ``X`` using
-       Euclidean distance as the distance metric. See linkage for more
-       information on the return structure and algorithm.
+       Euclidean distance as the distance metric.
 
     Parameters
     ----------
@@ -466,7 +463,9 @@ def ward(y):
     Returns
     -------
     Z : ndarray
-        The hierarchical clustering encoded as a linkage matrix.
+        The hierarchical clustering encoded as a linkage matrix. See
+       linkage for more information on the return structure and
+       algorithm.
 
     See Also
     --------
