@@ -56,6 +56,7 @@ matrix:
         - COVERAGE=
         - NUMPYSPEC="numpy==1.8.2"
         - USE_SDIST=1
+        - OPTIMIZE=-OO
     - python: 2.7
       env:
         - TESTMODE=full
