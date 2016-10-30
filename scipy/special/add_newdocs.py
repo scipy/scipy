@@ -188,8 +188,8 @@ add_newdoc("scipy.special", "airye",
 
         eAi  = Ai  * exp(2.0/3.0*z*sqrt(z))
         eAip = Aip * exp(2.0/3.0*z*sqrt(z))
-        eBi  = Bi  * exp(-abs((2.0/3.0*z*sqrt(z)).real))
-        eBip = Bip * exp(-abs((2.0/3.0*z*sqrt(z)).real))
+        eBi  = Bi  * exp(-abs(2.0/3.0*(z*sqrt(z)).real))
+        eBip = Bip * exp(-abs(2.0/3.0*(z*sqrt(z)).real))
 
     Parameters
     ----------
@@ -5697,10 +5697,11 @@ add_newdoc("scipy.special", "smirnovi",
 
 add_newdoc("scipy.special", "spence",
     r"""
-    spence(z)
+    spence(z, out=None)
 
-    Spence's function, also known as the dilogarithm. It is defined to
-    be
+    Spence's function, also known as the dilogarithm.
+
+    It is defined to be
 
     .. math::
       \int_0^z \frac{\log(t)}{1 - t}dt
@@ -5710,14 +5711,25 @@ add_newdoc("scipy.special", "spence",
     analytic everywhere except the negative real axis where it has a
     branch cut.
 
-    Note that there is a different convention which defines Spence's
-    function by the integral
+    Parameters
+    ----------
+    z : array_like
+        Points at which to evaluate Spence's function
+
+    Returns
+    -------
+    s : ndarray
+        Computed values of Spence's function
+
+    Notes
+    -----
+    There is a different convention which defines Spence's function by
+    the integral
 
     .. math::
       -\int_0^z \frac{\log(1 - t)}{t}dt;
 
     this is our ``spence(1 - z)``.
-
     """)
 
 add_newdoc("scipy.special", "stdtr",

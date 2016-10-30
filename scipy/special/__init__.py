@@ -572,8 +572,8 @@ Lambert W and Related Functions
 .. autosummary::
     :toctree: generated/
 
-   lambertw      -- Lambert W function.
-   wrightomega   -- Wright Omega function.
+   lambertw    -- Lambert W function.
+   wrightomega -- Wright Omega function.
 
 Other Special Functions
 -----------------------
@@ -594,8 +594,7 @@ Other Special Functions
    factorialk -- [+]Multifactorial of n of order k, n(!!...!).
    shichi     -- Hyperbolic sine and cosine integrals.
    sici       -- Sine and cosine integrals.
-   spence     -- Spence's function, also known as the dilogarithm. It is defined to be
-   lambertw   -- Lambert W function [1]_.
+   spence     -- Spence's function, also known as the dilogarithm.
    zeta       -- Riemann zeta function.
    zetac      -- Riemann zeta function minus 1.
 
