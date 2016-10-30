@@ -15,8 +15,9 @@ import operator
 
 import numpy as np
 from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
-                   ravel, poly1d, asarray, intp)
+                   dot, ravel, poly1d, asarray, intp)
 
+import scipy.linalg
 import scipy.special as spec
 from scipy.special import comb
 
@@ -2625,6 +2626,67 @@ class ppform(PPoly):
         return cls(sivals, xk, fill=fill)
 
 
+# The 3 private functions below can be called by splmake().
+
+
+def _dot0(a, b):
+    """Similar to numpy.dot, but sum over last axis of a and 1st axis of b"""
+    if b.ndim <= 2:
+        return dot(a, b)
+    else:
+        axes = list(range(b.ndim))
+        axes.insert(-1, 0)
+        axes.pop(0)
+        return dot(a, b.transpose(axes))
+
+
+def _find_smoothest(xk, yk, order, conds=None, B=None):
+    # construct Bmatrix, and Jmatrix
+    # e = J*c
+    # minimize norm(e,2) given B*c=yk
+    # if desired B can be given
+    # conds is ignored
+    N = len(xk)-1
+    K = order
+    if B is None:
+        B = _fitpack._bsplmat(order, xk)
+    J = _fitpack._bspldismat(order, xk)
+    u, s, vh = scipy.linalg.svd(B)
+    ind = K-1
+    V2 = vh[-ind:,:].T
+    V1 = vh[:-ind,:].T
+    A = dot(J.T,J)
+    tmp = dot(V2.T,A)
+    Q = dot(tmp,V2)
+    p = scipy.linalg.solve(Q, tmp)
+    tmp = dot(V2,p)
+    tmp = np.eye(N+K) - tmp
+    tmp = dot(tmp,V1)
+    tmp = dot(tmp,np.diag(1.0/s))
+    tmp = dot(tmp,u.T)
+    return _dot0(tmp, yk)
+
+
+# conds is a tuple of an array and a vector
+#  giving the left-hand and the right-hand side
+#  of the additional equations to add to B
+
+
+def _find_user(xk, yk, order, conds, B):
+    lh = conds[0]
+    rh = conds[1]
+    B = np.concatenate((B, lh), axis=0)
+    w = np.concatenate((yk, rh), axis=0)
+    M, N = B.shape
+    if (M > N):
+        raise ValueError("over-specification of conditions")
+    elif (M < N):
+        return _find_smoothest(xk, yk, order, None, B)
+    else:
+        return scipy.linalg.solve(B, w)
+
+
+# Remove the 3 private functions above as well when removing splmake
 @np.deprecate(message="splmake is deprecated in scipy 0.19.0, "
                       "use make_interp_spline instead.")
 def splmake(xk, yk, order=3, kind='smoothest', conds=None):
