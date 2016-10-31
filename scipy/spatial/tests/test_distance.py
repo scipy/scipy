@@ -41,40 +41,50 @@ from scipy._lib.six import xrange, u
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (verbose, TestCase, run_module_suite, assert_,
-        assert_raises, assert_array_equal, assert_equal, assert_almost_equal,
-        assert_allclose)
+                           assert_raises, assert_array_equal, assert_equal,
+                           assert_almost_equal, assert_allclose)
 
-from scipy.spatial.distance import (squareform, pdist, cdist, matching,
-        jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule,
-        num_obs_y, num_obs_dm, is_valid_dm, is_valid_y, minkowski, wminkowski,
-        euclidean, sqeuclidean, cosine, correlation, hamming, mahalanobis,
-        canberra, braycurtis, sokalmichener, _validate_vector)
+from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
+                                    num_obs_dm, is_valid_dm, is_valid_y,
+                                    _validate_vector)
 
+# these were missing: chebyshev cityblock kulsinski
+from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
+                                    correlation, cosine, dice, euclidean,
+                                    hamming, jaccard, kulsinski, mahalanobis,
+                                    matching, minkowski, rogerstanimoto,
+                                    russellrao, seuclidean, sokalmichener, 
+                                    sokalsneath, sqeuclidean, yule, wminkowski)
 
-_filenames = ["iris.txt",
+_filenames = [
               "cdist-X1.txt",
               "cdist-X2.txt",
-              "pdist-hamming-ml.txt",
+              "iris.txt",
               "pdist-boolean-inp.txt",
-              "pdist-jaccard-ml.txt",
+              "pdist-chebychev-ml-iris.txt",
+              "pdist-chebychev-ml.txt",
               "pdist-cityblock-ml-iris.txt",
-              "pdist-minkowski-3.2-ml-iris.txt",
               "pdist-cityblock-ml.txt",
               "pdist-correlation-ml-iris.txt",
-              "pdist-minkowski-5.8-ml-iris.txt",
               "pdist-correlation-ml.txt",
-              "pdist-minkowski-3.2-ml.txt",
               "pdist-cosine-ml-iris.txt",
-              "pdist-seuclidean-ml-iris.txt",
               "pdist-cosine-ml.txt",
-              "pdist-seuclidean-ml.txt",
               "pdist-double-inp.txt",
-              "pdist-spearman-ml.txt",
-              "pdist-euclidean-ml.txt",
               "pdist-euclidean-ml-iris.txt",
-              "pdist-chebychev-ml.txt",
-              "pdist-chebychev-ml-iris.txt",
-              "random-bool-data.txt"]
+              "pdist-euclidean-ml.txt",
+              "pdist-hamming-ml.txt",
+              "pdist-jaccard-ml.txt",
+              "pdist-minkowski-3.2-ml-iris.txt",
+              "pdist-minkowski-3.2-ml.txt",
+              "pdist-minkowski-5.8-ml-iris.txt",
+              "pdist-seuclidean-ml-iris.txt",
+              "pdist-seuclidean-ml.txt",
+              "pdist-spearman-ml.txt",
+              "random-bool-data.txt",
+              "random-double-data.txt",
+              "random-int-data.txt",
+              "random-uint-data.txt",
+              ]
 
 _tdist = np.array([[0, 662, 877, 255, 412, 996],
                       [662, 0, 295, 468, 268, 400],
@@ -85,6 +95,11 @@ _tdist = np.array([[0, 662, 877, 255, 412, 996],
 
 _ytdist = squareform(_tdist)
 
+_metrics = ['braycurtis', 'canberra', 'chebyshev', 'cityblock',
+            'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+            'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+            'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+            'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule','wminkowski']
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
 # Each test loads inputs and outputs from this dictionary.
@@ -98,7 +113,11 @@ def load_testing_files():
         fp = open(fqfn)
         eo[name] = np.loadtxt(fp)
         fp.close()
-    eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
+    eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])    
+    eo['random-bool-data'] = np.bool_(eo['random-bool-data'])
+    eo['random-float32-data'] = np.float32(eo['random-double-data'])
+    eo['random-int-data'] = np.int_(eo['random-int-data'])
+    eo['random-uint-data'] = np.uint(eo['random-uint-data'])
 
 load_testing_files()
 
@@ -393,6 +412,70 @@ class TestCdist(TestCase):
         right_y = 1.123
         assert_equal(cdist_y, right_y, verbose=verbose > 2)
 
+    def test_cdist_str_vs_function_equivalence(self):
+        # Ensures that specifying the metric with a str or scipy function 
+        # gives the same behaviour (i.e. same result or same exception). 
+        # The correctness should be checked within each metric tests.
+        eps = 1e-07
+        eos_names = ['random-float32-data', 'random-int-data', 
+                     'random-uint-data', 'random-double-data', 
+                     'random-bool-data']
+        for eo_name in eos_names:
+            X1 = eo[eo_name][:, ::-2]
+            X2 = eo[eo_name][:-3:2]
+            for metric in _metrics:
+                if verbose > 2:
+                    print("testing: ", metric, " with: ", eo_name)
+                if metric == 'yule' and eo_name not in ['pdist-boolean-inp']:
+                    # the python implementation raises a ZeroDivisionError 
+                    # while the C doesn't
+                    continue
+                try:
+                    y1 = cdist(X1, X2, metric=metric)
+                    y2 = cdist(X1, X2, metric=eval(metric))
+                    y3 = cdist(X1, X2, metric="test_" + metric)
+                except Exception as e:
+                    if metric == 'yule' and 'bool' not in eo_name:
+                        # the python implementation raises a ZeroDivisionError 
+                        # while the C doesn't
+                        assert_(isinstance(e, ZeroDivisionError))
+                        continue
+                    if verbose > 2:
+                        print(X.shape)
+                        print(e.__class__.__name__)
+                        print(e)
+                    assert_raises(e.__class__, cdist, X1, X2, metric=metric)
+                    assert_raises(e.__class__, cdist, X1, X2, metric=eval(metric))
+                    assert_raises(e.__class__, cdist, X1, X2, metric="test_" + metric)
+                else:
+                    _assert_within_tol(y1, y2, eps, verbose > 2)
+                    _assert_within_tol(y1, y3, eps, verbose > 2)
+                    
+    def test_cdist_dtype_equivalence(self):
+        # Tests that the result is not affected by type up-casting
+        eps = 1e-07        
+        tests = [(eo['random-bool-data'], [np.int_, np.uint, np.float32, np.double]),
+                 (eo['random-uint-data'], [np.int_, np.float32, np.double]),
+                 (eo['random-int-data'], [np.float32, np.double]),
+                 (eo['random-float32-data'], [np.double])]
+        for metric in _metrics:
+            for test in tests:
+                X1 = test[0]
+                try:
+                    y1 = pdist(X1, metric=metric)
+                except Exception as e:
+                    if verbose > 2:
+                        print(X.shape)
+                        print(e.__class__.__name__)
+                        print(e)
+                    for new_type in test[1]:
+                        X2 = new_type(test[0])
+                        assert_raises(e.__class__, pdist, X2, metric=metric)
+                else:
+                    for new_type in test[1]:
+                        y2 = pdist(new_type(X1), metric=metric)            
+                        _assert_within_tol(y1, y2, eps, verbose > 2)
+
 
 class TestPdist(TestCase):
 
@@ -466,7 +549,7 @@ class TestPdist(TestCase):
         eps = 1e-05
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-seuclidean']
-        Y_test2 = pdist(X, 'test_sqeuclidean')
+        Y_test2 = pdist(X, 'test_seuclidean')
         _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_seuclidean_iris(self):
@@ -490,7 +573,7 @@ class TestPdist(TestCase):
         eps = 1e-05
         X = eo['iris']
         Y_right = eo['pdist-seuclidean-iris']
-        Y_test2 = pdist(X, 'test_sqeuclidean')
+        Y_test2 = pdist(X, 'test_seuclidean')
         _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_cosine_random(self):
@@ -892,8 +975,8 @@ class TestPdist(TestCase):
     def test_pdist_matching_match(self):
         # Test pdist(X, 'matching') to see if the two implementations match on
         # random boolean input data.
-        D = eo['random-bool-data']
-        B = np.bool_(D)
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(B.shape, B.dtype)
         eps = 1e-10
@@ -925,13 +1008,14 @@ class TestPdist(TestCase):
     def test_pdist_jaccard_match(self):
         # Test pdist(X, 'jaccard') to see if the two implementations match on
         # random double input data.
-        D = eo['random-bool-data']
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(D.shape, D.dtype)
         eps = 1e-10
-        y1 = pdist(D, "jaccard")
-        y2 = pdist(D, "test_jaccard")
-        y3 = pdist(np.bool_(D), "test_jaccard")
+        y1 = pdist(B, "jaccard")
+        y2 = pdist(B, "test_jaccard")
+        y3 = pdist(D, "test_jaccard")
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
@@ -959,13 +1043,14 @@ class TestPdist(TestCase):
         assert_allclose(m2, 2, rtol=0, atol=1e-10)
 
     def test_pdist_yule_match(self):
-        D = eo['random-bool-data']
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(D.shape, D.dtype)
         eps = 1e-10
-        y1 = pdist(D, "yule")
-        y2 = pdist(D, "test_yule")
-        y3 = pdist(np.bool_(D), "test_yule")
+        y1 = pdist(B, "yule")
+        y2 = pdist(B, "test_yule")
+        y3 = pdist(D, "test_yule")
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
@@ -993,12 +1078,13 @@ class TestPdist(TestCase):
         assert_allclose(m2, 0.5, rtol=0, atol=1e-10)
 
     def test_pdist_dice_match(self):
-        D = eo['random-bool-data']
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(D.shape, D.dtype)
         eps = 1e-10
-        y1 = pdist(D, "dice")
-        y2 = pdist(D, "test_dice")
+        y1 = pdist(B, "dice")
+        y2 = pdist(B, "test_dice")
         y3 = pdist(D, "test_dice")
         if verbose > 2:
             print(np.abs(y1-y2).max())
@@ -1027,13 +1113,14 @@ class TestPdist(TestCase):
         assert_allclose(m2, 4/5, rtol=0, atol=1e-10)
 
     def test_pdist_sokalsneath_match(self):
-        D = eo['random-bool-data']
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(D.shape, D.dtype)
         eps = 1e-10
-        y1 = pdist(D, "sokalsneath")
-        y2 = pdist(D, "test_sokalsneath")
-        y3 = pdist(np.bool_(D), "test_sokalsneath")
+        y1 = pdist(B, "sokalsneath")
+        y2 = pdist(B, "test_sokalsneath")
+        y3 = pdist(D, "test_sokalsneath")
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
@@ -1061,13 +1148,14 @@ class TestPdist(TestCase):
         assert_allclose(m2, 4/5, rtol=0, atol=1e-10)
 
     def test_pdist_rogerstanimoto_match(self):
-        D = eo['random-bool-data']
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(D.shape, D.dtype)
         eps = 1e-10
-        y1 = pdist(D, "rogerstanimoto")
-        y2 = pdist(D, "test_rogerstanimoto")
-        y3 = pdist(np.bool_(D), "test_rogerstanimoto")
+        y1 = pdist(B, "rogerstanimoto")
+        y2 = pdist(B, "test_rogerstanimoto")
+        y3 = pdist(D, "test_rogerstanimoto")
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
@@ -1095,13 +1183,14 @@ class TestPdist(TestCase):
         assert_allclose(m2, 2/3, rtol=0, atol=1e-10)
 
     def test_pdist_russellrao_match(self):
-        D = eo['random-bool-data']
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(D.shape, D.dtype)
         eps = 1e-10
-        y1 = pdist(D, "russellrao")
-        y2 = pdist(D, "test_russellrao")
-        y3 = pdist(np.bool_(D), "test_russellrao")
+        y1 = pdist(B, "russellrao")
+        y2 = pdist(B, "test_russellrao")
+        y3 = pdist(D, "test_russellrao")
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
@@ -1109,13 +1198,14 @@ class TestPdist(TestCase):
         _assert_within_tol(y2, y3, eps)
 
     def test_pdist_sokalmichener_match(self):
-        D = eo['random-bool-data']
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(D.shape, D.dtype)
         eps = 1e-10
-        y1 = pdist(D, "sokalmichener")
-        y2 = pdist(D, "test_sokalmichener")
-        y3 = pdist(np.bool_(D), "test_sokalmichener")
+        y1 = pdist(B, "sokalmichener")
+        y2 = pdist(B, "test_sokalmichener")
+        y3 = pdist(D, "test_sokalmichener")
         if verbose > 2:
             print(np.abs(y1-y2).max())
             print(np.abs(y2-y3).max())
@@ -1123,13 +1213,14 @@ class TestPdist(TestCase):
         _assert_within_tol(y2, y3, eps)
 
     def test_pdist_kulsinski_match(self):
-        D = eo['random-bool-data']
+        B = eo['random-bool-data']
+        D = np.double(B)
         if verbose > 2:
             print(D.shape, D.dtype)
         eps = 1e-10
-        y1 = pdist(D, "kulsinski")
-        y2 = pdist(D, "test_kulsinski")
-        y3 = pdist(np.bool_(D), "test_kulsinski")
+        y1 = pdist(B, "kulsinski")
+        y2 = pdist(B, "test_kulsinski")
+        y3 = pdist(D, "test_kulsinski")
         _assert_within_tol(y1, y2, eps, verbose > 2)
         _assert_within_tol(y2, y3, eps)
 
@@ -1151,6 +1242,7 @@ class TestPdist(TestCase):
         _assert_within_tol(pdist_y, right_y, eps, verbose > 2)
 
     def test_pdist_custom_notdouble(self):
+        # tests that when using a custom metric the data type is not altered
         class myclass(object):
             pass
 
@@ -1162,6 +1254,64 @@ class TestPdist(TestCase):
         pdist_y = pdist(data, metric=dummy_metric)
         right_y = 1.123
         assert_equal(pdist_y, right_y, verbose=verbose > 2)
+
+    def test_pdist_str_vs_function_equivalence(self):
+        # Ensures that specifying the metric with a str or scipy function 
+        # gives the same behaviour (i.e. same result or same exception). 
+        # The correctness should be checked within each metric tests.
+        eps = 1e-07
+        eos_names = ['random-float32-data', 'random-int-data', 
+                     'random-uint-data', 'random-double-data', 
+                     'random-bool-data']
+        for eo_name in eos_names:
+            X = eo[eo_name][::2]
+            for metric in _metrics:
+                if verbose > 2:
+                    print("testing: ", metric, " with: ", eo_name)
+                try:
+                    y1 = pdist(X, metric=metric)
+                    y2 = pdist(X, metric=eval(metric))
+                    y3 = pdist(X, metric="test_" + metric)
+                except Exception as e:
+                    if metric == 'yule' and 'bool' not in eo_name:
+                        # the python implementation raises a ZeroDivisionError 
+                        # while the C doesn't
+                        assert_(isinstance(e, ZeroDivisionError))
+                        continue
+                    if verbose > 2:
+                        print(X.shape)
+                        print(e.__class__.__name__)
+                        print(e)
+                    assert_raises(e.__class__, pdist, X, metric=metric)
+                    assert_raises(e.__class__, pdist, X, metric=eval(metric))
+                    assert_raises(e.__class__, pdist, X, metric="test_" + metric)
+                else:
+                    _assert_within_tol(y1, y2, eps, verbose > 2)
+                    
+    def test_pdist_dtype_equivalence(self):
+        # Tests that the result is not affected by type up-casting
+        eps = 1e-07    
+        tests = [(eo['random-bool-data'], [np.int_, np.uint, np.float32, np.double]),
+                 (eo['random-uint-data'], [np.int_, np.float32, np.double]),
+                 (eo['random-int-data'], [np.float32, np.double]),
+                 (eo['random-float32-data'], [np.double])]
+        for metric in _metrics:
+            for test in tests:
+                X1 = test[0]
+                try:
+                    y1 = pdist(X1, metric=metric)
+                except Exception as e:
+                    if verbose > 2:
+                        print(X.shape)
+                        print(e.__class__.__name__)
+                        print(e)
+                    for new_type in test[1]:
+                        X2 = new_type(test[0])
+                        assert_raises(e.__class__, pdist, X2, metric=metric)
+                else:
+                    for new_type in test[1]:
+                        y2 = pdist(new_type(X1), metric=metric)            
+                        _assert_within_tol(y1, y2, eps, verbose > 2)
 
 
 def within_tol(a, b, tol):
