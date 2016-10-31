@@ -14,7 +14,7 @@ from scipy._lib.six import xrange
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
-         RectBivariateSpline, interpn, NdPPoly)
+         RectBivariateSpline, interpn, NdPPoly, BSpline)
 
 from scipy.special import poch, gamma
 
@@ -1003,6 +1003,18 @@ class TestPPoly(TestCase):
 
         xi = np.linspace(0, 1, 200)
         assert_allclose(pp(xi), splev(xi, spl))
+
+        # make sure .from_spline accepts BSpline objects
+        b = BSpline(*spl)
+        ppp = PPoly.from_spline(b)
+        assert_allclose(ppp(xi), b(xi))
+
+        # BSpline's extrapolate attribute propagates unless overridden
+        t, c, k = spl
+        for extrap in (None, True, False):
+            b = BSpline(t, c, k, extrapolate=extrap)
+            p = PPoly.from_spline(b)
+            assert_equal(p.extrapolate, b.extrapolate)
 
     def test_derivative_simple(self):
         np.random.seed(1234)

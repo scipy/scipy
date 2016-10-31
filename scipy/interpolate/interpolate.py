@@ -30,7 +30,7 @@ from .polyint import _Interpolator1D
 from . import _ppoly
 from .fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
-from ._bsplines import make_interp_spline
+from ._bsplines import make_interp_spline, BSpline
 
 
 def prod(x):
@@ -1194,13 +1194,18 @@ class PPoly(_PPolyBase):
         Parameters
         ----------
         tck
-            A spline, as returned by `splrep`
+            A spline, as returned by `splrep` or a BSpline object.
         extrapolate : bool or 'periodic', optional
             If bool, determines whether to extrapolate to out-of-bounds points
             based on first and last intervals, or to return NaNs.
             If 'periodic', periodic extrapolation is used. Default is True.
         """
-        t, c, k = tck
+        if isinstance(tck, BSpline):
+            t, c, k = tck.tck
+            if extrapolate is None:
+                extrapolate = tck.extrapolate
+        else:
+            t, c, k = tck
 
         cvals = np.empty((k + 1, len(t)-1), dtype=c.dtype)
         for m in xrange(k, -1, -1):
