@@ -134,14 +134,9 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        interp1d(self.x10, self.y10, kind='linear')
-        interp1d(self.x10, self.y10, kind='cubic')
-        interp1d(self.x10, self.y10, kind='slinear')
-        interp1d(self.x10, self.y10, kind='quadratic')
-        interp1d(self.x10, self.y10, kind='zero')
-        interp1d(self.x10, self.y10, kind='nearest')
-        interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
-        interp1d(self.x10, self.y10, kind='linear', fill_value="extrapolate")
+        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic', 'cubic'):
+            interp1d(self.x10, self.y10, kind=kind)
+            interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
         interp1d(self.x10, self.y10, kind='linear',
                  fill_value=np.array([-1]))
@@ -163,11 +158,6 @@ class TestInterp1D(object):
                  fill_value=(np.ones(10), np.ones(10)))
         interp1d(self.x2, self.y210, kind='linear', axis=0,
                  fill_value=(np.ones(10), -1))
-
-        # extrapolation is only allowed for nearest & linear methods
-        for kind in ('cubic', 'slinear', 'zero', 'quadratic'):
-            assert_raises(ValueError, interp1d, self.x10, self.y10, kind=kind,
-                          fill_value="extrapolate")
 
         # x array must be 1D.
         assert_raises(ValueError, interp1d, self.x25, self.y10)
@@ -253,20 +243,24 @@ class TestInterp1D(object):
                                   interp10_y_2d_unsorted(self.x10))
 
     def test_linear(self):
+        for kind in ['linear', 'slinear']:
+            self._check_linear(kind)
+
+    def _check_linear(self, kind):
         # Check the actual implementation of linear interpolation.
-        interp10 = interp1d(self.x10, self.y10)
+        interp10 = interp1d(self.x10, self.y10, kind=kind)
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array([1.2]))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2.4, 5.6, 6.0]))
 
         # test fill_value="extrapolate"
-        extrapolator = interp1d(self.x10, self.y10, kind='linear',
+        extrapolator = interp1d(self.x10, self.y10, kind=kind,
                                 fill_value='extrapolate')
         assert_allclose(extrapolator([-1., 0, 9, 11]),
                         [-1, 0, 9, 11], rtol=1e-14)
 
-        opts = dict(kind='linear',
+        opts = dict(kind=kind,
                     fill_value='extrapolate',
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
@@ -613,6 +607,36 @@ class TestInterp1D(object):
         x = np.array([0, 50, 127], dtype=np.int8)
         ii = interp1d(x, x, kind='nearest')
         assert_array_almost_equal(ii(x), x)
+
+    def test_local_nans(self):
+        # check that for local interpolation kinds (slinear, zero) a single nan
+        # only affects its local neighborhood
+        x = np.arange(10).astype(float)
+        y = x.copy()
+        y[6] = np.nan
+        for kind in ('zero', 'slinear'):
+            ir = interp1d(x, y, kind=kind)
+            vals = ir([4.9, 7.0])
+            assert_(np.isfinite(vals).all())
+
+    def test_spline_nans(self):
+        # Backwards compat: a single nan makes the whole spline interpolation
+        # return nans in an array of the correct shape. And it doesn't raise,
+        # just quiet nans because of backcompat.
+        x = np.arange(8).astype(float)
+        y = x.copy()
+        yn = y.copy()
+        yn[3] = np.nan
+
+        for kind in ['quadratic', 'cubic']:
+            ir = interp1d(x, y, kind=kind)
+            irn = interp1d(x, yn, kind=kind)
+            for xnew in (6, [1, 6], [[1, 6], [3, 5]]):
+                xnew = np.asarray(xnew)
+                out, outn = ir(x), irn(x)
+                assert_(np.isnan(outn).all())
+                assert_equal(out.shape, outn.shape)
+
 
 class TestLagrange(TestCase):
 

@@ -21,6 +21,14 @@ def prod(x):
     return functools.reduce(operator.mul, x)
 
 
+def _get_dtype(dtype):
+    """Return np.complex128 for complex dtypes, np.float64 otherwise."""
+    if np.issubdtype(dtype, np.complexfloating):
+        return np.complex_
+    else:
+        return np.float_
+
+
 class BSpline(object):
     r"""Univariate spline in the B-spline basis.
 
@@ -197,14 +205,8 @@ class BSpline(object):
         if self.c.shape[0] < n:
             raise ValueError("Knots, coefficients and degree are inconsistent.")
 
-        dt = self._get_dtype(self.c.dtype)
+        dt = _get_dtype(self.c.dtype)
         self.c = np.ascontiguousarray(self.c, dtype=dt)
-
-    def _get_dtype(self, dtype):
-        if np.issubdtype(dtype, np.complexfloating):
-            return np.complex_
-        else:
-            return np.float_
 
     @classmethod
     def construct_fast(cls, t, c, k, extrapolate=True, axis=0):
@@ -617,10 +619,23 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     # special-case k=0 right away
     if k == 0:
         if any(_ is not None for _ in (t, deriv_l, deriv_r)):
-            raise ValueError("Too much info for k=0.")
+            raise ValueError("Too much info for k=0: t and bc_type can only "
+                             "be None.")
+        x = _as_float_array(x, check_finite)
         t = np.r_[x, x[-1]]
-        c = y
-        return BSpline(t, c, k, axis=axis)
+        c = np.asarray(y)
+        c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
+        return BSpline.construct_fast(t, c, k, axis=axis)
+
+    # special-case k=1 (e.g., Lyche and Morken, Eq.(2.16))
+    if k == 1 and t is None:
+        if not (deriv_l is None and deriv_r is None):
+            raise ValueError("Too much info for k=1: bc_type can only be None.")
+        x = _as_float_array(x, check_finite)
+        t = np.r_[x[0], x, x[-1]]
+        c = np.asarray(y)
+        c = np.ascontiguousarray(c, dtype=_get_dtype(c.dtype))
+        return BSpline.construct_fast(t, c, k, axis=axis)
 
     # come up with a sensible knot vector, if needed
     if t is None:
@@ -645,18 +660,18 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     axis = axis % y.ndim
     y = np.rollaxis(y, axis)    # now internally interp axis is zero
 
-    if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
+    if x.ndim != 1 or np.any(x[1:] <= x[:-1]):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
-    if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
+    if t.ndim != 1 or np.any(t[1:] < t[:-1]):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
         raise ValueError('x and y are incompatible.')
     if t.size < x.size + k + 1:
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
-    if k > 0 and np.any((x < t[k]) | (x > t[-k])):
+    if (x[0] < t[k]) or (x[-1] > t[-k]):
         raise ValueError('Out of bounds w/ x = %s.' % x)
 
     # Here : deriv_l, r = [(nu, value), ...]
@@ -664,14 +679,14 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         deriv_l_ords, deriv_l_vals = zip(*deriv_l)
     else:
         deriv_l_ords, deriv_l_vals = [], []
-    deriv_l_ords, deriv_l_vals = map(np.atleast_1d, (deriv_l_ords, deriv_l_vals))
+    deriv_l_ords, deriv_l_vals = np.atleast_1d(deriv_l_ords, deriv_l_vals)
     nleft = deriv_l_ords.shape[0]
 
     if deriv_r is not None:
         deriv_r_ords, deriv_r_vals = zip(*deriv_r)
     else:
         deriv_r_ords, deriv_r_vals = [], []
-    deriv_r_ords, deriv_r_vals = map(np.atleast_1d, (deriv_r_ords, deriv_r_vals))
+    deriv_r_ords, deriv_r_vals = np.atleast_1d(deriv_r_ords, deriv_r_vals)
     nright = deriv_r_ords.shape[0]
 
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
