@@ -38,19 +38,8 @@ def main():
     sys.exit(run_asv(args.asv_command))
 
 
-def run_asv(args, current_repo=False):
+def run_asv(args):
     cwd = os.path.abspath(os.path.dirname(__file__))
-
-    if current_repo:
-        try:
-            from asv.util import load_json, write_json
-            conf = load_json(os.path.join(cwd, 'asv.conf.json'))
-            conf['repo'] = os.path.normpath(os.path.join(cwd, '..'))
-            cfg_fn = os.path.join(cwd, '.asvconf.tmp')
-            write_json(cfg_fn, conf)
-            args = ['--config', cfg_fn] + args
-        except ImportError:
-            pass
 
     repo_dir = os.path.join(cwd, 'scipy')
 
