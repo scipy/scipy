@@ -27,6 +27,7 @@ Contents
    minimum_spanning_tree -- construct the minimum spanning tree of a graph
    reverse_cuthill_mckee -- compute permutation for reverse Cuthill-McKee ordering
    maximum_bipartite_matching -- compute permutation to make diagonal zero free
+   structural_rank -- compute the structural rank of a graph
    NegativeCycleError
 
 .. autosummary::
@@ -151,6 +152,7 @@ __all__ = ['cs_graph_components',
            'minimum_spanning_tree',
            'reverse_cuthill_mckee',
            'maximum_bipartite_matching',
+           'structural_rank',
            'construct_dist_matrix',
            'reconstruct_path',
            'csgraph_masked_from_dense',
@@ -167,7 +169,8 @@ from ._shortest_path import shortest_path, floyd_warshall, dijkstra,\
 from ._traversal import breadth_first_order, depth_first_order, \
     breadth_first_tree, depth_first_tree, connected_components
 from ._min_spanning_tree import minimum_spanning_tree
-from ._reordering import reverse_cuthill_mckee, maximum_bipartite_matching
+from ._reordering import reverse_cuthill_mckee, maximum_bipartite_matching, \
+    structural_rank
 from ._tools import construct_dist_matrix, reconstruct_path,\
     csgraph_from_dense, csgraph_to_dense, csgraph_masked_from_dense,\
     csgraph_from_masked, csgraph_to_masked
