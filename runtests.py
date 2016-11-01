@@ -234,7 +234,7 @@ def main(argv):
             commit_a = out.strip()
 
             cmd = [os.path.join(ROOT_DIR, 'benchmarks', 'run.py'),
-                   '--current-repo', 'continuous', '-e', '-f', '1.05',
+                   'continuous', '-e', '-f', '1.05',
                    commit_a, commit_b] + bench_args
             os.execv(sys.executable, [sys.executable] + cmd)
             sys.exit(1)

@@ -11,7 +11,7 @@
 
     // The URL of the source code repository for the project being
     // benchmarked
-    "repo": "https://github.com/scipy/scipy.git",
+    "repo": "..",
     "dvcs": "git",
     "branches": ["master", "maintenance/0.15.x", "maintenance/0.14.x"],
 
