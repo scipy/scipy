@@ -131,7 +131,7 @@ class BDF(OdeSolver):
         Defines a sparsity structure of the Jacobian matrix for a finite
         difference approximation, its shape must be (n, n). If the Jacobian has
         only few non-zero elements in *each* row, providing the sparsity
-        structure will greatly speed up the computations [8]_. A zero
+        structure will greatly speed up the computations [4]_. A zero
         entry means that a corresponding element in the Jacobian is identically
         zero. If None (default), the Jacobian is assumed to be dense.
     vectorized : bool, optional
