@@ -1336,7 +1336,7 @@ def mathieu_odd_coef(m, q):
 
 
 def lpmn(m, n, z):
-    """Associated Legendre function of the first kind, Pmn(z).
+    """Sequence of associated Legendre functions of the first kind.
 
     Computes the associated Legendre function of the first kind of order m and
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
@@ -1413,7 +1413,7 @@ def lpmn(m, n, z):
 
 
 def clpmn(m, n, z, type=3):
-    """Associated Legendre function of the first kind, Pmn(z).
+    """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
@@ -1495,7 +1495,7 @@ def clpmn(m, n, z, type=3):
 
 
 def lqmn(m, n, z):
-    """Associated Legendre function of the second kind, Qmn(z).
+    """Sequence of associated Legendre functions of the second kind.
 
     Computes the associated Legendre function of the second kind of order m and
     degree n, ``Qmn(z)`` = :math:`Q_n^m(z)`, and its derivative, ``Qmn'(z)``.
@@ -1588,7 +1588,7 @@ def euler(n):
 
 
 def lpn(n, z):
-    """Legendre functions of the first kind, Pn(z).
+    """Legendre function of the first kind.
 
     Compute sequence of Legendre functions of the first kind (polynomials),
     Pn(z) and derivatives for all degrees from 0 to n (inclusive).
@@ -1618,7 +1618,7 @@ def lpn(n, z):
 
 
 def lqn(n, z):
-    """Legendre functions of the second kind, Qn(z).
+    """Legendre function of the second kind.
 
     Compute sequence of Legendre functions of the second kind, Qn(z) and
     derivatives for all degrees from 0 to n (inclusive).

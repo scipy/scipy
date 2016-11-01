@@ -328,7 +328,7 @@ Legendre Functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated legendre function of integer order.
+   lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
 
 These are not universal functions:
@@ -336,11 +336,11 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- [+]Associated Legendre function of the first kind, Pmn(z).
-   lpn   -- [+]Legendre functions of the first kind, Pn(z).
-   lqn   -- [+]Legendre functions of the second kind, Qn(z).
-   lpmn  -- [+]Associated Legendre function of the first kind, Pmn(z).
-   lqmn  -- [+]Associated Legendre function of the second kind, Qmn(z).
+   clpmn -- [+]Associated Legendre function of the first kind for complex arguments.
+   lpn   -- [+]Legendre function of the first kind.
+   lqn   -- [+]Legendre function of the second kind.
+   lpmn  -- [+]Sequence of associated Legendre functions of the first kind.
+   lqmn  -- [+]Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal Harmonics
 ---------------------
