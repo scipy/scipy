@@ -1326,10 +1326,7 @@ class _TestCommon:
                     assert_raises(ValueError, i.multiply, j)
                     continue
                 sp_mult = i.multiply(j)
-                if isspmatrix(sp_mult):
-                    assert_almost_equal(sp_mult.todense(), dense_mult)
-                else:
-                    assert_almost_equal(sp_mult, dense_mult)
+                assert_almost_equal(sp_mult.todense(), dense_mult)
 
         # sparse/dense
         for i in spmatrices:
