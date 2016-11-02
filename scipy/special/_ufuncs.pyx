@@ -1171,6 +1171,24 @@ cdef void loop_i_ddddd_dd_As_fffff_ff(char **args, np.npy_intp *dims, np.npy_int
         op1 += steps[6]
     sf_error.check_fpe(func_name)
 
+cdef void loop_i_i__As_l_l(char **args, np.npy_intp *dims, np.npy_intp *steps, void *data) nogil:
+    cdef np.npy_intp i, n = dims[0]
+    cdef void *func = (<void**>data)[0]
+    cdef char *func_name = <char*>(<void**>data)[1]
+    cdef char *ip0 = args[0]
+    cdef char *op0 = args[1]
+    cdef int ov0
+    for i in range(n):
+        if <int>(<long*>ip0)[0] == (<long*>ip0)[0]:
+            ov0 = (<int(*)(int) nogil>func)(<int>(<long*>ip0)[0])
+        else:
+            sf_error.error(func_name, sf_error.DOMAIN, "invalid input argument")
+            ov0 = <int>0xbad0bad0
+        (<long *>op0)[0] = <long>ov0
+        ip0 += steps[0]
+        op0 += steps[1]
+    sf_error.check_fpe(func_name)
+
 from _trig cimport dcospi as _func_dcospi
 ctypedef double _proto_dcospi_t(double) nogil
 cdef _proto_dcospi_t *_proto_dcospi_t_var = &_func_dcospi
@@ -1198,6 +1216,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_lgam1p "lgam1p"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_log1pmx "log1pmx"(double) nogil
+from sf_error cimport _sf_error_test_function as _func__sf_error_test_function
+ctypedef int _proto__sf_error_test_function_t(int) nogil
+cdef _proto__sf_error_test_function_t *_proto__sf_error_test_function_t_var = &_func__sf_error_test_function
 from _trig cimport dsinpi as _func_dsinpi
 ctypedef double _proto_dsinpi_t(double) nogil
 cdef _proto_dsinpi_t *_proto_dsinpi_t_var = &_func_dsinpi
@@ -2118,6 +2139,20 @@ ufunc__log1pmx_ptr[2*1+1] = <void*>(<char*>"_log1pmx")
 ufunc__log1pmx_data[0] = &ufunc__log1pmx_ptr[2*0]
 ufunc__log1pmx_data[1] = &ufunc__log1pmx_ptr[2*1]
 _log1pmx = np.PyUFunc_FromFuncAndData(ufunc__log1pmx_loops, ufunc__log1pmx_data, ufunc__log1pmx_types, 2, 1, 1, 0, "_log1pmx", ufunc__log1pmx_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__sf_error_test_function_loops[1]
+cdef void *ufunc__sf_error_test_function_ptr[2]
+cdef void *ufunc__sf_error_test_function_data[1]
+cdef char ufunc__sf_error_test_function_types[2]
+cdef char *ufunc__sf_error_test_function_doc = (
+    "Private function; do not use.")
+ufunc__sf_error_test_function_loops[0] = <np.PyUFuncGenericFunction>loop_i_i__As_l_l
+ufunc__sf_error_test_function_types[0] = <char>NPY_LONG
+ufunc__sf_error_test_function_types[1] = <char>NPY_LONG
+ufunc__sf_error_test_function_ptr[2*0] = <void*>_func__sf_error_test_function
+ufunc__sf_error_test_function_ptr[2*0+1] = <void*>(<char*>"_sf_error_test_function")
+ufunc__sf_error_test_function_data[0] = &ufunc__sf_error_test_function_ptr[2*0]
+_sf_error_test_function = np.PyUFunc_FromFuncAndData(ufunc__sf_error_test_function_loops, ufunc__sf_error_test_function_data, ufunc__sf_error_test_function_types, 1, 1, 1, 0, "_sf_error_test_function", ufunc__sf_error_test_function_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__sinpi_loops[4]
 cdef void *ufunc__sinpi_ptr[8]
