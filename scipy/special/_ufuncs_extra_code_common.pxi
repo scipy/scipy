@@ -34,5 +34,6 @@ cimport sf_error
 np.import_array()
 np.import_ufunc()
 
-cdef int _set_errprint(int flag) nogil:
-    return sf_error.set_print(flag)
+cdef void _set_action(sf_error.sf_error_t code,
+                      sf_error.sf_action_t action) nogil:
+    sf_error.set_action(code, action)
