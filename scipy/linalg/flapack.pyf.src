@@ -6,10 +6,23 @@
 ! $Revision$ $Date$
 !
 ! Additions by Travis Oliphant, Tiziano Zito, Collin RM Stocks, Fabian Pedregosa
-!              Skipper Seabold
+!              Skipper Seabold, 
+!              Ilhan Polat - ?gesvx,?sysv,?sysvx,?posvx,?hesvx
 !
-! <prefix2=s,d> <ctype2=float,double> <ftype2=real,double precision> <wrap2=ws,d>
-! <prefix2c=c,z> <ftype2c=complex,double complex> <ctype2c=complex_float,complex_double> <wrap2c=wc,z>
+! Shorthand Notations:
+! --------------------
+! <prefix=s,d,c,z>
+! <prefix2=s,d> 
+! <prefix2c=c,z> 
+! <ftype=real,double precision,complex,double complex>
+! <ftype2=real,double precision>
+! <ftype2c=complex,double complex> 
+! <ctype=float,double,complex_float,complex_double>
+! <ctype2=float,double> 
+! <ctype2c=complex_float,complex_double>
+! <wrap2=ws,d>
+! <wrap2c=wc,z>
+!
 
 python module _flapack
 interface
@@ -591,7 +604,7 @@ interface
      integer depend(b),intent(hide):: nrhs = shape(b,1)
      <ftype2c> dimension(n,n),intent(in,out,copy,out=as):: a
      integer depend(a),intent(hide):: lda = shape(a,0)
-     <ftype2c> optional,dimension(n,n),intent(in,out,out=lu):: af
+     <ftype2c> optional,dimension(n,n),depend(n),intent(in,out,out=lu):: af
      integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
      integer optional,dimension(n),depend(n),intent(in,out):: ipiv
      character optional,intent(in,out):: equed = "B"
@@ -609,6 +622,230 @@ interface
      integer intent(out):: info
 
    end subroutine <prefix2c>gesvx
+
+   subroutine <prefix>sysv(n,nrhs,a,lda,ipiv,b,ldb,work,lwork,info,lower)
+
+   ! Solve A * X = B for symmetric A matrix
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,a,&lda,ipiv,b,&ldb,work,&lwork,&info)
+     callprotoargument char*,int*,int*,<ctype>*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*
+
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer depend(a),intent(hide):: n = shape(a,0)
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=udut):: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     integer dimension(n),depend(n),intent(out):: ipiv
+     <ftype> dimension(n,nrhs),check(shape(b,0)==n),depend(n),intent(in,out,copy,out=x):: b
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = n
+     <ftype> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
+     integer intent(out):: info
+
+   end subroutine <prefix>sysv
+
+   subroutine <prefix>sysv_lwork(n,nrhs,a,lda,ipiv,b,ldb,work,lwork,info,lower)
+
+   ! lwork computation for ?SYSV
+
+     fortranname <prefix>sysv
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,&a,&lda,&ipiv,&b,&ldb,&work,&lwork,&info)
+     callprotoargument char*,int*,int*,<ctype>*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*
+
+     integer intent(in):: n
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+     integer intent(hide):: nrhs = 1
+     <ftype> intent(hide):: a
+     integer depend(n),intent(hide):: lda = n
+     integer intent(hide):: ipiv
+     <ftype> intent(hide):: b
+     integer depend(n),intent(hide):: ldb = n
+     integer intent(hide):: lwork = -1
+
+     <ftype> intent(out):: work
+     integer intent(out):: info
+
+   end subroutine <prefix>sysv_lwork
+
+   subroutine <prefix>sysvx(n,nrhs,a,lda,af,ldaf,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,lwork,irwork,info,factored,lower)
+
+   ! Solve A * X = B for symmetric A matrix
+   ! The expert driver of ?SYSV with condition number, backward,forward error estimates and iterative refinement
+   ! The <c,z> versions assume only symmetric complex matrices. For Hermitian matrices, routine <c,z>HESVX is used
+
+     callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,&lwork,irwork,&info)
+     callprotoargument char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,int*,<int,int,float,double>*,int*
+
+     integer optional,intent(in),check(factored==0||factored==1) :: factored = 0
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer depend(a),intent(hide):: n = shape(a,0)
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     <ftype> dimension(n,n),intent(in,copy,out,out=a_s):: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     <ftype> optional,dimension(n,n),depend(n),intent(in,out,out=udut):: af
+     integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
+     integer optional,dimension(n),depend(n),intent(in,out):: ipiv
+     <ftype> dimension(n,nrhs),intent(in,copy,out,out=b_s):: b
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+     <ftype> dimension(n,nrhs),intent(out):: x
+     integer depend(b),intent(hide):: ldx = n
+     <ftypereal> intent(out):: rcond
+     <ftypereal> intent(out),dimension(nrhs),depend(nrhs):: ferr
+     <ftypereal> intent(out),dimension(nrhs),depend(nrhs):: berr
+     integer optional,intent(in),check(lwork>=<3*n,3*n,2*n,2*n>||lwork==-1):: lwork = 3*n
+     <ftype> dimension(MAX(lwork,1)),intent(hide,cache),depend(lwork) :: work
+     <integer,integer,real,double precision> intent(hide,cache),dimension(n),depend(n) :: irwork
+     integer intent(out):: info
+
+   end subroutine <prefix>sysvx
+
+   subroutine <prefix>sysvx_lwork(n,nrhs,a,lda,af,ldaf,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,lwork,irwork,info,factored,lower)
+
+   ! lwork computation for ?SYSVX
+
+     fortranname <prefix>sysvx
+     callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,&a,&lda,&af,&ldaf,&ipiv,&b,&ldb,&x,&ldx,&rcond,&ferr,&berr,&work,&lwork,&irwork,&info)
+     callprotoargument char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,int*,<int,int,float,double>*,int*
+
+     integer intent(in):: n
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+     integer intent(hide) :: factored = 0
+     integer intent(hide):: nrhs = 1
+     <ftype> intent(hide):: a
+     integer depend(n),intent(hide):: lda = n
+     <ftype> intent(hide):: af
+     integer depend(n),intent(hide):: ldaf = n
+     integer intent(hide):: ipiv
+     <ftype> intent(hide):: b
+     integer depend(n),intent(hide):: ldb = n
+     <ftype> intent(hide):: x
+     integer depend(n),intent(hide):: ldx = n
+     <ftypereal> intent(hide):: rcond
+     <ftypereal> intent(hide):: ferr
+     <ftypereal> intent(hide):: berr
+     integer intent(hide):: lwork = -1
+     <integer,integer,real,double precision> intent(hide):: irwork
+
+     <ftype> intent(out) :: work
+     integer intent(out):: info
+
+   end subroutine <prefix>sysvx_lwork
+
+   subroutine <prefix2c>hesv(n,nrhs,a,lda,ipiv,b,ldb,work,lwork,info,lower)
+
+   ! Solves A * X = B for X
+   ! A is hermitian. For symmetric A see ?SYSV
+   ! A = U * D * U**H if lower = 0
+   ! A = L * D * L**H if lower = 1
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,a,&lda,ipiv,b,&ldb,work,&lwork,&info)
+     callprotoargument char*,int*,int*,<ctype2c>*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*
+
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer depend(a),intent(hide):: n = shape(a,0)
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=uduh):: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     integer dimension(n),depend(n),intent(out):: ipiv
+     <ftype2c> dimension(n,nrhs),check(shape(b,0)==n),depend(n),intent(in,out,copy,out=x):: b
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = n
+     <ftype2c> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
+     integer intent(out):: info
+
+   end subroutine <prefix2c>hesv
+
+   subroutine <prefix2c>hesv_lwork(n,nrhs,a,lda,ipiv,b,ldb,work,lwork,info,lower)
+
+   ! lwork computation for C/ZHESV
+
+     fortranname <prefix2c>hesv
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,&a,&lda,&ipiv,&b,&ldb,&work,&lwork,&info)
+     callprotoargument char*,int*,int*,<ctype2c>*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*
+
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer intent(in):: n
+
+     integer intent(hide):: nrhs = 1
+     <ftype2c> intent(hide):: a
+     integer intent(hide),depend(n):: lda = n
+     integer intent(hide):: ipiv
+     <ftype2c> intent(hide):: b
+     integer intent(hide),depend(n):: ldb = n
+     integer intent(hide):: lwork = -1
+
+     <ftype2c> intent(out):: work
+     integer intent(out):: info
+   
+   end subroutine <prefix2c>hesv_lwork
+
+   subroutine <prefix2c>hesvx(n,nrhs,a,lda,af,ldaf,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,lwork,rwork,info,factored,lower)
+
+   ! Solves A * X = B for X
+   ! Expert driver for ?HESV
+   ! A is hermitian. For symmetric A see ?SYSVX
+   ! A = U * D * U**H if lower = 0
+   ! A = L * D * L**H if lower = 1
+
+     callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,&lwork,rwork,&info)
+     callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2>*,int*
+
+     integer optional,intent(in),check(factored==0||factored==1) :: factored = 0
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer depend(a),intent(hide):: n = shape(a,0)
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     <ftype2c> dimension(n,n),intent(in,copy) :: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     <ftype2c> optional,dimension(n,n),depend(n),intent(in,out,out=uduh) :: af
+     integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
+     integer optional,depend(n),dimension(n),intent(in,out):: ipiv
+     <ftype2c> dimension(n,nrhs),intent(in,copy) :: b
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+     <ftype2c> dimension(n,nrhs),intent(out) :: x
+     integer depend(x),intent(hide):: ldx = shape(x,0)
+     <ftype2> intent(out):: rcond
+     <ftype2> intent(out),dimension(nrhs),depend(nrhs):: ferr
+     <ftype2> intent(out),dimension(nrhs),depend(nrhs):: berr
+     <ftype2c> dimension(MAX(1,lwork)),depend(lwork),intent(hide,cache):: work
+     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1):: lwork = 2*n
+     <ftype2> intent(hide,cache),dimension(n),depend(n) :: rwork
+     integer intent(out):: info
+
+   end subroutine <prefix2c>hesvx
+
+   subroutine <prefix2c>hesvx_lwork(n,nrhs,a,lda,af,ldaf,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,lwork,rwork,info,factored,lower)
+
+   ! lwork computation for ?HESVX
+     fortranname <prefix2c>hesvx
+     callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,&a,&lda,&af,&ldaf,&ipiv,&b,&ldb,&x,&ldx,&rcond,&ferr,&berr,&work,&lwork,&rwork,&info)
+     callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2>*,int*
+
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer intent(in):: n
+
+     integer intent(hide) :: factored = 0
+     integer depend(b),intent(hide):: nrhs = 1
+     <ftype2c> intent(hide) :: a
+     integer depend(n),intent(hide):: lda = n
+     <ftype2c> intent(hide) :: af
+     integer depend(n),intent(hide):: ldaf = n
+     integer intent(hide):: ipiv
+     <ftype2c> intent(hide) :: b
+     integer depend(n),intent(hide):: ldb = n
+     <ftype2c> intent(hide) :: x
+     integer depend(n),intent(hide):: ldx = n
+     <ftype2> intent(hide):: rcond
+     <ftype2> intent(hide):: ferr
+     <ftype2> intent(hide):: berr
+     integer intent(hide):: lwork = -1
+     <ftype2> intent(hide):: rwork
+
+     <ftype2c> intent(out):: work
+     integer intent(out):: info
+
+   end subroutine <prefix2c>hesvx_lwork
 
    subroutine <prefix>getrf(m,n,a,piv,info)
 
@@ -1894,6 +2131,37 @@ interface
      integer intent(out) :: info
 
    end subroutine <prefix>posv
+
+   subroutine <prefix>posvx(fact,n,nrhs,a,lda,af,ldaf,equed,s,b,ldb,x,ldx,rcond,ferr,berr,work,irwork,info,lower)
+
+   ! Solve A * X = B for Symmetric/Hermitian A
+   ! "expert" version of the ?POSV routines
+
+     callstatement (*f2py_func)(fact,(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,equed,s,b,&ldb,x,&ldx,&rcond,ferr,berr,work,irwork,&info)
+     callprotoargument char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,char*,<ctypereal>*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
+
+     character optional,intent(in):: fact = "E"
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer depend(a),intent(hide):: n = shape(a,0)
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,copy,out,out=a_s):: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     <ftype> optional,intent(in,out,out=lu),dimension(n,n),depend(n):: af
+     integer depend(af),intent(hide):: ldaf = shape(af,0)
+     character optional,intent(in,out):: equed = "Y"
+     <ftypereal> optional,dimension(n),depend(n),intent(in,out):: s
+     <ftype> dimension(n,nrhs),check(shape(b,0)==n),depend(n),intent(in,copy,out,out=b_s):: b
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+     <ftype> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
+     integer depend(x),intent(hide):: ldx = shape(x,0)
+     <ftypereal> intent(out):: rcond
+     <ftypereal> intent(out),dimension(nrhs),depend(nrhs):: ferr
+     <ftypereal> intent(out),dimension(nrhs),depend(nrhs):: berr
+     <ftype> intent(hide),dimension(<3*n,3*n,2*n,2*n>),depend(n):: work
+     <integer,integer,real,double precision> intent(hide),dimension(n),depend(n):: irwork
+     integer intent(out):: info
+
+   end subroutine <prefix>posvx
 
    subroutine <prefix2>potrf(n,a,info,lower,clean)
 
