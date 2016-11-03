@@ -618,6 +618,7 @@ Convenience Functions
    round   -- Round to nearest integer
    xlogy   -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
    xlog1py -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
+   logsumexp -- Compute the log of the sum of exponentials of input elements.
    exprel  -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
    sinc    -- Return the sinc function.
 
@@ -632,6 +633,7 @@ from __future__ import division, print_function, absolute_import
 from ._ufuncs import *
 
 from .basic import *
+from ._logsumexp import logsumexp
 from . import specfun
 from . import orthogonal
 from .orthogonal import *
