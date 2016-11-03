@@ -3,14 +3,18 @@
 from __future__ import division, print_function, absolute_import
 
 from math import ceil, log
+import warnings
+
 import numpy as np
-from numpy.fft import irfft
+from numpy.fft import irfft, fft, ifft
 from scipy.special import sinc
 from scipy.linalg import toeplitz, hankel, pinv
+from scipy._lib.six import string_types
+
 from . import sigtools
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
-           'firwin', 'firwin2', 'remez', 'firls']
+           'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
 
 
 # Some notes on function parameters:
@@ -205,6 +209,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
     --------
     firwin2
     firls
+    minimum_phase
     remez
 
     Examples
@@ -375,6 +380,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0,
     --------
     firls
     firwin
+    minimum_phase
     remez
 
     Notes
@@ -555,10 +561,10 @@ def remez(numtaps, bands, desired, weight=None, Hz=1, type='bandpass',
 
     See Also
     --------
-    freqz
     firls
     firwin
     firwin2
+    minimum_phase
 
     References
     ----------
@@ -644,6 +650,8 @@ def firls(numtaps, bands, desired, weight=None, nyq=1.):
     --------
     firwin
     firwin2
+    minimum_phase
+    remez
 
     Notes
     -----
@@ -791,3 +799,200 @@ def firls(numtaps, bands, desired, weight=None, nyq=1.):
     # make coefficients symmetric (linear phase)
     coeffs = np.hstack((a[:0:-1], 2 * a[0], a[1:]))
     return coeffs
+
+
+def _dhtm(mag):
+    """Compute the modified 1D discrete Hilbert transform
+
+    Parameters
+    ----------
+    mag : ndarray
+        The magnitude spectrum. Should be 1D with an even length, and
+        preferably a fast length for FFT/IFFT.
+    """
+    # Adapted based on code by Niranjan Damera-Venkata,
+    # Brian L. Evans and Shawn R. McCaslin (see refs for `minimum_phase`)
+    sig = np.zeros(len(mag))
+    # Leave Nyquist and DC at 0, knowing np.abs(fftfreq(N)[midpt]) == 0.5
+    midpt = len(mag) // 2
+    sig[1:midpt] = 1
+    sig[midpt+1:] = -1
+    # eventually if we want to support complex filters, we will need a
+    # np.abs() on the mag inside the log, and should remove the .real
+    recon = ifft(mag * np.exp(fft(sig * ifft(np.log(mag))))).real
+    return recon
+
+
+def minimum_phase(h, method='homomorphic', n_fft=None):
+    """Convert a linear-phase FIR filter to minimum phase
+
+    Parameters
+    ----------
+    h : array
+        Linear-phase FIR filter coefficients.
+    method : {'hilbert', 'homomorphic'}
+        The method to use:
+
+            'homomorphic' (default)
+                This method [4]_ [5]_ works best with filters with an
+                odd number of taps, and the resulting minimum phase filter
+                will have a magnitude response that approximates the square
+                root of the the original filter's magnitude response.
+
+            'hilbert'
+                This method [1]_ is designed to be used with equiripple
+                filters (e.g., from `remez`) with unity or zero gain
+                regions.
+
+    n_fft : int
+        The number of points to use for the FFT. Should be at least a
+        few times larger than the signal length (see Notes).
+
+    Returns
+    -------
+    h_minimum : array
+        The minimum-phase version of the filter, with length
+        ``(length(h) + 1) // 2``.
+
+    See Also
+    --------
+    firwin
+    firwin2
+    remez
+
+    Notes
+    -----
+    Both the Hilbert [1]_ or homomorphic [4]_ [5]_ methods require selection
+    of an FFT length to estimate the complex cepstrum of the filter.
+
+    In the case of the Hilbert method, the deviation from the ideal
+    spectrum ``epsilon`` is related to the number of stopband zeros
+    ``n_stop`` and FFT length ``n_fft`` as::
+
+        epsilon = 2. * n_stop / n_fft
+
+    For example, with 100 stopband zeros and a FFT length of 2048,
+    ``epsilon = 0.0976``. If we conservatively assume that the number of
+    stopband zeros is one less than the filter length, we can take the FFT
+    length to be the next power of 2 that satisfies ``epsilon=0.01`` as::
+
+        n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
+
+    This gives reasonable results for both the Hilbert and homomorphic
+    methods, and gives the value used when ``n_fft=None``.
+
+    Alternative implementations exist for creating minimum-phase filters,
+    including zero inversion [2]_ and spectral factorization [3]_ [4]_.
+    For more information, see:
+
+        http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters
+
+    Examples
+    --------
+    Create an optimal linear-phase filter, then convert it to minimum phase:
+
+    >>> from scipy.signal import remez, minimum_phase, freqz, group_delay
+    >>> import matplotlib.pyplot as plt
+    >>> freq = [0, 0.2, 0.3, 1.0]
+    >>> desired = [1, 0]
+    >>> h_linear = remez(151, freq, desired, Hz=2.)
+
+    Convert it to minimum phase:
+
+    >>> h_min_hom = minimum_phase(h_linear, method='homomorphic')
+    >>> h_min_hil = minimum_phase(h_linear, method='hilbert')
+
+    Compare the three filters:
+
+    >>> fig, axs = plt.subplots(4, figsize=(4, 8))
+    >>> for h, style, color in zip((h_linear, h_min_hom, h_min_hil),
+    ...                            ('-', '-', '--'), ('k', 'r', 'c')):
+    ...     w, H = freqz(h)
+    ...     w, gd = group_delay((h, 1))
+    ...     w /= np.pi
+    ...     axs[0].plot(h, color=color, linestyle=style)
+    ...     axs[1].plot(w, np.abs(H), color=color, linestyle=style)
+    ...     axs[2].plot(w, 20 * np.log10(np.abs(H)), color=color, linestyle=style)
+    ...     axs[3].plot(w, gd, color=color, linestyle=style)
+    >>> for ax in axs:
+    ...     ax.grid(True, color='0.5')
+    ...     ax.fill_between(freq[1:3], *ax.get_ylim(), color='#ffeeaa', zorder=1)
+    >>> axs[0].set(xlim=[0, len(h_linear) - 1], ylabel='Amplitude', xlabel='Samples')
+    >>> axs[1].legend(['Linear', 'Min-Hom', 'Min-Hil'], title='Phase')
+    >>> for ax, ylim in zip(axs[1:], ([0, 1.1], [-150, 10], [-60, 60])):
+    ...     ax.set(xlim=[0, 1], ylim=ylim, xlabel='Frequency')
+    >>> axs[1].set(ylabel='Magnitude')
+    >>> axs[2].set(ylabel='Magnitude (dB)')
+    >>> axs[3].set(ylabel='Group delay')
+    >>> plt.tight_layout()
+
+    References
+    ----------
+    .. [1] N. Damera-Venkata and B. L. Evans, "Optimal design of real and
+           complex minimum phase digital FIR filters," Acoustics, Speech,
+           and Signal Processing, 1999. Proceedings., 1999 IEEE International
+           Conference on, Phoenix, AZ, 1999, pp. 1145-1148 vol.3.
+           doi: 10.1109/ICASSP.1999.756179
+    .. [2] X. Chen and T. W. Parks, "Design of optimal minimum phase FIR
+           filters by direct factorization," Signal Processing,
+           vol. 10, no. 4, pp. 369–383, Jun. 1986.
+    .. [3] T. Saramaki, "Finite Impulse Response Filter Design," in
+           Handbook for Digital Signal Processing, chapter 4,
+           New York: Wiley-Interscience, 1993.
+    .. [4] J. S. Lim, Advanced Topics in Signal Processing.
+           Englewood Cliffs, N.J.: Prentice Hall, 1988.
+    .. [5] A. V. Oppenheim, R. W. Schafer, and J. R. Buck,
+           "Discrete-Time Signal Processing," 2nd edition.
+           Upper Saddle River, N.J.: Prentice Hall, 1999.
+    """  # noqa
+    h = np.asarray(h)
+    if np.iscomplexobj(h):
+        raise ValueError('Complex filters not supported')
+    if h.ndim != 1 or h.size <= 2:
+        raise ValueError('h must be 1D and at least 2 samples long')
+    n_half = len(h) // 2
+    if not np.allclose(h[-n_half:][::-1], h[:n_half]):
+        warnings.warn('h does not appear to by symmetric, conversion may '
+                      'fail', RuntimeWarning)
+    if not isinstance(method, string_types) or method not in \
+            ('homomorphic', 'hilbert',):
+        raise ValueError('method must be "homomorphic" or "hilbert", got %r'
+                         % (method,))
+    if n_fft is None:
+        n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
+    n_fft = int(n_fft)
+    if n_fft < len(h):
+        raise ValueError('n_fft must be at least len(h)==%s' % len(h))
+    if method == 'hilbert':
+        w = np.arange(n_fft) * (2 * np.pi / n_fft * n_half)
+        H = np.real(fft(h, n_fft) * np.exp(1j * w))
+        dp = max(H) - 1
+        ds = 0 - min(H)
+        S = 4. / (np.sqrt(1+dp+ds) + np.sqrt(1-dp+ds)) ** 2
+        H += ds
+        H *= S
+        H = np.sqrt(H, out=H)
+        H += 1e-10  # ensure that the log does not explode
+        h_minimum = _dhtm(H)
+    else:  # method == 'homomorphic'
+        # zero-pad; calculate the DFT
+        h_temp = np.abs(fft(h, n_fft))
+        # take 0.25*log(|H|**2) = 0.5*log(|H|)
+        h_temp += 1e-7 * h_temp[h_temp > 0].min()  # don't let log blow up
+        np.log(h_temp, out=h_temp)
+        h_temp *= 0.5
+        # IDFT
+        h_temp = ifft(h_temp).real
+        # multiply pointwise by the homomorphic filter
+        # lmin[n] = 2u[n] - d[n]
+        win = np.zeros(n_fft)
+        win[0] = 1
+        stop = (len(h) + 1) // 2
+        win[1:stop] = 2
+        if len(h) % 2:
+            win[stop] = 1
+        h_temp *= win
+        h_temp = ifft(np.exp(fft(h_temp)))
+        h_minimum = h_temp.real
+    n_out = n_half + len(h) % 2
+    return h_minimum[:n_out]
