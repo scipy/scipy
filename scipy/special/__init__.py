@@ -604,23 +604,23 @@ Convenience Functions
 .. autosummary::
    :toctree: generated/
 
-   cbrt    -- Cube root of `x`
-   exp10   -- 10**x
-   exp2    -- 2**x
-   radian  -- Convert from degrees to radians
-   cosdg   -- Cosine of the angle `x` given in degrees.
-   sindg   -- Sine of angle given in degrees
-   tandg   -- Tangent of angle x given in degrees.
-   cotdg   -- Cotangent of the angle `x` given in degrees.
-   log1p   -- Calculates log(1+x) for use when `x` is near zero
-   expm1   -- exp(x) - 1 for use when `x` is near zero.
-   cosm1   -- cos(x) - 1 for use when `x` is near zero.
-   round   -- Round to nearest integer
-   xlogy   -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
-   xlog1py -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
+   cbrt      -- Cube root of `x`
+   exp10     -- 10**x
+   exp2      -- 2**x
+   radian    -- Convert from degrees to radians
+   cosdg     -- Cosine of the angle `x` given in degrees.
+   sindg     -- Sine of angle given in degrees
+   tandg     -- Tangent of angle x given in degrees.
+   cotdg     -- Cotangent of the angle `x` given in degrees.
+   log1p     -- Calculates log(1+x) for use when `x` is near zero
+   expm1     -- exp(x) - 1 for use when `x` is near zero.
+   cosm1     -- cos(x) - 1 for use when `x` is near zero.
+   round     -- Round to nearest integer
+   xlogy     -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
+   xlog1py   -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
    logsumexp -- Compute the log of the sum of exponentials of input elements.
-   exprel  -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
-   sinc    -- Return the sinc function.
+   exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
+   sinc      -- Return the sinc function.
 
 .. [+] in the description indicates a function which is not a universal
 .. function and does not follow broadcasting and automatic
