@@ -6,20 +6,22 @@
 ! $Revision$ $Date$
 !
 ! Additions by Travis Oliphant, Tiziano Zito, Collin RM Stocks, Fabian Pedregosa
-!              Skipper Seabold, 
-!              Ilhan Polat - ?gesvx,?sysv,?sysvx,?posvx,?hesvx
+!              Skipper Seabold,
+!              Ilhan Polat - ?gesvx,?sysv,?sysvx,?posvx,?hesvx,?gecon,?pocon
 !
 ! Shorthand Notations:
 ! --------------------
 ! <prefix=s,d,c,z>
-! <prefix2=s,d> 
-! <prefix2c=c,z> 
+! <prefix2=s,d>
+! <prefix2c=c,z>
 ! <ftype=real,double precision,complex,double complex>
 ! <ftype2=real,double precision>
-! <ftype2c=complex,double complex> 
+! <ftype2c=complex,double complex>
+! <ftypereal=real,double precision,real,double precision>
 ! <ctype=float,double,complex_float,complex_double>
-! <ctype2=float,double> 
+! <ctype2=float,double>
 ! <ctype2c=complex_float,complex_double>
+! <ctypereal=float,double,float,double>
 ! <wrap2=ws,d>
 ! <wrap2c=wc,z>
 !
@@ -623,6 +625,25 @@ interface
 
    end subroutine <prefix2c>gesvx
 
+   subroutine <prefix>gecon(norm,n,a,lda,anorm,rcond,work,irwork,info)
+
+   ! Computes the 1- or inf- norm reciprocal condition number estimate.
+
+     callstatement (*f2py_func)(norm,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
+     callprotoargument char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
+
+     character optional,intent(in):: norm = '1'
+     integer depend(a),intent(hide):: n = shape(a,0)
+     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in):: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     <ftypereal> intent(in):: anorm
+     <ftypereal> intent(out):: rcond
+     <ftype> depend(n),dimension(<4*n,4*n,2*n,2*n>),intent(hide,cache):: work
+     <integer,integer,real, double precision> depend(n),dimension(<n,n,2*n,2*n>),intent(hide,cache):: irwork
+     integer intent(out):: info
+
+   end subroutine <prefix>gecon
+
    subroutine <prefix>sysv(n,nrhs,a,lda,ipiv,b,ldb,work,lwork,info,lower)
 
    ! Solve A * X = B for symmetric A matrix
@@ -778,7 +799,7 @@ interface
 
      <ftype2c> intent(out):: work
      integer intent(out):: info
-   
+
    end subroutine <prefix2c>hesv_lwork
 
    subroutine <prefix2c>hesvx(n,nrhs,a,lda,af,ldaf,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,lwork,rwork,info,factored,lower)
@@ -2162,6 +2183,26 @@ interface
      integer intent(out):: info
 
    end subroutine <prefix>posvx
+
+   subroutine <prefix>pocon(uplo,n,a,lda,anorm,rcond,work,irwork,info)
+
+   ! Computes the 1- or inf- norm reciprocal condition number estimate
+   ! for a positive definite symmetric/hermitian matrix.
+
+     callstatement (*f2py_func)(uplo,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
+     callprotoargument char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
+
+     character optional,intent(in):: uplo = 'U'
+     integer depend(a),intent(hide):: n = shape(a,0)
+     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in):: a
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     <ftypereal> intent(in):: anorm
+     <ftypereal> intent(out):: rcond
+     <ftype> depend(n),dimension(<3*n,3*n,2*n,2*n>),intent(hide,cache):: work
+     <integer,integer,real, double precision> depend(n),dimension(n),intent(hide,cache):: irwork
+     integer intent(out):: info
+
+   end subroutine <prefix>pocon
 
    subroutine <prefix2>potrf(n,a,info,lower,clean)
 

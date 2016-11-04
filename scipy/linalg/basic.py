@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-
+from numpy import atleast_2d
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from .misc import LinAlgError, _datacopied
@@ -105,90 +105,112 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                      'gesv|posv' % -info)
 
 
-def solve_x(a, b, trans='N', fact='E', equed='B', af=None,
-            r=None, c=None, ipiv=None, overwrite_a=False,
-            overwrite_b=False, check_finite=True):
+def solve_x(a, b, assume_a='gen', transposed=False,
+            overwrite_a=False, overwrite_b=False, check_finite=True):
     """
-    Solve the generic linear equations `a x = b` for `x` with real/complex
-    data using LU factorization where `a` is a square matrix and `x` and
-    `x` are compatible-shaped general matrices.
+    Solves the linear equation set ``a * x = b`` for the unknown ``x``
+    for square ``a`` matrix.
 
-    Error bounds on the solution and a condition estimate are also provided.
+    If the data matrix is known to be a particular type then supplying the
+    corresponding string to ``assume_a`` key chooses the dedicated solver.
+    The available options are
+
+    =====================  ========
+     general matrix         'gen'
+     symmetric              'sym'
+     hermitian              'her'
+     positive definite      'pos'
+    =====================  ========
+
+    The datatype of the arrays define which solver is called regardless
+    of the values. In other words, even when the complex array entries have
+    precisely zero imaginary parts, the complex solver will be called based
+    on the data type of the array.
 
     Parameters
     ----------
     a : (N, N) array_like
-        Square matrix
-    b : (N, NRHS) array_like
-        Right-hand side input data
-    trans : {'N', 'T', 'C'}, optional
-        Type of system to solve:
-
-        =========  ========= ==============
-        ``trans``   system    abbreviation
-        =========  ========= ==============
-          'N'      a   x = b      None
-          'T'      a^T x = b   Transpose
-          'C'      a^H x = b  Complex Conj
-        =========  ========= ==============
-    fact : {'E', 'N', 'F'}, optional
-        Selects the type of pre-conditioning on the data matrices. Specifies
-        whether or not the factorized form of the matrix ``a`` is supplied on
-        entry, and if not, whether the matrix ``a`` should be equilibrated
-        before it is factorized. See Notes for more details.
-    equed : {'B', 'N', 'R', 'C'}, optional
-        If requested, type of equilibration to be performed on the input data.
-        The letters denote (B)oth, (N)one, (R)ow, and (C)olumn scaling
-        respectively.
-    af : (N, N) array_like, optional
-        If `fact` is set to ``F``, then the argument of this key should
-        hold the compact LU factorization of ``a`` matrix. See Notes for
-        the required structure of this array.
-    r, c : (N,) array_like, optional
-        If fact is set to ``F``, then the argument of these keys should
-        hold the row and column scalings.
-    ipiv : (N,) array_like, optional
-        If fact is set to ``F``, then the argument of this key should contain
-        the pivot indices from the factorization ``a = p l u``.
+        Square input data
+    b :(N, NRHS) array_like
+        Input data for the right hand side
+    assume_a : str, optional
+        Valid entries are given in the docstring
+    transposed: bool, optional
+        If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
+        solved (only taken into account for ``'gen'``).
     overwrite_a : bool, optional
-        Allow overwriting data in `a` (may enhance performance)
+        Allow overwriting data in `a` (may enhance performance).
+        Default is False.
     overwrite_b : bool, optional
-        Allow overwriting data in `b` (may enhance performance)
+        Allow overwriting data in `b` (may enhance performance).
+        Default is False.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
-    Returns
-    -------
-    a_s : (N, N), ndarray
-        Possibly scaled input data matrix `a`
-    lu : (N, N), ndarray
-        The compact representation of the LU factors of input matrix `a`
-    ipiv: (N,), ndarray
-        The integer valued pivot indices from the PLU factorization
-    equed: str
-        One character string (byte literal) to denote which type of scaling
-        has been used.
-    rs, cs : (N,), ndarray
-        The row/column scalings (all-ones arrays in case omitted)
-    b_s : (N, NRHS), ndarray
-        Possibly scaled input data matrix `b`
-    x : (N,NRHS), ndarray
-        The solution matrix
-    rcond : float
-        The relative condition number of input matrix `a`
-    ferr, berr : (NRHS,), ndarray
-        Forward/Backward error estimates of the solution
-    info : int
-        Low-level success/error code for the solution
     """
-    a1 = _asarray_validated(a, check_finite=check_finite)
-    b1 = _asarray_validated(b, check_finite=check_finite)
-    gesvx = get_lapack_funcs(('gesvx'), (a1, b1))
+    a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
+    b1 = atleast_2d(_asarray_validated(b, check_finite=check_finite))
 
-    a_s, lu, piv, equed, rs, cs, b_s, x, rcond, ferr, berr, info = gesvx(
-                    a=a1, b=b1, trans=trans, fact=fact, equed=equed, af=af,
-                    r=r, c=c, ipiv=ipiv, overwrite_a=overwrite_a,
-                    overwrite_b=overwrite_b)
+    if a1.shape[0] != a1.shape[1]:
+        raise ValueError('Input a needs to be a square matrix.')
+    n = a1.shape[0]
+    if n != b1.shape[0]:
+        raise ValueError('Input b has to have same number of'
+                         ' rows as matrix a')
 
-    return a_s, lu, piv, equed, rs, cs, b_s, x, rcond, ferr, berr, info
+    r_or_c = complex if np.iscomplexobj(a1) else float
+
+    if assume_a in ('gen', 'sym', 'her', 'pos'):
+        _structure = assume_a
+    else:
+        raise ValueError('{} is not a recognized matrix structure'
+                         ''.format(assume_a))
+
+    if _structure == 'gen':
+        gesvx = get_lapack_funcs('gesvx', (a1, b1))
+        trans_conj = 'N'
+        if transposed:
+            trans_conj = 'T' if r_or_c is float else 'H'
+        _, _, _, _, _, _, _, x, rcond, _, _, info = gesvx(a1, b1,
+                                               trans = trans_conj,
+                                               overwrite_a=overwrite_a,
+                                               overwrite_b=overwrite_b
+                                               )
+    elif _structure == 'sym':
+        sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
+        lwork, _ = sysvx_lw(n)
+        _, _, _, _, x, rcond, _, _, info = sysvx(a1, b1, lwork=lwork,
+                                                 overwrite_a=overwrite_a,
+                                                 overwrite_b=overwrite_b
+                                                 )
+    elif _structure == 'her':
+        hesvx, hesvx_lw = get_lapack_funcs(('hesvx', 'hesvx_lwork'), (a1, b1))
+        lwork, _ = hesvx_lw(n)
+        _, _, x, rcond, _, _, info = hesvx(a1, b1, lwork=lwork,
+                                           overwrite_a=overwrite_a,
+                                           overwrite_b=overwrite_b
+                                           )
+    else:
+        posvx = get_lapack_funcs('posvx', (a1, b1))
+        _, _, _, _, _, x, rcond, _, _, info = posvx(a1, b1,
+                                                    overwrite_a=overwrite_a,
+                                                    overwrite_b=overwrite_b
+                                                    )
+
+    if info < 0:
+        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                         '.'.format(-info))
+    elif info == 0:
+        return x
+    elif 0 < info <= n:
+        raise LinAlgError('Matrix is singular')
+    elif info > n:
+        warnings.warn('Ill-conditioned matrix detected.\nResults are not'
+                      ' guaranteed to be inaccurate.\nReciprocal condition'
+                      ' number: {}'.format(rcond), RuntimeWarning)
+        return x
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
