@@ -645,7 +645,7 @@ class TestSolveX(TestCase):
         b = np.array([[2.98-10.18j, 28.68-39.89j],
                       [-9.58+3.88j, -24.79-8.40j],
                       [-0.77-16.05j, 4.23-70.02j],
-                      [7.79+5.48j, -35.39+18.01]])
+                      [7.79+5.48j, -35.39+18.01j]])
         x = solve_x(a, b, assume_a='her')
         assert_array_almost_equal(x, np.array([[2.+1j, -8+6j],
                                                [3.-2j, 7-2j],
