@@ -615,7 +615,7 @@ class TestSolveX(TestCase):
                       [0.77, -13.28],
                       [-6.22, -6.21]])
 
-        a_s, lu, piv, e, rs, cs, b_s, x, rcond, fer, ber, info = solve_x(a, b)
+        x = solve_x(a, b)
         assert_array_almost_equal(x, np.array([[1., -1, 3, -5],
                                                [3, 2, 4, 1]]).T)
 
@@ -630,11 +630,27 @@ class TestSolveX(TestCase):
                       [-5.75+25.31j, -2.15+30.19j],
                       [1.16+2.57j, -2.56+7.55j]])
 
-        a_s, lu, piv, e, rs, cs, b_s, x, rcond, fer, ber, info = solve_x(a, b)
+        x = solve_x(a, b)
         assert_array_almost_equal(x, np. array([[1+1.j, -1-2.j],
                                                 [2-3.j, 5+1.j],
                                                 [-4-5.j, -3+4.j],
                                                 [6.j, 2-3.j]]))
+
+    def test_hermitian(self):
+        # An upper triangular matrix will be used for hermitian matrix a
+        a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
+                      [0, -4.63, -1.84+0.03j, 2.21+0.21j],
+                      [0, 0, -8.87, 1.58-0.90j],
+                      [0, 0, 0, -1.36]])
+        b = np.array([[2.98-10.18j, 28.68-39.89j],
+                      [-9.58+3.88j, -24.79-8.40j],
+                      [-0.77-16.05j, 4.23-70.02j],
+                      [7.79+5.48j, -35.39+18.01]])
+        x = solve_x(a, b, assume_a='her')
+        assert_array_almost_equal(x, np.array([[2.+1j, -8+6j],
+                                               [3.-2j, 7-2j],
+                                               [-1+2j, -1+5j],
+                                               [1.-1j, 3-4j]]))
 
 
 class TestSolveTriangular(TestCase):

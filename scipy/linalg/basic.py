@@ -173,11 +173,12 @@ def solve_x(a, b, assume_a='gen', transposed=False,
         trans_conj = 'N'
         if transposed:
             trans_conj = 'T' if r_or_c is float else 'H'
-        _, _, _, _, _, _, _, x, rcond, _, _, info = gesvx(a1, b1,
-                                               trans = trans_conj,
-                                               overwrite_a=overwrite_a,
-                                               overwrite_b=overwrite_b
-                                               )
+        (_, _, _, _, _, _, _,
+         x, rcond, _, _, info) = gesvx(a1, b1,
+                                       trans=trans_conj,
+                                       overwrite_a=overwrite_a,
+                                       overwrite_b=overwrite_b
+                                       )
     elif _structure == 'sym':
         sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
         lwork, _ = sysvx_lw(n)
