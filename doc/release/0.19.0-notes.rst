@@ -86,6 +86,11 @@ the input, instead of always float64.
 The function `scipy.signal.find_peaks_cwt()` now returns an array instead of
 a list.
 
+`scipy.stats.kendalltau()` now computes the correct p-value in case the
+input contains ties. The p-value is also identical to that computed by
+`scipy.stats.mstats_basic.kendalltau()`. If the input does not contain
+ties there is no change w.r.t. the previous implementation.
+
 
 Other changes
 =============

@@ -25,6 +25,7 @@ import numpy as np
 
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
+import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from common_tests import check_named_results
@@ -614,6 +615,21 @@ def test_kendalltau():
     x = np.arange(10.)
     y = np.arange(20.)
     assert_raises(ValueError, stats.kendalltau, x, y)
+
+
+def test_kendalltau_vs_mstats_basic():
+    for s in range(2,10):
+        a = []
+        # Generate rankings with ties
+        for i in range(s):
+            a += [i]*i
+        b = list(a)
+        np.random.shuffle(a)
+        np.random.shuffle(b)
+        expected = mstats_basic.kendalltau(a, b)
+        actual = stats.kendalltau(a, b)
+        assert_approx_equal(expected[0], actual[0])
+        assert_approx_equal(expected[1], actual[1])
 
 
 def test_kendalltau_nan_2nd_arg():
