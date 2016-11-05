@@ -25,11 +25,13 @@ struct WeightedTree {
     npy_float64 *weights; 
     npy_float64 *node_weights; 
 };
+
 struct CNBParams
 {
     npy_float64 *r; 
     void * results; /* will be casted inside */
     WeightedTree self, other;
+    int cumulative;
 };
 
 template <typename MinMaxDist, typename WeightType, typename ResultType> static void
@@ -47,19 +49,44 @@ traverse(
             const ckdtreenode *node2) = traverse<MinMaxDist, WeightType, ResultType>;
 
     ResultType *results = (ResultType*) params->results;
-    
-    /* 
+
+    /*
      * Speed through pairs of nodes all of whose children are close
      * and see if any work remains to be done
      */
-    
-    start = std::lower_bound(start, end, tracker->min_distance);
-    end = std::lower_bound(start, end, tracker->max_distance);
+
+    npy_float64 * new_start = std::lower_bound(start, end, tracker->min_distance);
+    npy_float64 * new_end = std::lower_bound(start, end, tracker->max_distance);
+
 
     /* since max_distance >= min_distance, end < start never happens */
+    if (params->cumulative) {
+        npy_float64 * i;
+        if (new_end != end) {
+            ResultType nn = WeightType::get_weight(&params->self, node1)
+                          * WeightType::get_weight(&params->other, node2);
+
+            for (i = new_end; i < end; ++i) {
+                results[i - params->r] += nn;
+            }
+        }
+        /* any bins larger than end have been correctly counted, thus
+         * thus we can truncate the queries in future of this branch of the traversal*/
+        start = new_start;
+        end = new_end;
+    } else {
+        start = new_start;
+        end = new_end;
+
+        if (end == start) {
+            ResultType nn = WeightType::get_weight(&params->self, node1)
+                          * WeightType::get_weight(&params->other, node2);
+            results[start - params->r] += nn;
+        }
+    }
+
     if (end == start) {
-        results[start - params->r] += WeightType::get_weight(&params->self, node1)
-                                    * WeightType::get_weight(&params->other, node2);
+        /* this pair falls into exactly one bin, no need to probe deeper. */
         return;
     }
 
@@ -78,36 +105,51 @@ traverse(
             const npy_intp start2 = node2->start_idx;
             const npy_intp end1 = node1->end_idx;
             const npy_intp end2 = node2->end_idx;
-            
+
             prefetch_datapoint(sdata + sindices[start1] * m, m);
-            
+
             if (start1 < end1 - 1)
                 prefetch_datapoint(sdata + sindices[start1+1] * m, m);
-                                    
+
             /* brute-force */
             for (i = start1; i < end1; ++i) {
-                
+
                 if (i < end1 - 2)
                     prefetch_datapoint(sdata + sindices[i+2] * m, m);
-                                  
+
                 prefetch_datapoint(odata + oindices[start2] * m, m);
-                    
+
                 if (start2 < end2 - 1)
                     prefetch_datapoint(odata + oindices[start2+1] * m, m);
-              
+
                 for (j = start2; j < end2; ++j) {
-                 
+
                     if (j < end2 - 2)
                         prefetch_datapoint(odata + oindices[j+2] * m, m);
-             
+
                     npy_float64 d = MinMaxDist::distance_p(params->self.tree,
                             sdata + sindices[i] * m,
                             odata + oindices[j] * m,
                             p, m, tmd);
 
-                    const npy_float64 *l = std::lower_bound(start, end, d);
-                    results[l - params->r] += WeightType::get_weight(&params->self, sindices[i])
-                                            * WeightType::get_weight(&params->other, sindices[j]);   
+                    if (params->cumulative) {
+                        /*
+                         * I think it's usually cheaper to test d against all 
+                         * r's than to generate a distance array, sort it, then
+                         * search for all r's via binary search
+                         */
+                        npy_float64 * l;
+                        for (l = start; l < end; ++l) {
+                            if (d <= *l) {
+                                results[l - params->r] += WeightType::get_weight(&params->self, sindices[i])
+                                                        * WeightType::get_weight(&params->other, sindices[j]);
+                            }
+                        }
+                    } else {
+                        const npy_float64 *l = std::lower_bound(start, end, d);
+                        results[l - params->r] += WeightType::get_weight(&params->self, sindices[i])
+                                                * WeightType::get_weight(&params->other, sindices[j]);
+                    }
                 }
             }
         }
@@ -206,7 +248,7 @@ struct Unweighted {
 extern "C" PyObject*
 count_neighbors_unweighted(const ckdtree *self, const ckdtree *other,
                 npy_intp n_queries, npy_float64 *real_r, npy_intp *results,
-                const npy_float64 p) {
+                const npy_float64 p, int cumulative) {
 
     CNBParams params = {0};
 
@@ -214,6 +256,7 @@ count_neighbors_unweighted(const ckdtree *self, const ckdtree *other,
     params.results = (void*) results;
     params.self.tree = self;
     params.other.tree = other;
+    params.cumulative = cumulative;
 
     /* release the GIL */
     NPY_BEGIN_ALLOW_THREADS   
@@ -259,13 +302,14 @@ count_neighbors_weighted(const ckdtree *self, const ckdtree *other,
                 npy_float64 *self_weights, npy_float64 *other_weights, 
                 npy_float64 *self_node_weights, npy_float64 *other_node_weights, 
                 npy_intp n_queries, npy_float64 *real_r, npy_float64 *results,
-                const npy_float64 p) 
+                const npy_float64 p, int cumulative)
 {
 
     CNBParams params = {0};
 
     params.r = real_r;
     params.results = (void*) results;
+    params.cumulative = cumulative;
 
     params.self.tree = self;
     params.other.tree = other;

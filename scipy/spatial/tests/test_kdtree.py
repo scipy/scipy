@@ -1181,10 +1181,12 @@ def test_ckdtree_weights():
         data2 = data[w1 != 0]
         w2 = weights[w1 != 0]
         tree2 = cKDTree(data2)
-        
-        c1 = tree2.count_neighbors(tree2, np.linspace(0, 10, 100))
-        c2 = tree1.count_neighbors(tree1, np.linspace(0, 10, 100), 
+
+        c1 = tree1.count_neighbors(tree1, np.linspace(0, 10, 100),
                 weights=(w1, w1))
+        # "c2 is correct"
+        c2 = tree2.count_neighbors(tree2, np.linspace(0, 10, 100))
+
         assert_array_equal(c1, c2)
 
         try:

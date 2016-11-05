@@ -368,13 +368,14 @@ cdef extern from "ckdtree_methods.h":
                        const np.float64_t p, 
                        const np.float64_t eps,
                        vector[ordered_pair] *results)
-                       
+
     object count_neighbors_unweighted(const ckdtree *self,
                            const ckdtree *other,
                            np.intp_t     n_queries,
                            np.float64_t  *real_r,
                            np.intp_t     *results,
-                           const np.float64_t p)
+                           const np.float64_t p,
+                           int cumulative)
 
     object count_neighbors_weighted(const ckdtree *self,
                            const ckdtree *other,
@@ -385,8 +386,9 @@ cdef extern from "ckdtree_methods.h":
                            np.intp_t     n_queries,
                            np.float64_t  *real_r,
                            np.float64_t     *results,
-                           const np.float64_t p)
-                           
+                           const np.float64_t p,
+                           int cumulative)
+
     object query_ball_point(const ckdtree *self,
                             const np.float64_t *x,
                             const np.float64_t r,
@@ -1238,7 +1240,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
             iresults = results
             count_neighbors_unweighted(<ckdtree*> self, <ckdtree*> other, n_queries,
-                            &real_r[0], &iresults[0], p)
+                            &real_r[0], &iresults[0], p, cumulative)
 
         else:
             int_result = False
@@ -1265,15 +1267,17 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             count_neighbors_weighted(<ckdtree*> self, <ckdtree*> other,
                                     w1p, w2p, w1np, w2np,
                                     n_queries,
-                                    &real_r[0], &fresults[0], p)
+                                    &real_r[0], &fresults[0], p, cumulative)
 
+        results2 = np.zeros(inverse.shape, results.dtype)
         if cumulative:
-            results = results.cumsum()
-            results = results[inverse]
+            # copy out the results (taking care of duplication and sorting)
+            results2[...] = results[inverse]
         else:
-            results2 = np.zeros_like(results)
+            # keep the identical ones zero
+            # this could have been done in a more readable way.
             results2[uind] = results[inverse][uind]
-            results = results2
+        results = results2
 
         if r_ndim == 0:
             if int_result and results[0] <= <np.intp_t> LONG_MAX:
