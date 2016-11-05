@@ -7,6 +7,7 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
                    float32)
@@ -646,11 +647,35 @@ class TestSolveX(TestCase):
                       [-9.58+3.88j, -24.79-8.40j],
                       [-0.77-16.05j, 4.23-70.02j],
                       [7.79+5.48j, -35.39+18.01j]])
+        res = np.array([[2.+1j, -8+6j],
+                        [3.-2j, 7-2j],
+                        [-1+2j, -1+5j],
+                        [1.-1j, 3-4j]])
         x = solve_x(a, b, assume_a='her')
-        assert_array_almost_equal(x, np.array([[2.+1j, -8+6j],
-                                               [3.-2j, 7-2j],
-                                               [-1+2j, -1+5j],
-                                               [1.-1j, 3-4j]]))
+        assert_array_almost_equal(x, res)
+        # Also conjugate a and test for lower triangular data
+        x = solve_x(a.conj().T, b, assume_a='her', lower=True)
+        assert_array_almost_equal(x, res)
+
+    def test_singularity(self):
+        a = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 1],
+                      [1, 1, 1, 0, 0, 0, 1, 0, 1],
+                      [0, 1, 1, 0, 0, 0, 1, 0, 1],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1]])
+        b = np.arange(9)[:, None]
+        assert_raises(LinAlgError, solve_x, a, b)
+
+    def test_ill_condition_warning(self):
+        a = np.arange(1, 10).reshape(3, 3)
+        b = np.array([[15], [15], [15]])
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            assert_raises(RuntimeWarning, solve_x, a, b)
 
 
 class TestSolveTriangular(TestCase):

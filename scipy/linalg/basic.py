@@ -105,7 +105,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                      'gesv|posv' % -info)
 
 
-def solve_x(a, b, assume_a='gen', transposed=False,
+def solve_x(a, b, assume_a='gen', transposed=False, lower=False,
             overwrite_a=False, overwrite_b=False, check_finite=True):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
@@ -115,12 +115,14 @@ def solve_x(a, b, assume_a='gen', transposed=False,
     corresponding string to ``assume_a`` key chooses the dedicated solver.
     The available options are
 
-    =====================  ========
-     general matrix         'gen'
-     symmetric              'sym'
-     hermitian              'her'
-     positive definite      'pos'
-    =====================  ========
+    ===================  ========
+     generic matrix       'gen'
+     symmetric            'sym'
+     hermitian            'her'
+     positive definite    'pos'
+    ===================  ========
+
+    If omitted, ``'gen'`` is the default structure.
 
     The datatype of the arrays define which solver is called regardless
     of the values. In other words, even when the complex array entries have
@@ -131,13 +133,16 @@ def solve_x(a, b, assume_a='gen', transposed=False,
     ----------
     a : (N, N) array_like
         Square input data
-    b :(N, NRHS) array_like
+    b : (N, NRHS) array_like
         Input data for the right hand side
     assume_a : str, optional
         Valid entries are given in the docstring
     transposed: bool, optional
         If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
         solved (only taken into account for ``'gen'``).
+    lower : bool, optional
+        If True, only the data contained in the lower triangle of `a`. Default
+        is to use upper triangle. (ignored for ``'gen'``)
     overwrite_a : bool, optional
         Allow overwriting data in `a` (may enhance performance).
         Default is False.
@@ -148,6 +153,9 @@ def solve_x(a, b, assume_a='gen', transposed=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    Returns
+    -------
+    x : (N, NRHS) array_like
 
     """
     a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
@@ -181,21 +189,24 @@ def solve_x(a, b, assume_a='gen', transposed=False,
                                        )
     elif _structure == 'sym':
         sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
-        lwork, _ = sysvx_lw(n)
+        lwork, _ = sysvx_lw(n, lower)
         _, _, _, _, x, rcond, _, _, info = sysvx(a1, b1, lwork=lwork,
+                                                 lower=lower,
                                                  overwrite_a=overwrite_a,
                                                  overwrite_b=overwrite_b
                                                  )
     elif _structure == 'her':
         hesvx, hesvx_lw = get_lapack_funcs(('hesvx', 'hesvx_lwork'), (a1, b1))
-        lwork, _ = hesvx_lw(n)
+        lwork, _ = hesvx_lw(n, lower)
         _, _, x, rcond, _, _, info = hesvx(a1, b1, lwork=lwork,
+                                           lower=lower,
                                            overwrite_a=overwrite_a,
                                            overwrite_b=overwrite_b
                                            )
     else:
         posvx = get_lapack_funcs('posvx', (a1, b1))
         _, _, _, _, _, x, rcond, _, _, info = posvx(a1, b1,
+                                                    lower=lower,
                                                     overwrite_a=overwrite_a,
                                                     overwrite_b=overwrite_b
                                                     )
@@ -208,8 +219,8 @@ def solve_x(a, b, assume_a='gen', transposed=False,
     elif 0 < info <= n:
         raise LinAlgError('Matrix is singular')
     elif info > n:
-        warnings.warn('Ill-conditioned matrix detected.\nResults are not'
-                      ' guaranteed to be inaccurate.\nReciprocal condition'
+        warnings.warn('Ill-conditioned matrix detected.\nResult is not'
+                      ' guaranteed to be accurate.\nReciprocal condition'
                       ' number: {}'.format(rcond), RuntimeWarning)
         return x
 
