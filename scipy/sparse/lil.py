@@ -149,6 +149,8 @@ class lil_matrix(spmatrix, IndexMixin):
                                           self.__class__.__name__)
         self._shape = shape
 
+    set_shape.__doc__ = spmatrix.set_shape.__doc__
+
     shape = property(fget=spmatrix.get_shape, fset=set_shape)
 
     def __iadd__(self,other):
@@ -447,6 +449,8 @@ class lil_matrix(spmatrix, IndexMixin):
 
     def transpose(self, axes=None, copy=False):
         return self.tocsr().transpose(axes=axes, copy=copy).tolil()
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def tolil(self, copy=False):
         if copy:

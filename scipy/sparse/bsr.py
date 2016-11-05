@@ -309,6 +309,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     ##########################
 
     def getdata(self,ind):
+        """Not implemented method."""
         raise NotImplementedError
 
     def __getitem__(self,key):
@@ -322,9 +323,11 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     ######################
 
     def matvec(self, other):
+        """Multiply matrix by vector."""
         return self * other
 
     def matmat(self, other):
+        """Multiply matrix by matrix."""
         return self * other
 
     def _mul_vector(self, other):
@@ -507,6 +510,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     ##############################################################
 
     def eliminate_zeros(self):
+        """Remove zero elements in-place."""
         R,C = self.blocksize
         M,N = self.shape
 

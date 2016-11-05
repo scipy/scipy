@@ -169,6 +169,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
     tocsr.__doc__ = spmatrix.tocsr.__doc__
 
     def tocsc(self, copy=False):
+        """Convert this matrix to Compressed Sparse Column format."""
         idx_dtype = get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, self.shape[0]))
         indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
