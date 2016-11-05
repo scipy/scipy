@@ -193,22 +193,52 @@ class _minmax_mixin(object):
         else:
             raise ValueError("axis out of range")
 
+    def _arg_min_or_max_axis(self, axis, op, compare):
+        if self.shape[axis] == 0:
+            raise ValueError("Can't apply the operation along a zero-sized "
+                             "dimension.")
+
+        if axis < 0:
+            axis += 2
+
+        zero = self.dtype.type(0)
+
+        mat = self.tocsc() if axis == 0 else self.tocsr()
+        mat.sum_duplicates()
+
+        ret_size, line_size = mat._swap(mat.shape)
+        ret = np.zeros(ret_size, dtype=int)
+
+        nz_lines, = np.nonzero(np.diff(mat.indptr))
+        for i in nz_lines:
+            p, q = mat.indptr[i:i + 2]
+            data = mat.data[p:q]
+            indices = mat.indices[p:q]
+            am = op(data)
+            m = data[am]
+            if compare(m, zero) or q - p == line_size:
+                ret[i] = indices[am]
+            else:
+                ret[i] = _find_missing_index(indices, line_size)
+
+        return ret
+
     def _arg_min_or_max(self, axis, out, op, compare):
         if out is not None:
             raise ValueError("Sparse matrices do not support "
                              "an 'out' parameter.")
 
-        if 0 in self.shape:
-            raise ValueError("Can't apply the operation to an empty matrix.")
-
         validateaxis(axis)
 
-        zero = self.dtype.type(0)
-
         if axis is None:
+            if 0 in self.shape:
+                raise ValueError("Can't apply the operation to "
+                                 "an empty matrix.")
+
             if self.nnz == 0:
                 return 0
             else:
+                zero = self.dtype.type(0)
                 mat = self.tocoo()
                 mat.sum_duplicates()
                 am = op(mat.data)
@@ -223,32 +253,8 @@ class _minmax_mixin(object):
                     else:
                         ind = mat.row * mat.shape[1] + mat.col
                         return _find_missing_index(ind, size)
-        else:
-            if axis < 0:
-                axis += 2
 
-            mat = self.tocsc() if axis == 0 else self.tocsr()
-            mat.sum_duplicates()
-
-            line_size = mat.shape[axis]
-            ret = np.empty(mat.shape[1 - axis], dtype=int)
-
-            for i in range(ret.shape[0]):
-                p = mat.indptr[i]
-                q = mat.indptr[i + 1]
-                if p == q:
-                    ret[i] = 0
-                else:
-                    data = mat.data[p:q]
-                    indices = mat.indices[p:q]
-                    am = op(data)
-                    m = data[am]
-                    if compare(m, zero) or q - p == line_size:
-                        ret[i] = indices[am]
-                    else:
-                        ret[i] = _find_missing_index(indices, line_size)
-
-            return ret
+        return self._arg_min_or_max_axis(axis, op, compare)
 
     def max(self, axis=None, out=None):
         """

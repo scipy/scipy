@@ -36,10 +36,16 @@ def test_argmax():
             assert_equal(mat.argmax(axis=1), argmax_1)
             assert_equal(mat.argmin(axis=1), argmin_1)
 
-    D = np.empty((5, 0))
+    D1 = np.empty((0, 5))
+    D2 = np.empty((5, 0))
     for spmatrix in classes:
-        for axis in [None, 0, 1]:
-            mat = spmatrix(D)
+        for axis in [None, 0]:
+            mat = spmatrix(D1)
+            assert_raises(ValueError, mat.argmax, axis=axis)
+            assert_raises(ValueError, mat.argmin, axis=axis)
+
+        for axis in [None, 1]:
+            mat = spmatrix(D2)
             assert_raises(ValueError, mat.argmax, axis=axis)
             assert_raises(ValueError, mat.argmin, axis=axis)
 
