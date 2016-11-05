@@ -1,8 +1,9 @@
+from cpython cimport bool
 from libc cimport math
 cimport cython
 cimport numpy as np
 from numpy.math cimport PI
-from numpy cimport ndarray, int64_t, intp_t
+from numpy cimport ndarray, int64_t, float64_t, intp_t
 
 import numpy as np
 import scipy.stats, scipy.special
@@ -97,3 +98,194 @@ def _kendall_dis(intp_t[:] x, intp_t[:] y):
                 i += 1
 
     return dis
+
+
+# The weighted tau will be computed directly between these types.
+# Arrays of other types will be turned into a rank array using _toranks().
+
+ctypedef fused ordered0:
+    np.int32_t
+    np.int64_t
+    np.float32_t
+    np.float64_t
+
+ctypedef fused ordered1:
+    np.int32_t
+    np.int64_t
+    np.float32_t
+    np.float64_t
+
+
+# Inverts a permutation in place [B. H. Boonstra, Comm. ACM 8(2):104, 1965].
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cdef _invert_in_place(intp_t[:] perm):
+    cdef intp_t n, i, j, k
+    for n in xrange(len(perm)-1, -1, -1):
+        i = perm[n]
+        if i < 0:
+            perm[n] = -i - 1
+        else:
+            if i != n:
+                k = n
+                while True:
+                    j = perm[i]
+                    perm[i] = -k - 1
+                    if j == n:
+                        perm[n] = i
+                        break
+
+                    k = i
+                    i = j
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _toranks(x):
+    cdef intp_t[::1] perm = np.argsort(x, kind='quicksort')
+    # The type of this array must be one of the supported types
+    cdef int64_t[::1] rank = np.ndarray(len(perm), dtype=np.int64)
+    cdef intp_t i, j = 0
+    for i in xrange(len(x) - 1):
+        rank[perm[i]] = j
+        if x[perm[i]] != x[perm[i + 1]]:
+            j += 1
+
+    rank[perm[i + 1]] = j
+    return rank
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def _weightedrankedtau(ordered0[:] x, ordered1[:] y, intp_t[:] rank, weigher, bool additive):
+    cdef int64_t n = np.int64(len(x))
+
+    # initial sort on values of x and, if tied, on values of y
+    cdef intp_t[::1] perm = np.lexsort((y, x))
+
+    if rank is None:
+        # To generate a rank array, we must first reverse the permutation
+        # (to get higher ranks first) and then invert it.
+        rank = np.empty(n, dtype=np.intp)
+        rank[...] = perm[::-1]
+        _invert_in_place(rank)
+
+    # weigh joint ties
+    cdef intp_t i
+    cdef intp_t first = 0
+    cdef float64_t t = 0
+    cdef float64_t w = weigher(rank[perm[first]])
+    cdef float64_t s = w
+    cdef float64_t sq = w * w
+
+    for i in xrange(1, n):
+        if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
+            t += s * (i - first - 1) if additive else (s * s - sq) / 2
+            first = i
+            s = sq = 0
+
+        w = weigher(rank[perm[i]])
+        s += w
+        sq += w * w
+
+    t += s * (n - first - 1) if additive else (s * s - sq) / 2
+
+    # weigh ties in x
+    first = 0
+    cdef float64_t u = 0
+    w = weigher(rank[perm[first]])
+    s = w
+    sq = w * w
+
+    for i in xrange(1, n):
+        if x[perm[first]] != x[perm[i]]:
+            u += s * (i - first - 1) if additive else (s * s - sq) / 2
+            first = i
+            s = sq = 0
+
+        w = weigher(rank[perm[i]])
+        s += w
+        sq += w * w
+
+    u += s * (n - first - 1) if additive else (s * s - sq) / 2
+    if first == 0: # x is constant (all ties)
+        return np.nan
+
+    # this closure recursively sorts sections of perm[] by comparing
+    # elements of y[perm[]] using temp[] as support
+
+    # Note that to accumulate exchange weights we need to use
+    # a mutable object due to Python's scoping rules
+    cdef float64_t[::1] exchanges_weight = np.zeros(1, dtype=np.float64)
+    cdef intp_t[::1] temp = np.empty(n, dtype=np.intp) # support structure
+
+    def weigh(intp_t offset, intp_t length):
+        cdef intp_t length0, length1, middle, i, j, k
+        cdef float64_t weight, residual
+
+        if length == 1:
+            return weigher(rank[perm[offset]])
+        length0 = length // 2
+        length1 = length - length0
+        middle = offset + length0
+        residual = weigh(offset, length0)
+        weight = weigh(middle, length1) + residual
+        if y[perm[middle - 1]] < y[perm[middle]]:
+            return weight
+
+        # merging
+        i = j = k = 0
+
+        while j < length0 and k < length1:
+            if y[perm[offset + j]] <= y[perm[middle + k]]:
+                temp[i] = perm[offset + j]
+                residual -= weigher(rank[temp[i]])
+                j += 1
+            else:
+                temp[i] = perm[middle + k]
+                exchanges_weight[0] += weigher(rank[temp[i]]) * (
+                    length0 - j) + residual if additive else weigher(
+                    rank[temp[i]]) * residual
+                k += 1
+            i += 1
+
+        perm[offset+i:offset+i+length0-j] = perm[offset+j:offset+length0]
+        perm[offset:offset+i] = temp[0:i]
+        return weight
+
+    # weigh discordances
+    weigh(0, n)
+
+    # weigh ties in y
+    first = 0
+    cdef float64_t v = 0
+    w = weigher(rank[perm[first]])
+    s = w
+    sq = w * w
+
+    for i in xrange(1, n):
+        if y[perm[first]] != y[perm[i]]:
+            v += s * (i - first - 1) if additive else (s * s - sq) / 2
+            first = i
+            s = sq = 0
+
+        w = weigher(rank[perm[i]])
+        s += w
+        sq += w * w
+
+    v += s * (n - first - 1) if additive else (s * s - sq) / 2
+    if first == 0: # y is constant (all ties)
+        return np.nan
+
+    # weigh all pairs
+    s = sq = 0
+    for i in xrange(n):
+        w = weigher(rank[perm[i]])
+        s += w
+        sq += w * w
+
+    tot = s * (n - 1) if additive else (s * s - sq) / 2
+
+    tau = ((tot - (v + u - t)) - 2. * exchanges_weight[0]
+           ) / np.sqrt(tot - u) / np.sqrt(tot - v)
+    return min(1., max(-1., tau))

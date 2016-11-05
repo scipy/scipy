@@ -644,6 +644,45 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
 
 
+def test_weightedrankedtau():
+    x = [12, 2, 1, 12, 2]
+    y = [1, 4, 7, 1, 0]
+    tau, p_value = stats.weightedrankedtau(x, y)
+    assert_approx_equal(-0.4157652301037516, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedrankedtau(y, x)
+    assert_approx_equal(-0.7181341329699029, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedrankedtau(x, y, additive=False)
+    assert_approx_equal(-0.40644850966246893, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedrankedtau(y, x, additive=False)
+    assert_approx_equal(-0.83766582937355172, tau)
+    assert_equal(np.nan, p_value)
+    # This must be exactly Kendall's tau
+    tau, p_value = stats.weightedrankedtau(x, y, weigher=lambda x: 1)
+    assert_approx_equal(-0.47140452079103173, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedrankedtau(y, x, weigher=lambda x: 1)
+    assert_approx_equal(-0.47140452079103173, tau)
+    assert_equal(np.nan, p_value)
+
+
+def test_weightedtau():
+    x = [12, 2, 1, 12, 2]
+    y = [1, 4, 7, 1, 0]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(-0.56694968153682723, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(x, y, additive=False)
+    assert_approx_equal(-0.62205716951801038, tau)
+    assert_equal(np.nan, p_value)
+    # This must be exactly Kendall's tau
+    tau, p_value = stats.weightedtau(x, y, weigher=lambda x: 1)
+    assert_approx_equal(-0.47140452079103173, tau)
+    assert_equal(np.nan, p_value)
+
+
 class TestFindRepeats(TestCase):
 
     def test_basic(self):
