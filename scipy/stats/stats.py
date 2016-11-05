@@ -3486,8 +3486,6 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     >>> x1 = [12, 2, 1, 12, 2]
     >>> x2 = [1, 4, 7, 1, 0]
     >>> tau, p_value = stats.kendalltau(x1, x2)
-    >>> # Cross-check with R:
-    >>> # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
     >>> tau
     -0.47140452079103173
     >>> p_value

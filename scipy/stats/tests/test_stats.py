@@ -567,6 +567,8 @@ class TestCorrSpearmanrTies(TestCase):
 
 def test_kendalltau():
     # with some ties
+    # Cross-check with R:
+    # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
     x1 = [12, 2, 1, 12, 2]
     x2 = [1, 4, 7, 1, 0]
     expected = (-0.47140452079103173, 0.28274545993277478)
