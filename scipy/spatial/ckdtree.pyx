@@ -1117,22 +1117,42 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         else:
             raise ValueError("Invalid output type") 
 
-    @cython.boundscheck(False)
-    def build_weights(cKDTree self, object weights):
+    def _build_weights(cKDTree self, object weights):
+        """
+        _build_weights(weights)
+
+        Compute weights of nodes from weights of data points. This will sum
+        up the total weight per node. This function is used internally.
+
+        Parameters
+        ----------
+        weights : array_like
+            weights of data points; must be the same length as the data points.
+            currently only scalar weights are supported. Therefore the weights
+            array must be 1 dimensional.
+
+        Returns
+        -------
+        node_weights : array_like
+            total weight for each KD-Tree node.
+
+        """
         cdef np.intp_t num_of_nodes
-        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] node_weights;
-        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] _weights
+        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] node_weights
+        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] proper_weights
 
         num_of_nodes = self.tree_buffer.size();
         node_weights = np.empty(num_of_nodes, dtype=np.float64)
-        _weights = np.ascontiguousarray(weights, dtype=np.float64)
 
-        if len(_weights) != self.n:
+        # FIXME: use templates to avoid the type conversion 
+        proper_weights = np.ascontiguousarray(weights, dtype=np.float64)
+
+        if len(proper_weights) != self.n:
             raise ValueError('Number of weights differ from the number of data points')
 
         build_weights(<ckdtree*> self, <np.float64_t*>np.PyArray_DATA(node_weights),
-                            <np.float64_t*> np.PyArray_DATA(weights))
-                    
+                            <np.float64_t*> np.PyArray_DATA(proper_weights))
+
         return node_weights
 
     # ---------------
@@ -1247,7 +1267,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             # weighted / half weighted, use the floating point arithmetics
             if self_weights is not None:
                 w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
-                w1n = self.build_weights(w1)
+                w1n = self._build_weights(w1)
                 w1p = <np.float64_t*> np.PyArray_DATA(w1)
                 w1np = <np.float64_t*> np.PyArray_DATA(w1n)
             else:
@@ -1255,7 +1275,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 w1np = NULL
             if other_weights is not None:
                 w2 = np.ascontiguousarray(other_weights, dtype=np.float64)
-                w2n = other.build_weights(w2)
+                w2n = other._build_weights(w2)
                 w2p = <np.float64_t*> np.PyArray_DATA(w2)
                 w2np = <np.float64_t*> np.PyArray_DATA(w2n)
             else:

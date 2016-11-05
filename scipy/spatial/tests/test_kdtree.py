@@ -1148,12 +1148,13 @@ def test_ckdtree_weights():
 
     data = np.linspace(0, 1, 4).reshape(-1, 1)
     tree1 = cKDTree(data, leafsize=1)
-    weights = np.ones(len(data))
-    nw = tree1.build_weights(weights)
+    weights = np.ones(len(data), dtype='f4')
+
+    nw = tree1._build_weights(weights)
     assert_array_equal(nw, [4, 2, 1, 1, 2, 1, 1])
 
     try:
-        tree1.build_weights(weights[:-1])
+        tree1._build_weights(weights[:-1])
         raise AssertionError("Exception is not raised for short weights list")
     except ValueError:
         pass
