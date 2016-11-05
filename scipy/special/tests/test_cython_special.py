@@ -275,7 +275,7 @@ def test_cython_api():
     ]
 
     # Check that everything is tested
-    skip = ['errprint']
+    skip = []
     for name in dir(cython_special):
         func = getattr(cython_special, name)
         if callable(func) and not (name.startswith('_bench') or name in skip):

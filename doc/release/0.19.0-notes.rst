@@ -51,6 +51,9 @@ IIR notch filters that can be used to remove a frequency component from
 a signal. The dual function  `scipy.signal.irrpeak` was added to
 compute the coeficients of a second-order IIR peak (resonant) filter.
 
+The function `scipy.signal.minimum_phase` was added to convert linear-phase
+FIR filters to minimum phase.
+
 `scipy.sparse` improvements
 ---------------------------
 

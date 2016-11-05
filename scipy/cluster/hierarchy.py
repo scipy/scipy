@@ -302,8 +302,7 @@ def average(y):
     -------
     Z : ndarray
         A linkage matrix containing the hierarchical clustering. See
-        the `linkage` function documentation for more information
-        on its structure.
+        `linkage` for more information on its structure.
 
     See Also
     --------
@@ -318,7 +317,7 @@ def weighted(y):
     """
     Performs weighted/WPGMA linkage on the condensed distance matrix.
 
-    See ``linkage`` for more information on the return
+    See `linkage` for more information on the return
     structure and algorithm.
 
     Parameters
@@ -331,8 +330,7 @@ def weighted(y):
     -------
     Z : ndarray
         A linkage matrix containing the hierarchical clustering. See
-        the ``linkage`` function documentation for more information
-        on its structure.
+        `linkage` for more information on its structure.
 
     See Also
     --------
@@ -347,7 +345,7 @@ def centroid(y):
     """
     Performs centroid/UPGMC linkage.
 
-    See ``linkage`` for more information on the input matrix,
+    See `linkage` for more information on the input matrix,
     return structure, and algorithm.
 
     The following are common calling conventions:
@@ -355,14 +353,12 @@ def centroid(y):
     1. ``Z = centroid(y)``
 
        Performs centroid/UPGMC linkage on the condensed distance
-       matrix ``y``.  See ``linkage`` for more information on the return
-       structure and algorithm.
+       matrix ``y``.
 
     2. ``Z = centroid(X)``
 
        Performs centroid/UPGMC linkage on the observation matrix ``X``
-       using Euclidean distance as the distance metric. See `linkage`
-       for more information on the return structure and algorithm.
+       using Euclidean distance as the distance metric.
 
     Parameters
     ----------
@@ -393,7 +389,7 @@ def median(y):
     """
     Performs median/WPGMC linkage.
 
-    See ``linkage`` for more information on the return structure
+    See `linkage` for more information on the return structure
     and algorithm.
 
      The following are common calling conventions:
@@ -438,20 +434,17 @@ def ward(y):
     """
     Performs Ward's linkage on a condensed distance matrix.
 
-    See linkage for more information on the return structure
+    See `linkage` for more information on the return structure
     and algorithm.
 
     The following are common calling conventions:
 
     1. ``Z = ward(y)``
-       Performs Ward's linkage on the condensed distance matrix ``Z``. See
-       linkage for more information on the return structure and
-       algorithm.
+       Performs Ward's linkage on the condensed distance matrix ``y``.
 
     2. ``Z = ward(X)``
        Performs Ward's linkage on the observation matrix ``X`` using
-       Euclidean distance as the distance metric. See linkage for more
-       information on the return structure and algorithm.
+       Euclidean distance as the distance metric.
 
     Parameters
     ----------
@@ -466,7 +459,9 @@ def ward(y):
     Returns
     -------
     Z : ndarray
-        The hierarchical clustering encoded as a linkage matrix.
+        The hierarchical clustering encoded as a linkage matrix. See
+        `linkage` for more information on the return structure and
+        algorithm.
 
     See Also
     --------
