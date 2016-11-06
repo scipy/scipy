@@ -103,13 +103,7 @@ def _kendall_dis(intp_t[:] x, intp_t[:] y):
 # The weighted tau will be computed directly between these types.
 # Arrays of other types will be turned into a rank array using _toranks().
 
-ctypedef fused ordered0:
-    np.int32_t
-    np.int64_t
-    np.float32_t
-    np.float64_t
-
-ctypedef fused ordered1:
+ctypedef fused ordered:
     np.int32_t
     np.int64_t
     np.float32_t
@@ -157,7 +151,7 @@ def _toranks(x):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _weightedrankedtau(ordered0[:] x, ordered1[:] y, intp_t[:] rank, weigher, bool additive):
+def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool additive):
     cdef int64_t n = np.int64(len(x))
 
     # initial sort on values of x and, if tied, on values of y

@@ -3569,7 +3569,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     return KendalltauResult(min(1., max(-1., tau)), pvalue)
 
 
-def weightedrankedtau(x, y, rank=None, weigher=lambda x : 1./(x+1), additive=True):
+def weightedrankedtau(x, y, rank=None, weigher=lambda x: 1./(x+1), additive=True):
     """
     Calculates the weighted-ranked tau, a correlation measure for ordinal data.
     It is a weighted version of Kendall's tau in which exchanges of high
@@ -3626,7 +3626,7 @@ def weightedrankedtau(x, y, rank=None, weigher=lambda x : 1./(x+1), additive=Tru
     ----------
     .. [1] Sebastiano Vigna "A weighted correlation index for rankings with ties".
            In Proceedings of the 24th international conference on World Wide Web,
-           pages 1166−1176. ACM, 2015.
+           pages 1166-1176. ACM, 2015.
     .. [2] W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
            Ungrouped Data", Journal of the American Statistical Association,
            Vol. 61, No. 314, Part 1, pp. 436-439, 1966.
@@ -3670,11 +3670,16 @@ def weightedrankedtau(x, y, rank=None, weigher=lambda x : 1./(x+1), additive=Tru
         x = _toranks(x)
     if y.dtype not in (np.int32, np.int64, np.float32, np.float64):
         y = _toranks(y)
+    if x.dtype != y.dtype:
+        if x.dtype != np.int64:
+            x = _toranks(x)
+        if y.dtype != np.int64:
+            y = _toranks(y)
 
     return WeightedRankedTauResult(_weightedrankedtau(x, y, rank, weigher, additive), np.nan)
 
 
-def weightedtau(x, y, weigher=lambda x : 1./(x+1), additive=True):
+def weightedtau(x, y, weigher=lambda x: 1./(x+1), additive=True):
     """
     Calculates the weighted tau, a correlation measure
     for ordinal data. It is a weighted version of Kendall's tau in
@@ -3717,24 +3722,24 @@ def weightedtau(x, y, weigher=lambda x : 1./(x+1), additive=True):
     ----------
     .. [1] Sebastiano Vigna "A weighted correlation index for rankings with ties".
            In Proceedings of the 24th international conference on World Wide Web,
-           pages 1166−1176. ACM, 2015.
+           pages 1166-1176. ACM, 2015.
     Examples
     --------
     >>> from scipy import stats
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
-    >>> tau, p_value = stats.weightedtaukedtau(x, y)
+    >>> tau, p_value = stats.weightedrankedtau(x, y)
     >>> tau
     -0.56694968153682723
     >>> p_value
     nan
-    >>> tau, p_value = stats.weightedtaukedtau(x, y, additive=False)
+    >>> tau, p_value = stats.weightedrankedtau(x, y, additive=False)
     >>> tau
     -0.62205716951801038
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
     >>> # This is exactly Kendall's tau
-    >>> tau, p_value = stats.weightedtaukedtau(x, y, weigher=lambda x: 1)
+    >>> tau, p_value = stats.weightedrankedtau(x, y, weigher=lambda x: 1)
     >>> tau
     -0.47140452079103173
     """
@@ -3754,6 +3759,11 @@ def weightedtau(x, y, weigher=lambda x : 1./(x+1), additive=True):
         x = _toranks(x)
     if y.dtype not in (np.int32, np.int64, np.float32, np.float64):
         y = _toranks(y)
+    if x.dtype != y.dtype:
+        if x.dtype != np.int64:
+            x = _toranks(x)
+        if y.dtype != np.int64:
+            y = _toranks(y)
 
     return WeightedTauResult((
         _weightedrankedtau(x, y, None, weigher, additive) +
