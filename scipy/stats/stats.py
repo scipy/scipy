@@ -3568,6 +3568,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     # Limit range to fix computational errors
     return KendalltauResult(min(1., max(-1., tau)), pvalue)
 
+WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
+
 
 def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     """
@@ -3674,8 +3676,6 @@ def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     """
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
-
-    WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
 
     if x.size != y.size:
         raise ValueError("All inputs to `weightedtau` must be of the same size, "
