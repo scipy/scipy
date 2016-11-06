@@ -5,8 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy import special
-from scipy.special import entr, gammaln as gamln
-from scipy.misc import logsumexp
+from scipy.special import entr, logsumexp, gammaln as gamln
 from scipy._lib._numpy_compat import broadcast_to
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
