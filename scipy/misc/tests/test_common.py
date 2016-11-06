@@ -5,6 +5,12 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_equal, assert_)
 
 from scipy.misc import pade, logsumexp, face, ascent
+from scipy.special import logsumexp as sc_logsumexp
+
+def test_logsumexp():
+    # make sure logsumexp can be imported from either scipy.misc or
+    # scipy.special
+    assert_(logsumexp is sc_logsumexp)
 
 
 def test_pade_trivial():
