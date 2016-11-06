@@ -3573,21 +3573,21 @@ WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
 
 def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     """
-    Computes the weighted tau, a correlation measure for ordinal data. It
-    is a weighted version of Kendall's tau in which exchanges of high
-    weight are more influent than exchanges of low weight.
+    Computes the weighted tau, a correlation measure for ordinal data.
 
-    The default parameters compute the additive hyperbolic version
-    of the index, tau_h, which has been shown to provide the best
-    balance between important and unimportant elements [1]_.
+    It is a weighted version of Kendall's tau in which exchanges of high
+    weight are more influent than exchanges of low weight. The default
+    parameters compute the additive hyperbolic version of the index,
+    tau_h, which has been shown to provide the best balance between
+    important and unimportant elements [1]_.
 
     The weight of an exchange is defined by means of a rank array, which
     assigns a nonnegative rank to each element, and a weigher function,
     which assigns a weight based from the rank to each element. The weight
-    of an exchange is the sum or the product of the weights of the ranks
-    of the exchanged elements. The default parameters compute the additive
-    hyperbolic tau: an exchange between elements with rank r and s
-    (starting from zero) has has weight 1/(r+1) + 1/(s+1).
+    of an exchange is then the sum or the product of the weights of the
+    ranks of the exchanged elements. The default parameters compute the
+    additive hyperbolic tau: an exchange between elements with rank r and
+    s (starting from zero) has has weight 1/(r+1) + 1/(s+1).
 
     Specifying a rank array is meaningful only if you have in mind an
     external criterion of importance. If, as it usually happens, you do
@@ -3595,6 +3595,11 @@ def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     averaging the values obtained using the decreasing lexicographical
     rank by (x,y) and by (y,x). This is the behavior with default
     parameters.
+
+    Note that if you are computing the weighted tau on arrays of ranks,
+    rather than of scores (i.e., a larger value implies a lower rank) you
+    must negate the ranks, so that elements of higher rank are associated
+    with a larger value.
 
     Parameters
     ----------
