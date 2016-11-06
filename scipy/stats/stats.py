@@ -105,7 +105,6 @@ Correlation Functions
    spearmanr
    pointbiserialr
    kendalltau
-   weightedrankedtau
    weightedtau
    linregress
    theilslopes
@@ -179,7 +178,7 @@ from . import distributions
 from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
-from ._stats import _kendall_dis, _weightedrankedtau
+from ._stats import _kendall_dis, _toranks, _weightedrankedtau
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -191,7 +190,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'signaltonoise', 'sem', 'zmap', 'zscore', 'iqr', 'threshold',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
-           'kendalltau', 'weightedrankedtau', 'weightedtau',
+           'kendalltau', 'weightedtau',
            'linregress', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
@@ -3458,6 +3457,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     --------
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
+    weightedtau: Computes the weighted version of Kendall's tau.
 
     Notes
     -----
@@ -3569,38 +3569,45 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     return KendalltauResult(min(1., max(-1., tau)), pvalue)
 
 
-def weightedrankedtau(x, y, rank=None, weigher=lambda x: 1./(x+1), additive=True):
+def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     """
-    Calculates the weighted-ranked tau, a correlation measure for ordinal data.
-    It is a weighted version of Kendall's tau in which exchanges of high
-    weight are more influent than exchanges of low weight. The weight is
-    defined by means of a rank array, which assigns a rank to each element,
-    and a weigher function, which assigns a weight starting from the rank
-    The weight of an exchange is the sum or the product of the weights of
-    the ranks of the exchanged elements. The default parameters compute
-    the additive hyperbolic tau: an exchange between elements with rank r
-    and s (starting from zero) has has weight 1/(r+1) + 1/(s+1).
+    Computes the weighted tau, a correlation measure for ordinal data. It
+    is a weighted version of Kendall's tau in which exchanges of high
+    weight are more influent than exchanges of low weight.
 
-    If no rank array is specified, this function will use the
-    lexicographical rank (x,y); that is, it will assume that the rank is
-    obtained sorting by decreasing x (and, in case of a tie, y). As a
-    consequence, swapping x and y will return in general a different
-    result.
+    The default parameters compute the additive hyperbolic version
+    of the index, tau_h, which has been shown to provide the best
+    balance between important and unimportant elements [1]_.
+
+    The weight of an exchange is defined by means of a rank array, which
+    assigns a nonnegative rank to each element, and a weigher function,
+    which assigns a weight based from the rank to each element. The weight
+    of an exchange is the sum or the product of the weights of the ranks
+    of the exchanged elements. The default parameters compute the additive
+    hyperbolic tau: an exchange between elements with rank r and s
+    (starting from zero) has has weight 1/(r+1) + 1/(s+1).
 
     Specifying a rank array is meaningful only if you have in mind an
-    external criterion of importance. If, as it usually happens,
-    you do not have in mind a specific rank, you should use weightedtau().
+    external criterion of importance. If, as it usually happens, you do
+    not have in mind a specific rank, the weighted tau is defined by
+    averaging the values obtained using the decreasing lexicographical
+    rank by (x,y) and by (y,x). This is the behavior with default
+    parameters.
+
     Parameters
     ----------
     x, y : array_like
         Arrays of rankings, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
-    rank: array_like of ints
-        a nonnegative rank assigned to each element, over which weights will
-        be computed. The default is None, which means that the rank will be
-        computed by sorting by decreasing value first by x and then by y.
-        If you want to use the element indices directly as ranks, you must
-        pass an identity rank array, that is, [0, 1, ..., n - 1].
+    rank: array_like of ints or False or True, optional
+        A nonnegative rank assigned to each element. If it is None, the
+        decreasing lexicographical rank by (x,y) will be used: elements of
+        higher rank will be those with larger x-values, using y-values to
+        break ties (in particular, swapping x and y will give a different
+        result). If you use False, the element indices will be used
+        directly as ranks. The default is True, in which case this
+        function returns the average of the values obtained using the
+        decreasing lexicographical rank by (x,y) and by (y,x).
     weigher : function, optional
         The weigher function. Must map nonnegative integers (zero representing
         the most important element) to a nonnegative weight. The default is
@@ -3612,14 +3619,13 @@ def weightedrankedtau(x, y, rank=None, weigher=lambda x: 1./(x+1), additive=True
     Returns
     -------
     correlation : float
-       The weighted-ranked tau correlation index.
+       The weighted tau correlation index.
     pvalue : float
-       Presently np.nan, as the null statistics for the weighted-ranked tau is
+       Presently np.nan, as the null statistics for the weighted tau is
        unknown (even in the additive hyperbolic case).
     See also
     --------
     kendalltau : Calculates Kendall's tau
-    weightedtau: Calculates the weighted tau.
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
     References
@@ -3639,109 +3645,32 @@ def weightedrankedtau(x, y, rank=None, weigher=lambda x: 1./(x+1), additive=True
     >>> from scipy import stats
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
-    >>> tau, p_value = stats.weightedrankedtau(x, y)
-    >>> tau
-    -0.4157652301037516
-    >>> p_value
-    nan
-    >>> tau, p_value = stats.weightedrankedtau(y, x)
-    >>> tau
-    -0.71813413296990281
-    >>> p_value
-    nan
-    """
-    x = np.asarray(x).ravel()
-    y = np.asarray(y).ravel()
-
-    WeightedRankedTauResult = namedtuple('WeightedRankedTauResult', ('correlation', 'pvalue'))
-
-    if x.size != y.size:
-        raise ValueError("All inputs to `weightedrankedtau` must be of the same size, "
-                         "found x-size %s and y-size %s" % (x.size, y.size))
-    if not x.size:
-        return WeightedRankedTauResult(np.nan, np.nan)  # Return NaN if arrays are empty
-
-    if rank is not None and len(rank) != x.size:
-        raise ValueError("All inputs to `weightedrankedtau` must be of the same size, "
-                         "found x-size %s and rank-len %s" % (x.size, len(rank)))
-
-    # Reduce to ranks unsupported types
-    if x.dtype not in (np.int32, np.int64, np.float32, np.float64):
-        x = _toranks(x)
-    if y.dtype not in (np.int32, np.int64, np.float32, np.float64):
-        y = _toranks(y)
-    if x.dtype != y.dtype:
-        if x.dtype != np.int64:
-            x = _toranks(x)
-        if y.dtype != np.int64:
-            y = _toranks(y)
-
-    return WeightedRankedTauResult(_weightedrankedtau(x, y, rank, weigher, additive), np.nan)
-
-
-def weightedtau(x, y, weigher=lambda x: 1./(x+1), additive=True):
-    """
-    Calculates the weighted tau, a correlation measure
-    for ordinal data. It is a weighted version of Kendall's tau in
-    which exchanges of high weight are more influent than exchanges
-    of low weight. It is defined in terms of the weighted-ranked tau:
-    one averages the values returned by the weighted-ranked tau with
-    rank given by the order induced lexicographically by (x, y), and
-    then by (y, x).
-
-    The default parameters compute the additive hyperbolic version
-    of the index, tau_h, which has been shown to provide the best
-    balance between important and unimportant elements [1]_.
-    Parameters
-    ----------
-    x, y : array_like
-        Arrays of rankings, of the same shape. If arrays are not 1-D, they will
-        be flattened to 1-D.
-    weigher : function, optional
-        The weigher function. Must map nonnegative integers (zero representing
-        the most important element) to a nonnegative weight. The default is
-        hyperbolic weighing, that is, x -> 1/(x+1).
-    additive : boolean, optional
-        If true, the weight of an exchange is computed by adding the
-        weights of the ranks of the exchanged elements; otherwise, the weights
-        are multiplied. The default is True.
-    Returns
-    -------
-    correlation : float
-       The weighted tau correlation index.
-    pvalue : float
-       Presently np.nan, as the null statistics for the weighted tau is
-       unknown (even in the additive hyperbolic case).
-    See also
-    --------
-    weightedrankedtau: Calculates the weighted-ranked tau.
-    kendalltau : Calculates Kendall's tau.
-    spearmanr : Calculates a Spearman rank-order correlation coefficient.
-    theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
-    References
-    ----------
-    .. [1] Sebastiano Vigna "A weighted correlation index for rankings with ties".
-           In Proceedings of the 24th international conference on World Wide Web,
-           pages 1166-1176. ACM, 2015.
-    Examples
-    --------
-    >>> from scipy import stats
-    >>> x = [12, 2, 1, 12, 2]
-    >>> y = [1, 4, 7, 1, 0]
-    >>> tau, p_value = stats.weightedrankedtau(x, y)
+    >>> tau, p_value = stats.weightedtau(x, y)
     >>> tau
     -0.56694968153682723
     >>> p_value
     nan
-    >>> tau, p_value = stats.weightedrankedtau(x, y, additive=False)
+    >>> tau, p_value = stats.weightedtau(x, y, additive=False)
     >>> tau
     -0.62205716951801038
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
     >>> # This is exactly Kendall's tau
-    >>> tau, p_value = stats.weightedrankedtau(x, y, weigher=lambda x: 1)
+    >>> tau, p_value = stats.weightedtau(x, y, weigher=lambda x: 1)
     >>> tau
     -0.47140452079103173
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, 0]
+    >>> tau, p_value = stats.weightedtau(x, y, rank=None)
+    >>> tau
+    -0.4157652301037516
+    >>> p_value
+    nan
+    >>> tau, p_value = stats.weightedtau(y, x, rank=None)
+    >>> tau
+    -0.71813413296990281
+    >>> p_value
+    nan
     """
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
@@ -3765,10 +3694,22 @@ def weightedtau(x, y, weigher=lambda x: 1./(x+1), additive=True):
         if y.dtype != np.int64:
             y = _toranks(y)
 
-    return WeightedTauResult((
-        _weightedrankedtau(x, y, None, weigher, additive) +
-        _weightedrankedtau(y, x, None, weigher, additive)
-        ) / 2, np.nan)
+    if rank is True:
+        return WeightedTauResult((
+            _weightedrankedtau(x, y, None, weigher, additive) +
+            _weightedrankedtau(y, x, None, weigher, additive)
+            ) / 2, np.nan)
+
+    if rank is False:
+        rank = np.arange(x.size, dtype=np.intp)
+
+    if rank is not None:
+        rank = np.asarray(rank)
+        if rank.size != x.size:
+            raise ValueError("All inputs to `weightedtau` must be of the same size, "
+                         "found x-size %s and rank-size %s" % (x.size, rank.size))
+
+    return WeightedTauResult(_weightedrankedtau(x, y, rank, weigher, additive), np.nan)
 
 
 #####################################
