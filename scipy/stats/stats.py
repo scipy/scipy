@@ -3457,7 +3457,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     --------
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
-    weightedtau: Computes the weighted version of Kendall's tau.
+    weightedtau : Computes a weighted version of Kendall's tau.
 
     Notes
     -----
@@ -3573,13 +3573,13 @@ WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
 
 def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     """
-    Computes the weighted tau, a correlation measure for ordinal data.
+    Computes a weighted version of Kendall's tau.
 
-    It is a weighted version of Kendall's tau in which exchanges of high
-    weight are more influent than exchanges of low weight. The default
-    parameters compute the additive hyperbolic version of the index,
-    tau_h, which has been shown to provide the best balance between
-    important and unimportant elements [1]_.
+    The weighted tau is a weighted version of Kendall's tau in which
+    exchanges of high weight are more influent than exchanges of low
+    weight. The default parameters compute the additive hyperbolic version
+    of the index, tau_h, which has been shown to provide the best balance
+    between important and unimportant elements [1]_.
 
     The weight of an exchange is defined by means of a rank array, which
     assigns a nonnegative rank to each element, and a weigher function,
