@@ -3646,10 +3646,12 @@ def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     .. [2] W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
            Ungrouped Data", Journal of the American Statistical Association,
            Vol. 61, No. 314, Part 1, pp. 436-439, 1966.
+
     Notes
     -----
     This function uses an O(n log n), mergesort-based algorithm [1]_ that is a
     weighted extension of Knight's algorithm for Kendall's tau [2]_.
+
     Examples
     --------
     >>> from scipy import stats
