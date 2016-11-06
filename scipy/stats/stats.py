@@ -3623,6 +3623,7 @@ def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
         If true, the weight of an exchange is computed by adding the
         weights of the ranks of the exchanged elements; otherwise, the weights
         are multiplied. The default is True.
+
     Returns
     -------
     correlation : float
@@ -3630,11 +3631,13 @@ def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     pvalue : float
        Presently np.nan, as the null statistics for the weighted tau is
        unknown (even in the additive hyperbolic case).
+
     See also
     --------
     kendalltau : Calculates Kendall's tau
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
+
     References
     ----------
     .. [1] Sebastiano Vigna "A weighted correlation index for rankings with ties".
