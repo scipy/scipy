@@ -688,6 +688,43 @@ def test_weightedtau():
     assert_approx_equal(-0.56694968153682723, tau)
 
 
+def test_weightedtau_vs_quadratic():
+    # Trivial quadratic implementation, all parameters mandatory
+    def wkq(x, y, rank, weigher, add):
+        tot = conc = disc = u = v = 0
+        for i in range(len(x)):
+            for j in range(len(x)):
+                w = weigher(rank[i]) + weigher(rank[j]) if add else weigher(rank[i]) * weigher(rank[j])
+                tot += w
+                if x[i] == x[j]:
+                    u += w
+                if y[i] == y[j]:
+                    v += w
+                if x[i] < x[j] and y[i] < y[j] or x[i] > x[j] and y[i] > y[j]:
+                    conc += w;
+                elif x[i] < x[j] and y[i] > y[j] or x[i] > x[j] and y[i] < y[j]:
+                    disc += w;
+        return (conc - disc) / np.sqrt(tot - u) / np.sqrt(tot - v)
+
+    for s in range(3,10):
+        a = []
+        # Generate rankings with ties
+        for i in range(s):
+            a += [i]*i
+        b = list(a)
+        np.random.shuffle(a)
+        np.random.shuffle(b)
+        # First pass: use element indices as ranks
+        rank = np.arange(len(a), dtype=np.intp)
+        for i in range(2):
+            for add in [True, False]:
+                expected = wkq(a, b, rank, lambda x: 1./(x+1), add)
+                actual = stats.weightedtau(a, b, rank, lambda x: 1./(x+1), add).correlation
+                assert_approx_equal(expected, actual)
+            # Second pass: use a random rank
+            np.random.shuffle(rank)
+
+
 class TestFindRepeats(TestCase):
 
     def test_basic(self):
