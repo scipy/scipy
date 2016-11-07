@@ -1746,7 +1746,7 @@ status which is one upon success and zero otherwise.
 The function ``py_transform`` wraps the callback function in a
 :c:type:`PyCapsule`. The main steps are:
 
-- Initialize a :ctype:`PyCapsule`. The first argument is a pointer to
+- Initialize a :c:type:`PyCapsule`. The first argument is a pointer to
   the callback function.
 
 - The second argument is the function signature which must match exactly
@@ -1778,6 +1778,48 @@ ctypes_, or cffi_ instead of writing wrapper code in C.
 .. _Cython: http://cython.org/
 .. _ctypes: https://docs.python.org/3/library/ctypes.html
 .. _cffi: https://cffi.readthedocs.io/
+
+.. rubric:: Numba
+
+Numba_ provides a way to write low-level functions easily in Python.
+We can write the above using Numba as:
+
+.. code:: python
+
+   # example.py
+   import numpy as np
+   import ctypes
+   from scipy import ndimage, LowLevelCallable
+   from numba import cfunc, types, carray
+
+   @cfunc(types.intc(types.CPointer(types.intp),
+                     types.CPointer(types.double),
+                     types.intc,
+                     types.intc,
+                     types.voidptr))
+   def transform(output_coordinates_ptr, input_coordinates_ptr,
+                 output_rank, input_rank, user_data):
+       input_coordinates = carray(input_coordinates_ptr, (input_rank,))
+       output_coordinates = carray(output_coordinates_ptr, (output_rank,))
+       shift = carray(user_data, (1,), types.double)[0]
+
+       for i in range(input_rank):
+           input_coordinates[i] = output_coordinates[i] - shift
+
+       return 1
+
+   shift = 0.5
+
+   # Then call the function
+   user_data = ctypes.c_double(shift)
+   ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
+   callback = LowLevelCallable(transform.ctypes, ptr)
+
+   im = np.arange(12).reshape(4, 3).astype(np.float64)
+   print(ndimage.geometric_transform(im, callback))
+
+.. _Numba: http://numba.pydata.org/
+
 
 .. rubric:: Cython
 
@@ -1888,30 +1930,19 @@ cffi above.  The Python code is different:
    import numpy as np
    from scipy import ndimage, LowLevelCallable
 
-   # ctypes does not have a builtin intptr_t/npy_intp type,
-   # so we need to define one
-   intp_base = {
-       ctypes.sizeof(ctypes.c_long): ctypes.c_long,
-       ctypes.sizeof(ctypes.c_int): ctypes.c_int,
-   }[ctypes.sizeof(ctypes.c_voidp)]
-
-   class c_intptr_t(intp_base):
-       pass
-
    lib = ctypes.CDLL(os.path.abspath('example.so'))
-   lib._transform.argtypes = [
-       ctypes.POINTER(c_intptr_t),
-       ctypes.POINTER(ctypes.c_double),
-       ctypes.c_int,
-       ctypes.c_int,
-       ctypes.c_voidp]
-   lib._transform.restype = ctypes.c_int
 
    shift = 0.5
 
    user_data = ctypes.c_double(shift)
    ptr = ctypes.cast(ctypes.pointer(user_data), ctypes.c_void_p)
-   callback = LowLevelCallable(lib._transform, ptr)
+
+   # Ctypes has no built-in intptr type, so override the signature
+   # instead of trying to get it via ctypes
+   callback = LowLevelCallable(lib._transform, ptr,
+       "int _transform(intptr_t *, double *, int, int, void *)")
+
+   # Perform the call
    im = np.arange(12).reshape(4, 3).astype(np.float64)
    print(ndimage.geometric_transform(im, callback))
 
