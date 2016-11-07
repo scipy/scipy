@@ -760,16 +760,31 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
         If no suitable step size is found
 
     """
+
+    extra_condition = kwargs.pop('extra_condition', None)
+
     ret = line_search_wolfe1(f, fprime, xk, pk, gfk,
                              old_fval, old_old_fval,
                              **kwargs)
+
+    if ret[0] is not None and extra_condition is not None:
+        xp1 = xk + ret[0] * pk
+        if not extra_condition(ret[0], xp1, ret[3], ret[5]):
+            # Reject step if extra_condition fails
+            ret = (None,)
 
     if ret[0] is None:
         # line search failed: try different one.
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', LineSearchWarning)
+            kwargs2 = {}
+            for key in ('c1', 'c2', 'amax'):
+                if key in kwargs:
+                    kwargs2[key] = kwargs[key]
             ret = line_search_wolfe2(f, fprime, xk, pk, gfk,
-                                     old_fval, old_old_fval)
+                                     old_fval, old_old_fval,
+                                     extra_condition=extra_condition,
+                                     **kwargs2)
 
     if ret[0] is None:
         raise _LineSearchError()
@@ -1238,28 +1253,59 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     warnflag = 0
     pk = -gfk
     gnorm = vecnorm(gfk, ord=norm)
+
+    sigma_3 = 0.01
+
     while (gnorm > gtol) and (k < maxiter):
         deltak = numpy.dot(gfk, gfk)
+
+        cached_step = [None]
+
+        def polak_ribiere_powell_step(alpha, gfkp1=None):
+            xkp1 = xk + alpha * pk
+            if gfkp1 is None:
+                gfkp1 = myfprime(xkp1)
+            yk = gfkp1 - gfk
+            beta_k = max(0, numpy.dot(yk, gfkp1) / deltak)
+            pkp1 = -gfkp1 + beta_k * pk
+            gnorm = vecnorm(gfkp1, ord=norm)
+            return (alpha, xkp1, pkp1, gfkp1, gnorm)
+
+        def descent_condition(alpha, xkp1, fp1, gfkp1):
+            # Polak-Ribiere+ needs an explicit check of a sufficient
+            # descent condition, which is not guaranteed by strong Wolfe.
+            #
+            # See Gilbert & Nocedal, "Global convergence properties of
+            # conjugate gradient methods for optimization",
+            # SIAM J. Optimization 2, 21 (1992).
+            cached_step[:] = polak_ribiere_powell_step(alpha, gfkp1)
+            alpha, xk, pk, gfk, gnorm = cached_step
+
+            # Accept step if it leads to convergence.
+            if gnorm <= gtol:
+                return True
+
+            # Accept step if sufficient descent condition applies.
+            return numpy.dot(pk, gfk) <= -sigma_3 * numpy.dot(gfk, gfk)
 
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk, old_fval,
-                                          old_old_fval, c2=0.4, amin=1e-100, amax=1e100)
+                                          old_old_fval, c2=0.4, amin=1e-100, amax=1e100,
+                                          extra_condition=descent_condition)
         except _LineSearchError:
             # Line search failed to find a better solution.
             warnflag = 2
             break
 
-        xk = xk + alpha_k * pk
+        # Reuse already computed results if possible
+        if alpha_k == cached_step[0]:
+            alpha_k, xk, pk, gfk, gnorm = cached_step
+        else:
+            alpha_k, xk, pk, gfk, gnorm = polak_ribiere_powell_step(alpha_k, gfkp1)
+
         if retall:
             allvecs.append(xk)
-        if gfkp1 is None:
-            gfkp1 = myfprime(xk)
-        yk = gfkp1 - gfk
-        beta_k = max(0, numpy.dot(yk, gfkp1) / deltak)
-        pk = -gfkp1 + beta_k * pk
-        gfk = gfkp1
-        gnorm = vecnorm(gfk, ord=norm)
         if callback is not None:
             callback(xk)
         k += 1

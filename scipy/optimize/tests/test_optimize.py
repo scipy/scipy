@@ -124,6 +124,17 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0, -5.05700028e-01, 4.95985862e-01]],
                         atol=1e-14, rtol=1e-7)
 
+    def test_cg_cornercase(self):
+        def f(r):
+            return 2.5 * (1 - np.exp(-1.5*(r - 0.5)))**2
+
+        # Check several initial guesses. (Too far away from the
+        # minimum, the function ends up in the flat region of exp.)
+        for x0 in np.linspace(-0.75, 3, 71):
+            sol = optimize.minimize(f, [x0], method='CG')
+            assert_(sol.success)
+            assert_allclose(sol.x, [0.5], rtol=1e-5)
+
     @suppressed_stdout
     def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
