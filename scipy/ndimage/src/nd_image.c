@@ -319,8 +319,20 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
     double cval;
     ccallback_t callback;
     static char *callback_signatures[] = {
-        "int (double *, npy_intp, double *, npy_intp, void *)",
         "int (double *, intptr_t, double *, intptr_t, void *)",
+        "int (double *, npy_intp, double *, npy_intp, void *)",
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_SHORT
+        "int (double *, short, double *, short, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_INT
+        "int (double *, int, double *, int, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_LONG
+        "int (double *, long, double *, long, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_LONGLONG
+        "int (double *, long long, double *, long long, void *)",
+#endif
         NULL
     };
 
@@ -427,8 +439,20 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     double cval;
     ccallback_t callback;
     static char *callback_signatures[] = {
-        "int (double *, npy_intp, double *, void *)",
         "int (double *, intptr_t, double *, void *)",
+        "int (double *, npy_intp, double *, void *)",
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_SHORT
+        "int (double *, short, double *, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_INT
+        "int (double *, int, double *, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_LONG
+        "int (double *, long, double *, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_LONGLONG
+        "int (double *, long long, double *, void *)",
+#endif
         NULL
     };
 
@@ -613,8 +637,20 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
     NI_PythonCallbackData cbdata;
     ccallback_t callback;
     static char *callback_signatures[] = {
-        "int (npy_intp *, double *, int, int, void *)",
         "int (intptr_t *, double *, int, int, void *)",
+        "int (npy_intp *, double *, int, int, void *)",
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_SHORT
+        "int (short *, double *, int, int, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_INT
+        "int (int *, double *, int, int, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_LONG
+        "int (long *, double *, int, int, void *)",
+#endif
+#if NPY_SIZEOF_INTP == NPY_SIZEOF_LONGLONG
+        "int (long long *, double *, int, int, void *)",
+#endif
         NULL
     };
 
