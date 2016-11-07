@@ -35,6 +35,9 @@ class LowLevelCallable(tuple):
         Callback function given
     user_data
         User data given
+    signature : str
+        Signature of the function. If omitted, determined from *function*,
+        if possible.
 
     Methods
     -------
@@ -71,10 +74,10 @@ class LowLevelCallable(tuple):
     # Make the class immutable
     __slots__ = ()
 
-    def __new__(cls, function, user_data=None):
+    def __new__(cls, function, user_data=None, signature=None):
         # We need to hold a reference to the function & user data,
         # to prevent them going out of scope
-        item = cls._parse_callback(function, user_data)
+        item = cls._parse_callback(function, user_data, signature)
         return tuple.__new__(cls, (item, function, user_data))
 
     def __repr__(self):
@@ -87,6 +90,10 @@ class LowLevelCallable(tuple):
     @property
     def user_data(self):
         return tuple.__getitem__(self, 2)
+
+    @property
+    def signature(self):
+        return _ccallback_c.get_capsule_signature(tuple.__getitem__(self, 0))
 
     def __getitem__(self, idx):
         raise ValueError()
@@ -115,17 +122,15 @@ class LowLevelCallable(tuple):
         return cls(function, user_data)
 
     @classmethod
-    def _parse_callback(cls, obj, user_data=None):
+    def _parse_callback(cls, obj, user_data=None, signature=None):
         if isinstance(obj, LowLevelCallable):
             func = tuple.__getitem__(obj, 0)
-            signature = ""
         elif isinstance(obj, PyCFuncPtr):
-            func, signature = _get_ctypes_func(obj)
+            func, signature = _get_ctypes_func(obj, signature)
         elif isinstance(obj, CData):
-            func, signature = _get_cffi_func(obj)
+            func, signature = _get_cffi_func(obj, signature)
         elif _ccallback_c.check_capsule(obj):
             func = obj
-            signature = ""
         else:
             raise ValueError("Given input is not a callable or a low-level callable (pycapsule/ctypes/cffi)")
 
@@ -147,18 +152,19 @@ class LowLevelCallable(tuple):
 # ctypes helpers
 #
 
-def _get_ctypes_func(func):
+def _get_ctypes_func(func, signature=None):
     # Get function pointer
     func_ptr = ctypes.cast(func, ctypes.c_void_p).value
 
     # Construct function signature
-    signature = _typename_from_ctypes(func.restype) + " ("
-    for j, arg in enumerate(func.argtypes):
-        if j == 0:
-            signature += _typename_from_ctypes(arg)
-        else:
-            signature += ", " + _typename_from_ctypes(arg)
-    signature += ")"
+    if signature is None:
+        signature = _typename_from_ctypes(func.restype) + " ("
+        for j, arg in enumerate(func.argtypes):
+            if j == 0:
+                signature += _typename_from_ctypes(arg)
+            else:
+                signature += ", " + _typename_from_ctypes(arg)
+        signature += ")"
 
     return func_ptr, signature
 
@@ -194,12 +200,13 @@ def _get_ctypes_data(data):
 # CFFI helpers
 #
 
-def _get_cffi_func(func):
+def _get_cffi_func(func, signature=None):
     # Get function pointer
     func_ptr = ffi.cast('uintptr_t', func)
 
     # Get signature
-    signature = ffi.getctype(ffi.typeof(func)).replace('(*)', ' ')
+    if signature is None:
+        signature = ffi.getctype(ffi.typeof(func)).replace('(*)', ' ')
 
     return func_ptr, signature
 

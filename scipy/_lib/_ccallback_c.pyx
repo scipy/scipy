@@ -18,6 +18,7 @@ cdef void raw_capsule_destructor(object capsule):
     name = PyCapsule_GetName(capsule)
     free(name)
 
+
 def get_raw_capsule(func_obj, name_obj, context_obj):
     """
     get_raw_capsule(ptr, name, context)
@@ -42,9 +43,13 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
         char *name
         char *name_copy
 
-    if not isinstance(name_obj, bytes):
+    if name_obj is None:
+        name = NULL
+    elif not isinstance(name_obj, bytes):
         name_obj = name_obj.encode('ascii')
-    name = <char*>name_obj
+        name = <char*>name_obj
+    else:
+        name = <char*>name_obj
 
     if PyCapsule_CheckExact(context_obj):
         capsule_name = PyCapsule_GetName(context_obj)
@@ -61,7 +66,7 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
         if context == NULL:
             context = PyCapsule_GetContext(func_obj)
 
-        if name[0] == '\0':
+        if name == NULL:
             name = capsule_name
     else:
         func = PyLong_AsVoidPtr(long(func_obj))
@@ -75,6 +80,14 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
     if context != NULL:
         PyCapsule_SetContext(capsule, context)
     return capsule
+
+
+def get_capsule_signature(capsule_obj):
+    cdef char *name
+    name = PyCapsule_GetName(capsule_obj)
+    if name == NULL:
+        raise ValueError("Capsule has no signature")
+    return bytes(name).decode('ascii')
 
 
 def check_capsule(item):
