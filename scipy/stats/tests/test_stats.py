@@ -701,9 +701,9 @@ def test_weightedtau_vs_quadratic():
                 if y[i] == y[j]:
                     v += w
                 if x[i] < x[j] and y[i] < y[j] or x[i] > x[j] and y[i] > y[j]:
-                    conc += w;
+                    conc += w
                 elif x[i] < x[j] and y[i] > y[j] or x[i] > x[j] and y[i] < y[j]:
-                    disc += w;
+                    disc += w
         return (conc - disc) / np.sqrt(tot - u) / np.sqrt(tot - v)
 
     for s in range(3,10):
