@@ -7,7 +7,7 @@ def lambertw(z, k=0, tol=1e-8):
     r"""
     lambertw(z, k=0, tol=1e-8)
 
-    Lambert W function [1]_.
+    Lambert W function.
 
     The Lambert W function `W(z)` is defined as the inverse function
     of ``w * exp(w)``. In other words, the value of ``W(z)`` is
@@ -57,6 +57,10 @@ def lambertw(z, k=0, tol=1e-8):
     asymptotic approximation (O(log(w)) or `O(w)`) as the initial estimate.
 
     The definition, implementation and choice of branches is based on [2]_.
+
+    See Also
+    --------
+    wrightomega : the Wright Omega function
 
     References
     ----------

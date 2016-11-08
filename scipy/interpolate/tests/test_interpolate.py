@@ -14,7 +14,7 @@ from scipy._lib.six import xrange
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
-         RectBivariateSpline, interpn, NdPPoly)
+         RectBivariateSpline, interpn, NdPPoly, BSpline)
 
 from scipy.special import poch, gamma
 
@@ -134,14 +134,9 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        interp1d(self.x10, self.y10, kind='linear')
-        interp1d(self.x10, self.y10, kind='cubic')
-        interp1d(self.x10, self.y10, kind='slinear')
-        interp1d(self.x10, self.y10, kind='quadratic')
-        interp1d(self.x10, self.y10, kind='zero')
-        interp1d(self.x10, self.y10, kind='nearest')
-        interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
-        interp1d(self.x10, self.y10, kind='linear', fill_value="extrapolate")
+        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic', 'cubic'):
+            interp1d(self.x10, self.y10, kind=kind)
+            interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
         interp1d(self.x10, self.y10, kind='linear',
                  fill_value=np.array([-1]))
@@ -163,11 +158,6 @@ class TestInterp1D(object):
                  fill_value=(np.ones(10), np.ones(10)))
         interp1d(self.x2, self.y210, kind='linear', axis=0,
                  fill_value=(np.ones(10), -1))
-
-        # extrapolation is only allowed for nearest & linear methods
-        for kind in ('cubic', 'slinear', 'zero', 'quadratic'):
-            assert_raises(ValueError, interp1d, self.x10, self.y10, kind=kind,
-                          fill_value="extrapolate")
 
         # x array must be 1D.
         assert_raises(ValueError, interp1d, self.x25, self.y10)
@@ -253,20 +243,24 @@ class TestInterp1D(object):
                                   interp10_y_2d_unsorted(self.x10))
 
     def test_linear(self):
+        for kind in ['linear', 'slinear']:
+            self._check_linear(kind)
+
+    def _check_linear(self, kind):
         # Check the actual implementation of linear interpolation.
-        interp10 = interp1d(self.x10, self.y10)
+        interp10 = interp1d(self.x10, self.y10, kind=kind)
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array([1.2]))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2.4, 5.6, 6.0]))
 
         # test fill_value="extrapolate"
-        extrapolator = interp1d(self.x10, self.y10, kind='linear',
+        extrapolator = interp1d(self.x10, self.y10, kind=kind,
                                 fill_value='extrapolate')
         assert_allclose(extrapolator([-1., 0, 9, 11]),
                         [-1, 0, 9, 11], rtol=1e-14)
 
-        opts = dict(kind='linear',
+        opts = dict(kind=kind,
                     fill_value='extrapolate',
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
@@ -309,14 +303,13 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
-    @dec.knownfailureif(True, "zero-order splines fail for the last point")
     def test_zero(self):
         # Check the actual implementation of zero-order spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='zero')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
-                                  np.array([2., 6., 6.]))
+                                  np.array([2., 5., 6.]))
 
     def _bounds_check(self, kind='linear'):
         # Test that our handling of out-of-bounds input is correct.
@@ -573,7 +566,8 @@ class TestInterp1D(object):
             assert_array_almost_equal(z(x2).shape, b, err_msg=kind)
 
     def test_nd(self):
-        for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest'):
+        for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest',
+                     'zero'):
             self._nd_check_interp(kind)
             self._nd_check_shape(kind)
 
@@ -599,14 +593,6 @@ class TestInterp1D(object):
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
 
-    @dec.knownfailureif(True, "zero-order splines fail for the last point")
-    def test_nd_zero_spline(self):
-        # zero-order splines don't get the last point right,
-        # see test_zero above
-        #yield self._nd_check_interp, 'zero'
-        #yield self._nd_check_interp, 'zero'
-        pass
-
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
         x = np.linspace(0, 1)
@@ -621,6 +607,36 @@ class TestInterp1D(object):
         x = np.array([0, 50, 127], dtype=np.int8)
         ii = interp1d(x, x, kind='nearest')
         assert_array_almost_equal(ii(x), x)
+
+    def test_local_nans(self):
+        # check that for local interpolation kinds (slinear, zero) a single nan
+        # only affects its local neighborhood
+        x = np.arange(10).astype(float)
+        y = x.copy()
+        y[6] = np.nan
+        for kind in ('zero', 'slinear'):
+            ir = interp1d(x, y, kind=kind)
+            vals = ir([4.9, 7.0])
+            assert_(np.isfinite(vals).all())
+
+    def test_spline_nans(self):
+        # Backwards compat: a single nan makes the whole spline interpolation
+        # return nans in an array of the correct shape. And it doesn't raise,
+        # just quiet nans because of backcompat.
+        x = np.arange(8).astype(float)
+        y = x.copy()
+        yn = y.copy()
+        yn[3] = np.nan
+
+        for kind in ['quadratic', 'cubic']:
+            ir = interp1d(x, y, kind=kind)
+            irn = interp1d(x, yn, kind=kind)
+            for xnew in (6, [1, 6], [[1, 6], [3, 5]]):
+                xnew = np.asarray(xnew)
+                out, outn = ir(x), irn(x)
+                assert_(np.isnan(outn).all())
+                assert_equal(out.shape, outn.shape)
+
 
 class TestLagrange(TestCase):
 
@@ -1011,6 +1027,18 @@ class TestPPoly(TestCase):
 
         xi = np.linspace(0, 1, 200)
         assert_allclose(pp(xi), splev(xi, spl))
+
+        # make sure .from_spline accepts BSpline objects
+        b = BSpline(*spl)
+        ppp = PPoly.from_spline(b)
+        assert_allclose(ppp(xi), b(xi))
+
+        # BSpline's extrapolate attribute propagates unless overridden
+        t, c, k = spl
+        for extrap in (None, True, False):
+            b = BSpline(t, c, k, extrapolate=extrap)
+            p = PPoly.from_spline(b)
+            assert_equal(p.extrapolate, b.extrapolate)
 
     def test_derivative_simple(self):
         np.random.seed(1234)

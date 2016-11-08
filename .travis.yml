@@ -56,10 +56,16 @@ matrix:
         - COVERAGE=
         - NUMPYSPEC="numpy==1.8.2"
         - USE_SDIST=1
+        - OPTIMIZE=-OO
     - python: 2.7
       env:
         - TESTMODE=full
         - COVERAGE=--coverage
+        - NUMPYSPEC=numpy
+    - python: 3.6-dev
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
         - NUMPYSPEC=numpy
 addons:
   apt:
