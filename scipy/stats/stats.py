@@ -1,6 +1,9 @@
-# Copyright (c) Gary Strangman.  All rights reserved
+# Copyright 2002 Gary Strangman.  All rights reserved
+# Copyright 2002-2016 The SciPy Developers
 #
-# Disclaimer
+# The original code from Gary Strangman was heavily adapted for
+# use in SciPy by Travis Oliphant.  The original code came with the
+# following disclaimer:
 #
 # This software is provided "as-is".  There are no expressed or implied
 # warranties of any kind, including, but not limited to, the warranties
@@ -12,10 +15,7 @@
 # liability or tort (including negligence or otherwise) arising in any way
 # out of the use of this software, even if advised of the possibility of
 # such damage.
-#
 
-#
-# Heavily adapted for use by SciPy 2002 by Travis Oliphant
 """
 A collection of basic statistical functions for python.  The function
 names appear below.
@@ -166,18 +166,19 @@ import warnings
 import math
 from collections import namedtuple
 
-# Scipy imports.
-from scipy._lib.six import callable, string_types, xrange
-from scipy._lib._version import NumpyVersion
+import numpy as np
 from numpy import array, asarray, ma, zeros
+
+from scipy._lib.six import callable, string_types
+from scipy._lib._version import NumpyVersion
 import scipy.special as special
 import scipy.linalg as linalg
-import numpy as np
 from . import distributions
 from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
 from ._stats import _kendall_dis
+
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -255,11 +256,6 @@ def _contains_nan(a, nan_policy='propagate'):
     return (contains_nan, nan_policy)
 
 
-#####################################
-#         CENTRAL TENDENCY          #
-#####################################
-
-
 def gmean(a, axis=0, dtype=None):
     """
     Compute the geometric mean along the specified axis.
@@ -303,9 +299,11 @@ def gmean(a, axis=0, dtype=None):
     arrays automatically mask any non-finite values.
 
     """
-    if not isinstance(a, np.ndarray):  # if not an ndarray object attempt to convert it
+    if not isinstance(a, np.ndarray):
+        # if not an ndarray object attempt to convert it
         log_a = np.log(np.array(a, dtype=dtype))
-    elif dtype:  # Must change the default dtype allowing array type
+    elif dtype:
+        # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
             log_a = np.log(np.ma.asarray(a, dtype=dtype))
         else:
@@ -358,7 +356,8 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a > 0):  # Harmonic mean only defined if greater than zero
+    if np.all(a > 0):
+        # Harmonic mean only defined if greater than zero
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
         else:
@@ -3489,7 +3488,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     >>> tau
     -0.47140452079103173
     >>> p_value
-    0.24821309157521476
+    0.2827454599327748
 
     """
     x = np.asarray(x).ravel()
@@ -3521,7 +3520,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
-        return (cnt * (cnt - 1) // 2).sum()
+        cnt = cnt[cnt > 1]
+        return ((cnt * (cnt - 1) // 2).sum(),
+            (cnt * (cnt - 1.) * (cnt - 2)).sum(),
+            (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -3539,8 +3541,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
-    xtie = count_rank_tie(x)             # ties in x
-    ytie = count_rank_tie(y)             # ties in y
+    xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
+    ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
 
     tot = (size * (size - 1)) // 2
 
@@ -3549,18 +3551,19 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
     #               = con + dis + xtie + ytie - ntie
-    tau = (tot - xtie - ytie + ntie
-        - 2 * dis) / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
+    con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
+    tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
 
-    # what follows reproduces the ending of Gary Strangman's original
-    # stats.kendalltau() in SciPy
-    svar = (4.0 * size + 10.0) / (9.0 * size * (size - 1))
-    z = tau / np.sqrt(svar)
-    prob = special.erfc(np.abs(z) / 1.4142136)
+    # con_minus_dis is approx normally distributed with this variance [3]_
+    var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
+        2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
+        size * (size - 1) * (size - 2))
+    pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
 
-    return KendalltauResult(tau, prob)
+    # Limit range to fix computational errors
+    return KendalltauResult(min(1., max(-1., tau)), pvalue)
 
 
 #####################################

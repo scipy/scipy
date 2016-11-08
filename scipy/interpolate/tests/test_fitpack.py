@@ -364,6 +364,20 @@ class TestSplder(object):
         spl2 = insert(0.5, self.spl, m=4)
         assert_raises(ValueError, splder, spl2, 1)
 
+    def test_multidim(self):
+        # c can have trailing dims
+        for n in range(3):
+            t, c, k = self.spl
+            c2 = np.c_[c, c, c]
+            c2 = np.dstack((c2, c2))
+
+            spl2 = splantider((t, c2, k), n)
+            spl3 = splder(spl2, n)
+
+            assert_allclose(t, spl3[0])
+            assert_allclose(c2, spl3[1])
+            assert_equal(k, spl3[2])
+
 
 class TestBisplrep(object):
     def test_overflow(self):

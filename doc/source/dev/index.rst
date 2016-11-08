@@ -4,6 +4,8 @@ SciPy Developer Guide
 
 .. include:: decisions.rst
 
+.. include:: newfeatures.rst
+
 .. include:: github.rst
 
 .. include:: licensing.rst
@@ -15,4 +17,3 @@ SciPy Developer Guide
 .. include:: distributing.rst
 
 .. include:: releasing.rst
-

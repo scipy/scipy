@@ -51,6 +51,9 @@ IIR notch filters that can be used to remove a frequency component from
 a signal. The dual function  `scipy.signal.irrpeak` was added to
 compute the coeficients of a second-order IIR peak (resonant) filter.
 
+The function `scipy.signal.minimum_phase` was added to convert linear-phase
+FIR filters to minimum phase.
+
 `scipy.sparse` improvements
 ---------------------------
 
@@ -67,10 +70,44 @@ polynomials. For example, `scipy.special.j_roots` has been renamed
 functions `scipy.special.jacobi` and `scipy.special.eval_jacobi`. To
 preserve back-compatibility the old names have been left as aliases.
 
+`scipy.interpolate` improvements
+--------------------------------
+
+New class ``scipy.interpolate.BSpline`` represents splines. ``BSpline`` objects
+contain knots and coefficients and can evaluate the spline. The format is
+consistent with FITPACK, so that one can do, for example::
+
+    >>> t, c, k = splrep(x, y, s=0)
+    >>> spl = BSpline(t, c, k)
+    >>> np.allclose(spl(x), y)
+
+``spl*`` functions, `scipy.interpolate.splev`, `scipy.interpolate.splint`,
+`scipy.interpolate.splder` and `scipy.interpolate.splantider`, accept both
+``BSpline`` objects and ``(t, c, k)`` tuples for backwards compatibility.
+
+For multidimensional splines, ``c.ndim > 1``, ``BSpline`` objects are consistent
+with piecewise polynomials, `scipy.interpolate.PPoly`. This means that
+``BSpline`` objects are not immediately consistent with
+`scipy.interpolate.splprep`, and one *cannot* do 
+``>>> BSpline(*splprep([x, y])[0])``. Consult the `scipy.interpolate` test suite
+for examples of the precise equivalence.
+
+In new code, prefer using ``scipy.interpolate.BSpline`` objects instead of
+manipulating ``(t, c, k)`` tuples directly.
+
+New function `scipy.interpolate.make_interp_spline` constructs an interpolating
+spline given data points and boundary conditions.
+
+New function `scipy.interpolate.make_lsq_spline` constructs a least-squares
+spline approximation given data points.
+
 
 Deprecated features
 ===================
 
+`scipy.interpolate.splmake`, `scipy.interpolate.spleval` and
+`scipy.interpolate.spline` are deprecated. The format used by `splmake/spleval`
+was inconsistent with `splrep/splev` which was confusing to users.
 
 
 Backwards incompatible changes
@@ -86,6 +123,11 @@ the input, instead of always float64.
 The function `scipy.signal.find_peaks_cwt()` now returns an array instead of
 a list.
 
+`scipy.stats.kendalltau` now computes the correct p-value in case the
+input contains ties. The p-value is also identical to that computed by
+`scipy.stats.mstats_basic.kendalltau` and by R. If the input does not
+contain ties there is no change w.r.t. the previous implementation.
+
 
 Other changes
 =============
@@ -96,7 +138,10 @@ upgrade behavior is finally changing for the better (use
 ``--upgrade-strategy=only-if-needed`` for ``pip >= 8.2``; that behavior will
 become the default in the next major version of ``pip``).
 
-
+Numerical values returned by `scipy.interpolate.interp1d` with ``kind="cubic"``
+and ``"quadratic"`` may change relative to previous scipy versions. If your
+code depended on specific numeric values (i.e., on implementation
+details of the interpolators), you may want to double-check your results.
 
 Authors
 =======

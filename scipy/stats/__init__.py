@@ -129,6 +129,7 @@ Multivariate distributions
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
+   multinomial           -- Multinomial distribution
    special_ortho_group   -- SO(N) group
    ortho_group           -- O(N) group
    random_correlation    -- random correlation matrices

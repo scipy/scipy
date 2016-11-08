@@ -3,7 +3,7 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 try:
-    from scipy.spatial import cKDTree, KDTree
+    from scipy.spatial import cKDTree, KDTree, SphericalVoronoi, distance
 except ImportError:
     pass
 
@@ -127,3 +127,57 @@ class Neighbors(Benchmark):
         dim | # points T1 | # points T2 | p | probe radius |  BoxSize | LeafSize
         """
         self.T1.count_neighbors(self.T2, probe_radius, p=p)
+
+def generate_spherical_points(num_points):
+        # generate uniform points on sphere (see:
+        # http://stackoverflow.com/a/23785326/2942522)
+        np.random.seed(123)
+        points = np.random.normal(size=(num_points, 3))
+        points /= np.linalg.norm(points, axis=1)[:, np.newaxis]
+        return points
+
+class SphericalVor(Benchmark):
+    params = [10, 100, 1000, 5000, 10000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        self.points = generate_spherical_points(num_points)
+
+    def time_spherical_voronoi_calculation(self, num_points):
+        """Perform spherical Voronoi calculation, but not the sorting of
+        vertices in the Voronoi polygons.
+        """
+        SphericalVoronoi(self.points, radius=1, center=np.zeros(3))
+
+class SphericalVorSort(Benchmark):
+    params = [10, 100, 1000, 5000, 10000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        self.points = generate_spherical_points(num_points)
+        self.sv = SphericalVoronoi(self.points, radius=1,
+                                   center=np.zeros(3))
+
+    def time_spherical_polygon_vertex_sorting(self, num_points):
+        """Time the vertex sorting operation in the Spherical Voronoi
+        code.
+        """
+        self.sv.sort_vertices_of_regions()
+
+class Cdist(Benchmark):
+    params = ([10, 100, 1000], ['euclidean', 'minkowski', 'cityblock',
+    'seuclidean', 'sqeuclidean', 'cosine', 'correlation', 'hamming', 'jaccard',
+    'chebyshev', 'canberra', 'braycurtis', 'mahalanobis', 'yule', 'dice',
+    'kulsinski', 'rogerstanimoto', 'russellrao', 'sokalmichener',
+    'sokalsneath', 'wminkowski'])
+    param_names = ['num_points', 'metric']
+
+    def setup(self, num_points, metric):
+        np.random.seed(123)
+        self.points = np.random.random_sample((num_points, 3))
+
+    def time_cdist(self, num_points, metric):
+        """Time scipy.spatial.distance.cdist over a range of input data
+        sizes and metrics.
+        """
+        distance.cdist(self.points, self.points, metric)

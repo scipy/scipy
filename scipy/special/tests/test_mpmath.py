@@ -580,6 +580,77 @@ def test_dn_quarter_period():
     dataset = np.asarray(dataset)
 
     FuncData(dn, dataset, (0, 1), 2, rtol=1e-10).check()
+
+
+# ------------------------------------------------------------------------------
+# Wright Omega
+# ------------------------------------------------------------------------------
+
+def _mpmath_wrightomega(z, dps):
+    with mpmath.workdps(dps):
+        z = mpmath.mpc(z)
+        unwind = mpmath.ceil((z.imag - mpmath.pi)/(2*mpmath.pi))
+        res = mpmath.lambertw(mpmath.exp(z), unwind)
+    return res
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_branch():
+    x = -np.logspace(10, 0, 25)
+    picut_above = [np.nextafter(np.pi, np.inf)]
+    picut_below = [np.nextafter(np.pi, -np.inf)]
+    npicut_above = [np.nextafter(-np.pi, np.inf)]
+    npicut_below = [np.nextafter(-np.pi, -np.inf)]
+    for i in range(50):
+        picut_above.append(np.nextafter(picut_above[-1], np.inf))
+        picut_below.append(np.nextafter(picut_below[-1], -np.inf))
+        npicut_above.append(np.nextafter(npicut_above[-1], np.inf))
+        npicut_below.append(np.nextafter(npicut_below[-1], -np.inf))
+    y = np.hstack((picut_above, picut_below, npicut_above, npicut_below))
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-8).check()
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_region1():
+    # This region gets less coverage in the TestSystematic test
+    x = np.linspace(-2, 1)
+    y = np.linspace(1, 2*np.pi)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_region2():
+    # This region gets less coverage in the TestSystematic test
+    x = np.linspace(-2, 1)
+    y = np.linspace(-2*np.pi, -1)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
     
 
 # ------------------------------------------------------------------------------
@@ -1419,7 +1490,6 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         g = 6.024680040776729583740234375
         
         def gamma(x):
-            tmp = x + g - 0.5
             return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
         
         assert_mpmath_equal(gamma,
@@ -1750,6 +1820,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [Arg(-1e4, 1e4), Arg(0, 1e4)],
                             rtol=5e-10,
                             ignore_inf_sign=True)
+
+    def test_wrightomega(self):
+        assert_mpmath_equal(sc.wrightomega,
+                            lambda z: _mpmath_wrightomega(z, 25),
+                            [ComplexArg()], rtol=1e-14, nan_ok=False)
 
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,

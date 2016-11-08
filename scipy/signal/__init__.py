@@ -98,6 +98,7 @@ Filter design
                     -- FIR filter attenuation.
    kaiserord     -- Design a Kaiser window to limit ripple and width of
                     -- transition region.
+   minimum_phase -- Convert a linear phase FIR filter to minimum phase.
    savgol_coeffs -- Compute the FIR filter coefficients for a Savitzky-Golay
                     -- filter.
    remez         -- Optimal FIR filter design.

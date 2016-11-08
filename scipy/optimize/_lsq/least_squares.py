@@ -238,9 +238,9 @@ def least_squares(
         jac_sparsity=None, max_nfev=None, verbose=0, args=(), kwargs={}):
     """Solve a nonlinear least-squares problem with bounds on the variables.
 
-    Given the residuals f(x) (an m-dimensional function of n variables) and
-    the loss function rho(s) (a scalar function), `least_squares` finds a
-    local minimum of the cost function F(x)::
+    Given the residuals f(x) (an m-dimensional real function of n real
+    variables) and the loss function rho(s) (a scalar function), `least_squares`
+    finds a local minimum of the cost function F(x)::
 
         minimize F(x) = 0.5 * sum(rho(f_i(x)**2), i = 0, ..., m - 1)
         subject to lb <= x <= ub
@@ -255,7 +255,10 @@ def least_squares(
         ``fun(x, *args, **kwargs)``, i.e., the minimization proceeds with
         respect to its first argument. The argument ``x`` passed to this
         function is an ndarray of shape (n,) (never a scalar, even for n=1).
-        It must return a 1-d array_like of shape (m,) or a scalar.
+        It must return a 1-d array_like of shape (m,) or a scalar. If the
+        argument ``x`` is complex or the function ``fun`` returns complex
+        residuals, it must be wrapped in a real function of real arguments,
+        as shown at the end of the Examples section.
     x0 : array_like with shape (n,) or float
         Initial guess on independent variables. If float, it will be treated
         as a 1-d array with one element.
@@ -709,6 +712,30 @@ def least_squares(
     >>> plt.ylabel("y")
     >>> plt.legend()
     >>> plt.show()
+
+    In the next example, we show how complex-valued residual functions of
+    complex variables can be optimized with ``least_squares()``. Consider the
+    following function:
+
+    >>> def f(z):
+    ...     return z - (0.5 + 0.5j)
+
+    We wrap it into a function of real variables that returns real residuals
+    by simply handling the real and imaginary parts as independent variables:
+
+    >>> def f_wrap(x):
+    ...     fx = f(x[0] + 1j*x[1])
+    ...     return np.array([fx.real, fx.imag])
+
+    Thus, instead of the original m-dimensional complex function of n complex
+    variables we optimize a 2m-dimensional real function of 2n real variables:
+
+    >>> from scipy.optimize import least_squares
+    >>> res_wrapped = least_squares(f_wrap, (0.1, 0.1), bounds=([0, 0], [1, 1]))
+    >>> z = res_wrapped.x[0] + res_wrapped.x[1]*1j
+    >>> z
+    (0.49999999999925893+0.49999999999925893j)
+
     """
     if method not in ['trf', 'dogbox', 'lm']:
         raise ValueError("`method` must be 'trf', 'dogbox' or 'lm'.")
@@ -735,6 +762,9 @@ def least_squares(
 
     if max_nfev is not None and max_nfev <= 0:
         raise ValueError("`max_nfev` must be None or positive integer.")
+
+    if np.iscomplexobj(x0):
+        raise ValueError("`x0` must be real.")
 
     x0 = np.atleast_1d(x0).astype(float)
 

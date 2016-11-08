@@ -78,8 +78,8 @@ from __future__ import division, print_function, absolute_import
 
 # Scipy imports.
 import numpy as np
-from numpy import (any, exp, inf, pi, sqrt, floor, sin, cos, around,
-                   int, hstack, arccos, arange)
+from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around, int,
+                   hstack, arccos, arange)
 from scipy import linalg
 from scipy.special import airy
 
@@ -139,7 +139,7 @@ class orthopoly1d(np.poly1d):
             mu = mu / abs(kn)
             kn = 1.0
         self.__dict__['normcoef'] = mu
-        self.__dict__['coeffs'] *= kn
+        self.__dict__['coeffs'] *= float(kn)
 
         # Note: eval_func will be discarded on arithmetic
         self.__dict__['_eval_func'] = eval_func

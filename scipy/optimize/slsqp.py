@@ -80,7 +80,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     Parameters
     ----------
     func : callable f(x,*args)
-        Objective function.
+        Objective function.  Must return a scalar.
     x0 : 1-D ndarray of float
         Initial guess for the independent variable(s).
     eqcons : list, optional
@@ -364,7 +364,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if mode == 0 or mode == 1:  # objective and constraint evaluation requird
 
             # Compute objective function
-            fx = func(x)
+            try:
+                fx = float(np.asarray(func(x)))
+            except:
+                raise ValueError("Objective function must return a scalar")
             # Compute the constraints
             if cons['eq']:
                 c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
@@ -433,8 +436,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", feval[0])
         print("            Gradient evaluations:", geval[0])
 
-    return OptimizeResult(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
-                          njev=geval[0], status=int(mode),
+    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
+                          nfev=feval[0], njev=geval[0], status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
 
 

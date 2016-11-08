@@ -263,6 +263,7 @@ def test_cython_api():
         (special.tandg, cython_special.tandg, ('d',), None),
         (special.tklmbda, cython_special.tklmbda, ('dd',), None),
         (special.wofz, cython_special.wofz, ('D',), None),
+        (special.wrightomega, cython_special.wrightomega, ('D',), None),
         (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),
         (special.xlogy, cython_special.xlogy, ('dd', 'DD'), None),
         (special.y0, cython_special.y0, ('d',), None),
@@ -274,7 +275,7 @@ def test_cython_api():
     ]
 
     # Check that everything is tested
-    skip = ['errprint']
+    skip = []
     for name in dir(cython_special):
         func = getattr(cython_special, name)
         if callable(func) and not (name.startswith('_bench') or name in skip):

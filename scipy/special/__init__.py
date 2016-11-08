@@ -328,7 +328,7 @@ Legendre Functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated legendre function of integer order.
+   lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
 
 These are not universal functions:
@@ -336,11 +336,11 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- [+]Associated Legendre function of the first kind, Pmn(z).
-   lpn   -- [+]Legendre functions of the first kind, Pn(z).
-   lqn   -- [+]Legendre functions of the second kind, Qn(z).
-   lpmn  -- [+]Associated Legendre function of the first kind, Pmn(z).
-   lqmn  -- [+]Associated Legendre function of the second kind, Qmn(z).
+   clpmn -- [+]Associated Legendre function of the first kind for complex arguments.
+   lpn   -- [+]Legendre function of the first kind.
+   lqn   -- [+]Legendre function of the second kind.
+   lpmn  -- [+]Sequence of associated Legendre functions of the first kind.
+   lqmn  -- [+]Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal Harmonics
 ---------------------
@@ -566,6 +566,15 @@ Combinatorics
    comb -- [+]The number of combinations of N things taken k at a time.
    perm -- [+]Permutations of N things taken k at a time, i.e., k-permutations of N.
 
+Lambert W and Related Functions
+-------------------------------
+
+.. autosummary::
+    :toctree: generated/
+
+   lambertw    -- Lambert W function.
+   wrightomega -- Wright Omega function.
+
 Other Special Functions
 -----------------------
 
@@ -585,8 +594,7 @@ Other Special Functions
    factorialk -- [+]Multifactorial of n of order k, n(!!...!).
    shichi     -- Hyperbolic sine and cosine integrals.
    sici       -- Sine and cosine integrals.
-   spence     -- Spence's function, also known as the dilogarithm. It is defined to be
-   lambertw   -- Lambert W function [1]_.
+   spence     -- Spence's function, also known as the dilogarithm.
    zeta       -- Riemann zeta function.
    zetac      -- Riemann zeta function minus 1.
 
