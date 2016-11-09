@@ -219,7 +219,11 @@ class _minmax_mixin(object):
             if compare(m, zero) or q - p == line_size:
                 ret[i] = indices[am]
             else:
-                ret[i] = _find_missing_index(indices, line_size)
+                zero_ind = _find_missing_index(indices, line_size)
+                if m == zero:
+                    ret[i] = min(am, zero_ind)
+                else:
+                    ret[i] = zero_ind
 
         return ret
 
@@ -252,7 +256,11 @@ class _minmax_mixin(object):
                         return am
                     else:
                         ind = mat.row * mat.shape[1] + mat.col
-                        return _find_missing_index(ind, size)
+                        zero_ind = _find_missing_index(ind, size)
+                        if m == zero:
+                            return min(zero_ind, am)
+                        else:
+                            return zero_ind
 
         return self._arg_min_or_max_axis(axis, op, compare)
 
@@ -323,7 +331,8 @@ class _minmax_mixin(object):
     def argmax(self, axis=None, out=None):
         """Return indices of minimum elements along an axis.
 
-        Implicit zero elements are also taken into account.
+        Implicit zero elements are also taken into account. If there are
+        several maximum values, the index of the first occurrence is returned.
 
         Parameters
         ----------
@@ -345,7 +354,8 @@ class _minmax_mixin(object):
     def argmin(self, axis=None, out=None):
         """Return indices of minimum elements along an axis.
 
-        Implicit zero elements are also taken into account.
+        Implicit zero elements are also taken into account. If there are
+        several minimum values, the index of the first occurrence is returned.
 
         Parameters
         ----------
