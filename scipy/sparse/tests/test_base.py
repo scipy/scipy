@@ -3233,6 +3233,48 @@ class _TestMinMax(object):
             assert_array_equal(np.min(datsp), np.min(dat))
             assert_array_equal(np.max(datsp), np.max(dat))
 
+    def test_argmax(self):
+        D1 = np.array([
+            [-1, 5, 2, 3],
+            [0, 0, -1, -2],
+            [-1, -2, -3, -4],
+            [1, 2, 3, 4],
+            [1, 2, 0, 0],
+        ])
+        D2 = D1.transpose()
+
+        for D in [D1, D2]:
+            argmin = np.argmin(D)
+            argmax = np.argmax(D)
+            argmin_0 = np.argmin(D, axis=0)
+            argmax_0 = np.argmax(D, axis=0)
+            argmax_1 = np.argmax(D, axis=1)
+            argmin_1 = np.argmin(D, axis=1)
+
+            mat = self.spmatrix(D)
+
+            assert_equal(mat.argmax(), argmax)
+            assert_equal(mat.argmin(), argmin)
+
+            assert_equal(mat.argmax(axis=0), argmax_0)
+            assert_equal(mat.argmin(axis=0), argmin_0)
+
+            assert_equal(mat.argmax(axis=1), argmax_1)
+            assert_equal(mat.argmin(axis=1), argmin_1)
+
+        D1 = np.empty((0, 5))
+        D2 = np.empty((5, 0))
+
+        for axis in [None, 0]:
+            mat = self.spmatrix(D1)
+            assert_raises(ValueError, mat.argmax, axis=axis)
+            assert_raises(ValueError, mat.argmin, axis=axis)
+
+        for axis in [None, 1]:
+            mat = self.spmatrix(D2)
+            assert_raises(ValueError, mat.argmax, axis=axis)
+            assert_raises(ValueError, mat.argmin, axis=axis)
+
 
 class _TestGetNnzAxis(object):
     def test_getnnz_axis(self):
