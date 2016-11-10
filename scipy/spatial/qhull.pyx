@@ -1843,22 +1843,20 @@ class Delaunay(_QhullUser):
 
     We can find out which triangle points are in:
 
-    >>> p = np.array([(0.1, 0.2), (1.5, 0.5), (0.5, 1.05)])
+    >>> p = np.array([(0.1, 0.2), (1.5, 0.5)])
     >>> tri.find_simplex(p)
-    array([ 1, -1, 1], dtype=int32)
+    array([ 1, -1], dtype=int32)
 
     We can also compute barycentric coordinates in triangle 1 for
     these points:
 
-    >>> b = tri.transform[1,:2].dot(np.transpose(p - tri.transform[1,2]))
-    >>> np.c_[np.transpose(b), 1 - b.sum(axis=0)]
-    array([[ 0.1       ,  0.09090909,  0.80909091],
-           [ 1.5       , -0.90909091,  0.40909091],
-           [ 0.5       ,  0.5       ,  0.        ]])
+    >>> b = tri.transform[1,:2].dot(p - tri.transform[1,2])
+    >>> np.c_[b, 1 - b.sum(axis=1)]
+    array([[ 0.1       ,  0.2       ,  0.7       ],
+           [ 1.27272727,  0.27272727, -0.54545455]])
 
     The coordinates for the first point are all positive, meaning it
-    is indeed inside the triangle. The third point is on a vertex,
-    hence its null third coordinate.
+    is indeed inside the triangle.
 
     """
 
