@@ -152,10 +152,16 @@ def _toranks(x):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool additive):
+    cdef intp_t i, first
+    cdef float64_t t, u, v, w, s, sq
     cdef int64_t n = np.int64(len(x))
-
+    cdef float64_t[::1] exchanges_weight = np.zeros(1, dtype=np.float64)
     # initial sort on values of x and, if tied, on values of y
     cdef intp_t[::1] perm = np.lexsort((y, x))
+    cdef intp_t[::1] temp = np.empty(n, dtype=np.intp) # support structure
+
+    if weigher is None:
+        weigher = lambda x: 1./(1 + x)
 
     if rank is None:
         # To generate a rank array, we must first reverse the permutation
@@ -165,12 +171,11 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
         _invert_in_place(rank)
 
     # weigh joint ties
-    cdef intp_t i
-    cdef intp_t first = 0
-    cdef float64_t t = 0
-    cdef float64_t w = weigher(rank[perm[first]])
-    cdef float64_t s = w
-    cdef float64_t sq = w * w
+    first = 0
+    t = 0
+    w = weigher(rank[perm[first]])
+    s = w
+    sq = w * w
 
     for i in xrange(1, n):
         if x[perm[first]] != x[perm[i]] or y[perm[first]] != y[perm[i]]:
@@ -186,7 +191,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
     # weigh ties in x
     first = 0
-    cdef float64_t u = 0
+    u = 0
     w = weigher(rank[perm[first]])
     s = w
     sq = w * w
@@ -207,11 +212,6 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
     # this closure recursively sorts sections of perm[] by comparing
     # elements of y[perm[]] using temp[] as support
-
-    # Note that to accumulate exchange weights we need to use
-    # a mutable object due to Python's scoping rules
-    cdef float64_t[::1] exchanges_weight = np.zeros(1, dtype=np.float64)
-    cdef intp_t[::1] temp = np.empty(n, dtype=np.intp) # support structure
 
     def weigh(intp_t offset, intp_t length):
         cdef intp_t length0, length1, middle, i, j, k
@@ -252,7 +252,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
     # weigh ties in y
     first = 0
-    cdef float64_t v = 0
+    v = 0
     w = weigher(rank[perm[first]])
     s = w
     sq = w * w

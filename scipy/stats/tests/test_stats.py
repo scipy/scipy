@@ -618,8 +618,17 @@ def test_kendalltau():
     y = np.arange(20.)
     assert_raises(ValueError, stats.kendalltau, x, y)
 
+    # test all ties
+    tau, p_value = stats.kendalltau([], [])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.kendalltau([0], [0])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+
 
 def test_kendalltau_vs_mstats_basic():
+    np.random.seed(42)
     for s in range(2,10):
         a = []
         # Generate rankings with ties
@@ -658,7 +667,7 @@ def test_weightedtau():
     assert_approx_equal(-0.47140452079103173, tau)
     assert_equal(np.nan, p_value)
 
-    # Asymmatric, ranked version
+    # Asymmetric, ranked version
     tau, p_value = stats.weightedtau(x, y, rank=None)
     assert_approx_equal(-0.4157652301037516, tau)
     assert_equal(np.nan, p_value)
@@ -686,6 +695,16 @@ def test_weightedtau():
     assert_approx_equal(-0.56694968153682723, tau)
     tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64))
     assert_approx_equal(-0.56694968153682723, tau)
+    # All ties
+    tau, p_value = stats.weightedtau([], [])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau([0], [0])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    # Size mismatches
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1, 2])
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0])
 
 
 def test_weightedtau_vs_quadratic():
@@ -706,6 +725,7 @@ def test_weightedtau_vs_quadratic():
                     disc += w
         return (conc - disc) / np.sqrt(tot - u) / np.sqrt(tot - v)
 
+    np.random.seed(42)
     for s in range(3,10):
         a = []
         # Generate rankings with ties
@@ -716,7 +736,7 @@ def test_weightedtau_vs_quadratic():
         np.random.shuffle(b)
         # First pass: use element indices as ranks
         rank = np.arange(len(a), dtype=np.intp)
-        for i in range(2):
+        for _ in range(2):
             for add in [True, False]:
                 expected = wkq(a, b, rank, lambda x: 1./(x+1), add)
                 actual = stats.weightedtau(a, b, rank, lambda x: 1./(x+1), add).correlation

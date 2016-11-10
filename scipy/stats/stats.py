@@ -3571,29 +3571,31 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
 
 
-def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
+def weightedtau(x, y, rank=True, weigher=None, additive=True):
     """
-    Computes a weighted version of Kendall's tau.
+    Computes a weighted version of Kendall's :math:`\\tau`.
 
-    The weighted tau is a weighted version of Kendall's tau in which
-    exchanges of high weight are more influent than exchanges of low
-    weight. The default parameters compute the additive hyperbolic version
-    of the index, tau_h, which has been shown to provide the best balance
-    between important and unimportant elements [1]_.
+    The weighted :math:`\\tau` is a weighted version of Kendall's
+    :math:`\\tau` in which exchanges of high weight are more influent than
+    exchanges of low weight. The default parameters compute the additive
+    hyperbolic version of the index, :math:`\\tau_\\mathrm h`, which has
+    been shown to provide the best balance between important and
+    unimportant elements [1]_.
 
-    The weight of an exchange is defined by means of a rank array, which
-    assigns a nonnegative rank to each element, and a weigher function,
-    which assigns a weight based from the rank to each element. The weight
-    of an exchange is then the sum or the product of the weights of the
-    ranks of the exchanged elements. The default parameters compute the
-    additive hyperbolic tau: an exchange between elements with rank r and
-    s (starting from zero) has has weight 1/(r+1) + 1/(s+1).
+    The weighting is defined by means of a rank array, which assigns a
+    nonnegative rank to each element, and a weigher function, which
+    assigns a weight based from the rank to each element. The weight of an
+    exchange is then the sum or the product of the weights of the ranks of
+    the exchanged elements. The default parameters compute
+    :math:`\\tau_\\mathrm h`: an exchange between elements with rank
+    :math:`r` and :math:`s` (starting from zero) has weight
+    :math:`1/(r+1) + 1/(s+1)`.
 
     Specifying a rank array is meaningful only if you have in mind an
     external criterion of importance. If, as it usually happens, you do
     not have in mind a specific rank, the weighted tau is defined by
     averaging the values obtained using the decreasing lexicographical
-    rank by (x,y) and by (y,x). This is the behavior with default
+    rank by (`x`, `y`) and by (`y`, `x`). This is the behavior with default
     parameters.
 
     Note that if you are computing the weighted tau on arrays of ranks,
@@ -3606,20 +3608,21 @@ def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     x, y : array_like
         Arrays of rankings, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
-    rank: array_like of ints or False or True, optional
+    rank: array_like of ints or bool, optional
         A nonnegative rank assigned to each element. If it is None, the
-        decreasing lexicographical rank by (x,y) will be used: elements of
-        higher rank will be those with larger x-values, using y-values to
-        break ties (in particular, swapping x and y will give a different
+        decreasing lexicographical rank by (`x`, `y`) will be used: elements of
+        higher rank will be those with larger `x`-values, using `y`-values to
+        break ties (in particular, swapping `x` and `y` will give a different
         result). If you use False, the element indices will be used
-        directly as ranks. The default is True, in which case this
+        directly as ranks. The default is None, in which case this
         function returns the average of the values obtained using the
-        decreasing lexicographical rank by (x,y) and by (y,x).
-    weigher : function, optional
-        The weigher function. Must map nonnegative integers (zero representing
-        the most important element) to a nonnegative weight. The default is
-        hyperbolic weighing, that is, x -> 1/(x+1).
-    additive : boolean, optional
+        decreasing lexicographical rank by (`x`, `y`) and by (`y`, `x`).
+    weigher : callable or False, optional
+        The weigher function. Must map nonnegative integers (zero
+        representing the most important element) to a nonnegative weight.
+        The default, False, provides hyperbolic weighing, that is,
+        :math:`r` is mapped to :math:`1/(r+1)`.
+    additive : bool, optional
         If true, the weight of an exchange is computed by adding the
         weights of the ranks of the exchanged elements; otherwise, the weights
         are multiplied. The default is True.
@@ -3629,14 +3632,23 @@ def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
     correlation : float
        The weighted tau correlation index.
     pvalue : float
-       Presently np.nan, as the null statistics for the weighted tau is
-       unknown (even in the additive hyperbolic case).
+       Presently `np.nan`, as the null statistics is unknown (even in the
+       additive hyperbolic case).
 
     See also
     --------
-    kendalltau : Calculates Kendall's tau
+    kendalltau : Calculates Kendall's tau.
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
+
+    Notes
+    -----
+    This function uses an :math:`O(n \\log n)`, mergesort-based algorithm
+    [1]_ that is a weighted extension of Knight's algorithm for Kendall's
+    :math:`\\tau` [2]_. It can compute Shieh's weighted :math:`\\tau` [3]_
+    between rankings without ties (i.e., permutations) by setting
+    `additive` and `rank` to False, as the definition given in [1]_ is a
+    generalization of Shieh's.
 
     References
     ----------
@@ -3645,12 +3657,9 @@ def weightedtau(x, y, rank=True, weigher=lambda x: 1./(x+1), additive=True):
            pages 1166-1176. ACM, 2015.
     .. [2] W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
            Ungrouped Data", Journal of the American Statistical Association,
-           Vol. 61, No. 314, Part 1, pp. 436-439, 1966.
-
-    Notes
-    -----
-    This function uses an O(n log n), mergesort-based algorithm [1]_ that is a
-    weighted extension of Knight's algorithm for Kendall's tau [2]_.
+           Vol. 61, No. 314, Part 1, pages 436-439, 1966.
+    .. [3] Grace S. Shieh. "A weighted Kendall's tau statistic", Statistics & 
+           Probability Letters, Vol. 39, No. 1, pages 17-24, 1998.
 
     Examples
     --------
