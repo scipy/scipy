@@ -3593,15 +3593,15 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
     Specifying a rank array is meaningful only if you have in mind an
     external criterion of importance. If, as it usually happens, you do
-    not have in mind a specific rank, the weighted tau is defined by
-    averaging the values obtained using the decreasing lexicographical
-    rank by (`x`, `y`) and by (`y`, `x`). This is the behavior with default
-    parameters.
+    not have in mind a specific rank, the weighted :math:`\\tau` is
+    defined by averaging the values obtained using the decreasing
+    lexicographical rank by (`x`, `y`) and by (`y`, `x`). This is the
+    behavior with default parameters.
 
-    Note that if you are computing the weighted tau on arrays of ranks,
-    rather than of scores (i.e., a larger value implies a lower rank) you
-    must negate the ranks, so that elements of higher rank are associated
-    with a larger value.
+    Note that if you are computing the weighted :math:`\\tau` on arrays of
+    ranks, rather than of scores (i.e., a larger value implies a lower
+    rank) you must negate the ranks, so that elements of higher rank are
+    associated with a larger value.
 
     Parameters
     ----------
@@ -3617,20 +3617,20 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         directly as ranks. The default is None, in which case this
         function returns the average of the values obtained using the
         decreasing lexicographical rank by (`x`, `y`) and by (`y`, `x`).
-    weigher : callable or False, optional
+    weigher : callable or None, optional
         The weigher function. Must map nonnegative integers (zero
         representing the most important element) to a nonnegative weight.
-        The default, False, provides hyperbolic weighing, that is,
-        :math:`r` is mapped to :math:`1/(r+1)`.
+        The default, None, provides hyperbolic weighing, that is,
+        rank :math:`r` is mapped to weight :math:`1/(r+1)`.
     additive : bool, optional
-        If true, the weight of an exchange is computed by adding the
+        If True, the weight of an exchange is computed by adding the
         weights of the ranks of the exchanged elements; otherwise, the weights
         are multiplied. The default is True.
 
     Returns
     -------
     correlation : float
-       The weighted tau correlation index.
+       The weighted :math:`\\tau` correlation index.
     pvalue : float
        Presently `np.nan`, as the null statistics is unknown (even in the
        additive hyperbolic case).
