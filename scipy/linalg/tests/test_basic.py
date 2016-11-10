@@ -7,6 +7,7 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
                    float32)
@@ -21,7 +22,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance)
+                          matrix_balance, solve_x)
 
 from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
@@ -601,6 +602,80 @@ class TestSolve(TestCase):
                   [[2, 1], [-30, 4]]):
             x = solve(a, b, check_finite=False)
             assert_array_almost_equal(dot(a, x), b)
+
+
+class TestSolveX(TestCase):
+    def test_simple(self):
+        a = np.array([[1.80, 2.88, 2.05, -0.89],
+                      [525.00, -295.00, -95.00, -380.00],
+                      [1.58, -2.69, -2.90, -1.04],
+                      [-1.11, -0.66, -0.59, 0.80]])
+
+        b = np.array([[9.52, 18.47],
+                      [2435.00, 225.00],
+                      [0.77, -13.28],
+                      [-6.22, -6.21]])
+
+        x = solve_x(a, b)
+        assert_array_almost_equal(x, np.array([[1., -1, 3, -5],
+                                               [3, 2, 4, 1]]).T)
+
+    def test_simple_complex(self):
+        a = np.array([[-1.34+2.55j, 0.28+3.17j, -6.39-2.20j, 0.72-0.92j],
+                      [-1.70-14.10j, 33.10-1.50j, -1.50+13.40j, 12.90+13.80j],
+                      [-3.29-2.39j, -1.91+4.42j, -0.14-1.35j, 1.72+1.35j],
+                      [2.41+0.39j, -0.56+1.47j, -0.83-0.69j, -1.96+0.67j]])
+
+        b = np.array([[26.26+51.78j, 31.32-6.70j],
+                      [64.30-86.80j, 158.60-14.20j],
+                      [-5.75+25.31j, -2.15+30.19j],
+                      [1.16+2.57j, -2.56+7.55j]])
+
+        x = solve_x(a, b)
+        assert_array_almost_equal(x, np. array([[1+1.j, -1-2.j],
+                                                [2-3.j, 5+1.j],
+                                                [-4-5.j, -3+4.j],
+                                                [6.j, 2-3.j]]))
+
+    def test_hermitian(self):
+        # An upper triangular matrix will be used for hermitian matrix a
+        a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
+                      [0, -4.63, -1.84+0.03j, 2.21+0.21j],
+                      [0, 0, -8.87, 1.58-0.90j],
+                      [0, 0, 0, -1.36]])
+        b = np.array([[2.98-10.18j, 28.68-39.89j],
+                      [-9.58+3.88j, -24.79-8.40j],
+                      [-0.77-16.05j, 4.23-70.02j],
+                      [7.79+5.48j, -35.39+18.01j]])
+        res = np.array([[2.+1j, -8+6j],
+                        [3.-2j, 7-2j],
+                        [-1+2j, -1+5j],
+                        [1.-1j, 3-4j]])
+        x = solve_x(a, b, assume_a='her')
+        assert_array_almost_equal(x, res)
+        # Also conjugate a and test for lower triangular data
+        x = solve_x(a.conj().T, b, assume_a='her', lower=True)
+        assert_array_almost_equal(x, res)
+
+    def test_singularity(self):
+        a = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 1],
+                      [1, 1, 1, 0, 0, 0, 1, 0, 1],
+                      [0, 1, 1, 0, 0, 0, 1, 0, 1],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1]])
+        b = np.arange(9)[:, None]
+        assert_raises(LinAlgError, solve_x, a, b)
+
+    def test_ill_condition_warning(self):
+        a = np.arange(1, 10).reshape(3, 3)
+        b = np.array([[15], [15], [15]])
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            assert_raises(RuntimeWarning, solve_x, a, b)
 
 
 class TestSolveTriangular(TestCase):

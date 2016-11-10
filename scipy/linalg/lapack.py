@@ -150,6 +150,48 @@ All functions
    cgesv
    zgesv
 
+   sgesvx
+   dgesvx
+   cgesvx
+   zgesvx
+
+   sgecon
+   dgecon
+   cgecon
+   zgecon
+
+   ssysv
+   dsysv
+   csysv
+   zsysv
+
+   ssysv_lwork
+   dsysv_lwork
+   csysv_lwork
+   zsysv_lwork
+
+   ssysvx
+   dsysvx
+   csysvx
+   zsysvx
+
+   ssysvx_lwork
+   dsysvx_lwork
+   csysvx_lwork
+   zsysvx_lwork
+
+   chesv
+   zhesv
+
+   chesv_lwork
+   zhesv_lwork
+
+   chesvx
+   zhesvx
+
+   chesvx_lwork
+   zhesvx_lwork
+
    sgetrf
    dgetrf
    cgetrf
@@ -251,6 +293,16 @@ All functions
    dposv
    cposv
    zposv
+
+   sposvx
+   dposvx
+   cposvx
+   zposvx
+
+   spocon
+   dpocon
+   cpocon
+   zpocon
 
    spotrf
    dpotrf
