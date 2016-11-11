@@ -693,6 +693,8 @@ def test_weightedtau():
     # Test argument conversion
     tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), y)
     assert_approx_equal(-0.56694968153682723, tau)
+    tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.int16), y)
+    assert_approx_equal(-0.56694968153682723, tau)
     tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64))
     assert_approx_equal(-0.56694968153682723, tau)
     # All ties

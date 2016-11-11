@@ -3703,14 +3703,14 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         return WeightedTauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # Reduce to ranks unsupported types
-    if x.dtype not in (np.int64):  # (np.int32, np.int64, np.float32, np.float64):
-        x = _toranks(x)
-    if y.dtype not in (np.int64):  # (np.int32, np.int64, np.float32, np.float64):
-        y = _toranks(y)
     if x.dtype != y.dtype:
         if x.dtype != np.int64:
             x = _toranks(x)
         if y.dtype != np.int64:
+            y = _toranks(y)
+    else:
+        if x.dtype != np.int64:  # not in (np.int32, np.int64, np.float32, np.float64):
+            x = _toranks(x)
             y = _toranks(y)
 
     if rank is True:
