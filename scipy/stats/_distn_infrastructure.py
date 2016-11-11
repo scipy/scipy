@@ -2079,7 +2079,8 @@ class rv_continuous(rv_generic):
 
     def fit(self, data, *args, **kwds):
         """
-        Return MLEs for shape, location, and scale parameters from data.
+        Return MLEs for shape (if applicable), location, and scale
+        parameters from data.
 
         MLE stands for Maximum Likelihood Estimate.  Starting estimates for
         the fit are given by input arguments; for any arguments not provided
@@ -2122,9 +2123,10 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        shape, loc, scale : tuple of floats
-            MLEs for any shape statistics, followed by those for location and
-            scale.
+        mle_tuple : tuple of floats
+            MLEs for any shape statistics (if applicable), followed by those
+            for location and scale. For most random variables, shape statistics
+            will be returned, but there are exceptions (e.g. ``norm``).
 
         Notes
         -----
