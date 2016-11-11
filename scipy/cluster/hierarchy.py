@@ -609,9 +609,9 @@ def linkage(y, method='single', metric='euclidean'):
         A condensed distance matrix. A condensed distance matrix
         is a flat array containing the upper triangular of the distance matrix.
         This is the form that ``pdist`` returns. Alternatively, a collection of
-        :math:`m` observation vectors in n dimensions may be passed as an
-        :math:`m` by :math:`n` array. All elements of `y` must be finite,
-        i.e. no NaNs or infs.
+        :math:`m` observation vectors in :math:`n` dimensions may be passed as an
+        :math:`m` by :math:`n` array. All elements of the condensed distance matrix
+        must be finite, i.e. no NaNs or infs.
     method : str, optional
         The linkage algorithm to use. See the ``Linkage Methods`` section below
         for full descriptions.
@@ -675,7 +675,7 @@ def linkage(y, method='single', metric='euclidean'):
         raise ValueError("`y` must be 1 or 2 dimensional.")
 
     if not np.all(np.isfinite(y)):
-        raise ValueError("`y` must contain only finite values.")
+        raise ValueError("The condensed distance matrix must contain only finite values.")
 
     n = int(distance.num_obs_y(y))
     method_code = _LINKAGE_METHODS[method]
