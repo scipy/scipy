@@ -803,6 +803,68 @@ class skellam_gen(rv_discrete):
 skellam = skellam_gen(a=-np.inf, name="skellam", longname='A Skellam')
 
 
+class template_gen(rv_discrete):
+    """
+    Generates a distribution given by a histogram.
+    This is useful to generate a template distribution from a binned datasample.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    There are no additional shape parameters except for the loc and scale.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    def __init__(self, histogram, *args, **kwargs):
+        """
+        Create a new distribution using the given histogram
+        @param histogram the return value of np.histogram
+        """
+        self.histogram = histogram
+        pdf, bins = self.histogram
+        bin_widths = (np.roll(bins, -1) - bins)[:-1]
+        pdf = pdf / float(np.sum(pdf * bin_widths)) 
+        cdf = np.cumsum(pdf * bin_widths)[:-1]
+        self.template_bins = bins
+        self.template_bin_widths = bin_widths
+        self.template_pdf = np.hstack([0.0, pdf, 0.0])
+        self.template_cdf = np.hstack([0.0, cdf, 1.0])
+        super(template_gen, self).__init__(*args, **kwargs)
+
+    def _pdf(self, x):
+        """
+        PDF of the histogram
+        """
+        return self.template_pdf[np.digitize(x, bins=self.template_bins)]
+    
+    def _cdf(self, x):
+        """
+        CDF calculated from the histogram
+        """
+        return self.template_cdf[np.digitize(x, bins=self.template_bins)]
+    
+    def _rvs(self):
+        """
+        Random numbers distributed like the original histogram
+        """
+        probabilities = self.template_pdf[1:-1]
+        choices = np.random.choice(len(self.template_pdf) - 2, size=self._size, p=probabilities / probabilities.sum())
+        uniform = np.random.uniform(size=self._size)
+        return self.template_bins[choices] + uniform * self.template_bin_widths[choices]
+    
+    def _updated_ctor_param(self):
+        """
+        Set the histogram as additional constructor argument
+        """
+        dct = super(template_gen, self)._updated_ctor_param()
+        dct['histogram'] = self.histogram
+        return dct
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_discrete)
