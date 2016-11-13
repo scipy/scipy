@@ -313,8 +313,8 @@ _spherical_jn_d -- spherical_jn_d_real: ld->d, spherical_jn_d_complex: lD->D -- 
 _spherical_in_d -- spherical_in_d_real: ld->d, spherical_in_d_complex: lD->D -- _spherical_bessel.pxd
 _spherical_kn_d -- spherical_kn_d_real: ld->d, spherical_kn_d_complex: lD->D -- _spherical_bessel.pxd
 loggamma -- loggamma: D->D                                 -- _loggamma.pxd
-_sinpi -- sinpi[double]: d->d, sinpi[double_complex]: D->D -- _trig.pxd
-_cospi -- cospi[double]: d->d, cospi[double_complex]: D->D -- _trig.pxd
+_sinpi -- dsinpi: d->d, csinpi: D->D                       -- _trig.pxd
+_cospi -- dcospi: d->d, ccospi: D->D                       -- _trig.pxd
 _lgam1p -- lgam1p: d->d                                    -- cephes.h
 _lanczos_sum_expg_scaled -- lanczos_sum_expg_scaled: d->d  -- cephes.h
 _log1pmx -- log1pmx: d->d                                  -- cephes.h

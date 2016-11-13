@@ -967,12 +967,14 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         # an rdiff of ~6e-16. Neither the Taylor series nor the system
         # cosine are accurate enough here.
         eps = np.finfo(float).eps
-        assert_mpmath_equal(_cospi, mpmath.cospi,
-                            [Arg()], rtol=4*eps)
+        assert_mpmath_equal(_cospi,
+                            mpmath.cospi,
+                            [Arg()], nan_ok=False, rtol=4*eps)
 
     def test_cospi_complex(self):
-        assert_mpmath_equal(_cospi, mpmath.cospi,
-                            [ComplexArg()], rtol=1e-13)
+        assert_mpmath_equal(_cospi,
+                            mpmath.cospi,
+                            [ComplexArg()], nan_ok=False, rtol=1e-13)
 
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
@@ -1735,11 +1737,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], rtol=2*eps)
+                            [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [ComplexArg()], rtol=2e-14)
+                            [ComplexArg()], nan_ok=False, rtol=2e-14)
 
     def test_shi(self):
         def shi(x):
