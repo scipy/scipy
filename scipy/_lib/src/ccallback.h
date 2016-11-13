@@ -10,109 +10,10 @@
  *
  * This is done avoiding magic or code generation, so you need to write some
  * boilerplate code manually.
+ *
+ * For an example see `scipy/_lib/src/_test_ccallback.c`.
  */
 
-/* Boilerplate code that you need to write:
-
-   ----------------------------------------------------------------------------
-   static char *my_signatures[] = {
-       "double (double, double)",
-       "double (double, double, void *)",
-       NULL
-   };
-
-   double my_thunk(double a, double b) {
-       ccallback_t *callback = ccallback_obtain();
-       double result;
-       int error = 0;
-
-       if (callback->py_function) {
-           // You need to deal with GIL management yourself -- if you released
-           // it, you need to also reobtain it.
-           PyGILState_STATE state = PyGILState_Ensure();
-           PyObject *res, *res2;
-
-           res = PyObject_CallFunction(callback->py_function, "dd", a, b);
-
-           if (res == NULL) {
-               error = 1;
-           }
-           else {
-               result = PyFloat_AsDouble(res);
-               if (PyErr_Occurred()) {
-                   error = 1;
-               }
-           }
-
-           PyGILState_Release(state);
-       }
-       else {
-           switch (callback->signature_idx) {
-           case 0:
-               result = ((double(*)(double, double))callback->c_function)(a, b);
-               break;
-           case 1:
-               result = ((double(*)(double, double, void *))callback->c_function)(a, b,
-                       callback->user_data);
-               break;
-           }
-       }
-
-       if (error) {
-           // Bail out via longjmp. Note that this is not always safe. If your
-           // library supports a different way of bailing out, use that instead.
-           longjmp(callback.error_buf, 1);
-       }
-
-       return result;
-   }
-
-   void my_entry_point(PyObject *callback_obj) {
-       ccallback_t callback;
-       int callback_res;
-       ...
-
-       callback_res = ccallback_prepare(&callback, my_signatures,
-               callback_obj, CCALLBACK_DEFAULTS | CCALLBACK_OBTAIN);
-       if (callback_res != 0) {
-           // Callback preparation failed, Python error is already set, so bail out
-           return NULL;
-       }
-
-       if (setjmp(callback.error_buf) != 0) {
-           // Python error during callback --- we arrive here from longjmp.
-           // Only needed if you use the longjmp nonlocal return method.
-           // Be sure to be aware of the many caveats associated with setjmp.
-           callback_release(&callback);
-           return NULL;
-       }
-
-       ...
-
-       call_some_library_that_needs_callback(..., &my_thunk);
-
-       ...
-
-       callback_release(&callback);
-
-       return;
-   }
-   ----------------------------------------------------------------------------
-
-   If your library cannot pass along the extra data pointer:
-
-   ----------------------------------------------------------------------------
-   double my_thunk(double a, double b) {
-       ccallback_t *callback = ccallback_obtain();
-       ...
-   }
-   ----------------------------------------------------------------------------
-
-   In addition, add CCALLBACK_OBTAIN to flags passed to
-   ccallback_prepare. This will have a performance impact.
-
-   See _test_ccallback.c for full examples.
- */
 
 #ifndef CCALLBACK_H_
 #define CCALLBACK_H_
@@ -121,19 +22,31 @@
 #include <Python.h>
 #include <setjmp.h>
 
+/* Default behavior */
 #define CCALLBACK_DEFAULTS 0x0
+/* Whether calling ccallback_obtain is enabled */
 #define CCALLBACK_OBTAIN   0x1
+/* Deal with also other input objects than LowLevelCallable.
+ * Useful for maintaining legacy behavior.
+ */
 #define CCALLBACK_PARSE    0x2
+
 
 typedef struct ccallback ccallback_t;
 
 struct ccallback {
+    /* Pointer to a C function to call. NULL if none. */
     void *c_function;
+    /* Pointer to a Python function to call (refcount is owned). NULL if none. */
     PyObject *py_function;
+    /* Additional data pointer provided by the user. */
     void *user_data;
-    jmp_buf error_buf;
-    ccallback_t *prev_callback;
+    /* Index of the function signature selected */
     int signature_index;
+    /* setjmp buffer to jump to on error */
+    jmp_buf error_buf;
+    /* Previous callback, for TLS reentrancy */
+    ccallback_t *prev_callback;
 
     /* Unused variables that can be used by the thunk etc. code for any purpose */
     long info;
@@ -159,6 +72,9 @@ static int ccallback__set_thread_local(void *value)
     _active_ccallback = value;
 }
 
+/*
+ * Obtain a pointer to the current ccallback_t structure.
+ */
 static ccallback_t *ccallback_obtain(void)
 {
     return (ccallback_t *)ccallback__get_thread_local();
@@ -178,12 +94,17 @@ static int ccallback__set_thread_local(void *value)
     _active_ccallback = value;
 }
 
+/*
+ * Obtain a pointer to the current ccallback_t structure.
+ */
 static ccallback_t *ccallback_obtain(void)
 {
     return (ccallback_t *)ccallback__get_thread_local();
 }
 
 #else
+
+/* Fallback implementation with Python thread API */
 
 static void *ccallback__get_thread_local(void)
 {
@@ -234,6 +155,9 @@ static int ccallback__set_thread_local(void *value)
     }
 }
 
+/*
+ * Obtain a pointer to the current ccallback_t structure.
+ */
 static ccallback_t *ccallback_obtain(void)
 {
     PyGILState_STATE state;
@@ -254,7 +178,29 @@ static ccallback_t *ccallback_obtain(void)
 #endif
 
 
-/* Set up callback. */
+/*
+ * Set up callback.
+ *
+ * Parameters
+ * ----------
+ * callback : ccallback_t
+ *     Callback structure to initialize.
+ * signatures : char **
+ *     Pointer to a NULL-terminated array of C function signature strings.
+ *     The list of signatures should always contain a signature defined in
+ *     terms of C basic data types only.
+ * callback_obj : PyObject
+ *     Object provided by the user. Usually, LowLevelCallback object, or a
+ *     Python callable.
+ * flags : int
+ *     Bitmask of CCALLBACK_* flags.
+ *
+ * Returns
+ * -------
+ * success : int
+ *     0 if success, != 0 on failure (an appropriate Python exception is set).
+ *
+ */
 static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject *callback_obj, int flags)
 {
     static PyTypeObject *lowlevelcallable_type = NULL;
@@ -270,6 +216,7 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
         }
 
         lowlevelcallable_type = (PyTypeObject *)PyObject_GetAttrString(module, "LowLevelCallable");
+        Py_DECREF(module);
         if (lowlevelcallable_type == NULL) {
             goto error;
         }
@@ -293,22 +240,22 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
     if (PyCallable_Check(callback_obj)) {
         /* Python callable */
         callback->py_function = callback_obj;
+        Py_INCREF(callback->py_function);
         callback->c_function = NULL;
         callback->user_data = NULL;
         callback->signature_index = -1;
     }
     else if (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-             PyTuple_Check(callback_obj) &&
              PyCallable_Check(PyTuple_GET_ITEM(callback_obj, 0))) {
         /* Python callable in LowLevelCallable */
         callback->py_function = PyTuple_GET_ITEM(callback_obj, 0);
+        Py_INCREF(callback->py_function);
         callback->c_function = NULL;
         callback->user_data = NULL;
         callback->signature_index = -1;
     }
     else if (capsule != NULL ||
              PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-             PyTuple_Check(callback_obj) &&
              PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0))) {
         /* PyCapsule in LowLevelCallable (or parse result from above) */
         void *ptr, *user_data;
@@ -368,12 +315,21 @@ error:
 }
 
 
-/* Tear down callback. */
+/*
+ * Tear down callback.
+ *
+ * Parameters
+ * ----------
+ * callback : ccallback_t
+ *     A callback structure, previously initialized by ccallback_prepare
+ *
+ */
 static void ccallback_release(ccallback_t *callback)
 {
     if (callback->prev_callback != NULL) {
         ccallback__set_thread_local(callback->prev_callback);
     }
+    Py_XDECREF(callback->py_function);
     callback->prev_callback = NULL;
     callback->c_function = NULL;
     callback->py_function = NULL;
