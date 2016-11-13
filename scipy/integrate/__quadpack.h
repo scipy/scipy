@@ -215,12 +215,16 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
 static int
 free_callback(ccallback_t *callback)
 {
-    ccallback_release(callback);
-
     if (callback->signature_index == CB_ND || callback->signature_index == CB_ND_USER) {
         free(callback->info_p);
         callback->info_p = NULL;
     }
+
+    if (ccallback_release(callback) != 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 
@@ -352,7 +356,9 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
   DQAGSE(quad_thunk, &a, &b, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, 
          blist, rlist, elist, iord, &last);
 
-  free_callback(&callback);
+  if (free_callback(&callback) != 0) {
+      goto fail_free;
+  }
 
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist),ier);
@@ -368,6 +374,7 @@ static PyObject *quadpack_qagse(PyObject *dummy, PyObject *args) {
 
  fail:
   free_callback(&callback);
+ fail_free:
   Py_XDECREF(ap_alist);
   Py_XDECREF(ap_blist);
   Py_XDECREF(ap_rlist);
@@ -431,7 +438,9 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
 
   DQAGIE(quad_thunk, &bound, &inf, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
 
-  free_callback(&callback);
+  if (free_callback(&callback) != 0) {
+      goto fail_free;
+  }
 
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist),ier);
@@ -447,6 +456,7 @@ static PyObject *quadpack_qagie(PyObject *dummy, PyObject *args) {
 
  fail:
   free_callback(&callback);
+ fail_free:
   Py_XDECREF(ap_alist);
   Py_XDECREF(ap_blist);
   Py_XDECREF(ap_rlist);
@@ -524,7 +534,9 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
 
   DQAGPE(quad_thunk, &a, &b, &npts2, points, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, pts, iord, level, ndin, &last);
 
-  free_callback(&callback);
+  if (free_callback(&callback) != 0) {
+      goto fail_free;
+  }
 
   Py_DECREF(ap_points);
 
@@ -545,6 +557,7 @@ static PyObject *quadpack_qagpe(PyObject *dummy, PyObject *args) {
 
  fail:
   free_callback(&callback);
+ fail_free:
   Py_XDECREF(ap_alist);
   Py_XDECREF(ap_blist);
   Py_XDECREF(ap_rlist);
@@ -629,7 +642,9 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
 
   DQAWOE(quad_thunk, &a, &b, &omega, &integr, &epsabs, &epsrel, &limit, &icall, &maxp1, &result, &abserr, &neval, &ier, &last, alist, blist, rlist, elist, iord, nnlog, &momcom, chebmo);
 
-  free_callback(&callback);
+  if (free_callback(&callback) != 0) {
+      goto fail_free;
+  }
 
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N,s:N,s:i,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist), "nnlog", PyArray_Return(ap_nnlog), "momcom", momcom, "chebmo", PyArray_Return(ap_chebmo),ier);
@@ -647,7 +662,7 @@ static PyObject *quadpack_qawoe(PyObject *dummy, PyObject *args) {
 
  fail:
   free_callback(&callback);
-
+ fail_free:
   Py_XDECREF(ap_alist);
   Py_XDECREF(ap_blist);
   Py_XDECREF(ap_rlist);
@@ -730,7 +745,9 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
 
   DQAWFE(quad_thunk, &a, &omega, &integr, &epsabs, &limlst, &limit, &maxp1, &result, &abserr, &neval, &ier, rslst, erlst, ierlst, &lst, alist, blist, rlist, elist, iord, nnlog, chebmo);
 
-  free_callback(&callback);
+  if (free_callback(&callback) != 0) {
+      goto fail_free;
+  }
 
   Py_DECREF(ap_nnlog);
   Py_DECREF(ap_alist);
@@ -752,7 +769,7 @@ static PyObject *quadpack_qawfe(PyObject *dummy, PyObject *args) {
 
  fail:
   free_callback(&callback);
-
+ fail_free:
   Py_XDECREF(ap_alist);
   Py_XDECREF(ap_blist);
   Py_XDECREF(ap_rlist);
@@ -819,7 +836,9 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
 
   DQAWCE(quad_thunk, &a, &b, &c, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
 
-  free_callback(&callback);
+  if (free_callback(&callback) != 0) {
+      goto fail_free;
+  }
 
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist),ier);
@@ -835,7 +854,7 @@ static PyObject *quadpack_qawce(PyObject *dummy, PyObject *args) {
 
  fail:
   free_callback(&callback);
-
+ fail_free:
   Py_XDECREF(ap_alist);
   Py_XDECREF(ap_blist);
   Py_XDECREF(ap_rlist);
@@ -898,7 +917,9 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
 
   DQAWSE(quad_thunk, &a, &b, &alfa, &beta, &integr, &epsabs, &epsrel, &limit, &result, &abserr, &neval, &ier, alist, blist, rlist, elist, iord, &last);
 
-  free_callback(&callback);
+  if (free_callback(&callback) != 0) {
+      goto fail_free;
+  }
 
   if (full_output) {
     return Py_BuildValue("dd{s:i,s:i,s:N,s:N,s:N,s:N,s:N}i", result, abserr, "neval", neval, "last", last, "iord", PyArray_Return(ap_iord), "alist", PyArray_Return(ap_alist), "blist", PyArray_Return(ap_blist), "rlist", PyArray_Return(ap_rlist), "elist", PyArray_Return(ap_elist),ier);
@@ -914,7 +935,7 @@ static PyObject *quadpack_qawse(PyObject *dummy, PyObject *args) {
 
  fail:
   free_callback(&callback);
-
+ fail_free:
   Py_XDECREF(ap_alist);
   Py_XDECREF(ap_blist);
   Py_XDECREF(ap_rlist);

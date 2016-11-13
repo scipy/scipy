@@ -70,6 +70,7 @@ static void *ccallback__get_thread_local(void)
 static int ccallback__set_thread_local(void *value)
 {
     _active_ccallback = value;
+    return 0;
 }
 
 /*
@@ -92,6 +93,7 @@ static void *ccallback__get_thread_local(void)
 static int ccallback__set_thread_local(void *value)
 {
     _active_ccallback = value;
+    return 0;
 }
 
 /*
@@ -224,8 +226,8 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
 
     if ((flags & CCALLBACK_PARSE) && !PyObject_TypeCheck(callback_obj, lowlevelcallable_type)) {
         /* Parse callback */
-        callback_obj2 = PyObject_CallMethod(lowlevelcallable_type, "_parse_callback",
-                                            "O", callback_obj);
+        callback_obj2 = PyObject_CallMethod((PyObject *)lowlevelcallable_type,
+                                            "_parse_callback", "O", callback_obj);
         if (callback_obj2 == NULL) {
             goto error;
         }
@@ -255,8 +257,8 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
         callback->signature_index = -1;
     }
     else if (capsule != NULL ||
-             PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
-             PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0))) {
+             (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
+              PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0)))) {
         /* PyCapsule in LowLevelCallable (or parse result from above) */
         void *ptr, *user_data;
         char **sig;
@@ -300,7 +302,9 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
 
     if (flags & CCALLBACK_OBTAIN) {
         callback->prev_callback = ccallback__get_thread_local();
-        ccallback__set_thread_local((void *)callback);
+        if (ccallback__set_thread_local((void *)callback) != 0) {
+            goto error;
+        }
     }
     else {
         callback->prev_callback = NULL;
@@ -324,15 +328,20 @@ error:
  *     A callback structure, previously initialized by ccallback_prepare
  *
  */
-static void ccallback_release(ccallback_t *callback)
+static int ccallback_release(ccallback_t *callback)
 {
-    if (callback->prev_callback != NULL) {
-        ccallback__set_thread_local(callback->prev_callback);
-    }
     Py_XDECREF(callback->py_function);
-    callback->prev_callback = NULL;
     callback->c_function = NULL;
     callback->py_function = NULL;
+
+    if (callback->prev_callback != NULL) {
+        if (ccallback__set_thread_local(callback->prev_callback) != 0) {
+            return -1;
+        }
+    }
+    callback->prev_callback = NULL;
+
+    return 0;
 }
 
 #endif /* CCALLBACK_H_ */

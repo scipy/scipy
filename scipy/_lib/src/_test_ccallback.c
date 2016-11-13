@@ -62,9 +62,9 @@ static double library_call_nodata(double value, int *error_flag, double (*callba
 }
 
 
-static double library_call_nonlocal(double value, double (*callback)(double, void*), void *data)
+static double library_call_nonlocal(double value, double (*callback)(double))
 {
-    return callback(value, data);
+    return callback(value);
 }
 
 
@@ -250,7 +250,7 @@ static PyObject *test_call_nonlocal(PyObject *obj, PyObject *args)
     }
 
     /* Call 3rd party library code */
-    result = library_call_nonlocal(value, test_thunk_nonlocal, (void *)&callback);
+    result = library_call_nonlocal(value, test_thunk_nonlocal);
 
     PyEval_RestoreThread(_save);
 
