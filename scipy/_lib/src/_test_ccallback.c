@@ -2,13 +2,25 @@
  * Test code for ccallback.h
  *
  * This also is an internal "best-practices" code example on how to write
- * low-level callback code.
+ * low-level callback code. (In the examples below, it is assumed the semantics
+ * and signatures of the callbacks in test_call_* are fixed by some 3rd party
+ * library e.g. implemented in FORTRAN, and they are not necessarily the optimal
+ * way.)
  *
- * The *thunk_simple* function shows how to write the wrapper callback
- * function that dispatches to user-provided code (written in Python, C, Cython etc.).
+ * The general structure of callbacks is the following:
+ *
+ * - entry point function, callable from Python, calls 3rd party library code
+ *   (test_call_*)
+ * - 3rd party library code, calls the callback (included as a part of test_call_*)
+ * - callback thunk, has the signature expected by the 3rd party library, and
+ *   translates the callback call to a Python function or user-provided
+ *   low-level function call (thunk_*).
+ *
+ * The *thunk_simple* function shows how to write a callback thunk that
+ * dispatches to user-provided code (written in Python, C, Cython etc.).
  *
  * The *call_simple* function shows how to setup and teardown the ccallback_t
- * data structure.
+ * data structure in the entry point.
  *
  * The *call_nodata* and *thunk_nodata* show what to do when you need a
  * callback function for some code where it's not possible to pass along a
@@ -30,7 +42,36 @@
 
 #define ERROR_VALUE 2
 
-/* Thunks for the different cases considered */
+
+/*
+ * Example 3rd party library code, to be interfaced with
+ */
+
+static double library_call_simple(double value, int *error_flag, double (*callback)(double, int*, void*),
+                                  void *data)
+{
+    *error_flag = 0;
+    return callback(value, error_flag, data);
+}
+
+
+static double library_call_nodata(double value, int *error_flag, double (*callback)(double, int*))
+{
+    *error_flag = 0;
+    return callback(value, error_flag);
+}
+
+
+static double library_call_nonlocal(double value, double (*callback)(double, void*), void *data)
+{
+    return callback(value, data);
+}
+
+
+
+/*
+ * Callback thunks for the different cases
+ */
 
 static double test_thunk_simple(double a, int *error_flag, void *data)
 {
@@ -106,7 +147,9 @@ static double test_thunk_nonlocal(double a)
 }
 
 
-/* Caller entry point functions */
+/*
+ * Caller entry point functions
+ */
 
 static char *signatures[] = {"double (double, int *, void *)",
                              "double (double, double, int *, void *)",
@@ -117,7 +160,7 @@ static PyObject *test_call_simple(PyObject *obj, PyObject *args)
     PyObject *callback_obj;
     double value, result;
     ccallback_t callback;
-    int error_flag = 0;
+    int error_flag;
     int ret;
 
     if (!PyArg_ParseTuple(args, "Od", &callback_obj, &value)) {
@@ -129,9 +172,9 @@ static PyObject *test_call_simple(PyObject *obj, PyObject *args)
         return NULL;
     }
 
-    /* Call */
+    /* Call 3rd party library code */
     Py_BEGIN_ALLOW_THREADS
-    result = test_thunk_simple(value, &error_flag, (void *)&callback);
+    result = library_call_simple(value, &error_flag, test_thunk_simple, (void *)&callback);
     Py_END_ALLOW_THREADS
 
     ccallback_release(&callback);
@@ -151,7 +194,7 @@ static PyObject *test_call_nodata(PyObject *obj, PyObject *args)
     double value, result;
     ccallback_t callback;
     int ret;
-    int error_flag = 0;
+    int error_flag;
 
     if (!PyArg_ParseTuple(args, "Od", &callback_obj, &value)) {
         return NULL;
@@ -162,9 +205,9 @@ static PyObject *test_call_nodata(PyObject *obj, PyObject *args)
         return NULL;
     }
 
-    /* Call */
+    /* Call 3rd party library code */
     Py_BEGIN_ALLOW_THREADS
-    result = test_thunk_nodata(value, &error_flag);
+    result = library_call_nodata(value, &error_flag, test_thunk_nodata);
     Py_END_ALLOW_THREADS
 
     ccallback_release(&callback);
@@ -206,8 +249,8 @@ static PyObject *test_call_nonlocal(PyObject *obj, PyObject *args)
         return NULL;
     }
 
-    /* Call */
-    result = test_thunk_nonlocal(value);
+    /* Call 3rd party library code */
+    result = library_call_nonlocal(value, test_thunk_nonlocal, (void *)&callback);
 
     PyEval_RestoreThread(_save);
 
@@ -216,6 +259,10 @@ static PyObject *test_call_nonlocal(PyObject *obj, PyObject *args)
     return PyFloat_FromDouble(result);
 }
 
+
+/*
+ * Functions for testing the PyCapsule interface
+ */
 
 static char *test_plus1_signature = "double (double, int *, void *)";
 
@@ -312,10 +359,10 @@ static PyObject *test_get_data_capsule(PyObject *obj, PyObject *args)
     return PyCapsule_New((void *)data, NULL, data_capsule_destructor);
 }
 
+
 /*
  * Initialize the module
  */
-
 
 static PyMethodDef test_ccallback_methods[] = {
     {"test_call_simple", (PyCFunction)test_call_simple, METH_VARARGS, ""},
