@@ -5260,15 +5260,18 @@ class mixture_gen(rv_continuous):
     def __init__(self, distributions, *args, **kwargs):
         """
         Create a new mixture model given a number of distributions
-        @param distributions: dict(string: scipy.stats.rv_continuous)
+        @param distributions: list( tuple(string, scipy.stats.rv_continuous) )
         """
-        self.distributions = distributions
-        self.components = distributions.keys()
+        self.ctor_argument = distributions
+        self.distributions = []
+        self.components = []
         self.distribution_norms = []
         self.distribution_shapes = []
-        for component, distribution in distributions.items():
+        for component, distribution in distributions:
+            self.distributions.append(distribution)
+            self.components.append(component)
             self.distribution_norms.append('{}_norm'.format(component))
-            self.distribution_shapes.append(['{}_{}'.format(component, s) for s in get_shape_parameters(distribution)])
+            self.distribution_shapes.append(['{}_{}'.format(component, s) for s in _get_shape_parameters(distribution)])
         kwargs['shapes'] = ', '.join(sum(self.distribution_shapes, self.distribution_norms))
         super(mixture_gen, self).__init__(*args, **kwargs)
 
@@ -5292,14 +5295,14 @@ class mixture_gen(rv_continuous):
         The combined PDF is the sum of the distribution PDFs weighted by their individual norm factors
         """
         norm_values, shape_values = self._extract_positional_arguments(args)
-        return np.sum((norm * distribution.pdf(x, *shape) for norm, distribution, shape in zip(norm_values, self.distributions.values(), shape_values)), axis=0)
+        return np.sum((norm * distribution.pdf(x, *shape) for norm, distribution, shape in zip(norm_values, self.distributions, shape_values)), axis=0)
     
     def _cdf(self, x, *args):
         """
         The combined CDF is the sum of the distribution CDFs weighted by their individual norm factors
         """
         norm_values, shape_values = self._extract_positional_arguments(args)
-        return np.sum((norm * distribution.cdf(x, *shape) for norm, distribution, shape in zip(norm_values, self.distributions.values(), shape_values)), axis=0)
+        return np.sum((norm * distribution.cdf(x, *shape) for norm, distribution, shape in zip(norm_values, self.distributions, shape_values)), axis=0)
     
     def _rvs(self, *args):
         """
@@ -5309,7 +5312,7 @@ class mixture_gen(rv_continuous):
         norm_values, shape_values = self._extract_positional_arguments(args)
         choices = np.random.choice(len(norm_values), size=self._size, p=norm_values)
         result = np.zeros(self._size)
-        for i, (distribution, shape) in enumerate(zip(self.distributions.values(), shape_values)):
+        for i, (distribution, shape) in enumerate(zip(self.distributions, shape_values)):
             mask = choices == i
             result[mask] = distribution.rvs(size=mask.sum(), *shape)
         return result
@@ -5319,7 +5322,7 @@ class mixture_gen(rv_continuous):
         Set distributions as additional constructor argument
         """
         dct = super(mixture_gen, self)._updated_ctor_param()
-        dct['distributions'] = self.distributions
+        dct['distributions'] = self.ctor_argument
         return dct
 
     def _argcheck(self, *args):
@@ -5329,6 +5332,76 @@ class mixture_gen(rv_continuous):
         The default _argcheck method restricts the arguments to be positive.
         """
         return 1
+
+
+class template_gen(rv_continuous):
+    """
+    Generates a distribution given by a histogram.
+    This is useful to generate a template distribution from a binned datasample.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    There are no additional shape parameters except for the loc and scale.
+    The pdf and cdf are defined as stepwise functions from the provided histogram.
+    In particular the cdf is not interpolated between bin boundaries and not differentiable.
+
+    %(after_notes)s
+
+    %(example)s
+
+    """
+    _support_mask = rv_continuous._support_mask
+
+    def __init__(self, histogram, *args, **kwargs):
+        """
+        Create a new distribution using the given histogram
+        @param histogram the return value of np.histogram
+        """
+        self.histogram = histogram
+        pdf, bins = self.histogram
+        bin_widths = (np.roll(bins, -1) - bins)[:-1]
+        pdf = pdf / float(np.sum(pdf * bin_widths)) 
+        cdf = np.cumsum(pdf * bin_widths)[:-1]
+        self.template_bins = bins
+        self.template_bin_widths = bin_widths
+        self.template_pdf = np.hstack([0.0, pdf, 0.0])
+        self.template_cdf = np.hstack([0.0, cdf, 1.0, 1.0])
+        # Set support
+        epsilon = 1e-7
+        kwargs['a'] = self.template_bins[0] - epsilon
+        kwargs['b'] = self.template_bins[-1] + epsilon
+        super(template_gen, self).__init__(*args, **kwargs)
+
+    def _pdf(self, x):
+        """
+        PDF of the histogram
+        """
+        return self.template_pdf[np.digitize(x, bins=self.template_bins)]
+    
+    def _cdf(self, x):
+        """
+        CDF calculated from the histogram
+        """
+        return self.template_cdf[np.digitize(x, bins=self.template_bins)]
+    
+    def _rvs(self):
+        """
+        Random numbers distributed like the original histogram
+        """
+        probabilities = self.template_pdf[1:-1]
+        choices = np.random.choice(len(self.template_pdf) - 2, size=self._size, p=probabilities / probabilities.sum())
+        uniform = np.random.uniform(size=self._size)
+        return self.template_bins[choices] + uniform * self.template_bin_widths[choices]
+    
+    def _updated_ctor_param(self):
+        """
+        Set the histogram as additional constructor argument
+        """
+        dct = super(template_gen, self)._updated_ctor_param()
+        dct['histogram'] = self.histogram
+        return dct
 
 
 class crystalball_gen(rv_continuous):
@@ -5348,16 +5421,56 @@ class crystalball_gen(rv_continuous):
 
     %(example)s
     """
-    def _pdf(self, alpha, n):
+    def __init__(self, *args, **kwargs):
+        """
+        Set finite support for crystalball function,
+        otherwise the test_all_distributions function fails.
+        """
+        # Set support
+        kwargs['a'] = -1e30
+        kwargs['b'] = +1e30
+        super(crystalball_gen, self).__init__(*args, **kwargs)
+
+    def _pdf(self, x, alpha, n):
         """
         Return PDF of the crystalball function
         """
         A = (n / np.abs(alpha) ) ** n * np.exp( - alpha ** 2 / 2.0 )
         B = n / np.abs(alpha)  - np.abs(alpha)
         C = n / np.abs(alpha) * 1.0 / (n - 1.0) * np.exp( - alpha ** 2 / 2.0 )
-        D = np.sqrt(np.pi / 2.0) * (1 + scipy.special.erf(np.abs(alpha) / np.sqrt(2) ))
+        D = np.sqrt(np.pi / 2.0) * (1 + sc.erf(np.abs(alpha) / np.sqrt(2) ))
         N = 1.0 / (C + D)
-        return np.where(x > -alpha, np.exp(- x**2 / 2), A * (B - x) ** (-n))		
+        # Using np.where we also calculate powers of negative numbers,
+        # because (B - x) ** (..) is also executed for x <= -alpha
+        # But these values are not used in the end, therefore we ignore the errors
+        with np.errstate(invalid='ignore'):
+            return N * np.where(x > -alpha, np.exp(- x**2 / 2), A * (B - x) ** (-n))		
+    
+    def _cdf(self, x, alpha, n):
+        """
+        Return CDF of the crystalball function
+        """
+        A = (n / np.abs(alpha) ) ** n * np.exp( - alpha ** 2 / 2.0 )
+        B = n / np.abs(alpha)  - np.abs(alpha)
+        C = n / np.abs(alpha) * 1.0 / (n - 1.0) * np.exp( - alpha ** 2 / 2.0 )
+        D = np.sqrt(np.pi / 2.0) * (1 + sc.erf(np.abs(alpha) / np.sqrt(2) ))
+        N = 1.0 / (C + D)
+        # Using np.where we also calculate powers of negative numbers,
+        # because (B - x) ** (..) is also executed for x <= -alpha
+        # But these values are not used in the end, therefore we ignore the errors
+        with np.errstate(invalid='ignore'):
+            return N * np.where(x > -alpha,
+                    A * (B + alpha) ** (-n+1) / (n-1) + sc.erf(x / np.sqrt(2)) - sc.erf(-alpha / np.sqrt(2)),
+                    A * (B - x) ** (-n+1) / (n-1) )
+    
+    def _argcheck(self, alpha, n):
+        """
+        In HEP crystal-ball is also defined for n = 1 (see plot on wikipedia)
+        But the function doesn't have a finite integral in this corner case,
+        and isn't a PDF anymore (but can still be used on a finite range).
+        Here we restrict the function to n > 1.
+        """
+        return (n > 1)
 crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Function")
 
 

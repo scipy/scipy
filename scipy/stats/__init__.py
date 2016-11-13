@@ -35,6 +35,7 @@ Continuous distributions
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
+   crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
    erlang            -- Erlang
@@ -85,6 +86,7 @@ Continuous distributions
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
    lomax             -- Lomax (Pareto of the second kind)
+   mixture_gen       -- Mixture (Generator)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
    nakagami          -- Nakagami
@@ -105,6 +107,7 @@ Continuous distributions
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
+   template_gen      -- Template (Generator)
    trapz              -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
