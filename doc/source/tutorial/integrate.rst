@@ -332,9 +332,10 @@ to write a little C to reduce computation time significantly.
 
 The approach can be used, for example, via `ctypes` in a few simple steps:
 
-1.) Write an integrand function in C with the function signature 
-``double f(int n, double *args)``, where ``args`` is an array containing the
-arguments of the function f.  
+1.) Write an integrand function in C with the function signature
+``double f(int n, double *x, void *user_data)``, where ``x`` is an
+array containing the point the function f is evaluated at, and ``user_data``
+to arbitrary additional data you want to provide.
 
 .. code-block:: c
 
