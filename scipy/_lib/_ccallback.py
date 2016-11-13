@@ -1,21 +1,26 @@
 from . import _ccallback_c
 
-import types
 import ctypes
 
 PyCFuncPtr = ctypes.CFUNCTYPE(ctypes.c_void_p).__bases__[0]
 
-py_function_types = (types.MethodType, types.FunctionType)
+ffi = None
 
-try:
-    import cffi
-    ffi = cffi.FFI()
-    CData = ffi.CData
-except ImportError:
-    ffi = None
+class CData(object):
+    pass
 
-    class CData(object):
-        pass
+def _import_cffi():
+    global ffi, CData
+
+    if ffi is not None:
+        return
+
+    try:
+        import cffi
+        ffi = cffi.FFI()
+        CData = ffi.CData
+    except ImportError:
+        ffi = False
 
 
 class LowLevelCallable(tuple):
@@ -123,6 +128,8 @@ class LowLevelCallable(tuple):
 
     @classmethod
     def _parse_callback(cls, obj, user_data=None, signature=None):
+        _import_cffi()
+
         if isinstance(obj, LowLevelCallable):
             func = tuple.__getitem__(obj, 0)
         elif isinstance(obj, PyCFuncPtr):
