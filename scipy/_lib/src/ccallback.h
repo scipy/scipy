@@ -164,6 +164,25 @@ static ccallback_t *ccallback_obtain(void)
     return (ccallback_t *)ccallback__get_thread_local();
 }
 
+#elif defined(_MSC_VER)
+
+static __declspec(thread) ccallback_t *_active_ccallback = NULL;
+
+static void *ccallback__get_thread_local(void)
+{
+    return (void *)_active_ccallback;
+}
+
+static int ccallback__set_thread_local(void *value)
+{
+    _active_ccallback = value;
+}
+
+static ccallback_t *ccallback_obtain(void)
+{
+    return (ccallback_t *)ccallback__get_thread_local();
+}
+
 #else
 
 static void *ccallback__get_thread_local(void)
