@@ -345,8 +345,7 @@ def test_loggamma_taylor1():
     # Make sure there isn't a big jump in accuracy when we move from
     # using the Taylor series to using the recurrence relation.
 
-    pts = [-0.5, 0.5j, -0.5j, 0.5, 1 + 0.5j, 1 - 0.5j, 1.5, 2 - 0.5j,
-           2 + 0.5j, 2.5]
+    pts = [1 + 0.1j, 1 - 0.1j, 1.1, 0.9, 2 - 0.1j, 2 + 0.1j, 2.1, 1.9]
     dataset = []
     for p in pts:
         for eps in [1e-6, -1e-6, 1e-6j, -1e-6j]:
@@ -361,10 +360,10 @@ def test_loggamma_taylor1():
 def test_loggamma_taylor2():
     # Test around the zeros at z = 1, 2.
 
-    dx = np.r_[-np.logspace(-1, -16, 10), np.logspace(-16, -1, 10)]
-    dy = dx.copy()
-    dx, dy = np.meshgrid(dx, dy)
-    dz = dx + 1j*dy
+    r = np.r_[-np.logspace(-1, -16, 10), np.logspace(-16, -1, 10)]
+    theta = np.linspace(0, 2*np.pi, 20)
+    r, theta = np.meshgrid(r, theta)
+    dz = r*(np.cos(theta) + 1j*np.sin(theta))
     z = np.r_[1 + dz, 2 + dz].flatten()
     dataset = []
     for z0 in z:
