@@ -34,7 +34,8 @@ below are not available without it.
    lena - Get classic image processing example image Lena
    logsumexp - Compute the log of the sum of exponentials of input elements
                (imported from scipy.special)
-   pade - Pade approximation to function as the ratio of two polynomials
+   pade - Pade approximation to function as the ratio of two polynomials.
+          (imported from scipy.interpolate)
    toimage - Takes a numpy array and returns a PIL image [requires Pillow]
    source - Print function source code
    who - Print the Numpy arrays in the given dictionary
@@ -43,12 +44,13 @@ below are not available without it.
 
 from __future__ import division, print_function, absolute_import
 
-__all__ = ['who', 'source', 'info', 'doccer',
+__all__ = ['who', 'source', 'info', 'doccer', 'pade',
            'comb', 'factorial', 'factorial2', 'factorialk', 'logsumexp']
 
 from . import doccer
 from .common import *
 from numpy import who, source, info as _info
+from scipy.interpolate._pade import pade
 from scipy.special import comb, factorial, factorial2, factorialk, logsumexp
 
 import sys
