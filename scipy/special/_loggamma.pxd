@@ -18,17 +18,13 @@ cimport cython
 cimport sf_error
 from libc.math cimport M_PI, floor, fabs
 from _complexstuff cimport (
-    nan, zisnan, zabs, zlog, zlog1, zsin, zexp, zdiv, zpack
+    nan, zisnan, zabs, zlog, zlog1, zexp, zdiv, zpack
 )
 from _trig cimport sinpi
 
 cdef extern from "numpy/npy_math.h":
     double npy_copysign(double x, double y) nogil
     int npy_signbit(double x) nogil
-    double NPY_EULER
-
-cdef extern from "cephes.h":
-    double zeta(double x, double q) nogil
 
 DEF TWOPI = 6.2831853071795864769252842 # 2*pi
 DEF LOGPI = 1.1447298858494001741434262 # log(pi)
@@ -50,9 +46,9 @@ cdef inline double complex loggamma(double complex z) nogil:
         return zpack(nan, nan)
     elif z.real > SMALLX or fabs(z.imag) > SMALLY:
         return loggamma_stirling(z)
-    elif zabs(z - 1) <= 0.5:
+    elif zabs(z - 1) <= 0.1:
         return loggamma_taylor(z)
-    elif zabs(z - 2) < 0.5:
+    elif zabs(z - 2) <= 0.1:
         # Recurrence relation and the Taylor series around 1
         return zlog1(z - 1) + loggamma_taylor(z - 1)
     elif z.real < 0.1:
@@ -68,52 +64,56 @@ cdef inline double complex loggamma(double complex z) nogil:
 
 @cython.cdivision(True)
 cdef inline double complex loggamma_recurrence(double complex z) nogil:
-    """Backward recurrence relation; see Proposition 2.2 in [1]."""
-    cdef:
-        int n = <int>(SMALLX - z.real) + 1
-        int signflips = 0
-        int i
-        double complex po, pn
+    """Backward recurrence relation.
 
-    po = z + n - 1
-    pn = po
-    for i in range(2, n + 1):
-        pn = po*(z + n - i)
-        signflips += 1 if po.imag >=0 and pn.imag < 0 else 0
-        po = pn
-    return loggamma_stirling(z + n) - (zlog(pn) + signflips*TWOPI*1J)
+    See Proposition 2.2 in [1] and the Julia implementation [2].
+
+    """
+    cdef:
+        int signflips = 0
+        int sb = 0
+        int nsb
+        double complex shiftprod = z
+
+    z.real += 1
+    while z.real <= SMALLX:
+        shiftprod *= z 
+        nsb = npy_signbit(shiftprod.imag)
+        signflips += 1 if nsb != 0 and sb == 0 else 0
+        sb = nsb
+        z.real += 1
+    return loggamma_stirling(z) - zlog(shiftprod) - signflips*TWOPI*1J
 
 
 @cython.cdivision(True)
 cdef inline double complex loggamma_stirling(double complex z) nogil:
+    """Stirling series for log-Gamma.
+    
+    The coefficients are B[2*n]/(2*n*(2*n - 1)) where B[2*n] is the
+    (2*n)th Bernoulli number. See (1.1) in [1].
+
+    """
     cdef:
-        int n = 1
-        # Bernoulli numbers B_{2k} for 1 <= k <= 16
-        double *bernoulli2k = [0.166666666666666667,
-                               -0.0333333333333333333,
-                               0.0238095238095238095,
-                               -0.0333333333333333333,
-                               0.0757575757575757576,
-                               -0.253113553113553114,
-                               1.16666666666666667,
-                               -7.09215686274509804,
-                               54.9711779448621554,
-                               -529.124242424242424,
-                               6192.12318840579710,
-                               -86580.2531135531136,
-                               1425517.16666666667,
-                               -27298231.0678160920,
-                               601580873.900642368,
-                               -15116315767.0921569]
+        int n
+        double *coeffs = [
+            8.3333333333333333333e-2, -2.7777777777777777778e-3,
+            7.9365079365079365079e-4, -5.952380952380952381e-4,
+            8.4175084175084175084e-4, -1.9175269175269175269e-3,
+            6.4102564102564102564e-3, -2.955065359477124183e-2,
+            1.7964437236883057316e-1, -1.3924322169059011164,
+            1.3402864044168391994e+1, -1.5684828462600201731e+2,
+            2.1931033333333333333e+3, -3.6108771253724989357e+4,
+            6.9147226885131306711e+5, -1.5238221539407416192e+7
+        ]
         double complex res = (z - 0.5)*zlog(z) - z + HLOG2PI
-        double complex coeff = zdiv(1.0, z)
-        double complex rzz = zdiv(coeff, z)
+        double complex zfac = zdiv(1.0, z)
+        double complex rzz = zdiv(zfac, z)
         double complex term
 
-    res += coeff*bernoulli2k[n-1]/(2*n*(2*n - 1))
+    res += coeffs[0]*zfac
     for n in range(2, 17):
-        coeff *= rzz
-        term = coeff*bernoulli2k[n-1]/(2*n*(2*n - 1))
+        zfac *= rzz
+        term = coeffs[n-1]*zfac
         res += term
         if zabs(term) <= TOL*zabs(res):
             break
@@ -122,32 +122,39 @@ cdef inline double complex loggamma_stirling(double complex z) nogil:
 
 @cython.cdivision(True)
 cdef inline double complex loggamma_taylor(double complex z) nogil:
-    """
-    Taylor series around z = 1. Derived from the Taylor series for the
-    digamma function at 1:
+    """Taylor series for log-Gamma around z = 1.
 
-    psi(z + 1) = -gamma - (-zeta(2)*z + zeta(3)*z**2 - ...)
+    It is
 
-    by integrating. Here gamma is the Euler-Mascheroni constant and
-    zeta is the Riemann zeta function. Note that we can approximate
-    zeta(n) by 1/(n - 1), so if we use a radius of 1/2 we should need
-    at most 41 terms.
+    loggamma(z + 1) = -gamma*z + zeta(2)*z**2/2 - zeta(3)*z**3/3 ...
+
+    where gamma is the Euler-Mascheroni constant.
 
     """
     cdef:
         int n
-        double complex zfac, coeff, res
+        double *coeffs = [
+            -5.7721566490153286061e-1, 8.2246703342411321824e-1,
+            -4.0068563438653142847e-1, 2.7058080842778454788e-1,
+            -2.0738555102867398527e-1, 1.6955717699740818995e-1,
+            -1.4404989676884611812e-1, 1.2550966952474304242e-1,
+            -1.1133426586956469049e-1, 1.0009945751278180853e-1,
+            -9.0954017145829042233e-2, 8.3353840546109004025e-2,
+            -7.6932516411352191473e-2, 7.1432946295361336059e-2,
+            -6.6668705882420468033e-2, 6.2500955141213040742e-2
+        ]
+        double complex zfac = 1.0
+        double complex res = 0.0
+        double complex term
 
     z = z - 1
-    if z == 0:
-        return 0
-    res = -NPY_EULER*z
-    zfac = -z
-    for n in xrange(2, 42):
-        zfac *= -z
-        coeff = zeta(n, 1)*zfac/n
-        res += coeff
-        if zabs(coeff/res) < TOL:
+    for n in xrange(16):
+        zfac *= z
+        term = coeffs[n]*zfac
+        res += term
+        with gil:
+            print(term)
+        if zabs(term) < TOL*zabs(res):
             break
     return res
 
