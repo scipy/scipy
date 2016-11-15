@@ -128,6 +128,8 @@ input contains ties. The p-value is also identical to that computed by
 `scipy.stats.mstats_basic.kendalltau` and by R. If the input does not
 contain ties there is no change w.r.t. the previous implementation.
 
+The function `scipy.linalg.block_diag` will not ignore zero-sized matrices anymore.
+
 
 Other changes
 =============

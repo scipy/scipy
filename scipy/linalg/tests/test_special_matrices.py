@@ -266,16 +266,33 @@ class TestBlockDiag:
         assert_equal(a.nbytes, 0)
     
     def test_empty_matrix_arg(self):
-        # regression test for gh-4596: check the shape of the result for empty matrix inputs
+        # regression test for gh-4596: check the shape of the result
+        # for empty matrix inputs. Empty matrices are no longer ignored
+        # (gh-4908) it is viewed as a shape (1, 0) matrix.
         a = block_diag([[1, 0], [0, 1]],
                        [],
                        [[2, 3], [4, 5], [6, 7]])
         assert_array_equal(a, [[1, 0, 0, 0],
                                [0, 1, 0, 0],
+                               [0, 0, 0, 0],
                                [0, 0, 2, 3],
                                [0, 0, 4, 5],
                                [0, 0, 6, 7]])
 
+    def test_zerosized_matrix_arg(self):
+        # test for gh-4908: check the shape of the result for 
+        # zero-sized matrix inputs, i.e. matrices with shape (0,n) or (n,0).
+        # note that [[]] takes shape (1,0)
+        a = block_diag([[1, 0], [0, 1]],
+                       [[]],
+                       [[2, 3], [4, 5], [6, 7]],
+                       np.zeros([0,2],dtype='int32'))
+        assert_array_equal(a, [[1, 0, 0, 0, 0, 0],
+                               [0, 1, 0, 0, 0, 0],
+                               [0, 0, 0, 0, 0, 0],
+                               [0, 0, 2, 3, 0, 0],
+                               [0, 0, 4, 5, 0, 0],
+                               [0, 0, 6, 7, 0, 0]])
 
 class TestKron:
 
