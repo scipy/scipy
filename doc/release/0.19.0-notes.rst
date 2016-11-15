@@ -129,6 +129,8 @@ input contains ties. The p-value is also identical to that computed by
 contain ties there is no change w.r.t. the previous implementation.
 
 The function `scipy.linalg.block_diag` will not ignore zero-sized matrices anymore.
+Instead it will insert rows or columns of zeros of the appropriate size.
+See gh-4908 for more details.
 
 
 Other changes
