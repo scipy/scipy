@@ -185,7 +185,6 @@ _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
                     'median': 4, 'ward': 5, 'weighted': 6}
 _EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
 
-
 __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
            'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
@@ -2040,11 +2039,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     The dendrogram illustrates how each cluster is
     composed by drawing a U-shaped link between a non-singleton
-    cluster and its children. The height of the top of the U-link is
-    the distance between its children clusters. It is also the
+    cluster and its children.  The top of the U-link indicates a
+    cluster merge.  The two legs of the U-link indicate which clusters
+    were merged.  The length of the two legs of the U-link represents
+    the distance between the child clusters.  It is also the
     cophenetic distance between original observations in the two
-    children clusters. It is expected that the distances in Z[:,2] be
-    monotonic, otherwise crossings appear in the dendrogram.
+    children clusters.
 
     Parameters
     ----------
@@ -2060,21 +2060,23 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         large. Truncation is used to condense the dendrogram. There
         are several modes:
 
-        ``None/'none'``
-          No truncation is performed (Default).
+        ``None``
+          No truncation is performed (default).
+          Note: ``'none'`` is an alias for ``None`` that's kept for
+          backward compatibility.
 
         ``'lastp'``
-          The last ``p`` non-singleton formed in the linkage are the only
-          non-leaf nodes in the linkage; they correspond to rows
+          The last ``p`` non-singleton clusters formed in the linkage are the
+          only non-leaf nodes in the linkage; they correspond to rows
           ``Z[n-p-2:end]`` in ``Z``. All other non-singleton clusters are
           contracted into leaf nodes.
 
-        ``'mlab'``
-          This corresponds to MATLAB(TM) behavior. (not implemented yet)
-
-        ``'level'/'mtica'``
+        ``'level'``
           No more than ``p`` levels of the dendrogram tree are displayed.
-          This corresponds to Mathematica(TM) behavior.
+          A "level" includes all nodes with ``p`` merges from the last merge.
+
+          Note: ``'mtica'`` is an alias for ``'level'`` that's kept for
+          backward compatibility.
 
     color_threshold : double, optional
         For brevity, let :math:`t` be the ``color_threshold``.
@@ -2246,6 +2248,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     --------
     linkage, set_link_color_palette
 
+    Notes
+    -----
+    It is expected that the distances in ``Z[:,2]`` be monotonic, otherwise
+    crossings appear in the dendrogram.
+
     Examples
     --------
     >>> from scipy.cluster import hierarchy
@@ -2296,13 +2303,18 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         raise TypeError('The second argument must be a number')
 
     if truncate_mode not in ('lastp', 'mlab', 'mtica', 'level', 'none', None):
+        # 'mlab' and 'mtica' are kept working for backwards compat.
         raise ValueError('Invalid truncation mode.')
 
     if truncate_mode == 'lastp' or truncate_mode == 'mlab':
         if p > n or p == 0:
             p = n
 
-    if truncate_mode == 'mtica' or truncate_mode == 'level':
+    if truncate_mode == 'mtica':
+        # 'mtica' is an alias
+        truncate_mode = 'level'
+
+    if truncate_mode == 'level':
         if p <= 0:
             p = np.inf
 
@@ -2479,10 +2491,10 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         raise ValueError("Invalid root cluster index i.")
 
     if truncate_mode == 'lastp':
-        # If the node is a leaf node but corresponds to a non-single cluster,
+        # If the node is a leaf node but corresponds to a non-singleton cluster,
         # its label is either the empty string or the number of original
         # observations belonging to cluster i.
-        if 2 * n - p > i >= n:
+        if 2*n - p > i >= n:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
@@ -2494,7 +2506,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
                                         leaf_label_func, i, labels)
             return (iv + 5.0, 10.0, 0.0, 0.0)
-    elif truncate_mode in ('mtica', 'level'):
+    elif truncate_mode == 'level':
         if i > n and level > p:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
@@ -2508,12 +2520,10 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                         leaf_label_func, i, labels)
             return (iv + 5.0, 10.0, 0.0, 0.0)
     elif truncate_mode in ('mlab',):
-        pass
+        msg = "Mode 'mlab' is deprecated in scipy 0.19.0 (it never worked)."
+        warnings.warn(msg, DeprecationWarning)
 
     # Otherwise, only truncate if we have a leaf node.
-    #
-    # If the truncate_mode is mlab, the linkage has been modified
-    # with the truncated tree.
     #
     # Only place leaves if they correspond to original observations.
     if i < n:
