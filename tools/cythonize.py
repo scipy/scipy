@@ -54,8 +54,8 @@ def process_pyx(fromfile, tofile):
     try:
         from Cython.Compiler.Version import version as cython_version
         from distutils.version import LooseVersion
-        if LooseVersion(cython_version) < LooseVersion('0.22'):
-            raise Exception('Building SciPy requires Cython >= 0.22')
+        if LooseVersion(cython_version) < LooseVersion('0.23.4'):
+            raise Exception('Building SciPy requires Cython >= 0.23.4')
 
     except ImportError:
         pass
