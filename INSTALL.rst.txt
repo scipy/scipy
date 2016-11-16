@@ -35,7 +35,7 @@ SciPy requires the following software installed for your platform:
 
 __ http://www.python.org
 
-2) NumPy__ >= 1.7.1
+2) NumPy__ >= 1.8.2
 
 __ http://www.numpy.org/
 
@@ -49,7 +49,7 @@ __ http://sphinx-doc.org/
 
 5) If you want to build SciPy master or other unreleased version from source
    (Cython-generated C sources are included in official releases):
-   Cython__ >= 0.22
+   Cython__ >= 0.23.4
 
 __ http://cython.org/
 
