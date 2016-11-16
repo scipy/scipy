@@ -798,7 +798,14 @@ def nn_chain(double[:] dists, int n, int method):
         # Go through chain of neighbors until two mutual neighbors are found.
         while True:
             x = cluster_chain[chain_length - 1]
-            current_min = NPY_INFINITYF
+
+            # We want to prefer the previous element in the chain as the
+            # minimum, to avoid potentially going in cycles.
+            if chain_length > 1:
+                y = cluster_chain[chain_length - 2]
+                current_min = D[condensed_index(n, x, y)]
+            else:
+                current_min = NPY_INFINITYF
 
             for i in range(n):
                 if size[i] == 0 or x == i:
@@ -817,6 +824,10 @@ def nn_chain(double[:] dists, int n, int method):
 
         # Merge clusters x and y and pop them from stack.
         chain_length -= 2
+
+        # This is a convention used in fastcluster.
+        if x > y:
+            x, y = y, x
 
         # get the original numbers of points in clusters x and y
         nx = size[x]
