@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_equal, assert_)
 
-from scipy.misc import pade, logsumexp, face, ascent
+from scipy.misc import pade, logsumexp, face, ascent, inversefunc
 
 
 def test_pade_trivial():
@@ -170,3 +170,69 @@ def test_face():
 
 def test_ascent():
     assert_equal(ascent().shape, (512, 512))
+
+
+def test_inversefunc_infinite():
+    accuracy = 2
+    cube = (lambda x: x**3)
+    invcube = inversefunc(cube)
+    assert_array_almost_equal(invcube([-27, -8, -1, 0, 1, 8, 27]),
+                              [-3, -2, -1, 0, 1, 2, 3], accuracy)
+
+def test_inversefunc_vminclosed():
+    accuracy = 2
+    square = (lambda x: x**2)
+    invsquare = inversefunc(square, domain=0)
+    assert_array_almost_equal(invsquare([4, 16, 64]), [2, 4, 8], accuracy)
+
+def test_inversefunc_vminopen():
+    accuracy = 2
+    log = (lambda x: np.log10(x))
+    invlog = inversefunc(log, domain=0,
+                         open_domain=True,
+                         image=[-np.inf, None])
+    assert_array_almost_equal(invlog([-2., -3.]), [0.01, 0.001], accuracy)
+
+def test_inversefunc_vmaxclosed():
+    accuracy = 2
+    square = (lambda x: x**2)
+    invsquare = inversefunc(square, domain=[None, 0])
+    assert_array_almost_equal(invsquare([4, 16, 64]), [-2, -4, -8], accuracy)
+
+def test_inversefunc_vmaxopen():
+    accuracy = 2
+    log = (lambda x: np.log10(-x))
+    invlog = inversefunc(log, domain=[None, 0],
+                         open_domain=True,
+                         image=[-np.inf, None])
+    assert_array_almost_equal(invlog([-2., -3.]), [-0.01, -0.001], accuracy)
+
+def test_inversefunc_vminclosedvmaxclosed():
+    accuracy = 2
+    cos = (lambda x: np.cos(x))
+    invcos = inversefunc(cos, domain=[0, np.pi])
+    assert_array_almost_equal(invcos([1, 0, -1]),
+                              [0., np.pi / 2, np.pi], accuracy)
+
+def test_inversefunc_vminopenvmaxclosed():
+    accuracy = 2
+    cos = (lambda x: np.cos(x))
+    invcos = inversefunc(cos, domain=[0, np.pi], open_domain=[True, False])
+    assert_array_almost_equal(invcos([1 / np.sqrt(2), 0, -1 / np.sqrt(2)]),
+                              [np.pi / 4, np.pi / 2, 3 * np.pi / 4], accuracy)
+
+def test_inversefunc_vminclosedvmaxopen():
+    accuracy = 2
+    cos = (lambda x: np.cos(x))
+    invcos = inversefunc(cos, domain=[0, np.pi], open_domain=[False, True])
+    assert_array_almost_equal(invcos([1 / np.sqrt(2), 0, -1 / np.sqrt(2)]),
+                              [np.pi / 4, np.pi / 2, 3 * np.pi / 4], accuracy)
+
+def test_inversefunc_vminopenvmaxopen():
+    accuracy = 2
+    tan = (lambda x: np.tan(x))
+    invtan = inversefunc(tan,
+                         domain=[-np.pi/2, np.pi/2],
+                         open_domain=True)
+    assert_array_almost_equal(invtan([1, 0, -1]),
+                              [np.pi / 4, 0., -np.pi / 4], accuracy)

@@ -101,6 +101,12 @@ spline given data points and boundary conditions.
 New function `scipy.interpolate.make_lsq_spline` constructs a least-squares
 spline approximation given data points.
 
+`scipy.misc` improvements
+--------------------------------
+
+New function `scipy.misc.inversefunc` returns a callable implementing the
+inverse of an input function.
+
 
 Deprecated features
 ===================
