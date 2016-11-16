@@ -306,6 +306,17 @@ def gaussian_filter(input, sigma, order=0, output=None,
            [29, 31, 33, 34, 36],
            [35, 37, 39, 40, 42]])
 
+    >>> from scipy import misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = gaussian_filter(ascent, sigma=5)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
@@ -342,10 +353,15 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     --------
     >>> from scipy import ndimage, misc
     >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
     >>> ascent = misc.ascent()
     >>> result = ndimage.prewitt(ascent)
-    >>> plt.gray()  # show the filtered result in grayscale
-    >>> plt.imshow(result)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
@@ -373,10 +389,15 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     --------
     >>> from scipy import ndimage, misc
     >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
     >>> ascent = misc.ascent()
     >>> result = ndimage.sobel(ascent)
-    >>> plt.gray()  # show the filtered result in grayscale
-    >>> plt.imshow(result)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
@@ -443,10 +464,15 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
     --------
     >>> from scipy import ndimage, misc
     >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
     >>> ascent = misc.ascent()
     >>> result = ndimage.laplace(ascent)
-    >>> plt.gray()  # show the filtered result in grayscale
-    >>> plt.imshow(result)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     def derivative2(input, axis, output, mode, cval):
         return correlate1d(input, [1, -2, 1], axis, output, mode, cval, 0)
@@ -563,6 +589,25 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     %(mode)s
     %(cval)s
     Extra keyword arguments will be passed to gaussian_filter().
+
+    Returns
+    -------
+    gaussian_gradient_magnitude : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.gaussian_gradient_magnitude(ascent, sigma=5)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
 
@@ -806,6 +851,11 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     %(cval)s
     %(origin)s
 
+    Returns
+    -------
+    uniform_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
     Notes
     -----
     The multi-dimensional filter is implemented as a sequence of
@@ -813,6 +863,20 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.uniform_filter(ascent, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
@@ -1005,6 +1069,25 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    minimum_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.minimum_filter(ascent, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
                               cval, origin, 1)
@@ -1023,6 +1106,25 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    maximum_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.maximum_filter(ascent, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
                               cval, origin, 0)
@@ -1097,6 +1199,25 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    rank_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.rank_filter(ascent, rank=42, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _rank_filter(input, rank, size, footprint, output, mode, cval,
                         origin, 'rank')
@@ -1120,8 +1241,21 @@ def median_filter(input, size=None, footprint=None, output=None,
     Returns
     -------
     median_filter : ndarray
-        Return of same shape as `input`.
+        Filtered array. Has the same shape as `input`.
 
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.median_filter(ascent, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _rank_filter(input, 0, size, footprint, output, mode, cval,
                         origin, 'median')
@@ -1143,6 +1277,25 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    percentile_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.percentile_filter(ascent, percentile=20, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _rank_filter(input, percentile, size, footprint, output, mode,
                                    cval, origin, 'percentile')
