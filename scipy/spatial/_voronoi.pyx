@@ -4,20 +4,21 @@ cimport cython
 
 __all__ = ['sort_vertices_of_regions']
 
-cdef void remaining_filter(int shape, long[:] remaining, int current_simplex):
-   cdef unsigned int i
+cdef void remaining_filter(np.npy_intp shape, np.npy_intp[:] remaining,
+		np.npy_intp current_simplex):
+   cdef np.npy_intp i
    for i in range(shape):
      if remaining[i] == current_simplex:
        remaining[i] = -2
     
 @cython.boundscheck(False)
 def sort_vertices_of_regions(int[:,::1] simplices, regions):
-  cdef unsigned int n, k, s, i
-  cdef int num_regions = len(regions)
-  cdef int current_simplex, current_vertex, remaining_count
-  cdef int cs_identified, remaining_size
-  cdef long[:] remaining
-  cdef long[:] sorted_vertices = np.zeros(max([len(region) for region in
+  cdef np.npy_intp n, k, s, i
+  cdef np.npy_intp num_regions = len(regions)
+  cdef np.npy_intp current_simplex, current_vertex, remaining_count
+  cdef np.npy_intp cs_identified, remaining_size
+  cdef np.npy_intp[:] remaining
+  cdef np.npy_intp[:] sorted_vertices = np.zeros(max([len(region) for region in
 	  regions]), dtype = np.int64)
 
   for n in range(num_regions):

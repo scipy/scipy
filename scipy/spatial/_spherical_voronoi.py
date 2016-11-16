@@ -15,7 +15,7 @@ import numpy as np
 import numpy.matlib
 import scipy
 import itertools
-from . import _sv_sort_vertices
+from . import _voronoi
 
 __all__ = ['SphericalVoronoi']
 
@@ -295,5 +295,5 @@ class SphericalVoronoi:
          of its surrounding region.
         """
 
-        _sv_sort_vertices.sort_vertices_of_regions(self._tri.simplices,
+        _voronoi.sort_vertices_of_regions(self._tri.simplices,
                                                    self.regions)

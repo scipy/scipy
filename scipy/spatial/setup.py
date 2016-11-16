@@ -79,8 +79,8 @@ def configuration(parent_package='', top_path=None):
         include_dirs=[get_numpy_include_dirs()],
         extra_info=get_misc_info("npymath"))
 
-    config.add_extension('_sv_sort_vertices',
-                         sources=['_sv_sort_vertices.c'])
+    config.add_extension('_voronoi',
+                         sources=['_voronoi.c'])
 
     return config
 
