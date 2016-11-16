@@ -2124,7 +2124,7 @@ class rv_continuous(rv_generic):
         Returns
         -------
         mle_tuple : tuple of floats
-            MLEs for any shape statistics (if applicable), followed by those
+            MLEs for any shape parameters (if applicable), followed by those
             for location and scale. For most random variables, shape statistics
             will be returned, but there are exceptions (e.g. ``norm``).
 
@@ -2165,6 +2165,14 @@ class rv_continuous(rv_generic):
         >>> a1
         1
 
+        Not all distributions return estimates for the shape parameters.
+        ``norm`` for example just returns estimates for location and scale:
+
+        >>> from scipy.stats import norm
+        >>> x = norm.rvs(a, b, size=1000, random_state=123)
+        >>> loc1, scale1 = norm.fit(x)
+        >>> loc1, scale1
+        (0.92087172783841631, 2.0015750750324668)
         """
         Narg = len(args)
         if Narg > self.numargs:
