@@ -58,7 +58,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     Examples
     --------
-    >>> from scipy.misc import logsumexp
+    >>> from scipy.special import logsumexp
     >>> a = np.arange(10)
     >>> np.log(np.sum(np.exp(a)))
     9.4586297444267107
