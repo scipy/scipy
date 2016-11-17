@@ -1,12 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
-import numpy as np
-from numpy.testing import (assert_array_equal, assert_almost_equal,
-                           assert_array_almost_equal, assert_equal, assert_)
+from numpy.testing import assert_equal, assert_
 
 from scipy.misc import pade, logsumexp, face, ascent
 from scipy.special import logsumexp as sc_logsumexp
 from scipy.interpolate import pade as i_pade
+
 
 def test_logsumexp():
     # make sure logsumexp can be imported from either scipy.misc or
