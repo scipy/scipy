@@ -3613,8 +3613,8 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         decreasing lexicographical rank by (`x`, `y`) will be used: elements of
         higher rank will be those with larger `x`-values, using `y`-values to
         break ties (in particular, swapping `x` and `y` will give a different
-        result). If you use False, the element indices will be used
-        directly as ranks. The default is None, in which case this
+        result). If it is False, the element indices will be used
+        directly as ranks. The default is True, in which case this
         function returns the average of the values obtained using the
         decreasing lexicographical rank by (`x`, `y`) and by (`y`, `x`).
     weigher : callable or None, optional
@@ -3709,7 +3709,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         if y.dtype != np.int64:
             y = _toranks(y)
     else:
-        if x.dtype != np.int64:  # not in (np.int32, np.int64, np.float32, np.float64):
+        if x.dtype not in (np.int32, np.int64, np.float32, np.float64):
             x = _toranks(x)
             y = _toranks(y)
 
@@ -3721,9 +3721,8 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
     if rank is False:
         rank = np.arange(x.size, dtype=np.intp)
-
-    if rank is not None:
-        rank = np.asarray(rank)
+    elif rank is not None:
+        rank = np.asarray(rank).ravel()
         if rank.size != x.size:
             raise ValueError("All inputs to `weightedtau` must be of the same size, "
                          "found x-size %s and rank-size %s" % (x.size, rank.size))

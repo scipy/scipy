@@ -104,10 +104,10 @@ def _kendall_dis(intp_t[:] x, intp_t[:] y):
 # Arrays of other types will be turned into a rank array using _toranks().
 
 ctypedef fused ordered:
-#    np.int32_t
+    np.int32_t
     np.int64_t
-#    np.float32_t
-#    np.float64_t
+    np.float32_t
+    np.float64_t
 
 
 # Inverts a permutation in place [B. H. Boonstra, Comm. ACM 8(2):104, 1965].
