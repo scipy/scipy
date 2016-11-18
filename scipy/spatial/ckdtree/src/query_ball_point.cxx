@@ -71,12 +71,12 @@ traverse_checking(const ckdtree *self,
         const npy_intp end = lnode->end_idx;
             
         prefetch_datapoint(data + indices[start] * m, m);
-        if (start < end)
+        if (start < end - 1)
             prefetch_datapoint(data + indices[start+1] * m, m);
                 
         for (i = start; i < end; ++i) {
             
-            if (i < end-2)
+            if (i < end -2 )
                 prefetch_datapoint(data + indices[i+2] * m, m);
            
             d = MinMaxDist::distance_p(self, data + indices[i] * m, tpt, p, m, tub);
