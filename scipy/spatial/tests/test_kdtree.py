@@ -4,12 +4,16 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_equal, assert_array_equal,
-    assert_almost_equal, assert_array_almost_equal, assert_, run_module_suite)
+    assert_almost_equal, assert_array_almost_equal, assert_,
+    assert_raises,
+    run_module_suite)
 
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial.ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
+
+import itertools
 
 def distance_box(a, b, p, boxsize):
     diff = a - b
@@ -1065,19 +1069,11 @@ def test_ckdtree_box():
 
 def test_ckdtree_box_upper_bounds():
     data = np.linspace(0, 2, 10).reshape(-1, 1)
-    try:
-        cKDTree(data, leafsize=1, boxsize=1.0)
-    except ValueError:
-        return
-    raise AssertionError("ValueError is not raised")
+    assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=1.0)
 
 def test_ckdtree_box_lower_bounds():
     data = np.linspace(-1, 1, 10)
-    try:
-        cKDTree(data, leafsize=1, boxsize=1.0)
-    except ValueError:
-        return
-    raise AssertionError("ValueError is not raised")
+    assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=1.0)
 
 def simulate_periodic_box(kdtree, data, k, boxsize):
     dd = []
@@ -1153,11 +1149,7 @@ def test_ckdtree_weights():
     nw = tree1._build_weights(weights)
     assert_array_equal(nw, [4, 2, 1, 1, 2, 1, 1])
 
-    try:
-        tree1._build_weights(weights[:-1])
-        raise AssertionError("Exception is not raised for short weights list")
-    except ValueError:
-        pass
+    assert_raises(ValueError, tree1._build_weights, weights[:-1])
 
     for i in range(10):
         # since weights are uniform, these shall agree:
@@ -1190,17 +1182,12 @@ def test_ckdtree_weights():
 
         assert_array_equal(c1, c2)
 
-        try:
-            #this asserts for two different trees, singular weights
-            # crashes
-            tree1.count_neighbors(tree2, np.linspace(0, 10, 100), 
-                    weights=w1)
-            raise AssertionError("Exception is not caught")
-        except ValueError:
-            pass 
+        #this asserts for two different trees, singular weights
+        # crashes
+        assert_raises(ValueError, tree1.count_neighbors,
+            tree2, np.linspace(0, 10, 100), weights=w1)
 
 def test_ckdtree_count_neighbous_multiple_r():
-    import itertools
     n = 2000
     m = 2
     np.random.seed(1234)
@@ -1293,11 +1280,8 @@ def test_ckdtree_noncumulative_nondecreasing():
     # root left (1), and right (2)
     kdtree = cKDTree([[0]], leafsize=1)
 
-    try:
-        kdtree.count_neighbors(kdtree, [0.1, 0], cumulative=False)
-        raise AssertionError("valueerror not caught")
-    except ValueError:
-        pass
+    assert_raises(ValueError, kdtree.count_neighbors,
+        kdtree, [0.1, 0], cumulative=False)
 
 def test_short_knn():
 

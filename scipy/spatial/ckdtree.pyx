@@ -1163,7 +1163,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
     def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2., 
                         object weights=None, int cumulative=True):
         """
-        count_neighbors(self, other, r, p=2., self_weights=None, other_weights=None, cumulative=True)
+        count_neighbors(self, other, r, p=2., weights=None, cumulative=True)
 
         Count how many nearby pairs can be formed. (pair-counting)
 
@@ -1171,8 +1171,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         from self and x2 drawn from ``other``, and where
         ``distance(x1, x2, p) <= r``.
 
-        Data points on self and other are optionally weighted by 
-        ``self_weights`` and ``other_weights``.
+        Data points on self and other are optionally weighted by the ``weights``
+        argument. (See below)
 
         The algorithm we implement here is based on [1]_. See notes for further discussion.
 
@@ -1190,12 +1190,14 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             Which Minkowski p-norm to use.
             Default 2.0.
         weights : tuple, array_like, or None, optional
-            If given as a tuple, weights[0] is the weights of points in self, and
-            weights[1] is the weights of points in other; either can be None to 
-            indicate the points are unweighted.
-            If given as an array_like, weights is the weights of points in self 
-            and other. If self and other are two different trees, an Error is raised.
             If None, the pair-counting is unweighted.
+            If given as a tuple, weights[0] is the weights of points in ``self``, and
+            weights[1] is the weights of points in ``other``; either can be None to 
+            indicate the points are unweighted.
+            If given as an array_like, weights is the weights of points in ``self``
+            and ``other``. For this to make sense, ``self`` and ``other`` must be the
+            same tree. If ``self`` and ``other`` are two different trees, a ``ValueError``
+            is raised.
             Default: None
         cumulative : bool, optional
             Whether the returned counts are cumulative. When cumulative is set to ``False``
@@ -1213,7 +1215,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         Notes
         -----
-
         Pair-counting is the basic operation used to calculate the two point
         correlation functions from a data set composed of position of objects.
 
@@ -1235,18 +1236,19 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
              \\xi(r) = \\frac{<D, D> - 2 f <D, R> + f^2<R, R>}{f^2<R, R>},
 
-        where the brakets represents counting pairs between two data sets
+        where the brackets represents counting pairs between two data sets
         in a finite bin around ``r`` (distance), corresponding to setting
         `cumulative=False`, and ``f = float(len(D)) / float(len(R))`` is the
         ratio between number of objects from data and random.
 
-        The algorithm implemented here is loosely based on the dual-tree algorithm
-        described in [1]_. We
-        switch between two different pair-cumulation scheme depending on the setting of
-        ``cumulative``.  The computing time of the method we use when
-        for ``cumulative == False`` does not scale with the total number of bins.
-        The algorithm for ``cumulative == True`` scales linearly with the number of bins,
-        though it is slightly faster when only 1 or 2 bins are used. [5]_.
+        The algorithm implemented here is loosely based on the dual-tree
+        algorithm described in [1]_. We switch between two different
+        pair-cumulation scheme depending on the setting of ``cumulative``.
+        The computing time of the method we use when for
+        ``cumulative == False`` does not scale with the total number of bins.
+        The algorithm for ``cumulative == True`` scales linearly with the
+        number of bins, though it is slightly faster when only
+        1 or 2 bins are used. [5]_.
 
         As an extension to the naive pair-counting,
         weighted pair-counting counts the product of weights instead
@@ -1256,17 +1258,25 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         or to properly calculate the average of data per distance bin
         (e.g. [4]_, section 2.1 on redshift).
 
-        .. [1] Gray and Moore "N-body problems in statistical learning", Mining the sky,
-               2000, https://arxiv.org/abs/astro-ph/0012333
+        .. [1] Gray and Moore,
+               "N-body problems in statistical learning",
+               Mining the sky, 2000,
+               https://arxiv.org/abs/astro-ph/0012333
 
-        .. [2] Landy and Szalay, "Bias and variance of angular correlation functions",
-               1993, http://adsabs.harvard.edu/abs/1993ApJ...412...64L
+        .. [2] Landy and Szalay,
+               "Bias and variance of angular correlation functions",
+               The Astrophysical Journal, 1993,
+               http://adsabs.harvard.edu/abs/1993ApJ...412...64L
 
-        .. [3] Sheth, Connolly and Skibba, "Marked correlations in galaxy formation models",
-               2005, https://arxiv.org/abs/astro-ph/0511773
+        .. [3] Sheth, Connolly and Skibba,
+               "Marked correlations in galaxy formation models",
+               Arxiv e-print, 2005,
+               https://arxiv.org/abs/astro-ph/0511773
 
-        .. [4] Hawkins, et al., "The 2dF Galaxy Redshift Survey: correlation functions,
-               peculiar velocities and the matter density of the Universe", 2002,
+        .. [4] Hawkins, et al.,
+               "The 2dF Galaxy Redshift Survey: correlation functions,
+               peculiar velocities and the matter density of the Universe",
+               Monthly Notices of the Royal Astronomical Society, 2002,
                http://adsabs.harvard.edu/abs/2003MNRAS.346...78H
 
         .. [5] https://github.com/scipy/scipy/pull/5647#issuecomment-168474926
