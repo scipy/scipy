@@ -42,7 +42,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
          'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice', 'kappa4', 'kappa3', 'truncnorm', 'crystalball']
+         'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -3155,6 +3155,58 @@ class TestMixture(TestCase):
         assert_allclose(np.sum(sample < -1.0), 2.0/6.0 * N, rtol=0.05)
         assert_allclose(np.sum(sample <  0.0), 5.0/6.0 * N, rtol=0.05)
         
+
+def test_argus_function():
+    # There is no usable reference implementation (RooFit implementation returns unreasonable results which are not normalized correctly)
+    # Instead we do some tests if the distribution behaves as expected for different shapes and scales
+    for i in range(1, 10):
+        for j in range(1, 10):
+            assert_equal(stats.argus.pdf(i + 0.001, chi=j, scale=i), 0.0)
+            assert_(stats.argus.pdf(i - 0.001, chi=j, scale=i) > 0.0)
+            assert_equal(stats.argus.pdf(-0.001, chi=j, scale=i), 0.0)
+            assert_(stats.argus.pdf(+0.001, chi=j, scale=i) > 0.0)
+
+    for i in range(1, 10):
+        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
+
+
+def test_crystalball_function():
+    """
+    All values are calculated using the independent implementation of the ROOT framework (see https://root.cern.ch/).
+    Corresponding ROOT code is given in the comments.
+    """
+    X = np.linspace(-5.0, 5.0, 21)[:-1]
+
+    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_pdf(x, 1.0, 2.0, 1.0) << ", ";
+    calculated = stats.crystalball.pdf(X, alpha=1.0, n=2.0)
+    expected = np.array([0.0202867, 0.0241428, 0.0292128, 0.0360652, 0.045645, 0.059618, 0.0811467, 0.116851, 0.18258, 0.265652, 0.301023, 0.265652, 0.18258, 0.097728, 0.0407391, 0.013226, 0.00334407, 0.000658486, 0.000100982, 1.20606e-05])
+    assert_allclose(expected, calculated, rtol=0.001)
+
+    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 1.0) << ", ";
+    calculated = stats.crystalball.pdf(X, alpha=2.0, n=3.0)
+    expected = np.array([0.0019648, 0.00279754, 0.00417592, 0.00663121, 0.0114587, 0.0223803, 0.0530497, 0.12726, 0.237752, 0.345928, 0.391987, 0.345928, 0.237752, 0.12726, 0.0530497, 0.0172227, 0.00435458, 0.000857469, 0.000131497, 1.57051e-05])
+    assert_allclose(expected, calculated, rtol=0.001)
+    
+    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
+    calculated = stats.crystalball.pdf(X, alpha=2.0, n=3.0, loc=0.5, scale=2.0)
+    expected = np.array([0.00785921, 0.0111902, 0.0167037, 0.0265249, 0.0423866, 0.0636298, 0.0897324, 0.118876, 0.147944, 0.172964, 0.189964, 0.195994, 0.189964, 0.172964, 0.147944, 0.118876, 0.0897324, 0.0636298, 0.0423866, 0.0265249])
+    assert_allclose(expected, calculated, rtol=0.001)
+
+    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_cdf(x, 1.0, 2.0, 1.0) << ", ";
+    calculated = stats.crystalball.cdf(X, alpha=1.0, n=2.0)
+    expected = np.array([0.12172, 0.132785, 0.146064, 0.162293, 0.18258, 0.208663, 0.24344, 0.292128, 0.36516, 0.478254, 0.622723, 0.767192, 0.880286, 0.94959, 0.982834, 0.995314, 0.998981, 0.999824, 0.999976, 0.999997])
+    assert_allclose(expected, calculated, rtol=0.001)
+
+    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 1.0) << ", ";
+    calculated = stats.crystalball.cdf(X, alpha=2.0, n=3.0)
+    expected = np.array([0.00442081, 0.00559509, 0.00730787, 0.00994682, 0.0143234, 0.0223803, 0.0397873, 0.0830763, 0.173323, 0.320592, 0.508717, 0.696841, 0.844111, 0.934357, 0.977646, 0.993899, 0.998674, 0.999771, 0.999969, 0.999997])
+    assert_allclose(expected, calculated, rtol=0.001)
+
+    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
+    calculated = stats.crystalball.cdf(X, alpha=2.0, n=3.0, loc=0.5, scale=2.0)
+    expected = np.array([0.0176832, 0.0223803, 0.0292315, 0.0397873, 0.0567945, 0.0830763, 0.121242, 0.173323, 0.24011, 0.320592, 0.411731, 0.508717, 0.605702, 0.696841, 0.777324, 0.844111, 0.896192, 0.934357, 0.960639, 0.977646])
+    assert_allclose(expected, calculated, rtol=0.001)
+
 
 if __name__ == "__main__":
     run_module_suite()

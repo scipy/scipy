@@ -5238,6 +5238,7 @@ class mixture_gen(rv_continuous):
     E.g.
 
     mixture_gen({'Gauss': scipy.stats.norm, 'Gamma': scipy.stats.gamma})
+
     has the following shape parameters:
       - Gauss_norm
       - Gauss_loc
@@ -5351,6 +5352,10 @@ class template_gen(rv_continuous):
 
     %(example)s
 
+    data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5)
+    hist = np.histogram(data, bins=100)
+    template = scipy_extra.stats.template_gen(hist)
+
     """
     _support_mask = rv_continuous._support_mask
 
@@ -5421,16 +5426,6 @@ class crystalball_gen(rv_continuous):
 
     %(example)s
     """
-    def __init__(self, *args, **kwargs):
-        """
-        Set finite support for crystalball function,
-        otherwise the test_all_distributions function fails.
-        """
-        # Set support
-        kwargs['a'] = -1e30
-        kwargs['b'] = +1e30
-        super(crystalball_gen, self).__init__(*args, **kwargs)
-
     def _pdf(self, x, alpha, n):
         """
         Return PDF of the crystalball function
@@ -5443,7 +5438,7 @@ class crystalball_gen(rv_continuous):
         # Using np.where we also calculate powers of negative numbers,
         # because (B - x) ** (..) is also executed for x <= -alpha
         # But these values are not used in the end, therefore we ignore the errors
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid='ignore', divide='ignore'):
             return N * np.where(x > -alpha, np.exp(- x**2 / 2), A * (B - x) ** (-n))		
     
     def _cdf(self, x, alpha, n):
@@ -5458,9 +5453,9 @@ class crystalball_gen(rv_continuous):
         # Using np.where we also calculate powers of negative numbers,
         # because (B - x) ** (..) is also executed for x <= -alpha
         # But these values are not used in the end, therefore we ignore the errors
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid='ignore', divide='ignore'):
             return N * np.where(x > -alpha,
-                    A * (B + alpha) ** (-n+1) / (n-1) + sc.erf(x / np.sqrt(2)) - sc.erf(-alpha / np.sqrt(2)),
+                    A * (B + alpha) ** (-n+1) / (n-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-alpha)),
                     A * (B - x) ** (-n+1) / (n-1) )
     
     def _argcheck(self, alpha, n):
@@ -5472,6 +5467,56 @@ class crystalball_gen(rv_continuous):
         """
         return (n > 1)
 crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Function")
+
+
+def _argus_phi(chi):
+    """
+    Utility function for the argus distribution
+    used in the CDF and norm of the Argus Funktion
+    """
+    return  _norm_cdf(chi) - chi * _norm_pdf(chi) - 0.5
+
+
+class argus_gen(rv_continuous):
+    """
+    Argus distribution
+
+    %(before_notes)s
+
+    Notes
+    -----
+    Named after the argus experiment.
+    Used in elementary particle physics to model invariant mass distributions from continuum background
+
+    For details see: https://en.wikipedia.org/wiki/ARGUS_distribution
+
+    The parameter c of the Argus distributions is named scale in scipy.
+
+    %(after_notes)s
+
+    %(example)s
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        Set finite support for argus function.
+        """
+        # Set support
+        kwargs['a'] = 0.0
+        kwargs['b'] = 1.0
+        super(argus_gen, self).__init__(*args, **kwargs)
+
+    def _pdf(self, x, chi):
+        """
+        Return PDF of the argus function
+        """
+        return chi**3 / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(1.0 - x**2) * np.exp(- 0.5 * chi**2 * (1.0 - x**2) )
+
+    def _cdf(self, x, chi):
+        """
+        Return CDF of the argus function
+        """
+        return 1.0 - _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+argus = argus_gen(name='argus', longname="An Argus Function")
 
 
 # Collect names of classes and objects in this module.
