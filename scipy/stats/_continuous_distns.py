@@ -5237,16 +5237,18 @@ class mixture_gen(rv_continuous):
     
     E.g.
 
-    mixture_gen({'Gauss': scipy.stats.norm, 'Gamma': scipy.stats.gamma})
+    mixture_gen([('Gauss', scipy.stats.norm), ('Gamma', scipy.stats.gamma)])
 
-    has the following shape parameters:
+    has the following shape parameters (in this order):
       - Gauss_norm
+      - Gamma_norm
       - Gauss_loc
       - Gauss_scale
-      - Gamma_norm
+      - Gamma_a
       - Gamma_loc
       - Gamma_scale
-      - Gamma_a
+
+    So, first all the normalisation parameters, secondly the shape parameters of the individual distributions.
 
     See Also
     --------
