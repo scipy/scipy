@@ -5206,6 +5206,57 @@ class halfgennorm_gen(rv_continuous):
 halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 
+def _argus_phi(chi):
+    """
+    Utility function for the argus distribution
+    used in the CDF and norm of the Argus Funktion
+    """
+    return _norm_cdf(chi) - chi * _norm_pdf(chi) - 0.5
+
+
+class argus_gen(rv_continuous):
+    """
+    Argus distribution
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `argus` is::
+
+        argus.pdf(x, chi) = chi**3 / (sqrt(2*pi) * Psi(chi)) * x * sqrt(1-x**2) * exp(- 0.5 * chi**2 * (1 - x**2))
+
+        where:
+                 Psi(chi) = Phi(chi) - chi * phi(chi) - 1/2
+                 with Phi and phi being the CDF and PDF of a standard normal distribution, respectively.
+
+    `argus` takes ``chi`` as shape a parameter.
+
+    References
+    ----------
+
+    .. [1] "ARGUS distribution",
+           https://en.wikipedia.org/wiki/ARGUS_distribution
+
+    %(after_notes)s
+
+    %(example)s
+    """
+    def _pdf(self, x, chi):
+        """
+        Return PDF of the argus function
+        """
+        y = 1.0 - x**2
+        return chi**3 / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
+
+    def _sf(self, x, chi):
+        """
+        Return Survival function of the argus function
+        """
+        return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)

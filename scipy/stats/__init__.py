@@ -26,6 +26,7 @@ Continuous distributions
    alpha             -- Alpha
    anglit            -- Anglit
    arcsine           -- Arcsine
+   argus             -- Argus
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
