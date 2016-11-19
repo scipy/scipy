@@ -3021,6 +3021,7 @@ def test_argus_function():
 
     for i in range(1, 10):
         assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
+        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0 - stats.argus.sf(1.0, chi=i))
 
 
 if __name__ == "__main__":

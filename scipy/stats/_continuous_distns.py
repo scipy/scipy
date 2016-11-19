@@ -5253,7 +5253,13 @@ class argus_gen(rv_continuous):
         """
         Return CDF of the argus function
         """
-        return 1.0 - _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+        return 1.0 - self._sf(x, chi)
+
+    def _sf(self, x, chi):
+        """
+        Return survival function of the argus function
+        """
+        return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 
 
