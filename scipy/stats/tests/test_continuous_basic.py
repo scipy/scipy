@@ -63,14 +63,18 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
                    'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
-                   'vonmises', 'vonmises_line',])
+                   'vonmises', 'vonmises_line', 'test_histogram_instance'])
+
+stats.test_histogram_instance = stats.rv_histogram(np.histogram([1,2,2,3,3,3,4,4,4,4,5,5,5,5,5,6,6,6,6,7,7,7,8,8,9], bins=8))
+stats.distributions.test_histogram_instance = stats.test_histogram_instance
 
 def test_cont_basic():
     # this test skips slow distributions
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore',
                                 category=integrate.IntegrationWarning)
-        for distname, arg in distcont[:]:
+        
+        for distname, arg in distcont[:] + [('test_histogram_instance', tuple())]:
             if distname in distslow:
                 continue
             if distname is 'levy_stable':
@@ -100,7 +104,7 @@ def test_cont_basic():
                      distfn.logsf]
             # make sure arguments are within support
             spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
-                      'pareto': 1.5, 'tukeylambda': 0.3}
+                      'pareto': 1.5, 'tukeylambda': 0.3, 'test_histogram_instance': 5.0}
             x = spec_x.get(distname, 0.5)
             yield check_named_args, distfn, x, arg, locscale_defaults, meths
             yield check_random_state_property, distfn, arg
@@ -203,7 +207,7 @@ def test_moments():
         knf = npt.dec.knownfailureif
         fail_normalization = set(['vonmises', 'ksone'])
         fail_higher = set(['vonmises', 'ksone', 'ncf'])
-        for distname, arg in distcont[:]:
+        for distname, arg in distcont[:] + [('test_histogram_instance', tuple())]:
             if distname is 'levy_stable':
                 continue
             distfn = getattr(stats, distname)
