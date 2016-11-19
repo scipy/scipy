@@ -88,6 +88,7 @@ Continuous distributions
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
    lomax             -- Lomax (Pareto of the second kind)
+   mixture_gen       -- Mixture (Generator)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
    nakagami          -- Nakagami
