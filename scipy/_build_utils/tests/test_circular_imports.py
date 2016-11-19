@@ -1,5 +1,6 @@
 from __future__ import division, absolute_import, print_function
 
+import sys
 import subprocess
 
 from numpy.testing import run_module_suite
@@ -41,7 +42,7 @@ def test_importing_submodules():
     # Regression test for gh-6793.
     for name in PUBLIC_SUBMODULES:
         try:
-            cmd = ['python', '-c', 'import scipy.{0}'.format(name)]
+            cmd = [sys.executable, '-c', 'import scipy.{0}'.format(name)]
             subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
             raise AssertionError('Importing scipy.{0} failed'.format(name))
