@@ -3008,7 +3008,7 @@ def test_burr12_ppf_small_arg():
     assert_allclose(quantile, 5.7735026918962575e-09)
 
 
-class TestTemplate(TestCase):
+class TestHistogram(TestCase):
     def setUp(self):
         # We have 8 bins
         # [1,2), [2,3), [3,4), [4,5), [5,6), [6,7), [7,8), [8,9)
@@ -3016,21 +3016,30 @@ class TestTemplate(TestCase):
         # Therefore there is a slight difference below for the last bin, from what you might
         # have expected.
         histogram = np.histogram([1,2,2,3,3,3,4,4,4,4,5,5,5,5,5,6,6,6,6,7,7,7,8,8,9], bins=8)
-        self.template = stats.template_gen(histogram)
+        self.template = stats.histogram_gen(histogram)
     
     def test_pdf(self):
         assert_almost_equal(self.template.pdf(0.0), 0.0/25.0)
+        assert_almost_equal(self.template.pdf(0.5), 0.0/25.0)
         assert_almost_equal(self.template.pdf(1.0), 1.0/25.0)
+        assert_almost_equal(self.template.pdf(1.5), 1.0/25.0)
         assert_almost_equal(self.template.pdf(2.0), 2.0/25.0)
+        assert_almost_equal(self.template.pdf(2.5), 2.0/25.0)
         assert_almost_equal(self.template.pdf(3.0), 3.0/25.0)
+        assert_almost_equal(self.template.pdf(3.5), 3.0/25.0)
         assert_almost_equal(self.template.pdf(4.0), 4.0/25.0)
+        assert_almost_equal(self.template.pdf(4.5), 4.0/25.0)
         assert_almost_equal(self.template.pdf(5.0), 5.0/25.0)
+        assert_almost_equal(self.template.pdf(5.5), 5.0/25.0)
         assert_almost_equal(self.template.pdf(6.0), 4.0/25.0)
+        assert_almost_equal(self.template.pdf(6.5), 4.0/25.0)
         assert_almost_equal(self.template.pdf(7.0), 3.0/25.0)
+        assert_almost_equal(self.template.pdf(7.5), 3.0/25.0)
         # As stated above the pdf in the bin [8,9) is greater than
         # one would naively expect because np.histogram putted the 9
         # into the [8,9) bin. 
         assert_almost_equal(self.template.pdf(8.0), 3.0/25.0)
+        assert_almost_equal(self.template.pdf(8.5), 3.0/25.0)
         # 9 is outside our defined bins [8,9) hence the pdf is already 0
         # for a continuous distribution this is fine, because a single value
         # does not have a finite probability!
@@ -3039,28 +3048,44 @@ class TestTemplate(TestCase):
     
     def test_cdf(self):
         assert_almost_equal(self.template.cdf(0.0), 0.0/25.0)
-        assert_almost_equal(self.template.cdf(1.0), 1.0/25.0)
-        assert_almost_equal(self.template.cdf(2.0), 3.0/25.0)
-        assert_almost_equal(self.template.cdf(3.0), 6.0/25.0)
-        assert_almost_equal(self.template.cdf(4.0), 10.0/25.0)
-        assert_almost_equal(self.template.cdf(5.0), 15.0/25.0)
-        assert_almost_equal(self.template.cdf(6.0), 19.0/25.0)
-        assert_almost_equal(self.template.cdf(7.0), 22.0/25.0)
-        assert_almost_equal(self.template.cdf(8.0), 25.0/25.0)
+        assert_almost_equal(self.template.cdf(0.5), 0.0/25.0)
+        assert_almost_equal(self.template.cdf(1.0), 0.0/25.0)
+        assert_almost_equal(self.template.cdf(1.5), 0.5/25.0)
+        assert_almost_equal(self.template.cdf(2.0), 1.0/25.0)
+        assert_almost_equal(self.template.cdf(2.5), 2.0/25.0)
+        assert_almost_equal(self.template.cdf(3.0), 3.0/25.0)
+        assert_almost_equal(self.template.cdf(3.5), 4.5/25.0)
+        assert_almost_equal(self.template.cdf(4.0), 6.0/25.0)
+        assert_almost_equal(self.template.cdf(4.5), 8.0/25.0)
+        assert_almost_equal(self.template.cdf(5.0), 10.0/25.0)
+        assert_almost_equal(self.template.cdf(5.5), 12.5/25.0)
+        assert_almost_equal(self.template.cdf(6.0), 15.0/25.0)
+        assert_almost_equal(self.template.cdf(6.5), 17.0/25.0)
+        assert_almost_equal(self.template.cdf(7.0), 19.0/25.0)
+        assert_almost_equal(self.template.cdf(7.5), 20.5/25.0)
+        assert_almost_equal(self.template.cdf(8.0), 22.0/25.0)
+        assert_almost_equal(self.template.cdf(8.5), 23.5/25.0)
         assert_almost_equal(self.template.cdf(9.0), 25.0/25.0)
         assert_almost_equal(self.template.cdf(10.0), 25.0/25.0)
 
     def test_rvs(self):
         N = 10000
-        sample = self.template.rvs(size=N)
+        sample = self.template.rvs(size=N, random_state=123)
         assert_equal(np.sum(sample < 1.0), 0.0)
-        assert_allclose(np.sum(sample <= 2.0), 1.0/25.0 * N, rtol=0.05) 
-        assert_allclose(np.sum(sample <= 3.0), 3.0/25.0 * N, rtol=0.05) 
-        assert_allclose(np.sum(sample <= 4.0), 6.0/25.0 * N, rtol=0.05) 
+        assert_allclose(np.sum(sample <= 2.0), 1.0/25.0 * N, rtol=0.2) 
+        assert_allclose(np.sum(sample <= 2.5), 2.0/25.0 * N, rtol=0.2) 
+        assert_allclose(np.sum(sample <= 3.0), 3.0/25.0 * N, rtol=0.1) 
+        assert_allclose(np.sum(sample <= 3.5), 4.5/25.0 * N, rtol=0.1) 
+        assert_allclose(np.sum(sample <= 4.0), 6.0/25.0 * N, rtol=0.1) 
+        assert_allclose(np.sum(sample <= 4.5), 8.0/25.0 * N, rtol=0.1) 
         assert_allclose(np.sum(sample <= 5.0), 10.0/25.0 * N, rtol=0.05) 
+        assert_allclose(np.sum(sample <= 5.5), 12.5/25.0 * N, rtol=0.05) 
         assert_allclose(np.sum(sample <= 6.0), 15.0/25.0 * N, rtol=0.05) 
+        assert_allclose(np.sum(sample <= 6.5), 17.0/25.0 * N, rtol=0.05) 
         assert_allclose(np.sum(sample <= 7.0), 19.0/25.0 * N, rtol=0.05) 
+        assert_allclose(np.sum(sample <= 7.5), 20.5/25.0 * N, rtol=0.05) 
         assert_allclose(np.sum(sample <= 8.0), 22.0/25.0 * N, rtol=0.05) 
+        assert_allclose(np.sum(sample <= 8.5), 23.5/25.0 * N, rtol=0.05) 
         assert_allclose(np.sum(sample <= 9.0), 25.0/25.0 * N, rtol=0.05) 
         assert_allclose(np.sum(sample <= 9.0), 25.0/25.0 * N, rtol=0.05) 
         assert_equal(np.sum(sample > 9.0), 0.0) 
@@ -3143,13 +3168,13 @@ class TestMixture(TestCase):
 
     def test_rvs(self):
         N = 10000
-        sample = self.frozen_mixture1.rvs(size=N)
+        sample = self.frozen_mixture1.rvs(size=N, random_state=123)
         assert_equal(np.sum(np.abs(sample) <= 2.0), N)
         assert_equal(np.sum((sample > 0.0) & (sample < 1.0)), 0)
         assert_allclose(np.sum(sample < 0.0), 2.0/3.0 * N, rtol=0.05)
         assert_allclose(np.sum(sample > 1.0), 1.0/3.0 * N, rtol=0.05)
         
-        sample = self.frozen_mixture2.rvs(size=N)
+        sample = self.frozen_mixture2.rvs(size=N, random_state=123)
         assert_equal(np.sum(np.abs(sample) <= 2.0), N)
         assert_equal(np.sum(sample > 1.0), 0)
         assert_allclose(np.sum(sample < -1.0), 2.0/6.0 * N, rtol=0.05)
@@ -3157,7 +3182,8 @@ class TestMixture(TestCase):
         
 
 def test_argus_function():
-    # There is no usable reference implementation (RooFit implementation returns unreasonable results which are not normalized correctly)
+    # There is no usable reference implementation.
+    # (RooFit implementation returns unreasonable results which are not normalized correctly)
     # Instead we do some tests if the distribution behaves as expected for different shapes and scales
     for i in range(1, 10):
         for j in range(1, 10):
@@ -3177,34 +3203,62 @@ def test_crystalball_function():
     """
     X = np.linspace(-5.0, 5.0, 21)[:-1]
 
-    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_pdf(x, 1.0, 2.0, 1.0) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5)
+    #   std::cout << ROOT::Math::crystalball_pdf(x, 1.0, 2.0, 1.0) << ", ";
     calculated = stats.crystalball.pdf(X, alpha=1.0, n=2.0)
-    expected = np.array([0.0202867, 0.0241428, 0.0292128, 0.0360652, 0.045645, 0.059618, 0.0811467, 0.116851, 0.18258, 0.265652, 0.301023, 0.265652, 0.18258, 0.097728, 0.0407391, 0.013226, 0.00334407, 0.000658486, 0.000100982, 1.20606e-05])
+    expected = np.array([0.0202867, 0.0241428, 0.0292128, 0.0360652, 0.045645,
+                         0.059618, 0.0811467, 0.116851, 0.18258, 0.265652,
+                         0.301023, 0.265652, 0.18258, 0.097728, 0.0407391,
+                         0.013226, 0.00334407, 0.000658486, 0.000100982,
+                         1.20606e-05])
     assert_allclose(expected, calculated, rtol=0.001)
 
-    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 1.0) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5)
+    #   std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 1.0) << ", ";
     calculated = stats.crystalball.pdf(X, alpha=2.0, n=3.0)
-    expected = np.array([0.0019648, 0.00279754, 0.00417592, 0.00663121, 0.0114587, 0.0223803, 0.0530497, 0.12726, 0.237752, 0.345928, 0.391987, 0.345928, 0.237752, 0.12726, 0.0530497, 0.0172227, 0.00435458, 0.000857469, 0.000131497, 1.57051e-05])
+    expected = np.array([0.0019648, 0.00279754, 0.00417592, 0.00663121,
+                         0.0114587, 0.0223803, 0.0530497, 0.12726, 0.237752,
+                         0.345928, 0.391987, 0.345928, 0.237752, 0.12726,
+                         0.0530497, 0.0172227, 0.00435458, 0.000857469,
+                         0.000131497, 1.57051e-05])
     assert_allclose(expected, calculated, rtol=0.001)
     
-    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5) 
+    #   std::cout << ROOT::Math::crystalball_pdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
     calculated = stats.crystalball.pdf(X, alpha=2.0, n=3.0, loc=0.5, scale=2.0)
-    expected = np.array([0.00785921, 0.0111902, 0.0167037, 0.0265249, 0.0423866, 0.0636298, 0.0897324, 0.118876, 0.147944, 0.172964, 0.189964, 0.195994, 0.189964, 0.172964, 0.147944, 0.118876, 0.0897324, 0.0636298, 0.0423866, 0.0265249])
+    expected = np.array([0.00785921, 0.0111902, 0.0167037, 0.0265249,
+                         0.0423866, 0.0636298, 0.0897324, 0.118876, 0.147944,
+                         0.172964, 0.189964, 0.195994, 0.189964, 0.172964,
+                         0.147944, 0.118876, 0.0897324, 0.0636298, 0.0423866,
+                         0.0265249])
     assert_allclose(expected, calculated, rtol=0.001)
 
-    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_cdf(x, 1.0, 2.0, 1.0) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5)
+    #   std::cout << ROOT::Math::crystalball_cdf(x, 1.0, 2.0, 1.0) << ", ";
     calculated = stats.crystalball.cdf(X, alpha=1.0, n=2.0)
-    expected = np.array([0.12172, 0.132785, 0.146064, 0.162293, 0.18258, 0.208663, 0.24344, 0.292128, 0.36516, 0.478254, 0.622723, 0.767192, 0.880286, 0.94959, 0.982834, 0.995314, 0.998981, 0.999824, 0.999976, 0.999997])
+    expected = np.array([0.12172, 0.132785, 0.146064, 0.162293, 0.18258,
+                         0.208663, 0.24344, 0.292128, 0.36516, 0.478254,
+                         0.622723, 0.767192, 0.880286, 0.94959, 0.982834,
+                         0.995314, 0.998981, 0.999824, 0.999976, 0.999997])
     assert_allclose(expected, calculated, rtol=0.001)
 
-    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 1.0) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5)
+    #   std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 1.0) << ", ";
     calculated = stats.crystalball.cdf(X, alpha=2.0, n=3.0)
-    expected = np.array([0.00442081, 0.00559509, 0.00730787, 0.00994682, 0.0143234, 0.0223803, 0.0397873, 0.0830763, 0.173323, 0.320592, 0.508717, 0.696841, 0.844111, 0.934357, 0.977646, 0.993899, 0.998674, 0.999771, 0.999969, 0.999997])
+    expected = np.array([0.00442081, 0.00559509, 0.00730787, 0.00994682,
+                         0.0143234, 0.0223803, 0.0397873, 0.0830763, 0.173323,
+                         0.320592, 0.508717, 0.696841, 0.844111, 0.934357,
+                         0.977646, 0.993899, 0.998674, 0.999771, 0.999969,
+                         0.999997])
     assert_allclose(expected, calculated, rtol=0.001)
 
-    # for(float x = -5.0; x < 5.0; x+=0.5) std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
+    # for(float x = -5.0; x < 5.0; x+=0.5)
+    #   std::cout << ROOT::Math::crystalball_cdf(x, 2.0, 3.0, 2.0, 0.5) << ", ";
     calculated = stats.crystalball.cdf(X, alpha=2.0, n=3.0, loc=0.5, scale=2.0)
-    expected = np.array([0.0176832, 0.0223803, 0.0292315, 0.0397873, 0.0567945, 0.0830763, 0.121242, 0.173323, 0.24011, 0.320592, 0.411731, 0.508717, 0.605702, 0.696841, 0.777324, 0.844111, 0.896192, 0.934357, 0.960639, 0.977646])
+    expected = np.array([0.0176832, 0.0223803, 0.0292315, 0.0397873, 0.0567945,
+                         0.0830763, 0.121242, 0.173323, 0.24011, 0.320592,
+                         0.411731, 0.508717, 0.605702, 0.696841, 0.777324,
+                         0.844111, 0.896192, 0.934357, 0.960639, 0.977646])
     assert_allclose(expected, calculated, rtol=0.001)
 
 

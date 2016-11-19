@@ -68,6 +68,7 @@ Continuous distributions
    halflogistic      -- Half Logistic
    halfnorm          -- Half Normal
    halfgennorm       -- Generalized Half Normal
+   histogram_gen     -- Histogram (Generator)
    hypsecant         -- Hyperbolic Secant
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
@@ -108,7 +109,6 @@ Continuous distributions
    semicircular      -- Semicircular
    skewnorm          -- Skew normal
    t                 -- Student's T
-   template_gen      -- Template (Generator)
    trapz              -- Trapezoidal
    triang            -- Triangular
    truncexpon        -- Truncated Exponential

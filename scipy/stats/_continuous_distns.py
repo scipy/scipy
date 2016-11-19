@@ -5334,10 +5334,10 @@ class mixture_gen(rv_continuous):
         The sub distributions will check their arguments later anyway.
         The default _argcheck method restricts the arguments to be positive.
         """
-        return 1
+        return True
 
 
-class template_gen(rv_continuous):
+class histogram_gen(rv_continuous):
     """
     Generates a distribution given by a histogram.
     This is useful to generate a template distribution from a binned datasample.
@@ -5356,7 +5356,7 @@ class template_gen(rv_continuous):
 
     data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5)
     hist = np.histogram(data, bins=100)
-    template = scipy_extra.stats.template_gen(hist)
+    template = scipy.stats.histogram_gen(hist)
 
     """
     _support_mask = rv_continuous._support_mask
@@ -5374,12 +5374,11 @@ class template_gen(rv_continuous):
         self.template_bins = bins
         self.template_bin_widths = bin_widths
         self.template_pdf = np.hstack([0.0, pdf, 0.0])
-        self.template_cdf = np.hstack([0.0, cdf, 1.0, 1.0])
+        self.template_cdf = np.hstack([0.0, cdf, 1.0])
         # Set support
-        epsilon = 1e-7
-        kwargs['a'] = self.template_bins[0] - epsilon
-        kwargs['b'] = self.template_bins[-1] + epsilon
-        super(template_gen, self).__init__(*args, **kwargs)
+        kwargs['a'] = self.template_bins[0]
+        kwargs['b'] = self.template_bins[-1]
+        super(histogram_gen, self).__init__(*args, **kwargs)
 
     def _pdf(self, x):
         """
@@ -5391,7 +5390,7 @@ class template_gen(rv_continuous):
         """
         CDF calculated from the histogram
         """
-        return self.template_cdf[np.digitize(x, bins=self.template_bins)]
+        return np.interp(x, self.template_bins, self.template_cdf)
     
     def _rvs(self):
         """
@@ -5406,7 +5405,7 @@ class template_gen(rv_continuous):
         """
         Set the histogram as additional constructor argument
         """
-        dct = super(template_gen, self)._updated_ctor_param()
+        dct = super(histogram_gen, self)._updated_ctor_param()
         dct['histogram'] = self.histogram
         return dct
 
@@ -5419,10 +5418,27 @@ class crystalball_gen(rv_continuous):
 
     Notes
     -----
-    Named after the crystal ball experiment.
-    Used in elementary particle physics to model background components.
+    The probability density function for `crystalball` is::
 
-    For details see: https://en.wikipedia.org/wiki/Crystal_Ball_function
+                                            --
+                                            | exp(-x**2 / 2),  for x > -alpha
+        crystalball.pdf(x, alpha, n) =  N * |
+                                            | A * (B - x)**(-n), for x <= alpha  
+                                            --
+        where:
+                                   A = (n / |alpha|)**n * exp(-alpha**2 / 2)
+                                   B = n / |alpha| - |alpha|
+                                   and N is a normalisation constant.
+
+    `crystalball` takes ``alpha`` and ``n`` as shape parameters.
+    ``alpha`` defines the point where the pdf changes from a power-law to a gaussian distribution
+    ``n`` is power of the power-law tail.
+
+    References
+    ----------
+
+    .. [1] "Crystal Ball Function",
+           https://en.wikipedia.org/wiki/Crystal_Ball_function
 
     %(after_notes)s
 
@@ -5430,35 +5446,29 @@ class crystalball_gen(rv_continuous):
     """
     def _pdf(self, x, alpha, n):
         """
-        Return PDF of the crystalball function
+        Return PDF of the crystalball function.
+        We express the PDF in terms of |alpha| / n, in order to avoid
+        the numerical instability at alpha = 0.
         """
-        A = (n / np.abs(alpha) ) ** n * np.exp( - alpha ** 2 / 2.0 )
-        B = n / np.abs(alpha)  - np.abs(alpha)
-        C = n / np.abs(alpha) * 1.0 / (n - 1.0) * np.exp( - alpha ** 2 / 2.0 )
-        D = np.sqrt(np.pi / 2.0) * (1 + sc.erf(np.abs(alpha) / np.sqrt(2) ))
-        N = 1.0 / (C + D)
-        # Using np.where we also calculate powers of negative numbers,
-        # because (B - x) ** (..) is also executed for x <= -alpha
-        # But these values are not used in the end, therefore we ignore the errors
-        with np.errstate(invalid='ignore', divide='ignore'):
-            return N * np.where(x > -alpha, np.exp(- x**2 / 2), A * (B - x) ** (-n))		
+        A = np.exp(-alpha**2 / 2.0)
+        B = (1.0 - alpha**2 / n) 
+        N = np.abs(alpha) / n / (A / (n-1) + np.abs(alpha) / n * _norm_pdf_C * _norm_cdf(np.abs(alpha)))
+        return N * _lazywhere(x > -alpha, (x, alpha, n, A, B),
+                              f = lambda x, alpha, n, A, B: np.exp(-x**2 / 2),
+                              f2 = lambda x, alpha, n, A, B: A * (B - np.abs(alpha) / n * x)**(-n))
     
     def _cdf(self, x, alpha, n):
         """
         Return CDF of the crystalball function
+        We express the CDF in terms of |alpha| / n, in order to avoid
+        the numerical instability at alpha = 0.
         """
-        A = (n / np.abs(alpha) ) ** n * np.exp( - alpha ** 2 / 2.0 )
-        B = n / np.abs(alpha)  - np.abs(alpha)
-        C = n / np.abs(alpha) * 1.0 / (n - 1.0) * np.exp( - alpha ** 2 / 2.0 )
-        D = np.sqrt(np.pi / 2.0) * (1 + sc.erf(np.abs(alpha) / np.sqrt(2) ))
-        N = 1.0 / (C + D)
-        # Using np.where we also calculate powers of negative numbers,
-        # because (B - x) ** (..) is also executed for x <= -alpha
-        # But these values are not used in the end, therefore we ignore the errors
-        with np.errstate(invalid='ignore', divide='ignore'):
-            return N * np.where(x > -alpha,
-                    A * (B + alpha) ** (-n+1) / (n-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-alpha)),
-                    A * (B - x) ** (-n+1) / (n-1) )
+        A = np.exp(-alpha**2 / 2.0)
+        B = (1.0 - alpha**2 / n) 
+        N = 1.0 / (A / (n-1) + np.abs(alpha) / n * _norm_pdf_C * _norm_cdf(np.abs(alpha)))
+        return N * _lazywhere(x > -alpha, (x, alpha, n, A, B),
+                              f = lambda x, alpha, n, A, B: A / (n-1) + (np.abs(alpha) / n) * _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-alpha)),
+                              f2 = lambda x, alpha, n, A, B: A * (B - np.abs(alpha) / n * x)**(-n+1) / (n-1))
     
     def _argcheck(self, alpha, n):
         """
@@ -5476,7 +5486,7 @@ def _argus_phi(chi):
     Utility function for the argus distribution
     used in the CDF and norm of the Argus Funktion
     """
-    return  _norm_cdf(chi) - chi * _norm_pdf(chi) - 0.5
+    return _norm_cdf(chi) - chi * _norm_pdf(chi) - 0.5
 
 
 class argus_gen(rv_continuous):
@@ -5487,38 +5497,39 @@ class argus_gen(rv_continuous):
 
     Notes
     -----
-    Named after the argus experiment.
-    Used in elementary particle physics to model invariant mass distributions from continuum background
+    The probability density function for `argus` is::
 
-    For details see: https://en.wikipedia.org/wiki/ARGUS_distribution
+        argus.pdf(x, chi) = chi**3 / (sqrt(2*pi) * Psi(chi)) * x * sqrt(1-x**2) * exp(- 0.5 * chi**2 * (1 - x**2))
 
-    The parameter c of the Argus distributions is named scale in scipy.
+        where:
+                 Psi(chi) = Phi(chi) - chi * phi(chi) - 1/2
+                 with Phi and phi being the CDF and PDF of a standard normal distribution, respectively.
+
+    `argus` takes ``chi`` as shape a parameter.
+    
+    References
+    ----------
+
+    .. [1] "ARGUS distribution",
+           https://en.wikipedia.org/wiki/ARGUS_distribution
 
     %(after_notes)s
 
     %(example)s
     """
-    def __init__(self, *args, **kwargs):
-        """
-        Set finite support for argus function.
-        """
-        # Set support
-        kwargs['a'] = 0.0
-        kwargs['b'] = 1.0
-        super(argus_gen, self).__init__(*args, **kwargs)
-
     def _pdf(self, x, chi):
         """
         Return PDF of the argus function
         """
-        return chi**3 / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(1.0 - x**2) * np.exp(- 0.5 * chi**2 * (1.0 - x**2) )
+        y = 1.0 - x**2
+        return chi**3 / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
 
-    def _cdf(self, x, chi):
+    def _sf(self, x, chi):
         """
-        Return CDF of the argus function
+        Return Survival function of the argus function
         """
-        return 1.0 - _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
-argus = argus_gen(name='argus', longname="An Argus Function")
+        return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 
 
 # Collect names of classes and objects in this module.

@@ -23,4 +23,4 @@ __all__ = ['entropy', 'rv_discrete', 'rv_continuous']
 __all__ += _continuous_distns._distn_names
 __all__ += _discrete_distns._distn_names
 # Add meta-distributions
-__all__ += ['template_gen', 'mixture_gen']
+__all__ += ['histogram_gen', 'mixture_gen']
