@@ -125,7 +125,7 @@ else:
         underscore_paths = [os.path.join(base_dir, name) for name in underscore_modules]
         kw['extra_argv'] = list(kw.get('extra_argv', [])) + underscore_paths
         return test._tester.test(*a, **kw)
+
     test._tester = Tester()
     test.__doc__ = test._tester.test.__doc__
     test.__test__ = False  # Prevent nose from treating test() as a test
-    bench = test._tester.bench
