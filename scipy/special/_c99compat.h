@@ -9,12 +9,25 @@
 
 
 #define sc_isnan(x) ((x) != (x))
+
+
 #ifdef _MSC_VER
-    #define sc_isfinite(x) _finite((x))
+#define sc_isfinite(x) _finite((x))
 #else
-    #define sc_isfinite(x) !sc_isnan((x) + (-x))
+#define sc_isfinite(x) !sc_isnan((x) + (-x))
 #endif
+
+
 #define sc_isinf(x) (!sc_isfinite(x) && !sc_isnan(x))
+
+
+#if __STDC_VERSION__ >= 199901L
+/* We have C99 */
+#define sc_fma(x, y, z) fma(x, y, z)
+#else
+/* No C99, define fma as (x*y) + z and maybe the compiler picks it up */
+#define sc_fma(x, y, z) ((x*y) + z)
+#endif
 
 
 #endif /* _c99compat.h */
