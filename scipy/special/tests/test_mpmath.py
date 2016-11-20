@@ -340,37 +340,44 @@ def test_beta():
 # loggamma
 # ------------------------------------------------------------------------------
 
+LOGGAMMA_TAYLOR_RADIUS = 0.2
+
+
 @check_version(mpmath, '0.19')
-def test_loggamma_taylor1():
+def test_loggamma_taylor_transition():
     # Make sure there isn't a big jump in accuracy when we move from
     # using the Taylor series to using the recurrence relation.
 
-    pts = [1 + 0.1j, 1 - 0.1j, 1.1, 0.9, 2 - 0.1j, 2 + 0.1j, 2.1, 1.9]
+    r = LOGGAMMA_TAYLOR_RADIUS + np.array([-0.1, -0.01, 0, 0.01, 0.1])
+    theta = np.linspace(0, 2*np.pi, 20)
+    r, theta = np.meshgrid(r, theta)
+    dz = r*np.exp(1j*theta)
+    z = np.r_[1 + dz, 2 + dz].flatten()
+
     dataset = []
-    for p in pts:
-        for eps in [1e-6, -1e-6, 1e-6j, -1e-6j]:
-            q = p + eps
-            dataset.append((q, complex(mpmath.loggamma(q))))
-        
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.loggamma(z0))))    
     dataset = np.array(dataset)
-    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
 
 
 @check_version(mpmath, '0.19')
-def test_loggamma_taylor2():
+def test_loggamma_taylor():
     # Test around the zeros at z = 1, 2.
 
-    r = np.r_[-np.logspace(-1, -16, 10), np.logspace(-16, -1, 10)]
+    r = np.logspace(-16, np.log10(LOGGAMMA_TAYLOR_RADIUS), 10)
     theta = np.linspace(0, 2*np.pi, 20)
     r, theta = np.meshgrid(r, theta)
-    dz = r*(np.cos(theta) + 1j*np.sin(theta))
+    dz = r*np.exp(1j*theta)
     z = np.r_[1 + dz, 2 + dz].flatten()
+
     dataset = []
     for z0 in z:
         dataset.append((z0, complex(mpmath.loggamma(z0))))
-
     dataset = np.array(dataset)
-    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+    
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
 
 
 # ------------------------------------------------------------------------------
@@ -1217,7 +1224,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_gamma_complex(self):
         assert_mpmath_equal(sc.gamma,
                             exception_to_nan(mpmath.gamma),
-                            [ComplexArg()], rtol=1e-12)
+                            [ComplexArg()], rtol=5e-13)
 
     def test_gammainc(self):
         # Larger arguments are tested in test_data.py:test_local
@@ -1669,7 +1676,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         assert_mpmath_equal(sc.loggamma,
                             mpmath_loggamma,
                             [ComplexArg()], nan_ok=False,
-                            distinguish_nan_and_inf=False, rtol=1e-13)
+                            distinguish_nan_and_inf=False, rtol=5e-14)
 
     @knownfailure_overridable()
     def test_pcfd(self):
@@ -1716,7 +1723,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_rgamma_complex(self):
         assert_mpmath_equal(sc.rgamma,
                             exception_to_nan(mpmath.rgamma),
-                            [ComplexArg()], rtol=1e-12)
+                            [ComplexArg()], rtol=5e-13)
 
     def test_rf(self):
         def mppoch(a, m):
