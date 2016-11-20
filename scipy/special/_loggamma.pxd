@@ -17,10 +17,12 @@
 cimport cython
 cimport sf_error
 from libc.math cimport M_PI, floor, fabs
+
 from _complexstuff cimport (
-    nan, zisnan, zabs, zlog, zlog1, zexp, zdiv, zpack
+    nan, zisnan, zabs, zlog, zlog1, zexp, zdiv, zpack 
 )
 from _trig cimport sinpi
+from _evalpoly cimport cevalpoly
 
 cdef extern from "numpy/npy_math.h":
     double npy_copysign(double x, double y) nogil
@@ -31,7 +33,7 @@ DEF LOGPI = 1.1447298858494001741434262 # log(pi)
 DEF HLOG2PI = 0.918938533204672742 # log(2*pi)/2
 DEF SMALLX = 7
 DEF SMALLY = 7
-DEF TOL = 2.2204460492503131e-16
+DEF TAYLOR_RADIUS = 0.2
 
 
 @cython.cdivision(True)
@@ -46,9 +48,9 @@ cdef inline double complex loggamma(double complex z) nogil:
         return zpack(nan, nan)
     elif z.real > SMALLX or fabs(z.imag) > SMALLY:
         return loggamma_stirling(z)
-    elif zabs(z - 1) <= 0.1:
+    elif zabs(z - 1) <= TAYLOR_RADIUS:
         return loggamma_taylor(z)
-    elif zabs(z - 2) <= 0.1:
+    elif zabs(z - 2) <= TAYLOR_RADIUS:
         # Recurrence relation and the Taylor series around 1
         return zlog1(z - 1) + loggamma_taylor(z - 1)
     elif z.real < 0.1:
@@ -94,30 +96,16 @@ cdef inline double complex loggamma_stirling(double complex z) nogil:
 
     """
     cdef:
-        int n
         double *coeffs = [
-            8.3333333333333333333e-2, -2.7777777777777777778e-3,
-            7.9365079365079365079e-4, -5.952380952380952381e-4,
-            8.4175084175084175084e-4, -1.9175269175269175269e-3,
-            6.4102564102564102564e-3, -2.955065359477124183e-2,
-            1.7964437236883057316e-1, -1.3924322169059011164,
-            1.3402864044168391994e+1, -1.5684828462600201731e+2,
-            2.1931033333333333333e+3, -3.6108771253724989357e+4,
-            6.9147226885131306711e+5, -1.5238221539407416192e+7
+            -2.955065359477124183e-2, 6.4102564102564102564e-3,
+            -1.9175269175269175269e-3, 8.4175084175084175084e-4,
+            -5.952380952380952381e-4, 7.9365079365079365079e-4,
+            -2.7777777777777777778e-3, 8.3333333333333333333e-2
         ]
-        double complex res = (z - 0.5)*zlog(z) - z + HLOG2PI
-        double complex zfac = zdiv(1.0, z)
-        double complex rzz = zdiv(zfac, z)
-        double complex term
+        double complex rz = zdiv(1.0, z)
+        double complex rzz = zdiv(rz, z)
 
-    res += coeffs[0]*zfac
-    for n in range(2, 17):
-        zfac *= rzz
-        term = coeffs[n-1]*zfac
-        res += term
-        if zabs(term) <= TOL*zabs(res):
-            break
-    return res
+    return (z - 0.5)*zlog(z) - z + HLOG2PI + rz*cevalpoly(coeffs, 7, rzz)
 
 
 @cython.cdivision(True)
@@ -132,31 +120,23 @@ cdef inline double complex loggamma_taylor(double complex z) nogil:
 
     """
     cdef:
-        int n
         double *coeffs = [
-            -5.7721566490153286061e-1, 8.2246703342411321824e-1,
-            -4.0068563438653142847e-1, 2.7058080842778454788e-1,
-            -2.0738555102867398527e-1, 1.6955717699740818995e-1,
-            -1.4404989676884611812e-1, 1.2550966952474304242e-1,
-            -1.1133426586956469049e-1, 1.0009945751278180853e-1,
-            -9.0954017145829042233e-2, 8.3353840546109004025e-2,
-            -7.6932516411352191473e-2, 7.1432946295361336059e-2,
-            -6.6668705882420468033e-2, 6.2500955141213040742e-2
+            -4.3478266053040259361e-2, 4.5454556293204669442e-2,
+            -4.7619070330142227991e-2, 5.000004769810169364e-2,
+            -5.2631679379616660734e-2, 5.5555767627403611102e-2,
+            -5.8823978658684582339e-2, 6.2500955141213040742e-2,
+            -6.6668705882420468033e-2, 7.1432946295361336059e-2,
+            -7.6932516411352191473e-2, 8.3353840546109004025e-2,
+            -9.0954017145829042233e-2, 1.0009945751278180853e-1,
+            -1.1133426586956469049e-1, 1.2550966952474304242e-1,
+            -1.4404989676884611812e-1, 1.6955717699740818995e-1,
+            -2.0738555102867398527e-1, 2.7058080842778454788e-1,
+            -4.0068563438653142847e-1, 8.2246703342411321824e-1,
+            -5.7721566490153286061e-1
         ]
-        double complex zfac = 1.0
-        double complex res = 0.0
-        double complex term
 
     z = z - 1
-    for n in xrange(16):
-        zfac *= z
-        term = coeffs[n]*zfac
-        res += term
-        with gil:
-            print(term)
-        if zabs(term) < TOL*zabs(res):
-            break
-    return res
+    return z*cevalpoly(coeffs, 22, z)
 
 
 cdef inline double complex cgamma(double complex z) nogil:
