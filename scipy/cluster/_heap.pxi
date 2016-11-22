@@ -56,11 +56,11 @@ cdef class Heap:
                 break
 
     @staticmethod
-    cdef int left_child(int parent):
+    cdef inline int left_child(int parent):
         return (parent << 1) + 1
 
     @staticmethod
-    cdef int parent(int child):
+    cdef inline int parent(int child):
         return (child - 1) >> 1
 
     cdef void swap(self, int i, int j):
