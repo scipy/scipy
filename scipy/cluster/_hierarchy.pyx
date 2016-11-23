@@ -17,7 +17,7 @@ ctypedef unsigned char uchar
 include "_hierarchy_distance_update.pxi"
 cdef linkage_distance_update *linkage_methods = [
     _single, _complete, _average, _centroid, _median, _ward, _weighted]
-include "_heap.pxi"
+include "_structures.pxi"
 
 cdef inline np.npy_int64 condensed_index(np.npy_int64 n, np.npy_int64 i,
                                          np.npy_int64 j):
@@ -755,7 +755,7 @@ def linkage(double[:] dists, np.npy_int64 n, int method):
     return Z_arr
 
 
-cdef find_min_dist(int n, double[:] D, int[:] size, int x):
+cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
     cdef double current_min = NPY_INFINITYF
     cdef int y = -1
     cdef int i
@@ -770,7 +770,7 @@ cdef find_min_dist(int n, double[:] D, int[:] size, int x):
             current_min = dist
             y = i
 
-    return y, current_min
+    return Pair(y, current_min)
 
 
 def fast_linkage(double[:] dists, int n, int method):
@@ -820,11 +820,12 @@ def fast_linkage(double[:] dists, int n, int method):
     cdef int nx, ny, nz
     cdef int id_x, id_y
     cdef double dist
+    cdef Pair pair
 
     for x in range(n - 1):
-        y, dist = find_min_dist(n, D, size, x)
-        neighbor[x] = y
-        min_dist[x] = dist
+        pair = find_min_dist(n, D, size, x)
+        neighbor[x] = pair.key
+        min_dist[x] = pair.value
     cdef Heap min_dist_heap = Heap(min_dist)
 
     for k in range(n - 1):
@@ -834,13 +835,15 @@ def fast_linkage(double[:] dists, int n, int method):
         # clusters in no more that n - k (1 for the last iteration) distance
         # updates.
         for i in range(n - k):
-            x, dist = min_dist_heap.get_min()
+            pair = min_dist_heap.get_min()
+            x, dist = pair.key, pair.value
             y = neighbor[x]
 
             if dist == D[condensed_index(n, x, y)]:
                 break
 
-            y, dist = find_min_dist(n, D, size, x)
+            pair = find_min_dist(n, D, size, x)
+            y, dist = pair.key, pair.value
             neighbor[x] = y
             min_dist[x] = dist
             min_dist_heap.change_value(x, dist)
@@ -892,7 +895,8 @@ def fast_linkage(double[:] dists, int n, int method):
 
         # Find nearest neighbor for y.
         if y < n - 1:
-            z, dist = find_min_dist(n, D, size, y)
+            pair = find_min_dist(n, D, size, y)
+            z, dist = pair.key, pair.value
             if z != -1:
                 neighbor[y] = z
                 min_dist[y] = dist

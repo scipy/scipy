@@ -1,5 +1,9 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True
 import numpy as np
+
+
+ctypedef struct Pair:
+    int key
+    double value
 
 
 cdef class Heap:
@@ -17,8 +21,8 @@ cdef class Heap:
         for i in reversed(range(self.size / 2)):
             self.sift_down(i)
 
-    cdef tuple get_min(self):
-        return self.key_by_index[0], self.values[0]
+    cdef Pair get_min(self):
+        return Pair(self.key_by_index[0], self.values[0])
 
     cdef void remove_min(self):
         self.swap(0, self.size - 1)
