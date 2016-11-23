@@ -23,7 +23,7 @@ class CalculateWindowedFFT(Benchmark):
 
     def time_welch(self):
         signal.welch(self.x)
-    
+
     def time_csd(self):
         signal.csd(self.x, self.y)
 
@@ -38,7 +38,7 @@ class CalculateWindowedFFT(Benchmark):
 
 
 class Convolve2D(Benchmark):
-    param_names = ['mode', 'boundary']    
+    param_names = ['mode', 'boundary']
     params = [
         ['full', 'valid', 'same'],
         ['fill', 'wrap', 'symm']
@@ -70,7 +70,7 @@ class Convolve2D(Benchmark):
 
 
 class FFTConvolve(Benchmark):
-    param_names = ['mode']    
+    param_names = ['mode']
     params = [
         ['full', 'valid', 'same']
     ]
@@ -93,7 +93,7 @@ class FFTConvolve(Benchmark):
 
 
 class Convolve(Benchmark):
-    param_names = ['mode']    
+    param_names = ['mode']
     params = [
         ['full', 'valid', 'same']
     ]
@@ -141,3 +141,50 @@ class LTI(Benchmark):
 
     def time_bode(self):
         signal.bode(self.system)
+
+
+class Upfirdn1D(Benchmark):
+    param_names = ['up', 'down']
+    params = [
+        [1, 4],
+        [1, 4]
+    ]
+
+    def setup(self, up, down):
+        np.random.seed(1234)
+        # sample a bunch of pairs of 2d arrays
+        pairs = []
+        for nfilt in [8, ]:
+            for n in [32, 128, 512, 2048]:
+                    h = np.random.randn(nfilt)
+                    x = np.random.randn(n)
+                    pairs.append((h, x))
+        self.pairs = pairs
+
+    def time_upfirdn1d(self, up, down):
+        for h, x in self.pairs:
+            signal.upfirdn(h, x, up=up, down=down)
+
+
+class Upfirdn2D(Benchmark):
+    param_names = ['up', 'down', 'axis']
+    params = [
+        [1, 4],
+        [1, 4],
+        [0, -1],
+    ]
+
+    def setup(self, up, down, axis):
+        np.random.seed(1234)
+        # sample a bunch of pairs of 2d arrays
+        pairs = []
+        for nfilt in [8, ]:
+            for n in [32, 128, 512]:
+                    h = np.random.randn(nfilt)
+                    x = np.random.randn(n, n)
+                    pairs.append((h, x))
+        self.pairs = pairs
+
+    def time_upfirdn2d(self, up, down, axis):
+        for h, x in self.pairs:
+            signal.upfirdn(h, x, up=up, down=down, axis=axis)
