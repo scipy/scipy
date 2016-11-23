@@ -49,6 +49,7 @@ from scipy.cluster.hierarchy import (
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
     set_link_color_palette, cut_tree, _order_cluster_tree)
 from scipy.spatial.distance import pdist
+from scipy.cluster._hierarchy import Heap
 
 import hierarchy_test_data
 
@@ -991,6 +992,38 @@ def test_cut_tree():
                  cut_tree(Z, height=[5, 10]))
     assert_equal(cutree[:, np.searchsorted(heights, [10, 5])],
                  cut_tree(Z, height=[10, 5]))
+
+
+def test_Heap():
+    values = np.array([2, -1, 0, -1.5, 3])
+    heap = Heap(values)
+
+    pair = heap.get_min()
+    assert_equal(pair['key'], 3)
+    assert_equal(pair['value'], -1.5)
+
+    heap.remove_min()
+    pair = heap.get_min()
+    assert_equal(pair['key'], 1)
+    assert_equal(pair['value'], -1)
+
+    heap.change_value(1, 2.5)
+    pair = heap.get_min()
+    assert_equal(pair['key'], 2)
+    assert_equal(pair['value'], 0)
+
+    heap.remove_min()
+    heap.remove_min()
+
+    heap.change_value(1, 10)
+    pair = heap.get_min()
+    assert_equal(pair['key'], 4)
+    assert_equal(pair['value'], 3)
+
+    heap.remove_min()
+    pair = heap.get_min()
+    assert_equal(pair['key'], 1)
+    assert_equal(pair['value'], 10)
 
 
 if __name__ == "__main__":

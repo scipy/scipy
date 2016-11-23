@@ -21,15 +21,15 @@ cdef class Heap:
         for i in reversed(range(self.size / 2)):
             self.sift_down(i)
 
-    cdef Pair get_min(self):
+    cpdef Pair get_min(self):
         return Pair(self.key_by_index[0], self.values[0])
 
-    cdef void remove_min(self):
+    cpdef void remove_min(self):
         self.swap(0, self.size - 1)
         self.size -= 1
         self.sift_down(0)
 
-    cdef void change_value(self, int key, double value):
+    cpdef void change_value(self, int key, double value):
         cdef int index = self.index_by_key[key]
         cdef double old_value = self.values[index]
         self.values[index] = value
