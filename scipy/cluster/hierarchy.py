@@ -681,7 +681,7 @@ def linkage(y, method='single', metric='euclidean'):
         return _hierarchy.mst_single_linkage(y, n)
     elif method in ['complete', 'average', 'weighted', 'ward']:
         return _hierarchy.nn_chain(y, n, method_code)
-    elif method in ['centroid', 'median']:
+    else:
         return _hierarchy.fast_linkage(y, n, method_code)
 
 
