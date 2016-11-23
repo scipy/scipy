@@ -1,3 +1,15 @@
+"""
+Spherical Voronoi Cython Code
+
+.. versionadded:: 0.19.0
+
+"""
+#
+# Copyright (C)  Tyler Reddy, 2016
+#
+# Distributed under the same BSD license as Scipy.
+#
+
 import numpy as np
 cimport numpy as np
 cimport cython

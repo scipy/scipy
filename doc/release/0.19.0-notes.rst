@@ -35,6 +35,12 @@ The functions `scipy.linalg.solve_continuous_are` and
 These functions can also solve generalized algebraic matrix Riccati equations.
 Moreover, both gained a ``balanced`` keyword to turn balancing on and off.
 
+`scipy.spatial` improvements
+----------------------------
+
+`SphericalVoronoi.sort_vertices_of_regions()` has been re-written in
+cython to improve performance
+
 `scipy.ndimage` improvements
 ----------------------------
 
