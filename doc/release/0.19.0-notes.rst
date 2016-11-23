@@ -54,6 +54,11 @@ compute the coeficients of a second-order IIR peak (resonant) filter.
 The function `scipy.signal.minimum_phase` was added to convert linear-phase
 FIR filters to minimum phase.
 
+The functions `scipy.signal.upfirdn` and `scipy.signal.resample_poly` are now
+substantially faster when operating on some n-dimensional arrays when n > 1.
+The largest reduction in computation time is realized in cases where the size
+of the array is small (<1k samples or so) along the axis to be filtered.
+
 `scipy.sparse` improvements
 ---------------------------
 
@@ -88,7 +93,7 @@ consistent with FITPACK, so that one can do, for example::
 For multidimensional splines, ``c.ndim > 1``, ``BSpline`` objects are consistent
 with piecewise polynomials, `scipy.interpolate.PPoly`. This means that
 ``BSpline`` objects are not immediately consistent with
-`scipy.interpolate.splprep`, and one *cannot* do 
+`scipy.interpolate.splprep`, and one *cannot* do
 ``>>> BSpline(*splprep([x, y])[0])``. Consult the `scipy.interpolate` test suite
 for examples of the precise equivalence.
 
