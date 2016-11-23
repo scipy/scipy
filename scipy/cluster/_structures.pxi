@@ -7,6 +7,18 @@ ctypedef struct Pair:
 
 
 cdef class Heap:
+    """Binary heap.
+
+    Heap stores values and keys. Values are passed explicitly, whereas keys
+    are assigned implicitly to natural numbers (from 0 to n - 1).
+
+    The supported operations (all have O(log n) time complexity):
+
+        * Return the current minimum value and the corresponding key.
+        * Remove the current minimum value.
+        * Change the value of the given key. Note that the key must be still
+          in the heap.
+    """
     cdef int[:] index_by_key
     cdef int[:] key_by_index
     cdef double[:] values
