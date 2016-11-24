@@ -22,6 +22,19 @@ This release requires Python 2.7 or 3.4-3.5 and NumPy 1.8.2 or greater.
 New features
 ============
 
+`scipy.linalg` improvements
+---------------------------
+
+The function `scipy.linalg.matrix_balance` was added to perform the so-called
+matrix balancing using the LAPACK xGEBAL routine family. This can be used to
+approximately equate the row and column norms through diagonal similarity
+transformations.
+
+The functions `scipy.linalg.solve_continuous_are` and
+`scipy.linalg.solve_discrete_are` have numerically more stable algorithms.
+These functions can also solve generalized algebraic matrix Riccati equations.
+Moreover, both gained a ``balanced`` keyword to turn balancing on and off.
+
 `scipy.ndimage` improvements
 ----------------------------
 
@@ -88,7 +101,7 @@ consistent with FITPACK, so that one can do, for example::
 For multidimensional splines, ``c.ndim > 1``, ``BSpline`` objects are consistent
 with piecewise polynomials, `scipy.interpolate.PPoly`. This means that
 ``BSpline`` objects are not immediately consistent with
-`scipy.interpolate.splprep`, and one *cannot* do 
+`scipy.interpolate.splprep`, and one *cannot* do
 ``>>> BSpline(*splprep([x, y])[0])``. Consult the `scipy.interpolate` test suite
 for examples of the precise equivalence.
 
