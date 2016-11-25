@@ -46,6 +46,9 @@ cython to improve performance
 
 The callback function C API supports PyCapsules in Python 2.7
 
+Multidimensional filters now allow having different extrapolation modes for
+different axes.
+
 `scipy.optimize` improvements
 -----------------------------
 
