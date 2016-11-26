@@ -152,8 +152,6 @@ cdef inline double complex loggamma_taylor(double complex z) nogil:
         zfac *= z
         term = coeffs[n]*zfac
         res += term
-        with gil:
-            print(term)
         if zabs(term) < TOL*zabs(res):
             break
     return res
