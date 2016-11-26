@@ -3,7 +3,8 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 try:
-    from scipy.spatial import cKDTree, KDTree, SphericalVoronoi, distance
+    from scipy.spatial import (cKDTree, KDTree, SphericalVoronoi, distance,
+    ConvexHull)
 except ImportError:
     pass
 
@@ -228,3 +229,17 @@ class Cdist(Benchmark):
         sizes and metrics.
         """
         distance.cdist(self.points, self.points, metric)
+
+class ConvexHullBench(Benchmark):
+    params = ([10, 100, 1000, 5000], [True, False])
+    param_names = ['num_points', 'incremental']
+
+    def setup(self, num_points, incremental):
+        np.random.seed(123)
+        self.points = np.random.random_sample((num_points, 3))
+
+    def time_convex_hull(self, num_points, incremental):
+        """Time scipy.spatial.ConvexHull over a range of input data sizes
+        and settings.
+        """
+        ConvexHull(self.points, incremental)
