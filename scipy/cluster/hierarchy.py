@@ -650,7 +650,6 @@ def linkage(y, method='single', metric='euclidean'):
     ----------
     .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
            algorithms", :arXiv:`1109.2378v1`.
-
     """
     if method not in _LINKAGE_METHODS:
         raise ValueError("Invalid method: {0}".format(method))
@@ -683,7 +682,7 @@ def linkage(y, method='single', metric='euclidean'):
     elif method in ['complete', 'average', 'weighted', 'ward']:
         return _hierarchy.nn_chain(y, n, method_code)
     else:
-        return _hierarchy.linkage(y, n, method_code)
+        return _hierarchy.fast_linkage(y, n, method_code)
 
 
 class ClusterNode:

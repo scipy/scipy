@@ -17,7 +17,7 @@ ctypedef unsigned char uchar
 include "_hierarchy_distance_update.pxi"
 cdef linkage_distance_update *linkage_methods = [
     _single, _complete, _average, _centroid, _median, _ward, _weighted]
-
+include "_structures.pxi"
 
 cdef inline np.npy_int64 condensed_index(np.npy_int64 n, np.npy_int64 i,
                                          np.npy_int64 j):
@@ -753,6 +753,157 @@ def linkage(double[:] dists, np.npy_int64 n, int method):
             if i < x:
                 D[condensed_index(n, i, x)] = NPY_INFINITYF
     return Z_arr
+
+
+cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
+    cdef double current_min = NPY_INFINITYF
+    cdef int y = -1
+    cdef int i
+    cdef double dist
+
+    for i in range(x + 1, n):
+        if size[i] == 0:
+            continue
+
+        dist = D[condensed_index(n, x, i)]
+        if dist < current_min:
+            current_min = dist
+            y = i
+
+    return Pair(y, current_min)
+
+
+def fast_linkage(double[:] dists, int n, int method):
+    """Perform hierarchy clustering.
+
+    It implements "Generic Clustering Algorithm" from [1]. The worst case
+    time complexity is O(N^3), but the best case time complexity is O(N^2) and
+    it usually works quite close to the best case.
+
+    Parameters
+    ----------
+    dists : ndarray
+        A condensed matrix stores the pairwise distances of the observations.
+    n : int
+        The number of observations.
+    method : int
+        The linkage method. 0: single 1: complete 2: average 3: centroid
+        4: median 5: ward 6: weighted
+
+    Returns
+    -------
+    Z : ndarray, shape (n - 1, 4)
+        Computed linkage matrix.
+
+    References
+    ----------
+    .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
+       algorithms", :arXiv:`1109.2378v1`.
+    """
+    cdef double[:, :] Z = np.empty((n - 1, 4))
+
+    cdef double[:] D = dists.copy()  # Distances between clusters.
+    cdef int[:] size = np.ones(n, dtype=np.intc)  # Sizes of clusters.
+    # ID of a cluster to put into linkage matrix.
+    cdef int[:] cluster_id = np.arange(n, dtype=np.intc)
+
+    # Nearest neighbor candidate and lower bound of the distance to the
+    # true nearest neighbor for each cluster among clusters with higher
+    # indices (thus size is n - 1).
+    cdef int[:] neighbor = np.empty(n - 1, dtype=np.intc)
+    cdef double[:] min_dist = np.empty(n - 1)
+
+    cdef linkage_distance_update new_dist = linkage_methods[method]
+
+    cdef int i, k
+    cdef int x, y, z
+    cdef int nx, ny, nz
+    cdef int id_x, id_y
+    cdef double dist
+    cdef Pair pair
+
+    for x in range(n - 1):
+        pair = find_min_dist(n, D, size, x)
+        neighbor[x] = pair.key
+        min_dist[x] = pair.value
+    cdef Heap min_dist_heap = Heap(min_dist)
+
+    for k in range(n - 1):
+        # Theoretically speaking, this can be implemented as "while True", but
+        # having a fixed size loop when floating point computations involved
+        # looks more reliable. The idea that we should find the two closest
+        # clusters in no more that n - k (1 for the last iteration) distance
+        # updates.
+        for i in range(n - k):
+            pair = min_dist_heap.get_min()
+            x, dist = pair.key, pair.value
+            y = neighbor[x]
+
+            if dist == D[condensed_index(n, x, y)]:
+                break
+
+            pair = find_min_dist(n, D, size, x)
+            y, dist = pair.key, pair.value
+            neighbor[x] = y
+            min_dist[x] = dist
+            min_dist_heap.change_value(x, dist)
+        min_dist_heap.remove_min()
+
+        id_x = cluster_id[x]
+        id_y = cluster_id[y]
+        nx = size[x]
+        ny = size[y]
+
+        if id_x > id_y:
+            id_x, id_y = id_y, id_x
+
+        Z[k, 0] = id_x
+        Z[k, 1] = id_y
+        Z[k, 2] = dist
+        Z[k, 3] = nx + ny
+
+        size[x] = 0  # Cluster x will be dropped.
+        size[y] = nx + ny  # Cluster y will be replaced with the new cluster.
+        cluster_id[y] = n + k  # Update ID of y.
+
+        # Update the distance matrix.
+        for z in range(n):
+            nz = size[z]
+            if nz == 0 or z == y:
+                continue
+
+            D[condensed_index(n, z, y)] = new_dist(
+                D[condensed_index(n, z, x)], D[condensed_index(n, z, y)],
+                dist, nx, ny, nz)
+
+        # Reassign neighbor candidates from x to y.
+        # This reassignment is just a (logical) guess.
+        for z in range(x):
+            if size[z] > 0 and neighbor[z] == x:
+                neighbor[z] = y
+
+        # Update lower bounds of distance.
+        for z in range(y):
+            if size[z] == 0:
+                continue
+
+            dist = D[condensed_index(n, z, y)]
+            if dist < min_dist[z]:
+                neighbor[z] = y
+                min_dist[z] = dist
+                min_dist_heap.change_value(z, dist)
+
+        # Find nearest neighbor for y.
+        if y < n - 1:
+            pair = find_min_dist(n, D, size, y)
+            z, dist = pair.key, pair.value
+            if z != -1:
+                neighbor[y] = z
+                min_dist[y] = dist
+                min_dist_heap.change_value(y, dist)
+
+    return Z.base
+
 
 def nn_chain(double[:] dists, int n, int method):
     """Perform hierarchy clustering using nearest-neighbor chain algorithm.
