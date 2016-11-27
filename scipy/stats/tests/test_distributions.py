@@ -3285,9 +3285,10 @@ class TestHistogram(object):
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
 
-class TestMixture(TestCase):
-    def setUp(self):
-        self.mixture = stats.mixture_gen([('a', stats.uniform), ('b', stats.uniform)])
+class TestMixture(object):
+    def setup_method(self):
+        np.random.seed(1234)
+        self.mixture = stats.rv_mixture([('a', stats.uniform), ('b', stats.uniform)])
         self.frozen_mixture1 = self.mixture(a_norm=2.0, a_loc=-2, a_scale=2.0, b_norm=1.0, b_loc=1.0, b_scale=1.0)
         # PDF should look like this:
         #
@@ -3372,8 +3373,4 @@ class TestMixture(TestCase):
         assert_equal(np.sum(np.abs(sample) <= 2.0), N)
         assert_equal(np.sum(sample > 1.0), 0)
         assert_allclose(np.sum(sample < -1.0), 2.0/6.0 * N, rtol=0.05)
-        assert_allclose(np.sum(sample <  0.0), 5.0/6.0 * N, rtol=0.05)
-
-
-if __name__ == "__main__":
-    run_module_suite()
+        assert_allclose(np.sum(sample < 0.0), 5.0/6.0 * N, rtol=0.05)

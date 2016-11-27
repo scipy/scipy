@@ -17,6 +17,7 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
    rv_continuous
    rv_discrete
    rv_histogram
+   rv_mixture
 
 Continuous distributions
 ========================
@@ -88,7 +89,6 @@ Continuous distributions
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
    lomax             -- Lomax (Pareto of the second kind)
-   mixture_gen       -- Mixture (Generator)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
    nakagami          -- Nakagami

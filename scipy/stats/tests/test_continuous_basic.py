@@ -63,11 +63,13 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
                    'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
+                   'rv_mixture_instance'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
 histogram_test_instance = stats.rv_histogram(_h)
+mixture_test_instance = stats.rv_mixture([('Gauss', stats.norm), ('Gamma', stats.gamma)])
 
 
 def cases_test_cont_basic():
@@ -91,7 +93,13 @@ def test_cont_basic(distname, arg):
         distfn = getattr(stats, distname)
     except TypeError:
         distfn = distname
-        distname = 'rv_histogram_instance'
+        if distname is histogram_test_instance:
+            distname = 'rv_histogram_instance'
+        elif distname is mixture_test_instance:
+            distname = 'rv_mixture_instance'
+        else:
+            raise
+
     np.random.seed(765456)
     sn = 500
     rvs = distfn.rvs(size=sn, *arg)
@@ -163,7 +171,7 @@ def cases_test_moments():
     fail_normalization = set(['vonmises', 'ksone'])
     fail_higher = set(['vonmises', 'ksone', 'ncf'])
 
-    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
+    for distname, arg in distcont[:] + [(histogram_test_instance, tuple()), (mixture_test_instance, (1.0, 2.0, 1.0, 1.0, 3.0, 1.0, 1.0))]:
         if distname == 'levy_stable':
             continue
 
@@ -183,7 +191,12 @@ def test_moments(distname, arg, normalization_ok, higher_ok):
         distfn = getattr(stats, distname)
     except TypeError:
         distfn = distname
-        distname = 'rv_histogram_instance'
+        if distname is histogram_test_instance:
+            distname = 'rv_histogram_instance'
+        elif distname is mixture_test_instance:
+            distname = 'rv_mixture_instance'
+        else:
+            raise
 
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The integral is probably divergent, or slowly convergent.")
