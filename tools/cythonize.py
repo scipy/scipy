@@ -155,7 +155,7 @@ def get_pxi_dependencies(fullfrompath):
     dependencies = []
     with open(fullfrompath, 'r') as f:
         for line in f:
-            line = [token.strip('\'\" \n') for token in line.split(' ')]
+            line = [token.strip('\'\" \r\n') for token in line.split(' ')]
             if line[0] == "include":
                 dependencies.append(os.path.join(fullfromdir, line[1]))
     return dependencies
