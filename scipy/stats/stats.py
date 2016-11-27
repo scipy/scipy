@@ -3418,6 +3418,7 @@ def pointbiserialr(x, y):
     rpb, prob = pearsonr(x, y)
     return PointbiserialrResult(rpb, prob)
 
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
@@ -3568,17 +3569,18 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     # Limit range to fix computational errors
     return KendalltauResult(min(1., max(-1., tau)), pvalue)
 
+
 WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
 
 
 def weightedtau(x, y, rank=True, weigher=None, additive=True):
-    """
-    Computes a weighted version of Kendall's :math:`\\tau`.
+    r"""
+    Computes a weighted version of Kendall's :math:`\tau`.
 
-    The weighted :math:`\\tau` is a weighted version of Kendall's
-    :math:`\\tau` in which exchanges of high weight are more influent than
+    The weighted :math:`\tau` is a weighted version of Kendall's
+    :math:`\tau` in which exchanges of high weight are more influential than
     exchanges of low weight. The default parameters compute the additive
-    hyperbolic version of the index, :math:`\\tau_\\mathrm h`, which has
+    hyperbolic version of the index, :math:`\tau_\mathrm h`, which has
     been shown to provide the best balance between important and
     unimportant elements [1]_.
 
@@ -3587,18 +3589,18 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     assigns a weight based from the rank to each element. The weight of an
     exchange is then the sum or the product of the weights of the ranks of
     the exchanged elements. The default parameters compute
-    :math:`\\tau_\\mathrm h`: an exchange between elements with rank
+    :math:`\tau_\mathrm h`: an exchange between elements with rank
     :math:`r` and :math:`s` (starting from zero) has weight
     :math:`1/(r+1) + 1/(s+1)`.
 
     Specifying a rank array is meaningful only if you have in mind an
     external criterion of importance. If, as it usually happens, you do
-    not have in mind a specific rank, the weighted :math:`\\tau` is
+    not have in mind a specific rank, the weighted :math:`\tau` is
     defined by averaging the values obtained using the decreasing
     lexicographical rank by (`x`, `y`) and by (`y`, `x`). This is the
     behavior with default parameters.
 
-    Note that if you are computing the weighted :math:`\\tau` on arrays of
+    Note that if you are computing the weighted :math:`\tau` on arrays of
     ranks, rather than of scores (i.e., a larger value implies a lower
     rank) you must negate the ranks, so that elements of higher rank are
     associated with a larger value.
@@ -3617,7 +3619,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         directly as ranks. The default is True, in which case this
         function returns the average of the values obtained using the
         decreasing lexicographical rank by (`x`, `y`) and by (`y`, `x`).
-    weigher : callable or None, optional
+    weigher : callable, optional
         The weigher function. Must map nonnegative integers (zero
         representing the most important element) to a nonnegative weight.
         The default, None, provides hyperbolic weighing, that is,
@@ -3630,9 +3632,9 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     Returns
     -------
     correlation : float
-       The weighted :math:`\\tau` correlation index.
+       The weighted :math:`\tau` correlation index.
     pvalue : float
-       Presently `np.nan`, as the null statistics is unknown (even in the
+       Presently ``np.nan``, as the null statistics is unknown (even in the
        additive hyperbolic case).
 
     See also
@@ -3643,23 +3645,25 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
     Notes
     -----
-    This function uses an :math:`O(n \\log n)`, mergesort-based algorithm
+    This function uses an :math:`O(n \log n)`, mergesort-based algorithm
     [1]_ that is a weighted extension of Knight's algorithm for Kendall's
-    :math:`\\tau` [2]_. It can compute Shieh's weighted :math:`\\tau` [3]_
+    :math:`\tau` [2]_. It can compute Shieh's weighted :math:`\tau` [3]_
     between rankings without ties (i.e., permutations) by setting
     `additive` and `rank` to False, as the definition given in [1]_ is a
     generalization of Shieh's.
 
+    .. versionadded:: 0.19.0
+
     References
     ----------
-    .. [1] Sebastiano Vigna "A weighted correlation index for rankings with ties".
-           In Proceedings of the 24th international conference on World Wide Web,
-           pages 1166-1176. ACM, 2015.
+    .. [1] Sebastiano Vigna, "A weighted correlation index for rankings with
+           ties", Proceedings of the 24th international conference on World
+           Wide Web, pp. 1166-1176, ACM, 2015.
     .. [2] W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
            Ungrouped Data", Journal of the American Statistical Association,
-           Vol. 61, No. 314, Part 1, pages 436-439, 1966.
-    .. [3] Grace S. Shieh. "A weighted Kendall's tau statistic", Statistics & 
-           Probability Letters, Vol. 39, No. 1, pages 17-24, 1998.
+           Vol. 61, No. 314, Part 1, pp. 436-439, 1966.
+    .. [3] Grace S. Shieh. "A weighted Kendall's tau statistic", Statistics &
+           Probability Letters, Vol. 39, No. 1, pp. 17-24, 1998.
 
     Examples
     --------
@@ -3674,24 +3678,22 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     >>> tau, p_value = stats.weightedtau(x, y, additive=False)
     >>> tau
     -0.62205716951801038
+
+    This is exactly Kendall's tau:
+
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
-    >>> # This is exactly Kendall's tau
-    >>> tau, p_value = stats.weightedtau(x, y, weigher=lambda x: 1)
+    >>> tau, _ = stats.weightedtau(x, y, weigher=lambda x: 1)
     >>> tau
     -0.47140452079103173
+
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
-    >>> tau, p_value = stats.weightedtau(x, y, rank=None)
-    >>> tau
-    -0.4157652301037516
-    >>> p_value
-    nan
-    >>> tau, p_value = stats.weightedtau(y, x, rank=None)
-    >>> tau
-    -0.71813413296990281
-    >>> p_value
-    nan
+    >>> stats.weightedtau(x, y, rank=None)
+    WeightedTauResult(correlation=-0.4157652301037516, pvalue=nan)
+    >>> stats.weightedtau(y, x, rank=None)
+    WeightedTauResult(correlation=-0.71813413296990281, pvalue=nan)
+
     """
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
@@ -5073,7 +5075,7 @@ def friedmanchisquare(*args):
     """
     k = len(args)
     if k < 3:
-        raise ValueError('\nLess than 3 levels.  Friedman test not appropriate.\n')
+        raise ValueError('Less than 3 levels.  Friedman test not appropriate.')
 
     n = len(args[0])
     for i in range(1, k):
