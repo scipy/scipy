@@ -18,6 +18,11 @@ cdef class Heap:
         * Remove the current minimum value.
         * Change the value of the given key. Note that the key must be still
           in the heap.
+
+    The heap is stored as an array, where children of parent i have indices
+    2 * i + 1 and 2 * i + 2. All public methods are based on  `sift_down` and
+    `sift_up` methods, which restore the heap property by moving an element
+    down or up in the heap.
     """
     cdef int[:] index_by_key
     cdef int[:] key_by_index
@@ -30,6 +35,9 @@ cdef class Heap:
         self.key_by_index = np.arange(self.size, dtype=np.intc)
         self.values = values.copy()
         cdef int i
+
+        # Create the heap in a linear time. The algorithm sequentially sifts
+        # down items starting from lower levels.
         for i in reversed(range(self.size / 2)):
             self.sift_down(i)
 
