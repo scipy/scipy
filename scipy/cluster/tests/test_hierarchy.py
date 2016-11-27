@@ -47,7 +47,8 @@ from scipy.cluster.hierarchy import (
     is_isomorphic, single, leaders, complete, weighted, centroid,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette, cut_tree, _order_cluster_tree)
+    set_link_color_palette, cut_tree, _order_cluster_tree,
+    _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
 
@@ -104,6 +105,17 @@ class TestLinkage(object):
                                          metric="euclidean")
         Z = linkage(y, method)
         assert_allclose(Z, expectedZ, atol=1e-06)
+
+    def test_compare_with_trivial(self):
+        rng = np.random.RandomState(0)
+        n = 20
+        X = rng.rand(n, 2)
+        d = pdist(X)
+
+        for method, code in _LINKAGE_METHODS.items():
+            Z_trivial = _hierarchy.linkage(d, n, code)
+            Z = linkage(d, method)
+            assert_allclose(Z_trivial, Z, rtol=1e-14, atol=1e-15)
 
 
 class TestLinkageTies(object):
