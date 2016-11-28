@@ -2635,7 +2635,7 @@ def is_isomorphic(T1, T2):
     for i in xrange(0, n):
         if T1[i] in d1:
             if not T2[i] in d2:
-               return False
+                return False
             if d1[T1[i]] != T2[i] or d2[T2[i]] != T1[i]:
                 return False
         elif T2[i] in d2:
