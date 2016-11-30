@@ -53,6 +53,15 @@ the covariance matrix of errors in the data.
 `scipy.signal` improvements
 ---------------------------
 
+The function `scipy.signal.correlate` and `scipy.signal.convolve` have a new
+optional parameter `method`. The default value of `auto` estimates the fastest
+of two computation methods, the direct approach and the Fourier transform
+approach.
+
+A new function has been added to choose the convolution/correlation method,
+`scipy.signal.choose_conv_method` which may be appropriate if convolutions or
+correlations are performed on many arrays of the same size.
+
 The function `scipy.signal.sosfreqz` was added to compute the frequency
 response from second-order sections.
 
