@@ -141,7 +141,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
                  scaling, axis)
 
 
-def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using Welch's method.
@@ -275,7 +275,7 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     return freqs, Pxx.real
 
 
-def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate the cross power spectral density, Pxy, using Welch's method.
@@ -400,7 +400,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     return freqs, Pxy
 
 
-def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
+def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """
@@ -507,6 +507,11 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
     """
+    #parse window; if array like, then set nperseg = win.shape
+    if isinstance(window, string_types) or type(window) is tuple:
+        if nperseg == None: # if nperseg not specified by user or calling function
+            nperseg = 256 # change to default
+            
     # Less overlap than welch, so samples are more statisically independent
     if noverlap is None:
         noverlap = nperseg // 8
@@ -518,7 +523,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     return freqs, time, Pxy
 
 
-def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
+def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     """
     Estimate the magnitude squared coherence estimate, Cxy, of discrete-time
@@ -629,7 +634,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
     return freqs, Cxy
 
 
-def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
+def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
                     noverlap=None, nfft=None, detrend='constant',
                     return_onesided=True, scaling='spectrum', axis=-1,
                     mode='psd'):
@@ -647,7 +652,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
         Array or sequence containing the data to be analyzed.
     y : array_like
         Array or sequence containing the data to be analyzed. If this is
-        the same object in memoery as x (i.e. _spectral_helper(x, x, ...)),
+        the same object in memory as x (i.e. _spectral_helper(x, x, ...)),
         the extra computations are spared.
     fs : float, optional
         Sampling frequency of the time series. Defaults to 1.0.
@@ -766,6 +771,18 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
                 pad_shape[-1] = x.shape[-1] - y.shape[-1]
                 y = np.concatenate((y, np.zeros(pad_shape)), -1)
 
+    #parse window; if array like, then set nperseg = win.shape
+    if isinstance(window, string_types) or type(window) is tuple:
+        if nperseg == None: # if nperseg not specified
+            nperseg = 256 # then change to default
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if nperseg == None:
+            nperseg = win.shape[0]                
+        
     # X and Y are same length now, can test nperseg with either
     if x.shape[-1] < nperseg:
         warnings.warn('nperseg = {0:d}, is greater than input length = {1:d}, '
@@ -806,15 +823,6 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
             return np.rollaxis(d, axis, len(d.shape))
     else:
         detrend_func = detrend
-
-    if isinstance(window, string_types) or type(window) is tuple:
-        win = get_window(window, nperseg)
-    else:
-        win = np.asarray(window)
-        if len(win.shape) != 1:
-            raise ValueError('window must be 1-D')
-        if win.shape[0] != nperseg:
-            raise ValueError('window must have length of nperseg')
 
     if np.result_type(win,np.complex64) != outdtype:
         win = win.astype(outdtype)
@@ -952,3 +960,4 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
     result = fftpack.fft(result, n=nfft)
 
     return result
+
