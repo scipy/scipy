@@ -82,6 +82,10 @@ FIR filters to minimum phase.
 The functions `scipy.sparse.save_npz` and `scipy.sparse.load_npz` were added,
 providing simple serialization for some sparse formats.
 
+The `prune` method of classes `bsr_matrix`, `csc_matrix`, and `csr_matrix`
+was updated to reallocate backing arrays under certain conditions, reducing
+memory usage.
+
 `scipy.special` improvements
 ----------------------------
 
