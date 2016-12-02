@@ -254,12 +254,13 @@ class SphericalVoronoi:
         )
 
         # calculate regions from triangulation
-        generator_indices = np.arange(self.points.shape[0])
-        filter_tuple = np.where((np.expand_dims(self._tri.simplices,
-                                -1) == generator_indices).any(axis=1))
+        simplex_indices = np.arange(self._tri.simplices.shape[0])
+        tri_indices = np.stack([simplex_indices, simplex_indices,
+            simplex_indices], axis=-1).ravel()
+        point_indices = self._tri.simplices.ravel()
 
-        list_tuples_associations = zip(filter_tuple[1],
-                                       filter_tuple[0])
+        list_tuples_associations = zip(point_indices,
+                                       tri_indices)
 
         list_tuples_associations = sorted(list_tuples_associations,
                                           key=lambda t: t[0])
