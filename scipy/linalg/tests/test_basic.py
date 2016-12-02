@@ -605,7 +605,125 @@ class TestSolve(TestCase):
 
 
 class TestSolveX(TestCase):
+    def setUp(self):
+        np.random.seed(1234)
+
+    def test_20Feb04_bug(self):
+        a = [[1, 1], [1.0, 0]]  # ok
+        x0 = solve_x(a, [[1], [0j]])
+        assert_array_almost_equal(dot(a, x0), [[1], [0]])
+
+        # gives failure with clapack.zgesv(..,rowmajor=0)
+        a = [[1, 1], [1.2, 0]]
+        b = [[1], [0j]]
+        x0 = solve_x(a, b)
+        assert_array_almost_equal(dot(a, x0), [[1], [0]])
+
     def test_simple(self):
+        a = [[1, 20], [-30, 4]]
+        for b in ([[1, 0], [0, 1]], [[1], [0]],
+                  [[2, 1], [-30, 4]]):
+            x = solve_x(a, b)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym(self):
+        a = [[2, 3], [3, 5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]], [[1], [0]]):
+                x = solve_x(a, b, assume_a='sym', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_pos(self):
+        a = [[2, 3], [3, 5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]], [[1], [0]]):
+                x = solve_x(a, b, assume_a='pos', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym_complex(self):
+        a = [[5, 2], [2, 4]]
+        for b in ([[1j], [0]],
+                  [[1j, 1j],
+                   [0, 2]],
+                  ):
+            x = solve_x(a, b, assume_a='sym')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_complex(self):
+        a = array([[5, 2], [2j, 4]], 'D')
+        for b in ([[1j], [0]],
+                  [[1j, 1j],
+                   [0, 2]],
+                  [[1], [0j]],
+                  array([[1], [0]], 'D'),
+                  ):
+            x = solve_x(a, b)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_nils_20Feb04(self):
+        n = 2
+        A = random([n, n])+random([n, n])*1j
+        X = zeros((n, n), 'D')
+        Ainv = inv(A)
+        R = np.eye(n, dtype='D')
+        for i in arange(0, n):
+            r = R[:, [i]]
+            X[:, [i]] = solve_x(A, r)
+        assert_array_almost_equal(X, Ainv)
+
+    def test_random(self):
+        n = 20
+        a = random([n, n])
+        for i in range(n):
+            a[i, i] = 20*(.1+a[i, i])
+        for i in range(4):
+            b = random([n, 3])
+            x = solve_x(a, b)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_random_complex(self):
+        n = 20
+        a = random([n, n]) + 1j * random([n, n])
+        for i in range(n):
+            a[i, i] = 20*(.1+a[i, i])
+        for i in range(2):
+            b = random([n, 3])
+            x = solve_x(a, b)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_random_sym(self):
+        n = 20
+        a = random([n, n])
+        for i in range(n):
+            a[i, i] = abs(20*(.1+a[i, i]))
+            for j in range(i):
+                a[i, j] = a[j, i]
+        for i in range(4):
+            b = random([n,1])
+            x = solve_x(a, b, assume_a='pos')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_random_sym_complex(self):
+        n = 20
+        a = random([n, n])
+        # a  = a + 1j*random([n,n]) # XXX: with this the accuracy will be very low
+        for i in range(n):
+            a[i, i] = abs(20*(.1+a[i, i]))
+            for j in range(i):
+                a[i, j] = conjugate(a[j, i])
+        b = random([n,1])+2j*random([n,1])
+        for i in range(2):
+            x = solve_x(a, b, assume_a='pos')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_check_finite(self):
+        a = [[1, 20], [-30, 4]]
+        for b in ([[1, 0], [0, 1]], [[1], [0]],
+                  [[2, 1], [-30, 4]]):
+            x = solve_x(a, b, check_finite=False)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple2(self):
         a = np.array([[1.80, 2.88, 2.05, -0.89],
                       [525.00, -295.00, -95.00, -380.00],
                       [1.58, -2.69, -2.90, -1.04],
@@ -620,7 +738,7 @@ class TestSolveX(TestCase):
         assert_array_almost_equal(x, np.array([[1., -1, 3, -5],
                                                [3, 2, 4, 1]]).T)
 
-    def test_simple_complex(self):
+    def test_simple_complex2(self):
         a = np.array([[-1.34+2.55j, 0.28+3.17j, -6.39-2.20j, 0.72-0.92j],
                       [-1.70-14.10j, 33.10-1.50j, -1.50+13.40j, 12.90+13.80j],
                       [-3.29-2.39j, -1.91+4.42j, -0.14-1.35j, 1.72+1.35j],

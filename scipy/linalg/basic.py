@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-from numpy import atleast_2d
+from numpy import atleast_1d, atleast_2d
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from .misc import LinAlgError, _datacopied
