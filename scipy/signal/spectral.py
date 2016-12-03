@@ -507,10 +507,9 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
     """
+
     #parse window; if array like, then set nperseg = win.shape
-    if isinstance(window, string_types) or type(window) is tuple:
-        if nperseg == None: # if nperseg not specified by user or calling function
-            nperseg = 256 # change to default
+    window, nperseg = _triage_segments(window, nperseg)   
             
     # Less overlap than welch, so samples are more statisically independent
     if noverlap is None:
@@ -772,16 +771,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
                 y = np.concatenate((y, np.zeros(pad_shape)), -1)
 
     #parse window; if array like, then set nperseg = win.shape
-    if isinstance(window, string_types) or type(window) is tuple:
-        if nperseg == None: # if nperseg not specified
-            nperseg = 256 # then change to default
-        win = get_window(window, nperseg)
-    else:
-        win = np.asarray(window)
-        if len(win.shape) != 1:
-            raise ValueError('window must be 1-D')
-        if nperseg == None:
-            nperseg = win.shape[0]                
+    win, nperseg = _triage_segments(window, nperseg)              
         
     # X and Y are same length now, can test nperseg with either
     if x.shape[-1] < nperseg:
@@ -961,3 +951,34 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
 
     return result
 
+def _triage_segments(window, nperseg):
+    """
+    private function that handles defaults.
+    called by _spectral_helper, and also by spectrogram because it requires a
+    value for nperseg when setting noverlap to the default of nperseg // 8
+    If window is specified by a string or tuple and nperseg is not specified, 
+    _triage_segments sets nperseg to the default of 256 and the window is that
+    size. If instead the window is array_like and nperseg is not specified, then
+    nperseg is set to the length of the window.
+    
+    Returns
+    -------
+    window : ndarray
+        Array of FFT data
+    
+    nperseg : 
+    """
+    
+    #parse window; if array like, then set nperseg = win.shape
+    if isinstance(window, string_types) or isinstance(window, tuple):
+        if nperseg is None: # if nperseg not specified
+            nperseg = 256 # then change to default
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if nperseg is None:
+            nperseg = win.shape[0]
+    
+    return win, nperseg
