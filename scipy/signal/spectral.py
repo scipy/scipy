@@ -508,7 +508,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     >>> plt.show()
     """
 
-    #parse window; if array like, then set nperseg = win.shape
+    # need to set default for nperseg before setting default for noverlap below
     window, nperseg = _triage_segments(window, nperseg)   
             
     # Less overlap than welch, so samples are more statisically independent
@@ -770,7 +770,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
                 pad_shape[-1] = x.shape[-1] - y.shape[-1]
                 y = np.concatenate((y, np.zeros(pad_shape)), -1)
 
-    #parse window; if array like, then set nperseg = win.shape
+    # parse window; if array like, then set nperseg = win.shape
     win, nperseg = _triage_segments(window, nperseg)              
         
     # X and Y are same length now, can test nperseg with either
@@ -971,8 +971,9 @@ def _triage_segments(window, nperseg):
     
     #parse window; if array like, then set nperseg = win.shape
     if isinstance(window, string_types) or isinstance(window, tuple):
-        if nperseg is None: # if nperseg not specified
-            nperseg = 256 # then change to default
+        # if nperseg not specified
+        if nperseg is None:  
+            nperseg = 256  # then change to default
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
