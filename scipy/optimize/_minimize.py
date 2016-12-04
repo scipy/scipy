@@ -25,6 +25,7 @@ from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                       _minimize_scalar_golden, MemoizeJac)
 from ._trustregion_dogleg import _minimize_dogleg
 from ._trustregion_ncg import _minimize_trust_ncg
+from ._trustregion_exact import _minimize_trustregion_exact
 
 # constrained minimization
 from .lbfgsb import _minimize_lbfgsb
@@ -37,9 +38,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
              callback=None, options=None):
     """Minimization of scalar function of one or more variables.
-    
+
     In general, the optimization problems are of the form::
-    
+
         minimize f(x) subject to
 
         g_i(x) >= 0,  i = 1,...,m
@@ -75,6 +76,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'SLSQP'       :ref:`(see here) <optimize.minimize-slsqp>`
             - 'dogleg'      :ref:`(see here) <optimize.minimize-dogleg>`
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
+            - 'trust-region-exact'   :ref:`(see here) <optimize.minimize-trustexact>`
             - custom - a callable object (added in version 0.14.0),
               see below for description.
 
@@ -189,7 +191,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Newton-CG algorithm [5]_ pp. 168 (also known as the truncated
     Newton method). It uses a CG method to the compute the search
     direction. See also *TNC* method for a box-constrained
-    minimization with a similar algorithm.
+    minimization with a similar algorithm. Suitable for large-scale
+    problems.
 
     Method :ref:`dogleg <optimize.minimize-dogleg>` uses the dog-leg
     trust-region algorithm [5]_ for unconstrained minimization. This
@@ -200,7 +203,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Newton conjugate gradient trust-region algorithm [5]_ for
     unconstrained minimization. This algorithm requires the gradient
     and either the Hessian or a function that computes the product of
-    the Hessian with a given vector.
+    the Hessian with a given vector. Suitable for large-scale problems.
+
+    Method :ref:`trust-region-exact <optimize.minimize-trustexact>`
+    is a trust-region method for unconstrained minimization in which
+    quadratic subproblems are solved almost exactly [13]_. This
+    algorithm requires the gradient and the Hessian (which is
+    *not* required to be positive definite). It is, in many
+    situations, the Newton method to converge in fewer iteraction
+    and the most recommended for small and medium-size problems.
 
     **Constrained minimization**
 
@@ -290,6 +301,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     .. [12] Kraft, D. A software package for sequential quadratic
        programming. 1988. Tech. Rep. DFVLR-FB 88-28, DLR German Aerospace
        Center -- Institute for Flight Mechanics, Koln, Germany.
+    .. [13] Conn, A. R., Gould, N. I., and Toint, P. L.
+       Trust region methods. 2000. Siam. pp. 169-200.
 
     Examples
     --------
@@ -380,7 +393,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use gradient information (jac).' % method,
              RuntimeWarning)
     # - hess
-    if meth not in ('newton-cg', 'dogleg', 'trust-ncg', '_custom') and hess is not None:
+    if meth not in ('newton-cg', 'dogleg', 'trust-ncg',
+                    'trust-region-exact', '_custom') and hess is not None:
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
@@ -425,7 +439,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             options.setdefault('xtol', tol)
         if meth in ['powell', 'l-bfgs-b', 'tnc', 'slsqp']:
             options.setdefault('ftol', tol)
-        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg', 'trust-ncg']:
+        if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg',
+                    'trust-ncg', 'trust-region-exact']:
             options.setdefault('gtol', tol)
         if meth in ['cobyla', '_custom']:
             options.setdefault('tol', tol)
@@ -462,6 +477,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'trust-ncg':
         return _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
                                    callback=callback, **options)
+    elif meth == 'trust-region-exact':
+        return _minimize_trustregion_exact(fun, x0, args, jac, hess,
+                                           callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
