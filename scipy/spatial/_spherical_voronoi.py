@@ -259,10 +259,9 @@ class SphericalVoronoi:
             simplex_indices]).ravel()
         point_indices = self._tri.simplices.ravel()
 
-        list_tuples_associations = zip(point_indices,
-                                       tri_indices)
+        array_associations = np.dstack((point_indices, tri_indices))[0]
 
-        list_tuples_associations = sorted(list_tuples_associations,
+        list_tuples_associations = sorted(array_associations,
                                           key=lambda t: t[0])
 
         # group by generator indices to produce
