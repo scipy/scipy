@@ -261,8 +261,8 @@ class SphericalVoronoi:
 
         array_associations = np.dstack((point_indices, tri_indices))[0]
 
-        list_tuples_associations = sorted(array_associations,
-                                          key=lambda t: t[0])
+        list_tuples_associations = \
+        array_associations[np.argsort(array_associations[...,0])]
 
         # group by generator indices to produce
         # unsorted regions in nested list
