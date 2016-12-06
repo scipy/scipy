@@ -3608,7 +3608,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     Parameters
     ----------
     x, y : array_like
-        Arrays of rankings, of the same shape. If arrays are not 1-D, they will
+        Arrays of scores, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
     rank: array_like of ints or bool, optional
         A nonnegative rank assigned to each element. If it is None, the
