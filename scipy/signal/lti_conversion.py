@@ -15,7 +15,7 @@ from scipy import linalg
 
 __all__ = ['BadCoefficients', 'abcd_normalize', 'cont2discrete', 'normalize',
            'sos2tf', 'sos2zpk', 'ss2tf', 'ss2zpk', 'tf2sos', 'tf2ss', 'tf2zpk',
-           'zpk2sos', 'zpk2ss', 'zpk2tf']
+           'zpk2sos', 'zpk2ss', 'zpk2tf', 'sos2ss', 'ss2sos']
 
 
 class BadCoefficients(UserWarning):
@@ -290,6 +290,26 @@ def ss2tf(A, B, C, D, input=0):
     return num, den
 
 
+def sos2ss(sos):
+    """Zero-pole-gain representation to state-space representation
+
+    Parameters
+    ----------
+    sos : array_like
+        Array of second-order filter coefficients, must have shape
+        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        specification.
+
+    Returns
+    -------
+    A, B, C, D : ndarray
+        State space representation of the system, in controller canonical
+        form.
+
+    """
+    return tf2ss(*sos2tf(sos))
+
+
 def zpk2ss(z, p, k):
     """Zero-pole-gain representation to state-space representation
 
@@ -338,6 +358,36 @@ def ss2zpk(A, B, C, D, input=0):
 
     """
     return tf2zpk(*ss2tf(A, B, C, D, input=input))
+
+
+def ss2sos(A, B, C, D, input=0):
+    """State-space representation to zero-pole-gain representation.
+
+    A, B, C, D defines a linear state-space system with `p` inputs,
+    `q` outputs, and `n` state variables.
+
+    Parameters
+    ----------
+    A : array_like
+        State (or system) matrix of shape ``(n, n)``
+    B : array_like
+        Input matrix of shape ``(n, p)``
+    C : array_like
+        Output matrix of shape ``(q, n)``
+    D : array_like
+        Feedthrough (or feedforward) matrix of shape ``(q, p)``
+    input : int, optional
+        For multiple-input systems, the index of the input to use.
+
+    Returns
+    -------
+    sos : ndarray
+        Array of second-order filter coefficients, with shape
+        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
+        specification.
+
+    """
+    return tf2sos(*ss2tf(A, B, C, D, input=input))
 
 
 def tf2zpk(b, a):
