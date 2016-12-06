@@ -235,6 +235,7 @@ class SphericalVoronoi:
 
         # add the center to each of the simplices in tri to get the same
         # tetrahedrons we'd have gotten from Delaunay tetrahedralization
+        # tetrahedrons will have shape: (2N-4, 4, 3)
         tetrahedrons = self._tri.points[self._tri.simplices]
         tetrahedrons = np.insert(
             tetrahedrons,
@@ -244,9 +245,11 @@ class SphericalVoronoi:
         )
 
         # produce circumcenters of tetrahedrons from 3D Delaunay
+        # circumcenters will have shape: (2N-4, 3)
         circumcenters = calc_circumcenters(tetrahedrons)
 
         # project tetrahedron circumcenters to the surface of the sphere
+        # self.vertices will have shape: (2N-4, 3)
         self.vertices = project_to_sphere(
             circumcenters,
             self.center,
@@ -254,13 +257,18 @@ class SphericalVoronoi:
         )
 
         # calculate regions from triangulation
+        # simplex_indices will have shape: (2N-4,)
         simplex_indices = np.arange(self._tri.simplices.shape[0])
+        # tri_indices will have shape: (6N-12,)
         tri_indices = np.column_stack([simplex_indices, simplex_indices,
             simplex_indices]).ravel()
+        # point_indices will have shape: (6N-12,)
         point_indices = self._tri.simplices.ravel()
 
+        # array_associations will have shape: (6N-12, 2)
         array_associations = np.dstack((point_indices, tri_indices))[0]
 
+        # list_tuples_associations will have shape: (6N-12, 2)
         list_tuples_associations = \
         array_associations[np.argsort(array_associations[...,0])]
 
