@@ -3,7 +3,6 @@ from numpy.testing import (TestCase,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_equal)
-import scipy
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
 from scipy._lib._util import check_random_state
@@ -30,12 +29,6 @@ class TestHausdorff(TestCase):
         self.path_1_4d = np.insert(self.path_1, 3, 5, axis=1)
         self.path_2_4d = np.insert(self.path_2, 3, 27, axis=1)
 
-    def tearDown(self):
-        del self.path_1
-        del self.path_2
-        del self.path_1_4d
-        del self.path_2_4d
-
     def test_symmetry(self):
         # Ensure that the directed (asymmetric) Hausdorff distance is
         # actually asymmetric
@@ -46,7 +39,7 @@ class TestHausdorff(TestCase):
 
     def test_brute_force_comparison_forward(self):
         # Ensure that the algorithm for directed_hausdorff gives the
-        # sameresult as the simple / brute force approach in the
+        # same result as the simple / brute force approach in the
         # forward direction.
         actual = directed_hausdorff(self.path_1, self.path_2)[0]
         # brute force over rows:
@@ -108,23 +101,13 @@ class TestHausdorff(TestCase):
         new_global_state = rs2.get_state()
         assert_equal(new_global_state, old_global_state)
 
-    def test_random_state_None(self):
-        # check that a seed value of None does not alter global random
-        # state
-        rs = check_random_state(None)
-        old_global_state = rs.get_state()
-        directed_hausdorff(self.path_1, self.path_2, None)
-        rs2 = check_random_state(None)
-        new_global_state = rs2.get_state()
-        assert_equal(new_global_state, old_global_state)
-
-    def test_random_state_int(self):
-        # check that a seed value of int does not alter global random
-        # state
-        integer = 27870671
-        rs = check_random_state(None)
-        old_global_state = rs.get_state()
-        directed_hausdorff(self.path_1, self.path_2, integer)
-        rs2 = check_random_state(None)
-        new_global_state = rs2.get_state()
-        assert_equal(new_global_state, old_global_state)
+    def test_random_state_None_int(self):
+        # check that seed values of None or int do not alter global
+        # random state
+        for seed in [None, 27870671]:
+            rs = check_random_state(None)
+            old_global_state = rs.get_state()
+            directed_hausdorff(self.path_1, self.path_2, seed)
+            rs2 = check_random_state(None)
+            new_global_state = rs2.get_state()
+            assert_equal(new_global_state, old_global_state)

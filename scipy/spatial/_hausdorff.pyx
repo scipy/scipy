@@ -53,12 +53,15 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
             if d < cmax: # early break
                 break_occurred += 1
                 break
+
             if d < cmin:
                 cmin = d
                 i_store = i
                 j_store = j
+
         if cmin > cmax and cmin != np.inf and break_occurred == 0:
             cmax = cmin
             i_ret = i_store
             j_ret = j_store
+
     return (sqrt(cmax), resort1[i_ret], resort2[j_ret])

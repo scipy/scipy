@@ -159,20 +159,24 @@ def directed_hausdorff(u, v, seed=0):
     v : (O,N) ndarray
         Input array.
     seed : int or None
-        Local `RandomState` seed. Deafult is 0, a random shuffling of
+        Local `np.random.RandomState` seed. Default is 0, a random shuffling of
         u and v that guarantees reproducibility.
 
     Returns
     -------
-    out : tuple
+    d : double
         The directed Hausdorff distance between arrays `u` and `v`,
-        followed by indices of the Hausdorff pair in `u` and `v`,
-        respectively.
+
+    index_1 : int
+        index of point contributing to Hausdorff pair in `u`
+
+    index_2 : int
+        index of point contributing to Hausdorff pair in `v`
 
     Notes
-    ----------
+    -----
     Uses the early break technique and the random sampling approach
-    described by [1]_. Although worst-case performance is O(m * o)
+    described by [1]_. Although worst-case performance is ``O(m * o)``
     (as with the brute force algorithm), this is unlikely in practice
     as the input data would have to require the algorithm to explore
     every single point interaction, and after the algorithm shuffles
@@ -185,11 +189,10 @@ def directed_hausdorff(u, v, seed=0):
 
     References
     ----------
-
     .. [1] A. A. Taha and A. Hanbury, "An efficient algorithm for
-       calculating the exact Hausdorff distance." IEEE Transactions On
-       Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
-       2015.
+           calculating the exact Hausdorff distance." IEEE Transactions On
+           Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
+           2015.
 
     Examples
     --------
