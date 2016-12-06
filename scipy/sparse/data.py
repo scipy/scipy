@@ -225,7 +225,10 @@ class _minmax_mixin(object):
                 else:
                     ret[i] = zero_ind
 
-        return ret
+        if axis == 1:
+            ret = ret.reshape(-1, 1)
+
+        return np.asmatrix(ret)
 
     def _arg_min_or_max(self, axis, out, op, compare):
         if out is not None:
@@ -346,8 +349,8 @@ class _minmax_mixin(object):
 
         Returns
         -------
-        ind : ndarray or int
-            Indices of maximum elements.
+        ind : np.matrix or int
+            Indices of maximum elements. If matrix, its size along `axis` is 1.
         """
         return self._arg_min_or_max(axis, out, np.argmax, np.greater)
 
@@ -369,7 +372,7 @@ class _minmax_mixin(object):
 
         Returns
         -------
-        ind : ndarray or int
-            Indices of minimum elements.
+         ind : np.matrix or int
+            Indices of minimum elements. If matrix, its size along `axis` is 1.
         """
         return self._arg_min_or_max(axis, out, np.argmin, np.less)

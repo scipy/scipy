@@ -3244,16 +3244,20 @@ class _TestMinMax(object):
         D2 = D1.transpose()
 
         for D in [D1, D2]:
-            mat = self.spmatrix(D)
+            mat = csr_matrix(D)
 
             assert_equal(mat.argmax(), np.argmax(D))
             assert_equal(mat.argmin(), np.argmin(D))
 
-            assert_equal(mat.argmax(axis=0), np.argmax(D, axis=0))
-            assert_equal(mat.argmin(axis=0), np.argmin(D, axis=0))
+            assert_equal(mat.argmax(axis=0),
+                         np.asmatrix(np.argmax(D, axis=0)))
+            assert_equal(mat.argmin(axis=0),
+                         np.asmatrix(np.argmin(D, axis=0)))
 
-            assert_equal(mat.argmax(axis=1), np.argmax(D, axis=1))
-            assert_equal(mat.argmin(axis=1), np.argmin(D, axis=1))
+            assert_equal(mat.argmax(axis=1),
+                         np.asmatrix(np.argmax(D, axis=1).reshape(-1, 1)))
+            assert_equal(mat.argmin(axis=1),
+                         np.asmatrix(np.argmin(D, axis=1).reshape(-1, 1)))
 
         D1 = np.empty((0, 5))
         D2 = np.empty((5, 0))
