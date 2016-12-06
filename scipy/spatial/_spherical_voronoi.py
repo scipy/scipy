@@ -275,7 +275,7 @@ class SphericalVoronoi:
         groups = []
         for k, g in itertools.groupby(array_associations,
                                       lambda t: t[0]):
-            groups.append([element[1] for element in list(g)])
+            groups.append(list(zip(*list(g))[1]))
 
         self.regions = groups
 
