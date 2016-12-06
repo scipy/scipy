@@ -18,8 +18,9 @@ from scipy.signal import (tf2zpk, zpk2tf, tf2sos, sos2tf, sos2zpk, zpk2sos,
                           iirnotch, iirpeak, cheb1ap, cheb2ap, ellipap, iirfilter,
                           freqs, lp2lp, lp2hp, lp2bp, lp2bs, bilinear,
                           group_delay, firwin)
-from scipy.signal.filter_design import (_cplxreal, _cplxpair, _norm_factor,
-                                        _bessel_poly, _bessel_zeros)
+from scipy.signal.filter_design import (_norm_factor, _bessel_poly,
+                                        _bessel_zeros)
+from scipy.signal.lti_conversion import _cplxreal, _cplxpair
 
 try:
     import mpmath

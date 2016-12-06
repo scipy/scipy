@@ -30,9 +30,9 @@ from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
 from scipy._lib.six import xrange
-from .filter_design import tf2zpk, zpk2tf, normalize, freqs, freqz
+from .filter_design import freqs, freqz
 from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
-                             cont2discrete)
+                             cont2discrete, tf2zpk, zpk2tf, normalize)
 
 import numpy
 import numpy as np
