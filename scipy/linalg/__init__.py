@@ -67,6 +67,7 @@ Decompositions
    svdvals - Singular values of a matrix
    diagsvd - Construct matrix of singular values from output of svd
    orth - Construct orthonormal basis for the range of A using svd
+   ldl - LDL.T decomposition of a Hermitian or a symmetric matrix.
    cholesky - Cholesky decomposition of a matrix
    cholesky_banded - Cholesky decomp. of a sym. or Hermitian banded matrix
    cho_factor - Cholesky decomposition for use in solving a linear system
@@ -189,6 +190,7 @@ from .special_matrices import *
 from ._solvers import *
 from ._procrustes import *
 from ._decomp_update import *
+from ._decomp_ldl import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
