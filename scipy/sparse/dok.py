@@ -111,41 +111,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             self.shape = arg1.shape
             self.dtype = d.dtype
 
-    def clear(self):
-        """Remove all non-zero elements.
-
-        This is the method of the underlying dict object.
-        """
-        super(dok_matrix, self).clear()
-        
-    def items(self):
-        """A set-like object containing ((i, j)-index, value) pairs.
-
-        This is the method of the underlying dict object.
-        """
-        return super(dok_matrix, self).items()
-
-    def keys(self):
-        """A set-like object containing index pairs of non-zero elements.
-
-        This is the method of the underlying dict object.
-        """
-        return super(dok_matrix, self).keys()
-
-    def values(self):
-        """A set-like object containing values of non-zero elements.
-
-        This is the method of the underlying dict object.
-        """
-        return super(dok_matrix, self).values()
-
-    def setdefault(self, key, default=None):
-        """See setdefault method of Python dict.
-
-        This is the method of the underlying dict object.
-        """
-        super(dok_matrix, self).setdefault(key, default=default)
-
     def getnnz(self, axis=None):
         if axis is not None:
             raise NotImplementedError("getnnz over an axis is not implemented "
