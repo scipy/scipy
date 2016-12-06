@@ -108,4 +108,3 @@ __all__.extend(['dct', 'idct', 'dst', 'idst'])
 
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

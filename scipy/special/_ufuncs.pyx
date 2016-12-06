@@ -1171,12 +1171,12 @@ cdef void loop_i_ddddd_dd_As_fffff_ff(char **args, np.npy_intp *dims, np.npy_int
         op1 += steps[6]
     sf_error.check_fpe(func_name)
 
-from _trig cimport cospi as _func_cospi
-ctypedef double _proto_cospi_double__t(double) nogil
-cdef _proto_cospi_double__t *_proto_cospi_double__t_var = &_func_cospi[double]
-from _trig cimport cospi as _func_cospi
-ctypedef double complex _proto_cospi_double_complex__t(double complex) nogil
-cdef _proto_cospi_double_complex__t *_proto_cospi_double_complex__t_var = &_func_cospi[double_complex]
+from _trig cimport dcospi as _func_dcospi
+ctypedef double _proto_dcospi_t(double) nogil
+cdef _proto_dcospi_t *_proto_dcospi_t_var = &_func_dcospi
+from _trig cimport ccospi as _func_ccospi
+ctypedef double complex _proto_ccospi_t(double complex) nogil
+cdef _proto_ccospi_t *_proto_ccospi_t_var = &_func_ccospi
 from _ellip_harm cimport ellip_harmonic as _func_ellip_harmonic
 ctypedef double _proto_ellip_harmonic_t(double, double, int, int, double, double, double) nogil
 cdef _proto_ellip_harmonic_t *_proto_ellip_harmonic_t_var = &_func_ellip_harmonic
@@ -1198,12 +1198,12 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_lgam1p "lgam1p"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_log1pmx "log1pmx"(double) nogil
-from _trig cimport sinpi as _func_sinpi
-ctypedef double _proto_sinpi_double__t(double) nogil
-cdef _proto_sinpi_double__t *_proto_sinpi_double__t_var = &_func_sinpi[double]
-from _trig cimport sinpi as _func_sinpi
-ctypedef double complex _proto_sinpi_double_complex__t(double complex) nogil
-cdef _proto_sinpi_double_complex__t *_proto_sinpi_double_complex__t_var = &_func_sinpi[double_complex]
+from _trig cimport dsinpi as _func_dsinpi
+ctypedef double _proto_dsinpi_t(double) nogil
+cdef _proto_dsinpi_t *_proto_dsinpi_t_var = &_func_dsinpi
+from _trig cimport csinpi as _func_csinpi
+ctypedef double complex _proto_csinpi_t(double complex) nogil
+cdef _proto_csinpi_t *_proto_csinpi_t_var = &_func_csinpi
 from _spherical_bessel cimport spherical_in_real as _func_spherical_in_real
 ctypedef double _proto_spherical_in_real_t(long, double) nogil
 cdef _proto_spherical_in_real_t *_proto_spherical_in_real_t_var = &_func_spherical_in_real
@@ -1931,13 +1931,13 @@ ufunc__cospi_types[4] = <char>NPY_CFLOAT
 ufunc__cospi_types[5] = <char>NPY_CFLOAT
 ufunc__cospi_types[6] = <char>NPY_CDOUBLE
 ufunc__cospi_types[7] = <char>NPY_CDOUBLE
-ufunc__cospi_ptr[2*0] = <void*>_func_cospi[double]
+ufunc__cospi_ptr[2*0] = <void*>_func_dcospi
 ufunc__cospi_ptr[2*0+1] = <void*>(<char*>"_cospi")
-ufunc__cospi_ptr[2*1] = <void*>_func_cospi[double]
+ufunc__cospi_ptr[2*1] = <void*>_func_dcospi
 ufunc__cospi_ptr[2*1+1] = <void*>(<char*>"_cospi")
-ufunc__cospi_ptr[2*2] = <void*>_func_cospi[double_complex]
+ufunc__cospi_ptr[2*2] = <void*>_func_ccospi
 ufunc__cospi_ptr[2*2+1] = <void*>(<char*>"_cospi")
-ufunc__cospi_ptr[2*3] = <void*>_func_cospi[double_complex]
+ufunc__cospi_ptr[2*3] = <void*>_func_ccospi
 ufunc__cospi_ptr[2*3+1] = <void*>(<char*>"_cospi")
 ufunc__cospi_data[0] = &ufunc__cospi_ptr[2*0]
 ufunc__cospi_data[1] = &ufunc__cospi_ptr[2*1]
@@ -2137,13 +2137,13 @@ ufunc__sinpi_types[4] = <char>NPY_CFLOAT
 ufunc__sinpi_types[5] = <char>NPY_CFLOAT
 ufunc__sinpi_types[6] = <char>NPY_CDOUBLE
 ufunc__sinpi_types[7] = <char>NPY_CDOUBLE
-ufunc__sinpi_ptr[2*0] = <void*>_func_sinpi[double]
+ufunc__sinpi_ptr[2*0] = <void*>_func_dsinpi
 ufunc__sinpi_ptr[2*0+1] = <void*>(<char*>"_sinpi")
-ufunc__sinpi_ptr[2*1] = <void*>_func_sinpi[double]
+ufunc__sinpi_ptr[2*1] = <void*>_func_dsinpi
 ufunc__sinpi_ptr[2*1+1] = <void*>(<char*>"_sinpi")
-ufunc__sinpi_ptr[2*2] = <void*>_func_sinpi[double_complex]
+ufunc__sinpi_ptr[2*2] = <void*>_func_csinpi
 ufunc__sinpi_ptr[2*2+1] = <void*>(<char*>"_sinpi")
-ufunc__sinpi_ptr[2*3] = <void*>_func_sinpi[double_complex]
+ufunc__sinpi_ptr[2*3] = <void*>_func_csinpi
 ufunc__sinpi_ptr[2*3+1] = <void*>(<char*>"_sinpi")
 ufunc__sinpi_data[0] = &ufunc__sinpi_ptr[2*0]
 ufunc__sinpi_data[1] = &ufunc__sinpi_ptr[2*1]

@@ -3,19 +3,19 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import math
 
 import numpy
-from numpy import (atleast_1d, poly, polyval, roots, real, asarray, allclose,
+import numpy as np
+from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    resize, pi, absolute, logspace, r_, sqrt, tan, log10,
                    arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
-                   zeros, sinh, append, concatenate, prod, ones, array)
-from numpy import mintypecode
-import numpy as np
-from scipy import special, optimize
-from scipy.special import comb
-from scipy.misc import factorial
+                   zeros, sinh, append, concatenate, prod, ones, array,
+                   mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
-import math
+
+from scipy import special, optimize
+from scipy.special import comb, factorial
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',

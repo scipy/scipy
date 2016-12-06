@@ -22,6 +22,25 @@ This release requires Python 2.7 or 3.4-3.5 and NumPy 1.8.2 or greater.
 New features
 ============
 
+`scipy.linalg` improvements
+---------------------------
+
+The function `scipy.linalg.matrix_balance` was added to perform the so-called
+matrix balancing using the LAPACK xGEBAL routine family. This can be used to
+approximately equate the row and column norms through diagonal similarity
+transformations.
+
+The functions `scipy.linalg.solve_continuous_are` and
+`scipy.linalg.solve_discrete_are` have numerically more stable algorithms.
+These functions can also solve generalized algebraic matrix Riccati equations.
+Moreover, both gained a ``balanced`` keyword to turn balancing on and off.
+
+`scipy.spatial` improvements
+----------------------------
+
+`SphericalVoronoi.sort_vertices_of_regions()` has been re-written in
+cython to improve performance
+
 `scipy.ndimage` improvements
 ----------------------------
 
@@ -40,6 +59,15 @@ the covariance matrix of errors in the data.
 `scipy.signal` improvements
 ---------------------------
 
+The function `scipy.signal.correlate` and `scipy.signal.convolve` have a new
+optional parameter `method`. The default value of `auto` estimates the fastest
+of two computation methods, the direct approach and the Fourier transform
+approach.
+
+A new function has been added to choose the convolution/correlation method,
+`scipy.signal.choose_conv_method` which may be appropriate if convolutions or
+correlations are performed on many arrays of the same size.
+
 The function `scipy.signal.sosfreqz` was added to compute the frequency
 response from second-order sections.
 
@@ -51,11 +79,23 @@ IIR notch filters that can be used to remove a frequency component from
 a signal. The dual function  `scipy.signal.irrpeak` was added to
 compute the coeficients of a second-order IIR peak (resonant) filter.
 
+The function `scipy.signal.minimum_phase` was added to convert linear-phase
+FIR filters to minimum phase.
+
+The functions `scipy.signal.upfirdn` and `scipy.signal.resample_poly` are now
+substantially faster when operating on some n-dimensional arrays when n > 1.
+The largest reduction in computation time is realized in cases where the size
+of the array is small (<1k samples or so) along the axis to be filtered.
+
 `scipy.sparse` improvements
 ---------------------------
 
 The functions `scipy.sparse.save_npz` and `scipy.sparse.load_npz` were added,
 providing simple serialization for some sparse formats.
+
+The `prune` method of classes `bsr_matrix`, `csc_matrix`, and `csr_matrix`
+was updated to reallocate backing arrays under certain conditions, reducing
+memory usage.
 
 `scipy.special` improvements
 ----------------------------
@@ -85,7 +125,7 @@ consistent with FITPACK, so that one can do, for example::
 For multidimensional splines, ``c.ndim > 1``, ``BSpline`` objects are consistent
 with piecewise polynomials, `scipy.interpolate.PPoly`. This means that
 ``BSpline`` objects are not immediately consistent with
-`scipy.interpolate.splprep`, and one *cannot* do 
+`scipy.interpolate.splprep`, and one *cannot* do
 ``>>> BSpline(*splprep([x, y])[0])``. Consult the `scipy.interpolate` test suite
 for examples of the precise equivalence.
 
@@ -119,6 +159,15 @@ the input, instead of always float64.
 
 The function `scipy.signal.find_peaks_cwt()` now returns an array instead of
 a list.
+
+`scipy.stats.kendalltau` now computes the correct p-value in case the
+input contains ties. The p-value is also identical to that computed by
+`scipy.stats.mstats_basic.kendalltau` and by R. If the input does not
+contain ties there is no change w.r.t. the previous implementation.
+
+The function `scipy.linalg.block_diag` will not ignore zero-sized matrices anymore.
+Instead it will insert rows or columns of zeros of the appropriate size.
+See gh-4908 for more details.
 
 
 Other changes

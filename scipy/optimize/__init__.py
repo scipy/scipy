@@ -83,7 +83,7 @@ Equation (Local) Minimizers
 
 .. autosummary::
    :toctree: generated/
-   
+
    leastsq - Minimize the sum of squares of M equations in N unknowns
    least_squares - Feature-rich least-squares minimization.
    nnls - Linear least-squares problem with non-negativity constraint
@@ -250,4 +250,3 @@ from ._lsq import least_squares, lsq_linear
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

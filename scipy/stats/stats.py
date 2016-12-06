@@ -3488,7 +3488,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     >>> tau
     -0.47140452079103173
     >>> p_value
-    0.24821309157521476
+    0.2827454599327748
 
     """
     x = np.asarray(x).ravel()
@@ -3520,7 +3520,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
-        return (cnt * (cnt - 1) // 2).sum()
+        cnt = cnt[cnt > 1]
+        return ((cnt * (cnt - 1) // 2).sum(),
+            (cnt * (cnt - 1.) * (cnt - 2)).sum(),
+            (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -3538,8 +3541,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
-    xtie = count_rank_tie(x)             # ties in x
-    ytie = count_rank_tie(y)             # ties in y
+    xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
+    ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
 
     tot = (size * (size - 1)) // 2
 
@@ -3548,18 +3551,19 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
     #               = con + dis + xtie + ytie - ntie
-    tau = (tot - xtie - ytie + ntie
-        - 2 * dis) / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
+    con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
+    tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
     # Limit range to fix computational errors
     tau = min(1., max(-1., tau))
 
-    # what follows reproduces the ending of Gary Strangman's original
-    # stats.kendalltau() in SciPy
-    svar = (4.0 * size + 10.0) / (9.0 * size * (size - 1))
-    z = tau / np.sqrt(svar)
-    prob = special.erfc(np.abs(z) / 1.4142136)
+    # con_minus_dis is approx normally distributed with this variance [3]_
+    var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
+        2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
+        size * (size - 1) * (size - 2))
+    pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
 
-    return KendalltauResult(tau, prob)
+    # Limit range to fix computational errors
+    return KendalltauResult(min(1., max(-1., tau)), pvalue)
 
 
 #####################################

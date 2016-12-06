@@ -185,7 +185,6 @@ _LINKAGE_METHODS = {'single': 0, 'complete': 1, 'average': 2, 'centroid': 3,
                     'median': 4, 'ward': 5, 'weighted': 6}
 _EUCLIDEAN_METHODS = ('centroid', 'median', 'ward')
 
-
 __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'correspond', 'cut_tree', 'dendrogram', 'fcluster', 'fclusterdata',
            'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
@@ -609,9 +608,9 @@ def linkage(y, method='single', metric='euclidean'):
         A condensed distance matrix. A condensed distance matrix
         is a flat array containing the upper triangular of the distance matrix.
         This is the form that ``pdist`` returns. Alternatively, a collection of
-        :math:`m` observation vectors in n dimensions may be passed as an
-        :math:`m` by :math:`n` array. All elements of `y` must be finite,
-        i.e. no NaNs or infs.
+        :math:`m` observation vectors in :math:`n` dimensions may be passed as an
+        :math:`m` by :math:`n` array. All elements of the condensed distance matrix
+        must be finite, i.e. no NaNs or infs.
     method : str, optional
         The linkage algorithm to use. See the ``Linkage Methods`` section below
         for full descriptions.
@@ -651,7 +650,6 @@ def linkage(y, method='single', metric='euclidean'):
     ----------
     .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
            algorithms", :arXiv:`1109.2378v1`.
-
     """
     if method not in _LINKAGE_METHODS:
         raise ValueError("Invalid method: {0}".format(method))
@@ -675,7 +673,7 @@ def linkage(y, method='single', metric='euclidean'):
         raise ValueError("`y` must be 1 or 2 dimensional.")
 
     if not np.all(np.isfinite(y)):
-        raise ValueError("`y` must contain only finite values.")
+        raise ValueError("The condensed distance matrix must contain only finite values.")
 
     n = int(distance.num_obs_y(y))
     method_code = _LINKAGE_METHODS[method]
@@ -684,7 +682,7 @@ def linkage(y, method='single', metric='euclidean'):
     elif method in ['complete', 'average', 'weighted', 'ward']:
         return _hierarchy.nn_chain(y, n, method_code)
     else:
-        return _hierarchy.linkage(y, n, method_code)
+        return _hierarchy.fast_linkage(y, n, method_code)
 
 
 class ClusterNode:
@@ -2040,11 +2038,12 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
 
     The dendrogram illustrates how each cluster is
     composed by drawing a U-shaped link between a non-singleton
-    cluster and its children. The height of the top of the U-link is
-    the distance between its children clusters. It is also the
+    cluster and its children.  The top of the U-link indicates a
+    cluster merge.  The two legs of the U-link indicate which clusters
+    were merged.  The length of the two legs of the U-link represents
+    the distance between the child clusters.  It is also the
     cophenetic distance between original observations in the two
-    children clusters. It is expected that the distances in Z[:,2] be
-    monotonic, otherwise crossings appear in the dendrogram.
+    children clusters.
 
     Parameters
     ----------
@@ -2060,21 +2059,23 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         large. Truncation is used to condense the dendrogram. There
         are several modes:
 
-        ``None/'none'``
-          No truncation is performed (Default).
+        ``None``
+          No truncation is performed (default).
+          Note: ``'none'`` is an alias for ``None`` that's kept for
+          backward compatibility.
 
         ``'lastp'``
-          The last ``p`` non-singleton formed in the linkage are the only
-          non-leaf nodes in the linkage; they correspond to rows
+          The last ``p`` non-singleton clusters formed in the linkage are the
+          only non-leaf nodes in the linkage; they correspond to rows
           ``Z[n-p-2:end]`` in ``Z``. All other non-singleton clusters are
           contracted into leaf nodes.
 
-        ``'mlab'``
-          This corresponds to MATLAB(TM) behavior. (not implemented yet)
-
-        ``'level'/'mtica'``
+        ``'level'``
           No more than ``p`` levels of the dendrogram tree are displayed.
-          This corresponds to Mathematica(TM) behavior.
+          A "level" includes all nodes with ``p`` merges from the last merge.
+
+          Note: ``'mtica'`` is an alias for ``'level'`` that's kept for
+          backward compatibility.
 
     color_threshold : double, optional
         For brevity, let :math:`t` be the ``color_threshold``.
@@ -2246,6 +2247,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     --------
     linkage, set_link_color_palette
 
+    Notes
+    -----
+    It is expected that the distances in ``Z[:,2]`` be monotonic, otherwise
+    crossings appear in the dendrogram.
+
     Examples
     --------
     >>> from scipy.cluster import hierarchy
@@ -2296,13 +2302,18 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
         raise TypeError('The second argument must be a number')
 
     if truncate_mode not in ('lastp', 'mlab', 'mtica', 'level', 'none', None):
+        # 'mlab' and 'mtica' are kept working for backwards compat.
         raise ValueError('Invalid truncation mode.')
 
     if truncate_mode == 'lastp' or truncate_mode == 'mlab':
         if p > n or p == 0:
             p = n
 
-    if truncate_mode == 'mtica' or truncate_mode == 'level':
+    if truncate_mode == 'mtica':
+        # 'mtica' is an alias
+        truncate_mode = 'level'
+
+    if truncate_mode == 'level':
         if p <= 0:
             p = np.inf
 
@@ -2479,10 +2490,10 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
         raise ValueError("Invalid root cluster index i.")
 
     if truncate_mode == 'lastp':
-        # If the node is a leaf node but corresponds to a non-single cluster,
+        # If the node is a leaf node but corresponds to a non-singleton cluster,
         # its label is either the empty string or the number of original
         # observations belonging to cluster i.
-        if 2 * n - p > i >= n:
+        if 2*n - p > i >= n:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
                                            leaf_label_func, i, labels,
@@ -2494,7 +2505,7 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
                                         leaf_label_func, i, labels)
             return (iv + 5.0, 10.0, 0.0, 0.0)
-    elif truncate_mode in ('mtica', 'level'):
+    elif truncate_mode == 'level':
         if i > n and level > p:
             d = Z[i - n, 2]
             _append_nonsingleton_leaf_node(Z, p, n, level, lvs, ivl,
@@ -2508,12 +2519,10 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
                                         leaf_label_func, i, labels)
             return (iv + 5.0, 10.0, 0.0, 0.0)
     elif truncate_mode in ('mlab',):
-        pass
+        msg = "Mode 'mlab' is deprecated in scipy 0.19.0 (it never worked)."
+        warnings.warn(msg, DeprecationWarning)
 
     # Otherwise, only truncate if we have a leaf node.
-    #
-    # If the truncate_mode is mlab, the linkage has been modified
-    # with the truncated tree.
     #
     # Only place leaves if they correspond to original observations.
     if i < n:
@@ -2693,13 +2702,19 @@ def is_isomorphic(T1, T2):
     if T1S[0] != T2S[0]:
         raise ValueError('T1 and T2 must have the same number of elements.')
     n = T1S[0]
-    d = {}
+    d1 = {}
+    d2 = {}
     for i in xrange(0, n):
-        if T1[i] in d:
-            if d[T1[i]] != T2[i]:
+        if T1[i] in d1:
+            if not T2[i] in d2:
                 return False
+            if d1[T1[i]] != T2[i] or d2[T2[i]] != T1[i]:
+                return False
+        elif T2[i] in d2:
+            return False
         else:
-            d[T1[i]] = T2[i]
+            d1[T1[i]] = T2[i]
+            d2[T2[i]] = T1[i]
     return True
 
 
