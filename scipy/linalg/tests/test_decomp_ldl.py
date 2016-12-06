@@ -14,7 +14,7 @@ class TestLDL(TestCase):
     def Test_args(self):
         A = eye(3)
         assert_raises(ValueError, ldl, A[:, :2])
-        assert_raises(ValueError, ldl, A*1j) 
+        assert_raises(ValueError, ldl, A*1j)
 
     def Test_simple(self):
         a = array([[-0.39-0.71j, 5.14-0.64j, -7.86-2.96j, 3.80+0.92j],
@@ -76,7 +76,7 @@ class TestLDL(TestCase):
     def Test_permutations(self):
         for _ in range(10):
             n = randint(1, 100)
-            x = rand(n,n)
+            x = rand(n, n)
             x = x + x.conj().T
             x += eye(n)*randint(5, 1e6)
             lu_ind = tril_indices_from(x, k=-1)

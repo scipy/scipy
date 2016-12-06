@@ -20,18 +20,18 @@ def ldl(A, lower=True, rook_pivoting=False, only_sym=False,
 
     This function returns a block diagonal matrix D consisting blocks of size
     at most 2x2 and also a possibly permuted unit lower triangular matrix
-    :math:`L` such that the factorization
-
-    .. math::
-
-                            A = L D L^H
-
-    holds.
+    ``L`` such that the factorization ``A = L D L^H`` holds.
 
     Depending on the value of the boolean ``lower``, only upper or lower
     triangular part of the input array is referenced. Hence a triangular
     part of matrix on entry would give the same result as if the full matrix
     is supplied.
+
+    The permutation array can be used to triangulize the outer factors simply
+    by a row shuffle, i.e., ``lu[perm, :]`` is a upper/lower triangular
+    matrix. This is also equivalent to seeing the shuffle as a permutation
+    matrix ``P.dot(lu)`` where ``P`` is an identity matrix permuted by
+    ``perm``.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def ldl(A, lower=True, rook_pivoting=False, only_sym=False,
     d : ndarray
         The block diagonal multiplier of the factorization.
     perm : ndarray
-        The permutation indices array.
+        The permutation indices array that brings lu into triangular form.
 
     Notes
     -----
@@ -72,11 +72,26 @@ def ldl(A, lower=True, rook_pivoting=False, only_sym=False,
     be hermitian and choosing the (C/Z)HETRF solvers, symmetric solvers
     (C/Z)SYTRF are selected.
 
+    If ``rook_pivoting`` keyword is set to True the so-called bounded
+    Bunch-Kaufman algorithm given in [2]_ is used. Otherwise, the standard
+    algorithm given in [1]_ is used. Internally, this selects between
+    ``?(HE/SY)TRF`` and ``?(HE/SY)TRF_ROOK`` solvers.
+
     See also
     --------
     cholesky, lu
 
     .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] J.R. Bunch, L. Kaufman, Some stable methods for calculating
+       inertia and solving symmetric linear systems, Math. Comput. Vol.31,
+       1977. DOI: 10.2307/2005787
+
+    .. [2]  S. H. Cheng and N. J. Higham, A modified cholesky algorithm
+       based on a symmetric indefinite factorization, SIAM J. Matrix Anal.
+       Appl., Vol.19, 1998, DOI: 10.1137/S0895479896302898
     """
     a = atleast_2d(_asarray_validated(A, check_finite=check_finite))
     if a.shape[0] != a.shape[1]:
@@ -274,6 +289,8 @@ def _ldl_get_d_and_l(ldu, pivs, lower=True, only_sym=False):
         inc = blk_i + blk
 
         if blk == 2:
+            # If Hermitian matrix is factorized, the offdiagonal
+            # should be conjugated.
             if is_c and not only_sym:
                 d[[blk_i+x, blk_i+y], [blk_i+y, blk_i+x]] = [
                     ldu[blk_i+x, blk_i+y], ldu[blk_i+x, blk_i+y].conj()]
