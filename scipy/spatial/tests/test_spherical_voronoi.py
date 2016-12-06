@@ -2,6 +2,7 @@ from __future__ import print_function
 import numpy as np
 import itertools
 from numpy.testing import (TestCase,
+                           assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
@@ -120,6 +121,17 @@ class TestSphericalVoronoi(TestCase):
         sv.sort_vertices_of_regions()
         actual = list(itertools.chain(*sorted(sv.regions)))
         assert_array_equal(actual, expected)
+
+    def test_num_vertices(self):
+        # for any n >= 3, a spherical Voronoi diagram has 2n - 4
+        # vertices; this is a direct consequence of Euler's formula
+        # as explained by Dinis and Mamede (2010) Proceedings of the
+        # 2010 International Symposium on Voronoi Diagrams in Science
+        # and Engineering
+        sv = SphericalVoronoi(self.points)
+        expected = self.points.shape[0] * 2 - 4
+        actual = sv.vertices.shape[0]
+        assert_equal(actual, expected)
 
     def test_voronoi_circles(self):
         sv = spherical_voronoi.SphericalVoronoi(self.points)
