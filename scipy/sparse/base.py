@@ -617,7 +617,12 @@ class spmatrix(object):
 
     # Renamed conjtranspose() -> getH() for compatibility with dense matrices
     def getH(self):
-        """Hermitian transpose of a matrix."""
+        """Return the Hermitian transpose of this matrix.
+
+        See Also
+        --------
+        np.matrix.getH : NumPy's implementation of `getH` for matrices
+        """
         return self.transpose().conj()
 
     def _real(self):

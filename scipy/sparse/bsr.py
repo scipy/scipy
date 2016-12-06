@@ -327,7 +327,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         return self * other
 
     def matmat(self, other):
-        """Multiply matrix by matrix."""
+        """Multiply this sparse matrix by other matrix."""
         return self * other
 
     def _mul_vector(self, other):
