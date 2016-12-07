@@ -49,7 +49,7 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
 	    # faster performance with square of distance
 	    # avoid sqrt until very end
             for k in range(data_dims):
-                d += (ar1[i, k] - ar2[j, k]) * (ar1[i, k] - ar2[j, k])
+                d += (ar1[i, k] - ar2[j, k])**2
             if d < cmax: # early break
                 break_occurred += 1
                 break
