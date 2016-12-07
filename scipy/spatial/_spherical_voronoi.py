@@ -267,8 +267,9 @@ class SphericalVoronoi:
 
         # array_associations will have shape: (6N-12, 2)
         array_associations = np.dstack((point_indices, tri_indices))[0]
-        array_associations = array_associations[np.argsort(
-                                                array_associations[...,0])]
+        array_associations = array_associations[np.lexsort((
+                                                array_associations[...,1],
+                                                array_associations[...,0]))]
 
         # group by generator indices to produce
         # unsorted regions in nested list
