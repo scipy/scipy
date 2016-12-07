@@ -75,6 +75,7 @@ class spmatrix(object):
         self.maxprint = maxprint
 
     def set_shape(self, shape):
+        """See `reshape`."""
         shape = tuple(shape)
 
         if len(shape) != 2:
@@ -97,6 +98,7 @@ class spmatrix(object):
         self._shape = shape
 
     def get_shape(self):
+        """Get shape of a matrix."""
         return self._shape
 
     shape = property(fget=get_shape, fset=set_shape)
@@ -126,6 +128,15 @@ class spmatrix(object):
                                   self.__class__.__name__)
 
     def astype(self, t):
+        """Cast the matrix elements to a specified type.
+
+        The data will be copied.
+
+        Parameters
+        ----------
+        t : string or numpy dtype
+            Typecode or data-type to which to cast the data.
+        """
         return self.tocsr().astype(t).asformat(self.format)
 
     def asfptype(self):
@@ -148,6 +159,7 @@ class spmatrix(object):
             yield self[r, :]
 
     def getmaxprint(self):
+        """Maximum number of elements to display when printed."""
         return self.maxprint
 
     def count_nonzero(self):
@@ -189,6 +201,7 @@ class spmatrix(object):
         return self.getnnz()
 
     def getformat(self):
+        """Format of a matrix representation as a string."""
         return getattr(self, 'format', 'und')
 
     def __repr__(self):
@@ -266,9 +279,11 @@ class spmatrix(object):
         return self.tocsr().multiply(other)
 
     def maximum(self, other):
+        """Element-wise maximum between this and another matrix."""
         return self.tocsr().maximum(other)
 
     def minimum(self, other):
+        """Element-wise minimum between this and another matrix."""
         return self.tocsr().minimum(other)
 
     def dot(self, other):
@@ -287,6 +302,7 @@ class spmatrix(object):
         return self * other
 
     def power(self, n, dtype=None):
+        """Element-wise power."""
         return self.tocsr().power(n, dtype=dtype)
 
     def __eq__(self, other):
@@ -587,13 +603,26 @@ class spmatrix(object):
         return self.tocsr().transpose(axes=axes, copy=copy)
 
     def conj(self):
+        """Element-wise complex conjugation.
+
+        If the matrix is of non-complex data type, then this method does
+        nothing and the data is not copied.
+        """
         return self.tocsr().conj()
 
     def conjugate(self):
         return self.conj()
 
+    conjugate.__doc__ = conj.__doc__
+
     # Renamed conjtranspose() -> getH() for compatibility with dense matrices
     def getH(self):
+        """Return the Hermitian transpose of this matrix.
+
+        See Also
+        --------
+        np.matrix.getH : NumPy's implementation of `getH` for matrices
+        """
         return self.transpose().conj()
 
     def _real(self):

@@ -547,8 +547,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def maximum(self, other):
         return self._maximum_minimum(other, np.maximum, '_maximum_', lambda x: np.asarray(x) > 0)
 
+    maximum.__doc__ = spmatrix.maximum.__doc__
+
     def minimum(self, other):
         return self._maximum_minimum(other, np.minimum, '_minimum_', lambda x: np.asarray(x) < 0)
+
+    minimum.__doc__ = spmatrix.minimum.__doc__
 
     #####################
     # Reduce operations #
