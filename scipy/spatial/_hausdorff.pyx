@@ -59,7 +59,7 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
                 i_store = i
                 j_store = j
 
-        if cmin > cmax and cmin != np.inf and break_occurred == 0:
+        if cmin > cmax and break_occurred == 0:
             cmax = cmin
             i_ret = i_store
             j_ret = j_store
