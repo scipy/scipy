@@ -123,7 +123,8 @@ def ldl(A, lower=True, rook_pivoting=False, only_sym=False,
                          ''.format(s, -linfo)
                          )
 
-    ldu, piv, sinfo = solver(a, lwork=lwork, lower=lower)
+    ldu, piv, sinfo = solver(a, lwork=lwork, lower=lower,
+                             overwrite_a=overwrite_a)
     if sinfo < 0:
         raise ValueError('{} exited with the internal error '
                          '"illegal value in argument number {}". See '

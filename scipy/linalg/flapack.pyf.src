@@ -902,14 +902,14 @@ interface
      callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&info)
      callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*
 
-     integer intent(in):: m 
+     integer intent(in):: m
      integer intent(in):: n
      integer intent(hide),depend(m,n):: maxmn = MAX(m,n)
      <ftype2> intent(hide) :: a
 
      integer intent(in):: nrhs
      <ftype2> intent(hide) :: b
-     
+
      <ftype2> intent(in),optional :: cond = -1.0
      integer intent(hide) :: r
      <ftype2> intent(hide) :: s
@@ -953,23 +953,23 @@ interface
    end subroutine <prefix2c>gelss
 
    subroutine <prefix2>lasd4( n, i, d, z, delta, rho, sigma, work, info )
-    
+
 	! sigma, delta, work, info = lasd4(d,z,i,rho=1.0)
    	! Computes i-th square root of eigenvalue of rank one augmented diagonal matrix. Needed by SVD update procedure
-	
+
 	callstatement { i++; (*f2py_func)( &n, &i, d, z, delta, &rho, &sigma, work, &info); }
      callprotoargument int*, int*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, <ctype2>*, int*
-	
+
 	integer intent(hide),depend(d):: n = shape(d,0)
 	integer intent(in),depend(d),check(i>=0 && i<=(shape(d,0)-1)):: i
-	
+
 	<ftype2> dimension(n),intent(in)           :: d
 	<ftype2> dimension(n),intent(in),depend(n) :: z
-	
+
 	<ftype2> intent(out) :: sigma
 	<ftype2> dimension(n),intent(out),depend(n) :: delta
 	<ftype2> intent(in),optional:: rho = 1.0
-	
+
 	<ftype2> dimension(n),intent(out),depend(n) :: work
 	integer intent(out) :: info
 
@@ -991,7 +991,7 @@ interface
 
      integer intent(in):: nrhs
      <ftype2c> intent(hide) :: b
-     
+
      <ftype2> intent(in),optional :: cond = -1.0
      integer intent(hide) :: r
      <ftype2> intent(hide) :: s
@@ -1026,7 +1026,7 @@ interface
      integer intent(in,out,out=j),dimension(n),depend(n) :: jptv
 
      ! LWORK is obtained by the query call
-     integer intent(in),depend(nrhs,m,n,minmn) :: lwork 
+     integer intent(in),depend(nrhs,m,n,minmn) :: lwork
      check(lwork>=MAX(minmn+3*n+1, 2*minmn+nrhs)) :: lwork
      <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
      integer intent(out)::info
@@ -1123,7 +1123,7 @@ interface
 
    ! x,s,rank,info = dgelsd(a,b,lwork,size_iwork,cond=-1.0,overwrite_a=True,overwrite_b=True)
    ! Solve Minimize 2-norm(A * X - B).
-    
+
      callstatement (*f2py_func)(&m,&n,&nrhs,a,&m,b,&maxmn,s,&cond,&r,work,&lwork,iwork,&info)
      callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
 
@@ -1140,14 +1140,14 @@ interface
      <ftype2> intent(in),optional :: cond=-1.0
      integer intent(out,out=rank) :: r
      <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
-	
+
      integer intent(in),check(lwork>=1) :: lwork
      ! Impossible to calculate lwork explicitly, need to obtain it from query call first
      ! Same for size_iwork
      <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
 
      integer intent(in) :: size_iwork
-     integer intent(cache,hide),dimension(MAX(1,size_iwork)),depend(size_iwork) :: iwork	
+     integer intent(cache,hide),dimension(MAX(1,size_iwork)),depend(size_iwork) :: iwork
      integer intent(out)::info
 
    end subroutine <prefix2>gelsd
@@ -1156,7 +1156,7 @@ interface
 
    ! work,iwork,info = dgelsd_lwork(m,n,nrhs,cond=-1.0)
    ! Query for optimal lwork size
-    
+
      fortranname <prefix2>gelsd
      callstatement (*f2py_func)(&m,&n,&nrhs,&a,&m,&b,&maxmn,&s,&cond,&r,&work,&lwork,&iwork,&info)
      callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
@@ -1172,11 +1172,11 @@ interface
      <ftype2> intent(in),optional :: cond=-1.0
      integer intent(hide) :: r
      <ftype2> intent(hide) :: s
-	
+
      integer intent(in),optional :: lwork = -1
      <ftype2> intent(out) :: work
 
-     integer intent(out) :: iwork	
+     integer intent(out) :: iwork
      integer intent(out)::info
 
    end subroutine <prefix2>gelsd_lwork
@@ -1202,7 +1202,7 @@ interface
      <ftype2> intent(in),optional :: cond=-1.0
      integer intent(out,out=rank) :: r
      <ftype2> intent(out),dimension(minmn),depend(minmn) :: s
-	
+
      integer intent(in),check(lwork>=1||lwork==-1) :: lwork
      ! Impossible to calculate lwork explicitly, need to obtain it from query call first
      ! Same for size_rwork, size_iwork
@@ -1212,7 +1212,7 @@ interface
      <ftype2> intent(cache,hide),dimension(MAX(1,size_rwork)),depend(size_rwork) :: rwork
 
      integer intent(in) :: size_iwork
-     integer intent(cache,hide),dimension(MAX(1,size_iwork)),depend(size_iwork) :: iwork	
+     integer intent(cache,hide),dimension(MAX(1,size_iwork)),depend(size_iwork) :: iwork
      integer intent(out)::info
 
    end subroutine <prefix2c>gelsd
@@ -1237,12 +1237,12 @@ interface
      <ftype2> intent(in),optional :: cond=-1.0
      integer intent(hide) :: r
      <ftype2> intent(hide) :: s
-	
+
      integer intent(in),optional :: lwork = -1
      <ftype2c> intent(out) :: work
      <ftype2> intent(out) :: rwork
 
-     integer intent(out) :: iwork	
+     integer intent(out) :: iwork
      integer intent(out)::info
 
    end subroutine <prefix2c>gelsd_lwork
@@ -1864,7 +1864,7 @@ interface
 
    subroutine <prefix>sytrf_lwork(lower,n,a,lda,ipiv,work,lwork,info)
      ! lwork computation for ?SYTRF
- 
+
      fortranname <prefix>sytrf
 
      callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&ipiv,&work,&lwork,&info)
@@ -1907,7 +1907,7 @@ interface
 
    subroutine <prefix>sytrf_rook_lwork(lower,n,a,lda,ipiv,work,lwork,info)
      ! lwork computation for ?SYTRF_ROOK
- 
+
      fortranname <prefix>sytrf_rook
 
      callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&ipiv,&work,&lwork,&info)
@@ -2057,7 +2057,7 @@ interface
 
    subroutine <prefix2c>hetrf_lwork(lower,n,a,lda,ipiv,work,lwork,info)
      ! lwork computation for ?HETRF
- 
+
      fortranname <prefix2c>hetrf
 
      callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&ipiv,&work,&lwork,&info)
@@ -2099,7 +2099,7 @@ interface
 
    subroutine <prefix2c>hetrf_rook_lwork(lower,n,a,lda,ipiv,work,lwork,info)
      ! lwork computation for ?HETRF_ROOK
- 
+
      fortranname <prefix2c>hetrf_rook
 
      callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&ipiv,&work,&lwork,&info)
@@ -3229,7 +3229,7 @@ subroutine ilaver(major, minor, patch)
     integer intent(out) :: minor
     integer intent(out) :: patch
 end subroutine ilaver
- 
+
 end interface
 
 end python module _flapack
