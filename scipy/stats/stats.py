@@ -1238,6 +1238,12 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     -----
     The sample size must be at least 8.
 
+	References
+	----------
+	.. [1] D'Agostino, R. B., A. J. Belanger and R. B. D'Agostino, Jr 1990.
+	A suggestion for using powerful and informative tests of normality.
+	American Statistician 44: 316-321
+
     """
     a, axis = _chk_asarray(a, axis)
 
