@@ -1301,8 +1301,9 @@ class _TestCommon:
         H = np.ones((3, 4))
         J = H.T
         K = array([[0]])
+        L = array([[[1,2],[0,1]]])
 
-        # Rank 1 arrays can't be cast as spmatrices (A and C) so leave
+        # Some arrays can't be cast as spmatrices (A,C,L) so leave
         # them out.
         Bsp = self.spmatrix(B)
         Dsp = self.spmatrix(D)
@@ -1314,7 +1315,7 @@ class _TestCommon:
         Jspp = self.spmatrix(J[:,0,None])
         Ksp = self.spmatrix(K)
 
-        matrices = [A, B, C, D, E, F, G, H, J, K]
+        matrices = [A, B, C, D, E, F, G, H, J, K, L]
         spmatrices = [Bsp, Dsp, Esp, Fsp, Hsp, Hspp, Jsp, Jspp, Ksp]
 
         # sparse/sparse
@@ -1333,6 +1334,8 @@ class _TestCommon:
             for j in matrices:
                 try:
                     dense_mult = np.multiply(i.todense(), j)
+                except TypeError:
+                    continue
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue

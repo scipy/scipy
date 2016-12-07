@@ -427,58 +427,60 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 raise ValueError("inconsistent shapes")
 
+        # Assume other is a dense matrix/array, which produces a single-item
+        # object array if other isn't convertible to ndarray.
         other = np.atleast_2d(other)
-        # Dense matrix/array.
-        if other.ndim <= 2:
-            # Single element.
-            if other.size == 1:
-                return self._mul_scalar(other.flat[0])
-            elif self.shape == (1, 1):
-                return np.multiply(self.toarray()[0,0], other)
 
-            from .coo import coo_matrix
-            ret = self.tocoo()
-            # Matching shapes.
-            if self.shape == other.shape:
-                data = np.multiply(ret.data, other[ret.row, ret.col])
-            # Sparse row vector times...
-            elif self.shape[0] == 1:
-                if other.shape[1] == 1:  # Dense column vector.
-                    data = np.multiply(ret.data, other)
-                elif other.shape[1] == self.shape[1]:  # Dense matrix.
-                    data = np.multiply(ret.data, other[:, ret.col])
-                else:
-                    raise ValueError("inconsistent shapes")
-                row = np.repeat(np.arange(other.shape[0]), len(ret.row))
-                col = np.tile(ret.col, other.shape[0])
-                return coo_matrix((data.view(np.ndarray).ravel(), (row, col)),
-                                  shape=(other.shape[0], self.shape[1]),
-                                  copy=False)
-            # Sparse column vector times...
-            elif self.shape[1] == 1:
-                if other.shape[0] == 1:  # Dense row vector.
-                    data = np.multiply(ret.data[:, None], other)
-                elif other.shape[0] == self.shape[0]:  # Dense matrix.
-                    data = np.multiply(ret.data[:, None], other[ret.row])
-                else:
-                    raise ValueError("inconsistent shapes")
-                row = np.repeat(ret.row, other.shape[1])
-                col = np.tile(np.arange(other.shape[1]), len(ret.col))
-                return coo_matrix((data.view(np.ndarray).ravel(), (row, col)),
-                                  shape=(self.shape[0], other.shape[1]),
-                                  copy=False)
-            # Sparse matrix times dense row vector.
-            elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
-                data = np.multiply(ret.data, other[:, ret.col].ravel())
-            # Sparse matrix times dense column vector.
-            elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
-                data = np.multiply(ret.data, other[ret.row].ravel())
+        if other.ndim != 2:
+            return np.multiply(self.toarray(), other)
+        # Single element / wrapped object.
+        if other.size == 1:
+            return self._mul_scalar(other.flat[0])
+        # Fast case for trivial sparse matrix.
+        elif self.shape == (1, 1):
+            return np.multiply(self.toarray()[0,0], other)
+
+        from .coo import coo_matrix
+        ret = self.tocoo()
+        # Matching shapes.
+        if self.shape == other.shape:
+            data = np.multiply(ret.data, other[ret.row, ret.col])
+        # Sparse row vector times...
+        elif self.shape[0] == 1:
+            if other.shape[1] == 1:  # Dense column vector.
+                data = np.multiply(ret.data, other)
+            elif other.shape[1] == self.shape[1]:  # Dense matrix.
+                data = np.multiply(ret.data, other[:, ret.col])
             else:
                 raise ValueError("inconsistent shapes")
-            ret.data = data.view(np.ndarray).ravel()
-            return ret
-        # Anything else.
-        return np.multiply(self.todense(), other)
+            row = np.repeat(np.arange(other.shape[0]), len(ret.row))
+            col = np.tile(ret.col, other.shape[0])
+            return coo_matrix((data.view(np.ndarray).ravel(), (row, col)),
+                              shape=(other.shape[0], self.shape[1]),
+                              copy=False)
+        # Sparse column vector times...
+        elif self.shape[1] == 1:
+            if other.shape[0] == 1:  # Dense row vector.
+                data = np.multiply(ret.data[:, None], other)
+            elif other.shape[0] == self.shape[0]:  # Dense matrix.
+                data = np.multiply(ret.data[:, None], other[ret.row])
+            else:
+                raise ValueError("inconsistent shapes")
+            row = np.repeat(ret.row, other.shape[1])
+            col = np.tile(np.arange(other.shape[1]), len(ret.col))
+            return coo_matrix((data.view(np.ndarray).ravel(), (row, col)),
+                              shape=(self.shape[0], other.shape[1]),
+                              copy=False)
+        # Sparse matrix times dense row vector.
+        elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
+            data = np.multiply(ret.data, other[:, ret.col].ravel())
+        # Sparse matrix times dense column vector.
+        elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
+            data = np.multiply(ret.data, other[ret.row].ravel())
+        else:
+            raise ValueError("inconsistent shapes")
+        ret.data = data.view(np.ndarray).ravel()
+        return ret
 
     ###########################
     # Multiplication handlers #
