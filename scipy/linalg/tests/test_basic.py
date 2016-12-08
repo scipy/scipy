@@ -22,7 +22,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_raises,
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
-                          matrix_balance, solve_x)
+                          matrix_balance)
 
 from scipy.linalg.basic import LstsqLapackError
 from scipy.linalg._testutils import assert_no_overwrite
@@ -621,7 +621,7 @@ class TestSolve(TestCase):
                       [0.77, -13.28],
                       [-6.22, -6.21]])
 
-        x = solve_x(a, b)
+        x = solve(a, b)
         assert_array_almost_equal(x, np.array([[1., -1, 3, -5],
                                                [3, 2, 4, 1]]).T)
 
@@ -636,7 +636,7 @@ class TestSolve(TestCase):
                       [-5.75+25.31j, -2.15+30.19j],
                       [1.16+2.57j, -2.56+7.55j]])
 
-        x = solve_x(a, b)
+        x = solve(a, b)
         assert_array_almost_equal(x, np. array([[1+1.j, -1-2.j],
                                                 [2-3.j, 5+1.j],
                                                 [-4-5.j, -3+4.j],
@@ -656,10 +656,10 @@ class TestSolve(TestCase):
                         [3.-2j, 7-2j],
                         [-1+2j, -1+5j],
                         [1.-1j, 3-4j]])
-        x = solve_x(a, b, assume_a='her')
+        x = solve(a, b, assume_a='her')
         assert_array_almost_equal(x, res)
         # Also conjugate a and test for lower triangular data
-        x = solve_x(a.conj().T, b, assume_a='her', lower=True)
+        x = solve(a.conj().T, b, assume_a='her', lower=True)
         assert_array_almost_equal(x, res)
 
     def test_singularity(self):
@@ -673,14 +673,14 @@ class TestSolve(TestCase):
                       [1, 1, 1, 1, 1, 1, 1, 1, 1],
                       [1, 1, 1, 1, 1, 1, 1, 1, 1]])
         b = np.arange(9)[:, None]
-        assert_raises(LinAlgError, solve_x, a, b)
+        assert_raises(LinAlgError, solve, a, b)
 
     def test_ill_condition_warning(self):
         a = np.arange(1, 10).reshape(3, 3)
         b = np.array([[15], [15], [15]])
         with warnings.catch_warnings():
             warnings.simplefilter('error')
-            assert_raises(RuntimeWarning, solve_x, a, b)
+            assert_raises(RuntimeWarning, solve, a, b)
 
 
 class TestSolveTriangular(TestCase):

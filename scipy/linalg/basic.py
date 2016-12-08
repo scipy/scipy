@@ -52,7 +52,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     a : (N, N) array_like
         Square input data
     b : (N, NRHS) array_like
-        Input data for the right hand side. For single column right hand side
+        Input data for the right hand side.
     sym_pos : bool, optional
         Assume `a` is symmetric and positive definite. This key is deprecated
         and assume_a = 'pos' keyword is recommended instead. The functionality
@@ -97,12 +97,20 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     >>> from scipy import linalg
     >>> x = linalg.solve(a, b)
     >>> x
-    array([[ 2.],
-           [-2.],
-           [ 9.]])
+    array([ 2., -2.,  9.])
     >>> np.dot(a, x) == b
     array([ True,  True,  True], dtype=bool)
 
+    Notes
+    -----
+    If the input b matrix is a 1D array with N elements, when supplied
+    together with an NxN input a, it is assumed as a valid column vector
+    despite the apparent size mismatch. This is compatible with the
+    numpy.dot() behavior and the returned result is still 1D array.
+
+    The generic, symmetric, hermitian and positive definite solutions are
+    obtained via calling ?GESVX, ?SYSVX, ?HESVX, and ?POSVX routines of
+    LAPACK respectively.
     """
     a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = _asarray_validated(b, check_finite=check_finite)
