@@ -570,7 +570,7 @@ interface
      character optional,intent(in):: fact = "E"
      integer depend(a),intent(hide):: n = shape(a,0)
      integer depend(b),intent(hide):: nrhs = shape(b,1)
-     <ftype2> dimension(n,n),intent(in,out,copy,out=as):: a
+     <ftype2> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=as):: a
      integer depend(a),intent(hide):: lda = shape(a,0)
      <ftype2> optional,dimension(n,n),intent(in,out,out=lu):: af
      integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
@@ -578,7 +578,7 @@ interface
      character optional,intent(in,out):: equed = "B"
      <ftype2> optional,dimension(n),depend(n),intent(in,out,out=rs):: r
      <ftype2> optional,dimension(n),depend(n),intent(in,out,out=cs):: c
-     <ftype2> dimension(n,nrhs),intent(in,out,copy,out=bs):: b
+     <ftype2> depend(n),dimension(n,nrhs),intent(in,out,copy,out=bs):: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
      <ftype2> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
      integer depend(n),intent(hide):: ldx = n
@@ -604,7 +604,7 @@ interface
      character optional,intent(in):: fact = "E"
      integer depend(a),intent(hide):: n = shape(a,0)
      integer depend(b),intent(hide):: nrhs = shape(b,1)
-     <ftype2c> dimension(n,n),intent(in,out,copy,out=as):: a
+     <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=as):: a
      integer depend(a),intent(hide):: lda = shape(a,0)
      <ftype2c> optional,dimension(n,n),depend(n),intent(in,out,out=lu):: af
      integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
@@ -612,7 +612,7 @@ interface
      character optional,intent(in,out):: equed = "B"
      <ftype2> optional,dimension(n),depend(n),intent(in,out,out=rs):: r
      <ftype2> optional,dimension(n),depend(n),intent(in,out,out=cs):: c
-     <ftype2c> dimension(n,nrhs),intent(in,out,copy,out=bs):: b
+     <ftype2c> depend(n),dimension(n,nrhs),intent(in,out,copy,out=bs):: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
      <ftype2c> dimension(n,nrhs),depend(n,nrhs),intent(out):: x
      integer depend(n),intent(hide):: ldx = n
@@ -702,12 +702,12 @@ interface
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
      integer depend(a),intent(hide):: n = shape(a,0)
      integer depend(b),intent(hide):: nrhs = shape(b,1)
-     <ftype> dimension(n,n),intent(in,copy,out,out=a_s):: a
+     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,copy,out,out=a_s):: a
      integer depend(a),intent(hide):: lda = shape(a,0)
      <ftype> optional,dimension(n,n),depend(n),intent(in,out,out=udut):: af
      integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
      integer optional,dimension(n),depend(n),intent(in,out):: ipiv
-     <ftype> dimension(n,nrhs),intent(in,copy,out,out=b_s):: b
+     <ftype> depend(n),dimension(n,nrhs),intent(in,copy,out,out=b_s):: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
      <ftype> dimension(n,nrhs),intent(out):: x
      integer depend(b),intent(hide):: ldx = n
@@ -817,14 +817,14 @@ interface
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
      integer depend(a),intent(hide):: n = shape(a,0)
      integer depend(b),intent(hide):: nrhs = shape(b,1)
-     <ftype2c> dimension(n,n),intent(in,copy) :: a
+     <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,copy) :: a
      integer depend(a),intent(hide):: lda = shape(a,0)
      <ftype2c> optional,dimension(n,n),depend(n),intent(in,out,out=uduh) :: af
      integer optional,depend(af),intent(hide):: ldaf = shape(af,0)
      integer optional,depend(n),dimension(n),intent(in,out):: ipiv
-     <ftype2c> dimension(n,nrhs),intent(in,copy) :: b
+     <ftype2c> depend(n),dimension(n,nrhs),intent(in,copy) :: b
      integer depend(b),intent(hide):: ldb = shape(b,0)
-     <ftype2c> dimension(n,nrhs),intent(out) :: x
+     <ftype2c> depend(n,nrhs),dimension(n,nrhs),intent(out) :: x
      integer depend(x),intent(hide):: ldx = shape(x,0)
      <ftype2> intent(out):: rcond
      <ftype2> intent(out),dimension(nrhs),depend(nrhs):: ferr

@@ -121,7 +121,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     if n != b1.shape[0]:
         # Last chance to catch 1x1 scalar a and 1D b arrays
-        if not (n == 1 and b.size != 0):
+        if not (n == 1 and b1.size != 0):
             raise ValueError('Input b has to have same number of rows as '
                              'input a')
 
