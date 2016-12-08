@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-from numpy import atleast_1d, atleast_2d
+from numpy import atleast_2d
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from .misc import LinAlgError, _datacopied
@@ -18,95 +18,13 @@ from ._solve_toeplitz import levinson
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'solve_x']
+           'pinv', 'pinv2', 'pinvh', 'matrix_balance']
 
 
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, debug=False, check_finite=True):
-    """
-    Solve the equation ``a x = b`` for ``x``.
-
-    Parameters
-    ----------
-    a : (M, M) array_like
-        A square matrix.
-    b : (M,) or (M, N) array_like
-        Right-hand side matrix in ``a x = b``.
-    sym_pos : bool, optional
-        Assume `a` is symmetric and positive definite.
-    lower : bool, optional
-        Use only data contained in the lower triangle of `a`, if `sym_pos` is
-        true.  Default is to use upper triangle.
-    overwrite_a : bool, optional
-        Allow overwriting data in `a` (may enhance performance).
-        Default is False.
-    overwrite_b : bool, optional
-        Allow overwriting data in `b` (may enhance performance).
-        Default is False.
-    check_finite : bool, optional
-        Whether to check that the input matrices contain only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-
-    Returns
-    -------
-    x : (M,) or (M, N) ndarray
-        Solution to the system ``a x = b``.  Shape of the return matches the
-        shape of `b`.
-
-    Raises
-    ------
-    LinAlgError
-        If `a` is singular.
-    ValueError
-        If `a` is not square
-
-    Examples
-    --------
-    Given `a` and `b`, solve for `x`:
-
-    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
-    >>> b = np.array([2, 4, -1])
-    >>> from scipy import linalg
-    >>> x = linalg.solve(a, b)
-    >>> x
-    array([ 2., -2.,  9.])
-    >>> np.dot(a, x) == b
-    array([ True,  True,  True], dtype=bool)
-
-    """
-    a1 = _asarray_validated(a, check_finite=check_finite)
-    b1 = _asarray_validated(b, check_finite=check_finite)
-    if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
-        raise ValueError('expected square matrix')
-    if a1.shape[0] != b1.shape[0]:
-        raise ValueError('incompatible dimensions')
-    overwrite_a = overwrite_a or _datacopied(a1, a)
-    overwrite_b = overwrite_b or _datacopied(b1, b)
-    if debug:
-        print('solve:overwrite_a=', overwrite_a)
-        print('solve:overwrite_b=', overwrite_b)
-    if sym_pos:
-        posv, = get_lapack_funcs(('posv',), (a1, b1))
-        c, x, info = posv(a1, b1, lower=lower,
-                          overwrite_a=overwrite_a,
-                          overwrite_b=overwrite_b)
-    else:
-        gesv, = get_lapack_funcs(('gesv',), (a1, b1))
-        lu, piv, x, info = gesv(a1, b1, overwrite_a=overwrite_a,
-                                overwrite_b=overwrite_b)
-
-    if info == 0:
-        return x
-    if info > 0:
-        raise LinAlgError("singular matrix")
-    raise ValueError('illegal value in %d-th argument of internal '
-                     'gesv|posv' % -info)
-
-
-def solve_x(a, b, assume_a='gen', transposed=False, lower=False,
-            overwrite_a=False, overwrite_b=False, check_finite=True):
+          overwrite_b=False, check_finite=True, assume_a='gen',
+          transposed=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
     for square ``a`` matrix.
@@ -134,12 +52,11 @@ def solve_x(a, b, assume_a='gen', transposed=False, lower=False,
     a : (N, N) array_like
         Square input data
     b : (N, NRHS) array_like
-        Input data for the right hand side
-    assume_a : str, optional
-        Valid entries are given in the docstring
-    transposed: bool, optional
-        If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
-        solved (only taken into account for ``'gen'``).
+        Input data for the right hand side. For single column right hand side
+    sym_pos : bool, optional
+        Assume `a` is symmetric and positive definite. This key is deprecated
+        and assume_a = 'pos' keyword is recommended instead. The functionality
+        is the same. It will be removed in the future.
     lower : bool, optional
         If True, only the data contained in the lower triangle of `a`. Default
         is to use upper triangle. (ignored for ``'gen'``)
@@ -153,20 +70,52 @@ def solve_x(a, b, assume_a='gen', transposed=False, lower=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    assume_a : str, optional
+        Valid entries are given in the docstring
+    transposed: bool, optional
+        If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
+        solved (only taken into account for ``'gen'``).
     Returns
     -------
     x : (N, NRHS) array_like
 
+    Raises
+    ------
+    ValueError
+        If size mismatches detected or input a is not square.
+    LinAlgError
+        If the matrix is singular.
+    RuntimeWarning
+        If an ill-conditioned input a is detected.
+
+    Examples
+    --------
+    Given `a` and `b`, solve for `x`:
+
+    >>> a = np.array([[3, 2, 0], [1, -1, 0], [0, 5, 1]])
+    >>> b = np.array([2, 4, -1])
+    >>> from scipy import linalg
+    >>> x = linalg.solve(a, b)
+    >>> x
+    array([[ 2.],
+           [-2.],
+           [ 9.]])
+    >>> np.dot(a, x) == b
+    array([ True,  True,  True], dtype=bool)
+
     """
     a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
-    b1 = atleast_2d(_asarray_validated(b, check_finite=check_finite))
+    b1 = _asarray_validated(b, check_finite=check_finite)
+    n = a1.shape[0]
 
     if a1.shape[0] != a1.shape[1]:
         raise ValueError('Input a needs to be a square matrix.')
-    n = a1.shape[0]
+
     if n != b1.shape[0]:
-        raise ValueError('Input b has to have same number of'
-                         ' rows as matrix a')
+        # Last chance to catch 1x1 scalar a and 1D b arrays
+        if not (n == 1 and b.size != 0):
+            raise ValueError('Input b has to have same number of rows as '
+                             'input a')
 
     r_or_c = complex if np.iscomplexobj(a1) else float
 
@@ -175,6 +124,10 @@ def solve_x(a, b, assume_a='gen', transposed=False, lower=False,
     else:
         raise ValueError('{} is not a recognized matrix structure'
                          ''.format(assume_a))
+
+    # Backwards compatibility - old keyword.
+    if sym_pos:
+        assume_a = 'pos'
 
     if _structure == 'gen':
         gesvx = get_lapack_funcs('gesvx', (a1, b1))
@@ -217,11 +170,12 @@ def solve_x(a, b, assume_a='gen', transposed=False, lower=False,
     elif info == 0:
         return x
     elif 0 < info <= n:
-        raise LinAlgError('Matrix is singular')
+        raise LinAlgError('Matrix is singular.')
     elif info > n:
-        warnings.warn('Ill-conditioned matrix detected.\nResult is not'
-                      ' guaranteed to be accurate.\nReciprocal condition'
-                      ' number: {}'.format(rcond), RuntimeWarning)
+        warnings.warn('scipy.linalg.solve : Ill-conditioned matrix '
+                      'detected.\nResult is not guaranteed to be '
+                      'accurate.\nReciprocal condition number: {}'
+                      ''.format(rcond), RuntimeWarning)
         return x
 
 
