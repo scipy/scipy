@@ -527,7 +527,6 @@ def test_windowfunc_basics():
                             0, atol=1e-14)
 
 
-
 def test_needs_params():
     for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
