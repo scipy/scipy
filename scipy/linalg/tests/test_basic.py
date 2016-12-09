@@ -682,6 +682,19 @@ class TestSolve(TestCase):
             warnings.simplefilter('error')
             assert_raises(RuntimeWarning, solve, a, b)
 
+    def test_empty_rhs(self):
+        a = np.eye(2)
+        b = [[], []]
+        x = solve(a, b)
+        assert_(x.size == 0, 'Returned array is not empty')
+        assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
+
+    def test_multiple_rhs(self):
+        a = np.eye(2)
+        b = np.random.rand(2, 3, 4)
+        x = solve(a, b)
+        assert_array_almost_equal(x, b)
+
 
 class TestSolveTriangular(TestCase):
 

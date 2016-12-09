@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-from numpy import atleast_2d
+from numpy import atleast_1d, atleast_2d
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from .misc import LinAlgError, _datacopied
@@ -112,8 +112,12 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     obtained via calling ?GESVX, ?SYSVX, ?HESVX, and ?POSVX routines of
     LAPACK respectively.
     """
+    # Flags for 1D or nD right hand side
+    b_is_1D = False
+    b_is_ND = False
+
     a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
-    b1 = _asarray_validated(b, check_finite=check_finite)
+    b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
     n = a1.shape[0]
 
     if a1.shape[0] != a1.shape[1]:
@@ -124,6 +128,20 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         if not (n == 1 and b1.size != 0):
             raise ValueError('Input b has to have same number of rows as '
                              'input a')
+
+    # accomodate empty arrays
+    if b1.size == 0:
+        return np.asfortranarray(b1.copy())
+
+    # regularize 1D b arrays to 2D and catch nD RHS arrays
+    if b1.ndim == 1:
+        if n == 1:
+            b1 = b1[None, :]
+        else:
+            b1 = b1[:, None]
+        b_is_1D = True
+    elif b1.ndim > 2:
+        b_is_ND = True
 
     r_or_c = complex if np.iscomplexobj(a1) else float
 
@@ -171,6 +189,15 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                                     overwrite_a=overwrite_a,
                                                     overwrite_b=overwrite_b
                                                     )
+
+    # Unlike ?xxSV, ?xxSVX writes the solution x to a separate array, and
+    # overwrites b with its scaled version which is thrown away. Thus, the
+    # solution does not admit the same shape with the original b. For
+    # backwards compatibility, we reshape it manually.
+    if b_is_1D:
+        x = x.ravel()
+    if b_is_ND:
+        x = x.reshape(*b1.shape, order='F')
 
     if info < 0:
         raise ValueError('LAPACK reported an illegal value in {}-th argument'
