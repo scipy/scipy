@@ -426,22 +426,13 @@ class TestCdist(TestCase):
             for metric in _metrics:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                if metric == 'yule' and eo_name not in ['pdist-boolean-inp']:
-                    # the python implementation raises a ZeroDivisionError 
-                    # while the C doesn't
-                    continue
                 try:
                     y1 = cdist(X1, X2, metric=metric)
                     y2 = cdist(X1, X2, metric=eval(metric))
                     y3 = cdist(X1, X2, metric="test_" + metric)
                 except Exception as e:
-                    if metric == 'yule' and 'bool' not in eo_name:
-                        # the python implementation raises a ZeroDivisionError 
-                        # while the C doesn't
-                        assert_(isinstance(e, ZeroDivisionError))
-                        continue
                     if verbose > 2:
-                        print(X.shape)
+                        print(X1.shape)
                         print(e.__class__.__name__)
                         print(e)
                     assert_raises(e.__class__, cdist, X1, X2, metric=metric)
@@ -465,7 +456,7 @@ class TestCdist(TestCase):
                     y1 = pdist(X1, metric=metric)
                 except Exception as e:
                     if verbose > 2:
-                        print(X.shape)
+                        print(X1.shape)
                         print(e.__class__.__name__)
                         print(e)
                     for new_type in test[1]:
@@ -1287,6 +1278,7 @@ class TestPdist(TestCase):
                     assert_raises(e.__class__, pdist, X, metric="test_" + metric)
                 else:
                     _assert_within_tol(y1, y2, eps, verbose > 2)
+                    _assert_within_tol(y1, y3, eps, verbose > 2)
                     
     def test_pdist_dtype_equivalence(self):
         # Tests that the result is not affected by type up-casting
@@ -1302,7 +1294,7 @@ class TestPdist(TestCase):
                     y1 = pdist(X1, metric=metric)
                 except Exception as e:
                     if verbose > 2:
-                        print(X.shape)
+                        print(X1.shape)
                         print(e.__class__.__name__)
                         print(e)
                     for new_type in test[1]:

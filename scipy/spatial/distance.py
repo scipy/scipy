@@ -1248,18 +1248,17 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
 
     # validate input for multi-args metrics
-    if (metric in ['wminkowski', 'wmi', 'wm', 'wpnorm', 'test_wminkowski'] or
-        metric == wminkowski):
+    if(metric in ['wminkowski', 'wmi', 'wm', 'wpnorm', 'test_wminkowski'] or
+       metric == wminkowski):
         w = _validate_wminkowski_w(w)
 
-    if (metric in ['seuclidean', 'se', 's', 'test_seuclidean'] or
-        metric == seuclidean):
+    if(metric in ['seuclidean', 'se', 's', 'test_seuclidean'] or
+       metric == seuclidean):
         V = _validate_seuclidean_V(V, X, n)
 
-    if (metric in ['mahalanobis', 'mahal', 'mah', 'test_mahalanobis'] or
-        metric == mahalanobis):
+    if(metric in ['mahalanobis', 'mahal', 'mah', 'test_mahalanobis'] or
+       metric == mahalanobis):
         VI = _validate_mahalanobis_VI(VI, X, m, n)
-
 
     if callable(metric):
         # metrics that expects only doubles:
@@ -1364,12 +1363,12 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         elif metric == 'test_sqeuclidean':
             dm = pdist(X, sqeuclidean)
         elif metric == 'test_seuclidean':
-            dm = pdist(X, lambda u, v: seuclidean(u, v, V))
+            dm = pdist(X, seuclidean, V=V)
         elif metric == 'test_braycurtis':
             dm = pdist(X, braycurtis)
         elif metric == 'test_mahalanobis':
             # sqrt((u-v)V^(-1)(u-v)^T)
-            dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
+            dm = pdist(X, mahalanobis, VI=VI)
         elif metric == 'test_canberra':
             dm = pdist(X, canberra)
         elif metric == 'test_cityblock':
@@ -2040,16 +2039,16 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     dm = np.zeros((mA, mB), dtype=np.double)
 
     # validate input for multi-args metrics
-    if (metric in ['wminkowski', 'wmi', 'wm', 'wpnorm', 'test_wminkowski'] or
-        metric == wminkowski):
+    if(metric in ['wminkowski', 'wmi', 'wm', 'wpnorm', 'test_wminkowski'] or
+       metric == wminkowski):
         w = _validate_wminkowski_w(w)
 
-    if (metric in ['seuclidean', 'se', 's', 'test_seuclidean'] or
-        metric == seuclidean):
+    if(metric in ['seuclidean', 'se', 's', 'test_seuclidean'] or
+       metric == seuclidean):
         V = _validate_seuclidean_V(V, np.vstack([XA, XB]), n)
 
-    if (metric in ['mahalanobis', 'mahal', 'mah', 'test_mahalanobis'] or
-        metric == mahalanobis):
+    if(metric in ['mahalanobis', 'mahal', 'mah', 'test_mahalanobis'] or
+       metric == mahalanobis):
         VI = _validate_mahalanobis_VI(VI, np.vstack([XA, XB]), mA + mB, n)
 
     if callable(metric):
@@ -2154,14 +2153,14 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         elif metric == 'test_euclidean':
             dm = cdist(XA, XB, euclidean)
         elif metric == 'test_seuclidean':
-            dm = cdist(XA, XB, lambda u, v: seuclidean(u, v, V))
+            dm = cdist(XA, XB, seuclidean, V=V)
         elif metric == 'test_sqeuclidean':
-            dm = cdist(XA, XB, lambda u, v: sqeuclidean(u, v))
+            dm = cdist(XA, XB, sqeuclidean)
         elif metric == 'test_braycurtis':
             dm = cdist(XA, XB, braycurtis)
         elif metric == 'test_mahalanobis':
             # sqrt((u-v)V^(-1)(u-v)^T)
-            dm = cdist(XA, XB, (lambda u, v: mahalanobis(u, v, VI)))
+            dm = cdist(XA, XB, mahalanobis, VI=VI)
         elif metric == 'test_canberra':
             dm = cdist(XA, XB, canberra)
         elif metric == 'test_cityblock':
