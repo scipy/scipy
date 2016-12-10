@@ -101,7 +101,7 @@ def _kendall_dis(intp_t[:] x, intp_t[:] y):
 
 
 # The weighted tau will be computed directly between these types.
-# Arrays of other types will be turned into a rank array using _toranks().
+# Arrays of other types will be turned into a rank array using _toint64().
 
 ctypedef fused ordered:
     np.int32_t
@@ -135,18 +135,29 @@ cdef _invert_in_place(intp_t[:] perm):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def _toranks(x):
+def _toint64(x):
+    cdef intp_t i, j = 0, l = len(x)
     cdef intp_t[::1] perm = np.argsort(x, kind='quicksort')
     # The type of this array must be one of the supported types
-    cdef int64_t[::1] rank = np.ndarray(len(perm), dtype=np.int64)
-    cdef intp_t i, j = 0
-    for i in xrange(len(x) - 1):
-        rank[perm[i]] = j
+    cdef int64_t[::1] result = np.ndarray(l, dtype=np.int64)
+
+    # Find nans, if any, and assign them the lowest value
+    for i in xrange(l - 1, -1, -1):
+        if not np.isnan(x[perm[i]]):
+            break
+        result[perm[i]] = 0
+
+    if i < l - 1:
+        j = 1
+        l = i + 1
+
+    for i in xrange(l - 1):
+        result[perm[i]] = j
         if x[perm[i]] != x[perm[i + 1]]:
             j += 1
 
-    rank[perm[i + 1]] = j
-    return rank
+    result[perm[i + 1]] = j
+    return result
 
 
 @cython.wraparound(False)

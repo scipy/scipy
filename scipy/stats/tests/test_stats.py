@@ -639,8 +639,8 @@ def test_kendalltau_vs_mstats_basic():
         np.random.shuffle(b)
         expected = mstats_basic.kendalltau(a, b)
         actual = stats.kendalltau(a, b)
-        assert_approx_equal(expected[0], actual[0])
-        assert_approx_equal(expected[1], actual[1])
+        assert_approx_equal(actual[0], expected[0])
+        assert_approx_equal(actual[1], expected[1])
 
 
 def test_kendalltau_nan_2nd_arg():
@@ -657,46 +657,46 @@ def test_weightedtau():
     x = [12, 2, 1, 12, 2]
     y = [1, 4, 7, 1, 0]
     tau, p_value = stats.weightedtau(x, y)
-    assert_approx_equal(-0.56694968153682723, tau)
+    assert_approx_equal(tau, -0.56694968153682723)
     assert_equal(np.nan, p_value)
     tau, p_value = stats.weightedtau(x, y, additive=False)
-    assert_approx_equal(-0.62205716951801038, tau)
+    assert_approx_equal(tau, -0.62205716951801038)
     assert_equal(np.nan, p_value)
     # This must be exactly Kendall's tau
     tau, p_value = stats.weightedtau(x, y, weigher=lambda x: 1)
-    assert_approx_equal(-0.47140452079103173, tau)
+    assert_approx_equal(tau, -0.47140452079103173)
     assert_equal(np.nan, p_value)
 
     # Asymmetric, ranked version
     tau, p_value = stats.weightedtau(x, y, rank=None)
-    assert_approx_equal(-0.4157652301037516, tau)
+    assert_approx_equal(tau, -0.4157652301037516)
     assert_equal(np.nan, p_value)
     tau, p_value = stats.weightedtau(y, x, rank=None)
-    assert_approx_equal(-0.7181341329699029, tau)
+    assert_approx_equal(tau, -0.7181341329699029)
     assert_equal(np.nan, p_value)
     tau, p_value = stats.weightedtau(x, y, rank=None, additive=False)
-    assert_approx_equal(-0.40644850966246893, tau)
+    assert_approx_equal(tau, -0.40644850966246893)
     assert_equal(np.nan, p_value)
     tau, p_value = stats.weightedtau(y, x, rank=None, additive=False)
-    assert_approx_equal(-0.83766582937355172, tau)
+    assert_approx_equal(tau, -0.83766582937355172)
     assert_equal(np.nan, p_value)
     tau, p_value = stats.weightedtau(x, y, rank=False)
-    assert_approx_equal(-0.51604397940261848, tau)
+    assert_approx_equal(tau, -0.51604397940261848)
     assert_equal(np.nan, p_value)
     # This must be exactly Kendall's tau
     tau, p_value = stats.weightedtau(x, y, rank=True, weigher=lambda x: 1)
-    assert_approx_equal(-0.47140452079103173, tau)
+    assert_approx_equal(tau, -0.47140452079103173)
     assert_equal(np.nan, p_value)
     tau, p_value = stats.weightedtau(y, x, rank=True, weigher=lambda x: 1)
-    assert_approx_equal(-0.47140452079103173, tau)
+    assert_approx_equal(tau, -0.47140452079103173)
     assert_equal(np.nan, p_value)
     # Test argument conversion
     tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), y)
-    assert_approx_equal(-0.56694968153682723, tau)
+    assert_approx_equal(tau, -0.56694968153682723)
     tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.int16), y)
-    assert_approx_equal(-0.56694968153682723, tau)
+    assert_approx_equal(tau, -0.56694968153682723)
     tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64))
-    assert_approx_equal(-0.56694968153682723, tau)
+    assert_approx_equal(tau, -0.56694968153682723)
     # All ties
     tau, p_value = stats.weightedtau([], [])
     assert_equal(np.nan, tau)
@@ -707,6 +707,14 @@ def test_weightedtau():
     # Size mismatches
     assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1, 2])
     assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0])
+    # NaNs
+    x = [12, 2, 1, 12, 2]
+    y = [1, 4, 7, 1, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    x = [12, 2, np.nan, 12, 2]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
 
 
 def test_weightedtau_vs_quadratic():

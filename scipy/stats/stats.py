@@ -178,7 +178,7 @@ from . import distributions
 from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
-from ._stats import _kendall_dis, _toranks, _weightedrankedtau
+from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -3652,6 +3652,8 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     `additive` and `rank` to False, as the definition given in [1]_ is a
     generalization of Shieh's.
 
+    NaNs are considered the smallest possible score.
+
     .. versionadded:: 0.19.0
 
     References
@@ -3679,6 +3681,14 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     >>> tau
     -0.62205716951801038
 
+    NaNs are considered the smallest possible score:
+
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, np.nan]
+    >>> tau, _ = stats.weightedtau(x, y)
+    >>> tau
+    -0.56694968153682723
+
     This is exactly Kendall's tau:
 
     >>> x = [12, 2, 1, 12, 2]
@@ -3704,16 +3714,26 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     if not x.size:
         return WeightedTauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
+    # If there are NaNs we apply _toint64()
+    for i in xrange(x.size):
+        if np.isnan(x[i]):
+            x = np.array(_toint64(x), dtype=np.int64)
+            break
+    for i in xrange(y.size):
+        if np.isnan(y[i]):
+            y = np.array(_toint64(y), dtype=np.int64)
+            break
+
     # Reduce to ranks unsupported types
     if x.dtype != y.dtype:
         if x.dtype != np.int64:
-            x = _toranks(x)
+            x = _toint64(x)
         if y.dtype != np.int64:
-            y = _toranks(y)
+            y = _toint64(y)
     else:
         if x.dtype not in (np.int32, np.int64, np.float32, np.float64):
-            x = _toranks(x)
-            y = _toranks(y)
+            x = _toint64(x)
+            y = _toint64(y)
 
     if rank is True:
         return WeightedTauResult((
