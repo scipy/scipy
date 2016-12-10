@@ -385,14 +385,13 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     vals = np.concatenate((r[-1:0:-1], c))
     if b is None:
         raise ValueError('illegal value, `b` is a required argument')
-    if vals.shape[0] != (2*b.shape[0] - 1):
-        raise ValueError('incompatible dimensions')
 
     b = _asarray_validated(b)
+    if vals.shape[0] != (2*b.shape[0] - 1):
+        raise ValueError('incompatible dimensions')
     if np.iscomplexobj(vals) or np.iscomplexobj(b):
         vals = np.asarray(vals, dtype=np.complex128, order='c')
         b = np.asarray(b, dtype=np.complex128)
-
     else:
         vals = np.asarray(vals, dtype=np.double, order='c')
         b = np.asarray(b, dtype=np.double)
