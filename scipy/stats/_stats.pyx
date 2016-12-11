@@ -157,7 +157,7 @@ def _toint64(x):
             j += 1
 
     result[perm[i + 1]] = j
-    return result
+    return np.array(result, dtype=np.int64)
 
 
 @cython.wraparound(False)
