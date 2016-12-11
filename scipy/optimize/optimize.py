@@ -2060,7 +2060,7 @@ def golden(func, args=(), brack=None, tol=_epsilon,
 
 
 def _minimize_scalar_golden(func, brack=None, args=(),
-                            xtol=_epsilon, maxiter=500, **unknown_options):
+                            xtol=_epsilon, maxiter=5000, **unknown_options):
     """
     Options
     -------
@@ -2107,8 +2107,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     funcalls += 2
     nit = 0
     for i in xrange(maxiter):
-        if ((numpy.abs(x3 - x0) <= tol * (numpy.abs(x1) + numpy.abs(x2))) or
-                (x1 == x2)):
+        if numpy.abs(x3 - x0) <= tol * (numpy.abs(x1) + numpy.abs(x2)):
             break
         if (f2 < f1):
             x0 = x1
@@ -2131,7 +2130,8 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         xmin = x2
         fval = f2
 
-    return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit)
+    return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
+                          success=nit < maxiter)
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
