@@ -10,12 +10,10 @@ from numpy.testing import (TestCase, assert_raises, run_module_suite,
 import scipy.signal.bsplines as bsp
 
 class TestBSplines(TestCase):
-# pylint: disable=no-self-use
 
     def test_factorial(self):
         # can't all be zero state
         assert_equal(bsp.factorial(1), 1)
-
 
     def test_spline_filter(self):
         np.random.seed(12457)
