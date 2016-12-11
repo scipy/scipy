@@ -2012,7 +2012,8 @@ def _minimize_scalar_brent(func, brack=None, args=(),
                           success=nit < maxiter)
 
 
-def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
+def golden(func, args=(), brack=None, tol=_epsilon,
+           full_output=0, maxiter=5000):
     """
     Return the minimum of a function of one variable.
 
@@ -2036,6 +2037,8 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         x tolerance stop criterion
     full_output : bool, optional
         If True, return optional outputs.
+    maxiter : int
+        Maximum number of iterations to perform.
 
     See also
     --------
@@ -2048,7 +2051,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     interval.
 
     """
-    options = {'xtol': tol}
+    options = {'xtol': tol, 'maxiter': maxiter}
     res = _minimize_scalar_golden(func, brack, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nfev']
@@ -2057,7 +2060,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
 
 
 def _minimize_scalar_golden(func, brack=None, args=(),
-                            xtol=_epsilon, **unknown_options):
+                            xtol=_epsilon, maxiter=5000, **unknown_options):
     """
     Options
     -------
@@ -2102,7 +2105,10 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     f1 = func(*((x1,) + args))
     f2 = func(*((x2,) + args))
     funcalls += 2
-    while (numpy.abs(x3 - x0) > tol * (numpy.abs(x1) + numpy.abs(x2))):
+    nit = 0
+    for i in xrange(maxiter):
+        if numpy.abs(x3 - x0) <= tol * (numpy.abs(x1) + numpy.abs(x2)):
+            break
         if (f2 < f1):
             x0 = x1
             x1 = x2
@@ -2116,6 +2122,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
             f2 = f1
             f1 = func(*((x1,) + args))
         funcalls += 1
+        nit += 1
     if (f1 < f2):
         xmin = x1
         fval = f1
@@ -2123,7 +2130,8 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         xmin = x2
         fval = f2
 
-    return OptimizeResult(fun=fval, nfev=funcalls, x=xmin)
+    return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
+                          success=nit < maxiter)
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
