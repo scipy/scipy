@@ -279,7 +279,7 @@ def read(filename, mmap=False, return_cues=False, return_pitch=False):
             elif chunk_id == b'smpl':
                 size = struct.unpack('<i', fid.read(4))[0]
                 str1 = fid.read(size)
-                unity_note, pitch_fraction = struct.unpack('<ii', str1[12:20])
+                unity_note, pitch_fraction = struct.unpack('<iI', str1[12:20])
                 cents = pitch_fraction / (2**32-1)
                 pitch = 440 * 2 ** ((unity_note + cents - 69)/12)
             # see http://www.pjb.com.au/midi/sfspec21.html#i5
