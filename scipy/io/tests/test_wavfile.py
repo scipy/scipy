@@ -78,6 +78,19 @@ def test_read_5():
         del data
 
 
+def test_read_24bit():
+    for mmap in [False, True]:
+        rate, data, cues, pitch = wavfile.read(
+            datafile('test-44100Hz-24bit.wav'), mmap=mmap, return_cues=True,
+            return_pitch=True)
+        assert_equal(rate, 44100)
+        assert_(np.issubdtype(data.dtype, np.int32))
+        assert_equal(data.shape, (11025, 2))
+        assert_equal(pitch, 440.0)
+        assert_equal(cues, {1: {'pos': 4410}, 2: {'pos': 8820}})
+        del data
+
+
 def test_read_fail():
     for mmap in [False, True]:
         fp = open(datafile('example_1.nc'))

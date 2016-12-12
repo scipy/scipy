@@ -133,7 +133,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         fid.seek(1, 1)
 
     if bit_depth == 24:
-        a = numpy.empty((len(data)/3, 4), dtype='u1')
+        a = numpy.empty((len(data)//3, 4), dtype='u1')
         a[:, :3] = data.reshape((-1, 3))
         a[:, 3:] = (a[:, 3 - 1:3] >> 7) * 255
         data = a.view('<i4').reshape(a.shape[:-1])
@@ -269,7 +269,7 @@ def read(filename, mmap=False, return_cues=False, return_pitch=False):
                 _, num_cues = struct.unpack('<ii', fid.read(8))
                 for c in range(num_cues):
                     str1 = fid.read(24)
-                    cue_id, position = struct.unpack('<ii', str1)
+                    cue_id, position = struct.unpack('<ii', str1[:8])
                     cues[cue_id]['pos'] = position
             elif chunk_id == b'labl':
                 str1 = fid.read(8)
