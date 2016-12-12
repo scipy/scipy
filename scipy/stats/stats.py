@@ -3296,7 +3296,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if contains_nan and nan_policy == 'omit' and b is not None:
         a = ma.masked_invalid(a)
         b = ma.masked_invalid(b)
         return mstats_basic.spearmanr(a, b, axis)
