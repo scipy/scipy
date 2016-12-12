@@ -28,15 +28,17 @@ class WavFileWarning(UserWarning):
     pass
 
 
+# see the Wave File Format reference for details of chunk layouts:
+# https://web.archive.org/web/20141226210234/http://www.sonicspot.com/guide/wavefiles.html
+
 WAVE_FORMAT_PCM = 0x0001
 WAVE_FORMAT_IEEE_FLOAT = 0x0003
 WAVE_FORMAT_EXTENSIBLE = 0xfffe
 KNOWN_WAVE_FORMATS = (WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT)
 
+
 # assumes file pointer is immediately
 #  after the 'fmt ' id
-
-
 def _read_fmt_chunk(fid, is_big_endian):
     """
     Returns
