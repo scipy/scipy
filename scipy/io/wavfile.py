@@ -14,6 +14,7 @@ import sys
 import numpy
 import struct
 import warnings
+from collections import defaultdict
 
 
 __all__ = [
@@ -40,8 +41,6 @@ def _read_fmt_chunk(fid, is_big_endian):
     """
     Returns
     -------
-    size : int
-        size of format subchunk in bytes (minus 8 for "fmt " and itself)
     format_tag : int
         PCM, float, or compressed format
     channels : int
@@ -60,23 +59,22 @@ def _read_fmt_chunk(fid, is_big_endian):
     else:
         fmt = '<'
 
-    size = res = struct.unpack(fmt+'I', fid.read(4))[0]
+    size = struct.unpack(fmt+'I', fid.read(4))[0]
 
     if size < 16:
         raise ValueError("Binary structure of wave file is not compliant")
 
-    res = struct.unpack(fmt+'HHIIHH', fid.read(16))
+    (format_tag, channels, fs, bytes_per_second, block_align, bit_depth
+     ) = struct.unpack(fmt+'HHIIHH', fid.read(16))
     bytes_read = 16
 
-    format_tag, channels, fs, bytes_per_second, block_align, bit_depth = res
-
-    if format_tag == WAVE_FORMAT_EXTENSIBLE and size >= (16+2):
+    if format_tag == WAVE_FORMAT_EXTENSIBLE and size >= 18:
         ext_chunk_size = struct.unpack(fmt+'H', fid.read(2))[0]
         bytes_read += 2
         if ext_chunk_size >= 22:
             extensible_chunk_data = fid.read(22)
             bytes_read += 22
-            raw_guid = extensible_chunk_data[2+4:2+4+16]
+            raw_guid = extensible_chunk_data[6:22]
             # GUID template {XXXXXXXX-0000-0010-8000-00AA00389B71} (RFC-2361)
             # MS GUID byte order: first three groups are native byte order,
             # rest is Big Endian
@@ -96,8 +94,7 @@ def _read_fmt_chunk(fid, is_big_endian):
     if size > bytes_read:
         fid.read(size - bytes_read)
 
-    return (size, format_tag, channels, fs, bytes_per_second, block_align,
-            bit_depth)
+    return format_tag, channels, fs, bytes_per_second, block_align, bit_depth
 
 
 # assumes file pointer is immediately after the 'data' id
@@ -131,7 +128,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
 
     # if odd number of bytes, move 1 byte further (data chunk is word-aligned)
     if size % 2 == 1:
-      fid.seek(1, 1)
+        fid.seek(1, 1)
 
     if bit_depth == 24:
         a = numpy.empty((len(data)/3, 4), dtype='u1')
@@ -160,7 +157,7 @@ def _skip_unknown_chunk(fid, is_big_endian):
         # if odd number of bytes, move 1 byte further
         # (data chunk is word-aligned)
         if size % 2 == 1:
-          size += 1
+            size += 1
         fid.seek(size, 1)
 
 
@@ -246,8 +243,7 @@ def read(filename, mmap=False, return_cues=False, return_pitch=False):
         channels = 1
         bit_depth = 8
         format_tag = WAVE_FORMAT_PCM
-        cue = []
-        cuelabels = []
+        cues = defaultdict(dict)
         pitch = 0.0
         while fid.tell() < file_size:
             # read the next chunk
@@ -261,29 +257,27 @@ def read(filename, mmap=False, return_cues=False, return_pitch=False):
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
-                format_tag, channels, fs = fmt_chunk[1:4]
-                bit_depth = fmt_chunk[6]
+                format_tag, channels, fs, _, __, bit_depth = fmt_chunk
             elif chunk_id == b'data':
                 if not fmt_chunk_received:
                     raise ValueError("No fmt chunk before data")
                 data = _read_data_chunk(fid, format_tag, channels, bit_depth,
                                         is_big_endian, mmap=mmap)
             elif chunk_id == b'cue ':
-                str1 = fid.read(8)
-                _, numcue = struct.unpack('<ii', str1)
-                for c in range(numcue):
-                   str1 = fid.read(24)
-                   _, position = struct.unpack('<ii', str1)
-                   cue.append(position)
+                _, num_cues = struct.unpack('<ii', fid.read(8))
+                for c in range(num_cues):
+                    str1 = fid.read(24)
+                    cue_id, position = struct.unpack('<ii', str1)
+                    cues[cue_id]['pos'] = position
             elif chunk_id == b'labl':
                 str1 = fid.read(8)
-                size, _ = struct.unpack('<ii', str1)
+                size, cue_id = struct.unpack('<ii', str1)
                 size += (size % 2)  # ensure size is even
-                cuelabels.append(fid.read(size-4).rstrip('\x00'))
+                cues[cue_id]['label'] = fid.read(size-4).rstrip('\x00')
             elif chunk_id == b'smpl':
                 size = struct.unpack('<i', fid.read(4))[0]
                 str1 = fid.read(size)
-                unity_note, pitch_fraction = struct.unpack('<iI', str1[12:20])
+                unity_note, pitch_fraction = struct.unpack('<ii', str1[12:20])
                 cents = pitch_fraction / (2**32-1)
                 pitch = 440 * 2 ** ((unity_note + cents - 69)/12)
             # see http://www.pjb.com.au/midi/sfspec21.html#i5
@@ -303,14 +297,13 @@ def read(filename, mmap=False, return_cues=False, return_pitch=False):
 
     result = [fs, data]
     if return_cues:
-        result.append(cue)
-        result.append(cuelabels)
+        result.append(dict(cues))
     if return_pitch:
         result.append(pitch)
     return tuple(result)
 
 
-def write(filename, rate, data, cue=None, loops=None, bitrate=None):
+def write(filename, rate, data, cues=None, loops=None, bitrate=None):
     """
     Write a numpy array as a WAV file.
 
@@ -322,13 +315,20 @@ def write(filename, rate, data, cue=None, loops=None, bitrate=None):
         The sample rate (in samples/sec).
     data : ndarray
         A 1-D or 2-D numpy array of either integer or float data-type.
+    cues : sequence of ints, optional
+        Play order positions of cues.
+    loops : sequence of (int,int) pairs, optional
+        Pairs of (unity note, pitch fraction) values.
+    bitrate : int, optional
+        The number of bits per sample.
+        If None, bitrate is determined by the data-type.
 
     Notes
     -----
     * Writes a simple uncompressed WAV file.
     * To write multiple-channels, use a 2-D array of shape
       (Nsamples, Nchannels).
-    * The bits-per-sample and PCM/float will be determined by the data-type.
+    * The WAV type (PCM/float) is determined by the input data-type.
 
     Common data types: [1]_
 
@@ -420,23 +420,23 @@ def write(filename, rate, data, cue=None, loops=None, bitrate=None):
         _array_tofile(fid, data)
 
         # cue chunk
-        if cue:
-          fid.write(b'cue ')
-          size = 4 + len(cue) * 24
-          fid.write(struct.pack('<ii', size, len(cue)))
-          for i, c in enumerate(cue):
-            # 1635017060 is struct.unpack('<i',b'data')
-            fid.write(struct.pack('<iiiiii', i + 1, c, 1635017060, 0, 0, c))
+        if cues:
+            fid.write(b'cue ')
+            size = 4 + len(cues) * 24
+            fid.write(struct.pack('<ii', size, len(cues)))
+            for i, c in enumerate(cues):
+                # 1635017060 is struct.unpack('<i',b'data')
+                fid.write(struct.pack('<iiiiii', i + 1, c, 1635017060, 0, 0, c))
 
         # smpl chunk
         if loops:
-          fid.write(b'smpl')
-          size = 36 + len(loops) * 24
-          sampleperiod = int(1000000000 / rate)
-          fid.write(struct.pack('<iiiiiiiiii', size, 0, 0, sampleperiod, 0, 0,
-                                0, 0, len(loops), 0))
-          for i, loop in enumerate(loops):
-            fid.write(struct.pack('<iiiiii', 0, 0, loop[0], loop[1], 0, 0))
+            fid.write(b'smpl')
+            size = 36 + len(loops) * 24
+            sample_period = int(1000000000 / rate)
+            fid.write(struct.pack('<iiiiiiiiii', size, 0, 0, sample_period, 0,
+                                  0, 0, 0, len(loops), 0))
+            for i, loop in enumerate(loops):
+                fid.write(struct.pack('<iiiiii', 0, 0, loop[0], loop[1], 0, 0))
 
         # Determine file size and place it in correct
         #  position at start of the file.
