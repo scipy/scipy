@@ -3294,26 +3294,31 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
     a, axisout = _chk_asarray(a, axis)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit' and b is not None:
+    if a_contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        b = ma.masked_invalid(b)
-        return mstats_basic.spearmanr(a, b, axis)
 
-    if a.size <= 1:
+    if a.size <= 1 or (a_contains_nan and nan_policy == 'propagate'):
         return SpearmanrResult(np.nan, np.nan)
+        
     ar = np.apply_along_axis(rankdata, axisout, a)
 
     br = None
     if b is not None:
         b, axisout = _chk_asarray(b, axis)
 
-        contains_nan, nan_policy = _contains_nan(b, nan_policy)
+        b_contains_nan, nan_policy = _contains_nan(b, nan_policy)
 
-        if contains_nan and nan_policy == 'omit':
+        if b_contains_nan and nan_policy == 'omit':
             b = ma.masked_invalid(b)
-            return mstats_basic.spearmanr(a, b, axis)
+
+        if a_contains_nan or b_contains_nan:
+            if nan_policy == 'propagate':
+                return SpearmanrResult(np.nan, np.nan)
+
+            if nan_policy == 'omit':
+                return mstats_basic.spearmanr(a, b, axis)
 
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
