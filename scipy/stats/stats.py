@@ -3715,14 +3715,10 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         return WeightedTauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # If there are NaNs we apply _toint64()
-    for i in range(x.size):
-        if np.isnan(x[i]):
+    if np.isnan(np.min(x)):
             x = _toint64(x)
-            break
-    for i in range(y.size):
-        if np.isnan(y[i]):
+    if np.isnan(np.min(y)):
             y = _toint64(y)
-            break
 
     # Reduce to ranks unsupported types
     if x.dtype != y.dtype:
