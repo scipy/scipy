@@ -5,7 +5,7 @@ from numpy.testing import (assert_, assert_allclose, run_module_suite,
                            assert_equal, assert_raises, assert_no_warnings)
 import numpy as np
 from scipy.optimize._numdiff import group_columns
-from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF
+from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
 from scipy.integrate._py.common import num_jac
 from scipy.integrate._py.base import ConstantDenseOutput
@@ -140,7 +140,7 @@ def test_integration():
         warnings.simplefilter('ignore')
         for vectorized, method, t_span, jac in product(
                 [False, True],
-                ['RK23', 'RK45', 'Radau', 'BDF'],
+                ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA'],
                 [[5, 9], [5, 1]],
                 [None, jac_rational, jac_rational_sparse]):
 
@@ -159,7 +159,7 @@ def test_integration():
 
             assert_(res.nfev < 40)
 
-            if method in ['RK23', 'RK45']:
+            if method in ['RK23', 'RK45', 'LSODA']:
                 assert_equal(res.njev, 0)
                 assert_equal(res.nlu, 0)
             else:
@@ -243,7 +243,7 @@ def test_integration_const_jac():
 def test_events():
     event_rational_3.terminal = True
 
-    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+    for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:
         res = solve_ivp(fun_rational, [5, 8], [1/3, 2/9], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
@@ -293,7 +293,7 @@ def test_events():
     # Test in backward direction.
     event_rational_1.direction = 0
     event_rational_2.direction = 0
-    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+    for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:
         res = solve_ivp(fun_rational, [8, 5], [4/9, 20/81], method=method,
                         events=(event_rational_1, event_rational_2))
         assert_equal(res.status, 0)
@@ -345,7 +345,7 @@ def test_max_step():
     rtol = 1e-3
     atol = 1e-6
     y0 = [1/3, 2/9]
-    for method in [RK23, RK45, Radau, BDF]:
+    for method in [RK23, RK45, Radau, BDF, LSODA]:
         for t_span in ([5, 9], [5, 1]):
             res = solve_ivp(fun_rational, t_span, y0, rtol=rtol,
                             max_step=0.5, atol=atol, method=method,
@@ -376,9 +376,12 @@ def test_max_step():
             solver = method(fun_rational, t_span[0], y0, t_span[1], rtol=rtol,
                             atol=atol, max_step=1e-20)
             message = solver.step()
-            assert_equal(solver.status, 'failed')
-            assert_("step size is less" in message)
-            assert_raises(RuntimeError, solver.step)
+            if method is not LSODA:
+                assert_equal(solver.status, 'failed')
+                assert_("step size is less" in message)
+                assert_raises(RuntimeError, solver.step)
+            else:
+                a = 1
 
 
 def test_t_eval():
@@ -444,7 +447,7 @@ def test_t_eval():
 
 
 def test_no_integration():
-    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+    for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:
         sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3],
                         method=method, dense_output=True)
         assert_equal(sol.sol(4), [2, 3])
@@ -456,12 +459,12 @@ def test_empty():
 
     y0 = np.zeros((0,))
 
-    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+    for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:
         sol = assert_no_warnings(solve_ivp, fun, [0, 10], y0,
                                  method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
 
-    for method in ['RK23', 'RK45', 'Radau', 'BDF']:
+    for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:
         sol = assert_no_warnings(solve_ivp, fun, [0, np.inf], y0,
                                  method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
@@ -479,7 +482,7 @@ def test_ConstantDenseOutput():
 
 def test_classes():
     y0 = [1 / 3, 2 / 9]
-    for cls in [RK23, RK45, Radau, BDF]:
+    for cls in [RK23, RK45, Radau, BDF, LSODA]:
         solver = cls(fun_rational, 5, y0, np.inf)
         assert_equal(solver.n, 2)
         assert_equal(solver.status, 'running')
@@ -488,9 +491,10 @@ def test_classes():
         assert_equal(solver.t, 5)
         assert_equal(solver.y, y0)
         assert_(solver.step_size is None)
-        assert_(solver.nfev > 0)
-        assert_(solver.njev >= 0)
-        assert_(solver.nlu >= 0)
+        if cls is not LSODA:
+            assert_(solver.nfev > 0)
+            assert_(solver.njev >= 0)
+            assert_(solver.nlu >= 0)
         assert_raises(RuntimeError, solver.dense_output)
 
         message = solver.step()

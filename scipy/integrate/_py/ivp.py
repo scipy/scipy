@@ -3,6 +3,7 @@ import numpy as np
 from .bdf import BDF
 from .radau import Radau
 from .rk import RK23, RK45
+from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
 from .base import OdeSolver
@@ -11,7 +12,8 @@ from .base import OdeSolver
 METHODS = {'RK23': RK23,
            'RK45': RK45,
            'Radau': Radau,
-           'BDF': BDF}
+           'BDF': BDF,
+           'LSODA': LSODA}
 
 
 MESSAGE = {0: "The solver successfully reached the interval end.",
