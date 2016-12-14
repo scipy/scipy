@@ -181,6 +181,20 @@ class TestSolveBanded(TestCase):
         assert_array_equal(x, [[0.5, 1.0, 1.5]])
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
+        
+    def test_native_list_arguments(self):
+        a = [[1.0, 20, 0, 0],
+             [-30, 4, 6, 0],
+             [2, 1, 20, 2],
+             [0, -1, 7, 14]]
+        ab = [[0.0, 20, 6, 2],
+              [1, 4, 20, 14],
+              [-30, 1, 7, 0],
+              [2, -1, 0, 0]]
+        l, u = 2, 1
+        b = [10.0, 0.0, 2.0, 14.0]
+        x = solve_banded((l, u), ab, b)
+        assert_array_almost_equal(dot(a, x), b)
 
 
 class TestSolveHBanded(TestCase):
@@ -487,6 +501,15 @@ class TestSolveHBanded(TestCase):
         x = solveh_banded([[1]], [[1, 2, 3]])
         assert_array_equal(x, [[1.0, 2.0, 3.0]])
         assert_equal(x.dtype, np.dtype('f8'))
+        
+    def test_native_list_arguments(self):
+        # Same as test_01_upper, using python's native list.
+        ab = [[0.0, 0.0, 2.0, 2.0],
+              [-99, 1.0, 1.0, 1.0],
+              [4.0, 4.0, 4.0, 4.0]]
+        b = [1.0, 4.0, 1.0, 2.0]
+        x = solveh_banded(ab, b)
+        assert_array_almost_equal(x, [0.0, 1.0, 0.0, 0.0])
 
 
 class TestSolve(TestCase):
@@ -1114,6 +1137,12 @@ class TestPinv(TestCase):
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
         a_pinv = pinv2(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
+        
+    def test_native_list_argument(self):
+        a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+        a_pinv = pinv(a)
+        a_pinv2 = pinv2(a)
+        assert_array_almost_equal(a_pinv, a_pinv2)
 
 
 class TestPinvSymmetric(TestCase):
@@ -1140,6 +1169,12 @@ class TestPinvSymmetric(TestCase):
                                        dtype=float))
         a = np.dot(a, a.conj().T)
         a_pinv = pinvh(a)
+        assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
+        
+    def test_native_list_argument(self):
+        a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
+        a = np.dot(a, a.T)
+        a_pinv = pinvh(a.tolist())
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
 
@@ -1351,6 +1386,14 @@ class TestSolveCirculant(TestCase):
         x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)
         assert_equal(x.shape, (4, 2, 3))
         assert_allclose(x, expected)
+        
+    def test_native_list_arguments(self):
+        # Same as test_basic1 using python's native list.
+        c = [1, 2, 3, 5]
+        b = [1, -1, 1, 0]
+        x = solve_circulant(c, b)
+        y = solve(circulant(c), b)
+        assert_allclose(x, y)
 
 
 class TestMatrix_Balance(TestCase):
