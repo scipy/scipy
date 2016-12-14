@@ -2165,6 +2165,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             dm = cdist(XA, XB, canberra)
         elif metric == 'test_cityblock':
             dm = cdist(XA, XB, cityblock)
+        elif metric == 'test_cosine':
+            dm = cdist(XA, XB, cosine)
         elif metric == 'test_minkowski':
             dm = cdist(XA, XB, minkowski, p=p)
         elif metric == 'test_wminkowski':

@@ -53,7 +53,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, kulsinski, mahalanobis,
                                     matching, minkowski, rogerstanimoto,
-                                    russellrao, seuclidean, sokalmichener, 
+                                    russellrao, seuclidean, sokalmichener,
                                     sokalsneath, sqeuclidean, yule, wminkowski)
 
 _filenames = [
@@ -113,7 +113,7 @@ def load_testing_files():
         fp = open(fqfn)
         eo[name] = np.loadtxt(fp)
         fp.close()
-    eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])    
+    eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
     eo['random-bool-data'] = np.bool_(eo['random-bool-data'])
     eo['random-float32-data'] = np.float32(eo['random-double-data'])
     eo['random-int-data'] = np.int_(eo['random-int-data'])
@@ -123,6 +123,15 @@ load_testing_files()
 
 
 class TestCdist(TestCase):
+
+    def setUp(self):
+        self.rnd_eo_names = ['random-float32-data', 'random-int-data',
+                             'random-uint-data', 'random-double-data',
+                             'random-bool-data']
+        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.double],
+                              'uint': [np.int_, np.float32, np.double],
+                              'int': [np.float32, np.double],
+                              'float32': [np.double]}
 
     def test_cdist_euclidean_random(self):
         eps = 1e-07
@@ -412,63 +421,89 @@ class TestCdist(TestCase):
         right_y = 1.123
         assert_equal(cdist_y, right_y, verbose=verbose > 2)
 
-    def test_cdist_str_vs_function_equivalence(self):
-        # Ensures that specifying the metric with a str or scipy function 
-        # gives the same behaviour (i.e. same result or same exception). 
-        # The correctness should be checked within each metric tests.
-        eps = 1e-07
-        eos_names = ['random-float32-data', 'random-int-data', 
-                     'random-uint-data', 'random-double-data', 
-                     'random-bool-data']
-        for eo_name in eos_names:
-            X1 = eo[eo_name][:, ::-2]
+    def _check_calling_conventions(self, X1, X2, metric, eps=1e-07, **kwargs):
+        # helper function for test_cdist_calling_conventions
+        try:
+            y1 = cdist(X1, X2, metric=metric, **kwargs)
+            y2 = cdist(X1, X2, metric=eval(metric), **kwargs)
+            y3 = cdist(X1, X2, metric="test_" + metric, **kwargs)
+        except Exception as e:
+            e_cls = e.__class__
+            if verbose > 2:
+                print(e_cls.__name__)
+                print(e)
+            assert_raises(e_cls, cdist, X1, X2, metric=metric, **kwargs)
+            assert_raises(e_cls, cdist, X1, X2, metric=eval(metric), **kwargs)
+            assert_raises(e_cls, cdist, X1, X2, metric="test_" + metric, **kwargs)
+        else:
+            _assert_within_tol(y1, y2, eps, verbose > 2)
+            _assert_within_tol(y1, y3, eps, verbose > 2)
+
+    def test_cdist_calling_conventions(self):
+        # Ensures that specifying the metric with a str or scipy function
+        # gives the same behaviour (i.e. same result or same exception).
+        # NOTE: The correctness should be checked within each metric tests.
+        for eo_name in self.rnd_eo_names:
+            X1 = eo[eo_name][:, ::-1]
             X2 = eo[eo_name][:-3:2]
             for metric in _metrics:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                try:
-                    y1 = cdist(X1, X2, metric=metric)
-                    y2 = cdist(X1, X2, metric=eval(metric))
-                    y3 = cdist(X1, X2, metric="test_" + metric)
-                except Exception as e:
-                    if verbose > 2:
-                        print(X1.shape)
-                        print(e.__class__.__name__)
-                        print(e)
-                    assert_raises(e.__class__, cdist, X1, X2, metric=metric)
-                    assert_raises(e.__class__, cdist, X1, X2, metric=eval(metric))
-                    assert_raises(e.__class__, cdist, X1, X2, metric="test_" + metric)
-                else:
-                    _assert_within_tol(y1, y2, eps, verbose > 2)
-                    _assert_within_tol(y1, y3, eps, verbose > 2)
-                    
+                if metric == 'yule' and 'bool' not in eo_name:
+                    # python raises a ZeroDivisionError while the C doesn't
+                    continue
+                self._check_calling_conventions(X1, X2, metric)
+
+                # Testing built-in metrics with extra args
+                if metric == "wminkowski":
+                    w = 1.0 / X1.std(axis=0)
+                    self._check_calling_conventions(X1, X2, metric, w=w)
+                elif metric == "seuclidean":
+                    X12 = np.vstack([X1, X2]).astype(np.double)
+                    V = np.var(X12, axis=0, ddof=1)
+                    self._check_calling_conventions(X1, X2, metric, V=V)
+                elif metric == "mahalanobis":
+                    X12 = np.vstack([X1, X2]).astype(np.double)
+                    V = np.atleast_2d(np.cov(X12.T))
+                    VI = np.array(np.linalg.inv(V).T)
+                    self._check_calling_conventions(X1, X2, metric, VI=VI)
+
     def test_cdist_dtype_equivalence(self):
         # Tests that the result is not affected by type up-casting
-        eps = 1e-07        
-        tests = [(eo['random-bool-data'], [np.int_, np.uint, np.float32, np.double]),
-                 (eo['random-uint-data'], [np.int_, np.float32, np.double]),
-                 (eo['random-int-data'], [np.float32, np.double]),
-                 (eo['random-float32-data'], [np.double])]
+        eps = 1e-07
+        tests = [(eo['random-bool-data'], self.valid_upcasts['bool']),
+                 (eo['random-uint-data'], self.valid_upcasts['uint']),
+                 (eo['random-int-data'], self.valid_upcasts['int']),
+                 (eo['random-float32-data'], self.valid_upcasts['float32'])]
         for metric in _metrics:
             for test in tests:
                 X1 = test[0]
                 try:
                     y1 = pdist(X1, metric=metric)
                 except Exception as e:
+                    e_cls = e.__class__
                     if verbose > 2:
-                        print(X1.shape)
-                        print(e.__class__.__name__)
+                        print(e_cls.__name__)
                         print(e)
                     for new_type in test[1]:
                         X2 = new_type(test[0])
-                        assert_raises(e.__class__, pdist, X2, metric=metric)
+                        assert_raises(e_cls, pdist, X2, metric=metric)
                 else:
                     for new_type in test[1]:
-                        y2 = pdist(new_type(X1), metric=metric)            
+                        y2 = pdist(new_type(X1), metric=metric)
                         _assert_within_tol(y1, y2, eps, verbose > 2)
 
 
 class TestPdist(TestCase):
+
+    def setUp(self):
+        self.rnd_eo_names = ['random-float32-data', 'random-int-data',
+                             'random-uint-data', 'random-double-data',
+                             'random-bool-data']
+        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.double],
+                              'uint': [np.int_, np.float32, np.double],
+                              'int': [np.float32, np.double],
+                              'float32': [np.double]}
 
     def test_pdist_euclidean_random(self):
         eps = 1e-07
@@ -1246,63 +1281,75 @@ class TestPdist(TestCase):
         right_y = 1.123
         assert_equal(pdist_y, right_y, verbose=verbose > 2)
 
-    def test_pdist_str_vs_function_equivalence(self):
-        # Ensures that specifying the metric with a str or scipy function 
-        # gives the same behaviour (i.e. same result or same exception). 
-        # The correctness should be checked within each metric tests.
+    def _check_calling_conventions(self, X, metric, eps=1e-07, **kwargs):
+        # helper function for test_cdist_calling_conventions
+        try:
+            y1 = pdist(X, metric=metric, **kwargs)
+            y2 = pdist(X, metric=eval(metric), **kwargs)
+            y3 = pdist(X, metric="test_" + metric, **kwargs)
+        except Exception as e:
+            e_cls = e.__class__
+            if verbose > 2:
+                print(e_cls.__name__)
+                print(e)
+            assert_raises(e_cls, pdist, X, metric=metric, **kwargs)
+            assert_raises(e_cls, pdist, X, metric=eval(metric), **kwargs)
+            assert_raises(e_cls, pdist, X, metric="test_" + metric, **kwargs)
+        else:
+            _assert_within_tol(y1, y2, eps, verbose > 2)
+            _assert_within_tol(y1, y3, eps, verbose > 2)
+
+    def test_pdist_calling_conventions(self):
+        # Ensures that specifying the metric with a str or scipy function
+        # gives the same behaviour (i.e. same result or same exception).
+        # NOTE: The correctness should be checked within each metric tests.
+        # NOTE: Extra args should be checked with a dedicated test
         eps = 1e-07
-        eos_names = ['random-float32-data', 'random-int-data', 
-                     'random-uint-data', 'random-double-data', 
-                     'random-bool-data']
-        for eo_name in eos_names:
+        for eo_name in self.rnd_eo_names:
             X = eo[eo_name][::2]
             for metric in _metrics:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                try:
-                    y1 = pdist(X, metric=metric)
-                    y2 = pdist(X, metric=eval(metric))
-                    y3 = pdist(X, metric="test_" + metric)
-                except Exception as e:
-                    if metric == 'yule' and 'bool' not in eo_name:
-                        # the python implementation raises a ZeroDivisionError 
-                        # while the C doesn't
-                        assert_(isinstance(e, ZeroDivisionError))
-                        continue
-                    if verbose > 2:
-                        print(X.shape)
-                        print(e.__class__.__name__)
-                        print(e)
-                    assert_raises(e.__class__, pdist, X, metric=metric)
-                    assert_raises(e.__class__, pdist, X, metric=eval(metric))
-                    assert_raises(e.__class__, pdist, X, metric="test_" + metric)
-                else:
-                    _assert_within_tol(y1, y2, eps, verbose > 2)
-                    _assert_within_tol(y1, y3, eps, verbose > 2)
-                    
+                if metric == 'yule' and 'bool' not in eo_name:
+                    # python raises a ZeroDivisionError while the C doesn't
+                    continue
+                self._check_calling_conventions(X, metric)
+
+                # Testing built-in metrics with extra args
+                if metric == "wminkowski":
+                    w = 1.0 / X.std(axis=0)
+                    self._check_calling_conventions(X, metric, w=w)
+                elif metric == "seuclidean":
+                    V = np.var(X.astype(np.double), axis=0, ddof=1)
+                    self._check_calling_conventions(X, metric, V=V)
+                elif metric == "mahalanobis":
+                    V = np.atleast_2d(np.cov(X.astype(np.double).T))
+                    VI = np.array(np.linalg.inv(V).T)
+                    self._check_calling_conventions(X, metric, VI=VI)
+
     def test_pdist_dtype_equivalence(self):
         # Tests that the result is not affected by type up-casting
-        eps = 1e-07    
-        tests = [(eo['random-bool-data'], [np.int_, np.uint, np.float32, np.double]),
-                 (eo['random-uint-data'], [np.int_, np.float32, np.double]),
-                 (eo['random-int-data'], [np.float32, np.double]),
-                 (eo['random-float32-data'], [np.double])]
+        eps = 1e-07
+        tests = [(eo['random-bool-data'], self.valid_upcasts['bool']),
+                 (eo['random-uint-data'], self.valid_upcasts['uint']),
+                 (eo['random-int-data'], self.valid_upcasts['int']),
+                 (eo['random-float32-data'], self.valid_upcasts['float32'])]
         for metric in _metrics:
             for test in tests:
                 X1 = test[0]
                 try:
                     y1 = pdist(X1, metric=metric)
                 except Exception as e:
+                    e_cls = e.__class__
                     if verbose > 2:
-                        print(X1.shape)
-                        print(e.__class__.__name__)
+                        print(e_cls.__name__)
                         print(e)
                     for new_type in test[1]:
                         X2 = new_type(test[0])
-                        assert_raises(e.__class__, pdist, X2, metric=metric)
+                        assert_raises(e_cls, pdist, X2, metric=metric)
                 else:
                     for new_type in test[1]:
-                        y2 = pdist(new_type(X1), metric=metric)            
+                        y2 = pdist(new_type(X1), metric=metric)
                         _assert_within_tol(y1, y2, eps, verbose > 2)
 
 
@@ -1312,7 +1359,7 @@ def within_tol(a, b, tol):
 
 def _assert_within_tol(a, b, atol, verbose_=False):
     if verbose_:
-        print(np.abs(a-b).max())
+        print(np.abs(a - b).max())
     assert_allclose(a, b, rtol=0, atol=atol)
 
 
