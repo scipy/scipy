@@ -1364,6 +1364,13 @@ class TestMatrix_Balance(TestCase):
         assert_raises(ValueError, matrix_balance,
                       np.array([[1, 2], [3, np.nan]]))
 
+    def test_empty_data(self):
+        A = np.array([[], []])
+        x, (y, z) = matrix_balance(A, separate=1)
+        assert_equal(x.shape, (2, 0))
+        assert_equal(y.shape, (0,))
+        assert_equal(z.shape, (0,))
+
     def test_scaling(self):
         _, y = matrix_balance(np.array([[1000, 1], [1000, 0]]))
         # Pre/post LAPACK 3.5.0 gives the same result up to an offset
