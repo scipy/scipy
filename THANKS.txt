@@ -167,6 +167,7 @@ Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
 John Draper for bug fixes.
 Alvaro Sanchez-Gonzalez for axis-dependent modes in multidimensional filters.
+Alessandro Pietro Bardelli for improvements to pdist/cdist and to related tests.
 
 Institutions
 ------------
