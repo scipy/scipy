@@ -562,7 +562,7 @@ interface
    ! Solve A * X = B using LU decomposition
    ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
    ! This part takes care of the data types, single and double reals (sgesvx and dgesvx)
-
+     threadsafe
      callstatement {int i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);for(i=0;i\<n;--ipiv[i++]);}
      callprotoargument char*,char*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
 
@@ -596,7 +596,7 @@ interface
    ! Solve A * X = B using LU decomposition
    ! The expert driver of ?GESV with condition number, backward/forward error estimates, and iterative refinement
    ! This part takes care of the data types, complex and double complex (cgesvx and zgesvx)
-
+     threadsafe
      callstatement {int i;(*f2py_func)(fact,trans,&n,&nrhs,a,&lda,af,&ldaf,ipiv,equed,r,c,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);for(i=0;i\<n;--ipiv[i++]);}
      callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,char*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,int*
 
@@ -628,7 +628,7 @@ interface
    subroutine <prefix>gecon(norm,n,a,lda,anorm,rcond,work,irwork,info)
 
    ! Computes the 1- or inf- norm reciprocal condition number estimate.
-
+     threadsafe
      callstatement (*f2py_func)(norm,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
      callprotoargument char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
 
@@ -694,7 +694,7 @@ interface
    ! Solve A * X = B for symmetric A matrix
    ! The expert driver of ?SYSV with condition number, backward,forward error estimates and iterative refinement
    ! The <c,z> versions assume only symmetric complex matrices. For Hermitian matrices, routine <c,z>HESVX is used
-
+     threadsafe
      callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,&lwork,irwork,&info)
      callprotoargument char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,int*,<int,int,float,double>*,int*
 
@@ -760,7 +760,7 @@ interface
    ! A is hermitian. For symmetric A see ?SYSV
    ! A = U * D * U**H if lower = 0
    ! A = L * D * L**H if lower = 1
-
+     threadsafe
      callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,a,&lda,ipiv,b,&ldb,work,&lwork,&info)
      callprotoargument char*,int*,int*,<ctype2c>*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*
 
@@ -809,7 +809,7 @@ interface
    ! A is hermitian. For symmetric A see ?SYSVX
    ! A = U * D * U**H if lower = 0
    ! A = L * D * L**H if lower = 1
-
+     threadsafe
      callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,&lwork,rwork,&info)
      callprotoargument char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,int*,<ctype2>*,int*
 
@@ -2157,7 +2157,7 @@ interface
 
    ! Solve A * X = B for Symmetric/Hermitian A
    ! "expert" version of the ?POSV routines
-
+     threadsafe
      callstatement (*f2py_func)(fact,(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,equed,s,b,&ldb,x,&ldx,&rcond,ferr,berr,work,irwork,&info)
      callprotoargument char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,char*,<ctypereal>*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
 
@@ -2188,7 +2188,7 @@ interface
 
    ! Computes the 1- or inf- norm reciprocal condition number estimate
    ! for a positive definite symmetric/hermitian matrix.
-
+     threadsafe
      callstatement (*f2py_func)(uplo,&n,a,&lda,&anorm,&rcond,work,irwork,&info)
      callprotoargument char*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctype>*,<int,int,float,double>*,int*
 
