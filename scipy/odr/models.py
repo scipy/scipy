@@ -88,7 +88,7 @@ multilinear = Model(_lin_fcn, fjacb=_lin_fjb,
                fjacd=_lin_fjd, estimate=_lin_est,
                meta={'name': 'Arbitrary-dimensional Linear',
                      'equ':'y = B_0 + Sum[i=1..m, B_i * x_i]',
-                     'TeXequ':'$y=\\beta_0 + \sum_{i=1}^m \\beta_i x_i$'})
+                     'TeXequ':r'$y=\beta_0 + \sum_{i=1}^m \beta_i x_i$'})
 
 
 def polynomial(order):
@@ -126,14 +126,14 @@ def polynomial(order):
     return Model(_poly_fcn, fjacd=_poly_fjacd, fjacb=_poly_fjacb,
                  estimate=_poly_est, extra_args=(powers,),
                  meta={'name': 'Sorta-general Polynomial',
-                 'equ':'y = B_0 + Sum[i=1..%s, B_i * (x**i)]' % (len_beta-1),
-                 'TeXequ':'$y=\\beta_0 + \sum_{i=1}^{%s} \\beta_i x^i$' %
+                 'equ': 'y = B_0 + Sum[i=1..%s, B_i * (x**i)]' % (len_beta-1),
+                 'TeXequ': r'$y=\beta_0 + \sum_{i=1}^{%s} \beta_i x^i$' %
                         (len_beta-1)})
 
 exponential = Model(_exp_fcn, fjacd=_exp_fjd, fjacb=_exp_fjb,
                     estimate=_exp_est, meta={'name':'Exponential',
-                    'equ':'y= B_0 + exp(B_1 * x)',
-                    'TeXequ':'$y=\\beta_0 + e^{\\beta_1 x}$'})
+                    'equ': 'y= B_0 + exp(B_1 * x)',
+                    'TeXequ': r'$y=\beta_0 + e^{\beta_1 x}$'})
 
 
 def _unilin(B, x):

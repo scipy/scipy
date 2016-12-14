@@ -767,13 +767,13 @@ class Func(object):
         return [self._parse_signature(x) + (h,) for x, h in zip(sigs, headers)]
 
     def _parse_signature(self, sig):
-        m = re.match("\s*(.*):\s*([fdgFDGil]*)\s*\\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
+        m = re.match(r"\s*(.*):\s*([fdgFDGil]*)\s*\\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
         if m:
             func, inarg, outarg, ret = [x.strip() for x in m.groups()]
             if ret.count('*') > 1:
                 raise ValueError("%s: Invalid signature: %r" % (self.name, sig))
             return (func, inarg, outarg, ret)
-        m = re.match("\s*(.*):\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
+        m = re.match(r"\s*(.*):\s*([fdgFDGil]*)\s*->\s*([fdgFDGil]?)\s*$", sig)
         if m:
             func, inarg, ret = [x.strip() for x in m.groups()]
             return (func, inarg, "", ret)
@@ -824,7 +824,7 @@ class Func(object):
             line = line.strip()
             if not line:
                 continue
-            m = re.match("^([a-z0-9_]+)\s*--\s*(.*?)\s*--(.*)$", line)
+            m = re.match(r"^([a-z0-9_]+)\s*--\s*(.*?)\s*--(.*)$", line)
             if not m:
                 raise ValueError("Unparseable line %r" % line)
             ufuncs.append(cls(m.group(1), m.group(2), m.group(3)))

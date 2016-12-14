@@ -1690,7 +1690,7 @@ class BPoly(_PPolyBase):
 
     @staticmethod
     def _construct_from_derivatives(xa, xb, ya, yb):
-        """Compute the coefficients of a polynomial in the Bernstein basis
+        r"""Compute the coefficients of a polynomial in the Bernstein basis
         given the values and derivatives at the edges.
 
         Return the coefficients of a polynomial in the Bernstein basis
@@ -1776,7 +1776,7 @@ class BPoly(_PPolyBase):
 
     @staticmethod
     def _raise_degree(c, d):
-        """Raise a degree of a polynomial in the Bernstein basis.
+        r"""Raise a degree of a polynomial in the Bernstein basis.
 
         Given the coefficients of a polynomial degree `k`, return (the
         coefficients of) the equivalent polynomial of degree `k+d`.
@@ -1799,7 +1799,7 @@ class BPoly(_PPolyBase):
         a higher degree `k+d`:
 
             .. math:: b_{a, k} = comb(k, a) \sum_{j=0}^{d} b_{a+j, k+d} \
-                                comb(d, j) / comb(k+d, a+j)
+                                 comb(d, j) / comb(k+d, a+j)
 
         """
         if d == 0:

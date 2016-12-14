@@ -2287,7 +2287,7 @@ def factorial(n, exact=False):
     With ``exact=False`` the factorial is approximated using the gamma
     function:
 
-    .. math:: n! = \Gamma(n+1)
+    .. math:: n! = \\Gamma(n+1)
 
     Examples
     --------

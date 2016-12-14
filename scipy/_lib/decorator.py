@@ -77,7 +77,7 @@ def getargspec(f):
     spec = getfullargspec(f)
     return ArgSpec(spec.args, spec.varargs, spec.varkw, spec.defaults)
 
-DEF = re.compile('\s*def\s*([_\w][_\w\d]*)\s*\(')
+DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 
 
 # basic functionality

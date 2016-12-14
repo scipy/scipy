@@ -448,7 +448,7 @@ def sosfreqz(sos, worN=None, whole=False):
     >>> plt.plot(w/np.pi, np.angle(h))
     >>> plt.grid(True)
     >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
-    ...            ['$-\pi$', '$-\pi/2$', '0', '$\pi/2$', '$\pi$'])
+    ...            [r'$-\\pi$', r'$-\\pi/2$', '0', r'$\\pi/2$', r'$\\pi$'])
     >>> plt.ylabel('Phase [rad]')
     >>> plt.xlabel('Normalized frequency (1.0 = Nyquist)')
     >>> plt.show()

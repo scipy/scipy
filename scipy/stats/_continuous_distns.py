@@ -1154,10 +1154,10 @@ class exponnorm_gen(rv_continuous):
 
     An alternative parameterization of this distribution (for example, in
     `Wikipedia <http://en.wikipedia.org/wiki/Exponentially_modified_Gaussian_distribution>`_)
-    involves three parameters, :math:`\mu`, :math:`\lambda` and :math:`\sigma`.
+    involves three parameters, :math:`\\mu`, :math:`\\lambda` and :math:`\\sigma`.
     In the present parameterization this corresponds to having ``loc`` and
-    ``scale`` equal to :math:`\mu` and :math:`\sigma`, respectively, and
-    shape parameter :math:`K = 1/\sigma\lambda`.
+    ``scale`` equal to :math:`\\mu` and :math:`\\sigma`, respectively, and
+    shape parameter :math:`K = 1/\\sigma\\lambda`.
 
     .. versionadded:: 0.16.0
 

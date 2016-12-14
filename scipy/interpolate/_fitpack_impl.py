@@ -1188,8 +1188,8 @@ def splder(tck, n=1):
     >>> sproot(dspl) / np.pi
     array([ 0.50000001,  1.5       ,  2.49999998])
 
-    This agrees well with roots :math:`\pi/2 + n\pi` of
-    :math:`\cos(x) = \sin'(x)`.
+    This agrees well with roots :math:`\\pi/2 + n\\pi` of
+    :math:`\\cos(x) = \\sin'(x)`.
 
     """
     if n < 0:
