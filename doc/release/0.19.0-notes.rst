@@ -35,6 +35,12 @@ The functions `scipy.linalg.solve_continuous_are` and
 These functions can also solve generalized algebraic matrix Riccati equations.
 Moreover, both gained a ``balanced`` keyword to turn balancing on and off.
 
+`scipy.spatial` improvements
+----------------------------
+
+`SphericalVoronoi.sort_vertices_of_regions()` has been re-written in
+cython to improve performance
+
 `scipy.ndimage` improvements
 ----------------------------
 
@@ -75,6 +81,11 @@ compute the coeficients of a second-order IIR peak (resonant) filter.
 
 The function `scipy.signal.minimum_phase` was added to convert linear-phase
 FIR filters to minimum phase.
+
+The functions `scipy.signal.upfirdn` and `scipy.signal.resample_poly` are now
+substantially faster when operating on some n-dimensional arrays when n > 1.
+The largest reduction in computation time is realized in cases where the size
+of the array is small (<1k samples or so) along the axis to be filtered.
 
 `scipy.sparse` improvements
 ---------------------------

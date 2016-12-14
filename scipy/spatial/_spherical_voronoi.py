@@ -15,6 +15,7 @@ import numpy as np
 import numpy.matlib
 import scipy
 import itertools
+from . import _voronoi
 
 __all__ = ['SphericalVoronoi']
 
@@ -294,23 +295,5 @@ class SphericalVoronoi:
          of its surrounding region.
         """
 
-        for n in range(0, len(self.regions)):
-            remaining = self.regions[n][:]
-            sorted_vertices = []
-            current_simplex = remaining[0]
-            current_vertex = [k for k in self._tri.simplices[current_simplex]
-                              if k != n][0]
-            remaining.remove(current_simplex)
-            sorted_vertices.append(current_simplex)
-            while remaining:
-                current_simplex = [
-                    s for s in remaining
-                    if current_vertex in self._tri.simplices[s]
-                    ][0]
-                current_vertex = [
-                    s for s in self._tri.simplices[current_simplex]
-                    if s != n and s != current_vertex
-                    ][0]
-                remaining.remove(current_simplex)
-                sorted_vertices.append(current_simplex)
-            self.regions[n] = sorted_vertices
+        _voronoi.sort_vertices_of_regions(self._tri.simplices,
+                                                   self.regions)

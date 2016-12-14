@@ -67,11 +67,17 @@ class _data_matrix(spmatrix):
     def astype(self, t):
         return self._with_data(self._deduped_data().astype(t))
 
+    astype.__doc__ = spmatrix.astype.__doc__
+
     def conj(self):
         return self._with_data(self.data.conj())
 
+    conj.__doc__ = spmatrix.conj.__doc__
+
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
+
+    copy.__doc__ = spmatrix.copy.__doc__
 
     def count_nonzero(self):
         return np.count_nonzero(self._deduped_data())

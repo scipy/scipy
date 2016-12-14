@@ -9,7 +9,7 @@ import sys
 import timeit
 
 from . import sigtools, dlti
-from ._upfirdn import upfirdn, _UpFIRDn, _output_len
+from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
@@ -2356,15 +2356,13 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
     h = np.concatenate((np.zeros(n_pre_pad), h, np.zeros(n_post_pad)))
-    ufd = _UpFIRDn(h, x.dtype, up, down)
     n_pre_remove_end = n_pre_remove + n_out
 
-    def apply_remove(x):
-        """Apply the upfirdn filter and remove excess"""
-        return ufd.apply_filter(x)[n_pre_remove:n_pre_remove_end]
-
-    y = np.apply_along_axis(apply_remove, axis, x)
-    return y
+    # filter then remove excess
+    y = upfirdn(h, x, up, down, axis=axis)
+    keep = [slice(None), ]*x.ndim
+    keep[axis] = slice(n_pre_remove, n_pre_remove_end)
+    return y[keep]
 
 
 def vectorstrength(events, period):
