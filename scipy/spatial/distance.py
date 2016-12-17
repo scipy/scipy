@@ -968,6 +968,47 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     """
     Pairwise distances between observations in n-dimensional space.
 
+    See Notes for common calling conventions.
+
+    Parameters
+    ----------
+    X : ndarray
+        An m by n array of m original observations in an
+        n-dimensional space.
+    metric : str or function, optional
+        The distance metric to use. The distance function can
+        be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+        'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
+    w : ndarray, optional
+        The weight vector (for weighted Minkowski).
+    p : double, optional
+        The p-norm to apply (for Minkowski, weighted and unweighted)
+    V : ndarray, optional
+        The variance vector (for standardized Euclidean).
+    VI : ndarray, optional
+        The inverse of the covariance matrix (for Mahalanobis).
+
+    Returns
+    -------
+    Y : ndarray
+        Returns a condensed distance matrix Y.  For
+        each :math:`i` and :math:`j` (where :math:`i<j<n`), the
+        metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
+
+    See Also
+    --------
+    squareform : converts between condensed distance matrices and
+                 square distance matrices.
+
+    Notes
+    -----
+    See ``squareform`` for information on how to calculate the index of
+    this entry or to convert the condensed distance matrix to a
+    redundant square matrix.
+
     The following are common calling conventions.
 
     1. ``Y = pdist(X, 'euclidean')``
@@ -1149,45 +1190,6 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
        efficient, and we call it using the following syntax.::
 
          dm = pdist(X, 'sokalsneath')
-
-    Parameters
-    ----------
-    X : ndarray
-        An m by n array of m original observations in an
-        n-dimensional space.
-    metric : str or function, optional
-        The distance metric to use. The distance function can
-        be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
-        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'kulsinski', 'mahalanobis', 'matching',
-        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-    w : ndarray, optional
-        The weight vector (for weighted Minkowski).
-    p : double, optional
-        The p-norm to apply (for Minkowski, weighted and unweighted)
-    V : ndarray, optional
-        The variance vector (for standardized Euclidean).
-    VI : ndarray, optional
-        The inverse of the covariance matrix (for Mahalanobis).
-
-    Returns
-    -------
-    Y : ndarray
-        Returns a condensed distance matrix Y.  For
-        each :math:`i` and :math:`j` (where :math:`i<j<n`), the
-        metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
-
-    See Also
-    --------
-    squareform : converts between condensed distance matrices and
-                 square distance matrices.
-
-    Notes
-    -----
-    See ``squareform`` for information on how to calculate the index of
-    this entry or to convert the condensed distance matrix to a
-    redundant square matrix.
 
     """
     # You can also call this as:
@@ -1722,6 +1724,50 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     """
     Computes distance between each pair of the two collections of inputs.
 
+    See Notes for common calling conventions.
+
+    Parameters
+    ----------
+    XA : ndarray
+        An :math:`m_A` by :math:`n` array of :math:`m_A`
+        original observations in an :math:`n`-dimensional space.
+        Inputs are converted to float type.
+    XB : ndarray
+        An :math:`m_B` by :math:`n` array of :math:`m_B`
+        original observations in an :math:`n`-dimensional space.
+        Inputs are converted to float type.
+    metric : str or callable, optional
+        The distance metric to use.  If a string, the distance function can be
+        'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
+        'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
+        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
+        'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+        'wminkowski', 'yule'.
+    w : ndarray, optional
+        The weight vector (for weighted Minkowski).
+    p : scalar, optional
+        The p-norm to apply (for Minkowski, weighted and unweighted)
+    V : ndarray, optional
+        The variance vector (for standardized Euclidean).
+    VI : ndarray, optional
+        The inverse of the covariance matrix (for Mahalanobis).
+
+    Returns
+    -------
+    Y : ndarray
+        A :math:`m_A` by :math:`m_B` distance matrix is returned.
+        For each :math:`i` and :math:`j`, the metric
+        ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
+        :math:`ij` th entry.
+
+    Raises
+    ------
+    ValueError
+        An exception is thrown if `XA` and `XB` do not have
+        the same number of columns.
+
+    Notes
+    -----
     The following are common calling conventions:
 
     1. ``Y = cdist(XA, XB, 'euclidean')``
@@ -1904,46 +1950,6 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        efficient, and we call it using the following syntax::
 
          dm = cdist(XA, XB, 'sokalsneath')
-
-    Parameters
-    ----------
-    XA : ndarray
-        An :math:`m_A` by :math:`n` array of :math:`m_A`
-        original observations in an :math:`n`-dimensional space.
-        Inputs are converted to float type.
-    XB : ndarray
-        An :math:`m_B` by :math:`n` array of :math:`m_B`
-        original observations in an :math:`n`-dimensional space.
-        Inputs are converted to float type.
-    metric : str or callable, optional
-        The distance metric to use.  If a string, the distance function can be
-        'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
-        'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
-        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
-        'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
-        'wminkowski', 'yule'.
-    w : ndarray, optional
-        The weight vector (for weighted Minkowski).
-    p : scalar, optional
-        The p-norm to apply (for Minkowski, weighted and unweighted)
-    V : ndarray, optional
-        The variance vector (for standardized Euclidean).
-    VI : ndarray, optional
-        The inverse of the covariance matrix (for Mahalanobis).
-
-    Returns
-    -------
-    Y : ndarray
-        A :math:`m_A` by :math:`m_B` distance matrix is returned.
-        For each :math:`i` and :math:`j`, the metric
-        ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
-        :math:`ij` th entry.
-
-    Raises
-    ------
-    ValueError
-        An exception is thrown if `XA` and `XB` do not have
-        the same number of columns.
 
     Examples
     --------
