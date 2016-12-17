@@ -418,7 +418,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
-        return np.array([]), np.array([])
+        return ModeResult(np.array([]), np.array([]))
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
