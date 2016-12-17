@@ -422,8 +422,8 @@ def jaccard(u, v):
     u = _validate_vector(u)
     v = _validate_vector(v)
     dist = (np.double(np.bitwise_and((u != v),
-                                     np.bitwise_or(u != 0, v != 0)).sum())
-            / np.double(np.bitwise_or(u != 0, v != 0).sum()))
+                                     np.bitwise_or(u != 0, v != 0)).sum()) /
+            np.double(np.bitwise_or(u != 0, v != 0).sum()))
     return dist
 
 
@@ -930,7 +930,7 @@ def sokalsneath(u, v):
     denom = ntt + 2.0 * (ntf + nft)
     if denom == 0:
         raise ValueError('Sokal-Sneath dissimilarity is not defined for '
-                            'vectors that are entirely false.')
+                         'vectors that are entirely false.')
     return float(2.0 * (ntf + nft)) / denom
 
 
@@ -1195,8 +1195,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     # You can also call this as:
     #     Y = pdist(X, 'test_abc')
     # where 'abc' is the metric being tested.  This computes the distance
-    # between all pairs of vectors in X using the distance metric 'abc' but with
-    # a more succinct, verifiable, but less efficient implementation.
+    # between all pairs of vectors in X using the distance metric 'abc' but
+    # with a more succinct, verifiable, but less efficient implementation.
 
     X = np.asarray(X, order='c')
 
@@ -1213,7 +1213,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     wmink_names = ['wminkowski', 'wmi', 'wm', 'wpnorm']
     if w is None and (metric == wminkowski or metric in wmink_names):
         raise ValueError('weighted minkowski requires a weight '
-                            'vector `w` to be given.')
+                         'vector `w` to be given.')
 
     if callable(metric):
         if metric == minkowski:
