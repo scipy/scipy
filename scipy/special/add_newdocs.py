@@ -3635,7 +3635,7 @@ add_newdoc("scipy.special", "jn",
     Notes
     -----
     `jn` is an alias of `jv`.
-    Not to be confused with the spherical Bessel functions (see spherical_jn).
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
 
     See also
     --------
@@ -3682,7 +3682,7 @@ add_newdoc("scipy.special", "jv",
     term is exactly zero for integer `v`; to improve accuracy the second
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
-    Not to be confused with the spherical Bessel functions (see spherical_jn).
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
 
     See also
     --------
