@@ -6,6 +6,11 @@
 # generate_ufuncs.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
+#
+# Note : After editing this file and commiting changes, please run
+# generate_funcs.py and commit the changes as a separate commit with a comment
+# such as : GEN: special: run generate_ufuncs.py
+
 
 from __future__ import division, print_function, absolute_import
 
