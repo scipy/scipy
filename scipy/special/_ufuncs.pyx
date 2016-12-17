@@ -8440,7 +8440,7 @@ cdef char *ufunc_jv_doc = (
     "term is exactly zero for integer `v`; to improve accuracy the second\n"
     "term is explicitly omitted for `v` values such that `v = floor(v)`.\n"
     "\n"
-    "Not to be confused with the spherical Bessel functions (see spherical_jn).\n"
+    "Not to be confused with the spherical Bessel functions (see `spherical_jn`).\n"
     "\n"
     "See also\n"
     "--------\n"
