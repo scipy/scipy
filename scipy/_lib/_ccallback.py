@@ -104,7 +104,7 @@ class LowLevelCallable(tuple):
         raise ValueError()
 
     @classmethod
-    def from_cython(cls, module, name, user_data=None):
+    def from_cython(cls, module, name, user_data=None, signature=None):
         """
         Create a low-level callback function from an exported Cython function.
 
@@ -114,8 +114,10 @@ class LowLevelCallable(tuple):
             Cython module where the exported function resides
         name : str
             Name of the exported function
-        user_data : {PyCapsule, ctypes void pointer, cffi void pointer}
+        user_data : {PyCapsule, ctypes void pointer, cffi void pointer}, optional
             User data to pass on to the callback function.
+        signature : str, optional
+            Signature of the function. If omitted, determined from *function*.
 
         """
         try:
@@ -124,7 +126,7 @@ class LowLevelCallable(tuple):
             raise ValueError("Given module is not a Cython module with __pyx_capi__ attribute")
         except KeyError:
             raise ValueError("No function {!r} found in __pyx_capi__ of the module".format(name))
-        return cls(function, user_data)
+        return cls(function, user_data, signature)
 
     @classmethod
     def _parse_callback(cls, obj, user_data=None, signature=None):
