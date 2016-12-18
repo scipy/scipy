@@ -31,7 +31,7 @@ __all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
 #   - numeric and nominal attributes
 #   - missing values for numeric attributes
 
-r_meta = re.compile('^\s*@')
+r_meta = re.compile(r'^\s*@')
 # Match a comment
 r_comment = re.compile(r'^%')
 # Match an empty line

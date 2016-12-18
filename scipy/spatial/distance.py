@@ -1639,11 +1639,11 @@ def is_valid_y(y, warning=False, throw=False, name=None):
                 raise ValueError(('Length n of condensed distance matrix '
                                   '\'%s\' must be a binomial coefficient, i.e.'
                                   'there must be a k such that '
-                                  '(k \choose 2)=n)!') % name)
+                                  '(k \\choose 2)=n)!') % name)
             else:
                 raise ValueError('Length n of condensed distance matrix must '
                                  'be a binomial coefficient, i.e. there must '
-                                 'be a k such that (k \choose 2)=n)!')
+                                 'be a k such that (k \\choose 2)=n)!')
     except Exception as e:
         if throw:
             raise

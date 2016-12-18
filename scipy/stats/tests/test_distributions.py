@@ -2830,7 +2830,7 @@ class TestSubclassingNoShapes(TestCase):
         dummy_distr = _distr_gen(name='dummy')
         assert_equal(dummy_distr.numargs, 1)
         assert_equal(dummy_distr.shapes, 'a')
-        res = re.findall('logpdf\(x, a, loc=0, scale=1\)',
+        res = re.findall(r'logpdf\(x, a, loc=0, scale=1\)',
                          dummy_distr.__doc__)
         assert_(len(res) == 1)
 
@@ -2840,7 +2840,7 @@ class TestSubclassingNoShapes(TestCase):
         dummy_distr = _distr6_gen(name='dummy')
         assert_equal(dummy_distr.numargs, 2)
         assert_equal(dummy_distr.shapes, 'a, b')
-        res = re.findall('logpdf\(x, a, b, loc=0, scale=1\)',
+        res = re.findall(r'logpdf\(x, a, b, loc=0, scale=1\)',
                          dummy_distr.__doc__)
         assert_(len(res) == 1)
 
@@ -2877,7 +2877,7 @@ class TestSubclassingNoShapes(TestCase):
 
 @dec.skipif(DOCSTRINGS_STRIPPED)
 def test_docstrings():
-    badones = [',\s*,', '\(\s*,', '^\s*:']
+    badones = [r',\s*,', r'\(\s*,', r'^\s*:']
     for distname in stats.__all__:
         dist = getattr(stats, distname)
         if isinstance(dist, (stats.rv_discrete, stats.rv_continuous)):

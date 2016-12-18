@@ -231,7 +231,7 @@ def solve_discrete_lyapunov(a, q, method=None):
 
 
 def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
-    """
+    r"""
     Solves the continuous-time algebraic Riccati equation (CARE).
 
     The CARE is defined as
@@ -418,7 +418,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
 
 
 def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
-    """
+    r"""
     Solves the discrete-time algebraic Riccati equation (DARE).
 
     The DARE is defined as

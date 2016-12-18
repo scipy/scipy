@@ -1233,7 +1233,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
 
     if plot is not None:
         plot.plot(lmbdas, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='$\lambda$',
+        _add_axis_labels_title(plot, xlabel='$\\lambda$',
                                ylabel='Prob Plot Corr. Coef.',
                                title='Box-Cox Normality Plot')
 
