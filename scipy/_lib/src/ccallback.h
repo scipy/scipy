@@ -33,6 +33,14 @@
 
 
 typedef struct ccallback ccallback_t;
+typedef struct ccallback_signature ccallback_signature_t;
+
+struct ccallback_signature {
+    /* Function signature as a Cython/cffi-like prototype string */
+    char *signature;
+    /* Value that can be used for any purpose */
+    int value;
+};
 
 struct ccallback {
     /* Pointer to a C function to call. NULL if none. */
@@ -41,8 +49,8 @@ struct ccallback {
     PyObject *py_function;
     /* Additional data pointer provided by the user. */
     void *user_data;
-    /* Index of the function signature selected */
-    int signature_index;
+    /* Function signature selected */
+    ccallback_signature_t *signature;
     /* setjmp buffer to jump to on error */
     jmp_buf error_buf;
     /* Previous callback, for TLS reentrancy */
@@ -187,8 +195,8 @@ static ccallback_t *ccallback_obtain(void)
  * ----------
  * callback : ccallback_t
  *     Callback structure to initialize.
- * signatures : char **
- *     Pointer to a NULL-terminated array of C function signature strings.
+ * signatures : ccallback_signature_t *
+ *     Pointer to a NULL-terminated array of C function signatures.
  *     The list of signatures should always contain a signature defined in
  *     terms of C basic data types only.
  * callback_obj : PyObject
@@ -203,7 +211,8 @@ static ccallback_t *ccallback_obtain(void)
  *     0 if success, != 0 on failure (an appropriate Python exception is set).
  *
  */
-static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject *callback_obj, int flags)
+static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signatures,
+                             PyObject *callback_obj, int flags)
 {
     static PyTypeObject *lowlevelcallable_type = NULL;
     PyObject *callback_obj2 = NULL;
@@ -245,7 +254,7 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
         Py_INCREF(callback->py_function);
         callback->c_function = NULL;
         callback->user_data = NULL;
-        callback->signature_index = -1;
+        callback->signature = NULL;
     }
     else if (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
              PyCallable_Check(PyTuple_GET_ITEM(callback_obj, 0))) {
@@ -254,14 +263,14 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
         Py_INCREF(callback->py_function);
         callback->c_function = NULL;
         callback->user_data = NULL;
-        callback->signature_index = -1;
+        callback->signature = NULL;
     }
     else if (capsule != NULL ||
              (PyObject_TypeCheck(callback_obj, lowlevelcallable_type) &&
               PyCapsule_CheckExact(PyTuple_GET_ITEM(callback_obj, 0)))) {
         /* PyCapsule in LowLevelCallable (or parse result from above) */
         void *ptr, *user_data;
-        char **sig;
+        ccallback_signature_t *sig;
         const char *name;
 
         if (capsule == NULL) {
@@ -272,15 +281,19 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
         if (PyErr_Occurred()) {
             goto error;
         }
-        
-        callback->signature_index = 0;
-        for (sig = signatures; *sig != NULL; ++sig, ++callback->signature_index) {
-            if (name && strcmp(name, *sig) == 0) {
+
+        for (sig = signatures; sig->signature != NULL; ++sig) {
+            if (name && strcmp(name, sig->signature) == 0) {
                 break;
             }
         }
 
-        ptr = PyCapsule_GetPointer(capsule, *sig);
+        if (sig->signature == NULL) {
+            PyErr_SetString(PyExc_ValueError, "Invalid function signature in PyCapsule");
+            goto error;
+        }
+
+        ptr = PyCapsule_GetPointer(capsule, sig->signature);
         if (ptr == NULL) {
             PyErr_SetString(PyExc_ValueError, "Invalid function signature in PyCapsule");
             goto error;
@@ -294,6 +307,7 @@ static int ccallback_prepare(ccallback_t *callback, char **signatures, PyObject 
         callback->py_function = NULL;
         callback->c_function = ptr;
         callback->user_data = user_data;
+        callback->signature = sig;
     }
     else {
         PyErr_SetString(PyExc_ValueError, "invalid callable given");

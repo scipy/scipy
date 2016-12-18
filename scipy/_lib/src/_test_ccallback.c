@@ -106,7 +106,7 @@ static double test_thunk_simple(double a, int *error_flag, void *data)
         PyGILState_Release(state);
     }
     else {
-        if (callback->signature_index == 0) {
+        if (callback->signature->value == 0) {
             result = ((double(*)(double, int *, void *))callback->c_function)(
                 a, &error, callback->user_data);
         }
@@ -151,9 +151,11 @@ static double test_thunk_nonlocal(double a)
  * Caller entry point functions
  */
 
-static char *signatures[] = {"double (double, int *, void *)",
-                             "double (double, double, int *, void *)",
-                             NULL};
+static ccallback_signature_t signatures[] = {
+    {"double (double, int *, void *)", 0},
+    {"double (double, double, int *, void *)", 1},
+    {NULL}
+};
 
 static PyObject *test_call_simple(PyObject *obj, PyObject *args)
 {

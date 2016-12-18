@@ -76,26 +76,41 @@ void DQAWCE();
 
 
 
-static char *quadpack_call_signatures[] = {
-    "double (double, void *)",
-    "double (int, double *, void *)",
-    "double (double)",
-    "double (int, double *)",
-    NULL
-};
-
-static char *quadpack_call_legacy_signatures[] = {
-    "double (double)",
-    "double (int, double)", /* sic -- for backward compat only */
-    NULL
-};
-
 typedef enum {
     CB_1D_USER = 0,
     CB_ND_USER = 1,
     CB_1D = 2,
     CB_ND = 3
 } quadpack_signature_t;
+
+
+static ccallback_signature_t quadpack_call_signatures[] = {
+    {"double (double, void *)", CB_1D_USER},
+    {"double (int, double *, void *)", CB_ND_USER},
+    {"double (double)", CB_1D},
+    {"double (int, double *)", CB_ND},
+#if NPY_SIZEOF_SHORT == NPY_SIZEOF_INT
+    {"double (short, double *)", CB_ND},
+    {"double (short, double *, void *)", CB_ND_USER},
+#endif
+#if NPY_SIZEOF_LONG == NPY_SIZEOF_INT
+    {"double (long, double *)", CB_ND},
+    {"double (long, double *, void *)", CB_ND_USER},
+#endif
+    {NULL}
+};
+
+static ccallback_signature_t quadpack_call_legacy_signatures[] = {
+    {"double (double)", CB_1D},
+    {"double (int, double)", CB_ND}, /* sic -- for backward compat only */
+#if NPY_SIZEOF_SHORT == NPY_SIZEOF_INT
+    {"double (short, double)", CB_ND}, /* sic -- for backward compat only */
+#endif
+#if NPY_SIZEOF_LONG == NPY_SIZEOF_INT
+    {"double (long, double)", CB_ND}, /* sic -- for backward compat only */
+#endif
+    {NULL}
+};
 
 
 static int
@@ -147,7 +162,7 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
     int ndim;
     int flags = CCALLBACK_OBTAIN;
     int legacy = 0;
-    char **signatures = quadpack_call_signatures;
+    ccallback_signature_t *signatures = quadpack_call_signatures;
 
     if (cfuncptr_type == NULL) {
         PyObject *module;
@@ -176,20 +191,11 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
         return -1;
     }
 
-    if (legacy) {
-        if (callback->signature_index == 0) {
-            callback->signature_index = CB_1D;
-        }
-        else {
-            callback->signature_index = CB_ND;
-        }
-    }
-
-    if (callback->signature_index == -1) {
+    if (callback->signature == NULL) {
         /* pure-Python */
         callback->info_p = (void *)extra_arguments;
     }
-    else if (callback->signature_index == CB_1D || callback->signature_index == CB_1D_USER) {
+    else if (callback->signature->value == CB_1D || callback->signature->value == CB_1D_USER) {
         /* extra_arguments is just ignored */
         callback->info_p = NULL;
     }
@@ -215,7 +221,8 @@ init_callback(ccallback_t *callback, PyObject *func, PyObject *extra_arguments)
 static int
 free_callback(ccallback_t *callback)
 {
-    if (callback->signature_index == CB_ND || callback->signature_index == CB_ND_USER) {
+    if (callback->signature && (callback->signature->value == CB_ND ||
+                                callback->signature->value == CB_ND_USER)) {
         free(callback->info_p);
         callback->info_p = NULL;
     }
@@ -265,7 +272,7 @@ double quad_thunk(double *x)
         }
     }
     else {
-        switch (callback->signature_index) {
+        switch (callback->signature->value) {
         case CB_1D_USER:
             result = ((double(*)(double, void *))callback->c_function)(*x, callback->user_data);
             break;

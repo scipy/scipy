@@ -6,7 +6,8 @@ from cpython.long cimport PyLong_AsVoidPtr
 from libc.stdlib cimport malloc, free
 from libc.string cimport strdup
 
-from .ccallback cimport ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS
+from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS,
+                         ccallback_signature_t)
 
 
 #
@@ -110,9 +111,13 @@ DEF ERROR_VALUE = 2
 from libc.math cimport sin
 
 
-cdef char **signatures = ["double (double, int *, void *)",
-                          "double (double, double, int *, void *)",
-                          NULL]
+cdef ccallback_signature_t signatures[3]
+
+signatures[0].signature = "double (double, int *, void *)"
+signatures[0].value = 0
+signatures[1].signature = "double (double, double, int *, void *)"
+signatures[1].value = 1
+signatures[2].signature = NULL
 
 
 cdef double test_thunk_cython(double a, int *error_flag, void *data) nogil except? -1.0:
@@ -124,7 +129,7 @@ cdef double test_thunk_cython(double a, int *error_flag, void *data) nogil excep
         double result = 0
 
     if callback.c_function != NULL:
-        if callback.signature_index == 0:
+        if callback.signature.value == 0:
             result = (<double(*)(double, int *, void *) nogil>callback.c_function)(
                 a, error_flag, callback.user_data)
         else:
