@@ -6,6 +6,11 @@
 # generate_ufuncs.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
+#
+# Note : After editing this file and commiting changes, please run
+# generate_funcs.py and commit the changes as a separate commit with a comment
+# such as : GEN: special: run generate_ufuncs.py
+
 
 from __future__ import division, print_function, absolute_import
 
@@ -3568,10 +3573,13 @@ add_newdoc("scipy.special", "j0",
     two rational functions of degree 6/6 and 7/7.
 
     This function is a wrapper for the Cephes [1]_ routine `j0`.
+    It should not to be confused with the spherical Bessel functions (see
+    `spherical_jn`).
 
     See also
     --------
     jv : Bessel function of real order and complex argument.
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
@@ -3603,10 +3611,13 @@ add_newdoc("scipy.special", "j1",
     functions of degree 5/5.
 
     This function is a wrapper for the Cephes [1]_ routine `j1`.
+    It should not to be confused with the spherical Bessel functions (see
+    `spherical_jn`).
 
     See also
     --------
     jv
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
@@ -3624,10 +3635,12 @@ add_newdoc("scipy.special", "jn",
     Notes
     -----
     `jn` is an alias of `jv`.
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
 
     See also
     --------
     jv
+    spherical_jn : spherical Bessel functions.
 
     """)
 
@@ -3669,9 +3682,12 @@ add_newdoc("scipy.special", "jv",
     term is exactly zero for integer `v`; to improve accuracy the second
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
+
     See also
     --------
     jve : :math:`J_v` with leading exponential behavior stripped off.
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
