@@ -1308,9 +1308,12 @@ class TestMode(TestCase):
 
     def test_mode_result_attributes(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
+        data2 = []
         actual = stats.mode(data1)
         attributes = ('mode', 'count')
         check_named_results(actual, attributes)
+        actual2 = stats.mode(data2)
+        check_named_results(actual2, attributes)
 
     def test_mode_nan(self):
         data1 = [3, np.nan, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
