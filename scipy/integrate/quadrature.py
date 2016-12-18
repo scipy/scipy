@@ -215,7 +215,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     x : array_like, optional
         The coordinate to integrate along.  If None (default), use spacing `dx`
         between consecutive elements in `y`.
-    dx : int, optional
+    dx : float, optional
         Spacing between elements of `y`.  Only used if `x` is None.
     axis : int, optional
         Specifies the axis to cumulate.  Default is -1 (last axis).
