@@ -174,7 +174,7 @@ class GenSARunner(object):
         # It it is the first part of the markov chain
         # Changing all components at the same time
         if step < self._x.size:
-            visits = [self._visita() for _ in range(self._x.size)]
+            visits = np.array([self._visita() for _ in range(self._x.size)])
             visits[visits > 1.e8] = 1.e8 * self._random_state.random_sample()
             visits[visits < -1e8] = -1.e8 * self._random_state.random_sample()
             self._x = visits + self._xbackup
