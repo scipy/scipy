@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
 import sys
@@ -192,9 +193,10 @@ class TestConvolve(_TestConvolve):
 
         # This is really a test that convolving two large integers goes to the
         # direct method even if they're in the fft method.
-        for n in [10, 20, 50, 51, 52, 53, 54, 60, 63]:
-            fft = convolve([2**n], [2**n], method='fft')
-            direct = convolve([2**n], [2**n], method='direct')
+        for n in [10, 20, 50, 51, 52, 53, 54, 60, 62]:
+            z = np.array([2**n], dtype=np.int64)
+            fft = convolve(z, z, method='fft')
+            direct = convolve(z, z, method='direct')
 
             # this is the case when integer precision gets to us
             # issue #6076 has more detail, hopefully more tests after resolved
@@ -534,6 +536,11 @@ class TestResample(TestCase):
         assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
 
+        # test for issue #6505 - should not modify window.shape when axis ≠ 0
+        sig2 = np.tile(np.arange(160), (2,1))
+        signal.resample(sig2, num, axis=-1, window=win)
+        assert_(win.shape == (160,))
+
     def test_fft(self):
         # Test FFT-based resampling
         self._test_data(method='fft')
@@ -646,6 +653,22 @@ class TestCSpline1DEval(TestCase):
         # make sure interpolated values are on knot points
         assert_array_almost_equal(y2[::10], y, decimal=5)
 
+    def test_complex(self):
+        #  create some smoothly varying complex signal to interpolate
+        x = np.arange(2)
+        y = np.zeros(x.shape, dtype=np.complex64)
+        T = 10.0
+        f = 1.0 / T
+        y = np.exp(2.0J * np.pi * f * x)
+
+        # get the cspline transform
+        cy = signal.cspline1d(y)
+
+        # determine new test x value and interpolate
+        xnew = np.array([0.5])
+        ynew = signal.cspline1d_eval(cy, xnew)
+
+        assert_equal(ynew.dtype, y.dtype)
 
 class TestOrderFilt(TestCase):
 
@@ -1553,7 +1576,7 @@ def test_choose_conv_method():
                 h = x.copy()
                 assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
-        x = np.array([2**51], dtype=int)
+        x = np.array([2**51], dtype=np.int64)
         h = x.copy()
         assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 

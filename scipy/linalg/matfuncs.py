@@ -379,7 +379,7 @@ def sinm(A):
     Returns
     -------
     sinm : (N, N) ndarray
-        Matrix cosine of `A`
+        Matrix sine of `A`
 
     Examples
     --------

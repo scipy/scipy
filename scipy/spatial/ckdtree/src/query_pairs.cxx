@@ -112,12 +112,12 @@ traverse_checking(const ckdtree *self,
             const npy_intp end2 = lnode2->end_idx;
             
             prefetch_datapoint(data+indices[start1]*m, m);
-            if (start1 < end1)
+            if (start1 < end1 - 1)
                prefetch_datapoint(data+indices[start1+1]*m, m);
             
             for(i = start1; i < end1; ++i) {
             
-                if (i < end1-2)
+                if (i < end1 - 2)
                      prefetch_datapoint(data+indices[i+2]*m, m);
                                
                 /* Special care here to avoid duplicate pairs */
@@ -126,13 +126,14 @@ traverse_checking(const ckdtree *self,
                 else
                     min_j = start2;
                                
-                prefetch_datapoint(data+indices[min_j]*m, m);
                 if (min_j < end2)
+                    prefetch_datapoint(data+indices[min_j]*m, m);
+                if (min_j < end2 - 1)
                     prefetch_datapoint(data+indices[min_j+1]*m, m);
                             
                 for (j = min_j; j < end2; ++j) {
                                         
-                    if (j < end2-2)
+                    if (j < end2 - 2)
                         prefetch_datapoint(data+indices[j+2]*m, m);
                                         
                     d = MinMaxDist::distance_p(

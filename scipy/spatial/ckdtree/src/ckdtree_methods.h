@@ -232,6 +232,8 @@ CKDTREE_EXTERN PyObject*
 build_ckdtree(ckdtree *self, npy_intp start_idx, npy_intp end_idx,
               npy_float64 *maxes, npy_float64 *mins, int _median, int _compact);
 
+extern "C" PyObject*
+build_weights (ckdtree *self, npy_float64 *node_weights, npy_float64 *weights);
 
 /* Query methods in C++ for better speed and GIL release */
 
@@ -256,13 +258,26 @@ query_pairs(const ckdtree *self,
             std::vector<ordered_pair> *results);
             
 CKDTREE_EXTERN PyObject*
-count_neighbors(const ckdtree *self,
+count_neighbors_unweighted(const ckdtree *self,
                 const ckdtree *other,
                 npy_intp n_queries,
                 npy_float64 *real_r,
                 npy_intp *results,
-                npy_intp *idx, 
-                const npy_float64 p);
+                const npy_float64 p,
+                int cumulative);
+
+CKDTREE_EXTERN PyObject*
+count_neighbors_weighted(const ckdtree *self,
+                const ckdtree *other,
+                npy_float64 *self_weights, 
+                npy_float64 *other_weights, 
+                npy_float64 *self_node_weights, 
+                npy_float64 *other_node_weights, 
+                npy_intp n_queries,
+                npy_float64 *real_r,
+                npy_float64 *results,
+                const npy_float64 p,
+                int cumulative);
                                
 CKDTREE_EXTERN PyObject*
 query_ball_point(const ckdtree *self,

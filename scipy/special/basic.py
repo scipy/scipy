@@ -9,15 +9,16 @@ import warnings
 import numpy as np
 import math
 from scipy._lib.six import xrange
-from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
-                   where, mgrid, sin, place, issubdtype, extract,
-                   less, inexact, nan, zeros, atleast_1d, sinc)
+from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
+                   imag, sqrt, where, mgrid, sin, place, issubdtype,
+                   extract, less, inexact, nan, zeros, sinc)
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, _zeta, hankel1, hankel2, yv, kv, _gammaln,
                       ndtri, errprint, poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
+
 
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
@@ -1336,7 +1337,7 @@ def mathieu_odd_coef(m, q):
 
 
 def lpmn(m, n, z):
-    """Associated Legendre function of the first kind, Pmn(z).
+    """Sequence of associated Legendre functions of the first kind.
 
     Computes the associated Legendre function of the first kind of order m and
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
@@ -1413,7 +1414,7 @@ def lpmn(m, n, z):
 
 
 def clpmn(m, n, z, type=3):
-    """Associated Legendre function of the first kind, Pmn(z).
+    """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
@@ -1495,7 +1496,7 @@ def clpmn(m, n, z, type=3):
 
 
 def lqmn(m, n, z):
-    """Associated Legendre function of the second kind, Qmn(z).
+    """Sequence of associated Legendre functions of the second kind.
 
     Computes the associated Legendre function of the second kind of order m and
     degree n, ``Qmn(z)`` = :math:`Q_n^m(z)`, and its derivative, ``Qmn'(z)``.
@@ -1588,7 +1589,7 @@ def euler(n):
 
 
 def lpn(n, z):
-    """Legendre functions of the first kind, Pn(z).
+    """Legendre function of the first kind.
 
     Compute sequence of Legendre functions of the first kind (polynomials),
     Pn(z) and derivatives for all degrees from 0 to n (inclusive).
@@ -1618,7 +1619,7 @@ def lpn(n, z):
 
 
 def lqn(n, z):
-    """Legendre functions of the second kind, Qn(z).
+    """Legendre function of the second kind.
 
     Compute sequence of Legendre functions of the second kind, Qn(z) and
     derivatives for all degrees from 0 to n (inclusive).
@@ -2286,7 +2287,7 @@ def factorial(n, exact=False):
     With ``exact=False`` the factorial is approximated using the gamma
     function:
 
-    .. math:: n! = \Gamma(n+1)
+    .. math:: n! = \\Gamma(n+1)
 
     Examples
     --------
@@ -2468,3 +2469,4 @@ def zeta(x, q=None, out=None):
     if q is None:
         q = 1
     return _zeta(x, q, out)
+

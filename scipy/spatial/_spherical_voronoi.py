@@ -15,10 +15,7 @@ import numpy as np
 import numpy.matlib
 import scipy
 import itertools
-from scipy._lib._version import NumpyVersion
-
-# Whether Numpy has stacked matrix linear algebra
-HAS_NUMPY_VEC_DET = (NumpyVersion(np.__version__) >= '1.8.0')
+from . import _voronoi
 
 __all__ = ['SphericalVoronoi']
 
@@ -50,16 +47,10 @@ def calc_circumcenters(tetrahedrons):
     dy = np.delete(d, 2, axis=2)
     dz = np.delete(d, 3, axis=2)
 
-    if HAS_NUMPY_VEC_DET:
-        dx = np.linalg.det(dx)
-        dy = -np.linalg.det(dy)
-        dz = np.linalg.det(dz)
-        a = np.linalg.det(a)
-    else:
-        dx = np.array([np.linalg.det(m) for m in dx])
-        dy = -np.array([np.linalg.det(m) for m in dy])
-        dz = np.array([np.linalg.det(m) for m in dz])
-        a = np.array([np.linalg.det(m) for m in a])
+    dx = np.linalg.det(dx)
+    dy = -np.linalg.det(dy)
+    dz = np.linalg.det(dz)
+    a = np.linalg.det(a)
 
     nominator = np.vstack((dx, dy, dz))
     denominator = 2*a
@@ -304,23 +295,5 @@ class SphericalVoronoi:
          of its surrounding region.
         """
 
-        for n in range(0, len(self.regions)):
-            remaining = self.regions[n][:]
-            sorted_vertices = []
-            current_simplex = remaining[0]
-            current_vertex = [k for k in self._tri.simplices[current_simplex]
-                              if k != n][0]
-            remaining.remove(current_simplex)
-            sorted_vertices.append(current_simplex)
-            while remaining:
-                current_simplex = [
-                    s for s in remaining
-                    if current_vertex in self._tri.simplices[s]
-                    ][0]
-                current_vertex = [
-                    s for s in self._tri.simplices[current_simplex]
-                    if s != n and s != current_vertex
-                    ][0]
-                remaining.remove(current_simplex)
-                sorted_vertices.append(current_simplex)
-            self.regions[n] = sorted_vertices
+        _voronoi.sort_vertices_of_regions(self._tri.simplices,
+                                                   self.regions)

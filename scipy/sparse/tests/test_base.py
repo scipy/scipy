@@ -185,6 +185,42 @@ class BinopTester(object):
     def __rmatmul__(self, mat):
         return "matrix on the left"
 
+class BinopTester_with_shape(object):
+    # Custom type to test binary operations on sparse matrices
+    # with object which has shape attribute.
+    def __init__(self,shape):
+        self._shape = shape
+
+    def shape(self):
+        return self._shape
+
+    def ndim(self):
+        return len(self._shape)
+
+    def __add__(self, mat):
+        return "matrix on the right"
+
+    def __mul__(self, mat):
+        return "matrix on the right"
+
+    def __sub__(self, mat):
+        return "matrix on the right"
+
+    def __radd__(self, mat):
+        return "matrix on the left"
+
+    def __rmul__(self, mat):
+        return "matrix on the left"
+
+    def __rsub__(self, mat):
+        return "matrix on the left"
+
+    def __matmul__(self, mat):
+        return "matrix on the right"
+
+    def __rmatmul__(self, mat):
+        return "matrix on the left"
+
 
 #------------------------------------------------------------------------------
 # Generic tests
@@ -360,16 +396,15 @@ class _TestCommon:
             assert_array_equal((-1 < datsp).todense(), -1 < dat)
             assert_array_equal((-2 < datsp).todense(), -2 < dat)
 
-            if NumpyVersion(np.__version__) >= '1.8.0':
-                # data
-                dat = self.dat_dtypes[dtype]
-                datsp = self.datsp_dtypes[dtype]
-                dat2 = dat.copy()
-                dat2[:,0] = 0
-                datsp2 = self.spmatrix(dat2)
+            # data
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
 
-                # dense rhs
-                assert_array_equal(dat < datsp2, datsp < dat2)
+            # dense rhs
+            assert_array_equal(dat < datsp2, datsp < dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -426,16 +461,15 @@ class _TestCommon:
             assert_array_equal((-1 > datsp).todense(), -1 > dat)
             assert_array_equal((-2 > datsp).todense(), -2 > dat)
 
-            if NumpyVersion(np.__version__) >= '1.8.0':
-                # data
-                dat = self.dat_dtypes[dtype]
-                datsp = self.datsp_dtypes[dtype]
-                dat2 = dat.copy()
-                dat2[:,0] = 0
-                datsp2 = self.spmatrix(dat2)
+            # data
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
 
-                # dense rhs
-                assert_array_equal(dat > datsp2, datsp > dat2)
+            # dense rhs
+            assert_array_equal(dat > datsp2, datsp > dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -487,16 +521,15 @@ class _TestCommon:
             assert_array_equal((-1 <= datsp).todense(), -1 <= dat)
             assert_array_equal((-2 <= datsp).todense(), -2 <= dat)
 
-            if NumpyVersion(np.__version__) >= '1.8.0':
-                # data
-                dat = self.dat_dtypes[dtype]
-                datsp = self.datsp_dtypes[dtype]
-                dat2 = dat.copy()
-                dat2[:,0] = 0
-                datsp2 = self.spmatrix(dat2)
+            # data
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
 
-                # dense rhs
-                assert_array_equal(dat <= datsp2, datsp <= dat2)
+            # dense rhs
+            assert_array_equal(dat <= datsp2, datsp <= dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -549,16 +582,15 @@ class _TestCommon:
             assert_array_equal((-1 >= datsp).todense(), -1 >= dat)
             assert_array_equal((-2 >= datsp).todense(), -2 >= dat)
 
-            if NumpyVersion(np.__version__) >= '1.8.0':
-                # dense data
-                dat = self.dat_dtypes[dtype]
-                datsp = self.datsp_dtypes[dtype]
-                dat2 = dat.copy()
-                dat2[:,0] = 0
-                datsp2 = self.spmatrix(dat2)
+            # dense data
+            dat = self.dat_dtypes[dtype]
+            datsp = self.datsp_dtypes[dtype]
+            dat2 = dat.copy()
+            dat2[:,0] = 0
+            datsp2 = self.spmatrix(dat2)
 
-                # dense rhs
-                assert_array_equal(dat >= datsp2, datsp >= dat2)
+            # dense rhs
+            assert_array_equal(dat >= datsp2, datsp >= dat2)
 
         msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
         fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
@@ -1386,6 +1418,20 @@ class _TestCommon:
         # so overloading Custom + matrix etc. didn't work.
         A = self.spmatrix([[1], [2], [3]])
         B = BinopTester()
+        assert_equal(A + B, "matrix on the left")
+        assert_equal(A - B, "matrix on the left")
+        assert_equal(A * B, "matrix on the left")
+        assert_equal(B + A, "matrix on the right")
+        assert_equal(B - A, "matrix on the right")
+        assert_equal(B * A, "matrix on the right")
+
+        if TEST_MATMUL:
+            assert_equal(eval('A @ B'), "matrix on the left")
+            assert_equal(eval('B @ A'), "matrix on the right")
+
+    def test_binop_custom_type_with_shape(self):
+        A = self.spmatrix([[1], [2], [3]])
+        B = BinopTester_with_shape((3,1))
         assert_equal(A + B, "matrix on the left")
         assert_equal(A - B, "matrix on the left")
         assert_equal(A * B, "matrix on the left")

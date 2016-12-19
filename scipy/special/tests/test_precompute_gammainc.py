@@ -18,10 +18,7 @@ except ImportError:
 try:
     import mpmath as mp
 except ImportError:
-    try:
-        from sympy import mpmath as mp
-    except ImportError:
-        mp = MissingModule('mpmath')
+    mp = MissingModule('mpmath')
 
 
 @check_version(mp, '0.19')
@@ -35,6 +32,7 @@ def test_g():
 
 
 @dec.slow
+@check_version(mp, '0.19')
 @check_version(sympy, '0.7')
 def test_alpha():
     # Test data for the alpha_k. See DLMF 8.12.14.
@@ -46,6 +44,7 @@ def test_alpha():
 
 
 @xslow
+@check_version(mp, '0.19')
 @check_version(sympy, '0.7')
 def test_d():
     # Compare the d_{k, n} to the results in appendix F of [1].

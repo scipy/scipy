@@ -25,6 +25,7 @@ Delaunay Triangulation, Convex Hulls and Voronoi Diagrams
    ConvexHull  -- compute a convex hull for input points
    Voronoi     -- compute a Voronoi diagram hull from input points
    SphericalVoronoi -- compute a Voronoi diagram from input points on the surface of a sphere
+   HalfspaceIntersection -- compute the intersection points of input halfspaces
 
 Plotting Helpers
 ================
@@ -102,4 +103,3 @@ __all__ += ['distance']
 from . import distance
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

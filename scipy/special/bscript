@@ -23,6 +23,16 @@ def pre_build(context):
                                 "sc_specfun NPYMATH CLIB LAPACK",
                             includes=["c_misc"])
 
+    context.tweak_extension("cython_special",
+                            use="sc_amos sc_c_misc sc_cephes sc_mach sc_cdf "\
+                                "sc_specfun NPYMATH CLIB LAPACK",
+                            includes=["c_misc", "."],
+                            defines=['CYTHON_SPECIAL=1'])
+
     context.tweak_extension("_ellip_harm_2",
                             use="sc_amos sc_c_misc sc_cephes sc_mach sc_cdf "\
                                 "sc_specfun NPYMATH CLIB LAPACK")
+
+    context.tweak_extension("_test_round",
+                            use="NPYMATH",
+                            includes=["_round.h", "c_misc/double2.h"])

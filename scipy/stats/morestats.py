@@ -1,7 +1,3 @@
-# Author:  Travis Oliphant, 2002
-#
-# Further updates and enhancements by many SciPy developers.
-#
 from __future__ import division, print_function, absolute_import
 
 import math
@@ -1237,7 +1233,7 @@ def boxcox_normplot(x, la, lb, plot=None, N=80):
 
     if plot is not None:
         plot.plot(lmbdas, ppcc, 'x')
-        _add_axis_labels_title(plot, xlabel='$\lambda$',
+        _add_axis_labels_title(plot, xlabel='$\\lambda$',
                                ylabel='Prob Plot Corr. Coef.',
                                title='Box-Cox Normality Plot')
 
@@ -2731,11 +2727,14 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).sum(axis=axis)
     C = cos(ang).sum(axis=axis)
-    res = arctan2(S, C)*(high - low)/2.0/pi + low
-    mask = (S == .0) * (C == .0)
+    res = arctan2(S, C)
+    mask = res < 0
     if mask.ndim > 0:
-        res[mask] = np.nan
-    return res
+        res[mask] += 2*pi
+    elif mask:
+        res += 2*pi
+    return res*(high - low)/2.0/pi + low
+
 
 def circvar(samples, high=2*pi, low=0, axis=None):
     """
@@ -2806,33 +2805,3 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     R = hypot(S, C)
     return ((high - low)/2.0/pi) * sqrt(-2*log(R))
 
-
-# Tests to include (from R) -- some of these already in stats.
-########
-# X Ansari-Bradley
-# X Bartlett (and Levene)
-# X Binomial
-# Y Pearson's Chi-squared (stats.chisquare)
-# Y Association Between Paired samples (stats.pearsonr, stats.spearmanr)
-#                       stats.kendalltau) -- these need work though
-# Fisher's exact test
-# X Fligner-Killeen Test
-# Y Friedman Rank Sum (stats.friedmanchisquare?)
-# Y Kruskal-Wallis
-# Y Kolmogorov-Smirnov
-# Cochran-Mantel-Haenszel Chi-Squared for Count
-# McNemar's Chi-squared for Count
-# X Mood Two-Sample
-# X Test For Equal Means in One-Way Layout (see stats.ttest also)
-# Pairwise Comparisons of proportions
-# Pairwise t tests
-# Tabulate p values for pairwise comparisons
-# Pairwise Wilcoxon rank sum tests
-# Power calculations two sample test of prop.
-# Power calculations for one and two sample t tests
-# Equal or Given Proportions
-# Trend in Proportions
-# Quade Test
-# Y Student's T Test
-# Y F Test to compare two variances
-# XY Wilcoxon Rank Sum and Signed Rank Tests

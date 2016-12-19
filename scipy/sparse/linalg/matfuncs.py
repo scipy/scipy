@@ -16,7 +16,7 @@ import math
 
 import numpy as np
 
-import scipy.misc
+import scipy.special
 from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
@@ -813,7 +813,7 @@ def _ell(A, m):
 
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
-    choose_2p_p = scipy.misc.comb(2*p, p, exact=True)
+    choose_2p_p = scipy.special.comb(2*p, p, exact=True)
     abs_c_recip = float(choose_2p_p * math.factorial(2*p + 1))
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.

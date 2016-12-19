@@ -1,10 +1,7 @@
 #! /usr/bin/env python
 
-# David Cournapeau
-# Last Change: Wed Nov 05 07:00 PM 2008 J
 from __future__ import division, print_function, absolute_import
 
-import os.path
 import warnings
 import sys
 
@@ -208,13 +205,14 @@ class TestKMean(TestCase):
         kmeans(data, 2)
 
     def test_kmeans_simple(self):
+        np.random.seed(54321)
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         for tp in np.array, np.matrix:
             code1 = kmeans(tp(X), tp(initc), iter=1)[0]
             assert_array_almost_equal(code1, CODET2)
 
     def test_kmeans_lost_cluster(self):
-        # This will cause kmean to have a cluster with no points.
+        # This will cause kmeans to have a cluster with no points.
         data = TESTDATA_2D
         initk = np.array([[-1.8127404, -0.67128041],
                          [2.04621601, 0.07401111],
@@ -228,6 +226,7 @@ class TestKMean(TestCase):
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
 
     def test_kmeans2_simple(self):
+        np.random.seed(12345678)
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         for tp in np.array, np.matrix:
             code1 = kmeans2(tp(X), tp(initc), iter=1)[0]
@@ -291,6 +290,25 @@ class TestKMean(TestCase):
         assert_raises(ValueError, kmeans, X, 0)
         assert_raises(ValueError, kmeans2, X, 0)
         assert_raises(ValueError, kmeans2, X, np.array([]))
+
+    def test_kmeans_large_thres(self):
+        # Regression test for gh-1774
+        x = np.array([1,2,3,4,10], dtype=float)
+        res = kmeans(x, 1, thresh=1e16)
+        assert_allclose(res[0], np.array([4.]))
+        assert_allclose(res[1], 2.3999999999999999)
+
+    def test_kmeans_no_duplicates(self):
+        # Regression test for gh-4044
+        np.random.seed(23495)
+        features = np.linspace(1, 2, num=20).reshape(10, 2)
+        # randint(0, 10, 3) will give a duplicate with this seed ([7, 7, 5])
+        codebook, distortion = kmeans(features, k_or_guess=3)
+        expected = np.array([[1.15789474, 1.21052632],
+                             [1.52631579, 1.57894737],
+                             [1.84210526, 1.89473684]])
+        assert_allclose(codebook, expected)
+        assert_allclose(distortion, 0.11909166841036592)
 
 
 if __name__ == "__main__":

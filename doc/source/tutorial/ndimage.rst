@@ -452,7 +452,7 @@ functions, along with such details as the implementation of the
 boundary conditions. Only a callable object implementing a callback
 function that does the actual filtering work must be provided. The
 callback function can also be written in C and passed using a
-:ctype:`PyCapsule` (see :ref:`ndimage-ccallbacks` for more
+:c:type:`PyCapsule` (see :ref:`ndimage-ccallbacks` for more
 information).
 
 - The :func:`generic_filter1d` function implements a generic
@@ -461,7 +461,7 @@ information).
   object). The :func:`generic_filter1d` function iterates over the
   lines of an array and calls :func:`function` at each line. The
   arguments that are passed to :func:`function` are one-dimensional
-  arrays of the :ctype:`tFloat64` type. The first contains the values
+  arrays of the :c:type:`tFloat64` type. The first contains the values
   of the current line.  It is extended at the beginning end the end,
   according to the *filter_size* and *origin* arguments. The second
   array should be modified in-place to provide the output values of
@@ -524,7 +524,7 @@ information).
   python function (or other callable object). The
   :func:`generic_filter` function iterates over the array and calls
   :func:`function` at each element. The argument of :func:`function`
-  is a one-dimensional array of the :ctype:`tFloat64` type, that
+  is a one-dimensional array of the :c:type:`tFloat64` type, that
   contains the values around the current element that are within the
   footprint of the filter. The function should return a single value
   that can be converted to a double precision number. For example
@@ -834,7 +834,7 @@ is used.
   .. note::
      
      The mapping function can also be written in C and passed using a
-     :ctype:`PyCapsule`. See :ref:`ndimage-ccallbacks` for more
+     :c:type:`PyCapsule`. See :ref:`ndimage-ccallbacks` for more
      information.
 
 - The function :func:`map_coordinates` applies an arbitrary coordinate
@@ -1160,7 +1160,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type (both
-  :ctype:`Int32`). The basics of the algorithm used to implement this
+  :c:type:`Int32`). The basics of the algorithm used to implement this
   function is described in [2]_.
 
 - The function :func:`distance_transform_edt` calculates the exact
@@ -1182,7 +1182,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type
-  (:ctype:`Float64` and :ctype:`Int32`).The algorithm used to
+  (:c:type:`Float64` and :c:type:`Int32`).The algorithm used to
   implement this function is described in [3]_.
 
 - The function :func:`distance_transform_bf` uses a brute-force
@@ -1207,7 +1207,7 @@ Euclidean, City Block, and Chessboard distances.
 
   The *distances* and *indices* arguments can be used to give optional
   output arrays that must be of the correct size and type
-  (:ctype:`Float64` and :ctype:`Int32`).
+  (:c:type:`Float64` and :c:type:`Int32`).
 
   .. note::
 
@@ -1413,7 +1413,7 @@ for the objects:
   .. note::
 
      The implementation of :func:`watershed_ift` limits the data types
-     of the input to :ctype:`UInt8` and :ctype:`UInt16`.
+     of the input to :c:type:`UInt8` and :c:type:`UInt16`.
 
 .. _ndimage-object-measurements:
 
@@ -1597,7 +1597,7 @@ lists, if *index* is a sequence.
   ``None``, all elements of *input* are used in the calculation.
   Histograms are defined by their minimum (*min*), maximum (*max*) and
   the number of bins (*bins*). They are returned as one-dimensional
-  arrays of type :ctype:`Int32`.
+  arrays of type :c:type:`Int32`.
 
 .. _ndimage-ccallbacks:
 
@@ -1605,12 +1605,12 @@ Extending :mod:`scipy.ndimage` in C
 -----------------------------------
 
 A few functions in :mod:`scipy.ndimage` take a callback argument. This
-can be either a python function or a :ctype:`PyCapsule` containing a
+can be either a python function or a :c:type:`PyCapsule` containing a
 pointer to a C function. Using a C function will generally be more
 efficient since it avoids the overhead of calling a python function on
 many elements of an array. To use a C function you must write a C
 extension that contains the callback function and a Python function
-that returns a :ctype:`PyCapsule` containing a pointer to the
+that returns a :c:type:`PyCapsule` containing a pointer to the
 callback.
 
 An example of a function that supports callbacks is
@@ -1764,9 +1764,9 @@ C callback function returns an integer status which is one upon
 success and zero otherwise.
 
 The function ``py_transform`` wraps the callback function in a
-:ctype:`PyCapsule`. The main steps are:
+:c:type:`PyCapsule`. The main steps are:
 
-- Initialize a :ctype:`PyCapsule`. The first argument is a pointer to
+- Initialize a :c:type:`PyCapsule`. The first argument is a pointer to
   the callback function and the third argument is a destructor
   function which knows how to clean up memory associated with the
   capsule's context pointer (see next step). The second argument is
@@ -1830,7 +1830,7 @@ Functions that support C callback functions
 
 The :mod:`ndimage` functions that support C callback functions are
 described here along with prototypes of the callback functions they
-expect. All callback functions must be wrapped in a :ctype:`PyCapsule`
+expect. All callback functions must be wrapped in a :c:type:`PyCapsule`
 and accept a ``callback_data`` parameter which is set using
 :c:func:`PyCapsule_SetContext`. The capsule's destructor must know how
 to free memory associated with its context pointer. The callback

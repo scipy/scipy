@@ -9,7 +9,7 @@ import sys
 import timeit
 
 from . import sigtools, dlti
-from ._upfirdn import upfirdn, _UpFIRDn, _output_len
+from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
@@ -2211,6 +2211,7 @@ def resample(x, num, t=None, axis=0, window=None):
         newshape[axis] = len(W)
         W.shape = newshape
         X = X * W
+        W.shape = (Nx,)
     sl = [slice(None)] * x.ndim
     newshape = list(x.shape)
     newshape[axis] = num
@@ -2355,15 +2356,13 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
     h = np.concatenate((np.zeros(n_pre_pad), h, np.zeros(n_post_pad)))
-    ufd = _UpFIRDn(h, x.dtype, up, down)
     n_pre_remove_end = n_pre_remove + n_out
 
-    def apply_remove(x):
-        """Apply the upfirdn filter and remove excess"""
-        return ufd.apply_filter(x)[n_pre_remove:n_pre_remove_end]
-
-    y = np.apply_along_axis(apply_remove, axis, x)
-    return y
+    # filter then remove excess
+    y = upfirdn(h, x, up, down, axis=axis)
+    keep = [slice(None), ]*x.ndim
+    keep[axis] = slice(n_pre_remove, n_pre_remove_end)
+    return y[keep]
 
 
 def vectorstrength(events, period):
@@ -2404,14 +2403,14 @@ def vectorstrength(events, period):
     van Hemmen, JL, Longtin, A, and Vollmayr, AN. Testing resonating vector
         strength: Auditory system, electric fish, and noise.
         Chaos 21, 047508 (2011);
-        doi: 10.1063/1.3670512
+        :doi:`10.1063/1.3670512`.
     van Hemmen, JL.  Vector strength after Goldberg, Brown, and von Mises:
         biological and mathematical perspectives.  Biol Cybern.
-        2013 Aug;107(4):385-96. doi: 10.1007/s00422-013-0561-7.
+        2013 Aug;107(4):385-96. :doi:`10.1007/s00422-013-0561-7`.
     van Hemmen, JL and Vollmayr, AN.  Resonating vector strength: what happens
         when we vary the "probing" frequency while keeping the spike times
         fixed.  Biol Cybern. 2013 Aug;107(4):491-94.
-        doi: 10.1007/s00422-013-0560-8
+        :doi:`10.1007/s00422-013-0560-8`.
     '''
     events = asarray(events)
     period = asarray(period)

@@ -25,10 +25,7 @@ from scipy.special._ufuncs import (
 try:
     import mpmath
 except ImportError:
-    try:
-        import sympy.mpmath as mpmath
-    except ImportError:
-        mpmath = MissingModule('mpmath')
+    mpmath = MissingModule('mpmath')
 
 
 # ------------------------------------------------------------------------------
@@ -45,6 +42,23 @@ def test_expi_complex():
     dataset = np.array(dataset, dtype=np.complex_)
 
     FuncData(sc.expi, dataset, 0, 1).check()
+
+
+# ------------------------------------------------------------------------------
+# expn
+# ------------------------------------------------------------------------------
+
+@check_version(mpmath, '0.19')
+def test_expn_large_n():
+    # Test the transition to the asymptotic regime of n.
+    dataset = []
+    for n in [50, 51]:
+        for x in np.logspace(0, 4, 200):
+            with mpmath.workdps(100):
+                dataset.append((n, x, float(mpmath.expint(n, x))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.expn, dataset, (0, 1), 2, rtol=1e-13).check()
 
 # ------------------------------------------------------------------------------
 # hyp0f1
@@ -326,38 +340,44 @@ def test_beta():
 # loggamma
 # ------------------------------------------------------------------------------
 
+LOGGAMMA_TAYLOR_RADIUS = 0.2
+
+
 @check_version(mpmath, '0.19')
-def test_loggamma_taylor1():
+def test_loggamma_taylor_transition():
     # Make sure there isn't a big jump in accuracy when we move from
     # using the Taylor series to using the recurrence relation.
 
-    pts = [-0.5, 0.5j, -0.5j, 0.5, 1 + 0.5j, 1 - 0.5j, 1.5, 2 - 0.5j,
-           2 + 0.5j, 2.5]
+    r = LOGGAMMA_TAYLOR_RADIUS + np.array([-0.1, -0.01, 0, 0.01, 0.1])
+    theta = np.linspace(0, 2*np.pi, 20)
+    r, theta = np.meshgrid(r, theta)
+    dz = r*np.exp(1j*theta)
+    z = np.r_[1 + dz, 2 + dz].flatten()
+
     dataset = []
-    for p in pts:
-        for eps in [1e-6, -1e-6, 1e-6j, -1e-6j]:
-            q = p + eps
-            dataset.append((q, complex(mpmath.loggamma(q))))
-        
+    for z0 in z:
+        dataset.append((z0, complex(mpmath.loggamma(z0))))    
     dataset = np.array(dataset)
-    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
 
 
 @check_version(mpmath, '0.19')
-def test_loggamma_taylor2():
+def test_loggamma_taylor():
     # Test around the zeros at z = 1, 2.
 
-    dx = np.r_[-np.logspace(-1, -16, 10), np.logspace(-16, -1, 10)]
-    dy = dx.copy()
-    dx, dy = np.meshgrid(dx, dy)
-    dz = dx + 1j*dy
+    r = np.logspace(-16, np.log10(LOGGAMMA_TAYLOR_RADIUS), 10)
+    theta = np.linspace(0, 2*np.pi, 20)
+    r, theta = np.meshgrid(r, theta)
+    dz = r*np.exp(1j*theta)
     z = np.r_[1 + dz, 2 + dz].flatten()
+
     dataset = []
     for z0 in z:
         dataset.append((z0, complex(mpmath.loggamma(z0))))
-
     dataset = np.array(dataset)
-    FuncData(sc.loggamma, dataset, 0, 1, rtol=1e-13).check()
+    
+    FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
 
 
 # ------------------------------------------------------------------------------
@@ -566,6 +586,77 @@ def test_dn_quarter_period():
     dataset = np.asarray(dataset)
 
     FuncData(dn, dataset, (0, 1), 2, rtol=1e-10).check()
+
+
+# ------------------------------------------------------------------------------
+# Wright Omega
+# ------------------------------------------------------------------------------
+
+def _mpmath_wrightomega(z, dps):
+    with mpmath.workdps(dps):
+        z = mpmath.mpc(z)
+        unwind = mpmath.ceil((z.imag - mpmath.pi)/(2*mpmath.pi))
+        res = mpmath.lambertw(mpmath.exp(z), unwind)
+    return res
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_branch():
+    x = -np.logspace(10, 0, 25)
+    picut_above = [np.nextafter(np.pi, np.inf)]
+    picut_below = [np.nextafter(np.pi, -np.inf)]
+    npicut_above = [np.nextafter(-np.pi, np.inf)]
+    npicut_below = [np.nextafter(-np.pi, -np.inf)]
+    for i in range(50):
+        picut_above.append(np.nextafter(picut_above[-1], np.inf))
+        picut_below.append(np.nextafter(picut_below[-1], -np.inf))
+        npicut_above.append(np.nextafter(npicut_above[-1], np.inf))
+        npicut_below.append(np.nextafter(npicut_below[-1], -np.inf))
+    y = np.hstack((picut_above, picut_below, npicut_above, npicut_below))
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-8).check()
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_region1():
+    # This region gets less coverage in the TestSystematic test
+    x = np.linspace(-2, 1)
+    y = np.linspace(1, 2*np.pi)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
+
+
+@dec.slow
+@check_version(mpmath, '0.19')
+def test_wrightomega_region2():
+    # This region gets less coverage in the TestSystematic test
+    x = np.linspace(-2, 1)
+    y = np.linspace(-2*np.pi, -1)
+    x, y = np.meshgrid(x, y)
+    z = (x + 1j*y).flatten()
+
+    dataset = []
+    for z0 in z:
+        dataset.append((z0, complex(_mpmath_wrightomega(z0, 25))))
+    dataset = np.asarray(dataset)
+
+    FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
     
 
 # ------------------------------------------------------------------------------
@@ -882,12 +973,14 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         # an rdiff of ~6e-16. Neither the Taylor series nor the system
         # cosine are accurate enough here.
         eps = np.finfo(float).eps
-        assert_mpmath_equal(_cospi, mpmath.cospi,
-                            [Arg()], rtol=4*eps)
+        assert_mpmath_equal(_cospi,
+                            mpmath.cospi,
+                            [Arg()], nan_ok=False, rtol=4*eps)
 
     def test_cospi_complex(self):
-        assert_mpmath_equal(_cospi, mpmath.cospi,
-                            [ComplexArg()], rtol=1e-13)
+        assert_mpmath_equal(_cospi,
+                            mpmath.cospi,
+                            [ComplexArg()], nan_ok=False, rtol=1e-13)
 
     def test_digamma(self):
         assert_mpmath_equal(sc.digamma,
@@ -1103,11 +1196,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             mpmath.eulernum,
                             [IntArg(1, 10000)], n=10000)
 
-    @knownfailure_overridable("Bad values for n > 25 and x > 70.")
     def test_expint(self):
         assert_mpmath_equal(sc.expn,
                             mpmath.expint,
-                            [IntArg(0, 100), Arg(0, np.inf)])
+                            [IntArg(0, 200), Arg(0, np.inf)],
+                            rtol=1e-13, dps=160)
         
     def test_fresnels(self):
         def fresnels(x):
@@ -1131,7 +1224,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_gamma_complex(self):
         assert_mpmath_equal(sc.gamma,
                             exception_to_nan(mpmath.gamma),
-                            [ComplexArg()], rtol=1e-12)
+                            [ComplexArg()], rtol=5e-13)
 
     def test_gammainc(self):
         # Larger arguments are tested in test_data.py:test_local
@@ -1405,7 +1498,6 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         g = 6.024680040776729583740234375
         
         def gamma(x):
-            tmp = x + g - 0.5
             return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
         
         assert_mpmath_equal(gamma,
@@ -1574,15 +1666,17 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             param_filter=param_filter)
         
     def test_loggamma(self):
+        def mpmath_loggamma(z):
+            try:
+                res = mpmath.loggamma(z)
+            except ValueError:
+                res = complex(np.nan, np.nan)
+            return res
+        
         assert_mpmath_equal(sc.loggamma,
-                            exception_to_nan(lambda x: mpmath.loggamma(x, **HYPERKW)),
-                            [Arg()], rtol=1e-13)
-
-    def test_loggamma_complex(self):
-        assert_mpmath_equal(sc.loggamma,
-                            exception_to_nan(lambda z: mpmath.loggamma(z, **HYPERKW)),
-                            [ComplexArg()], nan_ok=False, distinguish_nan_and_inf=False,
-                            rtol=1e-13)
+                            mpmath_loggamma,
+                            [ComplexArg()], nan_ok=False,
+                            distinguish_nan_and_inf=False, rtol=5e-14)
 
     @knownfailure_overridable()
     def test_pcfd(self):
@@ -1629,7 +1723,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_rgamma_complex(self):
         assert_mpmath_equal(sc.rgamma,
                             exception_to_nan(mpmath.rgamma),
-                            [ComplexArg()], rtol=1e-12)
+                            [ComplexArg()], rtol=5e-13)
 
     def test_rf(self):
         def mppoch(a, m):
@@ -1649,11 +1743,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_sinpi(self):
         eps = np.finfo(float).eps
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [Arg()], rtol=2*eps)
+                            [Arg()], nan_ok=False, rtol=2*eps)
 
     def test_sinpi_complex(self):
         assert_mpmath_equal(_sinpi, mpmath.sinpi,
-                            [ComplexArg()], rtol=2e-14)
+                            [ComplexArg()], nan_ok=False, rtol=2e-14)
 
     def test_shi(self):
         def shi(x):
@@ -1736,6 +1830,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             [Arg(-1e4, 1e4), Arg(0, 1e4)],
                             rtol=5e-10,
                             ignore_inf_sign=True)
+
+    def test_wrightomega(self):
+        assert_mpmath_equal(sc.wrightomega,
+                            lambda z: _mpmath_wrightomega(z, 25),
+                            [ComplexArg()], rtol=1e-14, nan_ok=False)
 
     def test_zeta(self):
         assert_mpmath_equal(sc.zeta,

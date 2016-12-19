@@ -8,6 +8,7 @@ import operator
 
 import numpy as np
 from scipy._lib.six import zip as izip
+from scipy._lib._util import _prune_array
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
@@ -546,8 +547,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def maximum(self, other):
         return self._maximum_minimum(other, np.maximum, '_maximum_', lambda x: np.asarray(x) > 0)
 
+    maximum.__doc__ = spmatrix.maximum.__doc__
+
     def minimum(self, other):
         return self._maximum_minimum(other, np.minimum, '_minimum_', lambda x: np.asarray(x) < 0)
+
+    minimum.__doc__ = spmatrix.minimum.__doc__
 
     #####################
     # Reduce operations #
@@ -596,12 +601,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             Reduce result for nonzeros in each major_index
         """
         major_index = np.flatnonzero(np.diff(self.indptr))
-        if self.data.size == 0 and major_index.size == 0:
-            # Numpy < 1.8.0 don't handle empty arrays in reduceat
-            value = np.zeros_like(self.data)
-        else:
-            value = ufunc.reduceat(self.data,
-                                   downcast_intp_index(self.indptr[major_index]))
+        value = ufunc.reduceat(self.data,
+                               downcast_intp_index(self.indptr[major_index]))
         return major_index, value
 
     #######################
@@ -1030,8 +1031,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if len(self.data) < self.nnz:
             raise ValueError('data array has fewer than nnz elements')
 
-        self.data = self.data[:self.nnz]
-        self.indices = self.indices[:self.nnz]
+        self.indices = _prune_array(self.indices[:self.nnz])
+        self.data = _prune_array(self.data[:self.nnz])
 
     ###################
     # utility methods #
@@ -1079,15 +1080,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            other.data,
            indptr, indices, data)
 
-        actual_nnz = indptr[-1]
-        indices = indices[:actual_nnz]
-        data = data[:actual_nnz]
-        if actual_nnz < maxnnz // 2:
-            # too much waste, trim arrays
-            indices = indices.copy()
-            data = data.copy()
-
         A = self.__class__((data, indices, indptr), shape=self.shape)
+        A.prune()
 
         return A
 

@@ -23,7 +23,7 @@ def linear_sum_assignment(cost_matrix):
     assigned to column j. Then the optimal assignment has cost
 
     .. math::
-        \min \sum_i \sum_j C_{i,j} X_{i,j}
+        \\min \\sum_i \\sum_j C_{i,j} X_{i,j}
 
     s.t. each row is assignment to at most one column, and each column to at
     most one row.

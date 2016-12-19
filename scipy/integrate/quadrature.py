@@ -7,7 +7,7 @@ import warnings
 # trapz is a public function for scipy.integrate,
 # even though it's actually a numpy function.
 from numpy import trapz
-from scipy.special.orthogonal import p_roots
+from scipy.special import roots_legendre
 from scipy.special import gammaln
 from scipy._lib.six import xrange
 
@@ -19,16 +19,17 @@ class AccuracyWarning(Warning):
     pass
 
 
-def _cached_p_roots(n):
+def _cached_roots_legendre(n):
     """
-    Cache p_roots results to speed up calls of the fixed_quad function.
+    Cache roots_legendre results to speed up calls of the fixed_quad
+    function.
     """
-    if n in _cached_p_roots.cache:
-        return _cached_p_roots.cache[n]
+    if n in _cached_roots_legendre.cache:
+        return _cached_roots_legendre.cache[n]
 
-    _cached_p_roots.cache[n] = p_roots(n)
-    return _cached_p_roots.cache[n]
-_cached_p_roots.cache = dict()
+    _cached_roots_legendre.cache[n] = roots_legendre(n)
+    return _cached_roots_legendre.cache[n]
+_cached_roots_legendre.cache = dict()
 
 
 def fixed_quad(func, a, b, args=(), n=5):
@@ -73,7 +74,7 @@ def fixed_quad(func, a, b, args=(), n=5):
     odeint : ODE integrator
 
     """
-    x, w = _cached_p_roots(n)
+    x, w = _cached_roots_legendre(n)
     x = np.real(x)
     if np.isinf(a) or np.isinf(b):
         raise ValueError("Gaussian quadrature is only available for "
@@ -214,7 +215,7 @@ def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
     x : array_like, optional
         The coordinate to integrate along.  If None (default), use spacing `dx`
         between consecutive elements in `y`.
-    dx : int, optional
+    dx : float, optional
         Spacing between elements of `y`.  Only used if `x` is None.
     axis : int, optional
         Specifies the axis to cumulate.  Default is -1 (last axis).
@@ -346,7 +347,7 @@ def simps(y, x=None, dx=1, axis=-1, even='avg'):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : {'avg', 'first', 'str'}, optional
+    even : str {'avg', 'first', 'last'}, optional
         'avg' : Average two results:1) use the first N-2 intervals with
                   a trapezoidal rule on the last interval and 2) use the last
                   N-2 intervals with a trapezoidal rule on the first interval.

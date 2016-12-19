@@ -192,7 +192,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q, atol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -203,7 +202,6 @@ class TestPeriodogram(TestCase):
         assert_allclose(p, q)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
@@ -431,7 +429,6 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -444,7 +441,6 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j
@@ -474,6 +470,28 @@ class TestWelch(TestCase):
         feven, _ = welch(x, nperseg=6, nfft=nfft)
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
+
+    def test_window_correction(self):
+        A = 20
+        fs = 1e4
+        nperseg = fs//10
+        fsig = 300
+        ii = int(fsig*nperseg//fs)  # Freq index of fsig
+
+        tt = np.arange(fs)/fs
+        x = A*np.sin(2*np.pi*fsig*tt)
+
+        for window in ['hann', 'bartlett', ('tukey', 0.1), 'flattop']:
+            _, p_spec = welch(x, fs=fs, nperseg=nperseg, window=window,
+                              scaling='spectrum')
+            freq, p_dens = welch(x, fs=fs, nperseg=nperseg, window=window,
+                                 scaling='density')
+
+            # Check peak height at signal frequency for 'spectrum'
+            assert_allclose(p_spec[ii], A**2/2.0)
+            # Check integrated spectrum RMS for 'density'
+            assert_allclose(np.sqrt(np.trapz(p_dens, freq)), A*np.sqrt(2)/2,
+                            rtol=1e-3)
 
 class TestCSD:
     def test_pad_shorter_x(self):
@@ -736,7 +754,6 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_real_twosided_32(self):
         x = np.zeros(16, 'f')
         x[0] = 1
@@ -749,7 +766,6 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_complex_32(self):
         x = np.zeros(16, 'F')
         x[0] = 1.0 + 2.0j

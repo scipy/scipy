@@ -79,8 +79,12 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     if data.dtype == uint8:
         return data
 
+    if high > 255:
+        raise ValueError("`high` should be less than or equal to 255.")
+    if low < 0:
+        raise ValueError("`low` should be greater than or equal to 0.")
     if high < low:
-        raise ValueError("`high` should be larger than `low`.")
+        raise ValueError("`high` should be greater than or equal to `low`.")
 
     if cmin is None:
         cmin = data.min()
@@ -94,10 +98,8 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
         cscale = 1
 
     scale = float(high - low) / cscale
-    bytedata = (data * 1.0 - cmin) * scale + 0.4999
-    bytedata[bytedata > high] = high
-    bytedata[bytedata < 0] = 0
-    return cast[uint8](bytedata) + cast[uint8](low)
+    bytedata = (data - cmin) * scale + low
+    return (bytedata.clip(low, high) + 0.5).astype(uint8)
 
 
 def imread(name, flatten=False, mode=None):

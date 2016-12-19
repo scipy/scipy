@@ -4,7 +4,7 @@
 #
 from __future__ import division, print_function, absolute_import
 
-from scipy._lib.six import string_types, exec_
+from scipy._lib.six import string_types, exec_, PY3
 from scipy._lib._util import getargspec_no_self as _getargspec
 
 import sys
@@ -18,7 +18,7 @@ from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state, _lazywhere, _lazyselect
 from scipy._lib._util import _valarray as valarray
 
-from scipy.special import (comb, chndtr, entr, kl_div, xlogy, ive)
+from scipy.special import (comb, chndtr, entr, rel_entr, kl_div, xlogy, ive)
 
 # for root finding for discrete distribution ppf, and max likelihood estimation
 from scipy import optimize
@@ -39,12 +39,11 @@ import numpy as np
 
 from ._constants import _XMAX
 
-try:
-    from new import instancemethod
-except ImportError:
-    # Python 3
+if PY3:
     def instancemethod(func, obj, cls):
         return types.MethodType(func, obj)
+else:
+    instancemethod = types.MethodType
 
 
 # These are the docstring parts used for substitution in specific
@@ -67,11 +66,11 @@ _doc_logpdf = """\
     Log of the probability density function.
 """
 _doc_pmf = """\
-``pmf(x, %(shapes)s, loc=0, scale=1)``
+``pmf(k, %(shapes)s, loc=0, scale=1)``
     Probability mass function.
 """
 _doc_logpmf = """\
-``logpmf(x, %(shapes)s, loc=0, scale=1)``
+``logpmf(k, %(shapes)s, loc=0, scale=1)``
     Log of the probability mass function.
 """
 _doc_cdf = """\
@@ -266,6 +265,11 @@ _doc_disc_methods = ['rvs', 'pmf', 'logpmf', 'cdf', 'logcdf', 'sf', 'logsf',
                      'mean', 'var', 'std', 'interval']
 for obj in _doc_disc_methods:
     docdict_discrete[obj] = docdict_discrete[obj].replace(', scale=1', '')
+
+_doc_disc_methods_err_varname = ['cdf', 'logcdf', 'sf', 'logsf']
+for obj in _doc_disc_methods_err_varname:
+    docdict_discrete[obj] = docdict_discrete[obj].replace('(x, ', '(k, ')
+
 docdict_discrete.pop('pdf')
 docdict_discrete.pop('logpdf')
 
@@ -2075,7 +2079,8 @@ class rv_continuous(rv_generic):
 
     def fit(self, data, *args, **kwds):
         """
-        Return MLEs for shape, location, and scale parameters from data.
+        Return MLEs for shape (if applicable), location, and scale
+        parameters from data.
 
         MLE stands for Maximum Likelihood Estimate.  Starting estimates for
         the fit are given by input arguments; for any arguments not provided
@@ -2118,9 +2123,10 @@ class rv_continuous(rv_generic):
 
         Returns
         -------
-        shape, loc, scale : tuple of floats
-            MLEs for any shape statistics, followed by those for location and
-            scale.
+        mle_tuple : tuple of floats
+            MLEs for any shape parameters (if applicable), followed by those
+            for location and scale. For most random variables, shape statistics
+            will be returned, but there are exceptions (e.g. ``norm``).
 
         Notes
         -----
@@ -2159,6 +2165,14 @@ class rv_continuous(rv_generic):
         >>> a1
         1
 
+        Not all distributions return estimates for the shape parameters.
+        ``norm`` for example just returns estimates for location and scale:
+
+        >>> from scipy.stats import norm
+        >>> x = norm.rvs(a, b, size=1000, random_state=123)
+        >>> loc1, scale1 = norm.fit(x)
+        >>> loc1, scale1
+        (0.92087172783841631, 2.0015750750324668)
         """
         Narg = len(args)
         if Narg > self.numargs:
@@ -2496,7 +2510,7 @@ def entropy(pk, qk=None, base=None):
         if len(qk) != len(pk):
             raise ValueError("qk and pk must have same length.")
         qk = 1.0*qk / np.sum(qk, axis=0)
-        vec = kl_div(pk, qk)
+        vec = rel_entr(pk, qk)
     S = np.sum(vec, axis=0)
     if base is not None:
         S /= log(base)

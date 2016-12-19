@@ -343,7 +343,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements.  For the default 'hann' window an
-    overlap of 50\% is a reasonable trade off between accurately estimating
+    overlap of 50\\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
 
@@ -576,7 +576,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
     --------
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements.  For the default 'hann' window an
-    overlap of 50\% is a reasonable trade off between accurately estimating
+    overlap of 50\\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
 

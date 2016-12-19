@@ -306,7 +306,7 @@ class RealData(Data):
         If array-like, observed data for the dependent variable of the
         regression. A scalar input implies that the model to be used on
         the data is implicit.
-    sx, sy : array_like, optional
+    sx : array_like, optional
         Standard deviations of `x`.
         `sx` are standard deviations of `x` and are converted to weights by
         dividing 1.0 by their squares.

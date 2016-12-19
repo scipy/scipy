@@ -17,4 +17,3 @@ __all__ = ['loadmat', 'savemat', 'whosmat', 'byteordercodes']
 
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

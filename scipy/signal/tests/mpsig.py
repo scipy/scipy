@@ -7,10 +7,7 @@ from __future__ import division
 try:
     import mpmath
 except ImportError:
-    try:
-        import sympy.mpmath as mpmath
-    except ImportError:
-        mpmath = None
+    mpmath = None
 
 
 def _prod(seq):

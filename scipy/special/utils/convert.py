@@ -5,9 +5,6 @@ from __future__ import division, print_function, absolute_import
 import re
 import os
 
-from numpy import arccosh, log1p, expm1, arcsinh, arctanh
-from scipy.special import digamma, erfc, expi, erf, expn, gamma, gammaln, iv
-
 # Where to put the data (directory will be created)
 DATA_DIR = 'data'
 # where to pull out boost data: assume a SVN checkout of boost (here in

@@ -513,13 +513,13 @@ def unit_impulse(shape, idx=None, dtype=float):
 
     Examples
     --------
-    An impulse at the 0th element (:math:`\delta[n]`):
+    An impulse at the 0th element (:math:`\\delta[n]`):
 
     >>> from scipy import signal
     >>> signal.unit_impulse(8)
     array([ 1.,  0.,  0.,  0.,  0.,  0.,  0.,  0.])
 
-    Impulse offset by 2 samples (:math:`\delta[n-2]`):
+    Impulse offset by 2 samples (:math:`\\delta[n-2]`):
 
     >>> signal.unit_impulse(7, 2)
     array([ 0.,  0.,  1.,  0.,  0.,  0.,  0.])

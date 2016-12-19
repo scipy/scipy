@@ -1,9 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 from itertools import product
 
-from numpy.testing import assert_, assert_allclose
+from numpy.testing import assert_allclose
 from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy import special
@@ -264,6 +263,7 @@ def test_cython_api():
         (special.tandg, cython_special.tandg, ('d',), None),
         (special.tklmbda, cython_special.tklmbda, ('dd',), None),
         (special.wofz, cython_special.wofz, ('D',), None),
+        (special.wrightomega, cython_special.wrightomega, ('D',), None),
         (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),
         (special.xlogy, cython_special.xlogy, ('dd', 'DD'), None),
         (special.y0, cython_special.y0, ('d',), None),
@@ -275,7 +275,7 @@ def test_cython_api():
     ]
 
     # Check that everything is tested
-    skip = ['errprint']
+    skip = []
     for name in dir(cython_special):
         func = getattr(cython_special, name)
         if callable(func) and not (name.startswith('_bench') or name in skip):
@@ -328,13 +328,3 @@ def test_cython_api():
 
     for param in params:
         yield check, param
-
-
-def test_errprint():
-    flag = cython_special.errprint(1)
-    try:
-        with warnings.catch_warnings(record=True) as w:
-            cython_special.loggamma(0)
-            assert_(w[-1].category is special.SpecialFunctionWarning)
-    finally:
-        cython_special.errprint(flag)

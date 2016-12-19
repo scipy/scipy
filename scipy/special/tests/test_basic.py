@@ -1666,8 +1666,9 @@ class TestEuler(TestCase):
         eu0 = special.euler(0)
         eu1 = special.euler(1)
         eu2 = special.euler(2)   # just checking segfaults
-        assert_almost_equal(eu0[0],1,8)
-        assert_almost_equal(eu2[2],-1,8)
+        assert_allclose(eu0, [1], rtol=1e-15)
+        assert_allclose(eu1, [1, 0], rtol=1e-15)
+        assert_allclose(eu2, [1, 0, -1], rtol=1e-15)
         eu24 = special.euler(24)
         mathworld = [1,1,5,61,1385,50521,2702765,199360981,
                      19391512145,2404879675441,
@@ -3206,10 +3207,10 @@ class TestSpherical(TestCase):
             warnings.simplefilter("ignore", DeprecationWarning)
             sy1 = special.sph_yn(2,.2)[0][2]
             sy2 = special.sph_yn(0,.2)[0][0]
+            sy3 = special.sph_yn(1,.2)[1][1]
             sphpy = (special.sph_yn(1,.2)[0][0]-2*special.sph_yn(2,.2)[0][2])/3  # correct derivative value
         assert_almost_equal(sy1,-377.52483,5)  # previous values in the system
         assert_almost_equal(sy2,-4.9003329,5)
-        sy3 = special.sph_yn(1,.2)[1][1]
         assert_almost_equal(sy3,sphpy,4)  # compare correct derivative val. (correct =-system val).
 
 

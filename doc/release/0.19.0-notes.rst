@@ -15,17 +15,39 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 0.20.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.7 or 3.4-3.5 and NumPy 1.7.1 or greater.
+This release requires Python 2.7 or 3.4-3.5 and NumPy 1.8.2 or greater.
 
 
 
 New features
 ============
 
+`scipy.linalg` improvements
+---------------------------
+
+The function `scipy.linalg.matrix_balance` was added to perform the so-called
+matrix balancing using the LAPACK xGEBAL routine family. This can be used to
+approximately equate the row and column norms through diagonal similarity
+transformations.
+
+The functions `scipy.linalg.solve_continuous_are` and
+`scipy.linalg.solve_discrete_are` have numerically more stable algorithms.
+These functions can also solve generalized algebraic matrix Riccati equations.
+Moreover, both gained a ``balanced`` keyword to turn balancing on and off.
+
+`scipy.spatial` improvements
+----------------------------
+
+`SphericalVoronoi.sort_vertices_of_regions()` has been re-written in
+cython to improve performance
+
 `scipy.ndimage` improvements
 ----------------------------
 
 The callback function C API supports PyCapsules in Python 2.7
+
+Multidimensional filters now allow having different extrapolation modes for
+different axes.
 
 `scipy.optimize` improvements
 -----------------------------
@@ -34,8 +56,20 @@ The `scipy.optimize.basinhopping` global minimizer obtained a new keyword,
 `seed`, which can be used to seed the random number generator and obtain
 repeatable minimizations.
 
+The keyword `sigma` in `scipy.optimize.curve_fit` was overloaded to also accept
+the covariance matrix of errors in the data.
+
 `scipy.signal` improvements
 ---------------------------
+
+The function `scipy.signal.correlate` and `scipy.signal.convolve` have a new
+optional parameter `method`. The default value of `auto` estimates the fastest
+of two computation methods, the direct approach and the Fourier transform
+approach.
+
+A new function has been added to choose the convolution/correlation method,
+`scipy.signal.choose_conv_method` which may be appropriate if convolutions or
+correlations are performed on many arrays of the same size.
 
 The function `scipy.signal.sosfreqz` was added to compute the frequency
 response from second-order sections.
@@ -43,22 +77,115 @@ response from second-order sections.
 The function `scipy.signal.unit_impulse` was added to conveniently
 generate an impulse function.
 
+The function `scipy.signal.irrnotch` was added to design second-order
+IIR notch filters that can be used to remove a frequency component from
+a signal. The dual function  `scipy.signal.irrpeak` was added to
+compute the coeficients of a second-order IIR peak (resonant) filter.
+
+The function `scipy.signal.minimum_phase` was added to convert linear-phase
+FIR filters to minimum phase.
+
+The functions `scipy.signal.upfirdn` and `scipy.signal.resample_poly` are now
+substantially faster when operating on some n-dimensional arrays when n > 1.
+The largest reduction in computation time is realized in cases where the size
+of the array is small (<1k samples or so) along the axis to be filtered.
+
+`scipy.sparse` improvements
+---------------------------
+
+The functions `scipy.sparse.save_npz` and `scipy.sparse.load_npz` were added,
+providing simple serialization for some sparse formats.
+
+The `prune` method of classes `bsr_matrix`, `csc_matrix`, and `csr_matrix`
+was updated to reallocate backing arrays under certain conditions, reducing
+memory usage.
+
+`scipy.special` improvements
+----------------------------
+
+The names of orthogonal polynomial root functions have been changed to
+be consistent with other functions relating to orthogonal
+polynomials. For example, `scipy.special.j_roots` has been renamed
+`scipy.special.roots_jacobi` for consistency with the related
+functions `scipy.special.jacobi` and `scipy.special.eval_jacobi`. To
+preserve back-compatibility the old names have been left as aliases.
+
+`scipy.interpolate` improvements
+--------------------------------
+
+New class ``scipy.interpolate.BSpline`` represents splines. ``BSpline`` objects
+contain knots and coefficients and can evaluate the spline. The format is
+consistent with FITPACK, so that one can do, for example::
+
+    >>> t, c, k = splrep(x, y, s=0)
+    >>> spl = BSpline(t, c, k)
+    >>> np.allclose(spl(x), y)
+
+``spl*`` functions, `scipy.interpolate.splev`, `scipy.interpolate.splint`,
+`scipy.interpolate.splder` and `scipy.interpolate.splantider`, accept both
+``BSpline`` objects and ``(t, c, k)`` tuples for backwards compatibility.
+
+For multidimensional splines, ``c.ndim > 1``, ``BSpline`` objects are consistent
+with piecewise polynomials, `scipy.interpolate.PPoly`. This means that
+``BSpline`` objects are not immediately consistent with
+`scipy.interpolate.splprep`, and one *cannot* do
+``>>> BSpline(*splprep([x, y])[0])``. Consult the `scipy.interpolate` test suite
+for examples of the precise equivalence.
+
+In new code, prefer using ``scipy.interpolate.BSpline`` objects instead of
+manipulating ``(t, c, k)`` tuples directly.
+
+New function `scipy.interpolate.make_interp_spline` constructs an interpolating
+spline given data points and boundary conditions.
+
+New function `scipy.interpolate.make_lsq_spline` constructs a least-squares
+spline approximation given data points.
+
 
 Deprecated features
 ===================
 
+`scipy.interpolate.splmake`, `scipy.interpolate.spleval` and
+`scipy.interpolate.spline` are deprecated. The format used by `splmake/spleval`
+was inconsistent with `splrep/splev` which was confusing to users.
 
 
 Backwards incompatible changes
 ==============================
 
+The deprecated ``scipy.weave`` submodule was removed.
+
+`scipy.spatial.distance.squareform` now returns arrays of the same dtype as
+the input, instead of always float64.
+
+`scipy.special.errprint` now returns a boolean.
+
+The function `scipy.signal.find_peaks_cwt()` now returns an array instead of
+a list.
+
+`scipy.stats.kendalltau` now computes the correct p-value in case the
+input contains ties. The p-value is also identical to that computed by
+`scipy.stats.mstats_basic.kendalltau` and by R. If the input does not
+contain ties there is no change w.r.t. the previous implementation.
+
+The function `scipy.linalg.block_diag` will not ignore zero-sized matrices anymore.
+Instead it will insert rows or columns of zeros of the appropriate size.
+See gh-4908 for more details.
 
 
 Other changes
 =============
 
+SciPy wheels will now report their dependency on ``numpy`` on all platforms.
+This change was made because Numpy wheels are available, and because the pip
+upgrade behavior is finally changing for the better (use
+``--upgrade-strategy=only-if-needed`` for ``pip >= 8.2``; that behavior will
+become the default in the next major version of ``pip``).
 
-
+Numerical values returned by `scipy.interpolate.interp1d` with ``kind="cubic"``
+and ``"quadratic"`` may change relative to previous scipy versions. If your
+code depended on specific numeric values (i.e., on implementation
+details of the interpolators), you may want to double-check your results.
 
 Authors
 =======

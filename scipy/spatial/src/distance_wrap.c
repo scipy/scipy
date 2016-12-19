@@ -799,30 +799,31 @@ static PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
 
 static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *M_, *v_;
-  int n;
-  const double *v;
-  double *M;
+  int n, elsize;
   if (!PyArg_ParseTuple(args, "O!O!",
 			&PyArray_Type, &M_,
 			&PyArray_Type, &v_)) {
     return 0;
   }
-  else {
-    NPY_BEGIN_ALLOW_THREADS;
-    M = (double*)M_->data;
-    v = (const double*)v_->data;
-    n = M_->dimensions[0];
-    dist_to_squareform_from_vector(M, v, n);
-    NPY_END_ALLOW_THREADS;
+  NPY_BEGIN_ALLOW_THREADS;
+  n = M_->dimensions[0];
+  elsize = M_->descr->elsize;
+  if (elsize == 8) {
+    dist_to_squareform_from_vector_double(
+        (double*)M_->data, (const double*)v_->data, n);
+  } else {
+    dist_to_squareform_from_vector_generic(
+        (char*)M_->data, (const char*)v_->data, n, elsize);
   }
-  return Py_BuildValue("d", 0.0);
+  NPY_END_ALLOW_THREADS;
+  return Py_BuildValue("");
 }
 
 static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) {
   PyArrayObject *M_, *v_;
-  int n;
-  double *v;
-  const double *M;
+  int n, s;
+  char *v;
+  const char *M;
   if (!PyArg_ParseTuple(args, "O!O!",
 			&PyArray_Type, &M_,
 			&PyArray_Type, &v_)) {
@@ -830,13 +831,14 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) 
   }
   else {
     NPY_BEGIN_ALLOW_THREADS;
-    M = (const double*)M_->data;
-    v = (double*)v_->data;
+    M = (const char*)M_->data;
+    v = (char*)v_->data;
     n = M_->dimensions[0];
-    dist_to_vector_from_squareform(M, v, n);
+    s = M_->descr->elsize;
+    dist_to_vector_from_squareform(M, v, n, s);
     NPY_END_ALLOW_THREADS;
   }
-  return Py_BuildValue("d", 0.0);
+  return Py_BuildValue("");
 }
 
 

@@ -82,9 +82,9 @@ class PchipInterpolator(BPoly):
     ----------
     .. [1] F. N. Fritsch and R. E. Carlson, Monotone Piecewise Cubic Interpolation,
            SIAM J. Numer. Anal., 17(2), 238 (1980).
-           DOI:10.1137/0717021
+           :doi:`10.1137/0717021`.
     .. [2] see, e.g., C. Moler, Numerical Computing with Matlab, 2004.
-           DOI: http://dx.doi.org/10.1137/1.9780898717952
+           :doi:`10.1137/1.9780898717952`
 
 
     """
@@ -109,7 +109,7 @@ class PchipInterpolator(BPoly):
         """
         Return the roots of the interpolated function.
         """
-        return (PPoly.from_bernstein_basis(self._bpoly)).roots()
+        return (PPoly.from_bernstein_basis(self)).roots()
 
     @staticmethod
     def _edge_case(h0, h1, m0, m1):

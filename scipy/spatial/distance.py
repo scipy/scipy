@@ -124,26 +124,15 @@ def _copy_array_if_base_present(a):
     """
     if a.base is not None:
         return a.copy()
-    elif np.issubsctype(a, np.float32):
-        return np.array(a, dtype=np.double)
-    else:
-        return a
+    return a
 
 
 def _convert_to_bool(X):
-    if X.dtype != bool:
-        X = X.astype(bool)
-    if not X.flags.contiguous:
-        X = X.copy()
-    return X
+    return np.ascontiguousarray(X, dtype=bool)
 
 
 def _convert_to_double(X):
-    if X.dtype != np.double:
-        X = X.astype(np.double)
-    if not X.flags.contiguous:
-        X = X.copy()
-    return X
+    return np.ascontiguousarray(X, dtype=np.double)
 
 
 def _validate_vector(u, dtype=None):
@@ -433,8 +422,8 @@ def jaccard(u, v):
     u = _validate_vector(u)
     v = _validate_vector(v)
     dist = (np.double(np.bitwise_and((u != v),
-                                     np.bitwise_or(u != 0, v != 0)).sum())
-            / np.double(np.bitwise_or(u != 0, v != 0).sum()))
+                                     np.bitwise_or(u != 0, v != 0)).sum()) /
+            np.double(np.bitwise_or(u != 0, v != 0).sum()))
     return dist
 
 
@@ -941,7 +930,7 @@ def sokalsneath(u, v):
     denom = ntt + 2.0 * (ntf + nft)
     if denom == 0:
         raise ValueError('Sokal-Sneath dissimilarity is not defined for '
-                            'vectors that are entirely false.')
+                         'vectors that are entirely false.')
     return float(2.0 * (ntf + nft)) / denom
 
 
@@ -978,6 +967,47 @@ for name in ["dice", "kulsinski", "matching", "rogerstanimoto", "russellrao",
 def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     """
     Pairwise distances between observations in n-dimensional space.
+
+    See Notes for common calling conventions.
+
+    Parameters
+    ----------
+    X : ndarray
+        An m by n array of m original observations in an
+        n-dimensional space.
+    metric : str or function, optional
+        The distance metric to use. The distance function can
+        be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+        'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
+    w : ndarray, optional
+        The weight vector (for weighted Minkowski).
+    p : double, optional
+        The p-norm to apply (for Minkowski, weighted and unweighted)
+    V : ndarray, optional
+        The variance vector (for standardized Euclidean).
+    VI : ndarray, optional
+        The inverse of the covariance matrix (for Mahalanobis).
+
+    Returns
+    -------
+    Y : ndarray
+        Returns a condensed distance matrix Y.  For
+        each :math:`i` and :math:`j` (where :math:`i<j<n`), the
+        metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
+
+    See Also
+    --------
+    squareform : converts between condensed distance matrices and
+                 square distance matrices.
+
+    Notes
+    -----
+    See ``squareform`` for information on how to calculate the index of
+    this entry or to convert the condensed distance matrix to a
+    redundant square matrix.
 
     The following are common calling conventions.
 
@@ -1084,14 +1114,14 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
 
-            d(u,v) = \\frac{\\sum_i {u_i-v_i}}
-                          {\\sum_i {u_i+v_i}}
+            d(u,v) = \\frac{\\sum_i {|u_i-v_i|}}
+                           {\\sum_i {|u_i+v_i|}}
 
     13. ``Y = pdist(X, 'mahalanobis', VI=None)``
 
        Computes the Mahalanobis distance between the points. The
        Mahalanobis distance between two points ``u`` and ``v`` is
-       :math:`(u-v)(1/V)(u-v)^T` where :math:`(1/V)` (the ``VI``
+       :math:`\\sqrt{(u-v)(1/V)(u-v)^T}` where :math:`(1/V)` (the ``VI``
        variable) is the inverse covariance. If ``VI`` is not None,
        ``VI`` will be used as the inverse covariance matrix.
 
@@ -1161,51 +1191,12 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
          dm = pdist(X, 'sokalsneath')
 
-    Parameters
-    ----------
-    X : ndarray
-        An m by n array of m original observations in an
-        n-dimensional space.
-    metric : str or function, optional
-        The distance metric to use. The distance function can
-        be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
-        'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'kulsinski', 'mahalanobis', 'matching',
-        'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
-        'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-    w : ndarray, optional
-        The weight vector (for weighted Minkowski).
-    p : double, optional
-        The p-norm to apply (for Minkowski, weighted and unweighted)
-    V : ndarray, optional
-        The variance vector (for standardized Euclidean).
-    VI : ndarray, optional
-        The inverse of the covariance matrix (for Mahalanobis).
-
-    Returns
-    -------
-    Y : ndarray
-        Returns a condensed distance matrix Y.  For
-        each :math:`i` and :math:`j` (where :math:`i<j<n`), the
-        metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
-
-    See Also
-    --------
-    squareform : converts between condensed distance matrices and
-                 square distance matrices.
-
-    Notes
-    -----
-    See ``squareform`` for information on how to calculate the index of
-    this entry or to convert the condensed distance matrix to a
-    redundant square matrix.
-
     """
     # You can also call this as:
     #     Y = pdist(X, 'test_abc')
     # where 'abc' is the metric being tested.  This computes the distance
-    # between all pairs of vectors in X using the distance metric 'abc' but with
-    # a more succinct, verifiable, but less efficient implementation.
+    # between all pairs of vectors in X using the distance metric 'abc' but
+    # with a more succinct, verifiable, but less efficient implementation.
 
     X = np.asarray(X, order='c')
 
@@ -1222,7 +1213,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     wmink_names = ['wminkowski', 'wmi', 'wm', 'wpnorm']
     if w is None and (metric == wminkowski or metric in wmink_names):
         raise ValueError('weighted minkowski requires a weight '
-                            'vector `w` to be given.')
+                         'vector `w` to be given.')
 
     if callable(metric):
         if metric == minkowski:
@@ -1334,7 +1325,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                                      "are required." % (m, n, n + 1))
                 V = np.atleast_2d(np.cov(X.T))
                 VI = _convert_to_double(np.linalg.inv(V).T.copy())
-            # (u-v)V^(-1)(u-v)^T
+            # sqrt((u-v)V^(-1)(u-v)^T)
             _distance_wrap.pdist_mahalanobis_wrap(X, VI, dm)
         elif metric == 'test_euclidean':
             dm = pdist(X, euclidean)
@@ -1353,7 +1344,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             else:
                 VI = np.asarray(VI, order='c')
             VI = _copy_array_if_base_present(VI)
-            # (u-v)V^(-1)(u-v)^T
+            # sqrt((u-v)V^(-1)(u-v)^T)
             dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
         elif metric == 'test_canberra':
             dm = pdist(X, canberra)
@@ -1407,11 +1398,11 @@ def squareform(X, force="no", checks=True):
     X : ndarray
         Either a condensed or redundant distance matrix.
     force : str, optional
-        As with MATLAB(TM), if force is equal to 'tovector' or 'tomatrix',
-        the input will be treated as a distance matrix or distance vector
-        respectively.
+        As with MATLAB(TM), if force is equal to ``'tovector'`` or
+        ``'tomatrix'``, the input will be treated as a distance matrix or
+        distance vector respectively.
     checks : bool, optional
-        If `checks` is set to False, no checks will be made for matrix
+        If set to False, no checks will be made for matrix
         symmetry nor zero diagonals. This is useful if it is known that
         ``X - X.T1`` is small and ``diag(X)`` is close to zero.
         These values are ignored any way so they do not disrupt the
@@ -1426,28 +1417,30 @@ def squareform(X, force="no", checks=True):
 
     Notes
     -----
-
     1. v = squareform(X)
 
        Given a square d-by-d symmetric distance matrix X,
-       ``v=squareform(X)`` returns a ``d * (d-1) / 2`` (or
-       `${n \\choose 2}$`) sized vector v.
+       ``v = squareform(X)`` returns a ``d * (d-1) / 2`` (or
+       :math:`{n \\choose 2}`) sized vector v.
 
-      v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)] is the distance
+      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` is the distance
       between points i and j. If X is non-square or asymmetric, an error
       is returned.
 
     2. X = squareform(v)
 
-      Given a d*(d-1)/2 sized v for some integer d>=2 encoding distances
-      as described, X=squareform(v) returns a d by d distance matrix X. The
-      X[i, j] and X[j, i] values are set to
-      v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)] and all
+      Given a ``d*(d-1)/2`` sized v for some integer ``d >= 2`` encoding
+      distances as described, ``X = squareform(v)`` returns a d by d distance
+      matrix X.  The ``X[i, j]`` and ``X[j, i]`` values are set to
+      :math:`v[{n \\choose 2}-{n-i \\choose 2} + (j-i-1)]` and all
       diagonal elements are zero.
+
+    In Scipy 0.19.0, ``squareform`` stopped casting all input types to
+    float64, and started returning arrays of the same dtype as the input.
 
     """
 
-    X = _convert_to_double(np.asarray(X, order='c'))
+    X = np.ascontiguousarray(X)
 
     s = X.shape
 
@@ -1462,21 +1455,21 @@ def squareform(X, force="no", checks=True):
 
     # X = squareform(v)
     if len(s) == 1:
-        if X.shape[0] == 0:
-            return np.zeros((1, 1), dtype=np.double)
+        if s[0] == 0:
+            return np.zeros((1, 1), dtype=X.dtype)
 
         # Grab the closest value to the square root of the number
         # of elements times 2 to see if the number of elements
         # is indeed a binomial coefficient.
-        d = int(np.ceil(np.sqrt(X.shape[0] * 2)))
+        d = int(np.ceil(np.sqrt(s[0] * 2)))
 
         # Check that v is of valid dimensions.
-        if d * (d - 1) / 2 != int(s[0]):
+        if d * (d - 1) != s[0] * 2:
             raise ValueError('Incompatible vector size. It must be a binomial '
                              'coefficient n choose 2 for some integer n >= 2.')
 
         # Allocate memory for the distance matrix.
-        M = np.zeros((d, d), dtype=np.double)
+        M = np.zeros((d, d), dtype=X.dtype)
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
@@ -1497,10 +1490,10 @@ def squareform(X, force="no", checks=True):
         d = s[0]
 
         if d <= 1:
-            return np.array([], dtype=np.double)
+            return np.array([], dtype=X.dtype)
 
         # Create a vector.
-        v = np.zeros((d * (d - 1)) // 2, dtype=np.double)
+        v = np.zeros((d * (d - 1)) // 2, dtype=X.dtype)
 
         # Since the C code does not support striding using strides.
         # The dimensions are used instead.
@@ -1511,16 +1504,16 @@ def squareform(X, force="no", checks=True):
         return v
     else:
         raise ValueError(('The first argument must be one or two dimensional '
-                         'array. A %d-dimensional array is not '
-                         'permitted') % len(s))
+                          'array. A %d-dimensional array is not '
+                          'permitted') % len(s))
 
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     """
     Returns True if input array is a valid distance matrix.
 
-    Distance matrices must be 2-dimensional numpy arrays containing
-    doubles. They must have a zero-diagonal, and they must be symmetric.
+    Distance matrices must be 2-dimensional numpy arrays.
+    They must have a zero-diagonal, and they must be symmetric.
 
     Parameters
     ----------
@@ -1556,13 +1549,6 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     valid = True
     try:
         s = D.shape
-        if D.dtype != np.double:
-            if name:
-                raise TypeError(('Distance matrix \'%s\' must contain doubles '
-                                 '(double).') % name)
-            else:
-                raise TypeError('Distance matrix must contain doubles '
-                                '(double).')
         if len(D.shape) != 2:
             if name:
                 raise ValueError(('Distance matrix \'%s\' must have shape=2 '
@@ -1614,9 +1600,9 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     """
     Returns True if the input array is a valid condensed distance matrix.
 
-    Condensed distance matrices must be 1-dimensional
-    numpy arrays containing doubles. Their length must be a binomial
-    coefficient :math:`{n \\choose 2}` for some positive integer n.
+    Condensed distance matrices must be 1-dimensional numpy arrays.
+    Their length must be a binomial coefficient :math:`{n \\choose 2}`
+    for some positive integer n.
 
     Parameters
     ----------
@@ -1638,13 +1624,6 @@ def is_valid_y(y, warning=False, throw=False, name=None):
     y = np.asarray(y, order='c')
     valid = True
     try:
-        if y.dtype != np.double:
-            if name:
-                raise TypeError(('Condensed distance matrix \'%s\' must '
-                                 'contain doubles (double).') % name)
-            else:
-                raise TypeError('Condensed distance matrix must contain '
-                                'doubles (double).')
         if len(y.shape) != 1:
             if name:
                 raise ValueError(('Condensed distance matrix \'%s\' must '
@@ -1660,11 +1639,11 @@ def is_valid_y(y, warning=False, throw=False, name=None):
                 raise ValueError(('Length n of condensed distance matrix '
                                   '\'%s\' must be a binomial coefficient, i.e.'
                                   'there must be a k such that '
-                                  '(k \choose 2)=n)!') % name)
+                                  '(k \\choose 2)=n)!') % name)
             else:
                 raise ValueError('Length n of condensed distance matrix must '
                                  'be a binomial coefficient, i.e. there must '
-                                 'be a k such that (k \choose 2)=n)!')
+                                 'be a k such that (k \\choose 2)=n)!')
     except Exception as e:
         if throw:
             raise
@@ -1745,6 +1724,50 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     """
     Computes distance between each pair of the two collections of inputs.
 
+    See Notes for common calling conventions.
+
+    Parameters
+    ----------
+    XA : ndarray
+        An :math:`m_A` by :math:`n` array of :math:`m_A`
+        original observations in an :math:`n`-dimensional space.
+        Inputs are converted to float type.
+    XB : ndarray
+        An :math:`m_B` by :math:`n` array of :math:`m_B`
+        original observations in an :math:`n`-dimensional space.
+        Inputs are converted to float type.
+    metric : str or callable, optional
+        The distance metric to use.  If a string, the distance function can be
+        'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
+        'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
+        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
+        'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
+        'wminkowski', 'yule'.
+    w : ndarray, optional
+        The weight vector (for weighted Minkowski).
+    p : scalar, optional
+        The p-norm to apply (for Minkowski, weighted and unweighted)
+    V : ndarray, optional
+        The variance vector (for standardized Euclidean).
+    VI : ndarray, optional
+        The inverse of the covariance matrix (for Mahalanobis).
+
+    Returns
+    -------
+    Y : ndarray
+        A :math:`m_A` by :math:`m_B` distance matrix is returned.
+        For each :math:`i` and :math:`j`, the metric
+        ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
+        :math:`ij` th entry.
+
+    Raises
+    ------
+    ValueError
+        An exception is thrown if `XA` and `XB` do not have
+        the same number of columns.
+
+    Notes
+    -----
     The following are common calling conventions:
 
     1. ``Y = cdist(XA, XB, 'euclidean')``
@@ -1850,8 +1873,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
        .. math::
 
-            d(u,v) = \\frac{\\sum_i (u_i-v_i)}
-                          {\\sum_i (u_i+v_i)}
+            d(u,v) = \\frac{\\sum_i (|u_i-v_i|)}
+                          {\\sum_i (|u_i+v_i|)}
 
     13. ``Y = cdist(XA, XB, 'mahalanobis', VI=None)``
 
@@ -1927,46 +1950,6 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        efficient, and we call it using the following syntax::
 
          dm = cdist(XA, XB, 'sokalsneath')
-
-    Parameters
-    ----------
-    XA : ndarray
-        An :math:`m_A` by :math:`n` array of :math:`m_A`
-        original observations in an :math:`n`-dimensional space.
-        Inputs are converted to float type.
-    XB : ndarray
-        An :math:`m_B` by :math:`n` array of :math:`m_B`
-        original observations in an :math:`n`-dimensional space.
-        Inputs are converted to float type.
-    metric : str or callable, optional
-        The distance metric to use.  If a string, the distance function can be
-        'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
-        'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
-        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
-        'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
-        'wminkowski', 'yule'.
-    w : ndarray, optional
-        The weight vector (for weighted Minkowski).
-    p : scalar, optional
-        The p-norm to apply (for Minkowski, weighted and unweighted)
-    V : ndarray, optional
-        The variance vector (for standardized Euclidean).
-    VI : ndarray, optional
-        The inverse of the covariance matrix (for Mahalanobis).
-
-    Returns
-    -------
-    Y : ndarray
-        A :math:`m_A` by :math:`m_B` distance matrix is returned.
-        For each :math:`i` and :math:`j`, the metric
-        ``dist(u=XA[i], v=XB[j])`` is computed and stored in the
-        :math:`ij` th entry.
-
-    Raises
-    ------
-    ValueError
-        An exception is thrown if `XA` and `XB` do not have
-        the same number of columns.
 
     Examples
     --------
@@ -2145,7 +2128,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 V = np.atleast_2d(np.cov(X.T))
                 del X
                 VI = np.linalg.inv(V).T.copy()
-            # (u-v)V^(-1)(u-v)^T
+            # sqrt((u-v)V^(-1)(u-v)^T)
             _distance_wrap.cdist_mahalanobis_wrap(XA, XB, VI, dm)
         elif metric == 'test_euclidean':
             dm = cdist(XA, XB, euclidean)
@@ -2169,7 +2152,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             else:
                 VI = np.asarray(VI, order='c')
             VI = _copy_array_if_base_present(VI)
-            # (u-v)V^(-1)(u-v)^T
+            # sqrt((u-v)V^(-1)(u-v)^T)
             dm = cdist(XA, XB, (lambda u, v: mahalanobis(u, v, VI)))
         elif metric == 'test_canberra':
             dm = cdist(XA, XB, canberra)

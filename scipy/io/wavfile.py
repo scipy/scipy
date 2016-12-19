@@ -241,6 +241,12 @@ def read(filename, mmap=False):
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
+
+            if not chunk_id:
+                raise ValueError("Unexpected end of file.")
+            elif len(chunk_id) < 4:
+                raise ValueError("Incomplete wav chunk.")
+
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)

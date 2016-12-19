@@ -1,6 +1,9 @@
-# Copyright (c) Gary Strangman.  All rights reserved
+# Copyright 2002 Gary Strangman.  All rights reserved
+# Copyright 2002-2016 The SciPy Developers
 #
-# Disclaimer
+# The original code from Gary Strangman was heavily adapted for
+# use in SciPy by Travis Oliphant.  The original code came with the
+# following disclaimer:
 #
 # This software is provided "as-is".  There are no expressed or implied
 # warranties of any kind, including, but not limited to, the warranties
@@ -12,10 +15,7 @@
 # liability or tort (including negligence or otherwise) arising in any way
 # out of the use of this software, even if advised of the possibility of
 # such damage.
-#
 
-#
-# Heavily adapted for use by SciPy 2002 by Travis Oliphant
 """
 A collection of basic statistical functions for python.  The function
 names appear below.
@@ -162,21 +162,23 @@ References
 
 from __future__ import division, print_function, absolute_import
 
-from collections import namedtuple
-import math
 import warnings
+import math
+from collections import namedtuple
 
-# Scipy imports.
-from scipy._lib.six import callable, string_types, xrange
-from scipy._lib._version import NumpyVersion
+import numpy as np
 from numpy import array, asarray, ma, zeros
+
+from scipy._lib.six import callable, string_types
+from scipy._lib._version import NumpyVersion
 import scipy.special as special
 import scipy.linalg as linalg
-import numpy as np
-from . import distributions, mstats_basic, _stats
+from . import distributions
+from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
-from ._stats import _kendall_condis
+from ._stats import _kendall_dis
+
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -254,11 +256,6 @@ def _contains_nan(a, nan_policy='propagate'):
     return (contains_nan, nan_policy)
 
 
-#####################################
-#         CENTRAL TENDENCY          #
-#####################################
-
-
 def gmean(a, axis=0, dtype=None):
     """
     Compute the geometric mean along the specified axis.
@@ -302,9 +299,11 @@ def gmean(a, axis=0, dtype=None):
     arrays automatically mask any non-finite values.
 
     """
-    if not isinstance(a, np.ndarray):  # if not an ndarray object attempt to convert it
+    if not isinstance(a, np.ndarray):
+        # if not an ndarray object attempt to convert it
         log_a = np.log(np.array(a, dtype=dtype))
-    elif dtype:  # Must change the default dtype allowing array type
+    elif dtype:
+        # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
             log_a = np.log(np.ma.asarray(a, dtype=dtype))
         else:
@@ -357,7 +356,8 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a > 0):  # Harmonic mean only defined if greater than zero
+    if np.all(a > 0):
+        # Harmonic mean only defined if greater than zero
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
         else:
@@ -377,7 +377,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     """
     Returns an array of the modal (most common) value in the passed array.
 
-    If there is more than one such value, only the first is returned.
+    If there is more than one such value, only the smallest is returned.
     The bin-count for the modal bins is also returned.
 
     Parameters
@@ -418,7 +418,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
-        return np.array([]), np.array([])
+        return ModeResult(np.array([]), np.array([]))
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
@@ -1237,6 +1237,12 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     Notes
     -----
     The sample size must be at least 8.
+
+    References
+    ----------
+    .. [1] R. B. D'Agostino, A. J. Belanger and R. B. D'Agostino Jr.,
+            "A suggestion for using powerful and informative tests of 
+            normality", American Statistician 44, pp. 316-321, 1990.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2729,12 +2735,7 @@ def trimboth(a, proportiontocut, axis=0):
     if (lowercut >= uppercut):
         raise ValueError("Proportion too big.")
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
@@ -2789,12 +2790,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         lowercut = int(proportiontocut * nobs)
         uppercut = nobs
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     return atmp[lowercut:uppercut]
 
@@ -2862,12 +2858,7 @@ def trim_mean(a, proportiontocut, axis=0):
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
@@ -3440,8 +3431,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
-    strong disagreement.  This is the tau-b version of Kendall's tau which
-    accounts for ties.
+    strong disagreement.  This is the 1945 "tau-b" version of Kendall's
+    tau [2]_, which can account for ties and which reduces to the 1938 "tau-a"
+    version [1]_ in absence of ties.
 
     Parameters
     ----------
@@ -3449,15 +3441,13 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         Arrays of rankings, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
     initial_lexsort : bool, optional
-        Whether to use lexsort or quicksort as the sorting method for the
-        initial sort of the inputs. Default is lexsort (True), for which
-        `kendalltau` is of complexity O(n log(n)). If False, the complexity is
-        O(n^2), but with a smaller pre-factor (so quicksort may be faster for
-        small arrays).
+        Unused (deprecated).
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        values. Default is 'propagate'. Note that if the input contains nan
+        'omit' delegates to mstats_basic.kendalltau(), which has a different
+        implementation.
 
     Returns
     -------
@@ -3474,7 +3464,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     Notes
     -----
-    The definition of Kendall's tau that is used is::
+    The definition of Kendall's tau that is used is [2]_::
 
       tau = (P - Q) / sqrt((P + Q + T) * (P + Q + U))
 
@@ -3485,9 +3475,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     References
     ----------
-    W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
-    Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
-    No. 314, Part 1, pp. 436-439, 1966.
+    .. [1] Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
+           Vol. 30, No. 1/2, pp. 81-93, 1938.
+    .. [2] Maurice G. Kendall, "The treatment of ties in ranking problems",
+           Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
+    .. [3] Gottfried E. Noether, "Elements of Nonparametric Statistics", John
+           Wiley & Sons, 1967.
+    .. [4] Peter M. Fenwick, "A new data structure for cumulative frequency
+           tables", Software: Practice and Experience, Vol. 24, No. 3,
+           pp. 327-336, 1994.
 
     Examples
     --------
@@ -3498,7 +3494,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     >>> tau
     -0.47140452079103173
     >>> p_value
-    0.24821309157521476
+    0.2827454599327748
 
     """
     x = np.asarray(x).ravel()
@@ -3530,7 +3526,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
-        return (cnt * (cnt - 1) // 2).sum()
+        cnt = cnt[cnt > 1]
+        return ((cnt * (cnt - 1) // 2).sum(),
+            (cnt * (cnt - 1.) * (cnt - 2)).sum(),
+            (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -3542,27 +3541,35 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     x, y = x[perm], y[perm]
     x = np.r_[True, x[1:] != x[:-1]].cumsum(dtype=np.intp)
 
-    con, dis = _kendall_condis(x, y)  # concordant & discordant pairs
+    dis = _kendall_dis(x, y)  # discordant pairs
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
-    xtie = count_rank_tie(x) - ntie      # ties only in x
-    ytie = count_rank_tie(y) - ntie      # ties only in y
+    xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
+    ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
 
-    if con + dis + xtie == 0 or con + dis + ytie == 0:
+    tot = (size * (size - 1)) // 2
+
+    if xtie == tot or ytie == tot:
         return KendalltauResult(np.nan, np.nan)
 
-    tau = (con - dis) / np.sqrt(con + dis + xtie) / np.sqrt(con + dis + ytie)
+    # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
+    #               = con + dis + xtie + ytie - ntie
+    con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
+    tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
+    # Limit range to fix computational errors
+    tau = min(1., max(-1., tau))
 
-    # what follows reproduces the ending of Gary Strangman's original
-    # stats.kendalltau() in SciPy
-    svar = (4.0 * size + 10.0) / (9.0 * size * (size - 1))
-    z = tau / np.sqrt(svar)
-    prob = special.erfc(np.abs(z) / 1.4142136)
+    # con_minus_dis is approx normally distributed with this variance [3]_
+    var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
+        2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
+        size * (size - 1) * (size - 2))
+    pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
 
-    return KendalltauResult(tau, prob)
+    # Limit range to fix computational errors
+    return KendalltauResult(min(1., max(-1., tau)), pvalue)
 
 
 #####################################
@@ -4550,21 +4557,13 @@ def ks_2samp(data1, data2):
     """
     data1 = np.sort(data1)
     data2 = np.sort(data2)
-    n1, = data1.shape
-    n2, = data2.shape
-    common_type = np.find_common_type([], [data1.dtype, data2.dtype])
-    if not (np.issubdtype(common_type, np.number) and
-            not np.issubdtype(common_type, np.complexfloating)):
-        raise ValueError('ks_2samp only accepts real inputs')
-    # nans, if any, are at the end after sorting.
-    if np.isnan(data1[-1]) or np.isnan(data2[-1]):
-        raise ValueError('ks_2samp only accepts non-nan inputs')
-    # Absolute KS distance can be computed (less efficiently) as follows:
-    # data_all = np.concatenate([data1, data2])
-    # d = np.max(np.abs(data1.searchsorted(data_all, side='right') / n1 -
-    #                   data2.searchsorted(data_all, side='right') / n2))
-    d = _stats.ks_2samp(np.asarray(data1, common_type),
-                        np.asarray(data2, common_type))
+    n1 = data1.shape[0]
+    n2 = data2.shape[0]
+    data_all = np.concatenate([data1, data2])
+    cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
+    cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
+    d = np.max(np.absolute(cdf1 - cdf2))
+    # Note: d absolute not signed distance
     en = np.sqrt(n1 * n2 / float(n1 + n2))
     try:
         prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)

@@ -18,16 +18,9 @@
 #include "ordered_pair.h"
 #include "ckdtree_methods.h"
 #include "cpp_exc.h"
+#include "cpp_utils.h"
 #include "partial_sort.h"
 
-
-
-inline ckdtreenode*
-tree_buffer_root(std::vector<ckdtreenode> *buf)
-{
-    std::vector<ckdtreenode> &tmp = *buf;
-    return &tmp[0];
-}
 
 
 static npy_intp 
@@ -50,13 +43,15 @@ build(ckdtree *self, npy_intp start_idx, npy_intp end_idx,
     node_index = self->tree_buffer->size() - 1;
     root = tree_buffer_root(self->tree_buffer);
     n = root + node_index;
-                
+    memset(n, 0, sizeof(n[0]));
+
+    n->start_idx = start_idx;
+    n->end_idx = end_idx;
+    n->children = end_idx - start_idx;
+    
     if (end_idx-start_idx <= self->leafsize) {
         /* below brute force limit, return leafnode */
         n->split_dim = -1;
-        n->children = end_idx - start_idx;
-        n->start_idx = start_idx;
-        n->end_idx = end_idx;
         return node_index;
     }
     else {
@@ -99,9 +94,6 @@ build(ckdtree *self, npy_intp start_idx, npy_intp end_idx,
              * return leafnode
              */
             n->split_dim = -1;
-            n->children = end_idx - start_idx;
-            n->start_idx = start_idx;
-            n->end_idx = end_idx;
             return node_index;
         }   
         
@@ -199,7 +191,6 @@ build(ckdtree *self, npy_intp start_idx, npy_intp end_idx,
         n->_greater = _greater;
         n->less = root + _less;
         n->greater = root + _greater;
-        n->children = n->less->children + n->greater->children;      
         n->split_dim = d;
         n->split = split;
         
@@ -236,3 +227,67 @@ build_ckdtree(ckdtree *self, npy_intp start_idx, npy_intp end_idx,
         Py_RETURN_NONE;
     }
 }
+
+static npy_float64
+add_weights(ckdtree *self, 
+           npy_float64 *node_weights, 
+           npy_intp node_index, 
+           npy_float64 *weights)
+{
+      
+    npy_intp *indices = (npy_intp *)(self->raw_indices);
+
+    ckdtreenode *n, *root;
+
+    root = tree_buffer_root(self->tree_buffer); 
+
+    n = root + node_index;
+    
+    npy_float64 sum = 0;
+
+    if (n->split_dim != -1) {
+        /* internal nodes; recursively calculate the total weight */
+        npy_float64 left, right;
+        left = add_weights(self, node_weights, n->_less, weights);
+        right = add_weights(self, node_weights, n->_greater, weights);
+        sum = left + right;
+    } else {
+        npy_intp i;
+
+        /* Leaf nodes */
+        for (i = n->start_idx; i < n->end_idx; ++i) {
+            sum += weights[indices[i]];
+        }
+    }
+
+    node_weights[node_index] = sum;
+    return sum;
+}
+        
+        
+extern "C" PyObject*
+build_weights (ckdtree *self, npy_float64 *node_weights, npy_float64 *weights)
+{
+    
+    /* release the GIL */
+    NPY_BEGIN_ALLOW_THREADS
+    {
+        try {
+            add_weights(self, node_weights, 0, weights);        
+        } 
+        catch(...) {
+            translate_cpp_exception_with_gil();
+        }
+    }
+    /* reacquire the GIL */
+    NPY_END_ALLOW_THREADS
+
+    if (PyErr_Occurred()) 
+        /* true if a C++ exception was translated */
+        return NULL;
+    else {
+        /* return None if there were no errors */
+        Py_RETURN_NONE;
+    }
+}
+

@@ -7,6 +7,7 @@ import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state
+from scipy._lib.six import xrange
 import warnings
 
 
@@ -510,7 +511,7 @@ class DifferentialEvolutionSolver(object):
             self._calculate_population_energies()
 
         # do the optimisation.
-        for nit in range(1, self.maxiter + 1):
+        for nit in xrange(1, self.maxiter + 1):
             # evolve the population by a generation
             try:
                 next(self)

@@ -3,19 +3,19 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import math
 
 import numpy
-from numpy import (atleast_1d, poly, polyval, roots, real, asarray, allclose,
+import numpy as np
+from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    resize, pi, absolute, logspace, r_, sqrt, tan, log10,
                    arctan, arcsinh, sin, exp, cosh, arccosh, ceil, conjugate,
-                   zeros, sinh, append, concatenate, prod, ones, array)
-from numpy import mintypecode
-import numpy as np
-from scipy import special, optimize
-from scipy.special import comb
-from scipy.misc import factorial
+                   zeros, sinh, append, concatenate, prod, ones, array,
+                   mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
-import math
+
+from scipy import special, optimize
+from scipy.special import comb, factorial
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -25,7 +25,7 @@ __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
            'buttap', 'cheb1ap', 'cheb2ap', 'ellipap', 'besselap',
            'BadCoefficients',
            'tf2sos', 'sos2tf', 'zpk2sos', 'sos2zpk', 'group_delay',
-           'sosfreqz']
+           'sosfreqz', 'iirnotch', 'iirpeak']
 
 
 class BadCoefficients(UserWarning):
@@ -448,7 +448,7 @@ def sosfreqz(sos, worN=None, whole=False):
     >>> plt.plot(w/np.pi, np.angle(h))
     >>> plt.grid(True)
     >>> plt.yticks([-np.pi, -0.5*np.pi, 0, 0.5*np.pi, np.pi],
-    ...            ['$-\pi$', '$-\pi/2$', '0', '$\pi/2$', '$\pi$'])
+    ...            [r'$-\\pi$', r'$-\\pi/2$', '0', r'$\\pi/2$', r'$\\pi$'])
     >>> plt.ylabel('Phase [rad]')
     >>> plt.xlabel('Normalized frequency (1.0 = Nyquist)')
     >>> plt.show()
@@ -3607,8 +3607,7 @@ def besselap(N, norm='phase'):
     .. [1] C.R. Bond, "Bessel Filter Constants",
            http://www.crbond.com/papers/bsf.pdf
     .. [2] Campos and Calderon, "Approximate closed-form formulas for the
-           zeros of the Bessel Polynomials", arXiv:1105.0957 [math-ph],
-           http://arxiv.org/abs/1105.0957
+           zeros of the Bessel Polynomials", :arXiv:`1105.0957`.
     .. [3] Thomson, W.E., "Delay Networks having Maximally Flat Frequency
            Characteristics", Proceedings of the Institution of Electrical
            Engineers, Part III, November 1949, Vol. 96, No. 44, pp. 487-490.
@@ -3617,7 +3616,7 @@ def besselap(N, norm='phase'):
            April 1973
     .. [5] Ehrlich, "A modified Newton method for polynomials", Communications
            of the ACM, Vol. 10, Issue 2, pp. 107-108, Feb. 1967,
-           DOI:10.1145/363067.363115
+           :DOI:`10.1145/363067.363115`
     .. [6] Miller and Bohn, "A Bessel Filter Crossover, and Its Relation to
            Others", RaneNote 147, 1998, http://www.rane.com/note147.html
 
@@ -3651,6 +3650,233 @@ def besselap(N, norm='phase'):
             raise ValueError('normalization not understood')
 
     return asarray([]), asarray(p, dtype=complex), float(k)
+
+
+def iirnotch(w0, Q):
+    """
+    Design second-order IIR notch digital filter.
+
+    A notch filter is a band-stop filter with a narrow bandwidth
+    (high quality factor). It rejects a narrow frequency band and
+    leaves the rest of the spectrum little changed.
+
+    Parameters
+    ----------
+    w0 : float
+        Normalized frequency to remove from a signal. It is a
+        scalar that must satisfy  ``0 < w0 < 1``, with ``w0 = 1``
+        corresponding to half of the sampling frequency.
+    Q : float
+        Quality factor. Dimensionless parameter that characterizes
+        notch filter -3 dB bandwidth ``bw`` relative to its center
+        frequency, ``Q = w0/bw``.
+
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (``b``) and denominator (``a``) polynomials
+        of the IIR filter.
+
+    See Also
+    --------
+    iirpeak
+
+    Notes
+    -----
+    .. versionadded: 0.19.0
+
+    References
+    ----------
+    .. [1] Sophocles J. Orfanidis, "Introduction To Signal Processing",
+           Prentice-Hall, 1996
+
+    Examples
+    --------
+    Design and plot filter to remove the 60Hz component from a
+    signal sampled at 200Hz, using a quality factor Q = 30
+
+    >>> from scipy import signal
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> fs = 200.0  # Sample frequency (Hz)
+    >>> f0 = 60.0  # Frequency to be removed from signal (Hz)
+    >>> Q = 30.0  # Quality factor
+    >>> w0 = f0/(fs/2)  # Normalized Frequency
+    >>> # Design notch filter
+    >>> b, a = signal.iirnotch(w0, Q)
+
+    >>> # Frequency response
+    >>> w, h = signal.freqz(b, a)
+    >>> # Generate frequency axis
+    >>> freq = w*fs/(2*np.pi)
+    >>> # Plot
+    >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
+    >>> ax[0].plot(freq, 20*np.log10(abs(h)), color='blue')
+    >>> ax[0].set_title("Frequency Response")
+    >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
+    >>> ax[0].set_xlim([0, 100])
+    >>> ax[0].set_ylim([-25, 10])
+    >>> ax[0].grid()
+    >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
+    >>> ax[1].set_ylabel("Angle (degrees)", color='green')
+    >>> ax[1].set_xlabel("Frequency (Hz)")
+    >>> ax[1].set_xlim([0, 100])
+    >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
+    >>> ax[1].set_ylim([-90, 90])
+    >>> ax[1].grid()
+    >>> plt.show()
+    """
+
+    return _design_notch_peak_filter(w0, Q, "notch")
+
+
+def iirpeak(w0, Q):
+    """
+    Design second-order IIR peak (resonant) digital filter.
+
+    A peak filter is a band-pass filter with a narrow bandwidth
+    (high quality factor). It rejects components outside a narrow
+    frequency band.
+
+    Parameters
+    ----------
+    w0 : float
+        Normalized frequency to be retained in a signal. It is a
+        scalar that must satisfy  ``0 < w0 < 1``, with ``w0 = 1`` corresponding
+        to half of the sampling frequency.
+    Q : float
+        Quality factor. Dimensionless parameter that characterizes
+        peak filter -3 dB bandwidth ``bw`` relative to its center
+        frequency, ``Q = w0/bw``.
+
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (``b``) and denominator (``a``) polynomials
+        of the IIR filter.
+
+    See Also
+    --------
+    iirnotch
+
+    Notes
+    -----
+    .. versionadded: 0.19.0
+
+    References
+    ----------
+    .. [1] Sophocles J. Orfanidis, "Introduction To Signal Processing",
+           Prentice-Hall, 1996
+
+    Examples
+    --------
+    Design and plot filter to remove the frequencies other than the 300Hz
+    component from a signal sampled at 1000Hz, using a quality factor Q = 30
+
+    >>> from scipy import signal
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> fs = 1000.0  # Sample frequency (Hz)
+    >>> f0 = 300.0  # Frequency to be retained (Hz)
+    >>> Q = 30.0  # Quality factor
+    >>> w0 = f0/(fs/2)  # Normalized Frequency
+    >>> # Design peak filter
+    >>> b, a = signal.iirpeak(w0, Q)
+
+    >>> # Frequency response
+    >>> w, h = signal.freqz(b, a)
+    >>> # Generate frequency axis
+    >>> freq = w*fs/(2*np.pi)
+    >>> # Plot
+    >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
+    >>> ax[0].plot(freq, 20*np.log10(abs(h)), color='blue')
+    >>> ax[0].set_title("Frequency Response")
+    >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
+    >>> ax[0].set_xlim([0, 500])
+    >>> ax[0].set_ylim([-50, 10])
+    >>> ax[0].grid()
+    >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
+    >>> ax[1].set_ylabel("Angle (degrees)", color='green')
+    >>> ax[1].set_xlabel("Frequency (Hz)")
+    >>> ax[1].set_xlim([0, 500])
+    >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
+    >>> ax[1].set_ylim([-90, 90])
+    >>> ax[1].grid()
+    >>> plt.show()
+    """
+
+    return _design_notch_peak_filter(w0, Q, "peak")
+
+
+def _design_notch_peak_filter(w0, Q, ftype):
+    """
+    Design notch or peak digital filter.
+
+    Parameters
+    ----------
+    w0 : float
+        Normalized frequency to remove from a signal. It is a
+        scalar that must satisfy  ``0 < w0 < 1``, with ``w0 = 1``
+        corresponding to half of the sampling frequency.
+    Q : float
+        Quality factor. Dimensionless parameter that characterizes
+        notch filter -3 dB bandwidth ``bw`` relative to its center
+        frequency, ``Q = w0/bw``.
+    ftype : str
+        The type of IIR filter to design:
+
+            - notch filter : ``notch``
+            - peak filter  : ``peak``
+
+    Returns
+    -------
+    b, a : ndarray, ndarray
+        Numerator (``b``) and denominator (``a``) polynomials
+        of the IIR filter.
+    """
+
+    # Guarantee that the inputs are floats
+    w0 = float(w0)
+    Q = float(Q)
+
+    # Checks if w0 is within the range
+    if w0 > 1.0 or w0 < 0.0:
+        raise ValueError("w0 should be such that 0 < w0 < 1")
+
+    # Get bandwidth
+    bw = w0/Q
+
+    # Normalize inputs
+    bw = bw*np.pi
+    w0 = w0*np.pi
+
+    # Compute -3dB atenuation
+    gb = 1/np.sqrt(2)
+
+    if ftype == "notch":
+        # Compute beta: formula 11.3.4 (p.575) from reference [1]
+        beta = (np.sqrt(1.0-gb**2.0)/gb)*np.tan(bw/2.0)
+    elif ftype == "peak":
+        # Compute beta: formula 11.3.19 (p.579) from reference [1]
+        beta = (gb/np.sqrt(1.0-gb**2.0))*np.tan(bw/2.0)
+    else:
+        raise ValueError("Unknown ftype.")
+
+    # Compute gain: formula 11.3.6 (p.575) from reference [1]
+    gain = 1.0/(1.0+beta)
+
+    # Compute numerator b and denominator a
+    # formulas 11.3.7 (p.575) and 11.3.21 (p.579)
+    # from reference [1]
+    if ftype == "notch":
+        b = gain*np.array([1.0, -2.0*np.cos(w0), 1.0])
+    else:
+        b = (1.0-gain)*np.array([1.0, 0.0, -1.0])
+    a = np.array([1.0, -2.0*gain*np.cos(w0), (2.0*gain-1.0)])
+
+    return b, a
 
 
 filter_dict = {'butter': [buttap, buttord],
@@ -3699,3 +3925,4 @@ bessel_norms = {'bessel': 'phase',
                 'bessel_phase': 'phase',
                 'bessel_delay': 'delay',
                 'bessel_mag': 'mag'}
+

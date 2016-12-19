@@ -5,8 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy import special
-from scipy.special import entr, gammaln as gamln
-from scipy.misc import logsumexp
+from scipy.special import entr, logsumexp, gammaln as gamln
 from scipy._lib._numpy_compat import broadcast_to
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -142,13 +141,17 @@ class nbinom_gen(rv_discrete):
 
     Notes
     -----
-    The probability mass function for `nbinom` is::
+    Negative binomial distribution describes a sequence of i.i.d. Bernoulli 
+    trials, repeated until a predefined, non-random number of successes occurs.
 
-         nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
+    The probability mass function of the number of failures for `nbinom` is::
+
+       nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
 
     for ``k >= 0``.
 
-    `nbinom` takes ``n`` and ``p`` as shape parameters.
+    `nbinom` takes ``n`` and ``p`` as shape parameters where n is the number of
+    successes, whereas p is the probability of a single success.
 
     %(after_notes)s
 
@@ -406,10 +409,10 @@ class logser_gen(rv_discrete):
         return (p > 0) & (p < 1)
 
     def _pmf(self, k, p):
-        return -np.power(p, k) * 1.0 / k / log(1 - p)
+        return -np.power(p, k) * 1.0 / k / special.log1p(-p)
 
     def _stats(self, p):
-        r = log(1 - p)
+        r = special.log1p(-p)
         mu = p / (p - 1.0) / r
         mu2p = -p / r / (p - 1.0)**2
         var = mu2p - mu*mu

@@ -65,9 +65,9 @@ def assert_deallocated(func, *args, **kwargs):
     ----------
     func : callable
         Callable to create object to check
-    \*args : sequence
+    \\*args : sequence
         positional arguments to `func` in order to create object to check
-    \*\*kwargs : dict
+    \\*\\*kwargs : dict
         keyword arguments to `func` in order to create object to check
 
     Examples

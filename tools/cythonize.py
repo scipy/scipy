@@ -54,8 +54,8 @@ def process_pyx(fromfile, tofile):
     try:
         from Cython.Compiler.Version import version as cython_version
         from distutils.version import LooseVersion
-        if LooseVersion(cython_version) < LooseVersion('0.22'):
-            raise Exception('Building SciPy requires Cython >= 0.22')
+        if LooseVersion(cython_version) < LooseVersion('0.23.4'):
+            raise Exception('Building SciPy requires Cython >= 0.23.4')
 
     except ImportError:
         pass
@@ -114,6 +114,8 @@ def load_hashes(filename):
         with open(filename, 'r') as f:
             for line in f:
                 filename, inhash, outhash = line.split()
+                if outhash == "None":
+                    outhash = None
                 hashes[filename] = (inhash, outhash)
     else:
         hashes = {}
@@ -142,14 +144,42 @@ def normpath(path):
 
 def get_hash(frompath, topath):
     from_hash = sha1_of_file(frompath)
-    to_hash = sha1_of_file(topath) if os.path.exists(topath) else None
+    if topath:
+        to_hash = sha1_of_file(topath) if os.path.exists(topath) else None
+    else:
+        to_hash = None
     return (from_hash, to_hash)
 
-def process(path, fromfile, tofile, processor_function, hash_db):
+def get_pxi_dependencies(fullfrompath):
+    fullfromdir = os.path.dirname(fullfrompath)
+    dependencies = []
+    with open(fullfrompath, 'r') as f:
+        for line in f:
+            line = [token.strip('\'\" \r\n') for token in line.split(' ')]
+            if line[0] == "include":
+                dependencies.append(os.path.join(fullfromdir, line[1]))
+    return dependencies
+
+def process(path, fromfile, tofile, processor_function, hash_db, pxi_hashes):
     fullfrompath = os.path.join(path, fromfile)
     fulltopath = os.path.join(path, tofile)
     current_hash = get_hash(fullfrompath, fulltopath)
     if current_hash == hash_db.get(normpath(fullfrompath), None):
+        file_changed = False
+    else:
+        file_changed = True
+
+    pxi_changed = False
+    pxi_dependencies = get_pxi_dependencies(fullfrompath)
+    for pxi in pxi_dependencies:
+        pxi_hash = get_hash(pxi, None)
+        if pxi_hash == hash_db.get(normpath(pxi), None):
+            continue
+        else:
+            pxi_hashes[normpath(pxi)] = pxi_hash
+            pxi_changed = True
+
+    if not file_changed and not pxi_changed:
         print('%s has not changed' % fullfrompath)
         return
 
@@ -168,6 +198,10 @@ def process(path, fromfile, tofile, processor_function, hash_db):
 
 def find_process_files(root_dir):
     hash_db = load_hashes(HASH_FILE)
+    # Keep changed .pxi hashes in a separate dict until the end
+    # because if we update hash_db and multiple files include the same
+    # .pxi file the changes won't be detected.
+    pxi_hashes = {}
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
             in_file = os.path.join(cur_dir, filename + ".in")
@@ -183,8 +217,9 @@ def find_process_files(root_dir):
                             toext = ".cxx"
                     fromfile = filename
                     tofile = filename[:-len(fromext)] + toext
-                    process(cur_dir, fromfile, tofile, function, hash_db)
-                    save_hashes(hash_db, HASH_FILE)
+                    process(cur_dir, fromfile, tofile, function, hash_db, pxi_hashes)
+    hash_db.update(pxi_hashes)
+    save_hashes(hash_db, HASH_FILE)
 
 def main():
     try:
