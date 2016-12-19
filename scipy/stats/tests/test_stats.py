@@ -422,6 +422,7 @@ class TestCorrSpearmanr(TestCase):
     def test_nan_policy(self):
         x = np.arange(10.)
         x[9] = np.nan
+        assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
         assert_array_equal(stats.spearmanr(x, x, nan_policy='omit'),
                            (1.0, 0.0))
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
@@ -536,6 +537,11 @@ class TestCorrSpearmanr(TestCase):
         res = stats.spearmanr(X, X)
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
+
+    def test_spearmanr_optional_param(self):
+        x = np.reshape(range(1,10,1), (3,3))
+        res = (np.ones((3,3)), np.zeros((3,3)))
+        assert_array_equal(stats.spearmanr(x), res)
 
 
 class TestCorrSpearmanrTies(TestCase):
