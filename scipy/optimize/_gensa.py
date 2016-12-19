@@ -16,10 +16,6 @@ from scipy._lib._util import check_random_state
 
 __all__ = ['gensa']
 
-KSPRING = 1.e8
-BIG_VALUE = 1.e13
-MAX_REINIT_COUNT = 100
-
 
 class GenSARunner(object):
     """This class implements the core of the gensa algorithm.
@@ -65,8 +61,13 @@ class GenSARunner(object):
     maxsteps : int, optional
         The maximum number of gensa iterations will perform.
     """
+
+    KSPRING = 1.e8
+    BIG_VALUE = 1.e13
+    MAX_REINIT_COUNT = 100
+
     def __init__(self, fun, x0, bounds, args=(), seed=None,
-            temp_start=5230, qv=2.62, qa=-5.0, maxfun=1e7, maxsteps=500,
+            temperature_start=5230, qv=2.62, qa=-5.0, maxfun=1e7, maxsteps=500,
             pure_sa=False):
         self.fun = fun
         self.args = args
@@ -104,13 +105,13 @@ class GenSARunner(object):
         self.maxsteps = maxsteps
         # Minimum value of annealing temperature reached to perform
         # re-annealing
-        self.temp_restart = 0.1
+        self.temperature_restart = 0.1
         # Visiting distribution parameter
         self.qv = qv
         # Acceptance parameter value
         self.qa = qa
         # Initial temperature value for annealing
-        self.temp_start = temp_start
+        self.temperature_start = temperature_start
         # Not yet implemented contraint function that would be used in the
         # future
         self.has_constraint = False
@@ -122,9 +123,9 @@ class GenSARunner(object):
         self._x = np.array(x0)
         self._xrange = self._upper - self._lower
         self._xbackup = np.array(self._x)
-        self._xmini = np.array(self._x)
+        self._xmin = np.array(self._x)
         self._xbuffer = np.zeros(self._x.size)
-        self._temp = self.temp_start
+        self._temperature = self.temperature_start
         self._usey = 1
         self._xgas = 0.0
         self._ygas = 0.0
@@ -133,9 +134,9 @@ class GenSARunner(object):
         self._sgas = -1.0
         self._step_record = 0
         self._nbfuncall = 0
-        self._emini_unchanged = True
-        self._index_no_emini_update = 0
-        self._temp_qa = 0
+        self._emin_unchanged = True
+        self._index_no_emin_update = 0
+        self._temperature_qa = 0
         self._initialize()
 
     def _initialize(self):
@@ -151,8 +152,8 @@ class GenSARunner(object):
         reinit_counter = 0
         while(init_error):
             self._energy(self._x)
-            if self._etot >= BIG_VALUE:
-                if reinit_counter >= MAX_REINIT_COUNT:
+            if self._etot >= self.BIG_VALUE:
+                if reinit_counter >= self.MAX_REINIT_COUNT:
                     init_error = False
                     self._message = [(
                         'Stopping algorithm because function '
@@ -203,9 +204,9 @@ class GenSARunner(object):
     def _run_markov_chain(self, step):
         for j in range(self.markov_length):
             if j == 0:
-                self._emini_unchanged = True
+                self._emin_unchanged = True
             if step == 0 and j == 0:
-                self._emini_unchanged = False
+                self._emin_unchanged = False
             # Keeping old location before visiting new place
             self._xbackup = np.array(self._x)
             self._visiting(j)
@@ -213,16 +214,16 @@ class GenSARunner(object):
             if self._etot < self._etot0:
                 # We get a better energy value
                 self._etot0 = np.array(self._etot)
-                if self._etot < self._emini:
-                    self._emini = np.array(self._etot)
-                    self._xmini = np.array(self._x)
-                    self._emini_unchanged = False
-                    self._index_no_emini_update = 0
+                if self._etot < self._emin:
+                    self._emin = np.array(self._etot)
+                    self._xmin = np.array(self._x)
+                    self._emin_unchanged = False
+                    self._index_no_emin_update = 0
             else:
                 # We do not have improvement but do we accept location
                 r = self._random_state.random_sample()
                 pqa1 = (self.qa - 1.0) * (
-                    self._etot - self._etot0) / self._temp_qa + 1.0
+                    self._etot - self._etot0) / self._temperature_qa + 1.0
                 if pqa1 < 0.0:
                     pqa = 0.0
                 else:
@@ -236,78 +237,78 @@ class GenSARunner(object):
             if self._check_stopping():
                 self._stop_search()
                 return 0
-            if self._index_no_emini_update >= self._index_tol_emini_update - 1:
+            if self._index_no_emin_update >= self._index_tol_emin_update - 1:
                 if j == 0:
-                    self._emini_markov = np.array(self._etot0)
-                    self._xmini_markov = np.array(self._x)
+                    self._emin_markov = np.array(self._etot0)
+                    self._xmin_markov = np.array(self._x)
                 else:
                     if self._etot0 < self._emini_markov:
-                        self._emini_markov = np.array(self._etot0)
-                        self._xmini_markov = np.array(self._x)
+                        self._emin_markov = np.array(self._etot0)
+                        self._xmin_markov = np.array(self._x)
 
     def start_search(self):
         """ Start annealing process with eventually re-annealing
         """
         in_constraint = True
-        self._emini_unchanged = True
-        self._emini_markov = 0.0
-        self._xmini_markov = np.zeros(self._x.size)
-        self._index_no_emini_update = 0
-        self._index_tol_emini_update = 1000
+        self._emin_unchanged = True
+        self._emin_markov = 0.0
+        self._xmin_markov = np.zeros(self._x.size)
+        self._index_no_emin_update = 0
+        self._index_tol_emin_update = 1000
         self._starttime = time.time()
-        self._emini = np.array(self._etot)
-        self._xmini = np.array(self._x)
+        self._emin = np.array(self._etot)
+        self._xmin = np.array(self._x)
         self._etot0 = np.array(self._etot)
-        if self._etot < self._emini:
-            self._emini = np.array(self._etot)
-            self._xmini = np.array(self._x)
+        if self._etot < self._emin:
+            self._emin = np.array(self._etot)
+            self._xmin = np.array(self._x)
         self._etot0 = self._etot
         if self._check_stopping():
             self._stop_search()
         self._step_record = 0
-        self._temp = self.temp_start
-        tolowtemp = True
-        while(tolowtemp):
+        self._temperature = self.temperature_start
+        max_steps_not_exceeded = True
+        while(max_steps_not_exceeded):
             for i in range(self.maxsteps):
                 # Evaluating iteration artificial temperature
                 s = float(i) + 2.0
                 t1 = np.exp((self.qv - 1) * np.log(2.0)) - 1.0
                 t2 = np.exp((self.qv - 1) * np.log(s)) - 1.0
-                self._temp = self.temp_start * t1 / t2
+                self._temperature = self.temperature_start * t1 / t2
                 self._step_record += 1
-                self._temp_qa = self._temp / float(i + 1)
-                self._index_no_emini_update += 1
+                self._temperature_qa = self._temperature / float(i + 1)
+                self._index_no_emin_update += 1
                 # break out of both for-loop and while loop because, annealing
                 # and eventually re-anneling reached maximum number of
                 # iteration set.
                 if self._step_record == self.maxsteps:
-                    tolowtemp = False
+                    max_steps_not_exceeded = False
                     break
                 # Need a re-annealing process? - Restarting main loop
-                if self._temp < self.temp_restart:
+                if self._temperature < self.temperature_restart:
                     break
                 # Starting Markov chain
                 self._run_markov_chain(i)
 
                 # Decision making for performing a local search
                 # based on the markov chain results
-                if not self._emini_unchanged and not self.pure_sa:
-                    temp = np.array(self._xmini)
+                if not self._emin_unchanged and not self.pure_sa:
+                    temp = np.array(self._xmin)
                     etemp = self._ls_energy(temp)
                     temp = self._xbuffer
-                    if etemp < self._emini:
-                        self._xmini = np.array(temp)
-                        self._emini = np.array(etemp)
-                        self._index_no_emini_update = 0
-                if self._index_no_emini_update >= (
-                        self._index_tol_emini_update - 1) and not self.pure_sa:
-                    self._emini_markov = np.array(self._ls_energy(
-                        self._xmini_markov))
-                    self._index_no_emini_update = 0
-                    self._index_tol_emini_update = self._x.size
-                    if self._emini_markov < self._emini:
-                        self._xmini = np.array(self._xmini_markov)
-                        self._emini = np.array(self._emini_markov)
+                    if etemp < self._emin:
+                        self._xmin = np.array(temp)
+                        self._emin = np.array(etemp)
+                        self._index_no_emin_update = 0
+                if self._index_no_emin_update >= (
+                        self._index_tol_emin_update - 1) and not self.pure_sa:
+                    self._emin_markov = np.array(self._ls_energy(
+                        self._xmin_markov))
+                    self._index_no_emin_update = 0
+                    self._index_tol_emin_update = self._x.size
+                    if self._emin_markov < self._emin:
+                        self._xmin = np.array(self._xmin_markov)
+                        self._emin = np.array(self._emin_markov)
                 if self._check_stopping():
                     self._stop_search()
                     return 0
@@ -319,7 +320,7 @@ class GenSARunner(object):
         """Check if the search has to be stopped
         """
         if self.know_real:
-            if self._emini <= self.real_threshold:
+            if self._emin <= self.real_threshold:
                 self._message = ["Known value for minimum reached"]
                 return True
         self._endtime = time.time()
@@ -336,11 +337,11 @@ class GenSARunner(object):
         """
         if self.pure_sa:
             # In case of pure sa approach, doing ad LS at the end
-            temp = np.array(self._xmini)
+            temp = np.array(self._xmin)
             etemp = self._ls_energy(temp)
             temp = self._xbuffer
-            self._xmini = np.array(temp)
-            self._emini = np.array(etemp)
+            self._xmin = np.array(temp)
+            self._emin = np.array(etemp)
         self._endtime = time.time()
 
     def _coordin(self):
@@ -356,7 +357,7 @@ class GenSARunner(object):
         if self.has_constraint:
             in_constraint = self.judge_constraint()
             if not in_constraint:
-                self._etot = BIG_VALUE
+                self._etot = self.BIG_VALUE
                 return 0
         if np.all(np.logical_and(
                 x >= self._lower, x <= self._upper)):
@@ -365,16 +366,16 @@ class GenSARunner(object):
             lcomp = x < self._lower
             ucomp = x > self._upper
             delta_energy_l = np.fabs(
-                x[lcomp] - self._lower[lcomp]) * KSPRING
+                x[lcomp] - self._lower[lcomp]) * self.KSPRING
             delta_energy_u = np.fabs(
-                x[ucomp] - self._upper[ucomp]) * KSPRING
+                x[ucomp] - self._upper[ucomp]) * self.KSPRING
             delta_energy = np.sum(delta_energy_l) + np.sum(
                 delta_energy_u)
         self._etot = self.fun(x, *self.args)
         self._nbfuncall += 1
         self._etot = self._etot + delta_energy
         if np.isinf(self._etot) or np.isnan(self._etot):
-            self._etot = BIG_VALUE
+            self._etot = self.BIG_VALUE
 
     def _ls_energy(self, x):
         """Performing a local search on the current location
@@ -388,7 +389,7 @@ class GenSARunner(object):
         """Visiting distribution function
         """
         pi = np.arcsin(1.0) * 2.0
-        fator1 = np.exp(np.log(self._temp) / (self.qv - 1.0))
+        fator1 = np.exp(np.log(self._temperature) / (self.qv - 1.0))
         fator2 = np.exp((4.0 - self.qv) * np.log(self.qv - 1.0))
         fator3 = np.exp((2.0 - self.qv) * np.log(2.0) / (self.qv - 1.0))
         fator4 = np.sqrt(pi) * fator1 * fator2 / (fator3 * (3.0 - self.qv))
@@ -510,7 +511,7 @@ class GenSARunner(object):
     def result(self):
         """ The OptimizeResult """
         res = OptimizeResult()
-        res.x = self._xmini
+        res.x = self._xmin
         res.fun = self._fvalue
         res.message = self._message
         res.nit = self._step_record
@@ -662,9 +663,9 @@ def gensa(func, x0, bounds, maxiter=500, initial_temp=5230., visit=2.62,
     >>> print("global minimum: xmin = {0}, f(xmin) = {1}".format(
     ...    ret.x, ret.fun))
     """
-    gr = GenSARunner(func, x0, bounds, args, seed, temp_start=initial_temp,
-            qv = visit, qa = accept, maxfun=maxfun, maxsteps=maxiter,
-            pure_sa=pure_sa)
+    gr = GenSARunner(func, x0, bounds, args, seed,
+            temperature_start=initial_temp, qv = visit, qa = accept,
+            maxfun=maxfun, maxsteps=maxiter,pure_sa=pure_sa)
     gr.start_search()
     return gr.result
 
