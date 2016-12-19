@@ -778,6 +778,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
         warnings.warn('nperseg = {0:d}, is greater than input length = {1:d}, '
                       'using nperseg = {1:d}'.format(nperseg, x.shape[-1]))
         nperseg = x.shape[-1]
+        win, nperseg = _triage_segments(window, nperseg) 
 
     nperseg = int(nperseg)
     if nperseg < 1:
@@ -966,8 +967,10 @@ def _triage_segments(window, nperseg):
     window : ndarray
         Array of FFT data
     
-    nperseg : 
+    nperseg : int, optional
+        Length of each segment.  Defaults to 256.
     """
+    
     
     #parse window; if array like, then set nperseg = win.shape
     if isinstance(window, string_types) or isinstance(window, tuple):
@@ -981,5 +984,8 @@ def _triage_segments(window, nperseg):
             raise ValueError('window must be 1-D')
         if nperseg is None:
             nperseg = win.shape[0]
-    
+        elif nperseg is not None:
+            if nperseg != win.shape[0]:
+                raise ValueError("Value specified for nperseg is different from"
+                                 " length of ndarray provided as window.")
     return win, nperseg
