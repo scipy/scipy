@@ -156,18 +156,21 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             raise ValueError('data, indices, and indptr should be 1-D')
 
         # check index pointer
-        if (len(self.indptr) != major_dim + 1):
+        if len(self.indptr) != major_dim + 1:
             raise ValueError("index pointer size (%d) should be (%d)" %
                                 (len(self.indptr), major_dim + 1))
-        if (self.indptr[0] != 0):
+        if self.indptr[0] != 0:
             raise ValueError("index pointer should start with 0")
 
         # check index and data arrays
-        if (len(self.indices) != len(self.data)):
+        if len(self.indices) != len(self.data):
             raise ValueError("indices and data should have the same size")
-        if (self.indptr[-1] > len(self.indices)):
+        if self.indptr[-1] > len(self.indices):
             raise ValueError("Last value of index pointer should be less than "
-                                "the size of index and data arrays")
+                             "the size of index and data arrays")
+        if self.indptr[-1] < len(self.indices):
+            warn("Last value of index pointer is less than the size of index "
+                 "and data arrays", SparseEfficiencyWarning)
 
         self.prune()
 
