@@ -74,7 +74,7 @@ class GenSARunner(object):
         self.pure_sa = pure_sa
         if x0 is not None and not len(x0) == len(bounds):
             raise ValueError('Bounds size does not match x0')
-        lu = zip(*bounds)
+        lu = list(zip(*bounds))
         self._lower = np.array(lu[0])
         self._upper = np.array(lu[1])
         # Checking that bounds are consistent
