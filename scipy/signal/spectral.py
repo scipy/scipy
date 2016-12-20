@@ -971,7 +971,6 @@ def _triage_segments(window, nperseg):
         Length of each segment.  Defaults to 256.
     """
     
-    
     #parse window; if array like, then set nperseg = win.shape
     if isinstance(window, string_types) or isinstance(window, tuple):
         # if nperseg not specified
