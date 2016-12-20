@@ -655,8 +655,8 @@ def gensa(func, x0, bounds, maxiter=500, initial_temp=5230., visit=2.62,
     (https://en.wikipedia.org/wiki/Rastrigin_function)
 
     >>> from scipy.optimize import gensa
-    >>> func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x)) +
-    ...    10 * np.size(x)
+    >>> func = lambda x: np.sum(x * x - 10 * np.cos(
+    ...    2 * np.pi * x)) + 10 * np.size(x)
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
     >>> ret = gensa(func, None, bounds=(zip(lw, up)))
