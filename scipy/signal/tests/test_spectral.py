@@ -476,7 +476,7 @@ class TestWelch(TestCase):
     def test_window_correction(self):
         A = 20
         fs = 1e4
-        nperseg = fs//10
+        nperseg = int(fs//10)
         fsig = 300
         ii = int(fsig*nperseg//fs)  # Freq index of fsig
 
