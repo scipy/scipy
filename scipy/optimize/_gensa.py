@@ -660,8 +660,6 @@ def gensa(func, x0, bounds, maxiter=500, initial_temp=5230., visit=2.62,
     >>> lw = [-5.12] * 10
     >>> up = [5.12] * 10
     >>> ret = gensa(func, None, bounds=(zip(lw, up)))
-    >>> #print("global minimum: xmin = {0}, f(xmin) = {1}".format(
-    ... #   ret.x, ret.fun))
     """
     gr = GenSARunner(func, x0, bounds, args, seed,
             temperature_start=initial_temp, qv = visit, qa = accept,
