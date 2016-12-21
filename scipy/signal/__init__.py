@@ -85,8 +85,10 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
-   freqs         -- Analog filter frequency response.
-   freqz         -- Digital filter frequency response.
+   freqs         -- Analog filter frequency response from TF coefficients.
+   freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
+   freqz         -- Digital filter frequency response from TF coefficients.
+   freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    sosfreqz      -- Digital filter frequency response for SOS format filter.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
