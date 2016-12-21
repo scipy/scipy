@@ -5,11 +5,10 @@ import warnings
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, assert_raises, TestCase, run_module_suite)
-from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
-                          dlti, bode, freqresp, lsim, impulse, step,
-                          abcd_normalize, place_poles,
-                          TransferFunction, StateSpace, ZerosPolesGain)
-from scipy.signal.filter_design import BadCoefficients
+from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti, dlti,
+                          bode, freqresp, lsim, impulse, step, abcd_normalize,
+                          place_poles, TransferFunction, StateSpace,
+                          ZerosPolesGain, BadCoefficients)
 import scipy.linalg as linalg
 
 
