@@ -547,11 +547,12 @@ class gaussian_kde(object):
 
         if m >= self.n:
             # there are more points than data, so loop over data
+            energy = zeros((self.n, m), dtype=float)
             for i in range(self.n):
                 diff = self.dataset[:, i, newaxis] - points
                 tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff,axis=0) / 2.0
-                result = logsumexp(-energy, b=1/self._norm_factor)
+                energy[i] = sum(diff*tdiff,axis=0) / 2.0
+            result = logsumexp(-energy, b=1/self._norm_factor, axis=0)
         else:
             # loop over points
             for i in range(m):
