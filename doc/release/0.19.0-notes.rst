@@ -41,6 +41,9 @@ Moreover, both gained a ``balanced`` keyword to turn balancing on and off.
 `SphericalVoronoi.sort_vertices_of_regions()` has been re-written in
 cython to improve performance
 
+`SphericalVoronoi` can handle > 200 k points (at least 10 million) & has
+improved performance
+
 `scipy.ndimage` improvements
 ----------------------------
 
