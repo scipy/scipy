@@ -1,6 +1,8 @@
 from __future__ import print_function
 import numpy as np
+import itertools
 from numpy.testing import (TestCase,
+                           assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
@@ -109,6 +111,27 @@ class TestSphericalVoronoi(TestCase):
         unsorted_regions = sv.regions
         sv.sort_vertices_of_regions()
         assert_array_equal(sorted(sv.regions), sorted(unsorted_regions))
+
+    def test_sort_vertices_of_regions_flattened(self):
+        expected = sorted([[0, 6, 5, 2, 3], [2, 3, 10, 11, 8, 7], [0, 6, 4, 1], [4, 8,
+            7, 5, 6], [9, 11, 10], [2, 7, 5], [1, 4, 8, 11, 9], [0, 3, 10, 9,
+                1]])
+        expected = list(itertools.chain(*sorted(expected)))
+        sv = SphericalVoronoi(self.points)
+        sv.sort_vertices_of_regions()
+        actual = list(itertools.chain(*sorted(sv.regions)))
+        assert_array_equal(actual, expected)
+
+    def test_num_vertices(self):
+        # for any n >= 3, a spherical Voronoi diagram has 2n - 4
+        # vertices; this is a direct consequence of Euler's formula
+        # as explained by Dinis and Mamede (2010) Proceedings of the
+        # 2010 International Symposium on Voronoi Diagrams in Science
+        # and Engineering
+        sv = SphericalVoronoi(self.points)
+        expected = self.points.shape[0] * 2 - 4
+        actual = sv.vertices.shape[0]
+        assert_equal(actual, expected)
 
     def test_voronoi_circles(self):
         sv = spherical_voronoi.SphericalVoronoi(self.points)

@@ -5,7 +5,8 @@ import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_raises, assert_allclose,
-                           assert_array_equal, TestCase, run_module_suite)
+                           assert_array_equal, assert_almost_equal,
+                           TestCase, run_module_suite)
 
 import scipy.ndimage as sndi
 
@@ -84,6 +85,165 @@ def test_valid_origins():
         # Just check this raises an error instead of silently accepting or
         # segfaulting.
         assert_raises(ValueError, filter, data, 3, origin=2)
+
+
+def test_multiple_modes():
+    # Test that the filters with multiple mode cababilities for different
+    # dimensions give the same result as applying a single mode.
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
+
+    mode1 = 'reflect'
+    mode2 = ['reflect', 'reflect']
+
+    assert_equal(sndi.gaussian_filter(arr, 1, mode=mode1),
+                 sndi.gaussian_filter(arr, 1, mode=mode2))
+    assert_equal(sndi.prewitt(arr, mode=mode1),
+                 sndi.prewitt(arr, mode=mode2))
+    assert_equal(sndi.sobel(arr, mode=mode1),
+                 sndi.sobel(arr, mode=mode2))
+    assert_equal(sndi.laplace(arr, mode=mode1),
+                 sndi.laplace(arr, mode=mode2))
+    assert_equal(sndi.gaussian_laplace(arr, 1, mode=mode1),
+                 sndi.gaussian_laplace(arr, 1, mode=mode2))
+    assert_equal(sndi.maximum_filter(arr, size=5, mode=mode1),
+                 sndi.maximum_filter(arr, size=5, mode=mode2))
+    assert_equal(sndi.minimum_filter(arr, size=5, mode=mode1),
+                 sndi.minimum_filter(arr, size=5, mode=mode2))
+    assert_equal(sndi.gaussian_gradient_magnitude(arr, 1, mode=mode1),
+                 sndi.gaussian_gradient_magnitude(arr, 1, mode=mode2))
+    assert_equal(sndi.uniform_filter(arr, 5, mode=mode1),
+                 sndi.uniform_filter(arr, 5, mode=mode2))
+
+
+def test_multiple_modes_sequentially():
+    # Test that the filters with multiple mode cababilities for different
+    # dimensions give the same result as applying the filters with
+    # different modes sequentially
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
+
+    modes = ['reflect', 'wrap']
+
+    expected = sndi.gaussian_filter1d(arr, 1, axis=0, mode=modes[0])
+    expected = sndi.gaussian_filter1d(expected, 1, axis=1, mode=modes[1])
+    assert_equal(expected,
+                 sndi.gaussian_filter(arr, 1, mode=modes))
+
+    expected = sndi.uniform_filter1d(arr, 5, axis=0, mode=modes[0])
+    expected = sndi.uniform_filter1d(expected, 5, axis=1, mode=modes[1])
+    assert_equal(expected,
+                 sndi.uniform_filter(arr, 5, mode=modes))
+
+    expected = sndi.maximum_filter1d(arr, size=5, axis=0, mode=modes[0])
+    expected = sndi.maximum_filter1d(expected, size=5, axis=1, mode=modes[1])
+    assert_equal(expected,
+                 sndi.maximum_filter(arr, size=5, mode=modes))
+
+    expected = sndi.minimum_filter1d(arr, size=5, axis=0, mode=modes[0])
+    expected = sndi.minimum_filter1d(expected, size=5, axis=1, mode=modes[1])
+    assert_equal(expected,
+                 sndi.minimum_filter(arr, size=5, mode=modes))
+
+
+def test_multiple_modes_prewitt():
+    # Test prewitt filter for multiple extrapolation modes
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
+
+    expected = np.array([[1., -3., 2.],
+                         [1., -2., 1.],
+                         [1., -1., 0.]])
+
+    modes = ['reflect', 'wrap']
+
+    assert_equal(expected,
+                 sndi.prewitt(arr, mode=modes))
+
+
+def test_multiple_modes_sobel():
+    # Test sobel filter for multiple extrapolation modes
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
+
+    expected = np.array([[1., -4., 3.],
+                         [2., -3., 1.],
+                         [1., -1., 0.]])
+
+    modes = ['reflect', 'wrap']
+
+    assert_equal(expected,
+                 sndi.sobel(arr, mode=modes))
+
+
+def test_multiple_modes_laplace():
+    # Test laplace filter for multiple extrapolation modes
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
+
+    expected = np.array([[-2., 2., 1.],
+                         [-2., -3., 2.],
+                         [1., 1., 0.]])
+
+    modes = ['reflect', 'wrap']
+
+    assert_equal(expected,
+                 sndi.laplace(arr, mode=modes))
+
+
+def test_multiple_modes_gaussian_laplace():
+    # Test gaussian_laplace filter for multiple extrapolation modes
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
+
+    expected = np.array([[-0.28438687, 0.01559809, 0.19773499],
+                         [-0.36630503, -0.20069774, 0.07483620],
+                         [0.15849176, 0.18495566, 0.21934094]])
+
+    modes = ['reflect', 'wrap']
+
+    assert_almost_equal(expected,
+                        sndi.gaussian_laplace(arr, 1, mode=modes))
+
+
+def test_multiple_modes_gaussian_gradient_magnitude():
+    # Test gaussian_gradient_magnitude filter for multiple
+    # extrapolation modes
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
+
+    expected = np.array([[0.04928965, 0.09745625, 0.06405368],
+                         [0.23056905, 0.14025305, 0.04550846],
+                         [0.19894369, 0.14950060, 0.06796850]])
+
+    modes = ['reflect', 'wrap']
+
+    calculated = sndi.gaussian_gradient_magnitude(arr, 1, mode=modes)
+
+    assert_almost_equal(expected, calculated)
+
+
+def test_multiple_modes_uniform():
+    # Test uniform filter for multiple extrapolation modes
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
+
+    expected = np.array([[0.32, 0.40, 0.48],
+                         [0.20, 0.28, 0.32],
+                         [0.28, 0.32, 0.40]])
+
+    modes = ['reflect', 'wrap']
+
+    assert_almost_equal(expected,
+                        sndi.uniform_filter(arr, 5, mode=modes))
 
 
 def test_gaussian_truncate():

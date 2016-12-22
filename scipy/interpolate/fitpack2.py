@@ -356,7 +356,7 @@ class UnivariateSpline(object):
         >>> spl.integral(0, 3)
         9.0
 
-        which agrees with :math:`\int x^2 dx = x^3 / 3` between the limits
+        which agrees with :math:`\\int x^2 dx = x^3 / 3` between the limits
         of 0 and 3.
 
         A caveat is that this routine assumes the spline to be zero outside of
@@ -452,7 +452,8 @@ class UnivariateSpline(object):
         >>> spl.derivative().roots() / np.pi
         array([ 0.50000001,  1.5       ,  2.49999998])
 
-        This agrees well with roots :math:`\pi/2 + n\pi` of `cos(x) = sin'(x)`.
+        This agrees well with roots :math:`\\pi/2 + n\\pi` of
+        :math:`\\cos(x) = \\sin'(x)`.
 
         """
         tck = fitpack.splder(self._eval_args, n)
@@ -1529,7 +1530,9 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         (0, pi).
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
-        Coordinates must be given in radians, and must lie within (0, 2pi).
+        Coordinates must be given in radians. First element (v[0]) must lie 
+        within the interval [-pi, pi). Last element (v[-1]) must satisfy 
+        v[-1] <= v[0] + 2*pi.
     r : array_like
         2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional

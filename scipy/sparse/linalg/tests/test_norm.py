@@ -88,7 +88,6 @@ class TestVsNumpyNorm(TestCase):
                 [-1, 1, 4j]],
             )
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_sparse_matrix_norms(self):
         for sparse_type in self._sparse_types:
             for M in self._test_matrices:
@@ -100,7 +99,6 @@ class TestVsNumpyNorm(TestCase):
                 assert_allclose(spnorm(S, 1), npnorm(M, 1))
                 assert_allclose(spnorm(S, -1), npnorm(M, -1))
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_sparse_matrix_norms_with_axis(self):
         for sparse_type in self._sparse_types:
             for M in self._test_matrices:
@@ -118,7 +116,6 @@ class TestVsNumpyNorm(TestCase):
                     assert_allclose(spnorm(S, 'fro', axis=axis),
                                     npnorm(M, 'fro', axis=axis))
 
-    @dec.skipif(NumpyVersion(np.__version__) < '1.8.0')
     def test_sparse_vector_norms(self):
         for sparse_type in self._sparse_types:
             for M in self._test_matrices:

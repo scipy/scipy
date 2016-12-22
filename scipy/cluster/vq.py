@@ -83,6 +83,7 @@ import warnings
 
 import numpy as np
 from scipy._lib._util import _asarray_validated
+from scipy._lib import _numpy_compat
 
 from . import _vq
 
@@ -556,7 +557,15 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
             raise ValueError("Asked for 0 cluster ? ")
         for i in range(iter):
             # the initial code book is randomly selected from observations
-            guess = np.take(obs, np.random.randint(0, No, k), 0)
+            k_random_indices = np.random.randint(0, No, k)
+            if np.any(_numpy_compat.unique(k_random_indices,
+                                           return_counts=True)[1] > 1):
+                # randint can give duplicates, which is incorrect.  Only fix
+                # the issue if it occurs, to not change results for users who
+                #  use a random seed and get no duplicates.
+                k_random_indices = np.random.permutation(No)[:k]
+
+            guess = np.take(obs, k_random_indices, 0)
             book, dist = _kmeans(obs, guess, thresh=thresh)
             if dist < best_dist:
                 best_book = book

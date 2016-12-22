@@ -142,7 +142,7 @@ def geometric_transform(input, mapping, output_shape=None,
                         mode='constant', cval=0.0, prefilter=True,
                         extra_arguments=(), extra_keywords={}):
     """
-    Apply an arbritrary geometric transform.
+    Apply an arbitrary geometric transform.
 
     The given mapping function is used to find, for each point in the
     output, the corresponding coordinates in the input. The value of the
@@ -167,7 +167,7 @@ def geometric_transform(input, mapping, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -256,7 +256,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -376,7 +376,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -463,7 +463,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -525,7 +525,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -623,7 +623,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if

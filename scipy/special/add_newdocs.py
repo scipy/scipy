@@ -6,6 +6,11 @@
 # generate_ufuncs.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
+#
+# Note : After editing this file and commiting changes, please run
+# generate_funcs.py and commit the changes as a separate commit with a comment
+# such as : GEN: special: run generate_ufuncs.py
+
 
 from __future__ import division, print_function, absolute_import
 
@@ -19,42 +24,69 @@ def get(name):
 def add_newdoc(place, name, doc):
     docdict['.'.join((place, name))] = doc
 
+
 add_newdoc("scipy.special", "sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
 
     Compute spherical harmonics.
 
-    .. math:: Y^m_n(\theta,\phi) = \sqrt{\frac{2n+1}{4\pi}\frac{(n-m)!}{(n+m)!}} e^{i m \theta} P^m_n(\cos(\phi))
+    The spherical harmonics are defined as
+
+    .. math::
+
+        Y^m_n(\theta,\phi) = \sqrt{\frac{2n+1}{4\pi} \frac{(n-m)!}{(n+m)!}}
+          e^{i m \theta} P^m_n(\cos(\phi))
+
+    where :math:`P_n^m` are the associated Legendre functions; see `lpmv`.
 
     Parameters
     ----------
-    m : int
-       ``|m| <= n``; the order of the harmonic.
-    n : int
-       where `n` >= 0; the degree of the harmonic.  This is often called
-       ``l`` (lower case L) in descriptions of spherical harmonics.
-    theta : float
-       [0, 2*pi]; the azimuthal (longitudinal) coordinate.
-    phi : float
-       [0, pi]; the polar (colatitudinal) coordinate.
+    m : array_like
+        Order of the harmonic (int); must have ``|m| <= n``.
+    n : array_like
+       Degree of the harmonic (int); must have ``n >= 0``. This is
+       often denoted by ``l`` (lower case L) in descriptions of
+       spherical harmonics.
+    theta : array_like
+       Azimuthal (longitudinal) coordinate; must be in ``[0, 2*pi]``.
+    phi : array_like
+       Polar (colatitudinal) coordinate; must be in ``[0, pi]``.
 
     Returns
     -------
     y_mn : complex float
-       The harmonic :math:`Y^m_n` sampled at `theta` and `phi`
+       The harmonic :math:`Y^m_n` sampled at ``theta`` and ``phi``.
 
     Notes
     -----
-    There are different conventions for the meaning of input arguments
-    `theta` and `phi`.  We take `theta` to be the azimuthal angle and
-    `phi` to be the polar angle.  It is common to see the opposite
-    convention - that is `theta` as the polar angle and `phi` as the
-    azimuthal angle.
+    There are different conventions for the meanings of the input
+    arguments ``theta`` and ``phi``. In SciPy ``theta`` is the
+    azimuthal angle and ``phi`` is the polar angle. It is common to
+    see the opposite convention, that is, ``theta`` as the polar angle
+    and ``phi`` as the azimuthal angle.
+
+    Note that SciPy's spherical harmonics include the Condon-Shortley
+    phase [2]_ because it is part of `lpmv`.
+
+    With SciPy's conventions, the first several spherical harmonics
+    are
+
+    .. math::
+
+        Y_0^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{1}{\pi}} \\
+        Y_1^{-1}(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{2\pi}}
+                                    e^{-i\theta} \sin(\phi) \\
+        Y_1^0(\theta, \phi) &= \frac{1}{2} \sqrt{\frac{3}{\pi}}
+                                 \cos(\phi) \\
+        Y_1^1(\theta, \phi) &= -\frac{1}{2} \sqrt{\frac{3}{2\pi}}
+                                 e^{i\theta} \sin(\phi).
 
     References
     ----------
-    .. [1] Digital Library of Mathematical Functions, 14.30. http://dlmf.nist.gov/14.30
+    .. [1] Digital Library of Mathematical Functions, 14.30.
+           http://dlmf.nist.gov/14.30
+    .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
     """)
 
 add_newdoc("scipy.special", "_ellip_harm",
@@ -70,6 +102,58 @@ add_newdoc("scipy.special", "_ellip_norm",
 add_newdoc("scipy.special", "_lambertw",
     """
     Internal function, use `lambertw` instead.
+    """)
+
+add_newdoc("scipy.special", "wrightomega",
+    r"""
+    wrightomega(z, out=None)
+
+    Wright Omega function.
+
+    Defined as the solution to
+
+    .. math::
+
+        \omega + \log(\omega) = z
+
+    where :math:`\log` is the principal branch of the complex logarithm.
+
+    Parameters
+    ----------
+    z : array_like
+        Points at which to evaluate the Wright Omega function
+
+    Returns
+    -------
+    omega : ndarray
+        Values of the Wright Omega function
+
+    Notes
+    -----
+    .. versionadded:: 0.19.0
+
+    The function can also be defined as
+
+    .. math::
+
+        \omega(z) = W_{K(z)}(e^z)
+
+    where :math:`K(z) = \lceil (\Im(z) - \pi)/(2\pi) \rceil` is the
+    unwinding number and :math:`W` is the Lambert W function.
+
+    The implementation here is taken from [1]_.
+
+    See Also
+    --------
+    lambertw : The Lambert W function
+
+    References
+    ----------
+    .. [1] Lawrence, Corless, and Jeffrey, "Algorithm 917: Complex
+           Double-Precision Evaluation of the Wright :math:`\omega`
+           Function." ACM Transactions on Mathematical Software,
+           2012. :doi:`10.1145/2168773.2168779`.
+
     """)
 
 add_newdoc("scipy.special", "airy",
@@ -136,8 +220,8 @@ add_newdoc("scipy.special", "airye",
 
         eAi  = Ai  * exp(2.0/3.0*z*sqrt(z))
         eAip = Aip * exp(2.0/3.0*z*sqrt(z))
-        eBi  = Bi  * exp(-abs((2.0/3.0*z*sqrt(z)).real))
-        eBip = Bip * exp(-abs((2.0/3.0*z*sqrt(z)).real))
+        eBi  = Bi  * exp(-abs(2.0/3.0*(z*sqrt(z)).real))
+        eBip = Bip * exp(-abs(2.0/3.0*(z*sqrt(z)).real))
 
     Parameters
     ----------
@@ -897,7 +981,7 @@ add_newdoc("scipy.special", "chdtri",
 
 add_newdoc("scipy.special", "chdtriv",
     """
-    chdtri(p, x)
+    chdtriv(p, x)
 
     Inverse to `chdtr` vs `v`
 
@@ -1429,7 +1513,7 @@ add_newdoc("scipy.special", "eval_jacobi",
 
     See Also
     --------
-    j_roots : roots and quadrature weights of Jacobi polynomials
+    roots_jacobi : roots and quadrature weights of Jacobi polynomials
     jacobi : Jacobi polynomial object
     hyp2f1 : Gauss hypergeometric function
     """)
@@ -1466,8 +1550,8 @@ add_newdoc("scipy.special", "eval_sh_jacobi",
 
     See Also
     --------
-    js_roots : roots and quadrature weights of shifted Jacobi
-               polynomials
+    roots_sh_jacobi : roots and quadrature weights of shifted Jacobi
+                      polynomials
     sh_jacobi : shifted Jacobi polynomial object
     eval_jacobi : evaluate Jacobi polynomials
     """)
@@ -1507,7 +1591,8 @@ add_newdoc("scipy.special", "eval_gegenbauer",
 
     See Also
     --------
-    cg_roots : roots and quadrature weights of Gegenbauer polynomials
+    roots_gegenbauer : roots and quadrature weights of Gegenbauer
+                       polynomials
     gegenbauer : Gegenbauer polynomial object
     hyp2f1 : Gauss hypergeometric function
     """)
@@ -1544,8 +1629,8 @@ add_newdoc("scipy.special", "eval_chebyt",
 
     See Also
     --------
-    t_roots : roots and quadrature weights of Chebyshev polynomials of
-              the first kind
+    roots_chebyt : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind
     chebyu : Chebychev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     hyp2f1 : Gauss hypergeometric function
@@ -1589,8 +1674,8 @@ add_newdoc("scipy.special", "eval_chebyu",
 
     See Also
     --------
-    u_roots : roots and quadrature weights of Chebyshev polynomials of
-              the second kind
+    roots_chebyu : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind
     chebyu : Chebyshev polynomial object
     eval_chebyt : evaluate Chebyshev polynomials of the first kind
     hyp2f1 : Gauss hypergeometric function
@@ -1626,8 +1711,8 @@ add_newdoc("scipy.special", "eval_chebys",
 
     See Also
     --------
-    s_roots : roots and quadrature weights of Chebyshev polynomials of
-              the second kind on [-2, 2]
+    roots_chebys : roots and quadrature weights of Chebyshev
+                   polynomials of the second kind on [-2, 2]
     chebys : Chebyshev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
@@ -1662,8 +1747,8 @@ add_newdoc("scipy.special", "eval_chebyc",
 
     See Also
     --------
-    c_roots : roots and quadrature weights of Chebyshev polynomials of
-              the first kind on [-2, 2]
+    roots_chebyc : roots and quadrature weights of Chebyshev
+                   polynomials of the first kind on [-2, 2]
     chebyc : Chebyshev polynomial object
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     eval_chebyt : evaluate Chebycshev polynomials of the first kind
@@ -1699,8 +1784,8 @@ add_newdoc("scipy.special", "eval_sh_chebyt",
 
     See Also
     --------
-    ts_roots : roots and quadrature weights of shifted Chebychev
-               polynomials of the first kind
+    roots_sh_chebyt : roots and quadrature weights of shifted
+                      Chebyshev polynomials of the first kind
     sh_chebyt : shifted Chebyshev polynomial object
     eval_chebyt : evalaute Chebyshev polynomials of the first kind
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
@@ -1736,8 +1821,8 @@ add_newdoc("scipy.special", "eval_sh_chebyu",
 
     See Also
     --------
-    us_roots : roots and quadrature weights of shifted Chebychev
-               polynomials of the second kind
+    roots_sh_chebyu : roots and quadrature weights of shifted
+                      Chebychev polynomials of the second kind
     sh_chebyu : shifted Chebyshev polynomial object
     eval_chebyu : evaluate Chebyshev polynomials of the second kind
     """)
@@ -1774,7 +1859,8 @@ add_newdoc("scipy.special", "eval_legendre",
 
     See Also
     --------
-    p_roots : roots and quadrature weights of Legendre polynomials
+    roots_legendre : roots and quadrature weights of Legendre
+                     polynomials
     legendre : Legendre polynomial object
     hyp2f1 : Gauss hypergeometric function
     numpy.polynomial.legendre.Legendre : Legendre series
@@ -1809,8 +1895,8 @@ add_newdoc("scipy.special", "eval_sh_legendre",
 
     See Also
     --------
-    ps_roots : roots and quadrature weights of shifted Legendre
-               polynomials
+    roots_sh_legendre : roots and quadrature weights of shifted
+                        Legendre polynomials
     sh_legendre : shifted Legendre polynomial object
     eval_legendre : evaluate Legendre polynomials
     numpy.polynomial.legendre.Legendre : Legendre series
@@ -1853,8 +1939,8 @@ add_newdoc("scipy.special", "eval_genlaguerre",
 
     See Also
     --------
-    la_roots : roots and quadrature weights of generalized Laguerre
-               polynomials
+    roots_genlaguerre : roots and quadrature weights of generalized
+                        Laguerre polynomials
     genlaguerre : generalized Laguerre polynomial object
     hyp1f1 : confluent hypergeometric function
     eval_laguerre : evaluate Laguerre polynomials
@@ -1892,7 +1978,8 @@ add_newdoc("scipy.special", "eval_laguerre",
 
      See Also
      --------
-     l_roots : roots and quadrature weights of Laguerre polynomials
+     roots_laguerre : roots and quadrature weights of Laguerre
+                      polynomials
      laguerre : Laguerre polynomial object
      numpy.polynomial.laguerre.Laguerre : Laguerre series
      eval_genlaguerre : evaluate generalized Laguerre polynomials
@@ -1926,8 +2013,8 @@ add_newdoc("scipy.special", "eval_hermite",
 
     See Also
     --------
-    h_roots : roots and quadrature weights of physicist's Hermite
-              polynomials
+    roots_hermite : roots and quadrature weights of physicist's
+                    Hermite polynomials
     hermite : physicist's Hermite polynomial object
     numpy.polynomial.hermite.Hermite : Physicist's Hermite series
     eval_hermitenorm : evaluate Probabilist's Hermite polynomials
@@ -1962,8 +2049,8 @@ add_newdoc("scipy.special", "eval_hermitenorm",
 
     See Also
     --------
-    he_roots : roots and quadrature weights of probabilist's
-               Hermite polynomials
+    roots_hermitenorm : roots and quadrature weights of probabilist's
+                        Hermite polynomials
     hermitenorm : probabilist's Hermite polynomial object
     numpy.polynomial.hermite_e.HermiteE : Probabilist's Hermite series
     eval_hermite : evaluate physicist's Hermite polynomials
@@ -3486,10 +3573,13 @@ add_newdoc("scipy.special", "j0",
     two rational functions of degree 6/6 and 7/7.
 
     This function is a wrapper for the Cephes [1]_ routine `j0`.
+    It should not to be confused with the spherical Bessel functions (see
+    `spherical_jn`).
 
     See also
     --------
     jv : Bessel function of real order and complex argument.
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
@@ -3521,10 +3611,13 @@ add_newdoc("scipy.special", "j1",
     functions of degree 5/5.
 
     This function is a wrapper for the Cephes [1]_ routine `j1`.
+    It should not to be confused with the spherical Bessel functions (see
+    `spherical_jn`).
 
     See also
     --------
     jv
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
@@ -3542,10 +3635,12 @@ add_newdoc("scipy.special", "jn",
     Notes
     -----
     `jn` is an alias of `jv`.
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
 
     See also
     --------
     jv
+    spherical_jn : spherical Bessel functions.
 
     """)
 
@@ -3587,9 +3682,12 @@ add_newdoc("scipy.special", "jv",
     term is exactly zero for integer `v`; to improve accuracy the second
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
+
     See also
     --------
     jve : :math:`J_v` with leading exponential behavior stripped off.
+    spherical_jn : spherical Bessel functions.
 
     References
     ----------
@@ -4123,34 +4221,57 @@ add_newdoc('scipy.special', 'logit',
     """)
 
 add_newdoc("scipy.special", "lpmv",
-    """
+    r"""
     lpmv(m, v, x)
 
-    Associated legendre function of integer order.
+    Associated Legendre function of integer order and real degree.
+
+    Defined as
+
+    .. math::
+
+        P_v^m = (-1)^m (1 - x^2)^{m/2} \frac{d^m}{dx^m} P_v(x)
+
+    where
+
+    .. math::
+
+        P_v = \sum_{k = 0}^\infty \frac{(-v)_k (v + 1)_k}{(k!)^2}
+                \left(\frac{1 - x}{2}\right)^k
+
+    is the Legendre function of the first kind. Here :math:`(\cdot)_k`
+    is the Pochhammer symbol; see `poch`.
 
     Parameters
     ----------
-    m : int
-        Order
-    v : float
-        Degree.
-    x : float
-        Argument. Must be ``|x| <= 1``.
+    m : array_like
+        Order (int or float). If passed a float not equal to an
+        integer the function returns NaN.
+    v : array_like
+        Degree (float).
+    x : array_like
+        Argument (float). Must have ``|x| <= 1``.
 
     Returns
     -------
-    res : float
-        The value of the function.
+    pmv : ndarray
+        Value of the associated Legendre function.
 
     See Also
     --------
-    lpmn : Similar, but computes values for all orders 0..m and degrees 0..n.
-    clpmn : Similar to `lpmn` but allows a complex argument.
+    lpmn : Compute the associated Legendre function for all orders
+           ``0, ..., m`` and degrees ``0, ..., n``.
+    clpmn : Compute the associated Legendre function at complex
+            arguments.
 
     Notes
     -----
-    It is possible to extend the domain of this function to all
-    complex m, v, x, but this is not yet implemented.
+    Note that this implementation includes the Condon-Shortley phase.
+
+    References
+    ----------
+    .. [1] Zhang, Jin, "Computation of Special Functions", John Wiley
+           and Sons, Inc, 1996.
 
     """)
 
@@ -5642,10 +5763,11 @@ add_newdoc("scipy.special", "smirnovi",
 
 add_newdoc("scipy.special", "spence",
     r"""
-    spence(z)
+    spence(z, out=None)
 
-    Spence's function, also known as the dilogarithm. It is defined to
-    be
+    Spence's function, also known as the dilogarithm.
+
+    It is defined to be
 
     .. math::
       \int_0^z \frac{\log(t)}{1 - t}dt
@@ -5655,14 +5777,25 @@ add_newdoc("scipy.special", "spence",
     analytic everywhere except the negative real axis where it has a
     branch cut.
 
-    Note that there is a different convention which defines Spence's
-    function by the integral
+    Parameters
+    ----------
+    z : array_like
+        Points at which to evaluate Spence's function
+
+    Returns
+    -------
+    s : ndarray
+        Computed values of Spence's function
+
+    Notes
+    -----
+    There is a different convention which defines Spence's function by
+    the integral
 
     .. math::
       -\int_0^z \frac{\log(1 - t)}{t}dt;
 
     this is our ``spence(1 - z)``.
-
     """)
 
 add_newdoc("scipy.special", "stdtr",

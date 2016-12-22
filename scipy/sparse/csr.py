@@ -188,7 +188,7 @@ class csr_matrix(_cs_matrix, IndexMixin):
         A.has_sorted_indices = True
         return A
 
-    tocsr.__doc__ = spmatrix.tocsr.__doc__
+    tocsc.__doc__ = spmatrix.tocsc.__doc__
 
     def tobsr(self, blocksize=None, copy=True):
         from .bsr import bsr_matrix

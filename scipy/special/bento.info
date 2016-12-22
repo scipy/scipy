@@ -32,7 +32,17 @@ Library:
             _ufuncs_cxx.cxx,
             sf_error.c,
             _faddeeva.cxx,
-            Faddeeva.cc
+            Faddeeva.cc,
+            _wright.cxx,
+            wright.cc
+    Extension: cython_special
+        Sources:
+            cython_special.c,
+            sf_error.c,
+            _logit.c.src,
+            amos_wrappers.c,
+            cdf_wrappers.c,
+            specfun_wrappers.c
     Extension: specfun
          Sources:
             specfun.pyf
@@ -43,3 +53,6 @@ Library:
     Extension: _comb
         Sources:
             _comb.c
+    Extension: _test_round
+        Sources:
+            _test_round.c

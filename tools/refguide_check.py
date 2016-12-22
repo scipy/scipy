@@ -112,6 +112,12 @@ REFGUIDE_ALL_SKIPLIST = [
     r'scipy\.linalg\.lapack\.[sdczi].*',
 ]
 
+# these names are not required to be in an autosummary:: listing
+# despite being in ALL
+REFGUIDE_AUTOSUMMARY_SKIPLIST = [
+    r'scipy\.special\..*_roots' # old aliases for scipy.special.*_roots
+]
+
 
 HAVE_MATPLOTLIB = False
 
@@ -207,7 +213,11 @@ def compare(all_dict, others, names, module_name):
     only_all = set()
     for name in all_dict:
         if name not in names:
-            only_all.add(name)
+            for pat in REFGUIDE_AUTOSUMMARY_SKIPLIST:
+                if re.match(pat, module_name + '.' + name):
+                    break
+            else:
+                only_all.add(name)
 
     only_ref = set()
     missing = set()
@@ -262,10 +272,17 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
             for name in sorted(only_all):
                 output += "    " + name + "\n"
 
+            output += "\nThis issue can be fixed by adding these objects to\n"
+            output += "the function listing in __init__.py for this module\n"
+
         if len(only_ref) > 0:
             output += "ERROR: objects in refguide but not in %s.__all__::\n\n" % module_name
             for name in sorted(only_ref):
                 output += "    " + name + "\n"
+
+            output += "\nThis issue should likely be fixed by removing these objects\n"
+            output += "from the function listing in __init__.py for this module\n"
+            output += "or adding them to __all__.\n"
 
         if len(missing) > 0:
             output += "ERROR: missing objects::\n\n"

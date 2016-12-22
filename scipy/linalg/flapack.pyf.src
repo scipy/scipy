@@ -26,16 +26,16 @@ interface
      integer intent(hide),check(wantz==0||wantz==1) :: wantz=1
      logical intent(in),dimension(n) :: select
      integer intent(hide),depend(a) :: n=shape(a,1)
-     <ftype2> intent(in,out,copy),dimension(lda,*) :: a
+     <ftype2> intent(in,out,copy),dimension(lda,n) :: a
      integer intent(hide),depend(a) :: lda=shape(a,0)
-     <ftype2> intent(in,out,copy),dimension(ldb,*) :: b
+     <ftype2> intent(in,out,copy),dimension(ldb,n) :: b
      integer intent(hide),depend(b) :: ldb=shape(b,0)
      <ftype2> intent(out),dimension(n) :: alphar
      <ftype2> intent(out),dimension(n) :: alphai
      <ftype2> intent(out),dimension(n) :: beta
-     <ftype2> intent(in,out,copy),dimension(ldq,*) :: q
+     <ftype2> intent(in,out,copy),dimension(ldq,n) :: q
      integer intent(hide),depend(q) :: ldq=shape(q,0)
-     <ftype2> intent(in,out,copy),dimension(ldz,*) :: z
+     <ftype2> intent(in,out,copy),dimension(ldz,n) :: z
      integer intent(hide),depend(z) :: ldz=shape(z,0)
      integer intent(out) :: m
      <ftype2> intent(out) :: pl
@@ -57,15 +57,15 @@ interface
      integer intent(hide),check(wantz==0||wantz==1) :: wantz=1
      logical intent(in),dimension(n) :: select
      integer intent(hide),depend(a) :: n=shape(a,1)
-     <ftype2c> intent(in,out,copy),dimension(lda,*) :: a
+     <ftype2c> intent(in,out,copy),dimension(lda,n) :: a
      integer intent(hide),depend(a) :: lda=shape(a,0)
-     <ftype2c> intent(in,out,copy),dimension(ldb,*) :: b
+     <ftype2c> intent(in,out,copy),dimension(ldb,n) :: b
      integer intent(hide),depend(b) :: ldb=shape(b,0)
      <ftype2c> intent(out),dimension(n) :: alpha
      <ftype2c> intent(out),dimension(n) :: beta
-     <ftype2c> intent(in,out,copy),dimension(ldq,*) :: q
+     <ftype2c> intent(in,out,copy),dimension(ldq,n) :: q
      integer intent(hide),depend(q) :: ldq=shape(q,0)
-     <ftype2c> intent(in,out,copy),dimension(ldz,*) :: z
+     <ftype2c> intent(in,out,copy),dimension(ldz,n) :: z
      integer intent(hide),depend(z) :: ldz=shape(z,0)
      integer intent(out) :: m
      <ftype2> intent(out) :: pl
@@ -96,9 +96,9 @@ interface
      integer optional,intent(in),check(sort_t==0||sort_t==1) :: sort_t=0
      external <prefix2>select
      integer intent(hide),depend(a) :: n=shape(a,1)
-     <ftype2> intent(in,out,copy),dimension(lda,*) :: a
+     <ftype2> intent(in,out,copy),dimension(lda,n) :: a
      integer intent(hide),depend(a) :: lda=shape(a,0)
-     <ftype2> intent(in,out,copy),dimension(ldb,*) :: b
+     <ftype2> intent(in,out,copy),dimension(ldb,n) :: b
      integer intent(hide),depend(b) :: ldb=shape(b,0)
      integer intent(out) :: sdim=0
      <ftype2> intent(out),dimension(n) :: alphar
@@ -132,9 +132,9 @@ interface
      integer optional,intent(in),check(sort_t==0||sort_t==1) :: sort_t=0
      external <prefix2c>select
      integer intent(hide),depend(a) :: n=shape(a,1)
-     <ftype2c> intent(in,out,copy),dimension(lda,*) :: a
+     <ftype2c> intent(in,out,copy),dimension(lda,n) :: a
      integer intent(hide),depend(a) :: lda=shape(a,0)
-     <ftype2c> intent(in,out,copy),dimension(ldb,*) :: b
+     <ftype2c> intent(in,out,copy),dimension(ldb,n) :: b
      integer intent(hide),depend(b) :: ldb=shape(b,0)
      integer intent(out) :: sdim=0
      <ftype2c> intent(out),dimension(n) :: alpha
@@ -333,12 +333,12 @@ interface
 
    subroutine <prefix>ptsv(n, nrhs, d, e, b, info)
      callstatement (*f2py_func)(&n, &nrhs, d, e, b, &n, &info);
-     callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+     callprotoargument int*, int*, <ctypereal>*, <ctype>*, <ctype>*, int*, int*
      integer intent(hide), depend(d) :: n = len(d)
      integer intent(hide), depend(b) :: nrhs = shape(b, 1)
-     <real, double precision, \0, \1> dimension(*), intent(in,out,copy) :: d
-     <ftype> dimension(n-1), intent(in,out,copy,out=du), depend(d,n) :: e
-     <ftype> dimension(*,*), intent(in,out,copy,out=x), depend(d,n), check(shape(b,0)==n) :: b
+     <ftypereal> dimension(n), intent(in,out,copy) :: d
+     <ftype> dimension(n-1), intent(in,out,copy,out=du), depend(n) :: e
+     <ftype> dimension(n,nrhs), intent(in,out,copy,out=x), depend(n), check(shape(b,0)==n) :: b
      integer intent(out) :: info
    end subroutine <prefix>ptsv
 
@@ -443,6 +443,7 @@ interface
      ! LWORK computation ofr orghr
      fortranname <prefix2>orghr
      callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+     callprotoargument int*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,int*,int*
      integer intent(in) :: n
      <ftype2> intent(hide) :: a
      integer intent(in), optional :: lo = 0
@@ -475,6 +476,7 @@ interface
      ! LWORK computation ofr orghr
      fortranname <prefix2c>unghr
      callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
+     callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,int*
      integer intent(in) :: n
      <ftype2c> intent(hide) :: a
      integer intent(in), optional :: lo = 0
@@ -514,9 +516,9 @@ interface
      integer intent(hide), depend(d) :: n = len(d)
      integer intent(hide), depend(b) :: nrhs = shape(b, 1)
      <ftype> dimension(n-1), intent(in,out,copy,out=du2), depend(d,n) :: dl
-     <ftype> dimension(*), intent(in,out,copy) :: d
-     <ftype> dimension(n-1), intent(in,out,copy), depend(d,n) :: du
-     <ftype> dimension(*,*), intent(in,out,copy,out=x), depend(d,n), check(shape(b,0)==n) :: b
+     <ftype> dimension(n), intent(in,out,copy) :: d
+     <ftype> dimension(n-1), intent(in,out,copy), depend(n) :: du
+     <ftype> dimension(n,nrhs), intent(in,out,copy,out=x), depend(n), check(shape(b,0)==n) :: b
      integer intent(out) :: info
    end subroutine <prefix>gtsv
 
@@ -1283,7 +1285,7 @@ interface
 
      integer optional,intent(in),depend(n),check(lwork>=n||lwork==-1) :: lwork=3*(n+1)
      <ftype2c> dimension(MAX(lwork,1)),intent(out),depend(lwork) :: work
-     <ftype2c> dimension(2*n),intent(hide),depend(n) :: rwork
+     <ftype2> dimension(2*n),intent(hide),depend(n) :: rwork
      integer intent(out) :: info
    end subroutine <prefix2c>geqp3
 
@@ -1715,7 +1717,7 @@ interface
    !   If compute_v=0 and overwrite_a=1, the contents of a is destroyed.
 
      callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,a,&n,w,work,&lwork,rwork,&info)
-     callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,<ctype2>*,int*
+     callprotoargument char*,char*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2>*,int*
 
      integer optional,intent(in):: compute_v = 1
      check(compute_v==1||compute_v==0) compute_v
@@ -2181,7 +2183,7 @@ subroutine <prefix2>sbev(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,info) ! in :B
 
   ! Remark: if ab is fortran contigous on input
   !         and overwrite_ab=1  ab will be overwritten.
-  <ftype2> dimension(ldab,*), intent(in,overwrite) :: ab
+  <ftype2> dimension(ldab,n), intent(in,overwrite) :: ab
 
   integer optional,intent(in):: compute_v = 1
   check(compute_v==1||compute_v==0) compute_v
@@ -2211,7 +2213,7 @@ subroutine <prefix2>sbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,iwork,
 
   ! Remark: if ab is fortran contigous on input
   !         and overwrite_ab=1  ab will be overwritten.
-  <ftype2> dimension(ldab,*), intent(in, overwrite) :: ab
+  <ftype2> dimension(ldab,n), intent(in, overwrite) :: ab
 
   integer optional,intent(in):: compute_v = 1
   check( compute_v==1||compute_v==0) compute_v
@@ -2258,7 +2260,7 @@ subroutine <prefix2>sbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,a
 
   ! Remark: if ab is fortran contigous on input
   !         and overwrite_ab=1  ab will be overwritten.
-  <ftype2> dimension(ldab,*),intent(in, overwrite) :: ab
+  <ftype2> dimension(ldab,n),intent(in, overwrite) :: ab
 
 
   ! FIXME: do we need to make q available for outside usage ???
@@ -2322,7 +2324,7 @@ subroutine <prefix2c>hbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,rwork
 
   ! Remark: if ab is fortran contigous on input
   !         and overwrite_ab=1  ab will be overwritten.
-  <ftype2c> dimension(ldab,*), intent(in, overwrite) :: ab
+  <ftype2c> dimension(ldab,n), intent(in, overwrite) :: ab
 
   integer optional,intent(in):: compute_v = 1
   check( compute_v==1||compute_v==0) compute_v
@@ -2361,8 +2363,7 @@ subroutine <prefix2c>hbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,
 
   callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),(lower?"L":"U"),&n,&kd,ab,&ldab,q,&ldq,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,rwork,iwork,ifail,&info)
 
-  callprotoargument
-  char*,char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,<ctype2>*,int*,int*,int*
+  callprotoargument char*,char*,char*,int*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,<ctype2c>*,int*,<ctype2c>*,<ctype2>*,int*,int*,int*
 
   integer optional,intent(in):: compute_v = 1
   check(compute_v==1||compute_v==0) compute_v
@@ -2378,7 +2379,7 @@ subroutine <prefix2c>hbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,
 
   ! Remark: if ab is fortran contigous on input
   !         and overwrite_ab=1  ab will be overwritten.
-  <ftype2c> dimension(ldab,*),intent(in, overwrite) :: ab
+  <ftype2c> dimension(ldab,n),intent(in, overwrite) :: ab
 
 
   ! FIXME: do we need to make q available for outside usage ???
@@ -2510,7 +2511,7 @@ subroutine <prefix>gbtrs(ab,kl,ku,b,ipiv,trans,n,nrhs,ldab,ldb,info) ! in :Band:
 !  2  = 'C':  A'* X = B  (Conjugate transpose = Transpose)
 
 callstatement {int i;for(i=0;i\<n;++ipiv[i++]);(*f2py_func)((trans>0?(trans==1?"T":"C"):"N"),&n,&kl,&ku,&nrhs,ab,&ldab,ipiv,b,&ldb,&info);for(i=0;i\<n;--ipiv[i++]);}
-lprotoargument char*,int*,int *,int*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
+callprotoargument char*,int*,int *,int*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
     !character optional:: trans='N'
     integer optional:: trans=0
     integer optional,depend(ab) :: n=shape(ab,1)
@@ -2518,13 +2519,13 @@ lprotoargument char*,int*,int *,int*,int*,<ctype>*,int*,int*,<ctype>*,int*,int*
     integer :: ku
     integer intent(hide),depend(b):: nrhs=shape(b,1)
 
-    <ftype> dimension(ldab,*),intent(in) :: ab
+    <ftype> dimension(ldab,n),intent(in) :: ab
     integer optional,check(shape(ab,0)==ldab),depend(ab) :: ldab=shape(ab,0)
 
     integer dimension(n),intent(in) :: ipiv
-    <ftype> dimension(ldb,*),intent(in,out,copy,out=x) :: b
+    <ftype> dimension(ldb,nrhs),intent(in,out,copy,out=x) :: b
     integer optional,check(shape(b,0)==ldb),depend(b) :: ldb=shape(b,0)
-    integer optional,check(shape(b,0)==ldb),depend(b) :: ldb=shape(b,0)
+!    integer optional,check(shape(b,0)==ldb),depend(b) :: ldb=shape(b,0)
     integer intent(out):: info
 end subroutine <prefix>gbtrs
 

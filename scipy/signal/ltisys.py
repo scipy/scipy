@@ -30,7 +30,8 @@ from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
 from scipy._lib.six import xrange
-from .filter_design import tf2zpk, zpk2tf, normalize, freqs, freqz
+from .filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
+                            freqz_zpk)
 from .lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
                              cont2discrete)
 
@@ -713,7 +714,7 @@ class TransferFunction(LinearTimeInvariant):
     dt: None
     )
 
-    Contruct the transfer function with a sampling time of 0.5 seconds:
+    Contruct the transfer function with a sampling time of 0.1 seconds:
 
     .. math:: H(z) = \frac{z^2 + 3z + 3}{z^2 + 2z + 1}
 
@@ -2457,12 +2458,15 @@ def freqresp(system, w=None, n=10000):
     >>> plt.show()
     """
     if isinstance(system, lti):
-        sys = system._as_tf()
+        if isinstance(system, (TransferFunction, ZerosPolesGain)):
+            sys = system
+        else:
+            sys = system._as_zpk()
     elif isinstance(system, dlti):
         raise AttributeError('freqresp can only be used with continuous-time '
                              'systems.')
     else:
-        sys = lti(*system)._as_tf()
+        sys = lti(*system)._as_zpk()
 
     if sys.inputs != 1 or sys.outputs != 1:
         raise ValueError("freqresp() requires a SISO (single input, single "
@@ -2473,9 +2477,13 @@ def freqresp(system, w=None, n=10000):
     else:
         worN = n
 
-    # In the call to freqs(), sys.num.ravel() is used because there are
-    # cases where sys.num is a 2-D array with a single row.
-    w, h = freqs(sys.num.ravel(), sys.den, worN=worN)
+    if isinstance(sys, TransferFunction):
+        # In the call to freqs(), sys.num.ravel() is used because there are
+        # cases where sys.num is a 2-D array with a single row.
+        w, h = freqs(sys.num.ravel(), sys.den, worN=worN)
+
+    elif isinstance(sys, ZerosPolesGain):
+        w, h = freqs_zpk(sys.zeros, sys.poles, sys.gain, worN=worN)
 
     return w, h
 
@@ -3548,14 +3556,17 @@ def dfreqresp(system, w=None, n=10000, whole=False):
 
     """
     if isinstance(system, dlti):
-        system = system._as_tf()
+        if isinstance(system, (TransferFunction, ZerosPolesGain)):
+            sys = system
+        else:
+            sys = system._as_zpk()
     elif isinstance(system, lti):
         raise AttributeError('dfreqresp can only be used with discrete-time '
                              'systems.')
     else:
-        system = dlti(*system[:-1], dt=system[-1])._as_tf()
+        sys = dlti(*system[:-1], dt=system[-1])._as_zpk()
 
-    if system.inputs != 1 or system.outputs != 1:
+    if sys.inputs != 1 or sys.outputs != 1:
         raise ValueError("dfreqresp requires a SISO (single input, single "
                          "output) system.")
 
@@ -3564,11 +3575,17 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     else:
         worN = n
 
-    # Convert numerator and denominator from polynomials in the variable 'z'
-    # to polynomials in the variable 'z^-1', as freqz expects.
-    num, den = TransferFunction._z_to_zinv(system.num.ravel(), system.den)
+    if isinstance(sys, TransferFunction):
+        # Convert numerator and denominator from polynomials in the variable
+        # 'z' to polynomials in the variable 'z^-1', as freqz expects.
+        num, den = TransferFunction._z_to_zinv(sys.num.ravel(), sys.den)
+        w, h = freqz(num, den, worN=worN, whole=whole)
 
-    return freqz(num, den, worN=worN, whole=whole)
+    elif isinstance(system, ZerosPolesGain):
+        w, h = freqz_zpk(sys.zeros, sys.poles, sys.gain, worN=worN,
+                         whole=whole)
+
+    return w, h
 
 
 def dbode(system, w=None, n=100):

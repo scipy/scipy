@@ -1,13 +1,15 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
         assert_almost_equal, assert_array_almost_equal, assert_equal, \
-        assert_, assert_allclose
+        assert_, assert_allclose, assert_warns
 from scipy.special import sinc
 
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-        firwin, firwin2, freqz, remez, firls
+        firwin, firwin2, freqz, remez, firls, minimum_phase
 
 
 def test_kaiser_beta():
@@ -389,6 +391,24 @@ class TestRemez(TestCase):
         idx = np.logical_and(f > a, f < 0.5-a)
         assert_((abs(Hmag[idx] - 1) < 0.015).all(), "Pass Band Close To Unity")
 
+    def test_compare(self):
+        # test comparison to MATLAB
+        k = [0.024590270518440, -0.041314581814658, -0.075943803756711,
+             -0.003530911231040, 0.193140296954975, 0.373400753484939,
+             0.373400753484939, 0.193140296954975, -0.003530911231040,
+             -0.075943803756711, -0.041314581814658, 0.024590270518440]
+        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        assert_allclose(h, k)
+
+        h = [-0.038976016082299, 0.018704846485491, -0.014644062687875,
+             0.002879152556419, 0.016849978528150, -0.043276706138248,
+             0.073641298245579, -0.103908158578635, 0.129770906801075,
+             -0.147163447297124, 0.153302248456347, -0.147163447297124,
+             0.129770906801075, -0.103908158578635, 0.073641298245579,
+             -0.043276706138248, 0.016849978528150, 0.002879152556419,
+             -0.014644062687875, 0.018704846485491, -0.038976016082299]
+        assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.), h)
+
 
 class TestFirls(TestCase):
 
@@ -475,6 +495,61 @@ class TestFirls(TestCase):
             -8.5530572592947856, 7.5288619164321826, -4.1385894727395849,
             1.156090832768218]
         assert_allclose(taps, known_taps)
+
+
+class TestMinimumPhase(TestCase):
+
+    def test_bad_args(self):
+        # not enough taps
+        assert_raises(ValueError, minimum_phase, [1.])
+        assert_raises(ValueError, minimum_phase, [1., 1.])
+        assert_raises(ValueError, minimum_phase, np.ones(10) * 1j)
+        assert_raises(ValueError, minimum_phase, 'foo')
+        assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
+        assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            assert_warns(RuntimeWarning, minimum_phase, np.arange(3))
+
+    def test_homomorphic(self):
+        # check that it can recover frequency responses of arbitrary
+        # linear-phase filters
+
+        # for some cases we can get the actual filter back
+        h = [1, -1]
+        h_new = minimum_phase(np.convolve(h, h[::-1]))
+        assert_allclose(h_new, h, rtol=0.05)
+
+        # but in general we only guarantee we get the magnitude back
+        rng = np.random.RandomState(0)
+        for n in (2, 3, 10, 11, 15, 16, 17, 20, 21, 100, 101):
+            h = rng.randn(n)
+            h_new = minimum_phase(np.convolve(h, h[::-1]))
+            assert_allclose(np.abs(np.fft.fft(h_new)),
+                            np.abs(np.fft.fft(h)), rtol=1e-4)
+
+    def test_hilbert(self):
+        # compare to MATLAB output of reference implementation
+
+        # f=[0 0.3 0.5 1];
+        # a=[1 1 0 0];
+        # h=remez(11,f,a);
+        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        k = [0.349585548646686, 0.373552164395447, 0.326082685363438,
+             0.077152207480935, -0.129943946349364, -0.059355880509749]
+        m = minimum_phase(h, 'hilbert')
+        assert_allclose(m, k, rtol=1e-3)
+
+        # f=[0 0.8 0.9 1];
+        # a=[0 0 1 1];
+        # h=remez(20,f,a);
+        h = remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.)
+        k = [0.232486803906329, -0.133551833687071, 0.151871456867244,
+             -0.157957283165866, 0.151739294892963, -0.129293146705090,
+             0.100787844523204, -0.065832656741252, 0.035361328741024,
+             -0.014977068692269, -0.158416139047557]
+        m = minimum_phase(h, 'hilbert', n_fft=2**19)
+        assert_allclose(m, k, rtol=1e-3)
 
 if __name__ == "__main__":
     run_module_suite()

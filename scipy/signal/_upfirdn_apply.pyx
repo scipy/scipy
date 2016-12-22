@@ -36,6 +36,8 @@
 cimport cython
 cimport numpy as np
 import numpy as np
+from cython import bint  # boolean integer type
+from libc.stdlib cimport malloc, free
 
 
 ctypedef double complex double_complex
@@ -49,40 +51,173 @@ ctypedef fused DTYPE_t:
     double
     double_complex
 
+cdef struct ArrayInfo:
+    np.intp_t * shape
+    np.intp_t * strides
+    np.intp_t ndim
 
-def _output_len(Py_ssize_t len_h,
-                Py_ssize_t in_len,
-                Py_ssize_t up,
-                Py_ssize_t down):
+
+def _output_len(np.intp_t len_h,
+                np.intp_t in_len,
+                np.intp_t up,
+                np.intp_t down):
     """The output length that results from a given input"""
-    cdef Py_ssize_t np
-    cdef Py_ssize_t in_len_copy
+    cdef np.intp_t nt
+    cdef np.intp_t in_len_copy
     in_len_copy = in_len + (len_h + (-len_h % up)) // up - 1
-    np = in_len_copy * up
-    cdef Py_ssize_t need = np // down
-    if np % down > 0:
+    nt = in_len_copy * up
+    cdef np.intp_t need = nt // down
+    if nt % down > 0:
         need += 1
     return need
 
 
-def _apply(DTYPE_t [:] x, DTYPE_t [:] h_trans_flip, DTYPE_t [:] out,
-                 Py_ssize_t up, Py_ssize_t down):
-    _apply_impl(x, h_trans_flip, out, up, down)
+def _apply(np.ndarray data, DTYPE_t [::1] h_trans_flip, np.ndarray out,
+           np.intp_t up, np.intp_t down, np.intp_t axis):
+    cdef ArrayInfo data_info, output_info
+    cdef np.intp_t len_h = h_trans_flip.size
+    cdef DTYPE_t *data_ptr
+    cdef DTYPE_t *filter_ptr
+    cdef DTYPE_t *out_ptr
+    cdef int retval
+
+    data_info.ndim = data.ndim
+    data_info.strides = <np.intp_t *> data.strides
+    data_info.shape = <np.intp_t *> data.shape
+
+    output_info.ndim = out.ndim
+    output_info.strides = <np.intp_t *> out.strides
+    output_info.shape = <np.intp_t *> out.shape
+
+    data_ptr = <DTYPE_t*> data.data
+    filter_ptr = <DTYPE_t*> &h_trans_flip[0]
+    out_ptr = <DTYPE_t*> out.data
+
+    with nogil:
+        retval = _apply_axis_inner(data_ptr, data_info,
+                                   filter_ptr, len_h,
+                                   out_ptr, output_info,
+                                   up, down, axis)
+    if retval == 1:
+        raise ValueError("failure in _apply_axis_inner: data and output arrays"
+                         " must have the same number of dimensions.")
+    elif retval == 2:
+        raise ValueError(
+            ("failure in _apply_axis_inner: axis = {}, ".format(axis) +
+             "but data_info.ndim is only {}.".format(data_info.ndim)))
+    elif retval == 3 or retval == 4:
+        raise MemoryError()
+    return out
+
+
+@cython.cdivision(True)
+cdef int _apply_axis_inner(DTYPE_t* data, ArrayInfo data_info,
+                           DTYPE_t* h_trans_flip, np.intp_t len_h,
+                           DTYPE_t* output, ArrayInfo output_info,
+                           np.intp_t up, np.intp_t down,
+                           np.intp_t axis) nogil:
+    cdef np.intp_t i
+    cdef np.intp_t num_loops = 1
+    cdef bint make_temp_data, make_temp_output
+    cdef DTYPE_t* temp_data = NULL
+    cdef DTYPE_t* temp_output = NULL
+
+    if data_info.ndim != output_info.ndim:
+        return 1
+    if axis >= data_info.ndim:
+        return 2
+
+    make_temp_data = data_info.strides[axis] != sizeof(DTYPE_t);
+    make_temp_output = output_info.strides[axis] != sizeof(DTYPE_t);
+    if make_temp_data:
+        temp_data = <DTYPE_t*>malloc(data_info.shape[axis] * sizeof(DTYPE_t))
+        if not temp_data:
+            free(temp_data)
+            return 3
+    if make_temp_output:
+        temp_output = <DTYPE_t*>malloc(output_info.shape[axis] * sizeof(DTYPE_t))
+        if not temp_output:
+            free(temp_data)
+            free(temp_output)
+            return 4
+
+    for i in range(output_info.ndim):
+        if i != axis:
+            num_loops *= output_info.shape[i]
+
+    cdef np.intp_t j
+    cdef np.intp_t data_offset
+    cdef np.intp_t output_offset
+    cdef DTYPE_t* data_row
+    cdef DTYPE_t* output_row
+    cdef np.intp_t reduced_idx
+    cdef np.intp_t j_rev
+    cdef np.intp_t axis_idx
+    cdef DTYPE_t* tmp_ptr = NULL
+    for i in range(num_loops):
+        data_offset = 0
+        output_offset = 0
+        # Calculate offset into linear buffer
+        reduced_idx = i
+        for j in range(output_info.ndim):
+            j_rev = output_info.ndim - 1 - j
+            if j_rev != axis:
+                axis_idx = reduced_idx % output_info.shape[j_rev]
+                reduced_idx /= output_info.shape[j_rev]
+                data_offset += (axis_idx * data_info.strides[j_rev])
+                output_offset += (axis_idx * output_info.strides[j_rev])
+
+        # Copy to temporary data if necessary
+        if make_temp_data:
+            for j in range(data_info.shape[axis]):
+                # Offsets are byte offsets, to need to cast to char and back
+                tmp_ptr = <DTYPE_t *>((<char *> data) + data_offset +
+                    j * data_info.strides[axis])
+                temp_data[j] = tmp_ptr[0]
+
+        # Select temporary or direct output and data
+        if make_temp_data:
+            data_row = temp_data
+        else:
+            data_row = <DTYPE_t *>((<char *>data) + data_offset)
+        if make_temp_output:
+            output_row = temp_output
+            for j in range(output_info.shape[axis]):
+                output_row[j] = 0.0  # initialize as zeros
+        else:
+            output_row = <DTYPE_t *>((<char *>output) + output_offset)
+
+        # call 1D upfirdn
+        _apply_impl(data_row, data_info.shape[axis],
+                    h_trans_flip, len_h, output_row, up, down)
+
+        # Copy from temporary output if necessary
+        if make_temp_output:
+            for j in range(output_info.shape[axis]):
+                # Offsets are byte offsets, to need to cast to char and back
+                tmp_ptr = <DTYPE_t *>((<char *>output) + output_offset +
+                    j * output_info.strides[axis])
+                tmp_ptr[0] = output_row[j]
+
+    # cleanup
+    free(temp_data)
+    free(temp_output)
+    return 0
 
 
 @cython.cdivision(True)  # faster modulo
 @cython.boundscheck(False)  # designed to stay within bounds
 @cython.wraparound(False)  # we don't use negative indexing
-cdef void _apply_impl(DTYPE_t [:] x, DTYPE_t [:] h_trans_flip, DTYPE_t [:] out,
-                 Py_ssize_t up, Py_ssize_t down) nogil:
-    cdef Py_ssize_t len_x = x.shape[0]
-    cdef Py_ssize_t h_per_phase = h_trans_flip.shape[0] / up
-    cdef Py_ssize_t padded_len = len_x + h_per_phase - 1
-    cdef Py_ssize_t x_idx = 0
-    cdef Py_ssize_t y_idx = 0
-    cdef Py_ssize_t h_idx = 0
-    cdef Py_ssize_t t = 0
-    cdef Py_ssize_t x_conv_idx = 0
+cdef void _apply_impl(DTYPE_t *x, np.intp_t len_x, DTYPE_t *h_trans_flip,
+                      np.intp_t len_h, DTYPE_t *out,
+                      np.intp_t up, np.intp_t down) nogil:
+    cdef np.intp_t h_per_phase = len_h / up
+    cdef np.intp_t padded_len = len_x + h_per_phase - 1
+    cdef np.intp_t x_idx = 0
+    cdef np.intp_t y_idx = 0
+    cdef np.intp_t h_idx = 0
+    cdef np.intp_t t = 0
+    cdef np.intp_t x_conv_idx = 0
 
     while x_idx < len_x:
         h_idx = t * h_per_phase

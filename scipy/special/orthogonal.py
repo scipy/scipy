@@ -46,26 +46,8 @@ assume:
 For the mathematical background, see [golub.welsch-1969-mathcomp]_ and
 [abramowitz.stegun-1965]_.
 
-Functions::
-
-  gen_roots_and_weights  -- Generic roots and weights.
-  j_roots                -- Jacobi
-  js_roots               -- Shifted Jacobi
-  la_roots               -- Generalized Laguerre
-  h_roots                -- Hermite
-  he_roots               -- Hermite (unit-variance)
-  cg_roots               -- Ultraspherical (Gegenbauer)
-  t_roots                -- Chebyshev of the first kind
-  u_roots                -- Chebyshev of the second kind
-  c_roots                -- Chebyshev of the first kind ([-2,2] interval)
-  s_roots                -- Chebyshev of the second kind ([-2,2] interval)
-  ts_roots               -- Shifted Chebyshev of the first kind.
-  us_roots               -- Shifted Chebyshev of the second kind.
-  p_roots                -- Legendre
-  ps_roots               -- Shifted Legendre
-  l_roots                -- Laguerre
-
-
+References
+----------
 .. [golub.welsch-1969-mathcomp]
    Golub, Gene H, and John H Welsch. 1969. Calculation of Gauss
    Quadrature Rules. *Mathematics of Computation* 23, 221-230+s1--s10.
@@ -96,8 +78,8 @@ from __future__ import division, print_function, absolute_import
 
 # Scipy imports.
 import numpy as np
-from numpy import (any, exp, inf, pi, sqrt, floor, sin, cos, around,
-                   int, hstack, arccos, arange)
+from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around, int,
+                   hstack, arccos, arange)
 from scipy import linalg
 from scipy.special import airy
 
@@ -106,21 +88,36 @@ from . import _ufuncs as cephes
 _gam = cephes.gamma
 from . import specfun
 
-__all__ = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
-           'jacobi', 'laguerre', 'genlaguerre', 'hermite', 'hermitenorm',
-           'gegenbauer', 'sh_legendre', 'sh_chebyt', 'sh_chebyu', 'sh_jacobi',
-           'p_roots', 'ps_roots', 'j_roots', 'js_roots', 'l_roots', 'la_roots',
-           'he_roots', 'ts_roots', 'us_roots', 's_roots',
-           't_roots', 'u_roots', 'c_roots', 'cg_roots', 'h_roots',
-           'eval_legendre', 'eval_chebyt', 'eval_chebyu', 'eval_chebyc',
-           'eval_chebys', 'eval_jacobi', 'eval_laguerre', 'eval_genlaguerre',
-           'eval_hermite', 'eval_hermitenorm', 'eval_gegenbauer',
-           'eval_sh_legendre', 'eval_sh_chebyt', 'eval_sh_chebyu',
-           'eval_sh_jacobi', 'poch', 'binom']
+_polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
+             'jacobi', 'laguerre', 'genlaguerre', 'hermite',
+             'hermitenorm', 'gegenbauer', 'sh_legendre', 'sh_chebyt',
+             'sh_chebyu', 'sh_jacobi']
 
+# Correspondence between new and old names of root functions
+_rootfuns_map = {'roots_legendre': 'p_roots',
+               'roots_chebyt': 't_roots',
+               'roots_chebyu': 'u_roots',
+               'roots_chebyc': 'c_roots',
+               'roots_chebys': 's_roots',
+               'roots_jacobi': 'j_roots',
+               'roots_laguerre': 'l_roots',
+               'roots_genlaguerre': 'la_roots',
+               'roots_hermite': 'h_roots',
+               'roots_hermitenorm': 'he_roots',
+               'roots_gegenbauer': 'cg_roots',
+               'roots_sh_legendre': 'ps_roots',
+               'roots_sh_chebyt': 'ts_roots',
+               'roots_sh_chebyu': 'us_roots',
+               'roots_sh_jacobi': 'js_roots'}
 
-# For backward compatibility
-poch = cephes.poch
+_evalfuns = ['eval_legendre', 'eval_chebyt', 'eval_chebyu',
+             'eval_chebyc', 'eval_chebys', 'eval_jacobi',
+             'eval_laguerre', 'eval_genlaguerre', 'eval_hermite',
+             'eval_hermitenorm', 'eval_gegenbauer',
+             'eval_sh_legendre', 'eval_sh_chebyt', 'eval_sh_chebyu',
+             'eval_sh_jacobi']
+
+__all__ = _polyfuns + list(_rootfuns_map.keys()) + _evalfuns + ['poch', 'binom']
 
 
 class orthopoly1d(np.poly1d):
@@ -142,7 +139,7 @@ class orthopoly1d(np.poly1d):
             mu = mu / abs(kn)
             kn = 1.0
         self.__dict__['normcoef'] = mu
-        self.__dict__['coeffs'] *= kn
+        self.__dict__['coeffs'] *= float(kn)
 
         # Note: eval_func will be discarded on arithmetic
         self.__dict__['_eval_func'] = eval_func
@@ -208,7 +205,7 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
 # Jacobi Polynomials 1               P^(alpha,beta)_n(x)
 
 
-def j_roots(n, alpha, beta, mu=False):
+def roots_jacobi(n, alpha, beta, mu=False):
     r"""Gauss-Jacobi quadrature.
 
     Computes the sample points and weights for Gauss-Jacobi quadrature. The
@@ -250,9 +247,9 @@ def j_roots(n, alpha, beta, mu=False):
         raise ValueError("alpha and beta must be greater than -1.")
 
     if alpha == 0.0 and beta == 0.0:
-        return p_roots(m, mu)
+        return roots_legendre(m, mu)
     if alpha == beta:
-        return cg_roots(m, alpha+0.5, mu)
+        return roots_gegenbauer(m, alpha+0.5, mu)
 
     mu0 = 2.0**(alpha+beta+1)*cephes.beta(alpha+1, beta+1)
     a = alpha
@@ -317,7 +314,7 @@ def jacobi(n, alpha, beta, monic=False):
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
                            eval_func=np.ones_like)
-    x, w, mu = j_roots(n, alpha, beta, mu=True)
+    x, w, mu = roots_jacobi(n, alpha, beta, mu=True)
     ab1 = alpha + beta + 1.0
     hn = 2**ab1 / (2 * n + ab1) * _gam(n + alpha + 1)
     hn *= _gam(n + beta + 1.0) / _gam(n + 1) / _gam(n + ab1)
@@ -330,7 +327,7 @@ def jacobi(n, alpha, beta, monic=False):
 # Jacobi Polynomials shifted         G_n(p,q,x)
 
 
-def js_roots(n, p1, q1, mu=False):
+def roots_sh_jacobi(n, p1, q1, mu=False):
     """Gauss-Jacobi (shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Jacobi (shifted)
@@ -367,7 +364,7 @@ def js_roots(n, p1, q1, mu=False):
     """
     if (p1-q1) <= -1 or q1 <= 0:
         raise ValueError("(p - q) must be greater than -1, and q must be greater than 0.")
-    x, w, m = j_roots(n, p1-q1, q1-1, True)
+    x, w, m = roots_jacobi(n, p1-q1, q1-1, True)
     x = (x + 1) / 2
     scale = 2.0**p1
     w /= scale
@@ -421,7 +418,7 @@ def sh_jacobi(n, p, q, monic=False):
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (-1, 1), monic,
                            eval_func=np.ones_like)
     n1 = n
-    x, w, mu0 = js_roots(n1, p, q, mu=True)
+    x, w, mu0 = roots_sh_jacobi(n1, p, q, mu=True)
     hn = _gam(n + 1) * _gam(n + q) * _gam(n + p) * _gam(n + p - q + 1)
     hn /= (2 * n + p) * (_gam(2 * n + p)**2)
     # kn = 1.0 in standard form so monic is redundant.  Kept for compatibility.
@@ -433,7 +430,7 @@ def sh_jacobi(n, p, q, monic=False):
 # Generalized Laguerre               L^(alpha)_n(x)
 
 
-def la_roots(n, alpha, mu=False):
+def roots_genlaguerre(n, alpha, mu=False):
     r"""Gauss-generalized Laguerre quadrature.
 
     Computes the sample points and weights for Gauss-generalized Laguerre
@@ -541,7 +538,7 @@ def genlaguerre(n, alpha, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = la_roots(n1, alpha, mu=True)
+    x, w, mu0 = roots_genlaguerre(n1, alpha, mu=True)
     wfunc = lambda x: exp(-x) * x**alpha
     if n == 0:
         x, w = [], []
@@ -554,7 +551,7 @@ def genlaguerre(n, alpha, monic=False):
 # Laguerre                      L_n(x)
 
 
-def l_roots(n, mu=False):
+def roots_laguerre(n, mu=False):
     r"""Gauss-Laguerre quadrature.
 
     Computes the sample points and weights for Gauss-Laguerre quadrature.
@@ -585,7 +582,7 @@ def l_roots(n, mu=False):
     scipy.integrate.fixed_quad
     numpy.polynomial.laguerre.laggauss
     """
-    return la_roots(n, 0.0, mu=mu)
+    return roots_genlaguerre(n, 0.0, mu=mu)
 
 
 def laguerre(n, monic=False):
@@ -624,7 +621,7 @@ def laguerre(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = l_roots(n1, mu=True)
+    x, w, mu0 = roots_laguerre(n1, mu=True)
     if n == 0:
         x, w = [], []
     hn = 1.0
@@ -636,7 +633,7 @@ def laguerre(n, monic=False):
 # Hermite  1                         H_n(x)
 
 
-def h_roots(n, mu=False):
+def roots_hermite(n, mu=False):
     r"""Gauss-Hermite (physicst's) quadrature.
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
@@ -678,7 +675,7 @@ def h_roots(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     numpy.polynomial.hermite.hermgauss
-    he_roots
+    roots_hermitenorm
 
     References
     ----------
@@ -706,7 +703,7 @@ def h_roots(n, mu=False):
         df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
-        nodes, weights = _h_roots_asy(m)
+        nodes, weights = _roots_hermite_asy(m)
         if mu:
             return nodes, weights, mu0
         else:
@@ -737,7 +734,7 @@ def _compute_tauk(n, k, maxit=5):
     See Also
     --------
     initial_nodes_a
-    h_roots_asy
+    roots_hermite_asy
     """
     a = n % 2 - 0.5
     c = (4.0*floor(n/2.0) - 4.0*k + 3.0)*pi / (4.0*floor(n/2.0) + 2.0*a + 2.0)
@@ -750,7 +747,7 @@ def _compute_tauk(n, k, maxit=5):
 
 
 def _initial_nodes_a(n, k):
-    """Tricomi initial guesses
+    r"""Tricomi initial guesses
 
     Computes an initial approximation to the square of the `k`-th
     (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
@@ -773,7 +770,7 @@ def _initial_nodes_a(n, k):
     See Also
     --------
     initial_nodes
-    h_roots_asy
+    roots_hermite_asy
     """
     tauk = _compute_tauk(n, k)
     sigk = cos(0.5*tauk)**2
@@ -785,7 +782,7 @@ def _initial_nodes_a(n, k):
 
 
 def _initial_nodes_b(n, k):
-    """Gatteschi initial guesses
+    r"""Gatteschi initial guesses
 
     Computes an initial approximation to the square of the `k`-th
     (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
@@ -808,7 +805,7 @@ def _initial_nodes_b(n, k):
     See Also
     --------
     initial_nodes
-    h_roots_asy
+    roots_hermite_asy
     """
     a = n % 2 - 0.5
     nu = 4.0*floor(n/2.0) + 2.0*a + 2.0
@@ -844,7 +841,7 @@ def _initial_nodes(n):
 
     See Also
     --------
-    h_roots_asy
+    roots_hermite_asy
     """
     # Turnover point
     # linear polynomial fit to error of 10, 25, 40, ..., 1000 point rules
@@ -864,7 +861,7 @@ def _initial_nodes(n):
 
 
 def _pbcf(n, theta):
-    """Asymptotic series expansion of parabolic cylinder function
+    r"""Asymptotic series expansion of parabolic cylinder function
 
     The implementation is based on sections 3.2 and 3.3 from the
     original paper. Compared to the published version this code
@@ -890,7 +887,7 @@ def _pbcf(n, theta):
 
     See Also
     --------
-    h_roots_asy
+    roots_hermite_asy
 
     References
     ----------
@@ -997,7 +994,7 @@ def _newton(n, x_initial, maxit=5):
 
     See Also
     --------
-    h_roots_asy
+    roots_hermite_asy
     """
     # Variable transformation
     mu = sqrt(2.0*n + 1.0)
@@ -1020,7 +1017,7 @@ def _newton(n, x_initial, maxit=5):
     return x, w
 
 
-def _h_roots_asy(n):
+def _roots_hermite_asy(n):
     r"""Gauss-Hermite (physicst's) quadrature for large n.
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
@@ -1047,7 +1044,7 @@ def _h_roots_asy(n):
 
     See Also
     --------
-    h_roots
+    roots_hermite
 
     References
     ----------
@@ -1114,7 +1111,7 @@ def hermite(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = h_roots(n1, mu=True)
+    x, w, mu0 = roots_hermite(n1, mu=True)
     wfunc = lambda x: exp(-x * x)
     if n == 0:
         x, w = [], []
@@ -1127,7 +1124,7 @@ def hermite(n, monic=False):
 # Hermite  2                         He_n(x)
 
 
-def he_roots(n, mu=False):
+def roots_hermitenorm(n, mu=False):
     r"""Gauss-Hermite (statistician's) quadrature.
 
     Computes the sample points and weights for Gauss-Hermite quadrature.
@@ -1182,7 +1179,7 @@ def he_roots(n, mu=False):
         df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
-        nodes, weights = _h_roots_asy(m)
+        nodes, weights = _roots_hermite_asy(m)
         # Transform
         nodes *= sqrt(2)
         weights *= sqrt(2)
@@ -1230,7 +1227,7 @@ def hermitenorm(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = he_roots(n1, mu=True)
+    x, w, mu0 = roots_hermitenorm(n1, mu=True)
     wfunc = lambda x: exp(-x * x / 2.0)
     if n == 0:
         x, w = [], []
@@ -1245,7 +1242,7 @@ def hermitenorm(n, monic=False):
 # Ultraspherical (Gegenbauer)        C^(alpha)_n(x)
 
 
-def cg_roots(n, alpha, mu=False):
+def roots_gegenbauer(n, alpha, mu=False):
     r"""Gauss-Gegenbauer quadrature.
 
     Computes the sample points and weights for Gauss-Gegenbauer quadrature.
@@ -1288,7 +1285,7 @@ def cg_roots(n, alpha, mu=False):
         # strictly, we should just error out here, since the roots are not
         # really defined, but we used to return something useful, so let's
         # keep doing so.
-        return t_roots(n, mu)
+        return roots_chebyt(n, mu)
 
     mu0 = np.sqrt(np.pi) * cephes.gamma(alpha + 0.5) / cephes.gamma(alpha + 1)
     an_func = lambda k: 0.0 * k
@@ -1348,7 +1345,7 @@ def gegenbauer(n, alpha, monic=False):
 # Computed anew.
 
 
-def t_roots(n, mu=False):
+def roots_chebyt(n, mu=False):
     r"""Gauss-Chebyshev (first kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
@@ -1432,7 +1429,7 @@ def chebyt(n, monic=False):
         return orthopoly1d([], [], pi, 1.0, wfunc, (-1, 1), monic,
                            lambda x: eval_chebyt(n, x))
     n1 = n
-    x, w, mu = t_roots(n1, mu=True)
+    x, w, mu = roots_chebyt(n1, mu=True)
     hn = pi / 2
     kn = 2**(n - 1)
     p = orthopoly1d(x, w, hn, kn, wfunc, (-1, 1), monic,
@@ -1443,7 +1440,7 @@ def chebyt(n, monic=False):
 #    U_n(x) = (n+1)! sqrt(pi) / (2*_gam(n+3./2)) * P^(1/2,1/2)_n(x)
 
 
-def u_roots(n, mu=False):
+def roots_chebyu(n, mu=False):
     r"""Gauss-Chebyshev (second kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
@@ -1529,7 +1526,7 @@ def chebyu(n, monic=False):
 # Chebyshev of the first kind        C_n(x)
 
 
-def c_roots(n, mu=False):
+def roots_chebyc(n, mu=False):
     r"""Gauss-Chebyshev (first kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
@@ -1559,7 +1556,7 @@ def c_roots(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     """
-    x, w, m = t_roots(n, True)
+    x, w, m = roots_chebyt(n, True)
     x *= 2
     w *= 2
     m *= 2
@@ -1610,7 +1607,7 @@ def chebyc(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = c_roots(n1, mu=True)
+    x, w, mu0 = roots_chebyc(n1, mu=True)
     if n == 0:
         x, w = [], []
     hn = 4 * pi * ((n == 0) + 1)
@@ -1626,7 +1623,7 @@ def chebyc(n, monic=False):
 # Chebyshev of the second kind       S_n(x)
 
 
-def s_roots(n, mu=False):
+def roots_chebys(n, mu=False):
     r"""Gauss-Chebyshev (second kind) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
@@ -1656,7 +1653,7 @@ def s_roots(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     """
-    x, w, m = u_roots(n, True)
+    x, w, m = roots_chebyu(n, True)
     x *= 2
     w *= 2
     m *= 2
@@ -1707,7 +1704,7 @@ def chebys(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = s_roots(n1, mu=True)
+    x, w, mu0 = roots_chebys(n1, mu=True)
     if n == 0:
         x, w = [], []
     hn = pi
@@ -1724,7 +1721,7 @@ def chebys(n, monic=False):
 # Shifted Chebyshev of the first kind     T^*_n(x)
 
 
-def ts_roots(n, mu=False):
+def roots_sh_chebyt(n, mu=False):
     r"""Gauss-Chebyshev (first kind, shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
@@ -1755,7 +1752,7 @@ def ts_roots(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     """
-    xw = t_roots(n, mu)
+    xw = roots_chebyt(n, mu)
     return ((xw[0] + 1) / 2,) + xw[1:]
 
 
@@ -1796,7 +1793,7 @@ def sh_chebyt(n, monic=False):
 
 
 # Shifted Chebyshev of the second kind    U^*_n(x)
-def us_roots(n, mu=False):
+def roots_sh_chebyu(n, mu=False):
     r"""Gauss-Chebyshev (second kind, shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Chebyshev quadrature.
@@ -1827,7 +1824,7 @@ def us_roots(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     """
-    x, w, m = u_roots(n, True)
+    x, w, m = roots_chebyu(n, True)
     x = (x + 1) / 2
     m_us = cephes.beta(1.5, 1.5)
     w *= m_us / m
@@ -1872,7 +1869,7 @@ def sh_chebyu(n, monic=False):
 # Legendre
 
 
-def p_roots(n, mu=False):
+def roots_legendre(n, mu=False):
     r"""Gauss-Legendre quadrature.
 
     Computes the sample points and weights for Gauss-Legendre quadrature.
@@ -1961,7 +1958,7 @@ def legendre(n, monic=False):
         n1 = n + 1
     else:
         n1 = n
-    x, w, mu0 = p_roots(n1, mu=True)
+    x, w, mu0 = roots_legendre(n1, mu=True)
     if n == 0:
         x, w = [], []
     hn = 2.0 / (2 * n + 1)
@@ -1973,7 +1970,7 @@ def legendre(n, monic=False):
 # Shifted Legendre              P^*_n(x)
 
 
-def ps_roots(n, mu=False):
+def roots_sh_legendre(n, mu=False):
     r"""Gauss-Legendre (shifted) quadrature.
 
     Computes the sample points and weights for Gauss-Legendre quadrature.
@@ -2003,7 +2000,7 @@ def ps_roots(n, mu=False):
     scipy.integrate.quadrature
     scipy.integrate.fixed_quad
     """
-    x, w = p_roots(n)
+    x, w = roots_legendre(n)
     x = (x + 1) / 2
     w /= 2
     if mu:
@@ -2043,18 +2040,30 @@ def sh_legendre(n, monic=False):
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (0, 1), monic,
                            lambda x: eval_sh_legendre(n, x))
-    x, w, mu0 = ps_roots(n, mu=True)
+    x, w, mu0 = roots_sh_legendre(n, mu=True)
     hn = 1.0 / (2 * n + 1.0)
     kn = _gam(2 * n + 1) / _gam(n + 1)**2
     p = orthopoly1d(x, w, hn, kn, wfunc, limits=(0, 1), monic=monic,
                     eval_func=lambda x: eval_sh_legendre(n, x))
     return p
 
+
 # -----------------------------------------------------------------------------
-# Vectorized functions for evaluation
+# Code for backwards compatibility
 # -----------------------------------------------------------------------------
+
+# Import functions in case someone is still calling the orthogonal
+# module directly. (They shouldn't be; it's not in the public API).
+poch = cephes.poch
+
 from ._ufuncs import (binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer,
                       eval_chebyt, eval_chebyu, eval_chebys, eval_chebyc,
                       eval_sh_chebyt, eval_sh_chebyu, eval_legendre,
                       eval_sh_legendre, eval_genlaguerre, eval_laguerre,
                       eval_hermite, eval_hermitenorm)
+
+# Make the old root function names an alias for the new ones
+_modattrs = globals()
+for newfun, oldfun in _rootfuns_map.items():
+    _modattrs[oldfun] = _modattrs[newfun]
+    __all__.append(oldfun)

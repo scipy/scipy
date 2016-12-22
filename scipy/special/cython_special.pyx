@@ -25,8 +25,8 @@ The module is usable from Cython via::
 Error Handling
 ==============
 
-Error handling works the same as in `scipy.special`; in particular
-error messages can be controlled by ``cython_special.errprint``.
+Functions can indicate an error by returning ``nan``; however they
+cannot emit warnings like their counterparts in ``scipy.special``.
 
 Available Functions
 ===================
@@ -937,6 +937,10 @@ Available Functions
 
         double complex wofz(double complex)
 
+- :py:func:`~scipy.special.wrightomega`::
+
+        double complex wrightomega(double complex)
+
 - :py:func:`~scipy.special.xlog1py`::
 
         double xlog1py(double, double)
@@ -975,62 +979,7 @@ Available Functions
         double zetac(double)
 
 """
-cimport numpy as np
-from numpy cimport (
-    npy_float, npy_double, npy_longdouble,
-    npy_cfloat, npy_cdouble, npy_clongdouble,
-    npy_int, npy_long,
-    NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
-    NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE,
-    NPY_INT, NPY_LONG)
-
-cdef extern from "numpy/ufuncobject.h":
-    int PyUFunc_getfperr() nogil
-
-cdef public int wrap_PyUFunc_getfperr() nogil:
-    """
-    Call PyUFunc_getfperr in a context where PyUFunc_API array is initialized;
-    this avoids messing with the UNIQUE_SYMBOL #defines
-    """
-    return PyUFunc_getfperr()
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_NAN
-
-cimport sf_error
-cimport _complexstuff
-cimport scipy.special._ufuncs_cxx
-from . import _ufuncs
-
-ctypedef long double long_double
-ctypedef float complex float_complex
-ctypedef double complex double_complex
-ctypedef long double complex long_double_complex
-
-def errprint(inflag=None):
-    """
-    errprint(inflag=None)
-
-    Sets or returns the error printing flag for special functions.
-
-    Parameters
-    ----------
-    inflag : bool, optional
-        Whether warnings concerning evaluation of special functions in
-        scipy.special are shown. If omitted, no change is made to the
-        current setting.
-
-    Returns
-    -------
-    old_flag
-        Previous value of the error flag
-
-    """
-    if inflag is not None:
-        scipy.special._ufuncs_cxx._set_errprint(int(bool(inflag)))
-        return sf_error.set_print(int(bool(inflag)))
-    else:
-        return sf_error.get_print()
+include "_cython_special.pxi"
 
 cdef extern from "_ufuncs_defs.h":
     cdef npy_int _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
@@ -3271,6 +3220,10 @@ cpdef double tklmbda(double x0, double x1) nogil:
 cpdef double complex wofz(double complex x0) nogil:
     """See the documentation for scipy.special.wofz"""
     return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_faddeeva_w)(x0)
+
+cpdef double complex wrightomega(double complex x0) nogil:
+    """See the documentation for scipy.special.wrightomega"""
+    return (<double complex(*)(double complex) nogil>scipy.special._ufuncs_cxx._export_wrightomega)(x0)
 
 cpdef Dd_number_t xlog1py(Dd_number_t x0, Dd_number_t x1) nogil:
     """See the documentation for scipy.special.xlog1py"""

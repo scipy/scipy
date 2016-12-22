@@ -85,8 +85,10 @@ Filter design
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
-   freqs         -- Analog filter frequency response.
-   freqz         -- Digital filter frequency response.
+   freqs         -- Analog filter frequency response from TF coefficients.
+   freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
+   freqz         -- Digital filter frequency response from TF coefficients.
+   freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
    sosfreqz      -- Digital filter frequency response for SOS format filter.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
@@ -98,6 +100,7 @@ Filter design
                     -- FIR filter attenuation.
    kaiserord     -- Design a Kaiser window to limit ripple and width of
                     -- transition region.
+   minimum_phase -- Convert a linear phase FIR filter to minimum phase.
    savgol_coeffs -- Compute the FIR filter coefficients for a Savitzky-Golay
                     -- filter.
    remez         -- Optimal FIR filter design.
@@ -310,4 +313,3 @@ from ._peak_finding import *
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench
