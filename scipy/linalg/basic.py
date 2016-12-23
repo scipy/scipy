@@ -23,7 +23,7 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, check_finite=True, assume_a='gen',
+          overwrite_b=False, debug=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
@@ -168,7 +168,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                        )
     elif _structure == 'sym':
         sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
-        lwork, _ = sysvx_lw(n, lower)
+        lwork = _compute_lwork(sysvx_lw, n, lower)
         _, _, _, _, x, rcond, _, _, info = sysvx(a1, b1, lwork=lwork,
                                                  lower=lower,
                                                  overwrite_a=overwrite_a,
@@ -176,7 +176,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
                                                  )
     elif _structure == 'her':
         hesvx, hesvx_lw = get_lapack_funcs(('hesvx', 'hesvx_lwork'), (a1, b1))
-        lwork, _ = hesvx_lw(n, lower)
+        lwork = _compute_lwork(hesvx_lw, n, lower)
         _, _, x, rcond, _, _, info = hesvx(a1, b1, lwork=lwork,
                                            lower=lower,
                                            overwrite_a=overwrite_a,

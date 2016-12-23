@@ -609,6 +609,7 @@ class TestSolve(TestCase):
         b = [1, 2, 3]
         x = solve(a, b)
         assert_array_almost_equal(x.ravel(), b)
+        assert_(x.shape == (3,), 'Scalar_a_1D_b test returned wrong shape')
 
     def test_simple2(self):
         a = np.array([[1.80, 2.88, 2.05, -0.89],
@@ -662,6 +663,13 @@ class TestSolve(TestCase):
         x = solve(a.conj().T, b, assume_a='her', lower=True)
         assert_array_almost_equal(x, res)
 
+    def test_pos_and_sym(self):
+        A = np.arange(1,10).reshape(3, 3)
+        x = solve(np.tril(A)/9,np.ones(3), assume_a='pos')
+        assert_array_almost_equal(x, [9., 1.8, 1.])
+        x = solve(np.tril(A)/9,np.ones(3), assume_a='sym')
+        assert_array_almost_equal(x, [9., 1.8, 1.])
+
     def test_singularity(self):
         a = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 1],
                       [1, 1, 1, 0, 0, 0, 1, 0, 1],
@@ -695,6 +703,13 @@ class TestSolve(TestCase):
         x = solve(a, b)
         assert_array_almost_equal(x, b)
 
+    def test_transposed_keyword(self):
+        A = np.arange(9).reshape(3, 3) + 1
+        x = solve(np.tril(A)/9,np.ones(3), transposed=1)
+        assert_array_almost_equal(x, [1.2, 0.2, 1])
+        x = solve(np.tril(A)/9,np.ones(3), transposed=0)
+        assert_array_almost_equal(x, [9, -5.4, -1.2])
+        
 
 class TestSolveTriangular(TestCase):
 
