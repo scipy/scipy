@@ -122,7 +122,7 @@ class TestPeriodogram(TestCase):
         fe, pe = periodogram(x, 10, win)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
-        
+
     def test_padded_fft(self):
         x = np.zeros(16)
         x[0] = 1
@@ -359,7 +359,7 @@ class TestWelch(TestCase):
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
         assert_raises(ValueError, welch, x,
-                      10, win, nperseg=4) 
+                      10, win, nperseg=4)  # because nperseg != win.shape[-1]
 
     def test_empty_input(self):
         f, p = welch([])
@@ -663,7 +663,7 @@ class TestCSD:
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
         assert_raises(ValueError, csd, x, x,
-                      10, win, nperseg=256) 
+                      10, win, nperseg=256)  # because nperseg != win.shape[-1]
 
     def test_empty_input(self):
         f, p = csd([],np.zeros(10))

@@ -772,17 +772,17 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
 
     # parse window; if array like, then set nperseg = win.shape
     win, nperseg = _triage_segments(window, nperseg)              
-        
+
+    nperseg = int(nperseg)
+    if nperseg < 1:
+        raise ValueError('nperseg must be a positive integer')
+
     # X and Y are same length now, can test nperseg with either
     if x.shape[-1] < nperseg:
         warnings.warn('nperseg = {0:d}, is greater than input length = {1:d}, '
                       'using nperseg = {1:d}'.format(nperseg, x.shape[-1]))
         nperseg = x.shape[-1]
         win, nperseg = _triage_segments(window, nperseg) 
-
-    nperseg = int(nperseg)
-    if nperseg < 1:
-        raise ValueError('nperseg must be a positive integer')
 
     if nfft is None:
         nfft = nperseg
@@ -954,23 +954,34 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
 
 def _triage_segments(window, nperseg):
     """
-    private function that handles defaults.
-    called by _spectral_helper, and also by spectrogram because it requires a
-    value for nperseg when setting noverlap to the default of nperseg // 8
-    If window is specified by a string or tuple and nperseg is not specified, 
-    _triage_segments sets nperseg to the default of 256 and the window is that
-    size. If instead the window is array_like and nperseg is not specified, then
-    nperseg is set to the length of the window.
+    Parses window and nperseg arguments for spectrogram and _spectral_helper.
+    This is a helper function, not meant to be called externally.
+
+    Parameters
+    ---------
+    window : string, tuple, or ndarray
+        If window is specified by a string or tuple and nperseg is not 
+        specified, nperseg is set to the default of 256 and returns a window of
+        that length.
+        If instead the window is array_like and nperseg is not specified, then
+        nperseg is set to the length of the window. A ValueError is raised if
+        the user supplies both an array_like window and a value for nperseg but
+        nperseg does not equal the length of the window.
     
+    nperseg : int
+        Length of each segment
+        
     Returns
     -------
-    window : ndarray
-        Array of FFT data
+    win : ndarray
+        window. If function was called with string or tuple than this will hold
+        the actual array used as a window.
+
+    nperseg : int
+        Length of each segment. Defaults to 256 (if called with None).
     
-    nperseg : int, optional
-        Length of each segment.  Defaults to 256.
     """
-    
+
     #parse window; if array like, then set nperseg = win.shape
     if isinstance(window, string_types) or isinstance(window, tuple):
         # if nperseg not specified
@@ -986,5 +997,5 @@ def _triage_segments(window, nperseg):
         elif nperseg is not None:
             if nperseg != win.shape[0]:
                 raise ValueError("Value specified for nperseg is different from"
-                                 " length of ndarray provided as window.")
+                                 " length of window.")
     return win, nperseg
