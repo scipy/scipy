@@ -25,7 +25,7 @@ import warnings
 # Scipy imports.
 from scipy._lib.six import callable, string_types
 from scipy import linalg, special
-from scipy.misc import logsumexp
+from scipy.special import logsumexp
 
 from numpy import atleast_2d, reshape, zeros, newaxis, dot, exp, pi, sqrt, \
      ravel, power, atleast_1d, squeeze, sum, transpose

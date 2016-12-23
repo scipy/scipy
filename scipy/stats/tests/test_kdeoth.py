@@ -239,7 +239,7 @@ def test_pdf_logpdf():
     gkde = stats.gaussian_kde(xs)
     pdf = np.log(gkde.evaluate(xn))
     pdf2 = gkde.logpdf(xn)
-    assert_almost_equal(logpdf, logpdf2, decimal=12)
+    assert_almost_equal(pdf, pdf2, decimal=12)
 
 
 if __name__ == "__main__":
