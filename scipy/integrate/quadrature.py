@@ -43,6 +43,8 @@ def fixed_quad(func, a, b, args=(), n=5):
     ----------
     func : callable
         A Python function or method to integrate (must accept vector inputs).
+        If integrating a vector-valued function, the returned array must have
+        shape ``(..., len(x))``.
     a : float
         Lower limit of integration.
     b : float
