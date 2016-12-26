@@ -530,6 +530,7 @@ class DifferentialEvolutionSolver(object):
 
             if (self.callback and
                     self.callback(self._scale_parameters(self.population[0]),
+                                  self.population_energies[0],
                                   convergence=self.tol / convergence) is True):
 
                 warning_flag = True
