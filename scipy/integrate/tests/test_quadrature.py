@@ -7,8 +7,26 @@ from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_almost_equal, assert_allclose, assert_
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
-                             cumtrapz, quad, simps)
+                             cumtrapz, quad, simps, fixed_quad)
 from scipy.integrate.quadrature import AccuracyWarning
+
+
+class TestFixedQuad(object):
+    def test_scalar(self):
+        n = 4
+        func = lambda x: x**(2*n - 1)
+        expected = 1/(2*n)
+        got, _ = fixed_quad(func, 0, 1, n=n)
+        # quadrature exact for this input
+        assert_allclose(got, expected, rtol=1e-12)
+
+    def test_vector(self):
+        n = 4
+        p = np.arange(1, 2*n)
+        func = lambda x: x**p[:,None]
+        expected = 1/(p + 1)
+        got, _ = fixed_quad(func, 0, 1, n=n)
+        assert_allclose(got, expected, rtol=1e-12)
 
 
 class TestQuadrature(TestCase):
