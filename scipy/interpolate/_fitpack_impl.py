@@ -914,7 +914,7 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         _surfit_cache['tx'] = atleast_1d(tx)
     nx = len(_surfit_cache['tx'])
     if ty is None and task == -1:
-        raise TypeError('K nots_y must be given for task=-1')
+        raise TypeError('Knots_y must be given for task=-1')
     if ty is not None:
         _surfit_cache['ty'] = atleast_1d(ty)
     ny = len(_surfit_cache['ty'])
