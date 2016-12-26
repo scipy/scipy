@@ -372,5 +372,13 @@ def test_minmaximum_filter1d():
     assert_equal([9, 9, 4, 5, 6, 7, 8, 9, 9, 9], out)
 
 
+def test_footprint_all_zeros():
+    # regression test for gh-6876: footprint of all zeros segfaults
+    arr = np.random.randint(0, 100, (100, 100))
+    kernel = np.zeros((3, 3), bool)
+    with assert_raises(ValueError):
+        sndi.maximum_filter(arr, footprint=kernel)
+
+
 if __name__ == "__main__":
     run_module_suite(argv=sys.argv)

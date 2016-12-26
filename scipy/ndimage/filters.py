@@ -1017,6 +1017,8 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)
+            if not footprint.any():
+                raise ValueError("All-zero footprint is not supported.")
             if numpy.alltrue(numpy.ravel(footprint), axis=0):
                 size = footprint.shape
                 footprint = None
