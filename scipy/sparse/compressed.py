@@ -1031,8 +1031,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if len(self.data) < self.nnz:
             raise ValueError('data array has fewer than nnz elements')
 
-        self.indices = _prune_array(self.indices[:self.nnz])
-        self.data = _prune_array(self.data[:self.nnz])
+        if len(self.indices) > self.nnz:
+            self.indices = _prune_array(self.indices[:self.nnz])
+        if len(self.data) > self.nnz:
+            self.data = _prune_array(self.data[:self.nnz])
 
     ###################
     # utility methods #
