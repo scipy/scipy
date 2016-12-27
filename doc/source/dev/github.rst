@@ -4,6 +4,8 @@ SciPy development largely takes place on GitHub; this section describes the
 expected way of working for issues, pull requests and managing the main
 ``scipy`` repository.
 
+.. _labels-and-milestones:
+
 Labels and Milestones
 ---------------------
 Each issue and pull request normally gets at least two labels: one for the
@@ -53,6 +55,7 @@ Dealing with pull requests
   committer comment or close.
 
 
+.. _backporting:
 
 Backporting
 -----------

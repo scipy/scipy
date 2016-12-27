@@ -1,4 +1,4 @@
-Making a Scipy release
+Making a SciPy release
 ======================
 
 At the highest level, this is what the release manager does to release a new
@@ -17,11 +17,11 @@ steps.  In addition to those steps, which have to be performed by the release
 manager, here are descriptions of release-related activities and conventions of
 interest:
 
-- `Backporting`_
-- `Labels and Milestones`_
-- `Version numbering`_
-- `Supported Python and Numpy versions`_
-- `Deprecations`_
+- :ref:`backporting`
+- :ref:`labels-and-milestones`
+- :doc:`versioning`
+- :ref:`supported-py-numpy-versions`
+- :doc:`deprecations`
 
 
 Proposing a release schedule

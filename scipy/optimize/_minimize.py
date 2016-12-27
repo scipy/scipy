@@ -477,29 +477,30 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         Scalar function, must return a scalar.
     bracket : sequence, optional
         For methods 'brent' and 'golden', `bracket` defines the bracketing
-        interval and can either have three items `(a, b, c)` so that `a < b
-        < c` and `fun(b) < fun(a), fun(c)` or two items `a` and `c` which
-        are assumed to be a starting interval for a downhill bracket search
-        (see `bracket`); it doesn't always mean that the obtained solution
-        will satisfy `a <= x <= c`.
+        interval and can either have three items ``(a, b, c)`` so that
+        ``a < b < c`` and ``fun(b) < fun(a), fun(c)`` or two items ``a`` and
+        ``c`` which are assumed to be a starting interval for a downhill
+        bracket search (see `bracket`); it doesn't always mean that the
+        obtained solution will satisfy ``a <= x <= c``.
     bounds : sequence, optional
         For method 'bounded', `bounds` is mandatory and must have two items
         corresponding to the optimization bounds.
     args : tuple, optional
         Extra arguments passed to the objective function.
     method : str or callable, optional
-        Type of solver.  Should be one of
+        Type of solver.  Should be one of:
 
             - 'Brent'     :ref:`(see here) <optimize.minimize_scalar-brent>`
             - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
             - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
-            - custom - a callable object (added in version 0.14.0),
-              see below
+            - custom - a callable object (added in version 0.14.0), see below
+
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
         options.
     options : dict, optional
         A dictionary of solver options.
+
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool

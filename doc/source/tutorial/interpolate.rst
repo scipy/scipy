@@ -199,7 +199,7 @@ example that follows.
    >>> def integ(x, tck, constant=-1):
    ...     x = np.atleast_1d(x)
    ...     out = np.zeros(x.shape, dtype=x.dtype)
-   ...     for n in xrange(len(out)):
+   ...     for n in range(len(out)):
    ...         out[n] = interpolate.splint(0, x[n], tck)
    ...     out += constant
    ...     return out
