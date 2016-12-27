@@ -445,7 +445,7 @@ various assert functions.
 
 .. _how to document: https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt
 
-.. _bug report http://scipy.org/bug-report.html
+.. _bug report: http://scipy.org/bug-report.html
 
 .. _PEP8: http://www.python.org/dev/peps/pep-0008/
 
@@ -455,7 +455,7 @@ various assert functions.
 
 .. _SciPy API: https://docs.scipy.org/doc/scipy/reference/api.html
 
-.. _SciPy Roadmap http://docs.scipy.org/doc/scipy/reference/roadmap.html
+.. _SciPy Roadmap: http://docs.scipy.org/doc/scipy/reference/roadmap.html
 
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 

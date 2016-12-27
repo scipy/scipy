@@ -10,6 +10,9 @@ import numpy as np
 from numpy import asarray, zeros, place, nan, mod, pi, extract, log, sqrt, \
     exp, cos, sin, polyval, polyint
 
+from scipy._lib.six import string_types
+
+
 __all__ = ['sawtooth', 'square', 'gausspulse', 'chirp', 'sweep_poly',
            'unit_impulse']
 
@@ -234,13 +237,16 @@ def gausspulse(t, fc=1000, bw=0.5, bwr=-6, tpr=-60, retquad=False,
     # pi^2/a * fc^2 * bw^2 /4=-log(ref)
     a = -(pi * fc * bw) ** 2 / (4.0 * log(ref))
 
-    if t == 'cutoff':  # compute cut_off point
-        #  Solve exp(-a tc**2) = tref  for tc
-        #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
-        if tpr >= 0:
-            raise ValueError("Reference level for time cutoff must be < 0 dB")
-        tref = pow(10.0, tpr / 20.0)
-        return sqrt(-log(tref) / a)
+    if isinstance(t, string_types):
+        if t == 'cutoff':  # compute cut_off point
+            #  Solve exp(-a tc**2) = tref  for tc
+            #   tc = sqrt(-log(tref) / a) where tref = 10^(tpr/20)
+            if tpr >= 0:
+                raise ValueError("Reference level for time cutoff must be < 0 dB")
+            tref = pow(10.0, tpr / 20.0)
+            return sqrt(-log(tref) / a)
+        else:
+            raise ValueError("If `t` is a string, it must be 'cutoff'")
 
     yenv = exp(-a * t * t)
     yI = yenv * cos(2 * pi * fc * t)
