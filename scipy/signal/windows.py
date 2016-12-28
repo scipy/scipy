@@ -1678,14 +1678,36 @@ for k, v in _win_equiv_raw.items():
         _needs_param.update(k)
 
 
+brthan = bth = barthann
+bart = brt = bartlett
+black = blk = blackman
+blackharr = bkh = blackmanharris
+bman = bmn = bohman
+box = ones = rect = rectangular = boxcar
+cheb = chebwin
+halfcosine = cosine
+poisson = exponential
+flat = flt = flattop
+gauss = gss = gaussian
+general_gauss = ggs = general_gaussian
+hamm = ham = hamming
+hann = han = hann
+ksr = kaiser
+nutl = nut = nuttall
+parz = par = parzen
+slep = optimal = dpss = dss = slepian
+triang = tri = triang
+tuk = tukey
+
+
 def get_window(window, Nx, fftbins=True):
     """
     Return a window.
 
     Parameters
     ----------
-    window : string, float, or tuple
-        The type of window to create. See below for more details.
+    window : callable
+        The window window function. See below for more details.
     Nx : int
         The number of samples in the window.
     fftbins : bool, optional
@@ -1710,14 +1732,11 @@ def get_window(window, Nx, fftbins=True):
         (needs width), `chebwin` (needs attenuation), `exponential`
         (needs decay scale), `tukey` (needs taper fraction)
 
-    If the window requires no parameters, then `window` can be a string.
+    If the window requires no parameters, then `window` can be a callable
+    from this module.
 
-    If the window requires parameters, then `window` must be a tuple
-    with the first argument the string name of the window, and the next
-    arguments the needed parameters.
-
-    If `window` is a floating point number, it is interpreted as the beta
-    parameter of the `kaiser` window.
+    If the window requires parameters, then these parameters must be bound
+    to `window` using `functools.partial`.
 
     Each of the window types listed above is also the name of
     a function that can be called directly to create a window of
@@ -1725,18 +1744,25 @@ def get_window(window, Nx, fftbins=True):
 
     Examples
     --------
+    >>> import functools
     >>> from scipy import signal
-    >>> signal.get_window('triang', 7)
+    >>> signal.get_window(signal.windows.triang, 7)
     array([ 0.25,  0.5 ,  0.75,  1.  ,  0.75,  0.5 ,  0.25])
-    >>> signal.get_window(('kaiser', 4.0), 9)
-    array([ 0.08848053,  0.32578323,  0.63343178,  0.89640418,  1.        ,
-            0.89640418,  0.63343178,  0.32578323,  0.08848053])
-    >>> signal.get_window(4.0, 9)
+    >>> signal.get_window(functools.partial(signal.windows.kaiser, beta=4.0), 9)
     array([ 0.08848053,  0.32578323,  0.63343178,  0.89640418,  1.        ,
             0.89640418,  0.63343178,  0.32578323,  0.08848053])
 
     """
+    if not callable(window):
+        mesg = ("calling get_window with anything but a callable function "
+                "is deprecated and will be removed in the future.")
+        warnings.warn(mesg, DeprecationWarning)
+
     sym = not fftbins
+
+    if callable(window):
+        return window(Nx, sym=sym)
+
     try:
         beta = float(window)
     except (TypeError, ValueError):

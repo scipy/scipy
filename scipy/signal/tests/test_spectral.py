@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import functools
 import warnings
 import numpy as np
 from numpy.testing import assert_raises, assert_approx_equal, \
@@ -117,8 +118,8 @@ class TestPeriodogram(TestCase):
     def test_window_external(self):
         x = np.zeros(16)
         x[0] = 1
-        f, p = periodogram(x, 10, 'hann')
-        win = signal.get_window('hann', 16)
+        f, p = periodogram(x, 10, signal.windows.hann)
+        win = signal.get_window(signal.windows.hann, 16)
         fe, pe = periodogram(x, 10, win)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
@@ -353,8 +354,8 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, 10, 'hann', 8)
-        win = signal.get_window('hann', 8)
+        f, p = welch(x, 10, signal.windows.hann, 8)
+        win = signal.get_window(signal.windows.hann, 8)
         fe, pe = welch(x, 10, win, 8)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
@@ -402,7 +403,7 @@ class TestWelch(TestCase):
         assert_allclose(p, q, atol=1e-12)
 
     def test_bad_noverlap(self):
-        assert_raises(ValueError, welch, np.zeros(4), 1, 'hann', 2, 7)
+        assert_raises(ValueError, welch, np.zeros(4), 1, signal.windows.hann, 2, 7)
 
     def test_nfft_too_short(self):
         assert_raises(ValueError, welch, np.ones(12), nfft=3, nperseg=4)
@@ -481,7 +482,12 @@ class TestWelch(TestCase):
         tt = np.arange(fs)/fs
         x = A*np.sin(2*np.pi*fsig*tt)
 
-        for window in ['hann', 'bartlett', ('tukey', 0.1), 'flattop']:
+        for window in [
+            signal.windows.hann,
+            signal.windows.bartlett,
+            functools.partial(signal.windows.tukey, alpha=0.1),
+            signal.windows.flattop
+        ]:
             _, p_spec = welch(x, fs=fs, nperseg=nperseg, window=window,
                               scaling='spectrum')
             freq, p_dens = welch(x, fs=fs, nperseg=nperseg, window=window,
@@ -655,8 +661,8 @@ class TestCSD:
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = csd(x, x, 10, 'hann', 8)
-        win = signal.get_window('hann', 8)
+        f, p = csd(x, x, 10, signal.windows.hann, 8)
+        win = signal.get_window(signal.windows.hann, 8)
         fe, pe = csd(x, x, 10, win, 8)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
@@ -725,8 +731,8 @@ class TestCSD:
         assert_allclose(p, q, atol=1e-12)
 
     def test_bad_noverlap(self):
-        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1, 'hann',
-                      2, 7)
+        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
+                      signal.windows.hann, 2, 7)
 
     def test_nfft_too_short(self):
         assert_raises(ValueError, csd, np.ones(12), np.zeros(12), nfft=3,
@@ -826,7 +832,7 @@ class TestSpectrogram:
         x = np.random.randn(1024)
 
         fs = 1.0
-        window = ('tukey', 0.25)
+        window = functools.partial(signal.windows.tukey, alpha=0.25)
         nperseg = 16
         noverlap = 2
 

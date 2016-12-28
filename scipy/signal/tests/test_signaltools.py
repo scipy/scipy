@@ -2,6 +2,7 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
+import functools
 
 from decimal import Decimal
 from itertools import product
@@ -20,7 +21,7 @@ from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve, hann, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk)
+    sosfilt_zi, tf2zpk, windows)
 from scipy.signal.signaltools import _filtfilt_gust
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
@@ -529,7 +530,7 @@ class TestResample(TestCase):
         # window.shape must equal to sig.shape[0]
         sig = np.arange(128)
         num = 256
-        win = signal.get_window(('kaiser', 8.0), 160)
+        win = signal.get_window(functools.partial(signal.windows.kaiser, beta=8.0), 160)
         assert_raises(ValueError, signal.resample, sig, num, window=win)
 
         # Other degenerate conditions
@@ -577,8 +578,10 @@ class TestResample(TestCase):
                     max_rate = max(up, down)
                     f_c = 1. / max_rate
                     half_len = 10 * max_rate
-                    window = signal.firwin(2 * half_len + 1, f_c,
-                                           window=('kaiser', 5.0))
+                    window = signal.firwin(
+                        2 * half_len + 1, f_c,
+                        window=functools.partial(windows.kaiser, beta=5.0)
+                    )
                     polyargs = {'window': window}
                 else:
                     polyargs = {}
@@ -628,7 +631,7 @@ class TestResample(TestCase):
             x[-1] = 0
 
             for down in down_factors:
-                h = signal.firwin(31, 1. / down, window='hamming')
+                h = signal.firwin(31, 1. / down, window=windows.hamming)
                 yf = filtfilt(h, 1.0, x, padtype='constant')[::down]
 
                 # Need to pass convolved version of filter to resample_poly,
@@ -1674,7 +1677,7 @@ class TestDecimate(TestCase):
             if method == 'fir':
                 n = 30
                 system = signal.dlti(signal.firwin(n + 1, 1. / q,
-                                                   window='hamming'), 1.)
+                                                   window=windows.hamming), 1.)
             elif method == 'iir':
                 n = 8
                 wc = 0.8*np.pi/q

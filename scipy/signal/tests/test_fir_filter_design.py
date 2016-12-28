@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import functools
 
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
@@ -9,7 +10,7 @@ from numpy.testing import TestCase, run_module_suite, assert_raises, \
 from scipy.special import sinc
 
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-        firwin, firwin2, freqz, remez, firls, minimum_phase
+        firwin, firwin2, freqz, remez, firls, minimum_phase, windows
 
 
 def test_kaiser_beta():
@@ -55,7 +56,7 @@ class TestFirwin(TestCase):
         h = firwin(N, f)  # low-pass from 0 to f
         self.check_response(h, [(.25,1), (.75,0)])
 
-        h = firwin(N+1, f, window='nuttall')  # specific window
+        h = firwin(N+1, f, window=windows.nuttall)  # specific window
         self.check_response(h, [(.25,1), (.75,0)])
 
         h = firwin(N+2, f, pass_zero=False)  # stop from 0 to f --> high-pass
@@ -113,8 +114,8 @@ class TestFirwin(TestCase):
             ([.5], False, (1, 1)),
         ]
         for cutoff, pass_zero, expected_response in cases:
-            h = firwin(N, cutoff, scale=False, pass_zero=pass_zero, window='ones')
-            hs = firwin(N, cutoff, scale=True, pass_zero=pass_zero, window='ones')
+            h = firwin(N, cutoff, scale=False, pass_zero=pass_zero, window=windows.boxcar)
+            hs = firwin(N, cutoff, scale=True, pass_zero=pass_zero, window=windows.boxcar)
             if len(cutoff) == 1:
                 if pass_zero:
                     cutoff = [0] + cutoff
@@ -131,7 +132,7 @@ class TestFirWinMore(TestCase):
     def test_lowpass(self):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        taps = firwin(ntaps, cutoff=0.5, window=('kaiser', beta), scale=False)
+        taps = firwin(ntaps, cutoff=0.5, window=functools.partial(windows.kaiser, beta=beta), scale=False)
 
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
@@ -149,7 +150,7 @@ class TestFirWinMore(TestCase):
         # Ensure that ntaps is odd.
         ntaps |= 1
 
-        taps = firwin(ntaps, cutoff=0.5, window=('kaiser', beta),
+        taps = firwin(ntaps, cutoff=0.5, window=functools.partial(windows.kaiser, beta=beta),
                         pass_zero=False, scale=False)
 
         # Check the symmetry of taps.
@@ -164,7 +165,7 @@ class TestFirWinMore(TestCase):
     def test_bandpass(self):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        taps = firwin(ntaps, cutoff=[0.3, 0.7], window=('kaiser', beta),
+        taps = firwin(ntaps, cutoff=[0.3, 0.7], window=functools.partial(windows.kaiser, beta=beta),
                         pass_zero=False, scale=False)
 
         # Check the symmetry of taps.
@@ -180,7 +181,7 @@ class TestFirWinMore(TestCase):
     def test_multi(self):
         width = 0.04
         ntaps, beta = kaiserord(120, width)
-        taps = firwin(ntaps, cutoff=[0.2, 0.5, 0.8], window=('kaiser', beta),
+        taps = firwin(ntaps, cutoff=[0.2, 0.5, 0.8], window=functools.partial(windows.kaiser, beta=beta),
                         pass_zero=True, scale=False)
 
         # Check the symmetry of taps.
@@ -201,7 +202,7 @@ class TestFirWinMore(TestCase):
         width = 40.0
         relative_width = width/nyquist
         ntaps, beta = kaiserord(120, relative_width)
-        taps = firwin(ntaps, cutoff=[300, 700], window=('kaiser', beta),
+        taps = firwin(ntaps, cutoff=[300, 700], window=functools.partial(windows.kaiser, beta=beta),
                         pass_zero=False, scale=False, nyq=nyquist)
 
         # Check the symmetry of taps.
@@ -278,7 +279,7 @@ class TestFirwin2(TestCase):
         # increases from w=0.5 to w=1  (w=1 is the Nyquist frequency).
         freq = [0.0, 0.5, 1.0]
         gain = [1.0, 1.0, 0.0]
-        taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
+        taps = firwin2(ntaps, freq, gain, window=functools.partial(windows.kaiser, beta=beta))
         freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2,
                                                         0.75, 1.0-width/2])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
@@ -293,7 +294,7 @@ class TestFirwin2(TestCase):
         # An ideal highpass filter.
         freq = [0.0, 0.5, 0.5, 1.0]
         gain = [0.0, 0.0, 1.0, 1.0]
-        taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
+        taps = firwin2(ntaps, freq, gain, window=functools.partial(windows.kaiser, beta=beta))
         freq_samples = np.array([0.0, 0.25, 0.5-width, 0.5+width, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
         assert_array_almost_equal(np.abs(response),
@@ -306,7 +307,7 @@ class TestFirwin2(TestCase):
         ntaps = int(ntaps) | 1
         freq = [0.0, 0.4, 0.4, 0.5, 0.5, 1.0]
         gain = [1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
-        taps = firwin2(ntaps, freq, gain, window=('kaiser', beta))
+        taps = firwin2(ntaps, freq, gain, window=functools.partial(windows.kaiser, beta=beta))
         freq_samples = np.array([0.0, 0.4-width, 0.4+width, 0.45,
                                     0.5-width, 0.5+width, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
@@ -314,12 +315,12 @@ class TestFirwin2(TestCase):
                     [1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0], decimal=5)
 
     def test04(self):
-        """Test firwin2 when window=None."""
+        """Test firwin2 when window=boxcar."""
         ntaps = 5
         # Ideal lowpass: gain is 1 on [0,0.5], and 0 on [0.5, 1.0]
         freq = [0.0, 0.5, 0.5, 1.0]
         gain = [1.0, 1.0, 0.0, 0.0]
-        taps = firwin2(ntaps, freq, gain, window=None, nfreqs=8193)
+        taps = firwin2(ntaps, freq, gain, window=windows.boxcar, nfreqs=8193)
         alpha = 0.5 * (ntaps - 1)
         m = np.arange(0, ntaps) - alpha
         h = 0.5 * sinc(0.5 * m)
@@ -331,7 +332,7 @@ class TestFirwin2(TestCase):
 
         freq = [0.0, 1.0]
         gain = [0.0, 1.0]
-        taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
+        taps = firwin2(ntaps, freq, gain, window=windows.boxcar, antisymmetric=True)
         assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2:][::-1])
 
         freqs, response = freqz(taps, worN=2048)
@@ -343,7 +344,7 @@ class TestFirwin2(TestCase):
 
         freq = [0.0, 0.5, 0.55, 1.0]
         gain = [0.0, 0.5, 0.0, 0.0]
-        taps = firwin2(ntaps, freq, gain, window=None, antisymmetric=True)
+        taps = firwin2(ntaps, freq, gain, window=windows.boxcar, antisymmetric=True)
         assert_equal(taps[ntaps // 2], 0.0)
         assert_array_almost_equal(taps[: ntaps // 2], -taps[ntaps // 2 + 1:][::-1])
 

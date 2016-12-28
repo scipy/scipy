@@ -213,7 +213,7 @@ Thus, the full discrete convolution of two finite sequences of lengths
 One dimensional convolution is implemented in SciPy with the function
 :func:`convolve`. This function takes as inputs the signals :math:`x,`
 :math:`h` , and two optional flags 'mode' and 'method' and returns the signal
-:math:`y.` 
+:math:`y.`
 
 The first optional flag 'mode' allows for specification of which part of the
 output signal to return. The default value of 'full' returns the entire signal.
@@ -927,7 +927,7 @@ Gaussian noise.
    >>> x = amp*np.sin(2*np.pi*freq*time)
    >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
 
-   >>> f, Pper_spec = signal.periodogram(x, fs, 'flattop', scaling='spectrum')
+   >>> f, Pper_spec = signal.periodogram(x, fs, signal.windows.flattop, scaling='spectrum')
 
    >>> plt.semilogy(f, Pper_spec)
    >>> plt.xlabel('frequency [Hz]')

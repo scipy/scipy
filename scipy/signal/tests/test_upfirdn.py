@@ -37,7 +37,7 @@ from itertools import product
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
                            assert_raises, assert_allclose)
 
-from scipy.signal import upfirdn, firwin, lfilter
+from scipy.signal import upfirdn, firwin, lfilter, windows
 from scipy.signal._upfirdn import _output_len
 
 
@@ -123,7 +123,7 @@ class test_upfirdn(TestCase):
                 x += 1j * random_state.randn(size)
 
             for down in down_factors:
-                h = firwin(31, 1. / down, window='hamming')
+                h = firwin(31, 1. / down, window=windows.hamming)
                 yl = lfilter(h, 1.0, x)[::down]
                 y = upfirdn(h, x, up=1, down=down)
                 assert_allclose(yl, y[:yl.size], atol=1e-7, rtol=1e-7)
