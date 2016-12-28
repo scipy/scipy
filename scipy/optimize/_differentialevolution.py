@@ -529,9 +529,10 @@ class DifferentialEvolutionSolver(object):
             convergence = self.convergence
 
             if self.callback:
-                argspec = inspect.getargspec(self.kwargs = {'func_val':self.population_energies[0],'convergence':self.tol/convergence}
+                argspec = self.callback.func_code.co_varnames
+		kwargs = {'func_val':self.population_energies[0],'convergence':self.tol/convergence}
                 for key in kwargs.keys():
-			if key not in argspec.args:
+			if key not in argspec:
 				del kwargs[key]
 		if self.callback(self._scale_parameters(self.population[0]),**kwargs) is True:
 			warning_flag = True
