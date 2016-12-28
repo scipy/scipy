@@ -527,17 +527,16 @@ class DifferentialEvolutionSolver(object):
 
             # should the solver terminate?
             convergence = self.convergence
-
+            
             if self.callback:
-                argspec = self.callback.func_code.co_varnames
-                kwargs = {'func_val':self.population_energies[0],'convergence':self.tol/convergence}
-                for key in kwargs.keys():
-                    if key not in argspec:
-                        del kwargs[key]
-                if self.callback(self._scale_parameters(self.population[0]),**kwargs) is True:
-                    warning_flag = True
-                    status_message = ('callback function requested stop early by returning True')
-                    break
+				kwargs = {'func_val':self.population_energies[0],'convergence':self.tol/convergence}
+				for key in kwargs.keys():
+					if key not in self.callback.func_code.co_varnames:
+						del kwargs[key]
+				if self.callback(self._scale_parameters(self.population[0]),**kwargs) is True:		
+					warning_flag = True
+					status_message = 'callback function requested stop early by returning True'
+					break
 
             intol = (np.std(self.population_energies) <=
                      self.atol +
@@ -787,4 +786,3 @@ class DifferentialEvolutionSolver(object):
         self.random_number_generator.shuffle(idxs)
         idxs = idxs[:number_samples]
         return idxs
-
