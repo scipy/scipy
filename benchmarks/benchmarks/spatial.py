@@ -4,7 +4,7 @@ import numpy as np
 
 try:
     from scipy.spatial import (cKDTree, KDTree, SphericalVoronoi, distance,
-    ConvexHull)
+    ConvexHull, Voronoi)
 except ImportError:
     pass
 
@@ -243,3 +243,15 @@ class ConvexHullBench(Benchmark):
         and settings.
         """
         ConvexHull(self.points, incremental)
+
+class VoronoiBench(Benchmark):
+    params = ([10, 100, 1000, 5000, 10000], [False, True])
+    param_names = ['num_points', 'furthest_site']
+
+    def setup(self, num_points, furthest_site):
+        np.random.seed(123)
+        self.points = np.random.random_sample((num_points, 3))
+
+    def time_voronoi_calculation(self, num_points, furthest_site):
+        """Time conventional Voronoi diagram calculation."""
+        Voronoi(self.points, furthest_site=furthest_site)
