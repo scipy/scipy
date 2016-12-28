@@ -72,6 +72,7 @@ setup.cfg
 .coverage
 .deps
 .libs
+.eggs
 
 # Paver generated files #
 #########################
