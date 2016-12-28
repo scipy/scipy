@@ -10,6 +10,7 @@ from .windows import get_window
 from . import windows
 from ._spectral import lombscargle
 import warnings
+import functools
 
 from scipy._lib.six import string_types
 
