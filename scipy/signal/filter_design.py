@@ -308,7 +308,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     --------
     >>> from scipy import signal
     >>> import functools
-    >>> b = signal.firwin(80, 0.5, window=functools.partial(windows.kaiser, beta=8))
+    >>> b = signal.firwin(80, 0.5, window=functools.partial(signal.windows.kaiser, beta=8))
     >>> w, h = signal.freqz(b)
 
     >>> import matplotlib.pyplot as plt

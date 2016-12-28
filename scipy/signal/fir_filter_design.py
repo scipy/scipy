@@ -217,7 +217,7 @@ def firwin(numtaps, cutoff, width=None, window=None, pass_zero=True,
     --------
     Low-pass from 0 to f:
 
-    >>> from scipy import signal, windows
+    >>> from scipy import signal
     >>> numtaps = 3
     >>> f = 0.1
     >>> signal.firwin(numtaps, f)
