@@ -162,7 +162,9 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         directly as the window and its length will be used for nperseg.
         Defaults to 'hann'.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap : int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 2``.  Defaults to None.
@@ -294,12 +296,14 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         directly as the window and its length will be used for nperseg.
         Defaults to 'hann'.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap: int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 2``.  Defaults to None.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        Length of the FFT used, if a zero padded FFT is desired. If None,
         the FFT length is `nperseg`. Defaults to None.
     detrend : str or function or False, optional
         Specifies how to detrend each segment. If `detrend` is a string,
@@ -421,7 +425,9 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
         directly as the window and its length will be used for nperseg.
         Defaults to a Tukey window with shape parameter of 0.25.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap : int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 8``.  Defaults to None.
@@ -546,7 +552,9 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         directly as the window and its length will be used for nperseg.
         Defaults to 'hann'.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap: int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 2``.  Defaults to None.
@@ -661,7 +669,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
         directly as the window and its length will be used for nperseg.
         Defaults to 'hann'.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap : int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 2``.  Defaults to None.
@@ -978,8 +988,10 @@ def _triage_segments(window, nperseg):
         the actual array used as a window.
 
     nperseg : int
-        Length of each segment. Defaults to 256 (if called with None).
-    
+        Length of each segment. If window is str or tuple, nperseg is set to
+        256. If window is array_like, nperseg is set to the length of the
+        6
+        window.
     """
 
     #parse window; if array like, then set nperseg = win.shape

@@ -353,11 +353,13 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, 10, 'hann', 8)
+        f, p = welch(x, 10, 'hann', nperseg=8)
         win = signal.get_window('hann', 8)
-        fe, pe = welch(x, 10, win, 8)
+        fe, pe = welch(x, 10, win, nperseg=None)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
+        assert_array_equal(pe.shape, (5,))
         assert_raises(ValueError, welch, x,
                       10, win, nperseg=4)  # because nperseg != win.shape[-1]
 
@@ -494,6 +496,7 @@ class TestWelch(TestCase):
             # Check integrated spectrum RMS for 'density'
             assert_allclose(np.sqrt(np.trapz(p_dens, freq)), A*np.sqrt(2)/2,
                             rtol=1e-3)
+
 
 class TestCSD:
     def test_pad_shorter_x(self):
@@ -659,9 +662,11 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, 10, 'hann', 8)
         win = signal.get_window('hann', 8)
-        fe, pe = csd(x, x, 10, win, 8)
+        fe, pe = csd(x, x, 10, win, nperseg=None)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
+        assert_array_equal(pe.shape, (5,))
         assert_raises(ValueError, csd, x, x,
                       10, win, nperseg=256)  # because nperseg != win.shape[-1]
 
@@ -801,6 +806,7 @@ class TestCSD:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
+
 class TestCoherence:
     def test_identical_input(self):
         x = np.random.randn(20)
@@ -838,6 +844,23 @@ class TestSpectrogram:
         fw, Pw = welch(x, fs, window, nperseg, noverlap)
         assert_allclose(f, fw)
         assert_allclose(np.mean(P, axis=-1), Pw)
+    
+    def test_window_external(self):
+        x = np.random.randn(1024)
+
+        fs = 1.0
+        window = ('tukey', 0.25)
+        nperseg = 16
+        noverlap = 2
+        f, _, P = spectrogram(x, fs, window, nperseg, noverlap)
+
+        win = signal.get_window(('tukey', 0.25), 16)
+        fe, _, Pe = spectrogram(x, fs, win, nperseg=None, noverlap=2)
+        assert_array_equal(fe.shape, (9,))  # because win length used as nperseg
+        assert_array_equal(Pe.shape, (9,73))
+        assert_raises(ValueError, spectrogram, x,
+                      fs, win, nperseg=8)  # because nperseg != win.shape[-1]
+
 
 class TestLombscargle:
     def test_frequency(self):
