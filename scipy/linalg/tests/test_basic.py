@@ -8,6 +8,7 @@
 from __future__ import division, print_function, absolute_import
 
 import warnings
+import itertools
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
                    float32)
@@ -709,7 +710,45 @@ class TestSolve(TestCase):
         assert_array_almost_equal(x, [1.2, 0.2, 1])
         x = solve(np.tril(A)/9,np.ones(3), transposed=0)
         assert_array_almost_equal(x, [9, -5.4, -1.2])
+
+    def test_nonsquare_a(self):
+        assert_raises(ValueError, solve, [1, 2], 1)
+
+    def test_size_mismatch_with_1D_b(self):
+        assert_array_almost_equal(solve(np.eye(3), np.ones(3)), np.ones(3))
+        assert_raises(ValueError, solve, np.eye(3), np.ones(4))
+
+    def test_all_type_size_routine_combinations(self):
+        sizes = [10, 100, 1000]
+        assume_as = ['gen', 'sym', 'pos', 'her']
+        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+        for size, assume_a, dtype_ in itertools.product(sizes,
+                                                       assume_as,
+                                                       dtypes):
+            is_complex = dtype_ in (np.complex64, np.complex128)
+            if assume_a == 'her' and not is_complex:
+                continue
         
+            err_msg = ("Failed for size: {}, assume_a: {},"
+                       "dtype: {}".format(size, assume_a, dtype_))
+        
+            a = np.random.randn(size, size).astype(dtype_)
+            b = np.random.randn(size).astype(dtype_)
+            if is_complex:
+                a = a + (1j*np.random.randn(size, size)).astype(dtype_)
+        
+            if assume_a in ('sym', 'her'):
+                a = a + a.T.conj()
+            elif assume_a == 'pos':
+                a = a.conj().T.dot(a) + 0.1*np.eye(size)
+
+            x = solve(a, b)
+            tol_ = 1e-12 if dtype_ in (np.float64, np.complex128) else 1e-5
+            assert_allclose(a.dot(x), b,
+                            atol=tol_ * size,
+                            rtol=tol_ * size, 
+                            err_msg=err_msg)
+
 
 class TestSolveTriangular(TestCase):
 
