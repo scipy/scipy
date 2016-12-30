@@ -116,6 +116,12 @@ polynomials. For example, `scipy.special.j_roots` has been renamed
 functions `scipy.special.jacobi` and `scipy.special.eval_jacobi`. To
 preserve back-compatibility the old names have been left as aliases.
 
+`scipy.stats` improvements
+--------------------------
+
+The function `scipy.stats.weightedtau` was added.  It provides a weighted
+version of Kendall's tau.
+
 `scipy.interpolate` improvements
 --------------------------------
 

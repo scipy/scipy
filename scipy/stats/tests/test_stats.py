@@ -618,8 +618,17 @@ def test_kendalltau():
     y = np.arange(20.)
     assert_raises(ValueError, stats.kendalltau, x, y)
 
+    # test all ties
+    tau, p_value = stats.kendalltau([], [])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.kendalltau([0], [0])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+
 
 def test_kendalltau_vs_mstats_basic():
+    np.random.seed(42)
     for s in range(2,10):
         a = []
         # Generate rankings with ties
@@ -630,8 +639,8 @@ def test_kendalltau_vs_mstats_basic():
         np.random.shuffle(b)
         expected = mstats_basic.kendalltau(a, b)
         actual = stats.kendalltau(a, b)
-        assert_approx_equal(expected[0], actual[0])
-        assert_approx_equal(expected[1], actual[1])
+        assert_approx_equal(actual[0], expected[0])
+        assert_approx_equal(actual[1], expected[1])
 
 
 def test_kendalltau_nan_2nd_arg():
@@ -642,6 +651,108 @@ def test_kendalltau_nan_2nd_arg():
     r1 = stats.kendalltau(x, y, nan_policy='omit')
     r2 = stats.kendalltau(x[1:], y[1:])
     assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
+
+
+def test_weightedtau():
+    x = [12, 2, 1, 12, 2]
+    y = [1, 4, 7, 1, 0]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(x, y, additive=False)
+    assert_approx_equal(tau, -0.62205716951801038)
+    assert_equal(np.nan, p_value)
+    # This must be exactly Kendall's tau
+    tau, p_value = stats.weightedtau(x, y, weigher=lambda x: 1)
+    assert_approx_equal(tau, -0.47140452079103173)
+    assert_equal(np.nan, p_value)
+
+    # Asymmetric, ranked version
+    tau, p_value = stats.weightedtau(x, y, rank=None)
+    assert_approx_equal(tau, -0.4157652301037516)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(y, x, rank=None)
+    assert_approx_equal(tau, -0.7181341329699029)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(x, y, rank=None, additive=False)
+    assert_approx_equal(tau, -0.40644850966246893)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(y, x, rank=None, additive=False)
+    assert_approx_equal(tau, -0.83766582937355172)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(x, y, rank=False)
+    assert_approx_equal(tau, -0.51604397940261848)
+    assert_equal(np.nan, p_value)
+    # This must be exactly Kendall's tau
+    tau, p_value = stats.weightedtau(x, y, rank=True, weigher=lambda x: 1)
+    assert_approx_equal(tau, -0.47140452079103173)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(y, x, rank=True, weigher=lambda x: 1)
+    assert_approx_equal(tau, -0.47140452079103173)
+    assert_equal(np.nan, p_value)
+    # Test argument conversion
+    tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.int16), y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64))
+    assert_approx_equal(tau, -0.56694968153682723)
+    # All ties
+    tau, p_value = stats.weightedtau([], [])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau([0], [0])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    # Size mismatches
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1, 2])
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0])
+    # NaNs
+    x = [12, 2, 1, 12, 2]
+    y = [1, 4, 7, 1, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    x = [12, 2, np.nan, 12, 2]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+
+
+def test_weightedtau_vs_quadratic():
+    # Trivial quadratic implementation, all parameters mandatory
+    def wkq(x, y, rank, weigher, add):
+        tot = conc = disc = u = v = 0
+        for i in range(len(x)):
+            for j in range(len(x)):
+                w = weigher(rank[i]) + weigher(rank[j]) if add else weigher(rank[i]) * weigher(rank[j])
+                tot += w
+                if x[i] == x[j]:
+                    u += w
+                if y[i] == y[j]:
+                    v += w
+                if x[i] < x[j] and y[i] < y[j] or x[i] > x[j] and y[i] > y[j]:
+                    conc += w
+                elif x[i] < x[j] and y[i] > y[j] or x[i] > x[j] and y[i] < y[j]:
+                    disc += w
+        return (conc - disc) / np.sqrt(tot - u) / np.sqrt(tot - v)
+
+    np.random.seed(42)
+    for s in range(3,10):
+        a = []
+        # Generate rankings with ties
+        for i in range(s):
+            a += [i]*i
+        b = list(a)
+        np.random.shuffle(a)
+        np.random.shuffle(b)
+        # First pass: use element indices as ranks
+        rank = np.arange(len(a), dtype=np.intp)
+        for _ in range(2):
+            for add in [True, False]:
+                expected = wkq(a, b, rank, lambda x: 1./(x+1), add)
+                actual = stats.weightedtau(a, b, rank, lambda x: 1./(x+1), add).correlation
+                assert_approx_equal(expected, actual)
+            # Second pass: use a random rank
+            np.random.shuffle(rank)
 
 
 class TestFindRepeats(TestCase):

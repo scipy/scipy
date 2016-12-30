@@ -231,6 +231,7 @@ which work for masked arrays.
    spearmanr
    pointbiserialr
    kendalltau
+   weightedtau
    linregress
    theilslopes
    f_value

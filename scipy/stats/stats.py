@@ -105,6 +105,7 @@ Correlation Functions
    spearmanr
    pointbiserialr
    kendalltau
+   weightedtau
    linregress
    theilslopes
 
@@ -177,7 +178,7 @@ from . import distributions
 from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
-from ._stats import _kendall_dis
+from ._stats import _kendall_dis, _toint64, _weightedrankedtau
 
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
@@ -189,7 +190,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'signaltonoise', 'sem', 'zmap', 'zscore', 'iqr', 'threshold',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
-           'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
+           'kendalltau', 'weightedtau',
+           'linregress', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
@@ -3422,6 +3424,7 @@ def pointbiserialr(x, y):
     rpb, prob = pearsonr(x, y)
     return PointbiserialrResult(rpb, prob)
 
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
@@ -3461,6 +3464,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     --------
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
+    weightedtau : Computes a weighted version of Kendall's tau.
 
     Notes
     -----
@@ -3570,6 +3574,184 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     # Limit range to fix computational errors
     return KendalltauResult(min(1., max(-1., tau)), pvalue)
+
+
+WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
+
+
+def weightedtau(x, y, rank=True, weigher=None, additive=True):
+    r"""
+    Computes a weighted version of Kendall's :math:`\tau`.
+
+    The weighted :math:`\tau` is a weighted version of Kendall's
+    :math:`\tau` in which exchanges of high weight are more influential than
+    exchanges of low weight. The default parameters compute the additive
+    hyperbolic version of the index, :math:`\tau_\mathrm h`, which has
+    been shown to provide the best balance between important and
+    unimportant elements [1]_.
+
+    The weighting is defined by means of a rank array, which assigns a
+    nonnegative rank to each element, and a weigher function, which
+    assigns a weight based from the rank to each element. The weight of an
+    exchange is then the sum or the product of the weights of the ranks of
+    the exchanged elements. The default parameters compute
+    :math:`\tau_\mathrm h`: an exchange between elements with rank
+    :math:`r` and :math:`s` (starting from zero) has weight
+    :math:`1/(r+1) + 1/(s+1)`.
+
+    Specifying a rank array is meaningful only if you have in mind an
+    external criterion of importance. If, as it usually happens, you do
+    not have in mind a specific rank, the weighted :math:`\tau` is
+    defined by averaging the values obtained using the decreasing
+    lexicographical rank by (`x`, `y`) and by (`y`, `x`). This is the
+    behavior with default parameters.
+
+    Note that if you are computing the weighted :math:`\tau` on arrays of
+    ranks, rather than of scores (i.e., a larger value implies a lower
+    rank) you must negate the ranks, so that elements of higher rank are
+    associated with a larger value.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Arrays of scores, of the same shape. If arrays are not 1-D, they will
+        be flattened to 1-D.
+    rank: array_like of ints or bool, optional
+        A nonnegative rank assigned to each element. If it is None, the
+        decreasing lexicographical rank by (`x`, `y`) will be used: elements of
+        higher rank will be those with larger `x`-values, using `y`-values to
+        break ties (in particular, swapping `x` and `y` will give a different
+        result). If it is False, the element indices will be used
+        directly as ranks. The default is True, in which case this
+        function returns the average of the values obtained using the
+        decreasing lexicographical rank by (`x`, `y`) and by (`y`, `x`).
+    weigher : callable, optional
+        The weigher function. Must map nonnegative integers (zero
+        representing the most important element) to a nonnegative weight.
+        The default, None, provides hyperbolic weighing, that is,
+        rank :math:`r` is mapped to weight :math:`1/(r+1)`.
+    additive : bool, optional
+        If True, the weight of an exchange is computed by adding the
+        weights of the ranks of the exchanged elements; otherwise, the weights
+        are multiplied. The default is True.
+
+    Returns
+    -------
+    correlation : float
+       The weighted :math:`\tau` correlation index.
+    pvalue : float
+       Presently ``np.nan``, as the null statistics is unknown (even in the
+       additive hyperbolic case).
+
+    See also
+    --------
+    kendalltau : Calculates Kendall's tau.
+    spearmanr : Calculates a Spearman rank-order correlation coefficient.
+    theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
+
+    Notes
+    -----
+    This function uses an :math:`O(n \log n)`, mergesort-based algorithm
+    [1]_ that is a weighted extension of Knight's algorithm for Kendall's
+    :math:`\tau` [2]_. It can compute Shieh's weighted :math:`\tau` [3]_
+    between rankings without ties (i.e., permutations) by setting
+    `additive` and `rank` to False, as the definition given in [1]_ is a
+    generalization of Shieh's.
+
+    NaNs are considered the smallest possible score.
+
+    .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] Sebastiano Vigna, "A weighted correlation index for rankings with
+           ties", Proceedings of the 24th international conference on World
+           Wide Web, pp. 1166-1176, ACM, 2015.
+    .. [2] W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
+           Ungrouped Data", Journal of the American Statistical Association,
+           Vol. 61, No. 314, Part 1, pp. 436-439, 1966.
+    .. [3] Grace S. Shieh. "A weighted Kendall's tau statistic", Statistics &
+           Probability Letters, Vol. 39, No. 1, pp. 17-24, 1998.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, 0]
+    >>> tau, p_value = stats.weightedtau(x, y)
+    >>> tau
+    -0.56694968153682723
+    >>> p_value
+    nan
+    >>> tau, p_value = stats.weightedtau(x, y, additive=False)
+    >>> tau
+    -0.62205716951801038
+
+    NaNs are considered the smallest possible score:
+
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, np.nan]
+    >>> tau, _ = stats.weightedtau(x, y)
+    >>> tau
+    -0.56694968153682723
+
+    This is exactly Kendall's tau:
+
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, 0]
+    >>> tau, _ = stats.weightedtau(x, y, weigher=lambda x: 1)
+    >>> tau
+    -0.47140452079103173
+
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, 0]
+    >>> stats.weightedtau(x, y, rank=None)
+    WeightedTauResult(correlation=-0.4157652301037516, pvalue=nan)
+    >>> stats.weightedtau(y, x, rank=None)
+    WeightedTauResult(correlation=-0.71813413296990281, pvalue=nan)
+
+    """
+    x = np.asarray(x).ravel()
+    y = np.asarray(y).ravel()
+
+    if x.size != y.size:
+        raise ValueError("All inputs to `weightedtau` must be of the same size, "
+                         "found x-size %s and y-size %s" % (x.size, y.size))
+    if not x.size:
+        return WeightedTauResult(np.nan, np.nan)  # Return NaN if arrays are empty
+
+    # If there are NaNs we apply _toint64()
+    if np.isnan(np.min(x)):
+            x = _toint64(x)
+    if np.isnan(np.min(y)):
+            y = _toint64(y)
+
+    # Reduce to ranks unsupported types
+    if x.dtype != y.dtype:
+        if x.dtype != np.int64:
+            x = _toint64(x)
+        if y.dtype != np.int64:
+            y = _toint64(y)
+    else:
+        if x.dtype not in (np.int32, np.int64, np.float32, np.float64):
+            x = _toint64(x)
+            y = _toint64(y)
+
+    if rank is True:
+        return WeightedTauResult((
+            _weightedrankedtau(x, y, None, weigher, additive) +
+            _weightedrankedtau(y, x, None, weigher, additive)
+            ) / 2, np.nan)
+
+    if rank is False:
+        rank = np.arange(x.size, dtype=np.intp)
+    elif rank is not None:
+        rank = np.asarray(rank).ravel()
+        if rank.size != x.size:
+            raise ValueError("All inputs to `weightedtau` must be of the same size, "
+                         "found x-size %s and rank-size %s" % (x.size, rank.size))
+
+    return WeightedTauResult(_weightedrankedtau(x, y, rank, weigher, additive), np.nan)
 
 
 #####################################
@@ -4915,7 +5097,7 @@ def friedmanchisquare(*args):
     """
     k = len(args)
     if k < 3:
-        raise ValueError('\nLess than 3 levels.  Friedman test not appropriate.\n')
+        raise ValueError('Less than 3 levels.  Friedman test not appropriate.')
 
     n = len(args[0])
     for i in range(1, k):
