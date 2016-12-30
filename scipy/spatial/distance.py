@@ -194,6 +194,10 @@ def directed_hausdorff(u, v, seed=0):
            Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
            2015.
 
+    See Also
+    --------
+    scipy.spatial.procrustes : Another similarity test for two data sets
+
     Examples
     --------
     Find the directed Hausdorff distance between two 2-D arrays of
