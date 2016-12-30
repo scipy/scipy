@@ -17,6 +17,7 @@ stored in a rectangular array.
    pdist   -- pairwise distances between observation vectors.
    cdist   -- distances between two collections of observation vectors
    squareform -- convert distance matrix to a condensed one and vice versa
+   directed_hausdorff -- directed Hausdorff distance between arrays
 
 Predicates for checking the validity of distance matrices, both
 condensed and redundant. Also contained in this module are functions
@@ -84,6 +85,7 @@ __all__ = [
     'correlation',
     'cosine',
     'dice',
+    'directed_hausdorff',
     'euclidean',
     'hamming',
     'is_valid_dm',
@@ -115,8 +117,8 @@ from scipy._lib.six import callable, string_types
 from scipy._lib.six import xrange
 
 from . import _distance_wrap
+from . import _hausdorff
 from ..linalg import norm
-
 
 def _copy_array_if_base_present(a):
     """
@@ -144,6 +146,91 @@ def _validate_vector(u, dtype=None):
         raise ValueError("Input vector should be 1-D.")
     return u
 
+def directed_hausdorff(u, v, seed=0):
+    """
+    Computes the directed Hausdorff distance between two N-D arrays.
+
+    Distances between pairs are calculated using a Euclidean metric.
+    
+    Parameters
+    ----------
+    u : (M,N) ndarray
+        Input array.
+    v : (O,N) ndarray
+        Input array.
+    seed : int or None
+        Local `np.random.RandomState` seed. Default is 0, a random shuffling of
+        u and v that guarantees reproducibility.
+
+    Returns
+    -------
+    d : double
+        The directed Hausdorff distance between arrays `u` and `v`,
+
+    index_1 : int
+        index of point contributing to Hausdorff pair in `u`
+
+    index_2 : int
+        index of point contributing to Hausdorff pair in `v`
+
+    Notes
+    -----
+    Uses the early break technique and the random sampling approach
+    described by [1]_. Although worst-case performance is ``O(m * o)``
+    (as with the brute force algorithm), this is unlikely in practice
+    as the input data would have to require the algorithm to explore
+    every single point interaction, and after the algorithm shuffles
+    the input points at that. The best case performance is O(m), which
+    is satisfied by selecting an inner loop distance that is less than
+    cmax and leads to an early break as often as possible. The authors
+    have formally shown that the average runtime is closer to O(m).
+
+    .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] A. A. Taha and A. Hanbury, "An efficient algorithm for
+           calculating the exact Hausdorff distance." IEEE Transactions On
+           Pattern Analysis And Machine Intelligence, vol. 37 pp. 2153-63,
+           2015.
+
+    Examples
+    --------
+    Find the directed Hausdorff distance between two 2-D arrays of
+    coordinates:
+
+    >>> from scipy.spatial.distance import directed_hausdorff
+    >>> u = np.array([(1.0, 0.0),
+    ...               (0.0, 1.0),
+    ...               (-1.0, 0.0),
+    ...               (0.0, -1.0)])
+    >>> v = np.array([(2.0, 0.0),
+    ...               (0.0, 2.0),
+    ...               (-2.0, 0.0),
+    ...               (0.0, -4.0)])
+
+    >>> directed_hausdorff(u, v)[0]
+    2.23606797749979
+    >>> directed_hausdorff(v, u)[0]
+    3.0
+
+    Find the general (symmetric) Hausdorff distance between two 2-D
+    arrays of coordinates:
+
+    >>> max(directed_hausdorff(u, v)[0], directed_hausdorff(v, u)[0])
+    3.0
+
+    Find the indices of the points that generate the Hausdorff distance
+    (the Hausdorff pair):
+
+    >>> directed_hausdorff(v, u)[1:]
+    (3, 3)
+
+    """
+    u = np.asarray(u, dtype=np.float64, order='c')
+    v = np.asarray(v, dtype=np.float64, order='c')
+    result = _hausdorff.directed_hausdorff(u, v, seed)
+    return result
 
 def minkowski(u, v, p):
     """
