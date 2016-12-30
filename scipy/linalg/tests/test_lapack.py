@@ -510,5 +510,64 @@ def test_sgesdd_lwork_bug_workaround():
                  "Code apparently failed: " + p.stdout.read())
 
 
+class TestFlapackEV(TestCase):
+
+    def test_syevr(self):
+        m, n = 5, 4
+        _types = {'s': np.single, 'd': np.double}
+        for t in 'sd':
+            f = getattr(flapack, t + 'syevr', None)
+            assert f is not None
+
+            A = np.random.random((m, n)).astype(_types[t])
+            A = np.dot(A.T, A)
+            lam_full, v_full = np.linalg.eigh(A)
+
+            job = 'N'
+            uplo = 'U'
+
+            for il in range(1, n + 1):
+                for iu in range(il, n + 1):
+                    n_eig = iu - il + 1
+                    targ_lam = lam_full[il - 1:iu]
+
+                    lam, v, ret = f(A, job, 'I', uplo, il, iu)
+                    assert_array_almost_equal(lam[:n_eig], targ_lam)
+
+                    vl = np.floor(1000. * lam_full[il - 1]) / 1000.
+                    vu = np.ceil(1000. * lam_full[iu - 1]) / 1000.
+                    lam, v, ret = f(A, job, 'V', uplo, 1, 1, 26 * 5, vl, vu)
+                    assert_array_almost_equal(lam[:n_eig], targ_lam)
+
+    def test_heevr(self):
+        m, n = 5, 4
+        _types = {'c': np.complex64, 'z': np.complex128}
+        for t in 'cz':
+            f = getattr(flapack, t + 'heevr', None)
+            assert f is not None
+
+            R = np.random.random((m, n))
+            I = np.random.random((m, n))
+            A = (R + 1j * I).astype(_types[t])
+            A = np.dot(A.T, A)
+            lam_full, v_full = np.linalg.eigh(A)
+
+            job = 'N'
+            uplo = 'U'
+
+            for il in range(1, n + 1):
+                for iu in range(il, n + 1):
+                    n_eig = iu - il + 1
+                    targ_lam = lam_full[il - 1:iu]
+
+                    lam, v, ret = f(A, job, 'I', uplo, il, iu)
+                    assert_array_almost_equal(lam[:n_eig], targ_lam)
+
+                    vl = np.floor(1000. * lam_full[il - 1]) / 1000.
+                    vu = np.ceil(1000. * lam_full[iu - 1]) / 1000.
+                    lam, v, ret = f(A, job, 'V', uplo, 1, 1, 26 * 5, vl, vu)
+                    assert_array_almost_equal(lam[:n_eig], targ_lam, decimal=5)
+
+
 if __name__ == "__main__":
     run_module_suite()
