@@ -522,7 +522,7 @@ class DifferentialEvolutionSolver(object):
                           'convergence':self.tol/convergence,
                           'population':self._scale_parameters(self.population)}
                 for key in list(kwargs):
-                    if not key in self.callback.__code__.co_varnames:
+                    if key not in self.callback.__code__.co_varnames:
                         del kwargs[key]
                 if self.callback(self._scale_parameters(self.population[0]),**kwargs) is True:
                     warning_flag = True
