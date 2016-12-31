@@ -128,12 +128,17 @@ def _asfarray(x):
         # 'dtype' attribute does not ensure that the
         # object is an ndarray (e.g. Series class
         # from the pandas library)
+        if x.dtype == numpy.half:
+            # no half-precision routines, so convert to single precision
+            return numpy.asarray(x, dtype=numpy.float32)
         return numpy.asarray(x, dtype=x.dtype)
     else:
         # We cannot use asfarray directly because it converts sequences of
         # complex to sequence of real
         ret = numpy.asarray(x)
-        if ret.dtype.char not in numpy.typecodes["AllFloat"]:
+        if ret.dtype == numpy.half:
+            return numpy.asarray(ret, dtype=numpy.float32)
+        elif ret.dtype.char not in numpy.typecodes["AllFloat"]:
             return numpy.asfarray(x)
         return ret
 
