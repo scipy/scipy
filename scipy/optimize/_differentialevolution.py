@@ -213,6 +213,37 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     return solver.solve()
 
 
+def _init_population_lhs(rng, num_population_members, population_shape,
+                         parameter_count):
+    """Initializes the population with Latin Hypercube Sampling.
+
+    Latin Hypercube Sampling ensures that each parameter is uniformly
+    sampled over its range.
+    """
+    # Each parameter range needs to be sampled uniformly. The scaled
+    # parameter range ([0, 1)) needs to be split into
+    # `num_population_members` segments, each of which has the following
+    # size:
+    segsize = 1.0 / num_population_members
+
+    # Within each segment we sample from a uniform random distribution for
+    # each parameter and offset each segment to cover the entire parameter
+    # range [0, 1).
+    samples = (segsize * rng.random_sample(population_shape)
+               + np.linspace(0., 1., num_population_members,
+                             endpoint=False)[:, np.newaxis])
+
+    # Create an array for population of candidate solutions.
+    population = np.zeros_like(samples)
+
+    # Initialize population of candidate solutions by permutation of the
+    # random samples.
+    for j in range(parameter_count):
+        order = rng.permutation(range(num_population_members))
+        population[:, j] = samples[order, j]
+    return population
+
+
 class OptimizeStep(object):
     """A step in the iterations of an optimization solver."""
 
@@ -412,9 +443,18 @@ class DifferentialEvolutionSolver(object):
     def __enter__(self):
         self._nfev = 0
         if self._init_population_method == 'latinhypercube':
-            self.init_population_lhs()
+            self.population = _init_population_lhs(
+                self.random_number_generator,
+                self.num_population_members,
+                self.population_shape,
+                self.parameter_count,
+            )
         elif self._init_population_method == 'random':
-            self.init_population_random()
+            # Initialises the population at random.
+            # This type of initialization can possess clustering, Latin
+            # Hypercube sampling is generally better.
+            self.population = self.random_number_generator.random_sample(
+                self.population_shape)
         else:
             raise ValueError("The population initialization method must be one"
                              "of 'latinhypercube' or 'random'")
@@ -443,45 +483,6 @@ class DifferentialEvolutionSolver(object):
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
-
-    def init_population_lhs(self):
-        """
-        Initializes the population with Latin Hypercube Sampling.
-        Latin Hypercube Sampling ensures that each parameter is uniformly
-        sampled over its range.
-        """
-        rng = self.random_number_generator
-
-        # Each parameter range needs to be sampled uniformly. The scaled
-        # parameter range ([0, 1)) needs to be split into
-        # `self.num_population_members` segments, each of which has the following
-        # size:
-        segsize = 1.0 / self.num_population_members
-
-        # Within each segment we sample from a uniform random distribution.
-        # We need to do this sampling for each parameter.
-        samples = (segsize * rng.random_sample(self.population_shape)
-
-        # Offset each segment to cover the entire parameter range [0, 1)
-                   + np.linspace(0., 1., self.num_population_members,
-                                 endpoint=False)[:, np.newaxis])
-
-        # Create an array for population of candidate solutions.
-        self.population = np.zeros_like(samples)
-
-        # Initialize population of candidate solutions by permutation of the
-        # random samples.
-        for j in range(self.parameter_count):
-            order = rng.permutation(range(self.num_population_members))
-            self.population[:, j] = samples[order, j]
-
-    def init_population_random(self):
-        """
-        Initialises the population at random.  This type of initialization
-        can possess clustering, Latin Hypercube sampling is generally better.
-        """
-        rng = self.random_number_generator
-        self.population = rng.random_sample(self.population_shape)
 
     @property
     def x(self):
