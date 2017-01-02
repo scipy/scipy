@@ -207,14 +207,15 @@ class TestDifferentialEvolutionSolver(TestCase):
     def test_differential_evolution(self):
         # test that the Jmin of DifferentialEvolutionSolver
         # is the same as the function evaluation
-        solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
-        result = solver.solve()
+        result = differential_evolution(self.quadratic, [(-2, 2)])
         assert_almost_equal(result.fun, self.quadratic(result.x))
 
     def test_best_solution_retrieval(self):
         # test that the getter property method for the best solution works.
-        solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
-        result = solver.solve()
+        with DifferentialEvolutionSolver(self.quadratic, [(-2, 2)]) as solver:
+            while not solver.converged():
+                next(solver)
+        result = solver.result
         assert_almost_equal(result.x, solver.x)
 
     def test_callback_terminates(self):
@@ -288,8 +289,7 @@ class TestDifferentialEvolutionSolver(TestCase):
     def test_maxiter_stops_solve(self):
         # test that if the maximum number of iterations is exceeded
         # the solver stops.
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxiter=1)
-        result = solver.solve()
+        result = differential_evolution(rosen, self.bounds, maxiter=1)
         assert_equal(result.success, False)
         assert_equal(result.message,
                         'Maximum number of iterations has been exceeded.')
@@ -297,10 +297,10 @@ class TestDifferentialEvolutionSolver(TestCase):
     def test_maxfun_stops_solve(self):
         # test that if the maximum number of function evaluations is exceeded
         # during initialisation the solver stops
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1,
-                                             polish=False)
-        result = solver.solve()
-
+        with DifferentialEvolutionSolver(rosen, self.bounds, maxfun=1,
+                                         polish=False) as solver:
+            next(solver)
+        result = solver.result
         assert_equal(result.nfev, 2)
         assert_equal(result.success, False)
         assert_equal(result.message,
@@ -312,13 +312,12 @@ class TestDifferentialEvolutionSolver(TestCase):
         # Have to turn polishing off, as this will still occur even if maxfun
         # is reached. For popsize=5 and len(bounds)=2, then there are only 10
         # function evaluations during initialisation.
-        solver = DifferentialEvolutionSolver(rosen,
-                                             self.bounds,
-                                             popsize=5,
-                                             polish=False,
-                                             maxfun=40)
-        result = solver.solve()
-
+        with DifferentialEvolutionSolver(rosen, self.bounds, popsize=5,
+                                         polish=False, maxfun=40) as solver:
+            steps = list(solver)
+        self.assertEqual(len(steps), 3)
+        result = solver.result
+        self.assertEqual(result.nit, 3)
         assert_equal(result.nfev, 41)
         assert_equal(result.success, False)
         assert_equal(result.message,
@@ -327,11 +326,10 @@ class TestDifferentialEvolutionSolver(TestCase):
 
     def test_quadratic(self):
         # test the quadratic function from object
-        solver = DifferentialEvolutionSolver(self.quadratic,
-                                             [(-100, 100)],
-                                             tol=0.02)
-        solver.solve()
-        assert_equal(np.argmin(solver.population_energies), 0)
+        result = differential_evolution(self.quadratic,
+                                        [(-100, 100)],
+                                        tol=0.02)
+        assert_equal(np.argmin(result.fun), 0)
 
     def test_quadratic_from_diff_ev(self):
         # test the quadratic function from differential_evolution function
@@ -354,12 +352,11 @@ class TestDifferentialEvolutionSolver(TestCase):
 
     def test_exp_runs(self):
         # test whether exponential mutation loop runs
-        solver = DifferentialEvolutionSolver(rosen,
-                                             self.bounds,
-                                             strategy='best1exp',
-                                             maxiter=1)
-
-        solver.solve()
+        with DifferentialEvolutionSolver(rosen,
+                                         self.bounds,
+                                         strategy='best1exp') as solver:
+            # Just perform one iteration.
+            next(solver)
 
     def test_gh_4511_regression(self):
         # This modification of the differential evolution docstring example
@@ -371,9 +368,9 @@ class TestDifferentialEvolutionSolver(TestCase):
 
     def test_calculate_population_energies(self):
         # if popsize is 2 then the overall generation has size (4,)
-        with DifferentialEvolutionSolver(rosen, self.bounds, popsize=2) as solver:
-            # entering the context triggers calculation of population energies
-            pass
+        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2)
+        # entering the context triggers calculation of population energies
+        solver.__enter__()
 
         assert_equal(np.argmin(solver.population_energies), 0)
 
@@ -395,29 +392,33 @@ class TestDifferentialEvolutionSolver(TestCase):
             # the next generation should halt because it exceeds maxfun
             assert_raises(StopIteration, next, solver)
 
+        with DifferentialEvolutionSolver(rosen, self.bounds, popsize=2,
+                                         maxiter=1) as solver:
+            step = next(solver)
+            assert_equal(np.size(step.x, 0), 2)
+            # the next generation should halt because it exceeds maxiter
+            assert_raises(StopIteration, next, solver)
+
         # check a proper minimisation can be done by an iterable solver
-        with DifferentialEvolutionSolver(rosen, self.bounds) as solver:
-            for i, step in enumerate(solver):
-                # need to have this otherwise the solver would never stop.
-                if i == 1000:
+        with DifferentialEvolutionSolver(rosen, self.bounds, maxiter=1000) as solver:
+            for step in solver:
+                if solver.converged():
                     break
 
         assert_almost_equal(step.fun, 0)
 
     def test_convergence(self):
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, tol=0.2,
-                                             polish=False)
-        solver.solve()
+        with DifferentialEvolutionSolver(rosen, self.bounds, tol=0.2,
+                                         polish=False) as solver:
+            while not solver.converged():
+                next(solver)
         assert_(solver.convergence < 0.2)
 
     def test_maxiter_none_GH5731(self):
-        # Pre 0.17 the previous default for maxiter and maxfun was None.
-        # the numerical defaults are now 1000 and np.inf. However, some scripts
-        # will still supply None for both of those, this will raise a TypeError
-        # in the solve method.
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, maxiter=None,
-                                             maxfun=None)
-        solver.solve()
+        # Pre 0.17 the previous default for maxiter was None;
+        # the numerical defaults is now 1000. However, some scripts
+        # will still supply None.
+        differential_evolution(rosen, self.bounds, maxiter=None)
 
     def test_invalid_init_param(self):
         solver = DifferentialEvolutionSolver(

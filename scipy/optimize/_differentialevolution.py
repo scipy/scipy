@@ -7,7 +7,6 @@ import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state
-from scipy._lib.six import xrange
 import warnings
 
 
@@ -208,9 +207,28 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                          mutation=mutation,
                                          recombination=recombination,
                                          seed=seed, polish=polish,
-                                         callback=callback,
-                                         disp=disp, init=init, atol=atol)
-    return solver.solve()
+                                         init=init, atol=atol)
+    with solver as solver:
+        callback_termination, status_message = False, None
+        # Iterate on solver, which would go through either maxfev or maxiter.
+        for step in solver:
+            if disp:
+                print("differential_evolution step %d: f(x)= %g"
+                      % (step.nit, step.fun))
+            if (callback and
+                    callback(step.x,
+                             convergence=tol / solver.convergence) is True):
+                callback_termination = True
+                status_message = ('callback function requested stop early '
+                                  'by returning True')
+                break
+            if solver.converged():
+                break
+    result = solver.result
+    if callback_termination:
+        result.message = status_message
+        result.success = False
+    return result
 
 
 def _init_population_lhs(rng, num_population_members, population_shape,
@@ -332,14 +350,6 @@ class DifferentialEvolutionSolver(object):
         If `seed` is already a `np.random.RandomState` instance, then that
         `np.random.RandomState` instance is used.
         Specify `seed` for repeatable minimizations.
-    disp : bool, optional
-        Display status messages
-    callback : callable, `callback(xk, convergence=val)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the current value of ``x0``. ``val`` represents the fractional
-        value of the population convergence.  When ``val`` is greater than one
-        the function halts. If callback returns `True`, then the minimization
-        is halted (any polishing is still carried out).
     polish : bool, optional
         If True, then `scipy.optimize.minimize` with the `L-BFGS-B` method
         is used to polish the best population member at the end. This requires
@@ -375,7 +385,7 @@ class DifferentialEvolutionSolver(object):
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
-                 maxfun=np.inf, callback=None, disp=False, polish=True,
+                 maxfun=np.inf, polish=True,
                  init='latinhypercube', atol=0):
 
         if strategy in self._binomial:
@@ -386,7 +396,6 @@ class DifferentialEvolutionSolver(object):
             raise ValueError("Please select a valid mutation strategy")
         self.strategy = strategy
 
-        self.callback = callback
         self.polish = polish
 
         # relative and absolute tolerances for convergence
@@ -448,7 +457,7 @@ class DifferentialEvolutionSolver(object):
         self._nfev = None
         self._nit = None
         self.result = None
-        self.disp = disp
+        self._status_flag = None
 
     def __enter__(self):
         self._nfev = 0
@@ -475,9 +484,22 @@ class DifferentialEvolutionSolver(object):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type is not None:
+        if exc_type not in (None, StopIteration):
             return
-        if self.result is not None and self.polish:
+        self.result = OptimizeResult(
+            x=self.x,
+            fun=self.population_energies[0],
+            nfev=self._nfev,
+            nit=self._nit,
+        )
+        if self._status_flag is None and self.converged():
+            self._status_flag = 'success'
+        if self._status_flag is not None:
+            # Only set "success" flag and "message" when iteration terminated.
+            self.result.success = self._status_flag == 'success'
+            self.result.message = _status_message[self._status_flag]
+
+        if self.polish:
             result = minimize(self.func,
                               np.copy(self.x),
                               method='L-BFGS-B',
@@ -494,6 +516,8 @@ class DifferentialEvolutionSolver(object):
                 # to keep internal state consistent
                 self.population_energies[0] = result.fun
                 self.population[0] = self._unscale_parameters(result.x)
+        # Do not propagate StopIteration exception, which is handled here.
+        return True
 
     @property
     def x(self):
@@ -522,72 +546,6 @@ class DifferentialEvolutionSolver(object):
         return (np.std(self.population_energies) <=
                 self.atol +
                 self.tol * np.abs(np.mean(self.population_energies)))
-
-    def solve(self):
-        """
-        Runs the DifferentialEvolutionSolver.
-
-        Returns
-        -------
-        res : OptimizeResult
-            The optimization result represented as a ``OptimizeResult`` object.
-            Important attributes are: ``x`` the solution array, ``success`` a
-            Boolean flag indicating if the optimizer exited successfully and
-            ``message`` which describes the cause of the termination. See
-            `OptimizeResult` for a description of other attributes.  If `polish`
-            was employed, and a lower minimum was obtained by the polishing,
-            then OptimizeResult also contains the ``jac`` attribute.
-        """
-        with self as solver:
-            solver._solve()
-        return solver.result
-
-    def _solve(self):
-        warning_flag = False
-        status_message = _status_message['success']
-
-        # do the optimisation.
-        assert self._nit == 0
-        for _ in xrange(self.maxiter):
-            # evolve the population by a generation
-            try:
-                step = next(self)
-            except StopIteration:
-                warning_flag = True
-                status_message = _status_message['maxfev']
-                break
-
-            if self.disp:
-                print("differential_evolution step %d: f(x)= %g"
-                      % (step.nit,
-                         self.population_energies[0]))
-
-            # should the solver terminate?
-            convergence = self.convergence
-
-            if (self.callback and
-                    self.callback(self._scale_parameters(self.population[0]),
-                                  convergence=self.tol / convergence) is True):
-
-                warning_flag = True
-                status_message = ('callback function requested stop early '
-                                  'by returning True')
-                break
-
-            if warning_flag or self.converged():
-                break
-
-        else:
-            status_message = _status_message['maxiter']
-            warning_flag = True
-
-        self.result = OptimizeResult(
-            x=self.x,
-            fun=self.population_energies[0],
-            nfev=self._nfev,
-            nit=self._nit,
-            message=status_message,
-            success=(warning_flag is not True))
 
     def _calculate_population_energies(self):
         """
@@ -621,13 +579,20 @@ class DifferentialEvolutionSolver(object):
         Evolve the population by a single generation and return an
         `OptimizeStep` with current population information.
         """
+        if self._nit >= self.maxiter:
+            if self._status_flag is None:
+                self._status_flag = 'maxiter'
+            raise StopIteration()
+
         if self.dither is not None:
             self.scale = (self.random_number_generator.rand()
                           * (self.dither[1] - self.dither[0]) + self.dither[0])
 
         for candidate in range(self.num_population_members):
             if self._nfev > self.maxfun:
-                raise StopIteration
+                if self._status_flag is None:
+                    self._status_flag = 'maxfev'
+                raise StopIteration()
 
             # create a trial solution
             trial = self._mutate(candidate)
