@@ -247,9 +247,18 @@ def _init_population_lhs(rng, num_population_members, population_shape,
 class OptimizeStep(object):
     """A step in the iterations of an optimization solver."""
 
-    def __init__(self, x, fun):
+    def __init__(self, x, fun, nit):
         self.x = x
         self.fun = fun
+        self.nit = nit
+
+    def __eq__(self, other):
+        return NotImplemented
+
+    def __lt__(self, other):
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return self.nit < other.nit
 
 
 class DifferentialEvolutionSolver(object):
@@ -437,11 +446,13 @@ class DifferentialEvolutionSolver(object):
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
         self._nfev = None
+        self._nit = None
         self.result = None
         self.disp = disp
 
     def __enter__(self):
         self._nfev = 0
+        self._nit = 0
         if self._init_population_method == 'latinhypercube':
             self.population = _init_population_lhs(
                 self.random_number_generator,
@@ -532,14 +543,15 @@ class DifferentialEvolutionSolver(object):
         return solver.result
 
     def _solve(self):
-        nit, warning_flag = 0, False
+        warning_flag = False
         status_message = _status_message['success']
 
         # do the optimisation.
-        for nit in xrange(1, self.maxiter + 1):
+        assert self._nit == 0
+        for _ in xrange(self.maxiter):
             # evolve the population by a generation
             try:
-                next(self)
+                step = next(self)
             except StopIteration:
                 warning_flag = True
                 status_message = _status_message['maxfev']
@@ -547,7 +559,7 @@ class DifferentialEvolutionSolver(object):
 
             if self.disp:
                 print("differential_evolution step %d: f(x)= %g"
-                      % (nit,
+                      % (step.nit,
                          self.population_energies[0]))
 
             # should the solver terminate?
@@ -573,7 +585,7 @@ class DifferentialEvolutionSolver(object):
             x=self.x,
             fun=self.population_energies[0],
             nfev=self._nfev,
-            nit=nit,
+            nit=self._nit,
             message=status_message,
             success=(warning_flag is not True))
 
@@ -641,10 +653,11 @@ class DifferentialEvolutionSolver(object):
                 if energy < self.population_energies[0]:
                     self.population_energies[0] = energy
                     self.population[0] = trial
-
+        self._nit += 1
         return OptimizeStep(
             x=self.x,
             fun=self.population_energies[0],
+            nit=self._nit,
         )
 
     next = __next__

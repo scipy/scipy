@@ -2,13 +2,29 @@
 Unit tests for the differential global minimization algorithm.
 """
 from scipy.optimize import _differentialevolution
-from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
+from scipy.optimize._differentialevolution import (
+    DifferentialEvolutionSolver, OptimizeStep)
 from scipy.optimize import differential_evolution
 import numpy as np
 from scipy.optimize import rosen
 from numpy.testing import (assert_equal, TestCase, assert_allclose,
                            run_module_suite, assert_almost_equal,
                            assert_string_equal, assert_raises, assert_)
+
+
+class OptimizeStepTests(TestCase):
+
+    def test_comparison(self):
+        s1 = OptimizeStep(1, 2, 3)
+        s2 = OptimizeStep(1, 2, 0)
+        assert_(s1 > s2)
+
+    def test_sorting(self):
+        s1 = OptimizeStep(1, 2, 3)
+        s2 = OptimizeStep(1, 2, 0)
+        l = [s1, s2]
+        l.sort()
+        assert_equal(l, [s2, s1])
 
 
 class TestDifferentialEvolutionSolver(TestCase):
