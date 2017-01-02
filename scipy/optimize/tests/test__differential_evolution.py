@@ -356,7 +356,8 @@ class TestDifferentialEvolutionSolver(TestCase):
     def test_calculate_population_energies(self):
         # if popsize is 2 then the overall generation has size (4,)
         with DifferentialEvolutionSolver(rosen, self.bounds, popsize=2) as solver:
-            solver._calculate_population_energies()
+            # entering the context triggers calculation of population energies
+            pass
 
         assert_equal(np.argmin(solver.population_energies), 0)
 
@@ -402,27 +403,10 @@ class TestDifferentialEvolutionSolver(TestCase):
                                              maxfun=None)
         solver.solve()
 
-    def test_population_initiation(self):
-        # test the different modes of population initiation
-
-        # init must be either 'latinhypercube' or 'random'
-        # raising ValueError is something else is passed in
+    def test_invalid_init_param(self):
         solver = DifferentialEvolutionSolver(
             rosen, self.bounds, init='rubbish')
         assert_raises(ValueError, solver.__enter__)
-
-        solver = DifferentialEvolutionSolver(rosen, self.bounds)
-
-        # check that population initiation:
-        # 1) resets _nfev to 0
-        # 2) all population energies are np.inf
-        solver.init_population_random()
-        assert_equal(solver._nfev, 0)
-        assert_(np.all(np.isinf(solver.population_energies)))
-
-        solver.init_population_lhs()
-        assert_equal(solver._nfev, 0)
-        assert_(np.all(np.isinf(solver.population_energies)))
 
 
 if __name__ == '__main__':

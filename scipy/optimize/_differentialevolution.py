@@ -417,6 +417,9 @@ class DifferentialEvolutionSolver(object):
         else:
             raise ValueError("The population initialization method must be one"
                              "of 'latinhypercube' or 'random'")
+        self.population_energies = (np.ones(self.num_population_members) *
+                                    np.inf)
+        self._calculate_population_energies()
         return self
 
     def __exit__(self, *excinfo):
@@ -453,13 +456,6 @@ class DifferentialEvolutionSolver(object):
             order = rng.permutation(range(self.num_population_members))
             self.population[:, j] = samples[order, j]
 
-        # reset population energies
-        self.population_energies = (np.ones(self.num_population_members) *
-                                    np.inf)
-
-        # reset number of function evaluations counter
-        self._nfev = 0
-
     def init_population_random(self):
         """
         Initialises the population at random.  This type of initialization
@@ -467,13 +463,6 @@ class DifferentialEvolutionSolver(object):
         """
         rng = self.random_number_generator
         self.population = rng.random_sample(self.population_shape)
-
-        # reset population energies
-        self.population_energies = (np.ones(self.num_population_members) *
-                                    np.inf)
-
-        # reset number of function evaluations counter
-        self._nfev = 0
 
     @property
     def x(self):
@@ -517,14 +506,6 @@ class DifferentialEvolutionSolver(object):
     def _solve(self):
         nit, warning_flag = 0, False
         status_message = _status_message['success']
-
-        # The population may have just been initialized (all entries are
-        # np.inf). If it has you have to calculate the initial energies.
-        # Although this is also done in the evolve generator it's possible
-        # that someone can set maxiter=0, at which point we still want the
-        # initial energies to be calculated (the following loop isn't run).
-        if np.all(np.isinf(self.population_energies)):
-            self._calculate_population_energies()
 
         # do the optimisation.
         for nit in xrange(1, self.maxiter + 1):
@@ -623,11 +604,6 @@ class DifferentialEvolutionSolver(object):
         Evolve the population by a single generation and return an
         `OptimizeStep` with current population information.
         """
-        # the population may have just been initialized (all entries are
-        # np.inf). If it has you have to calculate the initial energies
-        if np.all(np.isinf(self.population_energies)):
-            self._calculate_population_energies()
-
         if self.dither is not None:
             self.scale = (self.random_number_generator.rand()
                           * (self.dither[1] - self.dither[0]) + self.dither[0])
