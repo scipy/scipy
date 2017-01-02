@@ -653,19 +653,7 @@ class DifferentialEvolutionSolver(object):
 
         return self.x, self.population_energies[0]
 
-    def next(self):
-        """
-        Evolve the population by a single generation
-
-        Returns
-        -------
-        x : ndarray
-            The best solution from the solver.
-        fun : float
-            Value of objective function obtained from the best solution.
-        """
-        # next() is required for compatibility with Python2.7.
-        return self.__next__()
+    next = __next__
 
     def _scale_parameters(self, trial):
         """
