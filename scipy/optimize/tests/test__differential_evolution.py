@@ -368,8 +368,8 @@ class TestDifferentialEvolutionSolver(TestCase):
         # if popsize is 2 then the overall generation has size (4,)
         solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2,
                                              maxfun=8)
-        x, fun = next(solver)
-        assert_equal(np.size(x, 0), 2)
+        step = next(solver)
+        assert_equal(np.size(step.x, 0), 2)
 
         # 4 nfev are required for initial calculation of energies, 4 nfev are
         # required for the evolution of the 4 population members.
@@ -380,13 +380,12 @@ class TestDifferentialEvolutionSolver(TestCase):
 
         # check a proper minimisation can be done by an iterable solver
         solver = DifferentialEvolutionSolver(rosen, self.bounds)
-        for i, soln in enumerate(solver):
-            x_current, fun_current = soln
+        for i, step in enumerate(solver):
             # need to have this otherwise the solver would never stop.
             if i == 1000:
                 break
 
-        assert_almost_equal(fun_current, 0)
+        assert_almost_equal(step.fun, 0)
 
     def test_convergence(self):
         solver = DifferentialEvolutionSolver(rosen, self.bounds, tol=0.2,

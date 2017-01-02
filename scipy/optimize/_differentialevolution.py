@@ -213,6 +213,14 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     return solver.solve()
 
 
+class OptimizeStep(object):
+    """A step in the iterations of an optimization solver."""
+
+    def __init__(self, x, fun):
+        self.x = x
+        self.fun = fun
+
+
 class DifferentialEvolutionSolver(object):
 
     """This class implements the differential evolution solver
@@ -604,14 +612,8 @@ class DifferentialEvolutionSolver(object):
 
     def __next__(self):
         """
-        Evolve the population by a single generation
-
-        Returns
-        -------
-        x : ndarray
-            The best solution from the solver.
-        fun : float
-            Value of objective function obtained from the best solution.
+        Evolve the population by a single generation and return an
+        `OptimizeStep` with current population information.
         """
         # the population may have just been initialized (all entries are
         # np.inf). If it has you have to calculate the initial energies
@@ -651,7 +653,10 @@ class DifferentialEvolutionSolver(object):
                     self.population_energies[0] = energy
                     self.population[0] = trial
 
-        return self.x, self.population_energies[0]
+        return OptimizeStep(
+            x=self.x,
+            fun=self.population_energies[0],
+        )
 
     next = __next__
 
