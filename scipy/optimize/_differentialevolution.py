@@ -504,6 +504,13 @@ class DifferentialEvolutionSolver(object):
         return (np.std(self.population_energies) /
                 np.abs(np.mean(self.population_energies) + _MACHEPS))
 
+    def converged(self):
+        """Return True if the solver has converged within specified tolerance.
+        """
+        return (np.std(self.population_energies) <=
+                self.atol +
+                self.tol * np.abs(np.mean(self.population_energies)))
+
     def solve(self):
         """
         Runs the DifferentialEvolutionSolver.
@@ -554,10 +561,7 @@ class DifferentialEvolutionSolver(object):
                                   'by returning True')
                 break
 
-            intol = (np.std(self.population_energies) <=
-                     self.atol +
-                     self.tol * np.abs(np.mean(self.population_energies)))
-            if warning_flag or intol:
+            if warning_flag or self.converged():
                 break
 
         else:
