@@ -406,6 +406,7 @@ class DifferentialEvolutionSolver(object):
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
         self._nfev = None
+        self.result = None
         self.disp = disp
 
     def __enter__(self):
@@ -422,8 +423,26 @@ class DifferentialEvolutionSolver(object):
         self._calculate_population_energies()
         return self
 
-    def __exit__(self, *excinfo):
-        pass
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is not None:
+            return
+        if self.result is not None and self.polish:
+            result = minimize(self.func,
+                              np.copy(self.x),
+                              method='L-BFGS-B',
+                              bounds=self.limits.T,
+                              args=self.args)
+
+            self._nfev += result.nfev
+            self.result.nfev = self._nfev
+
+            if result.fun < self.result.fun:
+                self.result.fun = result.fun
+                self.result.x = result.x
+                self.result.jac = result.jac
+                # to keep internal state consistent
+                self.population_energies[0] = result.fun
+                self.population[0] = self._unscale_parameters(result.x)
 
     def init_population_lhs(self):
         """
@@ -501,7 +520,8 @@ class DifferentialEvolutionSolver(object):
             then OptimizeResult also contains the ``jac`` attribute.
         """
         with self as solver:
-            return solver._solve()
+            solver._solve()
+        return solver.result
 
     def _solve(self):
         nit, warning_flag = 0, False
@@ -544,33 +564,13 @@ class DifferentialEvolutionSolver(object):
             status_message = _status_message['maxiter']
             warning_flag = True
 
-        DE_result = OptimizeResult(
+        self.result = OptimizeResult(
             x=self.x,
             fun=self.population_energies[0],
             nfev=self._nfev,
             nit=nit,
             message=status_message,
             success=(warning_flag is not True))
-
-        if self.polish:
-            result = minimize(self.func,
-                              np.copy(DE_result.x),
-                              method='L-BFGS-B',
-                              bounds=self.limits.T,
-                              args=self.args)
-
-            self._nfev += result.nfev
-            DE_result.nfev = self._nfev
-
-            if result.fun < DE_result.fun:
-                DE_result.fun = result.fun
-                DE_result.x = result.x
-                DE_result.jac = result.jac
-                # to keep internal state consistent
-                self.population_energies[0] = result.fun
-                self.population[0] = self._unscale_parameters(result.x)
-
-        return DE_result
 
     def _calculate_population_energies(self):
         """
