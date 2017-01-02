@@ -374,6 +374,20 @@ class TestSLSQP(TestCase):
         sol = minimize(func, [0, 0, 0], method='SLSQP')
         assert_(sol.jac.shape == (3,))
 
+    def test_invalid_bounds(self):
+        # Raise correct error when lower bound is greater than upper bound.
+        # See Github issue 6875.
+        bounds_list = [
+            ((1, 2), (2, 1)),
+            ((2, 1), (1, 2)),
+            ((2, 1), (2, 1)),
+            ((np.inf, 0), (np.inf, 0)),
+            ((1, -np.inf), (0, 1)),
+        ]
+        for bounds in bounds_list:
+            with assert_raises(ValueError):
+                minimize(self.fun, [-1.0, 1.0], bounds=bounds, method='SLSQP')
+
 
 if __name__ == "__main__":
     run_module_suite()
