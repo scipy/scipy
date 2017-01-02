@@ -151,7 +151,7 @@ def directed_hausdorff(u, v, seed=0):
     Computes the directed Hausdorff distance between two N-D arrays.
 
     Distances between pairs are calculated using a Euclidean metric.
-    
+
     Parameters
     ----------
     u : (M,N) ndarray
@@ -1086,8 +1086,9 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     -------
     Y : ndarray
         Returns a condensed distance matrix Y.  For
-        each :math:`i` and :math:`j` (where :math:`i<j<n`), the
-        metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``ij``.
+        each :math:`i` and :math:`j` (where :math:`i<j<m`),where m is the number
+        of original observations. The metric ``dist(u=X[i], v=X[j])``
+        is computed and stored in entry ``ij``.
 
     See Also
     --------
