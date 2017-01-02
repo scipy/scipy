@@ -283,6 +283,11 @@ class DifferentialEvolutionSolver(object):
 
     """This class implements the differential evolution solver
 
+    It provides more control than differential_evolution convenience function,
+    in particular with respect to the inner iteration mechanism and
+    termination mechanisms. This solver class should be used as context
+    manager and then be iterated through (see the Examples section).
+
     Parameters
     ----------
     func : callable
@@ -368,6 +373,46 @@ class DifferentialEvolutionSolver(object):
         ``np.std(pop) <= atol + tol * np.abs(np.mean(population_energies))``,
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
+
+    Attributes
+    ----------
+    x: ndarray
+        The best solution from the solver
+    convergence: ndarray
+        The standard deviation of the population energies divided by their
+        mean.
+    population: ndarray
+        The population of candidate solutions
+    result: OptimizeResult
+        The result of the optimization process (set upon context manager exit).
+
+    Methods
+    -------
+    converged()
+        Return True if the solver has converged within specified tolerance.
+
+    Examples
+    --------
+    Let us consider the problem of minimizing the Rosenbrock function. This
+    function is implemented in `rosen` in `scipy.optimize`.
+
+    In addition to the default termination conditions on the number of
+    iterations and the number of function evalutions we add a custom
+    termination condition based on elapsed time that should not exceed a
+    maximum duration.
+
+    >>> import time
+    >>> from scipy.optimize import rosen, DifferentialEvolutionSolver
+    >>> bounds = [(0, 2)] * 20
+    >>> max_duration = 10
+    >>> start_time = time.time()
+    >>> with DifferentialEvolutionSolver(rosen, bounds) as solver:
+    ...     while not solver.converged():
+    ...         next(solver)
+    ...         if time.time() - start_time >= max_duration:
+    ...             print('maximum duration exceeded')
+    ...             break
+    >>> result = solver.result
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
