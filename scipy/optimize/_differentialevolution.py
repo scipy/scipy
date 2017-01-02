@@ -10,7 +10,7 @@ from scipy._lib._util import check_random_state
 import warnings
 
 
-__all__ = ['differential_evolution']
+__all__ = ['differential_evolution', 'DifferentialEvolution']
 
 _MACHEPS = np.finfo(np.float64).eps
 

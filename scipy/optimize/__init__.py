@@ -98,6 +98,7 @@ Global Optimization
    basinhopping - Basinhopping stochastic optimizer
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
+   DifferentialEvolution - advanced interface for differential evolution solver
 
 Rosenbrock function
 -------------------
@@ -243,7 +244,8 @@ from .nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
 from ._hungarian import linear_sum_assignment
-from ._differentialevolution import differential_evolution
+from ._differentialevolution import (
+    differential_evolution, DifferentialEvolution)
 from ._lsq import least_squares, lsq_linear
 
 
