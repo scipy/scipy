@@ -355,8 +355,8 @@ class TestDifferentialEvolutionSolver(TestCase):
 
     def test_calculate_population_energies(self):
         # if popsize is 2 then the overall generation has size (4,)
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2)
-        solver._calculate_population_energies()
+        with DifferentialEvolutionSolver(rosen, self.bounds, popsize=2) as solver:
+            solver._calculate_population_energies()
 
         assert_equal(np.argmin(solver.population_energies), 0)
 
@@ -366,24 +366,24 @@ class TestDifferentialEvolutionSolver(TestCase):
     def test_iteration(self):
         # test that DifferentialEvolutionSolver is iterable
         # if popsize is 2 then the overall generation has size (4,)
-        solver = DifferentialEvolutionSolver(rosen, self.bounds, popsize=2,
-                                             maxfun=8)
-        step = next(solver)
-        assert_equal(np.size(step.x, 0), 2)
+        with DifferentialEvolutionSolver(rosen, self.bounds, popsize=2,
+                                         maxfun=8) as solver:
+            step = next(solver)
+            assert_equal(np.size(step.x, 0), 2)
 
-        # 4 nfev are required for initial calculation of energies, 4 nfev are
-        # required for the evolution of the 4 population members.
-        assert_equal(solver._nfev, 8)
+            # 4 nfev are required for initial calculation of energies, 4 nfev are
+            # required for the evolution of the 4 population members.
+            assert_equal(solver._nfev, 8)
 
-        # the next generation should halt because it exceeds maxfun
-        assert_raises(StopIteration, next, solver)
+            # the next generation should halt because it exceeds maxfun
+            assert_raises(StopIteration, next, solver)
 
         # check a proper minimisation can be done by an iterable solver
-        solver = DifferentialEvolutionSolver(rosen, self.bounds)
-        for i, step in enumerate(solver):
-            # need to have this otherwise the solver would never stop.
-            if i == 1000:
-                break
+        with DifferentialEvolutionSolver(rosen, self.bounds) as solver:
+            for i, step in enumerate(solver):
+                # need to have this otherwise the solver would never stop.
+                if i == 1000:
+                    break
 
         assert_almost_equal(step.fun, 0)
 
@@ -407,10 +407,9 @@ class TestDifferentialEvolutionSolver(TestCase):
 
         # init must be either 'latinhypercube' or 'random'
         # raising ValueError is something else is passed in
-        assert_raises(ValueError,
-                      DifferentialEvolutionSolver,
-                      *(rosen, self.bounds),
-                      **{'init': 'rubbish'})
+        solver = DifferentialEvolutionSolver(
+            rosen, self.bounds, init='rubbish')
+        assert_raises(ValueError, solver.__enter__)
 
         solver = DifferentialEvolutionSolver(rosen, self.bounds)
 

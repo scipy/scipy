@@ -400,23 +400,27 @@ class DifferentialEvolutionSolver(object):
 
         self.random_number_generator = check_random_state(seed)
 
-        # default population initialization is a latin hypercube design, but
-        # there are other population initializations possible.
+        self._init_population_method = init
         self.num_population_members = popsize * self.parameter_count
 
         self.population_shape = (self.num_population_members,
                                  self.parameter_count)
+        self._nfev = None
+        self.disp = disp
 
+    def __enter__(self):
         self._nfev = 0
-        if init == 'latinhypercube':
+        if self._init_population_method == 'latinhypercube':
             self.init_population_lhs()
-        elif init == 'random':
+        elif self._init_population_method == 'random':
             self.init_population_random()
         else:
             raise ValueError("The population initialization method must be one"
                              "of 'latinhypercube' or 'random'")
+        return self
 
-        self.disp = disp
+    def __exit__(self, *excinfo):
+        pass
 
     def init_population_lhs(self):
         """
@@ -507,6 +511,10 @@ class DifferentialEvolutionSolver(object):
             was employed, and a lower minimum was obtained by the polishing,
             then OptimizeResult also contains the ``jac`` attribute.
         """
+        with self as solver:
+            return solver._solve()
+
+    def _solve(self):
         nit, warning_flag = 0, False
         status_message = _status_message['success']
 
