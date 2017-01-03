@@ -568,11 +568,6 @@ class DifferentialEvolutionSolver(object):
     def x(self):
         """
         The best solution from the solver
-
-        Returns
-        -------
-        x : ndarray
-            The best solution from the solver.
         """
         return self._scale_parameters(self.population[0])
 
