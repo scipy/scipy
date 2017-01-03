@@ -30,4 +30,5 @@ def test_malformed1():
     #
     # Should raise an exception, not segfault
     fname = pjoin(TEST_DATA_PATH, 'malformed1.mat')
-    assert_raises(ValueError, loadmat, fname)
+    with open(fname, 'rb') as f:
+        assert_raises(ValueError, loadmat, f)

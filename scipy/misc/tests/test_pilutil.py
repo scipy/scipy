@@ -183,7 +183,8 @@ def test_imread_indexed_png():
                       [0, 31, 255, 255]]], dtype=np.uint8)
 
     filename = os.path.join(datapath, 'data', 'foo3x5x4indexed.png')
-    im = misc.imread(filename)
+    with open(filename, 'rb') as f:
+        im = misc.imread(f)
     assert_array_equal(im, data)
 
 
