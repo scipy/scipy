@@ -200,14 +200,11 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     .. [2] http://www1.icsi.berkeley.edu/~storn/code.html
     .. [3] http://en.wikipedia.org/wiki/Differential_evolution
     """
-
-    solver = DifferentialEvolutionSolver(func, bounds, args=args,
-                                         strategy=strategy, maxiter=maxiter,
-                                         popsize=popsize, tol=tol,
-                                         mutation=mutation,
-                                         recombination=recombination,
-                                         seed=seed, polish=polish,
-                                         init=init, atol=atol)
+    solver = DifferentialEvolution(func, bounds, args=args, strategy=strategy,
+                                   maxiter=maxiter, popsize=popsize, tol=tol,
+                                   mutation=mutation,
+                                   recombination=recombination, seed=seed,
+                                   polish=polish, init=init, atol=atol)
     with solver as solver:
         callback_termination, status_message = False, None
         # Iterate on solver, which would go through either maxfev or maxiter.
@@ -279,7 +276,7 @@ class OptimizeStep(object):
         return self.nit < other.nit
 
 
-class DifferentialEvolutionSolver(object):
+class DifferentialEvolution(object):
 
     """This class implements the differential evolution solver
 
@@ -402,11 +399,11 @@ class DifferentialEvolutionSolver(object):
     maximum duration.
 
     >>> import time
-    >>> from scipy.optimize import rosen, DifferentialEvolutionSolver
+    >>> from scipy.optimize import rosen, DifferentialEvolution
     >>> bounds = [(0, 2)] * 20
     >>> max_duration = 10
     >>> start_time = time.time()
-    >>> with DifferentialEvolutionSolver(rosen, bounds) as solver:
+    >>> with DifferentialEvolution(rosen, bounds) as solver:
     ...     while not solver.converged():
     ...         next(solver)
     ...         if time.time() - start_time >= max_duration:
