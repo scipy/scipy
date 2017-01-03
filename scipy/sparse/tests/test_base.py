@@ -4139,13 +4139,11 @@ class TestBSR(sparse_test_class(getset=False,
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]).reshape(-1,1)
         assert_equal(A*x, A.todense()*x)
-        assert_equal(A.matvec(x), A.todense()*x)
 
     def test_bsr_matvecs(self):
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
-        assert_equal(A.matmat(x), A.todense()*x)
 
     @dec.knownfailureif(True, 'BSR does not have a __getitem__')
     def test_iterator(self):
