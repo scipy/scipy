@@ -207,10 +207,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     elif 0 < info <= n:
         raise LinAlgError('Matrix is singular.')
     elif info > n:
-        warnings.warn('scipy.linalg.solve : Ill-conditioned matrix '
-                      'detected.\nResult is not guaranteed to be '
-                      'accurate.\nReciprocal condition number: {}'
-                      ''.format(rcond), RuntimeWarning)
+        warnings.warn('scipy.linalg.solve\nIll-conditioned matrix detected.'
+                      ' Result is not guaranteed to be accurate.\nReciprocal'
+                      ' condition number: {}'.format(rcond), RuntimeWarning)
         return x
 
 

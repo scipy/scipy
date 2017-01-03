@@ -722,31 +722,33 @@ class TestSolve(TestCase):
         sizes = [10, 100, 1000]
         assume_as = ['gen', 'sym', 'pos', 'her']
         dtypes = [np.float32, np.float64, np.complex64, np.complex128]
-        for size, assume_a, dtype_ in itertools.product(sizes,
+        for size, assume_a, dtype in itertools.product(sizes,
                                                        assume_as,
                                                        dtypes):
-            is_complex = dtype_ in (np.complex64, np.complex128)
+            is_complex = dtype in (np.complex64, np.complex128)
             if assume_a == 'her' and not is_complex:
                 continue
         
             err_msg = ("Failed for size: {}, assume_a: {},"
-                       "dtype: {}".format(size, assume_a, dtype_))
+                       "dtype: {}".format(size, assume_a, dtype))
         
-            a = np.random.randn(size, size).astype(dtype_)
-            b = np.random.randn(size).astype(dtype_)
+            a = np.random.randn(size, size).astype(dtype)
+            b = np.random.randn(size).astype(dtype)
             if is_complex:
-                a = a + (1j*np.random.randn(size, size)).astype(dtype_)
+                a = a + (1j*np.random.randn(size, size)).astype(dtype)
         
-            if assume_a in ('sym', 'her'):
+            if assume_a == 'sym':  # Can still be complex but only symmetric
+                a = a + a.T
+            elif assume_a == 'her':  # Handle hermitian matrices here instead
                 a = a + a.T.conj()
             elif assume_a == 'pos':
                 a = a.conj().T.dot(a) + 0.1*np.eye(size)
 
-            x = solve(a, b)
-            tol_ = 1e-12 if dtype_ in (np.float64, np.complex128) else 1e-5
+            x = solve(a, b, assume_a=assume_a)
+            tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
             assert_allclose(a.dot(x), b,
-                            atol=tol_ * size,
-                            rtol=tol_ * size, 
+                            atol=tol * size,
+                            rtol=tol * size, 
                             err_msg=err_msg)
 
 
