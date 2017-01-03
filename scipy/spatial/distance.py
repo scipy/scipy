@@ -1364,7 +1364,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         elif metric in [dice, kulsinski, matching, rogerstanimoto, russellrao,
                         sokalmichener, sokalsneath, yule]:
             X = _convert_to_bool(X)
-        # metric that may receive multiple types:
+        # metrics that may receive multiple types:
         elif metric in [hamming, jaccard]:
             if X.dtype == bool:
                 X = _convert_to_bool(X)
@@ -2161,7 +2161,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                         sokalmichener, sokalsneath, yule]:
             XA = _convert_to_bool(XA)
             XB = _convert_to_bool(XB)
-        # metric that may receive multiple types:
+        # metrics that may receive multiple types:
         elif metric in [hamming, jaccard]:
             if XA.dtype == bool:
                 XA = _convert_to_bool(XA)
