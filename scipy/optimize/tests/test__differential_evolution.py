@@ -1,7 +1,6 @@
 """
 Unit tests for the differential global minimization algorithm.
 """
-from scipy.optimize import _differentialevolution
 from scipy.optimize._differentialevolution import (
     DifferentialEvolution, OptimizeStep)
 from scipy.optimize import differential_evolution
