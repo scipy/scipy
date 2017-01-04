@@ -71,7 +71,6 @@ from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
 
-
 __all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
 
@@ -111,6 +110,8 @@ else:
                       UserWarning)
 
     del _NumpyVersion
+
+    from scipy._lib._ccallback import LowLevelCallable
 
     from numpy.testing import Tester
 

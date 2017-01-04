@@ -38,6 +38,30 @@ _multivariate_sin(int n, double *args)
     return sin(args[0]);
 }
 
+EXPORT(double)
+_sin_0(double x, void *user_data)
+{
+    return sin(x);
+}
+
+EXPORT(double)
+_sin_1(int ndim, double *x, void *user_data)
+{
+    return sin(x[0]);
+}
+
+EXPORT(double)
+_sin_2(double x)
+{
+    return sin(x);
+}
+
+EXPORT(double)
+_sin_3(int ndim, double *x)
+{
+    return sin(x[0]);
+}
+
 /*
   This won't allow you to actually use the methods here. It just
   lets you load the module so you can get at the __file__ attribute.
