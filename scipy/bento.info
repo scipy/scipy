@@ -1,4 +1,5 @@
 Recurse:
+    _lib,
     cluster,
     fftpack,
     integrate,
