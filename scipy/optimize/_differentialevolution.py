@@ -7,7 +7,6 @@ import numpy as np
 from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize.optimize import _status_message
 from scipy._lib._util import check_random_state
-import warnings
 
 
 __all__ = ['differential_evolution', 'DifferentialEvolution']
