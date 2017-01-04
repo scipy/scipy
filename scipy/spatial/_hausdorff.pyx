@@ -26,7 +26,7 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
     cdef int N2 = ar2.shape[0]
     cdef int data_dims = ar1.shape[1]
     cdef unsigned int i, j, k
-    cdef unsigned int i_store, j_store, i_ret, j_ret = 0
+    cdef unsigned int i_store = 0, j_store = 0, i_ret = 0, j_ret = 0
     cdef long[:] resort1, resort2
 
     # shuffling the points in each array generally increases the likelihood of

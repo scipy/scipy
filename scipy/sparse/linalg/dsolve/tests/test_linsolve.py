@@ -243,6 +243,24 @@ class TestLinsolve(TestCase):
         assert_equal(x.nnz, 2)
         assert_allclose(x.A, b.A, atol=1e-12, rtol=1e-12)
 
+    def test_dtype_cast(self):
+        A_real = scipy.sparse.csr_matrix([[1, 2, 0],
+                                          [0, 0, 3],
+                                          [4, 0, 5]])
+        A_complex = scipy.sparse.csr_matrix([[1, 2, 0],
+                                             [0, 0, 3],
+                                             [4, 0, 5 + 1j]])
+        b_real = np.array([1,1,1])
+        b_complex = np.array([1,1,1]) + 1j*np.array([1,1,1])
+        x = spsolve(A_real, b_real)
+        assert_(np.issubdtype(x.dtype, np.floating))
+        x = spsolve(A_real, b_complex)
+        assert_(np.issubdtype(x.dtype, np.complexfloating))
+        x = spsolve(A_complex, b_real)
+        assert_(np.issubdtype(x.dtype, np.complexfloating))
+        x = spsolve(A_complex, b_complex)
+        assert_(np.issubdtype(x.dtype, np.complexfloating))
+
 
 class TestSplu(object):
     def setUp(self):
