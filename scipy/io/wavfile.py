@@ -113,7 +113,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     # Number of bytes per sample
     bytes_per_sample = bit_depth//8
     if bit_depth in (8, 24):
-        dtype = 'u1'
+        dtype = numpy.uint8
         bytes_per_sample = 1
     elif format_tag == WAVE_FORMAT_PCM:
         dtype = '%si%d' % (fmt, bytes_per_sample)
@@ -133,10 +133,9 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
         fid.seek(1, 1)
 
     if bit_depth == 24:
-        a = numpy.empty((len(data)//3, 4), dtype='u1')
-        a[:, :3] = data.reshape((-1, 3))
-        a[:, 3:] = (a[:, 3 - 1:3] >> 7) * 255
-        data = a.view('<i4').reshape(a.shape[:-1])
+        a = numpy.empty((len(data)//3, 4), dtype=numpy.uint8)
+        a[:, 1:4] = data.reshape((-1, 3))
+        data = a.view(numpy.int32).reshape(a.shape[:-1])
 
     if channels > 1:
         data = data.reshape(-1, channels)
@@ -185,7 +184,7 @@ def _read_riff_chunk(fid):
     return file_size, is_big_endian
 
 
-def read(filename, mmap=False, return_cues=False, return_pitch=False):
+def read(filename, mmap=False, return_metadata=False):
     """
     Open a WAV file
 
@@ -200,6 +199,8 @@ def read(filename, mmap=False, return_cues=False, return_pitch=False):
         Only to be used on real files (Default: False).
 
         .. versionadded:: 0.12.0
+    return_metadata : bool, optional
+        Whether to return additional metadata (i.e., cues, pitch).
 
     Returns
     -------
@@ -246,7 +247,7 @@ def read(filename, mmap=False, return_cues=False, return_pitch=False):
         bit_depth = 8
         format_tag = WAVE_FORMAT_PCM
         cues = defaultdict(dict)
-        pitch = 0.0
+        pitch = None
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
@@ -297,15 +298,15 @@ def read(filename, mmap=False, return_cues=False, return_pitch=False):
         else:
             fid.seek(0)
 
-    result = [fs, data]
-    if return_cues:
-        result.append(dict(cues))
-    if return_pitch:
-        result.append(pitch)
-    return tuple(result)
+    if not return_metadata:
+        return fs, data
+
+    cues = sorted([(c['pos'], c.get('label', None)) for c in cues.values()])
+    metadata = dict(cues=cues, pitch=pitch)
+    return fs, data, metadata
 
 
-def write(filename, rate, data, cues=None, loops=None, bitrate=None):
+def write(filename, rate, data, cues=None, loops=None, bit_depth=None):
     """
     Write a numpy array as a WAV file.
 
@@ -321,9 +322,9 @@ def write(filename, rate, data, cues=None, loops=None, bitrate=None):
         Play order positions of cues.
     loops : sequence of (int,int) pairs, optional
         Pairs of (unity note, pitch fraction) values.
-    bitrate : int, optional
+    bit_depth : int, optional
         The number of bits per sample.
-        If None, bitrate is determined by the data-type.
+        If None, bit_depth is determined by the data-type.
 
     Notes
     -----
@@ -374,12 +375,10 @@ def write(filename, rate, data, cues=None, loops=None, bitrate=None):
             channels = 1
         else:
             channels = data.shape[1]
-        if bitrate is None:
+        if bit_depth is None:
             bit_depth = data.dtype.itemsize * 8
-        elif bitrate != 24 and bitrate != data.dtype.itemsize * 8:
-            raise ValueError("Unsupported bitrate for dtype: %s" % data.dtype)
-        else:
-            bit_depth = bitrate
+        elif bit_depth != 24 and bit_depth != data.dtype.itemsize * 8:
+            raise ValueError("Unsupported bit_depth for dtype: %s" % data.dtype)
 
         bytes_per_second = rate * (bit_depth // 8) * channels
         block_align = channels * (bit_depth // 8)
@@ -404,14 +403,14 @@ def write(filename, rate, data, cues=None, loops=None, bitrate=None):
         fid.write(header_data)
 
         # data chunk
-        if bitrate == 24:
+        if bit_depth == 24:
             a32 = numpy.asarray(data, dtype=numpy.int32)
             if a32.ndim == 1:
                 # Convert to a 2D array with a single column.
-                a32.shape = a32.shape + (1,)
+                a32 = a32[:, None]
             # By shifting first 0 bits, then 8, then 16,
             # the resulting output is 24 bit little-endian.
-            a8 = (a32.reshape(a32.shape + (1,)) >> numpy.array([0,8,16])) & 255
+            a8 = (a32[:, None] >> numpy.array([0,8,16])) & 255
             data = a8.astype(numpy.uint8)
 
         fid.write(b'data')
