@@ -200,7 +200,7 @@ def read(filename, mmap=False, return_metadata=False):
 
         .. versionadded:: 0.12.0
     return_metadata : bool, optional
-        Whether to return additional metadata (i.e., cues, pitch).
+        Whether to return additional metadata (cues, pitch, bit_depth).
 
     Returns
     -------
@@ -302,7 +302,7 @@ def read(filename, mmap=False, return_metadata=False):
         return fs, data
 
     cues = sorted([(c['pos'], c.get('label', None)) for c in cues.values()])
-    metadata = dict(cues=cues, pitch=pitch)
+    metadata = dict(cues=cues, pitch=pitch, bit_depth=bit_depth)
     return fs, data, metadata
 
 

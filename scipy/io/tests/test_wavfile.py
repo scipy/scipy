@@ -86,6 +86,7 @@ def test_read_24bit():
         assert_(np.issubdtype(data.dtype, np.int32))
         assert_equal(data.shape, (11025, 2))
         assert_equal(meta['pitch'], 440.0)
+        assert_equal(meta['bit_depth'], 24)
         assert_equal(meta['cues'], [(4410, None), (8820, None)])
         del data
 
