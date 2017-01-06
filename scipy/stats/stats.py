@@ -810,6 +810,14 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
     return sd / np.sqrt(am.count())
 
+   
+   
+def cdf2pdf(vals, probs):
+    pdf_vals = [(probs[1] - probs[0]) / (vals[1] - vals[0]) ]
+    for i in range(1, len(probs)-1):
+        pdf_vals.append( (probs[i+1] - probs[i-1]) / (vals[i+1] - vals[i-1]))
+    pdf_vals.append( (probs[i+1] - probs[i]) / (vals[i+1] - vals[i]))
+    return np.array(pdf_vals)
 
 #####################################
 #              MOMENTS              #
