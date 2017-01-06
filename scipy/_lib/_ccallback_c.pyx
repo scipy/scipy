@@ -110,14 +110,26 @@ DEF ERROR_VALUE = 2
 
 from libc.math cimport sin
 
+sigs = [
+    ("double (double, int *, void *)", 0),
+    ("double (double, double, int *, void *)", 1)
+]
 
-cdef ccallback_signature_t signatures[3]
+if sizeof(int) == sizeof(long):
+    sigs.append(("double (double, long *, void *)", 0))
+    sigs.append(("double (double, double, long *, void *)", 1))
 
-signatures[0].signature = "double (double, int *, void *)"
-signatures[0].value = 0
-signatures[1].signature = "double (double, double, int *, void *)"
-signatures[1].value = 1
-signatures[2].signature = NULL
+if sizeof(int) == sizeof(short):
+    sigs.append(("double (double, short *, void *)", 0))
+    sigs.append(("double (double, double, short *, void *)", 1))
+
+cdef ccallback_signature_t signatures[7]
+
+for idx, sig in enumerate(sigs):
+    signatures[idx].signature = sig[0]
+    signatures[idx].value = sig[1]
+
+signatures[idx + 1].signature = NULL
 
 
 cdef double test_thunk_cython(double a, int *error_flag, void *data) nogil except? -1.0:
