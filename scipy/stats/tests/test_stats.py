@@ -92,7 +92,7 @@ def _rough_check(a, b, compare_assert=partial(assert_allclose, atol=1e-5),
             _rough_check(a_i, b_i, compare_assert=compare_assert)
 
 def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='weights',
-                    squeeze=True, silent=False,
+                    squeeze=True, silent=False, n_pre_args=0,
                     ones_test=True, const_test=True, dup_test=True,
                     split_test=True, dud_test=True, ma_safe=True, ma_very_safe=True, nan_safe=True,
                     split_per=1.0, seed=0, compare_assert=partial(assert_allclose, atol=1e-5)):
@@ -102,8 +102,9 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
     def wrapped(*args, **kwargs):
         result = fn(*args, **kwargs)
 
-        arrays = args[:n_args]
-        rest = args[n_args:]
+        pre_args = args[:n_pre_args]
+        arrays = args[n_pre_args:n_pre_args + n_args]
+        rest = args[n_pre_args + n_args:]
         weights = kwargs.get(weight_arg, None)
         axis = kwargs.get('axis', default_axis)
 
@@ -114,7 +115,7 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
 
         try:
             # WEIGHTS CHECK 1: EQUAL WEIGHTED OBESERVATIONS
-            args = tuple(arrays) + rest
+            args = pre_args + tuple(arrays) + rest
             if ones_test:
                 kwargs[weight_arg] = weights
                 _rough_check(result, fn(*args, **kwargs), key=key)
@@ -133,7 +134,7 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
                 dud_arrays, dud_weights = _rand_split(arrays, weights, axis, split_per=split_per, seed=seed)
                 dud_weights[:weights.size] = weights  # not exactly 1 because of masked arrays
                 dud_weights[weights.size:] = 0
-                dud_args = tuple(dud_arrays) + rest
+                dud_args = pre_args + tuple(dud_arrays) + rest
                 kwargs[weight_arg] = dud_weights
                 _rough_check(result, fn(*dud_args, **kwargs), key=key)
                 # increase the value of those 0-weighted rows
@@ -141,7 +142,7 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
                     indexer = [slice(None)] * a.ndim
                     indexer[axis] = slice(weights.size, None)
                     a[indexer] = a[indexer] * 101  # doesn't work on strings; mode and itemfreq disabled
-                dud_args = tuple(dud_arrays) + rest
+                dud_args = pre_args + tuple(dud_arrays) + rest
                 _rough_check(result, fn(*dud_args, **kwargs), key=key)
                 # set those 0-weighted rows to NaNs
                 for a in dud_arrays:
@@ -149,12 +150,12 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
                     indexer[axis] = slice(weights.size, None)
                     a[indexer] = a[indexer] * np.nan
                 if kwargs.get("nan_policy", None) == "omit" and nan_safe:
-                    dud_args = tuple(dud_arrays) + rest
+                    dud_args = pre_args + tuple(dud_arrays) + rest
                     _rough_check(result, fn(*dud_args, **kwargs), key=key)
                 # mask out those nan values
                 if ma_safe:
                     dud_arrays = [np.ma.masked_invalid(a) for a in dud_arrays]
-                    dud_args = tuple(dud_arrays) + rest
+                    dud_args = pre_args + tuple(dud_arrays) + rest
                     _rough_check(result, fn(*dud_args, **kwargs), key=key)
                     if ma_very_safe:
                         kwargs[weight_arg] = None
@@ -165,7 +166,7 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
             if dup_test:
                 dup_arrays = [np.append(a, a, axis=axis) for a in arrays]
                 dup_weights = np.append(weights, weights) / 2.0
-                dup_args = tuple(dup_arrays) + rest
+                dup_args = pre_args + tuple(dup_arrays) + rest
                 kwargs[weight_arg] = dup_weights
                 _rough_check(result, fn(*dup_args, **kwargs), key=key)
                 del dup_args, dup_arrays, dup_weights
@@ -173,7 +174,7 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
             # WEIGHT CHECK 3: RANDOM SPLITTING
             if split_test and split_per > 0:
                 split_arrays, split_weights = _rand_split(arrays, weights, axis, split_per=split_per, seed=seed)
-                split_args = tuple(split_arrays) + rest
+                split_args = pre_args + tuple(split_arrays) + rest
                 kwargs[weight_arg] = split_weights
                 _rough_check(result, fn(*split_args, **kwargs), key=key)
         except NotImplementedError as e:
@@ -199,7 +200,7 @@ class TestTrimmedStats(TestCase):
         assert_approx_equal(y1, y2, significant=self.dprec)
 
     def test_tvar(self):
-        wtvar_no_split = _weight_checked(stats.tvar)
+        wtvar_no_split = _weight_checked(stats.tvar, split_test=False, const_test=False, dup_test=False)
         wtvar = _weight_checked(stats.tvar)
 
         # don't check split unless ddof is 0
@@ -213,7 +214,7 @@ class TestTrimmedStats(TestCase):
         assert_approx_equal(y, X.var(ddof=0), significant=self.dprec)
 
     def test_tstd(self):
-        wtstd_no_split = _weight_checked(stats.tstd, split_test=False)
+        wtstd_no_split = _weight_checked(stats.tstd, split_test=False, const_test=False, dup_test=False)
         wtstd = _weight_checked(stats.tstd)
 
         # don't check split unless ddof is 0
@@ -272,7 +273,7 @@ class TestTrimmedStats(TestCase):
         assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
 
     def test_tsem(self):
-        wtsem_no_split = _weight_checked(stats.tsem, split_test=False)
+        wtsem_no_split = _weight_checked(stats.tsem, split_test=False, const_test=False, dup_test=False)
         y = wtsem_no_split(X, limits=(3, 8), inclusive=(False, True))
         y_ref = np.array([4, 5, 6, 7, 8])
         assert_approx_equal(y, y_ref.std(ddof=1) / np.sqrt(y_ref.size),
@@ -1573,9 +1574,16 @@ class TestMode(TestCase):
         assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
 
 
-wsem = _weight_checked(stats.sem, split_test=False)
-wzmap = _weight_checked(stats.zmap)
-wzscore = _weight_checked(stats.zscore)
+wsem = _weight_checked(stats.sem, split_test=False, const_test=False, dup_test=False,
+                       ma_safe=False, nan_safe=False)
+# only look at the first element since the array size will change
+wzmap = _weight_checked(stats.zmap, n_pre_args=1, ma_very_safe=False, key=lambda x: x.ravel()[0])
+wzmap_no_split = _weight_checked(stats.zmap, split_test=False, const_test=False, dup_test=False,
+                                 n_pre_args=1, key=lambda x: x.ravel()[0])
+wzscore = _weight_checked(stats.zscore, ma_safe=False, key=lambda x: x.ravel()[0])
+wzscore_no_split = _weight_checked(stats.zscore, split_test=False, const_test=False, dup_test=False,
+                                   ma_safe=False, key=lambda x: x.ravel()[0])
+
 class TestVariability(TestCase):
 
     testcase = [1,2,3,4]
@@ -1651,7 +1659,7 @@ class TestVariability(TestCase):
         x = np.array([[0.0, 0.0, 1.0, 1.0],
                       [0.0, 1.0, 2.0, 3.0]])
 
-        z = _weight_checked(stats.zmap, split_test=False)(x, x, axis=1, ddof=1)
+        z = wzmap_no_split(x, x, axis=1, ddof=1)
 
         z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
         z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
@@ -1693,7 +1701,7 @@ class TestVariability(TestCase):
         x = np.array([[0.0, 0.0, 1.0, 1.0],
                       [0.0, 1.0, 2.0, 3.0]])
 
-        z = _weight_checked(stats.zscore, split_test=False)(x, axis=1, ddof=1)
+        z = wzscore_no_split(x, axis=1, ddof=1)
 
         z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
         z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))

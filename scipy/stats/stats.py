@@ -222,6 +222,8 @@ def _chk2_asarray(a, b, axis):
 
 
 def _weight_masked(arrays, weights, axis):
+    if axis is None:
+        axis = 0
     weights = np.asanyarray(weights)
     for a in arrays:
         axis_mask = np.ma.getmask(a)
@@ -237,10 +239,10 @@ def _weight_masked(arrays, weights, axis):
 def _freq_weights(weights):
     if weights is None:
         return weights
-    try:
-        return weights.astype(int, casting='safe')
-    except TypeError:
-        raise ValueError("frequency (integer count-type) weights required")
+    int_weights = weights.astype(int)
+    if (weights != int_weights).any():
+        raise ValueError("frequency (integer count-type) weights required %s" % weights)
+    return int_weights
 
 
 def _chk_weights(arrays, weights=None, axis=None,
@@ -344,9 +346,12 @@ def _var(a, axis=None, ddof=0, weights=None):
             n = a.count(axis=axis)
         else:
             n = a.shape[axis]
-        if ddof >= n:
-            ddof = np.nan
-        var *= n / float(n - ddof)
+        if np.asarray(n).ndim:
+            n = n.astype(float)
+            n[n <= ddof] = np.nan
+        elif ddof >= n:
+            n = np.nan
+        var *= n / (n - float(ddof))
     return var
 
 
@@ -907,7 +912,10 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
         am = _mask_to_limits(a, limits, inclusive)
     weights = _freq_weights(weights)
     sd = np.sqrt(_var(am, axis=axis, ddof=ddof, weights=weights))
-    n = _weight_masked([am], weights, axis).sum()
+    if weights is None:
+        n = am.count(axis)
+    else:
+        n = _weight_masked([am], weights, axis).sum()
     return sd / np.sqrt(n)
 
 
@@ -2376,6 +2384,9 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate', weights=None):
     1.2893796958227628
 
     """
+    a, weights, axis = _chk_weights([a], weights, axis,
+                                    nan_screen=nan_policy == "omit")
+    _contains_nan(a, nan_policy)
     return tsem(a, limits=None, axis=axis, ddof=ddof, weights=weights)
 
 
@@ -2489,8 +2500,9 @@ def zmap(scores, compare, axis=0, ddof=0, weights=None):
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
     """
-    score, compare, weights, axis = _chk_weights([scores, compare], weights=weights,
-                                                 axis=axis, ddof=ddof)
+    scores = np.asanyarray(scores)
+    compare, weights, axis = _chk_weights([compare], weights=weights,
+                                          axis=axis, ddof=ddof)
     mns = _avg(compare, axis=axis, weights=weights)
     sstd = np.sqrt(_var(compare, axis=axis, ddof=ddof, weights=weights))
     if axis and mns.ndim < compare.ndim:
