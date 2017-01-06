@@ -2434,7 +2434,7 @@ def zscore(a, axis=0, ddof=0, weights=None):
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
     """
-    a, weights, axis = _chk_weights([a], weights=weigths, axis=axis, ddof=ddof)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, ddof=ddof)
     mns = _avg(a, axis=axis, weights=weights)
     sstd = np.sqrt(_var(a, axis=axis, ddof=ddof, weights=weights))
     if axis and mns.ndim < a.ndim:
@@ -2489,7 +2489,7 @@ def zmap(scores, compare, axis=0, ddof=0, weights=None):
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
     """
-    score, compare, weights, axis = _chk_weights([scores, compare], weights=weigths,
+    score, compare, weights, axis = _chk_weights([scores, compare], weights=weights,
                                                  axis=axis, ddof=ddof)
     mns = _avg(compare, axis=axis, weights=weights)
     sstd = np.sqrt(_var(compare, axis=axis, ddof=ddof, weights=weights))

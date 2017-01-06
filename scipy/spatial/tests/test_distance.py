@@ -1398,7 +1398,7 @@ class TestPdist(TestCase):
 
                 # Testing built-in metrics with extra args
                 if metric == "seuclidean":
-                    V = np.var(X.astype(np.double), axis=0, ddof=1).astype(np.double)
+                    V = np.var(X.astype(np.double), axis=0, ddof=1)
                     self._check_calling_conventions(X, metric, V=V)
                 elif metric == "mahalanobis":
                     V = np.atleast_2d(np.cov(X.astype(np.double).T))

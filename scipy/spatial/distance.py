@@ -1376,7 +1376,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
         'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
     w : ndarray, optional
-        The weight vector (for weighted Minkowski).
+        The weight vector.
     p : double, optional
         The p-norm to apply (for Minkowski, weighted and unweighted)
     V : ndarray, optional
@@ -1431,6 +1431,22 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         VI = _validate_mahalanobis_VI(VI, X, m, n)
 
     if callable(metric):
+        # metrics that expects only doubles:
+        if metric in [braycurtis, canberra, chebyshev, cityblock, correlation,
+                      cosine, euclidean, mahalanobis, minkowski, sqeuclidean,
+                      seuclidean, wminkowski]:
+            X = _convert_to_double(X)
+        # metrics that expects only bools:
+        elif metric in [dice, kulsinski, matching, rogerstanimoto, russellrao,
+                        sokalmichener, sokalsneath, yule]:
+            X = _convert_to_bool(X)
+        # metrics that may receive multiple types:
+        elif metric in [hamming, jaccard]:
+            if X.dtype == bool:
+                X = _convert_to_bool(X)
+            else:
+                X = _convert_to_double(X)
+
         dfun = metric
         if p != 2:  # if not default
             dfun = partial(dfun, p=p)
@@ -1440,8 +1456,6 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             dfun = partial(dfun, V=V)
         elif VI is not None:
             dfun = partial(dfun, VI=VI)
-
-        X = _convert_to_double(X)
 
         k = 0
         for i in xrange(0, m - 1):
@@ -1534,16 +1548,16 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                             'test_mahalanobis': mahalanobis,
                             }
             if mstr in test_metrics:
-                dfun = test_metrics[mstr]
+                pfun = pdist
                 if p != 2:  # if not default
-                    dfun = partial(dfun, p=p)
+                    pfun = partial(pfun, p=p)
                 if w is not None:
-                    dfun = partial(dfun, w=w)
+                    pfun = partial(pfun, w=w)
                 elif V is not None:
-                    dfun = partial(dfun, V=V)
+                    pfun = partial(pfun, V=V)
                 elif VI is not None:
-                    dfun = partial(dfun, VI=VI)
-                dm = pdist(X, dfun)
+                    pfun = partial(pfun, VI=VI)
+                dm = pfun(X, test_metrics[mstr])
             else:
                 raise ValueError('Unknown Distance Metric: %s' % mstr)
         else:
@@ -2091,7 +2105,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
         'wminkowski', 'yule'.
     w : ndarray, optional
-        The weight vector (for weighted Minkowski).
+        The weight vector.
     p : scalar, optional
         The p-norm to apply (for Minkowski, weighted and unweighted)
     V : ndarray, optional
@@ -2191,6 +2205,26 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         VI = _validate_mahalanobis_VI(VI, np.vstack([XA, XB]), mA + mB, n)
 
     if callable(metric):
+        # metrics that expects only doubles:
+        if metric in [braycurtis, canberra, chebyshev, cityblock, correlation,
+                      cosine, euclidean, mahalanobis, minkowski, sqeuclidean,
+                      seuclidean, wminkowski]:
+            XA = _convert_to_double(XA)
+            XB = _convert_to_double(XB)
+        # metrics that expects only bools:
+        elif metric in [dice, kulsinski, matching, rogerstanimoto, russellrao,
+                        sokalmichener, sokalsneath, yule]:
+            XA = _convert_to_bool(XA)
+            XB = _convert_to_bool(XB)
+        # metrics that may receive multiple types:
+        elif metric in [hamming, jaccard]:
+            if XA.dtype == bool:
+                XA = _convert_to_bool(XA)
+                XB = _convert_to_bool(XB)
+            else:
+                XA = _convert_to_double(XA)
+                XB = _convert_to_double(XB)
+
         dfun = metric
         if p != 2:
             dfun = partial(dfun, p=p)
@@ -2290,16 +2324,16 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                             'test_mahalanobis': mahalanobis,
                             }
             if mstr in test_metrics:
-                dfun = test_metrics[mstr]
+                cfun = cdist
                 if p != 2:  # non-default
-                    dfun = partial(dfun, p=p)
+                    cfun = partial(cfun, p=p)
                 if w is not None:
-                    dfun = partial(dfun, w=w)
+                    cfun = partial(cfun, w=w)
                 elif V is not None:
-                    dfun = partial(dfun, V=V)
+                    cfun = partial(cfun, V=V)
                 elif VI is not None:
-                    dfun = partial(dfun, VI=VI)
-                dm = cdist(XA, XB, dfun)
+                    cfun = partial(cfun, VI=VI)
+                dm = cfun(XA, XB, test_metrics[mstr])
             else:
                 raise ValueError('Unknown Distance Metric: %s' % mstr)
         else:

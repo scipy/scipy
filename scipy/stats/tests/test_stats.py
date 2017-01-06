@@ -272,13 +272,14 @@ class TestTrimmedStats(TestCase):
         assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
 
     def test_tsem(self):
-        y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
+        wtsem_no_split = _weight_checked(stats.tsem, split_test=False)
+        y = wtsem_no_split(X, limits=(3, 8), inclusive=(False, True))
         y_ref = np.array([4, 5, 6, 7, 8])
         assert_approx_equal(y, y_ref.std(ddof=1) / np.sqrt(y_ref.size),
                             significant=self.dprec)
 
-        assert_approx_equal(stats.tsem(X, limits=[-1, 10]),
-                            stats.tsem(X, limits=None),
+        assert_approx_equal(wtsem_no_split(X, limits=[-1, 10]),
+                            wtsem_no_split(X, limits=None),
                             significant=self.dprec)
 
 
@@ -1572,6 +1573,9 @@ class TestMode(TestCase):
         assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
 
 
+wsem = _weight_checked(stats.sem, split_test=False)
+wzmap = _weight_checked(stats.zmap)
+wzscore = _weight_checked(stats.zscore)
 class TestVariability(TestCase):
 
     testcase = [1,2,3,4]
@@ -1596,26 +1600,26 @@ class TestVariability(TestCase):
         # assert_approx_equal(y,0.775177399)
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=RuntimeWarning)
-            y = stats.sem(self.scalar_testcase)
+            y = wsem(self.scalar_testcase)
         assert_(np.isnan(y))
 
-        y = stats.sem(self.testcase)
+        y = wsem(self.testcase)
         assert_approx_equal(y, 0.6454972244)
         n = len(self.testcase)
-        assert_allclose(stats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
-                        stats.sem(self.testcase, ddof=2))
+        assert_allclose(wsem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
+                        wsem(self.testcase, ddof=2))
 
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.sem(x), np.nan)
-        assert_equal(stats.sem(x, nan_policy='omit'), 0.9128709291752769)
-        assert_raises(ValueError, stats.sem, x, nan_policy='raise')
-        assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
+        assert_equal(wsem(x), np.nan)
+        assert_equal(wsem(x, nan_policy='omit'), 0.9128709291752769)
+        assert_raises(ValueError, wsem, x, nan_policy='raise')
+        assert_raises(ValueError, wsem, x, nan_policy='foobar')
 
     def test_zmap(self):
         # not in R, so tested by using:
         #     (testcase[i] - mean(testcase, axis=0)) / sqrt(var(testcase) * 3/4)
-        y = stats.zmap(self.testcase,self.testcase)
+        y = wzmap(self.testcase, self.testcase)
         desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996, 1.3416407864999])
         assert_array_almost_equal(desired,y,decimal=12)
 
@@ -1629,8 +1633,8 @@ class TestVariability(TestCase):
         t2 = np.sqrt(3.)/3
         t3 = np.sqrt(2.)
 
-        z0 = stats.zmap(x, x, axis=0)
-        z1 = stats.zmap(x, x, axis=1)
+        z0 = wzmap(x, x, axis=0)
+        z1 = wzmap(x, x, axis=1)
 
         z0_expected = [[-t1, -t3/2, -t3/2, 0.0],
                        [0.0, t3, -t3/2, t1],
@@ -1647,7 +1651,7 @@ class TestVariability(TestCase):
         x = np.array([[0.0, 0.0, 1.0, 1.0],
                       [0.0, 1.0, 2.0, 3.0]])
 
-        z = stats.zmap(x, x, axis=1, ddof=1)
+        z = _weight_checked(stats.zmap, split_test=False)(x, x, axis=1, ddof=1)
 
         z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
         z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
@@ -1657,7 +1661,7 @@ class TestVariability(TestCase):
     def test_zscore(self):
         # not in R, so tested by using:
         #    (testcase[i] - mean(testcase, axis=0)) / sqrt(var(testcase) * 3/4)
-        y = stats.zscore(self.testcase)
+        y = wzscore(self.testcase)
         desired = ([-1.3416407864999, -0.44721359549996, 0.44721359549996, 1.3416407864999])
         assert_array_almost_equal(desired,y,decimal=12)
 
@@ -1671,8 +1675,8 @@ class TestVariability(TestCase):
         t2 = np.sqrt(3.)/3
         t3 = np.sqrt(2.)
 
-        z0 = stats.zscore(x, axis=0)
-        z1 = stats.zscore(x, axis=1)
+        z0 = wzscore(x, axis=0)
+        z1 = wzscore(x, axis=1)
 
         z0_expected = [[-t1, -t3/2, -t3/2, 0.0],
                        [0.0, t3, -t3/2, t1],
@@ -1689,7 +1693,7 @@ class TestVariability(TestCase):
         x = np.array([[0.0, 0.0, 1.0, 1.0],
                       [0.0, 1.0, 2.0, 3.0]])
 
-        z = stats.zscore(x, axis=1, ddof=1)
+        z = _weight_checked(stats.zscore, split_test=False)(x, axis=1, ddof=1)
 
         z0_expected = np.array([-0.5, -0.5, 0.5, 0.5])/(1.0/np.sqrt(3))
         z1_expected = np.array([-1.5, -0.5, 0.5, 1.5])/(np.sqrt(5./3))
