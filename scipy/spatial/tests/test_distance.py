@@ -51,33 +51,39 @@ from scipy.spatial.distance import (squareform, pdist, cdist,
         jaccard, dice, sokalsneath, rogerstanimoto, russellrao, yule,
         num_obs_y, num_obs_dm, is_valid_dm, is_valid_y, minkowski,
         euclidean, sqeuclidean, cosine, correlation, hamming, mahalanobis,
-        canberra, braycurtis, sokalmichener, _validate_vector)
-matching = hamming # suppresses warning messages in testing
+        canberra, braycurtis, sokalmichener, _validate_vector,
+        chebyshev, cityblock)
+matching = hamming  # suppresses warning messages in testing
 
-_filenames = ["iris.txt",
+_filenames = [
               "cdist-X1.txt",
               "cdist-X2.txt",
-              "pdist-hamming-ml.txt",
+              "iris.txt",
               "pdist-boolean-inp.txt",
-              "pdist-jaccard-ml.txt",
+              "pdist-chebychev-ml-iris.txt",
+              "pdist-chebychev-ml.txt",
               "pdist-cityblock-ml-iris.txt",
-              "pdist-minkowski-3.2-ml-iris.txt",
               "pdist-cityblock-ml.txt",
               "pdist-correlation-ml-iris.txt",
-              "pdist-minkowski-5.8-ml-iris.txt",
               "pdist-correlation-ml.txt",
-              "pdist-minkowski-3.2-ml.txt",
               "pdist-cosine-ml-iris.txt",
-              "pdist-seuclidean-ml-iris.txt",
               "pdist-cosine-ml.txt",
-              "pdist-seuclidean-ml.txt",
               "pdist-double-inp.txt",
-              "pdist-spearman-ml.txt",
-              "pdist-euclidean-ml.txt",
               "pdist-euclidean-ml-iris.txt",
-              "pdist-chebychev-ml.txt",
-              "pdist-chebychev-ml-iris.txt",
-              "random-bool-data.txt"]
+              "pdist-euclidean-ml.txt",
+              "pdist-hamming-ml.txt",
+              "pdist-jaccard-ml.txt",
+              "pdist-minkowski-3.2-ml-iris.txt",
+              "pdist-minkowski-3.2-ml.txt",
+              "pdist-minkowski-5.8-ml-iris.txt",
+              "pdist-seuclidean-ml-iris.txt",
+              "pdist-seuclidean-ml.txt",
+              "pdist-spearman-ml.txt",
+              "random-bool-data.txt",
+              "random-double-data.txt",
+              "random-int-data.txt",
+              "random-uint-data.txt",
+]
 
 _tdist = np.array([[0, 662, 877, 255, 412, 996],
                       [662, 0, 295, 468, 268, 400],
@@ -87,6 +93,12 @@ _tdist = np.array([[0, 662, 877, 255, 412, 996],
                       [996, 400, 138, 869, 669, 0]], dtype='double')
 
 _ytdist = squareform(_tdist)
+
+_metrics = ['braycurtis', 'canberra', 'chebyshev', 'cityblock',
+            'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
+            'jaccard', 'kulsinski', 'mahalanobis', 'matching',
+            'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
+            'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule']
 
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
@@ -102,6 +114,10 @@ def load_testing_files():
         eo[name] = np.loadtxt(fp)
         fp.close()
     eo['pdist-boolean-inp'] = np.bool_(eo['pdist-boolean-inp'])
+    eo['random-bool-data'] = np.bool_(eo['random-bool-data'])
+    eo['random-float32-data'] = np.float32(eo['random-double-data'])
+    eo['random-int-data'] = np.int_(eo['random-int-data'])
+    eo['random-uint-data'] = np.uint(eo['random-uint-data'])
 
 load_testing_files()
 
@@ -112,18 +128,20 @@ def within_tol(a, b, tol):
 
 def _assert_within_tol(a, b, atol, verbose_=False):
     if verbose_:
-        print(np.abs(a-b).max())
+        print(np.abs(a - b).max())
     assert_allclose(a, b, rtol=0, atol=atol)
 
 
 def _rand_split(arrays, weights, axis, split_per, seed=None):
     # inverse operation for stats.collapse_weights
-    weights = np.array(weights) # modified inplace; need a copy
+    weights = np.array(weights)  # modified inplace; need a copy
     seeded_rand = np.random.RandomState(seed)
+
     def mytake(a, ix, axis):
         record = np.asanyarray(np.take(a, ix, axis=axis))
         return record.reshape([a.shape[i] if i != axis else 1
                                for i in range(a.ndim)])
+
     n_obs = arrays[0].shape[axis]
     assert all(a.shape[axis] == n_obs for a in arrays), "data must be aligned on sample axis"
     for i in range(int(split_per) * n_obs):
@@ -141,15 +159,13 @@ def _rough_check(a, b, compare_assert=partial(assert_allclose, atol=1e-5),
     check_a = key(a)
     check_b = key(b)
     try:
-        if np.array(check_a != check_b).any(): # try strict equality for string types
+        if np.array(check_a != check_b).any():  # try strict equality for string types
             compare_assert(check_a, check_b)
-    except AttributeError: # masked array
+    except AttributeError:  # masked array
         compare_assert(check_a, check_b)
-    except (TypeError, ValueError): # nested data structure
+    except (TypeError, ValueError):  # nested data structure
         for a_i, b_i in zip(check_a, check_b):
             _rough_check(a_i, b_i, compare_assert=compare_assert)
-    #except Exception as e:
-    #    raise type(e)((e, check_a, check_b))
 
 # diff from test_stats:
 #  n_args=2, weight_arg='w', default_axis=None
@@ -194,7 +210,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
             if dud_test:
                 # add randomly resampled rows, weighted at 0
                 dud_arrays, dud_weights = _rand_split(arrays, weights, axis, split_per=split_per, seed=seed)
-                dud_weights[:weights.size] = weights # not exactly 1 because of masked arrays
+                dud_weights[:weights.size] = weights  # not exactly 1 because of masked arrays
                 dud_weights[weights.size:] = 0
                 dud_args = tuple(dud_arrays) + rest
                 kwargs[weight_arg] = dud_weights
@@ -203,7 +219,7 @@ def _weight_checked(fn, n_args=2, default_axis=None, key=lambda x: x, weight_arg
                 for a in dud_arrays:
                     indexer = [slice(None)] * a.ndim
                     indexer[axis] = slice(weights.size, None)
-                    a[indexer] = a[indexer] * 101 # ??? structured arrays?
+                    a[indexer] = a[indexer] * 101 
                 dud_args = tuple(dud_arrays) + rest
                 _rough_check(result, fn(*dud_args, **kwargs), key=key)
                 # set those 0-weighted rows to NaNs
@@ -270,6 +286,14 @@ wrussellrao = _weight_checked(russellrao)
 
 
 class TestCdist(TestCase):
+    def setUp(self):
+        self.rnd_eo_names = ['random-float32-data', 'random-int-data',
+                             'random-uint-data', 'random-double-data',
+                             'random-bool-data']
+        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.double],
+                              'uint': [np.int_, np.float32, np.double],
+                              'int': [np.float32, np.double],
+                              'float32': [np.double]}
 
     def test_cdist_euclidean_random(self):
         eps = 1e-07
@@ -509,8 +533,101 @@ class TestCdist(TestCase):
         Y2 = cdist(X1, X2, 'test_sokalsneath')
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
 
+    def test_cdist_custom_notdouble(self):
+        class myclass(object):
+            pass
+
+        def dummy_metric(x, y):
+            if not isinstance(x[0], myclass) or not isinstance(y[0], myclass):
+                raise ValueError("Type has been changed")
+            return 1.123
+        data = np.array([[myclass()]], dtype=object)
+        cdist_y = cdist(data, data, metric=dummy_metric)
+        right_y = 1.123
+        assert_equal(cdist_y, right_y, verbose=verbose > 2)
+
+    def _check_calling_conventions(self, X1, X2, metric, eps=1e-07, **kwargs):
+        # helper function for test_cdist_calling_conventions
+        try:
+            y1 = cdist(X1, X2, metric=metric, **kwargs)
+            y2 = cdist(X1, X2, metric=eval(metric), **kwargs)
+            y3 = cdist(X1, X2, metric="test_" + metric, **kwargs)
+        except Exception as e:
+            e_cls = e.__class__
+            if verbose > 2:
+                print(e_cls.__name__)
+                print(e)
+            assert_raises(e_cls, cdist, X1, X2, metric=metric, **kwargs)
+            assert_raises(e_cls, cdist, X1, X2, metric=eval(metric), **kwargs)
+            assert_raises(e_cls, cdist, X1, X2, metric="test_" + metric, **kwargs)
+        else:
+            _assert_within_tol(y1, y2, eps, verbose > 2)
+            _assert_within_tol(y1, y3, eps, verbose > 2)
+
+    def test_cdist_calling_conventions(self):
+        # Ensures that specifying the metric with a str or scipy function
+        # gives the same behaviour (i.e. same result or same exception).
+        # NOTE: The correctness should be checked within each metric tests.
+        for eo_name in self.rnd_eo_names:
+            X1 = eo[eo_name][:, ::-1]
+            X2 = eo[eo_name][:-3:2]
+            for metric in _metrics:
+                if verbose > 2:
+                    print("testing: ", metric, " with: ", eo_name)
+                if metric == 'yule' and 'bool' not in eo_name:
+                    # python raises a ZeroDivisionError while the C doesn't
+                    continue
+                self._check_calling_conventions(X1, X2, metric)
+
+                # Testing built-in metrics with extra args
+                if metric == "wminkowski":
+                    w = 1.0 / X1.std(axis=0)
+                    self._check_calling_conventions(X1, X2, metric, w=w)
+                elif metric == "seuclidean":
+                    X12 = np.vstack([X1, X2]).astype(np.double)
+                    V = np.var(X12, axis=0, ddof=1)
+                    self._check_calling_conventions(X1, X2, metric, V=V)
+                elif metric == "mahalanobis":
+                    X12 = np.vstack([X1, X2]).astype(np.double)
+                    V = np.atleast_2d(np.cov(X12.T))
+                    VI = np.array(np.linalg.inv(V).T)
+                    self._check_calling_conventions(X1, X2, metric, VI=VI)
+
+    def test_cdist_dtype_equivalence(self):
+        # Tests that the result is not affected by type up-casting
+        eps = 1e-07
+        tests = [(eo['random-bool-data'], self.valid_upcasts['bool']),
+                 (eo['random-uint-data'], self.valid_upcasts['uint']),
+                 (eo['random-int-data'], self.valid_upcasts['int']),
+                 (eo['random-float32-data'], self.valid_upcasts['float32'])]
+        for metric in _metrics:
+            for test in tests:
+                X1 = test[0]
+                try:
+                    y1 = cdist(X1, metric=metric)
+                except Exception as e:
+                    e_cls = e.__class__
+                    if verbose > 2:
+                        print(e_cls.__name__)
+                        print(e)
+                    for new_type in test[1]:
+                        X2 = new_type(test[0])
+                        assert_raises(e_cls, cdist, X2, metric=metric)
+                else:
+                    for new_type in test[1]:
+                        y2 = cdist(new_type(X1), metric=metric)
+                        _assert_within_tol(y1, y2, eps, verbose > 2)
+
 
 class TestPdist(TestCase):
+    def setUp(self):
+        self.rnd_eo_names = ['random-float32-data', 'random-int-data',
+                             'random-uint-data', 'random-double-data',
+                             'random-bool-data']
+        self.valid_upcasts = {'bool': [np.uint, np.int_, np.float32, np.double],
+                              'uint': [np.int_, np.float32, np.double],
+                              'int': [np.float32, np.double],
+                              'float32': [np.double]}
 
     def test_pdist_euclidean_random(self):
         eps = 1e-07
@@ -809,7 +926,6 @@ class TestPdist(TestCase):
         Y_right = eo['pdist-minkowski-5.8-iris']
         Y_test2 = wpdist_no_const(X, 'test_minkowski', 5.8)
         _assert_within_tol(Y_test2, Y_right, eps)
-
 
     def test_pdist_mahalanobis(self):
         # 1-dimensional observations
@@ -1234,6 +1350,77 @@ class TestPdist(TestCase):
         pdist_y = wpdist_no_const(([3.3], [3.4]), "canberra")
         right_y = 0.01492537
         _assert_within_tol(pdist_y, right_y, eps, verbose > 2)
+
+    def _check_calling_conventions(self, X, metric, eps=1e-07, **kwargs):
+        # helper function for test_pdist_calling_conventions
+        try:
+            y1 = pdist(X, metric=metric, **kwargs)
+            y2 = pdist(X, metric=eval(metric), **kwargs)
+            y3 = pdist(X, metric="test_" + metric, **kwargs)
+        except Exception as e:
+            e_cls = e.__class__
+            if verbose > 2:
+                print(e_cls.__name__)
+                print(e)
+            assert_raises(e_cls, pdist, X, metric=metric, **kwargs)
+            assert_raises(e_cls, pdist, X, metric=eval(metric), **kwargs)
+            assert_raises(e_cls, pdist, X, metric="test_" + metric, **kwargs)
+        else:
+            _assert_within_tol(y1, y2, eps, verbose > 2)
+            _assert_within_tol(y1, y3, eps, verbose > 2)
+
+    def test_pdist_calling_conventions(self):
+        # Ensures that specifying the metric with a str or scipy function
+        # gives the same behaviour (i.e. same result or same exception).
+        # NOTE: The correctness should be checked within each metric tests.
+        # NOTE: Extra args should be checked with a dedicated test
+        eps = 1e-07
+        for eo_name in self.rnd_eo_names:
+            X = eo[eo_name][::2]
+            for metric in _metrics:
+                if verbose > 2:
+                    print("testing: ", metric, " with: ", eo_name)
+                if metric == 'yule' and 'bool' not in eo_name:
+                    # python raises a ZeroDivisionError while the C doesn't
+                    continue
+                self._check_calling_conventions(X, metric)
+
+                # Testing built-in metrics with extra args
+                if metric == "wminkowski":
+                    w = 1.0 / X.std(axis=0)
+                    self._check_calling_conventions(X, metric, w=w)
+                elif metric == "seuclidean":
+                    V = np.var(X.astype(np.double), axis=0, ddof=1)
+                    self._check_calling_conventions(X, metric, V=V)
+                elif metric == "mahalanobis":
+                    V = np.atleast_2d(np.cov(X.astype(np.double).T))
+                    VI = np.array(np.linalg.inv(V).T)
+                    self._check_calling_conventions(X, metric, VI=VI)
+
+    def test_pdist_dtype_equivalence(self):
+        # Tests that the result is not affected by type up-casting
+        eps = 1e-07
+        tests = [(eo['random-bool-data'], self.valid_upcasts['bool']),
+                 (eo['random-uint-data'], self.valid_upcasts['uint']),
+                 (eo['random-int-data'], self.valid_upcasts['int']),
+                 (eo['random-float32-data'], self.valid_upcasts['float32'])]
+        for metric in _metrics:
+            for test in tests:
+                X1 = test[0]
+                try:
+                    y1 = pdist(X1, metric=metric)
+                except Exception as e:
+                    e_cls = e.__class__
+                    if verbose > 2:
+                        print(e_cls.__name__)
+                        print(e)
+                    for new_type in test[1]:
+                        X2 = new_type(test[0])
+                        assert_raises(e_cls, pdist, X2, metric=metric)
+                else:
+                    for new_type in test[1]:
+                        y2 = pdist(new_type(X1), metric=metric)
+                        _assert_within_tol(y1, y2, eps, verbose > 2)
 
 
 class TestSomeDistanceFunctions(TestCase):

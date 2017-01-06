@@ -506,7 +506,7 @@ def mode(a, axis=0, nan_policy='propagate', weights=None):
     for score in scores:
         template = (a == score)
         if weights is not None:
-            template = weights * template #.astype(int)
+            template = weights * template
         counts = np.expand_dims(np.sum(template, axis), axis)
         mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
         oldcounts = np.maximum(counts, oldcounts)
@@ -609,7 +609,6 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None, weights=None):
         limits = (None, None)
     am = _mask_to_limits(a, limits, inclusive)
     return np.ma.average(am, axis=axis, weights=weights)
-
 
 
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
@@ -1120,8 +1119,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate', weights=None):
     vals = _lazywhere(~zero, (m2, m3),
                       lambda m2, m3: m3 / m2**1.5,
                       0.)
-    if not bias: # TODO: weighted bias correction?
+    if not bias:
         if weights is not None:
+            # TODO: weighted bias correction
             raise NotImplementedError("weighted bias correction non-obvious")
         can_correct = (n > 2) & (m2 is not ma.masked and m2 > 0)
         if can_correct.any():
@@ -1200,8 +1200,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate', weights=
     finally:
         np.seterr(**olderr)
 
-    if not bias: # TODO: weighted bias correction?
+    if not bias:
         if weights is not None:
+            # TODO: weighted bias correction
             raise NotImplementedError("weighted bias correction non-obvious")
         can_correct = (n > 3) & (m2 is not ma.masked and m2 > 0)
         if can_correct.any():
@@ -1274,7 +1275,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate', weights=None)
     >>> from scipy import stats
     >>> a = np.arange(10)
     >>> stats.describe(a)
-    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.1666666666666661,
+    DescribeResult(nobs=10, minmax=(0, 9), mean=4.5, variance=9.1666666666666679,
                    skewness=0.0, kurtosis=-1.2242424242424244)
     >>> b = [[1, 2], [3, 4]]
     >>> stats.describe(b)
@@ -3875,12 +3876,14 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     >>> tau, p_value = stats.weightedtau(x, y, additive=False)
     >>> tau
     -0.62205716951801038
+
     NaNs are considered the smallest possible score:
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, np.nan]
     >>> tau, _ = stats.weightedtau(x, y)
     >>> tau
     -0.56694968153682723
+
     This is exactly Kendall's tau:
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
@@ -5783,7 +5786,7 @@ def rankdata(a, method='average', weights=None):
     # cumulative counts of each unique value
     if weights is None:
         count = np.r_[np.nonzero(obs)[0], len(obs)]
-    else: # weighted count
+    else:  # weighted count
         count = np.r_[0, np.roll(weights_arr.cumsum()[np.where(obs)[0]-1], -1)]
         # equivalently, slower, cleaner:
         #  count = np.r_[(weights_arr.cumsum() - weights_arr)[obs], weights_arr.sum()]

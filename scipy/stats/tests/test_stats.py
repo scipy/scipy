@@ -58,12 +58,14 @@ ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
 def _rand_split(arrays, weights, axis, split_per, seed=None):
     # inverse operation for stats.collapse_weights
-    weights = np.array(weights) # modified inplace; need a copy
+    weights = np.array(weights)  # modified inplace; need a copy
     seeded_rand = np.random.RandomState(seed)
+
     def mytake(a, ix, axis):
         record = np.asanyarray(np.take(a, ix, axis=axis))
         return record.reshape([a.shape[i] if i != axis else 1
                                for i in range(a.ndim)])
+
     n_obs = arrays[0].shape[axis]
     assert all(a.shape[axis] == n_obs for a in arrays), "data must be aligned on sample axis"
     for i in range(int(split_per) * n_obs):
@@ -81,15 +83,13 @@ def _rough_check(a, b, compare_assert=partial(assert_allclose, atol=1e-5),
     check_a = key(a)
     check_b = key(b)
     try:
-        if np.array(check_a != check_b).any(): # try strict equality for string types
+        if np.array(check_a != check_b).any():  # try strict equality for string types
             compare_assert(check_a, check_b)
-    except AttributeError: # masked array
+    except AttributeError:  # masked array
         compare_assert(check_a, check_b)
-    except (TypeError, ValueError): # nested data structure
+    except (TypeError, ValueError):  # nested data structure
         for a_i, b_i in zip(check_a, check_b):
             _rough_check(a_i, b_i, compare_assert=compare_assert)
-    #except Exception as e:
-    #    raise type(e)((e, check_a, check_b))
 
 def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='weights',
                     squeeze=True, silent=False,
@@ -131,7 +131,7 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
             if dud_test:
                 # add randomly resampled rows, weighted at 0
                 dud_arrays, dud_weights = _rand_split(arrays, weights, axis, split_per=split_per, seed=seed)
-                dud_weights[:weights.size] = weights # not exactly 1 because of masked arrays
+                dud_weights[:weights.size] = weights  # not exactly 1 because of masked arrays
                 dud_weights[weights.size:] = 0
                 dud_args = tuple(dud_arrays) + rest
                 kwargs[weight_arg] = dud_weights
@@ -140,7 +140,7 @@ def _weight_checked(fn, n_args=1, default_axis=0, key=lambda x: x, weight_arg='w
                 for a in dud_arrays:
                     indexer = [slice(None)] * a.ndim
                     indexer[axis] = slice(weights.size, None)
-                    a[indexer] = a[indexer] * 101 # ??? structured arrays?
+                    a[indexer] = a[indexer] * 101  # doesn't work on strings; mode and itemfreq disabled
                 dud_args = tuple(dud_arrays) + rest
                 _rough_check(result, fn(*dud_args, **kwargs), key=key)
                 # set those 0-weighted rows to NaNs
@@ -3314,7 +3314,7 @@ class TestDescribe(TestCase):
         e_kurt = -1.8333333333333333
 
         # actual values
-        wdescribe(x, axis=None, ddof=0) # ddof=0 to check weighted
+        wdescribe(x, axis=None, ddof=0)  # ddof=0 to check weighted
         a = stats.describe(x, axis=None)
 
         assert_equal(a.nobs, e_nobs)

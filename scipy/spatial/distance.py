@@ -208,10 +208,12 @@ def directed_hausdorff(u, v, seed=0):
     2.23606797749979
     >>> directed_hausdorff(v, u)[0]
     3.0
+
     Find the general (symmetric) Hausdorff distance between two 2-D
     arrays of coordinates:
     >>> max(directed_hausdorff(u, v)[0], directed_hausdorff(v, u)[0])
     3.0
+
     Find the indices of the points that generate the Hausdorff distance
     (the Hausdorff pair):
     >>> directed_hausdorff(v, u)[1:]
@@ -346,7 +348,7 @@ def sqeuclidean(u, v, w=None):
     u = _validate_vector(u, dtype=utype)
     v = _validate_vector(v, dtype=vtype)
     u_v = u - v
-    u_v_w = u_v # only want weights applied once
+    u_v_w = u_v  # only want weights applied once
     if w is not None:
         w = _validate_vector(w)
         u_v_w = w * u_v
@@ -564,7 +566,7 @@ def kulsinski(u, v, w=None):
     return (ntf + nft - ntt + n) / (ntf + nft + n)
 
 
-def seuclidean(u, v, V): # replace with euclidian -- w = 1/V?
+def seuclidean(u, v, V):
     """
     Returns the standardized Euclidean distance between two 1-D arrays.
 
@@ -1397,7 +1399,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
     if callable(metric):
         dfun = metric
-        if p != 2: # if not default
+        if p != 2:  # if not default
             dfun = partial(dfun, p=p)
         if w is not None:
             dfun = partial(dfun, w=w)
@@ -1522,10 +1524,10 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                             'test_russellrao': russellrao,
                             'test_sokalsneath': sokalsneath,
                             'test_sokalmichener': sokalmichener,
-                           }
+                            }
             if mstr in test_metrics:
                 dfun = test_metrics[mstr]
-                if p != 2: # if not default
+                if p != 2:  # if not default
                     dfun = partial(dfun, p=p)
                 if w is not None:
                     dfun = partial(dfun, w=w)
@@ -2200,7 +2202,6 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                 raise ValueError("metric %s incompatible with weights" % mstr)
             mstr = "test_%s" % mstr
 
-
         try:
             validate, cdist_fn = _SIMPLE_CDIST[mstr]
             XA = validate(XA)
@@ -2310,10 +2311,10 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                             'test_sokalsneath': sokalsneath,
                             'test_sokalmichener': sokalmichener,
                             'test_sqeuclidean': sqeuclidean,
-                           }
+                            }
             if mstr in test_metrics:
                 dfun = test_metrics[mstr]
-                if p != 2: # non-default
+                if p != 2:  # non-default
                     dfun = partial(dfun, p=p)
                 if w is not None:
                     dfun = partial(dfun, w=w)
