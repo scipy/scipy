@@ -272,14 +272,13 @@ class TestTrimmedStats(TestCase):
         assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
 
     def test_tsem(self):
-        wtsem = _weight_checked(stats.tsem, split_test=False, dud_test=False)
-        y = wtsem(X, limits=(3, 8), inclusive=(False, True))
+        y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
         y_ref = np.array([4, 5, 6, 7, 8])
         assert_approx_equal(y, y_ref.std(ddof=1) / np.sqrt(y_ref.size),
                             significant=self.dprec)
 
-        assert_approx_equal(wtsem(X, limits=[-1, 10]),
-                            wtsem(X, limits=None),
+        assert_approx_equal(stats.tsem(X, limits=[-1, 10]),
+                            stats.tsem(X, limits=None),
                             significant=self.dprec)
 
 

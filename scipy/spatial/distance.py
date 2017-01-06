@@ -148,6 +148,37 @@ def _validate_vector(u, dtype=None):
         raise ValueError("Input vector should be 1-D.")
     return u
 
+def _validate_seuclidean_V(V, X, n):
+    if V is None:
+        return np.var(X.astype(np.double), axis=0, ddof=1)
+    V = np.asarray(V, order='c')
+    if V.dtype != np.double:
+        raise TypeError('Variance vector V must contain doubles.')
+    if len(V.shape) != 1:
+        raise ValueError('Variance vector V must '
+                         'be one-dimensional.')
+    if V.shape[0] != n:
+        raise ValueError('Variance vector V must be of the same '
+                         'dimension as the vectors on which the distances '
+                         'are computed.')
+    return _convert_to_double(V)
+
+
+def _validate_mahalanobis_VI(VI, X, m, n):
+    if VI is None:
+        if m <= n:
+            # There are fewer observations than the dimension of
+            # the observations.
+            raise ValueError("The number of observations (%d) is too "
+                             "small; the covariance matrix is "
+                             "singular. For observations with %d "
+                             "dimensions, at least %d observations "
+                             "are required." % (m, n, n + 1))
+        V = np.atleast_2d(np.cov(X.astype(np.double).T))
+        return _convert_to_double(np.linalg.inv(V).T.copy())
+    VI = _convert_to_double(VI)
+    return _copy_array_if_base_present(VI)
+
 
 def directed_hausdorff(u, v, seed=0):
     """
@@ -1394,8 +1425,14 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     m, n = s
     dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
 
-    # keeping for backwards compatibility
-    wmink_names = ['wminkowski', 'wmi', 'wm', 'wpnorm']
+    # validate input for multi-args metrics
+    if(metric in ['seuclidean', 'se', 's', 'test_seuclidean'] or
+       metric == seuclidean):
+        V = _validate_seuclidean_V(V, X, n)
+
+    if(metric in ['mahalanobis', 'mahal', 'mah', 'test_mahalanobis'] or
+       metric == mahalanobis):
+        VI = _validate_mahalanobis_VI(VI, X, m, n)
 
     if callable(metric):
         dfun = metric
@@ -2183,6 +2220,15 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     mB = sB[0]
     n = s[1]
     dm = np.zeros((mA, mB), dtype=np.double)
+
+    # validate input for multi-args metrics
+    if(metric in ['seuclidean', 'se', 's', 'test_seuclidean'] or
+       metric == seuclidean):
+        V = _validate_seuclidean_V(V, np.vstack([XA, XB]), n)
+
+    if(metric in ['mahalanobis', 'mahal', 'mah', 'test_mahalanobis'] or
+       metric == mahalanobis):
+        VI = _validate_mahalanobis_VI(VI, np.vstack([XA, XB]), mA + mB, n)
 
     if callable(metric):
         dfun = metric

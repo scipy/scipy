@@ -580,10 +580,7 @@ class TestCdist(TestCase):
                 self._check_calling_conventions(X1, X2, metric)
 
                 # Testing built-in metrics with extra args
-                if metric == "wminkowski":
-                    w = 1.0 / X1.std(axis=0)
-                    self._check_calling_conventions(X1, X2, metric, w=w)
-                elif metric == "seuclidean":
+                if metric == "seuclidean":
                     X12 = np.vstack([X1, X2]).astype(np.double)
                     V = np.var(X12, axis=0, ddof=1)
                     self._check_calling_conventions(X1, X2, metric, V=V)
@@ -1386,10 +1383,7 @@ class TestPdist(TestCase):
                 self._check_calling_conventions(X, metric)
 
                 # Testing built-in metrics with extra args
-                if metric == "wminkowski":
-                    w = 1.0 / X.std(axis=0)
-                    self._check_calling_conventions(X, metric, w=w)
-                elif metric == "seuclidean":
+                if metric == "seuclidean":
                     V = np.var(X.astype(np.double), axis=0, ddof=1)
                     self._check_calling_conventions(X, metric, V=V)
                 elif metric == "mahalanobis":

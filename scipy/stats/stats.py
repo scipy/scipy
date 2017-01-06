@@ -834,7 +834,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
     return np.sqrt(tvar(a, limits, inclusive, axis, ddof, weights=weights))
 
 
-def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
+def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     """
     Compute the trimmed standard error of the mean.
 
@@ -859,9 +859,6 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
         whole array `a`.
     ddof : int, optional
         Delta degrees of freedom.  Default is 1.
-    weights : array_like, optional
-        The weights for each value in `a`. Default is None, which gives each
-        value a weight of 1.0
 
     Returns
     -------
@@ -882,11 +879,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
     1.1547005383792515
 
     """
-    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    a, axis = _chk_asarrays([a], axis=axis)
     if limits is None:
         limits = (None, None)
     am = _mask_to_limits(a, limits, inclusive)
-    sd = np.sqrt(_var(am, axis=axis, ddof=ddof, weights=weights))
+    sd = np.std(am, axis=axis, ddof=ddof)
     n = am.count(axis=axis)
     return sd / np.sqrt(n)
 
@@ -1341,6 +1338,11 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     -----
     The sample size must be at least 8.
 
+    References
+    ----------
+    .. [1] R. B. D'Agostino, A. J. Belanger and R. B. D'Agostino Jr.,
+            "A suggestion for using powerful and informative tests of
+            normality", American Statistician 44, pp. 316-321, 1990.
     """
     a, axis = _chk_asarrays([a], axis=axis)
 
@@ -1609,9 +1611,12 @@ def itemfreq(a, weights=None):
     return np.array([items, freq]).T
 
 
-def collapse_weights(a, weights=None, axis=None):
+def collapse_weights(a, weights=None, axis=0):
     """
-    Collapse a weigthed representation of an array.
+    Collapse a weighted representation of an array. If axis is not None, and ndim > 1,
+    then this functions considers a "record" to consist of all of the axes which are not
+    the axis specified. It looks for uniques among "records", and sums up their weight.
+    It assumes that `weights is None`, or `a.shape[axis] == weights.size`.
 
     Parameters
     ----------
@@ -1627,7 +1632,7 @@ def collapse_weights(a, weights=None, axis=None):
     Returns
     -------
     uniq_a : ndarray
-        An ndarray of the sorted record in `a`, without duplicates.
+        An ndarray of the sorted records in `a`, without duplicates.
     uniq_w : array
         The weights for each record in `uniq_a` along `axis`d that
         make it representationally equivalent.
