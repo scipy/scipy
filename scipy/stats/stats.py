@@ -221,10 +221,33 @@ def _chk2_asarray(a, b, axis):
     return _chk_asarrays([a, b], axis=axis)
 
 
+def _weight_masked(arrays, weights, axis):
+    weights = np.asanyarray(weights)
+    for a in arrays:
+        axis_mask = np.ma.getmask(a)
+        if axis_mask is np.ma.nomask:
+            continue
+        if a.ndim > 1:
+            not_axes = tuple(i for i in range(a.ndim) if i != axis)
+            axis_mask = axis_mask.any(axis=not_axes)
+        weights *= 1 - axis_mask
+    return weights
+
+
+def _freq_weights(weights):
+    if weights is None:
+        return weights
+    try:
+        return weights.astype(int, casting='safe')
+    except TypeError:
+        raise ValueError("frequency (integer count-type) weights required")
+
+
 def _chk_weights(arrays, weights=None, axis=None,
                  force_weights=False, simplify_weights=True,
                  pos_only=False, neg_check=False,
-                 nan_screen=False, mask_screen=False):
+                 nan_screen=False, mask_screen=False,
+                 ddof=None):
     chked = _chk_asarrays(arrays, axis=axis)
     arrays, axis = chked[:-1], chked[-1]
 
@@ -247,15 +270,11 @@ def _chk_weights(arrays, weights=None, axis=None,
     else:
         return arrays + (weights, axis)
 
+    if ddof:
+        weights = _freq_weights(weights)
+
     if mask_screen:
-        for a in arrays:
-            axis_mask = np.ma.getmask(a)
-            if axis_mask is np.ma.nomask:
-                continue
-            if a.ndim > 1:
-                not_axes = tuple(i for i in range(a.ndim) if i != axis)
-                axis_mask = axis_mask.any(axis=not_axes)
-            weights *= 1 - axis_mask
+        weights = _weight_masked(arrays, weights, axis)
 
     if not all(weights.shape == (a.shape[axis],) for a in arrays):
         raise ValueError("weights shape must match arrays along axis")
@@ -311,20 +330,20 @@ def _avg(a, axis=None, dtype=None, weights=None):
 
 
 def _var(a, axis=None, ddof=0, weights=None):
-    if ddof != 0 and weights is not None:
-        raise NotImplementedError("ddof and weights are difficult views on data to merge")
+    if ddof != 0:
+        weights = _freq_weights(weights)
     u = _avg(a, axis=axis, weights=weights)
     if axis and u.ndim < a.ndim:
         u = np.expand_dims(u, axis=axis)
     var = _avg(np.square(a - u), axis=axis, weights=weights)
     if ddof:
-        if isinstance(a, np.ma.MaskedArray):
+        if weights is not None:
+            weights = _weight_masked([a], weights, axis)
+            n = weights.sum()
+        elif isinstance(a, np.ma.MaskedArray):
             n = a.count(axis=axis)
         else:
             n = a.shape[axis]
-        #n = n.expand_dims(n, axis=axis)
-        # TODO: test axis alignment of n and multiplication
-        # look into np.expand_dim
         if ddof >= n:
             ddof = np.nan
         var *= n / float(n - ddof)
@@ -428,13 +447,10 @@ def hmean(a, axis=0, dtype=None, weights=None):
     """
     a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
     a = np.asanyarray(a, dtype=dtype)
-    if np.all(a > 0):
+    if not np.all(a > 0):
         # Harmonic mean only defined if greater than zero
-        if axis is None:
-            a = a.ravel()
-        return 1.0 / _avg(1.0 / a, axis=axis, weights=weights)
-    else:
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
+    return 1.0 / _avg(1.0 / a, axis=axis, weights=weights)
 
 
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
@@ -660,7 +676,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
     20.0
 
     """
-    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, ddof=ddof)
     if limits is None:
         limits = (None, None)
     am = _mask_to_limits(a, limits, inclusive)
@@ -810,7 +826,8 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
         Delta degrees of freedom.  Default is 1.
     weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
-        value a weight of 1.0
+        value a weight of 1.0. Must be integer weights (representing
+        frequency / count) if ddof is nonzero.
 
     Returns
     -------
@@ -834,7 +851,7 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
     return np.sqrt(tvar(a, limits, inclusive, axis, ddof, weights=weights))
 
 
-def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
+def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
     """
     Compute the trimmed standard error of the mean.
 
@@ -859,6 +876,10 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         whole array `a`.
     ddof : int, optional
         Delta degrees of freedom.  Default is 1.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0. Must be integer weights (representing
+        frequency / count).
 
     Returns
     -------
@@ -879,12 +900,14 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a, axis = _chk_asarrays([a], axis=axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, ddof=ddof)
     if limits is None:
-        limits = (None, None)
-    am = _mask_to_limits(a, limits, inclusive)
-    sd = np.std(am, axis=axis, ddof=ddof)
-    n = am.count(axis=axis)
+        am = ma.MaskedArray(a)
+    else:
+        am = _mask_to_limits(a, limits, inclusive)
+    weights = _freq_weights(weights)
+    sd = np.sqrt(_var(am, axis=axis, ddof=ddof, weights=weights))
+    n = _weight_masked([am], weights, axis).sum()
     return sd / np.sqrt(n)
 
 
@@ -1281,7 +1304,8 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate', weights=None)
                    skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
 
     """
-    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, pos_only=True)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis,
+                                    pos_only=True, ddof=ddof)
     n = a.shape[axis]
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
@@ -1450,6 +1474,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
 
     # zprob uses upper tail, so Z needs to be positive
     return KurtosistestResult(Z, 2 * distributions.norm.sf(np.abs(Z)))
+
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
 
@@ -1746,7 +1771,7 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
 
     return _compute_qth_percentile(sorted_a, per, interpolation_method, axis, cum_sorted_weights)
 
-# does this handle ties well??
+
 # handle sequence of per's without calling sort multiple times
 def _compute_qth_percentile(sorted_a, per, interpolation_method, axis, cum_sorted_weights):
     if not np.isscalar(per):
@@ -1762,9 +1787,6 @@ def _compute_qth_percentile(sorted_a, per, interpolation_method, axis, cum_sorte
         idx = per / 100. * (sorted_a.shape[axis] - 1)
     else:
         max_w = cum_sorted_weights[-1]
-        #min_a = np.take(sorted_a, 0, axis=axis)
-        #min_as = np.where((np.expand_dims(min_a, axis=axis) == sorted_a).all(axis=axis))[0]
-        #min_w = cum_sorted_weights[min_as].sum()
         min_w = cum_sorted_weights[0]
         w = per / 100. * (max_w - min_w) + min_w
         idx = np.searchsorted(cum_sorted_weights, w)
@@ -2031,7 +2053,6 @@ CumfreqResult = namedtuple('CumfreqResult',
                            ('cumcount', 'lowerlimit', 'binsize',
                             'extrapoints'))
 
-
 def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     Returns a cumulative frequency histogram, using the histogram function.
@@ -2112,7 +2133,6 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
 RelfreqResult = namedtuple('RelfreqResult',
                            ('frequency', 'lowerlimit', 'binsize',
                             'extrapoints'))
-
 
 def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
@@ -2329,7 +2349,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate', weights=None):
         values. Default is 'propagate'.
     weights : array_like, optional
         The weights for each value in `a`. Default is None, which gives each
-        value a weight (incremental rank) of 1.0
+        value a weight of 1.0. Must be integer weights (representing frequency).
 
     Returns
     -------
@@ -2356,17 +2376,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate', weights=None):
     1.2893796958227628
 
     """
-    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
-    n = a.shape[axis]
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        n = a.count(axis=axis)
-
-    sd = np.sqrt(_var(a, axis=axis, weights=weights, ddof=ddof))
-    return sd / np.sqrt(n)
+    return tsem(a, limits=None, axis=axis, ddof=ddof, weights=weights)
 
 
 def zscore(a, axis=0, ddof=0, weights=None):
@@ -2424,7 +2434,7 @@ def zscore(a, axis=0, ddof=0, weights=None):
            [-0.22095197,  0.24468594,  1.19042819, -1.21416216],
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
     """
-    a = np.asanyarray(a)
+    a, weights, axis = _chk_weights([a], weights=weigths, axis=axis, ddof=ddof)
     mns = _avg(a, axis=axis, weights=weights)
     sstd = np.sqrt(_var(a, axis=axis, ddof=ddof, weights=weights))
     if axis and mns.ndim < a.ndim:
@@ -2479,8 +2489,8 @@ def zmap(scores, compare, axis=0, ddof=0, weights=None):
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
     """
-    scores = np.asanyarray(scores)
-    compare = np.asanyarray(compare)
+    score, compare, weights, axis = _chk_weights([scores, compare], weights=weigths,
+                                                 axis=axis, ddof=ddof)
     mns = _avg(compare, axis=axis, weights=weights)
     sstd = np.sqrt(_var(compare, axis=axis, ddof=ddof, weights=weights))
     if axis and mns.ndim < compare.ndim:

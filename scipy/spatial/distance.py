@@ -152,12 +152,7 @@ def _validate_seuclidean_V(V, X, n):
     if V is None:
         return np.var(X.astype(np.double), axis=0, ddof=1)
     V = np.asarray(V, order='c')
-    if V.dtype != np.double:
-        raise TypeError('Variance vector V must contain doubles.')
-    if len(V.shape) != 1:
-        raise ValueError('Variance vector V must '
-                         'be one-dimensional.')
-    if V.shape[0] != n:
+    if V.shape != (n,):
         raise ValueError('Variance vector V must be of the same '
                          'dimension as the vectors on which the distances '
                          'are computed.')
@@ -256,7 +251,7 @@ def directed_hausdorff(u, v, seed=0):
     return result
 
 
-def minkowski(u, v, p, w=None):
+def minkowski(u, v, p=2, w=None):
     """
     Computes the Minkowski distance between two 1-D arrays.
 
@@ -349,7 +344,7 @@ def sqeuclidean(u, v, w=None):
 
        {||u-v||}_2^2
 
-       \\left(\\sum{(|w_i (u_i - v_i)|^2)}\\right)
+       \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)
 
 
     Parameters
@@ -424,8 +419,8 @@ def correlation(u, v, w=None, centered=True):
     if centered:
         umu = np.average(u, weights=w)
         vmu = np.average(v, weights=w)
-        u -= umu
-        v -= vmu
+        u = u - umu
+        v = v - vmu
     uv = np.average(u * v, weights=w)
     uu = np.average(np.square(u), weights=w)
     vv = np.average(np.square(v), weights=w)
@@ -828,10 +823,17 @@ def canberra(u, v, w=None):
 
 
 def _nbool_correspond_all(u, v, w=None):
-    if u.dtype != v.dtype:
-        raise TypeError("Arrays being compared must be of the same data type.")
-
-    if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double or w is not None:
+    if u.dtype == v.dtype == bool and w is None:
+        not_u = ~u
+        not_v = ~v
+        nff = (not_u & not_v).sum()
+        nft = (not_u & v).sum()
+        ntf = (u & not_v).sum()
+        ntt = (u & v).sum()
+    else:
+        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        u = u.astype(dtype)
+        v = v.astype(dtype)
         not_u = 1.0 - u
         not_v = 1.0 - v
         if w is not None:
@@ -841,21 +843,19 @@ def _nbool_correspond_all(u, v, w=None):
         nft = (not_u * v).sum()
         ntf = (u * not_v).sum()
         ntt = (u * v).sum()
-    elif u.dtype == bool:
-        not_u = ~u
-        not_v = ~v
-        nff = (not_u & not_v).sum()
-        nft = (not_u & v).sum()
-        ntf = (u & not_v).sum()
-        ntt = (u & v).sum()
-    else:
-        raise TypeError("Arrays being compared have unknown type.")
-
     return (nff, nft, ntf, ntt)
 
 
 def _nbool_correspond_ft_tf(u, v, w=None):
-    if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double or w is not None:
+    if u.dtype == v.dtype == bool and w is None:
+        not_u = ~u
+        not_v = ~v
+        nft = (not_u & v).sum()
+        ntf = (u & not_v).sum()
+    else:
+        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        u = u.astype(dtype)
+        v = v.astype(dtype)
         not_u = 1.0 - u
         not_v = 1.0 - v
         if w is not None:
@@ -863,11 +863,6 @@ def _nbool_correspond_ft_tf(u, v, w=None):
             u = w * u
         nft = (not_u * v).sum()
         ntf = (u * not_v).sum()
-    else:
-        not_u = ~u
-        not_v = ~v
-        nft = (not_u & v).sum()
-        ntf = (u & not_v).sum()
     return (nft, ntf)
 
 
@@ -906,7 +901,7 @@ def yule(u, v, w=None):
     if w is not None:
         w = _validate_vector(w)
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
-    return float(2.0 * ntf * nft) / float(ntt * nff + ntf * nft)
+    return float(2.0 * ntf * nft / np.array(ntt * nff + ntf * nft))
 
 
 @np.deprecate(message="spatial.distance.matching is deprecated in scipy 0.18.0; "
@@ -955,14 +950,18 @@ def dice(u, v, w=None):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_vector(w)
-    if u.dtype == bool and w is None:
+    if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
-    elif w is None:
-        ntt = (u * v).sum()
     else:
-        ntt = (u * v * w).sum()
+        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        u = u.astype(dtype)
+        v = v.astype(dtype)
+        if w is None:
+            ntt = (u * v).sum()
+        else:
+            ntt = (u * v * w).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
-    return float(ntf + nft) / float(2.0 * ntt + ntf + nft)
+    return float((ntf + nft) / np.array(2.0 * ntt + ntf + nft))
 
 
 def rogerstanimoto(u, v, w=None):
@@ -1039,7 +1038,7 @@ def russellrao(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == bool and w is None:
+    if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
         n = float(len(u))
     elif w is None:
@@ -1087,7 +1086,7 @@ def sokalmichener(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == bool and w is None:
+    if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
         nff = (~u & ~v).sum()
     elif w is None:
@@ -1134,7 +1133,7 @@ def sokalsneath(u, v, w=None):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == bool and w is None:
+    if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
     elif w is None:
         ntt = (u * v).sum()
@@ -1142,11 +1141,8 @@ def sokalsneath(u, v, w=None):
         w = _validate_vector(w)
         ntt = (u * v * w).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
-    denom = ntt + 2.0 * (ntf + nft)
-    if denom == 0:
-        raise ValueError('Sokal-Sneath dissimilarity is not defined for '
-                         'vectors that are entirely false.')
-    return float(2.0 * (ntf + nft)) / denom
+    denom = np.array(ntt + 2.0 * (ntf + nft))
+    return float(2.0 * (ntf + nft) / denom)
 
 
 # Registry of "simple" distance metrics' pdist and cdist implementations,
@@ -1442,6 +1438,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             dfun = partial(dfun, w=w)
         elif V is not None:
             dfun = partial(dfun, V=V)
+        elif VI is not None:
+            dfun = partial(dfun, VI=VI)
 
         X = _convert_to_double(X)
 
@@ -1485,22 +1483,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             _distance_wrap.pdist_minkowski_wrap(X, dm, p)
         elif mstr in ['seuclidean', 'se', 's']:
             X = _convert_to_double(X)
-            if V is not None:
-                V = np.asarray(V, order='c')
-                if V.dtype != np.double:
-                    raise TypeError('Variance vector V must contain doubles.')
-                if len(V.shape) != 1:
-                    raise ValueError('Variance vector V must '
-                                     'be one-dimensional.')
-                if V.shape[0] != n:
-                    raise ValueError('Variance vector V must be of the same '
-                            'dimension as the vectors on which the distances '
-                            'are computed.')
-                # The C code doesn't do striding.
-                VV = _copy_array_if_base_present(_convert_to_double(V))
-            else:
-                VV = np.var(X, axis=0, ddof=1)
-            _distance_wrap.pdist_seuclidean_wrap(X, VV, dm)
+            _distance_wrap.pdist_seuclidean_wrap(X, V, dm)
         elif mstr in ['cosine', 'cos']:
             X = _convert_to_double(X)
             norms = _row_norms(X)
@@ -1524,21 +1507,6 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             _distance_wrap.pdist_cosine_wrap(X2, dm, norms)
         elif mstr in ['mahalanobis', 'mahal', 'mah']:
             X = _convert_to_double(X)
-            if VI is not None:
-                VI = _convert_to_double(np.asarray(VI, order='c'))
-                VI = _copy_array_if_base_present(VI)
-            else:
-                if m <= n:
-                    # There are fewer observations than the dimension of
-                    # the observations.
-                    raise ValueError("The number of observations (%d) is too "
-                                     "small; the covariance matrix is "
-                                     "singular. For observations with %d "
-                                     "dimensions, at least %d observations "
-                                     "are required." % (m, n, n + 1))
-                V = np.atleast_2d(np.cov(X.T))
-                VI = _convert_to_double(np.linalg.inv(V).T.copy())
-            # sqrt((u-v)V^(-1)(u-v)^T)
             _distance_wrap.pdist_mahalanobis_wrap(X, VI, dm)
         elif mstr.startswith("test_"):
             test_metrics = {'test_euclidean': euclidean,
@@ -1554,13 +1522,16 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                             'test_chebyshev': chebyshev,
                             'test_chebychev': chebyshev,
                             'test_yule': yule,
-                            'test_matching': matching,
+                            'test_matching': hamming,
                             'test_dice': dice,
                             'test_kulsinski': kulsinski,
                             'test_rogerstanimoto': rogerstanimoto,
                             'test_russellrao': russellrao,
                             'test_sokalsneath': sokalsneath,
                             'test_sokalmichener': sokalmichener,
+                            'test_sqeuclidean': sqeuclidean,
+                            'test_seuclidean': seuclidean,
+                            'test_mahalanobis': mahalanobis,
                             }
             if mstr in test_metrics:
                 dfun = test_metrics[mstr]
@@ -1568,22 +1539,11 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
                     dfun = partial(dfun, p=p)
                 if w is not None:
                     dfun = partial(dfun, w=w)
+                elif V is not None:
+                    dfun = partial(dfun, V=V)
+                elif VI is not None:
+                    dfun = partial(dfun, VI=VI)
                 dm = pdist(X, dfun)
-            elif mstr == 'test_sqeuclidean':
-                if V is None:
-                    V = np.var(X, axis=0, ddof=1)
-                else:
-                    V = np.asarray(V, order='c')
-                dm = pdist(X, lambda u, v: seuclidean(u, v, V))
-            elif mstr == 'test_mahalanobis':
-                if VI is None:
-                    V = np.cov(X.T)
-                    VI = np.linalg.inv(V)
-                else:
-                    VI = np.asarray(VI, order='c')
-                VI = _copy_array_if_base_present(VI)
-                # sqrt((u-v)V^(-1)(u-v)^T)
-                dm = pdist(X, (lambda u, v: mahalanobis(u, v, VI)))
             else:
                 raise ValueError('Unknown Distance Metric: %s' % mstr)
         else:
@@ -2236,11 +2196,13 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             dfun = partial(dfun, p=p)
         if w is not None:
             dfun = partial(dfun, w=w)
-        elif w is not None:
+        elif V is not None:
             dfun = partial(dfun, V=V)
+        elif VI is not None:
+            dfun = partial(dfun, VI=VI)
         for i in xrange(0, mA):
             for j in xrange(0, mB):
-                dm[i, j] = metric(XA[i, :], XB[j, :])
+                dm[i, j] = dfun(XA[i, :], XB[j, :])
     elif isinstance(metric, string_types):
         mstr = metric.lower()
         if w is not None and not mstr.startswith("test_"):
@@ -2257,7 +2219,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         except KeyError:
             pass
 
-        if mstr in ['hamming', 'hamm', 'ha', 'h']:
+        if mstr in ['matching', 'hamming', 'hamm', 'ha', 'h']:
             if XA.dtype == bool:
                 XA = _convert_to_bool(XA)
                 XB = _convert_to_bool(XB)
@@ -2287,22 +2249,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         elif mstr in ['seuclidean', 'se', 's']:
             XA = _convert_to_double(XA)
             XB = _convert_to_double(XB)
-            if V is not None:
-                V = np.asarray(V, order='c')
-                if V.dtype != np.double:
-                    raise TypeError('Variance vector V must contain doubles.')
-                if len(V.shape) != 1:
-                    raise ValueError('Variance vector V must be '
-                                     'one-dimensional.')
-                if V.shape[0] != n:
-                    raise ValueError('Variance vector V must be of the same '
-                                     'dimension as the vectors on which the '
-                                     'distances are computed.')
-                # The C code doesn't do striding.
-                VV = _copy_array_if_base_present(_convert_to_double(V))
-            else:
-                VV = np.var(np.vstack([XA, XB]), axis=0, ddof=1)
-            _distance_wrap.cdist_seuclidean_wrap(XA, XB, VV, dm)
+            _distance_wrap.cdist_seuclidean_wrap(XA, XB, V, dm)
         elif mstr in ['cosine', 'cos']:
             XA = _convert_to_double(XA)
             XB = _convert_to_double(XB)
@@ -2316,24 +2263,6 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         elif mstr in ['mahalanobis', 'mahal', 'mah']:
             XA = _convert_to_double(XA)
             XB = _convert_to_double(XB)
-            if VI is not None:
-                VI = _convert_to_double(np.asarray(VI, order='c'))
-                VI = _copy_array_if_base_present(VI)
-            else:
-                m = mA + mB
-                if m <= n:
-                    # There are fewer observations than the dimension of
-                    # the observations.
-                    raise ValueError("The number of observations (%d) is too "
-                                     "small; the covariance matrix is "
-                                     "singular. For observations with %d "
-                                     "dimensions, at least %d observations "
-                                     "are required." % (m, n, n + 1))
-                X = np.vstack([XA, XB])
-                V = np.atleast_2d(np.cov(X.T))
-                del X
-                VI = np.linalg.inv(V).T.copy()
-            # sqrt((u-v)V^(-1)(u-v)^T)
             _distance_wrap.cdist_mahalanobis_wrap(XA, XB, VI, dm)
         elif mstr.startswith("test_"):
             test_metrics = {'test_euclidean': euclidean,
@@ -2349,7 +2278,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                             'test_chebyshev': chebyshev,
                             'test_chebychev': chebyshev,
                             'test_yule': yule,
-                            'test_matching': matching,
+                            'test_matching': hamming,
                             'test_dice': dice,
                             'test_kulsinski': kulsinski,
                             'test_rogerstanimoto': rogerstanimoto,
@@ -2357,6 +2286,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                             'test_sokalsneath': sokalsneath,
                             'test_sokalmichener': sokalmichener,
                             'test_sqeuclidean': sqeuclidean,
+                            'test_seuclidean': seuclidean,
+                            'test_mahalanobis': mahalanobis,
                             }
             if mstr in test_metrics:
                 dfun = test_metrics[mstr]
@@ -2364,25 +2295,11 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
                     dfun = partial(dfun, p=p)
                 if w is not None:
                     dfun = partial(dfun, w=w)
+                elif V is not None:
+                    dfun = partial(dfun, V=V)
+                elif VI is not None:
+                    dfun = partial(dfun, VI=VI)
                 dm = cdist(XA, XB, dfun)
-            elif mstr == 'test_seuclidean':
-                if V is None:
-                    V = np.var(np.vstack([XA, XB]), axis=0, ddof=1)
-                else:
-                    V = np.asarray(V, order='c')
-                dm = cdist(XA, XB, partial(seuclidean, V=V))
-            elif mstr == 'test_mahalanobis':
-                if VI is None:
-                    X = np.vstack([XA, XB])
-                    V = np.cov(X.T)
-                    VI = np.linalg.inv(V)
-                    X = None
-                    del X
-                else:
-                    VI = np.asarray(VI, order='c')
-                VI = _copy_array_if_base_present(VI)
-                # sqrt((u-v)V^(-1)(u-v)^T)
-                dm = cdist(XA, XB, partial(mahalanobis, VI=VI))
             else:
                 raise ValueError('Unknown Distance Metric: %s' % mstr)
         else:

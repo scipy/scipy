@@ -52,7 +52,7 @@ from scipy.spatial.distance import (squareform, pdist, cdist,
         num_obs_y, num_obs_dm, is_valid_dm, is_valid_y, minkowski,
         euclidean, sqeuclidean, cosine, correlation, hamming, mahalanobis,
         canberra, braycurtis, sokalmichener, _validate_vector,
-        chebyshev, cityblock)
+        chebyshev, cityblock, kulsinski, seuclidean)
 matching = hamming  # suppresses warning messages in testing
 
 _filenames = [
@@ -126,10 +126,10 @@ def within_tol(a, b, tol):
     return np.abs(a - b).max() < tol
 
 
-def _assert_within_tol(a, b, atol, verbose_=False):
+def _assert_within_tol(a, b, atol=0, rtol=0, verbose_=False):
     if verbose_:
         print(np.abs(a - b).max())
-    assert_allclose(a, b, rtol=0, atol=atol)
+    assert_allclose(a, b, rtol=rtol, atol=atol)
 
 
 def _rand_split(arrays, weights, axis, split_per, seed=None):
@@ -546,7 +546,7 @@ class TestCdist(TestCase):
         right_y = 1.123
         assert_equal(cdist_y, right_y, verbose=verbose > 2)
 
-    def _check_calling_conventions(self, X1, X2, metric, eps=1e-07, **kwargs):
+    def _check_calling_conventions(self, X1, X2, metric, eo_name, eps=1e-04, **kwargs):
         # helper function for test_cdist_calling_conventions
         try:
             y1 = cdist(X1, X2, metric=metric, **kwargs)
@@ -557,12 +557,18 @@ class TestCdist(TestCase):
             if verbose > 2:
                 print(e_cls.__name__)
                 print(e)
-            assert_raises(e_cls, cdist, X1, X2, metric=metric, **kwargs)
-            assert_raises(e_cls, cdist, X1, X2, metric=eval(metric), **kwargs)
-            assert_raises(e_cls, cdist, X1, X2, metric="test_" + metric, **kwargs)
+            try:
+                assert_raises(Exception, cdist, X1, X2, metric=metric, **kwargs)
+                assert_raises(Exception, cdist, X1, X2, metric=eval(metric), **kwargs)
+                assert_raises(Exception, cdist, X1, X2, metric="test_" + metric, **kwargs)
+            except Exception as e2:
+                raise type(e)((e2, e, metric, eo_name))
         else:
-            _assert_within_tol(y1, y2, eps, verbose > 2)
-            _assert_within_tol(y1, y3, eps, verbose > 2)
+            try:
+                _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose > 2)
+                _assert_within_tol(y2, y3, rtol=eps, verbose_=verbose > 2)
+            except Exception as e:
+                raise type(e)((e, metric, eo_name))
 
     def test_cdist_calling_conventions(self):
         # Ensures that specifying the metric with a str or scipy function
@@ -574,21 +580,22 @@ class TestCdist(TestCase):
             for metric in _metrics:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                if metric == 'yule' and 'bool' not in eo_name:
-                    # python raises a ZeroDivisionError while the C doesn't
+                if metric in {'dice', 'yule', 'kulsinski', 'matching', 'rogerstanimoto',
+                              'russellrao', 'sokalmichener', 'sokalsneath'} and 'bool' not in eo_name:
+                    # python version permits non-bools e.g. for fuzzy logic
                     continue
-                self._check_calling_conventions(X1, X2, metric)
+                self._check_calling_conventions(X1, X2, metric, eo_name)
 
                 # Testing built-in metrics with extra args
                 if metric == "seuclidean":
                     X12 = np.vstack([X1, X2]).astype(np.double)
                     V = np.var(X12, axis=0, ddof=1)
-                    self._check_calling_conventions(X1, X2, metric, V=V)
+                    self._check_calling_conventions(X1, X2, metric, eo_name, V=V)
                 elif metric == "mahalanobis":
                     X12 = np.vstack([X1, X2]).astype(np.double)
                     V = np.atleast_2d(np.cov(X12.T))
                     VI = np.array(np.linalg.inv(V).T)
-                    self._check_calling_conventions(X1, X2, metric, VI=VI)
+                    self._check_calling_conventions(X1, X2, metric, eo_name, VI=VI)
 
     def test_cdist_dtype_equivalence(self):
         # Tests that the result is not affected by type up-casting
@@ -696,7 +703,7 @@ class TestPdist(TestCase):
         eps = 1e-05
         X = eo['pdist-double-inp']
         Y_right = eo['pdist-seuclidean']
-        Y_test2 = pdist(X, 'test_sqeuclidean')
+        Y_test2 = pdist(X, 'test_seuclidean')
         _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_seuclidean_iris(self):
@@ -720,7 +727,7 @@ class TestPdist(TestCase):
         eps = 1e-05
         X = eo['iris']
         Y_right = eo['pdist-seuclidean-iris']
-        Y_test2 = pdist(X, 'test_sqeuclidean')
+        Y_test2 = pdist(X, 'test_seuclidean')
         _assert_within_tol(Y_test2, Y_right, eps)
 
     def test_pdist_cosine_random(self):
@@ -1359,12 +1366,18 @@ class TestPdist(TestCase):
             if verbose > 2:
                 print(e_cls.__name__)
                 print(e)
-            assert_raises(e_cls, pdist, X, metric=metric, **kwargs)
-            assert_raises(e_cls, pdist, X, metric=eval(metric), **kwargs)
-            assert_raises(e_cls, pdist, X, metric="test_" + metric, **kwargs)
+            try:
+                assert_raises(Exception, pdist, X, metric=metric, **kwargs)
+                assert_raises(Exception, pdist, X, metric=eval(metric), **kwargs)
+                assert_raises(Exception, pdist, X, metric="test_" + metric, **kwargs)
+            except Exception as e2:
+                raise type(e2)((e2, e, metric))
         else:
-            _assert_within_tol(y1, y2, eps, verbose > 2)
-            _assert_within_tol(y1, y3, eps, verbose > 2)
+            try:
+                _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose > 2)
+                _assert_within_tol(y2, y3, rtol=eps, verbose_=verbose > 2)
+            except Exception as e:
+                raise type(e)((e, metric))
 
     def test_pdist_calling_conventions(self):
         # Ensures that specifying the metric with a str or scipy function
@@ -1377,14 +1390,15 @@ class TestPdist(TestCase):
             for metric in _metrics:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
-                if metric == 'yule' and 'bool' not in eo_name:
-                    # python raises a ZeroDivisionError while the C doesn't
+                if metric in {'dice', 'yule', 'kulsinski', 'matching', 'rogerstanimoto',
+                              'russellrao', 'sokalmichener', 'sokalsneath'} and 'bool' not in eo_name:
+                    # python version permits non-bools e.g. for fuzzy logic
                     continue
                 self._check_calling_conventions(X, metric)
 
                 # Testing built-in metrics with extra args
                 if metric == "seuclidean":
-                    V = np.var(X.astype(np.double), axis=0, ddof=1)
+                    V = np.var(X.astype(np.double), axis=0, ddof=1).astype(np.double)
                     self._check_calling_conventions(X, metric, V=V)
                 elif metric == "mahalanobis":
                     V = np.atleast_2d(np.cov(X.astype(np.double).T))
@@ -1762,11 +1776,6 @@ def test_bad_p():
     p = 0.5
     assert_raises(ValueError, wminkowski, [1, 2], [3, 4], p)
     assert_raises(ValueError, wminkowski, [1, 2], [3, 4], p, [1, 1])
-
-
-def test_sokalsneath_all_false():
-    # Regression test for ticket #876
-    assert_raises(ValueError, wsokalsneath, [False, False, False], [False, False, False])
 
 
 def test_canberra():
