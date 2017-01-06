@@ -201,36 +201,75 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'combine_pvalues', ]
 
 
+def _chk_asarrays(arrays, axis=None):
+    if axis is None:
+        arrays = [np.ravel(a) for a in arrays]
+        axis = 0
+    arrays = tuple(np.atleast_1d(a) for a in arrays)
+    if axis < 0:
+        if not all(a.ndim == arrays[0].ndim for a in arrays):
+            raise ValueError("array ndim must be the same for neg axis")
+        axis = range(arrays[0].ndim)[axis]
+    return arrays + (axis,)
+
+
+@np.deprecate(message=("deprecate please?"))
 def _chk_asarray(a, axis):
-    if axis is None:
-        a = np.ravel(a)
-        outaxis = 0
-    else:
-        a = np.asarray(a)
-        outaxis = axis
-
-    if a.ndim == 0:
-        a = np.atleast_1d(a)
-
-    return a, outaxis
-
-
+    return _chk_asarrays([a], axis=axis)
+@np.deprecate(message=("deprecate please?"))
 def _chk2_asarray(a, b, axis):
-    if axis is None:
-        a = np.ravel(a)
-        b = np.ravel(b)
-        outaxis = 0
+    return _chk_asarrays([a, b], axis=axis)
+
+
+def _chk_weights(arrays, weights=None, axis=None,
+                 force_weights=False, simplify_weights=True,
+                 pos_only=False, neg_check=False,
+                 nan_screen=False, mask_screen=False):
+    chked = _chk_asarrays(arrays, axis=axis)
+    arrays, axis = chked[:-1], chked[-1]
+
+    simplify_weights = simplify_weights and not force_weights
+    if not force_weights and mask_screen:
+        force_weights = any(np.ma.getmask(a) is not np.ma.nomask for a in arrays)
+
+    if nan_screen:
+        has_nans = [np.isnan(np.sum(a)) for a in arrays]
+        if any(has_nans):
+            mask_screen = True
+            force_weights = True
+            arrays = tuple(np.ma.masked_invalid(a) if has_nan else a
+                           for a, has_nan in zip(arrays, has_nans))
+
+    if weights is not None:
+        weights = np.asanyarray(weights)
+    elif force_weights:
+        weights = np.ones(arrays[0].shape[axis])
     else:
-        a = np.asarray(a)
-        b = np.asarray(b)
-        outaxis = axis
+        return arrays + (weights, axis)
 
-    if a.ndim == 0:
-        a = np.atleast_1d(a)
-    if b.ndim == 0:
-        b = np.atleast_1d(b)
+    if mask_screen:
+        for a in arrays:
+            axis_mask = np.ma.getmask(a)
+            if axis_mask is np.ma.nomask:
+                continue
+            if a.ndim > 1:
+                not_axes = tuple(i for i in range(a.ndim) if i != axis)
+                axis_mask = axis_mask.any(axis=not_axes)
+            weights *= 1 - axis_mask
 
-    return a, b, outaxis
+    if not all(weights.shape == (a.shape[axis],) for a in arrays):
+        raise ValueError("weights shape must match arrays along axis")
+    if neg_check and (weights < 0).any():
+        raise ValueError("weights cannot be negative")
+
+    if pos_only:
+        pos_weights = np.where(weights > 0)[0]
+        if pos_weights.size < weights.size:
+            arrays = tuple(np.take(a, pos_weights, axis=axis) for a in arrays)
+            weights = weights[pos_weights]
+    if simplify_weights and (weights == 1).all():
+        weights = None
+    return arrays + (weights, axis)
 
 
 def _contains_nan(a, nan_policy='propagate'):
@@ -258,7 +297,41 @@ def _contains_nan(a, nan_policy='propagate'):
     return (contains_nan, nan_policy)
 
 
-def gmean(a, axis=0, dtype=None):
+def _avg(a, axis=None, dtype=None, weights=None):
+    # needed for numpy < 1.13
+    #  see https://github.com/numpy/numpy/pull/8290
+    try:
+        a = np.asanyarray(a, dtype=dtype)
+        if isinstance(a, np.ma.MaskedArray):
+            return np.ma.average(a, axis=axis, weights=weights)
+        else:
+            return np.average(a, axis=axis, weights=weights)
+    except TypeError as e:
+        raise type(e)((e, a.shape, weights.shape))
+
+
+def _var(a, axis=None, ddof=0, weights=None):
+    if ddof != 0 and weights is not None:
+        raise NotImplementedError("ddof and weights are difficult views on data to merge")
+    u = _avg(a, axis=axis, weights=weights)
+    if axis and u.ndim < a.ndim:
+        u = np.expand_dims(u, axis=axis)
+    var = _avg(np.square(a - u), axis=axis, weights=weights)
+    if ddof:
+        if isinstance(a, np.ma.MaskedArray):
+            n = a.count(axis=axis)
+        else:
+            n = a.shape[axis]
+        #n = n.expand_dims(n, axis=axis)
+        # TODO: test axis alignment of n and multiplication
+        # look into np.expand_dim
+        if ddof >= n:
+            ddof = np.nan
+        var *= n / float(n - ddof)
+    return var
+
+
+def gmean(a, axis=0, dtype=None, weights=None):
     """
     Compute the geometric mean along the specified axis.
 
@@ -278,6 +351,9 @@ def gmean(a, axis=0, dtype=None):
         dtype of a, unless a has an integer dtype with a precision less than
         that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -301,21 +377,12 @@ def gmean(a, axis=0, dtype=None):
     arrays automatically mask any non-finite values.
 
     """
-    if not isinstance(a, np.ndarray):
-        # if not an ndarray object attempt to convert it
-        log_a = np.log(np.array(a, dtype=dtype))
-    elif dtype:
-        # Must change the default dtype allowing array type
-        if isinstance(a, np.ma.MaskedArray):
-            log_a = np.log(np.ma.asarray(a, dtype=dtype))
-        else:
-            log_a = np.log(np.asarray(a, dtype=dtype))
-    else:
-        log_a = np.log(a)
-    return np.exp(log_a.mean(axis=axis))
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    log_a = np.log(np.asanyarray(a, dtype=dtype))
+    return np.exp(_avg(log_a, axis=axis, weights=weights))
 
 
-def hmean(a, axis=0, dtype=None):
+def hmean(a, axis=0, dtype=None, weights=None):
     """
     Calculates the harmonic mean along the specified axis.
 
@@ -334,6 +401,9 @@ def hmean(a, axis=0, dtype=None):
         dtype of `a`, unless `a` has an integer `dtype` with a precision less
         than that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -356,26 +426,20 @@ def hmean(a, axis=0, dtype=None):
     arise in the calculations such as Not a Number and infinity.
 
     """
-    if not isinstance(a, np.ndarray):
-        a = np.array(a, dtype=dtype)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    a = np.asanyarray(a, dtype=dtype)
     if np.all(a > 0):
         # Harmonic mean only defined if greater than zero
-        if isinstance(a, np.ma.MaskedArray):
-            size = a.count(axis)
-        else:
-            if axis is None:
-                a = a.ravel()
-                size = a.shape[0]
-            else:
-                size = a.shape[axis]
-        return size / np.sum(1.0/a, axis=axis, dtype=dtype)
+        if axis is None:
+            a = a.ravel()
+        return 1.0 / _avg(1.0 / a, axis=axis, weights=weights)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
 
+
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
-
-def mode(a, axis=0, nan_policy='propagate'):
+def mode(a, axis=0, nan_policy='propagate', weights=None):
     """
     Returns an array of the modal (most common) value in the passed array.
 
@@ -393,13 +457,16 @@ def mode(a, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
     mode : ndarray
         Array of modal values.
     count : ndarray
-        Array of counts for each mode.
+        Array of counts (or sum of weights) for each mode.
 
     Examples
     --------
@@ -418,15 +485,18 @@ def mode(a, axis=0, nan_policy='propagate'):
     (array([3]), array([3]))
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
     if a.size == 0:
-        return ModeResult(np.array([]), np.array([]))
+        return np.array([]), np.array([])
+    if weights is not None and weights.ndim == 1 and 1 < a.ndim:
+        weight_shape = [slice(None) if i == axis else np.newaxis
+                        for i in range(a.ndim)]
+        weights = np.broadcast_to(weights[weight_shape], a.shape)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.mode(a, axis)
 
     scores = np.unique(np.ravel(a))       # get ALL unique values
     testshape = list(a.shape)
@@ -435,6 +505,8 @@ def mode(a, axis=0, nan_policy='propagate'):
     oldcounts = np.zeros(testshape, dtype=int)
     for score in scores:
         template = (a == score)
+        if weights is not None:
+            template = weights * template #.astype(int)
         counts = np.expand_dims(np.sum(template, axis), axis)
         mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
         oldcounts = np.maximum(counts, oldcounts)
@@ -488,7 +560,7 @@ def _mask_to_limits(a, limits, inclusive):
     return am
 
 
-def tmean(a, limits=None, inclusive=(True, True), axis=None):
+def tmean(a, limits=None, inclusive=(True, True), axis=None, weights=None):
     """
     Compute the trimmed mean.
 
@@ -510,6 +582,9 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
         are included.  The default value is (True, True).
     axis : int or None, optional
         Axis along which to compute test. Default is None.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -529,15 +604,15 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     10.0
 
     """
-    a = asarray(a)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
     if limits is None:
-        return np.mean(a, None)
+        limits = (None, None)
+    am = _mask_to_limits(a, limits, inclusive)
+    return np.ma.average(am, axis=axis, weights=weights)
 
-    am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean(axis=axis)
 
 
-def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
+def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
     """
     Compute the trimmed variance
 
@@ -562,6 +637,9 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         whole array `a`.
     ddof : int, optional
         Delta degrees of freedom.  Default is 1.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -583,14 +661,11 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     20.0
 
     """
-    a = asarray(a)
-    a = a.astype(float).ravel()
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
     if limits is None:
-        n = len(a)
-        return a.var() * n/(n-1.)
+        limits = (None, None)
     am = _mask_to_limits(a, limits, inclusive)
-    return np.ma.var(am, ddof=ddof, axis=axis)
-
+    return _var(am, axis=axis, weights=weights, ddof=ddof)
 
 def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     """
@@ -637,7 +712,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     14
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, axis = _chk_asarrays([a], axis=axis)
     am = _mask_to_limits(a, (lowerlimit, None), (inclusive, False))
 
     contains_nan, nan_policy = _contains_nan(am, nan_policy)
@@ -695,7 +770,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     12
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, axis = _chk_asarrays([a], axis=axis)
     am = _mask_to_limits(a, (None, upperlimit), (False, inclusive))
 
     contains_nan, nan_policy = _contains_nan(am, nan_policy)
@@ -709,7 +784,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True, nan_policy='propagate'):
     return res
 
 
-def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
+def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
     """
     Compute the trimmed sample standard deviation
 
@@ -734,6 +809,9 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         whole array `a`.
     ddof : int, optional
         Delta degrees of freedom.  Default is 1.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -754,10 +832,10 @@ def tstd(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     4.4721359549995796
 
     """
-    return np.sqrt(tvar(a, limits, inclusive, axis, ddof))
+    return np.sqrt(tvar(a, limits, inclusive, axis, ddof, weights=weights))
 
 
-def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
+def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
     """
     Compute the trimmed standard error of the mean.
 
@@ -782,6 +860,9 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
         whole array `a`.
     ddof : int, optional
         Delta degrees of freedom.  Default is 1.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -802,20 +883,20 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     1.1547005383792515
 
     """
-    a = np.asarray(a).ravel()
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
     if limits is None:
-        return a.std(ddof=ddof) / np.sqrt(a.size)
-
+        limits = (None, None)
     am = _mask_to_limits(a, limits, inclusive)
-    sd = np.sqrt(np.ma.var(am, ddof=ddof, axis=axis))
-    return sd / np.sqrt(am.count())
+    sd = np.sqrt(_var(am, axis=axis, ddof=ddof, weights=weights))
+    n = am.count(axis=axis)
+    return sd / np.sqrt(n)
 
 
 #####################################
 #              MOMENTS              #
 #####################################
 
-def moment(a, moment=1, axis=0, nan_policy='propagate'):
+def moment(a, moment=1, axis=0, nan_policy='propagate', weights=None):
     r"""
     Calculates the nth moment about the mean for a sample.
 
@@ -837,6 +918,9 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -864,13 +948,12 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
     ----------
     .. [1] http://eli.thegreenplace.net/2009/03/21/efficient-integer-exponentiation-algorithms
     """
-    a, axis = _chk_asarray(a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.moment(a, moment, axis)
 
     if a.size == 0:
         # empty array, return nan(s) with shape matching `moment`
@@ -881,12 +964,12 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
-        mmnt = [_moment(a, i, axis) for i in moment]
+        mmnt = [_moment(a, i, axis, weights=weights) for i in moment]
         return np.array(mmnt)
     else:
-        return _moment(a, moment, axis)
+        return _moment(a, moment, axis, weights=weights)
 
-def _moment(a, moment, axis):
+def _moment(a, moment, axis, weights=None):
     if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
@@ -923,7 +1006,8 @@ def _moment(a, moment, axis):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        a_zero_mean = a - np.expand_dims(np.mean(a, axis), axis)
+        expand_dims = np.ma.expand_dims if isinstance(a, np.ma.MaskedArray) else np.expand_dims
+        a_zero_mean = a - expand_dims(_avg(a, axis=axis, weights=weights), axis=axis)
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -934,10 +1018,10 @@ def _moment(a, moment, axis):
             s = s**2
             if n % 2:
                 s *= a_zero_mean
-        return np.mean(s, axis)
+        return _avg(s, axis=axis, weights=weights)
 
 
-def variation(a, axis=0, nan_policy='propagate'):
+def variation(a, axis=0, nan_policy='propagate', weights=None):
     """
     Computes the coefficient of variation, the ratio of the biased standard
     deviation to the mean.
@@ -953,6 +1037,9 @@ def variation(a, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -966,18 +1053,18 @@ def variation(a, axis=0, nan_policy='propagate'):
        York. 2000.
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.variation(a, axis)
+    u = _avg(a, axis=axis, weights=weights)
+    std = np.sqrt(_var(a, axis=axis, weights=weights))
+    return std / u
 
-    return a.std(axis) / a.mean(axis)
 
-
-def skew(a, axis=0, bias=True, nan_policy='propagate'):
+def skew(a, axis=0, bias=True, nan_policy='propagate', weights=None):
     """
     Computes the skewness of a data set.
 
@@ -999,6 +1086,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -1015,23 +1105,25 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
        Section 2.2.24.1
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
     n = a.shape[axis]
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.skew(a, axis, bias)
+        n = a.count(axis=axis)
 
-    m2 = moment(a, 2, axis)
-    m3 = moment(a, 3, axis)
+    m2 = moment(a, 2, axis, weights=weights)
+    m3 = moment(a, 3, axis, weights=weights)
     zero = (m2 == 0)
     vals = _lazywhere(~zero, (m2, m3),
-                             lambda m2, m3: m3 / m2**1.5,
-                             0.)
-    if not bias:
-        can_correct = (n > 2) & (m2 > 0)
+                      lambda m2, m3: m3 / m2**1.5,
+                      0.)
+    if not bias: # TODO: weighted bias correction?
+        if weights is not None:
+            raise NotImplementedError("weighted bias correction non-obvious")
+        can_correct = (n > 2) & (m2 is not ma.masked and m2 > 0)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m3 = np.extract(can_correct, m3)
@@ -1044,7 +1136,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals
 
 
-def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
+def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate', weights=None):
     """
     Computes the kurtosis (Fisher or Pearson) of a dataset.
 
@@ -1073,6 +1165,9 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -1087,17 +1182,17 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
        York. 2000.
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    n = a.shape[axis]
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.kurtosis(a, axis, fisher, bias)
+        n = a.count(axis=axis)
 
-    n = a.shape[axis]
-    m2 = moment(a, 2, axis)
-    m4 = moment(a, 4, axis)
+    m2 = moment(a, 2, axis, weights=weights)
+    m4 = moment(a, 4, axis, weights=weights)
     zero = (m2 == 0)
     olderr = np.seterr(all='ignore')
     try:
@@ -1105,8 +1200,10 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     finally:
         np.seterr(**olderr)
 
-    if not bias:
-        can_correct = (n > 3) & (m2 > 0)
+    if not bias: # TODO: weighted bias correction?
+        if weights is not None:
+            raise NotImplementedError("weighted bias correction non-obvious")
+        can_correct = (n > 3) & (m2 is not ma.masked and m2 > 0)
         if can_correct.any():
             m2 = np.extract(can_correct, m2)
             m4 = np.extract(can_correct, m4)
@@ -1126,7 +1223,7 @@ DescribeResult = namedtuple('DescribeResult',
                              'kurtosis'))
 
 
-def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
+def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate', weights=None):
     """
     Computes several descriptive statistics of the passed array.
 
@@ -1146,6 +1243,9 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -1183,22 +1283,22 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    skewness=array([ 0., 0.]), kurtosis=array([-2., -2.]))
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, pos_only=True)
+    n = a.shape[axis]
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.describe(a, axis, ddof, bias)
+        n = a.count(axis=axis)
 
     if a.size == 0:
         raise ValueError("The input must not be empty.")
-    n = a.shape[axis]
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
-    m = np.mean(a, axis=axis)
-    v = np.var(a, axis=axis, ddof=ddof)
-    sk = skew(a, axis, bias=bias)
-    kurt = kurtosis(a, axis, bias=bias)
+    m = _avg(a, axis=axis, weights=weights)
+    v = _var(a, axis=axis, ddof=ddof, weights=weights)
+    sk = skew(a, axis, bias=bias, weights=weights)
+    kurt = kurtosis(a, axis, bias=bias, weights=weights)
 
     return DescribeResult(n, mm, m, v, sk, kurt)
 
@@ -1240,14 +1340,8 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     -----
     The sample size must be at least 8.
 
-    References
-    ----------
-    .. [1] R. B. D'Agostino, A. J. Belanger and R. B. D'Agostino Jr.,
-            "A suggestion for using powerful and informative tests of 
-            normality", American Statistician 44, pp. 316-321, 1990.
-
     """
-    a, axis = _chk_asarray(a, axis)
+    a, axis = _chk_asarrays([a], axis=axis)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
@@ -1316,7 +1410,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate'):
        statistic b2 for normal samples", Biometrika, vol. 70, pp. 227-234, 1983.
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, axis = _chk_asarrays([a], axis=axis)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
@@ -1395,7 +1489,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
            normality", Biometrika, 60, 613-622
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, axis = _chk_asarrays([a], axis=axis)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
@@ -1470,7 +1564,7 @@ def jarque_bera(x):
 #        FREQUENCY FUNCTIONS        #
 #####################################
 
-def itemfreq(a):
+def itemfreq(a, weights=None):
     """
     Returns a 2-D array of item frequencies.
 
@@ -1478,6 +1572,9 @@ def itemfreq(a):
     ----------
     a : (N,) array_like
         Input array.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight of 1.0
 
     Returns
     -------
@@ -1507,12 +1604,53 @@ def itemfreq(a):
 
     """
     items, inv = np.unique(a, return_inverse=True)
-    freq = np.bincount(inv)
+    freq = np.bincount(inv, weights=weights)
     return np.array([items, freq]).T
 
 
+def collapse_weights(a, weights=None, axis=None):
+    """
+    Collapse a weigthed representation of an array.
+
+    Parameters
+    ----------
+    a : array_like
+        A ndarray of values.
+    axis : int, optional
+        Axis along which uniques are computed, and weights are valid. Default
+        is None. If  None, flatten `a` first.
+    weights : array_like, optional
+        The weights for each record along `axis` in `a`. Default is None,
+        which gives each record a weight of 1.0.
+
+    Returns
+    -------
+    uniq_a : ndarray
+        An ndarray of the sorted record in `a`, without duplicates.
+    uniq_w : array
+        The weights for each record in `uniq_a` along `axis`d that
+        make it representationally equivalent.
+    """
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, pos_only=True,
+                                    force_weights=True, simplify_weights=False)
+    sort_axes = [0] * a.ndim
+    sort_axes[axis] = slice(None)
+    sort_ix = np.argsort(a, axis=axis)[sort_axes]
+    sorted_a = np.take(a, sort_ix, axis=axis)
+    new_a = np.diff(sorted_a, axis=axis)
+    if a.ndim > 1:
+        not_axes = tuple(i for i in range(a.ndim) if i != axis)
+        new_a = new_a.any(axis=not_axes)
+    new_a = np.append(0, np.where(new_a)[0]+1)
+
+    uniq_a = np.take(sorted_a, new_a, axis=axis)
+    cum_w = np.append(0, weights[sort_ix].cumsum())
+    uniq_w = np.diff(cum_w[np.append(new_a, -1)])
+    return uniq_a, uniq_w
+
+
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
-                      axis=None):
+                      axis=None, weights=None):
     """
     Calculate the score at a given percentile of the input sequence.
 
@@ -1544,6 +1682,9 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
     axis : int, optional
         Axis along which the percentiles are computed. Default is None. If
         None, compute over the whole array `a`.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -1581,34 +1722,56 @@ def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
             return np.ones(np.asarray(per).shape, dtype=np.float64) * np.nan
 
     if limit:
-        a = a[(limit[0] <= a) & (a <= limit[1])]
+        mask = (limit[0] <= a) & (a <= limit[1])
+        if weights is not None:
+            weights = weights[mask]
+        a = a[mask]
+        del mask
 
-    sorted = np.sort(a, axis=axis)
+    if weights is None:
+        sorted_a = np.sort(a, axis=axis)
+        cum_sorted_weights = None
+    else:
+        sorted_a, weights = collapse_weights(a, weights=weights, axis=axis)
+        cum_sorted_weights = weights.cumsum()
+
     if axis is None:
         axis = 0
 
-    return _compute_qth_percentile(sorted, per, interpolation_method, axis)
+    return _compute_qth_percentile(sorted_a, per, interpolation_method, axis, cum_sorted_weights)
 
-
+# does this handle ties well??
 # handle sequence of per's without calling sort multiple times
-def _compute_qth_percentile(sorted, per, interpolation_method, axis):
+def _compute_qth_percentile(sorted_a, per, interpolation_method, axis, cum_sorted_weights):
     if not np.isscalar(per):
-        score = [_compute_qth_percentile(sorted, i, interpolation_method, axis)
-                 for i in per]
+        score = [_compute_qth_percentile(sorted_a, i, interpolation_method, axis,
+                                         cum_sorted_weights) for i in per]
         return np.array(score)
 
     if (per < 0) or (per > 100):
         raise ValueError("percentile must be in the range [0, 100]")
 
-    indexer = [slice(None)] * sorted.ndim
-    idx = per / 100. * (sorted.shape[axis] - 1)
+    indexer = [slice(None)] * sorted_a.ndim
+    if cum_sorted_weights is None:
+        idx = per / 100. * (sorted_a.shape[axis] - 1)
+    else:
+        max_w = cum_sorted_weights[-1]
+        #min_a = np.take(sorted_a, 0, axis=axis)
+        #min_as = np.where((np.expand_dims(min_a, axis=axis) == sorted_a).all(axis=axis))[0]
+        #min_w = cum_sorted_weights[min_as].sum()
+        min_w = cum_sorted_weights[0]
+        w = per / 100. * (max_w - min_w) + min_w
+        idx = np.searchsorted(cum_sorted_weights, w)
+        excess = cum_sorted_weights[idx] - w
+        if excess > 0:
+            idx -= excess / float(cum_sorted_weights[idx] - cum_sorted_weights[idx-1])
 
     if int(idx) != idx:
         # round fractional indices according to interpolation method
         if interpolation_method == 'lower':
-            idx = int(np.floor(idx))
+            idx = np.floor(idx)
         elif interpolation_method == 'higher':
-            idx = int(np.ceil(idx))
+            idx = np.ceil(idx)
         elif interpolation_method == 'fraction':
             pass  # keep idx as fraction and interpolate
         else:
@@ -1624,16 +1787,16 @@ def _compute_qth_percentile(sorted, per, interpolation_method, axis):
         indexer[axis] = slice(i, i + 2)
         j = i + 1
         weights = array([(j - idx), (idx - i)], float)
-        wshape = [1] * sorted.ndim
+        wshape = [1] * sorted_a.ndim
         wshape[axis] = 2
         weights.shape = wshape
         sumval = weights.sum()
 
     # Use np.add.reduce (== np.sum but a little faster) to coerce data type
-    return np.add.reduce(sorted[indexer] * weights, axis=axis) / sumval
+    return np.add.reduce(sorted_a[indexer] * weights, axis=axis) / sumval
 
 
-def percentileofscore(a, score, kind='rank'):
+def percentileofscore(a, score, kind='rank', weights=None):
     """
     The percentile rank of a score relative to a list of scores.
 
@@ -1664,6 +1827,9 @@ def percentileofscore(a, score, kind='rank'):
                   testing.  See
 
                   http://en.wikipedia.org/wiki/Percentile_rank
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -1704,29 +1870,34 @@ def percentileofscore(a, score, kind='rank'):
     60.0
 
     """
-    a = np.array(a)
-    n = len(a)
-
+    a = np.asanyarray(a)
     if kind == 'rank':
-        if not np.any(a == score):
+        if weights is not None:
+            raise NotImplementedError("ordinal ranking cannot be made weight-consistent")
+        contains_score = np.any(a == score)
+        n = len(a)
+        if not contains_score:
             a = np.append(a, score)
-            a_len = np.array(list(range(len(a))))
-        else:
-            a_len = np.array(list(range(len(a)))) + 1.0
-
+        a_len = np.arange(len(a)) + contains_score
         a = np.sort(a)
         idx = [a == score]
         pct = (np.mean(a_len[idx]) / n) * 100.0
         return pct
-
-    elif kind == 'strict':
-        return np.sum(a < score) / float(n) * 100
-    elif kind == 'weak':
-        return np.sum(a <= score) / float(n) * 100
-    elif kind == 'mean':
-        return (np.sum(a < score) + np.sum(a <= score)) * 50 / float(n)
     else:
-        raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
+        if weights is None:
+            weights = 1
+            total_weight = float(a.size)
+        else:
+            total_weight = weights.sum()
+        if kind == 'strict':
+            return np.sum((a < score) * weights) / total_weight * 100
+        elif kind == 'weak':
+            return np.sum((a <= score) * weights) / total_weight * 100
+        elif kind == 'mean':
+            is_less = (a < score).astype(int) + (a <= score).astype(int)
+            return np.sum(is_less * weights) * 50 / total_weight
+        else:
+            raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
 
 
 @np.deprecate(message=("scipy.stats.histogram2 is deprecated in scipy 0.16.0; "
@@ -2008,7 +2179,11 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     """
     a = np.asanyarray(a)
     h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights)
-    h = h / float(a.shape[0])
+    if weights is None:
+        total_weight = float(a.shape[0])
+    else:
+        total_weight = weights.sum()
+    h = h / total_weight
 
     return RelfreqResult(h, l, b, e)
 
@@ -2125,7 +2300,7 @@ def signaltonoise(a, axis=0, ddof=0):
     return np.where(sd == 0, 0, m/sd)
 
 
-def sem(a, axis=0, ddof=1, nan_policy='propagate'):
+def sem(a, axis=0, ddof=1, nan_policy='propagate', weights=None):
     """
     Calculates the standard error of the mean (or standard error of
     measurement) of the values in the input array.
@@ -2146,6 +2321,9 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -2172,20 +2350,20 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    n = a.shape[axis]
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.sem(a, axis, ddof)
+        n = a.count(axis=axis)
 
-    n = a.shape[axis]
-    s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
-    return s
+    sd = np.sqrt(_var(a, axis=axis, weights=weights, ddof=ddof))
+    return sd / np.sqrt(n)
 
 
-def zscore(a, axis=0, ddof=0):
+def zscore(a, axis=0, ddof=0, weights=None):
     """
     Calculates the z score of each value in the sample, relative to the
     sample mean and standard deviation.
@@ -2200,6 +2378,9 @@ def zscore(a, axis=0, ddof=0):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -2238,8 +2419,8 @@ def zscore(a, axis=0, ddof=0):
            [-0.82780366,  1.4457416 , -0.43867764, -0.1792603 ]])
     """
     a = np.asanyarray(a)
-    mns = a.mean(axis=axis)
-    sstd = a.std(axis=axis, ddof=ddof)
+    mns = _avg(a, axis=axis, weights=weights)
+    sstd = np.sqrt(_var(a, axis=axis, ddof=ddof, weights=weights))
     if axis and mns.ndim < a.ndim:
         return ((a - np.expand_dims(mns, axis=axis)) /
                 np.expand_dims(sstd, axis=axis))
@@ -2247,7 +2428,7 @@ def zscore(a, axis=0, ddof=0):
         return (a - mns) / sstd
 
 
-def zmap(scores, compare, axis=0, ddof=0):
+def zmap(scores, compare, axis=0, ddof=0, weights=None):
     """
     Calculates the relative z-scores.
 
@@ -2269,6 +2450,9 @@ def zmap(scores, compare, axis=0, ddof=0):
     ddof : int, optional
         Degrees of freedom correction in the calculation of the
         standard deviation. Default is 0.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -2289,9 +2473,10 @@ def zmap(scores, compare, axis=0, ddof=0):
     >>> zmap(a, b)
     array([-1.06066017,  0.        ,  0.35355339,  0.70710678])
     """
-    scores, compare = map(np.asanyarray, [scores, compare])
-    mns = compare.mean(axis=axis)
-    sstd = compare.std(axis=axis, ddof=ddof)
+    scores = np.asanyarray(scores)
+    compare = np.asanyarray(compare)
+    mns = _avg(compare, axis=axis, weights=weights)
+    sstd = np.sqrt(_var(compare, axis=axis, ddof=ddof, weights=weights))
     if axis and mns.ndim < compare.ndim:
         return ((scores - np.expand_dims(mns, axis=axis)) /
                 np.expand_dims(sstd, axis=axis))
@@ -2367,6 +2552,7 @@ def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
         If this is set to `True`, the reduced axes are left in the
         result as dimensions with size one. With this option, the result
         will broadcast correctly against the original array `x`.
+
 
     Returns
     -------
@@ -2614,7 +2800,7 @@ def threshold(a, threshmin=None, threshmax=None, newval=0):
 SigmaclipResult = namedtuple('SigmaclipResult', ('clipped', 'lower', 'upper'))
 
 
-def sigmaclip(a, low=4., high=4.):
+def sigmaclip(a, low=4., high=4., weights=None):
     """
     Iterative sigma-clipping of array elements.
 
@@ -2635,6 +2821,9 @@ def sigmaclip(a, low=4., high=4.):
         Lower bound factor of sigma clipping. Default is 4.
     high : float, optional
         Upper bound factor of sigma clipping. Default is 4.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -2668,14 +2857,16 @@ def sigmaclip(a, low=4., high=4.):
     True
 
     """
-    c = np.asarray(a).ravel()
+    c, weights, _ = _chk_weights([a], weights=weights, axis=None)
     delta = 1
     while delta:
-        c_std = c.std()
-        c_mean = c.mean()
+        c_mean = _avg(c, weights=weights)
+        c_std = np.sqrt(_var(c, weights=weights))
         size = c.size
         critlower = c_mean - c_std*low
         critupper = c_mean + c_std*high
+        if weights is not None:
+            weights = weights[(c > critlower) & (c < critupper)]
         c = c[(c > critlower) & (c < critupper)]
         delta = size - c.size
 
@@ -2734,7 +2925,7 @@ def trimboth(a, proportiontocut, axis=0):
     nobs = a.shape[axis]
     lowercut = int(proportiontocut * nobs)
     uppercut = nobs - lowercut
-    if (lowercut >= uppercut):
+    if lowercut >= uppercut:
         raise ValueError("Proportion too big.")
 
     atmp = np.partition(a, (lowercut, uppercut - 1), axis)
@@ -2857,7 +3048,7 @@ def trim_mean(a, proportiontocut, axis=0):
     nobs = a.shape[axis]
     lowercut = int(proportiontocut * nobs)
     uppercut = nobs - lowercut
-    if (lowercut > uppercut):
+    if lowercut > uppercut:
         raise ValueError("Proportion too big.")
 
     atmp = np.partition(a, (lowercut, uppercut - 1), axis)
@@ -2972,7 +3163,7 @@ def f_oneway(*args):
     return F_onewayResult(f, prob)
 
 
-def pearsonr(x, y):
+def pearsonr(x, y, weights=None):
     """
     Calculates a Pearson correlation coefficient and the p-value for testing
     non-correlation.
@@ -2996,6 +3187,9 @@ def pearsonr(x, y):
         Input
     y : (N,) array_like
         Input
+    weights : array_like, optional
+        The weights for each value in `x` and `y`. Default is None, which gives
+        each value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -3010,15 +3204,15 @@ def pearsonr(x, y):
 
     """
     # x and y should have same length.
-    x = np.asarray(x)
-    y = np.asarray(y)
+    x, y, weights, _ = _chk_weights([x, y], weights=weights, axis=0)
     n = len(x)
-    mx = x.mean()
-    my = y.mean()
+    mx = _avg(x, weights=weights)
+    my = _avg(y, weights=weights)
     xm, ym = x - mx, y - my
-    r_num = np.add.reduce(xm * ym)
-    r_den = np.sqrt(_sum_of_squares(xm) * _sum_of_squares(ym))
-    r = r_num / r_den
+    xy = _avg(xm * ym, weights=weights)
+    xx = _avg(xm * xm, weights=weights)
+    yy = _avg(ym * ym, weights=weights)
+    r = xy / np.sqrt(xx * yy)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of floating
     # point arithmetic.
@@ -3105,14 +3299,14 @@ def fisher_exact(table, alternative='two-sided'):
         # the odds ratio is NaN.
         return np.nan, 1.0
 
-    if c[1,0] > 0 and c[0,1] > 0:
-        oddsratio = c[0,0] * c[1,1] / float(c[1,0] * c[0,1])
+    if c[1, 0] > 0 and c[0, 1] > 0:
+        oddsratio = c[0, 0] * c[1, 1] / float(c[1, 0] * c[0, 1])
     else:
         oddsratio = np.inf
 
-    n1 = c[0,0] + c[0,1]
-    n2 = c[1,0] + c[1,1]
-    n = c[0,0] + c[1,0]
+    n1 = c[0, 0] + c[0, 1]
+    n2 = c[1, 0] + c[1, 1]
+    n = c[0, 0] + c[1, 0]
 
     def binary_search(n, n1, n2, side):
         """Binary search for where to begin lower/upper halves in two-sided
@@ -3156,28 +3350,28 @@ def fisher_exact(table, alternative='two-sided'):
         return guess
 
     if alternative == 'less':
-        pvalue = hypergeom.cdf(c[0,0], n1 + n2, n1, n)
+        pvalue = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
     elif alternative == 'greater':
         # Same formula as the 'less' case, but with the second column.
-        pvalue = hypergeom.cdf(c[0,1], n1 + n2, n1, c[0,1] + c[1,1])
+        pvalue = hypergeom.cdf(c[0, 1], n1 + n2, n1, c[0, 1] + c[1, 1])
     elif alternative == 'two-sided':
         mode = int(float((n + 1) * (n1 + 1)) / (n1 + n2 + 2))
-        pexact = hypergeom.pmf(c[0,0], n1 + n2, n1, n)
+        pexact = hypergeom.pmf(c[0, 0], n1 + n2, n1, n)
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
         epsilon = 1 - 1e-4
         if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= 1 - epsilon:
             return oddsratio, 1.
 
-        elif c[0,0] < mode:
-            plower = hypergeom.cdf(c[0,0], n1 + n2, n1, n)
+        elif c[0, 0] < mode:
+            plower = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
             if hypergeom.pmf(n, n1 + n2, n1, n) > pexact / epsilon:
                 return oddsratio, plower
 
             guess = binary_search(n, n1, n2, "upper")
             pvalue = plower + hypergeom.sf(guess - 1, n1 + n2, n1, n)
         else:
-            pupper = hypergeom.sf(c[0,0] - 1, n1 + n2, n1, n)
+            pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
             if hypergeom.pmf(0, n1 + n2, n1, n) > pexact / epsilon:
                 return oddsratio, pupper
 
@@ -3192,10 +3386,10 @@ def fisher_exact(table, alternative='two-sided'):
 
     return oddsratio, pvalue
 
+
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
-
-def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
+def spearmanr(a, b=None, axis=0, nan_policy='propagate', weights=None):
     """
     Calculates a Spearman rank-order correlation coefficient and the p-value
     to test for non-correlation.
@@ -3231,6 +3425,9 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    weights : array_like, optional
+        The weights for each value in `a` and `b`. Default is None, which gives
+        each value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -3294,32 +3491,38 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     (0.052760927029710199, 0.60213045837062351)
 
     """
-    a, axisout = _chk_asarray(a, axis)
+    nan_screen = nan_policy == "omit"
+    if b is None:
+        a, weights, axisout = _chk_weights([a], weights=weights, axis=axis,
+                                           nan_screen=nan_screen)
+    else:
+        a, b, weights, axisout = _chk_weights([a, b], weights=weights, axis=axis,
+                                              nan_screen=nan_screen)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        b = ma.masked_invalid(b)
-        return mstats_basic.spearmanr(a, b, axis)
+    # _contains_nan now only needs to worry about nan_policy=raise
+    _contains_nan(a, nan_policy)
 
     if a.size <= 1:
         return SpearmanrResult(np.nan, np.nan)
-    ar = np.apply_along_axis(rankdata, axisout, a)
+    ar = np.apply_along_axis(rankdata, axisout, a, weights=weights)
 
     br = None
     if b is not None:
-        b, axisout = _chk_asarray(b, axis)
-
-        contains_nan, nan_policy = _contains_nan(b, nan_policy)
-
-        if contains_nan and nan_policy == 'omit':
-            b = ma.masked_invalid(b)
-            return mstats_basic.spearmanr(a, b, axis)
-
-        br = np.apply_along_axis(rankdata, axisout, b)
+        _contains_nan(b, nan_policy)
+        br = np.apply_along_axis(rankdata, axisout, b, weights=weights)
     n = a.shape[axisout]
-    rs = np.corrcoef(ar, br, rowvar=axisout)
+    if weights is None:
+        rs = np.corrcoef(ar, br, rowvar=axisout)
+    else:
+        # would be better to let np.corrcoef accept weights
+        #   since this just replicates np.corrcoef
+        rs = np.cov(ar, br, rowvar=axisout, aweights=weights)
+        stddev = np.sqrt(np.diag(rs).real)
+        rs /= stddev[:, None]
+        rs /= stddev[None, :]
+        np.clip(rs.real, -1, 1, out=rs.real)
+        if np.iscomplexobj(rs):
+            np.clip(rs.imag, -1, 1, out=rs.imag)
 
     olderr = np.seterr(divide='ignore')  # rs can have elements equal to 1
     try:
@@ -3427,7 +3630,6 @@ def pointbiserialr(x, y):
 
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
-
 def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     """
     Calculates Kendall's tau, a correlation measure for ordinal data.
@@ -3532,8 +3734,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         cnt = np.bincount(ranks).astype('int64', copy=False)
         cnt = cnt[cnt > 1]
         return ((cnt * (cnt - 1) // 2).sum(),
-            (cnt * (cnt - 1.) * (cnt - 2)).sum(),
-            (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
+                (cnt * (cnt - 1.) * (cnt - 2)).sum(),
+                (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -3567,9 +3769,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     tau = min(1., max(-1., tau))
 
     # con_minus_dis is approx normally distributed with this variance [3]_
-    var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
-        2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
-        size * (size - 1) * (size - 2))
+    var = ((size * (size - 1) * (2.*size + 5) - x1 - y1) / 18.
+           + (2. * xtie * ytie) / (size * (size - 1))
+           + x0 * y0 / (9. * size * (size - 1) * (size - 2)))
     pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
 
     # Limit range to fix computational errors
@@ -3578,18 +3780,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
 WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
 
-
 def weightedtau(x, y, rank=True, weigher=None, additive=True):
-    r"""
+    """
     Computes a weighted version of Kendall's :math:`\tau`.
-
     The weighted :math:`\tau` is a weighted version of Kendall's
     :math:`\tau` in which exchanges of high weight are more influential than
     exchanges of low weight. The default parameters compute the additive
     hyperbolic version of the index, :math:`\tau_\mathrm h`, which has
     been shown to provide the best balance between important and
     unimportant elements [1]_.
-
     The weighting is defined by means of a rank array, which assigns a
     nonnegative rank to each element, and a weigher function, which
     assigns a weight based from the rank to each element. The weight of an
@@ -3598,19 +3797,16 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     :math:`\tau_\mathrm h`: an exchange between elements with rank
     :math:`r` and :math:`s` (starting from zero) has weight
     :math:`1/(r+1) + 1/(s+1)`.
-
     Specifying a rank array is meaningful only if you have in mind an
     external criterion of importance. If, as it usually happens, you do
     not have in mind a specific rank, the weighted :math:`\tau` is
     defined by averaging the values obtained using the decreasing
     lexicographical rank by (`x`, `y`) and by (`y`, `x`). This is the
     behavior with default parameters.
-
     Note that if you are computing the weighted :math:`\tau` on arrays of
     ranks, rather than of scores (i.e., a larger value implies a lower
     rank) you must negate the ranks, so that elements of higher rank are
     associated with a larger value.
-
     Parameters
     ----------
     x, y : array_like
@@ -3634,7 +3830,6 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         If True, the weight of an exchange is computed by adding the
         weights of the ranks of the exchanged elements; otherwise, the weights
         are multiplied. The default is True.
-
     Returns
     -------
     correlation : float
@@ -3642,13 +3837,11 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     pvalue : float
        Presently ``np.nan``, as the null statistics is unknown (even in the
        additive hyperbolic case).
-
     See also
     --------
     kendalltau : Calculates Kendall's tau.
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
-
     Notes
     -----
     This function uses an :math:`O(n \log n)`, mergesort-based algorithm
@@ -3657,11 +3850,8 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     between rankings without ties (i.e., permutations) by setting
     `additive` and `rank` to False, as the definition given in [1]_ is a
     generalization of Shieh's.
-
     NaNs are considered the smallest possible score.
-
     .. versionadded:: 0.19.0
-
     References
     ----------
     .. [1] Sebastiano Vigna, "A weighted correlation index for rankings with
@@ -3672,7 +3862,6 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
            Vol. 61, No. 314, Part 1, pp. 436-439, 1966.
     .. [3] Grace S. Shieh. "A weighted Kendall's tau statistic", Statistics &
            Probability Letters, Vol. 39, No. 1, pp. 17-24, 1998.
-
     Examples
     --------
     >>> from scipy import stats
@@ -3686,30 +3875,24 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     >>> tau, p_value = stats.weightedtau(x, y, additive=False)
     >>> tau
     -0.62205716951801038
-
     NaNs are considered the smallest possible score:
-
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, np.nan]
     >>> tau, _ = stats.weightedtau(x, y)
     >>> tau
     -0.56694968153682723
-
     This is exactly Kendall's tau:
-
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
     >>> tau, _ = stats.weightedtau(x, y, weigher=lambda x: 1)
     >>> tau
     -0.47140452079103173
-
     >>> x = [12, 2, 1, 12, 2]
     >>> y = [1, 4, 7, 1, 0]
     >>> stats.weightedtau(x, y, rank=None)
     WeightedTauResult(correlation=-0.4157652301037516, pvalue=nan)
     >>> stats.weightedtau(y, x, rank=None)
     WeightedTauResult(correlation=-0.71813413296990281, pvalue=nan)
-
     """
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
@@ -3819,7 +4002,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate'):
            [  7.89094663e-03,   1.49986458e-04]]))
 
     """
-    a, axis = _chk_asarray(a, axis)
+    a, axis = _chk_asarrays([a], axis=axis)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
@@ -4035,7 +4218,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     (-0.94365973617132992, 0.34744170334794122)
 
     """
-    a, b, axis = _chk2_asarray(a, b, axis)
+    a, b, axis = _chk_asarrays([a, b], axis=axis)
 
     # check both a and b
     cna, npa = _contains_nan(a, nan_policy)
@@ -4127,7 +4310,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     (-3.9995108708727933, 7.3082402191726459e-005)
 
     """
-    a, b, axis = _chk2_asarray(a, b, axis)
+    a, b, axis = _chk_asarrays([a, b], axis=axis)
 
     cna, npa = _contains_nan(a, nan_policy)
     cnb, npb = _contains_nan(b, nan_policy)
@@ -4922,7 +5105,8 @@ def ranksums(x, y):
     .. [1] http://en.wikipedia.org/wiki/Wilcoxon_rank-sum_test
 
     """
-    x, y = map(np.asarray, (x, y))
+    x = np.asarray(x)
+    y = np.asarray(y)
     n1 = len(x)
     n2 = len(y)
     alldata = np.concatenate((x, y))
@@ -5001,7 +5185,7 @@ def kruskal(*args, **kwargs):
     KruskalResult(statistic=7.0, pvalue=0.030197383422318501)
 
     """
-    args = list(map(np.asarray, args))
+    args = [np.asarray(arg) for arg in args]
     num_groups = len(args)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
@@ -5009,7 +5193,7 @@ def kruskal(*args, **kwargs):
     for arg in args:
         if arg.size == 0:
             return KruskalResult(np.nan, np.nan)
-    n = np.asarray(list(map(len, args)))
+    n = np.array([len(arg) for arg in args])
 
     if 'nan_policy' in kwargs.keys():
         if kwargs['nan_policy'] not in ('propagate', 'raise', 'omit'):
@@ -5112,8 +5296,8 @@ def friedmanchisquare(*args):
 
     # Handle ties
     ties = 0
-    for i in range(len(data)):
-        replist, repnum = find_repeats(array(data[i]))
+    for datum in data:
+        _, repnum = find_repeats(array(datum))
         for t in repnum:
             ties += t * (t*t - 1)
     c = 1 - ties / float(k*(k*k - 1)*n)
@@ -5407,7 +5591,7 @@ def ss(a, axis=0):
     return _sum_of_squares(a, axis)
 
 
-def _sum_of_squares(a, axis=0):
+def _sum_of_squares(a, axis=0, weights=None):
     """
     Squares each element of the input array, and returns the sum(s) of that.
 
@@ -5418,6 +5602,9 @@ def _sum_of_squares(a, axis=0):
     axis : int or None, optional
         Axis along which to calculate. Default is 0. If None, compute over
         the whole array `a`.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -5429,8 +5616,10 @@ def _sum_of_squares(a, axis=0):
     _square_of_sums : The square(s) of the sum(s) (the opposite of
     `_sum_of_squares`).
     """
-    a, axis = _chk_asarray(a, axis)
-    return np.sum(a*a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    if weights is None:
+        return np.sum(a * a, axis)
+    return np.sum(a * a * np.expand_dims(weights, axis), axis)
 
 
 @np.deprecate(message="scipy.stats.square_of_sums is deprecated "
@@ -5439,7 +5628,7 @@ def square_of_sums(a, axis=0):
     return _square_of_sums(a, axis)
 
 
-def _square_of_sums(a, axis=0):
+def _square_of_sums(a, axis=0, weights=None):
     """
     Sums elements of the input array, and returns the square(s) of that sum.
 
@@ -5450,6 +5639,9 @@ def _square_of_sums(a, axis=0):
     axis : int or None, optional
         Axis along which to calculate. Default is 0. If None, compute over
         the whole array `a`.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -5460,8 +5652,11 @@ def _square_of_sums(a, axis=0):
     --------
     _sum_of_squares : The sum of squares (the opposite of `square_of_sums`).
     """
-    a, axis = _chk_asarray(a, axis)
-    s = np.sum(a, axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    if weights is None:
+        s = np.sum(a, axis)
+    else:
+        s = np.sum(a * np.expand_dims(weights, axis), axis)
     if not np.isscalar(s):
         return s.astype(float) * s
     else:
@@ -5490,7 +5685,7 @@ def fastsort(a):
     return as_, it
 
 
-def rankdata(a, method='average'):
+def rankdata(a, method='average', weights=None):
     """
     rankdata(a, method='average')
 
@@ -5525,6 +5720,9 @@ def rankdata(a, method='average'):
             that the values occur in `a`.
 
         The default is 'average'.
+    weights : array_like, optional
+        The weights for each value in `a`. Default is None, which gives each
+        value a weight (incremental rank) of 1.0
 
     Returns
     -------
@@ -5550,6 +5748,11 @@ def rankdata(a, method='average'):
     >>> rankdata([0, 2, 3, 2], method='ordinal')
     array([ 1,  2,  4,  3])
     """
+    # warning -- the current definition of "min" has a weird '+ 1' that doesn't
+    #  make a ton of sense in a continuous-weighting interpretation of data,
+    #  but makes sense in classical ranking systems.  It isn't changed for
+    #  backwards compatibility reasons, but in general, all results of min should
+    #  probably be -=1, and all results of avg -= 0.5.
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
 
@@ -5560,18 +5763,30 @@ def rankdata(a, method='average'):
     inv = np.empty(sorter.size, dtype=np.intp)
     inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
+    if weights is not None:
+        weights_arr = np.ravel(np.asarray(weights))[sorter]
+
     if method == 'ordinal':
-        return inv + 1
+        if weights is None:
+            return inv + 1
+        else:
+            return weights_arr.cumsum()[inv]
 
     arr = arr[sorter]
     obs = np.r_[True, arr[1:] != arr[:-1]]
     dense = obs.cumsum()[inv]
 
     if method == 'dense':
+        assert weights is None, "dense ranking is inherently weight-inconsistent"
         return dense
 
     # cumulative counts of each unique value
-    count = np.r_[np.nonzero(obs)[0], len(obs)]
+    if weights is None:
+        count = np.r_[np.nonzero(obs)[0], len(obs)]
+    else: # weighted count
+        count = np.r_[0, np.roll(weights_arr.cumsum()[np.where(obs)[0]-1], -1)]
+        # equivalently, slower, cleaner:
+        #  count = np.r_[(weights_arr.cumsum() - weights_arr)[obs], weights_arr.sum()]
 
     if method == 'max':
         return count[dense]
