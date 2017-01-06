@@ -39,10 +39,7 @@ __all__ = ['netcdf_file']
 import warnings
 import weakref
 from operator import mul
-try:
-    from collections import OrderedDict
-except ImportError:
-    OrderedDict = dict
+from collections import OrderedDict
 
 import mmap as mm
 
@@ -1049,3 +1046,4 @@ class netcdf_variable(object):
 
 NetCDFFile = netcdf_file
 NetCDFVariable = netcdf_variable
+
