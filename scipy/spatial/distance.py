@@ -1145,7 +1145,7 @@ def sokalsneath(u, v, w=None):
     denom = ntt + 2.0 * (ntf + nft)
     if denom == 0:
         raise ValueError('Sokal-Sneath dissimilarity is not defined for '
-                            'vectors that are entirely false.')
+                         'vectors that are entirely false.')
     return float(2.0 * (ntf + nft)) / denom
 
 
@@ -2202,8 +2202,8 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     XB = np.asarray(XB, order='c')
 
     # The C code doesn't do striding.
-    XA = _copy_array_if_base_present(_convert_to_double(XA))
-    XB = _copy_array_if_base_present(_convert_to_double(XB))
+    XA = _copy_array_if_base_present(XA)
+    XB = _copy_array_if_base_present(XB)
 
     s = XA.shape
     sB = XB.shape
