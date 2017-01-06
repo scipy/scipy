@@ -74,21 +74,28 @@ class LSODA(OdeSolver):
             return False, 'Unexpected istate in LSODA.'
 
     def _dense_output_impl(self):
-        return LsodaDenseOutput(self.t_old, self.t, self.y_old, self.y)
+        iwork = self._lsoda_solver._integrator.iwork
+        rwork = self._lsoda_solver._integrator.rwork
+
+        order = iwork[14]
+        h = rwork[11]
+        yh = np.reshape(rwork[20:20 + (order + 1) * self.n],
+                        (self.n, order + 1), order='F').copy()
+
+        return LsodaDenseOutput(self.t_old, self.t, h, order, yh)
 
 
 class LsodaDenseOutput(DenseOutput):
-    def __init__(self, t_old, t, y_old, y):
+    def __init__(self, t_old, t, h, order, yh):
         super(LsodaDenseOutput, self).__init__(t_old, t)
-        self.y_old = y_old
-        self.y = y
+        self.h = h
+        self.yh = yh
+        self.p = np.arange(order + 1)
 
     def _call_impl(self, t):
-        if np.ndim(t) > 0:
-            y_old = np.expand_dims(self.y_old, 1)
-            y = np.expand_dims(self.y, 1)
+        if t.ndim == 0:
+            x = ((t - self.t) / self.h) ** self.p
         else:
-            y_old = self.y_old
-            y = self.y
+            x = ((t - self.t) / self.h) ** self.p[:, None]
 
-        return y_old + (t - self.t_old) * (y - y_old) / (self.t - self.t_old)
+        return np.dot(self.yh, x)
