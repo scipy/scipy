@@ -154,6 +154,14 @@ static double test_thunk_nonlocal(double a)
 static ccallback_signature_t signatures[] = {
     {"double (double, int *, void *)", 0},
     {"double (double, double, int *, void *)", 1},
+#if NPY_SIZEOF_INT == NPY_SIZEOF_SHORT
+    {"double (double, short *, void *)", 0},
+    {"double (double, double, short *, void *)", 1},
+#endif
+#if NPY_SIZEOF_INT == NPY_SIZEOF_LONG
+    {"double (double, long *, void *)", 0},
+    {"double (double, double, long *, void *)", 1},
+#endif
     {NULL}
 };
 
