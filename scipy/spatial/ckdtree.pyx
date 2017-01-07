@@ -473,6 +473,24 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
     Attributes
     ----------
+    data : ndarray, shape (n,m)
+        The n data points of dimension m to be indexed. This array is
+        not copied unless this is necessary to produce a contiguous
+        array of doubles. The data are also copied if the kd-tree is built
+        with `copy_data=True`.
+    leafsize : positive int
+        The number of points at which the algorithm switches over to
+        brute-force.
+    m : int
+        The dimension of a single data-point.
+    n : int
+        The number of data points.
+    maxes : ndarray, shape (m,)
+        The maximum value in each dimension of the n data points.
+    mins : ndarray, shape (m,)
+        The minimum value in each dimension of the n data points.
+    tree : object, class cKDTreeNode
+        This class exposes a Python view of the root node in the cKDTree object.
     size : int
         The number of nodes in the tree.
 
