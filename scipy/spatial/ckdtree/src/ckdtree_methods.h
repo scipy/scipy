@@ -99,19 +99,6 @@ dabs(const npy_float64 x)
         return -x;
 }
 
-inline npy_float64
-wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
-{
-    npy_float64 x1;
-    if (NPY_UNLIKELY(x < -hb)) x1 = fb + x;
-    else if (NPY_UNLIKELY(x > hb)) x1 = x - fb;
-    else x1 = x;
-#if 0
-    printf("dabs_b x : %g x1 %g\n", x, x1);
-#endif
-    return x1;
-}
-
 /*
  * Measuring distances
  * ===================

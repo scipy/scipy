@@ -131,7 +131,6 @@ struct BoxDist1D {
                     rect1.maxes()[k] - rect2.mins()[k], min, max,
                     tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + rect1.m]);
     }
-
     static inline npy_float64
     point_point(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
@@ -142,6 +141,22 @@ struct BoxDist1D {
         r1 = dabs(r1);
         return r1;
     }
+
+    private:
+    static inline npy_float64
+    wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
+    {
+        npy_float64 x1;
+        if (NPY_UNLIKELY(x < -hb)) x1 = fb + x;
+        else if (NPY_UNLIKELY(x > hb)) x1 = x - fb;
+        else x1 = x;
+    #if 0
+        printf("dabs_b x : %g x1 %g\n", x, x1);
+    #endif
+        return x1;
+    }
+
+
 };
 
 
