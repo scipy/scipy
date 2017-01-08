@@ -85,8 +85,8 @@ struct BoxDist1D {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
          */
-        _interval_interval_1d(rect1.mins[k] - rect2.maxes[k],
-                    rect1.maxes[k] - rect2.mins[k], min, max,
+        _interval_interval_1d(rect1.mins()[k] - rect2.maxes()[k],
+                    rect1.maxes()[k] - rect2.mins()[k], min, max,
                     tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + rect1.m]);
     }
 

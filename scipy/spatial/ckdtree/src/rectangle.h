@@ -27,32 +27,27 @@ struct Rectangle {
 
     const npy_intp m;
 
-    std::vector<npy_float64> buf;
-
-    npy_float64 * maxes;
-    npy_float64 * mins;
-    npy_float64 * side_distances;
+    /* the last const is to allow const Rectangle to use these functions;
+     * also notice we had to mark buf mutable to avoid writing non const version
+     * of the same accessors. */
+    npy_float64 * const maxes() const { return &buf[0]; }
+    npy_float64 * const mins() const { return &buf[0] + m; }
+    npy_float64 * const side_distances() const { return &buf[0] + m + m; }
 
     Rectangle(const npy_intp _m,
               const npy_float64 *_mins,
               const npy_float64 *_maxes) : m(_m), buf(3 * m) {
 
         /* copy array data */
-        mins = &buf[0];
-        maxes = &buf[m];
-        side_distances = &buf[2 * m];
-
         /* FIXME: use std::vector ? */
-        std::memcpy((void*)mins, (void*)_mins, m*sizeof(npy_float64));
-        std::memcpy((void*)maxes, (void*)_maxes, m*sizeof(npy_float64));
+        std::memcpy((void*)mins(), (void*)_mins, m*sizeof(npy_float64));
+        std::memcpy((void*)maxes(), (void*)_maxes, m*sizeof(npy_float64));
     };
 
-    Rectangle(const Rectangle& rect) : m(rect.m), buf(rect.buf) {
-        mins = &buf[0];
-        maxes = &buf[m];
-        side_distances = &buf[2 * m];
-    };
+    Rectangle(const Rectangle& rect) : m(rect.m), buf(rect.buf) {};
 
+    private:
+        mutable std::vector<npy_float64> buf;
 };
 
 #include "ckdtree_methods.h"
@@ -191,8 +186,8 @@ template<typename MinMaxDist>
         item->split_dim = split_dim;
         item->min_distance = min_distance;
         item->max_distance = max_distance;
-        item->min_along_dim = rect->mins[split_dim];
-        item->max_along_dim = rect->maxes[split_dim];
+        item->min_along_dim = rect->mins()[split_dim];
+        item->max_along_dim = rect->maxes()[split_dim];
 
         /* update min/max distances */
         npy_float64 min, max;
@@ -203,9 +198,9 @@ template<typename MinMaxDist>
         max_distance -= max;
 
         if (direction == LESS)
-            rect->maxes[split_dim] = split_val;
+            rect->maxes()[split_dim] = split_val;
         else
-            rect->mins[split_dim] = split_val;
+            rect->mins()[split_dim] = split_val;
 
         MinMaxDist::interval_interval_p(tree, rect1, rect2, split_dim, p, &min, &max);
 
@@ -239,12 +234,12 @@ template<typename MinMaxDist>
         max_distance = item->max_distance;
 
         if (item->which == 1) {
-            rect1.mins[item->split_dim] = item->min_along_dim;
-            rect1.maxes[item->split_dim] = item->max_along_dim;
+            rect1.mins()[item->split_dim] = item->min_along_dim;
+            rect1.maxes()[item->split_dim] = item->max_along_dim;
         }
         else {
-            rect2.mins[item->split_dim] = item->min_along_dim;
-            rect2.maxes[item->split_dim] = item->max_along_dim;
+            rect2.mins()[item->split_dim] = item->min_along_dim;
+            rect2.maxes()[item->split_dim] = item->max_along_dim;
         }
     };
 

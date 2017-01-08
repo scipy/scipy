@@ -8,10 +8,10 @@ struct Dist1D {
         /* Compute the minimum/maximum distance along dimension k between points in
          * two hyperrectangles.
          */
-        *min = dmax(0, dmax(rect1.mins[k] - rect2.maxes[k],
-                              rect2.mins[k] - rect1.maxes[k]));
-        *max = dmax(rect1.maxes[k] - rect2.mins[k],
-                              rect2.maxes[k] - rect1.mins[k]);
+        *min = dmax(0, dmax(rect1.mins()[k] - rect2.maxes()[k],
+                              rect2.mins()[k] - rect1.maxes()[k]));
+        *max = dmax(rect1.maxes()[k] - rect2.mins()[k],
+                              rect2.maxes()[k] - rect1.mins()[k]);
     }
 
     static inline npy_float64
