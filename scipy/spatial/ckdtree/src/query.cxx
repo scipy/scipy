@@ -117,8 +117,6 @@ struct heap {
  */
 
 struct nodeinfo {
-    nodeinfo           *next;
-    nodeinfo           *prev;
     const ckdtreenode  *node;
     npy_intp     m;
     npy_float64        buf[1]; // the good old struct hack
