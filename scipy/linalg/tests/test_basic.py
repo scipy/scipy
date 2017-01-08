@@ -183,7 +183,7 @@ class TestSolveBanded(TestCase):
         assert_array_equal(x, [[0.5, 1.0, 1.5]])
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
-        
+
     def test_native_list_arguments(self):
         a = [[1.0, 20, 0, 0],
              [-30, 4, 6, 0],
@@ -503,7 +503,7 @@ class TestSolveHBanded(TestCase):
         x = solveh_banded([[1]], [[1, 2, 3]])
         assert_array_equal(x, [[1.0, 2.0, 3.0]])
         assert_equal(x.dtype, np.dtype('f8'))
-        
+
     def test_native_list_arguments(self):
         # Same as test_01_upper, using python's native list.
         ab = [[0.0, 0.0, 2.0, 2.0],
@@ -688,10 +688,10 @@ class TestSolve(TestCase):
         assert_array_almost_equal(x, res)
 
     def test_pos_and_sym(self):
-        A = np.arange(1,10).reshape(3, 3)
-        x = solve(np.tril(A)/9,np.ones(3), assume_a='pos')
+        A = np.arange(1, 10).reshape(3, 3)
+        x = solve(np.tril(A)/9, np.ones(3), assume_a='pos')
         assert_array_almost_equal(x, [9., 1.8, 1.])
-        x = solve(np.tril(A)/9,np.ones(3), assume_a='sym')
+        x = solve(np.tril(A)/9, np.ones(3), assume_a='sym')
         assert_array_almost_equal(x, [9., 1.8, 1.])
 
     def test_singularity(self):
@@ -729,9 +729,9 @@ class TestSolve(TestCase):
 
     def test_transposed_keyword(self):
         A = np.arange(9).reshape(3, 3) + 1
-        x = solve(np.tril(A)/9,np.ones(3), transposed=1)
+        x = solve(np.tril(A)/9, np.ones(3), transposed=1)
         assert_array_almost_equal(x, [1.2, 0.2, 1])
-        x = solve(np.tril(A)/9,np.ones(3), transposed=0)
+        x = solve(np.tril(A)/9, np.ones(3), transposed=0)
         assert_array_almost_equal(x, [9, -5.4, -1.2])
 
     def test_nonsquare_a(self):
@@ -740,6 +740,9 @@ class TestSolve(TestCase):
     def test_size_mismatch_with_1D_b(self):
         assert_array_almost_equal(solve(np.eye(3), np.ones(3)), np.ones(3))
         assert_raises(ValueError, solve, np.eye(3), np.ones(4))
+
+    def test_assume_a_keyword(self):
+        assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
     def test_all_type_size_routine_combinations(self):
         sizes = [10, 100, 1000]
@@ -751,15 +754,15 @@ class TestSolve(TestCase):
             is_complex = dtype in (np.complex64, np.complex128)
             if assume_a == 'her' and not is_complex:
                 continue
-        
+
             err_msg = ("Failed for size: {}, assume_a: {},"
                        "dtype: {}".format(size, assume_a, dtype))
-        
+
             a = np.random.randn(size, size).astype(dtype)
             b = np.random.randn(size).astype(dtype)
             if is_complex:
                 a = a + (1j*np.random.randn(size, size)).astype(dtype)
-        
+
             if assume_a == 'sym':  # Can still be complex but only symmetric
                 a = a + a.T
             elif assume_a == 'her':  # Handle hermitian matrices here instead
@@ -771,7 +774,7 @@ class TestSolve(TestCase):
             tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
             assert_allclose(a.dot(x), b,
                             atol=tol * size,
-                            rtol=tol * size, 
+                            rtol=tol * size,
                             err_msg=err_msg)
 
 
@@ -1286,7 +1289,7 @@ class TestPinv(TestCase):
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
         a_pinv = pinv2(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
-        
+
     def test_native_list_argument(self):
         a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         a_pinv = pinv(a)
@@ -1319,7 +1322,7 @@ class TestPinvSymmetric(TestCase):
         a = np.dot(a, a.conj().T)
         a_pinv = pinvh(a)
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
-        
+
     def test_native_list_argument(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a = np.dot(a, a.T)
@@ -1535,7 +1538,7 @@ class TestSolveCirculant(TestCase):
         x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)
         assert_equal(x.shape, (4, 2, 3))
         assert_allclose(x, expected)
-        
+
     def test_native_list_arguments(self):
         # Same as test_basic1 using python's native list.
         c = [1, 2, 3, 5]
