@@ -35,6 +35,7 @@ maintenance activities and policies.
 
    hacking
    dev/index
+   dev/governance/governance
 
 To get an overview of where help or new features are desired or planned, see
 the roadmap:
