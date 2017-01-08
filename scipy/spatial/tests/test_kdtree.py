@@ -1068,8 +1068,12 @@ def test_ckdtree_box():
     assert_equal(ii, ii2)
 
 def test_ckdtree_box_upper_bounds():
-    data = np.linspace(0, 2, 10).reshape(-1, 1)
+    data = np.linspace(0, 2, 10).reshape(-1, 2)
+    data[:, 1] += 10
     assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=1.0)
+    assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=(0.0, 2.0))
+    # skip a dimension.
+    cKDTree(data, leafsize=1, boxsize=(2.0, 0.0))
 
 def test_ckdtree_box_lower_bounds():
     data = np.linspace(-1, 1, 10)
