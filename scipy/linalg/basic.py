@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-
+from numpy import atleast_2d
 from .flinalg import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from .misc import LinAlgError, _datacopied
@@ -18,7 +18,7 @@ from ._solve_toeplitz import levinson
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh', 'matrix_balance']
+           'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'solve_x']
 
 
 # Linear equations
@@ -103,6 +103,126 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         raise LinAlgError("singular matrix")
     raise ValueError('illegal value in %d-th argument of internal '
                      'gesv|posv' % -info)
+
+
+def solve_x(a, b, assume_a='gen', transposed=False, lower=False,
+            overwrite_a=False, overwrite_b=False, check_finite=True):
+    """
+    Solves the linear equation set ``a * x = b`` for the unknown ``x``
+    for square ``a`` matrix.
+
+    If the data matrix is known to be a particular type then supplying the
+    corresponding string to ``assume_a`` key chooses the dedicated solver.
+    The available options are
+
+    ===================  ========
+     generic matrix       'gen'
+     symmetric            'sym'
+     hermitian            'her'
+     positive definite    'pos'
+    ===================  ========
+
+    If omitted, ``'gen'`` is the default structure.
+
+    The datatype of the arrays define which solver is called regardless
+    of the values. In other words, even when the complex array entries have
+    precisely zero imaginary parts, the complex solver will be called based
+    on the data type of the array.
+
+    Parameters
+    ----------
+    a : (N, N) array_like
+        Square input data
+    b : (N, NRHS) array_like
+        Input data for the right hand side
+    assume_a : str, optional
+        Valid entries are given in the docstring
+    transposed: bool, optional
+        If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
+        solved (only taken into account for ``'gen'``).
+    lower : bool, optional
+        If True, only the data contained in the lower triangle of `a`. Default
+        is to use upper triangle. (ignored for ``'gen'``)
+    overwrite_a : bool, optional
+        Allow overwriting data in `a` (may enhance performance).
+        Default is False.
+    overwrite_b : bool, optional
+        Allow overwriting data in `b` (may enhance performance).
+        Default is False.
+    check_finite : bool, optional
+        Whether to check that the input matrices contain only finite numbers.
+        Disabling may give a performance gain, but may result in problems
+        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    Returns
+    -------
+    x : (N, NRHS) array_like
+
+    """
+    a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
+    b1 = atleast_2d(_asarray_validated(b, check_finite=check_finite))
+
+    if a1.shape[0] != a1.shape[1]:
+        raise ValueError('Input a needs to be a square matrix.')
+    n = a1.shape[0]
+    if n != b1.shape[0]:
+        raise ValueError('Input b has to have same number of'
+                         ' rows as matrix a')
+
+    r_or_c = complex if np.iscomplexobj(a1) else float
+
+    if assume_a in ('gen', 'sym', 'her', 'pos'):
+        _structure = assume_a
+    else:
+        raise ValueError('{} is not a recognized matrix structure'
+                         ''.format(assume_a))
+
+    if _structure == 'gen':
+        gesvx = get_lapack_funcs('gesvx', (a1, b1))
+        trans_conj = 'N'
+        if transposed:
+            trans_conj = 'T' if r_or_c is float else 'H'
+        (_, _, _, _, _, _, _,
+         x, rcond, _, _, info) = gesvx(a1, b1,
+                                       trans=trans_conj,
+                                       overwrite_a=overwrite_a,
+                                       overwrite_b=overwrite_b
+                                       )
+    elif _structure == 'sym':
+        sysvx, sysvx_lw = get_lapack_funcs(('sysvx', 'sysvx_lwork'), (a1, b1))
+        lwork, _ = sysvx_lw(n, lower)
+        _, _, _, _, x, rcond, _, _, info = sysvx(a1, b1, lwork=lwork,
+                                                 lower=lower,
+                                                 overwrite_a=overwrite_a,
+                                                 overwrite_b=overwrite_b
+                                                 )
+    elif _structure == 'her':
+        hesvx, hesvx_lw = get_lapack_funcs(('hesvx', 'hesvx_lwork'), (a1, b1))
+        lwork, _ = hesvx_lw(n, lower)
+        _, _, x, rcond, _, _, info = hesvx(a1, b1, lwork=lwork,
+                                           lower=lower,
+                                           overwrite_a=overwrite_a,
+                                           overwrite_b=overwrite_b
+                                           )
+    else:
+        posvx = get_lapack_funcs('posvx', (a1, b1))
+        _, _, _, _, _, x, rcond, _, _, info = posvx(a1, b1,
+                                                    lower=lower,
+                                                    overwrite_a=overwrite_a,
+                                                    overwrite_b=overwrite_b
+                                                    )
+
+    if info < 0:
+        raise ValueError('LAPACK reported an illegal value in {}-th argument'
+                         '.'.format(-info))
+    elif info == 0:
+        return x
+    elif 0 < info <= n:
+        raise LinAlgError('Matrix is singular')
+    elif info > n:
+        warnings.warn('Ill-conditioned matrix detected.\nResult is not'
+                      ' guaranteed to be accurate.\nReciprocal condition'
+                      ' number: {}'.format(rcond), RuntimeWarning)
+        return x
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
