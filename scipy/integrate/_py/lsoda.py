@@ -123,7 +123,7 @@ class LSODA(OdeSolver):
         self.min_step = min_step
         self.rtol = rtol
         self.atol = atol
-        self.jac = self._validate_jac(jac)
+        self.jac = jac
         self.lband = lband
         self.uband = uband
 
@@ -138,19 +138,6 @@ class LSODA(OdeSolver):
         solver._integrator.call_args[4] = solver._integrator.rwork
 
         self._lsoda_solver = solver
-
-    def _validate_jac(self, jac):
-        if jac is None:
-            jac_wrapped = None
-        elif callable(jac):
-            def jac_wrapped(t, y):
-                self.njev += 1
-                return np.asarray(jac(t, y), dtype=float)
-        else:
-            raise ValueError("`jac` is expected to be `None` or `callable`, "
-                             "but is actually type {}".format(type(jac)))
-
-        return jac_wrapped
 
     def _step_impl(self):
         solver = self._lsoda_solver
