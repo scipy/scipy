@@ -2645,6 +2645,13 @@ class _TestFancyIndexing:
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
 
+        # Regression for gh-4917: index with tuple of 2D arrays
+        i = np.array([[1]], dtype=int)
+        assert_equal(A[i,i].todense(), B[i,i])
+
+        # Regression for gh-4917: index with tuple of empty nested lists
+        assert_equal(A[[[]], [[]]].todense(), B[[[]], [[]]])
+
     def test_fancy_indexing_randomized(self):
         np.random.seed(1234)  # make runs repeatable
 
