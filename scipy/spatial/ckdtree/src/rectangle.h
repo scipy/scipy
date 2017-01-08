@@ -25,39 +25,34 @@
  
 struct Rectangle {
     
-    npy_intp m;
-    npy_float64 *mins;
-    npy_float64 *maxes;
-    
-    std::vector<npy_float64> mins_arr;
-    std::vector<npy_float64> maxes_arr;
+    const npy_intp m;
+
+    std::vector<npy_float64> buf;
+
+    npy_float64 * maxes;
+    npy_float64 * mins;
+    npy_float64 * side_distances;
 
     Rectangle(const npy_intp _m, 
               const npy_float64 *_mins, 
-              const npy_float64 *_maxes) : mins_arr(_m), maxes_arr(_m) {
+              const npy_float64 *_maxes) : m(_m), buf(3 * m) {
 
         /* copy array data */
-        m = _m;
-        mins = &mins_arr[0];
-        maxes = &maxes_arr[0];        
+        mins = &buf[0];
+        maxes = &buf[m];
+        side_distances = &buf[2 * m];
+
+        /* FIXME: use std::vector ? */
         std::memcpy((void*)mins, (void*)_mins, m*sizeof(npy_float64));
         std::memcpy((void*)maxes, (void*)_maxes, m*sizeof(npy_float64));
-    };    
-         
-    Rectangle(const Rectangle& rect) : mins_arr(rect.m), maxes_arr(rect.m) {
-        m = rect.m;
-        mins = &mins_arr[0];
-        maxes = &maxes_arr[0];        
-        std::memcpy((void*)mins, (void*)rect.mins, m*sizeof(npy_float64));
-        std::memcpy((void*)maxes, (void*)rect.maxes, m*sizeof(npy_float64));         
-    };    
-    
-    Rectangle() : mins_arr(0), maxes_arr(0) {
-        m = 0;
-        mins = NULL;
-        maxes = NULL;
     };
-    
+
+    Rectangle(const Rectangle& rect) : m(rect.m), buf(rect.buf) {
+        mins = &buf[0];
+        maxes = &buf[m];
+        side_distances = &buf[2 * m];
+    };
+
 };
 
 #include "ckdtree_methods.h"
