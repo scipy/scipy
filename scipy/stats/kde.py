@@ -162,6 +162,7 @@ class gaussian_kde(object):
     >>> plt.show()
 
     """
+
     def __init__(self, dataset, bw_method=None):
         self.dataset = atleast_2d(dataset)
         if not self.dataset.size > 1:
@@ -170,7 +171,7 @@ class gaussian_kde(object):
         self.d, self.n = self.dataset.shape
         self.set_bandwidth(bw_method=bw_method)
 
-    def evaluate(self, points):
+    def evaluate(self, points, lb=None, ub=None):
         """Evaluate the estimated pdf on a set of points.
 
         Parameters
@@ -178,6 +179,10 @@ class gaussian_kde(object):
         points : (# of dimensions, # of points)-array
             Alternatively, a (# of dimensions,) vector can be passed in and
             treated as a single point.
+        lb : float or array_like
+            Lower boundary for the estimated pdf
+        ub : float or array_like
+            Upper boundary for the estimated pdf
 
         Returns
         -------
@@ -191,6 +196,16 @@ class gaussian_kde(object):
 
         """
         points = atleast_2d(points)
+        if lb is not None:
+            lb = atleast_2d(lb)
+            f, s = lb.shape
+            if s > f:
+                lb = lb.T
+        if ub is not None:
+            ub = atleast_2d(ub)
+            f, s = ub.shape
+            if s > f:
+                ub = ub.T
 
         d, m = points.shape
         if d != self.d:
@@ -204,23 +219,45 @@ class gaussian_kde(object):
                 raise ValueError(msg)
 
         result = zeros((m,), dtype=float)
+        result_l = zeros((m,), dtype=float)
+        result_u = zeros((m,), dtype=float)
 
         if m >= self.n:
             # there are more points than data, so loop over data
             for i in range(self.n):
-                diff = self.dataset[:, i, newaxis] - points
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff*tdiff,axis=0) / 2.0
-                result = result + exp(-energy)
+                diff_0 = self.dataset[:, i, newaxis] - points
+                tdiff_0 = dot(self.inv_cov, diff_0)
+                energy_0 = sum(diff_0 * tdiff_0, axis=0) / 2.0
+                result = result + exp(-energy_0)
+                if lb is not None:
+                    diff_l = self.dataset + points[:, i, newaxis] - 2*lb
+                    tdiff_l = dot(self.inv_cov, diff_l)
+                    energy_l = sum(diff_l * tdiff_l, axis=0) / 2.0
+                    result_l[i] = sum(exp(-energy_l))
+                if ub is not None:
+                    diff_u = self.dataset + points[:, i, newaxis] - 2*ub
+                    tdiff_u = dot(self.inv_cov, diff_u)
+                    energy_u = sum(diff_u * tdiff_u, axis=0) / 2.0
+                    result_u[i] = sum(exp(-energy_u))
         else:
             # loop over points
             for i in range(m):
-                diff = self.dataset - points[:, i, newaxis]
-                tdiff = dot(self.inv_cov, diff)
-                energy = sum(diff * tdiff, axis=0) / 2.0
-                result[i] = sum(exp(-energy), axis=0)
+                diff_0 = self.dataset - points[:, i, newaxis]
+                tdiff_0 = dot(self.inv_cov, diff_0)
+                energy_0 = sum(diff_0 * tdiff_0, axis=0) / 2.0
+                result[i] = sum(exp(-energy_0), axis=0)
+                if lb is not None:
+                    diff_l = self.dataset + points[:, i, newaxis] - 2*lb
+                    tdiff_l = dot(self.inv_cov, diff_l)
+                    energy_l = sum(diff_l * tdiff_l, axis=0) / 2.0
+                    result_l[i] = sum(exp(-energy_l), axis=0)
+                if ub is not None:
+                    diff_u = self.dataset + points[:, i, newaxis] - 2*ub
+                    tdiff_u = dot(self.inv_cov, diff_u)
+                    energy_u = sum(diff_u * tdiff_u, axis=0) / 2.0
+                    result_u[i] = sum(exp(-energy_u), axis=0)
 
-        result = result / self._norm_factor
+        result = (result + result_l + result_u) / self._norm_factor
 
         return result
 
@@ -512,7 +549,7 @@ class gaussian_kde(object):
         self.inv_cov = self._data_inv_cov / self.factor**2
         self._norm_factor = sqrt(linalg.det(2*pi*self.covariance)) * self.n
 
-    def pdf(self, x):
+    def pdf(self, x, lb=None, ub=None):
         """
         Evaluate the estimated pdf on a provided set of points.
 
@@ -522,9 +559,9 @@ class gaussian_kde(object):
         docstring for more details.
 
         """
-        return self.evaluate(x)
+        return self.evaluate(x, lb, ub)
 
-    def logpdf(self, x):
+    def logpdf(self, x, lb=None, ub=None):
         """
         Evaluate the log of the estimated pdf on a provided set of points.
 
@@ -534,4 +571,5 @@ class gaussian_kde(object):
         returns ``np.log(gaussian_kde.evaluate(x))``.
 
         """
-        return np.log(self.evaluate(x))
+        return np.log(self.evaluate(x, lb, ub))
+
