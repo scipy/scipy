@@ -1,6 +1,6 @@
 struct Dist1D {
-    static inline void 
-    interval_interval(const ckdtree * tree, 
+    static inline void
+    interval_interval(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_intp k,
                         npy_float64 *min, npy_float64 *max)
@@ -10,12 +10,12 @@ struct Dist1D {
          */
         *min = dmax(0, dmax(rect1.mins[k] - rect2.maxes[k],
                               rect2.mins[k] - rect1.maxes[k]));
-        *max = dmax(rect1.maxes[k] - rect2.mins[k], 
+        *max = dmax(rect1.maxes[k] - rect2.mins[k],
                               rect2.maxes[k] - rect1.mins[k]);
     }
 
     static inline npy_float64
-    point_point(const ckdtree * tree, 
+    point_point(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                  const npy_intp k) {
         return dabs(x[k] - y[k]);
@@ -25,8 +25,8 @@ struct Dist1D {
 template <typename Dist1D>
 struct BaseMinkowskiDistP1 {
 
-    static inline void 
-    interval_interval_p(const ckdtree * tree, 
+    static inline void
+    interval_interval_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_intp k, const npy_float64 p,
                         npy_float64 *min, npy_float64 *max)
@@ -37,8 +37,8 @@ struct BaseMinkowskiDistP1 {
         Dist1D::interval_interval(tree, rect1, rect2, k, min, max);
     }
 
-    static inline void 
-    rect_rect_p(const ckdtree * tree, 
+    static inline void
+    rect_rect_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_float64 p,
                         npy_float64 *min, npy_float64 *max)
@@ -55,12 +55,12 @@ struct BaseMinkowskiDistP1 {
         }
     }
 
-    static inline npy_float64 
-    distance_p(const ckdtree * tree, 
+    static inline npy_float64
+    distance_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
-    {    
+    {
         npy_intp i;
         npy_float64 r;
         r = 0;
@@ -79,8 +79,8 @@ struct BaseMinkowskiDistPp {
      * These should only be used if p != infinity
      */
 
-    static inline void 
-    interval_interval_p(const ckdtree * tree, 
+    static inline void
+    interval_interval_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_intp k, const npy_float64 p,
                         npy_float64 *min, npy_float64 *max)
@@ -93,8 +93,8 @@ struct BaseMinkowskiDistPp {
         *max = std::pow(*max, p);
     }
 
-    static inline void 
-    rect_rect_p(const ckdtree * tree, 
+    static inline void
+    rect_rect_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_float64 p,
                         npy_float64 *min, npy_float64 *max)
@@ -111,12 +111,12 @@ struct BaseMinkowskiDistPp {
         }
     }
 
-    static inline npy_float64 
-    distance_p(const ckdtree * tree, 
+    static inline npy_float64
+    distance_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
-    {    
+    {
        /*
         * Compute the distance between x and y
         *
@@ -124,7 +124,7 @@ struct BaseMinkowskiDistPp {
         * If the distance**p is larger than upperbound, then any number larger
         * than upperbound may be returned (the calculation is truncated).
         */
-        
+
         npy_intp i;
         npy_float64 r, r1;
         r = 0;
@@ -135,12 +135,12 @@ struct BaseMinkowskiDistPp {
                  return r;
         }
         return r;
-    } 
+    }
 };
 
 template <typename Dist1D>
 struct BaseMinkowskiDistPinf {
-    static inline void 
+    static inline void
     interval_interval_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_intp k, npy_float64 p,
@@ -149,8 +149,8 @@ struct BaseMinkowskiDistPinf {
         return rect_rect_p(tree, rect1, rect2, p, min, max);
     }
 
-    static inline void 
-    rect_rect_p(const ckdtree * tree, 
+    static inline void
+    rect_rect_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_float64 p,
                         npy_float64 *min, npy_float64 *max)
@@ -167,12 +167,12 @@ struct BaseMinkowskiDistPinf {
         }
     }
 
-    static inline npy_float64 
-    distance_p(const ckdtree * tree, 
+    static inline npy_float64
+    distance_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
-    {    
+    {
         npy_intp i;
         npy_float64 r;
         r = 0;
@@ -187,7 +187,7 @@ struct BaseMinkowskiDistPinf {
 
 template <typename Dist1D>
 struct BaseMinkowskiDistP2 {
-    static inline void 
+    static inline void
     interval_interval_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_intp k, const npy_float64 p,
@@ -201,8 +201,8 @@ struct BaseMinkowskiDistP2 {
         *max *= *max;
     }
 
-    static inline void 
-    rect_rect_p(const ckdtree * tree, 
+    static inline void
+    rect_rect_p(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_float64 p,
                         npy_float64 *min, npy_float64 *max)
@@ -220,13 +220,13 @@ struct BaseMinkowskiDistP2 {
             *max += max_;
         }
     }
-    static inline npy_float64 
+    static inline npy_float64
 
-    distance_p(const ckdtree * tree, 
+    distance_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
-    {    
+    {
         npy_intp i;
         npy_float64 r;
         r = 0;
@@ -246,12 +246,12 @@ typedef BaseMinkowskiDistP1<Dist1D> MinkowskiDistP1;
 typedef BaseMinkowskiDistP2<Dist1D> NonOptimizedMinkowskiDistP2;
 
 struct MinkowskiDistP2: NonOptimizedMinkowskiDistP2 {
-    static inline npy_float64 
-    distance_p(const ckdtree * tree, 
+    static inline npy_float64
+    distance_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
-    {    
+    {
         return sqeuclidean_distance_double(x, y, k);
     }
 };

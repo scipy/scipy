@@ -3,7 +3,7 @@ struct BoxDist1D {
         npy_float64 min, npy_float64 max,
         npy_float64 *realmin, npy_float64 *realmax,
         const npy_float64 full, const npy_float64 half
-    ) 
+    )
     {
         /* Minimum and maximum distance of two intervals in a periodic box
          *
@@ -76,8 +76,8 @@ struct BoxDist1D {
             *realmin = 0;
         }
     }
-    static inline void 
-    interval_interval(const ckdtree * tree, 
+    static inline void
+    interval_interval(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
                         const npy_intp k,
                         npy_float64 *min, npy_float64 *max)
@@ -91,9 +91,9 @@ struct BoxDist1D {
     }
 
     static inline npy_float64
-    point_point(const ckdtree * tree, 
+    point_point(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
-               const npy_intp k) 
+               const npy_intp k)
     {
         npy_float64 r1;
         r1 = wrap_distance(x[k] - y[k], tree->raw_boxsize_data[k + tree->m], tree->raw_boxsize_data[k]);
