@@ -52,7 +52,6 @@ struct Rectangle {
 
 #include "ckdtree_methods.h"
 #include "distance.h"
-#include "distance_box.h"
 
 /*
  * Rectangle-to-rectangle distance tracker
