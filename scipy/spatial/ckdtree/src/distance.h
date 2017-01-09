@@ -166,7 +166,11 @@ struct BoxDist1D {
     {
         if (boxsize <= 0) return x;
         const npy_float64 r = std::floor(x / boxsize);
-        return x - r * boxsize;
+        npy_float64 x1 = x - r * boxsize;
+        /* ensure result is within the box. */
+        while(x1 >= boxsize) x1 -= boxsize;
+        while(x1 < 0) x1 += boxsize;
+        return x1;
     }
 
     static inline const npy_float64 side_distance_from_min_max(
