@@ -227,8 +227,8 @@ def _weight_masked(arrays, weights, axis):
         axis = 0
     weights = np.asanyarray(weights)
     for a in arrays:
-        axis_mask = np.ma.getmask(a)
-        if axis_mask is np.ma.nomask:
+        axis_mask = np.ma.getmaskarray(a)
+        if (~axis_mask).all():
             continue
         if a.ndim > 1:
             not_axes = tuple(i for i in range(a.ndim) if i != axis)
@@ -513,9 +513,9 @@ def mode(a, axis=0, nan_policy='propagate', weights=None):
     if a.size == 0:
         return np.array([]), np.array([])
     if weights is not None and weights.ndim == 1 and 1 < a.ndim:
-        weight_shape = [slice(None) if i == axis else np.newaxis
-                        for i in range(a.ndim)]
-        weights = np.broadcast_to(weights[weight_shape], a.shape)
+        weight_shape = [np.newaxis] * a.ndim
+        weight_shape[axis] = slice(None)
+        weights = weights[weight_shape]
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 

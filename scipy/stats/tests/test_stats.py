@@ -3235,7 +3235,7 @@ def test_ttest_1samp_new():
     finally:
         np.seterr(**olderr)
 
-wdescribe = _weight_checked(stats.describe, key=lambda x: x[1:])
+wdescribe = _weight_checked(stats.describe, key=lambda x: x[1:], ma_very_safe=False)
 class TestDescribe(TestCase):
     def test_describe_scalar(self):
         with warnings.catch_warnings():
@@ -3729,7 +3729,7 @@ class HarMeanTestCase:
 class TestHarMean(HarMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
         x = whmean(a, axis=axis, dtype=dtype)
-        assert_almost_equal(b, x)
+        assert_almost_equal(x, b)
         assert_equal(x.dtype, dtype)
 
 
@@ -3848,7 +3848,7 @@ class TestGeoMean(GeoMeanTestCase, TestCase):
     def do(self, a, b, axis=None, dtype=None):
         # Note this doesn't test when axis is not specified
         x = wgmean(a, axis=axis, dtype=dtype)
-        assert_almost_equal(b, x)
+        assert_almost_equal(x, b)
         assert_equal(x.dtype, dtype)
 
 
