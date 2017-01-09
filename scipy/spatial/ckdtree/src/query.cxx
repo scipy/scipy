@@ -370,22 +370,30 @@ query_single_point(const ckdtree *self,
                  */
                 ni2->init_plain(ni1);
 
+                npy_float64 side_distance;
+
                 if (x[split_dim] < split) {
                     ni1->node = inode->less;
                     ni2->node = inode->greater;
                 } else {
                     ni1->node = inode->greater;
                     ni2->node = inode->less;
-               }
+                }
+
+                npy_float64 tmp = x[split_dim] - split;
 
                 /* side distance of ni1 doesn't change -- because it is the closer node */
-
-                npy_float64 side_distance;
-                side_distance = side_distance_from_min_max(
-                        x[split_dim],
-                        self->raw_mins[split_dim],
-                        split,
-                        p, 0, 0);
+                if(NPY_LIKELY(p == 2)) {
+                    side_distance = tmp * tmp;
+                } else
+                if(NPY_LIKELY(p == 1)) {
+                    side_distance = dabs(tmp);
+                } else
+                if(NPY_LIKELY(ckdtree_isinf(p))) {
+                    side_distance = dabs(tmp);
+                } else {
+                    side_distance = std::pow(dabs(tmp), p);
+                }
 
                 ni2->update_side_distance(split_dim, side_distance, p);
             } else {
