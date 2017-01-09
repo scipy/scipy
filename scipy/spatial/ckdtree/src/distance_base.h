@@ -122,7 +122,7 @@ struct BaseMinkowskiDistP1 : public BaseMinkowskiDistPp<Dist1D> {
     static inline npy_float64
     distance_p(const npy_float64 s, const npy_float64 p)
     {
-        return dabs(s);
+        return s;
     }
 };
 
@@ -174,7 +174,7 @@ struct BaseMinkowskiDistPinf : public BaseMinkowskiDistPp<Dist1D> {
     static inline npy_float64
     distance_p(const npy_float64 s, const npy_float64 p)
     {
-        return dabs(s);
+        return s;
     }
 };
 

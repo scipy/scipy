@@ -184,7 +184,8 @@ struct BoxDist1D {
 
         if (fb <= 0) {
             /* non-periodic dimension */
-            return PlainDist1D::side_distance_from_min_max(tree, x, min, max, k);
+            s = PlainDist1D::side_distance_from_min_max(tree, x, min, max, k);
+            return s;
         }
 
         /* periodic */

@@ -122,15 +122,15 @@ struct nodeinfo {
     npy_float64  min_distance; /* full min distance */
     npy_float64        buf[1]; // the good old struct hack
     /* accessors to 'packed' attributes */
-    inline npy_float64        *side_distances() {
+    inline npy_float64        * const side_distances() {
         /* min distance to the query per side; we
          * update this as the query is proceeded */
         return buf;
     }
-    inline npy_float64        *maxes() {
+    inline npy_float64        * const maxes() {
         return buf + m;
     }
-    inline npy_float64        *mins() {
+    inline npy_float64        * const mins() {
         return buf + 2 * m;
     }
 
@@ -147,7 +147,7 @@ struct nodeinfo {
 
     inline void update_side_distance(const int d, const npy_float64 new_side_distance, const npy_float64 p) {
         if (NPY_UNLIKELY(ckdtree_isinf(p))) {
-            min_distance = dmax(min_distance, dabs(new_side_distance));
+            min_distance = dmax(min_distance, new_side_distance);
         } else {
             min_distance += new_side_distance - side_distances()[d];
         }
@@ -375,14 +375,14 @@ query_single_point(const ckdtree *self,
                 if (x[split_dim] < split) {
                     ni1->node = inode->less;
                     ni2->node = inode->greater;
+                    side_distance = split - x[split_dim];
                 } else {
                     ni1->node = inode->greater;
                     ni2->node = inode->less;
+                    side_distance = x[split_dim] - split;
                 }
 
-                npy_float64 tmp = x[split_dim] - split;
-
-                side_distance = MinMaxDist::distance_p(tmp, p);
+                side_distance = MinMaxDist::distance_p(side_distance, p);
 
                 ni2->update_side_distance(split_dim, side_distance, p);
             } else {
