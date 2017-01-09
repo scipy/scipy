@@ -1274,6 +1274,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
        .. math::
           \\sqrt{\\sum {(u_i-v_i)^2 / V[x_i]}}
+
        V is the variance vector; V[i] is the variance computed over all
        the i'th components of the points.  If not passed, it is
        automatically computed.
@@ -1286,9 +1287,11 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
     6. ``Y = pdist(X, 'cosine')``
 
        Computes the cosine distance between vectors u and v,
+
        .. math::
           1 - \\frac{u \\cdot v}
                    {{||u||}_2 {||v||}_2}
+
        where :math:`||*||_2` is the 2-norm of its argument ``*``, and
        :math:`u \\cdot v` is the dot product of ``u`` and ``v``.
 
@@ -1299,6 +1302,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
        .. math::
           1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
                    {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+
        where :math:`\\bar{v}` is the mean of the elements of vector v,
        and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
 
@@ -2011,6 +2015,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
        disagree where at least one of them is non-zero.
 
     10. ``Y = cdist(XA, XB, 'chebyshev')``
+
        Computes the Chebyshev distance between the points. The
        Chebyshev distance between two n-vectors ``u`` and ``v`` is the
        maximum norm-1 distance between their respective elements. More
@@ -2114,6 +2119,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
     Examples
     --------
     Find the Euclidean distances between four 2-D coordinates:
+
     >>> from scipy.spatial import distance
     >>> coords = [(35.0456, -85.2672),
     ...           (35.1174, -89.9711),
@@ -2127,6 +2133,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     Find the Manhattan distance from a 3-D point to the corners of the unit
     cube:
+
     >>> a = np.array([[0, 0, 0],
     ...               [0, 0, 1],
     ...               [0, 1, 0],

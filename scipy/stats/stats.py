@@ -3826,7 +3826,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
 
 def weightedtau(x, y, rank=True, weigher=None, additive=True):
-    """
+    r"""
     Computes a weighted version of Kendall's :math:`\tau`.
     The weighted :math:`\tau` is a weighted version of Kendall's
     :math:`\tau` in which exchanges of high weight are more influential than
