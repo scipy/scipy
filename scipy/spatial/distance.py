@@ -49,7 +49,6 @@ functions. Use ``pdist`` for this purpose.
    minkowski        -- the Minkowski distance.
    seuclidean       -- the normalized Euclidean distance.
    sqeuclidean      -- the squared Euclidean distance.
-   wminkowski       -- the weighted Minkowski distance.
 
 Distance functions between two boolean vectors (representing sets) ``u`` and
 ``v``.  As in the case of numerical vectors, ``pdist`` is more efficient for
@@ -62,7 +61,6 @@ computing the distances between all pairs.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
    kulsinski        -- the Kulsinski distance.
-   matching         -- the matching dissimilarity.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
    sokalmichener    -- the Sokal-Michener dissimilarity.
