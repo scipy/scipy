@@ -145,6 +145,7 @@ struct BoxDist1D {
     static inline const npy_float64
     wrap_position(const npy_float64 x, const npy_float64 boxsize)
     {
+        if (boxsize <= 0) return x;
         const npy_float64 r = std::floor(x / boxsize);
         return x - r * boxsize;
     }
