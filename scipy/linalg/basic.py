@@ -23,7 +23,7 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, debug=False, check_finite=True, assume_a='gen',
+          overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
@@ -78,7 +78,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     Returns
     -------
-    x : (N, NRHS) array_like
+    x : (N, NRHS) ndarray
+        The solution array.
 
     Raises
     ------
