@@ -191,7 +191,7 @@ class TestTrimmedStats(TestCase):
     dprec = np.finfo(np.float64).precision
 
     def test_tmean(self):
-        wtmean = _weight_checked(stats.tmean)
+        wtmean = _weight_checked(stats.tmean, ma_safe=False)
         y = wtmean(X, (2, 8), (True, True))
         assert_approx_equal(y, 5.0, significant=self.dprec)
 

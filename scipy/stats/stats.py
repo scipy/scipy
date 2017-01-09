@@ -402,7 +402,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
     arrays automatically mask any non-finite values.
 
     """
-    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, mask_screen=True)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis,
+                                    mask_screen=True, pos_only=True)
     log_a = np.log(np.asanyarray(a, dtype=dtype))
     return np.exp(_avg(log_a, axis=axis, weights=weights))
 
@@ -451,7 +452,8 @@ def hmean(a, axis=0, dtype=None, weights=None):
     arise in the calculations such as Not a Number and infinity.
 
     """
-    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, mask_screen=True)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis,
+                                    mask_screen=True, pos_only=True)
     a = np.asanyarray(a, dtype=dtype)
     if not np.all(a > 0):
         # Harmonic mean only defined if greater than zero
@@ -3553,7 +3555,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate', weights=None):
             if br is None or ar.ndim > 1:
                 raise NotImplementedError("weighted matrix correlations not"
                                           "implemented with numpy < 1.10")
-            rs = pearsonr(ar, br, weights=weights)
+            rs = pearsonr(ar, br, weights=weights)[0]
         else:
             stddev = np.sqrt(np.diag(rs).real)
             rs /= stddev[:, None]
