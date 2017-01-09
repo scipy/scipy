@@ -257,7 +257,6 @@ def _chk_weights(arrays, weights=None, axis=None,
     simplify_weights = simplify_weights and not force_weights
     if not force_weights and mask_screen:
         force_weights = any(np.ma.getmask(a) is not np.ma.nomask for a in arrays)
-        arrays = tuple(np.asarray(a) for a in arrays)
 
     if nan_screen:
         has_nans = [np.isnan(np.sum(a)) for a in arrays]
