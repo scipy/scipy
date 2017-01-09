@@ -133,13 +133,6 @@ sqeuclidean_distance_double(const npy_float64 *u, const npy_float64 *v, npy_intp
 }
 
 
-inline const npy_float64
-_wrap(const npy_float64 x, const npy_float64 box)
-{
-    const npy_float64 r = std::floor(x / box);
-    return x - r * box;
-}
-
 /* FIXME: this should be replaced by a function
  * in MinMaxDistBox */
 const inline npy_float64 side_distance_from_min_max(

@@ -142,6 +142,13 @@ struct BoxDist1D {
         return r1;
     }
 
+    static inline const npy_float64
+    wrap_position(const npy_float64 x, const npy_float64 boxsize)
+    {
+        const npy_float64 r = std::floor(x / boxsize);
+        return x - r * boxsize;
+    }
+
     private:
     static inline npy_float64
     wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
@@ -155,7 +162,6 @@ struct BoxDist1D {
     #endif
         return x1;
     }
-
 
 };
 

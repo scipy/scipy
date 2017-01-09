@@ -534,7 +534,7 @@ query_knn(const ckdtree      *self,
                     npy_intp *ii_row = ii + (i*nk);
                     const npy_float64 *old_xx_row = xx + (i*m);
                     for(j=0; j<m; ++j) {
-                        xx_row[j] = _wrap(old_xx_row[j], self->raw_boxsize_data[j]);
+                        xx_row[j] = BoxDist1D::wrap_position(old_xx_row[j], self->raw_boxsize_data[j]);
                     }
                     HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
                     HANDLE(p == 1, BoxMinkowskiDistP1)

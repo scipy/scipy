@@ -127,7 +127,7 @@ query_ball_point(const ckdtree *self, const npy_float64 *x,
                     Rectangle point(m, x + i * m, x + i * m);
                     int j;
                     for(j=0; j<m; ++j) {
-                        point.maxes()[j] = point.mins()[j] = _wrap(point.mins()[j], self->raw_boxsize_data[j]);
+                        point.maxes()[j] = point.mins()[j] = BoxDist1D::wrap_position(point.mins()[j], self->raw_boxsize_data[j]);
                     }
                     HANDLE(NPY_LIKELY(p == 2), BoxMinkowskiDistP2)
                     HANDLE(p == 1, BoxMinkowskiDistP1)
