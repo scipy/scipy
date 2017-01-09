@@ -228,7 +228,7 @@ def _weight_masked(arrays, weights, axis):
     weights = np.asanyarray(weights)
     for a in arrays:
         axis_mask = np.ma.getmaskarray(a)
-        if (~axis_mask).all():
+        if (~axis_mask).all():  # np.ma.getmask(a) is np.ma.nomask
             continue
         if a.ndim > 1:
             not_axes = tuple(i for i in range(a.ndim) if i != axis)
@@ -257,6 +257,7 @@ def _chk_weights(arrays, weights=None, axis=None,
     simplify_weights = simplify_weights and not force_weights
     if not force_weights and mask_screen:
         force_weights = any(np.ma.getmask(a) is not np.ma.nomask for a in arrays)
+        arrays = [np.asarray(a) for a in arrays]
 
     if nan_screen:
         has_nans = [np.isnan(np.sum(a)) for a in arrays]
@@ -919,7 +920,10 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1, weights=None):
         n = am.count(axis)
     else:
         n = _weight_masked([am], weights, axis).sum()
-    return sd / np.sqrt(n)
+    result = sd / np.sqrt(n)
+    if not np.isscalar(result):
+        result = np.array(result)
+    return result
 
 
 #####################################
@@ -3848,6 +3852,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     ranks, rather than of scores (i.e., a larger value implies a lower
     rank) you must negate the ranks, so that elements of higher rank are
     associated with a larger value.
+
     Parameters
     ----------
     x, y : array_like
@@ -3871,6 +3876,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         If True, the weight of an exchange is computed by adding the
         weights of the ranks of the exchanged elements; otherwise, the weights
         are multiplied. The default is True.
+
     Returns
     -------
     correlation : float
@@ -3878,11 +3884,13 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     pvalue : float
        Presently ``np.nan``, as the null statistics is unknown (even in the
        additive hyperbolic case).
+
     See also
     --------
     kendalltau : Calculates Kendall's tau.
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
+
     Notes
     -----
     This function uses an :math:`O(n \log n)`, mergesort-based algorithm
@@ -3893,6 +3901,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
     generalization of Shieh's.
     NaNs are considered the smallest possible score.
     .. versionadded:: 0.19.0
+
     References
     ----------
     .. [1] Sebastiano Vigna, "A weighted correlation index for rankings with
@@ -3903,6 +3912,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
            Vol. 61, No. 314, Part 1, pp. 436-439, 1966.
     .. [3] Grace S. Shieh. "A weighted Kendall's tau statistic", Statistics &
            Probability Letters, Vol. 39, No. 1, pp. 17-24, 1998.
+
     Examples
     --------
     >>> from scipy import stats
