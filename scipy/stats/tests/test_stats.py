@@ -3823,7 +3823,8 @@ class GeoMeanTestCase:
 
     def test_1dma0(self):
         #  Test a 1d masked array with zero element
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 0],
+                        mask=[0,0,0,0,0,0,0,0,0,1])
         b = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
@@ -3833,7 +3834,8 @@ class GeoMeanTestCase:
 
     def test_1dmainf(self):
         #  Test a 1d masked array with negative element
-        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1])
+        a = np.ma.array([10, 20, 30, 40, 50, 60, 70, 80, 90, -1],
+                        mask=[0,0,0,0,0,0,0,0,0,1])
         b = 41.4716627439
         olderr = np.seterr(all='ignore')
         try:
@@ -4053,7 +4055,8 @@ class TestTrim(object):
         assert_equal(stats.trim_mean([], 0.0), np.nan)
         assert_equal(stats.trim_mean([], 0.6), np.nan)
 
-wsigmaclip = _weight_checked(stats.sigmaclip, key=lambda x: (x[1], x[2]))
+# ma_safe=False for ancient versions of numpy
+wsigmaclip = _weight_checked(stats.sigmaclip, key=lambda x: (x[1], x[2]), ma_safe=False)
 class TestSigmaClip(object):
     def test_sigmaclip1(self):
         a = np.concatenate((np.linspace(9.5,10.5,31),np.linspace(0,20,5)))

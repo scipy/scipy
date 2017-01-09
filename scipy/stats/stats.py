@@ -165,6 +165,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import math
+from functools import partial
 from collections import namedtuple
 
 import numpy as np
@@ -401,7 +402,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     arrays automatically mask any non-finite values.
 
     """
-    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, mask_screen=True)
     log_a = np.log(np.asanyarray(a, dtype=dtype))
     return np.exp(_avg(log_a, axis=axis, weights=weights))
 
@@ -450,7 +451,7 @@ def hmean(a, axis=0, dtype=None, weights=None):
     arise in the calculations such as Not a Number and infinity.
 
     """
-    a, weights, axis = _chk_weights([a], weights=weights, axis=axis)
+    a, weights, axis = _chk_weights([a], weights=weights, axis=axis, mask_screen=True)
     a = np.asanyarray(a, dtype=dtype)
     if not np.all(a > 0):
         # Harmonic mean only defined if greater than zero
@@ -3532,26 +3533,36 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate', weights=None):
 
     if a.size <= 1:
         return SpearmanrResult(np.nan, np.nan)
-    ar = np.apply_along_axis(rankdata, axisout, a, weights=weights)
+    # when we can require np >= 1.9, we can do this instead:
+    # ar = np.apply_along_axis(rankdata, axisout, a, weights=weights)
+    ar = np.apply_along_axis(partial(rankdata, weights=weights), axisout, a)
 
     br = None
     if b is not None:
         _contains_nan(b, nan_policy)
-        br = np.apply_along_axis(rankdata, axisout, b, weights=weights)
-    n = a.shape[axisout]
+        br = np.apply_along_axis(partial(rankdata, weights=weights), axisout, b)
+
     if weights is None:
         rs = np.corrcoef(ar, br, rowvar=axisout)
     else:
-        # would be better to let np.corrcoef accept weights
-        #   since this just replicates np.corrcoef
-        rs = np.cov(ar, br, rowvar=axisout, aweights=weights)
-        stddev = np.sqrt(np.diag(rs).real)
-        rs /= stddev[:, None]
-        rs /= stddev[None, :]
-        np.clip(rs.real, -1, 1, out=rs.real)
-        if np.iscomplexobj(rs):
-            np.clip(rs.imag, -1, 1, out=rs.imag)
+        try:
+            # would be better to let np.corrcoef accept weights
+            #   since this just replicates np.corrcoef
+            rs = np.cov(ar, br, rowvar=bool(axisout), aweights=weights)
+        except TypeError:  # numpy < 1.10
+            if br is None or ar.ndim > 1:
+                raise NotImplementedError("weighted matrix correlations not"
+                                          "implemented with numpy < 1.10")
+            rs = pearsonr(ar, br, weights=weights)
+        else:
+            stddev = np.sqrt(np.diag(rs).real)
+            rs /= stddev[:, None]
+            rs /= stddev[None, :]
+            np.clip(rs.real, -1, 1, out=rs.real)
+            if np.iscomplexobj(rs):
+                np.clip(rs.imag, -1, 1, out=rs.imag)
 
+    n = a.shape[axisout]
     olderr = np.seterr(divide='ignore')  # rs can have elements equal to 1
     try:
         # clip the small negative values possibly caused by rounding
