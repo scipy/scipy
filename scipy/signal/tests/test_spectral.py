@@ -387,7 +387,7 @@ class TestWelch(TestCase):
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
-        assert_raises(ValueError, welch, x) # default nperseg > x.shape[-1]
+        assert_raises(ValueError, welch, x)  # default nperseg > x.shape[-1]
 
     def test_window_long_or_nd(self):
         with warnings.catch_warnings():
@@ -712,7 +712,7 @@ class TestCSD:
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
-        assert_raises(ValueError, csd, x, x) # default nperseg > x.shape[-1]
+        assert_raises(ValueError, csd, x, x)  # default nperseg > x.shape[-1]
 
     def test_window_long_or_nd(self):
         with warnings.catch_warnings():
