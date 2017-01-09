@@ -515,7 +515,8 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     """
 
     # need to set default for nperseg before setting default for noverlap below
-    window, nperseg = _triage_segments(window, nperseg)   
+    window, nperseg = _triage_segments(window, nperseg,
+                                       input_length=x.shape[-1])   
             
     # Less overlap than welch, so samples are more statisically independent
     if noverlap is None:
@@ -779,20 +780,14 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
                 pad_shape = list(y.shape)
                 pad_shape[-1] = x.shape[-1] - y.shape[-1]
                 y = np.concatenate((y, np.zeros(pad_shape)), -1)
+    
+    if nperseg is not None:  # if specified by user
+        nperseg = int(nperseg)
+        if nperseg < 1:
+            raise ValueError('nperseg must be a positive integer')
 
     # parse window; if array like, then set nperseg = win.shape
-    win, nperseg = _triage_segments(window, nperseg)              
-
-    nperseg = int(nperseg)
-    if nperseg < 1:
-        raise ValueError('nperseg must be a positive integer')
-
-    # X and Y are same length now, can test nperseg with either
-    if x.shape[-1] < nperseg:
-        warnings.warn('nperseg = {0:d}, is greater than input length = {1:d}, '
-                      'using nperseg = {1:d}'.format(nperseg, x.shape[-1]))
-        nperseg = x.shape[-1]
-        win, nperseg = _triage_segments(window, nperseg) 
+    win, nperseg = _triage_segments(window, nperseg,input_length=x.shape[-1])              
 
     if nfft is None:
         nfft = nperseg
@@ -962,7 +957,7 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
 
     return result
 
-def _triage_segments(window, nperseg):
+def _triage_segments(window, nperseg,input_length):
     """
     Parses window and nperseg arguments for spectrogram and _spectral_helper.
     This is a helper function, not meant to be called externally.
@@ -980,6 +975,9 @@ def _triage_segments(window, nperseg):
     
     nperseg : int
         Length of each segment
+    
+    input_length: int
+        Length of input signal, i.e. x.shape[-1]. Used to test for errors.
         
     Returns
     -------
@@ -997,17 +995,24 @@ def _triage_segments(window, nperseg):
     #parse window; if array like, then set nperseg = win.shape
     if isinstance(window, string_types) or isinstance(window, tuple):
         # if nperseg not specified
-        if nperseg is None:  
+        if nperseg is None:
             nperseg = 256  # then change to default
+            if nperseg > input_length:
+                raise ValueError('Default value for nperseg, {0:d}, is greater'
+                                 ' than input length = {1:d}. Please specify a '
+                                 'value for nperseg equal to or less than {1:d}'
+                                 .format(nperseg,input_length))
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
+        if input_length < win.shape[-1]:
+            raise ValueError('window is longer than input signal')
         if nperseg is None:
             nperseg = win.shape[0]
         elif nperseg is not None:
             if nperseg != win.shape[0]:
-                raise ValueError("Value specified for nperseg is different from"
-                                 " length of window.")
+                raise ValueError("value specified for nperseg is different from"
+                                 " length of window")
     return win, nperseg
