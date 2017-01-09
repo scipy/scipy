@@ -136,7 +136,7 @@ traverse_checking(const ckdtree *self,
                     if (j < end2 - 2)
                         prefetch_datapoint(data+indices[j+2]*m, m);
 
-                    d = MinMaxDist::distance_p(
+                    d = MinMaxDist::point_point_p(
                             self,
                             data + indices[i] * m,
                             data + indices[j] * m,

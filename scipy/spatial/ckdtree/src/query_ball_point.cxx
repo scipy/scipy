@@ -79,7 +79,7 @@ traverse_checking(const ckdtree *self,
             if (i < end -2 )
                 prefetch_datapoint(data + indices[i+2] * m, m);
 
-            d = MinMaxDist::distance_p(self, data + indices[i] * m, tpt, p, m, tub);
+            d = MinMaxDist::point_point_p(self, data + indices[i] * m, tpt, p, m, tub);
 
             if (d <= tub) {
                 results->push_back((npy_intp) indices[i]);

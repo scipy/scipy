@@ -312,7 +312,7 @@ query_single_point(const ckdtree *self,
                     if (i < end_idx - 2)
                         prefetch_datapoint(data+indices[i+2]*m, m);
 
-                    d = MinMaxDist::distance_p(self, data+indices[i]*m, x, p, m, distance_upper_bound);
+                    d = MinMaxDist::point_point_p(self, data+indices[i]*m, x, p, m, distance_upper_bound);
                     if (d < distance_upper_bound) {
                         /* replace furthest neighbor */
                         if (neighbors.n == kmax)

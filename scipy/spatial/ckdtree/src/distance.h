@@ -31,7 +31,7 @@ typedef BaseMinkowskiDistP2<PlainDist1D> NonOptimizedMinkowskiDistP2;
 
 struct MinkowskiDistP2: NonOptimizedMinkowskiDistP2 {
     static inline npy_float64
-    distance_p(const ckdtree * tree,
+    point_point_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
@@ -131,6 +131,7 @@ struct BoxDist1D {
                     rect1.maxes()[k] - rect2.mins()[k], min, max,
                     tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + rect1.m]);
     }
+
     static inline npy_float64
     point_point(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,

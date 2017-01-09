@@ -64,7 +64,7 @@ traverse(const ckdtree *self, const ckdtree *other,
                     if (j < end2 - 2)
                         prefetch_datapoint(odata + oindices[j+2] * m, m);
 
-                    npy_float64 d = MinMaxDist::distance_p(
+                    npy_float64 d = MinMaxDist::point_point_p(
                             self,
                             sdata + sindices[i] * m,
                             odata + oindices[j] * m,

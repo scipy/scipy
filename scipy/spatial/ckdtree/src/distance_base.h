@@ -37,7 +37,7 @@ struct BaseMinkowskiDistPp {
     }
 
     static inline npy_float64
-    distance_p(const ckdtree * tree,
+    point_point_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
@@ -97,7 +97,7 @@ struct BaseMinkowskiDistP1 : public BaseMinkowskiDistPp<Dist1D> {
     }
 
     static inline npy_float64
-    distance_p(const ckdtree * tree,
+    point_point_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
@@ -144,7 +144,7 @@ struct BaseMinkowskiDistPinf : public BaseMinkowskiDistPp<Dist1D> {
     }
 
     static inline npy_float64
-    distance_p(const ckdtree * tree,
+    point_point_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
@@ -198,7 +198,7 @@ struct BaseMinkowskiDistP2 : public BaseMinkowskiDistPp<Dist1D> {
     }
     static inline npy_float64
 
-    distance_p(const ckdtree * tree,
+    point_point_p(const ckdtree * tree,
                const npy_float64 *x, const npy_float64 *y,
                const npy_float64 p, const npy_intp k,
                const npy_float64 upperbound)
