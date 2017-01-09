@@ -178,10 +178,45 @@ struct BoxDist1D {
     {
         npy_float64 minout, maxout;
 
-        _interval_interval_1d(x - max,
-                    x - min, &minout, &maxout,
-                    tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + tree->m]);
-        return minout;
+        npy_float64 s, t, tmin, tmax;
+        npy_float64 fb = tree->raw_boxsize_data[k];
+        npy_float64 hb = tree->raw_boxsize_data[k + tree->m];
+
+        if (fb <= 0) {
+            /* non-periodic dimension */
+            return PlainDist1D::side_distance_from_min_max(tree, x, min, max, k);
+        }
+
+        /* periodic */
+        s = 0;
+        tmax = x - max;
+        tmin = x - min;
+        /* is the test point in this range */
+        if(NPY_LIKELY(tmax < 0 && tmin > 0)) {
+            /* yes. min distance is 0 */
+            return 0;
+        }
+
+        /* no */
+        tmax = dabs(tmax);
+        tmin = dabs(tmin);
+
+        /* make tmin the closer edge */
+        if(tmin > tmax) { t = tmin; tmin = tmax; tmax = t; }
+
+        /* both edges are less than half a box. */
+        /* no wrapping, use the closer edge */
+        if(tmax < hb) return tmin;
+
+        /* both edge are more than half a box. */
+        /* wrapping on both edge, use the
+         * wrapped further edge */
+        if(tmin > hb) return fb - tmax;
+
+        /* the further side is wrapped */
+        tmax = fb - tmax;
+        if(tmin > tmax) return tmax;
+        return tmin;
     }
 
     private:
