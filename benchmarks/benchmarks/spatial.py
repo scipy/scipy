@@ -42,7 +42,7 @@ class Build(Benchmark):
             self.cls(self.data)
 
 LEAF_SIZES = [8, 128]
-BOX_SIZES = [None, 1.0]
+BOX_SIZES = [None, 0.0, 1.0]
 
 class Query(Benchmark):
     params = [
