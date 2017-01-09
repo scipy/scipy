@@ -122,7 +122,9 @@ struct nodeinfo {
     npy_float64  min_distance; /* full min distance */
     npy_float64        buf[1]; // the good old struct hack
     /* accessors to 'packed' attributes */
-    inline npy_float64        *side_distances() { /* min distance to the query per side*/
+    inline npy_float64        *side_distances() {
+        /* min distance to the query per side; we
+         * update this as the query is proceeded */
         return buf;
     }
     inline npy_float64        *maxes() {
@@ -130,6 +132,20 @@ struct nodeinfo {
     }
     inline npy_float64        *mins() {
         return buf + 2 * m;
+    }
+
+    inline void init(const struct nodeinfo * from) {
+        std::memcpy(buf, from->buf, sizeof(npy_float64) * (3 * m));
+        min_distance = from->min_distance;
+    }
+
+    inline void update_side_distance(const int d, const npy_float64 new_side_distance, const npy_float64 p) {
+        if (NPY_UNLIKELY(ckdtree_isinf(p))) {
+            min_distance = dmax(min_distance, dabs(new_side_distance));
+        } else {
+            min_distance += new_side_distance - side_distances()[d];
+        }
+        side_distances()[d] = new_side_distance;
     }
 };
 
@@ -179,18 +195,6 @@ struct nodeinfo_pool {
     }
 };
 
-inline const npy_float64 adjust_min_distance(const npy_float64 min_distance,
-        const npy_float64 old_side_distance,
-        const npy_float64 new_side_distance,
-        const npy_float64 p) {
-    if (NPY_UNLIKELY(ckdtree_isinf(p))) {
-        return dmax(min_distance, dabs(new_side_distance));
-    } else {
-        return min_distance - old_side_distance
-                + new_side_distance;
-    }
-}
-
 /* k-nearest neighbor search for a single point x */
 template <typename MinMaxDist>
 static void
@@ -232,8 +236,6 @@ query_single_point(const ckdtree *self,
     nodeinfo      *ni2;
     npy_float64   d;
     npy_float64   epsfac;
-    npy_float64   min_distance;
-    npy_float64   ni1_old_side_distance;
     heapitem      it, it2, neighbor;
     const ckdtreenode   *node;
     const ckdtreenode   *inode;
@@ -241,6 +243,9 @@ query_single_point(const ckdtree *self,
     /* set up first nodeifo */
     ni1 = nipool.allocate();
     ni1->node = self->ctree;
+
+    /* initialize first node, update min_distance */
+    ni1->min_distance = 0;
 
     for (i=0; i<m; ++i) {
         ni1->mins()[i] = self->raw_mins[i];
@@ -252,18 +257,12 @@ query_single_point(const ckdtree *self,
         } else {
             hb = fb = 0;
         }
-        ni1->side_distances()[i] = side_distance_from_min_max(
+        npy_float64 side_distance = side_distance_from_min_max(
             x[i], ni1->mins()[i], ni1->maxes()[i],
             p, hb, fb);
-    }
 
-    /* compute first distance */
-    min_distance = 0.;
-    for (i=0; i<m; ++i) {
-        if (NPY_UNLIKELY(ckdtree_isinf(p)))
-            min_distance = dmax(min_distance,ni1->side_distances()[i]);
-        else
-            min_distance += ni1->side_distances()[i];
+        ni1->side_distances()[i] = 0;
+        ni1->update_side_distance(i, side_distance, p);
     }
 
     /* fiddle approximation factor */
@@ -330,7 +329,6 @@ query_single_point(const ckdtree *self,
             else {
                 it = q.pop();
                 ni1 = (nodeinfo*)(it.contents.ptrdata);
-                min_distance = it.priority;
             }
 
         }
@@ -344,18 +342,16 @@ query_single_point(const ckdtree *self,
              * but since the distance_upper_bound decreases, we might get
              * here even if the cell's too far
              */
-            if (min_distance > distance_upper_bound*epsfac) {
+            if (ni1->min_distance > distance_upper_bound*epsfac) {
                 /* since this is the nearest cell, we're done, bail out */
                 break;
             }
             ni2 = nipool.allocate();
-
-            ni1_old_side_distance = ni1->side_distances()[split_dim];
+            ni2->init(ni1);
 
             // set up children for searching
             // ni2 will be pushed to the queue
             if (NPY_LIKELY(self->raw_boxsize_data == NULL)) {
-                std::memcpy(ni2->side_distances(), ni1->side_distances(), sizeof(npy_float64) * ( m));
                 /*
                  * non periodic : the 'near' node is know from the
                  * relative distance to the split, and
@@ -372,40 +368,34 @@ query_single_point(const ckdtree *self,
                     ni2->node = inode->less;
                }
 
-                ni1->min_distance = min_distance;
-
                 npy_float64 tmp = x[split_dim] - split;
+                npy_float64 side_distance;
                 if(NPY_LIKELY(p == 2)) {
-                    ni2->side_distances()[split_dim] = tmp * tmp;
+                    side_distance = tmp * tmp;
                 } else
                 if(NPY_LIKELY(p == 1)) {
-                    ni2->side_distances()[split_dim] = dabs(tmp);
+                    side_distance = dabs(tmp);
                 } else
                 if(NPY_LIKELY(ckdtree_isinf(p))) {
-                    ni2->side_distances()[split_dim] = dabs(tmp);
+                    side_distance = dabs(tmp);
                 } else {
-                    ni2->side_distances()[split_dim] = std::pow(dabs(tmp), p);
+                    side_distance = std::pow(dabs(tmp), p);
                 }
 
                 /*
                  * one side distance changes
                  * we can adjust the minimum distance without recomputing
                  */
-                ni2->min_distance = adjust_min_distance(min_distance,
-                            ni1_old_side_distance,
-                            ni2->side_distances()[split_dim],
-                            p);
-
-
+                ni2->update_side_distance(split_dim, side_distance, p);
             } else {
-                std::memcpy(ni2->buf, ni1->buf, sizeof(npy_float64) * (3 * m));
                 /*
                  * for periodic queries, we do not know which node is closer.
                  * thus re-claculate ni1.
                  */
                 ni1->maxes()[split_dim] = split;
                 ni1->node = inode->less;
-                ni1->side_distances()[split_dim] =
+                npy_float64 side_distance;
+                side_distance =
                     side_distance_from_min_max(
                         x[split_dim],
                         ni1->mins()[split_dim],
@@ -414,14 +404,11 @@ query_single_point(const ckdtree *self,
                         self->raw_boxsize_data[m + split_dim],
                         self->raw_boxsize_data[split_dim]);
 
-                ni1->min_distance = adjust_min_distance(min_distance,
-                            ni1_old_side_distance,
-                            ni1->side_distances()[split_dim],
-                            p);
+                ni1->update_side_distance(split_dim, side_distance, p);
 
                 ni2->mins()[split_dim] = split;
                 ni2->node = inode->greater;
-                ni2->side_distances()[split_dim] =
+                side_distance = 
                     side_distance_from_min_max(
                         x[split_dim],
                         ni2->mins()[split_dim],
@@ -430,11 +417,7 @@ query_single_point(const ckdtree *self,
                         self->raw_boxsize_data[m + split_dim],
                         self->raw_boxsize_data[split_dim]);
 
-                ni2->min_distance = adjust_min_distance(min_distance,
-                            ni1_old_side_distance,
-                            ni2->side_distances()[split_dim],
-                            p);
-
+                ni2->update_side_distance(split_dim, side_distance, p);
             }
 
             /* Ensure ni1 is closer than ni2 */
@@ -452,7 +435,6 @@ query_single_point(const ckdtree *self,
              * we're going here next, so no point pushing it on the queue
              * no need to recompute the distance or the side_distances
              */
-            min_distance = ni1->min_distance;
 
             /*
              * far child can be further
