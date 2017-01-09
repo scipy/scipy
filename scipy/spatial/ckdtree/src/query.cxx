@@ -119,9 +119,10 @@ struct heap {
 struct nodeinfo {
     const ckdtreenode  *node;
     npy_intp     m;
+    npy_float64  min_distance; /* full min distance */
     npy_float64        buf[1]; // the good old struct hack
     /* accessors to 'packed' attributes */
-    inline npy_float64        *side_distances() {
+    inline npy_float64        *side_distances() { /* min distance to the query per side*/
         return buf;
     }
     inline npy_float64        *maxes() {
@@ -232,8 +233,6 @@ query_single_point(const ckdtree *self,
     npy_float64   d;
     npy_float64   epsfac;
     npy_float64   min_distance;
-    npy_float64   ni1_min_distance;
-    npy_float64   ni2_min_distance;
     npy_float64   ni1_old_side_distance;
     heapitem      it, it2, neighbor;
     const ckdtreenode   *node;
@@ -373,7 +372,7 @@ query_single_point(const ckdtree *self,
                     ni2->node = inode->less;
                }
 
-                ni1_min_distance = min_distance;
+                ni1->min_distance = min_distance;
 
                 npy_float64 tmp = x[split_dim] - split;
                 if(NPY_LIKELY(p == 2)) {
@@ -387,6 +386,16 @@ query_single_point(const ckdtree *self,
                 } else {
                     ni2->side_distances()[split_dim] = std::pow(dabs(tmp), p);
                 }
+
+                /*
+                 * one side distance changes
+                 * we can adjust the minimum distance without recomputing
+                 */
+                ni2->min_distance = adjust_min_distance(min_distance,
+                            ni1_old_side_distance,
+                            ni2->side_distances()[split_dim],
+                            p);
+
 
             } else {
                 std::memcpy(ni2->buf, ni1->buf, sizeof(npy_float64) * (3 * m));
@@ -405,7 +414,7 @@ query_single_point(const ckdtree *self,
                         self->raw_boxsize_data[m + split_dim],
                         self->raw_boxsize_data[split_dim]);
 
-                ni1_min_distance = adjust_min_distance(min_distance,
+                ni1->min_distance = adjust_min_distance(min_distance,
                             ni1_old_side_distance,
                             ni1->side_distances()[split_dim],
                             p);
@@ -421,24 +430,15 @@ query_single_point(const ckdtree *self,
                         self->raw_boxsize_data[m + split_dim],
                         self->raw_boxsize_data[split_dim]);
 
+                ni2->min_distance = adjust_min_distance(min_distance,
+                            ni1_old_side_distance,
+                            ni2->side_distances()[split_dim],
+                            p);
+
             }
 
-            /*
-             * one side distance changes
-             * we can adjust the minimum distance without recomputing
-             */
-            ni2_min_distance = adjust_min_distance(min_distance,
-                        ni1_old_side_distance,
-                        ni2->side_distances()[split_dim],
-                        p);
-
             /* Ensure ni1 is closer than ni2 */
-            if (ni1_min_distance > ni2_min_distance) {
-                {
-                    npy_float64 tmp = ni2_min_distance;
-                    ni2_min_distance = ni1_min_distance;
-                    ni1_min_distance = tmp;
-                }
+            if (ni1->min_distance > ni2->min_distance) {
                 {
                     nodeinfo *tmp;
                     tmp = ni1;
@@ -452,15 +452,15 @@ query_single_point(const ckdtree *self,
              * we're going here next, so no point pushing it on the queue
              * no need to recompute the distance or the side_distances
              */
-            min_distance = ni1_min_distance;
+            min_distance = ni1->min_distance;
 
             /*
              * far child can be further
              * push it on the queue if it's near enough
              */
 
-            if (ni2_min_distance<=distance_upper_bound*epsfac) {
-                it2.priority = ni2_min_distance;
+            if (ni2->min_distance<=distance_upper_bound*epsfac) {
+                it2.priority = ni2->min_distance;
                 it2.contents.ptrdata = (void*) ni2;
                 q.push(it2);
             }
