@@ -32,11 +32,10 @@ struct Rectangle {
      * of the same accessors. */
     npy_float64 * const maxes() const { return &buf[0]; }
     npy_float64 * const mins() const { return &buf[0] + m; }
-    npy_float64 * const side_distances() const { return &buf[0] + m + m; }
 
     Rectangle(const npy_intp _m,
               const npy_float64 *_mins,
-              const npy_float64 *_maxes) : m(_m), buf(3 * m) {
+              const npy_float64 *_maxes) : m(_m), buf(2 * m) {
 
         /* copy array data */
         /* FIXME: use std::vector ? */
