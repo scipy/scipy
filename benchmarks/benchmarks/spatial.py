@@ -135,7 +135,7 @@ class Neighbors(Benchmark):
         if cls != 'cKDTree_weighted':
             self.T1.count_neighbors(self.T2, probe_radius, p=p)
         else:
-            self.T1.count_neighbors(self.T2, probe_radius, self_weights=self.w1, other_weights=self.w2, p=p)
+            self.T1.count_neighbors(self.T2, probe_radius, weights=(self.w1, self.w2), p=p)
 
 class CNeighbors(Benchmark):
     params = [
