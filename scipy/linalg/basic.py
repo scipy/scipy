@@ -71,10 +71,11 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     assume_a : str, optional
-        Valid entries are given in the docstring
+        Valid entries are explained above.
     transposed: bool, optional
         If True, depending on the data type ``a^T x = b`` or ``a^H x = b`` is
         solved (only taken into account for ``'gen'``).
+
     Returns
     -------
     x : (N, NRHS) array_like
@@ -119,6 +120,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     a1 = atleast_2d(_asarray_validated(a, check_finite=check_finite))
     b1 = atleast_1d(_asarray_validated(b, check_finite=check_finite))
     n = a1.shape[0]
+
+    overwrite_a = overwrite_a or _datacopied(a1, a)
+    overwrite_b = overwrite_b or _datacopied(b1, b)
 
     if a1.shape[0] != a1.shape[1]:
         raise ValueError('Input a needs to be a square matrix.')
