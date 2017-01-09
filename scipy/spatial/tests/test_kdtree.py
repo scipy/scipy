@@ -320,7 +320,7 @@ class test_random_ball_compiled_periodic(ball_consistency):
         return distance_box(a, b, p, 1.0)
 
     def setUp(self):
-        n = 100
+        n = 10000
         m = 4
         np.random.seed(1234)
         self.data = np.random.uniform(size=(n,m))
@@ -1066,6 +1066,24 @@ def test_ckdtree_box():
     dd2, ii2 = simulate_periodic_box(kdtree2, data, k, boxsize=1.0)
     assert_almost_equal(dd, dd2)
     assert_equal(ii, ii2)
+
+def test_ckdtree_box_0():
+    # check ckdtree periodic boundary that mimics non-periodic
+    n = 2000
+    m = 2
+    k = 3
+    np.random.seed(1234)
+    data = np.random.uniform(size=(n, m))
+    kdtree = cKDTree(data, leafsize=1, boxsize=0.0)
+
+    # use the standard python KDTree for the simulated periodic box
+    kdtree2 = cKDTree(data, leafsize=1)
+
+    dd, ii = kdtree.query(data, k)
+
+    dd1, ii1 = kdtree2.query(data, k)
+    assert_almost_equal(dd, dd1)
+    assert_equal(ii, ii1)
 
 def test_ckdtree_box_upper_bounds():
     data = np.linspace(0, 2, 10).reshape(-1, 2)
