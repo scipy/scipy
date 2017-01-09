@@ -122,6 +122,9 @@ class TestPeriodogram(TestCase):
         fe, pe = periodogram(x, 10, win)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, periodogram, x,
+                      10, win_err)  # win longer than signal
 
     def test_padded_fft(self):
         x = np.zeros(16)
@@ -362,6 +365,9 @@ class TestWelch(TestCase):
         assert_array_equal(pe.shape, (5,))
         assert_raises(ValueError, welch, x,
                       10, win, nperseg=4)  # because nperseg != win.shape[-1]
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, welch, x,
+                      10, win_err, nperseg=None)  # win longer than signal      
 
     def test_empty_input(self):
         f, p = welch([])
@@ -381,13 +387,7 @@ class TestWelch(TestCase):
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            f, p = welch(x)
-
-        f1, p1 = welch(x, nperseg=8)
-        assert_allclose(f, f1)
-        assert_allclose(p, p1)
+        assert_raises(ValueError, welch, x) # default nperseg > x.shape[-1]
 
     def test_window_long_or_nd(self):
         with warnings.catch_warnings():
@@ -669,6 +669,9 @@ class TestCSD:
         assert_array_equal(pe.shape, (5,))
         assert_raises(ValueError, csd, x, x,
                       10, win, nperseg=256)  # because nperseg != win.shape[-1]
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, csd, x, x,
+              10, win_err, nperseg=None)  # because win longer than signal
 
     def test_empty_input(self):
         f, p = csd([],np.zeros(10))
@@ -709,13 +712,7 @@ class TestCSD:
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            f, p = csd(x, x)
-
-        f1, p1 = csd(x, x, nperseg=8)
-        assert_allclose(f, f1)
-        assert_allclose(p, p1)
+        assert_raises(ValueError, csd, x, x) # default nperseg > x.shape[-1]
 
     def test_window_long_or_nd(self):
         with warnings.catch_warnings():
@@ -860,7 +857,9 @@ class TestSpectrogram:
         assert_array_equal(Pe.shape, (9,73))
         assert_raises(ValueError, spectrogram, x,
                       fs, win, nperseg=8)  # because nperseg != win.shape[-1]
-
+        win_err = signal.get_window(('tukey', 0.25), 2048)
+        assert_raises(ValueError, spectrogram, x,
+                      fs, win_err, nperseg=None)  # win longer than signal
 
 class TestLombscargle:
     def test_frequency(self):
