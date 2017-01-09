@@ -1,6 +1,24 @@
 #include "distance_base.h"
 
 struct PlainDist1D {
+    static inline const npy_float64 side_distance_from_min_max(
+        const ckdtree * tree, const npy_float64 x,
+        const npy_float64 min,
+        const npy_float64 max,
+        const npy_intp k
+        )
+    {
+        npy_float64 s, t;
+        s = 0;
+        t = x - max;
+        if (t > s) {
+            s = t;
+        } else {
+            t = min - x;
+            if (t > s) s = t;
+        }
+        return s;
+    }
     static inline void
     interval_interval(const ckdtree * tree,
                         const Rectangle& rect1, const Rectangle& rect2,
@@ -151,6 +169,21 @@ struct BoxDist1D {
         return x - r * boxsize;
     }
 
+    static inline const npy_float64 side_distance_from_min_max(
+        const ckdtree * tree, const npy_float64 x,
+        const npy_float64 min,
+        const npy_float64 max,
+        const npy_intp k
+        )
+    {
+        npy_float64 minout, maxout;
+
+        _interval_interval_1d(x - max,
+                    x - min, &minout, &maxout,
+                    tree->raw_boxsize_data[k], tree->raw_boxsize_data[k + tree->m]);
+        return minout;
+    }
+
     private:
     static inline npy_float64
     wrap_distance(const npy_float64 x, const npy_float64 hb, const npy_float64 fb)
@@ -164,6 +197,7 @@ struct BoxDist1D {
     #endif
         return x1;
     }
+
 
 };
 

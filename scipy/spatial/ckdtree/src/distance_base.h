@@ -61,6 +61,12 @@ struct BaseMinkowskiDistPp {
         }
         return r;
     }
+
+    static inline npy_float64
+    distance_p(const npy_float64 s, const npy_float64 p)
+    {
+        return std::pow(s,p);
+    }
 };
 
 template <typename Dist1D>
@@ -112,6 +118,12 @@ struct BaseMinkowskiDistP1 : public BaseMinkowskiDistPp<Dist1D> {
         }
         return r;
     }
+
+    static inline npy_float64
+    distance_p(const npy_float64 s, const npy_float64 p)
+    {
+        return dabs(s);
+    }
 };
 
 template <typename Dist1D>
@@ -158,6 +170,11 @@ struct BaseMinkowskiDistPinf : public BaseMinkowskiDistPp<Dist1D> {
                 return r;
         }
         return r;
+    }
+    static inline npy_float64
+    distance_p(const npy_float64 s, const npy_float64 p)
+    {
+        return dabs(s);
     }
 };
 
@@ -213,6 +230,11 @@ struct BaseMinkowskiDistP2 : public BaseMinkowskiDistPp<Dist1D> {
                 return r;
         }
         return r;
+    }
+    static inline npy_float64
+    distance_p(const npy_float64 s, const npy_float64 p)
+    {
+        return s * s;
     }
 };
 

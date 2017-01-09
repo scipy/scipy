@@ -256,16 +256,16 @@ query_single_point(const ckdtree *self,
     for (i=0; i<m; ++i) {
         ni1->mins()[i] = self->raw_mins[i];
         ni1->maxes()[i] = self->raw_maxes[i];
-        npy_float64 hb, fb;
-        if(self->raw_boxsize_data) {
-            fb = self->raw_boxsize_data[i];
-            hb = self->raw_boxsize_data[m + i];
+
+        npy_float64 side_distance;
+        if(self->raw_boxsize_data != NULL) {
+            side_distance = BoxDist1D::side_distance_from_min_max(
+                self, x[i], self->raw_mins[i], self->raw_maxes[i], i);
         } else {
-            hb = fb = 0;
+            side_distance = PlainDist1D::side_distance_from_min_max(
+                self, x[i], self->raw_mins[i], self->raw_maxes[i], i);
         }
-        npy_float64 side_distance = side_distance_from_min_max(
-            x[i], self->raw_mins[i], self->raw_maxes[i],
-            p, hb, fb);
+        side_distance = MinMaxDist::distance_p(side_distance, p);
 
         ni1->side_distances()[i] = 0;
         ni1->update_side_distance(i, side_distance, p);
@@ -382,18 +382,7 @@ query_single_point(const ckdtree *self,
 
                 npy_float64 tmp = x[split_dim] - split;
 
-                /* side distance of ni1 doesn't change -- because it is the closer node */
-                if(NPY_LIKELY(p == 2)) {
-                    side_distance = tmp * tmp;
-                } else
-                if(NPY_LIKELY(p == 1)) {
-                    side_distance = dabs(tmp);
-                } else
-                if(NPY_LIKELY(ckdtree_isinf(p))) {
-                    side_distance = dabs(tmp);
-                } else {
-                    side_distance = std::pow(dabs(tmp), p);
-                }
+                side_distance = MinMaxDist::distance_p(tmp, p);
 
                 ni2->update_side_distance(split_dim, side_distance, p);
             } else {
@@ -409,25 +398,25 @@ query_single_point(const ckdtree *self,
 
                 ni1->maxes()[split_dim] = split;
                 ni1->node = inode->less;
-                side_distance = side_distance_from_min_max(
+
+                side_distance = BoxDist1D::side_distance_from_min_max(
+                        self,
                         x[split_dim],
                         ni1->mins()[split_dim],
-                        ni1->maxes()[split_dim],
-                        p,
-                        self->raw_boxsize_data[m + split_dim],
-                        self->raw_boxsize_data[split_dim]);
+                        ni1->maxes()[split_dim], split_dim);
+                side_distance = MinMaxDist::distance_p(side_distance, p);
 
                 ni1->update_side_distance(split_dim, side_distance, p);
 
                 ni2->mins()[split_dim] = split;
                 ni2->node = inode->greater;
-                side_distance = side_distance_from_min_max(
+
+                side_distance = BoxDist1D::side_distance_from_min_max(
+                        self,
                         x[split_dim],
                         ni2->mins()[split_dim],
-                        ni2->maxes()[split_dim],
-                        p,
-                        self->raw_boxsize_data[m + split_dim],
-                        self->raw_boxsize_data[split_dim]);
+                        ni2->maxes()[split_dim], split_dim);
+                side_distance = MinMaxDist::distance_p(side_distance, p);
 
                 ni2->update_side_distance(split_dim, side_distance, p);
             }
