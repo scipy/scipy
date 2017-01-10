@@ -33,6 +33,9 @@ class LowLevelCallable(tuple):
         Low-level callback function.
     user_data : {PyCapsule, ctypes void pointer, cffi void pointer}
         User data to pass on to the callback function.
+    signature : str, optional
+        Signature of the function. If omitted, determined from *function*,
+        if possible.
 
     Attributes
     ----------
@@ -40,9 +43,8 @@ class LowLevelCallable(tuple):
         Callback function given
     user_data
         User data given
-    signature : str
-        Signature of the function. If omitted, determined from *function*,
-        if possible.
+    signature
+        Signature of the function.
 
     Methods
     -------
