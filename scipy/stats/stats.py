@@ -227,8 +227,8 @@ def _weight_masked(arrays, weights, axis):
         axis = 0
     weights = np.asanyarray(weights)
     for a in arrays:
-        axis_mask = np.ma.getmaskarray(a)
-        if (~axis_mask).all():  # np.ma.getmask(a) is np.ma.nomask
+        axis_mask = np.ma.getmask(a)
+        if axis_mask is np.ma.nomask:
             continue
         if a.ndim > 1:
             not_axes = tuple(i for i in range(a.ndim) if i != axis)
