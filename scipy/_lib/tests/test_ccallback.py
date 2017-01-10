@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_equal, assert_raises
+from numpy.testing import assert_equal, assert_raises, assert_
 
 import time
 import nose
@@ -137,6 +137,15 @@ def test_bad_callbacks():
 
         # Test that passing in user_data also fails
         assert_raises(ValueError, caller, func2, 1.0)
+
+        # Test error message
+        llfunc = LowLevelCallable(func)
+        try:
+            caller(llfunc, 1.0)
+        except ValueError as err:
+            msg = str(err)
+            assert_(llfunc.signature in msg, msg)
+            assert_('double (double, double, int *, void *)' in msg, msg)
 
     for caller in sorted(CALLERS.keys()):
         for func in sorted(BAD_FUNCS.keys()):
