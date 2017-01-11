@@ -715,7 +715,8 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         Array of weights, same number of dimensions as input
     output : ndarray, optional
         The `output` parameter passes an array in which to store the
-        filter output.
+        filter output. Output array should have different name as
+        compared to input array to avoid aliasing errors.  
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
         the `mode` parameter determines how the array borders are
         handled. For 'constant' mode, values beyond borders are set to be
