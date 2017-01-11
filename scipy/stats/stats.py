@@ -233,7 +233,7 @@ def _weight_masked(arrays, weights, axis):
         if a.ndim > 1:
             not_axes = tuple(i for i in range(a.ndim) if i != axis)
             axis_mask = axis_mask.any(axis=not_axes)
-        weights *= 1 - axis_mask
+        weights *= 1 - axis_mask.astype(int)
     return weights
 
 
@@ -404,7 +404,11 @@ def gmean(a, axis=0, dtype=None, weights=None):
     """
     a, weights, axis = _chk_weights([a], weights=weights, axis=axis,
                                     mask_screen=True, pos_only=True)
-    log_a = np.log(np.asanyarray(a, dtype=dtype))
+    if a.ndim == 1:  # fixes weird old numpy bug?
+        a = np.asarray(a, dtype=dtype)
+    else:
+        a = np.asanyarray(a, dtype=dtype)
+    log_a = np.log(a)
     return np.exp(_avg(log_a, axis=axis, weights=weights))
 
 
@@ -454,7 +458,10 @@ def hmean(a, axis=0, dtype=None, weights=None):
     """
     a, weights, axis = _chk_weights([a], weights=weights, axis=axis,
                                     mask_screen=True, pos_only=True)
-    a = np.asanyarray(a, dtype=dtype)
+    if a.ndim == 1:  # fixes weird old numpy bug?
+        a = np.asarray(a, dtype=dtype)
+    else:
+        a = np.asanyarray(a, dtype=dtype)
     if not np.all(a > 0):
         # Harmonic mean only defined if greater than zero
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
