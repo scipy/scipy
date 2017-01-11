@@ -203,9 +203,10 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
 
 
 def _chk_asarrays(arrays, axis=None):
+    arrays = [np.asanyarray(a) for a in arrays]
     if axis is None:
         # np < 1.10 ravel removes subclass from arrays
-        arrays = [np.ravel(a) if a.ndim != 1 else 1
+        arrays = [np.ravel(a) if a.ndim != 1 else a
                   for a in arrays]
         axis = 0
     arrays = tuple(np.atleast_1d(a) for a in arrays)
