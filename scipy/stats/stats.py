@@ -204,7 +204,9 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
 
 def _chk_asarrays(arrays, axis=None):
     if axis is None:
-        arrays = [np.ravel(a) for a in arrays]
+        # np < 1.10 ravel removes subclass from arrays
+        arrays = [np.ravel(a) if a.ndim != 1 else 1
+                  for a in arrays]
         axis = 0
     arrays = tuple(np.atleast_1d(a) for a in arrays)
     if axis < 0:
@@ -404,10 +406,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     """
     a, weights, axis = _chk_weights([a], weights=weights, axis=axis,
                                     mask_screen=True, pos_only=True)
-    if a.ndim == 1:  # fixes weird old numpy bug?
-        a = np.asarray(a, dtype=dtype)
-    else:
-        a = np.asanyarray(a, dtype=dtype)
+    a = np.asanyarray(a, dtype=dtype)
     log_a = np.log(a)
     return np.exp(_avg(log_a, axis=axis, weights=weights))
 
@@ -458,10 +457,7 @@ def hmean(a, axis=0, dtype=None, weights=None):
     """
     a, weights, axis = _chk_weights([a], weights=weights, axis=axis,
                                     mask_screen=True, pos_only=True)
-    if a.ndim == 1:  # fixes weird old numpy bug?
-        a = np.asarray(a, dtype=dtype)
-    else:
-        a = np.asanyarray(a, dtype=dtype)
+    a = np.asanyarray(a, dtype=dtype)
     if not np.all(a > 0):
         # Harmonic mean only defined if greater than zero
         raise ValueError("Harmonic mean only defined if all elements greater than zero")
