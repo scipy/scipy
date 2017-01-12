@@ -56,7 +56,8 @@ _axis_doc = \
 _output_doc = \
 """output : array, optional
     The `output` parameter passes an array in which to store the
-    filter output."""
+    filter output. Output array should have different name as compared
+    to input array to avoid aliasing errors."""
 _size_foot_doc = \
 """size : scalar or tuple, optional
     See footprint, below
@@ -679,7 +680,8 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
         array of weights, same number of dimensions as input
     output : array, optional
         The ``output`` parameter passes an array in which to store the
-        filter output.
+        filter output. Output array should have different name as
+        compared to input array to avoid aliasing errors.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
         The ``mode`` parameter determines how the array borders are
         handled, where ``cval`` is the value when mode is equal to
