@@ -102,7 +102,6 @@ _metrics = ['braycurtis', 'canberra', 'chebyshev', 'cityblock',
             'jaccard', 'kulsinski', 'mahalanobis', 'matching',
             'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
             'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule']
-_wmetrics = set(_metrics) - {'mahalanobis', 'seuclidean', 'sqeuclidean'}
 
 # A hashmap of expected output arrays for the tests. These arrays
 # come from a list of text files, which are read prior to testing.
@@ -552,19 +551,18 @@ class TestCdist(TestCase):
 
     def _check_calling_conventions(self, X1, X2, metric, eps=1e-04, **kwargs):
         # helper function for test_cdist_calling_conventions
-        cfun = wcdist if metric in _wmetrics else cdist
         try:
-            y1 = cfun(X1, X2, metric=metric, **kwargs)
-            y2 = cfun(X1, X2, metric=eval(metric), **kwargs)
-            y3 = cfun(X1, X2, metric="test_" + metric, **kwargs)
+            y1 = cdist(X1, X2, metric=metric, **kwargs)
+            y2 = cdist(X1, X2, metric=eval(metric), **kwargs)
+            y3 = cdist(X1, X2, metric="test_" + metric, **kwargs)
         except Exception as e:
             e_cls = e.__class__
             if verbose > 2:
                 print(e_cls.__name__)
                 print(e)
-            assert_raises(Exception, cfun, X1, X2, metric=metric, **kwargs)
-            assert_raises(Exception, cfun, X1, X2, metric=eval(metric), **kwargs)
-            assert_raises(Exception, cfun, X1, X2, metric="test_" + metric, **kwargs)
+            assert_raises(Exception, cdist, X1, X2, metric=metric, **kwargs)
+            assert_raises(Exception, cdist, X1, X2, metric=eval(metric), **kwargs)
+            assert_raises(Exception, cdist, X1, X2, metric="test_" + metric, **kwargs)
         else:
             _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose > 2)
             _assert_within_tol(y2, y3, rtol=eps, verbose_=verbose > 2)
@@ -1370,19 +1368,18 @@ class TestPdist(TestCase):
 
     def _check_calling_conventions(self, X, metric, eps=1e-07, **kwargs):
         # helper function for test_pdist_calling_conventions
-        pfun = wpdist if metric in _wmetrics else pdist
         try:
-            y1 = pfun(X, metric=metric, **kwargs)
-            y2 = pfun(X, metric=eval(metric), **kwargs)
-            y3 = pfun(X, metric="test_" + metric, **kwargs)
+            y1 = pdist(X, metric=metric, **kwargs)
+            y2 = pdist(X, metric=eval(metric), **kwargs)
+            y3 = pdist(X, metric="test_" + metric, **kwargs)
         except Exception as e:
             e_cls = e.__class__
             if verbose > 2:
                 print(e_cls.__name__)
                 print(e)
-            assert_raises(Exception, pfun, X, metric=metric, **kwargs)
-            assert_raises(Exception, pfun, X, metric=eval(metric), **kwargs)
-            assert_raises(Exception, pfun, X, metric="test_" + metric, **kwargs)
+            assert_raises(Exception, pdist, X, metric=metric, **kwargs)
+            assert_raises(Exception, pdist, X, metric=eval(metric), **kwargs)
+            assert_raises(Exception, pdist, X, metric="test_" + metric, **kwargs)
         else:
             _assert_within_tol(y1, y2, rtol=eps, verbose_=verbose > 2)
             _assert_within_tol(y2, y3, rtol=eps, verbose_=verbose > 2)
