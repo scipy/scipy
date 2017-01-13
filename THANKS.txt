@@ -162,7 +162,7 @@ Bill Sacks for fixes to netcdf i/o.
 Kolja Glogowski for a bug fix in scipy.special.
 Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
-Antonio Ribeiro for implementing irrnotch and iirpeak functions.
+Antonio Ribeiro for irrnotch and iirpeak functions and improvements on BFGS method.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
 John Draper for bug fixes.
