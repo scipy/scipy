@@ -364,6 +364,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         ts = []
         ys = []
 
+        if len(t_eval) > 0 and t_eval[0] == t0:
+            pass
+            # If the first t_eval is the start time, deal with it now
+            ts.append(solver.t)
+            ys.append(np.expand_dims(solver.y, axis=1))
+            t_eval_i += 1
+
     interpolants = []
 
     events, is_terminal, event_dir = prepare_events(events)

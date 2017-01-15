@@ -9,7 +9,7 @@ def check_arguments(fun, y0):
         raise ValueError("`y0` must be 1-dimensional.")
 
     def fun_wrapped(t, y):
-        return np.asarray(fun(t, y))
+        return np.asarray(fun(t, y), dtype=float)
 
     return fun_wrapped, y0
 
