@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Created by: Pearu Peterson, March 2002
 #
