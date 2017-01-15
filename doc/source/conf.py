@@ -299,10 +299,17 @@ if not use_matplotlib_plot_directive:
 
 # in seconds
 linkcheck_timeout = 300
-# github links have a weird behavior
-linkchek_ignore = [
+linkcheck_ignore = [
+    # github links may time out
     r'https://github.com/scipy/scipy/pull/\d+',
-    r'https://github.com/scipy/scipy/issues/\d+'
+    r'https://github.com/scipy/scipy/issues/\d+',
+    # ignore gmane problems
+    r'http://article.gmane.org/gmane.comp.python.distutils.devel/24218',
+    r'http://article.gmane.org/gmane.comp.python.numeric.general/61727',
+    r'http://article.gmane.org/gmane.comp.python.distutils.devel/24218',
+    r'http://article.gmane.org/gmane.comp.python.numeric.general/61727',
+    # some sort of rate limiting?
+    r'https://doi.org/10.1093/bioinformatics/btl355',
 ]
 
 # -----------------------------------------------------------------------------
