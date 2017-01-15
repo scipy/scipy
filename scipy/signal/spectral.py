@@ -998,10 +998,15 @@ def _triage_segments(window, nperseg,input_length):
         if nperseg is None:
             nperseg = 256  # then change to default
             if nperseg > input_length:
-                raise ValueError('Default value for nperseg, {0:d}, is greater'
-                                 ' than input length = {1:d}. Please specify a '
-                                 'value for nperseg equal to or less than {1:d}'
-                                 .format(nperseg,input_length))
+                warnings.warn('nperseg = {0:d}, is greater than input length '
+                              ' = {1:d}, using nperseg = {1:d}'
+                              .format(nperseg, input_length))
+                nperseg = input_length
+        if nperseg > input_length:
+            raise ValueError('Default value for nperseg, {0:d}, is greater'
+                             ' than input length = {1:d}. Please specify a '
+                             'value for nperseg equal to or less than {1:d}'
+                             .format(nperseg,input_length))
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
