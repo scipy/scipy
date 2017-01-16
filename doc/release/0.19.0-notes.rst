@@ -114,6 +114,9 @@ The `prune` method of classes `bsr_matrix`, `csc_matrix`, and `csr_matrix`
 was updated to reallocate backing arrays under certain conditions, reducing
 memory usage.
 
+The methods `argmin` and `argmax` were added to classes `coo_matrix`,
+`csc_matrix`, `csr_matrix`, and `bsr_matrix`.
+
 `scipy.special` improvements
 ----------------------------
 
