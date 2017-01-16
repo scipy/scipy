@@ -5206,6 +5206,332 @@ class halfgennorm_gen(rv_continuous):
 halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 
+def _get_shape_parameters(distribution):
+    """
+    Returns all shape parameters of a scipy distribution
+    including loc and scale
+    @param distribution scipy.stats.rv_continuous
+    """
+    shape_parameters = []
+    if distribution.shapes is not None:
+        shape_parameters += distribution.shapes.split(', ')
+    shape_parameters += ['loc', 'scale']
+    return shape_parameters
+
+
+class mixture_gen(rv_continuous):
+    """ Mixture of distributions
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `mixture` is given
+    by the weighted sum of probability densities of all sub distributions
+
+        mixture.pdf(x, *shapes) = c_a a.pdf(x, shapes_a) + c_b b.pdf(x, shapes_b) + ...
+
+    `mixture` takes all shape parameters of its sub distributions as a shape parameters.
+    And in addition there is one shape parameter per sub distribution for the relative normalisation.
+    The names of the shape parameters are the same as in the sub distribution with a prefix:
+    
+    E.g.
+
+    mixture_gen([('Gauss', scipy.stats.norm), ('Gamma', scipy.stats.gamma)])
+
+    has the following shape parameters (in this order):
+      - Gauss_norm
+      - Gamma_norm
+      - Gauss_loc
+      - Gauss_scale
+      - Gamma_a
+      - Gamma_loc
+      - Gamma_scale
+
+    So, first all the normalisation parameters, secondly the shape parameters of the individual distributions.
+
+    See Also
+    --------
+
+    References
+    ----------
+
+
+    %(example)s
+
+    """
+    def __init__(self, distributions, *args, **kwargs):
+        """
+        Create a new mixture model given a number of distributions
+        @param distributions: list( tuple(string, scipy.stats.rv_continuous) )
+        """
+        self.ctor_argument = distributions
+        self.distributions = []
+        self.components = []
+        self.distribution_norms = []
+        self.distribution_shapes = []
+        for component, distribution in distributions:
+            self.distributions.append(distribution)
+            self.components.append(component)
+            self.distribution_norms.append('{}_norm'.format(component))
+            self.distribution_shapes.append(['{}_{}'.format(component, s) for s in _get_shape_parameters(distribution)])
+        kwargs['shapes'] = ', '.join(sum(self.distribution_shapes, self.distribution_norms))
+        super(mixture_gen, self).__init__(*args, **kwargs)
+
+    def _extract_positional_arguments(self, parameters):
+        """
+        scipy passes the arguments as positional arguments,
+        this method splits up the individual positional arguments
+        into the norm arguments and the shape arguments for each individual component
+        """
+        norm_values, parameters = parameters[:len(self.distribution_norms)], parameters[len(self.distribution_norms):]
+        shape_values = []
+        for shape in self.distribution_shapes:
+            shape_values.append(parameters[:len(shape)])
+            parameters = parameters[len(shape):]
+        total_norm = np.sum(np.array(norm_values), axis=0)
+        norm_values = [norm_value / total_norm for norm_value in norm_values]
+        return norm_values, shape_values
+
+    def _pdf(self, x, *args):
+        """
+        The combined PDF is the sum of the distribution PDFs weighted by their individual norm factors
+        """
+        norm_values, shape_values = self._extract_positional_arguments(args)
+        return np.sum((norm * distribution.pdf(x, *shape) for norm, distribution, shape in zip(norm_values, self.distributions, shape_values)), axis=0)
+    
+    def _cdf(self, x, *args):
+        """
+        The combined CDF is the sum of the distribution CDFs weighted by their individual norm factors
+        """
+        norm_values, shape_values = self._extract_positional_arguments(args)
+        return np.sum((norm * distribution.cdf(x, *shape) for norm, distribution, shape in zip(norm_values, self.distributions, shape_values)), axis=0)
+    
+    def _rvs(self, *args):
+        """
+        Generates random numbers using the individual distribution random generator
+        with a probability given by their individual norm factors 
+        """
+        norm_values, shape_values = self._extract_positional_arguments(args)
+        choices = np.random.choice(len(norm_values), size=self._size, p=norm_values)
+        result = np.zeros(self._size)
+        for i, (distribution, shape) in enumerate(zip(self.distributions, shape_values)):
+            mask = choices == i
+            result[mask] = distribution.rvs(size=mask.sum(), *shape)
+        return result
+
+    def _updated_ctor_param(self):
+        """
+        Set distributions as additional constructor argument
+        """
+        dct = super(mixture_gen, self)._updated_ctor_param()
+        dct['distributions'] = self.ctor_argument
+        return dct
+
+    def _argcheck(self, *args):
+        """
+        We allow for arbitrary arguments.
+        The sub distributions will check their arguments later anyway.
+        The default _argcheck method restricts the arguments to be positive.
+        """
+        return True
+
+
+class histogram_gen(rv_continuous):
+    """
+    Generates a distribution given by a histogram.
+    This is useful to generate a template distribution from a binned datasample.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    There are no additional shape parameters except for the loc and scale.
+    The pdf and cdf are defined as stepwise functions from the provided histogram.
+    In particular the cdf is not interpolated between bin boundaries and not differentiable.
+
+    %(after_notes)s
+
+    %(example)s
+
+    data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5)
+    hist = np.histogram(data, bins=100)
+    template = scipy.stats.histogram_gen(hist)
+
+    """
+    _support_mask = rv_continuous._support_mask
+
+    def __init__(self, histogram, *args, **kwargs):
+        """
+        Create a new distribution using the given histogram
+        @param histogram the return value of np.histogram
+        """
+        self.histogram = histogram
+        pdf, bins = self.histogram
+        bin_widths = (np.roll(bins, -1) - bins)[:-1]
+        pdf = pdf / float(np.sum(pdf * bin_widths)) 
+        cdf = np.cumsum(pdf * bin_widths)[:-1]
+        self.template_bins = bins
+        self.template_bin_widths = bin_widths
+        self.template_pdf = np.hstack([0.0, pdf, 0.0])
+        self.template_cdf = np.hstack([0.0, cdf, 1.0])
+        # Set support
+        kwargs['a'] = self.template_bins[0]
+        kwargs['b'] = self.template_bins[-1]
+        super(histogram_gen, self).__init__(*args, **kwargs)
+
+    def _pdf(self, x):
+        """
+        PDF of the histogram
+        """
+        return self.template_pdf[np.digitize(x, bins=self.template_bins)]
+    
+    def _cdf(self, x):
+        """
+        CDF calculated from the histogram
+        """
+        return np.interp(x, self.template_bins, self.template_cdf)
+    
+    def _rvs(self):
+        """
+        Random numbers distributed like the original histogram
+        """
+        probabilities = self.template_pdf[1:-1]
+        choices = np.random.choice(len(self.template_pdf) - 2, size=self._size, p=probabilities / probabilities.sum())
+        uniform = np.random.uniform(size=self._size)
+        return self.template_bins[choices] + uniform * self.template_bin_widths[choices]
+    
+    def _updated_ctor_param(self):
+        """
+        Set the histogram as additional constructor argument
+        """
+        dct = super(histogram_gen, self)._updated_ctor_param()
+        dct['histogram'] = self.histogram
+        return dct
+
+
+class crystalball_gen(rv_continuous):
+    """
+    Crystalball distribution
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `crystalball` is::
+
+                                            --
+                                            | exp(-x**2 / 2),  for x > -alpha
+        crystalball.pdf(x, alpha, n) =  N * |
+                                            | A * (B - x)**(-n), for x <= alpha  
+                                            --
+        where:
+                                   A = (n / |alpha|)**n * exp(-alpha**2 / 2)
+                                   B = n / |alpha| - |alpha|
+                                   and N is a normalisation constant.
+
+    `crystalball` takes ``alpha`` and ``n`` as shape parameters.
+    ``alpha`` defines the point where the pdf changes from a power-law to a gaussian distribution
+    ``n`` is power of the power-law tail.
+
+    References
+    ----------
+
+    .. [1] "Crystal Ball Function",
+           https://en.wikipedia.org/wiki/Crystal_Ball_function
+
+    %(after_notes)s
+
+    %(example)s
+    """
+    def _pdf(self, x, alpha, n):
+        """
+        Return PDF of the crystalball function.
+        We express the PDF in terms of |alpha| / n, in order to avoid
+        the numerical instability at alpha = 0.
+        """
+        A = np.exp(-alpha**2 / 2.0)
+        B = (1.0 - alpha**2 / n) 
+        N = np.abs(alpha) / n / (A / (n-1) + np.abs(alpha) / n * _norm_pdf_C * _norm_cdf(np.abs(alpha)))
+        return N * _lazywhere(x > -alpha, (x, alpha, n, A, B),
+                              f = lambda x, alpha, n, A, B: np.exp(-x**2 / 2),
+                              f2 = lambda x, alpha, n, A, B: A * (B - np.abs(alpha) / n * x)**(-n))
+    
+    def _cdf(self, x, alpha, n):
+        """
+        Return CDF of the crystalball function
+        We express the CDF in terms of |alpha| / n, in order to avoid
+        the numerical instability at alpha = 0.
+        """
+        A = np.exp(-alpha**2 / 2.0)
+        B = (1.0 - alpha**2 / n) 
+        N = 1.0 / (A / (n-1) + np.abs(alpha) / n * _norm_pdf_C * _norm_cdf(np.abs(alpha)))
+        return N * _lazywhere(x > -alpha, (x, alpha, n, A, B),
+                              f = lambda x, alpha, n, A, B: A / (n-1) + (np.abs(alpha) / n) * _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-alpha)),
+                              f2 = lambda x, alpha, n, A, B: A * (B - np.abs(alpha) / n * x)**(-n+1) / (n-1))
+    
+    def _argcheck(self, alpha, n):
+        """
+        In HEP crystal-ball is also defined for n = 1 (see plot on wikipedia)
+        But the function doesn't have a finite integral in this corner case,
+        and isn't a PDF anymore (but can still be used on a finite range).
+        Here we restrict the function to n > 1.
+        """
+        return (n > 1)
+crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Function")
+
+
+def _argus_phi(chi):
+    """
+    Utility function for the argus distribution
+    used in the CDF and norm of the Argus Funktion
+    """
+    return _norm_cdf(chi) - chi * _norm_pdf(chi) - 0.5
+
+
+class argus_gen(rv_continuous):
+    """
+    Argus distribution
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `argus` is::
+
+        argus.pdf(x, chi) = chi**3 / (sqrt(2*pi) * Psi(chi)) * x * sqrt(1-x**2) * exp(- 0.5 * chi**2 * (1 - x**2))
+
+        where:
+                 Psi(chi) = Phi(chi) - chi * phi(chi) - 1/2
+                 with Phi and phi being the CDF and PDF of a standard normal distribution, respectively.
+
+    `argus` takes ``chi`` as shape a parameter.
+    
+    References
+    ----------
+
+    .. [1] "ARGUS distribution",
+           https://en.wikipedia.org/wiki/ARGUS_distribution
+
+    %(after_notes)s
+
+    %(example)s
+    """
+    def _pdf(self, x, chi):
+        """
+        Return PDF of the argus function
+        """
+        y = 1.0 - x**2
+        return chi**3 / (_norm_pdf_C * _argus_phi(chi)) * x * np.sqrt(y) * np.exp(-chi**2 * y / 2)
+
+    def _sf(self, x, chi):
+        """
+        Return Survival function of the argus function
+        """
+        return _argus_phi(chi * np.sqrt(1 - x**2)) / _argus_phi(chi)
+argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)

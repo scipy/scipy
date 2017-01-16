@@ -26,6 +26,7 @@ Continuous distributions
    alpha             -- Alpha
    anglit            -- Anglit
    arcsine           -- Arcsine
+   argus             -- Argus
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
@@ -35,6 +36,7 @@ Continuous distributions
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
+   crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
    erlang            -- Erlang
@@ -66,6 +68,7 @@ Continuous distributions
    halflogistic      -- Half Logistic
    halfnorm          -- Half Normal
    halfgennorm       -- Generalized Half Normal
+   histogram_gen     -- Histogram (Generator)
    hypsecant         -- Hyperbolic Secant
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
@@ -85,6 +88,7 @@ Continuous distributions
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
    lomax             -- Lomax (Pareto of the second kind)
+   mixture_gen       -- Mixture (Generator)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
    nakagami          -- Nakagami

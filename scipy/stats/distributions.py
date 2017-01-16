@@ -22,3 +22,5 @@ __all__ = ['entropy', 'rv_discrete', 'rv_continuous']
 # Add only the distribution names, not the *_gen names.
 __all__ += _continuous_distns._distn_names
 __all__ += _discrete_distns._distn_names
+# Add meta-distributions
+__all__ += ['histogram_gen', 'mixture_gen']
