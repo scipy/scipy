@@ -23,7 +23,7 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, check_finite=True, assume_a='gen',
+          overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
           transposed=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
@@ -155,6 +155,12 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     else:
         raise ValueError('{} is not a recognized matrix structure'
                          ''.format(assume_a))
+
+    # Deprecate keyword "debug"
+    if debug is not None:
+        warnings.warn('Use of the "debug" keyword is deprecated '
+                      'and this keyword will be removed in the future '
+                      'versions of SciPy.', DeprecationWarning)
 
     # Backwards compatibility - old keyword.
     if sym_pos:

@@ -33,7 +33,7 @@ a warning to be emitted with the estimated condition number information. Old
 ``sym_pos`` keyword is kept for backwards compatibility reasons however it
 is identical to using ``assume_a='pos'``. Moreover, the ``debug`` keyword,
 which had no function but only printing the ``overwrite_<a, b>`` values, is
-removed.
+deprecated.
 
 The function `scipy.linalg.matrix_balance` was added to perform the so-called
 matrix balancing using the LAPACK xGEBAL routine family. This can be used to
