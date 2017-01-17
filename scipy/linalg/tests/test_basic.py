@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Created by: Pearu Peterson, March 2002
 #
@@ -7,6 +6,8 @@
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+import itertools
 import numpy as np
 from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
                    float32)
@@ -181,7 +182,7 @@ class TestSolveBanded(TestCase):
         assert_array_equal(x, [[0.5, 1.0, 1.5]])
         assert_equal(x.dtype, np.dtype('f8'))
         assert_array_equal(b, [[1.0, 2.0, 3.0]])
-        
+
     def test_native_list_arguments(self):
         a = [[1.0, 20, 0, 0],
              [-30, 4, 6, 0],
@@ -501,7 +502,7 @@ class TestSolveHBanded(TestCase):
         x = solveh_banded([[1]], [[1, 2, 3]])
         assert_array_equal(x, [[1.0, 2.0, 3.0]])
         assert_equal(x.dtype, np.dtype('f8'))
-        
+
     def test_native_list_arguments(self):
         # Same as test_01_upper, using python's native list.
         ab = [[0.0, 0.0, 2.0, 2.0],
@@ -608,7 +609,8 @@ class TestSolve(TestCase):
     def test_random_sym_complex(self):
         n = 20
         a = random([n, n])
-        # a  = a + 1j*random([n,n]) # XXX: with this the accuracy will be very low
+        # XXX: with the following addition the accuracy will be very low
+        a = a + 1j*random([n, n])
         for i in range(n):
             a[i, i] = abs(20*(.1+a[i, i]))
             for j in range(i):
@@ -624,6 +626,155 @@ class TestSolve(TestCase):
                   [[2, 1], [-30, 4]]):
             x = solve(a, b, check_finite=False)
             assert_array_almost_equal(dot(a, x), b)
+
+    def test_scalar_a_and_1D_b(self):
+        a = 1
+        b = [1, 2, 3]
+        x = solve(a, b)
+        assert_array_almost_equal(x.ravel(), b)
+        assert_(x.shape == (3,), 'Scalar_a_1D_b test returned wrong shape')
+
+    def test_simple2(self):
+        a = np.array([[1.80, 2.88, 2.05, -0.89],
+                      [525.00, -295.00, -95.00, -380.00],
+                      [1.58, -2.69, -2.90, -1.04],
+                      [-1.11, -0.66, -0.59, 0.80]])
+
+        b = np.array([[9.52, 18.47],
+                      [2435.00, 225.00],
+                      [0.77, -13.28],
+                      [-6.22, -6.21]])
+
+        x = solve(a, b)
+        assert_array_almost_equal(x, np.array([[1., -1, 3, -5],
+                                               [3, 2, 4, 1]]).T)
+
+    def test_simple_complex2(self):
+        a = np.array([[-1.34+2.55j, 0.28+3.17j, -6.39-2.20j, 0.72-0.92j],
+                      [-1.70-14.10j, 33.10-1.50j, -1.50+13.40j, 12.90+13.80j],
+                      [-3.29-2.39j, -1.91+4.42j, -0.14-1.35j, 1.72+1.35j],
+                      [2.41+0.39j, -0.56+1.47j, -0.83-0.69j, -1.96+0.67j]])
+
+        b = np.array([[26.26+51.78j, 31.32-6.70j],
+                      [64.30-86.80j, 158.60-14.20j],
+                      [-5.75+25.31j, -2.15+30.19j],
+                      [1.16+2.57j, -2.56+7.55j]])
+
+        x = solve(a, b)
+        assert_array_almost_equal(x, np. array([[1+1.j, -1-2.j],
+                                                [2-3.j, 5+1.j],
+                                                [-4-5.j, -3+4.j],
+                                                [6.j, 2-3.j]]))
+
+    def test_hermitian(self):
+        # An upper triangular matrix will be used for hermitian matrix a
+        a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
+                      [0, -4.63, -1.84+0.03j, 2.21+0.21j],
+                      [0, 0, -8.87, 1.58-0.90j],
+                      [0, 0, 0, -1.36]])
+        b = np.array([[2.98-10.18j, 28.68-39.89j],
+                      [-9.58+3.88j, -24.79-8.40j],
+                      [-0.77-16.05j, 4.23-70.02j],
+                      [7.79+5.48j, -35.39+18.01j]])
+        res = np.array([[2.+1j, -8+6j],
+                        [3.-2j, 7-2j],
+                        [-1+2j, -1+5j],
+                        [1.-1j, 3-4j]])
+        x = solve(a, b, assume_a='her')
+        assert_array_almost_equal(x, res)
+        # Also conjugate a and test for lower triangular data
+        x = solve(a.conj().T, b, assume_a='her', lower=True)
+        assert_array_almost_equal(x, res)
+
+    def test_pos_and_sym(self):
+        A = np.arange(1, 10).reshape(3, 3)
+        x = solve(np.tril(A)/9, np.ones(3), assume_a='pos')
+        assert_array_almost_equal(x, [9., 1.8, 1.])
+        x = solve(np.tril(A)/9, np.ones(3), assume_a='sym')
+        assert_array_almost_equal(x, [9., 1.8, 1.])
+
+    def test_singularity(self):
+        a = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 1],
+                      [1, 1, 1, 0, 0, 0, 1, 0, 1],
+                      [0, 1, 1, 0, 0, 0, 1, 0, 1],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 0, 1, 1, 1, 1, 0, 0, 0],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1],
+                      [1, 1, 1, 1, 1, 1, 1, 1, 1]])
+        b = np.arange(9)[:, None]
+        assert_raises(LinAlgError, solve, a, b)
+
+    def test_ill_condition_warning(self):
+        a = np.arange(1, 10).reshape(3, 3)
+        b = np.array([[15], [15], [15]])
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            assert_raises(RuntimeWarning, solve, a, b)
+
+    def test_empty_rhs(self):
+        a = np.eye(2)
+        b = [[], []]
+        x = solve(a, b)
+        assert_(x.size == 0, 'Returned array is not empty')
+        assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
+
+    def test_multiple_rhs(self):
+        a = np.eye(2)
+        b = np.random.rand(2, 3, 4)
+        x = solve(a, b)
+        assert_array_almost_equal(x, b)
+
+    def test_transposed_keyword(self):
+        A = np.arange(9).reshape(3, 3) + 1
+        x = solve(np.tril(A)/9, np.ones(3), transposed=1)
+        assert_array_almost_equal(x, [1.2, 0.2, 1])
+        x = solve(np.tril(A)/9, np.ones(3), transposed=0)
+        assert_array_almost_equal(x, [9, -5.4, -1.2])
+
+    def test_nonsquare_a(self):
+        assert_raises(ValueError, solve, [1, 2], 1)
+
+    def test_size_mismatch_with_1D_b(self):
+        assert_array_almost_equal(solve(np.eye(3), np.ones(3)), np.ones(3))
+        assert_raises(ValueError, solve, np.eye(3), np.ones(4))
+
+    def test_assume_a_keyword(self):
+        assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
+
+    def test_all_type_size_routine_combinations(self):
+        sizes = [10, 100, 1000]
+        assume_as = ['gen', 'sym', 'pos', 'her']
+        dtypes = [np.float32, np.float64, np.complex64, np.complex128]
+        for size, assume_a, dtype in itertools.product(sizes,
+                                                       assume_as,
+                                                       dtypes):
+            is_complex = dtype in (np.complex64, np.complex128)
+            if assume_a == 'her' and not is_complex:
+                continue
+
+            err_msg = ("Failed for size: {}, assume_a: {},"
+                       "dtype: {}".format(size, assume_a, dtype))
+
+            a = np.random.randn(size, size).astype(dtype)
+            b = np.random.randn(size).astype(dtype)
+            if is_complex:
+                a = a + (1j*np.random.randn(size, size)).astype(dtype)
+
+            if assume_a == 'sym':  # Can still be complex but only symmetric
+                a = a + a.T
+            elif assume_a == 'her':  # Handle hermitian matrices here instead
+                a = a + a.T.conj()
+            elif assume_a == 'pos':
+                a = a.conj().T.dot(a) + 0.1*np.eye(size)
+
+            x = solve(a, b, assume_a=assume_a)
+            tol = 1e-12 if dtype in (np.float64, np.complex128) else 1e-6
+            assert_allclose(a.dot(x), b,
+                            atol=tol * size,
+                            rtol=tol * size,
+                            err_msg=err_msg)
 
 
 class TestSolveTriangular(TestCase):
@@ -1137,7 +1288,7 @@ class TestPinv(TestCase):
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
         a_pinv = pinv2(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
-        
+
     def test_native_list_argument(self):
         a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         a_pinv = pinv(a)
@@ -1170,7 +1321,7 @@ class TestPinvSymmetric(TestCase):
         a = np.dot(a, a.conj().T)
         a_pinv = pinvh(a)
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
-        
+
     def test_native_list_argument(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a = np.dot(a, a.T)
@@ -1386,7 +1537,7 @@ class TestSolveCirculant(TestCase):
         x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)
         assert_equal(x.shape, (4, 2, 3))
         assert_allclose(x, expected)
-        
+
     def test_native_list_arguments(self):
         # Same as test_basic1 using python's native list.
         c = [1, 2, 3, 5]

@@ -28,6 +28,9 @@ except ImportError:
     mpmath = MissingModule('mpmath')
 
 
+_is_32bit_platform = np.intp(0).itemsize < 8
+
+
 # ------------------------------------------------------------------------------
 # expi
 # ------------------------------------------------------------------------------
@@ -85,7 +88,7 @@ def test_hyp0f1_gh5764():
     FuncData(lambda v, z: sc.hyp0f1(v.real, z), dataset, (0, 1), 2,
              rtol=1e-13).check()
 
-    
+
 @check_version(mpmath, '0.19')
 def test_hyp0f1_gh_1609():
     # this is a regression test for gh-1609
@@ -356,7 +359,7 @@ def test_loggamma_taylor_transition():
 
     dataset = []
     for z0 in z:
-        dataset.append((z0, complex(mpmath.loggamma(z0))))    
+        dataset.append((z0, complex(mpmath.loggamma(z0))))
     dataset = np.array(dataset)
 
     FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
@@ -376,7 +379,7 @@ def test_loggamma_taylor():
     for z0 in z:
         dataset.append((z0, complex(mpmath.loggamma(z0))))
     dataset = np.array(dataset)
-    
+
     FuncData(sc.loggamma, dataset, 0, 1, rtol=5e-14).check()
 
 
@@ -657,7 +660,7 @@ def test_wrightomega_region2():
     dataset = np.asarray(dataset)
 
     FuncData(sc.wrightomega, dataset, 0, 1, rtol=1e-15).check()
-    
+
 
 # ------------------------------------------------------------------------------
 # Systematic tests
@@ -1117,7 +1120,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                 return 0
             else:
                 return mpmath.ellipfun("sn", u=u, m=m)
-        
+
         # Oscillating function --- limit range of first argument; the
         # loss of precision there is an expected numerical feature
         # rather than an actual bug
@@ -1201,7 +1204,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             mpmath.expint,
                             [IntArg(0, 200), Arg(0, np.inf)],
                             rtol=1e-13, dps=160)
-        
+
     def test_fresnels(self):
         def fresnels(x):
             return sc.fresnel(x)[0]
@@ -1239,7 +1242,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             lambda z, a: mpmath.gammainc(z, a=a, regularized=True),
                             [Arg(0, 1e4, inclusive_a=False), Arg(0, 1e4)],
                             nan_ok=False, rtol=1e-11)
-        
+
     def test_gammaln(self):
         # The real part of loggamma is log(|gamma(z)|).
         def f(z):
@@ -1407,6 +1410,8 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(lambda a, b, x: mpmath.hyperu(a, b, x, **HYPERKW)),
                             [Arg(), Arg(), Arg()])
 
+    @dec.knownfailureif(_is_32bit_platform,
+            "mpmath issue gh-342: unsupported operand mpz, long for pow")
     def test_igam_fac(self):
         def mp_igam_fac(a, x):
             return mpmath.power(x, a)*mpmath.exp(-x)/mpmath.gamma(a)
@@ -1487,6 +1492,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             lambda n, x: exception_to_nan(mpmath.laguerre)(n, x, **HYPERKW),
                             [IntArg(), Arg()], n=20000)
 
+    @dec.knownfailureif(_is_32bit_platform, "see gh-3551 for bad points")
     def test_lambertw(self):
         assert_mpmath_equal(lambda x, k: sc.lambertw(x, int(k)),
                             lambda x, k: mpmath.lambertw(x, int(k)),
@@ -1496,10 +1502,10 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         maxgamma = 171.624376956302725
         e = np.exp(1)
         g = 6.024680040776729583740234375
-        
+
         def gamma(x):
             return ((x + g - 0.5)/e)**(x - 0.5)*_lanczos_sum_expg_scaled(x)
-        
+
         assert_mpmath_equal(gamma,
                             mpmath.gamma,
                             [Arg(0, maxgamma, inclusive_a=False)],
@@ -1655,16 +1661,16 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
         def param_filter(x):
             # Filter the poles
             return np.where((np.floor(x) == x) & (x <= 0), False, True)
-        
+
         def mp_lgam1p(z):
             # The real part of loggamma is log(|gamma(z)|)
             return mpmath.loggamma(1 + z).real
-        
+
         assert_mpmath_equal(_lgam1p,
                             mp_lgam1p,
                             [Arg()], rtol=1e-13, dps=100,
                             param_filter=param_filter)
-        
+
     def test_loggamma(self):
         def mpmath_loggamma(z):
             try:
@@ -1672,7 +1678,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
             except ValueError:
                 res = complex(np.nan, np.nan)
             return res
-        
+
         assert_mpmath_equal(sc.loggamma,
                             mpmath_loggamma,
                             [ComplexArg()], nan_ok=False,
@@ -1725,6 +1731,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             exception_to_nan(mpmath.rgamma),
                             [ComplexArg()], rtol=5e-13)
 
+    @dec.knownfailureif(_is_32bit_platform, "see gh-3551 for bad points")
     def test_rf(self):
         def mppoch(a, m):
             # deal with cases where the result in double precision
@@ -1764,7 +1771,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             mpmath.shi,
                             [ComplexArg(complex(-np.inf, -1e8), complex(np.inf, 1e8))],
                             rtol=1e-12)
-        
+
     def test_si(self):
         def si(x):
             return sc.sici(x)[0]

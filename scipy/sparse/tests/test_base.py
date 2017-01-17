@@ -2645,6 +2645,13 @@ class _TestFancyIndexing:
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
 
+        # Regression for gh-4917: index with tuple of 2D arrays
+        i = np.array([[1]], dtype=int)
+        assert_equal(A[i,i].todense(), B[i,i])
+
+        # Regression for gh-4917: index with tuple of empty nested lists
+        assert_equal(A[[[]], [[]]].todense(), B[[[]], [[]]])
+
     def test_fancy_indexing_randomized(self):
         np.random.seed(1234)  # make runs repeatable
 
@@ -3232,6 +3239,45 @@ class _TestMinMax(object):
         if isinstance(datsp, data._minmax_mixin):
             assert_array_equal(np.min(datsp), np.min(dat))
             assert_array_equal(np.max(datsp), np.max(dat))
+
+    def test_argmax(self):
+        D1 = np.array([
+            [-1, 5, 2, 3],
+            [0, 0, -1, -2],
+            [-1, -2, -3, -4],
+            [1, 2, 3, 4],
+            [1, 2, 0, 0],
+        ])
+        D2 = D1.transpose()
+
+        for D in [D1, D2]:
+            mat = csr_matrix(D)
+
+            assert_equal(mat.argmax(), np.argmax(D))
+            assert_equal(mat.argmin(), np.argmin(D))
+
+            assert_equal(mat.argmax(axis=0),
+                         np.asmatrix(np.argmax(D, axis=0)))
+            assert_equal(mat.argmin(axis=0),
+                         np.asmatrix(np.argmin(D, axis=0)))
+
+            assert_equal(mat.argmax(axis=1),
+                         np.asmatrix(np.argmax(D, axis=1).reshape(-1, 1)))
+            assert_equal(mat.argmin(axis=1),
+                         np.asmatrix(np.argmin(D, axis=1).reshape(-1, 1)))
+
+        D1 = np.empty((0, 5))
+        D2 = np.empty((5, 0))
+
+        for axis in [None, 0]:
+            mat = self.spmatrix(D1)
+            assert_raises(ValueError, mat.argmax, axis=axis)
+            assert_raises(ValueError, mat.argmin, axis=axis)
+
+        for axis in [None, 1]:
+            mat = self.spmatrix(D2)
+            assert_raises(ValueError, mat.argmax, axis=axis)
+            assert_raises(ValueError, mat.argmin, axis=axis)
 
 
 class _TestGetNnzAxis(object):

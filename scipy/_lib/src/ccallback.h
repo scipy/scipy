@@ -189,6 +189,84 @@ static ccallback_t *ccallback_obtain(void)
 
 
 /*
+ * Set Python error status indicating a signature mismatch.
+ *
+ * Parameters
+ * ----------
+ * signatures
+ *     NULL terminated list of allowed signatures.
+ * capsule_signature
+ *     The mismatcing signature from user-provided PyCapsule.
+ */
+static void ccallback__err_invalid_signature(ccallback_signature_t *signatures,
+                                             char *capsule_signature)
+{
+    PyObject *sig_list = NULL;
+    ccallback_signature_t *sig;
+
+    sig_list = PyList_New(0);
+    if (sig_list == NULL) {
+        return;
+    }
+
+    if (capsule_signature == NULL) {
+        capsule_signature = "NULL";
+    }
+
+    for (sig = signatures; sig->signature != NULL; ++sig) {
+        PyObject *str;
+        int ret;
+
+#if PY_VERSION_HEX >= 0x03000000
+        str = PyUnicode_FromString(sig->signature);
+#else
+        str = PyString_FromString(sig->signature);
+#endif
+        if (str == NULL) {
+            goto fail;
+        }
+
+        ret = PyList_Append(sig_list, str);
+        Py_DECREF(str);
+        if (ret == -1) {
+            goto fail;
+        }
+    }
+
+#if PY_VERSION_HEX >= 0x03000000
+    PyErr_Format(PyExc_ValueError,
+                 "Invalid scipy.LowLevelCallable signature \"%s\". Expected one of: %R",
+                 capsule_signature, sig_list);
+#else
+    {
+        PyObject *sig_list_repr;
+        char *sig_list_repr_str;
+
+        sig_list_repr = PyObject_Repr(sig_list);
+        if (sig_list_repr == NULL) {
+            goto fail;
+        }
+
+        sig_list_repr_str = PyString_AsString(sig_list_repr);
+        if (sig_list_repr_str == NULL) {
+            Py_DECREF(sig_list_repr);
+            goto fail;
+        }
+
+        PyErr_Format(PyExc_ValueError,
+                     "Invalid scipy.LowLevelCallable signature \"%s\". Expected one of: %s",
+                     capsule_signature, sig_list_repr_str);
+        Py_DECREF(sig_list_repr);
+    }
+#endif
+
+fail:
+    Py_XDECREF(sig_list);
+    return;
+}
+
+
+/*
  * Set up callback.
  *
  * Parameters
@@ -289,13 +367,13 @@ static int ccallback_prepare(ccallback_t *callback, ccallback_signature_t *signa
         }
 
         if (sig->signature == NULL) {
-            PyErr_SetString(PyExc_ValueError, "Invalid function signature in PyCapsule");
+            ccallback__err_invalid_signature(signatures, name);
             goto error;
         }
 
         ptr = PyCapsule_GetPointer(capsule, sig->signature);
         if (ptr == NULL) {
-            PyErr_SetString(PyExc_ValueError, "Invalid function signature in PyCapsule");
+            PyErr_SetString(PyExc_ValueError, "PyCapsule_GetPointer failed");
             goto error;
         }
 

@@ -489,10 +489,256 @@ usage of the *Dfun* option which allows the user to specify a gradient
     >>> y2[:36:6,1]
     array([0.355028, 0.339511, 0.324067, 0.308763, 0.293658, 0.278806])
 
+Solving a system with a banded Jacobian matrix
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`odeint` can be told that the Jacobian is *banded*.  For a large
+system of differential equations that are known to be stiff, this
+can improve performance significantly.
+
+As an example, we'll solve the one-dimensional Gray-Scott partial
+differential equations using the method of lines [MOL]_.  The Gray-Scott equations
+for the functions :math:`u(x, t)` and :math:`v(x, t)` on the interval
+:math:`x \in [0, L]` are
+
+.. math::
+
+    \begin{split}
+    \frac{\partial u}{\partial t} = D_u \frac{\partial^2 u}{\partial x^2} - uv^2 + f(1-u) \\
+    \frac{\partial v}{\partial t} = D_v \frac{\partial^2 v}{\partial x^2} + uv^2 - (f + k)v \\
+    \end{split}
+
+where :math:`D_u` and :math:`D_v` are the diffusion coefficients of the
+components :math:`u` and :math:`v`, respectively, and :math:`f` and :math:`k`
+are constants.  (For more information about the system, see
+http://groups.csail.mit.edu/mac/projects/amorphous/GrayScott/)
+
+We'll assume Neumann (i.e. "no flux") boundary conditions:
+
+.. math::
+
+    \frac{\partial u}{\partial x}(0,t) = 0, \quad
+    \frac{\partial v}{\partial x}(0,t) = 0, \quad
+    \frac{\partial u}{\partial x}(L,t) = 0, \quad
+    \frac{\partial v}{\partial x}(L,t) = 0
+
+To apply the method of lines, we discretize the :math:`x` variable by defining
+the uniformly spaced grid of :math:`N` points :math:`\left\{x_0, x_1, \ldots, x_{N-1}\right\}`, with
+:math:`x_0 = 0` and :math:`x_{N-1} = L`.
+We define :math:`u_j(t) \equiv u(x_k, t)` and :math:`v_j(t) \equiv v(x_k, t)`, and
+replace the :math:`x` derivatives with finite differences.  That is,
+
+.. math::
+
+    \frac{\partial^2 u}{\partial x^2}(x_j, t) \rightarrow
+        \frac{u_{j-1}(t) - 2 u_{j}(t) + u_{j+1}(t)}{(\Delta x)^2}
+
+We then have a system of :math:`2N` ordinary differential equations:
+
+.. math::
+   :label: interior
+
+    \begin{split}
+    \frac{du_j}{dt} = \frac{D_u}{(\Delta x)^2} \left(u_{j-1} - 2 u_{j} + u_{j+1}\right)
+          -u_jv_j^2 + f(1 - u_j) \\
+    \frac{dv_j}{dt} = \frac{D_v}{(\Delta x)^2} \left(v_{j-1} - 2 v_{j} + v_{j+1}\right)
+          + u_jv_j^2 - (f + k)v_j
+    \end{split}
+
+For convenience, the :math:`(t)` arguments have been dropped.
+
+To enforce the boundary conditions, we introduce "ghost" points
+:math:`x_{-1}` and :math:`x_N`, and define :math:`u_{-1}(t) \equiv u_1(t)`,
+:math:`u_N(t) \equiv u_{N-2}(t)`; :math:`v_{-1}(t)` and :math:`v_N(t)`
+are defined analogously.
+
+Then
+
+.. math::
+   :label: boundary0
+
+    \begin{split}
+    \frac{du_0}{dt} = \frac{D_u}{(\Delta x)^2} \left(2u_{1} - 2 u_{0}\right)
+          -u_0v_0^2 + f(1 - u_0) \\
+    \frac{dv_0}{dt} = \frac{D_v}{(\Delta x)^2} \left(2v_{1} - 2 v_{0}\right)
+          + u_0v_0^2 - (f + k)v_0
+    \end{split}
+
+and
+
+.. math::
+   :label: boundaryL
+
+    \begin{split}
+    \frac{du_{N-1}}{dt} = \frac{D_u}{(\Delta x)^2} \left(2u_{N-2} - 2 u_{N-1}\right)
+          -u_{N-1}v_{N-1}^2 + f(1 - u_{N-1}) \\
+    \frac{dv_{N-1}}{dt} = \frac{D_v}{(\Delta x)^2} \left(2v_{N-2} - 2 v_{N-1}\right)
+          + u_{N-1}v_{N-1}^2 - (f + k)v_{N-1}
+    \end{split}
+
+Our complete system of :math:`2N` ordinary differential equations is :eq:`interior`
+for :math:`k = 1, 2, \ldots, N-2`, along with :eq:`boundary0` and :eq:`boundaryL`.
+
+We can now starting implementing this system in code.  We must combine
+:math:`\{u_k\}` and :math:`\{v_k\}` into a single vector of length :math:`2N`.
+The two obvious choices are
+:math:`\{u_0, u_1, \ldots, u_{N-1}, v_0, v_1, \ldots, v_{N-1}\}`
+and
+:math:`\{u_0, v_0, u_1, v_1, \ldots, u_{N-1}, v_{N-1}\}`.
+Mathematically, it does not matter, but the choice affects how
+efficiently `odeint` can solve the system.  The reason is in how
+the order affects the pattern of the nonzero elements of the Jacobian matrix.
+
+
+When the variables are ordered
+as :math:`\{u_0, u_1, \ldots, u_{N-1}, v_0, v_1, \ldots, v_{N-1}\}`,
+the pattern of nonzero elements of the Jacobian matrix is
+
+.. math::
+
+    \begin{smallmatrix}
+       * & * & 0 & 0 & 0 & 0 & 0  &  * & 0 & 0 & 0 & 0 & 0 & 0 \\
+       * & * & * & 0 & 0 & 0 & 0  &  0 & * & 0 & 0 & 0 & 0 & 0 \\
+       0 & * & * & * & 0 & 0 & 0  &  0 & 0 & * & 0 & 0 & 0 & 0 \\
+       0 & 0 & * & * & * & 0 & 0  &  0 & 0 & 0 & * & 0 & 0 & 0 \\
+       0 & 0 & 0 & * & * & * & 0  &  0 & 0 & 0 & 0 & * & 0 & 0 \\
+       0 & 0 & 0 & 0 & * & * & *  &  0 & 0 & 0 & 0 & 0 & * & 0 \\
+       0 & 0 & 0 & 0 & 0 & * & *  &  0 & 0 & 0 & 0 & 0 & 0 & * \\
+       * & 0 & 0 & 0 & 0 & 0 & 0  &  * & * & 0 & 0 & 0 & 0 & 0 \\
+       0 & * & 0 & 0 & 0 & 0 & 0  &  * & * & * & 0 & 0 & 0 & 0 \\
+       0 & 0 & * & 0 & 0 & 0 & 0  &  0 & * & * & * & 0 & 0 & 0 \\
+       0 & 0 & 0 & * & 0 & 0 & 0  &  0 & 0 & * & * & * & 0 & 0 \\
+       0 & 0 & 0 & 0 & * & 0 & 0  &  0 & 0 & 0 & * & * & * & 0 \\
+       0 & 0 & 0 & 0 & 0 & * & 0  &  0 & 0 & 0 & 0 & * & * & * \\
+       0 & 0 & 0 & 0 & 0 & 0 & *  &  0 & 0 & 0 & 0 & ) & * & * \\
+    \end{smallmatrix}
+
+The Jacobian pattern with variables interleaved
+as :math:`\{u_0, v_0, u_1, v_1, \ldots, u_{N-1}, v_{N-1}\}` is
+
+.. math::
+    \begin{smallmatrix}
+       * & * & * & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+       * & * & 0 & * & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+       * & 0 & * & * & * & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+       0 & * & * & * & 0 & * & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+       0 & 0 & * & 0 & * & * & * & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+       0 & 0 & 0 & * & * & * & 0 & * & 0 & 0 & 0 & 0 & 0 & 0 \\
+       0 & 0 & 0 & 0 & * & 0 & * & * & * & 0 & 0 & 0 & 0 & 0 \\
+       0 & 0 & 0 & 0 & 0 & * & * & * & 0 & * & 0 & 0 & 0 & 0 \\
+       0 & 0 & 0 & 0 & 0 & 0 & * & 0 & * & * & * & 0 & 0 & 0 \\
+       0 & 0 & 0 & 0 & 0 & 0 & 0 & * & * & * & 0 & * & 0 & 0 \\
+       0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & * & 0 & * & * & * & 0 \\
+       0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & * & * & * & 0 & * \\
+       0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & * & 0 & * & * \\
+       0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & * & * & * \\
+    \end{smallmatrix}
+
+In both cases, there are just five nontrivial diagonals, but
+when the variables are interleaved, the bandwidth is much
+smaller.
+That is, the main diagonal and the two diagonals immediately
+above and the two immediately below the main diagonal
+are the nonzero diagonals.
+This is important, because the inputs ``mu`` and ``ml``
+of `odeint` are the upper and lower bandwidths of the
+Jacobian matrix.  When the variables are interleaved,
+``mu`` and ``ml`` are 2.  When the variables are stacked
+with :math:`\{v_k\}` following :math:`\{u_k\}`, the upper
+and lower bandwidths are :math:`N`.
+
+With that decision made, we can write the function that
+implements the system of differential equations.
+
+First, we define the functions for the source and reaction
+terms of the system::
+
+    def G(u, v, f, k):
+        return f * (1 - u) - u*v**2
+
+    def H(u, v, f, k):
+        return -(f + k) * v + u*v**2
+
+Next we define the function that computes the right-hand-side
+of the system of differential equations::
+
+    def grayscott1d(y, t, f, k, Du, Dv, dx):
+        """
+        Differential equations for the 1D Gray-Scott equations.
+
+        The ODEs are derived using the method of lines.
+        """
+        # The vectors u and v are interleaved in y.  We define
+        # views of u and v by slicing y.
+        u = y[::2]
+        v = y[1::2]
+
+        # dydt is the return value of this function.
+        dydt = np.empty_like(y)
+
+        # Just like u and v are views of the interleaved vectors
+        # in y, dudt and dvdt are views of the interleaved output
+        # vectors in dydt.
+        dudt = dydt[::2]
+        dvdt = dydt[1::2]
+
+        # Compute du/dt and dv/dt.  The end points and the interior points
+        # are handled separately.
+        dudt[0]    = G(u[0],    v[0],    f, k) + Du * (-2.0*u[0] + 2.0*u[1]) / dx**2
+        dudt[1:-1] = G(u[1:-1], v[1:-1], f, k) + Du * np.diff(u,2) / dx**2
+        dudt[-1]   = G(u[-1],   v[-1],   f, k) + Du * (- 2.0*u[-1] + 2.0*u[-2]) / dx**2
+        dvdt[0]    = H(u[0],    v[0],    f, k) + Dv * (-2.0*v[0] + 2.0*v[1]) / dx**2
+        dvdt[1:-1] = H(u[1:-1], v[1:-1], f, k) + Dv * np.diff(v,2) / dx**2
+        dvdt[-1]   = H(u[-1],   v[-1],   f, k) + Dv * (-2.0*v[-1] + 2.0*v[-2]) / dx**2
+
+        return dydt
+
+We won't implement a function to compute the Jacobian, but we will tell
+`odeint` that the Jacobian matrix is banded.  This allows the underlying
+solver (LSODA) to avoid computing values that it knows are zero.  For a large
+system, this improves the performance significantly, as demonstrated in the
+following ipython session.
+
+First, we define the required inputs::
+
+    In [31]: y0 = np.random.randn(5000)
+
+    In [32]: t = np.linspace(0, 50, 11)
+
+    In [33]: f = 0.024
+
+    In [34]: k = 0.055
+
+    In [35]: Du = 0.01
+
+    In [36]: Dv = 0.005
+
+    In [37]: dx = 0.025
+
+Time the computation without taking advantage of the banded structure
+of the Jacobian matrix::
+
+    In [38]: %timeit sola = odeint(grayscott1d, y0, t, args=(f, k, Du, Dv, dx))
+    1 loop, best of 3: 25.2 s per loop
+
+Now set ``ml=2`` and ``mu=2``, so `odeint` knows that the Jacobian matrix
+is banded::
+
+    In [39]: %timeit solb = odeint(grayscott1d, y0, t, args=(f, k, Du, Dv, dx), ml=2, mu=2)
+    10 loops, best of 3: 191 ms per loop
+
+That is quite a bit faster!
+
+Let's ensure that they have computed the same result::
+
+    In [41]: np.allclose(sola, solb)
+    Out[41]: True
 
 References
 ~~~~~~~~~~
 
-.. [WPR] http://en.wikipedia.org/wiki/Romberg's_method
+.. [WPR] https://en.wikipedia.org/wiki/Romberg's_method
 
 .. [NPT] https://docs.scipy.org/doc/numpy/reference/generated/numpy.trapz.html
+
+.. [MOL] https://en.wikipedia.org/wiki/Method_of_lines

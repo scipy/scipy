@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import dec
+import numpy as np
+from numpy.testing import dec, run_module_suite
 
 from scipy._lib._testutils import xslow
 from scipy.special._testutils import MissingModule, check_version
@@ -21,6 +22,9 @@ except ImportError:
     mp = MissingModule('mpmath')
 
 
+_is_32bit_platform = np.intp(0).itemsize < 8
+
+
 @check_version(mp, '0.19')
 def test_g():
     # Test data for the g_k. See DLMF 5.11.4.
@@ -34,6 +38,7 @@ def test_g():
 @dec.slow
 @check_version(mp, '0.19')
 @check_version(sympy, '0.7')
+@dec.knownfailureif(_is_32bit_platform, "rtol only 2e-11, see gh-6938")
 def test_alpha():
     # Test data for the alpha_k. See DLMF 8.12.14.
     with mp.workdps(30):
@@ -48,7 +53,7 @@ def test_alpha():
 @check_version(sympy, '0.7')
 def test_d():
     # Compare the d_{k, n} to the results in appendix F of [1].
-    # 
+    #
     # Sources
     # -------
     # [1] DiDonato and Morris, Computation of the Incomplete Gamma
@@ -110,3 +115,7 @@ def test_gammaincc():
                         lambda a, x: mp.gammainc(a, a=x, regularized=True),
                         [IntArg(1, 100), Arg(0, 100)],
                         nan_ok=False, rtol=1e-17, n=50, dps=50)
+
+
+if __name__ == "__main__":
+    run_module_suite()

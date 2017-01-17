@@ -25,6 +25,14 @@ New features
 `scipy.linalg` improvements
 ---------------------------
 
+The function `scipy.linalg.solve` obtained two more keywords ``assume_a`` and
+``transposed``. The underlying LAPACK routines are replaced with "expert"
+versions and now can also be used to solve symmetric, hermitian and positive
+definite coefficient matrices. Moreover, ill-conditioned matrices now cause
+a warning to be emitted with the estimated condition number information. Old
+``sym_pos`` keyword is kept for backwards compatibility reasons however it
+is identical to using ``assume_a='pos'``.
+
 The function `scipy.linalg.matrix_balance` was added to perform the so-called
 matrix balancing using the LAPACK xGEBAL routine family. This can be used to
 approximately equate the row and column norms through diagonal similarity
@@ -105,6 +113,9 @@ providing simple serialization for some sparse formats.
 The `prune` method of classes `bsr_matrix`, `csc_matrix`, and `csr_matrix`
 was updated to reallocate backing arrays under certain conditions, reducing
 memory usage.
+
+The methods `argmin` and `argmax` were added to classes `coo_matrix`,
+`csc_matrix`, `csr_matrix`, and `bsr_matrix`.
 
 `scipy.special` improvements
 ----------------------------

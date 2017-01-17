@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ''' Jottings to work out format for __function_workspace__ matrix at end
 of mat file.
 

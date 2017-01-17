@@ -130,7 +130,7 @@ Jörg Dietrich for the k-sample Anderson Darling test.
 Blake Griffith for improvements to scipy.sparse.
 Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
-Nathan Woods for work on multivariate integration. 
+Nathan Woods for work on multivariate integration.
 Brianna Laugher for bug fixes.
 Johannes Kulick for the Dirichlet distribution.
 Bastian Venthur for bug fixes.
@@ -168,6 +168,7 @@ Sebastiano Vigna for code in the stats package related to Kendall's tau.
 John Draper for bug fixes.
 Alvaro Sanchez-Gonzalez for axis-dependent modes in multidimensional filters.
 Alessandro Pietro Bardelli for improvements to pdist/cdist and to related tests.
+Jonathan T. Siebert for bug fixes.
 
 Institutions
 ------------
