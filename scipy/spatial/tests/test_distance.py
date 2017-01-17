@@ -614,7 +614,7 @@ class TestCdist(TestCase):
                         print(e_cls.__name__)
                         print(e)
                     for new_type in test[1]:
-                      X1new = new_type(X1)
+                        X1new = new_type(X1)
                         X2new = new_type(X2)
                         assert_raises(e_cls, cdist, X1new, X2new, metric=metric)
                 else:
