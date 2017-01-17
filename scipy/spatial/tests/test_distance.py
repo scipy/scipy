@@ -269,8 +269,10 @@ class TestCdist(TestCase):
         # gives the same behaviour (i.e. same result or same exception).
         # NOTE: The correctness should be checked within each metric tests.
         for eo_name in self.rnd_eo_names:
-            X1 = eo[eo_name][:, ::-1]
-            X2 = eo[eo_name][:-3:2]
+            # subsampling input data to speed-up tests
+            # NOTE: num samples needs to be > than dimensions for mahalanobis
+            X1 = eo[eo_name][::5, ::-2]
+            X2 = eo[eo_name][1::5, ::2]
             for metric in _metrics:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
@@ -302,20 +304,22 @@ class TestCdist(TestCase):
                  (eo['random-float32-data'], self.valid_upcasts['float32'])]
         for metric in _metrics:
             for test in tests:
-                X1 = test[0]
+                X1 = test[0][::5, ::-2]
+                X2 = test[0][1::5, ::2]
                 try:
-                    y1 = pdist(X1, metric=metric)
+                    y1 = cdist(X1, X2, metric=metric)
                 except Exception as e:
                     e_cls = e.__class__
                     if verbose > 2:
                         print(e_cls.__name__)
                         print(e)
                     for new_type in test[1]:
-                        X2 = new_type(test[0])
-                        assert_raises(e_cls, pdist, X2, metric=metric)
+                        X1new = new_type(X1)
+                        X2new = new_type(X2)
+                        assert_raises(e_cls, cdist, X1new, X2new, metric=metric)
                 else:
                     for new_type in test[1]:
-                        y2 = pdist(new_type(X1), metric=metric)
+                        y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                         _assert_within_tol(y1, y2, eps, verbose > 2)
 
 
@@ -995,7 +999,9 @@ class TestPdist(TestCase):
         # NOTE: Extra args should be checked with a dedicated test
         eps = 1e-07
         for eo_name in self.rnd_eo_names:
-            X = eo[eo_name][::2]
+            # subsampling input data to speed-up tests
+            # NOTE: num samples needs to be > than dimensions for mahalanobis
+            X = eo[eo_name][::5, ::2]
             for metric in _metrics:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
@@ -1025,7 +1031,7 @@ class TestPdist(TestCase):
                  (eo['random-float32-data'], self.valid_upcasts['float32'])]
         for metric in _metrics:
             for test in tests:
-                X1 = test[0]
+                X1 = test[0][::5, ::2]
                 try:
                     y1 = pdist(X1, metric=metric)
                 except Exception as e:
@@ -1034,7 +1040,7 @@ class TestPdist(TestCase):
                         print(e_cls.__name__)
                         print(e)
                     for new_type in test[1]:
-                        X2 = new_type(test[0])
+                        X2 = new_type(X1)
                         assert_raises(e_cls, pdist, X2, metric=metric)
                 else:
                     for new_type in test[1]:
