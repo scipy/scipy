@@ -5,7 +5,7 @@ from os.path import join, dirname
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_equal
 
-from scipy.fftpack.realtransforms import dct, idct, dst, idst
+from scipy.fftpack.realtransforms import dct, idct, dst, idst, dctn, idctn
 
 # Matlab reference data
 MDATA = np.load(join(dirname(__file__), 'test.npz'))
@@ -48,7 +48,27 @@ def fftw_dst_ref(type, size, dt):
     return x, y, dt
 
 
-class TestComplex(object):
+def dct_2d_ref(x, **kwargs):
+    """ used as a reference in testing dct2. """
+    x = np.array(x, copy=True)
+    for row in range(x.shape[0]):
+        x[row, :] = dct(x[row, :], **kwargs)
+    for col in range(x.shape[1]):
+        x[:, col] = dct(x[:, col], **kwargs)
+    return x
+
+
+def idct_2d_ref(x, **kwargs):
+    """ used as a reference in testing idct2. """
+    x = np.array(x, copy=True)
+    for row in range(x.shape[0]):
+        x[row, :] = idct(x[row, :], **kwargs)
+    for col in range(x.shape[1]):
+        x[:, col] = idct(x[:, col], **kwargs)
+    return x
+
+
+class TestComplex(TestCase):
     def test_dct_complex64(self):
         y = dct(1j*np.arange(5, dtype=np.complex64))
         x = 1j*dct(np.arange(5))
@@ -521,3 +541,40 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (16, 2), 0, overwritable)
             self._check_1d(idst, dtype, (2, 16), 1, overwritable)
 
+
+class Test_DCTN_IDCTN(TestCase):
+    dec = 14
+    types = [1, 2, 3]
+    norms = [None, 'ortho']
+    rstate = np.random.RandomState(1234)
+    shape = (32, 16)
+    data = rstate.randn(*shape)
+
+    def test_axes_round_trip(self):
+        norm = 'ortho'
+        for axes in [None, (1, ), (0, ), (0, 1), (-2, -1)]:
+            for dct_type in self.types:
+                if norm == 'ortho' and dct_type == 1:
+                    continue  # 'ortho' not supported by DCT-I
+                tmp = dctn(self.data, type=dct_type, axes=axes, norm=norm)
+                tmp = idctn(tmp, type=dct_type, axes=axes, norm=norm)
+                assert_array_almost_equal(self.data, tmp, decimal=self.dec)
+
+    def test_dctn_vs_2d_reference(self):
+        for dct_type in self.types:
+            for norm in self.norms:
+                if norm == 'ortho' and dct_type == 1:
+                    continue  # 'ortho' not supported by DCT-I
+                y1 = dctn(self.data, type=dct_type, axes=None, norm=norm)
+                y2 = dct_2d_ref(self.data, type=dct_type, norm=norm)
+                assert_array_almost_equal(y1, y2, decimal=11)
+
+    def test_idctn_vs_2d_reference(self):
+        for dct_type in self.types:
+            for norm in self.norms:
+                if norm == 'ortho' and dct_type == 1:
+                    continue  # 'ortho' not supported by DCT-I
+                fdata = dctn(self.data, type=dct_type, norm=norm)
+                y1 = idctn(fdata, type=dct_type, norm=norm)
+                y2 = idct_2d_ref(fdata, type=dct_type, norm=norm)
+                assert_array_almost_equal(y1, y2, decimal=11)
