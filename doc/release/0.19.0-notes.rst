@@ -31,7 +31,9 @@ versions and now can also be used to solve symmetric, hermitian and positive
 definite coefficient matrices. Moreover, ill-conditioned matrices now cause
 a warning to be emitted with the estimated condition number information. Old
 ``sym_pos`` keyword is kept for backwards compatibility reasons however it
-is identical to using ``assume_a='pos'``.
+is identical to using ``assume_a='pos'``. Moreover, the ``debug`` keyword,
+which had no function but only printing the ``overwrite_<a, b>`` values, is
+deprecated.
 
 The function `scipy.linalg.matrix_balance` was added to perform the so-called
 matrix balancing using the LAPACK xGEBAL routine family. This can be used to

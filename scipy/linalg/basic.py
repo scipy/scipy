@@ -23,7 +23,7 @@ __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
 
 # Linear equations
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, debug=False, check_finite=True, assume_a='gen',
+          overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
           transposed=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
@@ -78,7 +78,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     Returns
     -------
-    x : (N, NRHS) array_like
+    x : (N, NRHS) ndarray
+        The solution array.
 
     Raises
     ------
@@ -155,6 +156,12 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         raise ValueError('{} is not a recognized matrix structure'
                          ''.format(assume_a))
 
+    # Deprecate keyword "debug"
+    if debug is not None:
+        warnings.warn('Use of the "debug" keyword is deprecated '
+                      'and this keyword will be removed in the future '
+                      'versions of SciPy.', DeprecationWarning)
+
     # Backwards compatibility - old keyword.
     if sym_pos:
         assume_a = 'pos'
@@ -218,7 +225,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
-                     overwrite_b=False, debug=False, check_finite=True):
+                     overwrite_b=False, debug=None, check_finite=True):
     """
     Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
 
@@ -266,6 +273,13 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     .. versionadded:: 0.9.0
 
     """
+
+    # Deprecate keyword "debug"
+    if debug is not None:
+        warnings.warn('Use of the "debug" keyword is deprecated '
+                      'and this keyword will be removed in the future '
+                      'versions of SciPy.', DeprecationWarning)
+
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -290,7 +304,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
 
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
-                 debug=False, check_finite=True):
+                 debug=None, check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
 
@@ -329,6 +343,13 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
         shape of `b`.
 
     """
+
+    # Deprecate keyword "debug"
+    if debug is not None:
+        warnings.warn('Use of the "debug" keyword is deprecated '
+                      'and this keyword will be removed in the future '
+                      'versions of SciPy.', DeprecationWarning)
+
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
     # Validate shapes.
