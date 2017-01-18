@@ -5335,7 +5335,9 @@ class rv_histogram(rv_continuous):
         self._hpdf = np.asarray(histogram[0])
         self._hbins = np.asarray(histogram[1])
         if len(self._hpdf) + 1 != len(self._hbins):
-            raise ValueError("Number of elements in histogram content and histogram boundaries do not match, expected n and n+1")
+            raise ValueError("Number of elements in histogram content "
+                             "and histogram boundaries do not match, "
+                             "expected n and n+1.")
         self._hbin_widths = self._hbins[1:] - self._hbins[:-1]
         self._hpdf = self._hpdf / float(np.sum(self._hpdf * self._hbin_widths))
         self._hcdf = np.cumsum(self._hpdf * self._hbin_widths)
@@ -5371,7 +5373,11 @@ class rv_histogram(rv_continuous):
 
     def _entropy(self):
         """Compute entropy of distribution"""
-        return - np.sum(self._hpdf[1:-1] * _lazywhere(self._hpdf[1:-1] > 0.0, (self._hpdf[1:-1],), np.log, 0.0) * self._hbin_widths)
+        res = _lazywhere(self._hpdf[1:-1] > 0.0,
+                         (self._hpdf[1:-1],),
+                         np.log,
+                         0.0)
+        return -np.sum(self._hpdf[1:-1] * res * self._hbin_widths)
 
     def _updated_ctor_param(self):
         """
