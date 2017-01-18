@@ -1,3 +1,4 @@
+      IMPLICIT NONE
       SUBROUTINE CFFTB (N,C,WSAVE)
       DIMENSION       C(*)       ,WSAVE(*)
       IF (N .EQ. 1) RETURN
