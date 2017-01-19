@@ -42,7 +42,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
          'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice', 'kappa4', 'kappa3', 'truncnorm']
+         'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -3006,6 +3006,22 @@ def test_burr12_ppf_small_arg():
     #   >>> float(((1-q)**(-1/d) - 1)**(1/c))
     #   5.7735026918962575e-09
     assert_allclose(quantile, 5.7735026918962575e-09)
+
+
+def test_argus_function():
+    # There is no usable reference implementation.
+    # (RooFit implementation returns unreasonable results which are not normalized correctly)
+    # Instead we do some tests if the distribution behaves as expected for different shapes and scales
+    for i in range(1, 10):
+        for j in range(1, 10):
+            assert_equal(stats.argus.pdf(i + 0.001, chi=j, scale=i), 0.0)
+            assert_(stats.argus.pdf(i - 0.001, chi=j, scale=i) > 0.0)
+            assert_equal(stats.argus.pdf(-0.001, chi=j, scale=i), 0.0)
+            assert_(stats.argus.pdf(+0.001, chi=j, scale=i) > 0.0)
+
+    for i in range(1, 10):
+        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
+        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0 - stats.argus.sf(1.0, chi=i))
 
 
 if __name__ == "__main__":
