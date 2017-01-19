@@ -767,7 +767,7 @@ class Func(object):
         return [self._parse_signature(x) + (h,) for x, h in zip(sigs, headers)]
 
     def _parse_signature(self, sig):
-        m = re.match(r"\s*(.*):\s*([fdgFDGil]*)\s*\\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
+        m = re.match(r"\s*(.*):\s*([fdgFDGil]*)\s*\*\s*([fdgFDGil]*)\s*->\s*([*fdgFDGil]*)\s*$", sig)
         if m:
             func, inarg, outarg, ret = [x.strip() for x in m.groups()]
             if ret.count('*') > 1:
