@@ -5,7 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy import special
-from scipy.special import entr, logsumexp, gammaln as gamln
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._numpy_compat import broadcast_to
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -321,9 +321,9 @@ class hypergeom_gen(rv_discrete):
     def _logpmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        return gamln(good+1) - gamln(good-k+1) - gamln(k+1) + gamln(bad+1) \
-            - gamln(bad-N+k+1) - gamln(N-k+1) - gamln(tot+1) + gamln(tot-N+1) \
-            + gamln(N+1)
+        return betaln(good+1, 1) + betaln(bad+1,1) + betaln(tot-N+1, N+1)\
+            - betaln(k+1, good-k+1) - betaln(N-k+1,bad-N+k+1)\
+            - betaln(tot+1, 1)
 
     def _pmf(self, k, M, n, N):
         # same as the following but numerically more precise
