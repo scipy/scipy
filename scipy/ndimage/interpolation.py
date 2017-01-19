@@ -600,8 +600,11 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
                 "the returned array has changed.", UserWarning)
 
     zoom_div = numpy.array(output_shape, float) - 1
-    zoom = (numpy.array(input.shape) - 1) / zoom_div
-
+    err = numpy.seterr(divide='ignore', invalid='ignore')
+    try:
+        zoom = (numpy.array(input.shape) - 1) / zoom_div
+    finally:
+        numpy.seterr(**err)
     # Zooming to non-finite values is unpredictable, so just choose
     # zoom factor 1 instead
     zoom[~numpy.isfinite(zoom)] = 1
