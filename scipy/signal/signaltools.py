@@ -7,8 +7,9 @@ import warnings
 import threading
 import sys
 import timeit
+import functools
 
-from . import sigtools, dlti
+from . import sigtools, dlti, windows
 from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
@@ -2144,7 +2145,7 @@ def resample(x, num, t=None, axis=0, window=None):
         associated with the signal data in `x`.
     axis : int, optional
         The axis of `x` that is resampled.  Default is 0.
-    window : array_like, callable, string, float, or tuple, optional
+    window : callable or array_like, optional
         Specifies the window applied to the signal in the Fourier
         domain.  See below for details.
 
@@ -2244,7 +2245,7 @@ def resample(x, num, t=None, axis=0, window=None):
         return y, new_t
 
 
-def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
+def resample_poly(x, up, down, axis=0, window=None):
     """
     Resample `x` along the given axis using polyphase filtering.
 
@@ -2264,7 +2265,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
         The downsampling factor.
     axis : int, optional
         The axis of `x` that is resampled. Default is 0.
-    window : string, tuple, or array_like, optional
+    window : callable or array_like, optional
         Desired window to use to design the low-pass filter, or the FIR filter
         coefficients to employ. See below for details.
 
@@ -2327,6 +2328,9 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     >>> plt.legend(['resample', 'resamp_poly', 'data'], loc='best')
     >>> plt.show()
     """
+    if window is None:
+        window = functools.partial(windows.kaiser, beta=5.0)
+
     x = asarray(x)
     up = int(up)
     down = int(down)
@@ -3379,7 +3383,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     if ftype == 'fir':
         if n is None:
             n = 30
-        system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
+        system = dlti(firwin(n+1, 1. / q, window=windows.hamming), 1.)
     elif ftype == 'iir':
         if n is None:
             n = 8

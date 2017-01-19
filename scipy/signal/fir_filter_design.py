@@ -4,6 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 from math import ceil, log
 import warnings
+import functools
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
@@ -11,7 +12,7 @@ from scipy.special import sinc
 from scipy.linalg import toeplitz, hankel, pinv
 from scipy._lib.six import string_types
 
-from . import sigtools
+from . import sigtools, windows
 
 __all__ = ['kaiser_beta', 'kaiser_atten', 'kaiserord',
            'firwin', 'firwin2', 'remez', 'firls', 'minimum_phase']
@@ -116,9 +117,9 @@ def kaiserord(ripple, width):
     -----
     There are several ways to obtain the Kaiser window:
 
-    - ``signal.kaiser(numtaps, beta, sym=True)``
+    - ``signal.windows.kaiser(numtaps, beta, sym=True)``
     - ``signal.get_window(beta, numtaps)``
-    - ``signal.get_window(('kaiser', beta), numtaps)``
+    - ``signal.get_window(functools.partial(signal.windows.kaiser, beta=beta), numtaps)``
 
     The empirical equations discovered by Kaiser are used.
 
@@ -141,7 +142,7 @@ def kaiserord(ripple, width):
     return int(ceil(numtaps)), beta
 
 
-def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
+def firwin(numtaps, cutoff, width=None, window=None, pass_zero=True,
            scale=True, nyq=1.0):
     """
     FIR filter design using the window method.
@@ -171,9 +172,9 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         of the transition region (expressed in the same units as `nyq`)
         for use in Kaiser FIR filter design.  In this case, the `window`
         argument is ignored.
-    window : string or tuple of string and parameter values, optional
-        Desired window to use. See `scipy.signal.get_window` for a list
-        of windows and required parameters.
+    window : callable window function, optional
+        Desired window to use. See `scipy.signal.windows` for a list
+        of windows and parameters.
     pass_zero : bool, optional
         If True, the gain at the frequency 0 (i.e. the "DC gain") is 1.
         Otherwise the DC gain is 0.
@@ -224,7 +225,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 
     Use a specific window function:
 
-    >>> signal.firwin(numtaps, f, window='nuttall')
+    >>> signal.firwin(numtaps, f, window=signal.windows.nuttall)
     array([  3.56607041e-04,   9.99286786e-01,   3.56607041e-04])
 
     High-pass ('stop' from 0 to f):
@@ -261,6 +262,9 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 
     cutoff = np.atleast_1d(cutoff) / float(nyq)
 
+    if window is None:
+        window = windows.hamming
+
     # Check for invalid input.
     if cutoff.ndim > 1:
         raise ValueError("The cutoff argument must be at most "
@@ -279,7 +283,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         # and set `window`.  This overrides the value of `window` passed in.
         atten = kaiser_atten(numtaps, float(width) / nyq)
         beta = kaiser_beta(atten)
-        window = ('kaiser', beta)
+        window = functools.partial(windows.kaiser, beta=beta)
 
     pass_nyquist = bool(cutoff.size & 1) ^ pass_zero
     if pass_nyquist and numtaps % 2 == 0:
@@ -328,7 +332,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 #
 # Rewritten by Warren Weckesser, 2010.
 
-def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0,
+def firwin2(numtaps, freq, gain, nfreqs=None, window='default', nyq=1.0,
             antisymmetric=False):
     """
     FIR filter design using the window method.
@@ -359,10 +363,9 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0,
         (e.g, 129, 257, etc).  The default is one more than the smallest
         power of 2 that is not less than `numtaps`.  `nfreqs` must be greater
         than `numtaps`.
-    window : string or (string, float) or float, or None, optional
-        Window function to use. Default is "hamming".  See
+    window : callable, optional
+        Window function to use. Default is `scipy.windows.hamming`.  See
         `scipy.signal.get_window` for the complete list of possible values.
-        If None, no window function is applied.
     nyq : float, optional
         Nyquist frequency.  Each frequency in `freq` must be between 0 and
         `nyq` (inclusive).
@@ -429,6 +432,20 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=1.0,
     [-0.02286961 -0.06362756  0.57310236  0.57310236 -0.06362756 -0.02286961]
 
     """
+
+    # We must use this awkward default argument value as `None` was abused as
+    # an alias for windows.rect in previous versions.
+    # Hsnce, passing `None` will be deprecated, too. Once phased out, the
+    # default argument will be switched to `None`.
+    if window == 'default':
+        window = windows.hamming
+
+    if window is None:
+        mesg = ("Calling firwin2 with argument window=None is deprecated. "
+                "Use window=signal.windows.rect instead.")
+        warnings.warn(mesg, DeprecationWarning)
+
+        window = windows.rect
 
     if len(freq) != len(gain):
         raise ValueError('freq and gain must be of same length.')

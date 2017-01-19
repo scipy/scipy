@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import functools
 import warnings
 import numpy as np
 from numpy import array
@@ -10,27 +11,27 @@ from scipy import signal, fftpack
 
 
 window_funcs = [
-    ('boxcar', ()),
-    ('triang', ()),
-    ('parzen', ()),
-    ('bohman', ()),
-    ('blackman', ()),
-    ('nuttall', ()),
-    ('blackmanharris', ()),
-    ('flattop', ()),
-    ('bartlett', ()),
-    ('hanning', ()),
-    ('barthann', ()),
-    ('hamming', ()),
-    ('kaiser', (1,)),
-    ('gaussian', (0.5,)),
-    ('general_gaussian', (1.5, 2)),
-    ('chebwin', (1,)),
-    ('slepian', (2,)),
-    ('cosine', ()),
-    ('hann', ()),
-    ('exponential', ()),
-    ('tukey', (0.5,)),
+    signal.windows.boxcar,
+    signal.windows.triang,
+    signal.windows.parzen,
+    signal.windows.bohman,
+    signal.windows.blackman,
+    signal.windows.nuttall,
+    signal.windows.blackmanharris,
+    signal.windows.flattop,
+    signal.windows.bartlett,
+    signal.windows.hanning,
+    signal.windows.barthann,
+    signal.windows.hamming,
+    functools.partial(signal.windows.kaiser, beta=1),
+    functools.partial(signal.windows.gaussian, std=0.5),
+    functools.partial(signal.windows.general_gaussian, p=1.5, sig=2),
+    functools.partial(signal.windows.chebwin, at=1),
+    functools.partial(signal.windows.slepian, width=2),
+    signal.windows.cosine,
+    signal.windows.hann,
+    signal.windows.exponential,
+    functools.partial(signal.windows.tukey, alpha=0.5),
     ]
 
 
@@ -424,23 +425,36 @@ class TestTukey(object):
 class TestGetWindow(object):
 
     def test_boxcar(self):
-        w = signal.get_window('boxcar', 12)
+        # window is a callable
+        w = signal.get_window(signal.windows.boxcar, 12)
         assert_array_equal(w, np.ones_like(w))
 
-        # window is a tuple of len 1
-        w = signal.get_window(('boxcar',), 16)
-        assert_array_equal(w, np.ones_like(w))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            # window is a string
+            w = signal.get_window('boxcar', 12)
+            assert_array_equal(w, np.ones_like(w))
+
+            # window is a tuple of len 1
+            w = signal.get_window(('boxcar',), 16)
+            assert_array_equal(w, np.ones_like(w))
 
     def test_cheb_odd(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            w = signal.get_window(('chebwin', -40), 53, fftbins=False)
+            w = signal.get_window(
+                functools.partial(signal.windows.chebwin, at=-40), 53,
+                fftbins=False
+            )
         assert_array_almost_equal(w, cheb_odd_true, decimal=4)
 
     def test_cheb_even(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
-            w = signal.get_window(('chebwin', 40), 54, fftbins=False)
+            w = signal.get_window(
+                functools.partial(signal.windows.chebwin, at=-40), 54,
+                fftbins=False
+            )
         assert_array_almost_equal(w, cheb_even_true, decimal=4)
 
     def test_kaiser_float(self):
@@ -460,51 +474,53 @@ class TestGetWindow(object):
         osfactor = 128
         sig = np.arange(128)
 
-        win = signal.get_window(('kaiser', 8.0), osfactor // 2)
+        win = signal.get_window(
+            functools.partial(signal.windows.kaiser, beta=8.0),
+            osfactor // 2
+        )
         assert_raises(ValueError, signal.resample,
                       (sig, len(sig) * osfactor), {'window': win})
 
 
 def test_windowfunc_basics():
-    for window_name, params in window_funcs:
-        window = getattr(signal, window_name)
+    for window in window_funcs:
         with warnings.catch_warnings(record=True):  # window is not suitable...
-            w1 = window(7, *params, sym=True)
-            w2 = window(7, *params, sym=False)
+            w1 = window(7, sym=True)
+            w2 = window(7, sym=False)
             assert_array_almost_equal(w1, w2)
 
             # Check that functions run and output lengths are correct
-            assert_equal(len(window(6, *params, sym=True)), 6)
-            assert_equal(len(window(6, *params, sym=False)), 6)
-            assert_equal(len(window(7, *params, sym=True)), 7)
-            assert_equal(len(window(7, *params, sym=False)), 7)
+            assert_equal(len(window(6, sym=True)), 6)
+            assert_equal(len(window(6, sym=False)), 6)
+            assert_equal(len(window(7, sym=True)), 7)
+            assert_equal(len(window(7, sym=False)), 7)
 
             # Check invalid lengths
-            assert_raises(ValueError, window, 5.5, *params)
-            assert_raises(ValueError, window, -7, *params)
+            assert_raises(ValueError, window, 5.5)
+            assert_raises(ValueError, window, -7)
 
             # Check degenerate cases
-            assert_array_equal(window(0, *params, sym=True), [])
-            assert_array_equal(window(0, *params, sym=False), [])
-            assert_array_equal(window(1, *params, sym=True), [1])
-            assert_array_equal(window(1, *params, sym=False), [1])
+            assert_array_equal(window(0, sym=True), [])
+            assert_array_equal(window(0, sym=False), [])
+            assert_array_equal(window(1, sym=True), [1])
+            assert_array_equal(window(1, sym=False), [1])
 
             # Check dtype
-            assert_(window(0, *params, sym=True).dtype == 'float')
-            assert_(window(0, *params, sym=False).dtype == 'float')
-            assert_(window(1, *params, sym=True).dtype == 'float')
-            assert_(window(1, *params, sym=False).dtype == 'float')
-            assert_(window(6, *params, sym=True).dtype == 'float')
-            assert_(window(6, *params, sym=False).dtype == 'float')
+            assert_(window(0, sym=True).dtype == 'float')
+            assert_(window(0, sym=False).dtype == 'float')
+            assert_(window(1, sym=True).dtype == 'float')
+            assert_(window(1, sym=False).dtype == 'float')
+            assert_(window(6, sym=True).dtype == 'float')
+            assert_(window(6, sym=False).dtype == 'float')
 
             # Check normalization
-            assert_array_less(window(10, *params, sym=True), 1.01)
-            assert_array_less(window(10, *params, sym=False), 1.01)
-            assert_array_less(window(9, *params, sym=True), 1.01)
-            assert_array_less(window(9, *params, sym=False), 1.01)
+            assert_array_less(window(10, sym=True), 1.01)
+            assert_array_less(window(10, sym=False), 1.01)
+            assert_array_less(window(9, sym=True), 1.01)
+            assert_array_less(window(9, sym=False), 1.01)
 
             # Check periodic spectrum
-            assert_allclose(fftpack.fft(window(10, *params, sym=False)).imag,
+            assert_allclose(fftpack.fft(window(10, sym=False)).imag,
                             0, atol=1e-14)
 
 

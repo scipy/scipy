@@ -7,8 +7,10 @@ import numpy as np
 from scipy import fftpack
 from . import signaltools
 from .windows import get_window
+from . import windows
 from ._spectral import lombscargle
 import warnings
+import functools
 
 from scipy._lib.six import string_types
 
@@ -30,7 +32,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     window : str or tuple or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is an array it will be used
-        directly as the window. Defaults to None; equivalent to 'boxcar'.
+        directly as the window. Defaults to None; equivalent to `scipy.windows.boxcar`.
     nfft : int, optional
         Length of the FFT used. If None the length of `x` will be used.
     detrend : str or function or False, optional
@@ -102,7 +104,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
 
     Now compute and plot the power spectrum.
 
-    >>> f, Pxx_spec = signal.periodogram(x, fs, 'flattop', scaling='spectrum')
+    >>> f, Pxx_spec = signal.periodogram(x, fs, signal.windows.flattop, scaling='spectrum')
     >>> plt.figure()
     >>> plt.semilogy(f, np.sqrt(Pxx_spec))
     >>> plt.ylim([1e-4, 1e1])
@@ -122,7 +124,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
         return np.empty(x.shape), np.empty(x.shape)
 
     if window is None:
-        window = 'boxcar'
+        window = windows.boxcar
 
     if nfft is None:
         nperseg = x.shape[axis]
@@ -141,7 +143,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
                  scaling, axis)
 
 
-def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+def welch(x, fs=1.0, window=None, nperseg=256, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using Welch's method.
@@ -160,7 +162,7 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
-        Defaults to 'hann'.
+        Defaults to `signal.windows.hann`.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
     noverlap : int, optional
@@ -202,7 +204,7 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     Notes
     -----
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hann' window an
+    and on your requirements.  For the default `scipy.windows.hann` window an
     overlap of 50% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
@@ -255,7 +257,7 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
     Now compute and plot the power spectrum.
 
-    >>> f, Pxx_spec = signal.welch(x, fs, 'flattop', 1024, scaling='spectrum')
+    >>> f, Pxx_spec = signal.welch(x, fs, signal.windows.flattop, 1024, scaling='spectrum')
     >>> plt.figure()
     >>> plt.semilogy(f, np.sqrt(Pxx_spec))
     >>> plt.xlabel('frequency [Hz]')
@@ -268,6 +270,8 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     2.0077340678640727
 
     """
+    if window is None:
+        window = windows.hann
 
     freqs, Pxx = csd(x, x, fs, window, nperseg, noverlap, nfft, detrend,
                      return_onesided, scaling, axis)
@@ -275,7 +279,7 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     return freqs, Pxx.real
 
 
-def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+def csd(x, y, fs=1.0, window=None, nperseg=256, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate the cross power spectral density, Pxy, using Welch's method.
@@ -288,11 +292,11 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         Time series of measurement values
     fs : float, optional
         Sampling frequency of the `x` and `y` time series. Defaults to 1.0.
-    window : str or tuple or array_like, optional
+    window : callable or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
-        Defaults to 'hann'.
+        Defaults to `signal.windows.hann`.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
     noverlap: int, optional
@@ -342,7 +346,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     zero-padded to match.
 
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hann' window an
+    and on your requirements.  For the default `signal.windows.hann` window an
     overlap of 50\\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
@@ -385,6 +389,8 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     >>> plt.ylabel('CSD [V**2/Hz]')
     >>> plt.show()
     """
+    if window is None:
+        window = windows.hann
 
     freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
                                      detrend, return_onesided, scaling, axis,
@@ -400,7 +406,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     return freqs, Pxy
 
 
-def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
+def spectrogram(x, fs=1.0, window=None, nperseg=256, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """
@@ -415,7 +421,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
         Time series of measurement values
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
-    window : str or tuple or array_like, optional
+    window : callable or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
@@ -511,6 +517,9 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     if noverlap is None:
         noverlap = nperseg // 8
 
+    if window is None:
+        window = functools.partial(windows.tukey, alpha=.25)
+
     freqs, time, Pxy = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided, scaling,
                                         axis, mode=mode)
@@ -518,7 +527,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     return freqs, time, Pxy
 
 
-def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
+def coherence(x, y, fs=1.0, window=None, nperseg=256, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     """
     Estimate the magnitude squared coherence estimate, Cxy, of discrete-time
@@ -536,11 +545,11 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
         Time series of measurement values
     fs : float, optional
         Sampling frequency of the `x` and `y` time series. Defaults to 1.0.
-    window : str or tuple or array_like, optional
+    window : callable or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
-        Defaults to 'hann'.
+        Defaults to `signal.windows.hann`.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
     noverlap: int, optional
@@ -575,7 +584,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
     Notes
     --------
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hann' window an
+    and on your requirements.  For the default `signal.windows.hann` window an
     overlap of 50\\% is a reasonable trade off between accurately estimating
     the signal power, while not over counting any of the data.  Narrower
     windows may require a larger overlap.
@@ -618,6 +627,8 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
     >>> plt.ylabel('Coherence')
     >>> plt.show()
     """
+    if window is None:
+        window = windows.hann
 
     freqs, Pxx = welch(x, fs, window, nperseg, noverlap, nfft, detrend,
                        axis=axis)
@@ -629,7 +640,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
     return freqs, Cxy
 
 
-def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
+def _spectral_helper(x, y, fs=1.0, window=None, nperseg=256,
                     noverlap=None, nfft=None, detrend='constant',
                     return_onesided=True, scaling='spectrum', axis=-1,
                     mode='psd'):
@@ -651,11 +662,11 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
         the extra computations are spared.
     fs : float, optional
         Sampling frequency of the time series. Defaults to 1.0.
-    window : str or tuple or array_like, optional
+    window : callable or array_like, optional
         Desired window to use. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
         directly as the window and its length will be used for nperseg.
-        Defaults to 'hann'.
+        Defaults to `signal.windows.hann`.
     nperseg : int, optional
         Length of each segment.  Defaults to 256.
     noverlap : int, optional
@@ -707,6 +718,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
 
     .. versionadded:: 0.16.0
     """
+    if window is None:
+        window = windows.hann
+
     if mode not in ['psd', 'complex', 'magnitude', 'angle', 'phase']:
         raise ValueError("Unknown value for mode %s, must be one of: "
                          "'default', 'psd', 'complex', "
@@ -807,7 +821,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
     else:
         detrend_func = detrend
 
-    if isinstance(window, string_types) or type(window) is tuple:
+    if isinstance(window, string_types) or type(window) is tuple or callable(window):
         win = get_window(window, nperseg)
     else:
         win = np.asarray(window)
