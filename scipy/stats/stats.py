@@ -3296,10 +3296,10 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
 
     a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if a_contains_nan and nan_policy == 'omit':
+    if a_contains_nan:
         a = ma.masked_invalid(a)
 
-    if a.size <= 1 or (a_contains_nan and nan_policy == 'propagate'):
+    if a.size <= 1:
         return SpearmanrResult(np.nan, np.nan)
         
     ar = np.apply_along_axis(rankdata, axisout, a)
@@ -3311,11 +3311,13 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
         b_contains_nan, nan_policy = _contains_nan(b, nan_policy)
 
         if a_contains_nan or b_contains_nan:
+            b = ma.masked_invalid(b)
+
             if nan_policy == 'propagate':
-                return SpearmanrResult(np.nan, np.nan)
+                rho, pval = mstats_basic.spearmanr(a, b, axis)
+                return SpearmanrResult(rho * np.nan, pval * np.nan)
 
             if nan_policy == 'omit':
-                b = ma.masked_invalid(b)
                 return mstats_basic.spearmanr(a, b, axis)
 
         br = np.apply_along_axis(rankdata, axisout, b)
