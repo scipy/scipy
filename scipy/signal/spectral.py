@@ -150,7 +150,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density',
           axis=-1):
-    """
+    r"""
     Estimate power spectral density using Welch's method.
 
     Welch's method [1]_ computes an estimate of the power spectral
@@ -291,7 +291,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
 def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', axis=-1):
-    """
+    r"""
     Estimate the cross power spectral density, Pxy, using Welch's
     method.
 
@@ -363,7 +363,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default 'hann' window an overlap
-    of 50\\% is a reasonable trade off between accurately estimating the
+    of 50% is a reasonable trade off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
@@ -580,7 +580,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
 
 
 def check_COLA(window, nperseg, noverlap, tol=1e-10):
-    """
+    r"""
     Check whether the Constant OverLap Add (COLA) constraint is met
 
     Parameters
@@ -704,7 +704,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, centered=True, padded=True,
          axis=-1):
-    """
+    r"""
     Compute the Short Time Fourier Transform (STFT).
 
     STFTs can be used as a way of quantifying the change of a
@@ -845,7 +845,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, centered=True, time_axis=-1, freq_axis=-2):
-    """
+    r"""
     Perform the inverse Short Time Fourier transform (iSTFT).
 
     Parameters
@@ -1107,7 +1107,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
 def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
-    """
+    r"""
     Estimate the magnitude squared coherence estimate, Cxy, of
     discrete-time signals X and Y using Welch's method.
 
@@ -1167,7 +1167,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     --------
     An appropriate amount of overlap will depend on the choice of window
     and on your requirements. For the default 'hann' window an overlap
-    of 50\\% is a reasonable trade off between accurately estimating the
+    of 50% is a reasonable trade off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
