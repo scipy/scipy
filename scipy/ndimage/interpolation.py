@@ -600,18 +600,14 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
                 "the returned array has changed.", UserWarning)
 
     zoom_div = numpy.array(output_shape, float) - 1
-    err = numpy.seterr(divide='ignore', invalid='ignore')
-    try:
-        zoom = (numpy.array(input.shape) - 1) / zoom_div
-    finally:
-        numpy.seterr(**err)
-    # Zooming to non-finite values is unpredictable, so just choose
+    # Zooming to infinite values is unpredictable, so just choose
     # zoom factor 1 instead
-    zoom[~numpy.isfinite(zoom)] = 1
+    zoom = numpy.divide(numpy.array(input.shape) - 1, zoom_div,
+                        out=numpy.ones_like(input.shape, dtype=numpy.float64),
+                        where=zoom_div!=0)
 
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    zoom = numpy.asarray(zoom, dtype=numpy.float64)
     zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
     return return_value
