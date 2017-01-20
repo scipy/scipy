@@ -422,7 +422,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
 def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
-                scaling='density', axis=-1):
+                scaling='density', axis=-1, mode='psd'):
     """
     Compute a spectrogram with consecutive Fourier transforms.
 
@@ -469,6 +469,13 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     axis : int, optional
         Axis along which the spectrogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
+    mode : str, optional
+        Defines what kind of return values are expected. Options are
+        ['psd', 'complex', 'magnitude', 'angle', 'phase']. 'complex' is
+        equivalent to the output of `stft` with no padding or centering.
+        'magnitude' returns the absolute magnitude of the STFT. 'angle'
+        and 'phase' return the complex angle of the STFT, with and
+        without unwrapping, respectively.
 
     Returns
     -------
@@ -532,18 +539,42 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
     """
+    modelist = ['psd', 'complex', 'magnitude', 'angle', 'phase']
+    if mode not in modelist:
+        raise ValueError('unknown value for mode {}, must be one of {}'
+                         .format(mode, modelist))
 
     # need to set default for nperseg before setting default for noverlap below
     window, nperseg = _triage_segments(window, nperseg,
-                                       input_length=x.shape[-1])
+                                       input_length=x.shape[axis])
 
     # Less overlap than welch, so samples are more statisically independent
     if noverlap is None:
         noverlap = nperseg // 8
 
-    freqs, time, Sxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
-                                        nfft, detrend, return_onesided,
-                                        scaling, axis, mode='psd')
+    if mode == 'psd':
+        freqs, time, Sxx = _spectral_helper(x, x, fs, window, nperseg,
+                                            noverlap, nfft, detrend,
+                                            return_onesided, scaling, axis,
+                                            mode='psd')
+
+    else:
+        freqs, time, Sxx = _spectral_helper(x, x, fs, window, nperseg,
+                                            noverlap, nfft, detrend,
+                                            return_onesided, scaling, axis,
+                                            mode='stft')
+
+        if mode == 'magnitude':
+            Sxx = np.abs(Sxx)
+        elif mode in ['angle', 'phase']:
+            Sxx = np.angle(Sxx)
+            if mode == 'phase':
+                # Sxx has one additional dimension for time strides
+                if axis < 0:
+                    axis -= 1
+                Sxx = np.unwrap(Sxx, axis=axis)
+
+        # mode =='complex' is same as `stft`, doesn't need modification
 
     return freqs, time, Sxx
 
