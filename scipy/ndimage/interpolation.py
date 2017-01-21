@@ -604,7 +604,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     # zoom factor 1 instead
     zoom = numpy.divide(numpy.array(input.shape) - 1, zoom_div,
                         out=numpy.ones_like(input.shape, dtype=numpy.float64),
-                        where=zoom_div!=0)
+                        where=zoom_div != 0)
 
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
