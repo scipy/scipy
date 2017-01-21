@@ -256,21 +256,29 @@ geom = geom_gen(a=1, name='geom', longname="A geometric")
 
 
 class hypergeom_gen(rv_discrete):
-    """A hypergeometric discrete random variable.
+    r"""A hypergeometric discrete random variable.
 
     The hypergeometric distribution models drawing objects from a bin.
-    M is the total number of objects, n is total number of Type I objects.
-    The random variate represents the number of Type I objects in N drawn
+    `M` is the total number of objects, `n` is total number of Type I objects.
+    The random variate represents the number of Type I objects in `N` drawn
     without replacement from the total population.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function is defined as::
+    The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
+    universally accepted.  See the Examples for a clarification of the
+    definitions used here.
 
-        pmf(k, M, n, N) = choose(n, k) * choose(M - n, N - k) / choose(M, N),
-                                       for max(0, N - (M-n)) <= k <= min(n, N)
+    The probability mass function is defined as,
+
+    .. math:: p(k, M, n, N) = \frac{\binom{n}{k} \binom{M - n}{N - k}}{\binom{M}{N}}
+
+    for :math:`k \in [\max(0, N - M + n), \min(n, N)]`, where the binomial
+    coefficients are defined as,
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
     %(after_notes)s
 
