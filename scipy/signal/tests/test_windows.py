@@ -60,6 +60,10 @@ class TestBlackman(object):
     def test_basic(self):
         assert_allclose(signal.blackman(6, sym=False),
                         [0, 0.13, 0.63, 1.0, 0.63, 0.13], atol=1e-14)
+        assert_allclose(signal.blackman(7, sym=False),
+                        [0, 0.09045342435412804, 0.4591829575459636,
+                         0.9203636180999081, 0.9203636180999081,
+                         0.4591829575459636, 0.09045342435412804], atol=1e-8)
         assert_allclose(signal.blackman(6),
                         [0, 0.2007701432625305, 0.8492298567374694,
                          0.8492298567374694, 0.2007701432625305, 0],
@@ -73,6 +77,10 @@ class TestBlackmanHarris(object):
     def test_basic(self):
         assert_allclose(signal.blackmanharris(6, False),
                         [6.0e-05, 0.055645, 0.520575, 1.0, 0.520575, 0.055645])
+        assert_allclose(signal.blackmanharris(7, sym=False),
+                        [6.0e-05, 0.03339172347815117, 0.332833504298565,
+                         0.8893697722232837, 0.8893697722232838,
+                         0.3328335042985652, 0.03339172347815122])
         assert_allclose(signal.blackmanharris(6),
                         [6.0e-05, 0.1030114893456638, 0.7938335106543362,
                          0.7938335106543364, 0.1030114893456638, 6.0e-05])
@@ -211,25 +219,13 @@ exponential_data = {
     (4, 2, 1.0, False): array([0.1353352832366127, 0.36787944117144233, 1.,
                                0.36787944117144233]),
     (4, 2, 1.0, True): None,
-    (5, None, 0.2, False):
-        array([4.53999297624848542e-05,
-               6.73794699908546700e-03, 1.00000000000000000e+00,
-               6.73794699908546700e-03, 4.53999297624848542e-05]),
     (5, None, 0.2, True):
         array([4.53999297624848542e-05,
                6.73794699908546700e-03, 1.00000000000000000e+00,
                6.73794699908546700e-03, 4.53999297624848542e-05]),
-    (5, None, 1.0, False): array([0.1353352832366127, 0.36787944117144233, 1.,
-                                  0.36787944117144233, 0.1353352832366127]),
     (5, None, 1.0, True): array([0.1353352832366127, 0.36787944117144233, 1.,
                                  0.36787944117144233, 0.1353352832366127]),
-    (5, 2, 0.2, False):
-        array([4.53999297624848542e-05, 6.73794699908546700e-03,
-               1.00000000000000000e+00, 6.73794699908546700e-03,
-               4.53999297624848542e-05]),
     (5, 2, 0.2, True): None,
-    (5, 2, 1.0, False): array([0.1353352832366127, 0.36787944117144233, 1.,
-                               0.36787944117144233, 0.1353352832366127]),
     (5, 2, 1.0, True): None
 }
 
@@ -249,6 +245,11 @@ class TestFlatTop(object):
         assert_allclose(signal.flattop(6, sym=False),
                         [-0.000421051, -0.051263156, 0.19821053, 1.0,
                          0.19821053, -0.051263156])
+        assert_allclose(signal.flattop(7, sym=False),
+                        [-0.000421051, -0.03684078115492348,
+                         0.01070371671615342, 0.7808739149387698,
+                         0.7808739149387698, 0.01070371671615342,
+                         -0.03684078115492348])
         assert_allclose(signal.flattop(6),
                         [-0.000421051, -0.0677142520762119, 0.6068721525762117,
                          0.6068721525762117, -0.0677142520762119,
@@ -284,6 +285,10 @@ class TestHamming(object):
     def test_basic(self):
         assert_allclose(signal.hamming(6, False),
                         [0.08, 0.31, 0.77, 1.0, 0.77, 0.31])
+        assert_allclose(signal.hamming(7, sym=False),
+                        [0.08, 0.2531946911449826, 0.6423596296199047,
+                         0.9544456792351128, 0.9544456792351128,
+                         0.6423596296199047, 0.2531946911449826])
         assert_allclose(signal.hamming(6),
                         [0.08, 0.3978521825875242, 0.9121478174124757,
                          0.9121478174124757, 0.3978521825875242, 0.08])
@@ -296,6 +301,10 @@ class TestHann(object):
     def test_basic(self):
         assert_allclose(signal.hann(6, sym=False),
                         [0, 0.25, 0.75, 1.0, 0.75, 0.25])
+        assert_allclose(signal.hann(7, sym=False),
+                        [0, 0.1882550990706332, 0.6112604669781572,
+                         0.9504844339512095, 0.9504844339512095,
+                         0.6112604669781572, 0.1882550990706332])
         assert_allclose(signal.hann(6, True),
                         [0, 0.3454915028125263, 0.9045084971874737,
                          0.9045084971874737, 0.3454915028125263, 0])
@@ -334,6 +343,10 @@ class TestNuttall(object):
         assert_allclose(signal.nuttall(6, sym=False),
                         [0.0003628, 0.0613345, 0.5292298, 1.0, 0.5292298,
                          0.0613345])
+        assert_allclose(signal.nuttall(7, sym=False),
+                        [0.0003628, 0.03777576895352025, 0.3427276199688195,
+                         0.8918518610776603, 0.8918518610776603,
+                         0.3427276199688196, 0.0377757689535203])
         assert_allclose(signal.nuttall(6),
                         [0.0003628, 0.1105152530498718, 0.7982580969501282,
                          0.7982580969501283, 0.1105152530498719, 0.0003628])
@@ -469,9 +482,15 @@ def test_windowfunc_basics():
     for window_name, params in window_funcs:
         window = getattr(signal, window_name)
         with warnings.catch_warnings(record=True):  # window is not suitable...
-            w1 = window(7, *params, sym=True)
+
+            # Check symmetry for odd and even lengths
+            w1 = window(8, *params, sym=True)
             w2 = window(7, *params, sym=False)
-            assert_array_almost_equal(w1, w2)
+            assert_array_almost_equal(w1[:-1], w2)
+
+            w1 = window(9, *params, sym=True)
+            w2 = window(8, *params, sym=False)
+            assert_array_almost_equal(w1[:-1], w2)
 
             # Check that functions run and output lengths are correct
             assert_equal(len(window(6, *params, sym=True)), 6)
@@ -503,8 +522,10 @@ def test_windowfunc_basics():
             assert_array_less(window(9, *params, sym=True), 1.01)
             assert_array_less(window(9, *params, sym=False), 1.01)
 
-            # Check periodic spectrum
+            # Check that DFT-even spectrum is purely real for odd and even
             assert_allclose(fftpack.fft(window(10, *params, sym=False)).imag,
+                            0, atol=1e-14)
+            assert_allclose(fftpack.fft(window(11, *params, sym=False)).imag,
                             0, atol=1e-14)
 
 

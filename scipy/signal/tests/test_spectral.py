@@ -230,8 +230,8 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353])
+        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                      0.17072113])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_twosided(self):
@@ -270,8 +270,8 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353])
+        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                      0.17072113])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
@@ -424,8 +424,8 @@ class TestWelch(TestCase):
         x[8] = 1
         f, p = welch(x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353], 'f')
+        q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
+                      0.17072113], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
@@ -532,8 +532,8 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353])
+        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                      0.17072113])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_real_twosided(self):
@@ -572,8 +572,8 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353])
+        q = np.array([0.12477455, 0.23430933, 0.17072113, 0.17072113,
+                      0.17072113])
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
 
     def test_integer_twosided(self):
@@ -749,8 +749,8 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, nperseg=9)
         assert_allclose(f, np.arange(5.0)/9.0)
-        q = np.array([0.15958227, 0.24193957, 0.24145224, 0.24100919,
-                      0.24377353], 'f')
+        q = np.array([0.12477458, 0.23430935, 0.17072113, 0.17072116,
+                      0.17072113], 'f')
         assert_allclose(p, q, atol=1e-7, rtol=1e-7)
         assert_(p.dtype == q.dtype)
 
