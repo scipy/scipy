@@ -568,6 +568,11 @@ def test_solve_generalized_continuous_are():
 
 
 def test_solve_generalized_discrete_are():
+    mat20170120 = np.load(os.path.join(
+                             os.path.abspath(os.path.dirname(__file__)),
+                             'data',
+                             'gendare_20170120_data.npz'))
+
     cases = [
         # Two random examples differ by s term
         # in the absence of any literature for demanding examples.
@@ -596,10 +601,19 @@ def test_solve_generalized_discrete_are():
                    [7.093648e-01, 6.797027e-01, 1.189977e-01],
                    [7.546867e-01, 6.550980e-01, 4.983641e-01]]),
          np.ones((3, 2)),
-         None)
+         None),
+        # user-reported (under PR-6616) 20-Jan-2017
+        # tests against the case where E is None but S is provided
+        (mat20170120['A'],
+         mat20170120['B'],
+         mat20170120['Q'],
+         mat20170120['R'],
+         None,
+         mat20170120['S'],
+         None),
         ]
 
-    min_decimal = (11, 11)
+    min_decimal = (11, 11, 16)
 
     def _test_factory(case, dec):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""

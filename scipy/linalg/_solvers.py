@@ -384,7 +384,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
                              output=out_str)
 
     # Get the relevant parts of the stable subspace basis
-    if gen_are:
+    if e is not None:
         u, _ = qr(np.vstack((e.dot(u[:m, :m]), u[m:, :m])))
     u00 = u[:m, :m]
     u10 = u[m:, :m]
@@ -573,7 +573,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
                              output=out_str)
 
     # Get the relevant parts of the stable subspace basis
-    if gen_are:
+    if e is not None:
         u, _ = qr(np.vstack((e.dot(u[:m, :m]), u[m:, :m])))
     u00 = u[:m, :m]
     u10 = u[m:, :m]
