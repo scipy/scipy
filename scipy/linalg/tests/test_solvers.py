@@ -622,6 +622,10 @@ def test_solve_generalized_discrete_are():
             raise KnownFailureTest(knownfailure)
 
         x = solve_discrete_are(a, b, q, r, e, s)
+        if e is None:
+            e = np.eye(a.shape[0])
+        if s is None:
+            s = np.zeros_like(b)
         res = a.conj().T.dot(x.dot(a)) - e.conj().T.dot(x.dot(e)) + q
         res -= (a.conj().T.dot(x.dot(b)) + s).dot(
                     solve(r+b.conj().T.dot(x.dot(b)),
