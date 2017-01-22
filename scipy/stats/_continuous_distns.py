@@ -5239,6 +5239,8 @@ class argus_gen(rv_continuous):
            https://en.wikipedia.org/wiki/ARGUS_distribution
 
     %(after_notes)s
+    
+    .. versionadded:: 0.19.0
 
     %(example)s
     """
@@ -5277,6 +5279,8 @@ class rv_histogram(rv_continuous):
     The cdf is a linear interpolation of the pdf.
 
     %(after_notes)s
+    
+    .. versionadded:: 0.19.0
 
     Examples
     --------
@@ -5352,7 +5356,7 @@ class rv_histogram(rv_continuous):
         """
         PDF of the histogram
         """
-        return self._hpdf[np.digitize(x, bins=self._hbins)]
+        return self._hpdf[np.searchsorted(self._hbins, x, side='right')]
 
     def _cdf(self, x):
         """

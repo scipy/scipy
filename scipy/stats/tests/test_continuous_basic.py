@@ -65,7 +65,7 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance'])
 
-_h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5 , 5, 5, 5, 5, 6,
+_h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
 test_histogram_instance = stats.rv_histogram(_h)
 
