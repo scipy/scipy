@@ -347,7 +347,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     H[2*m:, m:2*m] = b.conj().T
     H[2*m:, 2*m:] = r
 
-    if gen_are:
+    if gen_are and e is not None:
         J = block_diag(e, e.conj().T, np.zeros_like(r, dtype=r_or_c))
     else:
         J = block_diag(np.eye(2*m), np.zeros_like(r, dtype=r_or_c))
