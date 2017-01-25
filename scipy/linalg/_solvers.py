@@ -347,7 +347,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     H[2*m:, m:2*m] = b.conj().T
     H[2*m:, 2*m:] = r
 
-    if gen_are:
+    if gen_are and e is not None:
         J = block_diag(e, e.conj().T, np.zeros_like(r, dtype=r_or_c))
     else:
         J = block_diag(np.eye(2*m), np.zeros_like(r, dtype=r_or_c))
@@ -384,7 +384,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
                              output=out_str)
 
     # Get the relevant parts of the stable subspace basis
-    if gen_are:
+    if e is not None:
         u, _ = qr(np.vstack((e.dot(u[:m, :m]), u[m:, :m])))
     u00 = u[:m, :m]
     u10 = u[m:, :m]
@@ -573,7 +573,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
                              output=out_str)
 
     # Get the relevant parts of the stable subspace basis
-    if gen_are:
+    if e is not None:
         u, _ = qr(np.vstack((e.dot(u[:m, :m]), u[m:, :m])))
     u00 = u[:m, :m]
     u10 = u[m:, :m]
