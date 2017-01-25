@@ -5239,6 +5239,8 @@ class argus_gen(rv_continuous):
            https://en.wikipedia.org/wiki/ARGUS_distribution
 
     %(after_notes)s
+    
+    .. versionadded:: 0.19.0
 
     %(example)s
     """
@@ -5263,8 +5265,135 @@ class argus_gen(rv_continuous):
 argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 
 
+class rv_histogram(rv_continuous):
+    """
+    Generates a distribution given by a histogram.
+    This is useful to generate a template distribution from a binned datasample.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    There are no additional shape parameters except for the loc and scale.
+    The pdf is defined as a stepwise function from the provided histogram
+    The cdf is a linear interpolation of the pdf.
+
+    %(after_notes)s
+    
+    .. versionadded:: 0.19.0
+
+    Examples
+    --------
+
+    Create a scipy.stats distribution from a numpy histogram
+    >>> import scipy.stats
+    >>> import numpy as np
+    >>> data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5, random_state=123)
+    >>> hist = np.histogram(data, bins=100)
+    >>> hist_dist = scipy.stats.rv_histogram(hist)
+
+    Behaves like an ordinary scipy rv_continuous distribution
+    >>> hist_dist.pdf(1.0)
+    0.20538577847618705
+    >>> hist_dist.cdf(2.0)
+    0.90818568543056499
+
+    PDF is zero above (below) the highest (lowest) bin of the histogram,
+    defined by the max (min) of the original dataset
+    >>> hist_dist.pdf(np.max(data))
+    0.0
+    >>> hist_dist.cdf(np.max(data))
+    1.0
+    >>> hist_dist.pdf(np.min(data))
+    7.7591907244498314e-05
+    >>> hist_dist.cdf(np.min(data))
+    0.0
+
+    PDF and CDF follow the histogram
+    >>> import matplotlib.pyplot as plt
+    >>> X = np.linspace(-5.0, 5.0, 100)
+    >>> plt.title("PDF from Template")
+    >>> plt.hist(data, normed=True, bins=100)
+    >>> plt.plot(X, hist_dist.pdf(X), label='PDF')
+    >>> plt.plot(X, hist_dist.cdf(X), label='CDF')
+    >>> plt.show()
+
+    """
+    _support_mask = rv_continuous._support_mask
+
+    def __init__(self, histogram, *args, **kwargs):
+        """
+        Create a new distribution using the given histogram
+
+        Parameters
+        ----------
+        histogram : tuple of array_like
+          Tuple containing two array_like objects
+          The first containing the content of n bins
+          The second containing the (n+1) bin boundaries
+          In particular the return value np.histogram is accepted
+        """
+        self._histogram = histogram
+        if len(histogram) != 2:
+            raise ValueError("Expected length 2 for parameter histogram")
+        self._hpdf = np.asarray(histogram[0])
+        self._hbins = np.asarray(histogram[1])
+        if len(self._hpdf) + 1 != len(self._hbins):
+            raise ValueError("Number of elements in histogram content "
+                             "and histogram boundaries do not match, "
+                             "expected n and n+1.")
+        self._hbin_widths = self._hbins[1:] - self._hbins[:-1]
+        self._hpdf = self._hpdf / float(np.sum(self._hpdf * self._hbin_widths))
+        self._hcdf = np.cumsum(self._hpdf * self._hbin_widths)
+        self._hpdf = np.hstack([0.0, self._hpdf, 0.0])
+        self._hcdf = np.hstack([0.0, self._hcdf])
+        # Set support
+        kwargs['a'] = self._hbins[0]
+        kwargs['b'] = self._hbins[-1]
+        super(rv_histogram, self).__init__(*args, **kwargs)
+
+    def _pdf(self, x):
+        """
+        PDF of the histogram
+        """
+        return self._hpdf[np.searchsorted(self._hbins, x, side='right')]
+
+    def _cdf(self, x):
+        """
+        CDF calculated from the histogram
+        """
+        return np.interp(x, self._hbins, self._hcdf)
+
+    def _ppf(self, x):
+        """
+        Percentile function calculated from the histogram
+        """
+        return np.interp(x, self._hcdf, self._hbins)
+
+    def _munp(self, n):
+        """Compute the n-th non-central moment."""
+        integrals = (self._hbins[1:]**(n+1) - self._hbins[:-1]**(n+1)) / (n+1)
+        return np.sum(self._hpdf[1:-1] * integrals)
+
+    def _entropy(self):
+        """Compute entropy of distribution"""
+        res = _lazywhere(self._hpdf[1:-1] > 0.0,
+                         (self._hpdf[1:-1],),
+                         np.log,
+                         0.0)
+        return -np.sum(self._hpdf[1:-1] * res * self._hbin_widths)
+
+    def _updated_ctor_param(self):
+        """
+        Set the histogram as additional constructor argument
+        """
+        dct = super(rv_histogram, self)._updated_ctor_param()
+        dct['histogram'] = self._histogram
+        return dct
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
-__all__ = _distn_names + _distn_gen_names
+__all__ = _distn_names + _distn_gen_names + ['rv_histogram']
