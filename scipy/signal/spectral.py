@@ -141,7 +141,7 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
                  scaling, axis)
 
 
-def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using Welch's method.
@@ -162,7 +162,9 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         directly as the window and its length will be used for nperseg.
         Defaults to 'hann'.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap : int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 2``.  Defaults to None.
@@ -275,7 +277,7 @@ def welch(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     return freqs, Pxx.real
 
 
-def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', axis=-1):
     """
     Estimate the cross power spectral density, Pxy, using Welch's method.
@@ -294,12 +296,14 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         directly as the window and its length will be used for nperseg.
         Defaults to 'hann'.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap: int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 2``.  Defaults to None.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired.  If None,
+        Length of the FFT used, if a zero padded FFT is desired. If None,
         the FFT length is `nperseg`. Defaults to None.
     detrend : str or function or False, optional
         Specifies how to detrend each segment. If `detrend` is a string,
@@ -400,7 +404,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     return freqs, Pxy
 
 
-def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
+def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
     """
@@ -421,7 +425,9 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
         directly as the window and its length will be used for nperseg.
         Defaults to a Tukey window with shape parameter of 0.25.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap : int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 8``.  Defaults to None.
@@ -507,6 +513,11 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
     """
+
+    # need to set default for nperseg before setting default for noverlap below
+    window, nperseg = _triage_segments(window, nperseg,
+                                       input_length=x.shape[-1])
+
     # Less overlap than welch, so samples are more statisically independent
     if noverlap is None:
         noverlap = nperseg // 8
@@ -518,7 +529,7 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=256, noverlap=None,
     return freqs, time, Pxy
 
 
-def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
+def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
     """
     Estimate the magnitude squared coherence estimate, Cxy, of discrete-time
@@ -542,7 +553,9 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
         directly as the window and its length will be used for nperseg.
         Defaults to 'hann'.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap: int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 2``.  Defaults to None.
@@ -629,7 +642,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=256, noverlap=None,
     return freqs, Cxy
 
 
-def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
+def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
                     noverlap=None, nfft=None, detrend='constant',
                     return_onesided=True, scaling='spectrum', axis=-1,
                     mode='psd'):
@@ -647,7 +660,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
         Array or sequence containing the data to be analyzed.
     y : array_like
         Array or sequence containing the data to be analyzed. If this is
-        the same object in memoery as x (i.e. _spectral_helper(x, x, ...)),
+        the same object in memory as x (i.e. _spectral_helper(x, x, ...)),
         the extra computations are spared.
     fs : float, optional
         Sampling frequency of the time series. Defaults to 1.0.
@@ -657,7 +670,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
         directly as the window and its length will be used for nperseg.
         Defaults to 'hann'.
     nperseg : int, optional
-        Length of each segment.  Defaults to 256.
+        Length of each segment. Defaults to None, but if window is str or
+        tuple, is set to 256, and if window is array_like, is set to the
+        length of the window.
     noverlap : int, optional
         Number of points to overlap between segments. If None,
         ``noverlap = nperseg // 2``.  Defaults to None.
@@ -766,15 +781,13 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
                 pad_shape[-1] = x.shape[-1] - y.shape[-1]
                 y = np.concatenate((y, np.zeros(pad_shape)), -1)
 
-    # X and Y are same length now, can test nperseg with either
-    if x.shape[-1] < nperseg:
-        warnings.warn('nperseg = {0:d}, is greater than input length = {1:d}, '
-                      'using nperseg = {1:d}'.format(nperseg, x.shape[-1]))
-        nperseg = x.shape[-1]
+    if nperseg is not None:  # if specified by user
+        nperseg = int(nperseg)
+        if nperseg < 1:
+            raise ValueError('nperseg must be a positive integer')
 
-    nperseg = int(nperseg)
-    if nperseg < 1:
-        raise ValueError('nperseg must be a positive integer')
+    # parse window; if array like, then set nperseg = win.shape
+    win, nperseg = _triage_segments(window, nperseg,input_length=x.shape[-1])
 
     if nfft is None:
         nfft = nperseg
@@ -806,15 +819,6 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=256,
             return np.rollaxis(d, axis, len(d.shape))
     else:
         detrend_func = detrend
-
-    if isinstance(window, string_types) or type(window) is tuple:
-        win = get_window(window, nperseg)
-    else:
-        win = np.asarray(window)
-        if len(win.shape) != 1:
-            raise ValueError('window must be 1-D')
-        if win.shape[0] != nperseg:
-            raise ValueError('window must have length of nperseg')
 
     if np.result_type(win,np.complex64) != outdtype:
         win = win.astype(outdtype)
@@ -952,3 +956,63 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
     result = fftpack.fft(result, n=nfft)
 
     return result
+
+def _triage_segments(window, nperseg,input_length):
+    """
+    Parses window and nperseg arguments for spectrogram and _spectral_helper.
+    This is a helper function, not meant to be called externally.
+
+    Parameters
+    ---------
+    window : string, tuple, or ndarray
+        If window is specified by a string or tuple and nperseg is not
+        specified, nperseg is set to the default of 256 and returns a window of
+        that length.
+        If instead the window is array_like and nperseg is not specified, then
+        nperseg is set to the length of the window. A ValueError is raised if
+        the user supplies both an array_like window and a value for nperseg but
+        nperseg does not equal the length of the window.
+
+    nperseg : int
+        Length of each segment
+
+    input_length: int
+        Length of input signal, i.e. x.shape[-1]. Used to test for errors.
+
+    Returns
+    -------
+    win : ndarray
+        window. If function was called with string or tuple than this will hold
+        the actual array used as a window.
+
+    nperseg : int
+        Length of each segment. If window is str or tuple, nperseg is set to
+        256. If window is array_like, nperseg is set to the length of the
+        6
+        window.
+    """
+
+    #parse window; if array like, then set nperseg = win.shape
+    if isinstance(window, string_types) or isinstance(window, tuple):
+        # if nperseg not specified
+        if nperseg is None:
+            nperseg = 256  # then change to default
+        if nperseg > input_length:
+            warnings.warn('nperseg = {0:d} is greater than input length '
+                              ' = {1:d}, using nperseg = {1:d}'
+                              .format(nperseg, input_length))
+            nperseg = input_length
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if input_length < win.shape[-1]:
+            raise ValueError('window is longer than input signal')
+        if nperseg is None:
+            nperseg = win.shape[0]
+        elif nperseg is not None:
+            if nperseg != win.shape[0]:
+                raise ValueError("value specified for nperseg is different from"
+                                 " length of window")
+    return win, nperseg

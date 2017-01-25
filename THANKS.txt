@@ -170,6 +170,7 @@ Alvaro Sanchez-Gonzalez for axis-dependent modes in multidimensional filters.
 Alessandro Pietro Bardelli for improvements to pdist/cdist and to related tests.
 Jonathan T. Siebert for bug fixes.
 Thomas Keck for adding new scipy.stats distributions used in HEP
+David Nicholson for bug fixes in spectral functions.
 
 Institutions
 ------------

@@ -122,6 +122,9 @@ class TestPeriodogram(TestCase):
         fe, pe = periodogram(x, 10, win)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, periodogram, x,
+                      10, win_err)  # win longer than signal
 
     def test_padded_fft(self):
         x = np.zeros(16)
@@ -353,11 +356,18 @@ class TestWelch(TestCase):
         x = np.zeros(16)
         x[0] = 1
         x[8] = 1
-        f, p = welch(x, 10, 'hann', 8)
+        f, p = welch(x, 10, 'hann', nperseg=8)
         win = signal.get_window('hann', 8)
-        fe, pe = welch(x, 10, win, 8)
+        fe, pe = welch(x, 10, win, nperseg=None)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
+        assert_array_equal(pe.shape, (5,))
+        assert_raises(ValueError, welch, x,
+                      10, win, nperseg=4)  # because nperseg != win.shape[-1]
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, welch, x,
+                      10, win_err, nperseg=None)  # win longer than signal
 
     def test_empty_input(self):
         f, p = welch([])
@@ -377,13 +387,18 @@ class TestWelch(TestCase):
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
+        #for string-like window, input signal length < nperseg value gives
+        #UserWarning, sets nperseg to x.shape[-1]
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
-            f, p = welch(x)
-
-        f1, p1 = welch(x, nperseg=8)
-        assert_allclose(f, f1)
-        assert_allclose(p, p1)
+            f, p = welch(x,window='hann')  # default nperseg
+            f1, p1 = welch(x,window='hann',
+                           nperseg=256)  # user-specified nperseg
+        f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
+        assert_allclose(f, f2)
+        assert_allclose(p, p2)
+        assert_allclose(f1, f2)
+        assert_allclose(p1, p2)
 
     def test_window_long_or_nd(self):
         with warnings.catch_warnings():
@@ -474,7 +489,7 @@ class TestWelch(TestCase):
     def test_window_correction(self):
         A = 20
         fs = 1e4
-        nperseg = fs//10
+        nperseg = int(fs//10)
         fsig = 300
         ii = int(fsig*nperseg//fs)  # Freq index of fsig
 
@@ -492,6 +507,7 @@ class TestWelch(TestCase):
             # Check integrated spectrum RMS for 'density'
             assert_allclose(np.sqrt(np.trapz(p_dens, freq)), A*np.sqrt(2)/2,
                             rtol=1e-3)
+
 
 class TestCSD:
     def test_pad_shorter_x(self):
@@ -657,9 +673,16 @@ class TestCSD:
         x[8] = 1
         f, p = csd(x, x, 10, 'hann', 8)
         win = signal.get_window('hann', 8)
-        fe, pe = csd(x, x, 10, win, 8)
+        fe, pe = csd(x, x, 10, win, nperseg=None)
         assert_array_almost_equal_nulp(p, pe)
         assert_array_almost_equal_nulp(f, fe)
+        assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
+        assert_array_equal(pe.shape, (5,))
+        assert_raises(ValueError, csd, x, x,
+                      10, win, nperseg=256)  # because nperseg != win.shape[-1]
+        win_err = signal.get_window('hann', 32)
+        assert_raises(ValueError, csd, x, x,
+              10, win_err, nperseg=None)  # because win longer than signal
 
     def test_empty_input(self):
         f, p = csd([],np.zeros(10))
@@ -700,13 +723,19 @@ class TestCSD:
     def test_short_data(self):
         x = np.zeros(8)
         x[0] = 1
+
+        #for string-like window, input signal length < nperseg value gives
+        #UserWarning, sets nperseg to x.shape[-1]
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', UserWarning)
-            f, p = csd(x, x)
-
-        f1, p1 = csd(x, x, nperseg=8)
-        assert_allclose(f, f1)
-        assert_allclose(p, p1)
+            f, p = csd(x, x, window='hann')  # default nperseg
+            f1, p1 = csd(x, x, window='hann',
+                         nperseg=256)  # user-specified nperseg
+        f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
+        assert_allclose(f, f2)
+        assert_allclose(p, p2)
+        assert_allclose(f1, f2)
+        assert_allclose(p1, p2)
 
     def test_window_long_or_nd(self):
         with warnings.catch_warnings():
@@ -797,6 +826,7 @@ class TestCSD:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
+
 class TestCoherence:
     def test_identical_input(self):
         x = np.random.randn(20)
@@ -834,6 +864,44 @@ class TestSpectrogram:
         fw, Pw = welch(x, fs, window, nperseg, noverlap)
         assert_allclose(f, fw)
         assert_allclose(np.mean(P, axis=-1), Pw)
+
+    def test_window_external(self):
+        x = np.random.randn(1024)
+
+        fs = 1.0
+        window = ('tukey', 0.25)
+        nperseg = 16
+        noverlap = 2
+        f, _, P = spectrogram(x, fs, window, nperseg, noverlap)
+
+        win = signal.get_window(('tukey', 0.25), 16)
+        fe, _, Pe = spectrogram(x, fs, win, nperseg=None, noverlap=2)
+        assert_array_equal(fe.shape, (9,))  # because win length used as nperseg
+        assert_array_equal(Pe.shape, (9,73))
+        assert_raises(ValueError, spectrogram, x,
+                      fs, win, nperseg=8)  # because nperseg != win.shape[-1]
+        win_err = signal.get_window(('tukey', 0.25), 2048)
+        assert_raises(ValueError, spectrogram, x,
+                      fs, win_err, nperseg=None)  # win longer than signal
+
+    def test_short_data(self):
+        x = np.random.randn(1024)
+        fs = 1.0
+
+        #for string-like window, input signal length < nperseg value gives
+        #UserWarning, sets nperseg to x.shape[-1]
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            f, _, p = spectrogram(x, fs,
+                                  window=('tukey',0.25))  # default nperseg
+            f1, _, p1 = spectrogram(x, fs, window=('tukey',0.25),
+                                    nperseg=1025)  # user-specified nperseg
+        f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default
+        f3, _, p3 = spectrogram(x, fs, nperseg=1024)  # compare w/user-spec'd
+        assert_allclose(f, f2)
+        assert_allclose(p, p2)
+        assert_allclose(f1, f3)
+        assert_allclose(p1, p3)
 
 class TestLombscargle:
     def test_frequency(self):
