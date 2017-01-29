@@ -37,6 +37,7 @@ Continuous distributions
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
+   crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
    erlang            -- Erlang
