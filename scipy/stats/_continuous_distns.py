@@ -5264,6 +5264,7 @@ class crystalball_gen(rv_continuous):
         Returns the m-th non-central moment of the crystalball function.
         """
         N = 1.0 / (n/alpha / (n-1) * np.exp(-alpha**2 / 2.0) + _norm_pdf_C * _norm_cdf(alpha))
+
         def m_th_moment(_m, _alpha, _n):
             """
             Returns m-th moment. Defined only if m+1 < n
@@ -5276,6 +5277,7 @@ class crystalball_gen(rv_continuous):
             for k in range(_m + 1):
                 powerlaw_term += sc.binom(_m, k) * B**(_m-k) * (-1)**k / (_n - k - 1) * (_n/_alpha)**(-_n + k + 1)
             return A * powerlaw_term + gauss_term
+
         return N * _lazywhere(np.atleast_1d(m + 1 < n), (m, alpha, n), np.vectorize(m_th_moment, otypes=[np.float]), np.inf)
 
     def _argcheck(self, alpha, n):
