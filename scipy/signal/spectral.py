@@ -472,10 +472,10 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     mode : str, optional
         Defines what kind of return values are expected. Options are
         ['psd', 'complex', 'magnitude', 'angle', 'phase']. 'complex' is
-        equivalent to the output of `stft` with no padding or centering.
-        'magnitude' returns the absolute magnitude of the STFT. 'angle'
-        and 'phase' return the complex angle of the STFT, with and
-        without unwrapping, respectively.
+        equivalent to the output of `stft` with no padding or boundary
+        extension. 'magnitude' returns the absolute magnitude of the
+        STFT. 'angle' and 'phase' return the complex angle of the STFT,
+        with and without unwrapping, respectively.
 
     Returns
     -------
@@ -702,7 +702,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
 
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
-         detrend=False, return_onesided=True, centered=True, padded=True,
+         detrend=False, return_onesided=True, boundary='even', padded=True,
          axis=-1):
     r"""
     Compute the Short Time Fourier Transform (STFT).
@@ -741,19 +741,22 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         `False` return a two-sided spectrum. Note that for complex
         data, a two-sided spectrum is always returned. Defaults to
         `True`.
-    centered : bool, optional
-        Specifies whether the input signal is padded via even extension,
-        to center the first window segment on the first input point.
-        I.e. ``[1, 2, 3, 4]`` is extended to ``[2, 1, 2, 3, 4, 3]``
-        for ``nperseg=3``. This has the benefit of enabling
-        reconstruction of the first data point when the employed window
-        function starts at zero. Defaults to `True.`
+    boundary : str or None, optional
+        Specifies whether the input signal is extended, and how to
+        generate the new values, in order to center the first windowed
+        segment on the first input point. This has the benefit of
+        enabling reconstruction of the first input point when the
+        employed window function starts at zero. Valid options are
+        ``['even', None]``. Defaults to 'even', for even extension. I.e.
+        ``[1, 2, 3, 4]`` is extended to ``[2, 1, 2, 3, 4, 3]`` for
+        ``nperseg=3``.
     padded : bool, optional
         Specifies whether the input signal is zero-padded at the end to
         make the signal fit exactly into an integer number of window
         segments, so that all of the signal is included in the output.
-        Default to `True`. Padding occurs after centering, if both
-        `centered` and `padded` are `True`, as is the default.
+        Defaults to `True`. Padding occurs after boundary extension, if
+        `boundary` is not `None`, and `padded` is `True`, as is the
+        default.
     axis : int, optional
         Axis along which the STFT is computed; the default is over the
         last axis (i.e. ``axis=-1``).
@@ -837,14 +840,14 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     freqs, time, Zxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided,
                                         scaling='spectrum', axis=axis,
-                                        mode='stft', padded=padded,
-                                        centered=centered)
+                                        mode='stft', boundary=boundary,
+                                        padded=padded)
 
     return freqs, time, Zxx
 
 
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
-          input_onesided=True, centered=True, time_axis=-1, freq_axis=-2):
+          input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2):
     r"""
     Perform the inverse Short Time Fourier transform (iSTFT).
 
@@ -889,9 +892,10 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         as is returned by `stft` with ``return_onesided=True`` and
         `numpy.fft.rfft`. If `False`, interpret the input as a a
         two-sided FFT. Defaults to `True`.
-    centered : bool, optional
-        Specifies whether the input signal was padded via even extension,
-        by using ``centered=True`` in `stft`. Defaults to `True`.
+    boundary : bool, optional
+        Specifies whether the input signal was extended at its
+        boundaries by supplying a non-`None` ``boundary`` argument to
+        `stft`. Defaults to `True`.
     time_axis : int, optional
         Where the time segments of the STFT is located; the default is
         the last axis (i.e. ``axis=-1``).
@@ -960,7 +964,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     Compute the STFT, and plot its magnitude
 
-    >>> f, t, Zxx = signal.stft(x, fs=fs, nperseg=nperseg, centered=True)
+    >>> f, t, Zxx = signal.stft(x, fs=fs, nperseg=nperseg)
     >>> plt.figure()
     >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
     >>> plt.ylim([f[1], f[-1]])
@@ -974,7 +978,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     then convert back to a time series via inverse STFT
 
     >>> Zxx = np.where(np.abs(Zxx) >= amp/10, Zxx, 0)
-    >>> _, xrec = signal.istft(Zxx, fs, centered=True)
+    >>> _, xrec = signal.istft(Zxx, fs)
 
     Compare the cleaned signal with the original and true carrier signals.
 
@@ -1088,7 +1092,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     x /= np.where(norm > 1e-10, norm, 1.0)
 
     # Remove extension points
-    if centered:
+    if boundary:
         x = x[..., nperseg//2:-(nperseg//2)]
 
     if input_onesided:
@@ -1222,8 +1226,8 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
 def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                      nfft=None, detrend='constant', return_onesided=True,
-                     scaling='spectrum', axis=-1, mode='psd', padded=False,
-                     centered=False):
+                     scaling='spectrum', axis=-1, mode='psd', boundary=None,
+                     padded=False):
     """
     Calculate various forms of windowed FFTs for PSD, CSD, etc.
 
@@ -1279,18 +1283,19 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     mode: str {'psd', 'stft'}, optional
         Defines what kind of return values are expected. Defaults to
         'psd'.
+    boundary : str or None, optional
+        Specifies whether the input signal is extended, and how to
+        generate the new values, in order to center the first windowed
+        segment on the first input point. This has the benefit of
+        enabling reconstruction of the first input point when the
+        employed window function starts at zero. Valid options are
+        ``['even', None]``. Defaults to `None`.
     padded : bool, optional
-        Specifies whether the input signal is zero-padded to make the
-        signal fit exactly into an integer number of window segments, so
-        that all of the signal is included in the output. Defaults to
-        `False`.
-    centered : bool, optional
-        Specifies whether the input signal is padded via even extension,
-        to center the first window segment on the first input point.
-        This has the benefit of enabling reconstruction of the first
-        data point when the employed window function starts at zero.
-        Defaults to `False`.
-
+        Specifies whether the input signal is zero-padded at the end to
+        make the signal fit exactly into an integer number of window
+        segments, so that all of the signal is included in the output.
+        Defaults to `False`. Padding occurs after boundary extension, if
+        `boundary` is not `None`, and `padded` is `True`.
     Returns
     -------
     freqs : ndarray
@@ -1316,6 +1321,10 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if mode not in ['psd', 'stft']:
         raise ValueError("Unknown value for mode %s, must be one of: "
                          "{'psd', 'stft'}" % mode)
+
+    if boundary not in ['even', None]:
+        raise ValueError("Unknown value for boundary option %s, must be one "
+                         "of: {'even', None}" % boundary)
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
@@ -1394,13 +1403,13 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         raise ValueError('noverlap must be less than nperseg.')
     nstep = nperseg - noverlap
 
-    # Padding occurs after centering, so that the extended signal ends
+    # Padding occurs after boundary extension, so that the extended signal ends
     # in zeros, instead of introducing an impulse at the end.
     # I.e. if x = [..., 3, 2]
-    # center then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
-    # pad then center -> [..., 3, 2, 0, 0, 0, 2, 3]
+    # even_ext then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
+    # pad then even_ext -> [..., 3, 2, 0, 0, 0, 2, 3]
 
-    if centered:
+    if boundary == 'even':
         # Even extension means first window doesn't get distorted by a
         # shift in the DC signal level as much when x[0] != 0
         x = even_ext(x, nperseg//2, axis=-1)
@@ -1488,7 +1497,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     time = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1,
                      nperseg - noverlap)/float(fs)
-    if centered:
+    if boundary is not None:
         time -= (nperseg/2) / fs
 
     result = result.astype(outdtype)

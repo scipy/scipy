@@ -1019,6 +1019,7 @@ class TestSTFT(TestCase):
         assert_raises(ValueError, _spectral_helper, x, x, mode='foo')
         assert_raises(ValueError, _spectral_helper, x[:512], x[512:],
                       mode='stft')
+        assert_raises(ValueError, _spectral_helper, x, x, boundary='foo')
 
     def test_check_COLA(self):
         settings = [
@@ -1049,7 +1050,7 @@ class TestSTFT(TestCase):
         # account for power at negative frequencies. stft doesn't do this,
         # because it breaks invertibility.
         f, _, Z = stft(x, fs, window, nperseg, noverlap, padded=False,
-                       return_onesided=False, centered=False)
+                       return_onesided=False, boundary=None)
         fw, Pw = welch(x, fs, window, nperseg, noverlap, return_onesided=False,
                        scaling='spectrum', detrend=False)
 
@@ -1096,11 +1097,10 @@ class TestSTFT(TestCase):
             x = 10*np.random.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
-                            window=window, detrend=None, padded=False,
-                            centered=True)
+                            window=window, detrend=None, padded=False)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window, centered=True)
+                           window=window)
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, tr, err_msg=msg)
@@ -1119,11 +1119,10 @@ class TestSTFT(TestCase):
             x = x.astype(np.float32)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
-                            window=window, detrend=None, padded=False,
-                            centered=True)
+                            window=window, detrend=None, padded=False)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window, centered=True)
+                           window=window)
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, t, err_msg=msg)
@@ -1148,10 +1147,10 @@ class TestSTFT(TestCase):
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
-                            centered=True, return_onesided=False)
+                            return_onesided=False)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window, centered=True, input_onesided=False)
+                           window=window, input_onesided=False)
 
             msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
             assert_allclose(t, tr, err_msg=msg)
@@ -1162,14 +1161,45 @@ class TestSTFT(TestCase):
             warnings.simplefilter('ignore', UserWarning)
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
-                            centered=True, return_onesided=True)
+                            return_onesided=True)
 
         tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                       window=window, centered=True, input_onesided=False)
+                       window=window, input_onesided=False)
 
         msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
         assert_allclose(t, tr, err_msg=msg)
         assert_allclose(x, xr, err_msg=msg)
+
+    def test_roundtrip_boundary_extension(self):
+        np.random.seed(1234)
+
+        # Test against boxcar, since window is all ones, and thus can be fully
+        # recovered with no boundary extension
+
+        settings = [
+                    ('boxcar', 100, 10, 0),           # Test no overlap
+                    ('boxcar', 100, 10, 9),           # Test high overlap
+                    ]
+
+        for window, N, nperseg, noverlap in settings:
+            t = np.arange(N)
+            x = 10*np.random.randn(t.size)
+
+            _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
+                           window=window, detrend=None, padded=True,
+                           boundary=None)
+
+            _, _, zz_ext = stft(x, nperseg=nperseg, noverlap=noverlap,
+                               window=window, detrend=None, padded=True,
+                               boundary='even')
+
+            _, xr = istft(zz, noverlap=noverlap, window=window, boundary=False)
+            _, xr_ext = istft(zz_ext, noverlap=noverlap, window=window,
+                              boundary=True)
+
+            msg = '{0}, {1}'.format(window, noverlap)
+            assert_allclose(x, xr, err_msg=msg)
+            assert_allclose(x, xr_ext, err_msg=msg)
 
     def test_roundtrip_padded_signal(self):
         np.random.seed(1234)
@@ -1184,10 +1214,9 @@ class TestSTFT(TestCase):
             x = 10*np.random.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
-                            window=window, detrend=None, padded=True,
-                            centered=True)
+                            window=window, detrend=None, padded=True)
 
-            tr, xr = istft(zz, noverlap=noverlap, window=window, centered=True)
+            tr, xr = istft(zz, noverlap=noverlap, window=window)
 
             msg = '{0}, {1}'.format(window, noverlap)
             # Account for possible zero-padding at the end
@@ -1211,19 +1240,18 @@ class TestSTFT(TestCase):
 
             # real signal
             _, _, z = stft(x, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
-                            window=window, detrend=None, padded=True,
-                            centered=True)
+                            window=window, detrend=None, padded=True)
 
             # complex signal
             _, _, zc = stft(xc, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
                             window=window, detrend=None, padded=True,
-                            centered=True, return_onesided=False)
+                            return_onesided=False)
 
             tr, xr = istft(z, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
-                           window=window, centered=True)
+                           window=window)
 
             tr, xcr = istft(zc, nperseg=nperseg, noverlap=noverlap, nfft=nfft,
-                            window=window, centered=True, input_onesided=False)
+                            window=window, input_onesided=False)
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, tr, err_msg=msg)
