@@ -5217,18 +5217,18 @@ class crystalball_gen(rv_continuous):
     The probability density function for `crystalball` is::
 
                                             --
-                                            | exp(-x**2 / 2),  for x > -alpha
-        crystalball.pdf(x, alpha, n) =  N * |
-                                            | A * (B - x)**(-n), for x <= -alpha
+                                            | exp(-x**2 / 2),  for x > -beta
+        crystalball.pdf(x, beta, m) =  N * |
+                                            | A * (B - x)**(-m), for x <= -beta
                                             --
         where:
-                                   A = (n / |alpha|)**n * exp(-alpha**2 / 2)
-                                   B = n / |alpha| - |alpha|
+                                   A = (m / |beta|)**n * exp(-beta**2 / 2)
+                                   B = m / |beta| - |beta|
                                    and N is a normalisation constant.
 
-    `crystalball` takes ``alpha`` and ``n`` as shape parameters.
-    ``alpha`` defines the point where the pdf changes from a power-law to a gaussian distribution
-    ``n`` is power of the power-law tail.
+    `crystalball` takes ``beta`` and ``m`` as shape parameters.
+    ``beta`` defines the point where the pdf changes from a power-law to a gaussian distribution
+    ``m`` is power of the power-law tail.
 
     References
     ----------
@@ -5241,54 +5241,54 @@ class crystalball_gen(rv_continuous):
 
     %(example)s
     """
-    def _pdf(self, x, alpha, n):
+    def _pdf(self, x, beta, m):
         """
         Return PDF of the crystalball function.
         """
-        N = 1.0 / (n/alpha / (n-1) * np.exp(-alpha**2 / 2.0) + _norm_pdf_C * _norm_cdf(alpha))
-        return N * _lazywhere(np.atleast_1d(x > -alpha), (x, alpha, n),
-                              f = lambda x, alpha, n: np.exp(-x**2 / 2),
-                              f2 = lambda x, alpha, n: (n/alpha)**n * np.exp(-alpha**2 / 2.0) * (n/alpha - alpha - x)**(-n))
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        rhs = lambda x, beta, m: np.exp(-x**2 / 2)
+        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m)
+        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
 
-    def _cdf(self, x, alpha, n):
+    def _cdf(self, x, beta, m):
         """
         Return CDF of the crystalball function
         """
-        N = 1.0 / (n/alpha / (n-1) * np.exp(-alpha**2 / 2.0) + _norm_pdf_C * _norm_cdf(alpha))
-        return N * _lazywhere(np.atleast_1d(x > -alpha), (x, alpha, n),
-                              f = lambda x, alpha, n: (n/alpha) * np.exp(-alpha**2 / 2.0) / (n-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-alpha)),
-                              f2 = lambda x, alpha, n: (n/alpha)**n * np.exp(-alpha**2 / 2.0) * (n/alpha - alpha - x)**(-n+1) / (n-1))
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        rhs = lambda x, beta, m: (m/beta) * np.exp(-beta**2 / 2.0) / (m-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta))
+        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m+1) / (m-1)
+        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
 
-    def _munp(self, m, alpha, n):
+    def _munp(self, n, beta, m):
         """
-        Returns the m-th non-central moment of the crystalball function.
+        Returns the n-th non-central moment of the crystalball function.
         """
-        N = 1.0 / (n/alpha / (n-1) * np.exp(-alpha**2 / 2.0) + _norm_pdf_C * _norm_cdf(alpha))
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
 
-        def m_th_moment(_m, _alpha, _n):
+        def n_th_moment(n, beta, m):
             """
-            Returns m-th moment. Defined only if m+1 < n
-            Function cannot broadcast due to the loop over _m
+            Returns n-th moment. Defined only if n+1 < m
+            Function cannot broadcast due to the loop over n
             """
-            A = (_n/_alpha)**_n * np.exp(-_alpha**2 / 2.0)
-            B = _n/_alpha - _alpha
-            gauss_term = 2**((_m-1)/2.0) * sc.gamma((_m+1)/2) * (1.0 + (-1)**_m * sc.gammainc((_m+1)/2, _alpha**2 / 2))
-            powerlaw_term = np.zeros(gauss_term.shape)
-            for k in range(_m + 1):
-                powerlaw_term += sc.binom(_m, k) * B**(_m-k) * (-1)**k / (_n - k - 1) * (_n/_alpha)**(-_n + k + 1)
-            return A * powerlaw_term + gauss_term
+            A = (m/beta)**m * np.exp(-beta**2 / 2.0)
+            B = m/beta - beta
+            rhs = 2**((n-1)/2.0) * sc.gamma((n+1)/2) * (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2))
+            lhs = np.zeros(rhs.shape)
+            for k in range(n + 1):
+                lhs += sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) * (m/beta)**(-m + k + 1)
+            return A * lhs + rhs
 
-        return N * _lazywhere(np.atleast_1d(m + 1 < n), (m, alpha, n), np.vectorize(m_th_moment, otypes=[np.float]), np.inf)
+        return N * _lazywhere(np.atleast_1d(n + 1 < m), (n, beta, m), np.vectorize(n_th_moment, otypes=[np.float]), np.inf)
 
-    def _argcheck(self, alpha, n):
+    def _argcheck(self, beta, m):
         """
-        In HEP crystal-ball is also defined for n = 1 (see plot on wikipedia)
+        In HEP crystal-ball is also defined for m = 1 (see plot on wikipedia)
         But the function doesn't have a finite integral in this corner case,
         and isn't a PDF anymore (but can still be used on a finite range).
-        Here we restrict the function to n > 1.
-        In addition we restrict alpha to be positive
+        Here we restrict the function to m > 1.
+        In addition we restrict beta to be positive
         """
-        return (n > 1) & (alpha > 0)
+        return (m > 1) & (beta > 0)
 crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Function")
 
 
