@@ -984,6 +984,17 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     >>> plt.figure()
     >>> plt.plot(time, x, time, xrec.real, time, carrier)
+    >>> plt.xlim([2, 2.1])
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.ylabel('Signal')
+    >>> plt.legend(['Carrier + Noise', 'Filtered via STFT', 'True Carrier'])
+    >>> plt.show()
+
+    Note that the cleaned signal does not start as abruptly as the original,
+    since some of the coefficients of the transient were also removed:
+
+    >>> plt.figure()
+    >>> plt.plot(time, x, time, xrec.real, time, carrier)
     >>> plt.xlim([0, 0.1])
     >>> plt.xlabel('Time [sec]')
     >>> plt.ylabel('Signal')
