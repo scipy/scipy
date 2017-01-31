@@ -450,7 +450,6 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
 
         ## fill forward
         indptr_start = A.indptr[0]
-
         for i in range(len(b)):
             indptr_stop = A.indptr[i+1]
 
@@ -464,14 +463,13 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
                 raise LinAlgError('A is no lower triangle matrix, since the '
                     'entry at ({},{}) is not zero!'.format(i, A.indices[indptr_stop-1]))
 
-            ## compute value
-            A_column_indices_in_row_i = A.indices[indptr_start:indptr_stop-1]    # skip diagonal entry
-            A_values_in_row_i = A.data[indptr_start:indptr_stop-1]
-
             ## compute x[i]
             x[i] = b[i]
-            x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i)
-            x[i] /= A.data[indptr_stop-1]    # devide by i-th diagonal element of A
+            if indptr_stop - indptr_start > 1:      # more than just the diagonal entry
+                A_column_indices_in_row_i = A.indices[indptr_start:indptr_stop-1]    # skip diagonal entry
+                A_values_in_row_i = A.data[indptr_start:indptr_stop-1]
+                x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i)
+            x[i] /= A.data[indptr_stop-1]           # devide by i-th diagonal element of A
 
             ## next row
             indptr_start = indptr_stop
@@ -479,7 +477,6 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
 
         ## fill backward
         indptr_stop = A.indptr[len(b)]
-
         for i in range(len(b)-1, -1, -1):
             indptr_start = A.indptr[i]
 
@@ -493,14 +490,13 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
                 raise LinAlgError('A is no upper triangle matrix, since the '
                     'entry at ({},{}) is not zero!'.format(i, A.indices[indptr_start]))
 
-            ## compute value
-            A_column_indices_in_row_i = A.indices[indptr_start+1:indptr_stop]    # skip diagonal entry
-            A_values_in_row_i = A.data[indptr_start+1:indptr_stop]
-
             ## compute x[i]
             x[i] = b[i]
-            x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i)
-            x[i] /= A.data[indptr_start]    # devide by i-th diagonal element of A
+            if indptr_stop - indptr_start > 1:    # more than just the diagonal entry
+                A_column_indices_in_row_i = A.indices[indptr_start+1:indptr_stop]    # skip diagonal entry
+                A_values_in_row_i = A.data[indptr_start+1:indptr_stop]
+                x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i)
+            x[i] /= A.data[indptr_start]          # devide by i-th diagonal element of A
 
             ## next row
             indptr_stop = indptr_start
