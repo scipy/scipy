@@ -455,6 +455,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
             indptr_stop = A.indptr[i+1]
 
             ## check regularity and triangularity
+            assert np.all(A.indices[indptr_start:indptr_stop-1] <
+                A.indices[indptr_start+1:indptr_stop])     # indices are assumed to be sorted
             if indptr_stop <= indptr_start or A.indices[indptr_stop-1] < i:
                 raise LinAlgError('A is singular since the {}th diagonal '
                     'entry of A is zero!'.format(i))
@@ -463,19 +465,13 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
                     'entry at ({},{}) is not zero!'.format(i, A.indices[indptr_stop-1]))
 
             ## compute value
-            column_indices_in_row = A.indices[indptr_start:indptr_stop-1]             # skip diagonal entry
-            data_in_row = A.data[indptr_start:indptr_stop-1]
-            assert np.all(column_indices_in_row[:-1] < column_indices_in_row[1:])     # indices are assumed to be sorted
+            A_column_indices_in_row_i = A.indices[indptr_start:indptr_stop-1]    # skip diagonal entry
+            A_values_in_row_i = A.data[indptr_start:indptr_stop-1]
 
-            ## compute x_i
-            A_ii = A.data[indptr_stop-1]
-            x_i = 0
-            for j, A_ij in zip(column_indices_in_row, data_in_row):
-                x_i -= A_ij * x[j]
-                assert j < i
-            x_i += b[i]
-            x_i /= A_ii
-            x[i] = x_i
+            ## compute x[i]
+            x[i] = b[i]
+            x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i)
+            x[i] /= A.data[indptr_stop-1]    # devide by i-th diagonal element of A
 
             ## next row
             indptr_start = indptr_stop
@@ -488,6 +484,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
             indptr_start = A.indptr[i]
 
             ## check regularity and triangularity
+            assert np.all(A.indices[indptr_start:indptr_stop-1] <
+                A.indices[indptr_start+1:indptr_stop])     # indices are assumed to be sorted
             if indptr_stop <= indptr_start or A.indices[indptr_start] > i:
                 raise LinAlgError('A is singular since the {}th diagonal '
                     'entry of A is zero!'.format(i))
@@ -496,19 +494,13 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
                     'entry at ({},{}) is not zero!'.format(i, A.indices[indptr_start]))
 
             ## compute value
-            column_indices_in_row = A.indices[indptr_start+1:indptr_stop]            # skip diagonal entry
-            data_in_row = A.data[indptr_start+1:indptr_stop]
-            assert np.all(column_indices_in_row[:-1] < column_indices_in_row[1:])    # indices are assumed to be sorted
+            A_column_indices_in_row_i = A.indices[indptr_start+1:indptr_stop]    # skip diagonal entry
+            A_values_in_row_i = A.data[indptr_start+1:indptr_stop]
 
-            ## compute x_i
-            A_ii = A.data[indptr_start]
-            x_i = 0
-            for j, A_ij in zip(column_indices_in_row, data_in_row):
-                x_i -= A_ij * x[j]
-                assert j > i
-            x_i += b[i]
-            x_i /= A_ii
-            x[i] = x_i
+            ## compute x[i]
+            x[i] = b[i]
+            x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i)
+            x[i] /= A.data[indptr_start]    # devide by i-th diagonal element of A
 
             ## next row
             indptr_stop = indptr_start
