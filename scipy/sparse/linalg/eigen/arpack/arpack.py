@@ -1088,7 +1088,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         the operation ``A * x``, where A is a real or complex square matrix.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
-        `k` must be smaller than N. It is not possible to compute all
+        `k` must be smaller than N-1. It is not possible to compute all
         eigenvectors of a matrix.
     M : ndarray, sparse matrix or LinearOperator, optional
         An array, sparse matrix, or LinearOperator representing
