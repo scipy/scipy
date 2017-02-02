@@ -490,7 +490,7 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
                 raise LinAlgError('A is singular: '
                     '{}th diagonal is zero!'.format(i))
             if A.indices[indptr_start] < i:
-                raise LinAlgError('A is no lower triangular matrix: '
+                raise LinAlgError('A is no upper triangular matrix: '
                     'entry[{},{}] is not zero!'.format(i, A.indices[indptr_start]))
 
             # Compute i-th entry of x.
