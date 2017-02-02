@@ -461,6 +461,7 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
 
     # Fill x iteratively.
     for i in row_indices:
+
         # Get indices for i-th row.
         indptr_start = A.indptr[i]
         indptr_stop = A.indptr[i+1]
@@ -476,15 +477,15 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
             raise LinAlgError('A is singular: '
                 '{}th diagonal is zero!'.format(i))
         if A.indices[A_diagonal_index_row_i] > i:
-            raise LinAlgError('A is no triangular matrix: '
-                'entry [{},{}] is not zero!'.format(i, A.indices[A_diagonal_index_row_i]))
+            raise LinAlgError('A is no triangular matrix: entry '
+                '[{},{}] is not zero!'.format(i, A.indices[A_diagonal_index_row_i]))
+
+        # Incorporate off-diagonal entries.
+        A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]
+        A_values_in_row_i = A.data[A_off_diagonal_indices_row_i]
+        x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
 
         # Compute i-th entry of x.
-        if indptr_stop - indptr_start > 1:
-            # Incorporate off-diagonal entries.
-            A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]
-            A_values_in_row_i = A.data[A_off_diagonal_indices_row_i]
-            x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
         x[i] /= A.data[A_diagonal_index_row_i]
 
     return x
