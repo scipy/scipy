@@ -388,44 +388,46 @@ def factorized(A):
 
 def spsolve_triangular(A, b, lower=True, overwrite_b=False):
     """
-    Solve the equation `A x = b` for `x`, assuming a is a triangular matrix.
+    Solve the equation `A x = b` for `x`, assuming A is a triangular matrix.
+
     Parameters
     ----------
     A : (M, M) sparse matrix
         A sparse square triangular matrix. Should be in CSR format.
     b : (M,) or (M, N) array_like
-        Right-hand side matrix in `a x = b`
+        Right-hand side matrix in `A x = b`
     lower : bool, optional
-        Whether `A` is a lower or upper triangle matrix.
-        Default is lower triangle matrix.
+        Whether `A` is a lower or upper triangular matrix.
+        Default is lower triangular matrix.
     overwrite_b : bool, optional
         Allow overwriting data in `b`.
         This may give a performance gain.
+
     Returns
     -------
     x : (M,) or (M, N) ndarray
         Solution to the system `A x = b`.  Shape of return matches shape of `b`.
+
     Raises
     ------
     LinAlgError
-        If `A` is singular.
+        If `A` is singular or not triangular.
     ValueError
         If shape of `A` or shape of `b` do not match the requirements.
+
     Notes
     -----
     .. versionadded:: 0.20.0
     """
 
     ## check input
-    if A.ndim != 2:
-        raise ValueError('A must have 2 dimensions but its shape is {}.'.format(A.shape))
-    if A.shape[0] != A.shape[1]:
-        raise ValueError('A must be a square matrix but its shape is {}.'.format(A.shape))
-
     if not isspmatrix_csr(A):
         warn('CSR matrix format is required. Converting to CSR matrix.',
              SparseEfficiencyWarning)
         A = csr_matrix(A)
+
+    if A.shape[0] != A.shape[1]:
+        raise ValueError('A must be a square matrix but its shape is {}.'.format(A.shape))
 
     A.eliminate_zeros()
     A.sort_indices()
@@ -440,10 +442,10 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
     ## init x
-    if not overwrite_b:
-        x = np.empty(b.shape)
-    else:
+    if overwrite_b:
         x = b
+    else:
+        x = b.copy()
 
     ## fill x
     if lower:
@@ -454,24 +456,21 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
             indptr_stop = A.indptr[i+1]
 
             ## check regularity and triangularity
-            assert np.all(A.indices[indptr_start:indptr_stop-1] <
-                A.indices[indptr_start+1:indptr_stop])     # indices are assumed to be sorted
             if indptr_stop <= indptr_start or A.indices[indptr_stop-1] < i:
-                raise LinAlgError('A is singular since the {}th diagonal '
-                    'entry of A is zero!'.format(i))
+                raise LinAlgError('A is singular: '
+                    '{}th diagonal is zero!'.format(i))
             if A.indices[indptr_stop-1] > i:
-                raise LinAlgError('A is no lower triangle matrix, since the '
-                    'entry at ({},{}) is not zero!'.format(i, A.indices[indptr_stop-1]))
+                raise LinAlgError('A is no lower triangular matrix: '
+                    'entry[{},{}] is not zero!'.format(i, A.indices[indptr_stop-1]))
 
             ## compute x[i]
-            x[i] = b[i]
             if indptr_stop - indptr_start > 1:      # more than just the diagonal entry
                 A_column_indices_in_row_i = A.indices[indptr_start:indptr_stop-1]    # skip diagonal entry
                 A_values_in_row_i = A.data[indptr_start:indptr_stop-1]
                 if x.ndim > 1:
                     A_values_in_row_i = A_values_in_row_i[:, np.newaxis]
                 x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i, axis=0)
-            x[i] /= A.data[indptr_stop-1]           # devide by i-th diagonal element of A
+            x[i] /= A.data[indptr_stop-1]           # divide by i-th diagonal element of A
 
             ## next row
             indptr_start = indptr_stop
@@ -483,24 +482,21 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
             indptr_start = A.indptr[i]
 
             ## check regularity and triangularity
-            assert np.all(A.indices[indptr_start:indptr_stop-1] <
-                A.indices[indptr_start+1:indptr_stop])     # indices are assumed to be sorted
             if indptr_stop <= indptr_start or A.indices[indptr_start] > i:
-                raise LinAlgError('A is singular since the {}th diagonal '
-                    'entry of A is zero!'.format(i))
+                raise LinAlgError('A is singular: '
+                    '{}th diagonal is zero!'.format(i))
             if A.indices[indptr_start] < i:
-                raise LinAlgError('A is no upper triangle matrix, since the '
-                    'entry at ({},{}) is not zero!'.format(i, A.indices[indptr_start]))
+                raise LinAlgError('A is no lower triangular matrix: '
+                    'entry[{},{}] is not zero!'.format(i, A.indices[indptr_start]))
 
             ## compute x[i]
-            x[i] = b[i]
             if indptr_stop - indptr_start > 1:    # more than just the diagonal entry
                 A_column_indices_in_row_i = A.indices[indptr_start+1:indptr_stop]    # skip diagonal entry
                 A_values_in_row_i = A.data[indptr_start+1:indptr_stop]
                 if x.ndim > 1:
                     A_values_in_row_i = A_values_in_row_i[:, np.newaxis]
                 x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i, axis=0)
-            x[i] /= A.data[indptr_start]          # devide by i-th diagonal element of A
+            x[i] /= A.data[indptr_start]          # divide by i-th diagonal element of A
 
             ## next row
             indptr_stop = indptr_start
