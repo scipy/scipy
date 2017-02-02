@@ -473,9 +473,7 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
             if indptr_stop - indptr_start > 1:      # Incorporate off-diagonal entries at i-th row of A.
                 A_column_indices_in_row_i = A.indices[indptr_start:indptr_stop-1]    # Skip diagonal entry of A.
                 A_values_in_row_i = A.data[indptr_start:indptr_stop-1]
-                if x.ndim > 1:
-                    A_values_in_row_i = A_values_in_row_i[:, np.newaxis]
-                x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i, axis=0)
+                x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
             x[i] /= A.data[indptr_stop-1]           # Divide by i-th diagonal entry of A.
 
             # Go to next row of A.
@@ -499,9 +497,7 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
             if indptr_stop - indptr_start > 1:    # Incorporate off-diagonal entries at i-th row of A.
                 A_column_indices_in_row_i = A.indices[indptr_start+1:indptr_stop]    # Skip diagonal entry of A.
                 A_values_in_row_i = A.data[indptr_start+1:indptr_stop]
-                if x.ndim > 1:
-                    A_values_in_row_i = A_values_in_row_i[:, np.newaxis]
-                x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i, axis=0)
+                x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
             x[i] /= A.data[indptr_start]          # Divide by i-th diagonal entry of A.
 
             # Go to next row of A.
