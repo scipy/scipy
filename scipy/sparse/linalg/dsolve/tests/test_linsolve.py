@@ -526,12 +526,12 @@ class TestSpsolveTriangular(TestCase):
 
     def test_random(self):
         def random_triangle_matrix(n, lower=True):
-            A = scipy.sparse.random(n, n, density=0.1, format='csr')
+            A = scipy.sparse.random(n, n, density=0.1, format='coo')
             if lower:
                 A = scipy.sparse.tril(A)
             else:
                 A = scipy.sparse.triu(A)
-            A = A.tocsr()
+            A = A.tocsr(copy=False)
             for i in range(n):
                 A[i,i] = np.random.rand() + 1
             return A
