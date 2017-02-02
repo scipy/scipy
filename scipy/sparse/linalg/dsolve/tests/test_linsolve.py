@@ -522,7 +522,7 @@ class TestSpsolveTriangular(TestCase):
         b = array([[2., 0.], [2., 2.]])
         for matrix_type in (array, csc_matrix, csr_matrix):
             x = spsolve_triangular(matrix_type(A), b, lower=True)
-            assert_array_almost_equal(np.dot(A, x), b)
+            assert_array_almost_equal(A.dot(x), b)
 
     def test_random(self):
         def random_triangle_matrix(n, lower=True):
@@ -542,7 +542,7 @@ class TestSpsolveTriangular(TestCase):
                 for lower in (True, False):
                     A = random_triangle_matrix(n, lower=lower)
                     x = spsolve_triangular(A, b, lower=lower)
-                    assert_array_almost_equal(np.dot(A.toarray(), x), b)
+                    assert_array_almost_equal(A.dot(x), b)
 
 
 if __name__ == "__main__":
