@@ -453,54 +453,38 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
     else:
         x = b.copy()
 
-    # Fill x iteratively.
+    # Chose forward or backward order.
     if lower:
-
-        # Fill x from start to end.
-        indptr_start = A.indptr[0]
-        for i in range(len(b)):
-            indptr_stop = A.indptr[i+1]
-
-            # Check regularity and triangularity of A.
-            if indptr_stop <= indptr_start or A.indices[indptr_stop-1] < i:
-                raise LinAlgError('A is singular: '
-                    '{}th diagonal is zero!'.format(i))
-            if A.indices[indptr_stop-1] > i:
-                raise LinAlgError('A is no lower triangular matrix: '
-                    'entry[{},{}] is not zero!'.format(i, A.indices[indptr_stop-1]))
-
-            # Compute i-th entry of x.
-            if indptr_stop - indptr_start > 1:      # Incorporate off-diagonal entries at i-th row of A.
-                A_column_indices_in_row_i = A.indices[indptr_start:indptr_stop-1]    # Skip diagonal entry of A.
-                A_values_in_row_i = A.data[indptr_start:indptr_stop-1]
-                x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
-            x[i] /= A.data[indptr_stop-1]           # Divide by i-th diagonal entry of A.
-
-            # Go to next row of A.
-            indptr_start = indptr_stop
+        row_indices = range(len(b))
     else:
+        row_indices = range(len(b)-1, -1, -1)
 
-        # Fill x from end to start.
-        indptr_stop = A.indptr[len(b)]
-        for i in range(len(b)-1, -1, -1):
-            indptr_start = A.indptr[i]
+    # Fill x iteratively.
+    for i in row_indices:
+        # Get indices for i-th row.
+        indptr_start = A.indptr[i]
+        indptr_stop = A.indptr[i+1]
+        if lower:
+            A_diagonal_index_row_i = indptr_stop-1
+            A_off_diagonal_indices_row_i = slice(indptr_start,indptr_stop-1)
+        else:
+            A_diagonal_index_row_i = indptr_start
+            A_off_diagonal_indices_row_i = slice(indptr_start+1,indptr_stop)
 
-            # Check regularity and triangularity of A.
-            if indptr_stop <= indptr_start or A.indices[indptr_start] > i:
-                raise LinAlgError('A is singular: '
-                    '{}th diagonal is zero!'.format(i))
-            if A.indices[indptr_start] < i:
-                raise LinAlgError('A is no upper triangular matrix: '
-                    'entry[{},{}] is not zero!'.format(i, A.indices[indptr_start]))
+        # Check regularity and triangularity of A.
+        if indptr_stop <= indptr_start or A.indices[A_diagonal_index_row_i] < i:
+            raise LinAlgError('A is singular: '
+                '{}th diagonal is zero!'.format(i))
+        if A.indices[A_diagonal_index_row_i] > i:
+            raise LinAlgError('A is no triangular matrix: '
+                'entry [{},{}] is not zero!'.format(i, A.indices[A_diagonal_index_row_i]))
 
-            # Compute i-th entry of x.
-            if indptr_stop - indptr_start > 1:    # Incorporate off-diagonal entries at i-th row of A.
-                A_column_indices_in_row_i = A.indices[indptr_start+1:indptr_stop]    # Skip diagonal entry of A.
-                A_values_in_row_i = A.data[indptr_start+1:indptr_stop]
-                x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
-            x[i] /= A.data[indptr_start]          # Divide by i-th diagonal entry of A.
-
-            # Go to next row of A.
-            indptr_stop = indptr_start
+        # Compute i-th entry of x.
+        if indptr_stop - indptr_start > 1:
+            # Incorporate off-diagonal entries.
+            A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]
+            A_values_in_row_i = A.data[A_off_diagonal_indices_row_i]
+            x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
+        x[i] /= A.data[A_diagonal_index_row_i]
 
     return x
