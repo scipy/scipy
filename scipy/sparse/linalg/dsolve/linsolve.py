@@ -386,7 +386,7 @@ def factorized(A):
         return splu(A).solve
 
 
-def spsolve_triangular(A, b, lower=True, overwrite_b=False):
+def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
     """
     Solve the equation `A x = b` for `x`, assuming A is a triangular matrix.
 
@@ -399,9 +399,13 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
     lower : bool, optional
         Whether `A` is a lower or upper triangular matrix.
         Default is lower triangular matrix.
+    copy_A : bool, optional
+        Whether `A` should be copied so that it remains unmodified. The indices
+        of `A` are going to be sorted and zero entries going to be removed.
+        Disabling gives a performance gain. Default is True.
     overwrite_b : bool, optional
         Allow overwriting data in `b`.
-        This may give a performance gain.
+        Enabling gives a performance gain. Default is False.
 
     Returns
     -------
@@ -420,11 +424,13 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
     .. versionadded:: 0.20.0
     """
 
-    ## check input
+    # Check the input for correct type and format.
     if not isspmatrix_csr(A):
         warn('CSR matrix format is required. Converting to CSR matrix.',
              SparseEfficiencyWarning)
         A = csr_matrix(A)
+    elif copy_A:
+        A = A.copy()
 
     if A.shape[0] != A.shape[1]:
         raise ValueError('A must be a square matrix but its shape is {}.'.format(A.shape))
@@ -441,21 +447,21 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
             'the size of the first dimension of b but the shape of A is '
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
-    ## init x
+    # Init x as copy of b.
     if overwrite_b:
         x = b
     else:
         x = b.copy()
 
-    ## fill x
+    # Fill x iteratively.
     if lower:
 
-        ## fill forward
+        # Fill x from start to end.
         indptr_start = A.indptr[0]
         for i in range(len(b)):
             indptr_stop = A.indptr[i+1]
 
-            ## check regularity and triangularity
+            # Check regularity and triangularity of A.
             if indptr_stop <= indptr_start or A.indices[indptr_stop-1] < i:
                 raise LinAlgError('A is singular: '
                     '{}th diagonal is zero!'.format(i))
@@ -463,25 +469,25 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
                 raise LinAlgError('A is no lower triangular matrix: '
                     'entry[{},{}] is not zero!'.format(i, A.indices[indptr_stop-1]))
 
-            ## compute x[i]
-            if indptr_stop - indptr_start > 1:      # more than just the diagonal entry
-                A_column_indices_in_row_i = A.indices[indptr_start:indptr_stop-1]    # skip diagonal entry
+            # Compute i-th entry of x.
+            if indptr_stop - indptr_start > 1:      # Incorporate off-diagonal entries at i-th row of A.
+                A_column_indices_in_row_i = A.indices[indptr_start:indptr_stop-1]    # Skip diagonal entry of A.
                 A_values_in_row_i = A.data[indptr_start:indptr_stop-1]
                 if x.ndim > 1:
                     A_values_in_row_i = A_values_in_row_i[:, np.newaxis]
                 x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i, axis=0)
-            x[i] /= A.data[indptr_stop-1]           # divide by i-th diagonal element of A
+            x[i] /= A.data[indptr_stop-1]           # Divide by i-th diagonal entry of A.
 
-            ## next row
+            # Go to next row of A.
             indptr_start = indptr_stop
     else:
 
-        ## fill backward
+        # Fill x from end to start.
         indptr_stop = A.indptr[len(b)]
         for i in range(len(b)-1, -1, -1):
             indptr_start = A.indptr[i]
 
-            ## check regularity and triangularity
+            # Check regularity and triangularity of A.
             if indptr_stop <= indptr_start or A.indices[indptr_start] > i:
                 raise LinAlgError('A is singular: '
                     '{}th diagonal is zero!'.format(i))
@@ -489,16 +495,16 @@ def spsolve_triangular(A, b, lower=True, overwrite_b=False):
                 raise LinAlgError('A is no lower triangular matrix: '
                     'entry[{},{}] is not zero!'.format(i, A.indices[indptr_start]))
 
-            ## compute x[i]
-            if indptr_stop - indptr_start > 1:    # more than just the diagonal entry
-                A_column_indices_in_row_i = A.indices[indptr_start+1:indptr_stop]    # skip diagonal entry
+            # Compute i-th entry of x.
+            if indptr_stop - indptr_start > 1:    # Incorporate off-diagonal entries at i-th row of A.
+                A_column_indices_in_row_i = A.indices[indptr_start+1:indptr_stop]    # Skip diagonal entry of A.
                 A_values_in_row_i = A.data[indptr_start+1:indptr_stop]
                 if x.ndim > 1:
                     A_values_in_row_i = A_values_in_row_i[:, np.newaxis]
                 x[i] -= np.sum(x[A_column_indices_in_row_i] * A_values_in_row_i, axis=0)
-            x[i] /= A.data[indptr_start]          # divide by i-th diagonal element of A
+            x[i] /= A.data[indptr_start]          # Divide by i-th diagonal entry of A.
 
-            ## next row
+            # Go to next row of A.
             indptr_stop = indptr_start
 
     return x
