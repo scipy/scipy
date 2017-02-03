@@ -8,12 +8,24 @@ EPS = np.finfo(float).eps
 
 
 def validate_max_step(max_step):
+    """Assert that max_Step is valid and return it."""
     if max_step <= 0:
         raise ValueError("`max_step` must be positive.")
     return max_step
 
 
 def warn_extraneous(extraneous):
+    """Display a warning for extraneous keyword arguments.
+
+    The initializer of each solver class is expected to collect keyword
+    arguments that it doesn't understand and warn about them. This function
+    prints a warning for each key in the supplied dictionary.
+
+    Parameters
+    ----------
+    extraneous : dict
+        Extraneous keyword arguments
+    """
     if extraneous:
         warn("The following arguments have no effect for a chosen solver: {}."
              .format(", ".join("`{}`".format(x) for x in extraneous)))

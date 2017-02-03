@@ -52,7 +52,7 @@ def jac_rational_sparse(t, y):
 
 
 def sol_rational(t):
-    return np.vstack((t / (t + 10), 10 * t / (t + 10) ** 2))
+    return np.asarray((t / (t + 10), 10 * t / (t + 10) ** 2))
 
 
 def event_rational_1(t, y):
@@ -177,6 +177,13 @@ def test_integration():
             e = compute_error(yc, yc_true, rtol, atol)
             assert_(np.all(e < 5))
 
+            tc = (t_span[0] + t_span[-1]) / 2
+            yc_true = sol_rational(tc)
+            yc = res.sol(tc)
+
+            e = compute_error(yc, yc_true, rtol, atol)
+            assert_(np.all(e < 5))
+
             # LSODA for some reasons doesn't pass the polynomial through the
             # previous points exactly after the order change. It might be some
             # bug in LSOSA implementation or maybe we missing something.
@@ -286,6 +293,12 @@ def test_events():
         assert_equal(res.t_events[2].size, 1)
         assert_(5.3 < res.t_events[0][0] < 5.7)
         assert_(7.3 < res.t_events[2][0] < 7.5)
+
+        res = solve_ivp(fun_rational, [5, 8], [1 / 3, 2 / 9], method=method,
+                        events=event_rational_1, dense_output=True)
+        assert_equal(res.status, 0)
+        assert_equal(res.t_events[0].size, 1)
+        assert_(5.3 < res.t_events[0][0] < 5.7)
 
         # Also test that termination by event doesn't break interpolants.
         tc = np.linspace(res.t[0], res.t[-1])
@@ -456,6 +469,21 @@ def test_no_integration():
         sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3],
                         method=method, dense_output=True)
         assert_equal(sol.sol(4), [2, 3])
+
+
+def test_no_integration_class():
+    for method in [RK23, RK45, Radau, BDF, LSODA]:
+        solver = method(lambda t, y: -y, 0.0, [10.0, 0.0], 0.0)
+        solver.step()
+        assert_equal(solver.status, 'finished')
+        sol = solver.dense_output()
+        assert_equal(sol(0.0), [10.0, 0.0])
+
+        solver = method(lambda t, y: -y, 0.0, [], np.inf)
+        solver.step()
+        assert_equal(solver.status, 'finished')
+        sol = solver.dense_output()
+        assert_equal(sol(100.0), [])
 
 
 def test_empty():

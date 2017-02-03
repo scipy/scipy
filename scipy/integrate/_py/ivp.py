@@ -25,6 +25,7 @@ class OdeResult(OptimizeResult):
 
 
 def prepare_events(events):
+    """Standardize event functions and extract is_terminal and direction."""
     if callable(events):
         events = (events,)
 

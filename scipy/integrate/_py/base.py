@@ -3,6 +3,7 @@ import numpy as np
 
 
 def check_arguments(fun, y0):
+    """Helper function for checking arguments common to all solvers."""
     y0 = np.asarray(y0, dtype=float)
 
     if y0.ndim != 1:
@@ -23,8 +24,8 @@ class OdeSolver(object):
            (listed below) along with any other parameters specific to a solver.
         2. A constructor must accept arbitrary extraneous arguments
            ``**extraneous``, but warn that these arguments are irrelevant
-           using `common.warn_extraneous` function. Do not pass these arguments
-           to the base class.
+           using the `common.warn_extraneous` function. Do not pass these
+           arguments to the base class.
         3. A solver must implement a private method `_step_impl(self)` which
            propagates a solver one step further. It must return tuple
            ``(success, message)``, where ``success`` is a boolean indicating
@@ -32,7 +33,7 @@ class OdeSolver(object):
            containing description of a failure if a step failed or None
            otherwise.
         4. A solver must implement a private method `_dense_output_impl(self)`
-           which returns `DenseOutput` object covering the last successful
+           which returns a `DenseOutput` object covering the last successful
            step.
         5. A solver must have attributes listed below in Attributes section.
            Note that `step_size` is computed automatically from `t` and
@@ -48,7 +49,7 @@ class OdeSolver(object):
         8. If a solver uses a Jacobian matrix and LU decompositions, it should
            track the number of Jacobian evaluations (`njev`) and the number of
            LU decompositions (`nlu`).
-        9. By convention a function evaluations used to compute a finite
+        9. By convention the function evaluations used to compute a finite
            difference approximation of the Jacobian should not be counted in
            `nfev`, thus use `fun_single(self, t, y)` or
            `fun_vectorized(self, t, y)` when computing a finite difference
@@ -203,7 +204,7 @@ class OdeSolver(object):
 
 
 class DenseOutput(object):
-    """Local interpolant over the last successful step made by an ODE solver.
+    """Base class for local interpolant over step made by an ODE solver.
 
     It interpolates between `t_min` and `t_max` (see Attributes below).
     Evaluation outside this interval is not forbidden, but the accuracy is not
@@ -244,6 +245,7 @@ class DenseOutput(object):
 
 
 class ConstantDenseOutput(DenseOutput):
+    """Dummy class for interpolating steps with no actual integration."""
     def __init__(self, t_old, t, value):
         super(ConstantDenseOutput, self).__init__(t_old, t)
         self.value = value
