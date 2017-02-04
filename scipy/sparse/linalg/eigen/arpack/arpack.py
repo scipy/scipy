@@ -46,7 +46,7 @@ from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, isspmatrix, isspmatrix_csr
-from scipy.linalg import lu_factor, lu_solve
+from scipy.linalg import eig, lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
@@ -1221,6 +1221,17 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     (13, 6)
 
     """
+    n = A.shape[0]
+
+    if k >= n-1:
+        import warnings
+        warnings.warn('k greater than/equal to N - 1 . '
+                      'Using scipy.linalg.eig instead.')
+        if return_eigenvectors is True:
+            return eig(A.todense())
+        else:
+            return eig(A.todense(), right=False)
+
     if A.shape[0] != A.shape[1]:
         raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
     if M is not None:
@@ -1231,7 +1242,6 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
             import warnings
             warnings.warn('M does not have the same type precision as A. '
                           'This may adversely affect ARPACK convergence')
-    n = A.shape[0]
 
     if k <= 0 or k >= n:
         raise ValueError("k=%d must be between 1 and ndim(A)-1=%d"
@@ -1485,6 +1495,17 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     (13, 6)
 
     """
+    n = A.shape[0]
+
+    if k >= n:
+        import warnings
+        warnings.warn('k greater than/equal to the order of the square '
+                      'matrix. Using scipy.linalg.eig instead.')
+        if return_eigenvectors is True:
+            return eig(A.todense())
+        else:
+            return eig(A.todense(), right=False)
+
     # complex hermitian matrices should be solved with eigs
     if np.issubdtype(A.dtype, np.complexfloating):
         if mode != 'normal':
@@ -1516,7 +1537,6 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             import warnings
             warnings.warn('M does not have the same type precision as A. '
                           'This may adversely affect ARPACK convergence')
-    n = A.shape[0]
 
     if k <= 0 or k >= n:
         raise ValueError("k must be between 1 and the order of the "
