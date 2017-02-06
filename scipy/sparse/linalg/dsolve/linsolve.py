@@ -453,7 +453,7 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
     else:
         x = b.copy()
 
-    # Chose forward or backward order.
+    # Choose forward or backward order.
     if lower:
         row_indices = range(len(b))
     else:
