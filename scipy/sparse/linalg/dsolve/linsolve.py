@@ -386,7 +386,7 @@ def factorized(A):
         return splu(A).solve
 
 
-def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
+def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     """
     Solve the equation `A x = b` for `x`, assuming A is a triangular matrix.
 
@@ -399,10 +399,10 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
     lower : bool, optional
         Whether `A` is a lower or upper triangular matrix.
         Default is lower triangular matrix.
-    copy_A : bool, optional
-        Whether `A` should be copied so that it remains unmodified. The indices
-        of `A` are going to be sorted and zero entries going to be removed.
-        Disabling gives a performance gain. Default is True.
+    overwrite_A : bool, optional
+        Allow changing `A`. The indices of `A` are going to be sorted and zero
+        entries are going to be removed.
+        Enabling gives a performance gain. Default is False.
     overwrite_b : bool, optional
         Allow overwriting data in `b`.
         Enabling gives a performance gain. Default is False.
@@ -429,7 +429,7 @@ def spsolve_triangular(A, b, lower=True, copy_A=True, overwrite_b=False):
         warn('CSR matrix format is required. Converting to CSR matrix.',
              SparseEfficiencyWarning)
         A = csr_matrix(A)
-    elif copy_A:
+    elif not overwrite_A:
         A = A.copy()
 
     if A.shape[0] != A.shape[1]:
