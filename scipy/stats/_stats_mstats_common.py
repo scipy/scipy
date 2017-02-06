@@ -69,10 +69,11 @@ def linregress(x, y=None):
     TINY = 1.0e-20
     if y is None:  # x is a (2, N) or (N, 2) shaped array_like
         x = np.asarray(x)
-        if x.shape[0] == 2:
-            x, y = x
-        elif x.shape[1] == 2:
-            x, y = x.T
+        if len(x.shape) == 2:
+            if x.shape[0] == 2:
+                x, y = x
+            elif x.shape[1] == 2:
+                x, y = x.T
         else:
             msg = ("If only `x` is given as input, it has to be of shape "
                    "(2, N) or (N, 2), provided shape was %s" % str(x.shape))
@@ -83,6 +84,8 @@ def linregress(x, y=None):
 
     if x.size == 0 or y.size == 0:
         raise ValueError("Inputs must not be empty.")
+    elif x.size == 1 or y.size == 1:
+        raise ValueError("Inputs must have sizes of at least 2.")
 
     n = len(x)
     xmean = np.mean(x, None)
