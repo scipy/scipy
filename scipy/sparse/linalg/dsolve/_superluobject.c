@@ -1028,16 +1028,22 @@ static int droprule_cvt(PyObject * input, int *value)
     }
     else if (PyUnicode_Check(input)) {
 	/* Comma-separated string */
-	PyObject *s;
-	int ret;
-
-	s = PyUnicode_AsASCIIString(input);
-	if (s == NULL) {
+#if PY_MAJOR_VERSION >= 3
+	seq = PyObject_CallMethod(input, "split", "s", ",");
+	if (seq == NULL || !PySequence_Check(seq))
 	    goto fail;
-	}
-	ret = droprule_cvt(s, value);
-	Py_DECREF(s);
-	return ret;
+#else
+        PyObject *s;
+        int ret;
+
+        s = PyUnicode_AsASCIIString(input);
+        if (s == NULL) {
+            goto fail;
+        }
+        ret = droprule_cvt(s, value);
+        Py_DECREF(s);
+        return ret;
+#endif
     }
     else if (PySequence_Check(input)) {
 	/* Sequence of strings or integers */
