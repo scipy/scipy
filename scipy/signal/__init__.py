@@ -285,6 +285,9 @@ Spectral Analysis
    spectrogram    -- Compute the spectrogram
    lombscargle    -- Computes the Lomb-Scargle periodogram
    vectorstrength -- Computes the vector strength
+   stft           -- Compute the Short Time Fourier Transform
+   istft          -- Compute the Inverse Short Time Fourier Transform
+   check_COLA     -- Check the COLA constraint for iSTFT reconstruction
 
 """
 from __future__ import division, print_function, absolute_import

@@ -8,15 +8,16 @@ from scipy import fftpack
 from . import signaltools
 from .windows import get_window
 from ._spectral import lombscargle
+from ._arraytools import even_ext
 import warnings
 
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
-           'spectrogram']
+           'spectrogram', 'stft', 'istft', 'check_COLA']
 
 
-def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
+def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
                 return_onesided=True, scaling='density', axis=-1):
     """
     Estimate power spectral density using a periodogram.
@@ -28,28 +29,32 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows and
-        required parameters. If `window` is an array it will be used
-        directly as the window. Defaults to None; equivalent to 'boxcar'.
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be nperseg.
+        Defaults to 'boxcar'.
     nfft : int, optional
-        Length of the FFT used. If None the length of `x` will be used.
-    detrend : str or function or False, optional
-        Specifies how to detrend `x` prior to computing the spectrum. If
-        `detrend` is a string, it is passed as the ``type`` argument to
-        `detrend`.  If it is a function, it should return a detrended array.
-        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+        Length of the FFT used. If `None` the length of `x` will be
+        used.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
     return_onesided : bool, optional
-        If True, return a one-sided spectrum for real data. If False return
-        a two-sided spectrum. Note that for complex data, a two-sided
-        spectrum is always returned.
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum. Note that for complex
+        data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power spectrum
-        ('spectrum') where `Pxx` has units of V**2, if `x` is measured in V
-        and fs is measured in Hz.  Defaults to 'density'
+        where `Pxx` has units of V**2/Hz and computing the power
+        spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
+        is measured in V and `fs` is measured in Hz. Defaults to
+        'density'
     axis : int, optional
-        Axis along which the periodogram is computed; the default is over
-        the last axis (i.e. ``axis=-1``).
+        Axis along which the periodogram is computed; the default is
+        over the last axis (i.e. ``axis=-1``).
 
     Returns
     -------
@@ -110,7 +115,8 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
     >>> plt.ylabel('Linear spectrum [V RMS]')
     >>> plt.show()
 
-    The peak height in the power spectrum is an estimate of the RMS amplitude.
+    The peak height in the power spectrum is an estimate of the RMS
+    amplitude.
 
     >>> np.sqrt(Pxx_spec.max())
     2.0077340678640727
@@ -142,13 +148,15 @@ def periodogram(x, fs=1.0, window=None, nfft=None, detrend='constant',
 
 
 def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
-          detrend='constant', return_onesided=True, scaling='density', axis=-1):
-    """
+          detrend='constant', return_onesided=True, scaling='density',
+          axis=-1):
+    r"""
     Estimate power spectral density using Welch's method.
 
-    Welch's method [1]_ computes an estimate of the power spectral density
-    by dividing the data into overlapping segments, computing a modified
-    periodogram for each segment and averaging the periodograms.
+    Welch's method [1]_ computes an estimate of the power spectral
+    density by dividing the data into overlapping segments, computing a
+    modified periodogram for each segment and averaging the
+    periodograms.
 
     Parameters
     ----------
@@ -157,37 +165,39 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows and
-        required parameters. If `window` is array_like it will be used
-        directly as the window and its length will be used for nperseg.
-        Defaults to 'hann'.
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be nperseg.
+        Defaults to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
     noverlap : int, optional
-        Number of points to overlap between segments. If None,
-        ``noverlap = nperseg // 2``.  Defaults to None.
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired.  If None,
-        the FFT length is `nperseg`. Defaults to None.
-    detrend : str or function or False, optional
-        Specifies how to detrend each segment. If `detrend` is a string,
-        it is passed as the ``type`` argument to `detrend`.  If it is a
-        function, it takes a segment and returns a detrended segment.
-        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
     return_onesided : bool, optional
-        If True, return a one-sided spectrum for real data. If False return
-        a two-sided spectrum. Note that for complex data, a two-sided
-        spectrum is always returned.
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum. Note that for complex
+        data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power spectrum
-        ('spectrum') where `Pxx` has units of V**2, if `x` is measured in V
-        and fs is measured in Hz.  Defaults to 'density'
+        where `Pxx` has units of V**2/Hz and computing the power
+        spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
+        is measured in V and `fs` is measured in Hz. Defaults to
+        'density'
     axis : int, optional
-        Axis along which the periodogram is computed; the default is over
-        the last axis (i.e. ``axis=-1``).
+        Axis along which the periodogram is computed; the default is
+        over the last axis (i.e. ``axis=-1``).
 
     Returns
     -------
@@ -204,12 +214,13 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     Notes
     -----
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hann' window an
-    overlap of 50% is a reasonable trade off between accurately estimating
-    the signal power, while not over counting any of the data.  Narrower
+    and on your requirements. For the default 'hann' window an overlap
+    of 50% is a reasonable trade off between accurately estimating the
+    signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
-    If `noverlap` is 0, this method is equivalent to Bartlett's method [2]_.
+    If `noverlap` is 0, this method is equivalent to Bartlett's method
+    [2]_.
 
     .. versionadded:: 0.12.0
 
@@ -264,7 +275,8 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.ylabel('Linear spectrum [V RMS]')
     >>> plt.show()
 
-    The peak height in the power spectrum is an estimate of the RMS amplitude.
+    The peak height in the power spectrum is an estimate of the RMS
+    amplitude.
 
     >>> np.sqrt(Pxx_spec.max())
     2.0077340678640727
@@ -279,8 +291,9 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
 def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         detrend='constant', return_onesided=True, scaling='density', axis=-1):
-    """
-    Estimate the cross power spectral density, Pxy, using Welch's method.
+    r"""
+    Estimate the cross power spectral density, Pxy, using Welch's
+    method.
 
     Parameters
     ----------
@@ -289,39 +302,41 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     y : array_like
         Time series of measurement values
     fs : float, optional
-        Sampling frequency of the `x` and `y` time series. Defaults to 1.0.
+        Sampling frequency of the `x` and `y` time series. Defaults
+        to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows and
-        required parameters. If `window` is array_like it will be used
-        directly as the window and its length will be used for nperseg.
-        Defaults to 'hann'.
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be nperseg.
+        Defaults to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
     noverlap: int, optional
-        Number of points to overlap between segments. If None,
-        ``noverlap = nperseg // 2``.  Defaults to None.
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired. If None,
-        the FFT length is `nperseg`. Defaults to None.
-    detrend : str or function or False, optional
-        Specifies how to detrend each segment. If `detrend` is a string,
-        it is passed as the ``type`` argument to `detrend`.  If it is a
-        function, it takes a segment and returns a detrended segment.
-        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
     return_onesided : bool, optional
-        If True, return a one-sided spectrum for real data. If False return
-        a two-sided spectrum. Note that for complex data, a two-sided
-        spectrum is always returned.
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum. Note that for complex
+        data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross spectrum
         ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
-        measured in V and fs is measured in Hz.  Defaults to 'density'
+        measured in V and `fs` is measured in Hz. Defaults to 'density'
     axis : int, optional
-        Axis along which the CSD is computed for both inputs; the default is
-        over the last axis (i.e. ``axis=-1``).
+        Axis along which the CSD is computed for both inputs; the
+        default is over the last axis (i.e. ``axis=-1``).
 
     Returns
     -------
@@ -334,21 +349,22 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     --------
     periodogram: Simple, optionally modified periodogram
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
-    welch: Power spectral density by Welch's method. [Equivalent to csd(x,x)]
+    welch: Power spectral density by Welch's method. [Equivalent to
+           csd(x,x)]
     coherence: Magnitude squared coherence by Welch's method.
 
     Notes
     --------
-    By convention, Pxy is computed with the conjugate FFT of X multiplied by
-    the FFT of Y.
+    By convention, Pxy is computed with the conjugate FFT of X
+    multiplied by the FFT of Y.
 
     If the input series differ in length, the shorter series will be
     zero-padded to match.
 
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hann' window an
-    overlap of 50\\% is a reasonable trade off between accurately estimating
-    the signal power, while not over counting any of the data.  Narrower
+    and on your requirements. For the default 'hann' window an overlap
+    of 50% is a reasonable trade off between accurately estimating the
+    signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
     .. versionadded:: 0.16.0
@@ -420,40 +436,46 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows and
-        required parameters. If `window` is array_like it will be used
-        directly as the window and its length will be used for nperseg.
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be nperseg.
         Defaults to a Tukey window with shape parameter of 0.25.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
     noverlap : int, optional
-        Number of points to overlap between segments. If None,
-        ``noverlap = nperseg // 8``.  Defaults to None.
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 8``. Defaults to `None`.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired.  If None,
-        the FFT length is `nperseg`. Defaults to None.
-    detrend : str or function or False, optional
-        Specifies how to detrend each segment. If `detrend` is a string,
-        it is passed as the ``type`` argument to `detrend`.  If it is a
-        function, it takes a segment and returns a detrended segment.
-        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
     return_onesided : bool, optional
-        If True, return a one-sided spectrum for real data. If False return
-        a two-sided spectrum. Note that for complex data, a two-sided
-        spectrum is always returned.
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum. Note that for complex
+        data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power spectrum
-        ('spectrum') where `Pxx` has units of V**2, if `x` is measured in V
-        and fs is measured in Hz.  Defaults to 'density'
+        where `Sxx` has units of V**2/Hz and computing the power
+        spectrum ('spectrum') where `Sxx` has units of V**2, if `x`
+        is measured in V and `fs` is measured in Hz. Defaults to
+        'density'.
     axis : int, optional
         Axis along which the spectrogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
     mode : str, optional
-        Defines what kind of return values are expected. Options are ['psd',
-        'complex', 'magnitude', 'angle', 'phase'].
+        Defines what kind of return values are expected. Options are
+        ['psd', 'complex', 'magnitude', 'angle', 'phase']. 'complex' is
+        equivalent to the output of `stft` with no padding or boundary
+        extension. 'magnitude' returns the absolute magnitude of the
+        STFT. 'angle' and 'phase' return the complex angle of the STFT,
+        with and without unwrapping, respectively.
 
     Returns
     -------
@@ -462,8 +484,8 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     t : ndarray
         Array of segment times.
     Sxx : ndarray
-        Spectrogram of x. By default, the last axis of Sxx corresponds to the
-        segment times.
+        Spectrogram of x. By default, the last axis of Sxx corresponds
+        to the segment times.
 
     See Also
     --------
@@ -475,35 +497,39 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     Notes
     -----
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements. In contrast to welch's method, where the entire
-    data stream is averaged over, one may wish to use a smaller overlap (or
-    perhaps none at all) when computing a spectrogram, to maintain some
-    statistical independence between individual segments.
+    and on your requirements. In contrast to welch's method, where the
+    entire data stream is averaged over, one may wish to use a smaller
+    overlap (or perhaps none at all) when computing a spectrogram, to
+    maintain some statistical independence between individual segments.
+    It is for this reason that the default window is a Tukey window with
+    1/8th of a window's length overlap at each end.
 
     .. versionadded:: 0.16.0
 
     References
     ----------
-    .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck "Discrete-Time
-           Signal Processing", Prentice Hall, 1999.
+    .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
+           "Discrete-Time Signal Processing", Prentice Hall, 1999.
 
     Examples
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
 
-    Generate a test signal, a 2 Vrms sine wave whose frequency linearly changes
-    with time from 1kHz to 2kHz, corrupted by 0.001 V**2/Hz of white noise
-    sampled at 10 kHz.
+    Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
+    modulated around 3kHz, corrupted by white noise of exponentially
+    decreasing magnitude sampled at 10 kHz.
 
     >>> fs = 10e3
     >>> N = 1e5
     >>> amp = 2 * np.sqrt(2)
-    >>> noise_power = 0.001 * fs / 2
-    >>> time = np.arange(N) / fs
-    >>> freq = np.linspace(1e3, 2e3, N)
-    >>> x = amp * np.sin(2*np.pi*freq*time)
-    >>> x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> noise_power = 0.01 * fs / 2
+    >>> time = np.arange(N) / float(fs)
+    >>> mod = 500*np.cos(2*np.pi*0.25*time)
+    >>> carrier = amp * np.sin(2*np.pi*3e3*time + mod)
+    >>> noise = np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    >>> noise *= np.exp(-time/5)
+    >>> x = carrier + noise
 
     Compute and plot the spectrogram.
 
@@ -513,31 +539,596 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
     """
+    modelist = ['psd', 'complex', 'magnitude', 'angle', 'phase']
+    if mode not in modelist:
+        raise ValueError('unknown value for mode {}, must be one of {}'
+                         .format(mode, modelist))
 
     # need to set default for nperseg before setting default for noverlap below
     window, nperseg = _triage_segments(window, nperseg,
-                                       input_length=x.shape[-1])
+                                       input_length=x.shape[axis])
 
     # Less overlap than welch, so samples are more statisically independent
     if noverlap is None:
         noverlap = nperseg // 8
 
-    freqs, time, Pxy = _spectral_helper(x, x, fs, window, nperseg, noverlap,
-                                        nfft, detrend, return_onesided, scaling,
-                                        axis, mode=mode)
+    if mode == 'psd':
+        freqs, time, Sxx = _spectral_helper(x, x, fs, window, nperseg,
+                                            noverlap, nfft, detrend,
+                                            return_onesided, scaling, axis,
+                                            mode='psd')
 
-    return freqs, time, Pxy
+    else:
+        freqs, time, Sxx = _spectral_helper(x, x, fs, window, nperseg,
+                                            noverlap, nfft, detrend,
+                                            return_onesided, scaling, axis,
+                                            mode='stft')
+
+        if mode == 'magnitude':
+            Sxx = np.abs(Sxx)
+        elif mode in ['angle', 'phase']:
+            Sxx = np.angle(Sxx)
+            if mode == 'phase':
+                # Sxx has one additional dimension for time strides
+                if axis < 0:
+                    axis -= 1
+                Sxx = np.unwrap(Sxx, axis=axis)
+
+        # mode =='complex' is same as `stft`, doesn't need modification
+
+    return freqs, time, Sxx
+
+
+def check_COLA(window, nperseg, noverlap, tol=1e-10):
+    r"""
+    Check whether the Constant OverLap Add (COLA) constraint is met
+
+    Parameters
+    ----------
+    window : str or tuple or array_like
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be `nperseg`.
+    nperseg : int
+        Length of each segment.
+    noverlap : int
+        Number of points to overlap between segments.
+    tol : float, optional
+        The allowed variance of a bin's weighted sum from the median bin
+        sum.
+
+    Returns
+    -------
+    verdict : bool
+        `True` if chosen combination satisfies COLA within `tol`,
+        `False` otherwise
+
+    See Also
+    --------
+    stft: Short Time Fourier Transform
+    istft: Inverse Short Time Fourier Transform
+
+    Notes
+    -----
+    In order to enable inversion of an STFT via the inverse STFT in
+    `istft`, the signal windowing must obey the constraint of "Constant
+    OverLap Add" (COLA). This ensures that every point in the input data
+    is equally weighted, thereby avoiding aliasing and allowing full
+    reconstruction.
+
+    Some examples of windows that satisfy COLA:
+        - Rectangular window at overlap of 0, 1/2, 2/3, 3/4, ...
+        - Bartlett window at overlap of 1/2, 3/4, 5/6, ...
+        - Hann window at 1/2, 2/3, 3/4, ...
+        - Any Blackman family window at 2/3 overlap
+        - Any window with ``noverlap = nperseg-1``
+
+    A very comprehensive list of other windows may be found in [2]_,
+    wherein the COLA condition is satisfied when the "Amplitude
+    Flatness" is unity.
+
+    .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] Julius O. Smith III, "Spectral Audio Signal Processing", W3K
+           Publishing, 2011,ISBN 978-0-9745607-3-1.
+    .. [2] G. Heinzel, A. Ruediger and R. Schilling, "Spectrum and
+           spectral density estimation by the Discrete Fourier transform
+           (DFT), including a comprehensive list of window functions and
+           some new at-top windows", 2002,
+           http://hdl.handle.net/11858/00-001M-0000-0013-557A-5
+
+    Examples
+    --------
+    >>> from scipy import signal
+
+    Confirm COLA condition for rectangular window of 75% (3/4) overlap:
+
+    >>> signal.check_COLA(signal.boxcar(100), 100, 75)
+    True
+
+    COLA is not true for 25% (1/4) overlap, though:
+
+    >>> signal.check_COLA(signal.boxcar(100), 100, 25)
+    False
+
+    "Symmetrical" Hann window (for filter design) is not COLA:
+
+    >>> signal.check_COLA(signal.hann(120, sym=True), 120, 60)
+    False
+
+    "Periodic" or "DFT-even" Hann window (for FFT analysis) is COLA for
+    overlap of 1/2, 2/3, 3/4, etc.:
+
+    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 60)
+    True
+
+    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 80)
+    True
+
+    >>> signal.check_COLA(signal.hann(120, sym=False), 120, 90)
+    True
+
+    """
+
+    nperseg = int(nperseg)
+
+    if nperseg < 1:
+        raise ValueError('nperseg must be a positive integer')
+
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    noverlap = int(noverlap)
+
+    if isinstance(window, string_types) or type(window) is tuple:
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if win.shape[0] != nperseg:
+            raise ValueError('window must have length of nperseg')
+
+    step = nperseg - noverlap
+    binsums = np.sum((win[ii*step:(ii+1)*step] for ii in range(nperseg//step)),
+                     axis=0)
+
+    if nperseg % step != 0:
+        binsums[:nperseg % step] += win[-(nperseg % step):]
+
+    deviation = binsums - np.median(binsums)
+    return np.max(np.abs(deviation)) < tol
+
+
+def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
+         detrend=False, return_onesided=True, boundary='even', padded=True,
+         axis=-1):
+    r"""
+    Compute the Short Time Fourier Transform (STFT).
+
+    STFTs can be used as a way of quantifying the change of a
+    nonstationary signal's frequency and phase content over time.
+
+    Parameters
+    ----------
+    x : array_like
+        Time series of measurement values
+    fs : float, optional
+        Sampling frequency of the `x` time series. Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be nperseg.
+        Defaults to a Hann window.
+    nperseg : int, optional
+        Length of each segment. Defaults to 256.
+    noverlap : int, optional
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`. When
+        specified, the COLA constraint must be met (see Notes below).
+    nfft : int, optional
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to `False`.
+    return_onesided : bool, optional
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum. Note that for complex
+        data, a two-sided spectrum is always returned. Defaults to
+        `True`.
+    boundary : str or None, optional
+        Specifies whether the input signal is extended, and how to
+        generate the new values, in order to center the first windowed
+        segment on the first input point. This has the benefit of
+        enabling reconstruction of the first input point when the
+        employed window function starts at zero. Valid options are
+        ``['even', None]``. Defaults to 'even', for even extension. I.e.
+        ``[1, 2, 3, 4]`` is extended to ``[2, 1, 2, 3, 4, 3]`` for
+        ``nperseg=3``.
+    padded : bool, optional
+        Specifies whether the input signal is zero-padded at the end to
+        make the signal fit exactly into an integer number of window
+        segments, so that all of the signal is included in the output.
+        Defaults to `True`. Padding occurs after boundary extension, if
+        `boundary` is not `None`, and `padded` is `True`, as is the
+        default.
+    axis : int, optional
+        Axis along which the STFT is computed; the default is over the
+        last axis (i.e. ``axis=-1``).
+
+    Returns
+    -------
+    f : ndarray
+        Array of sample frequencies.
+    t : ndarray
+        Array of segment times.
+    Zxx : ndarray
+        STFT of `x`. By default, the last axis of `Zxx` corresponds
+        to the segment times.
+
+    See Also
+    --------
+    istft: Inverse Short Time Fourier Transform
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint
+                is met
+    welch: Power spectral density by Welch's method.
+    spectrogram: Spectrogram by Welch's method.
+    csd: Cross spectral density by Welch's method.
+    lombscargle: Lomb-Scargle periodogram for unevenly sampled data
+
+    Notes
+    -----
+    In order to enable inversion of an STFT via the inverse STFT in
+    `istft`, the signal windowing must obey the constraint of "Constant
+    OverLap Add" (COLA), and the input signal must have complete
+    windowing coverage (i.e. ``(x.shape[axis] - nperseg) %
+    (nperseg-noverlap) == 0``). The `padded` argument may be used to
+    accomplish this.
+
+    The COLA constraint ensures that every point in the input data is
+    equally weighted, thereby avoiding aliasing and allowing full
+    reconstruction. Whether a choice of `window`, `nperseg`, and
+    `noverlap` satisfy this constraint can be tested with
+    `check_COLA`.
+
+    .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
+           "Discrete-Time Signal Processing", Prentice Hall, 1999.
+    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from
+           Modified Short Fourier Transform", IEEE 1984,
+           10.1109/TASSP.1984.1164317
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    Generate a test signal, a 2 Vrms sine wave whose frequency is slowly
+    modulated around 3kHz, corrupted by white noise of exponentially
+    decreasing magnitude sampled at 10 kHz.
+
+    >>> fs = 10e3
+    >>> N = 1e5
+    >>> amp = 2 * np.sqrt(2)
+    >>> noise_power = 0.01 * fs / 2
+    >>> time = np.arange(N) / float(fs)
+    >>> mod = 500*np.cos(2*np.pi*0.25*time)
+    >>> carrier = amp * np.sin(2*np.pi*3e3*time + mod)
+    >>> noise = np.random.normal(scale=np.sqrt(noise_power),
+    ...                          size=time.shape)
+    >>> noise *= np.exp(-time/5)
+    >>> x = carrier + noise
+
+    Compute and plot the STFT's magnitude.
+
+    >>> f, t, Zxx = signal.stft(x, fs, nperseg=1000)
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.title('STFT Magnitude')
+    >>> plt.ylabel('Frequency [Hz]')
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.show()
+    """
+
+    freqs, time, Zxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
+                                        nfft, detrend, return_onesided,
+                                        scaling='spectrum', axis=axis,
+                                        mode='stft', boundary=boundary,
+                                        padded=padded)
+
+    return freqs, time, Zxx
+
+
+def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
+          input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2):
+    r"""
+    Perform the inverse Short Time Fourier transform (iSTFT).
+
+    Parameters
+    ----------
+    Zxx : array_like
+        STFT of the signal to be reconstructed. If a purely real array
+        is passed, it will be cast to a complex data type.
+    fs : float, optional
+        Sampling frequency of the time series. Defaults to 1.0.
+    window : str or tuple or array_like, optional
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be `nperseg`.
+        Defaults to a Hann window. Must match the window used to
+        generate the STFT for faithful inversion.
+    nperseg : int, optional
+        Number of data points corresponding to each STFT segment. This
+        parameter must be specified if the number of data points per
+        segment is odd, or if the STFT was padded via ``nfft >
+        nperseg``. If `None`, the value depends on the shape of
+        `Zxx` and `input_onesided`. If `input_onesided` is True,
+        ``nperseg=2*(Zxx.shape[freq_axis] - 1)``. Otherwise,
+        ``nperseg=Zxx.shape[freq_axis]``. Defaults to `None`.
+    noverlap : int, optional
+        Number of points to overlap between segments. If `None`, half
+        of the segment length. Defaults to `None`. When specified, the
+        COLA constraint must be met (see Notes below), and should match
+        the parameter used to generate the STFT. Defaults to `None`.
+    nfft : int, optional
+        Number of FFT points corresponding to each STFT segment. This
+        parameter must be specified if the STFT was padded via ``nfft >
+        nperseg``. If `None`, the default values are the same as for
+        `nperseg`, detailed above, with one exception: if
+        `input_onesided` is True and
+        ``nperseg==2*Zxx.shape[freq_axis] - 1``, `nfft` also takes on
+        that value. This case allows the proper inversion of an
+        odd-length unpadded STFT using ``nfft=None``. Defaults to
+        `None`.
+    input_onesided : bool, optional
+        If `True`, interpret the input array as one-sided FFTs, such
+        as is returned by `stft` with ``return_onesided=True`` and
+        `numpy.fft.rfft`. If `False`, interpret the input as a a
+        two-sided FFT. Defaults to `True`.
+    boundary : bool, optional
+        Specifies whether the input signal was extended at its
+        boundaries by supplying a non-`None` ``boundary`` argument to
+        `stft`. Defaults to `True`.
+    time_axis : int, optional
+        Where the time segments of the STFT is located; the default is
+        the last axis (i.e. ``axis=-1``).
+    freq_axis : int, optional
+        Where the frequency axis of the STFT is located; the default is
+        the penultimate axis (i.e. ``axis=-2``).
+
+    Returns
+    -------
+    t : ndarray
+        Array of output data times.
+    x : ndarray
+        iSTFT of `Zxx`.
+
+    See Also
+    --------
+    stft: Short Time Fourier Transform
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint
+                is met
+
+    Notes
+    -----
+    In order to enable inversion of an STFT via the inverse STFT with
+    `istft`, the signal windowing must obey the constraint of "Constant
+    OverLap Add" (COLA). This ensures that every point in the input data
+    is equally weighted, thereby avoiding aliasing and allowing full
+    reconstruction. Whether a choice of `window`, `nperseg`, and
+    `noverlap` satisfy this constraint can be tested with
+    `check_COLA`, by using ``nperseg = Zxx.shape[freq_axis]``.
+
+    An STFT which has been modified (via masking or otherwise) is not
+    guaranteed to correspond to a exactly realizible signal. This
+    function implements the iSTFT via the least-squares esimation
+    algorithm detailed in [2]_, which produces a signal that minimizes
+    the mean squared error between the STFT of the returned signal and
+    the modified STFT.
+
+    .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] Oppenheim, Alan V., Ronald W. Schafer, John R. Buck
+           "Discrete-Time Signal Processing", Prentice Hall, 1999.
+    .. [2] Daniel W. Griffin, Jae S. Limdt "Signal Estimation from
+           Modified Short Fourier Transform", IEEE 1984,
+           10.1109/TASSP.1984.1164317
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+
+    Generate a test signal, a 2 Vrms sine wave at 50Hz corrupted by
+    0.001 V**2/Hz of white noise sampled at 1024 Hz.
+
+    >>> fs = 1024
+    >>> N = 10*fs
+    >>> nperseg = 512
+    >>> amp = 2 * np.sqrt(2)
+    >>> noise_power = 0.001 * fs / 2
+    >>> time = np.arange(N) / float(fs)
+    >>> carrier = amp * np.sin(2*np.pi*50*time)
+    >>> noise = np.random.normal(scale=np.sqrt(noise_power),
+    ...                          size=time.shape)
+    >>> x = carrier + noise
+
+    Compute the STFT, and plot its magnitude
+
+    >>> f, t, Zxx = signal.stft(x, fs=fs, nperseg=nperseg)
+    >>> plt.figure()
+    >>> plt.pcolormesh(t, f, np.abs(Zxx), vmin=0, vmax=amp)
+    >>> plt.ylim([f[1], f[-1]])
+    >>> plt.title('STFT Magnitude')
+    >>> plt.ylabel('Frequency [Hz]')
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.yscale('log')
+    >>> plt.show()
+
+    Zero the components that are 10% or less of the carrier magnitude,
+    then convert back to a time series via inverse STFT
+
+    >>> Zxx = np.where(np.abs(Zxx) >= amp/10, Zxx, 0)
+    >>> _, xrec = signal.istft(Zxx, fs)
+
+    Compare the cleaned signal with the original and true carrier signals.
+
+    >>> plt.figure()
+    >>> plt.plot(time, x, time, xrec.real, time, carrier)
+    >>> plt.xlim([2, 2.1])
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.ylabel('Signal')
+    >>> plt.legend(['Carrier + Noise', 'Filtered via STFT', 'True Carrier'])
+    >>> plt.show()
+
+    Note that the cleaned signal does not start as abruptly as the original,
+    since some of the coefficients of the transient were also removed:
+
+    >>> plt.figure()
+    >>> plt.plot(time, x, time, xrec.real, time, carrier)
+    >>> plt.xlim([0, 0.1])
+    >>> plt.xlabel('Time [sec]')
+    >>> plt.ylabel('Signal')
+    >>> plt.legend(['Carrier + Noise', 'Filtered via STFT', 'True Carrier'])
+    >>> plt.show()
+
+    """
+
+    # Make sure input is an ndarray of appropriate complex dtype
+    Zxx = np.asarray(Zxx) + 0j
+    freq_axis = int(freq_axis)
+    time_axis = int(time_axis)
+
+    if Zxx.ndim < 2:
+        raise ValueError('Input stft must be at least 2d!')
+
+    if freq_axis == time_axis:
+        raise ValueError('Must specify differing time and frequency axes!')
+
+    nseg = Zxx.shape[time_axis]
+
+    if input_onesided:
+        # Assume even segment length
+        n_default = 2*(Zxx.shape[freq_axis] - 1)
+    else:
+        n_default = Zxx.shape[freq_axis]
+
+    # Check windowing parameters
+    if nperseg is None:
+        nperseg = n_default
+    else:
+        nperseg = int(nperseg)
+        if nperseg < 1:
+            raise ValueError('nperseg must be a positive integer')
+
+    if nfft is None:
+        if (input_onesided) and (nperseg == n_default + 1):
+            # Odd nperseg, no FFT padding
+            nfft = nperseg
+        else:
+            nfft = n_default
+    elif nfft < nperseg:
+        raise ValueError('nfft must be greater than or equal to nperseg.')
+    else:
+        nfft = int(nfft)
+
+    if noverlap is None:
+        noverlap = nperseg//2
+    else:
+        noverlap = int(noverlap)
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    nstep = nperseg - noverlap
+
+    if not check_COLA(window, nperseg, noverlap):
+        raise ValueError('Window, STFT shape and noverlap do not satisfy the '
+                         'COLA constraint.')
+
+    # Rearrange axes if neccessary
+    if time_axis != Zxx.ndim-1 or freq_axis != Zxx.ndim-2:
+        # Turn negative indices to positive for the call to transpose
+        if freq_axis < 0:
+            freq_axis = Zxx.ndim + freq_axis
+        if time_axis < 0:
+            time = Zxx.ndim + time_axis
+        zouter = list(range(Zxx.ndim))
+        for ax in sorted([time_axis, freq_axis], reverse=True):
+            zouter.pop(ax)
+        Zxx = np.transpose(Zxx, zouter+[freq_axis, time_axis])
+
+    # Get window as array
+    if isinstance(window, string_types) or type(window) is tuple:
+        win = get_window(window, nperseg)
+    else:
+        win = np.asarray(window)
+        if len(win.shape) != 1:
+            raise ValueError('window must be 1-D')
+        if win.shape[0] != nperseg:
+            raise ValueError('window must have length of {0}'.format(nperseg))
+
+    if input_onesided:
+        ifunc = np.fft.irfft
+    else:
+        ifunc = fftpack.ifft
+
+    xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
+
+    # Initialize output and normalization arrays
+    outputlength = nperseg + (nseg-1)*nstep
+    x = np.zeros(list(Zxx.shape[:-2])+[outputlength], dtype=xsubs.dtype)
+    norm = np.zeros(outputlength, dtype=xsubs.dtype)
+
+    if np.result_type(win, xsubs) != xsubs.dtype:
+        win = win.astype(xsubs.dtype)
+
+    xsubs *= win.sum()  # This takes care of the 'spectrum' scaling
+
+    # Construct the output from the ifft segments
+    # This loop could perhaps be vectorized/strided somehow...
+    for ii in range(nseg):
+        # Window the ifft
+        x[..., ii*nstep:ii*nstep+nperseg] += xsubs[..., ii] * win
+        norm[..., ii*nstep:ii*nstep+nperseg] += win**2
+
+    # Divide out normalization where non-tiny
+    x /= np.where(norm > 1e-10, norm, 1.0)
+
+    # Remove extension points
+    if boundary:
+        x = x[..., nperseg//2:-(nperseg//2)]
+
+    if input_onesided:
+        x = x.real
+
+    # Put axes back
+    if x.ndim > 1:
+        if time_axis != Zxx.ndim-1:
+            if freq_axis < time_axis:
+                time_axis -= 1
+            x = np.rollaxis(x, -1, time_axis)
+
+    time = np.arange(x.shape[0])/float(fs)
+    return time, x
 
 
 def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
               nfft=None, detrend='constant', axis=-1):
-    """
-    Estimate the magnitude squared coherence estimate, Cxy, of discrete-time
-    signals X and Y using Welch's method.
+    r"""
+    Estimate the magnitude squared coherence estimate, Cxy, of
+    discrete-time signals X and Y using Welch's method.
 
-    Cxy = abs(Pxy)**2/(Pxx*Pyy), where Pxx and Pyy are power spectral density
-    estimates of X and Y, and Pxy is the cross spectral density estimate of X
-    and Y.
+    ``Cxy = abs(Pxy)**2/(Pxx*Pyy)``, where `Pxx` and `Pyy` are power
+    spectral density estimates of X and Y, and `Pxy` is the cross
+    spectral density estimate of X and Y.
 
     Parameters
     ----------
@@ -546,30 +1137,32 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     y : array_like
         Time series of measurement values
     fs : float, optional
-        Sampling frequency of the `x` and `y` time series. Defaults to 1.0.
+        Sampling frequency of the `x` and `y` time series. Defaults
+        to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows and
-        required parameters. If `window` is array_like it will be used
-        directly as the window and its length will be used for nperseg.
-        Defaults to 'hann'.
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be `nperseg`.
+        Defaults to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
     noverlap: int, optional
-        Number of points to overlap between segments. If None,
-        ``noverlap = nperseg // 2``.  Defaults to None.
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired.  If None,
-        the FFT length is `nperseg`. Defaults to None.
-    detrend : str or function or False, optional
-        Specifies how to detrend each segment. If `detrend` is a string,
-        it is passed as the ``type`` argument to `detrend`.  If it is a
-        function, it takes a segment and returns a detrended segment.
-        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
     axis : int, optional
-        Axis along which the coherence is computed for both inputs; the default is
-        over the last axis (i.e. ``axis=-1``).
+        Axis along which the coherence is computed for both inputs; the
+        default is over the last axis (i.e. ``axis=-1``).
 
     Returns
     -------
@@ -588,9 +1181,9 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     Notes
     --------
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements.  For the default 'hann' window an
-    overlap of 50\\% is a reasonable trade off between accurately estimating
-    the signal power, while not over counting any of the data.  Narrower
+    and on your requirements. For the default 'hann' window an overlap
+    of 50% is a reasonable trade off between accurately estimating the
+    signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
     .. versionadded:: 0.16.0
@@ -601,8 +1194,8 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
            estimation of power spectra: A method based on time averaging
            over short, modified periodograms", IEEE Trans. Audio
            Electroacoust. vol. 15, pp. 70-73, 1967.
-    .. [2] Stoica, Petre, and Randolph Moses, "Spectral Analysis of Signals"
-           Prentice Hall, 2005
+    .. [2] Stoica, Petre, and Randolph Moses, "Spectral Analysis of
+           Signals" Prentice Hall, 2005
 
     Examples
     --------
@@ -642,17 +1235,17 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     return freqs, Cxy
 
 
-def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
-                    noverlap=None, nfft=None, detrend='constant',
-                    return_onesided=True, scaling='spectrum', axis=-1,
-                    mode='psd'):
+def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
+                     nfft=None, detrend='constant', return_onesided=True,
+                     scaling='spectrum', axis=-1, mode='psd', boundary=None,
+                     padded=False):
     """
     Calculate various forms of windowed FFTs for PSD, CSD, etc.
 
-    This is a helper function that implements the commonality between the
-    psd, csd, and spectrogram functions. It is not designed to be called
-    externally. The windows are not averaged over; the result from each window
-    is returned.
+    This is a helper function that implements the commonality between
+    the stft, psd, csd, and spectrogram functions. It is not designed to
+    be called externally. The windows are not averaged over; the result
+    from each window is returned.
 
     Parameters
     ---------
@@ -660,46 +1253,60 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
         Array or sequence containing the data to be analyzed.
     y : array_like
         Array or sequence containing the data to be analyzed. If this is
-        the same object in memory as x (i.e. _spectral_helper(x, x, ...)),
-        the extra computations are spared.
+        the same object in memory as `x` (i.e. ``_spectral_helper(x,
+        x, ...)``), the extra computations are spared.
     fs : float, optional
         Sampling frequency of the time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows and
-        required parameters. If `window` is array_like it will be used
-        directly as the window and its length will be used for nperseg.
+        Desired window to use. See `get_window` for a list of windows
+        and required parameters. If `window` is array_like it will be
+        used directly as the window and its length must be `nperseg`.
         Defaults to 'hann'.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
         length of the window.
     noverlap : int, optional
-        Number of points to overlap between segments. If None,
-        ``noverlap = nperseg // 2``.  Defaults to None.
+        Number of points to overlap between segments. If `None`,
+        ``noverlap = nperseg // 2``. Defaults to `None`.
     nfft : int, optional
-        Length of the FFT used, if a zero padded FFT is desired.  If None,
-        the FFT length is `nperseg`. Defaults to None.
-    detrend : str or function or False, optional
-        Specifies how to detrend each segment. If `detrend` is a string,
-        it is passed as the ``type`` argument to `detrend`.  If it is a
-        function, it takes a segment and returns a detrended segment.
-        If `detrend` is False, no detrending is done.  Defaults to 'constant'.
+        Length of the FFT used, if a zero padded FFT is desired. If
+        `None`, the FFT length is `nperseg`. Defaults to `None`.
+    detrend : str or function or `False`, optional
+        Specifies how to detrend each segment. If `detrend` is a
+        string, it is passed as the `type` argument to the `detrend`
+        function. If it is a function, it takes a segment and returns a
+        detrended segment. If `detrend` is `False`, no detrending is
+        done. Defaults to 'constant'.
     return_onesided : bool, optional
-        If True, return a one-sided spectrum for real data. If False return
-        a two-sided spectrum. Note that for complex data, a two-sided
-        spectrum is always returned.
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum. Note that for complex
+        data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross spectral density ('density')
-        where `Pxy` has units of V**2/Hz and computing the cross spectrum
-        ('spectrum') where `Pxy` has units of V**2, if `x` and `y` are
-        measured in V and fs is measured in Hz.  Defaults to 'density'
+        where `Pxy` has units of V**2/Hz and computing the cross
+        spectrum ('spectrum') where `Pxy` has units of V**2, if `x`
+        and `y` are measured in V and `fs` is measured in Hz.
+        Defaults to 'density'
     axis : int, optional
-        Axis along which the periodogram is computed; the default is over
-        the last axis (i.e. ``axis=-1``).
-    mode : str, optional
-        Defines what kind of return values are expected. Options are ['psd',
-        'complex', 'magnitude', 'angle', 'phase'].
-
+        Axis along which the FFTs are computed; the default is over the
+        last axis (i.e. ``axis=-1``).
+    mode: str {'psd', 'stft'}, optional
+        Defines what kind of return values are expected. Defaults to
+        'psd'.
+    boundary : str or None, optional
+        Specifies whether the input signal is extended, and how to
+        generate the new values, in order to center the first windowed
+        segment on the first input point. This has the benefit of
+        enabling reconstruction of the first input point when the
+        employed window function starts at zero. Valid options are
+        ``['even', None]``. Defaults to `None`.
+    padded : bool, optional
+        Specifies whether the input signal is zero-padded at the end to
+        make the signal fit exactly into an integer number of window
+        segments, so that all of the signal is included in the output.
+        Defaults to `False`. Padding occurs after boundary extension, if
+        `boundary` is not `None`, and `padded` is `True`.
     Returns
     -------
     freqs : ndarray
@@ -712,9 +1319,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
     References
     ----------
     .. [1] Stack Overflow, "Rolling window for 1D arrays in Numpy?",
-        http://stackoverflow.com/a/6811241
-    .. [2] Stack Overflow, "Using strides for an efficient moving average
-        filter", http://stackoverflow.com/a/4947453
+           http://stackoverflow.com/a/6811241
+    .. [2] Stack Overflow, "Using strides for an efficient moving
+           average filter", http://stackoverflow.com/a/4947453
 
     Notes
     -----
@@ -722,16 +1329,19 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
 
     .. versionadded:: 0.16.0
     """
-    if mode not in ['psd', 'complex', 'magnitude', 'angle', 'phase']:
+    if mode not in ['psd', 'stft']:
         raise ValueError("Unknown value for mode %s, must be one of: "
-                         "'default', 'psd', 'complex', "
-                         "'magnitude', 'angle', 'phase'" % mode)
+                         "{'psd', 'stft'}" % mode)
+
+    if boundary not in ['even', None]:
+        raise ValueError("Unknown value for boundary option %s, must be one "
+                         "of: {'even', None}" % boundary)
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
 
     if not same_data and mode != 'psd':
-        raise ValueError("x and y must be equal if mode is not 'psd'")
+        raise ValueError("x and y must be equal if mode is 'stft'")
 
     axis = int(axis)
 
@@ -739,9 +1349,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
     x = np.asarray(x)
     if not same_data:
         y = np.asarray(y)
-        outdtype = np.result_type(x,y,np.complex64)
+        outdtype = np.result_type(x, y, np.complex64)
     else:
-        outdtype = np.result_type(x,np.complex64)
+        outdtype = np.result_type(x, np.complex64)
 
     if not same_data:
         # Check if we can broadcast the outer axes together
@@ -798,10 +1408,34 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
 
     if noverlap is None:
         noverlap = nperseg//2
-    elif noverlap >= nperseg:
-        raise ValueError('noverlap must be less than nperseg.')
     else:
         noverlap = int(noverlap)
+    if noverlap >= nperseg:
+        raise ValueError('noverlap must be less than nperseg.')
+    nstep = nperseg - noverlap
+
+    # Padding occurs after boundary extension, so that the extended signal ends
+    # in zeros, instead of introducing an impulse at the end.
+    # I.e. if x = [..., 3, 2]
+    # even_ext then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
+    # pad then even_ext -> [..., 3, 2, 0, 0, 0, 2, 3]
+
+    if boundary == 'even':
+        # Even extension means first window doesn't get distorted by a
+        # shift in the DC signal level as much when x[0] != 0
+        x = even_ext(x, nperseg//2, axis=-1)
+        if not same_data:
+            y = even_ext(y, nperseg//2, axis=-1)
+
+    if padded:
+        # Pad to integer number of windowed segments
+        # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
+        nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
+        zeros_shape = list(x.shape[:-1]) + [nadd]
+        x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
+        if not same_data:
+            zeros_shape = list(y.shape[:-1]) + [nadd]
+            y = np.concatenate((y, np.zeros(zeros_shape)), axis=-1)
 
     # Handle detrending and window functions
     if not detrend:
@@ -823,76 +1457,64 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
     if np.result_type(win,np.complex64) != outdtype:
         win = win.astype(outdtype)
 
-    if mode == 'psd':
-        if scaling == 'density':
-            scale = 1.0 / (fs * (win*win).sum())
-        elif scaling == 'spectrum':
-            scale = 1.0 / win.sum()**2
-        else:
-            raise ValueError('Unknown scaling: %r' % scaling)
+    if scaling == 'density':
+        scale = 1.0 / (fs * (win*win).sum())
+    elif scaling == 'spectrum':
+        scale = 1.0 / win.sum()**2
     else:
-        scale = 1
+        raise ValueError('Unknown scaling: %r' % scaling)
 
-    if return_onesided is True:
+    if mode == 'stft':
+        scale = np.sqrt(scale)
+
+    if return_onesided:
         if np.iscomplexobj(x):
             sides = 'twosided'
+            warnings.warn('Input data is complex, switching to '
+                          'return_onesided=False')
         else:
             sides = 'onesided'
             if not same_data:
                 if np.iscomplexobj(y):
                     sides = 'twosided'
+                    warnings.warn('Input data is complex, switching to '
+                                  'return_onesided=False')
     else:
         sides = 'twosided'
 
     if sides == 'twosided':
-        num_freqs = nfft
+        freqs = fftpack.fftfreq(nfft, 1/fs)
     elif sides == 'onesided':
-        if nfft % 2:
-            num_freqs = (nfft + 1)//2
-        else:
-            num_freqs = nfft//2 + 1
+        freqs = np.fft.rfftfreq(nfft, 1/fs)
 
     # Perform the windowed FFTs
-    result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft)
-    result = result[..., :num_freqs]
-    freqs = fftpack.fftfreq(nfft, 1/fs)[:num_freqs]
+    result = _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides)
 
     if not same_data:
         # All the same operations on the y data
-        result_y = _fft_helper(y, win, detrend_func, nperseg, noverlap, nfft)
-        result_y = result_y[..., :num_freqs]
+        result_y = _fft_helper(y, win, detrend_func, nperseg, noverlap, nfft,
+                               sides)
         result = np.conjugate(result) * result_y
     elif mode == 'psd':
         result = np.conjugate(result) * result
-    elif mode == 'magnitude':
-        result = np.absolute(result)
-    elif mode == 'angle' or mode == 'phase':
-        result = np.angle(result)
-    elif mode == 'complex':
-        pass
 
     result *= scale
-    if sides == 'onesided':
+    if sides == 'onesided' and mode == 'psd':
         if nfft % 2:
-            result[...,1:] *= 2
+            result[..., 1:] *= 2
         else:
             # Last point is unpaired Nyquist freq point, don't double
-            result[...,1:-1] *= 2
+            result[..., 1:-1] *= 2
 
-    t = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1, nperseg - noverlap)/float(fs)
-
-    if sides != 'twosided' and not nfft % 2:
-        # get the last value correctly, it is negative otherwise
-        freqs[-1] *= -1
-
-    # we unwrap the phase here to handle the onesided vs. twosided case
-    if mode == 'phase':
-        result = np.unwrap(result, axis=-1)
+    time = np.arange(nperseg/2, x.shape[-1] - nperseg/2 + 1,
+                     nperseg - noverlap)/float(fs)
+    if boundary is not None:
+        time -= (nperseg/2) / fs
 
     result = result.astype(outdtype)
 
     # All imaginary parts are zero anyways
-    if same_data and mode != 'complex':
+    if same_data and mode != 'stft':
         result = result.real
 
     # Output is going to have new last axis for window index
@@ -907,18 +1529,19 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None,
         # Make sure window/time index is last axis
         result = np.rollaxis(result, -1, -2)
 
-    return freqs, t, result
+    return freqs, time, result
 
 
-def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
+def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
     """
-    Calculate windowed FFT, for internal use by scipy.signal._spectral_helper
+    Calculate windowed FFT, for internal use by
+    scipy.signal._spectral_helper
 
     This is a helper function that does the main FFT calculation for
-    _spectral helper. All input valdiation is performed there, and the data
-    axis is assumed to be the last axis of x. It is not designed to be called
-    externally. The windows are not averaged over; the result from each window
-    is returned.
+    `_spectral helper`. All input valdiation is performed there, and the
+    data axis is assumed to be the last axis of x. It is not designed to
+    be called externally. The windows are not averaged over; the result
+    from each window is returned.
 
     Returns
     -------
@@ -927,8 +1550,8 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
 
     References
     ----------
-    .. [1] Stack Overflow, "Repeat NumPy array without replicating data?",
-        http://stackoverflow.com/a/5568169
+    .. [1] Stack Overflow, "Repeat NumPy array without replicating
+           data?", http://stackoverflow.com/a/5568169
 
     Notes
     -----
@@ -953,7 +1576,12 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft):
     result = win * result
 
     # Perform the fft. Acts on last axis by default. Zero-pads automatically
-    result = fftpack.fft(result, n=nfft)
+    if sides == 'twosided':
+        func = fftpack.fft
+    else:
+        result = result.real
+        func = np.fft.rfft
+    result = func(result, n=nfft)
 
     return result
 
