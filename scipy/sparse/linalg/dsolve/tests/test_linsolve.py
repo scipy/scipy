@@ -343,8 +343,14 @@ class TestSplu(object):
         # Test passing in the drop_rule argument to spilu.
         A = identity(2)
 
-        # no error here.
-        assert_(isinstance(spilu(A, drop_rule='basic,area'), SuperLU))
+        rules = [
+            b'basic,area'.decode('ascii'),  # unicode
+            b'basic,area',  # ascii
+            [b'basic', b'area'.decode('ascii')]
+        ]
+        for rule in rules:
+            # Argument should be accepted
+            assert_(isinstance(spilu(A, drop_rule=rule), SuperLU))
 
     def test_splu_nnz0(self):
         A = csc_matrix((5,5), dtype='d')
