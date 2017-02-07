@@ -536,6 +536,7 @@ class TestSpsolveTriangular(TestCase):
                 A[i,i] = np.random.rand() + 1
             return A
 
+        np.random.seed(1234)
         for n in (10, 10**2, 10**3):
             for m in (1, 10):
                 b = np.random.rand(n, m)
