@@ -13,7 +13,8 @@ from numpy.testing import (TestCase, run_module_suite,
 import scipy.linalg
 from scipy.linalg import norm, inv
 from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
-        csr_matrix, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
+        csr_matrix, identity, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
+from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu)
 
@@ -337,6 +338,19 @@ class TestSplu(object):
             self._smoketest(spilu, check, np.complex128)
 
             assert_(max(errors) > 1e-5)
+
+    def test_spilu_drop_rule(self):
+        # Test passing in the drop_rule argument to spilu.
+        A = identity(2)
+
+        rules = [
+            b'basic,area'.decode('ascii'),  # unicode
+            b'basic,area',  # ascii
+            [b'basic', b'area'.decode('ascii')]
+        ]
+        for rule in rules:
+            # Argument should be accepted
+            assert_(isinstance(spilu(A, drop_rule=rule), SuperLU))
 
     def test_splu_nnz0(self):
         A = csc_matrix((5,5), dtype='d')
