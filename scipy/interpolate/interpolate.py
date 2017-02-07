@@ -338,10 +338,11 @@ class interp1d(_Interpolator1D):
         axis must be equal to the length of `x`.
     kind : str or int, optional
         Specifies the kind of interpolation as a string
-        ('linear', 'nearest', 'zero', 'slinear', 'quadratic, 'cubic'
-        where 'slinear', 'quadratic' and 'cubic' refer to a spline
-        interpolation of first, second or third order) or as an integer
-        specifying the order of the spline interpolator to use.
+        ('linear', 'nearest', 'nearest-left', 'nearest-right', 'zero',
+        'slinear', 'quadratic, 'cubic' where 'slinear', 'quadratic' and
+        cubic' refer to a spline interpolation of first, second or third
+        order) or as an integer specifying the order of the spline
+        interpolator to use.
         Default is 'linear'.
     axis : int, optional
         Specifies the axis of `y` along which to interpolate.
@@ -394,9 +395,34 @@ class interp1d(_Interpolator1D):
     >>> y = np.exp(-x/3.0)
     >>> f = interpolate.interp1d(x, y)
 
-    >>> xnew = np.arange(0, 9, 0.1)
-    >>> ynew = f(xnew)   # use interpolation function returned by `interp1d`
-    >>> plt.plot(x, y, 'o', xnew, ynew, '-')
+    >>> x_new = np.arange(0, 9, 0.01)
+    >>> y_new = f(x_new)   # use interpolation function returned by `interp1d`
+    >>> plt.plot(x, y, 'o', x_new, y_new, '-')
+    >>> plt.show()
+
+    >>> f_nearest = interpolate.interp1d(x, y, kind='nearest')
+    >>> f_nearest_left = interpolate.interp1d(x, y, kind='nearest-left')
+    >>> f_nearest_right = interpolate.interp1d(x, y, kind='nearest-right')
+
+    >>> fig, (ax0, ax1, ax2) = plt.subplots(figsize=(9, 9), nrows=3, ncols=1)
+    >>> ax0.plot(x_new, f_nearest(x_new), '-')
+    >>> ax0.plot(x, y, 'o')
+    >>> ax0.set_xlim([-1, 7])
+    >>> ax0.set_ylim([-1.2, 1.2])
+    >>> ax0.set_title('nearest')
+
+    >>> ax1.plot(x_new, f_nearest_left(x_new), '-')
+    >>> ax1.plot(x, y, 'o')
+    >>> ax1.set_xlim([-1, 7])
+    >>> ax1.set_ylim([-1.2, 1.2])
+    >>> ax1.set_title('nearest left')
+
+    >>> ax2.plot(x_new, f_nearest_right(x_new), '-')
+    >>> ax2.plot(x, y, 'o')
+    >>> ax2.set_xlim([-1, 7])
+    >>> ax2.set_ylim([-1.2, 1.2])
+    >>> ax2.set_title('nearest right')
+
     >>> plt.show()
     """
 
@@ -416,7 +442,7 @@ class interp1d(_Interpolator1D):
         elif isinstance(kind, int):
             order = kind
             kind = 'spline'
-        elif kind not in ('linear', 'nearest'):
+        elif kind not in ('linear', 'nearest', 'nearest-left', 'nearest-right'):
             raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
@@ -451,7 +477,7 @@ class interp1d(_Interpolator1D):
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
         # collection.  See: http://docs.python.org/2/reference/datamodel.html
-        if kind in ('linear', 'nearest'):
+        if kind in ('linear', 'nearest', 'nearest-left', 'nearest-right'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
             minval = 2
@@ -462,6 +488,10 @@ class interp1d(_Interpolator1D):
                 self.x_bds = self.x_bds[1:] + self.x_bds[:-1]
 
                 self._call = self.__class__._call_nearest
+            elif kind == 'nearest-left':
+                self._call = self.__class__._call_nearest_left
+            elif kind == 'nearest-right':
+                self._call = self.__class__._call_nearest_right
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
                 cond = self.x.dtype == np.float_ and self.y.dtype == np.float_
@@ -578,19 +608,54 @@ class interp1d(_Interpolator1D):
     def _call_nearest(self, x_new):
         """ Find nearest neighbour interpolated y_new = f(x_new)."""
 
-        # 2. Find where in the averaged data the values to interpolate
+        # 1. Find where in the averaged data the values to interpolate
         #    would be inserted.
         #    Note: use side='left' (right) to searchsorted() to define the
         #    halfway point to be nearest to the left (right) neighbour
         x_new_indices = searchsorted(self.x_bds, x_new, side='left')
-
-        # 3. Clip x_new_indices so that they are within the range of x indices.
+        # 2. Clip x_new_indices so that they are within the range of x
+        # indices.
         x_new_indices = x_new_indices.clip(0, len(self.x)-1).astype(intp)
-
-        # 4. Calculate the actual value for each entry in x_new.
+        # 3. Calculate the actual value for each entry in x_new.
         y_new = self._y[x_new_indices]
 
         return y_new
+
+    def _call_nearest_left(self, x_new):
+        return self._call_nearest_left_right(x_new, index_offset=-1)
+
+    def _call_nearest_right(self, x_new):
+        return self._call_nearest_left_right(x_new, index_offset=0)
+
+    def _call_nearest_left_right(self, x_new, index_offset=-1):
+        """Nearest neighbour interpolation based on the left or right neighbour.
+
+        :param x_new: the values where the interpolation will be done.
+        :return: The interpolated y values
+        :param index_offset: -1 => nearest left neighbour interpolation,
+         0 => nearest right neighbour interpolation.
+        """
+
+        x, y = self.x, self.y
+
+        yi = np.zeros(x_new.size, 'f8')
+
+        # the mask of the new values that match values of x exactly, i.e. input
+        # values that do not need to be interpolated, just copy their
+        # corresponding y values
+        mask_matching_exactly = np.in1d(x_new, x)
+
+        # setting the y interpolated values corresponding to x_new that
+        # have exactly matching values in x
+        yi[np.where(mask_matching_exactly)] = y[np.where(np.in1d(x, x_new))]
+
+        # interpolating the non matching values
+        inds_not_matching_exactly = np.where(~mask_matching_exactly)
+        yi[inds_not_matching_exactly] = \
+            y[np.searchsorted(x,
+                              x_new[inds_not_matching_exactly]) + index_offset]
+
+        return yi
 
     def _call_spline(self, x_new):
         return self._spline(x_new)
