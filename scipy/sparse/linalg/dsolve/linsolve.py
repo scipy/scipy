@@ -421,7 +421,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
 
     Notes
     -----
-    .. versionadded:: 0.20.0
+    .. versionadded:: 0.19.0
     """
 
     # Check the input for correct type and format.
