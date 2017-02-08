@@ -50,6 +50,15 @@ This new trust-region method solves the subproblem with higher accuracy at the c
 of more Hessian factorizations (compared to dogleg) and is able to deal with indefinite
 Hessians. It seems very competitive against the other Newton methods implemented in scipy.
 
+`scipy.stats` improvements
+--------------------------
+
+The methods `logcdf` and `cdf` were added to `scipy.stats.multivariate_normal`,
+providing the cumulative distribution function of the multivariate normal
+distribution.  The underlying code is the classic one by Alan Genz (see
+`scipy/stats/mvndst.f`).
+
+
 Deprecated features
 ===================
 
