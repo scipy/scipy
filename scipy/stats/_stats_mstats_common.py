@@ -103,11 +103,19 @@ def linregress(x, y=None):
             r = -1.0
 
     df = n - 2
-    t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-    prob = 2 * distributions.t.sf(np.abs(t), df)
     slope = r_num / ssxm
     intercept = ymean - slope*xmean
-    sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
+    if n == 2:
+        # handle case when only two points are passed in
+        if y[0] == y[1]:
+            prob = 1.0
+        else:
+            prob = 0.0
+        sterrest = 0.0
+    else:
+        t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
+        prob = 2 * distributions.t.sf(np.abs(t), df)
+        sterrest = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
     return LinregressResult(slope, intercept, r, prob, sterrest)
 
