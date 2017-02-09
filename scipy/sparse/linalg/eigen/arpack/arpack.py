@@ -51,6 +51,7 @@ from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
+from scipy.sparse import SparseEfficiencyWarning
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -1225,9 +1226,10 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     if k >= n-1:
         import warnings
-        warnings.warn('k greater than/equal to N - 1 . '
-                      'Using scipy.linalg.eig instead.')
-        if return_eigenvectors is True:
+        warnings.warn('k greater than/equal to N - 1 for N * N square matrix. '
+                      'Using scipy.linalg.eig instead.',
+                      SparseEfficiencyWarning)
+        if return_eigenvectors:
             return eig(A.todense())
         else:
             return eig(A.todense(), right=False)
@@ -1499,9 +1501,10 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     if k >= n:
         import warnings
-        warnings.warn('k greater than/equal to the order of the square '
-                      'matrix. Using scipy.linalg.eig instead.')
-        if return_eigenvectors is True:
+        warnings.warn('k greater than/equal to N for N * N square matrix. '
+                      'Using scipy.linalg.eig instead.',
+                      SparseEfficiencyWarning)
+        if return_eigenvectors:
             return eig(A.todense())
         else:
             return eig(A.todense(), right=False)

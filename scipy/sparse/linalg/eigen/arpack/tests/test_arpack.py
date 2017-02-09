@@ -913,16 +913,18 @@ def test_regression_arpackng_1315():
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
     A = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))
-    eigs(A, k=3)
-    eigs(A, k=4)
-    eigs(A, k=5)
+    eig_tuple = eig(A.todense())
+    assert_equal(eigs(A, k=3), eig_tuple)
+    assert_equal(eigs(A, k=4), eig_tuple)
+    assert_equal(eigs(A, k=5), eig_tuple)
 
 
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
     A = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))
-    eigsh(A, k=4)
-    eigsh(A, k=5)
+    eig_tuple = eig(A.todense())
+    assert_equal(eigsh(A, k=4), eig_tuple)
+    assert_equal(eigsh(A, k=5), eig_tuple)
 
 
 if __name__ == "__main__":
