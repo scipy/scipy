@@ -511,7 +511,7 @@ def test_eigen_bad_shapes():
 
 def test_eigen_bad_kwargs():
     # Test eigen on wrong keyword argument
-    A = csc_matrix(np.zeros((2, 2)))
+    A = csc_matrix(np.zeros((8, 8)))
     assert_raises(ValueError, eigs, A, which='XX')
 
 
