@@ -5270,7 +5270,9 @@ class rv_histogram(rv_continuous):
     Generates a distribution given by a histogram.
     This is useful to generate a template distribution from a binned datasample.
 
-    %(before_notes)s
+    As a subclass of `rv_continuous`, this class inherits from it a collection
+    of generic methods (see below for the full list), and completes them with
+    details specific for this particular distribution.
 
     Notes
     -----
@@ -5278,7 +5280,11 @@ class rv_histogram(rv_continuous):
     The pdf is defined as a stepwise function from the provided histogram
     The cdf is a linear interpolation of the pdf.
 
-    %(after_notes)s
+    The probability density is defined in the "standardized" form. To shift
+    and/or scale the distribution use the ``loc`` and ``scale`` parameters.
+    Specifically, if ``rv = rv_histogram(values, bins)``, then
+    ``rv.pdf(x, loc, scale)`` is identically equivalent to ``rv.pdf(y) / scale``
+     with ``y = (x - loc) / scale``.
     
     .. versionadded:: 0.19.0
 
