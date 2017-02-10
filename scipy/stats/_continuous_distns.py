@@ -5284,21 +5284,22 @@ class rv_histogram(rv_continuous):
     and/or scale the distribution use the ``loc`` and ``scale`` parameters.
     Specifically, if ``rv = rv_histogram(values, bins)``, then
     ``rv.pdf(x, loc, scale)`` is identically equivalent to ``rv.pdf(y) / scale``
-     with ``y = (x - loc) / scale``.
+    with ``y = (x - loc) / scale``.
     
     .. versionadded:: 0.19.0
 
     Examples
     --------
 
-    Create a scipy.stats distribution from a numpy histogram
-    >>> import scipy.stats
-    >>> import numpy as np
-    >>> data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5, random_state=123)
-    >>> hist = np.histogram(data, bins=100)
-    >>> hist_dist = scipy.stats.rv_histogram(hist)
+    Create a scipy.stats distribution from a `numpy` histogram
 
-    Behaves like an ordinary scipy rv_continuous distribution
+    >>> from scipy.stats import norm, rv_histogram
+    >>> data = norm.rvs(size=100000, loc=0, scale=1.5, random_state=123)
+    >>> hist = np.histogram(data, bins=100)
+    >>> hist_dist = rv_histogram(hist)
+
+    Behaves like an ordinary scipy `rv_continuous` distribution
+
     >>> hist_dist.pdf(1.0)
     0.20538577847618705
     >>> hist_dist.cdf(2.0)
@@ -5306,6 +5307,7 @@ class rv_histogram(rv_continuous):
 
     PDF is zero above (below) the highest (lowest) bin of the histogram,
     defined by the max (min) of the original dataset
+
     >>> hist_dist.pdf(np.max(data))
     0.0
     >>> hist_dist.cdf(np.max(data))
@@ -5316,6 +5318,7 @@ class rv_histogram(rv_continuous):
     0.0
 
     PDF and CDF follow the histogram
+
     >>> import matplotlib.pyplot as plt
     >>> X = np.linspace(-5.0, 5.0, 100)
     >>> plt.title("PDF from Template")
