@@ -873,6 +873,24 @@ class TestRegression(TestCase):
         attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
         check_named_results(res, attributes)
 
+    def test_regress_two_inputs(self):
+        # Regress a simple line formed by two points.
+        x = np.arange(2)
+        y = np.arange(3, 5)
+
+        res = stats.linregress(x, y)
+        assert_almost_equal(res[3], 0.0)  # non-horizontal line
+        assert_almost_equal(res[4], 0.0)  # zero stderr
+
+    def test_regress_two_inputs_horizontal_line(self):
+        # Regress a horizontal line formed by two points.
+        x = np.arange(2)
+        y = np.ones(2)
+
+        res = stats.linregress(x, y)
+        assert_almost_equal(res[3], 1.0)  # horizontal line
+        assert_almost_equal(res[4], 0.0)  # zero stderr
+
     def test_nist_norris(self):
         x = [0.2, 337.4, 118.2, 884.6, 10.1, 226.5, 666.3, 996.3, 448.6, 777.0,
              558.2, 0.4, 0.6, 775.5, 666.9, 338.0, 447.5, 11.6, 556.0, 228.1,
