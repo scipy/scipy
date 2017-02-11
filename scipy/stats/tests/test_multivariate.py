@@ -22,6 +22,7 @@ from scipy.stats import multivariate_normal
 from scipy.stats import matrix_normal
 from scipy.stats import special_ortho_group, ortho_group
 from scipy.stats import random_correlation
+from scipy.stats import unitary_group
 from scipy.stats import dirichlet, beta
 from scipy.stats import wishart, multinomial, invwishart, chi2, invgamma
 from scipy.stats import norm
@@ -1402,6 +1403,57 @@ class TestRandomCorrelation(TestCase):
         m = random_correlation._to_corr(m0.copy())
         assert_allclose(m[0,0], 1)
 
+
+class TestUnitaryGroup(TestCase):
+    def test_reproducibility(self):
+        np.random.seed(514)
+        x = unitary_group.rvs(3)
+        x2 = unitary_group.rvs(3, random_state=514)
+
+        expected = np.array([[0.308771+0.360312j, 0.044021+0.622082j, 0.160327+0.600173j],
+                             [0.732757+0.297107j, 0.076692-0.4614j, -0.394349+0.022613j],
+                             [-0.148844+0.357037j, -0.284602-0.557949j, 0.607051+0.299257j]])
+
+        assert_array_almost_equal(x, expected)
+        assert_array_almost_equal(x2, expected)
+
+    def test_invalid_dim(self):
+        assert_raises(ValueError, unitary_group.rvs, None)
+        assert_raises(ValueError, unitary_group.rvs, (2, 2))
+        assert_raises(ValueError, unitary_group.rvs, 1)
+        assert_raises(ValueError, unitary_group.rvs, 2.5)
+
+    def test_unitarity(self):
+        xs = [unitary_group.rvs(dim)
+              for dim in range(2,12)
+              for i in range(3)]
+
+        # Test that these are unitary matrices
+        for x in xs:
+            assert_array_almost_equal(np.dot(x, x.conj().T),
+                                      np.eye(x.shape[0]))
+
+    def test_haar(self):
+        # Test that the eigenvalues, which lie on the unit circle in
+        # the complex plane, are uncorrelated.
+
+        # Generate samples
+        dim = 2
+        samples = 10000  # Not too many, or the test takes too long
+        np.random.seed(514)  # Note that the test is sensitive to seed too
+        xs = unitary_group.rvs(dim, size=samples)
+
+        eigs = np.vstack( scipy.linalg.eigvals(x) for x in xs )
+        x = np.arctan(eigs.imag/eigs.real)
+
+        h = np.histogram(x.flatten())[0]
+
+        # The angles "x" of the eigenvalues should be uniformly distributed
+        # We are not checking that the range is correct; maybe we should?
+        # Overall this seems to be a necessary but weak test of the distribution.
+        avg = samples*dim/len(h)
+        rel_err = (h - avg)/avg
+        success = (scipy.fabs(rel_err) < .1).all()
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles

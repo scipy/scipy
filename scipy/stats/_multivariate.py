@@ -21,7 +21,8 @@ __all__ = ['multivariate_normal',
            'multinomial',
            'special_ortho_group',
            'ortho_group',
-           'random_correlation']
+           'random_correlation',
+           'unitary_group']
 
 _LOG_2PI = np.log(2 * np.pi)
 _LOG_2 = np.log(2)
@@ -3521,3 +3522,102 @@ class random_correlation_gen(multi_rv_generic):
         return m
 
 random_correlation = random_correlation_gen()
+
+class unitary_group_gen(multi_rv_generic):
+    r"""
+    A matrix-valued U(N) random variable.
+
+    Return a random unitary matrix.
+
+    The `dim` keyword specifies the dimension N.
+
+    Methods
+    -------
+    ``rvs(dim=None, size=1, random_state=None)``
+        Draw random samples from U(N).
+
+    Parameters
+    ----------
+    dim : scalar
+        Dimension of matrices
+
+    Notes
+    ----------
+    This class is similar to `ortho_group`.
+
+    References
+    ----------
+    .. [1] F. Mezzadri, "How to generate random matrices from the classical
+           compact groups", arXiv:math-ph/0609050v2.
+
+    Examples
+    --------
+    TODO Update this
+
+    >>> from scipy.stats import ortho_group
+    >>> x = ortho_group.rvs(3)
+
+    >>> np.dot(x, x.T)
+    array([[  1.00000000e+00,   1.13231364e-17,  -2.86852790e-16],
+           [  1.13231364e-17,   1.00000000e+00,  -1.46845020e-16],
+           [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])
+
+    >>> import scipy.linalg
+    >>> np.fabs(scipy.linalg.det(x))
+    1.0
+
+    This generates one random matrix from O(3). It is orthogonal and
+    has a determinant of +1 or -1.
+
+    """
+
+    def __init__(self, seed=None):
+        super(unitary_group_gen, self).__init__(seed)
+        self.__doc__ = doccer.docformat(self.__doc__)
+
+    def _process_parameters(self, dim):
+        """
+        Dimension N must be specified; it cannot be inferred.
+        """
+
+        if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
+            raise ValueError("Dimension of rotation must be specified,"
+                             "and must be a scalar greater than 1.")
+
+        return dim
+
+    def rvs(self, dim, size=1, random_state=None):
+        """
+        Draw random samples from U(N).
+
+        Parameters
+        ----------
+        dim : integer
+            Dimension of space (N).
+        size : integer, optional
+            Number of samples to draw (default 1).
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random size N-dimensional matrices, dimension (size, dim, dim)
+
+        """
+        size = int(size)
+        if size > 1:
+            return np.array([self.rvs(dim, size=1, random_state=random_state)
+                             for i in range(size)])
+
+        dim = self._process_parameters(dim)
+
+        random_state = self._get_random_state(random_state)
+
+        z = 1/math.sqrt(2)*(random_state.normal(size=(dim,dim)) +
+                            1j*random_state.normal(size=(dim,dim)))
+        q, r = scipy.linalg.qr(z)
+        d = r.diagonal()
+        d = d/abs(d)
+        q = q*d
+        return q
+
+unitary_group = unitary_group_gen()
