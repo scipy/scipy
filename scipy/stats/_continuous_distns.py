@@ -5268,10 +5268,13 @@ argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 class rv_histogram(rv_continuous):
     """
     Generates a distribution given by a histogram.
-    This is useful to generate a template distribution from a binned datasample.
+    This is useful to generate a template distribution from a binned
+    datasample.
 
-    As a subclass of the `rv_continuous` class, `rv_histogram` inherits from it a collection of generic methods (see `rv_continuous` for the full list),
-    and implements them based on the properties of the provided binned datasample.
+    As a subclass of the `rv_continuous` class, `rv_histogram` inherits from it
+    a collection of generic methods (see `rv_continuous` for the full list),
+    and implements them based on the properties of the provided binned
+    datasample.
         
     Parameters
     ----------
