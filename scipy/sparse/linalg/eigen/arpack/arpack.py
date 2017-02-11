@@ -1240,10 +1240,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         warnings.warn('k greater than/equal to N - 1 for N * N square matrix. '
                       'Using scipy.linalg.eig instead.',
                       SparseEfficiencyWarning)
-        if return_eigenvectors:
-            return eig(A.todense())
-        else:
-            return eig(A.todense(), right=False)
+        return eig(A.todense(), right=return_eigenvectors)
 
     if k <= 0 or k >= n:
         raise ValueError("k=%d must be between 1 and ndim(A)-1=%d"
@@ -1536,10 +1533,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         warnings.warn('k greater than/equal to N for N * N square matrix. '
                       'Using scipy.linalg.eig instead.',
                       SparseEfficiencyWarning)
-        if return_eigenvectors:
-            return eig(A.todense())
-        else:
-            return eig(A.todense(), right=False)
+        return eig(A.todense(), right=return_eigenvectors)
 
     if k <= 0 or k >= n:
         raise ValueError("k must be between 1 and the order of the "
