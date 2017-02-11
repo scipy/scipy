@@ -171,6 +171,7 @@ Alessandro Pietro Bardelli for improvements to pdist/cdist and to related tests.
 Jonathan T. Siebert for bug fixes.
 Thomas Keck for adding new scipy.stats distributions used in HEP
 David Nicholson for bug fixes in spectral functions.
+Evan Limanto for bug fixes.
 
 Institutions
 ------------
