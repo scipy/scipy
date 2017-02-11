@@ -1993,7 +1993,7 @@ class rv_continuous(rv_generic):
 
     def _nnlf_and_penalty(self, x, args):
         cond0 = ~self._support_mask(x)
-        n_bad = sum(cond0)
+        n_bad = np.count_nonzero(cond0, axis=0)
         if n_bad > 0:
             x = argsreduce(~cond0, x)[0]
         logpdf = self._logpdf(x, *args)
