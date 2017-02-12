@@ -122,6 +122,10 @@ The methods `argmin` and `argmax` were added to classes `coo_matrix`,
 `scipy.special` improvements
 ----------------------------
 
+Better control over special-function errors is offered by the
+functions `scipy.special.geterr` and `scipy.special.seterr` and the
+context manager `scipy.special.errstate`.
+
 The names of orthogonal polynomial root functions have been changed to
 be consistent with other functions relating to orthogonal
 polynomials. For example, `scipy.special.j_roots` has been renamed
@@ -178,6 +182,8 @@ Deprecated features
 `scipy.interpolate.splmake`, `scipy.interpolate.spleval` and
 `scipy.interpolate.spline` are deprecated. The format used by `splmake/spleval`
 was inconsistent with `splrep/splev` which was confusing to users.
+`scipy.special.errprint` is deprecated. Improved functionality is
+available in `scipy.special.seterr`.
 
 
 Backwards incompatible changes

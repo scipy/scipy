@@ -81,6 +81,7 @@ from __future__ import division, print_function, absolute_import
 
 # Ufuncs without C++
 FUNCS = """
+_sf_error_test_function -- _sf_error_test_function: i->i   -- sf_error.pxd
 sph_harm -- sph_harmonic: iidd->D, sph_harmonic_unsafe: dddd->D -- sph_harm.pxd, _legacy.pxd
 _lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
 wrightomega -- wrightomega : D->D                          -- _wright.h++
@@ -1443,7 +1444,10 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
 
     # for _ufuncs_cxx*
     cxx_defs = []
-    cxx_pxd_defs = ["cdef int _set_errprint(int flag) nogil"]
+    cxx_pxd_defs = [
+        "cimport sf_error",
+        "cdef void _set_action(sf_error.sf_error_t, sf_error.sf_action_t) nogil"
+    ]
     cxx_defs_h = []
 
     ufuncs.sort(key=lambda u: u.name)

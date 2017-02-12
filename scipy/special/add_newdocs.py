@@ -25,6 +25,11 @@ def add_newdoc(place, name, doc):
     docdict['.'.join((place, name))] = doc
 
 
+add_newdoc("scipy.special", "_sf_error_test_function",
+    """
+    Private function; do not use.
+    """)
+    
 add_newdoc("scipy.special", "sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
