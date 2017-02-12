@@ -15,6 +15,7 @@ import json
 import shutil
 import argparse
 import sysconfig
+import errno
 
 
 EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
@@ -75,7 +76,7 @@ def run_asv(args):
     try:
         return subprocess.call(cmd, env=env, cwd=cwd)
     except OSError as err:
-        if err.errno == 2:
+        if err.errno == errno.ENOENT:
             print("Error when running '%s': %s\n" % (" ".join(cmd), str(err),))
             print("You need to install Airspeed Velocity https://spacetelescope.github.io/asv/")
             print("to run Scipy benchmarks")
