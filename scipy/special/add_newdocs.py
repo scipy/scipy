@@ -3035,6 +3035,52 @@ add_newdoc("scipy.special", "hyp2f1",
     hyp2f1(a, b, c, z)
 
     Gauss hypergeometric function 2F1(a, b; c; z).
+
+    Parameters
+    ----------
+    a : double argument.
+
+    b : double argument.
+
+    c : double argument.
+
+    z : double argument.
+
+    Returns
+    -------
+    y : double argument
+        y being the solution to the second-order linear ordinary differential equation.
+
+    Notes
+    -----
+
+    .. math::
+
+        \mathrm{hyp2f1}(a, b, c, z) = 1 + \sum_{k=0}^inf. \frac {{{a+k}\choose{a}} {{b+k}}\choose{b}}}{{c+k}\choose{c}} z^(k+1).
+    
+    Cases addressed are
+      Tests and escapes for negative integer a, b, or c
+      Linear transformation if c - a or c - b negative integer
+      Special case c = a or c = b
+      Linear transformation for  z near +1
+      Transformation for z < -0.5
+      Psi function expansion if z > 0.5 and c - a - b integer
+      Conditionally, a recurrence on c to make c-a-b > 0
+
+      z < -1  AMS 15.3.7 transformation applied (Travis Oliphant)
+         valid for b,a,c,(b-a) != integer and (c-a),(c-b) != negative integer
+
+      z >= 1 is rejected (unless special cases are present)
+    
+    See also
+    --------
+    hyp1f1 , hyp0f1.
+
+    References
+    ----------
+    .. [1] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+
     """)
 
 add_newdoc("scipy.special", "hyp3f0",
