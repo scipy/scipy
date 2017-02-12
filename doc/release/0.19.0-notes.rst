@@ -12,15 +12,30 @@ better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
 of bug-fixes and optimizations.  Moreover, our development attention
-will now shift to bug-fix releases on the 0.20.x branch, and on adding
+will now shift to bug-fix releases on the 0.19.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.7 or 3.4-3.5 and NumPy 1.8.2 or greater.
+This release requires Python 2.7 or 3.4-3.6 and NumPy 1.8.2 or greater.
 
+Highlights of this release include:
+
+- A unified FFI layer, `scipy.LowLevelCallable`.
+- Cython API for scalar, typed versions of the universal functions from
+  the `scipy.special` module, via `cimport scipy.special.cython_special`.
 
 
 New features
 ============
+
+Foreign function interface improvements
+---------------------------------------
+
+`scipy.LowLevelCallable` provides a new unified interface for wrapping
+low-level compiled callback functions in the Python space. It supports
+Cython imported "api" functions, ctypes function pointers, CFFI function
+pointers, ``PyCapsules``, Numba jitted functions and more.
+See `gh-6509 <https://github.com/scipy/scipy/pull/6509>`_ for details.
+
 
 `scipy.linalg` improvements
 ---------------------------
@@ -48,11 +63,11 @@ Moreover, both gained a ``balanced`` keyword to turn balancing on and off.
 `scipy.spatial` improvements
 ----------------------------
 
-`SphericalVoronoi.sort_vertices_of_regions()` has been re-written in
-cython to improve performance
+`scipy.spatial.SphericalVoronoi.sort_vertices_of_regions` has been re-written in
+Cython to improve performance.
 
-`SphericalVoronoi` can handle > 200 k points (at least 10 million) & has
-improved performance
+`scipy.spatial.SphericalVoronoi` can handle > 200 k points (at least 10 million)
+and has improved performance.
 
 The function `scipy.spatial.distance.directed_hausdorff` was
 added to calculate the directed Hausdorff distance.
@@ -99,9 +114,9 @@ response from second-order sections.
 The function `scipy.signal.unit_impulse` was added to conveniently
 generate an impulse function.
 
-The function `scipy.signal.irrnotch` was added to design second-order
+The function `scipy.signal.iirnotch` was added to design second-order
 IIR notch filters that can be used to remove a frequency component from
-a signal. The dual function  `scipy.signal.irrpeak` was added to
+a signal. The dual function  `scipy.signal.iirpeak` was added to
 compute the coeficients of a second-order IIR peak (resonant) filter.
 
 The function `scipy.signal.minimum_phase` was added to convert linear-phase
@@ -125,8 +140,17 @@ memory usage.
 The methods `argmin` and `argmax` were added to classes `coo_matrix`,
 `csc_matrix`, `csr_matrix`, and `bsr_matrix`.
 
+New function `scipy.sparse.csgraph.structural_rank` computes the structural
+rank of a graph with a given sparsity pattern.
+
+
 `scipy.special` improvements
 ----------------------------
+
+Scalar, typed versions of universal functions from `scipy.special` are available
+in the Cython space via ``cimport`` from the new module
+`scipy.special.cython_special`. These scalar functions can be expected to be
+significantly faster then the universal functions for scalar arguments.
 
 Better control over special-function errors is offered by the
 functions `scipy.special.geterr` and `scipy.special.seterr` and the
@@ -139,16 +163,25 @@ polynomials. For example, `scipy.special.j_roots` has been renamed
 functions `scipy.special.jacobi` and `scipy.special.eval_jacobi`. To
 preserve back-compatibility the old names have been left as aliases.
 
+Wright Omega function is implemented as `scipy.special.wrightomega`.
+
+
 `scipy.stats` improvements
 --------------------------
 
 The function `scipy.stats.weightedtau` was added.  It provides a weighted
 version of Kendall's tau.
 
+New class `scipy.stats.multinomial` implements the multinomial distribution.
+
+New class `scipy.stats.rv_histogram` constructs a continuous univariate
+distribution with a piecewise linear CDF from a binned data sample.
+
+
 `scipy.interpolate` improvements
 --------------------------------
 
-New class ``scipy.interpolate.BSpline`` represents splines. ``BSpline`` objects
+New class `scipy.interpolate.BSpline` represents splines. ``BSpline`` objects
 contain knots and coefficients and can evaluate the spline. The format is
 consistent with FITPACK, so that one can do, for example::
 
@@ -188,6 +221,7 @@ Deprecated features
 `scipy.interpolate.splmake`, `scipy.interpolate.spleval` and
 `scipy.interpolate.spline` are deprecated. The format used by `splmake/spleval`
 was inconsistent with `splrep/splev` which was confusing to users.
+
 `scipy.special.errprint` is deprecated. Improved functionality is
 available in `scipy.special.seterr`.
 
@@ -202,12 +236,12 @@ the input, instead of always float64.
 
 `scipy.special.errprint` now returns a boolean.
 
-The function `scipy.signal.find_peaks_cwt()` now returns an array instead of
+The function `scipy.signal.find_peaks_cwt` now returns an array instead of
 a list.
 
 `scipy.stats.kendalltau` now computes the correct p-value in case the
 input contains ties. The p-value is also identical to that computed by
-`scipy.stats.mstats_basic.kendalltau` and by R. If the input does not
+`scipy.stats.mstats.kendalltau` and by R. If the input does not
 contain ties there is no change w.r.t. the previous implementation.
 
 The function `scipy.linalg.block_diag` will not ignore zero-sized matrices anymore.
