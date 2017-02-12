@@ -5268,9 +5268,21 @@ argus = argus_gen(name='argus', longname="An Argus Function", a=0.0, b=1.0)
 class rv_histogram(rv_continuous):
     """
     Generates a distribution given by a histogram.
-    This is useful to generate a template distribution from a binned datasample.
+    This is useful to generate a template distribution from a binned
+    datasample.
 
-    %(before_notes)s
+    As a subclass of the `rv_continuous` class, `rv_histogram` inherits from it
+    a collection of generic methods (see `rv_continuous` for the full list),
+    and implements them based on the properties of the provided binned
+    datasample.
+        
+    Parameters
+    ----------
+    histogram : tuple of array_like
+      Tuple containing two array_like objects
+      The first containing the content of n bins
+      The second containing the (n+1) bin boundaries
+      In particular the return value np.histogram is accepted
 
     Notes
     -----
@@ -5278,14 +5290,13 @@ class rv_histogram(rv_continuous):
     The pdf is defined as a stepwise function from the provided histogram
     The cdf is a linear interpolation of the pdf.
 
-    %(after_notes)s
-    
     .. versionadded:: 0.19.0
 
     Examples
     --------
 
     Create a scipy.stats distribution from a numpy histogram
+
     >>> import scipy.stats
     >>> import numpy as np
     >>> data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5, random_state=123)
@@ -5293,6 +5304,7 @@ class rv_histogram(rv_continuous):
     >>> hist_dist = scipy.stats.rv_histogram(hist)
 
     Behaves like an ordinary scipy rv_continuous distribution
+
     >>> hist_dist.pdf(1.0)
     0.20538577847618705
     >>> hist_dist.cdf(2.0)
@@ -5300,6 +5312,7 @@ class rv_histogram(rv_continuous):
 
     PDF is zero above (below) the highest (lowest) bin of the histogram,
     defined by the max (min) of the original dataset
+
     >>> hist_dist.pdf(np.max(data))
     0.0
     >>> hist_dist.cdf(np.max(data))
@@ -5310,6 +5323,7 @@ class rv_histogram(rv_continuous):
     0.0
 
     PDF and CDF follow the histogram
+
     >>> import matplotlib.pyplot as plt
     >>> X = np.linspace(-5.0, 5.0, 100)
     >>> plt.title("PDF from Template")
