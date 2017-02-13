@@ -1443,7 +1443,7 @@ class TestUnitaryGroup(TestCase):
         np.random.seed(514)  # Note that the test is sensitive to seed too
         xs = unitary_group.rvs(dim, size=samples)
 
-        eigs = np.vstack( scipy.linalg.eigvals(x) for x in xs )
+        eigs = np.vstack(scipy.linalg.eigvals(x) for x in xs)
         x = np.arctan(eigs.imag/eigs.real)
 
         h = np.histogram(x.flatten())[0]
