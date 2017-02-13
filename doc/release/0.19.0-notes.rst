@@ -19,7 +19,7 @@ This release requires Python 2.7 or 3.4-3.6 and NumPy 1.8.2 or greater.
 
 Highlights of this release include:
 
-- A unified FFI layer, `scipy.LowLevelCallable`.
+- A unified foreign function interface layer, `scipy.LowLevelCallable`.
 - Cython API for scalar, typed versions of the universal functions from
   the `scipy.special` module, via `cimport scipy.special.cython_special`.
 
@@ -71,6 +71,11 @@ and has improved performance.
 
 The function `scipy.spatial.distance.directed_hausdorff` was
 added to calculate the directed Hausdorff distance.
+
+``count_neighbors`` method of `scipy.spatial.cKDTree` gained an ability to
+perform weighted pair counting via the new keywords ``wights`` and
+``cumulative``. See `gh-5647 <https://github.com/scipy/scipy/pull/5647>`_ for
+details.
 
 `scipy.ndimage` improvements
 ----------------------------
@@ -127,6 +132,19 @@ substantially faster when operating on some n-dimensional arrays when n > 1.
 The largest reduction in computation time is realized in cases where the size
 of the array is small (<1k samples or so) along the axis to be filtered.
 
+`scipy.fftpack` improvements
+----------------------------
+
+Fast Fourier transform routines now accept `np.float16` inputs and upcast
+them to `np.float32`. Previously, they would raise an error.
+
+`scipy.cluster` improvements
+----------------------------
+
+Methods ``"centroid"`` and ``"median"`` of `scipy.cluster.hierarchy.linkage`
+have been significantly sped up.
+
+
 `scipy.sparse` improvements
 ---------------------------
 
@@ -150,7 +168,8 @@ rank of a graph with a given sparsity pattern.
 Scalar, typed versions of universal functions from `scipy.special` are available
 in the Cython space via ``cimport`` from the new module
 `scipy.special.cython_special`. These scalar functions can be expected to be
-significantly faster then the universal functions for scalar arguments.
+significantly faster then the universal functions for scalar arguments. See
+the `scipy.special` tutorial for details.
 
 Better control over special-function errors is offered by the
 functions `scipy.special.geterr` and `scipy.special.seterr` and the
@@ -176,6 +195,8 @@ New class `scipy.stats.multinomial` implements the multinomial distribution.
 
 New class `scipy.stats.rv_histogram` constructs a continuous univariate
 distribution with a piecewise linear CDF from a binned data sample.
+
+New class `scipy.stats.argus` implements the Argus distribution.
 
 
 `scipy.interpolate` improvements
