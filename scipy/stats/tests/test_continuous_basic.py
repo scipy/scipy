@@ -241,6 +241,7 @@ def test_moments():
 
 
 def test_rvs_broadcast():
+    skp = npt.dec.skipif
     for dist, shape_args in distcont:
         # If shape_only is True, it means the _rvs method of the
         # distribution uses more than one random number to generate a random
@@ -270,7 +271,9 @@ def test_rvs_broadcast():
         allargs.extend([loc, scale])
         # bshape holds the expected shape when loc, scale, and the shape
         # parameters are all broadcast together.
-        yield check_rvs_broadcast, distfunc, dist, allargs, bshape, shape_only, 'd'
+        is_too_slow = dist in ['gausshyper', 'genexpon']
+        check_rvs = skp(is_too_slow)(check_rvs_broadcast)
+        yield check_rvs, distfunc, dist, allargs, bshape, shape_only, 'd'
 
 
 def test_rvs_gh2069_regression():
