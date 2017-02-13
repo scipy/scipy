@@ -61,6 +61,34 @@ matrix:
         - TESTMODE=full
         - COVERAGE=--coverage
         - NUMPYSPEC=numpy
+    - python: 3.6
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC=numpy
+  allow_failures:
+    - python: 2.7
+      env:
+        - TESTMODE=fast
+        - REFGUIDE_CHECK=1
+        - COVERAGE=
+        - NPY_RELAXED_STRIDES_CHECKING=1
+        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.4"
+      addons:
+        apt:
+          packages:
+            - libatlas-dev
+            - libatlas-base-dev
+            - liblapack-dev
+            - gfortran
+            - libgmp-dev
+            - libmpfr-dev
+            - ccache
+            - libfreetype6-dev
+            - libpng-dev
+            - zlib1g-dev
+            - texlive-fonts-recommended
+
 addons:
   apt:
     packages:
