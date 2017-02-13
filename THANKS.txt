@@ -130,7 +130,7 @@ Jörg Dietrich for the k-sample Anderson Darling test.
 Blake Griffith for improvements to scipy.sparse.
 Andrew Nelson for scipy.optimize.differential_evolution.
 Brian Newsom for work on ctypes multivariate integration.
-Nathan Woods for work on multivariate integration. 
+Nathan Woods for work on multivariate integration.
 Brianna Laugher for bug fixes.
 Johannes Kulick for the Dirichlet distribution.
 Bastian Venthur for bug fixes.
@@ -165,6 +165,12 @@ on data.
 Antonio Ribeiro for implementing irrnotch and iirpeak functions.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
+John Draper for bug fixes.
+Alvaro Sanchez-Gonzalez for axis-dependent modes in multidimensional filters.
+Alessandro Pietro Bardelli for improvements to pdist/cdist and to related tests.
+Jonathan T. Siebert for bug fixes.
+Thomas Keck for adding new scipy.stats distributions used in HEP
+David Nicholson for bug fixes in spectral functions.
 
 Institutions
 ------------
@@ -175,3 +181,4 @@ Agilent which gave a genereous donation for support of SciPy.
 UC Berkeley for providing travel money and hosting numerous sprints.
 The University of Stellenbosch for funding the development of
     the SciKits portal.
+Google Inc. for updating documentation of hypergeometric distribution.

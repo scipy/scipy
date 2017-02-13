@@ -79,6 +79,12 @@ def configuration(parent_package='', top_path=None):
         include_dirs=[get_numpy_include_dirs()],
         extra_info=get_misc_info("npymath"))
 
+    config.add_extension('_voronoi',
+                         sources=['_voronoi.c'])
+
+    config.add_extension('_hausdorff',
+                         sources=['_hausdorff.c'])
+
     return config
 
 if __name__ == '__main__':

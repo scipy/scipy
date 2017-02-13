@@ -142,7 +142,7 @@ def geometric_transform(input, mapping, output_shape=None,
                         mode='constant', cval=0.0, prefilter=True,
                         extra_arguments=(), extra_keywords={}):
     """
-    Apply an arbritrary geometric transform.
+    Apply an arbitrary geometric transform.
 
     The given mapping function is used to find, for each point in the
     output, the corresponding coordinates in the input. The value of the
@@ -153,7 +153,7 @@ def geometric_transform(input, mapping, output_shape=None,
     ----------
     input : array_like
         The input array.
-    mapping : callable
+    mapping : {callable, scipy.LowLevelCallable}
         A callable object that accepts a tuple of length equal to the output
         array rank, and returns the corresponding input coordinates as a tuple
         of length equal to the input array rank.
@@ -167,7 +167,7 @@ def geometric_transform(input, mapping, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -191,6 +191,38 @@ def geometric_transform(input, mapping, output_shape=None,
     See Also
     --------
     map_coordinates, affine_transform, spline_filter1d
+
+
+    Notes
+    -----
+    This function also accepts low-level callback functions with one
+    the following signatures and wrapped in `scipy.LowLevelCallable`:
+
+    .. code:: c
+
+       int mapping(npy_intp *output_coordinates, double *input_coordinates, 
+                   int output_rank, int input_rank, void *user_data)
+       int mapping(intptr_t *output_coordinates, double *input_coordinates, 
+                   int output_rank, int input_rank, void *user_data)
+
+    The calling function iterates over the elements of the output array,
+    calling the callback function at each element. The coordinates of the
+    current output element are passed through ``output_coordinates``. The
+    callback function must return the coordinates at which the input must
+    be interpolated in ``input_coordinates``. The rank of the input and
+    output arrays are given by ``input_rank`` and ``output_rank``
+    respectively.  ``user_data`` is the data pointer provided 
+    to `scipy.LowLevelCallable` as-is. 
+
+    The callback function must return an integer error status that is zero 
+    if something went wrong and one otherwise. If an error occurs, you should
+    normally set the python error status with an informative message
+    before returning, otherwise a default error message is set by the
+    calling function.
+
+    In addition, some other low-level function pointer specifications 
+    are accepted, but these are for backward compatibility only and should
+    not be used in new code.
 
     Examples
     --------
@@ -256,7 +288,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -376,7 +408,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -463,7 +495,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -525,7 +557,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -568,15 +600,14 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
                 "the returned array has changed.", UserWarning)
 
     zoom_div = numpy.array(output_shape, float) - 1
-    zoom = (numpy.array(input.shape) - 1) / zoom_div
-
-    # Zooming to non-finite values is unpredictable, so just choose
+    # Zooming to infinite values is unpredictable, so just choose
     # zoom factor 1 instead
-    zoom[~numpy.isfinite(zoom)] = 1
+    zoom = numpy.divide(numpy.array(input.shape) - 1, zoom_div,
+                        out=numpy.ones_like(input.shape, dtype=numpy.float64),
+                        where=zoom_div != 0)
 
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    zoom = numpy.asarray(zoom, dtype=numpy.float64)
     zoom = numpy.ascontiguousarray(zoom)
     _nd_image.zoom_shift(filtered, zoom, None, output, order, mode, cval)
     return return_value
@@ -623,7 +654,7 @@ def rotate(input, angle, axes=(1, 0), reshape=True,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if

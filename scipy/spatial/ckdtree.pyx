@@ -346,6 +346,10 @@ cdef extern from "ckdtree_methods.h":
                          np.float64_t *mins, 
                          int _median, 
                          int _compact)
+
+    object build_weights(ckdtree *self, 
+                         np.float64_t *node_weights,
+                         np.float64_t *weights)
        
     object query_knn(const ckdtree *self, 
                      np.float64_t *dd, 
@@ -364,15 +368,27 @@ cdef extern from "ckdtree_methods.h":
                        const np.float64_t p, 
                        const np.float64_t eps,
                        vector[ordered_pair] *results)
-                       
-    object count_neighbors(const ckdtree *self,
+
+    object count_neighbors_unweighted(const ckdtree *self,
                            const ckdtree *other,
                            np.intp_t     n_queries,
                            np.float64_t  *real_r,
                            np.intp_t     *results,
-                           np.intp_t     *idx,
-                           const np.float64_t p)
-                           
+                           const np.float64_t p,
+                           int cumulative)
+
+    object count_neighbors_weighted(const ckdtree *self,
+                           const ckdtree *other,
+                           np.float64_t  *self_weights,
+                           np.float64_t  *other_weights,
+                           np.float64_t  *self_node_weights,
+                           np.float64_t  *other_node_weights,
+                           np.intp_t     n_queries,
+                           np.float64_t  *real_r,
+                           np.float64_t     *results,
+                           const np.float64_t p,
+                           int cumulative)
+
     object query_ball_point(const ckdtree *self,
                             const np.float64_t *x,
                             const np.float64_t r,
@@ -438,8 +454,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         brute-force. Default: 16.
     compact_nodes : bool, optional    
         If True, the kd-tree is built to shrink the hyperrectangles to
-        the actual data range. This usually gives a more compact tree and 
-        faster queries at the expense of longer build time. Default: True.
+        the actual data range. This usually gives a more compact tree that 
+        is robust against degenerated input data and gives faster queries 
+        at the expense of longer build time. Default: True.
     copy_data : bool, optional
         If True the data is always copied to protect the kd-tree against 
         data corruption. Default: False.
@@ -453,6 +470,29 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         is the boxsize along i-th dimension. The input data shall be wrapped 
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
+
+    Attributes
+    ----------
+    data : ndarray, shape (n,m)
+        The n data points of dimension m to be indexed. This array is
+        not copied unless this is necessary to produce a contiguous
+        array of doubles. The data are also copied if the kd-tree is built
+        with `copy_data=True`.
+    leafsize : positive int
+        The number of points at which the algorithm switches over to
+        brute-force.
+    m : int
+        The dimension of a single data-point.
+    n : int
+        The number of data points.
+    maxes : ndarray, shape (m,)
+        The maximum value in each dimension of the n data points.
+    mins : ndarray, shape (m,)
+        The minimum value in each dimension of the n data points.
+    tree : object, class cKDTreeNode
+        This class exposes a Python view of the root node in the cKDTree object.
+    size : int
+        The number of nodes in the tree.
 
     See Also
     --------
@@ -477,6 +517,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         readonly object          boxsize
         np.ndarray               boxsize_data
         np.float64_t             *raw_boxsize_data
+        readonly np.intp_t       size
 
     def __cinit__(cKDTree self):
         self.tree_buffer = NULL        
@@ -499,7 +540,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         if boxsize is None:
             self.boxsize = None
-            self.raw_boxsize_data = NULL
             self.boxsize_data = None
         else:
             boxsize_arr = np.empty(2 * self.m, dtype=np.float64)
@@ -507,7 +547,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             boxsize_arr[self.m:] = 0.5 * boxsize_arr[:self.m]
             # FIXME: how to use a matching del if new is used?
             self.boxsize_data = boxsize_arr
-            self.raw_boxsize_data = <np.float64_t*> np.PyArray_DATA(boxsize_arr)
             self.boxsize = boxsize_arr[:self.m].copy()
             if (self.data >= self.boxsize[None, :]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
@@ -518,10 +557,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.mins = np.ascontiguousarray(np.amin(self.data,axis=0), dtype=np.float64)
         self.indices = np.ascontiguousarray(np.arange(self.n,dtype=np.intp))
 
-        self.raw_data = <np.float64_t*> np.PyArray_DATA(self.data)
-        self.raw_maxes = <np.float64_t*> np.PyArray_DATA(self.maxes)
-        self.raw_mins = <np.float64_t*> np.PyArray_DATA(self.mins)
-        self.raw_indices = <np.intp_t*> np.PyArray_DATA(self.indices)
+        self._pre_init()
 
         _compact = 1 if compact_nodes else 0
         _median = 1 if balanced_tree else 0
@@ -539,12 +575,11 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 _median, _compact)
         finally:
             PyMem_Free(tmp)
-                
+
         self._median_workspace = None
         
         # set up the tree structure pointers
-        self.ctree = tree_buffer_root(self.tree_buffer)
-        self._post_init(self.ctree)
+        self._post_init()
         
         # make the tree viewable from Python
         self.tree = cKDTreeNode()
@@ -553,9 +588,32 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         self.tree._indices = self.indices
         self.tree.level = 0
         self.tree._setup()
+
+    cdef int _pre_init(cKDTree self) except -1:
+
+        # finalize the pointers from array attributes
+
+        self.raw_data = <np.float64_t*> np.PyArray_DATA(self.data)
+        self.raw_maxes = <np.float64_t*> np.PyArray_DATA(self.maxes)
+        self.raw_mins = <np.float64_t*> np.PyArray_DATA(self.mins)
+        self.raw_indices = <np.intp_t*> np.PyArray_DATA(self.indices)
+
+        if self.boxsize_data is not None:
+            self.raw_boxsize_data = <np.float64_t*>np.PyArray_DATA(self.boxsize_data)
+
+        return 0        
+
+    cdef int _post_init(cKDTree self) except -1:
+        # finalize the tree points, this calls _post_init_traverse
         
-                
-    cdef int _post_init(cKDTree self, ckdtreenode *node) except -1:
+        self.ctree = tree_buffer_root(self.tree_buffer)
+
+        # set the size attribute after tree_buffer is built
+        self.size = self.tree_buffer.size()
+
+        return self._post_init_traverse(self.ctree)
+         
+    cdef int _post_init_traverse(cKDTree self, ckdtreenode *node) except -1:
         # recurse the tree and re-initialize
         # "less" and "greater" fields
         if node.split_dim == -1:
@@ -565,8 +623,9 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         else:
             node.less = self.ctree + node._less
             node.greater = self.ctree + node._greater
-            self._post_init(node.less)
-            self._post_init(node.greater)
+            self._post_init_traverse(node.less)
+            self._post_init_traverse(node.greater)
+                
         return 0
         
 
@@ -617,18 +676,18 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         -------
         d : array of floats
             The distances to the nearest neighbors. 
-            If x has shape tuple+(self.m,), then d has shape tuple+(len(k),).
+            If ``x`` has shape ``tuple+(self.m,)``, then ``d`` has shape ``tuple+(k,)``.
             When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with infinite distances.
         i : ndarray of ints
-            The locations of the neighbors in self.data.
-            If `x` has shape tuple+(self.m,), then `i` has shape tuple+(len(k),).
+            The locations of the neighbors in ``self.data``.
+            If ``x`` has shape ``tuple+(self.m,)``, then ``i`` has shape ``tuple+(k,)``.
             When k == 1, the last dimension of the output is squeezed.
-            Missing neighbors are indicated with self.n.
+            Missing neighbors are indicated with ``self.n``.
 
         Notes
         -----
-        If the KD-Tree is periodic, the position :py:code:`x` is wrapped into the
+        If the KD-Tree is periodic, the position ``x`` is wrapped into the
         box.
         
         When the input k is a list, a query for arange(max(k)) is performed, but
@@ -1045,7 +1104,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         r : positive float
             The maximum distance.
         p : float, optional
-            Which Minkowski norm to use.  `p` has to meet the condition
+            Which Minkowski norm to use.  ``p`` has to meet the condition
             ``1 <= p <= infinity``.
         eps : float, optional
             Approximate search.  Branches of the tree are not explored
@@ -1076,46 +1135,183 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         else:
             raise ValueError("Invalid output type") 
 
+    def _build_weights(cKDTree self, object weights):
+        """
+        _build_weights(weights)
+
+        Compute weights of nodes from weights of data points. This will sum
+        up the total weight per node. This function is used internally.
+
+        Parameters
+        ----------
+        weights : array_like
+            weights of data points; must be the same length as the data points.
+            currently only scalar weights are supported. Therefore the weights
+            array must be 1 dimensional.
+
+        Returns
+        -------
+        node_weights : array_like
+            total weight for each KD-Tree node.
+
+        """
+        cdef np.intp_t num_of_nodes
+        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] node_weights
+        cdef np.ndarray[np.float64_t, ndim=1, mode="c"] proper_weights
+
+        num_of_nodes = self.tree_buffer.size();
+        node_weights = np.empty(num_of_nodes, dtype=np.float64)
+
+        # FIXME: use templates to avoid the type conversion 
+        proper_weights = np.ascontiguousarray(weights, dtype=np.float64)
+
+        if len(proper_weights) != self.n:
+            raise ValueError('Number of weights differ from the number of data points')
+
+        build_weights(<ckdtree*> self, <np.float64_t*>np.PyArray_DATA(node_weights),
+                            <np.float64_t*> np.PyArray_DATA(proper_weights))
+
+        return node_weights
 
     # ---------------
     # count_neighbors
     # ---------------
 
     @cython.boundscheck(False)
-    def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2.):
+    def count_neighbors(cKDTree self, cKDTree other, object r, np.float64_t p=2., 
+                        object weights=None, int cumulative=True):
         """
-        count_neighbors(self, other, r, p=2.)
+        count_neighbors(self, other, r, p=2., weights=None, cumulative=True)
 
-        Count how many nearby pairs can be formed.
+        Count how many nearby pairs can be formed. (pair-counting)
 
         Count the number of pairs (x1,x2) can be formed, with x1 drawn
-        from self and x2 drawn from `other`, and where
+        from self and x2 drawn from ``other``, and where
         ``distance(x1, x2, p) <= r``.
-        This is the "two-point correlation" described in Gray and Moore 2000,
-        "N-body problems in statistical learning", and the code here is based
-        on their algorithm.
+
+        Data points on self and other are optionally weighted by the ``weights``
+        argument. (See below)
+
+        The algorithm we implement here is based on [1]_. See notes for further discussion.
 
         Parameters
         ----------
         other : cKDTree instance
-            The other tree to draw points from.
+            The other tree to draw points from, can be the same tree as self.
         r : float or one-dimensional array of floats
             The radius to produce a count for. Multiple radii are searched with
-            a single tree traversal.
+            a single tree traversal. 
+            If the count is non-cumulative(``cumulative=False``), ``r`` defines 
+            the edges of the bins, and must be non-decreasing.
         p : float, optional 
-            1<=p<=infinity, default 2.0
-            Which Minkowski p-norm to use
+            1<=p<=infinity. 
+            Which Minkowski p-norm to use.
+            Default 2.0.
+        weights : tuple, array_like, or None, optional
+            If None, the pair-counting is unweighted.
+            If given as a tuple, weights[0] is the weights of points in ``self``, and
+            weights[1] is the weights of points in ``other``; either can be None to 
+            indicate the points are unweighted.
+            If given as an array_like, weights is the weights of points in ``self``
+            and ``other``. For this to make sense, ``self`` and ``other`` must be the
+            same tree. If ``self`` and ``other`` are two different trees, a ``ValueError``
+            is raised.
+            Default: None
+        cumulative : bool, optional
+            Whether the returned counts are cumulative. When cumulative is set to ``False``
+            the algorithm is optimized to work with a large number of bins (>10) specified
+            by ``r``. When ``cumulative`` is set to True, the algorithm is optimized to work
+            with a small number of ``r``. Default: True
 
         Returns
         -------
-        result : int or 1-D array of ints
-            The number of pairs.
+        result : scalar or 1-D array
+            The number of pairs. For unweighted counts, the result is integer.
+            For weighted counts, the result is float.
+            If cumulative is False, ``result[i]`` contains the counts with
+            ``(-inf if i == 0 else r[i-1]) < R <= r[i]``
+
+        Notes
+        -----
+        Pair-counting is the basic operation used to calculate the two point
+        correlation functions from a data set composed of position of objects.
+
+        Two point correlation function measures the clustering of objects and
+        is widely used in cosmology to quantify the large scale structure
+        in our Universe, but it may be useful for data analysis in other fields
+        where self-similar assembly of objects also occur.
+
+        The Landy-Szalay estimator for the two point correlation function of
+        ``D`` measures the clustering signal in ``D``. [2]_
+
+        For example, given the position of two sets of objects,
+
+        - objects ``D`` (data) contains the clustering signal, and
+
+        - objects ``R`` (random) that contains no signal,
+
+        .. math::
+
+             \\xi(r) = \\frac{<D, D> - 2 f <D, R> + f^2<R, R>}{f^2<R, R>},
+
+        where the brackets represents counting pairs between two data sets
+        in a finite bin around ``r`` (distance), corresponding to setting
+        `cumulative=False`, and ``f = float(len(D)) / float(len(R))`` is the
+        ratio between number of objects from data and random.
+
+        The algorithm implemented here is loosely based on the dual-tree
+        algorithm described in [1]_. We switch between two different
+        pair-cumulation scheme depending on the setting of ``cumulative``.
+        The computing time of the method we use when for
+        ``cumulative == False`` does not scale with the total number of bins.
+        The algorithm for ``cumulative == True`` scales linearly with the
+        number of bins, though it is slightly faster when only
+        1 or 2 bins are used. [5]_.
+
+        As an extension to the naive pair-counting,
+        weighted pair-counting counts the product of weights instead
+        of number of pairs.
+        Weighted pair-counting is used to estimate marked correlation functions
+        ([3]_, section 2.2),
+        or to properly calculate the average of data per distance bin
+        (e.g. [4]_, section 2.1 on redshift).
+
+        .. [1] Gray and Moore,
+               "N-body problems in statistical learning",
+               Mining the sky, 2000,
+               https://arxiv.org/abs/astro-ph/0012333
+
+        .. [2] Landy and Szalay,
+               "Bias and variance of angular correlation functions",
+               The Astrophysical Journal, 1993,
+               http://adsabs.harvard.edu/abs/1993ApJ...412...64L
+
+        .. [3] Sheth, Connolly and Skibba,
+               "Marked correlations in galaxy formation models",
+               Arxiv e-print, 2005,
+               https://arxiv.org/abs/astro-ph/0511773
+
+        .. [4] Hawkins, et al.,
+               "The 2dF Galaxy Redshift Survey: correlation functions,
+               peculiar velocities and the matter density of the Universe",
+               Monthly Notices of the Royal Astronomical Society, 2002,
+               http://adsabs.harvard.edu/abs/2003MNRAS.346...78H
+
+        .. [5] https://github.com/scipy/scipy/pull/5647#issuecomment-168474926
+
         """
         cdef: 
             int r_ndim
             np.intp_t n_queries, i
             np.ndarray[np.float64_t, ndim=1, mode="c"] real_r
-            np.ndarray[np.intp_t, ndim=1, mode="c"] results, idx
+            np.ndarray[np.float64_t, ndim=1, mode="c"] fresults
+            np.ndarray[np.intp_t, ndim=1, mode="c"] iresults
+            np.ndarray[np.float64_t, ndim=1, mode="c"] w1, w1n
+            np.ndarray[np.float64_t, ndim=1, mode="c"] w2, w2n
+            np.float64_t *w1p
+            np.float64_t *w1np
+            np.float64_t *w2p
+            np.float64_t *w2np
 
         # Make sure trees are compatible
         if self.m != other.m:
@@ -1129,6 +1325,10 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             raise ValueError("r must be either a single value or a "
                              "one-dimensional array of values")
         real_r = np.array(r, ndmin=1, dtype=np.float64, copy=True)
+        if not cumulative:
+            if (real_r[:-1] > real_r[1:]).any():
+                raise ValueError("r must be non-decreasing for non-cumulative counting.");
+        real_r, uind, inverse = np.unique(real_r, return_inverse=True, return_index=True)
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
@@ -1137,21 +1337,69 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                 if not ckdtree_isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
 
-        results = np.zeros(n_queries, dtype=np.intp)
-        idx = np.arange(n_queries, dtype=np.intp)
-        
-        count_neighbors(<ckdtree*> self, <ckdtree*> other, n_queries,
-                        &real_r[0], &results[0], &idx[0], p)
-        
+        if weights is None:
+            self_weights = other_weights = None
+        elif isinstance(weights, tuple):
+            self_weights, other_weights = weights
+        else:
+            self_weights = other_weights = weights
+            if other is not self:
+                raise ValueError("Two different trees are used. Specify weights for both in a tuple.")
+
+        if self_weights is None and other_weights is None:
+            int_result = True
+            # unweighted, use the integer arithmetics
+            results = np.zeros(n_queries + 1, dtype=np.intp)
+
+            iresults = results
+            count_neighbors_unweighted(<ckdtree*> self, <ckdtree*> other, n_queries,
+                            &real_r[0], &iresults[0], p, cumulative)
+
+        else:
+            int_result = False
+            # weighted / half weighted, use the floating point arithmetics
+            if self_weights is not None:
+                w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
+                w1n = self._build_weights(w1)
+                w1p = <np.float64_t*> np.PyArray_DATA(w1)
+                w1np = <np.float64_t*> np.PyArray_DATA(w1n)
+            else:
+                w1p = NULL
+                w1np = NULL
+            if other_weights is not None:
+                w2 = np.ascontiguousarray(other_weights, dtype=np.float64)
+                w2n = other._build_weights(w2)
+                w2p = <np.float64_t*> np.PyArray_DATA(w2)
+                w2np = <np.float64_t*> np.PyArray_DATA(w2n)
+            else:
+                w2p = NULL
+                w2np = NULL
+
+            results = np.zeros(n_queries + 1, dtype=np.float64)
+            fresults = results
+            count_neighbors_weighted(<ckdtree*> self, <ckdtree*> other,
+                                    w1p, w2p, w1np, w2np,
+                                    n_queries,
+                                    &real_r[0], &fresults[0], p, cumulative)
+
+        results2 = np.zeros(inverse.shape, results.dtype)
+        if cumulative:
+            # copy out the results (taking care of duplication and sorting)
+            results2[...] = results[inverse]
+        else:
+            # keep the identical ones zero
+            # this could have been done in a more readable way.
+            results2[uind] = results[inverse][uind]
+        results = results2
+
         if r_ndim == 0:
-            if results[0] <= <np.intp_t> LONG_MAX:
+            if int_result and results[0] <= <np.intp_t> LONG_MAX:
                 return int(results[0])
             else:
                 return results[0]
         else:
             return results
-
-
+    
     # ----------------------
     # sparse_distance_matrix
     # ----------------------
@@ -1236,21 +1484,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         # unpack the state
         (tree, self.data, self.n, self.m, self.leafsize, 
             self.maxes, self.mins, self.indices, self.boxsize, self.boxsize_data) = state
+
+        # set raw pointers
+        self._pre_init()
         
         # copy kd-tree buffer 
         unpickle_tree_buffer(self.tree_buffer, tree)    
         
-        # set raw pointers
-        self.raw_data = <np.float64_t*>np.PyArray_DATA(self.data)
-        self.raw_maxes = <np.float64_t*>np.PyArray_DATA(self.maxes)
-        self.raw_mins = <np.float64_t*>np.PyArray_DATA(self.mins)
-        self.raw_indices = <np.intp_t*>np.PyArray_DATA(self.indices)
-        if self.boxsize_data is not None:
-            self.raw_boxsize_data = <np.float64_t*>np.PyArray_DATA(self.boxsize_data)
- 
         # set up the tree structure pointers
-        self.ctree = tree_buffer_root(self.tree_buffer)
-        self._post_init(self.ctree)
+        self._post_init()
         
         # make the tree viewable from Python
         self.tree = cKDTreeNode()

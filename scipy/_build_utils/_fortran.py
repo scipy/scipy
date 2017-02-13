@@ -138,7 +138,7 @@ def split_fortran_files(source_dir, subroutines=None):
 
             # find lines with SUBROUTINE statements
             for ix, line in enumerate(lines):
-                m = re.match(b'^\\s+subroutine\\s+([a-z0-9_]+)\s*\\(', line, re.I)
+                m = re.match(b'^\\s+subroutine\\s+([a-z0-9_]+)\\s*\\(', line, re.I)
                 if m and line[0] not in b'Cc!*':
                     if subroutines is not None:
                         subr_name = m.group(1).decode('ascii').lower()

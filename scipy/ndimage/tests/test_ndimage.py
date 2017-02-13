@@ -64,6 +64,14 @@ class TestNdimage:
         # list of boundary modes:
         self.modes = ['nearest', 'wrap', 'reflect', 'mirror', 'constant']
 
+        # Fail on warnings.
+        self.saved_warning_settings = warnings.catch_warnings()
+        self.saved_warning_settings.__enter__()
+        warnings.simplefilter("error")
+
+    def tearDown(self):
+        self.saved_warning_settings.__exit__()
+
     def test_correlate01(self):
         array = numpy.array([1, 2])
         weights = numpy.array([2])
@@ -2119,13 +2127,9 @@ class TestNdimage:
         assert_array_equal(out,arr)
 
     def test_zoom3(self):
-        err = numpy.seterr(invalid='ignore')
         arr = numpy.array([[1, 2]])
-        try:
-            out1 = ndimage.zoom(arr, (2, 1))
-            out2 = ndimage.zoom(arr, (1,2))
-        finally:
-            numpy.seterr(**err)
+        out1 = ndimage.zoom(arr, (2, 1))
+        out2 = ndimage.zoom(arr, (1,2))
 
         assert_array_almost_equal(out1, numpy.array([[1, 2], [1, 2]]))
         assert_array_almost_equal(out2, numpy.array([[1, 1, 2, 2]]))
@@ -2143,24 +2147,15 @@ class TestNdimage:
 
     def test_zoom_infinity(self):
         # Ticket #1419 regression test
-        err = numpy.seterr(divide='ignore')
-
-        try:
-            dim = 8
-            ndimage.zoom(numpy.zeros((dim, dim)), 1./dim, mode='nearest')
-        finally:
-            numpy.seterr(**err)
+        dim = 8
+        ndimage.zoom(numpy.zeros((dim, dim)), 1./dim, mode='nearest')
 
     def test_zoom_zoomfactor_one(self):
         # Ticket #1122 regression test
         arr = numpy.zeros((1, 5, 5))
         zoom = (1.0, 2.0, 2.0)
 
-        err = numpy.seterr(invalid='ignore')
-        try:
-            out = ndimage.zoom(arr, zoom, cval=7)
-        finally:
-            numpy.seterr(**err)
+        out = ndimage.zoom(arr, zoom, cval=7)
         ref = numpy.zeros((1, 10, 10))
         assert_array_almost_equal(out, ref)
 

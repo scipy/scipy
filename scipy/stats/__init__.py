@@ -16,6 +16,7 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
 
    rv_continuous
    rv_discrete
+   rv_histogram
 
 Continuous distributions
 ========================
@@ -26,6 +27,7 @@ Continuous distributions
    alpha             -- Alpha
    anglit            -- Anglit
    arcsine           -- Arcsine
+   argus             -- Argus
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
@@ -231,6 +233,7 @@ which work for masked arrays.
    spearmanr
    pointbiserialr
    kendalltau
+   weightedtau
    linregress
    theilslopes
    f_value

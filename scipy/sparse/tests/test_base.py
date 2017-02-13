@@ -1301,8 +1301,9 @@ class _TestCommon:
         H = np.ones((3, 4))
         J = H.T
         K = array([[0]])
+        L = array([[[1,2],[0,1]]])
 
-        # Rank 1 arrays can't be cast as spmatrices (A and C) so leave
+        # Some arrays can't be cast as spmatrices (A,C,L) so leave
         # them out.
         Bsp = self.spmatrix(B)
         Dsp = self.spmatrix(D)
@@ -1314,7 +1315,7 @@ class _TestCommon:
         Jspp = self.spmatrix(J[:,0,None])
         Ksp = self.spmatrix(K)
 
-        matrices = [A, B, C, D, E, F, G, H, J, K]
+        matrices = [A, B, C, D, E, F, G, H, J, K, L]
         spmatrices = [Bsp, Dsp, Esp, Fsp, Hsp, Hspp, Jsp, Jspp, Ksp]
 
         # sparse/sparse
@@ -1326,16 +1327,15 @@ class _TestCommon:
                     assert_raises(ValueError, i.multiply, j)
                     continue
                 sp_mult = i.multiply(j)
-                if isspmatrix(sp_mult):
-                    assert_almost_equal(sp_mult.todense(), dense_mult)
-                else:
-                    assert_almost_equal(sp_mult, dense_mult)
+                assert_almost_equal(sp_mult.todense(), dense_mult)
 
         # sparse/dense
         for i in spmatrices:
             for j in matrices:
                 try:
                     dense_mult = np.multiply(i.todense(), j)
+                except TypeError:
+                    continue
                 except ValueError:
                     assert_raises(ValueError, i.multiply, j)
                     continue
@@ -2645,6 +2645,13 @@ class _TestFancyIndexing:
         assert_equal(A[s,:].todense(), B[2:4,:])
         assert_equal(A[:,s].todense(), B[:,2:4])
 
+        # Regression for gh-4917: index with tuple of 2D arrays
+        i = np.array([[1]], dtype=int)
+        assert_equal(A[i,i].todense(), B[i,i])
+
+        # Regression for gh-4917: index with tuple of empty nested lists
+        assert_equal(A[[[]], [[]]].todense(), B[[[]], [[]]])
+
     def test_fancy_indexing_randomized(self):
         np.random.seed(1234)  # make runs repeatable
 
@@ -3232,6 +3239,45 @@ class _TestMinMax(object):
         if isinstance(datsp, data._minmax_mixin):
             assert_array_equal(np.min(datsp), np.min(dat))
             assert_array_equal(np.max(datsp), np.max(dat))
+
+    def test_argmax(self):
+        D1 = np.array([
+            [-1, 5, 2, 3],
+            [0, 0, -1, -2],
+            [-1, -2, -3, -4],
+            [1, 2, 3, 4],
+            [1, 2, 0, 0],
+        ])
+        D2 = D1.transpose()
+
+        for D in [D1, D2]:
+            mat = csr_matrix(D)
+
+            assert_equal(mat.argmax(), np.argmax(D))
+            assert_equal(mat.argmin(), np.argmin(D))
+
+            assert_equal(mat.argmax(axis=0),
+                         np.asmatrix(np.argmax(D, axis=0)))
+            assert_equal(mat.argmin(axis=0),
+                         np.asmatrix(np.argmin(D, axis=0)))
+
+            assert_equal(mat.argmax(axis=1),
+                         np.asmatrix(np.argmax(D, axis=1).reshape(-1, 1)))
+            assert_equal(mat.argmin(axis=1),
+                         np.asmatrix(np.argmin(D, axis=1).reshape(-1, 1)))
+
+        D1 = np.empty((0, 5))
+        D2 = np.empty((5, 0))
+
+        for axis in [None, 0]:
+            mat = self.spmatrix(D1)
+            assert_raises(ValueError, mat.argmax, axis=axis)
+            assert_raises(ValueError, mat.argmin, axis=axis)
+
+        for axis in [None, 1]:
+            mat = self.spmatrix(D2)
+            assert_raises(ValueError, mat.argmax, axis=axis)
+            assert_raises(ValueError, mat.argmin, axis=axis)
 
 
 class _TestGetNnzAxis(object):
@@ -4139,13 +4185,11 @@ class TestBSR(sparse_test_class(getset=False,
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]).reshape(-1,1)
         assert_equal(A*x, A.todense()*x)
-        assert_equal(A.matvec(x), A.todense()*x)
 
     def test_bsr_matvecs(self):
         A = bsr_matrix(arange(2*3*4*5).reshape(2*4,3*5), blocksize=(4,5))
         x = arange(A.shape[1]*6).reshape(-1,6)
         assert_equal(A*x, A.todense()*x)
-        assert_equal(A.matmat(x), A.todense()*x)
 
     @dec.knownfailureif(True, 'BSR does not have a __getitem__')
     def test_iterator(self):

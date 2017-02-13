@@ -272,10 +272,17 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
             for name in sorted(only_all):
                 output += "    " + name + "\n"
 
+            output += "\nThis issue can be fixed by adding these objects to\n"
+            output += "the function listing in __init__.py for this module\n"
+
         if len(only_ref) > 0:
             output += "ERROR: objects in refguide but not in %s.__all__::\n\n" % module_name
             for name in sorted(only_ref):
                 output += "    " + name + "\n"
+
+            output += "\nThis issue should likely be fixed by removing these objects\n"
+            output += "from the function listing in __init__.py for this module\n"
+            output += "or adding them to __all__.\n"
 
         if len(missing) > 0:
             output += "ERROR: missing objects::\n\n"

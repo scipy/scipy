@@ -157,7 +157,7 @@ Ideas for new features:
   - Mesh refinement and coarsening of B-splines and corresponding tensor products.
 
 io
---
+``
 wavfile;
 
     - PCM float will be supported, for anything else use ``audiolab`` or other
@@ -222,7 +222,7 @@ The morphology interface needs to be standardized:
 
 
 odr
----
+```
 Rename the module to ``regression`` or ``fitting``, include
 ``optimize.curve_fit``. This module will then provide a home for other fitting
 functionality - what exactly needs to be worked out in more detail, a

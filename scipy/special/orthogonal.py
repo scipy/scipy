@@ -139,7 +139,7 @@ class orthopoly1d(np.poly1d):
             mu = mu / abs(kn)
             kn = 1.0
         self.__dict__['normcoef'] = mu
-        self.__dict__['coeffs'] *= kn
+        self.__dict__['coeffs'] *= float(kn)
 
         # Note: eval_func will be discarded on arithmetic
         self.__dict__['_eval_func'] = eval_func
@@ -747,7 +747,7 @@ def _compute_tauk(n, k, maxit=5):
 
 
 def _initial_nodes_a(n, k):
-    """Tricomi initial guesses
+    r"""Tricomi initial guesses
 
     Computes an initial approximation to the square of the `k`-th
     (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
@@ -782,7 +782,7 @@ def _initial_nodes_a(n, k):
 
 
 def _initial_nodes_b(n, k):
-    """Gatteschi initial guesses
+    r"""Gatteschi initial guesses
 
     Computes an initial approximation to the square of the `k`-th
     (positive) root :math:`x_k` of the Hermite polynomial :math:`H_n`
@@ -861,7 +861,7 @@ def _initial_nodes(n):
 
 
 def _pbcf(n, theta):
-    """Asymptotic series expansion of parabolic cylinder function
+    r"""Asymptotic series expansion of parabolic cylinder function
 
     The implementation is based on sections 3.2 and 3.3 from the
     original paper. Compared to the published version this code

@@ -25,6 +25,7 @@ import numpy as np
 
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
+import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
 from common_tests import check_named_results
@@ -421,6 +422,7 @@ class TestCorrSpearmanr(TestCase):
     def test_nan_policy(self):
         x = np.arange(10.)
         x[9] = np.nan
+        assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
         assert_array_equal(stats.spearmanr(x, x, nan_policy='omit'),
                            (1.0, 0.0))
         assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
@@ -536,6 +538,62 @@ class TestCorrSpearmanr(TestCase):
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
 
+def test_spearmanr():
+    # Cross-check with R:
+    # cor.test(c(1,2,3,4,5),c(5,6,7,8,7),method="spearmanr")
+    x1 = [1, 2, 3, 4, 5]
+    x2 = [5, 6, 7, 8, 7]
+    expected = (0.82078268166812329, 0.088587005313543798)
+    res = stats.spearmanr(x1, x2)
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    attributes = ('correlation', 'pvalue')
+    res = stats.spearmanr(x1, x2)
+    check_named_results(res, attributes)
+
+    # with only ties in one or both inputs
+    assert_equal(stats.spearmanr([2,2,2], [2,2,2]), (np.nan, np.nan))
+    assert_equal(stats.spearmanr([2,0,2], [2,2,2]), (np.nan, np.nan))
+    assert_equal(stats.spearmanr([2,2,2], [2,0,2]), (np.nan, np.nan))
+
+    # empty arrays provided as input
+    assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
+
+    np.random.seed(7546)
+    x = np.array([np.random.normal(loc=1, scale=1, size=500),
+                np.random.normal(loc=1, scale=1, size=500)])
+    corr = [[1.0, 0.3],
+            [0.3, 1.0]]
+    x = np.dot(np.linalg.cholesky(corr), x)
+    expected = (0.28659685838743354, 6.579862219051161e-11)
+    res = stats.spearmanr(x[0], x[1])
+    assert_approx_equal(res[0], expected[0])
+    assert_approx_equal(res[1], expected[1])
+
+    assert_approx_equal(stats.spearmanr([1,1,2], [1,1,2])[0], 1.0)
+
+    # test nan_policy
+    x = np.arange(10.)
+    x[9] = np.nan
+    assert_array_equal(stats.spearmanr(x, x), (np.nan, np.nan))
+    assert_allclose(stats.spearmanr(x, x, nan_policy='omit'),
+                    (1.0, 0))
+    assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='raise')
+    assert_raises(ValueError, stats.spearmanr, x, x, nan_policy='foobar')
+
+    # test unequal length inputs
+    x = np.arange(10.)
+    y = np.arange(20.)
+    assert_raises(ValueError, stats.spearmanr, x, y)
+
+    #test paired value
+    x1 = [1, 2, 3, 4]
+    x2 = [8, 7, 6, np.nan]
+    res1 = stats.spearmanr(x1, x2, nan_policy='omit')
+    res2 = stats.spearmanr(x1[:3], x2[:3], nan_policy='omit')
+    assert_equal(res1, res2)
+
 
 class TestCorrSpearmanrTies(TestCase):
     """Some tests of tie-handling by the spearmanr function."""
@@ -566,9 +624,11 @@ class TestCorrSpearmanrTies(TestCase):
 
 def test_kendalltau():
     # with some ties
+    # Cross-check with R:
+    # cor.test(c(12,2,1,12,2),c(1,4,7,1,0),method="kendall",exact=FALSE)
     x1 = [12, 2, 1, 12, 2]
     x2 = [1, 4, 7, 1, 0]
-    expected = (-0.47140452079103173, 0.24821309157521476)
+    expected = (-0.47140452079103173, 0.28274545993277478)
     res = stats.kendalltau(x1, x2)
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
@@ -586,20 +646,14 @@ def test_kendalltau():
     # empty arrays provided as input
     assert_equal(stats.kendalltau([], []), (np.nan, np.nan))
 
-    # check two different sort methods
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', UserWarning)
-        assert_approx_equal(stats.kendalltau(x1, x2, initial_lexsort=False)[1],
-                            stats.kendalltau(x1, x2, initial_lexsort=True)[1])
-
-    # and with larger arrays
+    # check with larger arrays
     np.random.seed(7546)
     x = np.array([np.random.normal(loc=1, scale=1, size=500),
                 np.random.normal(loc=1, scale=1, size=500)])
     corr = [[1.0, 0.3],
             [0.3, 1.0]]
     x = np.dot(np.linalg.cholesky(corr), x)
-    expected = (0.19291382765531062, 1.1337108207276285e-10)
+    expected = (0.19291382765531062, 1.1337095377742629e-10)
     res = stats.kendalltau(x[0], x[1])
     assert_approx_equal(res[0], expected[0])
     assert_approx_equal(res[1], expected[1])
@@ -621,6 +675,30 @@ def test_kendalltau():
     y = np.arange(20.)
     assert_raises(ValueError, stats.kendalltau, x, y)
 
+    # test all ties
+    tau, p_value = stats.kendalltau([], [])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.kendalltau([0], [0])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+
+
+def test_kendalltau_vs_mstats_basic():
+    np.random.seed(42)
+    for s in range(2,10):
+        a = []
+        # Generate rankings with ties
+        for i in range(s):
+            a += [i]*i
+        b = list(a)
+        np.random.shuffle(a)
+        np.random.shuffle(b)
+        expected = mstats_basic.kendalltau(a, b)
+        actual = stats.kendalltau(a, b)
+        assert_approx_equal(actual[0], expected[0])
+        assert_approx_equal(actual[1], expected[1])
+
 
 def test_kendalltau_nan_2nd_arg():
     # regression test for gh-6134: nans in the second arg were not handled
@@ -630,6 +708,108 @@ def test_kendalltau_nan_2nd_arg():
     r1 = stats.kendalltau(x, y, nan_policy='omit')
     r2 = stats.kendalltau(x[1:], y[1:])
     assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
+
+
+def test_weightedtau():
+    x = [12, 2, 1, 12, 2]
+    y = [1, 4, 7, 1, 0]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(x, y, additive=False)
+    assert_approx_equal(tau, -0.62205716951801038)
+    assert_equal(np.nan, p_value)
+    # This must be exactly Kendall's tau
+    tau, p_value = stats.weightedtau(x, y, weigher=lambda x: 1)
+    assert_approx_equal(tau, -0.47140452079103173)
+    assert_equal(np.nan, p_value)
+
+    # Asymmetric, ranked version
+    tau, p_value = stats.weightedtau(x, y, rank=None)
+    assert_approx_equal(tau, -0.4157652301037516)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(y, x, rank=None)
+    assert_approx_equal(tau, -0.7181341329699029)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(x, y, rank=None, additive=False)
+    assert_approx_equal(tau, -0.40644850966246893)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(y, x, rank=None, additive=False)
+    assert_approx_equal(tau, -0.83766582937355172)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(x, y, rank=False)
+    assert_approx_equal(tau, -0.51604397940261848)
+    assert_equal(np.nan, p_value)
+    # This must be exactly Kendall's tau
+    tau, p_value = stats.weightedtau(x, y, rank=True, weigher=lambda x: 1)
+    assert_approx_equal(tau, -0.47140452079103173)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau(y, x, rank=True, weigher=lambda x: 1)
+    assert_approx_equal(tau, -0.47140452079103173)
+    assert_equal(np.nan, p_value)
+    # Test argument conversion
+    tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.int16), y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    tau, p_value = stats.weightedtau(np.asarray(x, dtype=np.float64), np.asarray(y, dtype=np.float64))
+    assert_approx_equal(tau, -0.56694968153682723)
+    # All ties
+    tau, p_value = stats.weightedtau([], [])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    tau, p_value = stats.weightedtau([0], [0])
+    assert_equal(np.nan, tau)
+    assert_equal(np.nan, p_value)
+    # Size mismatches
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1, 2])
+    assert_raises(ValueError, stats.weightedtau, [0, 1], [0, 1], [0])
+    # NaNs
+    x = [12, 2, 1, 12, 2]
+    y = [1, 4, 7, 1, np.nan]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+    x = [12, 2, np.nan, 12, 2]
+    tau, p_value = stats.weightedtau(x, y)
+    assert_approx_equal(tau, -0.56694968153682723)
+
+
+def test_weightedtau_vs_quadratic():
+    # Trivial quadratic implementation, all parameters mandatory
+    def wkq(x, y, rank, weigher, add):
+        tot = conc = disc = u = v = 0
+        for i in range(len(x)):
+            for j in range(len(x)):
+                w = weigher(rank[i]) + weigher(rank[j]) if add else weigher(rank[i]) * weigher(rank[j])
+                tot += w
+                if x[i] == x[j]:
+                    u += w
+                if y[i] == y[j]:
+                    v += w
+                if x[i] < x[j] and y[i] < y[j] or x[i] > x[j] and y[i] > y[j]:
+                    conc += w
+                elif x[i] < x[j] and y[i] > y[j] or x[i] > x[j] and y[i] < y[j]:
+                    disc += w
+        return (conc - disc) / np.sqrt(tot - u) / np.sqrt(tot - v)
+
+    np.random.seed(42)
+    for s in range(3,10):
+        a = []
+        # Generate rankings with ties
+        for i in range(s):
+            a += [i]*i
+        b = list(a)
+        np.random.shuffle(a)
+        np.random.shuffle(b)
+        # First pass: use element indices as ranks
+        rank = np.arange(len(a), dtype=np.intp)
+        for _ in range(2):
+            for add in [True, False]:
+                expected = wkq(a, b, rank, lambda x: 1./(x+1), add)
+                actual = stats.weightedtau(a, b, rank, lambda x: 1./(x+1), add).correlation
+                assert_approx_equal(expected, actual)
+            # Second pass: use a random rank
+            np.random.shuffle(rank)
 
 
 class TestFindRepeats(TestCase):
@@ -749,6 +929,24 @@ class TestRegression(TestCase):
         res = stats.linregress(x, y)
         attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
         check_named_results(res, attributes)
+
+    def test_regress_two_inputs(self):
+        # Regress a simple line formed by two points.
+        x = np.arange(2)
+        y = np.arange(3, 5)
+
+        res = stats.linregress(x, y)
+        assert_almost_equal(res[3], 0.0)  # non-horizontal line
+        assert_almost_equal(res[4], 0.0)  # zero stderr
+
+    def test_regress_two_inputs_horizontal_line(self):
+        # Regress a horizontal line formed by two points.
+        x = np.arange(2)
+        y = np.ones(2)
+
+        res = stats.linregress(x, y)
+        assert_almost_equal(res[3], 1.0)  # horizontal line
+        assert_almost_equal(res[4], 0.0)  # zero stderr
 
     def test_nist_norris(self):
         x = [0.2, 337.4, 118.2, 884.6, 10.1, 226.5, 666.3, 996.3, 448.6, 777.0,
@@ -1296,9 +1494,12 @@ class TestMode(TestCase):
 
     def test_mode_result_attributes(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
+        data2 = []
         actual = stats.mode(data1)
         attributes = ('mode', 'count')
         check_named_results(actual, attributes)
+        actual2 = stats.mode(data2)
+        check_named_results(actual2, attributes)
 
     def test_mode_nan(self):
         data1 = [3, np.nan, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]

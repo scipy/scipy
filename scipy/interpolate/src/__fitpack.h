@@ -2,7 +2,7 @@
  * B-spline evaluation routine.
  */
 
-inline void
+static inline void
 _deBoor_D(double *t, double x, int k, int ell, int m, double *result) {
     /*
      * On completion the result array stores

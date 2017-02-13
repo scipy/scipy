@@ -80,7 +80,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     Parameters
     ----------
     func : callable f(x,*args)
-        Objective function.
+        Objective function.  Must return a scalar.
     x0 : 1-D ndarray of float
         Initial guess for the independent variable(s).
     eqcons : list, optional
@@ -338,7 +338,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             raise IndexError('SLSQP Error: the length of bounds is not '
                              'compatible with that of x0.')
 
-        bnderr = where(bnds[:, 0] > bnds[:, 1])[0]
+        bnderr = bnds[:, 0] > bnds[:, 1]
         if bnderr.any():
             raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
                              ', '.join(str(b) for b in bnderr))
@@ -364,7 +364,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if mode == 0 or mode == 1:  # objective and constraint evaluation requird
 
             # Compute objective function
-            fx = func(x)
+            try:
+                fx = float(np.asarray(func(x)))
+            except:
+                raise ValueError("Objective function must return a scalar")
             # Compute the constraints
             if cons['eq']:
                 c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))

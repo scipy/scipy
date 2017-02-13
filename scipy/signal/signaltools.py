@@ -9,7 +9,7 @@ import sys
 import timeit
 
 from . import sigtools, dlti
-from ._upfirdn import upfirdn, _UpFIRDn, _output_len
+from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
@@ -109,7 +109,7 @@ def _inputs_swap_needed(mode, shape1, shape2):
 
 
 def correlate(in1, in2, mode='full', method='auto'):
-    """
+    r"""
     Cross-correlate two N-dimensional arrays.
 
     Cross-correlate `in1` and `in2`, with the output size determined by the
@@ -163,8 +163,19 @@ def correlate(in1, in2, mode='full', method='auto'):
     -----
     The correlation z of two d-dimensional arrays x and y is defined as::
 
-      z[...,k,...] = sum[..., i_l, ...]
-                         x[..., i_l,...] * conj(y[..., i_l + k,...])
+        z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
+
+    This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')`` then
+      
+    .. math::
+
+          z[k] = (x * y)(k - N + 1) 
+               = \sum_{l=0}^{||x||-1}x_l y_{l-k+N-1}^{*}
+
+    for :math:`k = 0, 1, ..., ||x|| + ||y|| - 2`
+
+    where :math:`||x||` is the length of ``x``, :math:`N = \max(||x||,||y||)`,
+    and :math:`y_m` is 0 when m is outside the range of y.
 
     ``method='fft'`` only works for numerical arrays as it relies on
     `fftconvolve`. In certain cases (i.e., arrays of objects or when
@@ -2356,15 +2367,13 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
                       up, down) < n_out + n_pre_remove:
         n_post_pad += 1
     h = np.concatenate((np.zeros(n_pre_pad), h, np.zeros(n_post_pad)))
-    ufd = _UpFIRDn(h, x.dtype, up, down)
     n_pre_remove_end = n_pre_remove + n_out
 
-    def apply_remove(x):
-        """Apply the upfirdn filter and remove excess"""
-        return ufd.apply_filter(x)[n_pre_remove:n_pre_remove_end]
-
-    y = np.apply_along_axis(apply_remove, axis, x)
-    return y
+    # filter then remove excess
+    y = upfirdn(h, x, up, down, axis=axis)
+    keep = [slice(None), ]*x.ndim
+    keep[axis] = slice(n_pre_remove, n_pre_remove_end)
+    return y[keep]
 
 
 def vectorstrength(events, period):

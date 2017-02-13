@@ -141,6 +141,7 @@ Additional tools
 
    lagrange
    approximate_taylor_polynomial
+   pade
 
 .. seealso::
 
@@ -188,7 +189,8 @@ from .ndgriddata import *
 
 from ._bsplines import *
 
+from ._pade import *
+
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

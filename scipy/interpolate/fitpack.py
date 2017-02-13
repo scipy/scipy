@@ -111,6 +111,17 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     See `splev` for evaluation of the spline and its derivatives.
     The number of dimensions N must be smaller than 11.
 
+    References
+    ----------
+    .. [1] P. Dierckx, "Algorithms for smoothing data with periodic and
+        parametric splines, Computer Graphics and Image Processing",
+        20 (1982) 171-184.
+    .. [2] P. Dierckx, "Algorithms for smoothing data with periodic and
+        parametric splines", report tw55, Dept. Computer Science,
+        K.U.Leuven, 1981.
+    .. [3] P. Dierckx, "Curve and surface fitting with splines", Monographs on
+        Numerical Analysis, Oxford University Press, 1993.
+
     Examples
     --------
     Generate a discretization of a limacon curve in the polar coordinates:
@@ -134,17 +145,6 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     >>> ax.plot(x, y, 'ro')
     >>> ax.plot(new_points[0], new_points[1], 'r-')
     >>> plt.show()
-
-    References
-    ----------
-    .. [1] P. Dierckx, "Algorithms for smoothing data with periodic and
-        parametric splines, Computer Graphics and Image Processing",
-        20 (1982) 171-184.
-    .. [2] P. Dierckx, "Algorithms for smoothing data with periodic and
-        parametric splines", report tw55, Dept. Computer Science,
-        K.U.Leuven, 1981.
-    .. [3] P. Dierckx, "Curve and surface fitting with splines", Monographs on
-        Numerical Analysis, Oxford University Press, 1993.
 
     """
     res = _impl.splprep(x, w, u, ub, ue, k, task, s, t, full_output, nest, per,
@@ -226,13 +226,6 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     msg : str, optional
         A message corresponding to the integer flag, ier.
 
-    Notes
-    -----
-    See splev for evaluation of the spline and its derivatives.
-
-    The user is responsible for assuring that the values of *x* are unique.
-    Otherwise, *splrep* will not return sensible results.
-
     See Also
     --------
     UnivariateSpline, BivariateSpline
@@ -243,8 +236,11 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
 
     Notes
     -----
-    See splev for evaluation of the spline and its derivatives. Uses the
-    FORTRAN routine curfit from FITPACK.
+    See `splev` for evaluation of the spline and its derivatives. Uses the
+    FORTRAN routine ``curfit`` from FITPACK.
+
+    The user is responsible for assuring that the values of `x` are unique.
+    Otherwise, `splrep` will not return sensible results.
 
     If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
@@ -640,8 +636,8 @@ def splder(tck, n=1):
     >>> sproot(dspl) / np.pi
     array([ 0.50000001,  1.5       ,  2.49999998])
 
-    This agrees well with roots :math:`\pi/2 + n\pi` of
-    :math:`\cos(x) = \sin'(x)`.
+    This agrees well with roots :math:`\\pi/2 + n\\pi` of
+    :math:`\\cos(x) = \\sin'(x)`.
 
     """
     if isinstance(tck, BSpline):

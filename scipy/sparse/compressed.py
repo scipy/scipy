@@ -8,6 +8,7 @@ import operator
 
 import numpy as np
 from scipy._lib.six import zip as izip
+from scipy._lib._util import _prune_array
 
 from .base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from .data import _data_matrix, _minmax_mixin
@@ -399,44 +400,87 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             elif self.shape == (1,1):
                 return other._mul_scalar(self.toarray()[0, 0])
             # A row times a column.
-            elif self.shape[1] == other.shape[0] and self.shape[1] == 1:
+            elif self.shape[1] == 1 and other.shape[0] == 1:
                 return self._mul_sparse_matrix(other.tocsc())
-            elif self.shape[0] == other.shape[1] and self.shape[0] == 1:
+            elif self.shape[0] == 1 and other.shape[1] == 1:
                 return other._mul_sparse_matrix(self.tocsc())
             # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 other = dia_matrix((other.toarray().ravel(), [0]),
-                                    shape=(other.shape[1], other.shape[1]))
+                                   shape=(other.shape[1], other.shape[1]))
                 return self._mul_sparse_matrix(other)
             # self is a row.
             elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 copy = dia_matrix((self.toarray().ravel(), [0]),
-                                    shape=(self.shape[1], self.shape[1]))
+                                  shape=(self.shape[1], self.shape[1]))
                 return other._mul_sparse_matrix(copy)
             # Column vector times matrix. other is a column.
             elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 other = dia_matrix((other.toarray().ravel(), [0]),
-                                    shape=(other.shape[0], other.shape[0]))
+                                   shape=(other.shape[0], other.shape[0]))
                 return other._mul_sparse_matrix(self)
             # self is a column.
             elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 copy = dia_matrix((self.toarray().ravel(), [0]),
-                                    shape=(self.shape[0], self.shape[0]))
+                                  shape=(self.shape[0], self.shape[0]))
                 return copy._mul_sparse_matrix(other)
             else:
                 raise ValueError("inconsistent shapes")
-        # Dense matrix.
-        if isdense(other):
-            if self.shape == other.shape:
-                ret = self.tocoo()
-                ret.data = np.multiply(ret.data, other[ret.row, ret.col]
-                                       ).view(np.ndarray).ravel()
-                return ret
-            # Single element.
-            elif other.size == 1:
-                return self._mul_scalar(other.flat[0])
-        # Anything else.
-        return np.multiply(self.todense(), other)
+
+        # Assume other is a dense matrix/array, which produces a single-item
+        # object array if other isn't convertible to ndarray.
+        other = np.atleast_2d(other)
+
+        if other.ndim != 2:
+            return np.multiply(self.toarray(), other)
+        # Single element / wrapped object.
+        if other.size == 1:
+            return self._mul_scalar(other.flat[0])
+        # Fast case for trivial sparse matrix.
+        elif self.shape == (1, 1):
+            return np.multiply(self.toarray()[0,0], other)
+
+        from .coo import coo_matrix
+        ret = self.tocoo()
+        # Matching shapes.
+        if self.shape == other.shape:
+            data = np.multiply(ret.data, other[ret.row, ret.col])
+        # Sparse row vector times...
+        elif self.shape[0] == 1:
+            if other.shape[1] == 1:  # Dense column vector.
+                data = np.multiply(ret.data, other)
+            elif other.shape[1] == self.shape[1]:  # Dense matrix.
+                data = np.multiply(ret.data, other[:, ret.col])
+            else:
+                raise ValueError("inconsistent shapes")
+            row = np.repeat(np.arange(other.shape[0]), len(ret.row))
+            col = np.tile(ret.col, other.shape[0])
+            return coo_matrix((data.view(np.ndarray).ravel(), (row, col)),
+                              shape=(other.shape[0], self.shape[1]),
+                              copy=False)
+        # Sparse column vector times...
+        elif self.shape[1] == 1:
+            if other.shape[0] == 1:  # Dense row vector.
+                data = np.multiply(ret.data[:, None], other)
+            elif other.shape[0] == self.shape[0]:  # Dense matrix.
+                data = np.multiply(ret.data[:, None], other[ret.row])
+            else:
+                raise ValueError("inconsistent shapes")
+            row = np.repeat(ret.row, other.shape[1])
+            col = np.tile(np.arange(other.shape[1]), len(ret.col))
+            return coo_matrix((data.view(np.ndarray).ravel(), (row, col)),
+                              shape=(self.shape[0], other.shape[1]),
+                              copy=False)
+        # Sparse matrix times dense row vector.
+        elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
+            data = np.multiply(ret.data, other[:, ret.col].ravel())
+        # Sparse matrix times dense column vector.
+        elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
+            data = np.multiply(ret.data, other[ret.row].ravel())
+        else:
+            raise ValueError("inconsistent shapes")
+        ret.data = data.view(np.ndarray).ravel()
+        return ret
 
     ###########################
     # Multiplication handlers #
@@ -546,8 +590,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def maximum(self, other):
         return self._maximum_minimum(other, np.maximum, '_maximum_', lambda x: np.asarray(x) > 0)
 
+    maximum.__doc__ = spmatrix.maximum.__doc__
+
     def minimum(self, other):
         return self._maximum_minimum(other, np.minimum, '_minimum_', lambda x: np.asarray(x) < 0)
+
+    minimum.__doc__ = spmatrix.minimum.__doc__
 
     #####################
     # Reduce operations #
@@ -1026,8 +1074,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if len(self.data) < self.nnz:
             raise ValueError('data array has fewer than nnz elements')
 
-        self.data = self.data[:self.nnz]
-        self.indices = self.indices[:self.nnz]
+        self.indices = _prune_array(self.indices[:self.nnz])
+        self.data = _prune_array(self.data[:self.nnz])
 
     ###################
     # utility methods #
@@ -1075,15 +1123,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            other.data,
            indptr, indices, data)
 
-        actual_nnz = indptr[-1]
-        indices = indices[:actual_nnz]
-        data = data[:actual_nnz]
-        if actual_nnz < maxnnz // 2:
-            # too much waste, trim arrays
-            indices = indices.copy()
-            data = data.copy()
-
         A = self.__class__((data, indices, indptr), shape=self.shape)
+        A.prune()
 
         return A
 

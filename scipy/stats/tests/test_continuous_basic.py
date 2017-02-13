@@ -63,19 +63,28 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
                    'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
-                   'vonmises', 'vonmises_line',])
+                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+
+_h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
+                   6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
+test_histogram_instance = stats.rv_histogram(_h)
 
 def test_cont_basic():
     # this test skips slow distributions
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore',
                                 category=integrate.IntegrationWarning)
-        for distname, arg in distcont[:]:
+        
+        for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
             if distname in distslow:
                 continue
             if distname is 'levy_stable':
                 continue
-            distfn = getattr(stats, distname)
+            try:
+                distfn = getattr(stats, distname)
+            except TypeError:
+                distfn = distname
+                distname = 'rv_histogram_instance'
             np.random.seed(765456)
             sn = 500
             rvs = distfn.rvs(size=sn, *arg)
@@ -93,14 +102,18 @@ def test_cont_basic():
             yield check_sf_logsf, distfn, arg, distname
 
             alpha = 0.01
-            yield check_distribution_rvs, distname, arg, alpha, rvs
+            if distname == 'rv_histogram_instance':
+                yield check_distribution_rvs, distfn.cdf, arg, alpha, rvs
+            else:
+                yield check_distribution_rvs, distname, arg, alpha, rvs
 
             locscale_defaults = (0, 1)
             meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
                      distfn.logsf]
             # make sure arguments are within support
             spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
-                      'pareto': 1.5, 'tukeylambda': 0.3}
+                      'pareto': 1.5, 'tukeylambda': 0.3,
+                      'rv_histogram_instance': 5.0}
             x = spec_x.get(distname, 0.5)
             yield check_named_args, distfn, x, arg, locscale_defaults, meths
             yield check_random_state_property, distfn, arg
@@ -203,10 +216,14 @@ def test_moments():
         knf = npt.dec.knownfailureif
         fail_normalization = set(['vonmises', 'ksone'])
         fail_higher = set(['vonmises', 'ksone', 'ncf'])
-        for distname, arg in distcont[:]:
+        for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
             if distname is 'levy_stable':
                 continue
-            distfn = getattr(stats, distname)
+            try:
+                distfn = getattr(stats, distname)
+            except TypeError:
+                distfn = distname
+                distname = 'rv_histogram_instance'
             m, v, s, k = distfn.stats(*arg, moments='mvsk')
             cond1 = distname in fail_normalization
             cond2 = distname in fail_higher

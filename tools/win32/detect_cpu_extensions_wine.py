@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 Detect which x86 CPU extension instructions the given scipy install uses.
 This file can be used in the release process to check that the nosse installer

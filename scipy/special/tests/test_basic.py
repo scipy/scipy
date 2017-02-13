@@ -1622,13 +1622,15 @@ class TestErf(TestCase):
         assert_equal(i,0)
 
     def test_errprint(self):
-        a = special.errprint()
-        b = 1-a  # a is the state 1-a inverts state
-        c = special.errprint(b)  # returns last state 'a'
-        assert_equal(a,c)
-        d = special.errprint(a)  # returns to original state
-        assert_equal(d,b)  # makes sure state was returned
-        # assert_equal(d,1-a)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            a = special.errprint()
+            b = 1-a  # a is the state 1-a inverts state
+            c = special.errprint(b)  # returns last state 'a'
+            assert_equal(a,c)
+            d = special.errprint(a)  # returns to original state
+            assert_equal(d,b)  # makes sure state was returned
+            # assert_equal(d,1-a)
 
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
@@ -3294,7 +3296,7 @@ def test_legacy():
 
 @with_special_errors
 def test_error_raising():
-    assert_raises(special.SpecialFunctionWarning, special.iv, 1, 1e99j)
+    assert_raises(special.SpecialFunctionError, special.iv, 1, 1e99j)
 
 
 def test_xlogy():

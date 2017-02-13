@@ -308,9 +308,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     # NotImplemented methods #
     ##########################
 
-    def getdata(self,ind):
-        raise NotImplementedError
-
     def __getitem__(self,key):
         raise NotImplementedError
 
@@ -321,10 +318,16 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     # Arithmetic methods #
     ######################
 
+    @np.deprecate(message="BSR matvec is deprecated in scipy 0.19.0. "
+                          "Use * operator instead.")
     def matvec(self, other):
+        """Multiply matrix by vector."""
         return self * other
 
+    @np.deprecate(message="BSR matmat is deprecated in scipy 0.19.0. "
+                          "Use * operator instead.")
     def matmat(self, other):
+        """Multiply this sparse matrix by other matrix."""
         return self * other
 
     def _mul_vector(self, other):
@@ -507,6 +510,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     ##############################################################
 
     def eliminate_zeros(self):
+        """Remove zero elements in-place."""
         R,C = self.blocksize
         M,N = self.shape
 

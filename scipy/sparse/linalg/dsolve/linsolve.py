@@ -108,6 +108,11 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 
     A.sort_indices()
     A = A.asfptype()  # upcast to a floating point format
+    result_dtype = np.promote_types(A.dtype, b.dtype)
+    if A.dtype != result_dtype:
+        A = A.astype(result_dtype)
+    if b.dtype != result_dtype:
+        b = b.astype(result_dtype)
 
     # validate input shapes
     M, N = A.shape

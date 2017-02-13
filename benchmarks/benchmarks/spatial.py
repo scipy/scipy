@@ -3,7 +3,8 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 
 try:
-    from scipy.spatial import cKDTree, KDTree, SphericalVoronoi, distance
+    from scipy.spatial import (cKDTree, KDTree, SphericalVoronoi, distance,
+    ConvexHull, Voronoi)
 except ImportError:
     pass
 
@@ -106,27 +107,74 @@ class Neighbors(Benchmark):
         [1, 2, np.inf],
         [0.2, 0.5],
         BOX_SIZES, LEAF_SIZES,
+        ['cKDTree', 'cKDTree_weighted'],
     ]
-    param_names = ['(m, n1, n2)', 'p', 'probe radius', 'boxsize', 'leafsize']
+    param_names = ['(m, n1, n2)', 'p', 'probe radius', 'boxsize', 'leafsize', 'cls']
 
-    def setup(self, mn1n2, p, probe_radius, boxsize, leafsize):
+    def setup(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
         m, n1, n2 = mn1n2
 
         self.data1 = np.random.uniform(size=(n1, m))
         self.data2 = np.random.uniform(size=(n2, m))
 
+        self.w1 = np.ones(n1)
+        self.w2 = np.ones(n2)
+
         self.T1 = cKDTree(self.data1, boxsize=boxsize, leafsize=leafsize)
         self.T2 = cKDTree(self.data2, boxsize=boxsize, leafsize=leafsize)
 
-    def time_sparse_distance_matrix(self, mn1n2, p, probe_radius, boxsize, leafsize):
+    def time_sparse_distance_matrix(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
         self.T1.sparse_distance_matrix(self.T2, probe_radius, p=p)
 
-    def time_count_neighbors(self, mn1n2, p, probe_radius, boxsize, leafsize):
+    def time_count_neighbors(self, mn1n2, p, probe_radius, boxsize, leafsize, cls):
         """
         Count neighbors kd-tree
-        dim | # points T1 | # points T2 | p | probe radius |  BoxSize | LeafSize
+        dim | # points T1 | # points T2 | p | probe radius |  BoxSize | LeafSize | cls
         """
-        self.T1.count_neighbors(self.T2, probe_radius, p=p)
+
+        if cls != 'cKDTree_weighted':
+            self.T1.count_neighbors(self.T2, probe_radius, p=p)
+        else:
+            self.T1.count_neighbors(self.T2, probe_radius, self_weights=self.w1, other_weights=self.w2, p=p)
+
+class CNeighbors(Benchmark):
+    params = [
+        [
+          (2,1000,1000),
+          (8,1000,1000),
+          (16,1000,1000)
+        ],
+        [2, 10, 100, 400, 1000],
+    ]
+    param_names = ['(m, n1, n2)', 'Nr']
+
+    def setup(self, mn1n2, Nr):
+        m, n1, n2 = mn1n2
+
+        data1 = np.random.uniform(size=(n1, m))
+        data2 = np.random.uniform(size=(n2, m))
+        self.w1 = np.ones(len(data1))
+        self.w2 = np.ones(len(data2))
+ 
+        self.T1d = cKDTree(data1, leafsize=1)
+        self.T2d = cKDTree(data2, leafsize=1)
+        self.T1s = cKDTree(data1, leafsize=8)
+        self.T2s = cKDTree(data2, leafsize=8)
+        self.r = np.linspace(0, 0.5, Nr)
+
+    def time_count_neighbors_deep(self, mn1n2, Nr):
+        """
+        Count neighbors for a very deep kd-tree
+        dim | # points T1 | # points T2 | Nr
+        """
+        self.T1d.count_neighbors(self.T2d, self.r)
+
+    def time_count_neighbors_shallow(self, mn1n2, Nr):
+        """
+        Count neighbors for a shallow kd-tree
+        dim | # points T1 | # points T2 | Nr
+        """
+        self.T1s.count_neighbors(self.T2s, self.r)
 
 def generate_spherical_points(num_points):
         # generate uniform points on sphere (see:
@@ -181,3 +229,46 @@ class Cdist(Benchmark):
         sizes and metrics.
         """
         distance.cdist(self.points, self.points, metric)
+
+
+class ConvexHullBench(Benchmark):
+    params = ([10, 100, 1000, 5000], [True, False])
+    param_names = ['num_points', 'incremental']
+
+    def setup(self, num_points, incremental):
+        np.random.seed(123)
+        self.points = np.random.random_sample((num_points, 3))
+
+    def time_convex_hull(self, num_points, incremental):
+        """Time scipy.spatial.ConvexHull over a range of input data sizes
+        and settings.
+        """
+        ConvexHull(self.points, incremental)
+
+
+class VoronoiBench(Benchmark):
+    params = ([10, 100, 1000, 5000, 10000], [False, True])
+    param_names = ['num_points', 'furthest_site']
+
+    def setup(self, num_points, furthest_site):
+        np.random.seed(123)
+        self.points = np.random.random_sample((num_points, 3))
+
+    def time_voronoi_calculation(self, num_points, furthest_site):
+        """Time conventional Voronoi diagram calculation."""
+        Voronoi(self.points, furthest_site=furthest_site)
+
+class Hausdorff(Benchmark):
+    params = [10, 100, 1000]
+    param_names = ['num_points']
+
+    def setup(self, num_points):
+        np.random.seed(123)
+        self.points1 = np.random.random_sample((num_points, 3))
+        np.random.seed(71890)
+        self.points2 = np.random.random_sample((num_points, 3))
+
+    def time_directed_hausdorff(self, num_points):
+        # time directed_hausdorff code in 3 D
+        distance.directed_hausdorff(self.points1, self.points2)
+

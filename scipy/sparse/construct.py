@@ -571,14 +571,22 @@ def bmat(blocks, format=None, dtype=None):
                 if brow_lengths[i] == 0:
                     brow_lengths[i] = A.shape[0]
                 elif brow_lengths[i] != A.shape[0]:
-                    raise ValueError('blocks[%d,:] has incompatible '
-                                     'row dimensions' % i)
+                    msg = ('blocks[{i},:] has incompatible row dimensions. '
+                           'Got blocks[{i},{j}].shape[0] == {got}, '
+                           'expected {exp}.'.format(i=i, j=j,
+                                                    exp=brow_lengths[i],
+                                                    got=A.shape[0]))
+                    raise ValueError(msg)
 
                 if bcol_lengths[j] == 0:
                     bcol_lengths[j] = A.shape[1]
                 elif bcol_lengths[j] != A.shape[1]:
-                    raise ValueError('blocks[:,%d] has incompatible '
-                                     'column dimensions' % j)
+                    msg = ('blocks[:,{j}] has incompatible row dimensions. '
+                           'Got blocks[{i},{j}].shape[1] == {got}, '
+                           'expected {exp}.'.format(i=i, j=j,
+                                                    exp=bcol_lengths[j],
+                                                    got=A.shape[1]))
+                    raise ValueError(msg)
 
     nnz = sum(block.nnz for block in blocks[block_mask])
     if dtype is None:

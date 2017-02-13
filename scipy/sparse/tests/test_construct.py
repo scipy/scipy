@@ -6,6 +6,7 @@ import numpy as np
 from numpy import array, matrix
 from numpy.testing import (TestCase, run_module_suite, assert_equal, assert_,
         assert_array_equal, assert_raises, assert_array_almost_equal_nulp)
+from scipy._lib._numpy_compat import assert_raises_regex
 
 from scipy.sparse import csr_matrix, coo_matrix
 
@@ -365,8 +366,12 @@ class TestConstructUtils(TestCase):
         assert_equal(construct.bmat([[None,D],[C,None]]).todense(), expected)
 
         # test failure cases
-        assert_raises(ValueError, construct.bmat, [[A],[B]])
-        assert_raises(ValueError, construct.bmat, [[A,C]])
+        assert_raises_regex(ValueError,
+                            r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2',
+                            construct.bmat, [[A],[B]])
+        assert_raises_regex(ValueError,
+                            r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2',
+                            construct.bmat, [[A,C]])
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """

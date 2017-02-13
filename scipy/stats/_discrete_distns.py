@@ -5,8 +5,7 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy import special
-from scipy.special import entr, gammaln as gamln
-from scipy.misc import logsumexp
+from scipy.special import entr, logsumexp, betaln, gammaln as gamln
 from scipy._lib._numpy_compat import broadcast_to
 
 from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
@@ -257,21 +256,29 @@ geom = geom_gen(a=1, name='geom', longname="A geometric")
 
 
 class hypergeom_gen(rv_discrete):
-    """A hypergeometric discrete random variable.
+    r"""A hypergeometric discrete random variable.
 
     The hypergeometric distribution models drawing objects from a bin.
-    M is the total number of objects, n is total number of Type I objects.
-    The random variate represents the number of Type I objects in N drawn
+    `M` is the total number of objects, `n` is total number of Type I objects.
+    The random variate represents the number of Type I objects in `N` drawn
     without replacement from the total population.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability mass function is defined as::
+    The symbols used to denote the shape parameters (`M`, `n`, and `N`) are not
+    universally accepted.  See the Examples for a clarification of the
+    definitions used here.
 
-        pmf(k, M, n, N) = choose(n, k) * choose(M - n, N - k) / choose(M, N),
-                                       for max(0, N - (M-n)) <= k <= min(n, N)
+    The probability mass function is defined as,
+
+    .. math:: p(k, M, n, N) = \frac{\binom{n}{k} \binom{M - n}{N - k}}{\binom{M}{N}}
+
+    for :math:`k \in [\max(0, N - M + n), \min(n, N)]`, where the binomial
+    coefficients are defined as,
+
+    .. math:: \binom{n}{k} \equiv \frac{n!}{k! (n - k)!}.
 
     %(after_notes)s
 
@@ -322,9 +329,9 @@ class hypergeom_gen(rv_discrete):
     def _logpmf(self, k, M, n, N):
         tot, good = M, n
         bad = tot - good
-        return gamln(good+1) - gamln(good-k+1) - gamln(k+1) + gamln(bad+1) \
-            - gamln(bad-N+k+1) - gamln(N-k+1) - gamln(tot+1) + gamln(tot-N+1) \
-            + gamln(N+1)
+        return betaln(good+1, 1) + betaln(bad+1,1) + betaln(tot-N+1, N+1)\
+            - betaln(k+1, good-k+1) - betaln(N-k+1,bad-N+k+1)\
+            - betaln(tot+1, 1)
 
     def _pmf(self, k, M, n, N):
         # same as the following but numerically more precise

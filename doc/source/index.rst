@@ -73,3 +73,4 @@ parameters available for the algorithms.
    special
    stats
    stats.mstats
+   ccallback

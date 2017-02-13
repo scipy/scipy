@@ -56,7 +56,8 @@ _axis_doc = \
 _output_doc = \
 """output : array, optional
     The `output` parameter passes an array in which to store the
-    filter output."""
+    filter output. Output array should have different name as compared
+    to input array to avoid aliasing errors."""
 _size_foot_doc = \
 """size : scalar or tuple, optional
     See footprint, below
@@ -77,6 +78,14 @@ _mode_doc = \
     The `mode` parameter determines how the array borders are
     handled, where `cval` is the value when mode is equal to
     'constant'. Default is 'reflect'"""
+_mode_multiple_doc = \
+"""mode : str or sequence, optional
+    The `mode` parameter determines how the array borders are
+    handled. Valid modes are {'reflect', 'constant', 'nearest',
+    'mirror', 'wrap'}. `cval` is the value used when mode is equal to
+    'constant'. A list of modes with length equal to the number of
+    axes can be provided to specify different modes for different
+    axes. Default is 'reflect'"""
 _cval_doc = \
 """cval : scalar, optional
     Value to fill past edges of input if `mode` is 'constant'. Default
@@ -98,6 +107,7 @@ docdict = {
     'output': _output_doc,
     'size_foot': _size_foot_doc,
     'mode': _mode_doc,
+    'mode_multiple': _mode_multiple_doc,
     'cval': _cval_doc,
     'origin': _origin_doc,
     'extra_arguments': _extra_arguments_doc,
@@ -269,7 +279,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
         derivatives of a Gaussian. Higher order derivatives are not
         implemented
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
     truncate : float
         Truncate the filter at this many standard deviations.
@@ -306,6 +316,17 @@ def gaussian_filter(input, sigma, order=0, output=None,
            [29, 31, 33, 34, 36],
            [35, 37, 39, 40, 42]])
 
+    >>> from scipy import misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = gaussian_filter(ascent, sigma=5)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
@@ -313,11 +334,12 @@ def gaussian_filter(input, sigma, order=0, output=None,
     if not set(orders).issubset(set(range(4))):
         raise ValueError('Order outside 0..4 not implemented')
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
+    modes = _ni_support._normalize_sequence(mode, input.ndim)
     axes = list(range(input.ndim))
-    axes = [(axes[ii], sigmas[ii], orders[ii])
-                        for ii in range(len(axes)) if sigmas[ii] > 1e-15]
+    axes = [(axes[ii], sigmas[ii], orders[ii], modes[ii])
+            for ii in range(len(axes)) if sigmas[ii] > 1e-15]
     if len(axes) > 0:
-        for axis, sigma, order in axes:
+        for axis, sigma, order, mode in axes:
             gaussian_filter1d(input, sigma, axis, order, output,
                               mode, cval, truncate)
             input = output
@@ -335,25 +357,31 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(input)s
     %(axis)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
 
     Examples
     --------
     >>> from scipy import ndimage, misc
     >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
     >>> ascent = misc.ascent()
     >>> result = ndimage.prewitt(ascent)
-    >>> plt.gray()  # show the filtered result in grayscale
-    >>> plt.imshow(result)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
     output, return_value = _ni_support._get_output(output, input)
-    correlate1d(input, [-1, 0, 1], axis, output, mode, cval, 0)
+    modes = _ni_support._normalize_sequence(mode, input.ndim)
+    correlate1d(input, [-1, 0, 1], axis, output, modes[axis], cval, 0)
     axes = [ii for ii in range(input.ndim) if ii != axis]
     for ii in axes:
-        correlate1d(output, [1, 1, 1], ii, output, mode, cval, 0,)
+        correlate1d(output, [1, 1, 1], ii, output, modes[ii], cval, 0,)
     return return_value
 
 
@@ -366,25 +394,31 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     %(input)s
     %(axis)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
 
     Examples
     --------
     >>> from scipy import ndimage, misc
     >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
     >>> ascent = misc.ascent()
     >>> result = ndimage.sobel(ascent)
-    >>> plt.gray()  # show the filtered result in grayscale
-    >>> plt.imshow(result)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
     axis = _ni_support._check_axis(axis, input.ndim)
     output, return_value = _ni_support._get_output(output, input)
-    correlate1d(input, [-1, 0, 1], axis, output, mode, cval, 0)
+    modes = _ni_support._normalize_sequence(mode, input.ndim)
+    correlate1d(input, [-1, 0, 1], axis, output, modes[axis], cval, 0)
     axes = [ii for ii in range(input.ndim) if ii != axis]
     for ii in axes:
-        correlate1d(output, [1, 2, 1], ii, output, mode, cval, 0)
+        correlate1d(output, [1, 2, 1], ii, output, modes[ii], cval, 0)
     return return_value
 
 
@@ -406,7 +440,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
 
         See `extra_arguments`, `extra_keywords` below.
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
     %(extra_keywords)s
     %(extra_arguments)s
@@ -417,10 +451,11 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     output, return_value = _ni_support._get_output(output, input)
     axes = list(range(input.ndim))
     if len(axes) > 0:
-        derivative2(input, axes[0], output, mode, cval,
+        modes = _ni_support._normalize_sequence(mode, len(axes))
+        derivative2(input, axes[0], output, modes[0], cval,
                     *extra_arguments, **extra_keywords)
         for ii in range(1, len(axes)):
-            tmp = derivative2(input, axes[ii], output.dtype, mode, cval,
+            tmp = derivative2(input, axes[ii], output.dtype, modes[ii], cval,
                               *extra_arguments, **extra_keywords)
             output += tmp
     else:
@@ -436,17 +471,22 @@ def laplace(input, output=None, mode="reflect", cval=0.0):
     ----------
     %(input)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
 
     Examples
     --------
     >>> from scipy import ndimage, misc
     >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
     >>> ascent = misc.ascent()
     >>> result = ndimage.laplace(ascent)
-    >>> plt.gray()  # show the filtered result in grayscale
-    >>> plt.imshow(result)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     def derivative2(input, axis, output, mode, cval):
         return correlate1d(input, [1, -2, 1], axis, output, mode, cval, 0)
@@ -466,7 +506,7 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
         each axis as a sequence, or as a single number, in which case
         it is equal for all axes.
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
     Extra keyword arguments will be passed to gaussian_filter().
 
@@ -521,7 +561,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
         Note that the output from `derivative` is modified inplace;
         be careful to copy important inputs before returning them.
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
     %(extra_keywords)s
     %(extra_arguments)s
@@ -532,11 +572,12 @@ def generic_gradient_magnitude(input, derivative, output=None,
     output, return_value = _ni_support._get_output(output, input)
     axes = list(range(input.ndim))
     if len(axes) > 0:
-        derivative(input, axes[0], output, mode, cval,
+        modes = _ni_support._normalize_sequence(mode, len(axes))
+        derivative(input, axes[0], output, modes[0], cval,
                    *extra_arguments, **extra_keywords)
         numpy.multiply(output, output, output)
         for ii in range(1, len(axes)):
-            tmp = derivative(input, axes[ii], output.dtype, mode, cval,
+            tmp = derivative(input, axes[ii], output.dtype, modes[ii], cval,
                              *extra_arguments, **extra_keywords)
             numpy.multiply(tmp, tmp, tmp)
             output += tmp
@@ -560,9 +601,28 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
         each axis as a sequence, or as a single number, in which case
         it is equal for all axes..
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
     Extra keyword arguments will be passed to gaussian_filter().
+
+    Returns
+    -------
+    gaussian_gradient_magnitude : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.gaussian_gradient_magnitude(ascent, sigma=5)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
 
@@ -620,7 +680,8 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
         array of weights, same number of dimensions as input
     output : array, optional
         The ``output`` parameter passes an array in which to store the
-        filter output.
+        filter output. Output array should have different name as
+        compared to input array to avoid aliasing errors.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
         The ``mode`` parameter determines how the array borders are
         handled, where ``cval`` is the value when mode is equal to
@@ -656,7 +717,8 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         Array of weights, same number of dimensions as input
     output : ndarray, optional
         The `output` parameter passes an array in which to store the
-        filter output.
+        filter output. Output array should have different name as
+        compared to input array to avoid aliasing errors.  
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
         the `mode` parameter determines how the array borders are
         handled. For 'constant' mode, values beyond borders are set to be
@@ -802,9 +864,14 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
         sequence, or as a single number, in which case the size is
         equal for all axes.
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    uniform_filter : ndarray
+        Filtered array. Has the same shape as `input`.
 
     Notes
     -----
@@ -813,16 +880,31 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     in the same data type as the output. Therefore, for output types
     with a limited precision, the results may be imprecise because
     intermediate results may be stored with insufficient precision.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.uniform_filter(ascent, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
     sizes = _ni_support._normalize_sequence(size, input.ndim)
     origins = _ni_support._normalize_sequence(origin, input.ndim)
+    modes = _ni_support._normalize_sequence(mode, input.ndim)
     axes = list(range(input.ndim))
-    axes = [(axes[ii], sizes[ii], origins[ii])
+    axes = [(axes[ii], sizes[ii], origins[ii], modes[ii])
                            for ii in range(len(axes)) if sizes[ii] > 1]
     if len(axes) > 0:
-        for axis, size, origin in axes:
+        for axis, size, origin, mode in axes:
             uniform_filter1d(input, int(size), axis, output, mode,
                              cval, origin)
             input = output
@@ -938,6 +1020,8 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             footprint = numpy.asarray(footprint)
             footprint = footprint.astype(bool)
+            if not footprint.any():
+                raise ValueError("All-zero footprint is not supported.")
             if numpy.alltrue(numpy.ravel(footprint), axis=0):
                 size = footprint.shape
                 footprint = None
@@ -959,15 +1043,16 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if separable:
         sizes = _ni_support._normalize_sequence(size, input.ndim)
+        modes = _ni_support._normalize_sequence(mode, input.ndim)
         axes = list(range(input.ndim))
-        axes = [(axes[ii], sizes[ii], origins[ii])
+        axes = [(axes[ii], sizes[ii], origins[ii], modes[ii])
                                for ii in range(len(axes)) if sizes[ii] > 1]
         if minimum:
             filter_ = minimum_filter1d
         else:
             filter_ = maximum_filter1d
         if len(axes) > 0:
-            for axis, size, origin in axes:
+            for axis, size, origin, mode in axes:
                 filter_(input, int(size), axis, output, mode, cval, origin)
                 input = output
         else:
@@ -1002,9 +1087,28 @@ def minimum_filter(input, size=None, footprint=None, output=None,
     %(input)s
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    minimum_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.minimum_filter(ascent, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
                               cval, origin, 1)
@@ -1020,9 +1124,28 @@ def maximum_filter(input, size=None, footprint=None, output=None,
     %(input)s
     %(size_foot)s
     %(output)s
-    %(mode)s
+    %(mode_multiple)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    maximum_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.maximum_filter(ascent, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _min_or_max_filter(input, size, footprint, None, output, mode,
                               cval, origin, 0)
@@ -1097,6 +1220,25 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    rank_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.rank_filter(ascent, rank=42, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _rank_filter(input, rank, size, footprint, output, mode, cval,
                         origin, 'rank')
@@ -1120,8 +1262,21 @@ def median_filter(input, size=None, footprint=None, output=None,
     Returns
     -------
     median_filter : ndarray
-        Return of same shape as `input`.
+        Filtered array. Has the same shape as `input`.
 
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.median_filter(ascent, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _rank_filter(input, 0, size, footprint, output, mode, cval,
                         origin, 'median')
@@ -1143,6 +1298,25 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Returns
+    -------
+    percentile_filter : ndarray
+        Filtered array. Has the same shape as `input`.
+
+    Examples
+    --------
+    >>> from scipy import ndimage, misc
+    >>> import matplotlib.pyplot as plt
+    >>> fig = plt.figure()
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> ax1 = fig.add_subplot(121)  # left side
+    >>> ax2 = fig.add_subplot(122)  # right side
+    >>> ascent = misc.ascent()
+    >>> result = ndimage.percentile_filter(ascent, percentile=20, size=20)
+    >>> ax1.imshow(ascent)
+    >>> ax2.imshow(result)
+    >>> plt.show()
     """
     return _rank_filter(input, percentile, size, footprint, output, mode,
                                    cval, origin, 'percentile')
@@ -1164,7 +1338,7 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     Parameters
     ----------
     %(input)s
-    function : callable
+    function : {callable, scipy.LowLevelCallable}
         Function to apply along given axis.
     filter_size : scalar
         Length of the filter.
@@ -1175,6 +1349,42 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     %(origin)s
     %(extra_arguments)s
     %(extra_keywords)s
+
+    Notes
+    -----
+    This function also accepts low-level callback functions with one of
+    the following signatures and wrapped in `scipy.LowLevelCallable`:
+
+    .. code:: c
+
+       int function(double *input_line, npy_intp input_length, 
+                    double *output_line, npy_intp output_length, 
+                    void *user_data)
+       int function(double *input_line, intptr_t input_length, 
+                    double *output_line, intptr_t output_length, 
+                    void *user_data)
+
+    The calling function iterates over the lines of the input and output
+    arrays, calling the callback function at each line. The current line
+    is extended according to the border conditions set by the calling
+    function, and the result is copied into the array that is passed
+    through ``input_line``. The length of the input line (after extension)
+    is passed through ``input_length``. The callback function should apply
+    the filter and store the result in the array passed through
+    ``output_line``. The length of the output line is passed through
+    ``output_length``. ``user_data`` is the data pointer provided 
+    to `scipy.LowLevelCallable` as-is.
+
+    The callback function must return an integer error status that is zero 
+    if something went wrong and one otherwise. If an error occurs, you should
+    normally set the python error status with an informative message
+    before returning, otherwise a default error message is set by the
+    calling function.
+
+    In addition, some other low-level function pointer specifications 
+    are accepted, but these are for backward compatibility only and should
+    not be used in new code.
+
     """
     if extra_keywords is None:
         extra_keywords = {}
@@ -1207,7 +1417,7 @@ def generic_filter(input, function, size=None, footprint=None,
     Parameters
     ----------
     %(input)s
-    function : callable
+    function : {callable, scipy.LowLevelCallable}
         Function to apply at each element.
     %(size_foot)s
     %(output)s
@@ -1216,6 +1426,37 @@ def generic_filter(input, function, size=None, footprint=None,
     %(origin)s
     %(extra_arguments)s
     %(extra_keywords)s
+
+    Notes
+    -----
+    This function also accepts low-level callback functions with one of
+    the following signatures and wrapped in `scipy.LowLevelCallable`:
+
+    .. code:: c
+
+       int callback(double *buffer, npy_intp filter_size, 
+                    double *return_value, void *user_data)
+       int callback(double *buffer, intptr_t filter_size, 
+                    double *return_value, void *user_data)
+
+    The calling function iterates over the elements of the input and
+    output arrays, calling the callback function at each element. The
+    elements within the footprint of the filter at the current element are
+    passed through the ``buffer`` parameter, and the number of elements
+    within the footprint through ``filter_size``. The calculated value is
+    returned in ``return_value``. ``user_data`` is the data pointer provided 
+    to `scipy.LowLevelCallable` as-is.
+
+    The callback function must return an integer error status that is zero 
+    if something went wrong and one otherwise. If an error occurs, you should
+    normally set the python error status with an informative message
+    before returning, otherwise a default error message is set by the
+    calling function.
+
+    In addition, some other low-level function pointer specifications 
+    are accepted, but these are for backward compatibility only and should
+    not be used in new code.
+
     """
     if extra_keywords is None:
         extra_keywords = {}

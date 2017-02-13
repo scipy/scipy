@@ -9,7 +9,7 @@ __all__ = ['nnls']
 def nnls(A, b):
     """
     Solve ``argmin_x || Ax - b ||_2`` for ``x>=0``. This is a wrapper
-    for a FORTAN non-negative least squares solver.
+    for a FORTRAN non-negative least squares solver.
 
     Parameters
     ----------

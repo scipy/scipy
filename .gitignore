@@ -72,6 +72,7 @@ setup.cfg
 .coverage
 .deps
 .libs
+.eggs
 
 # Paver generated files #
 #########################
@@ -113,6 +114,7 @@ benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
 scipy/__config__.py
+scipy/_lib/_ccallback_c.c
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
 scipy/fftpack/_fftpackmodule.c
@@ -199,7 +201,9 @@ scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.cxx
 scipy/spatial/ckdtree.h
+scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
+scipy/spatial/_voronoi.c
 scipy/special/_comb.c
 scipy/spatial/qhull_misc_config.h
 scipy/special/_ellip_harm_2.c

@@ -39,6 +39,8 @@ __all__ = ['netcdf_file']
 import warnings
 import weakref
 from operator import mul
+from collections import OrderedDict
+
 import mmap as mm
 
 import numpy as np
@@ -245,8 +247,8 @@ class netcdf_file(object):
         self.version_byte = version
         self.maskandscale = maskandscale
 
-        self.dimensions = {}
-        self.variables = {}
+        self.dimensions = OrderedDict()
+        self.variables = OrderedDict()
 
         self._dims = []
         self._recs = 0
@@ -258,7 +260,7 @@ class netcdf_file(object):
             self._mm = mm.mmap(self.fp.fileno(), 0, access=mm.ACCESS_READ)
             self._mm_buf = np.frombuffer(self._mm, dtype=np.int8)
 
-        self._attributes = {}
+        self._attributes = OrderedDict()
 
         if mode in 'ra':
             self._read()
@@ -278,7 +280,7 @@ class netcdf_file(object):
             try:
                 self.flush()
             finally:
-                self.variables = {}
+                self.variables = OrderedDict()
                 if self._mm_buf is not None:
                     ref = weakref.ref(self._mm_buf)
                     self._mm_buf = None
@@ -509,7 +511,12 @@ class netcdf_file(object):
             # Handle rec vars with shape[0] < nrecs.
             if self._recs > len(var.data):
                 shape = (self._recs,) + var.data.shape[1:]
-                var.data.resize(shape)
+                # Resize in-place does not always work since 
+                # the array might not be single-segment                              
+                try:
+                    var.data.resize(shape)
+                except ValueError:
+                    var.__dict__['data'] = np.resize(var.data, shape).astype(var.data.dtype)
 
             pos0 = pos = self.fp.tell()
             for rec in var.data:
@@ -610,7 +617,7 @@ class netcdf_file(object):
             raise ValueError("Unexpected header.")
         count = self._unpack_int()
 
-        attributes = {}
+        attributes = OrderedDict()
         for attr in range(count):
             name = asstr(self._unpack_string())
             attributes[name] = self._read_values()
@@ -839,7 +846,7 @@ class netcdf_variable(object):
         self.dimensions = dimensions
         self.maskandscale = maskandscale
 
-        self._attributes = attributes or {}
+        self._attributes = attributes or OrderedDict()
         for k, v in self._attributes.items():
             self.__dict__[k] = v
 
@@ -980,7 +987,12 @@ class netcdf_variable(object):
                 recs = rec_index + 1
             if recs > len(self.data):
                 shape = (recs,) + self._shape[1:]
-                self.data.resize(shape)
+                # Resize in-place does not always work since 
+                # the array might not be single-segment                              
+                try:
+                    self.data.resize(shape)
+                except ValueError:
+                    self.__dict__['data'] = np.resize(self.data, shape).astype(self.data.dtype)
         self.data[index] = data
 
     def _get_missing_value(self):
@@ -1034,3 +1046,4 @@ class netcdf_variable(object):
 
 NetCDFFile = netcdf_file
 NetCDFVariable = netcdf_variable
+

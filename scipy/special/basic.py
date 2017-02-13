@@ -12,17 +12,19 @@ from scipy._lib.six import xrange
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, less, inexact, nan, zeros, sinc)
+from . import _ufuncs as ufuncs
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, _zeta, hankel1, hankel2, yv, kv, _gammaln,
-                      ndtri, errprint, poch, binom, hyp0f1)
+                      ndtri, poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
 
+
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
            'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk',
-           'erf_zeros', 'erfcinv', 'erfinv', 'errprint', 'euler', 'factorial',
+           'erf_zeros', 'erfcinv', 'erfinv', 'euler', 'factorial',
            'factorialk', 'factorial2', 'fresnel_zeros',
            'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
@@ -34,14 +36,7 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
            'sinc', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
-           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
-           'SpecialFunctionWarning']
-
-
-class SpecialFunctionWarning(Warning):
-    """Warning that can be issued with ``errprint(True)``"""
-    pass
-warnings.simplefilter("always", category=SpecialFunctionWarning)
+           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
 
 
 def diric(x, n):
@@ -1336,7 +1331,7 @@ def mathieu_odd_coef(m, q):
 
 
 def lpmn(m, n, z):
-    """Associated Legendre function of the first kind, Pmn(z).
+    """Sequence of associated Legendre functions of the first kind.
 
     Computes the associated Legendre function of the first kind of order m and
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
@@ -1394,15 +1389,14 @@ def lpmn(m, n, z):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        sv = errprint(0)
-        if abs(z) < 1:
-            # Ferrer function; DLMF 14.9.3
-            fixarr = where(mf > nf, 0.0,
-                           (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-        else:
-            # Match to clpmn; DLMF 14.9.13
-            fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
-        sv = errprint(sv)
+        with ufuncs.errstate(all='ignore'):
+            if abs(z) < 1:
+                # Ferrer function; DLMF 14.9.3
+                fixarr = where(mf > nf, 0.0,
+                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+            else:
+                # Match to clpmn; DLMF 14.9.13
+                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
     p, pd = specfun.lpmn(mp, n, z)
@@ -1413,7 +1407,7 @@ def lpmn(m, n, z):
 
 
 def clpmn(m, n, z, type=3):
-    """Associated Legendre function of the first kind, Pmn(z).
+    """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
@@ -1478,13 +1472,12 @@ def clpmn(m, n, z, type=3):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        sv = errprint(0)
-        if type == 2:
-            fixarr = where(mf > nf, 0.0,
-                           (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-        else:
-            fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
-        sv = errprint(sv)
+        with ufuncs.errstate(all='ignore'):
+            if type == 2:
+                fixarr = where(mf > nf, 0.0,
+                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+            else:
+                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
     p, pd = specfun.clpmn(mp, n, real(z), imag(z), type)
@@ -1495,7 +1488,7 @@ def clpmn(m, n, z, type=3):
 
 
 def lqmn(m, n, z):
-    """Associated Legendre function of the second kind, Qmn(z).
+    """Sequence of associated Legendre functions of the second kind.
 
     Computes the associated Legendre function of the second kind of order m and
     degree n, ``Qmn(z)`` = :math:`Q_n^m(z)`, and its derivative, ``Qmn'(z)``.
@@ -1588,7 +1581,7 @@ def euler(n):
 
 
 def lpn(n, z):
-    """Legendre functions of the first kind, Pn(z).
+    """Legendre function of the first kind.
 
     Compute sequence of Legendre functions of the first kind (polynomials),
     Pn(z) and derivatives for all degrees from 0 to n (inclusive).
@@ -1618,7 +1611,7 @@ def lpn(n, z):
 
 
 def lqn(n, z):
-    """Legendre functions of the second kind, Qn(z).
+    """Legendre function of the second kind.
 
     Compute sequence of Legendre functions of the second kind, Qn(z) and
     derivatives for all degrees from 0 to n (inclusive).
@@ -2286,7 +2279,7 @@ def factorial(n, exact=False):
     With ``exact=False`` the factorial is approximated using the gamma
     function:
 
-    .. math:: n! = \Gamma(n+1)
+    .. math:: n! = \\Gamma(n+1)
 
     Examples
     --------
@@ -2468,3 +2461,4 @@ def zeta(x, q=None, out=None):
     if q is None:
         q = 1
     return _zeta(x, q, out)
+

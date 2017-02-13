@@ -18,14 +18,19 @@ Error handling
 ==============
 
 Errors are handled by returning NaNs or other appropriate values.
-Some of the special function routines can emit warnings when an error
-occurs. By default this is disabled; to enable it use `errprint`.
+Some of the special function routines can emit warnings or raise
+exceptions when an error occurs. By default this is disabled; to
+query and control the current error handling state the following
+functions are provided.
 
 .. autosummary::
    :toctree: generated/
 
-   errprint               -- Set or return the error printing flag for special functions.
-   SpecialFunctionWarning -- Warning that can be issued with ``errprint(True)``
+   geterr                 -- Get the current way of handling special-function errors.
+   seterr                 -- Set how special-function errors are handled.
+   errstate               -- Context manager for special-function error handling.
+   SpecialFunctionWarning -- Warning that can be emitted by special functions.
+   SpecialFunctionError   -- Exception that can be raised by special functions.
 
 Available functions
 ===================
@@ -328,7 +333,7 @@ Legendre Functions
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated legendre function of integer order.
+   lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
 
 These are not universal functions:
@@ -336,11 +341,11 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   clpmn -- [+]Associated Legendre function of the first kind, Pmn(z).
-   lpn   -- [+]Legendre functions of the first kind, Pn(z).
-   lqn   -- [+]Legendre functions of the second kind, Qn(z).
-   lpmn  -- [+]Associated Legendre function of the first kind, Pmn(z).
-   lqmn  -- [+]Associated Legendre function of the second kind, Qmn(z).
+   clpmn -- [+]Associated Legendre function of the first kind for complex arguments.
+   lpn   -- [+]Legendre function of the first kind.
+   lqn   -- [+]Legendre function of the second kind.
+   lpmn  -- [+]Sequence of associated Legendre functions of the first kind.
+   lqmn  -- [+]Sequence of associated Legendre functions of the second kind.
 
 Ellipsoidal Harmonics
 ---------------------
@@ -572,8 +577,8 @@ Lambert W and Related Functions
 .. autosummary::
     :toctree: generated/
 
-   lambertw      -- Lambert W function.
-   wrightomega   -- Wright Omega function.
+   lambertw    -- Lambert W function.
+   wrightomega -- Wright Omega function.
 
 Other Special Functions
 -----------------------
@@ -594,8 +599,7 @@ Other Special Functions
    factorialk -- [+]Multifactorial of n of order k, n(!!...!).
    shichi     -- Hyperbolic sine and cosine integrals.
    sici       -- Sine and cosine integrals.
-   spence     -- Spence's function, also known as the dilogarithm. It is defined to be
-   lambertw   -- Lambert W function [1]_.
+   spence     -- Spence's function, also known as the dilogarithm.
    zeta       -- Riemann zeta function.
    zetac      -- Riemann zeta function minus 1.
 
@@ -605,22 +609,23 @@ Convenience Functions
 .. autosummary::
    :toctree: generated/
 
-   cbrt    -- Cube root of `x`
-   exp10   -- 10**x
-   exp2    -- 2**x
-   radian  -- Convert from degrees to radians
-   cosdg   -- Cosine of the angle `x` given in degrees.
-   sindg   -- Sine of angle given in degrees
-   tandg   -- Tangent of angle x given in degrees.
-   cotdg   -- Cotangent of the angle `x` given in degrees.
-   log1p   -- Calculates log(1+x) for use when `x` is near zero
-   expm1   -- exp(x) - 1 for use when `x` is near zero.
-   cosm1   -- cos(x) - 1 for use when `x` is near zero.
-   round   -- Round to nearest integer
-   xlogy   -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
-   xlog1py -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
-   exprel  -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
-   sinc    -- Return the sinc function.
+   cbrt      -- Cube root of `x`
+   exp10     -- 10**x
+   exp2      -- 2**x
+   radian    -- Convert from degrees to radians
+   cosdg     -- Cosine of the angle `x` given in degrees.
+   sindg     -- Sine of angle given in degrees
+   tandg     -- Tangent of angle x given in degrees.
+   cotdg     -- Cotangent of the angle `x` given in degrees.
+   log1p     -- Calculates log(1+x) for use when `x` is near zero
+   expm1     -- exp(x) - 1 for use when `x` is near zero.
+   cosm1     -- cos(x) - 1 for use when `x` is near zero.
+   round     -- Round to nearest integer
+   xlogy     -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
+   xlog1py   -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
+   logsumexp -- Compute the log of the sum of exponentials of input elements.
+   exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
+   sinc      -- Return the sinc function.
 
 .. [+] in the description indicates a function which is not a universal
 .. function and does not follow broadcasting and automatic
@@ -630,9 +635,12 @@ Convenience Functions
 
 from __future__ import division, print_function, absolute_import
 
+from .sf_error import SpecialFunctionWarning, SpecialFunctionError
+
 from ._ufuncs import *
 
 from .basic import *
+from ._logsumexp import logsumexp
 from . import specfun
 from . import orthogonal
 from .orthogonal import *
