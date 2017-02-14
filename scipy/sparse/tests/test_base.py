@@ -4200,6 +4200,10 @@ class TestBSR(sparse_test_class(getset=False,
     def test_setdiag(self):
         pass
 
+    @dec.knownfailureif(True, 'BSR does not have a __setitem__')
+    def test_setdiag_comprehensive(self):
+        pass
+
     def test_scalar_idx_dtype(self):
         # Check that index dtype takes into account all parameters
         # passed to sparsetools, including the scalar ones
