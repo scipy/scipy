@@ -16,7 +16,7 @@ from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
         csr_matrix, identity, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
-        MatrixRankWarning, _superlu)
+        MatrixRankWarning, _superlu, spsolve_triangular)
 
 warnings.simplefilter('ignore',SparseEfficiencyWarning)
 
@@ -510,6 +510,54 @@ class TestSplu(object):
             t.join()
 
         assert_equal(len(oks), 20)
+
+
+class TestSpsolveTriangular(TestCase):
+
+    def test_singular(self):
+        n = 5
+        A = csr_matrix((n,n))
+        b = np.arange(n)
+        for lower in (True, False):
+            assert_raises(scipy.linalg.LinAlgError, spsolve_triangular, A, b, lower=lower)
+
+    def test_bad_shape(self):
+        # A is not square.
+        A = np.zeros((3, 4))
+        b = ones((4, 1))
+        assert_raises(ValueError, spsolve_triangular, A, b)
+        # A2 and b2 have incompatible shapes.
+        A2 = csr_matrix(eye(3))
+        b2 = array([1.0, 2.0])
+        assert_raises(ValueError, spsolve_triangular, A2, b2)
+
+    def test_input_types(self):
+        A = array([[1., 0.], [1., 2.]])
+        b = array([[2., 0.], [2., 2.]])
+        for matrix_type in (array, csc_matrix, csr_matrix):
+            x = spsolve_triangular(matrix_type(A), b, lower=True)
+            assert_array_almost_equal(A.dot(x), b)
+
+    def test_random(self):
+        def random_triangle_matrix(n, lower=True):
+            A = scipy.sparse.random(n, n, density=0.1, format='coo')
+            if lower:
+                A = scipy.sparse.tril(A)
+            else:
+                A = scipy.sparse.triu(A)
+            A = A.tocsr(copy=False)
+            for i in range(n):
+                A[i,i] = np.random.rand() + 1
+            return A
+
+        np.random.seed(1234)
+        for n in (10, 10**2, 10**3):
+            for m in (1, 10):
+                b = np.random.rand(n, m)
+                for lower in (True, False):
+                    A = random_triangle_matrix(n, lower=lower)
+                    x = spsolve_triangular(A, b, lower=lower)
+                    assert_array_almost_equal(A.dot(x), b)
 
 
 if __name__ == "__main__":
