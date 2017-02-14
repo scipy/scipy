@@ -73,7 +73,7 @@ The function `scipy.spatial.distance.directed_hausdorff` was
 added to calculate the directed Hausdorff distance.
 
 ``count_neighbors`` method of `scipy.spatial.cKDTree` gained an ability to
-perform weighted pair counting via the new keywords ``wights`` and
+perform weighted pair counting via the new keywords ``weights`` and
 ``cumulative``. See `gh-5647 <https://github.com/scipy/scipy/pull/5647>`_ for
 details.
 
@@ -142,8 +142,8 @@ them to `np.float32`. Previously, they would raise an error.
 ----------------------------
 
 Methods ``"centroid"`` and ``"median"`` of `scipy.cluster.hierarchy.linkage`
-have been significantly sped up.
-
+have been significantly sped up. Long-standing issues with using ``linkage`` on
+large input data (over 16 GB) have been resolved.
 
 `scipy.sparse` improvements
 ---------------------------
