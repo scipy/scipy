@@ -691,7 +691,7 @@ class _TestCommon:
         assert_equal(self.spmatrix((40, 16130)).diagonal(), np.zeros(40))
 
     @dec.slow
-    def test_setdiag(self):
+    def test_setdiag_comprehensive(self):
         def dense_setdiag(a, v, k):
             v = np.asarray(v)
             if k >= 0:
@@ -704,7 +704,6 @@ class _TestCommon:
                 a[i,j] = v
             elif k < 0:
                 dense_setdiag(a.T, v, -k)
-                return
 
         def check_setdiag(a, b, k):
             # Check setting diagonal using a scalar, a vector of
@@ -721,30 +720,32 @@ class _TestCommon:
                 # check that dense_setdiag worked
                 d = np.diag(a, k)
                 if np.asarray(v).ndim == 0:
-                    assert_array_equal(d, v, err_msg=msg + " %d" % (r,))
+                    assert_array_equal(d, v, err_msg="%s %d" % (msg, r))
                 else:
                     n = min(len(d), len(v))
-                    assert_array_equal(d[:n], v[:n], err_msg=msg + " %d" % (r,))
+                    assert_array_equal(d[:n], v[:n], err_msg="%s %d" % (msg, r))
                 # check that sparse setdiag worked
-                assert_array_equal(b.A, a, err_msg=msg + " %d" % (r,))
+                assert_array_equal(b.A, a, err_msg="%s %d" % (msg, r))
 
         # comprehensive test
         np.random.seed(1234)
+        shapes = [(0,5), (5,0), (1,5), (5,1), (5,5)]
         for dtype in [np.int8, np.float64]:
-            for m in [0, 1, 3, 10]:
-                for n in [0, 1, 3, 10]:
-                    for k in range(-m+1, n-1):
-                        msg = repr((dtype, m, n, k))
-                        a = np.zeros((m, n), dtype=dtype)
-                        b = self.spmatrix((m, n), dtype=dtype)
+            for m,n in shapes:
+                ks = np.arange(-m+1, n-1)
+                for k in ks:
+                    msg = repr((dtype, m, n, k))
+                    a = np.zeros((m, n), dtype=dtype)
+                    b = self.spmatrix((m, n), dtype=dtype)
 
-                        check_setdiag(a, b, k)
+                    check_setdiag(a, b, k)
 
-                        # check overwriting etc
-                        for k2 in np.random.randint(-m+1, n-1, size=12):
-                            check_setdiag(a, b, k2)
+                    # check overwriting etc
+                    for k2 in np.random.choice(ks, size=min(len(ks), 5)):
+                        check_setdiag(a, b, k2)
 
-        # simpler test case
+    def test_setdiag(self):
+        # simple test cases
         m = self.spmatrix(np.eye(3))
         values = [3, 2, 1]
         assert_raises(ValueError, m.setdiag, values, k=4)
@@ -4197,6 +4198,10 @@ class TestBSR(sparse_test_class(getset=False,
 
     @dec.knownfailureif(True, 'BSR does not have a __setitem__')
     def test_setdiag(self):
+        pass
+
+    @dec.knownfailureif(True, 'BSR does not have a __setitem__')
+    def test_setdiag_comprehensive(self):
         pass
 
     def test_scalar_idx_dtype(self):
