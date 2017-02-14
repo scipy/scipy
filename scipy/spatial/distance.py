@@ -38,6 +38,7 @@ functions. Use ``pdist`` for this purpose.
 .. autosummary::
    :toctree: generated/
 
+   aitchison        -- the Aitchison distance.
    braycurtis       -- the Bray-Curtis distance.
    canberra         -- the Canberra distance.
    chebyshev        -- the Chebyshev distance.
@@ -77,6 +78,7 @@ computing the distances between all pairs.
 from __future__ import division, print_function, absolute_import
 
 __all__ = [
+    'aitchison',
     'braycurtis',
     'canberra',
     'cdist',
@@ -235,6 +237,13 @@ def directed_hausdorff(u, v, seed=0):
     v = np.asarray(v, dtype=np.float64, order='c')
     result = _hausdorff.directed_hausdorff(u, v, seed)
     return result
+
+
+def _validate_aitchison(w, u_v):
+    if np.any(w <= 0):
+        raise ValueError('Values in %s should be positive.' % u_v)
+    return w
+
 
 def _validate_wminkowski_w(w):
     if w is None:
@@ -411,6 +420,34 @@ def sqeuclidean(u, v):
     u_v = u - v
 
     return np.dot(u_v, u_v)
+
+
+def aitchison(u, v):
+    """
+    Computes the Aitchison distance between two 1-D arrays.
+    The Aitchison distance between 1-D arrays `u` and `v`, is defined as
+    .. math::
+       {||log \left( \frac{u}{v} \right) - mean \left(log \left( \frac{u}{v} \right) \right) ||}_2
+
+    Parameters
+    ----------
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
+    Returns
+    -------
+    aitchison : double
+        The Aitchison distance between vectors `u` and `v`.
+    """
+
+    u = _validate_vector(u)
+    v = _validate_vector(v)
+    _validate_aitchison(u, 'u')
+    _validate_aitchison(v, 'v')
+    log_u_v = np.log(u / v)
+    dist = norm(log_u_v - np.mean(log_u_v))
+    return dist
 
 
 def cosine(u, v):
@@ -1070,6 +1107,7 @@ _SIMPLE_CDIST = {}
 _SIMPLE_PDIST = {}
 
 for names, wrap_name in [
+    (['aitchison'], "aitchison"),
     (['braycurtis'], "bray_curtis"),
     (['canberra'], "canberra"),
     (['chebychev', 'chebyshev', 'cheby', 'cheb', 'ch'], "chebyshev"),
@@ -1107,7 +1145,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
         n-dimensional space.
     metric : str or function, optional
         The distance metric to use. The distance function can
-        be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
+        be 'aitchison', 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
         'jaccard', 'kulsinski', 'mahalanobis', 'matching',
         'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
@@ -1322,6 +1360,13 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
          dm = pdist(X, 'sokalsneath')
 
+    24. ``Y = pdist(X, 'aitchison')``
+
+       Computes the distance between m points using Aitchison distance
+       (2-norm) as the distance metric between the points. The points
+       are arranged as m n-dimensional row vectors in the matrix X.
+
+
     """
     # You can also call this as:
     #     Y = pdist(X, 'test_abc')
@@ -1356,7 +1401,7 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
 
     if callable(metric):
         # metrics that expects only doubles:
-        if metric in [braycurtis, canberra, chebyshev, cityblock, correlation,
+        if metric in [aitchison, braycurtis, canberra, chebyshev, cityblock, correlation,
                       cosine, euclidean, mahalanobis, minkowski, sqeuclidean,
                       seuclidean, wminkowski]:
             X = _convert_to_double(X)
@@ -1497,6 +1542,8 @@ def pdist(X, metric='euclidean', p=2, w=None, V=None, VI=None):
             dm = pdist(X, sokalsneath)
         elif metric == 'test_sokalmichener':
             dm = pdist(X, sokalmichener)
+        elif metric == 'test_aitchison':
+            dm = pdist(X, aitchison)
         else:
             raise ValueError('Unknown Distance Metric: %s' % mstr)
     else:
@@ -1855,7 +1902,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
         Inputs are converted to float type.
     metric : str or callable, optional
         The distance metric to use.  If a string, the distance function can be
-        'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
+        'aitchison', 'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'kulsinski',
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
         'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
@@ -2068,6 +2115,13 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
          dm = cdist(XA, XB, 'sokalsneath')
 
+    24. ``Y = cdist(XA, XB, 'aitchison')``
+
+       Computes the distance between :math:`m` points using
+       Aitchison distance (2-norm) as the distance metric between the
+       points. The points are arranged as :math:`m`
+       :math:`n`-dimensional row vectors in the matrix X.
+
     Examples
     --------
     Find the Euclidean distances between four 2-D coordinates:
@@ -2151,7 +2205,7 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
 
     if callable(metric):
         # metrics that expects only doubles:
-        if metric in [braycurtis, canberra, chebyshev, cityblock, correlation,
+        if metric in [aitchison, braycurtis, canberra, chebyshev, cityblock, correlation,
                       cosine, euclidean, mahalanobis, minkowski, sqeuclidean,
                       seuclidean, wminkowski]:
             XA = _convert_to_double(XA)
@@ -2293,9 +2347,12 @@ def cdist(XA, XB, metric='euclidean', p=2, V=None, VI=None, w=None):
             dm = cdist(XA, XB, sokalsneath)
         elif metric == 'test_sokalmichener':
             dm = cdist(XA, XB, sokalmichener)
+        elif metric == 'test_aitchioson':
+            dm = cdist(XA, XB, aitchison)
         else:
             raise ValueError('Unknown Distance Metric: %s' % mstr)
     else:
         raise TypeError('2nd argument metric must be a string identifier '
                         'or a function.')
     return dm
+
