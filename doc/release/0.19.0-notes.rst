@@ -161,6 +161,9 @@ The methods `argmin` and `argmax` were added to classes `coo_matrix`,
 New function `scipy.sparse.csgraph.structural_rank` computes the structural
 rank of a graph with a given sparsity pattern.
 
+New function `scipy.sparse.linalg.spsolve_triangular` solves a sparse linear
+system with a triangular left hand side matrix.
+
 
 `scipy.special` improvements
 ----------------------------
