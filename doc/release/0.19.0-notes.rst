@@ -87,6 +87,12 @@ A new function has been added to choose the convolution/correlation method,
 `scipy.signal.choose_conv_method` which may be appropriate if convolutions or
 correlations are performed on many arrays of the same size.
 
+New functions have been added to calculate complex short time fourier
+transforms of an input signal, and to invert the transform to recover the
+original signal: `scipy.signal.stft` and `scipy.signal.istft`. This
+implementation also fixes the previously incorrect ouput of
+`scipy.signal.spectrogram` when complex output data were requested.
+
 The function `scipy.signal.sosfreqz` was added to compute the frequency
 response from second-order sections.
 

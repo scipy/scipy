@@ -8,7 +8,7 @@ from scipy import fftpack
 from . import signaltools
 from .windows import get_window
 from ._spectral import lombscargle
-from ._arraytools import even_ext
+from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
 from scipy._lib.six import string_types
@@ -747,9 +747,9 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         segment on the first input point. This has the benefit of
         enabling reconstruction of the first input point when the
         employed window function starts at zero. Valid options are
-        ``['even', None]``. Defaults to 'even', for even extension. I.e.
-        ``[1, 2, 3, 4]`` is extended to ``[2, 1, 2, 3, 4, 3]`` for
-        ``nperseg=3``.
+        ``['even', 'odd', 'constant', 'zeros', None]``. Defaults to
+        'even', for even extension. I.e. ``[1, 2, 3, 4]`` is extended to
+        ``[2, 1, 2, 3, 4, 3]`` for ``nperseg=3``.
     padded : bool, optional
         Specifies whether the input signal is zero-padded at the end to
         make the signal fit exactly into an integer number of window
@@ -1300,7 +1300,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         segment on the first input point. This has the benefit of
         enabling reconstruction of the first input point when the
         employed window function starts at zero. Valid options are
-        ``['even', None]``. Defaults to `None`.
+        ``['even', 'odd', 'constant', 'zeros', None]``. Defaults to
+        `None`.
     padded : bool, optional
         Specifies whether the input signal is zero-padded at the end to
         make the signal fit exactly into an integer number of window
@@ -1333,9 +1334,15 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         raise ValueError("Unknown value for mode %s, must be one of: "
                          "{'psd', 'stft'}" % mode)
 
-    if boundary not in ['even', None]:
-        raise ValueError("Unknown value for boundary option %s, must be one "
-                         "of: {'even', None}" % boundary)
+    boundary_funcs = {'even': even_ext,
+                      'odd': odd_ext,
+                      'constant': const_ext,
+                      'zeros': zero_ext,
+                      None: None}
+
+    if boundary not in boundary_funcs:
+        raise ValueError("Unknown boundary option '{0}', must be one of: {1}"
+                          .format(boundary, list(boundary_funcs.keys())))
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
@@ -1417,15 +1424,14 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     # Padding occurs after boundary extension, so that the extended signal ends
     # in zeros, instead of introducing an impulse at the end.
     # I.e. if x = [..., 3, 2]
-    # even_ext then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
-    # pad then even_ext -> [..., 3, 2, 0, 0, 0, 2, 3]
+    # extend then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
+    # pad then extend -> [..., 3, 2, 0, 0, 0, 2, 3]
 
-    if boundary == 'even':
-        # Even extension means first window doesn't get distorted by a
-        # shift in the DC signal level as much when x[0] != 0
-        x = even_ext(x, nperseg//2, axis=-1)
+    if boundary is not None:
+        ext_func = boundary_funcs[boundary]
+        x = ext_func(x, nperseg//2, axis=-1)
         if not same_data:
-            y = even_ext(y, nperseg//2, axis=-1)
+            y = ext_func(y, nperseg//2, axis=-1)
 
     if padded:
         # Pad to integer number of windowed segments

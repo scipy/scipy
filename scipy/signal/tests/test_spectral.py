@@ -1189,17 +1189,19 @@ class TestSTFT(TestCase):
                            window=window, detrend=None, padded=True,
                            boundary=None)
 
-            _, _, zz_ext = stft(x, nperseg=nperseg, noverlap=noverlap,
-                               window=window, detrend=None, padded=True,
-                               boundary='even')
-
             _, xr = istft(zz, noverlap=noverlap, window=window, boundary=False)
-            _, xr_ext = istft(zz_ext, noverlap=noverlap, window=window,
-                              boundary=True)
 
-            msg = '{0}, {1}'.format(window, noverlap)
-            assert_allclose(x, xr, err_msg=msg)
-            assert_allclose(x, xr_ext, err_msg=msg)
+            for boundary in ['even', 'odd', 'constant', 'zeros']:
+                _, _, zz_ext = stft(x, nperseg=nperseg, noverlap=noverlap,
+                                window=window, detrend=None, padded=True,
+                                boundary=boundary)
+
+                _, xr_ext = istft(zz_ext, noverlap=noverlap, window=window,
+                                boundary=True)
+
+                msg = '{0}, {1}, {2}'.format(window, noverlap, boundary)
+                assert_allclose(x, xr, err_msg=msg)
+                assert_allclose(x, xr_ext, err_msg=msg)
 
     def test_roundtrip_padded_signal(self):
         np.random.seed(1234)
