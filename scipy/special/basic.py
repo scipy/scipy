@@ -1616,6 +1616,10 @@ def lqn(n, z):
     Compute sequence of Legendre functions of the second kind, Qn(z) and
     derivatives for all degrees from 0 to n (inclusive).
 
+    Warning: The computation of lqn(n,z) could fail for large n. Specifically,
+    if z^-n becomes very small (comparable to sys.float_info.min) then this may 
+    erroneously return all zeros.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
