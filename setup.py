@@ -61,8 +61,8 @@ Operating System :: MacOS
 MAJOR = 0
 MINOR = 19
 MICRO = 0
-ISRELEASED = False
-VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
+ISRELEASED = True
+VERSION = '%d.%d.%drc1' % (MAJOR, MINOR, MICRO)
 
 
 # Return the git revision as a string
