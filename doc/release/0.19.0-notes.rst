@@ -122,7 +122,7 @@ generate an impulse function.
 The function `scipy.signal.iirnotch` was added to design second-order
 IIR notch filters that can be used to remove a frequency component from
 a signal. The dual function  `scipy.signal.iirpeak` was added to
-compute the coeficients of a second-order IIR peak (resonant) filter.
+compute the coefficients of a second-order IIR peak (resonant) filter.
 
 The function `scipy.signal.minimum_phase` was added to convert linear-phase
 FIR filters to minimum phase.
