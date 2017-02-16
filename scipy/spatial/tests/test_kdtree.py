@@ -320,7 +320,7 @@ class test_random_ball_compiled_periodic(ball_consistency):
         return distance_box(a, b, p, 1.0)
 
     def setUp(self):
-        n = 100
+        n = 10000
         m = 4
         np.random.seed(1234)
         self.data = np.random.uniform(size=(n,m))
@@ -1044,7 +1044,7 @@ def test_ckdtree_list_k():
 def test_ckdtree_box():
     # check ckdtree periodic boundary
     n = 2000
-    m = 2
+    m = 3
     k = 3
     np.random.seed(1234)
     data = np.random.uniform(size=(n, m))
@@ -1053,29 +1053,53 @@ def test_ckdtree_box():
     # use the standard python KDTree for the simulated periodic box
     kdtree2 = cKDTree(data, leafsize=1)
 
-    dd, ii = kdtree.query(data, k)
+    for p in [1, 2, 3.0, np.inf]:
+        dd, ii = kdtree.query(data, k, p=p)
 
-    dd1, ii1 = kdtree.query(data + 1.0, k)
-    assert_almost_equal(dd, dd1)
-    assert_equal(ii, ii1)
-    
-    dd1, ii1 = kdtree.query(data - 1.0, k)
-    assert_almost_equal(dd, dd1)
-    assert_equal(ii, ii1)
+        dd1, ii1 = kdtree.query(data + 1.0, k, p=p)
+        assert_almost_equal(dd, dd1)
+        assert_equal(ii, ii1)
+        
+        dd1, ii1 = kdtree.query(data - 1.0, k, p=p)
+        assert_almost_equal(dd, dd1)
+        assert_equal(ii, ii1)
 
-    dd2, ii2 = simulate_periodic_box(kdtree2, data, k, boxsize=1.0)
-    assert_almost_equal(dd, dd2)
-    assert_equal(ii, ii2)
+        dd2, ii2 = simulate_periodic_box(kdtree2, data, k, boxsize=1.0, p=p)
+        assert_almost_equal(dd, dd2)
+        assert_equal(ii, ii2)
+
+def test_ckdtree_box_0boxsize():
+    # check ckdtree periodic boundary that mimics non-periodic
+    n = 2000
+    m = 2
+    k = 3
+    np.random.seed(1234)
+    data = np.random.uniform(size=(n, m))
+    kdtree = cKDTree(data, leafsize=1, boxsize=0.0)
+
+    # use the standard python KDTree for the simulated periodic box
+    kdtree2 = cKDTree(data, leafsize=1)
+
+    for p in [1, 2, np.inf]:
+        dd, ii = kdtree.query(data, k, p=p)
+
+        dd1, ii1 = kdtree2.query(data, k, p=p)
+        assert_almost_equal(dd, dd1)
+        assert_equal(ii, ii1)
 
 def test_ckdtree_box_upper_bounds():
-    data = np.linspace(0, 2, 10).reshape(-1, 1)
+    data = np.linspace(0, 2, 10).reshape(-1, 2)
+    data[:, 1] += 10
     assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=1.0)
+    assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=(0.0, 2.0))
+    # skip a dimension.
+    cKDTree(data, leafsize=1, boxsize=(2.0, 0.0))
 
 def test_ckdtree_box_lower_bounds():
     data = np.linspace(-1, 1, 10)
     assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=1.0)
 
-def simulate_periodic_box(kdtree, data, k, boxsize):
+def simulate_periodic_box(kdtree, data, k, boxsize, p):
     dd = []
     ii = []
     x = np.arange(3 ** data.shape[1])
@@ -1083,7 +1107,7 @@ def simulate_periodic_box(kdtree, data, k, boxsize):
     nn = nn - 1.0
     for n in nn:
         image = data + n * 1.0 * boxsize
-        dd2, ii2 = kdtree.query(image, k)
+        dd2, ii2 = kdtree.query(image, k, p=p)
         dd2 = dd2.reshape(-1, k)
         ii2 = ii2.reshape(-1, k)
         dd.append(dd2)

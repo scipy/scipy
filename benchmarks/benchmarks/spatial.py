@@ -42,7 +42,7 @@ class Build(Benchmark):
             self.cls(self.data)
 
 LEAF_SIZES = [8, 128]
-BOX_SIZES = [None, 1.0]
+BOX_SIZES = [None, 0.0, 1.0]
 
 class Query(Benchmark):
     params = [
@@ -135,7 +135,7 @@ class Neighbors(Benchmark):
         if cls != 'cKDTree_weighted':
             self.T1.count_neighbors(self.T2, probe_radius, p=p)
         else:
-            self.T1.count_neighbors(self.T2, probe_radius, self_weights=self.w1, other_weights=self.w2, p=p)
+            self.T1.count_neighbors(self.T2, probe_radius, weights=(self.w1, self.w2), p=p)
 
 class CNeighbors(Benchmark):
     params = [
