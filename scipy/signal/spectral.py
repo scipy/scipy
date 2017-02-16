@@ -712,7 +712,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
 
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
-         detrend=False, return_onesided=True, boundary='even', padded=True,
+         detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1):
     r"""
     Compute the Short Time Fourier Transform (STFT).
@@ -754,14 +754,14 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         data, a two-sided spectrum is always returned. Defaults to
         `True`.
     boundary : str or None, optional
-        Specifies whether the input signal is extended, and how to
-        generate the new values, in order to center the first windowed
-        segment on the first input point. This has the benefit of
-        enabling reconstruction of the first input point when the
+        Specifies whether the input signal is extended at both ends, and
+        how to generate the new values, in order to center the first
+        windowed segment on the first input point. This has the benefit
+        of enabling reconstruction of the first input point when the
         employed window function starts at zero. Valid options are
         ``['even', 'odd', 'constant', 'zeros', None]``. Defaults to
-        'even', for even extension. I.e. ``[1, 2, 3, 4]`` is extended to
-        ``[2, 1, 2, 3, 4, 3]`` for ``nperseg=3``.
+        'zeros', for zero padding extension. I.e. ``[1, 2, 3, 4]`` is
+        extended to ``[0, 1, 2, 3, 4, 0]`` for ``nperseg=3``.
     padded : bool, optional
         Specifies whether the input signal is zero-padded at the end to
         make the signal fit exactly into an integer number of window
@@ -1313,10 +1313,10 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         Defines what kind of return values are expected. Defaults to
         'psd'.
     boundary : str or None, optional
-        Specifies whether the input signal is extended, and how to
-        generate the new values, in order to center the first windowed
-        segment on the first input point. This has the benefit of
-        enabling reconstruction of the first input point when the
+        Specifies whether the input signal is extended at both ends, and
+        how to generate the new values, in order to center the first
+        windowed segment on the first input point. This has the benefit
+        of enabling reconstruction of the first input point when the
         employed window function starts at zero. Valid options are
         ``['even', 'odd', 'constant', 'zeros', None]``. Defaults to
         `None`.
