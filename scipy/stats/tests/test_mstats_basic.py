@@ -208,7 +208,7 @@ class TestCorr(TestCase):
         x = np.arange(2000, dtype=np.float)
         y = np.arange(2000, dtype=np.float)
         y = np.stack((y[1000:], y[:1000])).ravel()
-        assert_almost_equal(mstats.spearmanr(x,y)[0], -0.5)
+        assert_almost_equal(mstats.spearmanr(x,y)[0], -0.50000037)
 
         # test for namedtuple attributes
         res = mstats.spearmanr(x, y)
@@ -237,7 +237,7 @@ class TestCorr(TestCase):
         x = ma.masked_greater(x, 1995)
         y = np.arange(2000, dtype=np.float)
         y = np.stack((y[1000:], y[:1000])).ravel()
-        assert_almost_equal(mstats.kendalltau(x,y)[1], 0.9734409)
+        assert_almost_equal(mstats.kendalltau(x,y)[1], 0.97344095)
 
         # test for namedtuple attributes
         res = mstats.kendalltau(x, y)
