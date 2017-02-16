@@ -51,6 +51,8 @@ sf_action_t sf_error_get_action(sf_error_t code)
 
 void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
 {
+    PyGILState_STATE save;
+    PyObject *scipy_special = NULL;
     char msg[2048], info[1024];
     static PyObject *py_SpecialFunctionWarning = NULL;
     sf_action_t action;
@@ -81,14 +83,13 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
     }
 
 #ifdef WITH_THREAD
-    PyGILState_STATE save = PyGILState_Ensure();
+    save = PyGILState_Ensure();
 #endif
 
     if (PyErr_Occurred()) {
       goto skip_warn;
     }
 
-    PyObject *scipy_special = NULL;
     scipy_special = PyImport_ImportModule("scipy.special");
     if (scipy_special == NULL) {
 	PyErr_Clear();
