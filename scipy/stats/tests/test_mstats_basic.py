@@ -201,6 +201,14 @@ class TestCorr(TestCase):
               0.0, 0.6, 6.7, 3.8, 1.0, 1.2, 1.4, np.nan]
         (x, y) = (ma.fix_invalid(x), ma.fix_invalid(y))
         assert_almost_equal(mstats.spearmanr(x,y)[0], 0.6887299)
+        # Next test is to make sure calculation uses sufficient precision.
+        # The denominator's value is ~n^3 and used to be represented as an
+        # int. 2000**3 > 2**32 so these arrays would cause overflow on
+        # some machines.
+        x = np.arange(2000, dtype=np.float)
+        y = np.arange(2000, dtype=np.float)
+        y = np.stack((y[1000:], y[:1000])).ravel()
+        assert_almost_equal(mstats.spearmanr(x,y)[0], -0.5)
 
         # test for namedtuple attributes
         res = mstats.spearmanr(x, y)
@@ -223,6 +231,13 @@ class TestCorr(TestCase):
                             25,80,80,80,80,80,80, 0,10,45, np.nan, 0])
         result = mstats.kendalltau(x,y)
         assert_almost_equal(np.asarray(result), [-0.1585188, 0.4128009])
+        # make sure internal variable use correct precision with
+        # larger arrays
+        x = np.arange(2000, dtype=np.float)
+        x = ma.masked_greater(x, 1995)
+        y = np.arange(2000, dtype=np.float)
+        y = np.stack((y[1000:], y[:1000])).ravel()
+        assert_almost_equal(mstats.kendalltau(x,y)[1], 0.9734409)
 
         # test for namedtuple attributes
         res = mstats.kendalltau(x, y)
@@ -451,7 +466,7 @@ class TestMoments(TestCase):
         im[:, :50] += 1
         cp = im.copy()
         a = mstats.mode(im, None)
-        assert_equal(im, cp)    
+        assert_equal(im, cp)
 
 
 class TestPercentile(TestCase):
