@@ -1525,11 +1525,12 @@ def test_sokalmichener():
 
 def test_Xdist_deprecated_args():
     # testing both cdist and pdist deprecated warnings
-    X1 = np.asarray([[1., 2., 3.], [1.2, 2.3, 3.4], [2.2, 2.3, 4.4]])
-    warn_msg = "Got unexpected kwarg"
+    X1 = np.asarray([[1., 2., 3.],
+                     [1.2, 2.3, 3.4],
+                     [2.2, 2.3, 4.4],
+                     [22.2, 23.3, 44.4]])
+    warn_msg_kwargs = "Got unexpected kwarg"
     for metric in _METRICS_NAMES:
-        if metric in ("minkowski", "wminkowski", "seuclidean", "mahalanobis"):
-            continue
         for arg in ["p", "V", "VI", "w"]:
             kwargs = {arg:"foo"}
 
@@ -1540,7 +1541,7 @@ def test_Xdist_deprecated_args():
 
             if((arg == "V" and metric == "seuclidean") or
                (arg == "VI" and metric == "mahalanobis") or
-               (arg == "w" and metric == "wminkowski")):
+               (arg == "p" and metric == "minkowski")):
                 continue
 
             with warnings.catch_warnings(record=True) as w:
@@ -1550,7 +1551,7 @@ def test_Xdist_deprecated_args():
                 assert_(len(w) == 2)
                 assert_(issubclass(w[0].category, DeprecationWarning))
                 assert_(issubclass(w[1].category, DeprecationWarning))
-                assert_(all([warn_msg in str(warn.message) for warn in w]))
+                assert_(all([warn_msg_kwargs in str(warn.message) for warn in w]))
 
 
 def test__validate_vector():
