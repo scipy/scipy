@@ -423,7 +423,7 @@ def spearmanr(x, y, use_ties=True):
     Spearman correlation does not assume that both datasets are normally
     distributed. Like other correlation coefficients, this one varies
     between -1 and +1 with 0 implying no correlation. Correlations of -1 or
-    +1 imply an exact linear relationship. Positive correlations imply that
+    +1 imply a monotonic relationship. Positive correlations imply that
     as `x` increases, so does `y`. Negative correlations imply that as `x`
     increases, `y` decreases.
 
