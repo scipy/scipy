@@ -1,0 +1,9 @@
+This contains a few hacks to re-use BOOST C++ library special function tests
+data for scipy.special
+
+convert.py
+----------
+
+This script parse the BOOST data and write the data into a CVS text file. For
+each data file, a subdirectory is created, as one boost data file (.ipp) can
+have several test sets.

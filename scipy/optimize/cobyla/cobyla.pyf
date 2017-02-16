@@ -1,0 +1,34 @@
+!    -*- f90 -*-
+python module _cobyla__user__routines 
+    interface _cobyla_user_interface 
+        subroutine calcfc(n,m,x,f,con)
+            integer intent(in,hide) :: n
+            integer intent(in,hide) :: m
+            double precision dimension(n),depend(n),intent(in) :: x
+            double precision intent(out) :: f
+            double precision intent(in), dimension(m), depend(m) :: con
+        end subroutine calcfc
+    end interface _cobyla_user_interface
+end python module _cobyla__user__routines
+python module _cobyla ! in 
+    interface  ! in :__cobyla
+        subroutine minimize(calcfc,n,m,x,rhobeg,rhoend,iprint,maxfun,w,iact,dinfo)
+            fortranname cobyla
+            use _cobyla__user__routines
+            external calcfc
+            integer intent(hide),depend(x) :: n=len(x)
+            integer :: m
+            double precision dimension(n),intent(in,out) :: x
+            double precision :: rhobeg
+            double precision :: rhoend
+            integer optional,check(0<=iprint && iprint<=3) :: iprint=1
+            integer :: maxfun = 100
+            double precision dimension(n*(3*n+2*m+11)+4*m+6), intent(cache,hide),depend(n,m) :: w
+            integer dimension(m + 1),intent(cache,hide),depend(m) :: iact
+            double precision dimension(4), intent(in,out) :: dinfo
+        end subroutine minimize
+    end interface 
+end python module _cobyla
+
+! This file was auto-generated with f2py (version:2.39.235_1703).
+! See http://cens.ioc.ee/projects/f2py2e/

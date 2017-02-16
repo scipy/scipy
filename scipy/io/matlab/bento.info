@@ -1,0 +1,7 @@
+Library:
+    Extension: streams
+        Sources: streams.c
+    Extension: mio_utils
+        Sources: mio_utils.c
+    Extension: mio5_utils
+        Sources: mio5_utils.c

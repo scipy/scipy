@@ -1,0 +1,10 @@
+=========================
+SciPy 0.7.2 Release Notes
+=========================
+
+.. contents::
+
+SciPy 0.7.2 is a bug-fix release with no new features compared to 0.7.1. The
+only change is that all C sources from Cython code have been regenerated with
+Cython 0.12.1. This fixes the incompatibility between binaries of SciPy 0.7.1
+and NumPy 1.4. 

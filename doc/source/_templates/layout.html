@@ -1,0 +1,14 @@
+{% extends "!layout.html" %}
+
+{% block sidebarsearch %}
+{%- if sourcename %}
+<ul class="this-page-menu">
+{%- if 'generated/' in sourcename %}
+  <li><a href="/scipy/docs/{{ sourcename.replace('generated/', '').replace('.txt', '') |e }}">{{_('Edit page')}}</a></li>
+{%- else %}
+  <li><a href="/scipy/docs/scipy-docs/{{ sourcename.replace('.txt', '.rst') |e }}">{{_('Edit page')}}</a></li>
+{%- endif %}
+</ul>
+{%- endif %}
+{{ super() }}
+{% endblock %}

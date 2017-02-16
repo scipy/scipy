@@ -1,0 +1,11 @@
+Library:
+    Extension: _shortest_path
+        Sources: _shortest_path.c
+    Extension: _traversal
+        Sources: _traversal.c
+    Extension: _min_spanning_tree
+        Sources: _min_spanning_tree.c
+    Extension: _reordering
+        Sources: _reordering.c
+    Extension: _tools
+        Sources: _tools.c

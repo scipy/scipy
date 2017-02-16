@@ -1,0 +1,40 @@
+HookFile: bscript
+
+Library:
+    Extension: _fblas
+        Sources:
+            fblas.pyf.src
+    Extension: _cblas
+        Sources:
+            cblas.pyf.src
+    Extension: _flapack
+        Sources:
+            flapack.pyf.src,
+            src/lapack_deprecations/*.f
+    Extension: _clapack
+        Sources:
+            clapack.pyf.src
+    Extension: _flinalg
+        Sources:
+            src/det.f, src/lu.f
+    Extension: _interpolative
+        Sources:
+             interpolative.pyf,
+             src/id_dist/src/*.f
+    Extension: _calc_lwork
+        Sources:
+             src/calc_lwork.f
+    Extension: _solve_toeplitz
+        Sources:
+             _solve_toeplitz.c
+    Extension: cython_blas
+        Sources:
+            cython_blas.c,
+            _blas_subroutine_wrappers.f
+    Extension: cython_lapack
+        Sources:
+            cython_lapack.c,
+            _lapack_subroutine_wrappers.f
+    Extension: _decomp_update
+        Sources:
+            _decomp_update.c

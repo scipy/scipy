@@ -1,0 +1,6 @@
+For inclusion in the cephes library.  The routines here need to be compiled
+in a library and then linked with the module code.  Only the double precision
+routines are included.  Pay attention to i1mach.f and d1mach.f which must be
+modified to match your architecture.  Right now they are set for IBM_PC.
+This may also work for any IEEE 754 conforming machine.
+

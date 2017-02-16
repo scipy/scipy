@@ -1,0 +1,38 @@
+!%f90 -*- f90 -*-
+python module statlib ! in 
+    interface  ! in :statlib
+        subroutine swilk(init,x,n,n1,n2,a,w,pw,ifault) ! in :statlib:swilk.f
+            logical intent(optional), intent(in) :: init=0
+            real dimension(n),intent(in) :: x
+            integer depend(x),intent(hide) :: n = shape(x,0)
+            integer intent(optional),check(n1<=n),depend(n) :: n1=n
+            integer intent(hide),depend(n) :: n2=n/2
+            real intent(in,out), dimension(n2), depend(n2) :: a
+            real intent(out) :: w
+            real intent(out) :: pw
+            integer intent(out) :: ifault
+        end subroutine swilk
+
+        subroutine gscale(test,other,astart,a1,l1,a2,a3,ifault) ! in ansari.f
+          integer intent(in) :: test
+          integer intent(in) :: other
+          real intent(out) :: astart
+          real dimension(l1), intent(out) :: a1
+          integer intent(hide) :: l1=(1+(test*other)/2)
+          real dimension(l1), intent(hide), depend(l1) :: a2
+          real dimension(l1), intent(hide), depend(l1) :: a3
+          integer intent(out) :: ifault
+         end subroutine gscale
+
+         function prho(n,is,ifault) ! in spearman.f
+           integer intent(in) :: n
+           integer intent(in) :: is
+           integer intent(out) :: ifault
+           double precision intent(out) :: prho
+         end function prho         
+         
+    end interface 
+end python module statlib
+
+! This file was auto-generated with f2py (version:2.21.184-1308).
+! See http://cens.ioc.ee/projects/f2py2e/

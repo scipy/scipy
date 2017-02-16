@@ -1,0 +1,7 @@
+HookFile: bscript
+
+Library:
+    CompiledLibrary: odrpack
+        Sources: odrpack/d_odr.f, odrpack/d_mprec.f, odrpack/dlunoc.f, odrpack/d_lpk.f
+    Extension: __odrpack
+        Sources: __odrpack.c

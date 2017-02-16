@@ -1,0 +1,163 @@
+/* vim:syntax=c
+ * vim:sw=4
+ *
+ * Interfaces to the DST transforms of fftpack
+ */
+#include <math.h>
+
+#include "fftpack.h"
+
+enum normalize {
+    DST_NORMALIZE_NO = 0,
+    DST_NORMALIZE_ORTHONORMAL = 1
+};
+
+/**begin repeat
+
+#type=float,double#
+#pref=,d#
+#PREF=,D#
+*/
+extern void F_FUNC(@pref@sinti, @PREF@SINTI)(int*, @type@*);
+extern void F_FUNC(@pref@sint, @PREF@SINT)(int*, @type@*, @type@*);
+extern void F_FUNC(@pref@sinqi, @PREF@SINQI)(int*, @type@*);
+extern void F_FUNC(@pref@sinqb, @PREF@SINQB)(int*, @type@*, @type@*);
+extern void F_FUNC(@pref@sinqf, @PREF@SINQF)(int*, @type@*, @type@*);
+
+GEN_CACHE(@pref@dst1,(int n)
+      ,@type@* wsave;
+      ,(caches_@pref@dst1[i].n==n)
+      ,caches_@pref@dst1[id].wsave = malloc(sizeof(@type@)*(3*n+15));
+       F_FUNC(@pref@sinti, @PREF@SINTI)(&n, caches_@pref@dst1[id].wsave);
+      ,free(caches_@pref@dst1[id].wsave);
+      ,10)
+
+GEN_CACHE(@pref@dst2,(int n)
+      ,@type@* wsave;
+      ,(caches_@pref@dst2[i].n==n)
+      ,caches_@pref@dst2[id].wsave = malloc(sizeof(@type@)*(3*n+15));
+       F_FUNC(@pref@sinqi,@PREF@SINQI)(&n,caches_@pref@dst2[id].wsave);
+      ,free(caches_@pref@dst2[id].wsave);
+      ,10)
+
+void @pref@dst1(@type@ * inout, int n, int howmany, int normalize)
+{
+    int i;
+    @type@ *ptr = inout;
+    @type@ *wsave = NULL;
+
+    wsave = caches_@pref@dst1[get_cache_id_@pref@dst1(n)].wsave;
+
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        F_FUNC(@pref@sint, @PREF@SINT)(&n, ptr, wsave);
+    }
+
+    switch (normalize) {
+        case DST_NORMALIZE_NO:
+            break;
+#if 0
+        case DST_NORMALIZE_ORTHONORMAL:
+        {
+            @type@ n1, n2;
+
+            ptr = inout;
+            n1 = sqrt(0.5 / (n+1));
+            n2 = sqrt(1. / (n+1));
+            for (i = 0; i < howmany; ++i, ptr+=n) {
+                int j;
+                ptr[0] *= n1;
+                for (j = 1; j < n-1; ++j) {
+                    ptr[j] *= n2;
+                }
+            }
+            break;
+        }
+#endif
+        default:
+            fprintf(stderr, "dst1: normalize not yet supported=%d\n",
+                    normalize);
+            break;
+    }
+}
+
+void @pref@dst2(@type@ * inout, int n, int howmany, int normalize)
+{
+    int i, j;
+    @type@ *ptr = inout;
+    @type@ *wsave = NULL;
+    @type@ n1, n2;
+
+    wsave = caches_@pref@dst2[get_cache_id_@pref@dst2(n)].wsave;
+
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        F_FUNC(@pref@sinqb, @PREF@SINQB)(&n, ptr, wsave);
+
+    }
+
+    switch (normalize) {
+        case DST_NORMALIZE_NO:
+            ptr = inout;
+            /* 0.5 coeff comes from fftpack defining DST as
+             * 4 * sum(sin(something)), whereas most definition
+             * use 2 */
+            for (i = 0; i < n * howmany; ++i) {
+                ptr[i] *= 0.5;
+            }
+            break;
+        case DST_NORMALIZE_ORTHONORMAL:
+            ptr = inout;
+            /* 0.5 coeff comes from fftpack defining DST as
+             * 4 * sum(sin(something)), whereas most definition
+             * use 2 */
+            n1 = 0.25 * sqrt(1./n);
+            n2 = 0.25 * sqrt(2./n);
+            for (i = 0; i < howmany; ++i, ptr+=n) {
+                ptr[0] *= n1;
+                for (j = 1; j < n; ++j) {
+                    ptr[j] *= n2;
+                }
+            }
+            break;
+        default:
+            fprintf(stderr, "dst2: normalize not yet supported=%d\n",
+                    normalize);
+            break;
+    }
+}
+
+void @pref@dst3(@type@ * inout, int n, int howmany, int normalize)
+{
+    int i, j;
+    @type@ *ptr = inout;
+    @type@ *wsave = NULL;
+    @type@ n1, n2;
+
+    wsave = caches_@pref@dst2[get_cache_id_@pref@dst2(n)].wsave;
+
+    switch (normalize) {
+        case DST_NORMALIZE_NO:
+            break;
+        case DST_NORMALIZE_ORTHONORMAL:
+            n1 = sqrt(1./n);
+            n2 = sqrt(0.5/n);
+            for (i = 0; i < howmany; ++i, ptr+=n) {
+                ptr[0] *= n1;
+                for (j = 1; j < n; ++j) {
+                    ptr[j] *= n2;
+                }
+            }
+            break;
+        default:
+            fprintf(stderr, "dst3: normalize not yet supported=%d\n",
+                    normalize);
+            break;
+    }
+
+    ptr = inout;
+    for (i = 0; i < howmany; ++i, ptr += n) {
+        F_FUNC(@pref@sinqf, @PREF@SINQF)(&n, ptr, wsave);
+
+    }
+
+}
+/**end repeat**/

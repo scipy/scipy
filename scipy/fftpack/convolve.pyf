@@ -1,0 +1,47 @@
+!%f90 -*- f90 -*-
+! Author: Pearu Peterson, September 2002
+
+python module convolve__user__routines 
+    interface
+       real*8 function kernel_func(k)
+         intent(c) kernel_func
+         integer intent(in,c) :: k
+       end function kernel_func
+    end interface
+end python module convolve__user__routines
+
+python module convolve
+  interface
+
+     subroutine init_convolution_kernel (n,omega,d,kernel_func,zero_nyquist)
+       intent(c) init_convolution_kernel
+       use convolve__user__routines
+       external kernel_func
+       integer intent(in,c),check(n>0) :: n
+       integer intent(in,c),optional :: d = 0
+       real*8 intent(out,c),dimension(n),depend(n) :: omega
+       integer intent(in,c),optional,depend(d) :: zero_nyquist = d%2
+     end subroutine init_convolution_kernel
+
+     subroutine destroy_convolve_cache()
+       intent(c) destroy_convolve_cache
+     end subroutine destroy_convolve_cache
+
+     subroutine convolve(n,x,omega,swap_real_imag)
+       intent(c) convolve
+       integer intent(c,hide),depend (x) :: n = len(x)
+       real*8 intent(c,in,out,copy,out=y),dimension(n):: x
+       real*8 intent(c,in,cache),dimension(n),depend(n) :: omega
+       integer intent(c,in),optional :: swap_real_imag = 0
+     end subroutine convolve
+
+     subroutine convolve_z(n,x,omega_real,omega_imag)
+       intent(c) convolve_z
+       integer intent(c,hide),depend (x) :: n = len(x)
+       real*8 intent(c,in,out,copy,out=y),dimension(n):: x
+       real*8 intent(c,in,cache),dimension(n),depend(n) :: omega_real
+       real*8 intent(c,in,cache),dimension(n),depend(n) :: omega_imag
+     end subroutine convolve_z
+
+  end interface
+end python module convolve

@@ -1,0 +1,9 @@
+HookFile: bscript
+
+Library:
+    Extension: _hierarchy
+        Sources:
+             _hierarchy.c
+    Extension: _vq
+        Sources:
+             _vq.c

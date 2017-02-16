@@ -1,0 +1,93 @@
+.. -*- rest -*-
+
+================================================
+  fftpack - Discrete Fourier Transform package
+================================================
+
+:Author: Pearu Peterson <pearu@cens.ioc.ee>
+:Last changed: $Date$
+:Revision: $Revision$
+:Discussions to: scipy-dev@scipy.org
+
+Installation
+============
+
+To build fftpack, you'll need F2PY version 2.23.190-1367 or higher.
+
+Run
+
+::
+
+  python setup.py install
+
+Testing
+=======
+
+Run
+
+::
+
+  python -c "import scipy.fftpack; scipy.fftpack.test()"
+
+or from python
+
+>>> import scipy.fftpack
+>>> scipy.fftpack.test(10)
+
+
+Differences between fftpack and FFT from Numeric
+================================================
+
+* Functions rfft and irfft accept and return only real sequences. So,
+  the corresponding functions real_fft, inverse_real_fft from FFT are
+  not equivalent with rfft and irfft. The difference is in the storage
+  of data, see the definitions of corresponding functions for details.
+
+* PROPOSAL: When calling ifft with forced truncation or zero-padding
+  then I would like to propose that the corresponding action is
+  applied to the middle of data. For example, ifft([1,2,3,4,5,6],n=8)
+  is equivalent to ifft([1,2,3,4,0,0,5,6]), that is, the Fourier terms
+  with higher frequencies and zero coefficients are introduced. In the
+  Numeric.FFT case, the example above would be equivalent to
+  ifft([1,2,3,4,5,6,0,0],n=8), which would mean that Fourier
+  coefficients [5,6] become the coefficients of higher frequency terms
+  and the original terms are zerod.
+
+  Note that this proposal is **not implemented** because it needs to
+  be discussed. For instance, Matlab uses the same convention as FFT
+  and this change would be confusing for Matlab users.  On the other
+  hand, FFT or Matlab's conventions change the spectrum of the
+  original signal and I don't see any sense in this behaviour (if you
+  don't agree then please provide an example). Namely, one of the
+  applications of the argument n would be to compose a new signal with
+  a more dense or sparse grid than the original one by using
+
+  ::
+
+    new_signal = ifft(fft(signal),n)
+
+  Note that the new_signal would have the same Fourier spectrum as
+  original signal. With Matlab/FFT convention this is not true.  Any
+  thoughts?
+
+
+Nyquist mode
+============
+
+Pseudo-differential and differential operators of odd order assume
+that the Nyquist mode is zero that reduces the amplification of
+numerical noise from the aliasing effect.
+
+To do
+=====
+
+basic.py
+  - Optimize ``fftn()`` for real input.
+  - Implement ``rfftn()`` and ``irfftn()``.
+  - Implement discrete cosine/sine transforms
+pseudo_diffs.py
+  - Optimize functions for complex input.
+src/convolve.c
+  - See if convolve could use convolution function from DJBFFT.
+
+If you have any comments, please send them to scipy-dev@scipy.org.

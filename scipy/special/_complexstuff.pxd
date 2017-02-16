@@ -1,0 +1,201 @@
+# -*-cython-*-
+#
+# Common functions required when doing complex arithmetic with Cython.
+#
+
+import cython
+cimport numpy as np
+cimport libc.math
+
+cdef extern from "_complexstuff.h":
+    double npy_cabs(np.npy_cdouble z) nogil
+    double npy_carg(np.npy_cdouble z) nogil
+    np.npy_cdouble npy_clog(np.npy_cdouble z) nogil
+    np.npy_cdouble npy_cexp(np.npy_cdouble z) nogil
+    np.npy_cdouble npy_csin(np.npy_cdouble z) nogil
+    np.npy_cdouble npy_ccos(np.npy_cdouble z) nogil
+    np.npy_cdouble npy_csqrt(np.npy_cdouble z) nogil
+    np.npy_cdouble npy_cpow(np.npy_cdouble x, np.npy_cdouble y) nogil
+    double npy_log1p(double x) nogil
+    int npy_isnan(double x) nogil
+    int npy_isinf(double x) nogil
+    int npy_isfinite(double x) nogil
+    double inf "NPY_INFINITY"
+    double pi "NPY_PI"
+    double nan "NPY_NAN"
+
+DEF tol = 2.220446092504131e-16
+
+ctypedef double complex double_complex
+
+ctypedef fused number_t:
+    double
+    double_complex
+
+ctypedef union _complex_pun:
+    np.npy_cdouble npy
+    double_complex c99
+
+cdef inline np.npy_cdouble npy_cdouble_from_double_complex(
+        double_complex x) nogil:
+    cdef _complex_pun z
+    z.c99 = x
+    return z.npy
+
+cdef inline double_complex double_complex_from_npy_cdouble(
+        np.npy_cdouble x) nogil:
+    cdef _complex_pun z
+    z.npy = x
+    return z.c99
+
+cdef inline bint zisnan(number_t x) nogil:
+    if number_t is double_complex:
+        return npy_isnan(x.real) or npy_isnan(x.imag)
+    else:
+        return npy_isnan(x)
+
+cdef inline bint zisfinite(number_t x) nogil:
+    if number_t is double_complex:
+        return npy_isfinite(x.real) and npy_isfinite(x.imag)
+    else:
+        return npy_isfinite(x)
+
+cdef inline bint zisinf(number_t x) nogil:
+    if number_t is double_complex:
+        return not zisnan(x) and not zisfinite(x)
+    else:
+        return npy_isinf(x)
+
+cdef inline double zreal(number_t x) nogil:
+    if number_t is double_complex:
+        return x.real
+    else:
+        return x
+
+cdef inline double zabs(number_t x) nogil:
+    if number_t is double_complex:
+        return npy_cabs(npy_cdouble_from_double_complex(x))
+    else:
+        return libc.math.fabs(x)
+
+cdef inline double zarg(double complex x) nogil:
+    return npy_carg(npy_cdouble_from_double_complex(x))
+
+cdef inline number_t zlog(number_t x) nogil:
+    cdef np.npy_cdouble r
+    if number_t is double_complex:
+        r = npy_clog(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
+    else:
+        return libc.math.log(x)
+
+cdef inline number_t zexp(number_t x) nogil:
+    cdef np.npy_cdouble r
+    if number_t is double_complex:
+        r = npy_cexp(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
+    else:
+        return libc.math.exp(x)
+
+cdef inline number_t zsin(number_t x) nogil:
+    cdef np.npy_cdouble r
+    if number_t is double_complex:
+        r = npy_csin(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
+    else:
+        return libc.math.sin(x)
+
+cdef inline number_t zcos(number_t x) nogil:
+    cdef np.npy_cdouble r
+    if number_t is double_complex:
+        r = npy_ccos(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
+    else:
+        return libc.math.cos(x)
+
+cdef inline number_t zsqrt(number_t x) nogil:
+    cdef np.npy_cdouble r
+    if number_t is double_complex:
+        r = npy_csqrt(npy_cdouble_from_double_complex(x))
+        return double_complex_from_npy_cdouble(r)
+    else:
+        return libc.math.sqrt(x)
+
+cdef inline number_t zpow(number_t x, double y) nogil:
+    cdef np.npy_cdouble r, z
+    # FIXME
+    if number_t is double_complex:
+        z.real = y
+        z.imag = 0.0
+        r = npy_cpow(npy_cdouble_from_double_complex(x), z)
+        return double_complex_from_npy_cdouble(r)
+    else:
+        return libc.math.pow(x, y)
+
+cdef inline double_complex zpack(double zr, double zi) nogil:
+    cdef np.npy_cdouble z
+    z.real = zr
+    z.imag = zi
+    return double_complex_from_npy_cdouble(z)
+
+@cython.cdivision(True)
+cdef inline double complex zdiv(double complex x, double complex y) nogil:
+    """
+    Cython 0.24 uses the naive complex division algorithm which
+    overflows far before it should. See
+
+    https://groups.google.com/forum/#!topic/cython-users/1oSGbfiX7qw
+
+    This function implements Smith's method to get around the
+    problem. Smith's method can be further improved, see
+
+    http://arxiv.org/pdf/1210.4539v2.pdf
+
+    This is an UGLY HACK and should be removed as soon as the problem
+    is fixed upstream.
+
+    """
+    cdef:
+        double a = x.real
+        double b = x.imag
+        double c = y.real
+        double d = y.imag
+        double ratio, denom
+        double complex out
+
+    if libc.math.fabs(d) < libc.math.fabs(c):
+        ratio = d/c
+        denom = c + d*ratio
+        out.real = (a + b*ratio)/denom
+        out.imag = (b - a*ratio)/denom
+    else:
+        ratio = c/d
+        denom = c*ratio + d
+        out.real = (a*ratio + b)/denom
+        out.imag = (b*ratio - a)/denom
+    return out
+
+@cython.cdivision(True)
+cdef inline double complex zlog1(double complex z) nogil:
+    """
+    Compute log, paying special attention to accuracy around 1. We
+    implement this ourselves because some systems (most notably the
+    Travis CI machines) are weak in this regime.
+
+    """
+    cdef:
+        int n
+        double complex coeff = -1
+        double complex res = 0
+
+    if zabs(z - 1) > 0.1:
+        return zlog(z)
+    z = z - 1
+    if z == 0:
+        return 0
+    for n in range(1, 17):
+        coeff *= -z
+        res += coeff/n
+        if zabs(res/coeff) < tol:
+            break
+    return res

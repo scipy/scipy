@@ -1,0 +1,18 @@
+!%f90 -*- f90 -*-
+! Signatures for f2py-wrappers of FORTRAN BLAS functions.
+!
+! Author: Pearu Peterson
+! Created: Jan-Feb 2002
+! $Revision$ $Date$
+!
+
+
+python module _fblas
+    interface
+
+       include 'fblas_l1.pyf.src'
+       include 'fblas_l2.pyf.src'
+       include 'fblas_l3.pyf.src'
+
+    end interface
+end python module _fblas

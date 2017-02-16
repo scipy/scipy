@@ -1,0 +1,14 @@
+from bento.commands import hooks
+
+@hooks.pre_build
+def pre_build(context):
+    default_builder = context.default_builder
+
+    def builder(extension):
+        return default_builder(extension, features="c cstlib pyext bento")
+    context.register_compiled_library_builder("statlibimp", builder)
+
+    context.tweak_extension("statlib", features="c fc cshlib pyext bento f2py",
+                             use="statlibimp CLIB")
+    context.tweak_extension("mvn", features="c fc cshlib pyext bento f2py",
+                          use="CLIB")
