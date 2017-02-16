@@ -997,7 +997,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     Compare the cleaned signal with the original and true carrier signals.
 
     >>> plt.figure()
-    >>> plt.plot(time, x, time, xrec.real, time, carrier)
+    >>> plt.plot(time, x, time, xrec, time, carrier)
     >>> plt.xlim([2, 2.1])
     >>> plt.xlabel('Time [sec]')
     >>> plt.ylabel('Signal')
@@ -1008,7 +1008,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     since some of the coefficients of the transient were also removed:
 
     >>> plt.figure()
-    >>> plt.plot(time, x, time, xrec.real, time, carrier)
+    >>> plt.plot(time, x, time, xrec, time, carrier)
     >>> plt.xlim([0, 0.1])
     >>> plt.xlabel('Time [sec]')
     >>> plt.ylabel('Signal')
