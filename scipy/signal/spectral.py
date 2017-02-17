@@ -7,7 +7,7 @@ import numpy as np
 from scipy import fftpack
 from . import signaltools
 from .windows import get_window
-from ._spectral import lombscargle
+from ._spectral import _lombscargle
 from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
@@ -15,6 +15,140 @@ from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA']
+
+
+def lombscargle(x,
+                y,
+                freqs,
+                precenter=False,
+                normalize=False):
+    """
+    lombscargle(x, y, freqs)
+
+    Computes the Lomb-Scargle periodogram.
+    
+    The Lomb-Scargle periodogram was developed by Lomb [1]_ and further
+    extended by Scargle [2]_ to find, and test the significance of weak
+    periodic signals with uneven temporal sampling.
+
+    When *normalize* is False (default) the computed periodogram
+    is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
+    signal with amplitude A for sufficiently large N.
+
+    When *normalize* is True the computed periodogram is is normalized by
+    the residuals of the data around a constant reference model (at zero).
+
+    Input arrays should be one-dimensional and will be cast to float64.
+
+    Parameters
+    ----------
+    x : array_like
+        Sample times.
+    y : array_like
+        Measurement values.
+    freqs : array_like
+        Angular frequencies for output periodogram.
+    precenter : bool, optional
+        Pre-center amplitudes by subtracting the mean.
+    normalize : bool, optional
+        Compute normalized periodogram.
+
+    Returns
+    -------
+    pgram : array_like
+        Lomb-Scargle periodogram.
+
+    Raises
+    ------
+    ValueError
+        If the input arrays `x` and `y` do not have the same shape.
+
+    Notes
+    -----
+    This subroutine calculates the periodogram using a slightly
+    modified algorithm due to Townsend [3]_ which allows the
+    periodogram to be calculated using only a single pass through
+    the input arrays for each frequency.
+
+    The algorithm running time scales roughly as O(x * freqs) or O(N^2)
+    for a large number of samples and frequencies.
+
+    References
+    ----------
+    .. [1] N.R. Lomb "Least-squares frequency analysis of unequally spaced
+           data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
+
+    .. [2] J.D. Scargle "Studies in astronomical time series analysis. II - 
+           Statistical aspects of spectral analysis of unevenly spaced data",
+           The Astrophysical Journal, vol 263, pp. 835-853, 1982
+
+    .. [3] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
+           periodogram using graphics processing units.", The Astrophysical
+           Journal Supplement Series, vol 191, pp. 247-253, 2010
+
+    Examples
+    --------
+    >>> import scipy.signal
+    >>> import matplotlib.pyplot as plt
+
+    First define some input parameters for the signal:
+
+    >>> A = 2.
+    >>> w = 1.
+    >>> phi = 0.5 * np.pi
+    >>> nin = 1000
+    >>> nout = 100000
+    >>> frac_points = 0.9 # Fraction of points to select
+     
+    Randomly select a fraction of an array with timesteps:
+
+    >>> r = np.random.rand(nin)
+    >>> x = np.linspace(0.01, 10*np.pi, nin)
+    >>> x = x[r >= frac_points]
+     
+    Plot a sine wave for the selected times:
+
+    >>> y = A * np.sin(w*x+phi)
+
+    Define the array of frequencies for which to compute the periodogram:
+    
+    >>> f = np.linspace(0.01, 10, nout)
+     
+    Calculate Lomb-Scargle periodogram:
+
+    >>> import scipy.signal as signal
+    >>> pgram = signal.lombscargle(x, y, f, normalize=True)
+
+    Now make a plot of the input data:
+
+    >>> plt.subplot(2, 1, 1)
+    >>> plt.plot(x, y, 'b+')
+
+    Then plot the normalized periodogram:
+
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(f, pgram)
+    >>> plt.show()
+
+    """
+
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    freqs = np.asarray(freqs, dtype=np.float64)
+
+    assert x.ndim == 1
+    assert y.ndim == 1
+    assert freqs.ndim == 1
+
+    if precenter:
+        pgram = _lombscargle(x, y - y.mean(), freqs)
+    else:
+        pgram = _lombscargle(x, y, freqs)
+
+    if normalize:
+        pgram *= 2 / np.dot(y, y)
+
+    return pgram
 
 
 def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
@@ -1668,3 +1802,4 @@ def _triage_segments(window, nperseg,input_length):
                 raise ValueError("value specified for nperseg is different from"
                                  " length of window")
     return win, nperseg
+

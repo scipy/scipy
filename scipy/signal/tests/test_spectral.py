@@ -936,9 +936,8 @@ class TestLombscargle(TestCase):
         assert_(w - f[np.argmax(P)] < (delta/2.))
 
     def test_amplitude(self):
-        """Test if height of peak in normalized Lomb-Scargle periodogram
-        corresponds to amplitude of the generated input signal.
-        """
+        # Test if height of peak in normalized Lomb-Scargle periodogram
+        # corresponds to amplitude of the generated input signal.
 
         # Input parameters
         ampl = 2.
@@ -968,6 +967,66 @@ class TestLombscargle(TestCase):
         # Check if difference between found frequency maximum and input
         # frequency is less than accuracy
         assert_approx_equal(np.max(pgram), ampl, significant=2)
+
+    def test_precenter(self):
+        # Test if precenter gives the same result as manually precentering.
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+        offset = 0.15  # Offset to be subtracted in pre-centering
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        x = ampl * np.sin(w*t + phi) + offset
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, x, f, precenter=True)
+        pgram2 = lombscargle(t, x - x.mean(), f, precenter=False)
+
+        # check if centering worked
+        assert_allclose(pgram, pgram2)
+
+    def test_normalize(self):
+        # Test normalize option of Lomb-Scarge.
+
+        # Input parameters
+        ampl = 2.
+        w = 1.
+        phi = 0.5 * np.pi
+        nin = 100
+        nout = 1000
+        p = 0.7  # Fraction of points to select
+
+        # Randomly select a fraction of an array with timesteps
+        np.random.seed(2353425)
+        r = np.random.rand(nin)
+        t = np.linspace(0.01*np.pi, 10.*np.pi, nin)[r >= p]
+
+        # Plot a sine wave for the selected times
+        x = ampl * np.sin(w*t + phi)
+
+        # Define the array of frequencies for which to compute the periodogram
+        f = np.linspace(0.01, 10., nout)
+
+        # Calculate Lomb-Scargle periodogram
+        pgram = lombscargle(t, x, f)
+        pgram2 = lombscargle(t, x, f, normalize=True)
+
+        # check if normalization works as expected
+        assert_allclose(pgram * 2 / np.dot(x, x), pgram2)
+        assert_approx_equal(np.max(pgram2), 1.0, significant=2)
 
     def test_wrong_shape(self):
         t = np.linspace(0, 1, 1)
