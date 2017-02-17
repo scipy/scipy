@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import tempfile
 
@@ -6,11 +7,14 @@ from numpy.testing import assert_array_almost_equal, run_module_suite, assert_
 from scipy.sparse import csc_matrix, csr_matrix, bsr_matrix, dia_matrix, coo_matrix, save_npz, load_npz
 
 
-def _save_and_load(matrix):        
-    with tempfile.NamedTemporaryFile(suffix='.npz') as file:
-        file = file.name
-        save_npz(file, matrix)
-        loaded_matrix = load_npz(file)
+def _save_and_load(matrix):
+    fd, tmpfile = tempfile.mkstemp(suffix='.npz')
+    os.close(fd)
+    try:
+        save_npz(tmpfile, matrix)
+        loaded_matrix = load_npz(tmpfile)
+    finally:
+        os.remove(tmpfile)
     return loaded_matrix
 
 def _check_save_and_load(dense_matrix):
