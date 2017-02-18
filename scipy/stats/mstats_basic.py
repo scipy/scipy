@@ -459,6 +459,9 @@ def spearmanr(x, y, use_ties=True):
     (x, y) = (x.ravel(), y.ravel())
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
+    # need int() here, otherwise numpy defaults to 32 bit
+    # integer on all Windows architectures, causing overflow.
+    # int() will keep it infinite precision.
     n -= int(m.sum())
     if m is not nomask:
         x = ma.array(x, mask=m, copy=True)
@@ -529,6 +532,9 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     if m is not nomask:
         x = ma.array(x, mask=m, copy=True)
         y = ma.array(y, mask=m, copy=True)
+        # need int() here, otherwise numpy defaults to 32 bit
+        # integer on all Windows architectures, causing overflow.
+        # int() will keep it infinite precision.
         n -= int(m.sum())
 
     if n < 2:
