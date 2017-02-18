@@ -29,7 +29,7 @@ from .lsqr import _sym_ortho
 
 
 def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
-         maxiter=None, show=False):
+         maxiter=None, show=False, x0=None):
     """Iterative solver for least-squares problems.
 
     lsmr solves the system of linear equations ``Ax = b``. If the system
@@ -86,7 +86,10 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         needed.
     show : bool, optional
         Print iterations logs if ``show=True``.
+    x0 : array_like, shape (n,), optional
+        Initial guess of x, if None zeros are used.
 
+        .. versionadded:: 1.0.0
     Returns
     -------
     x : ndarray of float
@@ -94,7 +97,8 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     istop : int
         istop gives the reason for stopping::
 
-          istop   = 0 means x=0 is a solution.
+          istop   = 0 means x=0 is a solution.  If x0 was given, then x=x0 is a
+                      solution.
                   = 1 means x is an approximate solution to A*x = B,
                       according to atol and btol.
                   = 2 means x approximately solves the least-squares problem
@@ -140,7 +144,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     if b.ndim > 1:
         b = b.squeeze()
 
-    msg = ('The exact solution is  x = 0                              ',
+    msg = ('The exact solution is x = 0, or x = x0, if x0 was given  ',
          'Ax - b is small enough, given atol, btol                  ',
          'The least-squares solution is good enough, given atol     ',
          'The estimate of cond(Abar) has exceeded conlim            ',
@@ -171,15 +175,22 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print('btol = %8.2e             maxiter = %8g\n' % (btol, maxiter))
 
     u = b
-    beta = norm(u)
-
-    v = zeros(n)
-    alpha = 0
+    normb = norm(b)
+    if x0 is None:
+        x = zeros(n)
+        beta = normb.copy()
+    else:
+        x = atleast_1d(x0)
+        u = u - A.matvec(x)
+        beta = norm(u)
 
     if beta > 0:
         u = (1 / beta) * u
         v = A.rmatvec(u)
         alpha = norm(v)
+    else:
+        v = zeros(n)
+        alpha = 0
 
     if alpha > 0:
         v = (1 / alpha) * v
@@ -196,7 +207,6 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
 
     h = v.copy()
     hbar = zeros(n)
-    x = zeros(n)
 
     # Initialize variables for estimation of ||r||.
 
@@ -217,8 +227,7 @@ def lsmr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     condA = 1
     normx = 0
 
-    # Items for use in stopping rules.
-    normb = beta
+    # Items for use in stopping rules, normb set earlier
     istop = 0
     ctol = 0
     if conlim > 0:
