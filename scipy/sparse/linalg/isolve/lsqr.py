@@ -148,7 +148,7 @@ def lsqr(A, b, damp=0.0, atol=1e-8, btol=1e-8, conlim=1e8,
     x0 : array_like, shape (n,), optional
         Initial guess of x, if None zeros are used.
 
-        .. versionadded:: 0.19.0
+        .. versionadded:: 1.0.0
 
     Returns
     -------
