@@ -594,6 +594,18 @@ def test_spearmanr():
     res2 = stats.spearmanr(x1[:3], x2[:3], nan_policy='omit')
     assert_equal(res1, res2)
 
+    # Regression test for GitHub issue #6061 - Overflow on Windows
+    x = list(range(2000))
+    y = list(range(2000))
+    y[0], y[9] = y[9], y[0]
+    y[10], y[434] = y[434], y[10]
+    y[435], y[1509] = y[1509], y[435]
+    # rho = 1 - 6 * (2 * (9^2 + 424^2 + 1074^2))/(2000 * (2000^2 - 1))
+    #     = 1 - (1 / 500)
+    #     = 0.998
+    x.append(np.nan)
+    y.append(3.0)
+    assert_almost_equal(stats.spearmanr(x, y, nan_policy='omit')[0], 0.998)
 
 class TestCorrSpearmanrTies(TestCase):
     """Some tests of tie-handling by the spearmanr function."""
@@ -683,6 +695,12 @@ def test_kendalltau():
     assert_equal(np.nan, tau)
     assert_equal(np.nan, p_value)
 
+    # Regression test for GitHub issue #6061 - Overflow on Windows
+    x = np.arange(2000, dtype=float)
+    x = np.ma.masked_greater(x, 1995)
+    y = np.arange(2000, dtype=float)
+    y = np.concatenate((y[1000:], y[:1000]))
+    assert_(np.isfinite(stats.kendalltau(x,y)[1]))
 
 def test_kendalltau_vs_mstats_basic():
     np.random.seed(42)
