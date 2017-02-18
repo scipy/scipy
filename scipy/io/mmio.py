@@ -179,7 +179,7 @@ class MMFile (object):
             raise ValueError('unknown symmetry type %s, must be one of %s' %
                              (symmetry, self.SYMMETRY_VALUES))
 
-    DTYPES_BY_FIELD = {FIELD_INTEGER: 'int',
+    DTYPES_BY_FIELD = {FIELD_INTEGER: 'intp',
                        FIELD_REAL: 'd',
                        FIELD_COMPLEX: 'D',
                        FIELD_PATTERN: 'd'}
@@ -574,7 +574,7 @@ class MMFile (object):
             if is_pattern:
                 V = ones(entries, dtype='int8')
             elif is_integer:
-                V = zeros(entries, dtype='int')
+                V = zeros(entries, dtype='intp')
             elif is_complex:
                 V = zeros(entries, dtype='complex')
             else:
@@ -643,10 +643,10 @@ class MMFile (object):
             if field is not None:
 
                 if field == self.FIELD_INTEGER:
-                    if not can_cast(a.dtype, 'int'):
+                    if not can_cast(a.dtype, 'intp'):
                         raise OverflowError("mmwrite does not support integer "
-                                            "dtypes larger than native 'int'.")
-                    a = a.astype('int')
+                                            "dtypes larger than native 'intp'.")
+                    a = a.astype('intp')
                 elif field == self.FIELD_REAL:
                     if a.dtype.char not in 'fd':
                         a = a.astype('d')
@@ -671,9 +671,9 @@ class MMFile (object):
         if field is None:
             kind = a.dtype.kind
             if kind == 'i':
-                if not can_cast(a.dtype, 'int'):
+                if not can_cast(a.dtype, 'intp'):
                     raise OverflowError("mmwrite does not support integer "
-                                        "dtypes larger than native 'int'.")
+                                        "dtypes larger than native 'intp'.")
                 field = 'integer'
             elif kind == 'f':
                 field = 'real'
