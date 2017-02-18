@@ -553,9 +553,11 @@ def test_spearmanr():
     check_named_results(res, attributes)
 
     # with only ties in one or both inputs
-    assert_equal(stats.spearmanr([2,2,2], [2,2,2]), (np.nan, np.nan))
-    assert_equal(stats.spearmanr([2,0,2], [2,2,2]), (np.nan, np.nan))
-    assert_equal(stats.spearmanr([2,2,2], [2,0,2]), (np.nan, np.nan))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        assert_equal(stats.spearmanr([2,2,2], [2,2,2]), (np.nan, np.nan))
+        assert_equal(stats.spearmanr([2,0,2], [2,2,2]), (np.nan, np.nan))
+        assert_equal(stats.spearmanr([2,2,2], [2,0,2]), (np.nan, np.nan))
 
     # empty arrays provided as input
     assert_equal(stats.spearmanr([], []), (np.nan, np.nan))
