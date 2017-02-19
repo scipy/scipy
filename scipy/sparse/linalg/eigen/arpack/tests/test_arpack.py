@@ -913,18 +913,42 @@ def test_regression_arpackng_1315():
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
     A = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))
-    eig_tuple = eig(A.todense())
-    assert_equal(eigs(A, k=3), eig_tuple)
-    assert_equal(eigs(A, k=4), eig_tuple)
-    assert_equal(eigs(A, k=5), eig_tuple)
+    M1 = np.random.random((4, 4))
+    M2 = generate_matrix(4, sparse=True)
+    M3 = aslinearoperator(M1)
+    eig_tuple1 = eig(A.todense(), b=M1)
+    eig_tuple2 = eig(A.todense(), b=M2)
+
+    assert_equal(eigs(A, M=M1, k=3), eig_tuple1)
+    assert_equal(eigs(A, M=M1, k=4), eig_tuple1)
+    assert_equal(eigs(A, M=M1, k=5), eig_tuple1)
+
+    assert_equal(eigs(A, M=M2, k=3), eig_tuple2)  # M as sparse matrix
+    assert_raises(ValueError, eigs, A, M=M3, k=3)  # M as LinearOperator
+
+    # Test 'A' for different types
+    assert_raises(ValueError, eigs, aslinearoperator(A), k=3)
+    assert_equal(eigs(A.todense(), M=M1, k=3), eig_tuple1)
 
 
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
     A = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))
-    eig_tuple = eig(A.todense())
-    assert_equal(eigsh(A, k=4), eig_tuple)
-    assert_equal(eigsh(A, k=5), eig_tuple)
+    M1 = np.random.random((4, 4))
+    M2 = generate_matrix(4, sparse=True)
+    M3 = aslinearoperator(M1)
+    eig_tuple1 = eig(A.todense(), b=M1)
+    eig_tuple2 = eig(A.todense(), b=M2)
+
+    assert_equal(eigsh(A, M=M1, k=4), eig_tuple1)
+    assert_equal(eigsh(A, M=M1, k=5), eig_tuple1)
+
+    assert_equal(eigsh(A, M=M2, k=4), eig_tuple2)  # M as sparse matrix
+    assert_raises(ValueError, eigsh, A, M=M3, k=4)  # M as LinearOperator
+
+    # Test 'A' for different types
+    assert_raises(ValueError, eigsh, aslinearoperator(A), k=4)
+    assert_equal(eigsh(A.todense(), M=M1, k=4), eig_tuple1)
 
 
 if __name__ == "__main__":
