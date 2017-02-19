@@ -110,7 +110,8 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     -----
     See `splev` for evaluation of the spline and its derivatives.
     The number of dimensions N must be smaller than 11.
-    Splprep pads zeros at the end which is a cross-link to BSpline as BSpline does not require zero-padding.
+    The c array retruned consists of k+1 zeros at the end
+    while BSpline does not require zero-padding. 
 
     References
     ----------
