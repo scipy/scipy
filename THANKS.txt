@@ -223,6 +223,8 @@ Joseph Weston for a bug fix in scipy.optimize.zeros.
 Peyton Murray for a bug fix in scipy.optimize.curve_fit.
 Leo P. Singer for bug fixes in scipy.optimize and scipy.interpolate and
    contribution of the beta-binomial distribution to scipy.stats.
+Domen Gorjup and Janko Slavič for continuous wavelet transform with complex
+    wavelets fix.
 
 Institutions
 ------------

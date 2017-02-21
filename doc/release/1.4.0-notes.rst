@@ -67,6 +67,8 @@ Added a new function to calculate convolution using the overlap-add method,
 named `scipy.signal.oaconvolve`. Like `scipy.signal.fftconvolve`, this
 function supports specifying dimensions along which to do the convolution.
 
+`scipy.signal.cwt` now supports complex wavelets.
+
 `scipy.sparse` improvements
 ---------------------------
 
@@ -105,6 +107,10 @@ Backwards incompatible changes
 :func:`scipy.signal.resample` behavior for length-1 signal inputs has been
 fixed to output a constant (DC) value rather than an impulse, consistent with
 the assumption of signal periodicity in the FFT method.
+
+`scipy.signal.cwt` now performs complex conjugation and time-reversal of
+wavelet data, which is a backwards-incompatible bugfix for
+time-asymmetric wavelets.
 
 `scipy.stats` changes
 ---------------------

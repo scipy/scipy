@@ -245,12 +245,13 @@ Wavelets
 .. autosummary::
    :toctree: generated/
 
-   cascade  -- compute scaling function and wavelet from coefficients
-   daub     -- return low-pass
-   morlet   -- Complex Morlet wavelet.
-   qmf      -- return quadrature mirror filter from low-pass
-   ricker   -- return ricker wavelet
-   cwt      -- perform continuous wavelet transform
+   cascade      -- compute scaling function and wavelet from coefficients
+   daub         -- return low-pass
+   morlet       -- Complex Morlet wavelet.
+   qmf          -- return quadrature mirror filter from low-pass
+   ricker       -- return ricker wavelet
+   morlet2      -- return Morlet wavelet, compatible with cwt
+   cwt          -- perform continuous wavelet transform
 
 Peak finding
 ============
