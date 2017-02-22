@@ -85,14 +85,13 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None, xtype=None,
 
     eps = finfo(xtype).eps
 
-    x = zeros(n, dtype=xtype)
 
     # Set up y and v for the first Lanczos vector v1.
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
 
     y = b
-    r1 = b
+    r1 = b - A*x
 
     y = psolve(b)
 
