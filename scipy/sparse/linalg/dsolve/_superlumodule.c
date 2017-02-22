@@ -330,6 +330,10 @@ PyObject *PyInit__superlu(void)
 	return NULL;
     }
 
+    if (PyType_Ready(&SuperLUGlobalType) < 0) {
+	return;
+    }
+
     m = PyModule_Create(&moduledef);
     d = PyModule_GetDict(m);
 
