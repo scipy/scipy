@@ -929,7 +929,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         Least-squares solution.  Return shape matches shape of `b`.
     residues : () or (1,) or (K,) ndarray
         Sums of residues, squared 2-norm for each column in ``b - a x``.
-        If rank of matrix a is ``< N`` or ``> M``, or ``'gelsy'`` is used,
+        If rank of matrix a is ``< N`` or ``N > M``, or ``'gelsy'`` is used,
         this is an empty array. If b was 1-D, this is an (1,) shape array,
         otherwise the shape is (K,).
     rank : int
