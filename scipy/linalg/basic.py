@@ -914,7 +914,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    lapack_driver: str, optional
+    lapack_driver : str, optional
         Which LAPACK driver is used to solve the least-squares problem.
         Options are ``'gelsd'``, ``'gelsy'``, ``'gelss'``. Default
         (``'gelsd'``) is a good choice.  However, ``'gelsy'`` can be slightly
