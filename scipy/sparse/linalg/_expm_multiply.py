@@ -595,7 +595,8 @@ def _expm_multiply_interval_core_0(A, X, h, mu, m_star, s, q):
     A helper function, for the case q <= s.
     """
     for k in range(q):
-        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s)
+        s_step = -(-s//q) # Ceiling division
+        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s_step)
     return X, 0
 
 
