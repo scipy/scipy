@@ -230,7 +230,8 @@ class TestEig(object):
         length = np.empty(len(vr))
         for i in xrange(len(vr)):
             length[i] = norm(vr[:,i])
-        assert_allclose(length, np.ones(length.size), err_msg=msg)
+        assert_allclose(length, np.ones(length.size), err_msg=msg,
+                        atol=1e-7, rtol=1e-7)
 
         # Convert homogeneous coordinates
         beta_nonzero = (w[1,:] != 0)
