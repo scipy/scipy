@@ -77,6 +77,9 @@ perform weighted pair counting via the new keywords ``weights`` and
 ``cumulative``. See `gh-5647 <https://github.com/scipy/scipy/pull/5647>`_ for
 details.
 
+`scipy.spatial.distance.pdist` and `scipy.spatial.distance.cdist` now support
+non-double custom metrics. 
+
 `scipy.ndimage` improvements
 ----------------------------
 
@@ -248,6 +251,10 @@ was inconsistent with `splrep/splev` which was confusing to users.
 
 `scipy.special.errprint` is deprecated. Improved functionality is
 available in `scipy.special.seterr`.
+
+calling `scipy.spatial.distance.pdist` or `scipy.spatial.distance.cdist` with
+arguments not needed by the chosen metric is deprecated. Also, metrics
+`"old_cosine"` and `"old_cos"` are deprecated.
 
 
 Backwards incompatible changes

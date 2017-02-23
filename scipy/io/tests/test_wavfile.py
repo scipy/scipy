@@ -80,21 +80,21 @@ def test_read_5():
 
 def test_read_fail():
     for mmap in [False, True]:
-        fp = open(datafile('example_1.nc'))
+        fp = open(datafile('example_1.nc'), 'rb')
         assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
         fp.close()
 
 
 def test_read_early_eof():
     for mmap in [False, True]:
-        fp = open(datafile('test-44100Hz-le-1ch-4bytes-early-eof.wav'))
+        fp = open(datafile('test-44100Hz-le-1ch-4bytes-early-eof.wav'), 'rb')
         assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
         fp.close()
 
 
 def test_read_incomplete_chunk():
     for mmap in [False, True]:
-        fp = open(datafile('test-44100Hz-le-1ch-4bytes-incomplete-chunk.wav'))
+        fp = open(datafile('test-44100Hz-le-1ch-4bytes-incomplete-chunk.wav'), 'rb')
         assert_raises(ValueError, wavfile.read, fp, mmap=mmap)
         fp.close()
 
