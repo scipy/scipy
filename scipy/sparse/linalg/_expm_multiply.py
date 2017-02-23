@@ -570,7 +570,10 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     # Compute the expm action at the rest of the time points.
     if q <= s:
         if status_only:
-            return 0
+            if q == s:
+                return '0edgecase'
+            else:
+                return 0
         else:
             return _expm_multiply_interval_core_0(A, X,
                     h, mu, m_star, s, q)
