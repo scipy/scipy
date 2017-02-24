@@ -399,7 +399,6 @@ def pearsonr(x,y):
     # point arithmetic.
     r = min(r, 1.0)
     r = max(r, -1.0)
-    df = n - 2
 
     if r is masked or abs(r) == 1.0:
         prob = 0.
@@ -460,7 +459,10 @@ def spearmanr(x, y, use_ties=True):
     (x, y) = (x.ravel(), y.ravel())
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
-    n -= m.sum()
+    # need int() here, otherwise numpy defaults to 32 bit
+    # integer on all Windows architectures, causing overflow.
+    # int() will keep it infinite precision.
+    n -= int(m.sum())
     if m is not nomask:
         x = ma.array(x, mask=m, copy=True)
         y = ma.array(y, mask=m, copy=True)
@@ -530,7 +532,10 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     if m is not nomask:
         x = ma.array(x, mask=m, copy=True)
         y = ma.array(y, mask=m, copy=True)
-        n -= m.sum()
+        # need int() here, otherwise numpy defaults to 32 bit
+        # integer on all Windows architectures, causing overflow.
+        # int() will keep it infinite precision.
+        n -= int(m.sum())
 
     if n < 2:
         return KendalltauResult(np.nan, np.nan)
