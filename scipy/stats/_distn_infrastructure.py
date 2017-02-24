@@ -2596,7 +2596,10 @@ class rv_discrete(rv_generic):
     Notes
     -----
 
-    This class is similar to `rv_continuous`, the main differences being:
+    This class is similar to `rv_continuous`. Whether a shape parameter is
+    valid is decided by an ``_argcheck`` method (which defaults to checking
+    that its arguments are strictly positive.)
+    The main differences are :
 
     - the support of the distribution is a set of integers
     - instead of the probability density function, ``pdf`` (and the
