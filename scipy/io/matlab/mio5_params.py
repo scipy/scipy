@@ -212,9 +212,9 @@ for _bytecode in '<>':
 class mat_struct(object):
     ''' Placeholder for holding read data from structs
 
-    We deprecate this method of holding struct information, and will
-    soon remove it, in favor of the recarray method (see loadmat
-    docstring)
+    We use instances of this class when the user passes False as a value to the
+    ``struct_as_record`` parameter of the :func:`scipy.io.matlab.loadmat`
+    function.
     '''
     pass
 
