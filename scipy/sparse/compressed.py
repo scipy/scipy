@@ -300,28 +300,41 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             raise ValueError("Operands could not be compared.")
 
     def __lt__(self, other):
-        return self._inequality(other, operator.lt, '_lt_',
+        if isscalarlike(other) or isdense(other) or isspmatrix(other):
+            return self._inequality(other, operator.lt, '_lt_',
                                 "Comparing a sparse matrix with a scalar "
                                 "greater than zero using < is inefficient, "
                                 "try using >= instead.")
+        else:
+            NotImplemented
 
     def __gt__(self, other):
-        return self._inequality(other, operator.gt, '_gt_',
+        if isscalarlike(other) or isdense(other) or isspmatrix(other):
+            return self._inequality(other, operator.gt, '_gt_',
                                 "Comparing a sparse matrix with a scalar "
                                 "less than zero using > is inefficient, "
                                 "try using <= instead.")
+        else:
+            NotImplemented
 
     def __le__(self, other):
-        return self._inequality(other, operator.le, '_le_',
+        if isscalarlike(other) or isdense(other) or isspmatrix(other):
+            return self._inequality(other, operator.le, '_le_',
                                 "Comparing a sparse matrix with a scalar "
                                 "greater than zero using <= is inefficient, "
                                 "try using > instead.")
+        else:
+            return NotImplemented
 
     def __ge__(self,other):
-        return self._inequality(other, operator.ge, '_ge_',
+        if isscalarlike(other) or isdense(other) or isspmatrix(other):
+            return self._inequality(other, operator.ge, '_ge_',
                                 "Comparing a sparse matrix with a scalar "
                                 "less than zero using >= is inefficient, "
                                 "try using < instead.")
+        else:
+            return NotImplemented
+
 
     #################################
     # Arithmatic operator overrides #
