@@ -225,7 +225,8 @@ class TestEig(object):
 
         perm = np.lexsort(w)
         permt = np.lexsort(wt)
-        assert_allclose(w[:,perm], wt[:,permt], err_msg=msg)
+        assert_allclose(w[:,perm], wt[:,permt], atol=1e-7, rtol=1e-7,
+                        err_msg=msg)
 
         length = np.empty(len(vr))
         for i in xrange(len(vr)):
@@ -247,7 +248,8 @@ class TestEig(object):
             if all(isfinite(res[:,i])):
                 assert_allclose(res[:,i], 0, rtol=1e-13, atol=1e-13, err_msg=msg)
 
-        assert_allclose(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]), err_msg=msg)
+        assert_allclose(sort(w[isfinite(w)]), sort(wt[isfinite(wt)]),
+                        atol=1e-7, rtol=1e-7, err_msg=msg)
 
         length = np.empty(len(vr))
         for i in xrange(len(vr)):
@@ -2119,7 +2121,7 @@ class TestOrdQZ(TestCase):
             ret = [ordqz(Ai, Bi, sort=sort) for Ai, Bi in zip(self.A, self.B)]
         finally:
             np.seterr(**olderr)
-            
+
         return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
