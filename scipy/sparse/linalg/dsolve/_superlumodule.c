@@ -331,7 +331,7 @@ PyObject *PyInit__superlu(void)
     }
 
     if (PyType_Ready(&SuperLUGlobalType) < 0) {
-	return;
+	return NULL;
     }
 
     m = PyModule_Create(&moduledef);
