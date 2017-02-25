@@ -3552,22 +3552,15 @@ class unitary_group_gen(multi_rv_generic):
 
     Examples
     --------
-    TODO Update this
+    >>> from scipy.stats import unitary_group
+    >>> x = unitary_group.rvs(3)
 
-    >>> from scipy.stats import ortho_group
-    >>> x = ortho_group.rvs(3)
-
-    >>> np.dot(x, x.T)
+    >>> np.dot(x, x.conj().T)
     array([[  1.00000000e+00,   1.13231364e-17,  -2.86852790e-16],
            [  1.13231364e-17,   1.00000000e+00,  -1.46845020e-16],
            [ -2.86852790e-16,  -1.46845020e-16,   1.00000000e+00]])
 
-    >>> import scipy.linalg
-    >>> np.fabs(scipy.linalg.det(x))
-    1.0
-
-    This generates one random matrix from O(3). It is orthogonal and
-    has a determinant of +1 or -1.
+    This generates one random matrix from U(3). The dot product confirms that it is unitary up to machine precision.
 
     """
 
@@ -3616,8 +3609,7 @@ class unitary_group_gen(multi_rv_generic):
                             1j*random_state.normal(size=(dim,dim)))
         q, r = scipy.linalg.qr(z)
         d = r.diagonal()
-        d = d/abs(d)
-        q = q*d
+        q *= d/abs(d)
         return q
 
 unitary_group = unitary_group_gen()

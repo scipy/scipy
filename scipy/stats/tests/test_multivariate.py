@@ -25,8 +25,8 @@ from scipy.stats import random_correlation
 from scipy.stats import unitary_group
 from scipy.stats import dirichlet, beta
 from scipy.stats import wishart, multinomial, invwishart, chi2, invgamma
-from scipy.stats import norm
-from scipy.stats import ks_2samp
+from scipy.stats import norm, uniform
+from scipy.stats import ks_2samp, kstest
 from scipy.stats import binom
 
 from scipy.integrate import romb
@@ -1430,30 +1430,27 @@ class TestUnitaryGroup(TestCase):
 
         # Test that these are unitary matrices
         for x in xs:
-            assert_array_almost_equal(np.dot(x, x.conj().T),
-                                      np.eye(x.shape[0]))
+            assert_allclose(np.dot(x, x.conj().T), np.eye(x.shape[0]), atol=1e-15)
 
     def test_haar(self):
         # Test that the eigenvalues, which lie on the unit circle in
         # the complex plane, are uncorrelated.
 
         # Generate samples
-        dim = 2
-        samples = 10000  # Not too many, or the test takes too long
+        dim = 5
+        samples = 1000  # Not too many, or the test takes too long
         np.random.seed(514)  # Note that the test is sensitive to seed too
         xs = unitary_group.rvs(dim, size=samples)
 
-        eigs = np.vstack(scipy.linalg.eigvals(x) for x in xs)
-        x = np.arctan(eigs.imag/eigs.real)
-
-        h = np.histogram(x.flatten())[0]
-
         # The angles "x" of the eigenvalues should be uniformly distributed
-        # We are not checking that the range is correct; maybe we should?
         # Overall this seems to be a necessary but weak test of the distribution.
-        avg = samples*dim/len(h)
-        rel_err = (h - avg)/avg
-        success = (scipy.fabs(rel_err) < .1).all()
+        eigs = np.vstack(scipy.linalg.eigvals(x) for x in xs)
+        x = np.arctan2(eigs.imag, eigs.real)
+        res = kstest(x.ravel(),
+                     lambda x: uniform(0, 2*np.pi).cdf(x + np.pi))
+        # Note that this should be uniform(-pi, pi), but uniform's
+        # range can't seem to include 0 as an interior point
+        assert_(res.pvalue > 0.8)
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles
