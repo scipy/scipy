@@ -112,6 +112,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     The number of dimensions N must be smaller than 11.
     The c array retruned consists of k+1 zeros at the end
     while BSpline does not require zero-padding. 
+    Splrep also does not return padded-zeros in contrast to splprep.
 
     References
     ----------
