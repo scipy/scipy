@@ -115,7 +115,8 @@ REFGUIDE_ALL_SKIPLIST = [
 # these names are not required to be in an autosummary:: listing
 # despite being in ALL
 REFGUIDE_AUTOSUMMARY_SKIPLIST = [
-    r'scipy\.special\..*_roots' # old aliases for scipy.special.*_roots
+    r'scipy\.special\..*_roots', # old aliases for scipy.special.*_roots
+	r'scipy\.linalg\.solve_lyapunov' # deprecated name
 ]
 
 

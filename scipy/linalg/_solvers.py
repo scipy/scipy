@@ -10,6 +10,7 @@
 
 from __future__ import division, print_function, absolute_import
 
+import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
@@ -88,7 +89,7 @@ def solve_sylvester(a, b, q):
     return np.dot(np.dot(u, y), v.conj().transpose())
 
 
-def solve_lyapunov(a, q):
+def solve_continuous_lyapunov(a, q):
     """
     Solves the continuous Lyapunov equation :math:`AX + XA^H = Q`.
 
@@ -121,7 +122,53 @@ def solve_lyapunov(a, q):
 
     """
 
-    return solve_sylvester(a, a.conj().transpose(), q)
+    a = np.atleast_2d(_asarray_validated(a, check_finite=True))
+    q = np.atleast_2d(_asarray_validated(q, check_finite=True))
+
+    r_or_c = float
+
+    for ind, _ in enumerate(a, q):
+        if np.iscomplexobj(_):
+            r_or_c = complex
+
+        if not np.equal(*_.shape):
+            raise ValueError("Matrix {} should be square.".format("aq"[ind]))
+
+    # Shape consistency check
+    if a.shape != q.shape:
+        raise ValueError("Matrix a and q should have the same shape.")
+
+    # Compute the Schur decomp form of a
+    r, u = schur(a, output='real')
+
+    # Construct f = u'*q*u
+    f = u.conj().T.dot(q.dot(u))
+
+    # Call the Sylvester equation solver
+    trsyl, = get_lapack_funcs(('trsyl',), (r, f))
+    if trsyl is None:
+        raise RuntimeError('LAPACK implementation does not contain a proper '
+                           'Sylvester equation solver (TRSYL)')
+
+    dtype_string = 'T' if r_or_c == float else 'C'
+    y, scale, info = trsyl(r, r, f, tranb=dtype_string)
+
+    if info < 0:
+        raise ValueError('?TRSYL exited with the internal error '
+                         '"illegal value in argument number {}.". See '
+                         'LAPACK documentation for the ?TRSYL error codes.'
+                         ''.format(-info))
+    elif info == 1:
+        warnings.warn('Matrix a has an eigenvalue pair whose sum is '
+                      'very close to or exactly zero. The solution is '
+                      'obtained via perturbing the coefficients.',
+                      RuntimeWarning)
+    y *= scale
+
+    return u.dot(y).dot(u.conj().T)
+
+# For backwards compatibility, keep the old name
+solve_lyapunov = solve_continuous_lyapunov
 
 
 def _solve_discrete_lyapunov_direct(a, q):
