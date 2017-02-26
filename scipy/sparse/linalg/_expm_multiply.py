@@ -597,6 +597,21 @@ def _expm_multiply_interval_core_0(A, X, h, mu, m_star, s, q):
     """
     A helper function, for the case q <= s.
     """
+
+    # Recall that the values of m_star and s were computed for a time interval
+    # of length q*h. In theory, we should call _fragment_3_1 again to find the
+    # optimal values for a time interval of length h. However, observe that the
+    # value of m_star as computed by _fragment_3_1 doesn't change, and
+    # the value of s simply gets divided by q. (Strictly speaking, we
+    # have to take a ceiling division).
+    # (There is a slight subtlety here, which is what happens if _fragment_3_1
+    # enters the second branch of the if statement for q*h, but the first branch
+    # for h. However, recall that the first branch of _fragment_3_1 only exists
+    # to avoid the performance penalty of evaluating "alpha(p)". If we have
+    # already paid this performance penalty in the original
+    # invocation of _fragment_3_1, then there is no harm in assuming that
+    # _fragment_3_1 would have entered the second branch).
+
     for k in range(q):
         s_step = -(-s//q)  # Ceiling division
         X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s_step)
