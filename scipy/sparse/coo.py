@@ -283,7 +283,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            self.sum_duplicates()
             idx_dtype = get_index_dtype((self.col, self.row),
                                         maxval=max(self.nnz, M))
             row = self.row.astype(idx_dtype, copy=False)
@@ -296,7 +295,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             coo_tocsr(N, M, self.nnz, col, row, self.data,
                       indptr, indices, data)
 
-            return csc_matrix((data, indices, indptr), shape=self.shape)
+            x = csc_matrix((data, indices, indptr), shape=self.shape)
+            if not self.has_canonical_format:
+                x.sum_duplicates()
+            return x
 
     def tocsr(self, copy=False):
         """Convert this matrix to Compressed Sparse Row format
@@ -323,7 +325,6 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            self.sum_duplicates()
             idx_dtype = get_index_dtype((self.row, self.col),
                                         maxval=max(self.nnz, N))
             row = self.row.astype(idx_dtype, copy=False)
@@ -336,7 +337,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             coo_tocsr(M, N, self.nnz, row, col, self.data,
                       indptr, indices, data)
 
-            return csr_matrix((data, indices, indptr), shape=self.shape)
+            x = csr_matrix((data, indices, indptr), shape=self.shape)
+            if not self.has_canonical_format:
+                x.sum_duplicates()
+            return x
 
     def tocoo(self, copy=False):
         if copy:
