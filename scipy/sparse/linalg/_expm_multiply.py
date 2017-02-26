@@ -564,7 +564,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     t = t_q - t_0
     A = A - mu * ident
     A_1_norm = _exact_1_norm(A)
-    ell=2
+    ell = 2
     norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
@@ -605,10 +605,10 @@ def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
     # Compute the new values of m_star and s which should be applied
     # over intervals of size t/q
     if norm_info.onenorm() == 0:
-        m_star,s = 0,1
+        m_star, s = 0, 1
     else:
         norm_info.set_scale(1./q)
-        m_star,s = _fragment_3_1(norm_info, n0, tol, ell=ell)
+        m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
         norm_info.set_scale(1)
 
     for k in range(q):
