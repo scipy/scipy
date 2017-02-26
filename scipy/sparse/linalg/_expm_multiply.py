@@ -280,7 +280,6 @@ def _onenormest_matrix_power(A, p,
     #XXX but wait until expm_multiply goes into scipy.
     return scipy.sparse.linalg.onenormest(aslinearoperator(A) ** p)
 
-
 class LazyOperatorNormInfo:
     """
     Information about an operator is lazily computed.
@@ -292,7 +291,7 @@ class LazyOperatorNormInfo:
     outside of this module.
 
     """
-    def __init__(self, A, A_1_norm=None, ell=2):
+    def __init__(self, A, A_1_norm=None, ell=2, scale=1):
         """
         Provide the operator and some norm-related information.
 
@@ -304,12 +303,21 @@ class LazyOperatorNormInfo:
             The exact 1-norm of A.
         ell : int, optional
             A technical parameter controlling norm estimation quality.
+        scale : int, optional
+            If specified, return the norms of scale*A instead of A.
 
         """
         self._A = A
         self._A_1_norm = A_1_norm
         self._ell = ell
         self._d = {}
+        self._scale = scale
+
+    def set_scale(self,scale):
+        """
+        Set the scale parameter.
+        """
+        self._scale = scale
 
     def onenorm(self):
         """
@@ -317,7 +325,7 @@ class LazyOperatorNormInfo:
         """
         if self._A_1_norm is None:
             self._A_1_norm = _exact_1_norm(self._A)
-        return self._A_1_norm
+        return self._scale*self._A_1_norm
 
     def d(self, p):
         """
@@ -326,14 +334,13 @@ class LazyOperatorNormInfo:
         if p not in self._d:
             est = _onenormest_matrix_power(self._A, p, self._ell)
             self._d[p] = est ** (1.0 / p)
-        return self._d[p]
+        return self._scale*self._d[p]
 
     def alpha(self, p):
         """
         Lazily compute max(d(p), d(p+1)).
         """
         return max(self.d(p), self.d(p+1))
-
 
 def _compute_cost_div_m(m, p, norm_info):
     """
@@ -557,11 +564,11 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     t = t_q - t_0
     A = A - mu * ident
     A_1_norm = _exact_1_norm(A)
+    ell=2
+    norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
     if t*A_1_norm == 0:
         m_star, s = 0, 1
     else:
-        ell = 2
-        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=t*A_1_norm, ell=ell)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
     # Compute the expm action up to the initial time point.
@@ -570,13 +577,10 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     # Compute the expm action at the rest of the time points.
     if q <= s:
         if status_only:
-            if q == s:
-                return '0edgecase'
-            else:
-                return 0
+            return 0
         else:
-            return _expm_multiply_interval_core_0(A, X,
-                    h, mu, m_star, s, q)
+            return _expm_multiply_interval_core_0(A, X, 
+                    h, mu, q, norm_info, tol, ell,n0)
     elif q > s and not (q % s):
         if status_only:
             return 1
@@ -593,28 +597,22 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
         raise Exception('internal error')
 
 
-def _expm_multiply_interval_core_0(A, X, h, mu, m_star, s, q):
+def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
     """
     A helper function, for the case q <= s.
     """
 
-    # Recall that the values of m_star and s were computed for a time interval
-    # of length q*h. In theory, we should call _fragment_3_1 again to find the
-    # optimal values for a time interval of length h. However, observe that the
-    # value of m_star as computed by _fragment_3_1 doesn't change, and
-    # the value of s simply gets divided by q. (Strictly speaking, we
-    # have to take a ceiling division).
-    # (There is a slight subtlety here, which is what happens if _fragment_3_1
-    # enters the second branch of the if statement for q*h, but the first branch
-    # for h. However, recall that the first branch of _fragment_3_1 only exists
-    # to avoid the performance penalty of evaluating "alpha(p)". If we have
-    # already paid this performance penalty in the original
-    # invocation of _fragment_3_1, then there is no harm in assuming that
-    # _fragment_3_1 would have entered the second branch).
+    # Compute the new values of m_star and s which should be applied
+    # over intervals of size t/q
+    if norm_info.onenorm() == 0:
+        m_star,s = 0,1
+    else:
+        norm_info.set_scale(1./q)
+        m_star,s = _fragment_3_1(norm_info, n0, tol, ell=ell)
+        norm_info.set_scale(1)
 
     for k in range(q):
-        s_step = -(-s//q)  # Ceiling division
-        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s_step)
+        X[k+1] = _expm_multiply_simple_core(A, X[k], h, mu, m_star, s)
     return X, 0
 
 

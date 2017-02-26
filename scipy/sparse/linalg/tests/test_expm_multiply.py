@@ -212,9 +212,6 @@ class TestExpmActionInterval(TestCase):
     def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
 
-    def test_expm_multiply_interval_status_0edgecase(self):
-        self._help_test_specific_expm_interval_status('0edgecase')
-
     def test_expm_multiply_interval_status_1(self):
         self._help_test_specific_expm_interval_status(1)
 
@@ -231,7 +228,7 @@ class TestExpmActionInterval(TestCase):
         k = 2
         nrepeats = 10
         nsuccesses = 0
-        for num in [14, 13, 3, 2] * nrepeats:
+        for num in [14, 13, 2] * nrepeats:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
             status = _expm_multiply_interval(A, B,
