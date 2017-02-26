@@ -297,43 +297,31 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             return all_true - res
         else:
-            raise ValueError("Operands could not be compared.")
+            return NotImplemented
 
     def __lt__(self, other):
-        if isscalarlike(other) or isdense(other) or isspmatrix(other):
-            return self._inequality(other, operator.lt, '_lt_',
+        return self._inequality(other, operator.lt, '_lt_',
                                 "Comparing a sparse matrix with a scalar "
                                 "greater than zero using < is inefficient, "
                                 "try using >= instead.")
-        else:
-            NotImplemented
 
     def __gt__(self, other):
-        if isscalarlike(other) or isdense(other) or isspmatrix(other):
-            return self._inequality(other, operator.gt, '_gt_',
+        return self._inequality(other, operator.gt, '_gt_',
                                 "Comparing a sparse matrix with a scalar "
                                 "less than zero using > is inefficient, "
                                 "try using <= instead.")
-        else:
-            NotImplemented
 
     def __le__(self, other):
-        if isscalarlike(other) or isdense(other) or isspmatrix(other):
-            return self._inequality(other, operator.le, '_le_',
+        return self._inequality(other, operator.le, '_le_',
                                 "Comparing a sparse matrix with a scalar "
                                 "greater than zero using <= is inefficient, "
                                 "try using > instead.")
-        else:
-            return NotImplemented
 
     def __ge__(self,other):
-        if isscalarlike(other) or isdense(other) or isspmatrix(other):
-            return self._inequality(other, operator.ge, '_ge_',
+        return self._inequality(other, operator.ge, '_ge_',
                                 "Comparing a sparse matrix with a scalar "
                                 "less than zero using >= is inefficient, "
                                 "try using < instead.")
-        else:
-            return NotImplemented
 
 
     #################################
