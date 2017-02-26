@@ -1446,10 +1446,7 @@ class TestUnitaryGroup(TestCase):
         # Overall this seems to be a necessary but weak test of the distribution.
         eigs = np.vstack(scipy.linalg.eigvals(x) for x in xs)
         x = np.arctan2(eigs.imag, eigs.real)
-        res = kstest(x.ravel(),
-                     lambda x: uniform(0, 2*np.pi).cdf(x + np.pi))
-        # Note that this should be uniform(-pi, pi), but uniform's
-        # range can't seem to include 0 as an interior point
+        res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
         assert_(res.pvalue > 0.8)
 
 def check_pickling(distfn, args):
