@@ -1201,6 +1201,10 @@ class _TestCommon:
             assert_array_equal(c.todense(),
                                b.todense() + b.todense())
 
+            # test broadcasting
+            c = b + a[0]
+            assert_array_equal(c, b.todense() + a[0])
+
         for dtype in self.math_dtypes:
             yield check, dtype
 
@@ -1230,7 +1234,14 @@ class _TestCommon:
             assert_array_equal((datsp - A).todense(),dat - A.todense())
             assert_array_equal((A - datsp).todense(),A.todense() - dat)
 
+            # test broadcasting
+            assert_array_equal(datsp - dat[0], dat - dat[0])
+
         for dtype in self.math_dtypes:
+            if dtype == np.dtype('bool'):
+                # boolean array subtraction deprecated in 1.9.0
+                continue
+
             yield check, dtype
 
     def test_rsub(self):
@@ -1247,6 +1258,9 @@ class _TestCommon:
             assert_array_equal((A - dat),A.todense() - dat)
             assert_array_equal(A.todense() - datsp,A.todense() - dat)
             assert_array_equal(datsp - A.todense(),dat - A.todense())
+
+            # test broadcasting
+            assert_array_equal(dat[0] - datsp, dat[0] - dat)
 
         for dtype in self.math_dtypes:
             if dtype == np.dtype('bool'):
