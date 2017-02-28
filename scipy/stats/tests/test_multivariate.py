@@ -1447,7 +1447,7 @@ class TestUnitaryGroup(TestCase):
         eigs = np.vstack(scipy.linalg.eigvals(x) for x in xs)
         x = np.arctan2(eigs.imag, eigs.real)
         res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
-        assert_(res.pvalue > 0.8)
+        assert_(res.pvalue > 0.05)
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles
