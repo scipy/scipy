@@ -42,7 +42,7 @@ gives the corresponding weighted sum of squared residuals (fp>s).
 """,
                     2:"""
 A theoretically impossible result was found during the iteration
-proces for finding a smoothing spline with fp = s: s too small.
+process for finding a smoothing spline with fp = s: s too small.
 There is an approximation returned but the corresponding weighted sum
 of squared residuals does not satisfy the condition abs(fp-s)/s < tol.""",
                     3:"""
