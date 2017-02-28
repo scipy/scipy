@@ -65,6 +65,7 @@ These solvers are implemented as individual classes which can be used directly
    RK45          -- Explicit Runge-Kutta solver of order 5(4).
    Radau         -- Implicit Runge-Kutta solver of order 5.
    BDF           -- Implicit multi-step variable order (1 to 5) solver.
+   LSODA         -- Wrapper around compiled Fortran LSODA solver suite.
    OdeSolver     -- Base class for ODE solvers.
    DenseOutput   -- Local interpolant for computing a dense output.
    OdeSolution   -- Class which represents a continuous ODE solution.
