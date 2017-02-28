@@ -323,7 +323,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                 "less than zero using >= is inefficient, "
                                 "try using < instead.")
 
-
     #################################
     # Arithmatic operator overrides #
     #################################
