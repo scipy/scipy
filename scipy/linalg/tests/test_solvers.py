@@ -277,8 +277,8 @@ def test_solve_continuous_are():
     #
     # If the test is failing use "None" for that entry.
     #
-    min_decimal = (14, 12, 14, 14, 11, 6, None, 5, 7, 14, 14,
-                   None, 10, 14, 13, 14, None, 12, None, None)
+    min_decimal = (14, 12, 13, 14, 11, 6, None, 5, 7, 14, 14,
+                   None, 9, 14, 13, 14, None, 12, None, None)
 
     def _test_factory(case, dec):
         """Checks if 0 = XA + A'X - XB(R)^{-1} B'X + Q is true"""

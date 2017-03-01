@@ -1523,6 +1523,20 @@ def test_sokalmichener():
     assert_equal(dist1, dist2)
 
 
+def test_modifies_input():
+    # test whether cdist or pdist modifies input arrays
+    X1 = np.asarray([[1., 2., 3.],
+                     [1.2, 2.3, 3.4],
+                     [2.2, 2.3, 4.4],
+                     [22.2, 23.3, 44.4]])
+    X1_copy = X1.copy()
+    for metric in _METRICS_NAMES:
+        kwargs = {"w": 1.0 / X1.std(axis=0)} if metric == "wminkowski" else {}
+        cdist(X1, X1, metric, **kwargs)
+        pdist(X1, metric, **kwargs)
+        assert_array_equal(X1, X1_copy)
+
+
 def test_Xdist_deprecated_args():
     # testing both cdist and pdist deprecated warnings
     X1 = np.asarray([[1., 2., 3.],

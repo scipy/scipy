@@ -2115,6 +2115,9 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None):
     # between all pairs of vectors in XA and XB using the distance metric 'abc'
     # but with a more succinct, verifiable, but less efficient implementation.
 
+    # Store input arguments to check whether we can modify later.
+    input_XA, input_XB = XA, XB
+
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
 
@@ -2242,6 +2245,8 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None):
         elif mstr in ['correlation', 'co']:
             XA = _convert_to_double(XA)
             XB = _convert_to_double(XB)
+            XA = XA.copy() if XA is input_XA else XA
+            XB = XB.copy() if XB is input_XB else XB
             XA -= XA.mean(axis=1)[:, np.newaxis]
             XB -= XB.mean(axis=1)[:, np.newaxis]
             _cosine_cdist(XA, XB, dm)
