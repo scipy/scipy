@@ -117,6 +117,22 @@ def generate_matrix(N, complex=False, hermitian=False,
     return M
 
 
+def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
+    M = np.random.random((N, N))
+
+    if sparse:
+        i = np.random.randint(N, size=N * N // 2)
+        j = np.random.randint(N, size=N * N // 2)
+        M[i,j] = 0
+
+    M = 0.5 * (M + M.T)  # Make M symmetric
+
+    if pos_definite:
+        M = M + N * np.eye(N)
+
+    return M
+
+
 def _aslinearoperator_with_dtype(m):
     m = aslinearoperator(m)
     if not hasattr(m, 'dtype'):
@@ -934,11 +950,11 @@ def test_eigs_for_k_greater():
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
     A = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))
-    M1 = np.random.random((4, 4))
-    M2 = generate_matrix(4, sparse=True)
+    M1 = generate_matrix_symmetric(4, pos_definite=True)
+    M2 = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
     M3 = aslinearoperator(M1)
-    eig_tuple1 = eig(A.todense(), b=M1)
-    eig_tuple2 = eig(A.todense(), b=M2)
+    eig_tuple1 = eigh(A.todense(), b=M1)
+    eig_tuple2 = eigh(A.todense(), b=M2)
 
     assert_equal(eigsh(A, M=M1, k=4), eig_tuple1)
     assert_equal(eigsh(A, M=M1, k=5), eig_tuple1)

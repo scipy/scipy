@@ -46,7 +46,7 @@ from . import _arpack
 import numpy as np
 from scipy.sparse.linalg.interface import aslinearoperator, LinearOperator
 from scipy.sparse import eye, isspmatrix, isspmatrix_csr
-from scipy.linalg import eig, lu_factor, lu_solve
+from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
@@ -1553,7 +1553,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
         if not isdense(A):
             A = A.todense()
 
-        return eig(A, b=M, right=return_eigenvectors)
+        return eigh(A, b=M, eigvals_only=not return_eigenvectors)
 
     if k <= 0 or k >= n:
         raise ValueError("k must be between 1 and the order of the "
