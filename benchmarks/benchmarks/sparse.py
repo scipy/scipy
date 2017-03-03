@@ -69,7 +69,7 @@ if has_inplace_matvec():
         n_vecs = 1
         if b.ndim == 2:
             n_vecs = b.shape[1]
-    
+
         s = sparse._sparsetools
         if n_vecs == 1:
             if fmt == 'csr':
@@ -194,7 +194,7 @@ class Matvec(Benchmark):
 
 
 class Matvecs(Benchmark):
-    params = ['csr', 'csc', 'bsr']
+    params = ['dia', 'coo', 'csr', 'csc', 'bsr']
     param_names = ["format"]
 
     def setup(self, format):
@@ -207,15 +207,15 @@ class Matvecs(Benchmark):
 
     def time_matvecs_inplace_1_0(self, fmt):
         A = self.matrices[fmt]
-        sparse_gemm(A, self.x, self.y, 1, 0)
+        sparse_gemm(self.A, self.x, self.y, 1, 0)
 
     def time_matvecs_inplace_1_1(self, fmt):
         A = self.matrices[fmt]
-        sparse_gemm(A, self.x, self.y, 1, 1)
+        sparse_gemm(self.A, self.x, self.y, 1, 1)
 
     def time_matvecs_inplace_2_3(self, fmt):
         A = self.matrices[fmt]
-        sparse_gemm(A, self.x, self.y, 2, 3)
+        sparse_gemm(self.A, self.x, self.y, 2, 3)
 
 
 class Matmul(Benchmark):

@@ -32,22 +32,22 @@ import ._sparsetools
 # of rows.
 
 def csr_matvec(N, M, intptr, indices, data, x, y):
-    _sparsetools.csr_matvec(N, M, indptr, indices, data, 1, x, 0, y)
+    _sparsetools.csr_matvec(N, M, indptr, indices, data, 1, x, 1, y)
 
 def csr_matvecs(N, M, n_vecs, intptr, indices, data, x, y):
-    _sparsetools.csr_matvecs(N, M, n_vecs, indptr, indices, data, 1, x, 0, y)
+    _sparsetools.csr_matvecs(N, M, n_vecs, indptr, indices, data, 1, x, 1, y)
 
 def csc_matvec(N, M, intptr, indices, data, x, y):
-    _sparsetools.csc_matvec(N, M, indptr, indices, data, 1, x, 0, y)
+    _sparsetools.csc_matvec(N, M, indptr, indices, data, 1, x, 1, y)
 
 def csc_matvecs(N, M, n_vecs, intptr, indices, data, x, y):
-    _sparsetools.csc_matvecs(N, M, n_vecs, indptr, indices, data, 1, x, 0, y)
+    _sparsetools.csc_matvecs(N, M, n_vecs, indptr, indices, data, 1, x, 1, y)
 
 def bsr_matvec(N, M, R, C, intptr, indices, data, x, y):
-    _sparsetools.bsr_matvec(N, M, R, C, indptr, indices, data, 1, x, 0, y)
+    _sparsetools.bsr_matvec(N, M, R, C, indptr, indices, data, 1, x, 1, y)
 
 def bsr_matvecs(N, M, n_vecs, R, C, intptr, indices, data, x, y):
-    _sparsetools.bsr_matvecs(N, M, n_vecs, R, C, indptr, indices, data, 1, x, 0, y)
+    _sparsetools.bsr_matvecs(N, M, n_vecs, R, C, indptr, indices, data, 1, x, 1, y)
 
 def dia_matvec(N, M, len_off, L, offsets, data, x, y):
-    _sparsetools.dia_matvec(N, M, indptr, indices, data, 1, x, 0, y)
+    _sparsetools.dia_matvec(N, M, indptr, indices, data, 1, x, 1, y)
