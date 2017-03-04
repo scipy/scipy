@@ -111,28 +111,15 @@ def _ident_like(A):
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
-def _count_nonzero(A):
-    # A compatibility function which should eventually disappear.
-    #XXX There should be a better way to do this when A is sparse
-    #    in the traditional sense.
-    if isspmatrix(A):
-        return np.sum(A.toarray() != 0)
-    else:
-        return np.count_nonzero(A)
-
-
 def _is_upper_triangular(A):
     # This function could possibly be of wider interest.
     if isspmatrix(A):
         lower_part = scipy.sparse.tril(A, -1)
-        if lower_part.nnz == 0:
-            # structural upper triangularity
-            return True
-        else:
-            # coincidental upper triangularity
-            return _count_nonzero(lower_part) == 0
+        # Check structural upper triangularity,
+        # then coincidental upper triangularity if needed.
+        return lower_part.nnz == 0 or lower_part.count_nonzero() == 0
     else:
-        return _count_nonzero(np.tril(A, -1)) == 0
+        return not np.tril(A, -1).any()
 
 
 def _smart_matrix_product(A, B, alpha=None, structure=None):
