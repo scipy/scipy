@@ -212,7 +212,7 @@ add_newdoc("scipy.special", "airy",
            http://www.netlib.org/cephes/index.html
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
-           http://netlib.org/amos/.org/amos/
+           http://netlib.org/amos/
     """)
 
 add_newdoc("scipy.special", "airye",
@@ -3297,7 +3297,7 @@ add_newdoc("scipy.special", "it2struve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
 add_newdoc("scipy.special", "itairy",
@@ -3336,7 +3336,7 @@ add_newdoc("scipy.special", "itairy",
 
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
     """)
 
 add_newdoc("scipy.special", "iti0k0",
@@ -3395,7 +3395,7 @@ add_newdoc("scipy.special", "itmodstruve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """)
 
@@ -3431,7 +3431,7 @@ add_newdoc("scipy.special", "itstruve0",
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
-           http://jin.ece.illinois.edu/specfunc.html
+           https://people.sc.fsu.edu/~jburkardt/f_src/special_functions/special_functions.html
 
     """)
 

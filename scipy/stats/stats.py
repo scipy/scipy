@@ -4114,7 +4114,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
 
     References
     ----------
-    http://en.wikipedia.org/wiki/T-test#Dependent_t-test
+    https://en.wikipedia.org/wiki/T-test#Dependent_t-test_for_paired_samples
 
     Examples
     --------

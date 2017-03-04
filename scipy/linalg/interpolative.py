@@ -115,11 +115,11 @@ for Python users. Note that this module does not add any functionality
 beyond that of organizing a simpler and more consistent interface.
 
 We advise the user to consult also the `documentation for the ID package
-<https://cims.nyu.edu/~tygert/id_doc.pdf>`_.
+<http://tygert.com/id_doc.4.pdf>`_.
 
 .. [1] P.G. Martinsson, V. Rokhlin, Y. Shkolnisky, M. Tygert. "ID: a
     software package for low-rank approximation of matrices via interpolative
-    decompositions, version 0.2." http://cims.nyu.edu/~tygert/id_doc.pdf.
+    decompositions, version 0.2." http://tygert.com/id_doc.4.pdf.
 
 .. [2] H. Cheng, Z. Gimbutas, P.G. Martinsson, V. Rokhlin. "On the
     compression of low rank matrices." *SIAM J. Sci. Comput.* 26 (4): 1389--1404,

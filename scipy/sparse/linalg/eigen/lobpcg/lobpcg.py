@@ -1,7 +1,7 @@
 """
 Pure SciPy implementation of Locally Optimal Block Preconditioned Conjugate
 Gradient Method (LOBPCG), see
-http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
+https://bitbucket.org/joseroman/blopex
 
 License: BSD
 
@@ -266,7 +266,7 @@ def lobpcg(A, X,
            in hypre and PETSc.  http://arxiv.org/abs/0705.2626
 
     .. [3] A. V. Knyazev's C and MATLAB implementations:
-           http://www-math.cudenver.edu/~aknyazev/software/BLOPEX/
+           https://bitbucket.org/joseroman/blopex
 
     """
     blockVectorX = X
