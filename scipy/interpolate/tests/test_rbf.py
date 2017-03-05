@@ -13,34 +13,34 @@ FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')
 
 
-def check_rbf1d_interpolation(function):
+def check_rbf1d_interpolation(function, degree):
     # Check that the Rbf function interpolates through the nodes (1D)
     x = linspace(0,10,9)
     y = sin(x)
-    rbf = Rbf(x, y, function=function)
+    rbf = Rbf(x, y, function=function, degree=degree)
     yi = rbf(x)
     assert_array_almost_equal(y, yi)
     assert_almost_equal(rbf(float(x[0])), y[0])
 
 
-def check_rbf2d_interpolation(function):
+def check_rbf2d_interpolation(function, degree):
     # Check that the Rbf function interpolates through the nodes (2D).
     x = random.rand(50,1)*4-2
     y = random.rand(50,1)*4-2
     z = x*exp(-x**2-1j*y**2)
-    rbf = Rbf(x, y, z, epsilon=2, function=function)
+    rbf = Rbf(x, y, z, epsilon=2, function=function, degree=degree)
     zi = rbf(x, y)
     zi.shape = x.shape
     assert_array_almost_equal(z, zi)
 
 
-def check_rbf3d_interpolation(function):
+def check_rbf3d_interpolation(function, degree):
     # Check that the Rbf function interpolates through the nodes (3D).
     x = random.rand(50, 1)*4 - 2
     y = random.rand(50, 1)*4 - 2
     z = random.rand(50, 1)*4 - 2
     d = x*exp(-x**2 - y**2)
-    rbf = Rbf(x, y, z, d, epsilon=2, function=function)
+    rbf = Rbf(x, y, z, d, epsilon=2, function=function, degree=degree)
     di = rbf(x, y, z)
     di.shape = x.shape
     assert_array_almost_equal(di, d)
@@ -48,17 +48,18 @@ def check_rbf3d_interpolation(function):
 
 def test_rbf_interpolation():
     for function in FUNCTIONS:
-        yield check_rbf1d_interpolation, function
-        yield check_rbf2d_interpolation, function
-        yield check_rbf3d_interpolation, function
+        for degree in [None] + list(range(3)):
+            yield check_rbf1d_interpolation, function, degree
+            yield check_rbf2d_interpolation, function, degree
+            yield check_rbf3d_interpolation, function, degree
 
 
-def check_rbf1d_regularity(function, atol):
+def check_rbf1d_regularity(function, atol, degree):
     # Check that the Rbf function approximates a smooth function well away
     # from the nodes.
     x = linspace(0, 10, 9)
     y = sin(x)
-    rbf = Rbf(x, y, function=function)
+    rbf = Rbf(x, y, function=function, degree=degree)
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
     # import matplotlib.pyplot as plt
@@ -82,19 +83,20 @@ def test_rbf_regularity():
         'linear': 0.2
     }
     for function in FUNCTIONS:
-        yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
+        for degree in [None] + list(range(3)):
+            yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2), degree
 
 
-def check_rbf1d_stability(function):
-    # Check that the Rbf function with default epsilon is not subject 
+def check_rbf1d_stability(function, degree):
+    # Check that the Rbf function with default epsilon is not subject
     # to overshoot.  Regression for issue #4523.
     #
-    # Generate some data (fixed random seed hence deterministic) 
+    # Generate some data (fixed random seed hence deterministic)
     np.random.seed(1234)
     x = np.linspace(0, 10, 50)
     z = x + 4.0 * np.random.randn(len(x))
 
-    rbf = Rbf(x, z, function=function)
+    rbf = Rbf(x, z, function=function, degree=degree)
     xi = np.linspace(0, 10, 1000)
     yi = rbf(xi)
 
@@ -103,7 +105,8 @@ def check_rbf1d_stability(function):
 
 def test_rbf_stability():
     for function in FUNCTIONS:
-        yield check_rbf1d_stability, function
+        for degree in [None] + list(range(3)):
+            yield check_rbf1d_stability, function, degree
 
 
 def test_default_construction():
@@ -142,7 +145,7 @@ def test_two_arg_function_is_callable():
 def test_rbf_epsilon_none():
     x = linspace(0, 10, 9)
     y = sin(x)
-    rbf = Rbf(x, y, epsilon=None)
+    Rbf(x, y, epsilon=None)
 
 
 def test_rbf_epsilon_none_collinear():
