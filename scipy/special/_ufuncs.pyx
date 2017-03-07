@@ -2515,7 +2515,25 @@ cdef char *ufunc_airy_doc = (
     "       http://www.netlib.org/cephes/index.html\n"
     ".. [2] Donald E. Amos, \"AMOS, A Portable Package for Bessel Functions\n"
     "       of a Complex Argument and Nonnegative Order\",\n"
-    "       http://netlib.org/amos/.org/amos/")
+    "       http://netlib.org/amos/.org/amos/\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "Compute the Airy functions on the interval [-15, 5].\n"
+    "\n"
+    ">>> from scipy import special\n"
+    ">>> x = np.linspace(-15, 5, 201)\n"
+    ">>> ai, aip, bi, bip = special.airy(x)\n"
+    "\n"
+    "Plot Ai(x) and Bi(x).\n"
+    "\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    ">>> plt.plot(x, ai, 'r', label='Ai(x)')\n"
+    ">>> plt.plot(x, bi, 'b--', label='Bi(x)')\n"
+    ">>> plt.ylim(-0.5, 1.0)\n"
+    ">>> plt.grid()\n"
+    ">>> plt.legend(loc='upper left')\n"
+    ">>> plt.show()")
 ufunc_airy_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_f_ffff
 ufunc_airy_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_d_dddd
 ufunc_airy_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DDDD_As_F_FFFF
