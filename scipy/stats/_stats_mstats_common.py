@@ -33,7 +33,8 @@ def linregress(x, y=None):
         correlation coefficient
     pvalue : float
         two-sided p-value for a hypothesis test whose null hypothesis is
-        that the slope is zero.
+        that the slope is zero, using Wald Test with t-distribution of
+        the test statistic.
     stderr : float
         Standard error of the estimated gradient.
 
