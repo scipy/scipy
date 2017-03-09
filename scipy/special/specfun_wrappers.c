@@ -69,14 +69,6 @@ extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*
 /* This must be linked with fortran
  */
 
-npy_cdouble clngamma_wrap( npy_cdouble z) {
-  int kf = 0;
-  npy_cdouble cy;
-
-  F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
-  return cy;
-}
-
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   npy_cdouble outz;
   int l1, l0, isfer = 0;

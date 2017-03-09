@@ -14,8 +14,8 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    extract, less, inexact, nan, zeros, sinc)
 from . import _ufuncs as ufuncs
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, _zeta, hankel1, hankel2, yv, kv, _gammaln,
-                      ndtri, poch, binom, hyp0f1)
+                      psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
+                      poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
@@ -26,7 +26,7 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk',
            'erf_zeros', 'erfcinv', 'erfinv', 'euler', 'factorial',
            'factorialk', 'factorial2', 'fresnel_zeros',
-           'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
+           'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
            'jnjnp_zeros', 'jnp_zeros', 'jnyn_zeros', 'jv', 'jvp', 'kei_zeros',
            'keip_zeros', 'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv',
@@ -138,47 +138,6 @@ def diric(x, n):
     dsub = extract(mask, denom)
     place(y, mask, sin(nsub*xsub)/(nsub*dsub))
     return y
-
-
-def gammaln(x):
-    """
-    Logarithm of the absolute value of the Gamma function for real inputs.
-
-    Parameters
-    ----------
-    x : array-like
-        Values on the real line at which to compute ``gammaln``
-
-    Returns
-    -------
-    gammaln : ndarray
-        Values of ``gammaln`` at x.
-
-    See Also
-    --------
-    gammasgn : sign of the gamma function
-    loggamma : principal branch of the logarithm of the gamma function
-
-    Notes
-    -----
-    When used in conjunction with `gammasgn`, this function is useful
-    for working in logspace on the real axis without having to deal with
-    complex numbers, via the relation ``exp(gammaln(x)) = gammasgn(x)*gamma(x)``.
-
-    Note that `gammaln` currently accepts complex-valued inputs, but it is not
-    the same function as for real-valued inputs, and the branch is not
-    well-defined --- using `gammaln` with complex is deprecated and will be
-    disallowed in future Scipy versions.
-
-    For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
-
-    """
-    if np.iscomplexobj(x):
-        warnings.warn(("Use of gammaln for complex arguments is "
-                       "deprecated as of scipy 0.18.0. Use "
-                       "scipy.special.loggamma instead."),
-                      DeprecationWarning)
-    return _gammaln(x)
 
 
 def jnjnp_zeros(nt):
