@@ -9071,7 +9071,7 @@ C
            R=0.5D0*R*X*X/(K*(2.0D0*K-1.0D0))
            R1=H(K)*R
            Y1F=Y1F+R1
-           IF (DABS(R1/Y1F).LE.EPS.AND.K.GT.30) GO TO 20
+           IF (DABS(R1).LE.EPS*DABS(Y1F).AND.K.GT.30) GO TO 20
 15      CONTINUE
 20      Y1D=A
         R=1.0D0
@@ -9079,7 +9079,7 @@ C
            R=0.5D0*R*X*X/(K*(2.0D0*K+1.0D0))
            R1=H(K+1)*R
            Y1D=Y1D+R1
-           IF (DABS(R1/Y1D).LE.EPS.AND.K.GT.30) GO TO 30
+           IF (DABS(R1).LE.EPS*DABS(Y1D).AND.K.GT.30) GO TO 30
 25      CONTINUE
 30      Y1D=X*Y1D
         D1=1.0D0
@@ -9094,20 +9094,20 @@ C
 40         D2=DL
         Y2F=1.0D0
         R=1.0D0
-        DO 45 K=1,99
+        DO 45 K=1,79
            R=0.5D0*R*X*X/(K*(2.0D0*K+1.0D0))
            R1=D(K+1)*R
            Y2F=Y2F+R1
-           IF (DABS(R1/Y2F).LE.EPS.AND.K.GT.30) GO TO 50
+           IF (DABS(R1).LE.EPS*DABS(Y2F).AND.K.GT.30) GO TO 50
 45      CONTINUE
 50      Y2F=X*Y2F
         Y2D=1.0D0
         R=1.0D0
-        DO 55 K=1,99
+        DO 55 K=1,79
            R=0.5D0*R*X*X/(K*(2.0D0*K-1.0D0))
            R1=D(K+1)*R
            Y2D=Y2D+R1
-           IF (DABS(R1/Y2D).LE.EPS.AND.K.GT.30) GO TO 60
+           IF (DABS(R1).LE.EPS*DABS(Y2F).AND.K.GT.30) GO TO 60
 55      CONTINUE
 60      W1F=P0*(F1*Y1F-F2*Y2F)
         W2F=P0*(F1*Y1F+F2*Y2F)
