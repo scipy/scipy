@@ -4051,6 +4051,12 @@ cdef char *ufunc_ellipe_doc = (
     "\n"
     "is used.\n"
     "\n"
+    "The parameterization in terms of :math:`m` follows that of section\n"
+    "17.2 in [2]_. Other parameterizations in terms of the\n"
+    "complementary parameter :math:`1 - m`, modular angle\n"
+    ":math:`\\sin^2(\\alpha) = m`, or modulus :math:`k^2 = m` are also\n"
+    "used, so be careful that you choose the correct parameter.\n"
+    "\n"
     "See Also\n"
     "--------\n"
     "ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1\n"
@@ -4061,7 +4067,10 @@ cdef char *ufunc_ellipe_doc = (
     "References\n"
     "----------\n"
     ".. [1] Cephes Mathematical Functions Library,\n"
-    "       http://www.netlib.org/cephes/index.html")
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Milton Abramowitz and Irene A. Stegun, eds.\n"
+    "       Handbook of Mathematical Functions with Formulas,\n"
+    "       Graphs, and Mathematical Tables. New York: Dover, 1972.")
 ufunc_ellipe_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ellipe_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ellipe_types[0] = <char>NPY_FLOAT
@@ -4108,6 +4117,12 @@ cdef char *ufunc_ellipeinc_doc = (
     "\n"
     "Computation uses arithmetic-geometric means algorithm.\n"
     "\n"
+    "The parameterization in terms of :math:`m` follows that of section\n"
+    "17.2 in [2]_. Other parameterizations in terms of the\n"
+    "complementary parameter :math:`1 - m`, modular angle\n"
+    ":math:`\\sin^2(\\alpha) = m`, or modulus :math:`k^2 = m` are also\n"
+    "used, so be careful that you choose the correct parameter.\n"
+    "\n"
     "See Also\n"
     "--------\n"
     "ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1\n"
@@ -4118,7 +4133,10 @@ cdef char *ufunc_ellipeinc_doc = (
     "References\n"
     "----------\n"
     ".. [1] Cephes Mathematical Functions Library,\n"
-    "       http://www.netlib.org/cephes/index.html")
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Milton Abramowitz and Irene A. Stegun, eds.\n"
+    "       Handbook of Mathematical Functions with Formulas,\n"
+    "       Graphs, and Mathematical Tables. New York: Dover, 1972.")
 ufunc_ellipeinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ellipeinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_ellipeinc_types[0] = <char>NPY_FLOAT
@@ -4242,6 +4260,12 @@ cdef char *ufunc_ellipkinc_doc = (
     "Wrapper for the Cephes [1]_ routine `ellik`.  The computation is\n"
     "carried out using the arithmetic-geometric mean algorithm.\n"
     "\n"
+    "The parameterization in terms of :math:`m` follows that of section\n"
+    "17.2 in [2]_. Other parameterizations in terms of the\n"
+    "complementary parameter :math:`1 - m`, modular angle\n"
+    ":math:`\\sin^2(\\alpha) = m`, or modulus :math:`k^2 = m` are also\n"
+    "used, so be careful that you choose the correct parameter.\n"
+    "\n"
     "See Also\n"
     "--------\n"
     "ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1\n"
@@ -4252,7 +4276,10 @@ cdef char *ufunc_ellipkinc_doc = (
     "References\n"
     "----------\n"
     ".. [1] Cephes Mathematical Functions Library,\n"
-    "       http://www.netlib.org/cephes/index.html")
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Milton Abramowitz and Irene A. Stegun, eds.\n"
+    "       Handbook of Mathematical Functions with Formulas,\n"
+    "       Graphs, and Mathematical Tables. New York: Dover, 1972.")
 ufunc_ellipkinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ellipkinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_ellipkinc_types[0] = <char>NPY_FLOAT
