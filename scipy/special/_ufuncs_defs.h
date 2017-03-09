@@ -1,9 +1,6 @@
 #ifndef UFUNCS_PROTO_H
 #define UFUNCS_PROTO_H 1
 #include "cephes.h"
-npy_double lgam(npy_double);
-#include "specfun_wrappers.h"
-npy_cdouble clngamma_wrap(npy_cdouble);
 npy_double igam_fac(npy_double, npy_double);
 npy_double lanczos_sum_expg_scaled(npy_double);
 npy_double lgam1p(npy_double);
@@ -24,6 +21,7 @@ npy_double bdtri(npy_int, npy_int, npy_double);
 #include "cdf_wrappers.h"
 npy_double cdfbin2_wrap(npy_double, npy_double, npy_double);
 npy_double cdfbin3_wrap(npy_double, npy_double, npy_double);
+#include "specfun_wrappers.h"
 npy_double bei_wrap(npy_double);
 npy_double beip_wrap(npy_double);
 npy_double ber_wrap(npy_double);
@@ -79,6 +77,7 @@ npy_double igam(npy_double, npy_double);
 npy_double igamc(npy_double, npy_double);
 npy_double igami(npy_double, npy_double);
 npy_double gammaincinv(npy_double, npy_double);
+npy_double lgam(npy_double);
 npy_double gammasgn(npy_double);
 npy_double gdtr(npy_double, npy_double, npy_double);
 npy_double gdtrc(npy_double, npy_double, npy_double);
