@@ -2061,11 +2061,11 @@ def obl_cv_seq(m, n, c):
 
 
 def ellipk(m):
-    """Complete elliptic integral of the first kind.
+    r"""Complete elliptic integral of the first kind.
 
     This function is defined as
 
-    .. math:: K(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
 
     Parameters
     ----------
@@ -2082,6 +2082,12 @@ def ellipk(m):
     For more precision around point m = 1, use `ellipkm1`, which this
     function calls.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [1]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind around m = 1
@@ -2089,6 +2095,11 @@ def ellipk(m):
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
 
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
 
     """
     return ellipkm1(1 - asarray(m))

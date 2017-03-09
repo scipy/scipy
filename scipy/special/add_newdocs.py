@@ -1094,14 +1094,14 @@ add_newdoc("scipy.special", "dawsn",
     """)
 
 add_newdoc("scipy.special", "ellipe",
-    """
+    r"""
     ellipe(m)
 
     Complete elliptic integral of the second kind
 
     This function is defined as
 
-    .. math:: E(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{1/2} dt
+    .. math:: E(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{1/2} dt
 
     Parameters
     ----------
@@ -1119,14 +1119,20 @@ add_newdoc("scipy.special", "ellipe",
 
     For `m > 0` the computation uses the approximation,
 
-    .. math:: E(m) \\approx P(1-m) - (1-m) \\log(1-m) Q(1-m),
+    .. math:: E(m) \approx P(1-m) - (1-m) \log(1-m) Q(1-m),
 
     where :math:`P` and :math:`Q` are tenth-order polynomials.  For
     `m < 0`, the relation
 
-    .. math:: E(m) = E(m/(m - 1)) \\sqrt(1-m)
+    .. math:: E(m) = E(m/(m - 1)) \sqrt(1-m)
 
     is used.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
 
     See Also
     --------
@@ -1139,17 +1145,20 @@ add_newdoc("scipy.special", "ellipe",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
 add_newdoc("scipy.special", "ellipeinc",
-    """
+    r"""
     ellipeinc(phi, m)
 
     Incomplete elliptic integral of the second kind
 
     This function is defined as
 
-    .. math:: E(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{1/2} dt
+    .. math:: E(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{1/2} dt
 
     Parameters
     ----------
@@ -1170,6 +1179,12 @@ add_newdoc("scipy.special", "ellipeinc",
 
     Computation uses arithmetic-geometric means algorithm.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
@@ -1181,6 +1196,9 @@ add_newdoc("scipy.special", "ellipeinc",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
 add_newdoc("scipy.special", "ellipj",
@@ -1287,14 +1305,14 @@ add_newdoc("scipy.special", "ellipkm1",
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
-    """
+    r"""
     ellipkinc(phi, m)
 
     Incomplete elliptic integral of the first kind
 
     This function is defined as
 
-    .. math:: K(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{-1/2} dt
 
     This function is also called `F(phi, m)`.
 
@@ -1316,6 +1334,12 @@ add_newdoc("scipy.special", "ellipkinc",
     Wrapper for the Cephes [1]_ routine `ellik`.  The computation is
     carried out using the arithmetic-geometric mean algorithm.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
@@ -1327,6 +1351,9 @@ add_newdoc("scipy.special", "ellipkinc",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
 add_newdoc("scipy.special", "entr",
