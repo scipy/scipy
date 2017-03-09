@@ -2,11 +2,9 @@
 SciPy 0.19.0 Release Notes
 ==========================
 
-.. note:: Scipy 0.19.0 is not released yet!
-
 .. contents::
 
-SciPy 0.19.0 is the culmination of X months of hard work. It contains
+SciPy 0.19.0 is the culmination of 7 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -324,7 +322,6 @@ Authors
 * Baptiste Fontaine +
 * Jed Frey +
 * Siddhartha Gandhi +
-* GiggleLiu +
 * Wim Glenn +
 * Akash Goel +
 * Christoph Gohlke
@@ -353,6 +350,7 @@ Authors
 * Josh Lefler +
 * Julien Lhermitte +
 * Evan Limanto +
+* Jin-Guo Liu +
 * Nikolay Mayorov
 * Geordie McBain +
 * Josue Melka +
@@ -502,6 +500,9 @@ Issues closed for 0.19.0
 - `#6991 <https://github.com/scipy/scipy/issues/6991>`__: Division by zero in linregress()
 - `#7011 <https://github.com/scipy/scipy/issues/7011>`__: possible speed improvment in rv_continuous.fit()
 - `#7015 <https://github.com/scipy/scipy/issues/7015>`__: Test failure with Python 3.5 and numpy master
+- `#7055 <https://github.com/scipy/scipy/issues/7055>`__: SciPy 0.19.0rc1 test errors and failures on Windows
+- `#7096 <https://github.com/scipy/scipy/issues/7096>`__: macOS test failues for test_solve_continuous_are
+- `#7100 <https://github.com/scipy/scipy/issues/7100>`__: test_distance.test_Xdist_deprecated_args test error in 0.19.0rc2
 
 
 Pull requests for 0.19.0
@@ -775,4 +776,8 @@ Pull requests for 0.19.0
 - `#7071 <https://github.com/scipy/scipy/pull/7071>`__: TST: silence RuntimeWarning for nan test of stats.spearmanr
 - `#7072 <https://github.com/scipy/scipy/pull/7072>`__: Fix OverflowError: Python int too large to convert to C long...
 - `#7084 <https://github.com/scipy/scipy/pull/7084>`__: TST: linalg: bump tolerance in test_falker
+- `#7095 <https://github.com/scipy/scipy/pull/7095>`__: TST: linalg: bump more tolerances in test_falker
+- `#7101 <https://github.com/scipy/scipy/pull/7101>`__: TST: Relax solve_continuous_are test case 2 and 12
+- `#7106 <https://github.com/scipy/scipy/pull/7106>`__: BUG: stop cdist "correlation" modifying input
+- `#7116 <https://github.com/scipy/scipy/pull/7116>`__: Backports to 0.19.0rc2
 
