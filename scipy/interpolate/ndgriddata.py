@@ -21,7 +21,7 @@ __all__ = ['griddata', 'NearestNDInterpolator', 'LinearNDInterpolator',
 
 class NearestNDInterpolator(NDInterpolatorBase):
     """
-    NearestNDInterpolator(points, values)
+    NearestNDInterpolator(x, y)
 
     Nearest-neighbour interpolation in N dimensions.
 
