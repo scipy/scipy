@@ -71,3 +71,7 @@ def test_linear_sum_assignment_input_validation():
     I = np.identity(3)
     I[1][1] = np.inf
     assert_raises(ValueError, linear_sum_assignment, I)
+
+    I = np.array([[np.inf, 1, np.inf], [np.inf, 3, np.inf], [2, np.inf, 3]])
+    assert_array_equal(linear_sum_assignment(I),
+                       linear_sum_assignment(np.asarray(I)))

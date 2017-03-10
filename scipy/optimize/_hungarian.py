@@ -93,8 +93,9 @@ def linear_sum_assignment(cost_matrix):
     if np.any(np.isnan(cost_matrix)):
         raise ValueError("matrix contains invalid numeric entries")
 
-    if np.any(np.isinf(cost_matrix)):
-        cost_matrix = sys.maxint
+    for x in np.nditer(a, op_flags=['readwrite']):
+        if x == np.inf :
+            x[...] = sys.maxint
 
     if cost_matrix.dtype == np.dtype(np.bool):
         cost_matrix = cost_matrix.astype(np.int)
