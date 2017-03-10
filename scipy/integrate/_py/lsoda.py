@@ -89,10 +89,12 @@ class LSODA(OdeSolver):
     References
     ----------
     .. [1] L. Petzold, "Automatic selection of methods for solving stiff and
-    nonstiff systems of ordinary differential equations", SIAM Journal on
-    Scientific and Statistical Computing, Vol. 4, No. 1, pp. 136-148, 1983.
-    .. [2] A. C. Hindmarsh, "ODEPACK, A Systematized Collection of ODE Solvers,"
-    IMACS Transactions on Scientific Computation, Vol 1., pp. 55-64, 1983.
+           nonstiff systems of ordinary differential equations", SIAM Journal
+           on Scientific and Statistical Computing, Vol. 4, No. 1, pp. 136-148,
+           1983.
+    .. [2] A. C. Hindmarsh, "ODEPACK, A Systematized Collection of ODE
+           Solvers," IMACS Transactions on Scientific Computation, Vol 1.,
+           pp. 55-64, 1983.
     """
 
     def __init__(self, fun, t0, y0, t_crit, first_step=None, min_step=0.0,
