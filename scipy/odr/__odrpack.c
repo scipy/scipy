@@ -1291,7 +1291,7 @@ static struct PyModuleDef moduledef = {
 
 PyObject *PyInit___odrpack(void)
 {
-    PyObject *m, *s, *d;
+    PyObject *m;
     import_array();
     m = PyModule_Create(&moduledef);
     return m;
@@ -1299,7 +1299,7 @@ PyObject *PyInit___odrpack(void)
 #else
 PyMODINIT_FUNC init__odrpack(void)
 {
-    PyObject *m, *d;
+    PyObject *m;
     import_array();
     m = Py_InitModule("__odrpack", methods);
 }

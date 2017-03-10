@@ -138,7 +138,6 @@ init_multivariate_data(ccallback_t *callback, int ndim, PyObject *extra_argument
     p[0] = 0;
     for (i = 0; i < size; ++i) {
         PyObject *item;
-        double value;
 
         item = PyTuple_GET_ITEM(extra_arguments, i);
         p[i+1] = PyFloat_AsDouble(item);

@@ -302,7 +302,7 @@ static PyObject *IIRsymorder1(PyObject *NPY_UNUSED(dummy), PyObject *args)
   thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
   
-  if ((a_sig == NULL)) goto fail;
+  if (a_sig == NULL) goto fail;
   
   out = (PyArrayObject *)PyArray_SimpleNew(1, PyArray_DIMS(a_sig), thetype);
   if (out == NULL) goto fail;
@@ -426,7 +426,7 @@ static PyObject *IIRsymorder2(PyObject *NPY_UNUSED(dummy), PyObject *args)
   thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
   
-  if ((a_sig == NULL)) goto fail;
+  if (a_sig == NULL) goto fail;
   
   out = (PyArrayObject *)PyArray_SimpleNew(1, PyArray_DIMS(a_sig), thetype);
   if (out == NULL) goto fail;
