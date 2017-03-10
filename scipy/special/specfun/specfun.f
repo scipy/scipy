@@ -9039,7 +9039,7 @@ C       ======================================================
 C
         IMPLICIT DOUBLE PRECISION (A,B,D-H,O-Y)
         IMPLICIT COMPLEX *16 (C,Z)
-        DIMENSION H(100),D(100)
+        DIMENSION H(100),D(80)
         EPS=1.0D-15
         P0=0.59460355750136D0
         IF (A.EQ.0.0D0) THEN
