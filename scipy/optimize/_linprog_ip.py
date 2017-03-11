@@ -1,54 +1,25 @@
-# -*- coding: utf-8 -*-
 """
-Created on Thu Feb 02 17:09:17 2017
-
-@author: Matt
-
-To do:
-multiple presolve
-questions for scipy-dev
-* This is written in Python 2. How should I check compatibility with Python 3?
-* Are the warnings OK? Do I need an option to disable them?
-* Is 100% pep8 compliance necessary?
-* How should unit tests be performed on both simplex and ip?
-* Can I leave multi-pass presolve to an update?
-* Can I leave sparse presolve to an update?
-* Do I need to implement a callback interface?
-* There are some changes to be made to simplex; it should use the ip presolve
- routine. Can that be left to an update?
-* How do I document options not common with simplex?
-* How do I use _check_unknown_options?
-* Should I expose the choice of sparse matrix format to the user?
-* Should I expose the choice of sparse matrix solve pivot rule to the user?
-* there are many different tolerances. For well-scaled problems, they will
-    work just fine and I don't personally see a need to expose them all.
-    Should I anyway?
-* What should the file structure be? Can I keep things in separate files?
-* Should interior-point be the default?
-* Can my name appear somewhere in case I want to prove that I made this
-     contribution to a potential employer?
-     
-
+An interior-point method for linear programming.
 """
+# Author: Matt Haberland
+
 from __future__ import print_function, division, absolute_import
-from __future__ import division
 import numpy as np
 import scipy as sp
 import scipy.sparse as sps
 from warnings import warn
 from scipy.linalg import LinAlgError
-from scipy.optimize import OptimizeResult
-from scipy.optimize import linprog as linprog_simplex
-from ._removeRedundancy import _removeRedundancy
+from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
+#from scipy.optimize import _check_unknown_options
+from scipy.optimize._remove_redundancy import _remove_redundancy
 
-def _cleanInputs(
+def _clean_inputs(
         c,
         A_ub=None,
         b_ub=None,
         A_eq=None,
         b_eq=None,
-        bounds=None,
-        options={}):
+        bounds=None):
     """
     Given user inputs for a linear programming problem, return the
     objective vector, upper bound constraints, equality constraints,
@@ -77,8 +48,6 @@ def _cleanInputs(
         bounds are ``(0, None)`` (non-negative)
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
-    options : dict, optional
-        A dictionary of solver options.
 
     Returns
     -------
@@ -101,9 +70,6 @@ def _cleanInputs(
         the bounds on that parameter. Use None for each of ``min`` or
         ``max`` when there is no bound in that direction. By default
         bounds are ``(0, None)`` (non-negative)
-    options : dict
-        A dictionary of solver options. Option values not set by the user are
-        set to default values.
 
     """
 
@@ -268,7 +234,7 @@ def _cleanInputs(
 
         clean_bounds = []  # also creates a copy so user's object isn't changed
         for i, b in enumerate(bounds):
-            if b[0] is not None and b[1] is not None and b[0] > b[1] :
+            if b[0] is not None and b[1] is not None and b[0] > b[1]:
                 raise ValueError(
                     "Invalid input for linprog, bound " +
                     str(i) +
@@ -305,57 +271,7 @@ def _cleanInputs(
             "Invalid input for linprog: bounds must be a sequence of "
             "(min,max) pairs, each defining bounds on an element of x ")
 
-    defaultOptions = {
-        "alpha0": 0.99995,
-        "beta": 0.1,
-        "maxiter": 1000,
-        "disp": False,
-        "tol": 1e-8,
-        "sparse": False,
-        "lstsq": False,
-        "sym_pos": True,
-        "cholesky": False,
-        "pc": True,
-        "ip": False
-    }
-
-    for key in defaultOptions:
-        if key not in options:
-            options[key] = defaultOptions[key]
-
-    # These should be warnings, not Errors
-    if options["sparse"] and options["lstsq"]:
-        warn("Invalid option combination 'sparse':True "
-             "and 'lstsq':True; Sparse least squares is not recommended.")
-
-    if options["sparse"] and not options["sym_pos"]:
-        warn("Invalid option combination 'sparse':True "
-             "and 'sym_pos':False; option 'sym_pos' has no effect when "
-             "'sparse' is set True.")
-
-    if options["sparse"] and options["cholesky"]:
-        warn("Invalid option combination 'sparse':True "
-             "and 'cholesky';True: option 'cholesky' has no effect when "
-             "'sparse' is set True.")
-
-    if options["lstsq"] and options["sym_pos"]:
-        warn("Invalid option combination 'lstsq':True "
-             "and 'sym_pos':True; option 'sym_pos' has no effect when "
-             "'lstsq' is set True.")
-
-    if options["lstsq"] and options["cholesky"]:
-        warn("Invalid option combination 'lstsq':True "
-             "and 'cholesky':True; option 'cholesky' has no effect when "
-             "'lstsq' is set True.")
-
-    # This can be an error
-    if not options["sym_pos"] and options["cholesky"]:
-        raise ValueError(
-            "Invalid option combination 'sym_pos':False "
-            "and 'cholesky';True: Cholesky decomposition is only possible "
-            "for symmetric positive definite matrices.")
-
-    return c, A_ub, b_ub, A_eq, b_eq, bounds, options
+    return c, A_ub, b_ub, A_eq, b_eq, bounds
 
 
 def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
@@ -454,7 +370,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     status = 0              # all OK unless determined otherwise
     message = ""
 
-    # Standard form for bounds (from _cleanInputs) is list of tuples
+    # Standard form for bounds (from _clean_inputs) is list of tuples
     # but numpy array is more convenient here
     # In retrospect, numpy array should have been the standard
     bounds = np.array(bounds)
@@ -469,14 +385,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     m_eq, n = A_eq.shape
     m_ub, n = A_ub.shape
 
-# Save this to implement multiple presolve passes later
-#    modified = True
-#    while(modified):
-    modified = False
     # zero row in equality constraints
     zero_row = np.sum(A_eq != 0, axis=1) == 0
     if np.any(zero_row):
-        modified = True
         if np.any(
             np.logical_and(
                 zero_row,
@@ -493,12 +404,10 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
             # if RHS is zero, we can eliminate this equation entirely
             A_eq = A_eq[np.logical_not(zero_row)]
             b_eq = b_eq[np.logical_not(zero_row)]
-            modified = True
 
     # zero row in inequality constraints
     zero_row = np.sum(A_ub != 0, axis=1) == 0
     if np.any(zero_row):
-        modified = True
         if np.any(np.logical_and(zero_row, b_ub < -tol)):  # test_zero_row_1
             # infeasible if RHS is less than zero (because LHS is zero)
             status = 2
@@ -518,8 +427,6 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     A = np.vstack((A_eq, A_ub))
     if len(A > 0):
         zero_col = np.sum(A != 0, axis=0) == 0
-        if np.any(zero_col):
-            modified = True
         # variable will be at upper or lower bound, depending on objective
         x[np.logical_and(zero_col, c < 0)] = ub[
             np.logical_and(zero_col, c < 0)]
@@ -546,7 +453,6 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     cols = np.where(A_eq[singleton_row, :])[1]
     rows = np.where(singleton_row)[0]
     if len(rows) > 0:
-        modified = True
         for row, col in zip(rows, cols):
             val = b_eq[row] / A_eq[row, col]
             if not lb[col] - tol <= val <= ub[col] + tol:
@@ -569,13 +475,12 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     # row singleton in inequality constraints
     # this indicates a simple bound and the constraint can be removed
     # simple bounds may be adjusted here
-    # After all of the simple bound information is combined here, getAbc will
+    # After all of the simple bound information is combined here, get_Abc will
     # turn the simple bounds into constraints
     singleton_row = np.sum(A_ub != 0, axis=1) == 1
     cols = np.where(A_ub[singleton_row, :])[1]
     rows = np.where(singleton_row)[0]
     if len(rows) > 0:
-        modified = True
         for row, col in zip(rows, cols):
             val = b_ub[row] / A_ub[row, col]
             if A_ub[row, col] > 0:  # upper bound
@@ -602,7 +507,6 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     i_f = np.abs(lb - ub) < tol   # indices of "fixed" variables
     i_nf = np.logical_not(i_f)  # indices of "not fixed" variables
     if np.any(i_f):
-        modified = True
         c0 += c[i_f].dot(lb[i_f])
         b_eq = b_eq - A_eq[:, i_f].dot(lb[i_f])
         b_ub = b_ub - A_ub[:, i_f].dot(lb[i_f])
@@ -621,8 +525,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
         # test_empty_constraint_1
         if c.size == 0:
             status = 0
-            message = "The solution was determined in presolve as there " \
-            "are no non-trivial constraints."
+            message = "The solution was determined in presolve as there are \
+            no non-trivial constraints."
         elif np.any(np.logical_and(c < 0, ub == np.inf)) or \
                 np.any(np.logical_and(c > 0, lb == -np.inf)):
                 # test_no_constraints()
@@ -651,15 +555,15 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
         for j, col in enumerate(row):
             if str(
                     col) == "nan":  # comparing col to float("nan") and
-                                    # np.nan doesn't work
+                                    # np.nan doesn't work. should use np.isnan
                 bounds[i][j] = None
 
     # remove redundant (linearly dependent) rows from equality constraints
     if A_eq.size > 0 and np.linalg.matrix_rank(A_eq) < A_eq.shape[0]:
         warn("A_eq does not appear to be of full row rank. To improve "
              "performance, check the problem formulation for redundant "
-             "equality constraints.")
-        A_eq, b_eq, status = _removeRedundancy(A_eq, b_eq)
+             "equality constraints.", OptimizeWarning)
+        A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
         if status != 0:
             complete = True
 
@@ -667,7 +571,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
         x, undo, complete, status, message
 
 
-def _getAbc(
+def _get_Abc(
         c,
         c0=0,
         A_ub=None,
@@ -812,7 +716,9 @@ def _postprocess(
         b_eq=None,
         bounds=None,
         complete=False,
-        undo=[]):
+        undo=[],
+        status=0,
+        message=""):
     """
     Given solution x to presolved, standard form linear program x, add
     fixed variables back into the problem and undo the variable substitutions
@@ -841,6 +747,15 @@ def _postprocess(
     undo: list of tuples
         (index, value) pairs that record the original index and fixed value
         for each variable removed from the problem
+    status : int
+        An integer representing the exit status of the optimization::
+             0 : Optimization terminated successfully
+             1 : Iteration limit reached
+             2 : Problem appears to be infeasible
+             3 : Problem appears to be unbounded
+             4 : Serious numerical difficulties encountered
+    message : str
+        A string descriptor of the exit status of the optimization.
 
     Returns
     -------
@@ -854,6 +769,15 @@ def _postprocess(
     con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
         b - A_eq * x
+    status : int
+        An integer representing the exit status of the optimization::
+             0 : Optimization terminated successfully
+             1 : Iteration limit reached
+             2 : Problem appears to be infeasible
+             3 : Problem appears to be unbounded
+             4 : Serious numerical difficulties encountered
+    message : str
+        A string descriptor of the exit status of the optimization.
 
     """
     # note that all the inputs are the ORIGINAL, unmodified versions
@@ -902,10 +826,21 @@ def _postprocess(
     # report residuals of ORIGINAL EQ constraints
     con = b_eq - np.dot(A_eq, x)
 
-    return x, fun, slack, con
+    if status == 0 and (np.isnan(x).any() or np.isnan(fun) or
+                        np.isnan(slack).any() or np.isnan(con).any()):
+        status = 4
+        message = "Numerical difficulties were encountered but no errors " \
+                  "were raised. This is known to occur if the 'presolve' " \
+                  "option is False, 'sparse' is True, and A_eq includes " \
+                  "redundant rows. If you encounter this under different " \
+                  "circumstances, please submit a bug report. Otherwise, " \
+                  "remove linearly dependent equations from your equality " \
+                  "constraints or enable presolve."
+
+    return x, fun, slack, con, status, message
 
 
-def _getSolver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
+def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
     """
     Given solver options, return a handle to the appropriate linear system
     solver.
@@ -939,44 +874,52 @@ def _getSolver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
     """
     if sparse:
         if lstsq:  # this doesn't seem to work
-            solve = lambda M, r: sps.linalg.lsqr(M, r)[0]
+            # solve = lambda M, r: sps.linalg.lsqr(M, r)[0]
+            def solve(M, r): 
+                return sps.linsalg.lsqr(M, r)[0]
         else:
-            solve = lambda M, r: sps.linalg.spsolve(
-                M, r, permc_spec="MMD_AT_PLUS_A")
+            # solve = lambda M, r: sps.linalg.spsolve(
+            # M, r, permc_spec="MMD_AT_PLUS_A")
+            def solve(M, r): 
+                return sps.linalg.spsolve(M, r, permc_spec="MMD_AT_PLUS_A")
             # in tests MMD_AT_PLUS_A was often fastest.
             # should this be exposed as an option?
 
     else:
         if lstsq:  # sometimes necessary as solution is approached
-            solve = lambda M, r: sp.linalg.lstsq(M, r)[0]
+            # solve = lambda M, r: sp.linalg.lstsq(M, r)[0]
+            def solve(M, r): 
+                return sp.linalg.lstsq(M, r)[0]
         elif cholesky:
-            solve = _fbSubs
+            solve = _fb_subs
         else:
             # this seems to cache the matrix factorization, so solving
             # with multiple right hand sides is much faster
-            solve = lambda M, r, sym_pos = sym_pos: sp.linalg.solve(
-                M, r, sym_pos=sym_pos)
+            # solve = lambda M, r, sym_pos = sym_pos: sp.linalg.solve(
+            # M, r, sym_pos=sym_pos)
+            def solve(M, r, sym_pos=sym_pos): 
+                return sp.linalg.solve(M, r, sym_pos=sym_pos)
 
     return solve
 
 
-def _getDelta(
-    A,
-    b,
-    c,
-    x,
-    y,
-    z,
-    tau,
-    kappa,
-    gamma,
-    eta,
-    sparse=False,
-    lstsq=False,
-    sym_pos=False,
-    cholesky=False,
-    pc=True,
-        ip=False):
+def _get_delta(
+            A,
+            b,
+            c,
+            x,
+            y,
+            z,
+            tau,
+            kappa,
+            gamma,
+            eta,
+            sparse=False,
+            lstsq=False,
+            sym_pos=False,
+            cholesky=False,
+            pc=True,
+            ip=False):
     """
     Given standard form problem defined by A, b, and c; current variable
     estimates x, y, z, tau, and kappa; algorithmic parameters gamma and eta;
@@ -1028,7 +971,7 @@ def _getDelta(
 
     """
 
-    solve = _getSolver(sparse, lstsq, sym_pos, cholesky)
+    solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
     n_x = len(x)
 
     # [1] Equation 8.8
@@ -1047,12 +990,12 @@ def _getDelta(
         M = A.dot(Dinv.reshape(-1, 1) * A.T)
 
     # For very large problems it's more efficient to take Cholesky
-    # decomposition first, then use custom fwd/back solve function cholSolve
+    # decomposition first, then use custom fwd/back solve function _fb_subs
     # multiple times.
     # For most problems, calling sp.linalg.solve w/ sym_pos = True
     # is faster. I am pretty certain it caches the factorization for multiple
     # uses and checks the incoming matrix to see if it's the same as the one
-    # it already factorized. (Nothing else would explain the speed.)
+    # it already factorized. (I can't explain the speed otherwise.)
     if cholesky:
         L = sp.linalg.cholesky(M, lower=True)
 
@@ -1098,7 +1041,7 @@ def _getDelta(
         # sometimes numerical difficulties arise as the solution is approached
         # this loop tries to solve the equations using a sequence of functions
         # for solve.
-        # 1. cholSolve: cholesky factorization then forward/back subs,
+        # 1. _fb_subs: cholesky factorization then forward/back subs,
         # 2. scipy.linalg.solve w/ sym_pos = True,
         # 3. scipy.linalg.solve w/ sym_pos = False, and if all else fails
         # 4. scipy.linalg.lstsq
@@ -1107,10 +1050,10 @@ def _getDelta(
             try:
                 solve_this = L if cholesky else M
                 # [1] Equation 8.28
-                p, q = _symSolve(Dinv, solve_this, A, c, b, solve)
+                p, q = _sym_solve(Dinv, solve_this, A, c, b, solve)
                 # [1] Equation 8.29
-                u, v = _symSolve(Dinv, solve_this, A, rhatd -
-                                 (1 / x) * rhatxs, rhatp, solve)
+                u, v = _sym_solve(Dinv, solve_this, A, rhatd -
+                                  (1 / x) * rhatxs, rhatp, solve)
                 solved = True
             except (LinAlgError, ValueError) as e:
                 # Usually this doesn't happen. If it does, it happens when
@@ -1125,21 +1068,21 @@ def _getDelta(
                             "occasionally, especially as the solution is "
                             "approached. However, if you see this frequently, "
                             "consider setting option 'sym_pos' to False.",
-                            RuntimeWarning)
+                            OptimizeWarning)
                         sym_pos = False
                     else:
                         warn(
                             "Solving system with option 'sym_pos':False "
-                            "failed. This may happen occasionally "
-                            "occasionally, especially as the solution is "
+                            "failed. This may happen occasionally, "
+                            "especially as the solution is "
                             "approached. However, if you see this frequently, "
                             "your problem may be numerically challenging. "
                             "If you cannot improve the formulation, consider "
-                            "setting 'lstsq' to True.", RuntimeWarning)
+                            "setting 'lstsq' to True.", OptimizeWarning)
                         lstsq = True
                 else:
                     raise e
-                solve = _getSolver(sparse, lstsq, sym_pos)
+                solve = _get_solver(sparse, lstsq, sym_pos)
 
         # [1] Results after 8.29
         d_tau = (rhatg + 1 / tau * rhattk - (-c.dot(u) + b.dot(v))) / \
@@ -1152,7 +1095,7 @@ def _getDelta(
         d_kappa = 1 / tau * (rhattk - kappa * d_tau)
 
         # [1] 8.12 and "Let alpha be the maximal possible step..." before 8.23
-        alpha = _getStep(x, d_x, z, d_z, tau, d_tau, kappa, d_kappa, 1)
+        alpha = _get_step(x, d_x, z, d_z, tau, d_tau, kappa, d_kappa, 1)
         if ip:  # initial point - see [1] 4.4
             gamma = 10
         else:  # predictor-corrector, [1] definition after 8.12
@@ -1163,7 +1106,7 @@ def _getDelta(
     return d_x, d_y, d_z, d_tau, d_kappa
 
 
-def _fbSubs(L, r):
+def _fb_subs(L, r):
     """
     Given lower triangular Cholesky factor L and right-hand side r, solve the
     system L L^T = r by substitution.
@@ -1186,7 +1129,7 @@ def _fbSubs(L, r):
     return x
 
 
-def _symSolve(Dinv, M, A, r1, r2, solve):
+def _sym_solve(Dinv, M, A, r1, r2, solve):
     """
     An implementation of [1] equation 8.31 and 8.32
 
@@ -1206,7 +1149,7 @@ def _symSolve(Dinv, M, A, r1, r2, solve):
     return u, v
 
 
-def _getStep(x, d_x, z, d_z, tau, d_tau, kappa, d_kappa, alpha0):
+def _get_step(x, d_x, z, d_z, tau, d_tau, kappa, d_kappa, alpha0):
     """
     An implementation of [1] equation 8.21
 
@@ -1232,7 +1175,7 @@ def _getStep(x, d_x, z, d_z, tau, d_tau, kappa, d_kappa, alpha0):
     return alpha
 
 
-def _getMessage(status):
+def _get_message(status):
     """
     Given problem status code, return a more detailed message.
 
@@ -1255,20 +1198,20 @@ def _getMessage(status):
     messages = \
         ["Optimization terminated successfully.",
          "The iteration limit was reached before the algorithm converged.",
-         "The algorithm terminated successfully and determined that the \
-         problem is infeasible.",
-         "The algorithm terminated successfully and determined that the \
-         problem is unbounded.",
-         "Numerical difficulties were encountered before the problem \
-         converged. Please check your problem formulation for errors, \
-         independence of linear equality constraints, and reasonable \
-         scaling and matrix condition numbers. If you continue to encounter \
-         this error, please submit a bug report."
+         "The algorithm terminated successfully and determined that the " 
+         "problem is infeasible.",
+         "The algorithm terminated successfully and determined that the " 
+         "problem is unbounded.",
+         "Numerical difficulties were encountered before the problem " 
+         "converged. Please check your problem formulation for errors, " 
+         "independence of linear equality constraints, and reasonable " 
+         "scaling and matrix condition numbers. If you continue to " 
+         "encounter this error, please submit a bug report."
          ]
     return messages[status]
 
 
-def _doStep(x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha):
+def _do_step(x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha):
     """
     An implementation of [1] Equation 8.9
 
@@ -1288,7 +1231,7 @@ def _doStep(x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha):
     return x, y, z, tau, kappa
 
 
-def _getBlindStart(shape):
+def _get_blind_start(shape):
     """
     Return the starting point from [1] 4.4
 
@@ -1324,18 +1267,32 @@ def _indicators(A, b, c, c0, x, y, z, tau, kappa):
     """
 
     # residuals for termination are relative to initial values
-    x0, y0, z0, tau0, kappa0 = _getBlindStart(A.shape)
+    x0, y0, z0, tau0, kappa0 = _get_blind_start(A.shape)
 
     # See [1], Section 4 - The Homogeneous Algorithm, Equation 8.8
-    r_p = lambda x, tau: b * tau - A.dot(x)
-    r_d = lambda y, z, tau: c * tau - A.T.dot(y) - z
-    r_g = lambda x, y, kappa: kappa + c.dot(x) - b.dot(y)
+    # r_p = lambda x, tau: b * tau - A.dot(x)
+    def r_p(x, tau): 
+        return b * tau - A.dot(x)
+
+    # r_d = lambda y, z, tau: c * tau - A.T.dot(y) - z
+    def r_d(y, z, tau): 
+        return c * tau - A.T.dot(y) - z
+
+    # r_g = lambda x, y, kappa: kappa + c.dot(x) - b.dot(y)
+    def r_g(x, y, kappa): 
+        return kappa + c.dot(x) - b.dot(y)
+
     # np.dot unpacks if they are arrays of size one
-    mu = lambda x, tau, z, kappa: (
-        x.dot(z) + np.dot(tau, kappa)) / (len(x) + 1)
+    # mu = lambda x, tau, z, kappa: (
+    # x.dot(z) + np.dot(tau, kappa)) / (len(x) + 1)
+    def mu(x, tau, z, kappa): 
+        return (x.dot(z) + np.dot(tau, kappa)) / (len(x) + 1)
 
     obj = c.dot(x / tau) + c0
-    norm = lambda a: np.linalg.norm(a)
+    # norm = lambda a: np.linalg.norm(a)
+
+    def norm(a): 
+        return np.linalg.norm(a)
 
     # See [1], Section 4.5 - The Stopping Criteria
     r_p0 = r_p(x0, tau0)
@@ -1350,7 +1307,7 @@ def _indicators(A, b, c, c0, x, y, z, tau, kappa):
     return rho_p, rho_d, rho_A, rho_g, rho_mu, obj
 
 
-def _displayIter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
+def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
     """
     Print indicators of optimization status to the console.
 
@@ -1380,11 +1337,11 @@ def _displayIter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
 
     """
     if header:
-        print("Primal Feasibility ", \
-              "Dual Feasibility   ", \
-              "Duality Gap        ", \
-              "Step               ", \
-              "Path Parameter     ", \
+        print("Primal Feasibility ",
+              "Dual Feasibility   ",
+              "Duality Gap        ",
+              "Step               ",
+              "Path Parameter     ",
               "Objective          ")
 
     print('{0:<20}{1:<20}{2:<20}{3:<20}{4:<20}{5:<20}'.format(
@@ -1396,23 +1353,8 @@ def _displayIter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
         obj))
 
 
-def _ip_hsd(
-    A,
-    b,
-    c,
-    c0,
-    alpha0=.99995,
-    beta=0.1,
-    maxiter=1000,
-    disp=False,
-    tol=1e-8,
-    sparse=False,
-    lstsq=False,
-    sym_pos=True,
-    cholesky=False,
-    pc=True,
-    ip=False,
-        **unknown_options):
+def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, 
+            sparse, lstsq, sym_pos, cholesky, pc, ip):
     """
     Solve a linear programming problem in standard form:
 
@@ -1502,7 +1444,7 @@ def _ip_hsd(
     iteration = 0
 
     # default initial point
-    x, y, z, tau, kappa = _getBlindStart(A.shape)
+    x, y, z, tau, kappa = _get_blind_start(A.shape)
 
     # first iteration is special improvement of initial point
     ip = ip if pc else False
@@ -1513,7 +1455,7 @@ def _ip_hsd(
     go = rho_p > tol or rho_d > tol or rho_A > tol  # we might get lucky : )
 
     if disp:
-        _displayIter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
+        _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
 
     status = 0
     message = "Optimization terminated successfully."
@@ -1531,32 +1473,38 @@ def _ip_hsd(
         if ip:  # initial point
             # [1] Section 4.4
             gamma = 1
-            eta = lambda g: 1
+
+            # eta = lambda g: 1
+            def eta(g): 
+                return 1
         else:
             # gamma = 0 in predictor step according to [1] 4.1
             # if predictor/corrector is off, use mean of complementarity [3]
             # 5.1 / [4] Below Figure 10-4
             gamma = 0 if pc else beta * np.mean(z * x)
             # [1] Section 4.1
-            eta = lambda g=gamma: 1 - g
+
+            # eta = lambda g=gamma: 1 - g
+            def eta(g=gamma): 
+                return 1 - g
 
         try:
             # Solve [1] 8.6 and 8.7/8.13/8.23
-            d_x, d_y, d_z, d_tau, d_kappa = _getDelta(
+            d_x, d_y, d_z, d_tau, d_kappa = _get_delta(
                 A, b, c, x, y, z, tau, kappa, gamma, eta,
                 sparse, lstsq, sym_pos, cholesky, pc, ip)
         except LinAlgError:
-            # there are enough checks in getDelta that I've never seen this
+            # there are enough checks in get_delta that I've never seen this
             # happen
             status = 4
-            message = _getMessage(status)
+            message = _get_message(status)
             break
 
         if ip:  # initial point
             # [1] 4.4
             # Formula after 8.23 takes a full step regardless if this will take
             # it negative
-            x, y, z, tau, kappa = _doStep(
+            x, y, z, tau, kappa = _do_step(
                 x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha=1)
             x[x < 1] = 1
             z[z < 1] = 1
@@ -1565,7 +1513,7 @@ def _ip_hsd(
             ip = False  # done with initial point
         else:
             # [1] Section 4.3
-            alpha = _getStep(
+            alpha = _get_step(
                 x,
                 d_x,
                 z,
@@ -1576,7 +1524,7 @@ def _ip_hsd(
                 d_kappa,
                 alpha0)
             # [1] Equation 8.9
-            x, y, z, tau, kappa = _doStep(
+            x, y, z, tau, kappa = _do_step(
                 x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
 
         # [1] 4.5
@@ -1585,7 +1533,7 @@ def _ip_hsd(
         go = rho_p > tol or rho_d > tol or rho_A > tol
 
         if disp:
-            _displayIter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
+            _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
 
         # [1] 4.5
         inf1 = rho_p < tol and rho_d < tol and rho_g < tol and tau < tol * \
@@ -1597,11 +1545,11 @@ def _ip_hsd(
                 status = 2
             else:  # elif c.T.dot(x) < tol: ? Probably not necessary.
                 status = 3
-            message = _getMessage(status)
+            message = _get_message(status)
             break
         elif iteration >= maxiter:
             status = 1
-            message = _getMessage(status)
+            message = _get_message(status)
             break
 
     if disp:
@@ -1619,7 +1567,20 @@ def _linprog_ip(
         A_eq=None,
         b_eq=None,
         bounds=None,
-        options={}):
+        callback=None,
+        alpha0=.99995,
+        beta=0.1,
+        maxiter=1000,
+        disp=False,
+        tol=1e-8,
+        sparse=False,
+        lstsq=False,
+        sym_pos=True,
+        cholesky=False,
+        pc=True,
+        ip=False,
+        presolve=True,
+        **unknown_options):
     """
     Minimize a linear objective function subject to linear
     equality and inequality constraints using the interior point method of [1]
@@ -1655,48 +1616,56 @@ def _linprog_ip(
         bounds are ``(0, None)`` (non-negative)
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
-    options : dict, optional
-        A dictionary of solver options.
-            maxiter : int (default = 1000)
-                The maximum number of iterations of the algorithm
-            disp : boolean (default = False)
-                True if indicators of optimization status are to be printed to
-                the console each iteration
-            tol : float (default = 1e-8)
-                Termination tolerance to be used for all termination criteria;
-                see [1] 4.5
-            alpha0 : float (default = 0.99995)
-                The maximal step size for Mehrota's predictor-corrector search
-                direction; see \beta3 of [1] Table 8.1
-            beta : float (default = 0.1)
-                The desired reduction of the path parameter \mu (see [3]) when
-                Mehrota's predictor-corrector is not in use (uncommon).
-            sparse : boolean (default = False)
-                True if the problem is to be treated as sparse. Try setting
-                this to True if your constraint matrices are sparse and the
-                problem is relatively large.
-            lstsq : boolean (default = False)
-                True if the problem is expected to be very poorly conditioned.
-                This should always be False unless severe numerical
-                difficulties are encountered. Leave this at the default unless
-                you receive a warning message suggesting otherwise.
-            sym_pos : boolean (default = True)
-                True if the problem is expected to yield a well conditioned
-                symmetric positive definite normal equation matrix
-                (almost always). Leave this at the default unless you receive
-                a warning message suggesting otherwise.
-            cholesky : boolean (default = False)
-                True if the normal equations are to be solved by explicit
-                Cholesky decomposition followed by explicit forward/backward
-                substitution. This is occasionally faster for very large
-                problems, but should typically be set False.
-            pc : boolean (default = True)
-                True if the predictor-corrector method of Mehrota is to be
-                used. This is almost always (if not always) beneficial.
-            ip : boolean (default = False)
-                True if the improved initial point suggestion due to [1]
-                section 4.3 is desired. Whether this is beneficial or not
-                depends on the problem.
+        
+    Options
+    -------
+    maxiter : int (default = 1000)
+        The maximum number of iterations of the algorithm
+    disp : boolean (default = False)
+        True if indicators of optimization status are to be printed to
+        the console each iteration
+    tol : float (default = 1e-8)
+        Termination tolerance to be used for all termination criteria;
+        see [1] 4.5
+    alpha0 : float (default = 0.99995)
+        The maximal step size for Mehrota's predictor-corrector search
+        direction; see \beta3 of [1] Table 8.1
+    beta : float (default = 0.1)
+        The desired reduction of the path parameter \mu (see [3]) when
+        Mehrota's predictor-corrector is not in use (uncommon).
+    sparse : boolean (default = False)
+        True if the problem is to be treated as sparse. Try setting
+        this to True if your constraint matrices are sparse and the
+        problem is relatively large.
+    lstsq : boolean (default = False)
+        True if the problem is expected to be very poorly conditioned.
+        This should always be False unless severe numerical
+        difficulties are encountered. Leave this at the default unless
+        you receive a warning message suggesting otherwise.
+    sym_pos : boolean (default = True)
+        True if the problem is expected to yield a well conditioned
+        symmetric positive definite normal equation matrix
+        (almost always). Leave this at the default unless you receive
+        a warning message suggesting otherwise.
+    cholesky : boolean (default = False)
+        True if the normal equations are to be solved by explicit
+        Cholesky decomposition followed by explicit forward/backward
+        substitution. This is occasionally faster for very large
+        problems, but should typically be set False.
+    pc : boolean (default = True)
+        True if the predictor-corrector method of Mehrota is to be
+        used. This is almost always (if not always) beneficial.
+    ip : boolean (default = False)
+        True if the improved initial point suggestion due to [1]
+        section 4.3 is desired. Whether this is beneficial or not
+        depends on the problem.
+    presolve : boolean (default = True)
+        True if presolve routine should be run. The presolve routine is almost
+        always useful because it can detect trivial infeasibilities
+        and unboundedness, eliminate fixed variables, remove redundancies, 
+        etc... One circumstance in which it might be turned off is when
+        it detects that the problem is trivially unbounded but it is possible
+        that there is an infeasibility it cannot detect.
 
     Returns
     -------
@@ -1750,14 +1719,50 @@ def _linprog_ip(
            programming." Athena Scientific 1 (1997): 997.
 
     """
+    _check_unknown_options(unknown_options)
+    
+    if callback is not None:
+        warn("method 'interior-point' does not support callback function",
+             OptimizeWarning)
+             
+        # These should be warnings, not Errors
+    if sparse and lstsq:
+        warn("Invalid option combination 'sparse':True "
+             "and 'lstsq':True; Sparse least squares is not recommended.",
+             OptimizeWarning)
+
+    if sparse and not sym_pos:
+        warn("Invalid option combination 'sparse':True "
+             "and 'sym_pos':False; option 'sym_pos' has no effect when "
+             "'sparse' is set True.",
+             OptimizeWarning)
+
+    if sparse and cholesky:
+        warn("Invalid option combination 'sparse':True "
+             "and 'cholesky':True; option 'cholesky' has no effect when "
+             "'sparse' is set True.",
+             OptimizeWarning)
+
+    if lstsq and cholesky:
+        warn("Invalid option combination 'lstsq':True "
+             "and 'cholesky':True; option 'cholesky' has no effect when "
+             "'lstsq' is set True.",
+             OptimizeWarning)
+
+    # This can be an error
+    if not sym_pos and cholesky:
+        raise ValueError(
+            "Invalid option combination 'sym_pos':False "
+            "and 'cholesky';True: Cholesky decomposition is only possible "
+            "for symmetric positive definite matrices.")
 
     iteration = 0
     complete = False    # will become True if solved in presolve
     undo = []
 
     # Convert lists to numpy arrays, etc...
-    c, A_ub, b_ub, A_eq, b_eq, bounds, options = _cleanInputs(
-        c, A_ub, b_ub, A_eq, b_eq, bounds, options)
+    c, A_ub, b_ub, A_eq, b_eq, bounds = _clean_inputs(
+        c, A_ub, b_ub, A_eq, b_eq, bounds)
 
     # Keep the original arrays to calculate slack/residuals for original
     # problem.
@@ -1766,21 +1771,25 @@ def _linprog_ip(
 
     # Solve trivial problem, eliminate variables, tighten bounds, etc...
     c0 = 0  # we might get a constant term in the objective
-    if "presolve" not in options or options["presolve"] is True:
+    if presolve is True:
         c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, undo, complete, status, \
             message = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds)
 
     # If not solved in presolve, solve it
     if not complete:
         # Convert problem to standard form
-        A, b, c, c0 = _getAbc(c, c0, A_ub, b_ub, A_eq, b_eq, bounds, undo)
+        A, b, c, c0 = _get_Abc(c, c0, A_ub, b_ub, A_eq, b_eq, bounds, undo)
         # Solve the problem
-        x, status, message, iteration = _ip_hsd(A, b, c, c0, **options)
+        x, status, message, iteration = _ip_hsd(A, b, c, c0, alpha0, beta, 
+                                                maxiter, disp, tol, sparse, 
+                                                lstsq, sym_pos, cholesky, 
+                                                pc, ip)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc...
     # need modified bounds here to translate variables appropriately
-    x, fun, slack, con = _postprocess(
-        x, c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o, bounds, complete, undo)
+    x, fun, slack, con, status, message = _postprocess(
+        x, c_o, A_ub_o, b_ub_o, A_eq_o, b_eq_o,
+        bounds, complete, undo, status, message)
 
     sol = {
         'x': x,
@@ -1793,202 +1802,3 @@ def _linprog_ip(
         "success": status == 0}
 
     return OptimizeResult(sol)
-
-
-def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='interior-point', callback=None,
-            options=None):
-    """
-    Minimize a linear objective function subject to linear
-    equality and inequality constraints.
-
-    Linear Programming is intended to solve the following problem form:
-
-    Minimize:     c^T * x
-
-    Subject to:   A_ub * x <= b_ub
-                  A_eq * x == b_eq
-                  bounds[i][0] < x_i < bounds[i][1]
-
-    Parameters
-    ----------
-    c : array_like
-        Coefficients of the linear objective function to be minimized.
-    A_ub : array_like, optional
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        upper-bound inequality constraints at x.
-    b_ub : array_like, optional
-        1-D array of values representing the upper-bound of each inequality
-        constraint (row) in A_ub.
-    A_eq : array_like, optional
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x.
-    b_eq : array_like, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq.
-    bounds : sequence, optional
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
-        ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative)
-        If a sequence containing a single tuple is provided, then ``min`` and
-        ``max`` will be applied to all variables in the problem.
-    method : str, optional
-        Type of solver.  At this time only 'simplex' is supported
-        :ref:`(see here) <optimize.linprog-simplex>`.
-    callback : callable, optional
-        If a callback function is provide, it will be called within each
-        iteration of the simplex algorithm. The callback must have the
-        signature `callback(xk, **kwargs)` where xk is the current solution
-        vector and kwargs is a dictionary containing the following::
-
-            "tableau" : The current Simplex algorithm tableau
-            "nit" : The current iteration.
-            "pivot" : The pivot (row, column) used for the next iteration.
-            "phase" : Whether the algorithm is in Phase 1 or Phase 2.
-            "basis" : The indices of the columns of the basic variables.
-
-    options : dict, optional
-        A dictionary of solver options. All methods accept the following
-        generic options:
-
-            maxiter : int
-                Maximum number of iterations to perform.
-            disp : bool
-                Set to True to print convergence messages.
-
-        For method-specific options, see `show_options('linprog')`.
-
-    Returns
-    -------
-    A `scipy.optimize.OptimizeResult` consisting of the following fields:
-
-        x : ndarray
-            The independent variable vector which optimizes the linear
-            programming problem.
-        slack : ndarray
-            The values of the slack variables.  Each slack variable corresponds
-            to an inequality constraint.  If the slack is zero, then the
-            corresponding constraint is active.
-        success : bool
-            Returns True if the algorithm succeeded in finding an optimal
-            solution.
-        status : int
-            An integer representing the exit status of the optimization::
-
-                 0 : Optimization terminated successfully
-                 1 : Iteration limit reached
-                 2 : Problem appears to be infeasible
-                 3 : Problem appears to be unbounded
-
-        nit : int
-            The number of iterations performed.
-        message : str
-            A string descriptor of the exit status of the optimization.
-
-    See Also
-    --------
-    show_options : Additional options accepted by the solvers
-
-    Notes
-    -----
-    This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is :
-    ref:`Simplex <optimize.linprog-simplex>`.
-
-    Method *Simplex* uses the Simplex algorithm (as it relates to Linear
-    Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
-    should be reasonably reliable and fast, and the solution corresponds
-    with an optimal basis/vertex of the polytope defined by the constraints.
-
-    Method *Interior-Point* uses the homogeneous self-dual interior point
-    algorithm [4]_. This algorithm is often faster, especially for large
-    problems. However, the solution does not necessarily correspond with an
-    optimal basis and is only accurate to the specified tolerance.
-
-    .. versionadded:: ?
-
-    References
-    ----------
-    .. [1] Dantzig, George B., Linear programming and extensions. Rand
-           Corporation Research Study Princeton Univ. Press, Princeton, NJ,
-           1963
-    .. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
-           Mathematical Programming", McGraw-Hill, Chapter 4.
-    .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
-           Mathematics of Operations Research (2), 1977: pp. 103-107.
-    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
-           optimizer for linear programming: an implementation of the
-           homogeneous algorithm." High performance optimization. Springer US,
-           2000. 197-232.
-
-
-    Examples
-    --------
-    Consider the following problem:
-
-    Minimize: f = -1*x[0] + 4*x[1]
-
-    Subject to: -3*x[0] + 1*x[1] <= 6
-                 1*x[0] + 2*x[1] <= 4
-                            x[1] >= -3
-
-    where:  -inf <= x[0] <= inf
-
-    This problem deviates from the standard linear programming problem.
-    In standard form, linear programming problems assume the variables x are
-    non-negative.  Since the variables don't have standard bounds where
-    0 <= x <= inf, the bounds of the variables must be explicitly set.
-
-    There are two upper-bound constraints, which can be expressed as
-
-    dot(A_ub, x) <= b_ub
-
-    The input for this problem is as follows:
-
-    >>> c = [-1, 4]
-    >>> A = [[-3, 1], [1, 2]]
-    >>> b = [6, 4]
-    >>> x0_bounds = (None, None)
-    >>> x1_bounds = (-3, None)
-    >>> from scipy.optimize import linprog
-    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=(x0_bounds, x1_bounds),
-    ...               options={"disp": True})
-    >>> print(res)
-    Optimization terminated successfully.
-         Current function value: -11.428571
-         Iterations: 2
-    status: 0
-    success: True
-    fun: -11.428571428571429
-    x: array([-1.14285714,  2.57142857])
-    message: 'Optimization terminated successfully.'
-    nit: 2
-
-    Note the actual objective value is 11.428571.  In this case we minimized
-    the negative of the objective function.
-
-    """
-    meth = method.lower()
-    if options is None:
-        options = {}
-
-    if meth == 'simplex':
-        return linprog_simplex(
-            c,
-            A_ub=A_ub,
-            b_ub=b_ub,
-            A_eq=A_eq,
-            b_eq=b_eq,
-            bounds=bounds,
-            callback=callback,
-            options=options)
-    elif meth == 'interior-point':
-        if callback is not None:
-            pass
-            # warning: method 'interior-point' does not support callback
-            # function
-        return _linprog_ip(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                           bounds=bounds, options=options)
-    else:
-        raise ValueError('Unknown solver %s' % method)

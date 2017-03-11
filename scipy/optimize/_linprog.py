@@ -19,6 +19,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from .optimize import OptimizeResult, _check_unknown_options
+from ._linprog_ip import _linprog_ip
 
 __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
 
@@ -822,7 +823,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='simplex', callback=None,
+            bounds=None, method='interior-point', callback=None,
             options=None):
     """
     Minimize a linear objective function subject to linear
@@ -991,5 +992,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     if meth == 'simplex':
         return _linprog_simplex(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                                 bounds=bounds, callback=callback, **options)
+    elif meth == 'interior-point':
+        return _linprog_ip(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                                bounds=bounds, callback=callback, **options)
     else:
+        print(meth)
         raise ValueError('Unknown solver %s' % method)
