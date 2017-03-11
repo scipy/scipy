@@ -350,8 +350,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         d = np.diff(t_eval)
         if tf > t0 and np.any(d <= 0) or tf < t0 and np.any(d >= 0):
             raise ValueError("Values in `t_eval` are not properly sorted.")
-        t_eval_i = 0
-        n_eval = t_eval.shape[0]
+
+        if tf > t0:
+            t_eval_i = 0
+        else:
+            # Make order of t_eval ascending to use np.searchsorted.
+            t_eval = t_eval[::-1]
+            # This will be an upper bound for slices.
+            t_eval_i = t_eval.shape[0]
 
     if not callable(method):
         method = METHODS[method]
@@ -365,12 +371,14 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         ts = []
         ys = []
 
-        if len(t_eval) > 0 and t_eval[0] == t0:
-            pass
-            # If the first t_eval is the start time, deal with it now
-            ts.append(solver.t)
-            ys.append(np.expand_dims(solver.y, axis=1))
-            t_eval_i += 1
+        # This code needs clarification.
+        #
+        # if len(t_eval) > 0 and t_eval[0] == t0:
+        #     pass
+        #     # If the first t_eval is the start time, deal with it now
+        #     ts.append(solver.t)
+        #     ys.append(np.expand_dims(solver.y, axis=1))
+        #     t_eval_i += 1
 
     interpolants = []
 
@@ -425,24 +433,23 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             ts.append(t)
             ys.append(y)
         else:
-            t_end = t_eval_i
-            while t_end < n_eval and s * (t_eval[t_end] - t) < 0:
-                t_end += 1
+            # The value in t_eval equal to t will be included.
+            if solver.direction > 0:
+                t_eval_i_new = np.searchsorted(t_eval, t, side='right')
+                t_eval_step = t_eval[t_eval_i:t_eval_i_new]
+            else:
+                t_eval_i_new = np.searchsorted(t_eval, t, side='left')
+                # It has to be done with two slice operations, because
+                # you can't slice to 0-th element inclusive using backward
+                # slicing.
+                t_eval_step = t_eval[t_eval_i_new:t_eval_i][::-1]
 
-            # This should be handled in the next iteration, but this
-            # iteration is the last so we need to save this t.
-            if status is not None and t_end < n_eval and t_eval[t_end] == t:
-                t_end += 1
-
-            if t_end > t_eval_i:
+            if t_eval_step.size > 0:
                 if sol is None:
                     sol = solver.dense_output()
-
-                t_step = t_eval[t_eval_i:t_end]
-                ts.append(t_step)
-                ys.append(sol(t_step))
-
-            t_eval_i = t_end
+                ts.append(t_eval_step)
+                ys.append(sol(t_eval_step))
+                t_eval_i = t_eval_i_new
 
     message = MESSAGE.get(status, message)
 
