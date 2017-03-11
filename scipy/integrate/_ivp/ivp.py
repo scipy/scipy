@@ -16,8 +16,8 @@ METHODS = {'RK23': RK23,
            'LSODA': LSODA}
 
 
-MESSAGE = {0: "The solver successfully reached the interval end.",
-           1: "A termination event occurred."}
+MESSAGES = {0: "The solver successfully reached the interval end.",
+            1: "A termination event occurred."}
 
 
 class OdeResult(OptimizeResult):
@@ -59,13 +59,13 @@ def solve_event_equation(event, sol, t_old, t):
     Parameters
     ----------
     event : callable
-        Function ``event(x, y)``.
+        Function ``event(t, y)``.
     sol : callable
-        Computed solution ``y(x)``. It should be defined only between `x` and
-        `x_new`.
+        Function ``sol(t)`` which evaluates an ODE solution between `t_old`
+        and  `t`.
     t_old, t : float
-        Previous and new values of the independed variable, it will be used as
-        a bracketing interval.
+        Previous and new values of time. They will be used as a bracketing
+        interval.
 
     Returns
     -------
@@ -73,7 +73,8 @@ def solve_event_equation(event, sol, t_old, t):
         Found solution.
     """
     from scipy.optimize import brentq
-    return brentq(lambda t: event(t, sol(t)), t_old, t, xtol=4 * EPS)
+    return brentq(lambda t: event(t, sol(t)), t_old, t,
+                  xtol=4 * EPS, rtol=4 * EPS)
 
 
 def handle_events(sol, events, active_events, is_terminal, t_old, t):
@@ -82,27 +83,26 @@ def handle_events(sol, events, active_events, is_terminal, t_old, t):
     Parameters
     ----------
     sol : DenseOutput
-        Function ``sol(x)`` which evaluates an ODE solution.
+        Function ``sol(t)`` which evaluates an ODE solution between `t_old`
+        and  `t`.
     events : list of callables, length n_events
-        Event functions.
+        Event functions with signatures ``event(t, y)``.
     active_events : ndarray
-        Indices of events which occurred
+        Indices of events which occurred.
     is_terminal : ndarray, shape (n_events,)
-        Which events are terminate.
+        Which events are terminal.
     t_old, t : float
         Previous and new values of time.
 
     Returns
     -------
     root_indices : ndarray
-        Indices of events which take zero before a possible termination.
+        Indices of events which take zero between `t_old` and `t` and before
+        a possible termination.
     roots : ndarray
-        Values of x at which events take zero values.
+        Values of t at which events occurred.
     terminate : bool
-        Whether a termination event occurred.
-    t_old, t : float
-        Previous and new values of the independed variable, it will be used as
-        a bracketing interval.
+        Whether a terminal event occurred.
     """
     roots = []
     for event_index in active_events:
@@ -359,7 +359,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             # This will be an upper bound for slices.
             t_eval_i = t_eval.shape[0]
 
-    if not callable(method):
+    if not issubclass(method, OdeSolver):
         method = METHODS[method]
 
     solver = method(fun, t0, y0, tf, vectorized=vectorized, **options)
@@ -391,7 +391,6 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         t_events = None
 
     status = None
-    s = solver.direction
     while status is None:
         message = solver.step()
 
@@ -417,6 +416,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             if active_events.size > 0:
                 if sol is None:
                     sol = solver.dense_output()
+
                 root_indices, roots, terminate = handle_events(
                     sol, events, active_events, is_terminal, t_old, t)
 
@@ -427,6 +427,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                     status = 1
                     t = roots[-1]
                     y = sol(t)
+
             g = g_new
 
         if t_eval is None:
@@ -451,10 +452,10 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
                 ys.append(sol(t_eval_step))
                 t_eval_i = t_eval_i_new
 
-    message = MESSAGE.get(status, message)
+    message = MESSAGES.get(status, message)
 
     if t_events is not None:
-        t_events = [np.asarray(xe) for xe in t_events]
+        t_events = [np.asarray(te) for te in t_events]
 
     if t_eval is None:
         ts = np.array(ts)
