@@ -272,6 +272,24 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     -----
     .. versionadded:: 0.9.0
 
+    Examples
+    --------
+    Solve the lower triangular system a x = b, where::
+
+             [3  0  0  0]       [4]
+        a =  [2  1  0  0]   b = [2]
+             [1  0  1  0]       [4]
+             [1  1  1  1]       [2]
+
+    >>> from scipy.linalg import solve_triangular
+    >>> a = np.array([[3, 0, 0, 0], [2, 1, 0, 0], [1, 0, 1, 0], [1, 1, 1, 1]])
+    >>> b = np.array([4, 2, 4, 2])
+    >>> x = solve_triangular(a, b, lower=True)
+    >>> x
+    array([ 1.33333333, -0.66666667,  2.66666667, -1.33333333])
+    >>> a.dot(x)  # Check the result
+    array([ 4.,  2.,  4.,  2.])
+
     """
 
     # Deprecate keyword "debug"
@@ -341,6 +359,34 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     x : (M,) or (M, K) ndarray
         The solution to the system a x = b.  Returned shape depends on the
         shape of `b`.
+
+    Examples
+    --------
+    Solve the banded system a x = b, where::
+
+            [5  2 -1  0  0]       [0]
+            [1  4  2 -1  0]       [1]
+        a = [0  1  3  2 -1]   b = [2]
+            [0  0  1  2  2]       [2]
+            [0  0  0  1  1]       [3]
+
+    There is one nonzero diagonal below the main diagonal (l = 1), and
+    two above (u = 2).  The diagonal banded form of the matrix is::
+
+             [*  * -1 -1 -1]
+        ab = [*  2  2  2  2]
+             [5  4  3  2  1]
+             [1  1  1  1  *]
+
+    >>> from scipy.linalg import solve_banded
+    >>> ab = np.array([[0,  0, -1, -1, -1],
+    ...                [0,  2,  2,  2,  2],
+    ...                [5,  4,  3,  2,  1],
+    ...                [1,  1,  1,  1,  0]])
+    >>> b = np.array([0, 1, 2, 2, 3])
+    >>> x = solve_banded((1, 2), ab, b)
+    >>> x
+    array([-2.37288136,  3.93220339, -4.        ,  4.3559322 , -1.3559322 ])
 
     """
 
