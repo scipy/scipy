@@ -203,6 +203,7 @@ The `linprog` function supports the following methods:
 .. toctree::
 
    optimize.linprog-simplex
+   optimize.linprog-interior-point
 
 Assignment problems:
 
