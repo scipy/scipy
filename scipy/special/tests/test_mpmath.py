@@ -1700,13 +1700,25 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
                             lambda v, x: time_limited()(exception_to_nan(mpmath.pcfv))(v, x, **HYPERKW),
                             [Arg(), Arg()], n=1000)
 
-    @knownfailure_overridable()
     def test_pcfw(self):
         def pcfw(a, x):
             return sc.pbwa(a, x)[0]
+
+        def dpcfw(a, x):
+            return sc.pbwa(a, x)[1]
+
+        def mpmath_dpcfw(a, x):
+            return mpmath.diff(mpmath.pcfw, (a, x), (0, 1))
+
+        # The Zhang and Jin implementation only uses Taylor series and
+        # is thus accurate in only a very small range.
         assert_mpmath_equal(pcfw,
-                            lambda v, x: time_limited()(exception_to_nan(mpmath.pcfw))(v, x, **HYPERKW),
-                            [Arg(), Arg()], dps=50, n=1000)
+                            mpmath.pcfw,
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-12, n=100)
+
+        assert_mpmath_equal(dpcfw,
+                            mpmath_dpcfw,
+                            [Arg(-5, 5), Arg(-5, 5)], rtol=1e-12, n=100)
 
     @knownfailure_overridable("issues at large arguments (atol OK, rtol not) and <eps-close to z=0")
     def test_polygamma(self):
