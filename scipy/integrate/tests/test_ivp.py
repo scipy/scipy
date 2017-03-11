@@ -7,8 +7,8 @@ import numpy as np
 from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
-from scipy.integrate._py.common import num_jac
-from scipy.integrate._py.base import ConstantDenseOutput
+from scipy.integrate._ivp.common import num_jac
+from scipy.integrate._ivp.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
 
 

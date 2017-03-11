@@ -89,7 +89,7 @@ def configuration(parent_package='',top_path=None):
                          depends=(odepack_src + mach_src),
                          **lapack_opt)
 
-    config.add_subpackage('_py')
+    config.add_subpackage('_ivp')
 
     config.add_data_dir('tests')
     return config
