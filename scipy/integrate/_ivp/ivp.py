@@ -425,24 +425,24 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             ts.append(t)
             ys.append(y)
         else:
-            t_step = []
-
-            while t_eval_i < n_eval and s * (t_eval[t_eval_i] - t) < 0:
-                t_step.append(t_eval[t_eval_i])
-                t_eval_i += 1
+            t_end = t_eval_i
+            while t_end < n_eval and s * (t_eval[t_end] - t) < 0:
+                t_end += 1
 
             # This should be handled in the next iteration, but this
             # iteration is the last so we need to save this t.
-            if (status is not None and
-                    t_eval_i < n_eval and t_eval[t_eval_i] == t):
-                t_step.append(t)
+            if status is not None and t_end < n_eval and t_eval[t_end] == t:
+                t_end += 1
 
-            if t_step:
+            if t_end > t_eval_i:
                 if sol is None:
                     sol = solver.dense_output()
 
+                t_step = t_eval[t_eval_i:t_end]
                 ts.append(t_step)
                 ys.append(sol(t_step))
+
+            t_eval_i = t_end
 
     message = MESSAGE.get(status, message)
 
