@@ -679,18 +679,22 @@ double pmv_wrap(double m, double v, double x){
 }
 
 
-/* if x > 0 return w1f and w1d.
-    otherwise return w2f and w2d (after abs(x))
+/* 
+ * If x > 0 return w1f and w1d. Otherwise set x = abs(x) and return
+ * w2f and -w2d.
 */
 int pbwa_wrap(double a, double x, double *wf, double *wd) {
   int flag = 0;
   double w1f, w1d, w2f, w2d;
    
-  if (x < 0) {x=-x; flag=1;}
+  if (x < 0) {
+    x = -x;
+    flag=1;
+  }
   F_FUNC(pbwa,PBWA)(&a, &x, &w1f, &w1d, &w2f, &w2d);
   if (flag) {
     *wf = w2f;
-    *wd = w2d;
+    *wd = -w2d;
   }
   else {
     *wf = w1f;
