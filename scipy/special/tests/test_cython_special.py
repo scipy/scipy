@@ -230,7 +230,7 @@ def test_cython_api():
         (special.obl_rad2_cv, cython_special._obl_rad2_cv_pywrap, ('ddddd',), "see gh-6211"),
         (special.pbdv, cython_special._pbdv_pywrap, ('dd',), None),
         (special.pbvv, cython_special._pbvv_pywrap, ('dd',), None),
-        (special.pbwa, cython_special._pbwa_pywrap, ('dd',), "see gh-6208"),
+        (special.pbwa, cython_special._pbwa_pywrap, ('dd',), None),
         (special.pdtr, cython_special.pdtr, ('ld', 'dd'), None),
         (special.pdtrc, cython_special.pdtrc, ('ld', 'dd'), None),
         (special.pdtri, cython_special.pdtri, ('ld', 'dd'), None),
