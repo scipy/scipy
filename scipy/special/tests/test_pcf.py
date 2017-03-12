@@ -1,7 +1,8 @@
 """Tests for parabolic cylinder functions.
 
 """
-from numpy.testing import assert_allclose
+import numpy as np
+from numpy.testing import assert_allclose, assert_equal
 import scipy.special as sc
 
 
@@ -14,3 +15,10 @@ def test_pbwa_segfault():
     wp = -0.48887053372346189882
     assert_allclose(sc.pbwa(0, 0), (w, wp), rtol=1e-13, atol=0)
 
+
+def test_pbwa_nan():
+    # Check that NaN's are returned outside of the range in which the
+    # implementation is accurate.
+    pts = [(-6, -6), (-6, 6), (6, -6), (6, 6)]
+    for p in pts:
+        assert_equal(sc.pbwa(*p), (np.nan, np.nan))
