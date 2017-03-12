@@ -134,6 +134,7 @@ def test_cython_api():
         (special.gammaincc, cython_special.gammaincc, ('dd',), None),
         (special.gammainccinv, cython_special.gammainccinv, ('dd',), None),
         (special.gammaincinv, cython_special.gammaincinv, ('dd',), None),
+        (special.gammaln, cython_special.gammaln, ('d',), None),
         (special.gammasgn, cython_special.gammasgn, ('d',), None),
         (special.gdtr, cython_special.gdtr, ('ddd',), None),
         (special.gdtrc, cython_special.gdtrc, ('ddd',), None),

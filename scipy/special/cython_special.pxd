@@ -93,6 +93,7 @@ cpdef double gammainc(double x0, double x1) nogil
 cpdef double gammaincc(double x0, double x1) nogil
 cpdef double gammainccinv(double x0, double x1) nogil
 cpdef double gammaincinv(double x0, double x1) nogil
+cpdef double gammaln(double x0) nogil
 cpdef double gammasgn(double x0) nogil
 cpdef double gdtr(double x0, double x1, double x2) nogil
 cpdef double gdtrc(double x0, double x1, double x2) nogil

@@ -391,6 +391,10 @@ Available Functions
 
         double gammaincinv(double, double)
 
+- :py:func:`~scipy.special.gammaln`::
+
+        double gammaln(double)
+
 - :py:func:`~scipy.special.gammasgn`::
 
         double gammasgn(double)
@@ -1263,6 +1267,8 @@ cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_igami "igami"(npy_double, npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_gammaincinv "gammaincinv"(npy_double, npy_double)nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef npy_double _func_lgam "lgam"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_gammasgn "gammasgn"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2272,6 +2278,10 @@ cpdef double gammainccinv(double x0, double x1) nogil:
 cpdef double gammaincinv(double x0, double x1) nogil:
     """See the documentation for scipy.special.gammaincinv"""
     return _func_gammaincinv(x0, x1)
+
+cpdef double gammaln(double x0) nogil:
+    """See the documentation for scipy.special.gammaln"""
+    return _func_lgam(x0)
 
 cpdef double gammasgn(double x0) nogil:
     """See the documentation for scipy.special.gammasgn"""

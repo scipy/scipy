@@ -2538,9 +2538,32 @@ add_newdoc("scipy.special", "gammaincinv",
     Returns `x` such that ``gammainc(a, x) = y``.
     """)
 
-add_newdoc("scipy.special", "_gammaln",
+add_newdoc("scipy.special", "gammaln",
     """
-    Internal function, use ``gammaln`` instead.
+    Logarithm of the absolute value of the Gamma function.
+
+    Parameters
+    ----------
+    x : array-like
+        Values on the real line at which to compute ``gammaln``
+
+    Returns
+    -------
+    gammaln : ndarray
+        Values of ``gammaln`` at x.
+
+    See Also
+    --------
+    gammasgn : sign of the gamma function
+    loggamma : principal branch of the logarithm of the gamma function
+
+    Notes
+    -----
+    When used in conjunction with `gammasgn`, this function is useful
+    for working in logspace on the real axis without having to deal with
+    complex numbers, via the relation ``exp(gammaln(x)) = gammasgn(x)*gamma(x)``.
+
+    For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
     """)
 
 add_newdoc("scipy.special", "gammasgn",
