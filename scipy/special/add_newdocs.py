@@ -5408,24 +5408,46 @@ add_newdoc("scipy.special", "pbvv",
     """)
 
 add_newdoc("scipy.special", "pbwa",
-    """
+    r"""
     pbwa(a, x)
 
-    Parabolic cylinder function W
+    Parabolic cylinder function W.
 
-    Returns the parabolic cylinder function W(a, x) in w and the
-    derivative, W'(a, x) in wp.
+    The function is a particular solution to the differential equation
 
-    .. warning::
+    .. math::
 
-       May not be accurate for large (>5) arguments in a and/or x.
+        y'' + \left(\frac{1}{4}x^2 - a\right)y = 0,
+
+    for a full definition see section 12.14 in [1]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Real parameter
+    x : array_like
+        Real argument
 
     Returns
     -------
-    w
+    w : scalar or ndarray
         Value of the function
-    wp
-        Value of the derivative vs x
+    wp : scalar or ndarray
+        Value of the derivative in x
+
+    Notes
+    -----
+    The function is a wrapper for a Fortran routine by Zhang and Jin
+    [2]_. The implementation is accurate only for ``|a|, |x| < 5`` and
+    returns NaN outside that range.
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 14.30.
+           http://dlmf.nist.gov/14.30
+    .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
     """)
 
 add_newdoc("scipy.special", "pdtr",
