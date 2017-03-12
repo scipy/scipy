@@ -1,4 +1,5 @@
 from __future__ import division, print_function, absolute_import
+import inspect
 import numpy as np
 from .bdf import BDF
 from .radau import Radau
@@ -214,7 +215,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         'RK45' and if it does unusual many iterations or diverges then your
         problem is likely to be stiff and you should use 'Radau' or 'BDF'.
 
-        You can also pass an arbitrary instance of `OdeSolver`.
+        You can also pass an arbitrary class derived from `OdeSolver`.
     dense_output : bool, optional
         Whether to compute a continuous solution. Default is False.
     t_eval : array_like or None, optional
@@ -333,8 +334,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
     """
-    if method not in METHODS and not issubclass(method, OdeSolver):
-        raise ValueError("`method` must be one of {} or OdeSolver instance."
+    if method not in METHODS and not (
+            inspect.isclass(method) and issubclass(method, OdeSolver)):
+        raise ValueError("`method` must be one of {} or OdeSolver class."
                          .format(METHODS))
 
     t0, tf = float(t_span[0]), float(t_span[1])
@@ -359,7 +361,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             # This will be an upper bound for slices.
             t_eval_i = t_eval.shape[0]
 
-    if not issubclass(method, OdeSolver):
+    if method in METHODS:
         method = METHODS[method]
 
     solver = method(fun, t0, y0, tf, vectorized=vectorized, **options)
