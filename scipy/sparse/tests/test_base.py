@@ -493,6 +493,7 @@ class _TestCommon:
             datcsc = csc_matrix(dat)
             datcsr = csr_matrix(dat)
             datlil = lil_matrix(dat)
+            datsp3 = sparse.random(5,5)
 
             # sparse/sparse
             assert_array_equal(dat <= dat2, (datsp <= datsp2).todense())
@@ -520,6 +521,8 @@ class _TestCommon:
             assert_array_equal((1 <= datsp).todense(), 1 <= dat)
             assert_array_equal((-1 <= datsp).todense(), -1 <= dat)
             assert_array_equal((-2 <= datsp).todense(), -2 <= dat)
+            assert_array_equal((2 <= datsp3),'pass')
+            assert_array_equal((-2 <= datsp3),'pass')
 
             # data
             dat = self.dat_dtypes[dtype]
