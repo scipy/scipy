@@ -5,12 +5,11 @@ from .base import OdeSolver, DenseOutput
 
 
 class LSODA(OdeSolver):
-    """Lawrence Livermore solver for ODEs with automatic detection of nonstiff
-    and stiff problems
+    """Adams/BDF method with automatic stiffness detection and switching.
 
-    This solver switches automatically between the nonstiff Adams method and
-    the stiff BDF method. The method was originally detailed in [1]_. This
-    wrapper calls the compiled Fortran implementation included in ODEPACK [2]_.
+    This is a wrapper to the Fortran solver from ODEPACK [1]_. It switches
+    automatically between the nonstiff Adams method and the stiff BDF method.
+    The method was originally detailed in [2]_.
 
     Parameters
     ----------
@@ -59,11 +58,18 @@ class LSODA(OdeSolver):
         provide the Jacobian rather than relying on a finite difference
         approximation.
     lband, uband : int or None, optional
-        Jacobian band width, ``jac[i,j] != 0 for i-lband <= j <= i+uband``.
-        Setting these requires your jac routine to return the jacobian in packed
-        format, ``jac_packed[i-j+uband, j] = jac[i,j]``.
+        Jacobian band width:
+        ``jac[i, j] != 0 only for i - lband <= j <= i + uband``. Setting these
+        requires your jac routine to return the Jacobian in the packed format:
+        the returned array must have ``n`` columns and ``uband + lband + 1``
+        rows in which Jacobian diagonals are written. Specifically
+        ``jac_packed[uband + i - j , j] = jac[i, j]``. The same format is used
+        in `scipy.linalg.solve_banded` (check for an illustration).
+        These parameters can be also used with ``jac=None`` to reduce the
+        number of Jacobian elements estimated by finite differences.
     vectorized : bool, optional
-        Whether `fun` is implemented in a vectorized fashion. Default is False.
+        Whether `fun` is implemented in a vectorized fashion. A vectorized
+        implementation offers no advantages for this solver. Default is False.
 
     Attributes
     ----------
@@ -88,13 +94,13 @@ class LSODA(OdeSolver):
 
     References
     ----------
-    .. [1] L. Petzold, "Automatic selection of methods for solving stiff and
+    .. [1] A. C. Hindmarsh, "ODEPACK, A Systematized Collection of ODE
+           Solvers," IMACS Transactions on Scientific Computation, Vol 1.,
+           pp. 55-64, 1983.
+    .. [2] L. Petzold, "Automatic selection of methods for solving stiff and
            nonstiff systems of ordinary differential equations", SIAM Journal
            on Scientific and Statistical Computing, Vol. 4, No. 1, pp. 136-148,
            1983.
-    .. [2] A. C. Hindmarsh, "ODEPACK, A Systematized Collection of ODE
-           Solvers," IMACS Transactions on Scientific Computation, Vol 1.,
-           pp. 55-64, 1983.
     """
 
     def __init__(self, fun, t0, y0, t_crit, first_step=None, min_step=0.0,
@@ -103,15 +109,8 @@ class LSODA(OdeSolver):
         warn_extraneous(extraneous)
         super(LSODA, self).__init__(fun, t0, y0, t_crit, vectorized)
 
-        if first_step is None:
-            # 0.0 is LSODA value for default
-            first_step = 0.0
-        elif first_step <= 0.0:
-            raise ValueError("`first_step` must be positive or None.")
-
         if max_step == np.inf:
-            # 0.0 is LSODA value for default
-            max_step = 0.0
+            max_step = 0.0  # LSODA value for infinity.
         elif max_step <= 0.0:
             raise ValueError("`max_step` must be positive.")
 

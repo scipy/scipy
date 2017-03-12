@@ -209,13 +209,19 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               described in [6]_. A quasi-constant step scheme is used
               and accuracy enhancement using NDF modification is also
               implemented.
+            * 'LSODA': Adams/BDF method with automatic stiffness detection and
+              switching [7]_, [8]_. This is a wrapper of the Fortran solver
+              from ODEPACK.
 
         You should use 'RK45' or 'RK23' methods for non-stiff problems and
-        'Radau' or 'BDF' for stiff problems [7]_. If not sure, first try to run
+        'Radau' or 'BDF' for stiff problems [9]_. If not sure, first try to run
         'RK45' and if it does unusual many iterations or diverges then your
         problem is likely to be stiff and you should use 'Radau' or 'BDF'.
+        'LSODA' can also be a good universal choice, but it might be somewhat
+        less  convenient to work with as it wraps the old Fortran code.
 
-        You can also pass an arbitrary class derived from `OdeSolver`.
+        You can also pass an arbitrary class derived from `OdeSolver` which
+        implements the solver.
     dense_output : bool, optional
         Whether to compute a continuous solution. Default is False.
     t_eval : array_like or None, optional
@@ -258,14 +264,16 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         1e-3 for `rtol` and 1e-6 for `atol`.
     jac : {None, array_like, sparse_matrix, callable}, optional
         Jacobian matrix of the right-hand side of the system with respect to
-        y, required only by 'Radau' and 'BDF' methods. The Jacobian matrix
+        y, required by 'Radau', 'BDF' and 'LSODA' methods. The Jacobian matrix
         has shape (n, n) and its element (i, j) is equal to ``d f_i / d y_j``.
         There are 3 ways to define the Jacobian:
 
             * If array_like or sparse_matrix, then the Jacobian is assumed to
-              be constant.
+              be constant. Not supported by 'LSODA'.
             * If callable, then the Jacobian is assumed to depend on both
               t and y, and will be called as ``jac(t, y)`` as necessary.
+              For 'Radau' and 'BDF' methods the return value might be a sparse
+              matrix.
             * If None (default), then the Jacobian will be approximated by
               finite differences.
 
@@ -275,9 +283,25 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Defines a sparsity structure of the Jacobian matrix for a finite
         difference approximation, its shape must be (n, n). If the Jacobian has
         only few non-zero elements in *each* row, providing the sparsity
-        structure will greatly speed up the computations [8]_. A zero
+        structure will greatly speed up the computations [10]_. A zero
         entry means that a corresponding element in the Jacobian is identically
         zero. If None (default), the Jacobian is assumed to be dense.
+        Not supported by 'LSODA', see `lband` and `uband` instead.
+    lband, uband : int or None
+        Parameters defining the Jacobian matrix bandwidth for 'LSODA' method.
+        The Jacobian bandwidth means that
+        ``jac[i, j] != 0 only for i - lband <= j <= i + uband``. Setting these
+        requires your jac routine to return the Jacobian in the packed format:
+        the returned array must have ``n`` columns and ``uband + lband + 1``
+        rows in which Jacobian diagonals are written. Specifically
+        ``jac_packed[uband + i - j , j] = jac[i, j]``. The same format is used
+        in `scipy.linalg.solve_banded` (check for an illustration).
+        These parameters can be also used with ``jac=None`` to reduce the
+        number of Jacobian elements estimated by finite differences.
+    min_step, first_step : float, optional
+        The minimum allowed step size and the initial step size respectively
+        for 'LSODA' method. By default `min_step` is zero and `first_step` is
+        selected automatically.
 
     Returns
     -------
@@ -328,11 +352,18 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             on Wikipedia.
     .. [6] L. F. Shampine, M. W. Reichelt, "THE MATLAB ODE SUITE", SIAM J. SCI.
            COMPUTE., Vol. 18, No. 1, pp. 1-22, January 1997.
-    .. [7] `Stiff equation <https://en.wikipedia.org/wiki/Stiff_equation>`_ on
+    .. [7] A. C. Hindmarsh, "ODEPACK, A Systematized Collection of ODE
+           Solvers," IMACS Transactions on Scientific Computation, Vol 1.,
+           pp. 55-64, 1983.
+    .. [8] L. Petzold, "Automatic selection of methods for solving stiff and
+           nonstiff systems of ordinary differential equations", SIAM Journal
+           on Scientific and Statistical Computing, Vol. 4, No. 1, pp. 136-148,
+           1983.
+    .. [9] `Stiff equation <https://en.wikipedia.org/wiki/Stiff_equation>`_ on
            Wikipedia.
-    .. [8] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
-           sparse Jacobian matrices", Journal of the Institute of Mathematics
-           and its Applications, 13, pp. 117-120, 1974.
+    .. [10] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
+            sparse Jacobian matrices", Journal of the Institute of Mathematics
+            and its Applications, 13, pp. 117-120, 1974.
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
