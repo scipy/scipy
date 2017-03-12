@@ -109,6 +109,12 @@ class LSODA(OdeSolver):
         warn_extraneous(extraneous)
         super(LSODA, self).__init__(fun, t0, y0, t_crit, vectorized)
 
+        if first_step is None:
+            # 0.0 is LSODA value for default
+            first_step = 0.0
+        elif first_step <= 0.0:
+            raise ValueError("`first_step` must be positive or None.")
+
         if max_step == np.inf:
             max_step = 0.0  # LSODA value for infinity.
         elif max_step <= 0.0:
