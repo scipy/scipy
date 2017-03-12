@@ -488,9 +488,20 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.row = self.row[mask]
         self.col = self.col[mask]
 
-    ###########################
-    # Multiplication handlers #
-    ###########################
+    #######################
+    # Arithmetic handlers #
+    #######################
+
+    def _add_dense(self, other):
+        if other.shape != self.shape:
+            raise ValueError('Incompatible shapes.')
+        dtype = upcast_char(self.dtype.char, other.dtype.char)
+        result = np.array(other, dtype=dtype, copy=True)
+        fortran = int(result.flags.f_contiguous)
+        M, N = self.shape
+        coo_todense(M, N, self.nnz, self.row, self.col, self.data,
+                    result.ravel('A'), fortran)
+        return result
 
     def _mul_vector(self, other):
         #output array
