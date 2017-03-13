@@ -1722,8 +1722,8 @@ def _linprog_ip(
     _check_unknown_options(unknown_options)
     
     if callback is not None:
-        warn("method 'interior-point' does not support callback function",
-             OptimizeWarning)
+        raise NotImplementedError("method 'interior-point' does not support "
+                                  "callback functions.")
              
         # These should be warnings, not Errors
     if sparse and lstsq:
