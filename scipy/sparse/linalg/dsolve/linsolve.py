@@ -5,7 +5,8 @@ from warnings import warn
 import numpy as np
 from numpy import asarray, empty, ravel, nonzero
 from scipy.sparse import (isspmatrix_csc, isspmatrix_csr, isspmatrix,
-                          SparseEfficiencyWarning, csc_matrix)
+                          SparseEfficiencyWarning, csc_matrix, csr_matrix)
+from scipy.linalg import LinAlgError
 
 from . import _superlu
 
@@ -18,7 +19,7 @@ except ImportError:
 useUmfpack = not noScikit
 
 __all__ = ['use_solver', 'spsolve', 'splu', 'spilu', 'factorized',
-           'MatrixRankWarning']
+           'MatrixRankWarning', 'spsolve_triangular']
 
 
 class MatrixRankWarning(UserWarning):
@@ -383,3 +384,108 @@ def factorized(A):
         return solve
     else:
         return splu(A).solve
+
+
+def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
+    """
+    Solve the equation `A x = b` for `x`, assuming A is a triangular matrix.
+
+    Parameters
+    ----------
+    A : (M, M) sparse matrix
+        A sparse square triangular matrix. Should be in CSR format.
+    b : (M,) or (M, N) array_like
+        Right-hand side matrix in `A x = b`
+    lower : bool, optional
+        Whether `A` is a lower or upper triangular matrix.
+        Default is lower triangular matrix.
+    overwrite_A : bool, optional
+        Allow changing `A`. The indices of `A` are going to be sorted and zero
+        entries are going to be removed.
+        Enabling gives a performance gain. Default is False.
+    overwrite_b : bool, optional
+        Allow overwriting data in `b`.
+        Enabling gives a performance gain. Default is False.
+
+    Returns
+    -------
+    x : (M,) or (M, N) ndarray
+        Solution to the system `A x = b`.  Shape of return matches shape of `b`.
+
+    Raises
+    ------
+    LinAlgError
+        If `A` is singular or not triangular.
+    ValueError
+        If shape of `A` or shape of `b` do not match the requirements.
+
+    Notes
+    -----
+    .. versionadded:: 0.19.0
+    """
+
+    # Check the input for correct type and format.
+    if not isspmatrix_csr(A):
+        warn('CSR matrix format is required. Converting to CSR matrix.',
+             SparseEfficiencyWarning)
+        A = csr_matrix(A)
+    elif not overwrite_A:
+        A = A.copy()
+
+    if A.shape[0] != A.shape[1]:
+        raise ValueError('A must be a square matrix but its shape is {}.'.format(A.shape))
+
+    A.eliminate_zeros()
+    A.sort_indices()
+
+    b = np.asanyarray(b)
+
+    if b.ndim not in [1, 2]:
+        raise ValueError('b must have 1 or 2 dims but its shape is {}.'.format(b.shape))
+    if A.shape[0] != b.shape[0]:
+        raise ValueError('The size of the dimensions of A must be equal to '
+            'the size of the first dimension of b but the shape of A is '
+            '{} and the shape of b is {}.'.format(A.shape, b.shape))
+
+    # Init x as copy of b.
+    if overwrite_b:
+        x = b
+    else:
+        x = b.copy()
+
+    # Choose forward or backward order.
+    if lower:
+        row_indices = range(len(b))
+    else:
+        row_indices = range(len(b)-1, -1, -1)
+
+    # Fill x iteratively.
+    for i in row_indices:
+
+        # Get indices for i-th row.
+        indptr_start = A.indptr[i]
+        indptr_stop = A.indptr[i+1]
+        if lower:
+            A_diagonal_index_row_i = indptr_stop-1
+            A_off_diagonal_indices_row_i = slice(indptr_start,indptr_stop-1)
+        else:
+            A_diagonal_index_row_i = indptr_start
+            A_off_diagonal_indices_row_i = slice(indptr_start+1,indptr_stop)
+
+        # Check regularity and triangularity of A.
+        if indptr_stop <= indptr_start or A.indices[A_diagonal_index_row_i] < i:
+            raise LinAlgError('A is singular: '
+                '{}th diagonal is zero!'.format(i))
+        if A.indices[A_diagonal_index_row_i] > i:
+            raise LinAlgError('A is no triangular matrix: entry '
+                '[{},{}] is not zero!'.format(i, A.indices[A_diagonal_index_row_i]))
+
+        # Incorporate off-diagonal entries.
+        A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]
+        A_values_in_row_i = A.data[A_off_diagonal_indices_row_i]
+        x[i] -= np.dot(x[A_column_indices_in_row_i].T, A_values_in_row_i)
+
+        # Compute i-th entry of x.
+        x[i] /= A.data[A_diagonal_index_row_i]
+
+    return x

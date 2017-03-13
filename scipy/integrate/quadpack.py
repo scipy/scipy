@@ -502,7 +502,8 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     """
     def temp_ranges(*args):
         return [gfun(args[0]), hfun(args[0])]
-    return nquad(func, [temp_ranges, [a, b]], args=args)
+    return nquad(func, [temp_ranges, [a, b]], args=args, 
+            opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
 def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
@@ -574,7 +575,8 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         return [gfun(args[0]), hfun(args[0])]
 
     ranges = [ranges0, ranges1, [a, b]]
-    return nquad(func, ranges, args=args)
+    return nquad(func, ranges, args=args, 
+            opts={"epsabs": epsabs, "epsrel": epsrel})
 
 
 def nquad(func, ranges, args=None, opts=None, full_output=False):

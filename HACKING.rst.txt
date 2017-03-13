@@ -8,13 +8,6 @@ community process works in practice.  Readers who are familiar with the SciPy
 community and are experienced Python coders may want to jump straight to the
 `git workflow`_ documentation.
 
-.. note::
-
-   You may want to check the latest version of this guide, which is
-   available at:
-   https://github.com/scipy/scipy/blob/master/HACKING.rst.txt
-
-
 Contributing new code
 =====================
 

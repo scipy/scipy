@@ -6,6 +6,7 @@ import sys
 import numpy as np
 
 from scipy._lib.six import xrange
+from scipy._lib._numpy_compat import broadcast_to
 from .sputils import (isdense, isscalarlike, isintlike,
                       get_sum_dtype, validateaxis)
 
@@ -326,18 +327,69 @@ class spmatrix(object):
     def __abs__(self):
         return abs(self.tocsr())
 
-    def __add__(self, other):   # self + other
-        return self.tocsr().__add__(other)
+    def _add_sparse(self, other):
+        return self.tocsr()._add_sparse(other)
 
-    def __radd__(self, other):  # other + self
-        return self.tocsr().__radd__(other)
+    def _add_dense(self, other):
+        return self.tocoo()._add_dense(other)
 
-    def __sub__(self, other):   # self - other
-        # note: this can't be replaced by self + (-other) for unsigned types
-        return self.tocsr().__sub__(other)
+    def _sub_sparse(self, other):
+        return self.tocsr()._sub_sparse(other)
 
-    def __rsub__(self, other):  # other - self
-        return self.tocsr().__rsub__(other)
+    def _sub_dense(self, other):
+        return self.todense() - other
+
+    def _rsub_dense(self, other):
+        # note: this can't be replaced by other + (-self) for unsigned types
+        return other - self.todense()
+
+    def __add__(self, other):  # self + other
+        if isscalarlike(other):
+            if other == 0:
+                return self.copy()
+            # Now we would add this scalar to every element.
+            raise NotImplementedError('adding a nonzero scalar to a '
+                                      'sparse matrix is not supported')
+        elif isspmatrix(other):
+            if other.shape != self.shape:
+                raise ValueError("inconsistent shapes")
+            return self._add_sparse(other)
+        elif isdense(other):
+            other = broadcast_to(other, self.shape)
+            return self._add_dense(other)
+        else:
+            return NotImplemented
+
+    def __radd__(self,other):  # other + self
+        return self.__add__(other)
+
+    def __sub__(self, other):  # self - other
+        if isscalarlike(other):
+            if other == 0:
+                return self.copy()
+            raise NotImplementedError('subtracting a nonzero scalar from a '
+                                      'sparse matrix is not supported')
+        elif isspmatrix(other):
+            if other.shape != self.shape:
+                raise ValueError("inconsistent shapes")
+            return self._sub_sparse(other)
+        elif isdense(other):
+            other = broadcast_to(other, self.shape)
+            return self._sub_dense(other)
+        else:
+            return NotImplemented
+
+    def __rsub__(self,other):  # other - self
+        if isscalarlike(other):
+            if other == 0:
+                return -self.copy()
+            raise NotImplementedError('subtracting a sparse matrix from a '
+                                      'nonzero scalar is not supported')
+        elif isdense(other):
+            other = broadcast_to(other, self.shape)
+            return self._rsub_dense(other)
+        else:
+            return NotImplemented
 
     def __mul__(self, other):
         """interpret other and call one of the following

@@ -18,14 +18,19 @@ Error handling
 ==============
 
 Errors are handled by returning NaNs or other appropriate values.
-Some of the special function routines can emit warnings when an error
-occurs. By default this is disabled; to enable it use `errprint`.
+Some of the special function routines can emit warnings or raise
+exceptions when an error occurs. By default this is disabled; to
+query and control the current error handling state the following
+functions are provided.
 
 .. autosummary::
    :toctree: generated/
 
-   errprint               -- Set or return the error printing flag for special functions.
-   SpecialFunctionWarning -- Warning that can be issued with ``errprint(True)``
+   geterr                 -- Get the current way of handling special-function errors.
+   seterr                 -- Set how special-function errors are handled.
+   errstate               -- Context manager for special-function error handling.
+   SpecialFunctionWarning -- Warning that can be emitted by special functions.
+   SpecialFunctionError   -- Exception that can be raised by special functions.
 
 Available functions
 ===================
@@ -629,6 +634,8 @@ Convenience Functions
 """
 
 from __future__ import division, print_function, absolute_import
+
+from .sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from ._ufuncs import *
 

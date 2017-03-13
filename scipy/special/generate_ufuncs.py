@@ -81,6 +81,7 @@ from __future__ import division, print_function, absolute_import
 
 # Ufuncs without C++
 FUNCS = """
+_sf_error_test_function -- _sf_error_test_function: i->i   -- sf_error.pxd
 sph_harm -- sph_harmonic: iidd->D, sph_harmonic_unsafe: dddd->D -- sph_harm.pxd, _legacy.pxd
 _lambertw -- lambertw_scalar: Dld->D                       -- lambertw.pxd
 wrightomega -- wrightomega : D->D                          -- _wright.h++
@@ -138,7 +139,7 @@ eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.px
 exp10 -- exp10: d->d                                       -- cephes.h
 exp2 -- exp2: d->d                                         -- cephes.h
 gamma -- Gamma: d->d, cgamma: D->D                         -- cephes.h, _loggamma.pxd
-_gammaln -- lgam: d->d, clngamma_wrap: D->D                -- cephes.h, specfun_wrappers.h
+gammaln -- lgam: d->d                                      -- cephes.h
 gammasgn -- gammasgn: d->d                                 -- c_misc/misc.h
 i0 -- i0: d->d                                             -- cephes.h
 i0e -- i0e: d->d                                           -- cephes.h
@@ -1443,7 +1444,10 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
 
     # for _ufuncs_cxx*
     cxx_defs = []
-    cxx_pxd_defs = ["cdef int _set_errprint(int flag) nogil"]
+    cxx_pxd_defs = [
+        "cimport sf_error",
+        "cdef void _set_action(sf_error.sf_error_t, sf_error.sf_action_t) nogil"
+    ]
     cxx_defs_h = []
 
     ufuncs.sort(key=lambda u: u.name)

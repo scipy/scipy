@@ -327,60 +327,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Arithmatic operator overrides #
     #################################
 
-    def __add__(self,other):
-        # First check if argument is a scalar
-        if isscalarlike(other):
-            if other == 0:
-                return self.copy()
-            else:  # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a nonzero scalar to a '
-                                          'sparse matrix is not supported')
-        elif isspmatrix(other):
-            if (other.shape != self.shape):
-                raise ValueError("inconsistent shapes")
+    def _add_sparse(self, other):
+        return self._binopt(other, '_plus_')
 
-            return self._binopt(other,'_plus_')
-        elif isdense(other):
-            # Convert this matrix to a dense matrix and add them
-            return self.todense() + other
-        else:
-            return NotImplemented
-
-    def __radd__(self,other):
-        return self.__add__(other)
-
-    def __sub__(self,other):
-        # First check if argument is a scalar
-        if isscalarlike(other):
-            if other == 0:
-                return self.copy()
-            else:  # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a nonzero scalar to a '
-                                          'sparse matrix is not supported')
-        elif isspmatrix(other):
-            if (other.shape != self.shape):
-                raise ValueError("inconsistent shapes")
-
-            return self._binopt(other,'_minus_')
-        elif isdense(other):
-            # Convert this matrix to a dense matrix and subtract them
-            return self.todense() - other
-        else:
-            return NotImplemented
-
-    def __rsub__(self,other):  # other - self
-        # note: this can't be replaced by other + (-self) for unsigned types
-        if isscalarlike(other):
-            if other == 0:
-                return -self.copy()
-            else:  # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a nonzero scalar to a '
-                                          'sparse matrix is not supported')
-        elif isdense(other):
-            # Convert this matrix to a dense matrix and subtract them
-            return other - self.todense()
-        else:
-            return NotImplemented
+    def _sub_sparse(self, other):
+        return self._binopt(other, '_minus_')
 
     def multiply(self, other):
         """Point-wise multiplication by another matrix, vector, or

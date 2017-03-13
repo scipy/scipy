@@ -102,16 +102,17 @@ static NPY_INLINE double *mahalanobis_dimbuf(Py_ssize_t n)
 }
 
 
-static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
   int mA, mB, n;
   double *dm, *dimbuf;
   const double *XA, *XB;
   const double *covinv;
-  if (!PyArg_ParseTuple(args, "O!O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &covinv_,
-			&PyArray_Type, &dm_)) {
+  static char *kwlist[] = {"XA", "XB", "dm", "VI", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!O!:cdist_mahalanobis_wrap", kwlist,
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_, &PyArray_Type, &covinv_)) {
     return 0;
   }
   else {
@@ -137,15 +138,16 @@ static PyObject *cdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_seuclidean_wrap(PyObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *dm_, *var_;
   int mA, mB, n;
   double *dm;
   const double *XA, *XB, *var;
-  if (!PyArg_ParseTuple(args, "O!O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &var_,
-			&PyArray_Type, &dm_)) {
+  static char *kwlist[] = {"XA", "XB", "dm", "V", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!O!:cdist_seuclidean_wrap", kwlist,
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_, &PyArray_Type, &var_)) {
     return 0;
   }
   else {
@@ -170,8 +172,8 @@ static PyObject *cdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *XA, *XB;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -195,8 +197,8 @@ static PyObject *cdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *XA, *XB;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -214,16 +216,18 @@ static PyObject *cdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *dm_;
   int mA, mB, n;
   double *dm;
   const double *XA, *XB;
   double p;
-  if (!PyArg_ParseTuple(args, "O!O!O!d",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_,
-			&p)) {
+  static char *kwlist[] = {"XA", "XB", "dm", "p", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!d:cdist_minkowski_wrap", kwlist,
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_,
+            &p)) {
     return 0;
   }
   else {
@@ -240,17 +244,19 @@ static PyObject *cdist_minkowski_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
+static PyObject *cdist_weighted_minkowski_wrap(PyObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *dm_, *w_;
   int mA, mB, n;
   double *dm;
   const double *XA, *XB, *w;
   double p;
-  if (!PyArg_ParseTuple(args, "O!O!O!dO!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_,
-			&p,
-			&PyArray_Type, &w_)) {
+  static char *kwlist[] = {"XA", "XB", "dm", "p", "w", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!dO!:cdist_weighted_minkowski_wrap", kwlist,
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_,
+            &p,
+            &PyArray_Type, &w_)) {
     return 0;
   }
   else {
@@ -274,8 +280,8 @@ static PyObject *cdist_dice_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *XA, *XB;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -299,8 +305,8 @@ static PyObject *cdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
   double *dm;
   const char *XA, *XB;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -324,8 +330,8 @@ static PyObject *cdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *XA, *XB;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -349,8 +355,8 @@ static PyObject *cdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *XA, *XB;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -374,8 +380,8 @@ static PyObject *cdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *XA, *XB;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -399,8 +405,8 @@ static PyObject *cdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *XA, *XB;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &XA_, &PyArray_Type, &XB_, 
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &XA_, &PyArray_Type, &XB_, 
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -454,16 +460,18 @@ DEFINE_WRAP_PDIST_DOUBLE(jaccard)
 DEFINE_WRAP_PDIST_DOUBLE(sqeuclidean)
 
 
-static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_mahalanobis_wrap(PyObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject *X_, *covinv_, *dm_;
   int m, n;
   double *dimbuf, *dm;
   const double *X;
   const double *covinv;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &covinv_,
-			&PyArray_Type, &dm_)) {
+  static char *kwlist[] = {"X", "dm", "VI", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!:pdist_mahalanobis_wrap", kwlist,
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_, 
+            &PyArray_Type, &covinv_)) {
     return 0;
   }
   else {
@@ -495,9 +503,9 @@ static PyObject *pdist_cosine_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const double *X, *norms;
   if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_,
-			&PyArray_Type, &norms_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_,
+            &PyArray_Type, &norms_)) {
     return 0;
   }
   else {
@@ -514,15 +522,17 @@ static PyObject *pdist_cosine_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_seuclidean_wrap(PyObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject *X_, *dm_, *var_;
   int m, n;
   double *dm;
   const double *X, *var;
-  if (!PyArg_ParseTuple(args, "O!O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &var_,
-			&PyArray_Type, &dm_)) {
+  static char *kwlist[] = {"X", "dm", "V", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!O!:pdist_seuclidean_wrap", kwlist,
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_,
+            &PyArray_Type, &var_)) {
     return 0;
   }
   else {
@@ -545,8 +555,8 @@ static PyObject *pdist_hamming_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -568,8 +578,8 @@ static PyObject *pdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -585,15 +595,17 @@ static PyObject *pdist_jaccard_bool_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject *X_, *dm_;
   int m, n;
   double *dm, *X;
   double p;
-  if (!PyArg_ParseTuple(args, "O!O!d",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_,
-			&p)) {
+  static char *kwlist[] = {"X", "dm", "p", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!d:pdist_minkowski_wrap", kwlist,
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_,
+            &p)) {
     return 0;
   }
   else {
@@ -609,16 +621,18 @@ static PyObject *pdist_minkowski_wrap(PyObject *self, PyObject *args) {
   return Py_BuildValue("d", 0.0);
 }
 
-static PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args) {
+static PyObject *pdist_weighted_minkowski_wrap(PyObject *self, PyObject *args, PyObject *kwargs) {
   PyArrayObject *X_, *dm_, *w_;
   int m, n;
   double *dm, *X, *w;
   double p;
-  if (!PyArg_ParseTuple(args, "O!O!dO!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_,
-			&p,
-			&PyArray_Type, &w_)) {
+  static char *kwlist[] = {"X", "dm", "p", "w", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, 
+            "O!O!dO!:pdist_weighted_minkowski_wrap", kwlist,
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_,
+            &p,
+            &PyArray_Type, &w_)) {
     return 0;
   }
   else {
@@ -642,8 +656,8 @@ static PyObject *pdist_yule_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -665,8 +679,8 @@ static PyObject *pdist_dice_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -688,8 +702,8 @@ static PyObject *pdist_rogerstanimoto_bool_wrap(PyObject *self, PyObject *args) 
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -711,8 +725,8 @@ static PyObject *pdist_russellrao_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -734,8 +748,8 @@ static PyObject *pdist_kulsinski_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -757,8 +771,8 @@ static PyObject *pdist_sokalmichener_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -780,8 +794,8 @@ static PyObject *pdist_sokalsneath_bool_wrap(PyObject *self, PyObject *args) {
   double *dm;
   const char *X;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &X_,
-			&PyArray_Type, &dm_)) {
+            &PyArray_Type, &X_,
+            &PyArray_Type, &dm_)) {
     return 0;
   }
   else {
@@ -801,8 +815,8 @@ static PyObject *to_squareform_from_vector_wrap(PyObject *self, PyObject *args) 
   PyArrayObject *M_, *v_;
   int n, elsize;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &M_,
-			&PyArray_Type, &v_)) {
+            &PyArray_Type, &M_,
+            &PyArray_Type, &v_)) {
     return 0;
   }
   NPY_BEGIN_ALLOW_THREADS;
@@ -825,8 +839,8 @@ static PyObject *to_vector_from_squareform_wrap(PyObject *self, PyObject *args) 
   char *v;
   const char *M;
   if (!PyArg_ParseTuple(args, "O!O!",
-			&PyArray_Type, &M_,
-			&PyArray_Type, &v_)) {
+            &PyArray_Type, &M_,
+            &PyArray_Type, &v_)) {
     return 0;
   }
   else {
@@ -855,12 +869,12 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"cdist_jaccard_wrap", cdist_jaccard_wrap, METH_VARARGS},
   {"cdist_jaccard_bool_wrap", cdist_jaccard_bool_wrap, METH_VARARGS},
   {"cdist_kulsinski_bool_wrap", cdist_kulsinski_bool_wrap, METH_VARARGS},
-  {"cdist_mahalanobis_wrap", cdist_mahalanobis_wrap, METH_VARARGS},
-  {"cdist_minkowski_wrap", cdist_minkowski_wrap, METH_VARARGS},
-  {"cdist_weighted_minkowski_wrap", cdist_weighted_minkowski_wrap, METH_VARARGS},
+  {"cdist_mahalanobis_wrap", cdist_mahalanobis_wrap, METH_VARARGS | METH_KEYWORDS},
+  {"cdist_minkowski_wrap", cdist_minkowski_wrap, METH_VARARGS | METH_KEYWORDS},
+  {"cdist_weighted_minkowski_wrap", cdist_weighted_minkowski_wrap, METH_VARARGS | METH_KEYWORDS},
   {"cdist_rogerstanimoto_bool_wrap", cdist_rogerstanimoto_bool_wrap, METH_VARARGS},
   {"cdist_russellrao_bool_wrap", cdist_russellrao_bool_wrap, METH_VARARGS},
-  {"cdist_seuclidean_wrap", cdist_seuclidean_wrap, METH_VARARGS},
+  {"cdist_seuclidean_wrap", cdist_seuclidean_wrap, METH_VARARGS | METH_KEYWORDS},
   {"cdist_sokalmichener_bool_wrap", cdist_sokalmichener_bool_wrap, METH_VARARGS},
   {"cdist_sokalsneath_bool_wrap", cdist_sokalsneath_bool_wrap, METH_VARARGS},
   {"cdist_yule_bool_wrap", cdist_yule_bool_wrap, METH_VARARGS},
@@ -877,12 +891,12 @@ static PyMethodDef _distanceWrapMethods[] = {
   {"pdist_jaccard_wrap", pdist_jaccard_wrap, METH_VARARGS},
   {"pdist_jaccard_bool_wrap", pdist_jaccard_bool_wrap, METH_VARARGS},
   {"pdist_kulsinski_bool_wrap", pdist_kulsinski_bool_wrap, METH_VARARGS},
-  {"pdist_mahalanobis_wrap", pdist_mahalanobis_wrap, METH_VARARGS},
-  {"pdist_minkowski_wrap", pdist_minkowski_wrap, METH_VARARGS},
-  {"pdist_weighted_minkowski_wrap", pdist_weighted_minkowski_wrap, METH_VARARGS},
+  {"pdist_mahalanobis_wrap", pdist_mahalanobis_wrap, METH_VARARGS | METH_KEYWORDS},
+  {"pdist_minkowski_wrap", pdist_minkowski_wrap, METH_VARARGS | METH_KEYWORDS},
+  {"pdist_weighted_minkowski_wrap", pdist_weighted_minkowski_wrap, METH_VARARGS | METH_KEYWORDS},
   {"pdist_rogerstanimoto_bool_wrap", pdist_rogerstanimoto_bool_wrap, METH_VARARGS},
   {"pdist_russellrao_bool_wrap", pdist_russellrao_bool_wrap, METH_VARARGS},
-  {"pdist_seuclidean_wrap", pdist_seuclidean_wrap, METH_VARARGS},
+  {"pdist_seuclidean_wrap", pdist_seuclidean_wrap, METH_VARARGS | METH_KEYWORDS},
   {"pdist_sokalmichener_bool_wrap", pdist_sokalmichener_bool_wrap, METH_VARARGS},
   {"pdist_sokalsneath_bool_wrap", pdist_sokalsneath_bool_wrap, METH_VARARGS},
   {"pdist_yule_bool_wrap", pdist_yule_bool_wrap, METH_VARARGS},

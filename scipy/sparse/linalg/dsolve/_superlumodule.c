@@ -327,7 +327,11 @@ PyObject *PyInit__superlu(void)
     import_array();
 
     if (PyType_Ready(&SuperLUType) < 0) {
-	return NULL;
+        return NULL;
+    }
+
+    if (PyType_Ready(&SuperLUGlobalType) < 0) {
+    	return NULL;
     }
 
     m = PyModule_Create(&moduledef);
