@@ -823,7 +823,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='interior-point', callback=None,
+            bounds=None, method='simplex', callback=None,
             options=None):
     """
     Minimize a linear objective function subject to linear
