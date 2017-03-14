@@ -1521,7 +1521,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
 
-        except LinAlgError:
+        except (LinAlgError, FloatingPointError):
             # this can happen when sparse solver is used and presolve 
             # is turned off. I've never seen it otherwise.
             status = 4
