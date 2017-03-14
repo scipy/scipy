@@ -501,7 +501,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         M, N = self.shape
         coo_todense(M, N, self.nnz, self.row, self.col, self.data,
                     result.ravel('A'), fortran)
-        return result
+        return np.matrix(result, copy=False)
 
     def _mul_vector(self, other):
         #output array
