@@ -246,6 +246,36 @@ void csr_tobsr(const I n_row,
 
 
 /*
+ * Compute B += A for CSR matrix A, C-contiguous dense matrix B
+ *
+ * Input Arguments:
+ *   I  n_row           - number of rows in A
+ *   I  n_col           - number of columns in A
+ *   I  Ap[n_row+1]     - row pointer
+ *   I  Aj[nnz(A)]      - column indices
+ *   T  Ax[nnz(A)]      - nonzero values
+ *   T  Bx[n_row*n_col] - dense matrix in row-major order
+ *
+ */
+template <class I, class T>
+void csr_todense(const I n_row,
+                 const I n_col,
+                 const I Ap[],
+                 const I Aj[],
+                 const T Ax[],
+                       T Bx[])
+{
+    T * Bx_row = Bx;
+    for(I i = 0; i < n_row; i++){
+        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+            Bx_row[Aj[jj]] += Ax[jj];
+        }
+        Bx_row += (npy_intp)n_col;
+    }
+}
+
+
+/*
  * Determine whether the CSR column indices are in sorted order.
  *
  * Input Arguments:

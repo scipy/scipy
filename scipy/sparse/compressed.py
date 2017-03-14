@@ -911,8 +911,21 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
-        """See the docstring for `spmatrix.toarray`."""
-        return self.tocoo(copy=False).toarray(order=order, out=out)
+        out = self._process_toarray_args(order, out)
+        if not (out.flags.c_contiguous or out.flags.f_contiguous):
+            raise ValueError('Output array must be C or F contiguous')
+        # align ideal order with output array order
+        if out.flags.c_contiguous:
+            x = self.tocsr()
+            y = out
+        else:
+            x = self.tocsc()
+            y = out.T
+        M, N = x._swap(x.shape)
+        _sparsetools.csr_todense(M, N, x.indptr, x.indices, x.data, y)
+        return out
+
+    toarray.__doc__ = spmatrix.toarray.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #

@@ -478,6 +478,11 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
 
+    def toarray(self, order=None, out=None):
+        return self.tocoo(copy=False).toarray(order=order, out=out)
+
+    toarray.__doc__ = spmatrix.toarray.__doc__
+
     def transpose(self, axes=None, copy=False):
         if axes is not None:
             raise ValueError(("Sparse matrices do not support "

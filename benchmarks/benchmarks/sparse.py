@@ -357,3 +357,18 @@ class Iteration(Benchmark):
     def time_iteration(self, density, format):
         for row in self.X:
             pass
+
+
+class Densify(Benchmark):
+    params = [
+        ['dia', 'csr', 'csc', 'dok', 'lil', 'coo', 'bsr'],
+        ['C', 'F'],
+    ]
+    param_names = ['format', 'order']
+
+    def setup(self, format, order):
+        self.X = sparse.rand(1000, 1000, format=format, density=0.01)
+
+    def time_toarray(self, format, order):
+        self.X.toarray(order=order)
+

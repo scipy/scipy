@@ -440,12 +440,13 @@ class lil_matrix(spmatrix, IndexMixin):
     reshape.__doc__ = spmatrix.reshape.__doc__
 
     def toarray(self, order=None, out=None):
-        """See the docstring for `spmatrix.toarray`."""
         d = self._process_toarray_args(order, out)
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
                 d[i, j] = self.data[i][pos]
         return d
+
+    toarray.__doc__ = spmatrix.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
         return self.tocsr().transpose(axes=axes, copy=copy).tolil()
