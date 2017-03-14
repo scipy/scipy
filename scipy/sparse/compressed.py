@@ -327,6 +327,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Arithmatic operator overrides #
     #################################
 
+    def _add_dense(self, other):
+        if other.shape != self.shape:
+            raise ValueError('Incompatible shapes.')
+        dtype = upcast_char(self.dtype.char, other.dtype.char)
+        order = self._swap('CF')[0]
+        result = np.array(other, dtype=dtype, order=order, copy=True)
+        M, N = self._swap(self.shape)
+        y = result if result.flags.c_contiguous else result.T
+        _sparsetools.csr_todense(M, N, self.indptr, self.indices, self.data, y)
+        return np.matrix(result, copy=False)
+
     def _add_sparse(self, other):
         return self._binopt(other, '_plus_')
 

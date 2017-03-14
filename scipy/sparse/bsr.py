@@ -330,6 +330,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         """Multiply this sparse matrix by other matrix."""
         return self * other
 
+    def _add_dense(self, other):
+        return self.tocoo(copy=False)._add_dense(other)
+
     def _mul_vector(self, other):
         M,N = self.shape
         R,C = self.blocksize
