@@ -1059,11 +1059,10 @@ class _TestCommon:
     #    assert_equal( array(self.datsp), self.dat )
 
     def test_todense(self):
-        # Check C-contiguous (default).
+        # Check C- or F-contiguous (default).
         chk = self.datsp.todense()
         assert_array_equal(chk, self.dat)
-        assert_(chk.flags.c_contiguous)
-        assert_(not chk.flags.f_contiguous)
+        assert_(chk.flags.c_contiguous != chk.flags.f_contiguous)
         # Check C-contiguous (with arg).
         chk = self.datsp.todense(order='C')
         assert_array_equal(chk, self.dat)
@@ -1100,12 +1099,11 @@ class _TestCommon:
         assert_array_equal(spbool.todense(), matbool)
 
     def test_toarray(self):
-        # Check C-contiguous (default).
+        # Check C- or F-contiguous (default).
         dat = asarray(self.dat)
         chk = self.datsp.toarray()
         assert_array_equal(chk, dat)
-        assert_(chk.flags.c_contiguous)
-        assert_(not chk.flags.f_contiguous)
+        assert_(chk.flags.c_contiguous != chk.flags.f_contiguous)
         # Check C-contiguous (with arg).
         chk = self.datsp.toarray(order='C')
         assert_array_equal(chk, dat)

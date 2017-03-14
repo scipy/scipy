@@ -922,6 +922,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
+        if out is None and order is None:
+            order = self._swap('cf')[0]
         out = self._process_toarray_args(order, out)
         if not (out.flags.c_contiguous or out.flags.f_contiguous):
             raise ValueError('Output array must be C or F contiguous')
