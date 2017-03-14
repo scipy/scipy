@@ -1493,39 +1493,40 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             d_x, d_y, d_z, d_tau, d_kappa = _get_delta(
                 A, b, c, x, y, z, tau, kappa, gamma, eta,
                 sparse, lstsq, sym_pos, cholesky, pc, ip)
+
+            if ip:  # initial point
+                # [1] 4.4
+                # Formula after 8.23 takes a full step regardless if this will take
+                # it negative
+                x, y, z, tau, kappa = _do_step(
+                    x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha=1)
+                x[x < 1] = 1
+                z[z < 1] = 1
+                tau = max(1, tau)
+                kappa = max(1, kappa)
+                ip = False  # done with initial point
+            else:
+                # [1] Section 4.3
+                alpha = _get_step(
+                    x,
+                    d_x,
+                    z,
+                    d_z,
+                    tau,
+                    d_tau,
+                    kappa,
+                    d_kappa,
+                    alpha0)
+                # [1] Equation 8.9
+                x, y, z, tau, kappa = _do_step(
+                    x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
+
         except LinAlgError:
-            # there are enough checks in get_delta that I've never seen this
-            # happen
+            # this can happen when sparse solver is used and presolve 
+            # is turned off. I've never seen it otherwise.
             status = 4
             message = _get_message(status)
             break
-
-        if ip:  # initial point
-            # [1] 4.4
-            # Formula after 8.23 takes a full step regardless if this will take
-            # it negative
-            x, y, z, tau, kappa = _do_step(
-                x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha=1)
-            x[x < 1] = 1
-            z[z < 1] = 1
-            tau = max(1, tau)
-            kappa = max(1, kappa)
-            ip = False  # done with initial point
-        else:
-            # [1] Section 4.3
-            alpha = _get_step(
-                x,
-                d_x,
-                z,
-                d_z,
-                tau,
-                d_tau,
-                kappa,
-                d_kappa,
-                alpha0)
-            # [1] Equation 8.9
-            x, y, z, tau, kappa = _do_step(
-                x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
 
         # [1] 4.5
         rho_p, rho_d, rho_A, rho_g, rho_mu, obj = _indicators(
