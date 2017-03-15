@@ -29,7 +29,7 @@ TI = np.array([
     [4.17871859155190428, 0.32768282076106237, 0.52337644549944951],
     [-4.17871859155190428, -0.32768282076106237, 0.47662355450055044],
     [0.50287263494578682, -2.57192694985560522, 0.59603920482822492]])
-# This linear combinations are used in the algorithm.
+# These linear combinations are used in the algorithm.
 TI_REAL = TI[0]
 TI_COMPLEX = TI[1] + 1j * TI[2]
 
@@ -37,8 +37,7 @@ TI_COMPLEX = TI[1] + 1j * TI[2]
 P = np.array([
     [13/3 + 7*S6/3, -23/3 - 22*S6/3, 10/3 + 5 * S6],
     [13/3 - 7*S6/3, -23/3 + 22*S6/3, 10/3 - 5 * S6],
-    [1/3, -8/3, 10/3]
-])
+    [1/3, -8/3, 10/3]])
 
 
 NEWTON_MAXITER = 6  # Maximum number of Newton iterations.
@@ -226,7 +225,8 @@ class Radau(OdeSolver):
             * If array_like or sparse_matrix, then the Jacobian is assumed to
               be constant.
             * If callable, then the Jacobian is assumed to depend on both
-              t and y, and will be called as ``jac(t, y)`` as necessary.
+              t and y, and will be called as ``jac(t, y)`` as necessary. The
+              return value might be a sparse matrix.
             * If None (default), then the Jacobian will be approximated by
               finite differences.
 
@@ -445,11 +445,10 @@ class Radau(OdeSolver):
                     if current_jac:
                         break
 
-                    if not current_jac:
-                        J = self.jac(t, y, f)
-                        current_jac = True
-                        LU_real = None
-                        LU_complex = None
+                    J = self.jac(t, y, f)
+                    current_jac = True
+                    LU_real = None
+                    LU_complex = None
 
             if not converged:
                 h_abs *= 0.5
@@ -501,8 +500,7 @@ class Radau(OdeSolver):
         self.h_abs_old = self.h_abs
         self.error_norm_old = error_norm
 
-        h_abs *= factor
-        self.h_abs = h_abs
+        self.h_abs = h_abs * factor
 
         self.y_old = y
 
