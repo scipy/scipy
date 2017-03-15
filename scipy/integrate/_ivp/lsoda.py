@@ -53,7 +53,7 @@ class LSODA(OdeSolver):
         Jacobian matrix of the right-hand side of the system with respect to
         ``y``. The Jacobian matrix has shape (n, n) and its element (i, j) is
         equal to ``d f_i / d y_j``. The function will be called as
-        ``jac(t, y)``. If ``None`` (default), then the Jacobian will be
+        ``jac(t, y)``. If None (default), then the Jacobian will be
         approximated by finite differences. It is generally recommended to
         provide the Jacobian rather than relying on a finite difference
         approximation.
@@ -102,7 +102,6 @@ class LSODA(OdeSolver):
            on Scientific and Statistical Computing, Vol. 4, No. 1, pp. 136-148,
            1983.
     """
-
     def __init__(self, fun, t0, y0, t_crit, first_step=None, min_step=0.0,
                  max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
                  uband=None, vectorized=False, **extraneous):
@@ -110,17 +109,16 @@ class LSODA(OdeSolver):
         super(LSODA, self).__init__(fun, t0, y0, t_crit, vectorized)
 
         if first_step is None:
-            # 0.0 is LSODA value for default
-            first_step = 0.0
-        elif first_step <= 0.0:
+            first_step = 0  # LSODA value for automatic selection.
+        elif first_step <= 0:
             raise ValueError("`first_step` must be positive or None.")
 
         if max_step == np.inf:
-            max_step = 0.0  # LSODA value for infinity.
-        elif max_step <= 0.0:
+            max_step = 0  # LSODA value for infinity.
+        elif max_step <= 0:
             raise ValueError("`max_step` must be positive.")
 
-        if min_step < 0.0:
+        if min_step < 0:
             raise ValueError("`min_step` must be nonnegative.")
 
         rtol, atol = validate_tol(rtol, atol, self.n)
@@ -140,7 +138,7 @@ class LSODA(OdeSolver):
                               lband=lband, uband=uband)
         solver.set_initial_value(y0, t0)
 
-        # Inject t_crit into rwork array as needed for itask=5
+        # Inject t_crit into rwork array as needed for itask=5.
         solver._integrator.rwork[0] = self.t_crit
         solver._integrator.call_args[4] = solver._integrator.rwork
 
@@ -151,19 +149,20 @@ class LSODA(OdeSolver):
         integrator = solver._integrator
 
         # From lsoda.step and lsoda.integrate
-        # itask=5 means take a single step and do not go past t_crit
+        # itask=5 means take a single step and do not go past t_crit.
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
-        solver._y, solver.t = integrator.run(solver.f,
-                                             solver.jac or (lambda: None),
-                                             solver._y, solver.t, self.t_crit,
-                                             solver.f_params, solver.jac_params)
+        solver._y, solver.t = integrator.run(
+            solver.f, solver.jac or (lambda: None), solver._y, solver.t,
+            self.t_crit, solver.f_params, solver.jac_params)
         integrator.call_args[2] = itask
 
         if solver.successful():
             self.t = solver.t
             self.y = solver._y
+            # From LSODA Fortran source njev is equal to nlu.
             self.njev = integrator.iwork[12]
+            self.nlu = integrator.iwork[12]
             return True, None
         else:
             return False, 'Unexpected istate in LSODA.'
