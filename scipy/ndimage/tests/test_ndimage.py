@@ -2029,6 +2029,32 @@ class TestNdimage:
                                                 order=order)
             assert_array_almost_equal(out1, out2)
 
+    def test_affine_transform26(self):
+        # test homogeneous coordinates
+        data = numpy.array([[4, 1, 3, 2],
+                            [7, 6, 8, 5],
+                            [3, 5, 3, 6]])
+        for order in range(0, 6):
+            if (order > 1):
+                filtered = ndimage.spline_filter(data, order=order)
+            else:
+                filtered = data
+            tform_original = np.eye(2)
+            offset_original = -np.ones(2)
+            tform_h1 = np.hstack((tform_original, offset_original))
+            tform_h2 = np.vstack((tform_h1, [0, 0, 1]))
+            out1 = ndimage.affine_transform(filtered, tform_original,
+                                            offset_original, order=order,
+                                            prefilter=False)
+            out2 = ndimage.affine_transform(filtered, tform_h1, order=order,
+                                            prefilter=False)
+            out3 = ndimage.affine_transform(filtered, tform_h2, order=order,
+                                            prefilter=False)
+            for out in [out1, out2, out3]:
+                assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                                [0, 4, 1, 3],
+                                                [0, 7, 6, 8]])
+
     def test_shift01(self):
         data = numpy.array([1])
         for order in range(0, 6):
