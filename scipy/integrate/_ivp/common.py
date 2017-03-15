@@ -343,17 +343,6 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
     return diff, factor
 
 
-def _column_argmax_csc(A):
-    ret = np.empty(A.shape[1], dtype=int)
-    i = 0
-    for col in range(A.shape[1]):
-        j = A.indptr[col + 1]
-        a = np.argmax(A.data[i: j])
-        ret[col] = A.indices[i: j][a]
-        i = j
-    return ret
-
-
 def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     n = y.shape[0]
     n_groups = np.max(groups) + 1
@@ -368,7 +357,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
 
     i, j, _ = find(structure)
     diff = coo_matrix((df[i, groups[j]], (i, j)), shape=(n, n)).tocsc()
-    max_ind = _column_argmax_csc(abs(diff))
+    max_ind = np.array(abs(diff).argmax(axis=0)).ravel()
     r = np.arange(n)
     max_diff = np.asarray(np.abs(diff[max_ind, r])).ravel()
     scale = np.maximum(np.abs(f[max_ind]),
@@ -397,7 +386,7 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
         diff_new = coo_matrix((df[i, groups_map[groups[ind[j]]]],
                                (i, j)), shape=(n, ind.shape[0])).tocsc()
 
-        max_ind_new = _column_argmax_csc(abs(diff_new))
+        max_ind_new = np.array(abs(diff_new).argmax(axis=0)).ravel()
         r = np.arange(ind.shape[0])
         max_diff_new = np.asarray(np.abs(diff_new[max_ind_new, r])).ravel()
         scale_new = np.maximum(
