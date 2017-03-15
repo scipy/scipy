@@ -656,8 +656,8 @@ def test_num_jac_sparse():
                     rtol=1e-12, atol=1e-14)
     assert_allclose(factor_dense, factor_sparse, rtol=1e-12, atol=1e-14)
 
-    # Take small factors to trigger it recomputing inside.
-    factor = np.random.uniform(0, 1e-11, size=n)
+    # Take small factors to trigger they recomputing inside.
+    factor = np.random.uniform(0, 1e-12, size=n)
     J_num_sparse, factor_sparse = num_jac(fun, 0, y.ravel(), f, 1e-8, factor,
                                           sparsity=(A, groups))
     J_num_dense, factor_dense = num_jac(fun, 0, y.ravel(), f, 1e-8, factor)

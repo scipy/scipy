@@ -4,6 +4,7 @@ from warnings import warn
 import numpy as np
 from scipy.sparse import find, coo_matrix
 
+
 EPS = np.finfo(float).eps
 
 
@@ -227,6 +228,14 @@ class OdeSolution(object):
         return ys
 
 
+NUM_JAC_DIFF_REJECT = EPS ** 0.875
+NUM_JAC_DIFF_SMALL = EPS ** 0.75
+NUM_JAC_DIFF_BIG = EPS ** 0.25
+NUM_JAC_MIN_FACTOR = 1e3 * EPS
+NUM_JAC_FACTOR_INCREASE = 10
+NUM_JAC_FACTOR_DECREASE = 0.1
+
+
 def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
     """Finite differences Jacobian approximation tailored for ODE solvers.
 
@@ -265,7 +274,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
 
     Returns
     -------
-    J : ndarray, shape (n, n)
+    J : ndarray or csc_matrix, shape (n, n)
         Jacobian matrix.
     factor : ndarray, shape (n,)
         Suggested `factor` for the next evaluation.
@@ -311,10 +320,10 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
     max_diff = np.abs(diff[max_ind, r])
     scale = np.maximum(np.abs(f[max_ind]), np.abs(f_new[max_ind, r]))
 
-    diff_too_small = max_diff < EPS ** 0.875 * scale
+    diff_too_small = max_diff < NUM_JAC_DIFF_REJECT * scale
     if np.any(diff_too_small):
         ind, = np.nonzero(diff_too_small)
-        new_factor = 10 * factor[ind]
+        new_factor = NUM_JAC_FACTOR_INCREASE * factor[ind]
         h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
         h_vecs[ind, ind] = h_new
         f_new = fun(t, y[:, None] + h_vecs[:, ind])
@@ -336,9 +345,9 @@ def _dense_num_jac(fun, t, y, f, h, factor, y_scale):
 
     diff /= h
 
-    factor[max_diff < EPS ** 0.75 * scale] *= 10
-    factor[max_diff > EPS ** 0.25 * scale] *= 0.1
-    factor = np.maximum(factor, 1e3 * EPS)
+    factor[max_diff < NUM_JAC_DIFF_SMALL * scale] *= NUM_JAC_FACTOR_INCREASE
+    factor[max_diff > NUM_JAC_DIFF_BIG * scale] *= NUM_JAC_FACTOR_DECREASE
+    factor = np.maximum(factor, NUM_JAC_MIN_FACTOR)
 
     return diff, factor
 
@@ -363,10 +372,10 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
     scale = np.maximum(np.abs(f[max_ind]),
                        np.abs(f_new[max_ind, groups[r]]))
 
-    diff_too_small = max_diff < EPS ** 0.875 * scale
+    diff_too_small = max_diff < NUM_JAC_DIFF_REJECT * scale
     if np.any(diff_too_small):
         ind, = np.nonzero(diff_too_small)
-        new_factor = 10 * factor[ind]
+        new_factor = NUM_JAC_FACTOR_INCREASE * factor[ind]
         h_new = (y[ind] + new_factor * y_scale[ind]) - y[ind]
         h_new_all = np.zeros(n)
         h_new_all[ind] = h_new
@@ -405,8 +414,8 @@ def _sparse_num_jac(fun, t, y, f, h, factor, y_scale, structure, groups):
 
     diff.data /= np.repeat(h, np.diff(diff.indptr))
 
-    factor[max_diff < EPS ** 0.75 * scale] *= 10
-    factor[max_diff > EPS ** 0.25 * scale] *= 0.1
-    factor = np.maximum(factor, 1e3 * EPS)
+    factor[max_diff < NUM_JAC_DIFF_SMALL * scale] *= NUM_JAC_FACTOR_INCREASE
+    factor[max_diff > NUM_JAC_DIFF_BIG * scale] *= NUM_JAC_FACTOR_DECREASE
+    factor = np.maximum(factor, NUM_JAC_MIN_FACTOR)
 
     return diff, factor
