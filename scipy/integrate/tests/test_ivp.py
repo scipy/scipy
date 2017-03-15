@@ -469,6 +469,7 @@ def test_no_integration():
         sol = solve_ivp(lambda t, y: -y, [4, 4], [2, 3],
                         method=method, dense_output=True)
         assert_equal(sol.sol(4), [2, 3])
+        assert_equal(sol.sol([4, 5, 6]), [[2, 2, 2], [3, 3, 3]])
 
 
 def test_no_integration_class():
@@ -478,12 +479,14 @@ def test_no_integration_class():
         assert_equal(solver.status, 'finished')
         sol = solver.dense_output()
         assert_equal(sol(0.0), [10.0, 0.0])
+        assert_equal(sol([0, 1, 2]), [[10, 10, 10], [0, 0, 0]])
 
         solver = method(lambda t, y: -y, 0.0, [], np.inf)
         solver.step()
         assert_equal(solver.status, 'finished')
         sol = solver.dense_output()
         assert_equal(sol(100.0), [])
+        assert_equal(sol([0, 1, 2]), np.empty((0, 3)))
 
 
 def test_empty():
@@ -496,11 +499,13 @@ def test_empty():
         sol = assert_no_warnings(solve_ivp, fun, [0, 10], y0,
                                  method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
+        assert_equal(sol.sol([1, 2, 3]), np.zeros((0, 3)))
 
     for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:
         sol = assert_no_warnings(solve_ivp, fun, [0, np.inf], y0,
                                  method=method, dense_output=True)
         assert_equal(sol.sol(10), np.zeros((0,)))
+        assert_equal(sol.sol([1, 2, 3]), np.zeros((0, 3)))
 
 
 def test_ConstantDenseOutput():
@@ -656,7 +661,7 @@ def test_num_jac_sparse():
                     rtol=1e-12, atol=1e-14)
     assert_allclose(factor_dense, factor_sparse, rtol=1e-12, atol=1e-14)
 
-    # Take small factors to trigger they recomputing inside.
+    # Take small factors to trigger their recomputing inside.
     factor = np.random.uniform(0, 1e-12, size=n)
     J_num_sparse, factor_sparse = num_jac(fun, 0, y.ravel(), f, 1e-8, factor,
                                           sparsity=(A, groups))
