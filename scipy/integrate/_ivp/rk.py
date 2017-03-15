@@ -25,25 +25,25 @@ def rk_step(fun, t, y, f, h, A, B, C, E, K):
     fun : callable
         Right-hand side of the system.
     t : float
-        Current value of the independent variable.
+        Current time.
     y : ndarray, shape (n,)
-        Current value of the solution.
+        Current state.
     f : ndarray, shape (n,)
-        Current value of the derivative of the solution, i.e. ``fun(x, y)``.
-    h : float, shape (n,)
-        Step for x to use.
+        Current value of the derivative, i.e. ``fun(x, y)``.
+    h : float
+        Step to use.
     A : list of ndarray, length n_stages - 1
-        Coefficients for combining previous RK stages for computing the next
+        Coefficients for combining previous RK stages to compute the next
         stage. For explicit methods the coefficients above the main diagonal
-        are zeros, so they are stored as a list of arrays of increasing
-        lengths. The first stage is always just `f`, thus no coefficients are
-        required.
+        are zeros, so `A` is stored as a list of arrays of increasing lengths.
+        The first stage is always just `f`, thus no coefficients for it
+        are required.
     B : ndarray, shape (n_stages,)
         Coefficients for combining RK stages for computing the final
         prediction.
     C : ndarray, shape (n_stages - 1,)
-        Coefficients for incrementing x for computing RK stages. The value for
-        the first stage is always zero, thus it is not stored.
+        Coefficients for incrementing time for consecutive RK stages.
+        The value for the first stage is always zero, thus it is not stored.
     E : ndarray, shape (n_stages + 1,)
         Coefficients for estimating the error of a less accurate method. They
         are computed as the difference between b's in an extended tableau.
@@ -53,11 +53,11 @@ def rk_step(fun, t, y, f, h, A, B, C, E, K):
     Returns
     -------
     y_new : ndarray, shape (n,)
-        Solution at x + h computed with a higher accuracy.
+        Solution at t + h computed with a higher accuracy.
     f_new : ndarray, shape (n,)
-        Derivative ``fun(x + h, y_new)``.
+        Derivative ``fun(t + h, y_new)``.
     error : ndarray, shape (n,)
-        Error estimate.
+        Error estimate of a less accurate method.
 
     References
     ----------
@@ -167,7 +167,7 @@ class RK23(RungeKutta):
 
     The Bogacki-Shamping pair of formulas is used [1]_. The error is controlled
     assuming 2nd order accuracy, but steps are taken using a 3rd oder accurate
-    formulas (local extrapolation is done). A cubic Hermit polynomial is used
+    formula (local extrapolation is done). A cubic Hermit polynomial is used
     for the dense output.
 
     Parameters
@@ -324,7 +324,6 @@ class RK45(RungeKutta):
     .. [2] L. W. Shampine, "Some Practical Runge-Kutta Formulas", Mathematics
            of Computation,, Vol. 46, No. 173, pp. 135-150, 1986.
     """
-
     order = 4
     n_stages = 6
     C = np.array([1/5, 3/10, 4/5, 8/9, 1])
