@@ -24,7 +24,7 @@ class OdeSolver(object):
            (listed below) along with any other parameters specific to a solver.
         2. A constructor must accept arbitrary extraneous arguments
            ``**extraneous``, but warn that these arguments are irrelevant
-           using the `common.warn_extraneous` function. Do not pass these
+           using `common.warn_extraneous` function. Do not pass these
            arguments to the base class.
         3. A solver must implement a private method `_step_impl(self)` which
            propagates a solver one step further. It must return tuple
@@ -36,10 +36,9 @@ class OdeSolver(object):
            which returns a `DenseOutput` object covering the last successful
            step.
         5. A solver must have attributes listed below in Attributes section.
-           Note that `step_size` is computed automatically from `t` and
-           `t_old`.
+           Note that `t_old` and `step_size` are updated automatically.
         6. Use `fun(self, t, y)` method for the system rhs evaluation, this
-           way the number of functions evaluations (`nfev`) will be tracked
+           way the number of function evaluations (`nfev`) will be tracked
            automatically.
         7. For convenience a base class provides `fun_single(self, t, y)` and
            `fun_vectorized(self, t, y)` for evaluating the rhs in
@@ -160,7 +159,7 @@ class OdeSolver(object):
                                "solver.")
 
         if self.n == 0 or self.t == self.t_crit:
-            # Handle corner cases of empty solver and no integration.
+            # Handle corner cases of empty solver or no integration.
             self.t_old = self.t
             self.t = self.t_crit
             message = None
@@ -245,7 +244,11 @@ class DenseOutput(object):
 
 
 class ConstantDenseOutput(DenseOutput):
-    """Dummy class for interpolating steps with no actual integration."""
+    """Constant value interpolator.
+
+    This class used for degenerate integration cases: equal integration limits
+    or a system with 0 equations.
+    """
     def __init__(self, t_old, t, value):
         super(ConstantDenseOutput, self).__init__(t_old, t)
         self.value = value
