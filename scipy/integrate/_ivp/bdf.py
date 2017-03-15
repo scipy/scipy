@@ -33,8 +33,7 @@ def change_D(D, order, factor):
     D[:order + 1] = np.dot(RU.T, D[:order + 1])
 
 
-def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu,
-                     scale, tol):
+def solve_bdf_system(fun, t_new, y_predict, c, psi, LU, solve_lu, scale, tol):
     """Solve the algebraic system resulting from BDF method."""
     d = 0
     y = y_predict.copy()
@@ -121,7 +120,8 @@ class BDF(OdeSolver):
             * If array_like or sparse_matrix, then the Jacobian is assumed to
               be constant.
             * If callable, then the Jacobian is assumed to depend on both
-              t and y, and will be called as ``jac(t, y)`` as necessary.
+              t and y, and will be called as ``jac(t, y)`` as necessary. The
+              return value might be a sparse matrix.
             * If None (default), then the Jacobian will be approximated by
               finite differences.
 
@@ -183,9 +183,9 @@ class BDF(OdeSolver):
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
-        self.h_abs = select_initial_step(
-            self.fun, self.t, self.y, f, self.direction,
-            1, self.rtol, self.atol)
+        self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
+                                         self.direction, 1,
+                                         self.rtol, self.atol)
         self.h_abs_old = None
         self.error_norm_old = None
 
@@ -251,7 +251,7 @@ class BDF(OdeSolver):
             J = jac_wrapped(t0, y0)
         elif callable(jac):
             J = jac(t0, y0)
-            self.njev = 1
+            self.njev += 1
             if issparse(J):
                 J = csc_matrix(J)
 
@@ -285,7 +285,6 @@ class BDF(OdeSolver):
 
     def _step_impl(self):
         t = self.t
-        y_new = self.y
         D = self.D
 
         max_step = self.max_step
@@ -330,7 +329,6 @@ class BDF(OdeSolver):
             h = t_new - t
             h_abs = np.abs(h)
 
-            t_new = t + h
             y_predict = np.sum(D[:order + 1], axis=0)
 
             scale = atol + rtol * np.abs(y_predict)
