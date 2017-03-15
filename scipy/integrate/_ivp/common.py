@@ -1,8 +1,8 @@
 from __future__ import division, print_function, absolute_import
+from itertools import groupby
 from warnings import warn
 import numpy as np
 from scipy.sparse import find, coo_matrix
-
 
 EPS = np.finfo(float).eps
 
@@ -109,20 +109,6 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     return min(100 * h0, h1)
 
 
-def _find_group_indices(a):
-    c = None
-    indices = []
-    values = []
-    for i, e in enumerate(a):
-        if e != c:
-            indices.append(i)
-            values.append(e)
-            c = e
-    indices.append(a.shape[0])
-
-    return indices, values
-
-
 class OdeSolution(object):
     """Continuous ODE solution.
 
@@ -134,17 +120,32 @@ class OdeSolution(object):
     Attributes below). Evaluation outside this interval is not forbidden, but
     the accuracy is not guaranteed.
 
+    When evaluating at a breakpoint (one of the values in `ts`) a segment with
+    the lower index is selected.
+
+    Parameters
+    ----------
+    ts : array_like, shape (n_segments + 1,)
+        Time instants between which local interpolants are defined. Must
+        be strictly increasing or decreasing (zero segment with two points is
+        also allowed).
+    interpolants : list of DenseOutput with n_segments elements
+        Local interpolants. An i-th interpolant is assumed to be defined
+        between ``ts[i]`` and ``ts[i + 1]``.
+
     Attributes
     ----------
     t_min, t_max : float
         Time range of the interpolation.
     """
     def __init__(self, ts, interpolants):
+        ts = np.asarray(ts)
         d = np.diff(ts)
-        if not (np.all(d >= 0) or np.all(d <= 0)):
+        # The first case covers integration on zero segment.
+        if not ((ts.size == 2 and ts[0] == ts[-1])
+                or np.all(d > 0) or np.all(d < 0)):
             raise ValueError("`ts` must be strictly increasing or decreasing.")
 
-        ts = np.asarray(ts)
         self.n_segments = len(interpolants)
         if ts.shape != (self.n_segments + 1,):
             raise ValueError("Numbers of time stamps and interpolants "
@@ -161,15 +162,21 @@ class OdeSolution(object):
             self.t_min = ts[-1]
             self.t_max = ts[0]
             self.ascending = False
-            self.ts_sorted = np.sort(ts)
+            self.ts_sorted = ts[::-1]
 
     def _call_single(self, t):
-        i = min(max(np.searchsorted(self.ts_sorted, t) - 1, 0),
-                self.n_segments - 1)
-        if not self.ascending:
-            i = self.n_segments - 1 - i
+        # Here we preserve a certain symmetry that when t is in self.ts,
+        # then we prioritize a segment with a lower index.
+        if self.ascending:
+            ind = np.searchsorted(self.ts_sorted, t, side='left')
+        else:
+            ind = np.searchsorted(self.ts_sorted, t, side='right')
 
-        return self.interpolants[i](t)
+        segment = min(max(ind - 1, 0), self.n_segments - 1)
+        if not self.ascending:
+            segment = self.n_segments - 1 - segment
+
+        return self.interpolants[segment](t)
 
     def __call__(self, t):
         """Evaluate the solution.
@@ -182,7 +189,7 @@ class OdeSolution(object):
         Returns
         -------
         y : ndarray, shape (n_states,) or (n_states, n_points)
-            Computed values. Shape depends on whether `t` was a scalar or a
+            Computed values. Shape depends on whether `t` is a scalar or a
             1-d array.
         """
         t = np.asarray(t)
@@ -193,23 +200,26 @@ class OdeSolution(object):
         order = np.argsort(t)
         reverse = np.empty_like(order)
         reverse[order] = np.arange(order.shape[0])
-
         t_sorted = t[order]
 
-        index = np.searchsorted(self.ts_sorted, t_sorted)
-        index -= 1
-        index[index < 0] = 0
-        index[index > self.n_segments - 1] = self.n_segments - 1
-
+        # See comment in self._call_single.
+        if self.ascending:
+            segments = np.searchsorted(self.ts_sorted, t_sorted, side='left')
+        else:
+            segments = np.searchsorted(self.ts_sorted, t_sorted, side='right')
+        segments -= 1
+        segments[segments < 0] = 0
+        segments[segments > self.n_segments - 1] = self.n_segments - 1
         if not self.ascending:
-            index = self.n_segments - 1 - index
-
-        t_index, sol_index = _find_group_indices(index)
+            segments = self.n_segments - 1 - segments
 
         ys = []
-        for s, i, j in zip(sol_index, t_index[:-1], t_index[1:]):
-            y = self.interpolants[s](t_sorted[i: j])
+        group_start = 0
+        for segment, group in groupby(segments):
+            group_end = group_start + len(list(group))
+            y = self.interpolants[segment](t_sorted[group_start:group_end])
             ys.append(y)
+            group_start = group_end
 
         ys = np.hstack(ys)
         ys = ys[:, reverse]
