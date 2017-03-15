@@ -445,6 +445,11 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     matrix = numpy.asarray(matrix, dtype=numpy.float64)
     if matrix.ndim not in [1, 2] or matrix.shape[0] < 1:
         raise RuntimeError('no proper affine matrix provided')
+    if (matrix.ndim == 2 and matrix.shape[1] == input.ndim + 1 and
+            (matrix.shape[0] in [input.ndim, input.ndim + 1])):
+        # assume input is homogeneous coordinate transformation matrix
+        offset = matrix[:input.ndim, input.ndim]
+        matrix = matrix[:input.ndim, :input.ndim]
     if matrix.shape[0] != input.ndim:
         raise RuntimeError('affine matrix has wrong number of rows')
     if matrix.ndim == 2 and matrix.shape[1] != output.ndim:
