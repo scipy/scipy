@@ -244,7 +244,7 @@ static struct PyModuleDef moduledef = {
 
 PyObject *PyInit__interpolate(void)
 {
-    PyObject *m, *d, *s;
+    PyObject *m;
 
     m = PyModule_Create(&moduledef);
     import_array();
