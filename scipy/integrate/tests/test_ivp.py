@@ -528,6 +528,11 @@ def test_classes():
             assert_(solver.nfev > 0)
             assert_(solver.njev >= 0)
             assert_(solver.nlu >= 0)
+        else:
+            assert_equal(solver.nfev, 0)
+            assert_equal(solver.njev, 0)
+            assert_equal(solver.nlu, 0)
+
         assert_raises(RuntimeError, solver.dense_output)
 
         message = solver.step()
@@ -542,6 +547,8 @@ def test_classes():
         assert_(solver.nfev > 0)
         assert_(solver.njev >= 0)
         assert_(solver.nlu >= 0)
+        sol = solver.dense_output()
+        assert_equal(sol(5), y0)
 
 
 def test_OdeSolution():
