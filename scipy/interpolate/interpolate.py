@@ -661,8 +661,13 @@ class _PPolyBase(object):
             extrapolate = bool(extrapolate)
         self.extrapolate = extrapolate
 
+        if self.c.ndim < 2:
+            raise ValueError("Coefficients array must be at least "
+                             "2-dimensional.")
+
         if not (0 <= axis < self.c.ndim - 1):
-            raise ValueError("%s must be between 0 and %s" % (axis, c.ndim-1))
+            raise ValueError("axis=%s must be between 0 and %s" %
+                             (axis, self.c.ndim-1))
 
         self.axis = axis
         if axis != 0:
