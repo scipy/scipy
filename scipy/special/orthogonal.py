@@ -157,8 +157,13 @@ class orthopoly1d(np.poly1d):
     def _scale(self, p):
         if p == 1.0:
             return
-        self.__dict__['coeffs'] *= p
-        evf = self.__dict__['_eval_func']
+        try:
+            self._coeffs *= p
+        except ValueError:
+            # numpy < 1.13 raises ValueError on setting any property
+            self.__dict__['coeffs'] *= p
+
+        evf = self._eval_func
         if evf:
             self.__dict__['_eval_func'] = lambda x: evf(x) * p
         self.__dict__['normcoef'] *= p
