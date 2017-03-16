@@ -324,10 +324,10 @@ class BSpline(object):
         x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
 
         # With periodic extrapolation we map x to the segment
-        # (self.t[k], self.t[-k]).
+        # [self.t[k], self.t[-k]].
         if extrapolate == 'periodic':
-            x = self.t[self.k+1] + ((x - self.t[self.k+1]) %
-                                    (self.t[-(self.k)-1] - self.t[self.k+1]))
+            x = self.t[self.k] + (x - self.t[self.k]) % (self.t[-(self.k)] -
+                                                         self.t[self.k])
             extrapolate = False
 
         out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
