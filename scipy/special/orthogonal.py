@@ -158,10 +158,12 @@ class orthopoly1d(np.poly1d):
         if p == 1.0:
             return
         try:
-            self._coeffs *= p
-        except ValueError:
-            # numpy < 1.13 raises ValueError on setting any property
+            self._coeffs
+        except AttributeError:
             self.__dict__['coeffs'] *= p
+        else:
+            # the coeffs attr is be made private in future versions of numpy
+            self._coeffs *= p
 
         evf = self._eval_func
         if evf:
