@@ -206,6 +206,17 @@ class TestBSpline(TestCase):
         yy = b(xx)
         assert_(not np.all(np.isnan(yy)))
 
+    def test_periodic_extrap(self):
+        t = np.sort(np.random.random(10))
+        c = np.random.random(5)
+        k = 4
+        b = BSpline(t, c, k, extrapolate='periodic')
+
+        dt = t[-1] - t[0]
+        xx = np.linspace(t[k+1] - dt, t[-k-1] + dt, 50)
+        xy = t[k+1] + (xx - t[k+1]) % (t[-k-1] - t[k+1])
+        assert_allclose(b(xx), splev(xy, (t, c, k)))
+
     def test_ppoly(self):
         b = _make_random_spline()
         t, c, k = b.tck

@@ -47,11 +47,12 @@ class BSpline(object):
         spline coefficients
     k : int
         B-spline order
-    extrapolate : bool, optional
+    extrapolate : bool or 'periodic', optional
         whether to extrapolate beyond the base interval, ``t[k] .. t[n]``,
         or to return nans.
         If True, extrapolates the first and last polynomial pieces of b-spline
         functions active on the base interval.
+        If 'periodic', periodic extrapolation is used.
         Default is True.
     axis : int, optional
         Interpolation axis. Default is zero.
@@ -70,7 +71,7 @@ class BSpline(object):
     axis : int
         Interpolation axis.
     tck : tuple
-        A read-only equivalent of ``(self.t, self.c, self.k)``    
+        A read-only equivalent of ``(self.t, self.c, self.k)``
 
     Methods
     -------
@@ -169,7 +170,11 @@ class BSpline(object):
         self.k = int(k)
         self.c = np.asarray(c)
         self.t = np.ascontiguousarray(t, dtype=np.float64)
-        self.extrapolate = bool(extrapolate)
+
+        if extrapolate != 'periodic':
+            self.extrapolate = bool(extrapolate)
+        else:
+            self.extrapolate = extrapolate
 
         n = self.t.shape[0] - self.k - 1
 
@@ -235,9 +240,11 @@ class BSpline(object):
         ----------
         t : ndarray, shape (k+1,)
             internal knots
-        extrapolate : bool, optional
+        extrapolate : bool or 'periodic', optional
             whether to extrapolate beyond the base interval, ``t[0] .. t[k+1]``,
-            or to return nans. Default is True.
+            or to return nans.
+            If 'periodic', periodic extrapolation is used.
+            Default is True.
 
         Returns
         -------
@@ -298,9 +305,10 @@ class BSpline(object):
             points to evaluate the spline at.
         nu: int, optional
             derivative to evaluate (default is 0).
-        extrapolate : bool, optional
+        extrapolate : bool or 'periodic', optional
             whether to extrapolate based on the first and last intervals
-            or return nans. Default is `self.extrapolate`.
+            or return nans. If 'periodic', periodic extrapolation is used.
+            Default is `self.extrapolate`.
 
         Returns
         -------
@@ -314,6 +322,14 @@ class BSpline(object):
         x = np.asarray(x)
         x_shape, x_ndim = x.shape, x.ndim
         x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+
+        # With periodic extrapolation we map x to the segment
+        # (self.t[k], self.t[-k]).
+        if extrapolate == 'periodic':
+            x = self.t[self.k+1] + ((x - self.t[self.k+1]) %
+                                    (self.t[-(self.k)-1] - self.t[self.k+1]))
+            extrapolate = False
+
         out = np.empty((len(x), prod(self.c.shape[1:])), dtype=self.c.dtype)
         self._ensure_c_contiguous()
         self._evaluate(x, nu, extrapolate, out)
