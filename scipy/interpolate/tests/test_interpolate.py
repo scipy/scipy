@@ -735,6 +735,11 @@ class TestPPolyCommon(TestCase):
         assert_raises(ValueError, PPoly, c, x)
         assert_raises(ValueError, BPoly, c, x)
 
+    def test_ctor_c(self):
+        # wrong shape: `c` must be at least 2-dimensional
+        with assert_raises(ValueError):
+            PPoly([1, 2], [0, 1])
+
     def test_extend(self):
         # Test adding new points to the piecewise polynomial
         np.random.seed(1234)
