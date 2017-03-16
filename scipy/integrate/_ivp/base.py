@@ -68,7 +68,7 @@ class OdeSolver(object):
         Initial time.
     y0 : array_like, shape (n,)
         Initial state.
-    t_crit : float
+    t_bound : float
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
     vectorized : bool
@@ -80,7 +80,7 @@ class OdeSolver(object):
         Number of equations.
     status : string
         Current status of the solver: 'running', 'finished' or 'failed'.
-    t_crit : float
+    t_bound : float
         Boundary time.
     direction : float
         Integration direction: +1 or -1.
@@ -101,11 +101,11 @@ class OdeSolver(object):
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
-    def __init__(self, fun, t0, y0, t_crit, vectorized):
+    def __init__(self, fun, t0, y0, t_bound, vectorized):
         self.t_old = None
         self.t = t0
         self._fun, self.y = check_arguments(fun, y0)
-        self.t_crit = t_crit
+        self.t_bound = t_bound
         self.vectorized = vectorized
 
         if vectorized:
@@ -129,7 +129,7 @@ class OdeSolver(object):
         self.fun_single = fun_single
         self.fun_vectorized = fun_vectorized
 
-        self.direction = np.sign(t_crit - t0) if t_crit != t0 else 1
+        self.direction = np.sign(t_bound - t0) if t_bound != t0 else 1
         self.n = self.y.size
         self.status = 'running'
 
@@ -158,10 +158,10 @@ class OdeSolver(object):
             raise RuntimeError("Attempt to step on a failed or finished "
                                "solver.")
 
-        if self.n == 0 or self.t == self.t_crit:
+        if self.n == 0 or self.t == self.t_bound:
             # Handle corner cases of empty solver or no integration.
             self.t_old = self.t
-            self.t = self.t_crit
+            self.t = self.t_bound
             message = None
             self.status = 'finished'
         else:
@@ -172,7 +172,7 @@ class OdeSolver(object):
                 self.status = 'failed'
             else:
                 self.t_old = t
-                if self.direction * (self.t - self.t_crit) >= 0:
+                if self.direction * (self.t - self.t_bound) >= 0:
                     self.status = 'finished'
 
         return message

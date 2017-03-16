@@ -95,7 +95,7 @@ class BDF(OdeSolver):
         Initial time.
     y0 : array_like, shape (n,)
         Initial state.
-    t_crit : float
+    t_bound : float
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
@@ -143,7 +143,7 @@ class BDF(OdeSolver):
         Number of equations.
     status : string
         Current status of the solver: 'running', 'finished' or 'failed'.
-    t_crit : float
+    t_bound : float
         Boundary time.
     direction : float
         Integration direction: +1 or -1.
@@ -175,11 +175,11 @@ class BDF(OdeSolver):
            sparse Jacobian matrices", Journal of the Institute of Mathematics
            and its Applications, 13, pp. 117-120, 1974.
     """
-    def __init__(self, fun, t0, y0, t_crit, max_step=np.inf,
+    def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
                  vectorized=False, **extraneous):
         warn_extraneous(extraneous)
-        super(BDF, self).__init__(fun, t0, y0, t_crit, vectorized)
+        super(BDF, self).__init__(fun, t0, y0, t_bound, vectorized)
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
@@ -320,8 +320,8 @@ class BDF(OdeSolver):
             h = h_abs * self.direction
             t_new = t + h
 
-            if self.direction * (t_new - self.t_crit) > 0:
-                t_new = self.t_crit
+            if self.direction * (t_new - self.t_bound) > 0:
+                t_new = self.t_bound
                 change_D(D, order, np.abs(t_new - t) / h_abs)
                 self.n_equal_steps = 0
                 LU = None

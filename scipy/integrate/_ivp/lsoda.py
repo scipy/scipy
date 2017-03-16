@@ -27,7 +27,7 @@ class LSODA(OdeSolver):
         Initial time.
     y0 : array_like, shape (n,)
         Initial state.
-    t_crit : float
+    t_bound : float
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
     first_step : float or None, optional
@@ -77,7 +77,7 @@ class LSODA(OdeSolver):
         Number of equations.
     status : string
         Current status of the solver: 'running', 'finished' or 'failed'.
-    t_crit : float
+    t_bound : float
         Boundary time.
     direction : float
         Integration direction: +1 or -1.
@@ -102,11 +102,11 @@ class LSODA(OdeSolver):
            on Scientific and Statistical Computing, Vol. 4, No. 1, pp. 136-148,
            1983.
     """
-    def __init__(self, fun, t0, y0, t_crit, first_step=None, min_step=0.0,
+    def __init__(self, fun, t0, y0, t_bound, first_step=None, min_step=0.0,
                  max_step=np.inf, rtol=1e-3, atol=1e-6, jac=None, lband=None,
                  uband=None, vectorized=False, **extraneous):
         warn_extraneous(extraneous)
-        super(LSODA, self).__init__(fun, t0, y0, t_crit, vectorized)
+        super(LSODA, self).__init__(fun, t0, y0, t_bound, vectorized)
 
         if first_step is None:
             first_step = 0  # LSODA value for automatic selection.
@@ -133,8 +133,8 @@ class LSODA(OdeSolver):
                               lband=lband, uband=uband)
         solver.set_initial_value(y0, t0)
 
-        # Inject t_crit into rwork array as needed for itask=5.
-        solver._integrator.rwork[0] = self.t_crit
+        # Inject t_bound into rwork array as needed for itask=5.
+        solver._integrator.rwork[0] = self.t_bound
         solver._integrator.call_args[4] = solver._integrator.rwork
 
         self._lsoda_solver = solver
@@ -144,12 +144,12 @@ class LSODA(OdeSolver):
         integrator = solver._integrator
 
         # From lsoda.step and lsoda.integrate itask=5 means take a single
-        # step and do not go past t_crit.
+        # step and do not go past t_bound.
         itask = integrator.call_args[2]
         integrator.call_args[2] = 5
         solver._y, solver.t = integrator.run(
             solver.f, solver.jac, solver._y, solver.t,
-            self.t_crit, solver.f_params, solver.jac_params)
+            self.t_bound, solver.f_params, solver.jac_params)
         integrator.call_args[2] = itask
 
         if solver.successful():

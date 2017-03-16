@@ -88,10 +88,10 @@ class RungeKutta(OdeSolver):
     order = NotImplemented
     n_stages = NotImplemented
 
-    def __init__(self, fun, t0, y0, t_crit, max_step=np.inf,
+    def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, vectorized=False, **extraneous):
         warn_extraneous(extraneous)
-        super(RungeKutta, self).__init__(fun, t0, y0, t_crit, vectorized)
+        super(RungeKutta, self).__init__(fun, t0, y0, t_bound, vectorized)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -128,8 +128,8 @@ class RungeKutta(OdeSolver):
             h = h_abs * self.direction
             t_new = t + h
 
-            if self.direction * (t_new - self.t_crit) > 0:
-                t_new = self.t_crit
+            if self.direction * (t_new - self.t_bound) > 0:
+                t_new = self.t_bound
 
             h = t_new - t
             h_abs = np.abs(h)
@@ -186,7 +186,7 @@ class RK23(RungeKutta):
         Initial time.
     y0 : array_like, shape (n,)
         Initial state.
-    t_crit : float
+    t_bound : float
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
@@ -211,7 +211,7 @@ class RK23(RungeKutta):
         Number of equations.
     status : string
         Current status of the solver: 'running', 'finished' or 'failed'.
-    t_crit : float
+    t_bound : float
         Boundary time.
     direction : float
         Integration direction: +1 or -1.
@@ -272,7 +272,7 @@ class RK45(RungeKutta):
         Initial value of the independent variable.
     y0 : array_like, shape (n,)
         Initial values of the dependent variable.
-    t_crit : float
+    t_bound : float
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
     max_step : float, optional
@@ -297,7 +297,7 @@ class RK45(RungeKutta):
         Number of equations.
     status : string
         Current status of the solver: 'running', 'finished' or 'failed'.
-    t_crit : float
+    t_bound : float
         Boundary time.
     direction : float
         Integration direction: +1 or -1.
