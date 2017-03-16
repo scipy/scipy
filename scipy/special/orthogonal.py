@@ -124,13 +124,8 @@ class orthopoly1d(np.poly1d):
 
     def __init__(self, roots, weights=None, hn=1.0, kn=1.0, wfunc=None,
                  limits=None, monic=False, eval_func=None):
-        np.poly1d.__init__(self, roots, r=1)
         equiv_weights = [weights[k] / wfunc(roots[k]) for
                          k in range(len(roots))]
-        self.__dict__['weights'] = np.array(list(zip(roots,
-                                                     weights, equiv_weights)))
-        self.__dict__['weight_func'] = wfunc
-        self.__dict__['limits'] = limits
         mu = sqrt(hn)
         if monic:
             evf = eval_func
@@ -138,8 +133,17 @@ class orthopoly1d(np.poly1d):
                 eval_func = lambda x: evf(x) / kn
             mu = mu / abs(kn)
             kn = 1.0
+            
+        # compute coefficients from roots, then scale
+        poly = np.poly1d(roots, r=True)
+        np.poly1d.__init__(self, poly.coeffs * float(kn))
+        
+        # TODO: In numpy 1.13, there is no need to use __dict__ to access attributes
+        self.__dict__['weights'] = np.array(list(zip(roots,
+                                                     weights, equiv_weights)))
+        self.__dict__['weight_func'] = wfunc
+        self.__dict__['limits'] = limits
         self.__dict__['normcoef'] = mu
-        self.__dict__['coeffs'] *= float(kn)
 
         # Note: eval_func will be discarded on arithmetic
         self.__dict__['_eval_func'] = eval_func
