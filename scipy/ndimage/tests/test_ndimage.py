@@ -2039,10 +2039,10 @@ class TestNdimage:
                 filtered = ndimage.spline_filter(data, order=order)
             else:
                 filtered = data
-            tform_original = np.eye(2)
-            offset_original = -np.ones(2)
-            tform_h1 = np.hstack((tform_original, offset_original))
-            tform_h2 = np.vstack((tform_h1, [0, 0, 1]))
+            tform_original = numpy.eye(2)
+            offset_original = -numpy.ones(2)
+            tform_h1 = numpy.hstack((tform_original, offset_original))
+            tform_h2 = numpy.vstack((tform_h1, [0, 0, 1]))
             out1 = ndimage.affine_transform(filtered, tform_original,
                                             offset_original, order=order,
                                             prefilter=False)
