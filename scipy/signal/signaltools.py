@@ -166,10 +166,10 @@ def correlate(in1, in2, mode='full', method='auto'):
         z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
 
     This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')`` then
-      
+
     .. math::
 
-          z[k] = (x * y)(k - N + 1) 
+          z[k] = (x * y)(k - N + 1)
                = \sum_{l=0}^{||x||-1}x_l y_{l-k+N-1}^{*}
 
     for :math:`k = 0, 1, ..., ||x|| + ||y|| - 2`
@@ -3332,11 +3332,12 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     x : ndarray
         The signal to be downsampled, as an N-dimensional array.
     q : int
-        The downsampling factor. For downsampling factors higher than 13, it is
-        recommended to call `decimate` multiple times.
+        The downsampling factor. When using IIR downsampling, it is recommended
+        to call `decimate` multiple times for downsampling factors higher than
+        13.
     n : int, optional
         The order of the filter (1 less than the length for 'fir'). Defaults to
-        8 for 'iir' and 30 for 'fir'.
+        8 for 'iir' and 20 times the downsampling factor for 'fir'.
     ftype : str {'iir', 'fir'} or ``dlti`` instance, optional
         If 'iir' or 'fir', specifies the type of lowpass filter. If an instance
         of an `dlti` object, uses that object to filter before downsampling.
@@ -3378,7 +3379,8 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
 
     if ftype == 'fir':
         if n is None:
-            n = 30
+            half_len = 10 * q  # reasonable cutoff for our sinc-like function
+            n = 2 * half_len
         system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
     elif ftype == 'iir':
         if n is None:
