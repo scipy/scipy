@@ -970,10 +970,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             rhok = 1000.0
             if disp:
                 print("Divide-by-zero encountered: rhok assumed large")
-        A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
-        A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
-        Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + (rhok * sk[:, numpy.newaxis] *
-                                                 sk[numpy.newaxis, :])
+
+        Z = numpy.dot(Hk, yk)
+        Hk -= rhok * Z[:, numpy.newaxis] * sk[numpy.newaxis,:]
+        Hk -= rhok * sk[:, numpy.newaxis] * Z[numpy.newaxis, :]
+        Hk += rhok * rhok * numpy.dot(yk, Z) * sk[:, numpy.newaxis] * sk[numpy.newaxis,:]
 
     fval = old_fval
     if np.isnan(fval):
