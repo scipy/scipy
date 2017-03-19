@@ -171,10 +171,10 @@ class BSpline(object):
         self.c = np.asarray(c)
         self.t = np.ascontiguousarray(t, dtype=np.float64)
 
-        if extrapolate != 'periodic':
-            self.extrapolate = bool(extrapolate)
-        else:
+        if extrapolate == 'periodic':
             self.extrapolate = extrapolate
+        else:
+            self.extrapolate = bool(extrapolate)
 
         n = self.t.shape[0] - self.k - 1
 
@@ -398,6 +398,13 @@ class BSpline(object):
         b : BSpline object
             A new instance representing the antiderivative.
 
+        Notes
+        -----
+        If antiderivative is computed and ``self.extrapolate='periodic'``,
+        it will be set to False for the returned instance. This is done because
+        the antiderivative is no longer periodic and its correct evaluation
+        outside of the initially given x interval is difficult.
+
         See Also
         --------
         splder, splantider
@@ -416,7 +423,7 @@ class BSpline(object):
             extrapolate = self.extrapolate
 
         return self.construct_fast(*tck, extrapolate=extrapolate,
-                                    axis=self.axis)
+                                   axis=self.axis)
 
     def integrate(self, a, b, extrapolate=None):
         """Compute a definite integral of the spline.
@@ -428,9 +435,9 @@ class BSpline(object):
         b : float
             Upper limit of integration.
         extrapolate : bool or 'periodic', optional
-            whether to extrapolate beyond the base interval, ``t[k] .. t[-k-1]``,
-            or take the spline to be zero outside of the base interval.
-            If 'periodic', periodic extrapolation is used.
+            whether to extrapolate beyond the base interval,
+            ``t[k] .. t[-k-1]``, or take the spline to be zero outside of the
+            base interval. If 'periodic', periodic extrapolation is used.
             If None (default), use `self.extrapolate`.
 
         Returns
@@ -469,10 +476,10 @@ class BSpline(object):
         if extrapolate is None:
             extrapolate = self.extrapolate
 
-        # prepare t & c
+        # Prepare self.t and self.c.
         self._ensure_c_contiguous()
 
-        # Swap integration bounds if needed
+        # Swap integration bounds if needed.
         sign = 1
         if b < a:
             a, b = b, a
@@ -481,14 +488,14 @@ class BSpline(object):
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
         n = self.t.size - self.k - 1
 
-        # compute the antiderivative
+        # Compute the antiderivative.
         c = self.c
         ct = len(self.t) - len(c)
         if ct > 0:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         t, c, k = _fitpack_impl.splantider((self.t, c, self.k), 1)
 
-        if extrapolate=='periodic':
+        if extrapolate == 'periodic':
             # Split the integral into the part over period (can be several
             # of them) and the remaining part.
 
@@ -498,14 +505,14 @@ class BSpline(object):
             n_periods, left = divmod(interval, period)
 
             if n_periods > 0:
-                # evaluate the diff of antiderivatives
+                # Evaluate the difference of antiderivatives.
                 x = np.asarray([ts, te], dtype=np.float_)
                 _bspl.evaluate_spline(t, c.reshape(c.shape[0], -1),
-                        k, x, 0, False, out)
-                new = out[1] - out[0]
-                new *= n_periods
+                                      k, x, 0, False, out)
+                integral = out[1] - out[0]
+                integral *= n_periods
             else:
-                new.fill(0)
+                integral.fill(0)
 
             # Map a to [ts, te], b is always a + left.
             a = ts + (a - ts) % period
@@ -517,41 +524,39 @@ class BSpline(object):
             if b <= te:
                 x = np.asarray([a, b], dtype=np.float_)
                 _bspl.evaluate_spline(t, c.reshape(c.shape[0], -1),
-                        k, x, 0, False, remainder_int)
-                temp = remainder_int[1] - remainder_int[0]
-                new += temp
+                                      k, x, 0, False, remainder_int)
+                integral += remainder_int[1] - remainder_int[0]
             else:
                 x = np.asarray([a, te], dtype=np.float_)
                 _bspl.evaluate_spline(t, c.reshape(c.shape[0], -1),
-                        k, x, 0, False, remainder_int)
-                temp = remainder_int[1] - remainder_int[0]
-                new += temp
+                                      k, x, 0, False, remainder_int)
+                integral += remainder_int[1] - remainder_int[0]
 
                 x = np.asarray([ts, ts + b - te], dtype=np.float_)
                 _bspl.evaluate_spline(t, c.reshape(c.shape[0], -1),
-                        k, x, 0, False, remainder_int)
-                temp = remainder_int[1] - remainder_int[0]
-                new += temp
+                                      k, x, 0, False, remainder_int)
+                integral += remainder_int[1] - remainder_int[0]
         else:
             if not extrapolate:
-                # shrink the integration interval, if needed
+                # Shrink the integration interval, if needed.
                 a = max(a, self.t[self.k])
                 b = min(b, self.t[-self.k - 1])
 
                 if self.c.ndim == 1:
-                    # fast path: use FITPACK's routine (cf _fitpack_impl.splint)
+                    # Fast path: use FITPACK's routine
+                    # (cf _fitpack_impl.splint).
                     t, c, k = self.tck
                     aint, wrk = _dierckx._splint(t, c, k, a, b)
                     return aint
 
-            # evaluate the diff of antiderivatives
+            # Evaluate the difference of antiderivatives.
             x = np.asarray([a, b], dtype=np.float_)
             _bspl.evaluate_spline(t, c.reshape(c.shape[0], -1),
-                    k, x, 0, extrapolate, out)
-            new = out[1] - out[0]
+                                  k, x, 0, extrapolate, out)
+            integral = out[1] - out[0]
 
-        new *= sign
-        return new.reshape(c.shape[1:])
+        integral *= sign
+        return integral.reshape(c.shape[1:])
 
 
 #################################
