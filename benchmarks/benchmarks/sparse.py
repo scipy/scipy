@@ -206,15 +206,12 @@ class Matvecs(Benchmark):
         self.A * self.x
 
     def time_matvecs_inplace_1_0(self, fmt):
-        A = self.matrices[fmt]
         sparse_gemm(self.A, self.x, self.y, 1, 0)
 
     def time_matvecs_inplace_1_1(self, fmt):
-        A = self.matrices[fmt]
         sparse_gemm(self.A, self.x, self.y, 1, 1)
 
     def time_matvecs_inplace_2_3(self, fmt):
-        A = self.matrices[fmt]
         sparse_gemm(self.A, self.x, self.y, 2, 3)
 
 
