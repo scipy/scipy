@@ -208,19 +208,20 @@ class TestBSpline(TestCase):
 
     def test_periodic_extrap(self):
         np.random.seed(1234)
-        t = np.sort(np.random.random(100))
-        c = np.random.random(96)
+        t = np.sort(np.random.random(8))
+        c = np.random.random(4)
         k = 3
         b = BSpline(t, c, k, extrapolate='periodic')
+        n = t.size - (k + 1)
 
         dt = t[-1] - t[0]
-        xx = np.linspace(t[k] - dt, t[-k] + dt, 50)
-        xy = t[k] + (xx - t[k]) % (t[-k] - t[k])
+        xx = np.linspace(t[k] - dt, t[n] + dt, 50)
+        xy = t[k] + (xx - t[k]) % (t[n] - t[k])
         assert_allclose(b(xx), splev(xy, (t, c, k)))
 
         # Direct check
         xx = [-1, 0, 0.5, 1]
-        xy = t[k] + (xx - t[k]) % (t[-k] - t[k])
+        xy = t[k] + (xx - t[k]) % (t[n] - t[k])
         assert_equal(b(xx, extrapolate='periodic'), b(xy, extrapolate=True))
 
     def test_ppoly(self):
@@ -341,6 +342,8 @@ class TestBSpline(TestCase):
         assert_allclose(b.integrate(-1, 1), 0)
         assert_allclose(b.integrate(-1, 1, extrapolate=True), 0)
         assert_allclose(b.integrate(-1, 1, extrapolate=False), 0.5)
+        assert_allclose(b.integrate(-1, 1, extrapolate='periodic'), 1)
+        assert_allclose(b.integrate(1, -1, extrapolate='periodic'), -1)
 
     def test_subclassing(self):
         # classmethods should not decay to the base class
