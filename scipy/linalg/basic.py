@@ -482,6 +482,49 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         The solution to the system a x = b.  Shape of return matches shape
         of `b`.
 
+    Examples
+    --------
+    Solve the banded system A x = b, where::
+
+            [ 4  2 -1  0  0  0]       [1]
+            [ 2  5  2 -1  0  0]       [2]
+        A = [-1  2  6  2 -1  0]   b = [2]
+            [ 0 -1  2  7  2 -1]       [3]
+            [ 0  0 -1  2  8  2]       [3]
+            [ 0  0  0 -1  2  9]       [3]
+
+    >>> from scipy.linalg import solveh_banded
+
+    `ab` contains the main diagonal and the nonzero diagonals below the
+    main diagonal.  That is, we use the lower form:
+
+    >>> ab = np.array([[ 4,  5,  6,  7, 8, 9],
+    ...                [ 2,  2,  2,  2, 2, 0],
+    ...                [-1, -1, -1, -1, 0, 0]])
+    >>> b = np.array([1, 2, 2, 3, 3, 3])
+    >>> x = solveh_banded(ab, b, lower=True)
+    >>> x
+    array([ 0.03431373,  0.45938375,  0.05602241,  0.47759104,  0.17577031,
+            0.34733894])
+
+
+    Solve the Hermitian banded system H x = b, where::
+
+            [ 8   2-1j   0     0  ]        [ 1  ]
+        H = [2+1j  5     1j    0  ]    b = [1+1j]
+            [ 0   -1j    9   -2-1j]        [1-2j]
+            [ 0    0   -2+1j   6  ]        [ 0  ]
+
+    In this example, we put the upper diagonals in the array `hb`:
+
+    >>> hb = np.array([[0, 2-1j, 1j, -2-1j],
+    ...                [8,  5,    9,   6  ]])
+    >>> b = np.array([1, 1+1j, 1-2j, 0])
+    >>> x = solveh_banded(hb, b)
+    >>> x
+    array([ 0.07318536-0.02939412j,  0.11877624+0.17696461j,
+            0.10077984-0.23035393j, -0.00479904-0.09358128j])
+
     """
     a1 = _asarray_validated(ab, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
@@ -547,6 +590,35 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
     -----
     The solution is computed using Levinson-Durbin recursion, which is faster
     than generic least-squares methods, but can be less numerically stable.
+
+    Examples
+    --------
+    Solve the Toeplitz system T x = b, where::
+
+            [ 1 -1 -2 -3]       [1]
+        T = [ 3  1 -1 -2]   b = [2]
+            [ 6  3  1 -1]       [2]
+            [10  6  3  1]       [5]
+
+    To specify the Toeplitz matrix, only the first column and the first
+    row are needed.
+
+    >>> c = np.array([1, 3, 6, 10])    # First column of T
+    >>> r = np.array([1, -1, -2, -3])  # First row of T
+    >>> b = np.array([1, 2, 2, 5])
+
+    >>> from scipy.linalg import solve_toeplitz, toeplitz
+    >>> x = solve_toeplitz((c, r), b)
+    >>> x
+    array([ 1.66666667, -1.        , -2.66666667,  2.33333333])
+
+    Check the result by creating the full Toeplitz matrix and
+    multiplying it by `x`.  We should get `b`.
+
+    >>> T = toeplitz(c, r)
+    >>> T.dot(x)
+    array([ 1.,  2.,  2.,  5.])
+
     """
     # If numerical stability of this algorithm is a problem, a future
     # developer might consider implementing other O(N^2) Toeplitz solvers,
