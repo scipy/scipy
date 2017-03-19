@@ -245,6 +245,60 @@ def test_precond_dummy():
         yield check_precond_dummy, solver, case
 
 
+def check_precond_inverse(solver, case):
+    tol = 1e-8
+
+    def inverse(b,which=None):
+        """inverse preconditioner"""
+        A = case.A
+        if not isinstance(A, np.ndarray):
+            A = A.todense()
+        return np.linalg.solve(A, b)
+
+    def rinverse(b,which=None):
+        """inverse preconditioner"""
+        A = case.A
+        if not isinstance(A, np.ndarray):
+            A = A.todense()
+        return np.linalg.solve(A.T, b)
+
+    matvec_count = [0]
+
+    def matvec(b):
+        matvec_count[0] += 1
+        return case.A.dot(b)
+
+    def rmatvec(b):
+        matvec_count[0] += 1
+        return case.A.T.dot(b)
+
+    b = arange(case.A.shape[0], dtype=float)
+    x0 = 0*b
+
+    A = LinearOperator(case.A.shape, matvec, rmatvec=rmatvec)
+    precond = LinearOperator(case.A.shape, inverse, rmatvec=rinverse)
+
+    # Solve with preconditioner
+    matvec_count = [0]
+    x, info = solver(A, b, M=precond, x0=x0, tol=tol)
+
+    assert_equal(info, 0)
+    assert_normclose(case.A.dot(x), b, tol)
+
+    # Solution should be nearly instant
+    assert_(matvec_count[0] <= 3, repr(matvec_count))
+
+
+def test_precond_inverse():
+    case = params.Poisson1D
+    for solver in params.solvers:
+        if solver in case.skip:
+            continue
+        if solver is qmr:
+            continue
+        yield check_precond_inverse, solver, case
+
+
 def test_gmres_basic():
     A = np.vander(np.arange(10) + 1)[:, ::-1]
     b = np.zeros(10)
