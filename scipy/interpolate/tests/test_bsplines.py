@@ -348,8 +348,8 @@ class TestBSpline(TestCase):
 
         # Test ``_fitpack._splint()``
         t, c, k = b.tck
-        assert_allclose(b.integrate(-1, 1, extrapolate=False),
-                        _splint(t, c, k, -1, 1)[0])
+        assert_allclose(b.integrate(1, -1, extrapolate=False),
+                        _splint(t, c, k, 1, -1)[0])
 
     def test_subclassing(self):
         # classmethods should not decay to the base class

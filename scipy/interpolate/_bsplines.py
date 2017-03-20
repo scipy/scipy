@@ -547,6 +547,7 @@ class BSpline(object):
                     # (cf _fitpack_impl.splint).
                     t, c, k = self.tck
                     integral, wrk = _dierckx._splint(t, c, k, a, b)
+                    integral *= sign
                     return integral
 
             # Evaluate the difference of antiderivatives.
