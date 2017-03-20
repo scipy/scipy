@@ -832,6 +832,31 @@ def test_weightedtau_vs_quadratic():
             np.random.shuffle(rank)
 
 
+def test_kendalltau_distance():
+    x = [0, 9, 3, 5, 6, 2, 1, 8, 7, 4]
+    y = [1, 2, 0, 5, 8, 7, 4, 3, 9, 6]
+
+    assert_raises(ValueError, stats.kendalltau_distance, x, y[1:])
+
+    assert_equal(stats.kendalltau_distance(x, x), 0)
+    assert_equal(stats.kendalltau_distance(x, x[::-1], rank=True),
+                 len(x) * (len(x) - 1) / 2)
+
+    assert_equal(stats.kendalltau_distance(x, y, rank=True), 23)
+
+    x = [0, 2, 1, 3]
+    y = [1, 2, 0, 3]
+
+    assert_equal(stats.kendalltau_distance(x, y, rank=True), 3)
+    assert_equal(stats.kendalltau_distance(x, y, rank=True, norm=True), 0.5)
+
+    x = [1, 4, 9, 6, 3]
+    y = [5, 8, 7, 2, 0]
+
+    assert_equal(stats.kendalltau_distance(x, y), 4)
+    assert_equal(stats.kendalltau_distance(x, y, norm=True), .4)
+
+
 class TestFindRepeats(TestCase):
 
     def test_basic(self):

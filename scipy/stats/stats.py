@@ -108,6 +108,7 @@ Correlation Functions
    weightedtau
    linregress
    theilslopes
+   kendalltau_distance
 
 Inferential Stats
 -----------------
@@ -190,7 +191,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'signaltonoise', 'sem', 'zmap', 'zscore', 'iqr', 'threshold',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
-           'kendalltau', 'weightedtau',
+           'kendalltau', 'weightedtau', 'kendalltau_distance',
            'linregress', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
@@ -5586,3 +5587,128 @@ def rankdata(a, method='average'):
 
     # average method
     return .5 * (count[dense] + count[dense - 1] + 1)
+
+
+def kendalltau_distance(x, y, rank=False, norm=False):
+    """
+    Kendall tau rank distance.
+
+    The Kendall tau ranking distance is a metric that counts the number
+    of pairwise disagreements between two ranking list.
+    Distance will be equal to 0 if the two lists are identical and 
+    n*(n-1)/2 (where n is the list size) if one list is the reverse
+    of the other. 
+    Often Kendall tau distance is normalized by dividing
+    by n(n-1)/2 so a value of 1 indicates maximum disagreement.
+
+    Kendall tau distance in Rankings: A permutation (or ranking) is an array
+    of N integers where each of the integers between 0 and N-1 appears exactly
+    once. The Kendall tau distance between two rankings is the number of pairs
+    that are in different order in the two rankings.
+
+    Parameters
+    ----------
+    a, b: array_like
+        1-D arrays of the same shape.
+    norm: bool, optional
+        If True, the result is normalized by n(n-1)/2.
+        The default is False.
+    rank: bool, optional
+        If True, function result is distance between two rankings(number of
+        pairs that are in different order in the two rankings).
+        The default is False.
+
+    Returns
+    -------
+    distance: int or float
+        The Kendall tau ranking distance.
+
+    Notes
+    -----
+    Ranking array of size n is array with values from 0 to n-1 without
+    missing values(values can be shuffled).
+
+    Examples
+    --------
+    >>> from scipy.stats import kendalltau_distance
+    >>> x = [1, 2, 3, 4, 5]
+    >>> y = [3, 4, 1, 2, 5]
+    >>> kendalltau_distance(x, y)
+    4.0
+    >>> kendalltau_distance(x, y, norm=True)
+    0.4
+    >>> x = [0, 3, 1, 6, 2, 5, 4]
+    >>> y = [1, 0, 3, 6, 4, 2, 5]
+    >>> kendalltau_distance(x, y)
+    6.0
+    >>> kendalltau_distance(x, y, rank=True)
+    4.0
+    >>> kendalltau_distance(x, y, rank=True, norm=True)
+    0.19047619047619047
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    if x.size != y.size:
+        raise ValueError("Input arrays must be the same size")
+
+    count = 0
+
+    if rank:
+        count = _kendalltau_distance(x, y)
+    else:
+        for i in xrange(x.size):
+            for j in xrange(i + 1, x.size):
+                if ((x[i] > x[j] and y[i] > y[j])
+                        or (x[i] < x[j] and y[i] < y[j])):
+                    count += 1
+
+        count = x.size * (x.size - 1) / 2 - count
+
+    if norm:
+        count = count / (x.size * (x.size - 1) / 2.0)
+
+    return count
+
+
+def _kendalltau_distance(x, y):
+    xinv = np.zeros((x.size))
+    for i in xrange(x.size):
+        xinv[x[i]] = i
+
+    ynew = np.zeros((x.size))
+    for i in xrange(x.size):
+        ynew[i] = xinv[y[i]]
+
+    return _merge_sort(ynew)[1]
+
+
+def _merge(x, y, pairs):
+    result = []
+    i = 0
+    j = 0
+
+    while i < x.size and j < y.size:
+        if x[i] <= y[j]:
+            result.append(x[i])
+            i += 1
+        else:
+            pairs += x.size - i
+            result.append(y[j])
+            j += 1
+
+    if i == x.size:
+        result.extend(y[j:])
+    else:
+        result.extend(x[i:])
+
+    return (np.asarray(result), pairs)
+
+
+def _merge_sort(x, pairs=0.):
+    if x.size > 1:
+        left, pairs = _merge_sort(x[0: x.size // 2], pairs)
+        right, pairs = _merge_sort(x[x.size // 2:], pairs)
+        return _merge(left, right, pairs)
+    else:
+        return (x, pairs)
