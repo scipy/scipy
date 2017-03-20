@@ -546,8 +546,8 @@ class BSpline(object):
                     # Fast path: use FITPACK's routine
                     # (cf _fitpack_impl.splint).
                     t, c, k = self.tck
-                    aint, wrk = _dierckx._splint(t, c, k, a, b)
-                    return aint
+                    integral, wrk = _dierckx._splint(t, c, k, a, b)
+                    return integral
 
             # Evaluate the difference of antiderivatives.
             x = np.asarray([a, b], dtype=np.float_)
