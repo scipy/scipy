@@ -446,7 +446,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # csr_matvec or csc_matvec
         fn = getattr(_sparsetools,self.format + '_matvec')
-        fn(M, N, self.indptr, self.indices, self.data, other, result)
+        fn(M, N, self.indptr, self.indices, self.data, 1, other, 1, result)
 
         return result
 
@@ -459,7 +459,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # csr_matvecs or csc_matvecs
         fn = getattr(_sparsetools,self.format + '_matvecs')
-        fn(M, N, n_vecs, self.indptr, self.indices, self.data, other.ravel(), result.ravel())
+        fn(M, N, n_vecs, self.indptr, self.indices, self.data, 1, other.ravel(), 1, result.ravel())
 
         return result
 

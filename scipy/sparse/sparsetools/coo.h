@@ -113,7 +113,8 @@ void coo_todense(const I n_row,
 
 
 /*
- * Compute Y += A*X for COO matrix A and dense vectors X,Y
+ * Compute Y = alpha*A*X + beta*Y for COO matrix A and dense vectors X,Y
+ * and scalars alpha and beta
  *
  *
  * Input Arguments:
@@ -121,7 +122,9 @@ void coo_todense(const I n_row,
  *   I  Ai[nnz]       - row indices
  *   I  Aj[nnz]       - column indices
  *   T  Ax[nnz]       - nonzero values
+ *   T  alpha         - scalar factor multiplying A*X
  *   T  Xx[n_col]     - input vector
+ *   T  beta          - scalar factor multiplying Y
  *
  * Output Arguments:
  *   T  Yx[n_row]     - output vector
@@ -130,18 +133,22 @@ void coo_todense(const I n_row,
  *   Output array Yx must be preallocated
  *
  *   Complexity: Linear.  Specifically O(nnz(A))
- * 
+ *
  */
 template <class I, class T>
-void coo_matvec(const I nnz,
-	            const I Ai[], 
-	            const I Aj[], 
-	            const T Ax[],
-	            const T Xx[],
-	                  T Yx[])
+void coo_matvec(const I n_row,
+                const I nnz,
+                const I Ai[],
+                const I Aj[],
+                const T Ax[],
+                const T alpha,
+                const T Xx[],
+                const T beta,
+                      T Yx[])
 {
+    scal(n_row, beta, Yx);
     for(I n = 0; n < nnz; n++){
-        Yx[Ai[n]] += Ax[n] * Xx[Aj[n]];
+        Yx[Ai[n]] += alpha * Ax[n] * Xx[Aj[n]];
     }
 }
 

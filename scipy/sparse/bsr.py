@@ -338,7 +338,7 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         bsr_matvec(M//R, N//C, R, C,
             self.indptr, self.indices, self.data.ravel(),
-            other, result)
+            1, other, 1, result)
 
         return result
 
@@ -350,8 +350,8 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype))
 
         bsr_matvecs(M//R, N//C, n_vecs, R, C,
-                self.indptr, self.indices, self.data.ravel(),
-                other.ravel(), result.ravel())
+                self.indptr, self.indices, self.data.ravel(), 1,
+                other.ravel(), 1, result.ravel())
 
         return result
 

@@ -268,7 +268,7 @@ def test_upcast():
             if not (a_dtype == np.bool_ and b_dtype == np.bool_):
                 c = np.zeros((2,), dtype=np.bool_)
                 assert_raises(ValueError, _sparsetools.csr_matvec,
-                              2, 2, a.indptr, a.indices, a.data, b, c)
+                              2, 2, a.indptr, a.indices, a.data, 1, b, 1, c)
 
             if ((np.issubdtype(a_dtype, np.complexfloating) and
                  not np.issubdtype(b_dtype, np.complexfloating)) or
@@ -276,10 +276,11 @@ def test_upcast():
                  np.issubdtype(b_dtype, np.complexfloating))):
                 c = np.zeros((2,), dtype=np.float64)
                 assert_raises(ValueError, _sparsetools.csr_matvec,
-                              2, 2, a.indptr, a.indices, a.data, b, c)
+                              2, 2, a.indptr, a.indices, a.data, 1, b, 1, c)
 
             c = np.zeros((2,), dtype=np.result_type(a_dtype, b_dtype))
-            _sparsetools.csr_matvec(2, 2, a.indptr, a.indices, a.data, b, c)
+            _sparsetools.csr_matvec(2, 2, a.indptr, a.indices, a.data,
+                                    1, b, 1, c)
             assert_allclose(c, np.dot(a.toarray(), b), err_msg=msg)
 
 

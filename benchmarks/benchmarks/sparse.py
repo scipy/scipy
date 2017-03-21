@@ -10,6 +10,7 @@ import timeit
 import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty, random, zeros
+from numpy.testing import assert_
 
 try:
     from scipy import sparse
@@ -50,6 +51,61 @@ def poisson2d(N, dtype='d', format=None):
     diags[4, N::N] = 0  # first upper diagonal
 
     return dia_matrix((diags, offsets), shape=(N**2, N**2)).asformat(format)
+
+def has_inplace_matvec():
+    A = sparse.eye(3, format='csr')
+    x = ones(3)
+    y = ones(3)
+    try:
+        sparse._sparsetools.csr_matvec(3, 3, A.indptr, A.indices, A.data, 2, x, 3, y)
+        return True
+    except:
+        return False
+
+if has_inplace_matvec():
+    def sparse_gemm(a, b, c, alpha, beta):
+        fmt = a.format
+        M, N = a.shape
+        n_vecs = 1
+        if b.ndim == 2:
+            n_vecs = b.shape[1]
+    
+        s = sparse._sparsetools
+        if n_vecs == 1:
+            if fmt == 'csr':
+                s.csr_matvec(M, N, a.indptr, a.indices, a.data, alpha, b.ravel(), beta, c.ravel())
+            elif fmt == 'csc':
+                s.csc_matvec(M, N, a.indptr, a.indices, a.data, alpha, b.ravel(), beta, c.ravel())
+            elif fmt == 'bsr':
+                R, C = a.blocksize
+                s.bsr_matvec(M//R, N//R, R, C, a.indptr, a.indices, a.data, alpha, b.ravel(),
+                             beta, c.ravel())
+            elif fmt == 'dia':
+                L = a.data.shape[1]
+                s.dia_matvec(M,N, len(a.offsets), L, a.offsets, a.data, alpha, b.ravel(), beta, c.ravel())
+            elif fmt == 'coo':
+                s.coo_matvec(M, a.nnz, a.row, a.col, a.data, alpha, b.ravel(), beta, c.ravel())
+            else:
+                q = alpha * a*b
+                c *= beta
+                c += q
+        else:
+            if fmt == 'csr':
+                s.csr_matvecs(M, N, n_vecs, a.indptr, a.indices, a.data, alpha, b.ravel(), beta, c.ravel())
+            elif fmt == 'csc':
+                s.csc_matvecs(M, N, n_vecs, a.indptr, a.indices, a.data, alpha, b.ravel(), beta, c.ravel())
+            elif fmt == 'bsr':
+                R, C = a.blocksize
+                s.bsr_matvecs(M//R, N//R, n_vecs, R, C, a.indptr, a.indices, a.data, alpha, b.ravel(),
+                             beta, c.ravel())
+            else:
+                raise ValueError('unsupported type')
+else:
+    def sparse_gemm(a, b, c, alpha, beta):
+        q = a * b
+        q *= alpha
+        c *= beta
+        c += q
 
 
 class Arithmetic(Benchmark):
@@ -122,21 +178,44 @@ class Matvec(Benchmark):
             raise NotImplementedError()
 
         self.x = ones(self.A.shape[1], dtype=float)
+        self.y = ones(self.A.shape[0], dtype=float)
 
     def time_matvec(self, matrix, format):
         self.A * self.x
 
+    def time_matvec_inplace_1_0(self, matrix, format):
+        sparse_gemm(self.A, self.x, self.y, 1, 0)
+
+    def time_matvec_inplace_1_1(self, matrix, format):
+        sparse_gemm(self.A, self.x, self.y, 1, 1)
+
+    def time_matvec_inplace_2_3(self, matrix, format):
+        sparse_gemm(self.A, self.x, self.y, 2, 3)
+
 
 class Matvecs(Benchmark):
-    params = ['dia', 'coo', 'csr', 'csc', 'bsr']
+    params = ['csr', 'csc', 'bsr']
     param_names = ["format"]
 
     def setup(self, format):
         self.A = poisson2d(300, format=format)
         self.x = ones((self.A.shape[1], 10), dtype=self.A.dtype)
+        self.y = ones((self.A.shape[0], 10), dtype=self.A.dtype)
 
     def time_matvecs(self, format):
         self.A * self.x
+
+    def time_matvecs_inplace_1_0(self, fmt):
+        A = self.matrices[fmt]
+        sparse_gemm(A, self.x, self.y, 1, 0)
+
+    def time_matvecs_inplace_1_1(self, fmt):
+        A = self.matrices[fmt]
+        sparse_gemm(A, self.x, self.y, 1, 1)
+
+    def time_matvecs_inplace_2_3(self, fmt):
+        A = self.matrices[fmt]
+        sparse_gemm(A, self.x, self.y, 2, 3)
 
 
 class Matmul(Benchmark):

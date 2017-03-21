@@ -207,7 +207,7 @@ class dia_matrix(_data_matrix):
             row_sums = np.zeros(num_rows, dtype=res_dtype)
             one = np.ones(num_cols, dtype=res_dtype)
             dia_matvec(num_rows, num_cols, len(self.offsets),
-                       self.data.shape[1], self.offsets, self.data, one, row_sums)
+                       self.data.shape[1], self.offsets, self.data, 1, one, 1, row_sums)
 
             row_sums = np.matrix(row_sums)
 
@@ -236,7 +236,8 @@ class dia_matrix(_data_matrix):
 
         M,N = self.shape
 
-        dia_matvec(M,N, len(self.offsets), L, self.offsets, self.data, x.ravel(), y.ravel())
+        dia_matvec(M,N, len(self.offsets), L, self.offsets, self.data,
+                   1, x.ravel(), 1, y.ravel())
 
         return y
 

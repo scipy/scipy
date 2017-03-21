@@ -6,6 +6,7 @@ Type codes used:
 
     'i':  integer scalar
     'I':  integer array
+    't':  data scalar
     'T':  data array
     'B':  boolean array
     'V':  std::vector<integer>*
@@ -34,8 +35,8 @@ bsr_scale_columns   v iiiiII*TT
 bsr_sort_indices    v iiii*I*I*T
 bsr_transpose       v iiiiIIT*I*I*T
 bsr_matmat_pass2    v iiiiiIITIIT*I*I*T
-bsr_matvec          v iiiiIITT*T
-bsr_matvecs         v iiiiiIITT*T
+bsr_matvec          v iiiiIITtTt*T
+bsr_matvecs         v iiiiiIITtTt*T
 bsr_elmul_bsr       v iiiiIITIIT*I*I*T
 bsr_eldiv_bsr       v iiiiIITIIT*I*I*T
 bsr_plus_bsr        v iiiiIITIIT*I*I*T
@@ -55,8 +56,8 @@ csc_diagonal        v iiIIT*T
 csc_tocsr           v iiIIT*I*I*T
 csc_matmat_pass1    v iiIIII*I
 csc_matmat_pass2    v iiIITIIT*I*I*T
-csc_matvec          v iiIITT*T
-csc_matvecs         v iiiIITT*T
+csc_matvec          v iiIITtTt*T
+csc_matvecs         v iiiIITtTt*T
 csc_elmul_csc       v iiIITIIT*I*I*T
 csc_eldiv_csc       v iiIITIIT*I*I*T
 csc_plus_csc        v iiIITIIT*I*I*T
@@ -77,8 +78,8 @@ csr_matmat_pass2    v iiIITIIT*I*I*T
 csr_diagonal        v iiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
-csr_matvec          v iiIITT*T
-csr_matvecs         v iiiIITT*T
+csr_matvec          v iiIITtTt*T
+csr_matvecs         v iiiIITtTt*T
 csr_elmul_csr       v iiIITIIT*I*I*T
 csr_eldiv_csr       v iiIITIIT*I*I*T
 csr_plus_csr        v iiIITIIT*I*I*T
@@ -109,8 +110,8 @@ csr_has_canonical_format  i iII
 OTHER_ROUTINES = """
 coo_tocsr           v iiiIIT*I*I*T
 coo_todense         v iiiIIT*Ti
-coo_matvec          v iIITT*T
-dia_matvec          v iiiiITT*T
+coo_matvec          v iiIITtTt*T
+dia_matvec          v iiiiITtTt*T
 cs_graph_components i iII*I
 """
 
@@ -268,6 +269,8 @@ def parse_routine(name, args, types):
                 args.append("*(%s*)a[%d]" % (const + I_type, j))
             elif t == 'I':
                 args.append("(%s*)a[%d]" % (const + I_type, j))
+            elif t == 't':
+                args.append("*(%s*)a[%d]" % (const + T_type, j))
             elif t == 'T':
                 args.append("(%s*)a[%d]" % (const + T_type, j))
             elif t == 'B':

@@ -18,22 +18,15 @@ void axpy(const I n, const T a, const T * x, T * y){
 // scale a vector in-place
 template <class I, class T>
 void scal(const I n, const T a, T * x){
-    for(I i = 0; i < n; i++){
-        x[i] *= a;
+    if(a == 0){
+        std::fill_n(x, n, 0);
+    }
+    else if(a != 1){
+        for(I i = 0; i < n; i++){
+            x[i] *= a;
+        }
     }
 }
-
-
-// dot product
-template <class I, class T>
-void dot(const I n, const T * x, const T * y){
-    T dp = 0;
-    for(I i = 0; i < n; i++){
-        dp += x[i] * y[i];
-    }
-    return dp;
-}
-
 
 // vectorize a binary operation
 template<class I, class T, class binary_operator>
@@ -55,26 +48,26 @@ void vector_binop(const I n, const T * x, const T * y, T * z,
 
 // Level 2
 template <class I, class T>
-void gemv(const I m, const I n, const T * A, const T * x, T * y){
+void gemv(const I m, const I n, const T * A, const T alpha, const T * x, T * y){
     for(I i = 0; i < m; i++){
-        T dot = y[i];
+        T dot = 0;
         for(I j = 0; j < n; j++){
             dot += A[(npy_intp)n * i + j] * x[j];
         }
-        y[i] = dot;
+        y[i] +=  alpha * dot;
     }
 }
 
 // Level 3
 template <class I, class T>
-void gemm(const I m, const I n, const I k, const T * A, const T * B, T * C){
+void gemm(const I m, const I n, const I k, const T * A, const T alpha, const T * B, T * C){
     for(I i = 0; i < m; i++){
         for(I j = 0; j < n; j++){
-            T dot = C[(npy_intp)n * i + j];
+            T dot = 0;
             for(I _d = 0; _d < k; _d++){
                 dot += A[(npy_intp)k * i + _d] * B[(npy_intp)n * _d + j];
             }
-            C[(npy_intp)n * i + j] = dot;
+            C[(npy_intp)n * i + j] += alpha *  dot; 
         }
     }
 }
