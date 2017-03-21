@@ -519,4 +519,26 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
 
 def isspmatrix_coo(x):
+    """Is x of coo_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a coo matrix
+
+    Returns
+    -------
+    bool
+        True if x is a coo matrix, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_matrix, isspmatrix_coo
+    >>> isspmatrix_coo(coo_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import coo_matrix, csr_matrix, isspmatrix_coo
+    >>> isspmatrix_coo(csr_matrix([[5]]))
+    False
+    """
     return isinstance(x, coo_matrix)
