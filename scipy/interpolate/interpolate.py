@@ -73,10 +73,11 @@ def lagrange(x, w):
     
     Since there are only 3 points, Lagrange polynomial has degree 2.
 
-    >>> import numpy as np
-    >>> print (np.poly1d(poly))
-       2
-    6 x - 11 x + 6
+    >>> from numpy.polynomial.polynomial import Polynomial
+    >>> print (Polynomial(poly))
+    poly([  6. -11.   6.])
+            
+    Polynomial coefficients are in order of increasing degree, so Lagrange polynomial is 6 - 11x + 6x^2
     """
 
     M = len(x)
