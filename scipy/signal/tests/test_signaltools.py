@@ -156,40 +156,67 @@ class TestConvolve(_TestConvolve):
         self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
+    def test_convolve_method_diff_types(self, n=10):
+        types = sum([t for _, t in np.sctypes.items()], [])
+        types = {np.dtype(t).name for t in types}
+
+        # These types include 'bool' and all precisions (int8, int16, etc)
+        # The removed types throw errors in correlate or fftconvolve
+        for dtype in ['complex256', 'float128', 'str', 'void', 'bytes',
+                      'object', 'unicode', 'string']:
+            if dtype in types:
+                types.remove(dtype)
+
+        for t1 in types:
+            for t2 in types:
+                x1 = np.ones(n, dtype=t1)
+                x2 = np.ones(n, dtype=t2)
+                results = {key: convolve(x1, x2, method=key)
+                           for key in ['fft', 'direct']}
+
+                assert_equal(results['fft'].dtype, results['direct'].dtype)
+
+                if any([t in {'complex64', 'float32'} for t in [t1, t2]]):
+                    kwargs = {'rtol': 4.0e-3}
+                elif t1 in {'float16', 'complex128'} and t2 in {'float16',
+                        'complex128'}:
+                    kwargs = {'rtol': 1e-6}
+                else:
+                    kwargs = {}
+
+                assert_allclose(results['fft'], results['direct'], **kwargs)
+
     def test_convolve_method(self):
+        types = sum([t for _, t in np.sctypes.items()], [])
+        types = [np.dtype(t) for t in types]
         for mode in ['full', 'valid', 'same']:
-            for _, dtype_list in np.sctypes.items():
-                for dtype in dtype_list:
-                    if dtype == np.void or dtype == str:
-                        continue
-                    np.random.seed(42)
-                    x = (0.5 + np.random.rand(100)).astype(dtype)
-                    h = (0.5 + np.random.rand(50)).astype(dtype)
+            for dtype in types:
+                if dtype == np.void or dtype == str:
+                    continue
+                np.random.seed(42)
+                x = (0.5 + np.random.rand(100)).astype(dtype)
+                h = (0.5 + np.random.rand(50)).astype(dtype)
 
-                    if x.dtype.kind not in 'buifc' \
-                            or np.dtype(dtype).name in {'complex256', 'complex192'}:
-                        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
-                        # continues the for-loop; it will throw an error
-                        # because fftconv doesn't support the dtype
-                        continue
+                if x.dtype.kind not in 'buifc' \
+                        or np.dtype(dtype).name in {'complex256', 'complex192'}:
+                    assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+                    continue
 
-                    if x.dtype.kind != 'b':
-                        x += 1
-                        h += 1
+                if x.dtype.kind != 'b':
+                    x += 1
+                    h += 1
 
-                    if x.dtype.kind == 'c':
-                        x += 1j * np.random.rand(*x.shape).astype(dtype)
-                        h += 1j * np.random.rand(*h.shape).astype(dtype)
+                if x.dtype.kind == 'c':
+                    x += 1j * np.random.rand(*x.shape).astype(dtype)
+                    h += 1j * np.random.rand(*h.shape).astype(dtype)
 
-                    results = {'direct':convolve(x, h, mode=mode,
-                                                 method='direct'),
-                               'fft':convolve(x, h, mode=mode, method='fft')}
+                results = {key: convolve(x, h, mode=mode, method=key)
+                           for key in ['fft', 'direct']}
 
-                    rtol = {'rtol': 2.0e-3} if dtype in {np.complex64,
-                                                         np.float32} else {}
-                    if isinstance(results['direct'], np.ndarray):
-                        assert_allclose(results['fft'], results['direct'], **rtol)
-                        assert_equal(results['direct'].dtype, results['fft'].dtype)
+                rtol = {'rtol': 2.0e-3} if dtype in {np.dtype('complex64'),
+                                                     np.dtype('float32')} else {}
+                if isinstance(results['direct'], np.ndarray):
+                    assert_allclose(results['fft'], results['direct'], **rtol)
 
         # This is really a test that convolving two large integers goes to the
         # direct method even if they're in the fft method.
@@ -205,8 +232,8 @@ class TestConvolve(_TestConvolve):
                 assert_equal(fft, 2**(2*n))
                 assert_equal(direct, 2**(2*n))
 
-        assert_equal(convolve([4], [5], 'valid', 'fft'), 20)
-        assert_equal('direct', choose_conv_method(2 * [Decimal(3)], 2 * [Decimal(4)]))
+    assert_equal(convolve([4], [5], 'valid', 'fft'), 20)
+    assert_equal('direct', choose_conv_method(2 * [Decimal(3)], 2 * [Decimal(4)]))
 
 class _TestConvolve2d(TestCase):
 

@@ -786,7 +786,7 @@ def convolve(in1, in2, mode='full', method='auto'):
         out = fftconvolve(volume, kernel, mode=mode)
         if volume.dtype.kind in 'ui':
             out = np.around(out)
-        return out.astype(volume.dtype)
+        return out.astype(np.result_type(volume, kernel))
 
     # fastpath to faster numpy.convolve for 1d inputs when possible
     if _np_conv_ok(volume, kernel, mode):
