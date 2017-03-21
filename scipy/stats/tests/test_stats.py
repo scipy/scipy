@@ -856,6 +856,15 @@ def test_kendalltau_distance():
     assert_equal(stats.kendalltau_distance(x, y), 4)
     assert_equal(stats.kendalltau_distance(x, y, norm=True), .4)
 
+    # test nan_policy option
+    x = [1, 4, 9, 6, np.nan, 3]
+    y = [5, 8, 7, 2, 3, 0]
+
+    assert_equal(stats.kendalltau_distance(x, y), np.nan)
+    assert_raises(ValueError, stats.kendalltau_distance, x, y,
+                  nan_policy='raise')
+    assert_equal(stats.kendalltau_distance(x, y, nan_policy='omit'), 4)
+
 
 class TestFindRepeats(TestCase):
 

@@ -3348,6 +3348,7 @@ PointbiserialrResult = namedtuple('PointbiserialrResult',
 
 
 def pointbiserialr(x, y):
+
     r"""
     Calculates a point biserial correlation coefficient and its p-value.
 
@@ -5590,7 +5591,7 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def kendalltau_distance(x, y, rank=False, norm=False):
+def kendalltau_distance(x, y, rank=False, norm=False, nan_policy='propagate'):
     """
     Kendall tau rank distance.
 
@@ -5618,6 +5619,10 @@ def kendalltau_distance(x, y, rank=False, norm=False):
         If True, function result is distance between two rankings(number of
         pairs that are in different order in the two rankings).
         The default is False.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
@@ -5647,17 +5652,31 @@ def kendalltau_distance(x, y, rank=False, norm=False):
     >>> kendalltau_distance(x, y, rank=True, norm=True)
     0.19047619047619047
     """
-    x = np.asarray(x)
+    x = ma.asarray(x)
     y = np.asarray(y)
 
     if x.size != y.size:
         raise ValueError("Input arrays must be the same size")
 
-    count = 0
+    x_contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    y_contains_nan, nan_policy = _contains_nan(y, nan_policy)
+
+    if (x_contains_nan or y_contains_nan) and nan_policy == 'propagate':
+        return np.nan 
+
+    if not x.size or not y.size:
+        return np.nan
+
+    if x_contains_nan or y_contains_nan:
+        m = ma.mask_or(ma.getmask(ma.masked_invalid(x)),
+                       ma.getmask(ma.masked_invalid(y)))
+        x = ma.array(x, mask=m).compressed()
+        y = ma.array(y, mask=m).compressed()
 
     if rank:
         count = _kendalltau_distance(x, y)
     else:
+        count = 0
         for i in xrange(x.size):
             for j in xrange(i + 1, x.size):
                 if ((x[i] > x[j] and y[i] > y[j])
