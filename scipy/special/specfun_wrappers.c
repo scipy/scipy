@@ -678,10 +678,21 @@ double pmv_wrap(double m, double v, double x){
 int pbwa_wrap(double a, double x, double *wf, double *wd) {
   int flag = 0;
   double w1f, w1d, w2f, w2d;
+
+  if (x < -5 || x > 5 || a < -5 || a > 5) {
+    /*
+     * The Zhang and Jin implementation only uses Taylor series;
+     * return NaN outside of the range which they are accurate.
+     */
+    *wf = NPY_NAN;
+    *wd = NPY_NAN;
+    sf_error("pbwa", SF_ERROR_LOSS, NULL);
+    return 0;
+  }
    
   if (x < 0) {
     x = -x;
-    flag=1;
+    flag = 1;
   }
   F_FUNC(pbwa,PBWA)(&a, &x, &w1f, &w1d, &w2f, &w2d);
   if (flag) {
