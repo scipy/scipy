@@ -190,13 +190,13 @@ Simple iterations:
 Linear Programming
 ==================
 
-Simplex Algorithm:
+General linear programming solvers
 
 .. autosummary::
    :toctree: generated/
 
-   linprog -- Linear programming using the simplex algorithm
-   linprog_verbose_callback -- Sample callback function for linprog
+   linprog -- Unified interface for minimizers of linear programming problems
+   linprog_verbose_callback -- Sample callback function for linprog (simplex)
 
 The `linprog` function supports the following methods:
 
