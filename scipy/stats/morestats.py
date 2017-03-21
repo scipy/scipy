@@ -2775,6 +2775,14 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     -----
     This uses a definition of circular variance that in the limit of small
     angles returns a number close to the 'linear' variance.
+    
+    Examples
+    --------
+    >>> from scipy.stats import morestats
+    >>> import numpy as np
+    >>> morestats.circvar([0, 2*np.pi/3, 5*np.pi/3])
+    2.19722457734
+    
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
