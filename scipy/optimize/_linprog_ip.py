@@ -1688,16 +1688,18 @@ def _linprog_ip(
             solution.
         status : int
             An integer representing the exit status of the optimization::
+                
                  0 : Optimization terminated successfully
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
                  4 : Serious numerical difficulties encountered
+                 
         nit : int
             The number of iterations performed.
         message : str
             A string descriptor of the exit status of the optimization.
-
+    
     References
     ----------
     .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point

@@ -860,9 +860,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
     method : str, optional
-        Type of solver.  At this time only 'simplex' is supported
-        :ref:`(see here) <optimize.linprog-simplex>`.
-    callback : callable, optional
+        Type of solver.  :ref:`'simplex' <optimize.linprog-simplex>`
+        and :ref:`'interior point' <optimize.linprog-interior-point>` 
+        are supported.
+    callback : callable, optional (simplex only)
         If a callback function is provide, it will be called within each
         iteration of the simplex algorithm. The callback must have the signature
         `callback(xk, **kwargs)` where xk is the current solution vector
@@ -922,12 +923,20 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     -----
     This section describes the available solvers that can be selected by the
     'method' parameter. The default method is :ref:`Simplex <optimize.linprog-simplex>`.
+    :ref:`Interior point <optimize.linprog-interior-point>` is also available.
 
     Method *Simplex* uses the Simplex algorithm (as it relates to Linear
     Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
     should be reasonably reliable and fast.
 
     .. versionadded:: 0.15.0
+    
+    Method *interior-point* uses the primal-dual path following algorithm 
+    as outlined in [4]_. This algorithm is intended to provide a faster
+    and/or more reliable alternative to *simplex*, especially for large,
+    sparse problems. Note, however, the the solution returned may be less
+    accurate and may not correspond with a vertex of the polytope defined by
+    the constraints.
 
     References
     ----------
@@ -937,6 +946,24 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            Mathematical Programming", McGraw-Hill, Chapter 4.
     .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
            Mathematics of Operations Research (2), 1977: pp. 103-107.
+    .. [4] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
+           optimizer for linear programming: an implementation of the
+           homogeneous algorithm." High performance optimization. Springer US,
+           2000. 197-232.
+    .. [5] Andersen, Erling D. "Finding all linearly dependent rows in
+           large-scale linear programming." Optimization Methods and Software
+           6.3 (1995): 219-227.
+    .. [6] Freund, Robert M. "Primal-Dual Interior-Point Methods for Linear
+           Programming based on Newton's Method." Unpublished Course Notes,
+           March 2004. Available 2/25/2017 at
+           https://ocw.mit.edu/courses/sloan-school-of-management/15-084j-nonlinear-programming-spring-2004/lecture-notes/lec14_int_pt_mthd.pdf
+    .. [7] Fourer, Robert. "Solving Linear Programs by Interior-Point Methods."
+           Unpublished Course Notes, August 26, 2005. Available 2/25/2017 at
+           http://www.4er.org/CourseNotes/Book%20B/B-III.pdf
+    .. [8] Andersen, Erling D., and Knud D. Andersen. "Presolving in linear
+           programming." Mathematical Programming 71.2 (1995): 221-245.
+    .. [9] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
+           programming." Athena Scientific 1 (1997): 997.
 
     Examples
     --------
