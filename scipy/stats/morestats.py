@@ -2819,6 +2819,13 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     -----
     This uses a definition of circular standard deviation that in the limit of
     small angles returns a number close to the 'linear' standard deviation.
+    
+    Examples
+    --------
+    >>> from scipy.stats import morestats
+    >>> import numpy as np
+    >>> morestats.circstd([0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2])
+    0.063564063306
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
