@@ -327,6 +327,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Arithmatic operator overrides #
     #################################
 
+    def _add_dense(self, other):
+        if other.shape != self.shape:
+            raise ValueError('Incompatible shapes.')
+        dtype = upcast_char(self.dtype.char, other.dtype.char)
+        order = self._swap('CF')[0]
+        result = np.array(other, dtype=dtype, order=order, copy=True)
+        M, N = self._swap(self.shape)
+        y = result if result.flags.c_contiguous else result.T
+        _sparsetools.csr_todense(M, N, self.indptr, self.indices, self.data, y)
+        return np.matrix(result, copy=False)
+
     def _add_sparse(self, other):
         return self._binopt(other, '_plus_')
 
@@ -911,8 +922,23 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
-        """See the docstring for `spmatrix.toarray`."""
-        return self.tocoo(copy=False).toarray(order=order, out=out)
+        if out is None and order is None:
+            order = self._swap('cf')[0]
+        out = self._process_toarray_args(order, out)
+        if not (out.flags.c_contiguous or out.flags.f_contiguous):
+            raise ValueError('Output array must be C or F contiguous')
+        # align ideal order with output array order
+        if out.flags.c_contiguous:
+            x = self.tocsr()
+            y = out
+        else:
+            x = self.tocsc()
+            y = out.T
+        M, N = x._swap(x.shape)
+        _sparsetools.csr_todense(M, N, x.indptr, x.indices, x.data, y)
+        return out
+
+    toarray.__doc__ = spmatrix.toarray.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #
