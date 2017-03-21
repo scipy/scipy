@@ -2722,6 +2722,20 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     -------
     circmean : float
         Circular mean.
+        
+    Examples
+    --------
+    
+    >>> from scipy.stats import morestats
+    >>> import numpy as np
+    >>> morestats.circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
+    0.2
+    
+    
+    >>> from scipy.stats import morestats
+    >>> import numpy as np
+    >>> morestats.circmean([0.2, 1.4, 2.6], high = 1, low = 0)
+    0.4
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
