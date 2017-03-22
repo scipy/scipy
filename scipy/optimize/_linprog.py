@@ -458,7 +458,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Returns
     -------
-    A scipy.optimize.OptimizeResult consisting of the following fields::
+    A scipy.optimize.OptimizeResult consisting of the following fields:
+        
         x : ndarray
             The independent variable vector which optimizes the linear
             programming problem.
@@ -473,10 +474,12 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             solution.
         status : int
             An integer representing the exit status of the optimization::
+                
              0 : Optimization terminated successfully
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
+             
         nit : int
             The number of iterations performed.
         message : str
@@ -884,7 +887,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             disp : bool
                 Set to True to print convergence messages.
 
-        For method-specific options, see `show_options('linprog')`.
+        For method-specific options, see :func:`show_options('linprog')`.
 
     Returns
     -------
@@ -934,9 +937,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Method *interior-point* uses the primal-dual path following algorithm 
     as outlined in [4]_. This algorithm is intended to provide a faster
     and/or more reliable alternative to *simplex*, especially for large,
-    sparse problems. Note, however, the the solution returned may be less
-    accurate and may not correspond with a vertex of the polytope defined by
-    the constraints.
+    sparse problems. Note, however, that the solution returned may be less
+    accurate than that of the simplex method and may not correspond with a 
+    vertex of the polytope defined by the constraints.
 
     References
     ----------

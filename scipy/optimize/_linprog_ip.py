@@ -1710,11 +1710,11 @@ def _linprog_ip(
     infeasibilities, trivial unboundedness, and potential problem 
     simplifications. Specifically, it checks for:
         
-        rows of zeros in `A_eq` or `A_ub`, representing trivial constraints;
-        columns of zeros in both `A_eq` and `A_ub`, representing unconstrained 
-            variables;
-        column singletons in `A_eq`, representing fixed variables; and
-        column singletons in `A_ub`, representing simple bounds. 
+    - rows of zeros in `A_eq` or `A_ub`, representing trivial constraints;
+    - columns of zeros in both `A_eq` and `A_ub`, representing unconstrained 
+      variables;
+    - column singletons in `A_eq`, representing fixed variables; and
+    - column singletons in `A_ub`, representing simple bounds. 
     
     If presolve reveals that the problem is unbounded (e.g. an unconstrained 
     and unbounded variable has negative cost) or infeasible (e.g. a row of 
