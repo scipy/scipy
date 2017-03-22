@@ -565,6 +565,23 @@ def expm(A):
            SIAM Journal on Matrix Analysis and Applications.
            31 (3). pp. 970-989. ISSN 1095-7162
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import expm
+    >>> A = csc_matrix([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
+    >>> A.todense()
+    matrix([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]], dtype=int64)
+    >>> Aexp = expm(A)
+    >>> Aexp
+    <3x3 sparse matrix of type '<type 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> Aexp.todense()
+    matrix([[  2.71828183,   0.        ,   0.        ],
+            [  0.        ,   7.3890561 ,   0.        ],
+            [  0.        ,   0.        ,  20.08553692]])
     """
     return _expm(A, use_exact_onenorm='auto')
 
