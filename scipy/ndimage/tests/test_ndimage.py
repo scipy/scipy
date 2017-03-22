@@ -2040,12 +2040,12 @@ class TestNdimage:
             else:
                 filtered = data
             tform_original = numpy.eye(2)
-            offset_original = -numpy.ones(2)
+            offset_original = -numpy.ones((2, 1))
             tform_h1 = numpy.hstack((tform_original, offset_original))
-            tform_h2 = numpy.vstack((tform_h1, [0, 0, 1]))
+            tform_h2 = numpy.vstack((tform_h1, [[0, 0, 1]]))
             out1 = ndimage.affine_transform(filtered, tform_original,
-                                            offset_original, order=order,
-                                            prefilter=False)
+                                            offset_original.ravel(),
+                                            order=order, prefilter=False)
             out2 = ndimage.affine_transform(filtered, tform_h1, order=order,
                                             prefilter=False)
             out3 = ndimage.affine_transform(filtered, tform_h2, order=order,
@@ -2060,8 +2060,8 @@ class TestNdimage:
         data = numpy.array([[4, 1, 3, 2],
                             [7, 6, 8, 5],
                             [3, 5, 3, 6]])
-        tform_h1 = numpy.hstack((numpy.eye(2), -numpy.ones(2)))
-        tform_h2 = numpy.vstack((tform_h1, [5, 2, 1]))
+        tform_h1 = numpy.hstack((numpy.eye(2), -numpy.ones((2, 1))))
+        tform_h2 = numpy.vstack((tform_h1, [[5, 2, 1]]))
         numpy.testing.assert_raises(ValueError,
                                     ndimage.affine_transform, tform_h2)
 
