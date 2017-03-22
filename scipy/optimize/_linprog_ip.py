@@ -1745,7 +1745,7 @@ def _linprog_ip(
     non-negative slack variables for inequality constraints, and expressing 
     unbounded variables as the difference between two non-negative variables.
     
-    The primal-dual path following method begins with initial ‘guesses’ of 
+    The primal-dual path following method begins with initial 'guesses' of 
     the primal and dual variables of the standard form problem and iteratively 
     attempts to solve the (nonlinear) Karush-Kuhn-Tucker conditions for the 
     problem with a gradually reduced logarithmic barrier term added to the 
@@ -1795,7 +1795,7 @@ def _linprog_ip(
     the use of sparse linear algebra techniques improves the solve speed 
     despite the use of LU rather than Cholesky decomposition. A simple 
     improvement would be to use the sparse Cholesky decomposition of `CHOLMOD` 
-    via `scikit-sparse` when available. 
+    via `scikit-sparse` when available.
     
     Other potential improvements for combatting issues associated with dense 
     columns in otherwise sparse problems are outlined in [1]_ Section 5.3 and 
