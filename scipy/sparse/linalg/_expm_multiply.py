@@ -105,6 +105,27 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
            19. 159-208. ISSN 0962-4929
            http://eprints.ma.man.ac.uk/1451/
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import expm, expm_multiply
+    >>> A = csc_matrix([[1, 0], [0, 1]])
+    >>> A.todense()
+    matrix([[1, 0],
+            [0, 1]], dtype=int64)
+    >>> B = np.array([np.exp(-1.), np.exp(-2.)])
+    >>> B
+    array([ 0.36787944,  0.13533528])
+    >>> expm_multiply(A, B, start=1, stop=2, num=3, endpoint=True)
+    array([[ 1.        ,  0.36787944],
+           [ 1.64872127,  0.60653066],
+           [ 2.71828183,  1.        ]])
+    >>> expm(A).dot(B)                  # Verify 1st timestep
+    array([ 1.        ,  0.36787944])
+    >>> expm(1.5*A).dot(B)              # Verify 2nd timestep
+    array([ 1.64872127,  0.60653066])
+    >>> expm(2*A).dot(B)                # Verify 3rd timestep
+    array([ 2.71828183,  1.        ])
     """
     if all(arg is None for arg in (start, stop, num, endpoint)):
         X = _expm_multiply_simple(A, B)
@@ -579,7 +600,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
         if status_only:
             return 0
         else:
-            return _expm_multiply_interval_core_0(A, X, 
+            return _expm_multiply_interval_core_0(A, X,
                     h, mu, q, norm_info, tol, ell,n0)
     elif q > s and not (q % s):
         if status_only:
