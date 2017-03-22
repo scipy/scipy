@@ -1841,7 +1841,7 @@ def _linprog_ip(
     .. [6] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
            programming." Athena Scientific 1 (1997): 997.
     .. [7] Andersen, Erling D., et al. Implementation of interior point methods 
-           for large scale linear programming. HEC/Université de Genève, 1996.
+           for large scale linear programming. HEC/Universite de Geneve, 1996.
 
     """
     
