@@ -784,7 +784,7 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
-        if volume.dtype.kind in 'ui':
+        if volume.dtype.kind in 'ui' or kernel.dtype.kind in 'ui':
             out = np.around(out)
         return out.astype(np.result_type(volume, kernel))
 
