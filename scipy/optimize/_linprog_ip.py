@@ -1385,32 +1385,35 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     beta : float
         The desired reduction of the path parameter mu (see  [3])
     maxiter : int
-        The maximum number of iterations of the algorithm
+        The maximum number of iterations of the algorithm.
     disp : boolean
-        True if indicators of optimization status are to be printed to the
-        console each iteration
+        Set to ``True`` if indicators of optimization status are to be printed 
+        to the console each iteration.
     tol : float
-        Termination tolerance; see [1] 4.5
+        Termination tolerance; see [1]_ Section 4.5.
     sparse : boolean
-        True if the problem is to be treated as sparse.
+        Set to ``True`` if the problem is to be treated as sparse. However,
+        the inputs ``A_eq`` and ``A_ub`` should nonetheless be provided as 
+        (dense) arrays rather than sparse matrices.
     lstsq : boolean
-        True if the problem is expected to be very poorly conditioned. This
-        should always be False unless severe numerical difficulties are
-        encountered.
+        Set to ``True`` if the problem is expected to be very poorly 
+        conditioned. This should always be left as ``False`` unless severe 
+        numerical difficulties are frequently encountered, and a better option
+        would be to improve the formulation of the problem.
     sym_pos : boolean
-        True if the problem is expected to yield a well conditioned
+        Leave ``True`` if the problem is expected to yield a well conditioned
         symmetric positive definite normal equation matrix (almost always).
     cholesky : boolean
-        True if the normal equations are to be solved by explicit Cholesky
-        decomposition followed by explicit forward/backward substitution.
-        This is occasionally faster for very large problems, but should
-        typically be set False.
+        Set to ``True`` if the normal equations are to be solved by explicit 
+        Cholesky decomposition followed by explicit forward/backward 
+        substitution. This can be faster for very large, dense problems, but 
+        should typically be left ``False``.
     pc : boolean
-        True if the predictor-corrector method of Mehrota is to be used. This
-        is almost always (if not always) beneficial.
+        Leave ``True`` if the predictor-corrector method of Mehrota is to be 
+        used. This is almost always (if not always) beneficial.
     ip : boolean
-        True if the improved initial point suggestion due to [1] section 4.3
-        is desired. It's unclear whether this is beneficial.
+        Set to ``True`` if the improved initial point suggestion due to [1]_ 
+        Section 4.3 is desired. It's unclear whether this is beneficial.
 
     Returns
     -------
@@ -1584,9 +1587,10 @@ def _linprog_ip(
         **unknown_options):
     """
     Minimize a linear objective function subject to linear
-    equality and inequality constraints using the interior point method of [1]
+    equality constraints, linear inequality constraints, and simple bounds
+    using the interior point method of [1]_.
 
-    Linear Programming is intended to solve the following problem form:
+    Linear Programming is intended to solve problems of the following form:
 
     Minimize:     c^T * x
 
@@ -1599,75 +1603,77 @@ def _linprog_ip(
     c : array_like
         Coefficients of the linear objective function to be minimized.
     A_ub : array_like, optional
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        upper-bound inequality constraints at x.
+        2-D array which, when matrix-multiplied by `x`, gives the values of
+        the upper-bound inequality constraints at `x`.
     b_ub : array_like, optional
         1-D array of values representing the upper-bound of each inequality
-        constraint (row) in A_ub.
+        constraint (row) in `A_ub`.
     A_eq : array_like, optional
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x.
+        2-D array which, when matrix-multiplied by `x`, gives the values of the
+        equality constraints at `x`.
     b_eq : array_like, optional
-        1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq.
+        1-D array of values representing the right hand side of each equality 
+        constraint (row) in `A_eq`.
     bounds : sequence, optional
-        ``(min, max)`` pairs for each element in ``x``, defining
-        the bounds on that parameter. Use None for one of ``min`` or
+        ``(min, max)`` pairs for each element in `x`, defining
+        the bounds on that parameter. Use ``None`` for one of ``min`` or
         ``max`` when there is no bound in that direction. By default
-        bounds are ``(0, None)`` (non-negative)
+        bounds are ``(0, None)`` (non-negative).
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
         
     Options
     -------
     maxiter : int (default = 1000)
-        The maximum number of iterations of the algorithm
+        The maximum number of iterations of the algorithm.
     disp : boolean (default = False)
-        True if indicators of optimization status are to be printed to
-        the console each iteration
+        Set to ``True`` if indicators of optimization status are to be printed
+        to the console each iteration.
     tol : float (default = 1e-8)
         Termination tolerance to be used for all termination criteria;
-        see [1] 4.5
+        see [1]_ Section 4.5.
     alpha0 : float (default = 0.99995)
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see \beta3 of [1] Table 8.1
+        direction; see \beta3 of [1]_ Table 8.1.
     beta : float (default = 0.1)
-        The desired reduction of the path parameter \mu (see [3]) when
+        The desired reduction of the path parameter \mu (see [3]_) when
         Mehrota's predictor-corrector is not in use (uncommon).
     sparse : boolean (default = False)
-        True if the problem is to be treated as sparse. Try setting
-        this to True if your constraint matrices are sparse and the
-        problem is relatively large.
+        Set to ``True`` if the problem is to be treated as sparse. Try setting
+        this to ``True`` if your constraint matrices contain mostly zeros and 
+        the problem is relatively large.  However, the constraint matrices must
+        nonetheless be provided as (dense) arrays.
     lstsq : boolean (default = False)
-        True if the problem is expected to be very poorly conditioned.
-        This should always be False unless severe numerical
-        difficulties are encountered. Leave this at the default unless
-        you receive a warning message suggesting otherwise.
+        Set to ``True`` if the problem is expected to be very poorly 
+        conditioned. This should always be left ``False`` unless severe 
+        numerical difficulties are encountered. Leave this at the default 
+        unless you receive a warning message suggesting otherwise.
     sym_pos : boolean (default = True)
-        True if the problem is expected to yield a well conditioned
+        Leave ``True`` if the problem is expected to yield a well conditioned
         symmetric positive definite normal equation matrix
         (almost always). Leave this at the default unless you receive
         a warning message suggesting otherwise.
     cholesky : boolean (default = False)
-        True if the normal equations are to be solved by explicit
+        Set to ``True`` if the normal equations are to be solved by explicit
         Cholesky decomposition followed by explicit forward/backward
-        substitution. This is occasionally faster for very large
-        problems, but should typically be set False.
+        substitution. This is slightly faster for very large, dense
+        problems, but should typically be set ``False``.
     pc : boolean (default = True)
-        True if the predictor-corrector method of Mehrota is to be
+        Leave ``True`` if the predictor-corrector method of Mehrota is to be
         used. This is almost always (if not always) beneficial.
     ip : boolean (default = False)
-        True if the improved initial point suggestion due to [1]
-        section 4.3 is desired. Whether this is beneficial or not
+        Set to ``True`` if the improved initial point suggestion due to [1]_
+        Section 4.3 is desired. Whether this is beneficial or not
         depends on the problem.
     presolve : boolean (default = True)
-        True if presolve routine should be run. The presolve routine is almost
-        always useful because it can detect trivial infeasibilities
-        and unboundedness, eliminate fixed variables, remove redundancies, 
-        etc... One circumstance in which it might be turned off is when
-        it detects that the problem is trivially unbounded but it is possible
-        that there is an infeasibility it cannot detect.
-
+        Leave ``True`` if presolve routine should be run. The presolve routine 
+        is almost always useful because it can detect trivial infeasibilities
+        and unboundedness, eliminate fixed variables, and remove redundancies. 
+        One circumstance in which it might be turned off (set ``False``) is 
+        when it detects that the problem is trivially unbounded; it is possible
+        that that the problem is truly infeasibile but this has not been 
+        detected.
+        
     Returns
     -------
     A `scipy.optimize.OptimizeResult` consisting of the following fields:
@@ -1804,14 +1810,16 @@ def _linprog_ip(
     variables.
     
     After calculating the search direction, the maximum possible step size 
-    that does not violate the non-negativity constraints is calculated, and 
+    that does not activate the non-negativity constraints is calculated, and 
     the smaller of this step size and unity is applied (as in [1]_ Section 
     4.1. [1]_ Section 4.3 suggests improvements for choosing the step size.
     
     The new point is tested according to the termination conditions of [1]_ 
     Section 4.5. The same tolerance, which can be set using the `tol` option, 
-    is used for all checks. If optimality, unboundedness, or infeasibility is 
-    detected, the solve procedure terminates; otherwise it repeats.
+    is used for all checks. (A potential improvement would be to expose 
+    the different tolerances to be set independently.) If optimality, 
+    unboundedness, or infeasibility is detected, the solve procedure 
+    terminates; otherwise it repeats.
     
     If optimality is achieved, a postsolve procedure undoes transformations 
     associated with presolve and converting to standard form. It then 

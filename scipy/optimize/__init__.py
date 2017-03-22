@@ -190,13 +190,12 @@ Simple iterations:
 Linear Programming
 ==================
 
-General linear programming solvers
+General linear programming solver:
 
 .. autosummary::
    :toctree: generated/
 
    linprog -- Unified interface for minimizers of linear programming problems
-   linprog_verbose_callback -- Sample callback function for linprog (simplex)
 
 The `linprog` function supports the following methods:
 
@@ -205,13 +204,19 @@ The `linprog` function supports the following methods:
    optimize.linprog-simplex
    optimize.linprog-interior-point
 
+The simplex method supports callback functions, such as:
+    
+.. autosummary::
+   :toctree: generated/
+   
+   linprog_verbose_callback -- Sample callback function for linprog (simplex)
+
 Assignment problems:
 
 .. autosummary::
    :toctree: generated/
 
    linear_sum_assignment -- Solves the linear-sum assignment problem
-
 
 Utilities
 =========
