@@ -458,7 +458,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Returns
     -------
-    A scipy.optimize.OptimizeResult consisting of the following fields:
+    A `scipy.optimize.OptimizeResult` consisting of the following fields:
         
         x : ndarray
             The independent variable vector which optimizes the linear
