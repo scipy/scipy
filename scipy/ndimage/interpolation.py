@@ -392,7 +392,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     matrix : ndarray
         The matrix must be two-dimensional or can also be given as a
         one-dimensional sequence or array. In the latter case, it is assumed
-        that the matrix is diagonal. A more efficient algorithms is then
+        that the matrix is diagonal. A more efficient algorithm is then
         applied that exploits the separability of the problem.
     offset : float or sequence, optional
         The offset into the array where the transform is applied. If a float,
