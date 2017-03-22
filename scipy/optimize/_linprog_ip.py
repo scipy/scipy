@@ -1700,6 +1700,126 @@ def _linprog_ip(
         message : str
             A string descriptor of the exit status of the optimization.
     
+    Notes
+    -----
+    
+    This method implements the algorithm outlined in [1]_ with ideas from [5]_ 
+    and a structure inspired by the simpler methods of [3]_ and [4]_.
+    
+    First, a presolve procedure based on [5]_ attempts to identify trivial 
+    infeasibilities, trivial unboundedness, and potential problem 
+    simplifications. Specifically, it checks for:
+        
+        rows of zeros in `A_eq` or `A_ub`, representing trivial constraints;
+        columns of zeros in both `A_eq` and `A_ub`, representing unconstrained 
+            variables;
+        column singletons in `A_eq`, representing fixed variables; and
+        column singletons in `A_ub`, representing simple bounds. 
+    
+    If presolve reveals that the problem is unbounded (e.g. an unconstrained 
+    and unbounded variable has negative cost) or infeasible (e.g. a row of 
+    zeros in `A_eq` corresponds with a nonzero in `b_eq`), the solver 
+    terminates with the appropriate status code. Note that presolve terminates 
+    as soon as any sign of unboundedness is detected; consequently, a problem 
+    may be reported as unbounded when in reality the problem is infeasible 
+    (but infeasibility has not been detected yet). Therefore, if the output 
+    message states that unboundedness is detected in presolve and it is 
+    necessary to know whether the problem is actually infeasible, the option 
+    `presolve=False` should be set.
+    
+    If neither infeasibility nor unboundedness are detected in a single pass 
+    of the presolve check, bounds are tightened where possible and fixed 
+    variables are removed from the problem. Then, singular value decomposition 
+    is used to identify linearly dependent rows of the `A_eq` matrix, which 
+    are removed (unless they represent an infeasibility) to avoid numerical 
+    difficulties in the primary solve routine. 
+    
+    Several potential improvements can be made here: additional presolve 
+    checks outlined in [5]_ should be implemented, the presolve routine should 
+    be run multiple times (until no further simplifications can be made), a 
+    more efficient method for detecting redundancy (e.g. that of [2]_) should 
+    be used, and presolve should be implemented for sparse matrices.
+    
+    After presolve, the problem is transformed to standard form by converting 
+    the (tightened) simple bounds to upper bound constraints, introducing 
+    non-negative slack variables for inequality constraints, and expressing 
+    unbounded variables as the difference between two non-negative variables.
+    
+    The primal-dual path following method begins with initial ‘guesses’ of 
+    the primal and dual variables of the standard form problem and iteratively 
+    attempts to solve the (nonlinear) Karush-Kuhn-Tucker conditions for the 
+    problem with a gradually reduced logarithmic barrier term added to the 
+    objective. This particular implementation uses a homogeneous self-dual 
+    formulation, which provides certificates of infeasibility or unboundedness 
+    where applicable.
+    
+    The default initial point for the primal and dual variables is that 
+    defined in [1]_ Section 4.4 Equation 8.22. Optionally (by setting initial 
+    point option `ip=True`), a (potentially) improved starting point can be 
+    calculated according to the additional recommendations of [1]_ Section 4.4.
+    
+    A search direction is calculated using the predictor-corrector method 
+    (single correction) proposed by Mehrota and detailed in [1]_ Section 4.1.  
+    (A potential improvement would be to implement the method of multiple 
+    corrections described in [1]_ Section 4.2.) In practice, this is 
+    accomplished by solving the normal equations, [1]_ Section 5.1 Equations 
+    8.31 and 8.32, derived from the Newton equations [1]_ Section 5 Equations 
+    8.25 (compare to [1]_ Section 4 Equations 8.6-8.8). The advantage of 
+    solving the normal equations rather than 8.25 directly is that the 
+    matrices involved are symmetric positive definite, so Cholesky 
+    decomposition can be used rather than the more expensive LU factorization. 
+    
+    In code, this is accomplished using `scipy.linalg.solve` with 
+    `sym_pos=True`. Based on speed tests, this appears to cache the 
+    Cholesky decomposition of the matrix for later use, which is beneficial 
+    as the same system is solved four times with different right hand sides 
+    in each iteration of the algorithm. However, for very large, dense 
+    systems, it may be beneficial for the Cholesky decomposition to be 
+    calculated explicitly using `scipy.linalg.cholesky` and the decomposed 
+    systems to be solved by explicit forward/backward substitutions via 
+    `scipy.linalg.solve_triangular`; this is possible by setting the option 
+    `cholesky=True`.
+    
+    In problems with redundancy (e.g. if presolve is turned off with option 
+    `presolve=False`) or if the matrices become ill-conditioned (e.g. as the 
+    solution is approached and some decision variables approach zero), 
+    Cholesky decomposition can fail. Should this occur, successively more 
+    robust solvers (`scipy.linalg.solve` with `sym_pos=False` then 
+    `scipy.linalg.lstsq`) are tried, at the cost of computational efficiency. 
+    These solvers can be used from the outset by setting the options 
+    `sym_pos=False` and `lstsq=True`, respectively.
+    
+    Note that with the option `sparse=True`, the normal equations are solved 
+    using `scipy.sparse.linalg.spsolve`. Unfortunately, this uses the more 
+    expensive LU decomposition from the outset, but for large, sparse problems, 
+    the use of sparse linear algebra techniques improves the solve speed 
+    despite the use of LU rather than Cholesky decomposition. A simple 
+    improvement would be to use the sparse Cholesky decomposition of `CHOLMOD` 
+    via `scikit-sparse` when available. 
+    
+    Other potential improvements for combatting issues associated with dense 
+    columns in otherwise sparse problems are outlined in [1]_ Section 5.3 and 
+    [7]_ Section 4.1-4.2; the latter also discusses the alleviation of 
+    accuracy issues associated with the substitution approach to free 
+    variables.
+    
+    After calculating the search direction, the maximum possible step size 
+    that does not violate the non-negativity constraints is calculated, and 
+    the smaller of this step size and unity is applied (as in [1]_ Section 
+    4.1. [1]_ Section 4.3 suggests improvements for choosing the step size.
+    
+    The new point is tested according to the termination conditions of [1]_ 
+    Section 4.5. The same tolerance, which can be set using the `tol` option, 
+    is used for all checks. If optimality, unboundedness, or infeasibility is 
+    detected, the solve procedure terminates; otherwise it repeats.
+    
+    If optimality is achieved, a postsolve procedure undoes transformations 
+    associated with presolve and converting to standard form. It then 
+    calculates the residuals (equality constraint violations, which should 
+    be very small) and slacks (difference between the left and right hand 
+    sides of the upper bound constraints) of the original problem, which are 
+    returned with the solution in an `OptimizeResult` object.
+
     References
     ----------
     .. [1] Andersen, Erling D., and Knud D. Andersen. "The MOSEK interior point
@@ -1720,8 +1840,11 @@ def _linprog_ip(
            programming." Mathematical Programming 71.2 (1995): 221-245.
     .. [6] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
            programming." Athena Scientific 1 (1997): 997.
+    .. [7] Andersen, Erling D., et al. Implementation of interior point methods 
+           for large scale linear programming. HEC/Université de Genève, 1996.
 
     """
+    
     _check_unknown_options(unknown_options)
     
     if callback is not None:
