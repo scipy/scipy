@@ -399,6 +399,17 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
       M_x = lambda x: spla.spsolve(P, x)
       M = spla.LinearOperator((n, n), M_x)
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import gmres
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> b = np.array([2, 4, -1], dtype=float)
+    >>> x, exitCode = gmres(A, b)
+    >>> print(exitCode)            # 0 indicates successful convergence
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
     """
 
     # Change 'restrt' keyword to 'restart'
