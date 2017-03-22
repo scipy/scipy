@@ -337,19 +337,40 @@ class TestBSpline(TestCase):
     def test_integral(self):
         b = BSpline.basis_element([0, 1, 2])  # x for x < 1 else 2 - x
         assert_allclose(b.integrate(0, 1), 0.5)
+        assert_allclose(b.integrate(1, 0), -1 * 0.5)
         assert_allclose(b.integrate(1, 0), -0.5)
 
         # extrapolate or zeros outside of [0, 2]; default is yes
         assert_allclose(b.integrate(-1, 1), 0)
         assert_allclose(b.integrate(-1, 1, extrapolate=True), 0)
         assert_allclose(b.integrate(-1, 1, extrapolate=False), 0.5)
-        assert_allclose(b.integrate(-1, 1, extrapolate='periodic'), 1)
-        assert_allclose(b.integrate(1, -1, extrapolate='periodic'), -1)
+        assert_allclose(b.integrate(1, -1, extrapolate=False), -1 * 0.5)
 
         # Test ``_fitpack._splint()``
         t, c, k = b.tck
         assert_allclose(b.integrate(1, -1, extrapolate=False),
                         _splint(t, c, k, 1, -1)[0])
+
+        # Test ``extrapolate='periodic'``.
+        b.extrapolate = 'periodic'
+        i = b.antiderivative()
+        period_int = i(2) - i(0)
+
+        assert_allclose(b.integrate(0, 2), period_int)
+        assert_allclose(b.integrate(2, 0), -1 * period_int)
+        assert_allclose(b.integrate(-9, -7), period_int)
+        assert_allclose(b.integrate(-8, -4), 2 * period_int)
+
+        assert_allclose(b.integrate(0.5, 1.5), i(1.5) - i(0.5))
+        assert_allclose(b.integrate(1.5, 3), i(1) - i(0) + i(2) - i(1.5))
+        assert_allclose(b.integrate(1.5 + 12, 3 + 12),
+                        i(1) - i(0) + i(2) - i(1.5))
+        assert_allclose(b.integrate(1.5, 3 + 12),
+                        i(1) - i(0) + i(2) - i(1.5) + 6 * period_int)
+
+        assert_allclose(b.integrate(0, -1), i(0) - i(1))
+        assert_allclose(b.integrate(-9, -10), i(0) - i(1))
+        assert_allclose(b.integrate(0, -9), i(1) - i(2) - 4 * period_int)
 
     def test_subclassing(self):
         # classmethods should not decay to the base class
