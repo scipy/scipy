@@ -2055,6 +2055,16 @@ class TestNdimage:
                                                 [0, 4, 1, 3],
                                                 [0, 7, 6, 8]])
 
+    def test_affine_transform27(self):
+        # test valid homogeneous transformation matrix
+        data = numpy.array([[4, 1, 3, 2],
+                            [7, 6, 8, 5],
+                            [3, 5, 3, 6]])
+        tform_h1 = numpy.hstack((numpy.eye(2), -numpy.ones(2)))
+        tform_h2 = numpy.vstack((tform_h1, [5, 2, 1]))
+        numpy.testing.assert_raises(ValueError,
+                                    ndimage.affine_transform, tform_h2)
+
     def test_shift01(self):
         data = numpy.array([1])
         for order in range(0, 6):
