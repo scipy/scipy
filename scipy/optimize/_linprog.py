@@ -965,8 +965,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     .. [9] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
            programming." Athena Scientific 1 (1997): 997.
     .. [10] Andersen, Erling D., et al. Implementation of interior point  
-            methods for large scale linear programming. HEC/Université de 
-            Genève, 1996.
+            methods for large scale linear programming. HEC/Universite de 
+            Geneve, 1996.
 
     Examples
     --------
