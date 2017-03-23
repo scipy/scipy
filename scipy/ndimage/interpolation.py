@@ -364,36 +364,33 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     """
     Apply an affine transformation.
 
-    The given matrix and offset are used to find for each point in the
-    output the corresponding coordinates in the input by an affine
-    transformation. The value of the input at those coordinates is
-    determined by spline interpolation of the requested order. Points
-    outside the boundaries of the input are filled according to the given
-    mode.
-
     Given an output image pixel index vector ``o``, the pixel value
-    is determined from the input image at position ``np.dot(matrix,o) + offset``.
-
-    A diagonal matrix can be specified by supplying a one-dimensional
-    array-like to the matrix parameter, in which case a more efficient
-    algorithm is applied.
-
-    .. versionchanged:: 0.18.0
-        Previously, the exact interpretation of the affine transformation
-        depended on whether the matrix was supplied as a one-dimensional or
-        two-dimensional array. If a one-dimensional array was supplied
-        to the matrix parameter, the output pixel value at index ``o``
-        was determined from the input image at position ``matrix * (o + offset)``.
+    is determined from the input image at position
+    ``np.dot(matrix, o) + offset``.
 
     Parameters
     ----------
     input : ndarray
         The input array.
     matrix : ndarray
-        The matrix must be two-dimensional or can also be given as a
-        one-dimensional sequence or array. In the latter case, it is assumed
-        that the matrix is diagonal. A more efficient algorithm is then
-        applied that exploits the separability of the problem.
+        The inverse coordinate transformation matrix, mapping output
+        coordinates to input coordinates. If ``ndim`` is the number of
+        dimensions of ``input``, the given matrix must have one of the
+        following shapes:
+
+            - ``(ndim, ndim)``: the linear transformation matrix for each
+              output coordinate.
+            - ``(ndim,)``: assume that the 2D transformation matrix is
+              diagonal, with the diagonal specified by the given value. A more
+              efficient algorithm is then used that exploits the separability
+              of the problem.
+            - ``(ndim + 1, ndim + 1)``: assume that the transformation is
+              specified using homogeneous coordinates [1]_. In this case, any
+              value passed to ``offset`` is ignored.
+            - ``(ndim, ndim + 1)``: as above, but the bottom row of a
+              homogeneous transformation matrix is always ``[0, 0, ..., 1]``,
+              and may be omitted.
+
     offset : float or sequence, optional
         The offset into the array where the transform is applied. If a float,
         `offset` is the same for each axis. If a sequence, `offset` should
@@ -408,7 +405,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         The order has to be in the range 0-5.
     mode : str, optional
         Points outside the boundaries of the input are filled according
-        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or 'wrap').
+        to the given mode ('constant', 'nearest', 'reflect', 'mirror' or
+        'wrap').
         Default is 'constant'.
     cval : scalar, optional
         Value used for points outside the boundaries of the input if
@@ -425,6 +423,26 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         The transformed input. If `output` is given as a parameter, None is
         returned.
 
+    Notes
+    -----
+    The given matrix and offset are used to find for each point in the
+    output the corresponding coordinates in the input by an affine
+    transformation. The value of the input at those coordinates is
+    determined by spline interpolation of the requested order. Points
+    outside the boundaries of the input are filled according to the given
+    mode.
+
+    .. versionchanged:: 0.18.0
+        Previously, the exact interpretation of the affine transformation
+        depended on whether the matrix was supplied as a one-dimensional or
+        two-dimensional array. If a one-dimensional array was supplied
+        to the matrix parameter, the output pixel value at index ``o``
+        was determined from the input image at position
+        ``matrix * (o + offset)``.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
