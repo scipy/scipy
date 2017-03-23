@@ -521,44 +521,42 @@ class BSpline(object):
 
             # If b <= te then we need to integrate over [a, b], otherwise
             # over [a, te] and from xs to what is remained.
-            remainder_int = np.empty_like(out)
             if b <= te:
                 x = np.asarray([a, b], dtype=np.float_)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, remainder_int)
-                integral += remainder_int[1] - remainder_int[0]
+                                      ka, x, 0, False, out)
+                integral += out[1] - out[0]
             else:
                 x = np.asarray([a, te], dtype=np.float_)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, remainder_int)
-                integral += remainder_int[1] - remainder_int[0]
+                                      ka, x, 0, False, out)
+                integral += out[1] - out[0]
 
                 x = np.asarray([ts, ts + b - te], dtype=np.float_)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                      ka, x, 0, False, remainder_int)
-                integral += remainder_int[1] - remainder_int[0]
+                                      ka, x, 0, False, out)
+                integral += out[1] - out[0]
         else:
             if not extrapolate:
                 # Shrink the integration interval, if needed.
                 a = max(a, self.t[self.k])
                 b = min(b, self.t[n])
 
-                if self.c.ndim == 1:
-                    # Fast path: use FITPACK's routine
-                    # (cf _fitpack_impl.splint).
-                    t, c, k = self.tck
-                    integral, wrk = _dierckx._splint(t, c, k, a, b)
-                    integral *= sign
-                    return integral
-
-            # Evaluate the difference of antiderivatives.
-            x = np.asarray([a, b], dtype=np.float_)
-            _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
-                                  ka, x, 0, extrapolate, out)
-            integral = out[1] - out[0]
+            if (self.c.ndim == 1) and (not extrapolate):
+                # Fast path: use FITPACK's routine
+                # (cf _fitpack_impl.splint).
+                t, c, k = self.tck
+                int_val, wrk = _dierckx._splint(t, c, k, a, b)
+                integral.fill(int_val)
+            else:
+                # Evaluate the difference of antiderivatives.
+                x = np.asarray([a, b], dtype=np.float_)
+                _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
+                                      ka, x, 0, extrapolate, out)
+                integral = out[1] - out[0]
 
         integral *= sign
-        return integral.reshape(c.shape[1:])
+        return integral.reshape(ca.shape[1:])
 
 
 #################################
