@@ -309,6 +309,19 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     This function uses the SuperLU library.
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import spilu
+    >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
+    >>> B = spilu(A)
+    >>> x = np.array([1., 2., 3.], dtype=float)
+    >>> B.solve(x)
+    array([ 1. , -3. , -1.5])
+    >>> A.dot(B.solve(x))
+    array([ 1.,  2.,  3.])
+    >>> B.solve(A.dot(x))
+    array([ 1.,  2.,  3.])
     """
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
