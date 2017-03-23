@@ -449,7 +449,7 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
             (matrix.shape[0] in [input.ndim, input.ndim + 1])):
         if matrix.shape[0] == input.ndim + 1:
             exptd = [0] * input.ndim + [1]
-            if not np.all(matrix[input.ndim] == exptd):
+            if not numpy.all(matrix[input.ndim] == exptd):
                 msg = ('Expected homogeneous transformation matrix with '
                        'shape %s for image shape %s, but bottom row was '
                        'not equal to %s' % (matrix.shape, input.shape, exptd))

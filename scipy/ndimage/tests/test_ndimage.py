@@ -2063,7 +2063,7 @@ class TestNdimage:
         tform_h1 = numpy.hstack((numpy.eye(2), -numpy.ones((2, 1))))
         tform_h2 = numpy.vstack((tform_h1, [[5, 2, 1]]))
         numpy.testing.assert_raises(ValueError,
-                                    ndimage.affine_transform, tform_h2)
+                                    ndimage.affine_transform, data, tform_h2)
 
     def test_shift01(self):
         data = numpy.array([1])
