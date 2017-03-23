@@ -95,6 +95,16 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     resulting X is dense, the construction of this sparse result will be
     relatively expensive.  In that case, consider converting A to a dense
     matrix and using scipy.linalg.solve or its variants.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import spsolve
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> B = csc_matrix([[2, 0], [-1, 0], [2, 0]], dtype=float)
+    >>> x = spsolve(A, B)
+    >>> np.allclose(A.dot(x).todense(), B.todense())
+    True
     """
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
