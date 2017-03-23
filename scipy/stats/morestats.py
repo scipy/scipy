@@ -2725,16 +2725,12 @@ def circmean(samples, high=2*pi, low=0, axis=None):
         
     Examples
     --------
-    
-    >>> from scipy.stats import morestats
-    >>> import numpy as np
-    >>> morestats.circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
+    >>> from scipy.stats import circmean
+    >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
     0.2
     
-    
-    >>> from scipy.stats import morestats
-    >>> import numpy as np
-    >>> morestats.circmean([0.2, 1.4, 2.6], high = 1, low = 0)
+    >>> from scipy.stats import circmean
+    >>> circmean([0.2, 1.4, 2.6], high = 1, low = 0)
     0.4
 
     """
@@ -2778,12 +2774,10 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     
     Examples
     --------
-    >>> from scipy.stats import morestats
-    >>> import numpy as np
-    >>> morestats.circvar([0, 2*np.pi/3, 5*np.pi/3])
+    >>> from scipy.stats import circvar
+    >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
     2.19722457734
     
-
     """
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).mean(axis=axis)
@@ -2822,9 +2816,8 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     
     Examples
     --------
-    >>> from scipy.stats import morestats
-    >>> import numpy as np
-    >>> morestats.circstd([0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2])
+    >>> from scipy.stats import circstd
+    >>> circstd([0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2])
     0.063564063306
 
     """
