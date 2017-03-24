@@ -486,7 +486,7 @@ class BSpline(object):
             sign = -1
         n = self.t.size - self.k - 1
 
-        if not extrapolate and (extrapolate !="periodic"):
+        if not extrapolate and (extrapolate != "periodic"):
             # Shrink the integration interval, if needed.
             a = max(a, self.t[self.k])
             b = min(b, self.t[n])
