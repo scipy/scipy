@@ -486,7 +486,7 @@ class BSpline(object):
             sign = -1
         n = self.t.size - self.k - 1
 
-        if not extrapolate and (extrapolate != "periodic"):
+        if extrapolate != "periodic" and not extrapolate:
             # Shrink the integration interval, if needed.
             a = max(a, self.t[self.k])
             b = min(b, self.t[n])
@@ -496,7 +496,7 @@ class BSpline(object):
                 # (cf _fitpack_impl.splint).
                 t, c, k = self.tck
                 integral, wrk = _dierckx._splint(t, c, k, a, b)
-                integral = np.asarray(integral)
+                return integral * sign 
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
 
