@@ -873,10 +873,12 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
 
     """
     if sparse:
-        if lstsq:  # this doesn't seem to work
+        if lstsq or sym_pos == False:
             # solve = lambda M, r: sps.linalg.lsqr(M, r)[0]
-            def solve(M, r): 
-                return sps.linsalg.lsqr(M, r)[0]
+            def solve(M, r, sym_pos=False): 
+                return sps.linalg.lsqr(M, r)[0]
+#                return sps.linalg.lsqr(M, r, atol = 0, btol = 0, 
+#                                       iter_lim=5000)[0] # force it to work...
         else:
             # solve = lambda M, r: sps.linalg.spsolve(
             # M, r, permc_spec="MMD_AT_PLUS_A")
@@ -1054,6 +1056,8 @@ def _get_delta(
                 # [1] Equation 8.29
                 u, v = _sym_solve(Dinv, solve_this, A, rhatd -
                                   (1 / x) * rhatxs, rhatp, solve)
+                if np.any(np.isnan(p)) or np.any(np.isnan(q)):
+                    raise LinAlgError
                 solved = True
             except (LinAlgError, ValueError) as e:
                 # Usually this doesn't happen. If it does, it happens when
@@ -1867,8 +1871,8 @@ def _linprog_ip(
 
     if sparse and not sym_pos:
         warn("Invalid option combination 'sparse':True "
-             "and 'sym_pos':False; option 'sym_pos' has no effect when "
-             "'sparse' is set True.",
+             "and 'sym_pos':False; the effect is the same as sparse least "
+             "squares, which is not recommended.",
              OptimizeWarning)
 
     if sparse and cholesky:

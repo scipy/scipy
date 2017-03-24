@@ -629,11 +629,7 @@ class TestLingprogIP(LinprogCommonTests):
             c, A_eq=A, b_eq=b, bounds=(
                 0, 1), options={
                 "sparse": True, "presolve": False}, method=self.method)
-        assert_equal(
-            res.status,
-            4,
-            "failed to report numerical difficulties status")
-        assert_equal(res.success, False, "failed to report failure")
+        _assert_success(res, desired_fun=1.730550597)
 
     def test_bug_6690(self):
         # https://github.com/scipy/scipy/issues/6690
