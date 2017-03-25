@@ -2165,6 +2165,10 @@ add_newdoc('scipy.special', 'expit',
         An ndarray of the same shape as x. Its entries
         are expit of the corresponding entry of x.
 
+    See Also
+    --------
+    logit
+
     Notes
     -----
     As a ufunc expit takes a number of optional
@@ -2172,6 +2176,30 @@ add_newdoc('scipy.special', 'expit',
     see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 
     .. versionadded:: 0.10.0
+
+    Examples
+    --------
+    >>> from scipy.special import expit, logit
+
+    >>> expit([-np.inf, -1.5, 0, 1.5, np.inf])
+    array([ 0.        ,  0.18242552,  0.5       ,  0.81757448,  1.        ])
+
+    `logit` is the inverse of `expit`:
+
+    >>> logit(expit([-2.5, 0, 3.1, 5.0]))
+    array([-2.5,  0. ,  3.1,  5. ])
+
+    Plot expit(x) for x in [-6, 6]:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-6, 6, 121)
+    >>> y = expit(x)
+    >>> plt.plot(x, y)
+    >>> plt.grid()
+    >>> plt.xlim(-6, 6)
+    >>> plt.xlabel('x')
+    >>> plt.title('expit(x)')
+    >>> plt.show()
 
     """)
 
@@ -4328,6 +4356,10 @@ add_newdoc('scipy.special', 'logit',
         An ndarray of the same shape as x. Its entries
         are logit of the corresponding entry of x.
 
+    See Also
+    --------
+    expit
+
     Notes
     -----
     As a ufunc logit takes a number of optional
@@ -4335,6 +4367,30 @@ add_newdoc('scipy.special', 'logit',
     see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 
     .. versionadded:: 0.10.0
+
+    Examples
+    --------
+    >>> from scipy.special import logit, expit
+
+    >>> logit([0, 0.25, 0.5, 0.75, 1])
+    array([       -inf, -1.09861229,  0.        ,  1.09861229,         inf])
+
+    `expit` is the inverse of `logit`:
+
+    >>> expit(logit([0.1, 0.75, 0.999]))
+    array([ 0.1  ,  0.75 ,  0.999])
+
+    Plot logit(x) for x in [0, 1]:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 501)
+    >>> y = logit(x)
+    >>> plt.plot(x, y)
+    >>> plt.grid()
+    >>> plt.ylim(-6, 6)
+    >>> plt.xlabel('x')
+    >>> plt.title('logit(x)')
+    >>> plt.show()
 
     """)
 
