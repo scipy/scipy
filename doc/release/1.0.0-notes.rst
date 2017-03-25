@@ -33,6 +33,9 @@ Backwards incompatible changes
 Other changes
 =============
 
+In order to have consistent function names, the function
+`scipy.linalg.solve_lyapunov` is renamed to `scipy.linalg.solve_continuous_lyapunov`.
+The old name is kept for backwards-compatibility.
 
 Authors
 =======
