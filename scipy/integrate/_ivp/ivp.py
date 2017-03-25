@@ -390,7 +390,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
             raise ValueError("`t_eval` must be 1-dimensional.")
 
         if np.any(t_eval < min(t0, tf)) or np.any(t_eval > max(t0, tf)):
-            raise ValueError("Values in `t_eval` are not within `t_span`")
+            raise ValueError("Values in `t_eval` are not within `t_span`.")
 
         d = np.diff(t_eval)
         if tf > t0 and np.any(d <= 0) or tf < t0 and np.any(d >= 0):
@@ -399,7 +399,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         if tf > t0:
             t_eval_i = 0
         else:
-            # Make order of t_eval ascending to use np.searchsorted.
+            # Make order of t_eval decreasing to use np.searchsorted.
             t_eval = t_eval[::-1]
             # This will be an upper bound for slices.
             t_eval_i = t_eval.shape[0]
