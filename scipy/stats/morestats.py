@@ -2722,6 +2722,16 @@ def circmean(samples, high=2*pi, low=0, axis=None):
     -------
     circmean : float
         Circular mean.
+        
+    Examples
+    --------
+    >>> from scipy.stats import circmean
+    >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
+    0.2
+    
+    >>> from scipy.stats import circmean
+    >>> circmean([0.2, 1.4, 2.6], high = 1, low = 0)
+    0.4
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
@@ -2761,7 +2771,13 @@ def circvar(samples, high=2*pi, low=0, axis=None):
     -----
     This uses a definition of circular variance that in the limit of small
     angles returns a number close to the 'linear' variance.
-
+    
+    Examples
+    --------
+    >>> from scipy.stats import circvar
+    >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
+    2.19722457734
+    
     """
     samples, ang = _circfuncs_common(samples, high, low)
     S = sin(ang).mean(axis=axis)
@@ -2797,6 +2813,12 @@ def circstd(samples, high=2*pi, low=0, axis=None):
     -----
     This uses a definition of circular standard deviation that in the limit of
     small angles returns a number close to the 'linear' standard deviation.
+    
+    Examples
+    --------
+    >>> from scipy.stats import circstd
+    >>> circstd([0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2])
+    0.063564063306
 
     """
     samples, ang = _circfuncs_common(samples, high, low)
