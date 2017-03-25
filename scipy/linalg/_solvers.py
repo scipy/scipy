@@ -23,7 +23,8 @@ from ._decomp_qz import ordqz
 from .decomp import _asarray_validated
 from .special_matrices import kron, block_diag
 
-__all__ = ['solve_sylvester', 'solve_lyapunov', 'solve_discrete_lyapunov',
+__all__ = ['solve_sylvester',
+           'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
            'solve_continuous_are', 'solve_discrete_are']
 
 
@@ -105,11 +106,13 @@ def solve_continuous_lyapunov(a, q):
 
     Returns
     -------
-    x : array_like
+    x : ndarray
         Solution to the continuous Lyapunov equation
 
     See Also
     --------
+    solve_discrete_lyapunov : computes the solution to the discrete-time
+        Lyapunov equation
     solve_sylvester : computes the solution to the Sylvester equation
 
     Notes
@@ -127,7 +130,7 @@ def solve_continuous_lyapunov(a, q):
 
     r_or_c = float
 
-    for ind, _ in enumerate(a, q):
+    for ind, _ in enumerate((a, q)):
         if np.iscomplexobj(_):
             r_or_c = complex
 
@@ -145,10 +148,7 @@ def solve_continuous_lyapunov(a, q):
     f = u.conj().T.dot(q.dot(u))
 
     # Call the Sylvester equation solver
-    trsyl, = get_lapack_funcs(('trsyl',), (r, f))
-    if trsyl is None:
-        raise RuntimeError('LAPACK implementation does not contain a proper '
-                           'Sylvester equation solver (TRSYL)')
+    trsyl = get_lapack_funcs('trsyl', (r, f))
 
     dtype_string = 'T' if r_or_c == float else 'C'
     y, scale, info = trsyl(r, r, f, tranb=dtype_string)
@@ -159,7 +159,7 @@ def solve_continuous_lyapunov(a, q):
                          'LAPACK documentation for the ?TRSYL error codes.'
                          ''.format(-info))
     elif info == 1:
-        warnings.warn('Matrix a has an eigenvalue pair whose sum is '
+        warnings.warn('Input "a" has an eigenvalue pair whose sum is '
                       'very close to or exactly zero. The solution is '
                       'obtained via perturbing the coefficients.',
                       RuntimeWarning)
@@ -224,7 +224,8 @@ def solve_discrete_lyapunov(a, q, method=None):
 
     See Also
     --------
-    solve_lyapunov : computes the solution to the continuous Lyapunov equation
+    solve_continuous_lyapunov : computes the solution to the continuous-time
+        Lyapunov equation
 
     Notes
     -----
