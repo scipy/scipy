@@ -126,9 +126,26 @@ def medazko_sparsity(n):
     return coo_matrix((np.ones_like(cols), (cols, rows)))
 
 
+def fun_complex(t, y):
+    return -y
+
+
+def jac_complex(t, y):
+    return -np.eye(y.shape[0])
+
+
+def jac_complex_sparse(t, y):
+    return csc_matrix(jac_complex(t, y))
+
+
+def sol_complex(t):
+    y = (0.5 + 1j) * np.exp(-t)
+    return y.reshape((1, -1))
+
+
 def compute_error(y, y_true, rtol, atol):
     e = (y - y_true) / (atol + rtol * np.abs(y_true))
-    return np.sqrt(np.sum(e**2, axis=0) / e.shape[0])
+    return np.sqrt(np.sum(np.real(e * e.conj()), axis=0) / e.shape[0])
 
 
 def test_integration():
@@ -189,6 +206,30 @@ def test_integration():
             # bug in LSOSA implementation or maybe we missing something.
             if method != 'LSODA':
                 assert_allclose(res.sol(res.t), res.y, rtol=1e-15, atol=1e-15)
+
+
+def test_integration_complex():
+    rtol = 1e-3
+    atol = 1e-6
+    y0 = [0.5 + 1j]
+    t_span = [0, 1]
+    tc = np.linspace(t_span[0], t_span[1])
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        for method, jac in product(['RK23', 'RK45', 'BDF'],
+                                   [None, jac_complex, jac_complex_sparse]):
+            res = solve_ivp(fun_complex, t_span, y0, method=method,
+                            dense_output=True, rtol=rtol, atol=atol, jac=jac)
+            assert_(res.success)
+            assert_equal(res.status, 0)
+            assert_(res.nfev < 25)
+            y_true = sol_complex(res.t)
+            e = compute_error(res.y, y_true, rtol, atol)
+            assert_(np.all(e < 5))
+            yc_true = sol_complex(tc)
+            yc = res.sol(tc)
+            e = compute_error(yc, yc_true, rtol, atol)
+            assert_(np.all(e < 5))
 
 
 def test_integration_sparse_difference():
@@ -674,3 +715,4 @@ def test_num_jac_sparse():
 
 if __name__ == '__main__':
     run_module_suite()
+    # test_integration_complex()

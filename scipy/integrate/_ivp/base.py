@@ -2,15 +2,23 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 
-def check_arguments(fun, y0):
+def check_arguments(fun, y0, support_complex):
     """Helper function for checking arguments common to all solvers."""
-    y0 = np.asarray(y0, dtype=float)
+    y0 = np.asarray(y0)
+    if np.issubdtype(y0.dtype, np.complexfloating):
+        if not support_complex:
+            raise ValueError("`y0` is complex, but the chosen solver does "
+                             "not support integration in a complex domain.")
+        dtype = complex
+    else:
+        dtype = float
+    y0 = y0.astype(dtype, copy=False)
 
     if y0.ndim != 1:
         raise ValueError("`y0` must be 1-dimensional.")
 
     def fun_wrapped(t, y):
-        return np.asarray(fun(t, y), dtype=float)
+        return np.asarray(fun(t, y), dtype=dtype)
 
     return fun_wrapped, y0
 
@@ -73,6 +81,10 @@ class OdeSolver(object):
         determines the direction of the integration.
     vectorized : bool
         Whether `fun` is implemented in a vectorized fashion.
+    support_complex : bool, optional
+        Whether integration in a complex domain should be supported.
+        Generally determined by a derived solver class capabilities.
+        Default is False.
 
     Attributes
     ----------
@@ -101,10 +113,11 @@ class OdeSolver(object):
     """
     TOO_SMALL_STEP = "Required step size is less than spacing between numbers."
 
-    def __init__(self, fun, t0, y0, t_bound, vectorized):
+    def __init__(self, fun, t0, y0, t_bound, vectorized,
+                 support_complex=False):
         self.t_old = None
         self.t = t0
-        self._fun, self.y = check_arguments(fun, y0)
+        self._fun, self.y = check_arguments(fun, y0, support_complex)
         self.t_bound = t_bound
         self.vectorized = vectorized
 

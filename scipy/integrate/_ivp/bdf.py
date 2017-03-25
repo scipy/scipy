@@ -79,6 +79,8 @@ class BDF(OdeSolver):
     in [3]_. An accuracy enhancement using modified formulas (NDF) [2]_ is also
     implemented.
 
+    Can be applied in a complex domain.
+
     Parameters
     ----------
     fun : callable
@@ -179,7 +181,8 @@ class BDF(OdeSolver):
                  rtol=1e-3, atol=1e-6, jac=None, jac_sparsity=None,
                  vectorized=False, **extraneous):
         warn_extraneous(extraneous)
-        super(BDF, self).__init__(fun, t0, y0, t_bound, vectorized)
+        super(BDF, self).__init__(fun, t0, y0, t_bound, vectorized,
+                                  support_complex=True)
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
@@ -201,7 +204,7 @@ class BDF(OdeSolver):
             def solve_lu(LU, b):
                 return LU.solve(b)
 
-            I = eye(self.n, format='csc')
+            I = eye(self.n, format='csc', dtype=self.y.dtype)
         else:
             def lu(A):
                 self.nlu += 1
@@ -210,7 +213,7 @@ class BDF(OdeSolver):
             def solve_lu(LU, b):
                 return lu_solve(LU, b, overwrite_b=True)
 
-            I = np.identity(self.n)
+            I = np.identity(self.n, dtype=self.y.dtype)
 
         self.lu = lu
         self.solve_lu = solve_lu
@@ -221,7 +224,7 @@ class BDF(OdeSolver):
         self.alpha = (1 - kappa) * self.gamma
         self.error_const = kappa * self.gamma + 1 / np.arange(1, MAX_ORDER + 2)
 
-        D = np.empty((MAX_ORDER + 3, self.n))
+        D = np.empty((MAX_ORDER + 3, self.n), dtype=self.y.dtype)
         D[0] = self.y
         D[1] = f * self.h_abs * self.direction
         self.D = D
@@ -253,17 +256,17 @@ class BDF(OdeSolver):
             J = jac(t0, y0)
             self.njev += 1
             if issparse(J):
-                J = csc_matrix(J)
+                J = csc_matrix(J, dtype=y0.dtype)
 
                 def jac_wrapped(t, y):
                     self.njev += 1
-                    return csc_matrix(jac(t, y), dtype=float)
+                    return csc_matrix(jac(t, y), dtype=y0.dtype)
             else:
-                J = np.asarray(J, dtype=float)
+                J = np.asarray(J, dtype=y0.dtype)
 
                 def jac_wrapped(t, y):
                     self.njev += 1
-                    return np.asarray(jac(t, y), dtype=float)
+                    return np.asarray(jac(t, y), dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
                 raise ValueError("`jac` is expected to have shape {}, but "
@@ -271,9 +274,9 @@ class BDF(OdeSolver):
                                  .format((self.n, self.n), J.shape))
         else:
             if issparse(jac):
-                J = csc_matrix(jac)
+                J = csc_matrix(jac, dtype=y0.dtype)
             else:
-                J = np.asarray(jac, dtype=float)
+                J = np.asarray(jac, dtype=y0.dtype)
 
             if J.shape != (self.n, self.n):
                 raise ValueError("`jac` is expected to have shape {}, but "

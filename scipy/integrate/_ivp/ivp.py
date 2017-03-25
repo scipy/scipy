@@ -170,6 +170,13 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     The goal is to find y(t) approximately satisfying a differential
     equation, given an initial value y(t0)=y0.
 
+    Some of the solvers support integration in a complex domain, but note that
+    for stiff ODE solvers the right hand side must must be complex
+    differentiable (satisfy Cauchy-Riemann equations [11]_). To solve a problem
+    in a complex domain, pass y0 with a complex data type. Another option
+    always available is to rewrite your problem for real and imaginary parts
+    separately.
+
     Parameters
     ----------
     fun : callable
@@ -186,7 +193,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         Interval of integration (t0, tf). The solver starts with t=t0 and
         integrates until it reaches t=tf.
     y0 : array_like, shape (n,)
-        Initial state.
+        Initial state. For problems in a complex domain pass `y0` with a
+        complex data type (even if the initial guess is purely real).
     method : string or `OdeSolver`, optional
         Integration method to use:
 
@@ -194,11 +202,12 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               The error is controlled assuming 4th order accuracy, but steps
               are taken using a 5th oder accurate formula (local extrapolation
               is done). A quartic interpolation polynomial is used for the
-              dense output [2]_.
+              dense output [2]_. Can be applied in a complex domain.
             * 'RK23': Explicit Runge-Kutta method of order 3(2) [3]_. The error
               is controlled assuming 2nd order accuracy, but steps are taken
               using a 3rd oder accurate formula (local extrapolation is done).
               A cubic Hermit polynomial is used for the dense output.
+              Can be applied in a complex domain.
             * 'Radau': Implicit Runge-Kutta method of Radau IIA family of
               order 5 [4]_. The error is controlled for a 3rd order accurate
               embedded formula. A cubic polynomial which satisfies the
@@ -208,7 +217,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               approximation [5]_. An implementation approach follows the one
               described in [6]_. A quasi-constant step scheme is used
               and accuracy enhancement using NDF modification is also
-              implemented.
+              implemented. Can be applied in a complex domain.
             * 'LSODA': Adams/BDF method with automatic stiffness detection and
               switching [7]_, [8]_. This is a wrapper of the Fortran solver
               from ODEPACK.
@@ -364,6 +373,9 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     .. [10] A. Curtis, M. J. D. Powell, and J. Reid, "On the estimation of
             sparse Jacobian matrices", Journal of the Institute of Mathematics
             and its Applications, 13, pp. 117-120, 1974.
+    .. [11] `Cauchy-Riemann equations
+             <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
+             Wikipedia.
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):

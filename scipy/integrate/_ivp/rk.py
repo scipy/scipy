@@ -91,7 +91,8 @@ class RungeKutta(OdeSolver):
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, vectorized=False, **extraneous):
         warn_extraneous(extraneous)
-        super(RungeKutta, self).__init__(fun, t0, y0, t_bound, vectorized)
+        super(RungeKutta, self).__init__(fun, t0, y0, t_bound, vectorized,
+                                         support_complex=True)
         self.y_old = None
         self.max_step = validate_max_step(max_step)
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
@@ -99,7 +100,7 @@ class RungeKutta(OdeSolver):
         self.h_abs = select_initial_step(
             self.fun, self.t, self.y, self.f, self.direction,
             self.order, self.rtol, self.atol)
-        self.K = np.empty((self.n_stages + 1, self.n))
+        self.K = np.empty((self.n_stages + 1, self.n), dtype=self.y.dtype)
 
     def _step_impl(self):
         t = self.t
@@ -169,6 +170,8 @@ class RK23(RungeKutta):
     assuming 2nd order accuracy, but steps are taken using a 3rd oder accurate
     formula (local extrapolation is done). A cubic Hermit polynomial is used
     for the dense output.
+
+    Can be applied in a complex domain.
 
     Parameters
     ----------
@@ -255,6 +258,8 @@ class RK45(RungeKutta):
     assuming 4th order accuracy, but steps are taken using a 5th
     oder accurate formula (local extrapolation is done). A quartic
     interpolation polynomial is used for the dense output [2]_.
+
+    Can be applied in a complex domain.
 
     Parameters
     ----------
