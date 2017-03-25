@@ -675,6 +675,12 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
+        if any([_numeric_arrays([x], kinds='fc') for x in [volume, kernel]]):
+            return 'direct'
+
+    if _numeric_arrays([volume, kernel], kinds='b'):
+        return 'direct'
+
     if _numeric_arrays([volume, kernel]):
         if _fftconv_faster(volume, kernel, mode):
             return 'fft'

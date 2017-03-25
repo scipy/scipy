@@ -1553,6 +1553,16 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     assert_allclose(zg1, zo1, rtol=1e-9, atol=1e-10)
     assert_allclose(zg2, zo2, rtol=1e-9, atol=1e-10)
 
+def test_choose_conv_method_types(n=3000):
+    np.random.seed(42)
+    for t1, t2 in [(bool, bool), (int, float), (int, complex), (float, int),
+                   (complex, int)]:
+        x1 = np.random.randn(n).astype(t1)
+        x2 = np.random.randn(n).astype(t2)
+
+        float_method = choose_conv_method(x1.astype(complex), x2.astype(complex))
+        assert_(float_method == 'fft')
+        assert_(choose_conv_method(x1, x2) == 'direct')
 
 def test_choose_conv_method():
     for mode in ['valid', 'same', 'full']:
