@@ -86,6 +86,29 @@ def load_npz(file):
     --------
     scipy.sparse.save_npz: Save a sparse matrix to a file using ``.npz`` format.
     numpy.load: Load several arrays from a ``.npz`` archive.
+
+    Examples
+    --------
+    Store sparse matrix to disk, and load it again:
+
+    >>> import scipy.sparse
+    >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
+    >>> sparse_matrix
+    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+       with 2 stored elements in Compressed Sparse Column format>
+    >>> sparse_matrix.todense()
+    matrix([[0, 0, 3],
+            [4, 0, 0]], dtype=int64)
+
+    >>> scipy.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
+    >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
+
+    >>> sparse_matrix
+    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+        with 2 stored elements in Compressed Sparse Column format>
+    >>> sparse_matrix.todense()
+    matrix([[0, 0, 3],
+            [4, 0, 0]], dtype=int64)
     """
 
     loaded = np.load(file)

@@ -1161,6 +1161,32 @@ class spmatrix(object):
 
 
 def isspmatrix(x):
+    """Is x of a sparse matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a sparse matrix
+
+    Returns
+    -------
+    bool
+        True if x is a sparse matrix, False otherwise
+
+    Notes
+    -----
+    issparse and isspmatrix are aliases for the same function.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix, isspmatrix
+    >>> isspmatrix(csr_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import isspmatrix
+    >>> isspmatrix(5)
+    False
+    """
     return isinstance(x, spmatrix)
 
 issparse = isspmatrix

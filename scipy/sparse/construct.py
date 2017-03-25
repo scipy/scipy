@@ -700,6 +700,10 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sampled using the same random state as is used for sampling
         the sparsity structure.
 
+    Returns
+    -------
+    res : sparse matrix
+
     Examples
     --------
     >>> from scipy.sparse import random
@@ -787,9 +791,29 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         Random number generator or random seed. If not given, the singleton
         numpy.random will be used.
 
+    Returns
+    -------
+    res : sparse matrix
+
     Notes
     -----
     Only float types are supported for now.
 
+    See Also
+    --------
+    scipy.sparse.random : Similar function that allows a user-specified random
+        data source.
+
+    Examples
+    --------
+    >>> from scipy.sparse import rand
+    >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
+    >>> matrix
+    <3x4 sparse matrix of type '<type 'numpy.float64'>'
+       with 3 stored elements in Compressed Sparse Row format>
+    >>> matrix.todense()
+    matrix([[ 0.        ,  0.59685016,  0.779691  ,  0.        ],
+            [ 0.        ,  0.        ,  0.        ,  0.44583275],
+            [ 0.        ,  0.        ,  0.        ,  0.        ]])
     """
     return random(m, n, density, format, dtype, random_state)
