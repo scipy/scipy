@@ -12,7 +12,7 @@ better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
 are encouraged to upgrade to this release, as there are a large number
 of bug-fixes and optimizations.  Moreover, our development attention
-will now shift to bug-fix releases on the 0.19.x branch, and on adding
+will now shift to bug-fix releases on the 1.0.x branch, and on adding
 new features on the master branch.
 
 This release requires Python 2.7 or 3.4+ and NumPy 1.8.1 or greater.
@@ -21,13 +21,43 @@ This release requires Python 2.7 or 3.4+ and NumPy 1.8.1 or greater.
 New features
 ============
 
+`scipy.ndimage` improvements
+----------------------------
+
+Support for homogeneous coordinate transforms has been added to
+`scipy.ndimage.affine_transform`.
+
+
+`scipy.sparse` improvements
+---------------------------
+
+Iterating over and slicing of CSC and CSR matrices is now faster by up to ~35%.
+
+The ``tocsr`` method of COO matrices is now several times faster.
+
+
+`scipy.sparse.linalg` improvements
+----------------------------------
+
+`scipy.sparse.linalg.lsmr` now accepts an initial guess, yielding potentially
+faster convergence.
+
 
 Deprecated features
 ===================
 
+``scipy.interpolate.interpolate_wrapper`` and all functions in that submodule
+are deprecated.  This was a never finished set of wrapper functions which is
+not relevant anymore.
+
 
 Backwards incompatible changes
 ==============================
+
+The default value for the ``zero_phase`` keyword of `scipy.signal.decimate`
+has been changed to True.
+
+`scipy.special.gammaln` does not accept complex arguments anymore.
 
 
 Other changes
@@ -36,6 +66,7 @@ Other changes
 In order to have consistent function names, the function
 `scipy.linalg.solve_lyapunov` is renamed to `scipy.linalg.solve_continuous_lyapunov`.
 The old name is kept for backwards-compatibility.
+
 
 Authors
 =======
