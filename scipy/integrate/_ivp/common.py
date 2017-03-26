@@ -290,8 +290,9 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         factor = factor.copy()
 
     # Direct the step as ODE dictates, hoping that such a step won't lead to
-    # a problematic region.
-    f_sign = 2 * (f >= 0).astype(float) - 1
+    # a problematic region. For complex ODEs it makes sense to use the real
+    # part of f as we use steps along real axis.
+    f_sign = 2 * (np.real(f) >= 0).astype(float) - 1
     y_scale = f_sign * np.maximum(threshold, np.abs(y))
     h = (y + factor * y_scale) - y
 
