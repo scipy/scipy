@@ -367,7 +367,7 @@ def setup_package():
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
-        maintainer_email="scipy-dev@scipy.org",
+        maintainer_email="scipy-dev@python.org",
         description=DOCLINES[0],
         long_description="\n".join(DOCLINES[2:]),
         url="https://www.scipy.org",

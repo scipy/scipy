@@ -7,7 +7,7 @@ integral to wrapping the many Fortran libraries used in SciPy.
 
 Since then many people have contributed to SciPy, both in code development,
 suggestions, and financial support.  Below is a partial list.  If you've
-been left off, please email the "SciPy Developers List" <scipy-dev@scipy.org>.
+been left off, please email the "SciPy Developers List" <scipy-dev@python.org>.
 
 Please add names as needed so that we can keep up with all the contributors.
 
