@@ -158,24 +158,23 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
               events=None, vectorized=False, **options):
     """Solve an initial value problem for a system of ODEs.
 
-    This function numerically integrates a system of ODEs given an initial
-    value::
+    This function numerically integrates a system of ordinary differential
+    equations given an initial value::
 
         dy / dt = f(t, y)
         y(t0) = y0
 
     Here t is a 1-dimensional independent variable (time), y(t) is an
     n-dimensional vector-valued function (state) and an n-dimensional
-    vector-valued function f(t, y) determines a differential equation.
-    The goal is to find y(t) approximately satisfying a differential
-    equation, given an initial value y(t0)=y0.
+    vector-valued function f(t, y) determines the differential equations.
+    The goal is to find y(t) approximately satisfying the differential
+    equations, given an initial value y(t0)=y0.
 
     Some of the solvers support integration in a complex domain, but note that
-    for stiff ODE solvers the right hand side must must be complex
-    differentiable (satisfy Cauchy-Riemann equations [11]_). To solve a problem
-    in a complex domain, pass y0 with a complex data type. Another option
-    always available is to rewrite your problem for real and imaginary parts
-    separately.
+    for stiff ODE solvers the right hand side must be complex differentiable
+    (satisfy Cauchy-Riemann equations [11]_). To solve a problem in a complex
+    domain, pass y0 with a complex data type. Another option always available
+    is to rewrite your problem for real and imaginary parts separately.
 
     Parameters
     ----------
@@ -188,7 +187,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         corresponds to a single column in ``y``. The choice between the two
         options is determined by `vectorized` argument (see below). The
         vectorized implementation allows faster approximation of the Jacobian
-        by finite differences.
+        by finite differences (required for stiff solvers).
     t_span : 2-tuple of floats
         Interval of integration (t0, tf). The solver starts with t=t0 and
         integrates until it reaches t=tf.
@@ -227,7 +226,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         'RK45' and if it does unusual many iterations or diverges then your
         problem is likely to be stiff and you should use 'Radau' or 'BDF'.
         'LSODA' can also be a good universal choice, but it might be somewhat
-        less  convenient to work with as it wraps the old Fortran code.
+        less  convenient to work with as it wraps an old Fortran code.
 
         You can also pass an arbitrary class derived from `OdeSolver` which
         implements the solver.
