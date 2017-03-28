@@ -204,11 +204,12 @@ Continuous Distributions in `scipy.stats`
    continuous_expon
    continuous_exponweib
    continuous_exponpow
+   continuous_f
    continuous_fatiguelife
    continuous_fisk
    continuous_foldcauchy
    continuous_foldnorm
-   continuous_f
+   continuous_frechet
    continuous_gamma
    continuous_genlogistic
    continuous_genpareto
