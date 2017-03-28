@@ -156,12 +156,11 @@ class TestConvolve(_TestConvolve):
         self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
-    def test_convolve_method(self, n=int(10e3)):
-        np.random.seed(42)
+    def test_convolve_method(self, n=100):
         types = sum([t for _, t in np.sctypes.items()], [])
         types = {np.dtype(t).name for t in types}
 
-        # These types include 'bool' and all precisions (int8, int16, etc)
+        # These types include 'bool' and all precisions (int8, float32, etc)
         # The removed types throw errors in correlate or fftconvolve
         for dtype in ['complex256', 'float128', 'str', 'void', 'bytes',
                       'object', 'unicode', 'string']:
@@ -177,6 +176,7 @@ class TestConvolve(_TestConvolve):
         array_types['c'] = array_types['f'] + 0.5j * array_types['f']
 
         for t1, t2, mode in args:
+            np.random.seed(42)
             x1 = array_types[np.dtype(t1).kind].astype(t1)
             x2 = array_types[np.dtype(t2).kind].astype(t2)
 
