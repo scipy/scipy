@@ -14,8 +14,9 @@ from numpy.testing import (
     assert_allclose,
     assert_equal,
     run_module_suite)
-from scipy.optimize.tests.test_linprog import magic_square
+#from scipy.optimize.tests.test_linprog import magic_square
 
+from test_linprog import magic_square
 from scipy.optimize._remove_redundancy import _remove_redundancy
 
 
