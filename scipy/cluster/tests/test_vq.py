@@ -10,7 +10,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
     assert_)
 from numpy.testing.decorators import skipif
 
-from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
+from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
     ClusterError, _krandinit)
 from scipy.cluster import _vq
 
@@ -118,27 +118,12 @@ class TestVq(TestCase):
             label1 = py_vq(tp(X), tp(initc))[0]
             assert_array_equal(label1, LABEL1)
 
-    def test_py_vq2(self):
-        initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
-            label1 = py_vq2(tp(X), tp(initc))[0]
-            assert_array_equal(label1, LABEL1)
-
     def test_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         for tp in np.array, np.matrix:
             label1, dist = _vq.vq(tp(X), tp(initc))
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
-
-    # def test_py_vq_1d(self):
-    #     """Test special rank 1 vq algo, python implementation."""
-    #     data = X[:, 0]
-    #     initc = data[:3]
-    #     a, b = _py_vq_1d(data, initc)
-    #     ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-    #     assert_array_equal(a, ta)
-    #     assert_array_equal(b, tb)
 
     def test_vq_1d(self):
         # Test special rank 1 vq algo, python implementation.

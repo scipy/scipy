@@ -264,8 +264,8 @@ def py_vq(obs, code_book, check_finite=True):
     min_dist = dist[np.arange(len(code)), code]
     return code, min_dist
 
-# py_vq2 is technically public, so we'll just alias it for now.
-py_vq2 = py_vq
+# py_vq2 was equivalent to py_vq
+py_vq2 = np.deprecate(py_vq, old_name='py_vq2', new_name='py_vq')
 
 
 def _kmeans(obs, guess, thresh=1e-5):
