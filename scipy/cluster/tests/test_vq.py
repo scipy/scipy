@@ -203,10 +203,11 @@ class TestKMean(object):
                          [2.04621601, 0.07401111],
                          [-2.31149087,-0.05160469]])
 
+        kmeans(data, initk)
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
-                       "One of the clusters is empty. Re-run kmean with a different initialization")
-            kmeans(data, initk)
+                       "One of the clusters is empty. Re-run kmeans with a "
+                       "different initialization")
             kmeans2(data, initk, missing='warn')
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
@@ -281,14 +282,3 @@ class TestKMean(object):
         assert_allclose(res[0], np.array([4.]))
         assert_allclose(res[1], 2.3999999999999999)
 
-    def test_kmeans_no_duplicates(self):
-        # Regression test for gh-4044
-        np.random.seed(23495)
-        features = np.linspace(1, 2, num=20).reshape(10, 2)
-        # randint(0, 10, 3) will give a duplicate with this seed ([7, 7, 5])
-        codebook, distortion = kmeans(features, k_or_guess=3)
-        expected = np.array([[1.15789474, 1.21052632],
-                             [1.52631579, 1.57894737],
-                             [1.84210526, 1.89473684]])
-        assert_allclose(codebook, expected)
-        assert_allclose(distortion, 0.11909166841036592)
