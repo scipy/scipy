@@ -367,7 +367,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             fx = func(x)
             try:
                 fx = float(np.asarray(fx))
-            except TypeError:
+            except (TypeError, ValueError):
                 raise ValueError("Objective function must return a scalar")
             # Compute the constraints
             if cons['eq']:
