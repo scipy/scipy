@@ -196,13 +196,13 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
 
     References
     ----------
-    .. [1] Conn, A. R., Gould, N. I., & Toint, P. L.
-           Trust region methods.  2000. Siam. pp. 169-200.
-    .. [2] Nocedal, J., and  Wright, S. Numerical optimization.
-           2006. Springer Science & Business Media. pp. 83-91.
-    .. [3] Moré, J. J., & Sorensen, D. C. Computing a trust
-           region step. 1983. SIAM Journal on Scientific and
-           Statistical Computing, 4(3), 553-572.
+    .. [1] A.R. Conn, N.I. Gould, and P.L. Toint, "Trust region methods",
+           Siam, pp. 169-200, 2000.
+    .. [2] J. Nocedal and  S. Wright, "Numerical optimization",
+           Springer Science & Business Media. pp. 83-91, 2006.
+    .. [3] J.J. More and D.C. Sorensen, "Computing a trust region step",
+           SIAM Journal on Scientific and Statistical Computing, vol. 4(3),
+           pp. 553-572, 1983.
     """
 
     # UPDATE_COEFF appears in reference [1]_
@@ -318,7 +318,7 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 # Check for interior convergence
                 if p_norm <= tr_radius and lambda_current == 0:
                     hits_boundary = False
-                    break 
+                    break
 
                 # Solve `U.T w = p`
                 w = solve_triangular(U, p, trans='T')
