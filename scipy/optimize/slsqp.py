@@ -364,9 +364,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if mode == 0 or mode == 1:  # objective and constraint evaluation requird
 
             # Compute objective function
+            fx = func(x)
             try:
-                fx = float(np.asarray(func(x)))
-            except:
+                fx = float(np.asarray(fx))
+            except (TypeError, ValueError):
                 raise ValueError("Objective function must return a scalar")
             # Compute the constraints
             if cons['eq']:
