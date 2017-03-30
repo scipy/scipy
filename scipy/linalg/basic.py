@@ -1414,7 +1414,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         will not be scaled.
     separate : bool, optional
         This switches from returning a full matrix of the transformation
-        to a tuple of two separate 1D permutation and scaling arrays.
+        to a (2,n) array where the first row holds the scaling and the
+        second row holds the permutation arrays.
     overwrite_a : bool, optional
         This is passed to xGEBAL directly. Essentially, overwrites the result
         to the data. It might increase the space efficiency. See LAPACK manual
@@ -1427,10 +1428,11 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     T : (n, n) ndarray
         A possibly permuted diagonal matrix whose nonzero entries are
         integer powers of 2 to avoid numerical truncation errors.
-    scale, perm : (n,) ndarray
-        If ``separate`` keyword is set to True then instead of the array
-        ``T`` above, the scaling and the permutation vector is given
-        separately without allocating the full array ``T``.
+    sp : (2,n) ndarray
+        If ``separate`` keyword is set to True then the scaling and the
+        permutation vector is given as rows of a 2xn array instead of
+        allocating the full array ``T`` described above. ``T`` can be
+        reconstructed by ``T = np.diag(sp[0])[sp[1], :]`` if needed.
 
     .. versionadded:: 0.19.0
 
@@ -1452,14 +1454,14 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     >>> from scipy import linalg
     >>> x = np.array([[1,2,0], [9,1,0.01], [1,2,10*np.pi]])
 
-    >>> y, permscale = linalg.matrix_balance(x)
+    >>> y, scaleperm = linalg.matrix_balance(x)
     >>> np.abs(x).sum(axis=0) / np.abs(x).sum(axis=1)
     array([ 3.66666667,  0.4995005 ,  0.91312162])
 
     >>> np.abs(y).sum(axis=0) / np.abs(y).sum(axis=1) # 1-norms approx. equal
     array([ 1.10625   ,  0.90547703,  1.00011878])
 
-    >>> permscale  # only powers of 2 (0.5 == 2^(-1))
+    >>> scaleperm  # only powers of 2 (0.5 == 2^(-1))
     array([[  0.5,   0. ,   0. ],
            [  0. ,   1. ,   0. ],
            [  0. ,   0. ,  16. ]])
@@ -1480,7 +1482,10 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     """
 
     A = np.atleast_2d(_asarray_validated(A, check_finite=True))
-
+    if A.size == 0:
+        if separate:
+            return A, np.array([[], []])
+        return A, np.array([])
     if not np.equal(*A.shape):
         raise ValueError('The data matrix for balancing should be square.')
 
@@ -1489,10 +1494,9 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
                                 overwrite_a=overwrite_a)
 
     if info < 0:
-        raise ValueError('xGEBAL exited with the internal error '
+        raise ValueError('?GEBAL exited with the internal error '
                          '"illegal value in argument number {}.". See '
-                         'LAPACK documentation for the xGEBAL error codes.'
-                         ''.format(-info))
+                         'LAPACK documentation.'.format(-info))
 
     # Separate the permutations from the scalings and then convert to int
     scaling = np.ones_like(ps, dtype=float)
@@ -1517,6 +1521,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
             perm[[x, ind]] = perm[[ind, x]]
 
     if separate:
-        return B, (scaling, perm)
+        return B, np.vstack((scaling, perm))
 
     return B, np.diag(scaling)[perm, :]
