@@ -37,6 +37,8 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     Byte scaling means converting the input image to uint8 dtype and scaling
     the range to ``(low, high)`` (default 0-255).
     If the input image already has dtype uint8, no scaling is done.
+    
+    This function is only avaliable if Pillow is installed.
 
     Parameters
     ----------
