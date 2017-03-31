@@ -37,8 +37,8 @@ def bytescale(data, cmin=None, cmax=None, high=255, low=0):
     Byte scaling means converting the input image to uint8 dtype and scaling
     the range to ``(low, high)`` (default 0-255).
     If the input image already has dtype uint8, no scaling is done.
-    
-    This function is only avaliable if Pillow is installed.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -108,6 +108,8 @@ def imread(name, flatten=False, mode=None):
     """
     Read an image from a file as an array.
 
+    This function is only available if Python Imaging Library (PIL) is installed.
+
     Parameters
     ----------
     name : str or file object
@@ -163,6 +165,8 @@ def imsave(name, arr, format=None):
     """
     Save an array as an image.
 
+    This function is only available if Python Imaging Library (PIL) is installed.
+
     Parameters
     ----------
     name : str or file object
@@ -207,6 +211,8 @@ def imsave(name, arr, format=None):
 def fromimage(im, flatten=False, mode=None):
     """
     Return a copy of a PIL image as a numpy array.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -262,6 +268,8 @@ _errstr = "Mode is unknown or incompatible with input array shape."
 def toimage(arr, high=255, low=0, cmin=None, cmax=None, pal=None,
             mode=None, channel_axis=None):
     """Takes a numpy array and returns a PIL image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     The mode of the PIL image depends on the array shape and the `pal` and
     `mode` keywords.
@@ -377,6 +385,8 @@ def imrotate(arr, angle, interp='bilinear'):
     """
     Rotate an image counter-clockwise by angle degrees.
 
+    This function is only available if Python Imaging Library (PIL) is installed.
+
     Parameters
     ----------
     arr : ndarray
@@ -408,6 +418,8 @@ def imrotate(arr, angle, interp='bilinear'):
 def imshow(arr):
     """
     Simple showing of an image through an external viewer.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Uses the image viewer specified by the environment variable
     SCIPY_PIL_IMAGE_VIEWER, or if that is not defined then `see`,
@@ -450,6 +462,8 @@ def imshow(arr):
 def imresize(arr, size, interp='bilinear', mode=None):
     """
     Resize an image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
@@ -496,6 +510,8 @@ def imresize(arr, size, interp='bilinear', mode=None):
 def imfilter(arr, ftype):
     """
     Simple filtering of an image.
+
+    This function is only available if Python Imaging Library (PIL) is installed.
 
     Parameters
     ----------
