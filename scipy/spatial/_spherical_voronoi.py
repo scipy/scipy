@@ -111,6 +111,12 @@ class SphericalVoronoi:
             the n-th entry is a list consisting of the indices
             of the vertices belonging to the n-th point in points
 
+    Raises
+    ------
+    ValueError
+        If there are duplicates in `points`.
+        If the provided `radius` is not consistent with `points`.
+
     Notes
     ----------
     The spherical Voronoi diagram algorithm proceeds as follows. The Convex
