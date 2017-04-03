@@ -148,3 +148,12 @@ class TestSphericalVoronoi(TestCase):
         self.degenerate = np.concatenate((self.points, self.points))
         with assert_raises(ValueError):
             sv = spherical_voronoi.SphericalVoronoi(self.degenerate)
+
+    def test_incorrect_radius_handling(self):
+        # an exception should be raised if the radius provided
+        # cannot possibly match the input generators
+        # currently, only sensitive to the generators clearly
+        # belonging to a data set with a greater radius than provided
+        with assert_raises(ValueError):
+            sv = spherical_voronoi.SphericalVoronoi(self.points,
+                                                    radius=0.98)

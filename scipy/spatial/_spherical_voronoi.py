@@ -217,6 +217,8 @@ class SphericalVoronoi:
             self.radius = radius
         else:
             self.radius = 1
+        if pdist(self.points).max() > (2. * self.radius):
+            raise ValueError("Radius inconsistent with generators.")
         self.vertices = None
         self.regions = None
         self._tri = None
