@@ -16,6 +16,7 @@ import numpy.matlib
 import scipy
 import itertools
 from . import _voronoi
+from scipy.spatial.distance import pdist
 
 __all__ = ['SphericalVoronoi']
 
@@ -206,6 +207,8 @@ class SphericalVoronoi:
         """
 
         self.points = points
+        if pdist(self.points).min() == 0:
+            raise ValueError("Duplicate generators present.")
         if np.any(center):
             self.center = center
         else:

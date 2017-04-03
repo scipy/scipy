@@ -5,7 +5,8 @@ from numpy.testing import (TestCase,
                            assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
-                           assert_array_almost_equal)
+                           assert_array_almost_equal,
+                           assert_raises)
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 
@@ -140,3 +141,10 @@ class TestSphericalVoronoi(TestCase):
             closest = np.array(sorted(distances)[0:3])
             assert_almost_equal(closest[0], closest[1], 7, str(vertex))
             assert_almost_equal(closest[0], closest[2], 7, str(vertex))
+
+    def test_duplicate_point_handling(self):
+        # an exception should be raised for degenerate generators
+        # related to Issue# 7046
+        self.degenerate = np.concatenate((self.points, self.points))
+        with assert_raises(ValueError):
+            sv = spherical_voronoi.SphericalVoronoi(self.degenerate)
