@@ -3119,5 +3119,65 @@ class TestHistogram(TestCase):
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
 
+class TestScatter(TestCase):
+    def setUp(self):
+        trapx0 = np.array([0, 0.2, 0.8, 1])
+        trapx1 = np.array([-0.5, -0.3, 0.3, 0.5])
+        trapy = np.array([0, 1, 1, 0])
+
+        self.rv0 = stats.rv_scatter((trapx0, trapy))
+        self.rv1 = stats.rv_scatter((trapx1, trapy))
+
+        self.trapz = stats.trapz(0.2, 0.8)
+
+    def test_normaliser(self):
+        assert_almost_equal(self.rv0._normalise, 0.8)
+
+    def test_pdf(self):
+        values0 = np.array([-1, 0, 0.1, 0.2, 0.5, 0.8, 0.9, 1.0, 2])
+        values1 = np.array([-1, -0.5, -0.4, -0.3, 0., 0.3, 0.4, 0.5, 1])
+
+        pdf_values = np.array([0, 0, 0.625, 1.25, 1.25, 1.25, 0.625, 0, 0])
+
+        assert_allclose(self.rv0.pdf(values0), pdf_values)
+        assert_allclose(self.rv1.pdf(values1), pdf_values)
+
+        # test against stats.trapz
+        assert_allclose(self.rv0.pdf(values0), self.trapz.pdf(values0))
+
+    def test_cdf_ppf(self):
+        values0 = np.array([-1, 0, 0.1, 0.2, 0.5, 0.8, 0.9, 1.0, 2])
+        values1 = np.array([-1, -0.5, -0.4, -0.3, 0., 0.3, 0.4, 0.5, 1])
+
+        cdf_values = np.array([0, 0, 0.03125, 0.125, 0.5,
+                               0.875, 0.96875, 1, 1])
+
+        assert_allclose(self.rv0.cdf(values0), cdf_values)
+        assert_allclose(self.rv1.cdf(values1), cdf_values)
+
+        # test against trapz
+        assert_allclose(self.rv0.cdf(values0), self.trapz.cdf(values0))
+
+        # Test of cdf and ppf are inverse functions
+        x = np.linspace(0., 1.0, 100)
+        assert_allclose(self.rv0.cdf(self.rv0.ppf(x)), x)
+        assert_allclose(self.rv1.cdf(self.rv1.ppf(x)), x)
+
+        x = np.array([1e-4, 1e-3, 1e-2, 0.99, 0.999, 0.9999])
+        assert_allclose(self.rv0.cdf(self.rv0.ppf(x)), x)
+        assert_allclose(self.rv1.cdf(self.rv1.ppf(x)), x)
+
+    def test_rvs(self):
+        N = 10000
+        sample = self.rv0.rvs(size=N, random_state=123)
+        assert_equal(np.sum(sample < 0), 0)
+        assert_allclose(np.sum(sample <= 0.1), 0.03125 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 0.2), 0.125 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 0.8), 0.875 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 0.9), 0.96875 * N, rtol=0.05)
+        assert_equal(np.sum(sample <= 1), N)
+        assert_equal(np.sum(sample > 1), 0.0)
+
+
 if __name__ == "__main__":
     run_module_suite()

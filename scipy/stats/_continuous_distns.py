@@ -5411,7 +5411,8 @@ class rv_histogram(rv_continuous):
 class rv_scatter(rv_continuous):
     """
     Generates a distribution given by a x/y scatter points that specify
-    the PDF of the distribution.
+    the PDF of the distribution, with piecewise linear interpolation of the PDF
+    in-between points.
 
     The PDF is normalized to one when the object is constructed. All supplied
     y values must be greater than or equal to 0.
@@ -5503,21 +5504,22 @@ class rv_scatter(rv_continuous):
         """
         Percentile function calculated from the scatter points
         """
+        # the entirety of this function is ~6 times faster than
+        # using brentq
 
         # get x points which bracket the ppf value
         # using searchsorted instead of np.interp because the
         # user might have specified non-unique x-values
         bracket = np.searchsorted(self._xcdf, x, side='right') - 1
 
-        # cdf of the left bracket point
+        # remainder of the area lying within the bracket
         remainder = x - self._xcdf[bracket]
 
-        # the remainder of the distance through the next bracket
+        # find eqn of line between points
         x0, x1 = self._xpdf[bracket], self._xpdf[bracket + 1]
         y0 = self._ypdf[bracket]
         y1 = self._ypdf[bracket + 1]
 
-        # eqn of line between points
         slope = (y0 - y1) / (x0 - x1)
         intercept = y0 - slope * x0
 
@@ -5526,10 +5528,13 @@ class rv_scatter(rv_continuous):
         p1 = intercept
         p0 = -0.5 * slope * x0**2 - remainder - intercept * x0
 
-        soln = lambda coefs: np.roots(coefs)[-1]
-        roots = np.fromiter(map(soln, zip(p2, p1, p0)), float, count=p2.size)
-
-        return roots
+        ret = np.zeros(p2.size)
+        for idx, coefs in enumerate(zip(p2, p1, p0)):
+            # need root that's the first one above requested point
+            roots = np.roots(coefs)
+            roots.sort()
+            ret[idx] = roots[np.searchsorted(roots, x0[idx])]
+        return ret
 
     def _updated_ctor_param(self):
         """
