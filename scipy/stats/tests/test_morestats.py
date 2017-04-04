@@ -1230,6 +1230,13 @@ class TestCircFuncs(TestCase):
         assert_(m < np.pi)
         assert_(m > -np.pi)
 
+    def test_circfuncs_unit8(self):
+        # regression test for gh-7255: wrong results when working with
+        # numpy uint8 data type
+        x = np.array([150, 10], dtype='uint8')
+        assert_equal(stats.circmean(x, high=180), 170.0)
+        assert_allclose(stats.circvar(x, high=180), 437.45871686, rtol=1e-7)
+        assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
 
 def test_accuracy_wilcoxon():
     freq = [1, 4, 16, 15, 8, 4, 5, 1, 2]
