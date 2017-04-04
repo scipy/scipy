@@ -852,15 +852,16 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         if self.has_sorted_indices:
             # Copies may be made, if dtypes of indices are not identical
-            minor_index = np.asarray(minor_index, dtype=self.indices.dtype)
-            insert_pos_left = np.searchsorted(self.indices[start:end],
-                                              minor_index, side='left')
-            insert_pos_right = np.searchsorted(self.indices[start:end],
-                                               minor_index, side='right')
+            minor_index = self.indices.dtype.type(minor_index)
+            minor_indices = self.indices[start:end]
+            insert_pos_left = np.searchsorted(
+                minor_indices, minor_index, side='left')
+            insert_pos_right = insert_pos_left + np.searchsorted(
+                minor_indices[insert_pos_left:], minor_index, side='right')
             if insert_pos_left == insert_pos_right:
-                return np.zeros(1, dtype=self.dtype)[0]
+                return self.dtype.type(0)
             else:
-                return self.data[self.indptr[major_index] + insert_pos_left]
+                return self.data[start + insert_pos_left]
         else:
             # can use np.add(..., where) from numpy 1.7
             return np.compress(minor_index == self.indices[start:end],
