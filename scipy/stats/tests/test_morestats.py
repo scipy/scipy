@@ -1231,7 +1231,7 @@ class TestCircFuncs(TestCase):
         assert_(m > -np.pi)
 
     def test_circfuncs_unit8(self):
-        # regression test for gh-7255: wrong results when working with
+        # regression test for gh-7255: overflow when working with
         # numpy uint8 data type
         x = np.array([150, 10], dtype='uint8')
         assert_equal(stats.circmean(x, high=180), 170.0)
