@@ -17,6 +17,7 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
    rv_continuous
    rv_discrete
    rv_histogram
+   rv_scatter
 
 Continuous distributions
 ========================

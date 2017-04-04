@@ -12,6 +12,8 @@ from scipy.misc.doccer import inherit_docstring_from
 from scipy import optimize
 from scipy import integrate
 import scipy.special as sc
+from scipy.interpolate import InterpolatedUnivariateSpline
+
 from scipy._lib._numpy_compat import broadcast_to
 
 from . import _stats
@@ -5406,8 +5408,140 @@ class rv_histogram(rv_continuous):
         return dct
 
 
+class rv_scatter(rv_continuous):
+    """
+    Generates a distribution given by a x/y scatter points that specify
+    the PDF of the distribution.
+
+    The PDF is normalized to one when the object is constructed. All supplied
+    y values must be greater than or equal to 0.
+
+    As a subclass of the `rv_continuous` class, `rv_scatter` inherits a
+    collection of generic methods (see `rv_continuous` for the full list),
+    and implements them based on the properties of the provided dataset.
+
+    Parameters
+    ----------
+    scatter : tuple of array_like
+        Tuple containing two array_like objects representing x and y
+        datapoints. The two array_like objects must have the same length.
+
+    Notes
+    -----
+    There are no additional shape parameters except for the loc and scale.
+    The pdf is defined as a piecewise linear interpolation of the data.
+    The cdf is a linear interpolation of the pdf.
+
+    See Also
+    --------
+    rv_histogram : The histogram analogue.
+
+    .. versionadded::
+
+    Examples
+    --------
+
+    """
+    _support_mask = rv_continuous._support_mask
+
+    def __init__(self, scatter, *args, **kwargs):
+        """
+        Create a new distribution using the given datasets
+
+        Parameters
+        ----------
+        scatter : tuple of array_like
+            Tuple containing two array_like objects representing x and y
+            datapoints that specify the PDF. The two array_like objects
+            must have the same length. All y values must be greater than
+            or equal to 0.
+        """
+        self._scatter = scatter
+        if len(scatter) != 2:
+            raise ValueError("Expected two arrays for the scatter parameter")
+        self._xpdf = np.asfarray(scatter[0])
+        self._ypdf = np.asfarray(scatter[1])
+        if len(self._xpdf) != len(self._ypdf):
+            raise ValueError("Number of elements in x and y arrays do not"
+                             " match.")
+
+        if np.any(self._ypdf < 0):
+            raise ValueError("y array had negative values.")
+
+        self._spl = InterpolatedUnivariateSpline(self._xpdf,
+                                                 self._ypdf,
+                                                 k=1,
+                                                 check_finite=True)
+
+        # precompute CDF at each of the datapoints for fast ppf calcn
+        self._xcdf = np.array([self._spl.integral(self._xpdf[0], v)
+                               for v in self._xpdf])
+        self._normalise = self._xcdf[-1]
+        self._xcdf /= self._normalise
+        self._ypdf /= self._normalise
+
+        # Set support
+        kwargs['a'] = self._xpdf[0]
+        kwargs['b'] = self._xpdf[-1]
+        super(rv_scatter, self).__init__(*args, **kwargs)
+
+    def _pdf(self, x):
+        """
+        PDF of the data
+        """
+        return self._spl(x) / self._normalise
+
+    def _cdf(self, x):
+        """
+        CDF calculated from the scatter points
+        """
+        cdf = np.array([self._spl.integral(self._xpdf[0], v) for v in x])
+        cdf /= self._normalise
+        return cdf
+
+    def _ppf(self, x):
+        """
+        Percentile function calculated from the scatter points
+        """
+
+        # get x points which bracket the ppf value
+        # using searchsorted instead of np.interp because the
+        # user might have specified non-unique x-values
+        bracket = np.searchsorted(self._xcdf, x, side='right') - 1
+
+        # cdf of the left bracket point
+        remainder = x - self._xcdf[bracket]
+
+        # the remainder of the distance through the next bracket
+        x0, x1 = self._xpdf[bracket], self._xpdf[bracket + 1]
+        y0 = self._ypdf[bracket]
+        y1 = self._ypdf[bracket + 1]
+
+        # eqn of line between points
+        slope = (y0 - y1) / (x0 - x1)
+        intercept = y0 - slope * x0
+
+        # the integral under the line is a quadratic
+        p2 = 0.5 * slope
+        p1 = intercept
+        p0 = -0.5 * slope * x0**2 - remainder - intercept * x0
+
+        soln = lambda coefs: np.roots(coefs)[-1]
+        roots = np.fromiter(map(soln, zip(p2, p1, p0)), float, count=p2.size)
+
+        return roots
+
+    def _updated_ctor_param(self):
+        """
+        Set the scatter as additional constructor argument
+        """
+        dct = super(rv_scatter, self)._updated_ctor_param()
+        dct['scatter'] = self._scatter
+        return dct
+
+
 # Collect names of classes and objects in this module.
 pairs = list(globals().items())
 _distn_names, _distn_gen_names = get_distribution_names(pairs, rv_continuous)
 
-__all__ = _distn_names + _distn_gen_names + ['rv_histogram']
+__all__ = _distn_names + _distn_gen_names + ['rv_histogram', 'rv_scatter']

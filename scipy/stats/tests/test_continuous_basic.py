@@ -63,11 +63,16 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
                    'pearson3', 'rice', 't', 'skewnorm', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance'])
+                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
+                   'rv_scatter_instance'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
 test_histogram_instance = stats.rv_histogram(_h)
+
+_s = (np.array([-1, -0.75, 0.75, 1]), np.array([0, 1, 1, 0]))
+test_scatter_instance = stats.rv_scatter(_s)
+
 
 def test_cont_basic():
     # this test skips slow distributions
@@ -75,7 +80,8 @@ def test_cont_basic():
         warnings.filterwarnings('ignore',
                                 category=integrate.IntegrationWarning)
         
-        for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
+        for distname, arg in distcont[:] + [(test_histogram_instance, tuple()),
+                                            (test_scatter_instance, tuple())]:
             if distname in distslow:
                 continue
             if distname is 'levy_stable':
@@ -84,7 +90,11 @@ def test_cont_basic():
                 distfn = getattr(stats, distname)
             except TypeError:
                 distfn = distname
-                distname = 'rv_histogram_instance'
+                if isinstance(distname, stats.rv_histogram):
+                    distname = 'rv_histogram_instance'
+                elif isinstance(distname, stats.rv_scatter):
+                    distname = 'rv_scatter_instance'
+
             np.random.seed(765456)
             sn = 500
             rvs = distfn.rvs(size=sn, *arg)
@@ -103,6 +113,8 @@ def test_cont_basic():
 
             alpha = 0.01
             if distname == 'rv_histogram_instance':
+                yield check_distribution_rvs, distfn.cdf, arg, alpha, rvs
+            elif distname == 'rv_scatter_instance':
                 yield check_distribution_rvs, distfn.cdf, arg, alpha, rvs
             else:
                 yield check_distribution_rvs, distname, arg, alpha, rvs
@@ -223,7 +235,11 @@ def test_moments():
                 distfn = getattr(stats, distname)
             except TypeError:
                 distfn = distname
-                distname = 'rv_histogram_instance'
+                if isinstance(distname, stats.rv_histogram):
+                    distname = 'rv_histogram_instance'
+                elif isinstance(distname, stats.rv_scatter):
+                    distname = 'rv_scatter_instance'
+
             m, v, s, k = distfn.stats(*arg, moments='mvsk')
             cond1 = distname in fail_normalization
             cond2 = distname in fail_higher
