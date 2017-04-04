@@ -34,8 +34,13 @@ import math
 import numpy
 from . import _ni_support
 from . import _nd_image
-from scipy.misc import doccer
+from scipy.misc import doccer, toimage, fromimage
 from scipy._lib._version import NumpyVersion
+
+try:
+    from PIL import ImageFilter
+except ImportError:
+    import ImageFilter
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -718,7 +723,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     output : ndarray, optional
         The `output` parameter passes an array in which to store the
         filter output. Output array should have different name as
-        compared to input array to avoid aliasing errors.  
+        compared to input array to avoid aliasing errors.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
         the `mode` parameter determines how the array borders are
         handled. For 'constant' mode, values beyond borders are set to be
@@ -727,8 +732,8 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
     origin : array_like, optional
-        The `origin` parameter controls the placement of the filter, 
-        relative to the centre of the current element of the input.  
+        The `origin` parameter controls the placement of the filter,
+        relative to the centre of the current element of the input.
         Default of 0 is equivalent to ``(0,)*input.ndim``.
 
     Returns
@@ -1357,11 +1362,11 @@ def generic_filter1d(input, function, filter_size, axis=-1,
 
     .. code:: c
 
-       int function(double *input_line, npy_intp input_length, 
-                    double *output_line, npy_intp output_length, 
+       int function(double *input_line, npy_intp input_length,
+                    double *output_line, npy_intp output_length,
                     void *user_data)
-       int function(double *input_line, intptr_t input_length, 
-                    double *output_line, intptr_t output_length, 
+       int function(double *input_line, intptr_t input_length,
+                    double *output_line, intptr_t output_length,
                     void *user_data)
 
     The calling function iterates over the lines of the input and output
@@ -1372,16 +1377,16 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     is passed through ``input_length``. The callback function should apply
     the filter and store the result in the array passed through
     ``output_line``. The length of the output line is passed through
-    ``output_length``. ``user_data`` is the data pointer provided 
+    ``output_length``. ``user_data`` is the data pointer provided
     to `scipy.LowLevelCallable` as-is.
 
-    The callback function must return an integer error status that is zero 
+    The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
     normally set the python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
-    In addition, some other low-level function pointer specifications 
+    In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
@@ -1434,9 +1439,9 @@ def generic_filter(input, function, size=None, footprint=None,
 
     .. code:: c
 
-       int callback(double *buffer, npy_intp filter_size, 
+       int callback(double *buffer, npy_intp filter_size,
                     double *return_value, void *user_data)
-       int callback(double *buffer, intptr_t filter_size, 
+       int callback(double *buffer, intptr_t filter_size,
                     double *return_value, void *user_data)
 
     The calling function iterates over the elements of the input and
@@ -1444,16 +1449,16 @@ def generic_filter(input, function, size=None, footprint=None,
     elements within the footprint of the filter at the current element are
     passed through the ``buffer`` parameter, and the number of elements
     within the footprint through ``filter_size``. The calculated value is
-    returned in ``return_value``. ``user_data`` is the data pointer provided 
+    returned in ``return_value``. ``user_data`` is the data pointer provided
     to `scipy.LowLevelCallable` as-is.
 
-    The callback function must return an integer error status that is zero 
+    The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
     normally set the python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
-    In addition, some other low-level function pointer specifications 
+    In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
@@ -1485,3 +1490,135 @@ def generic_filter(input, function, size=None, footprint=None,
     _nd_image.generic_filter(input, function, footprint, output, mode,
                          cval, origins, extra_arguments, extra_keywords)
     return return_value
+
+
+def imrotate(arr, angle, interp='bilinear'):
+    """
+    Rotate an image counter-clockwise by angle degrees.
+
+    This function is only available if Python Imaging Library (PIL) is
+    installed.
+
+    Parameters
+    ----------
+    arr : ndarray
+        Input array of image to be rotated.
+    angle : float
+        The angle of rotation.
+    interp : str, optional
+        Interpolation
+
+        - 'nearest' :  for nearest neighbor
+        - 'bilinear' : for bilinear
+        - 'lanczos' : for lanczos
+        - 'cubic' : for bicubic
+        - 'bicubic' : for bicubic
+
+    Returns
+    -------
+    imrotate : ndarray
+        The rotated array of image.
+
+    """
+    arr = numpy.asarray(arr)
+    func = {'nearest': 0, 'lanczos': 1, 'bilinear': 2,
+            'bicubic': 3, 'cubic': 3}
+    im = toimage(arr)
+    im = im.rotate(angle, resample=func[interp])
+    return fromimage(im)
+
+
+def imresize(arr, size, interp='bilinear', mode=None):
+    """
+    Resize an image.
+
+    This function is only available if Python Imaging Library (PIL) is
+    installed.
+
+    Parameters
+    ----------
+    arr : ndarray
+        The array of image to be resized.
+
+    size : int, float or tuple
+        * int   - Percentage of current size.
+        * float - Fraction of current size.
+        * tuple - Size of the output image.
+
+    interp : str, optional
+        Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear',
+        'bicubic' or 'cubic').
+
+    mode : str, optional
+        The PIL image mode ('P', 'L', etc.) to convert `arr` before resizing.
+
+    Returns
+    -------
+    imresize : ndarray
+        The resized array of image.
+
+    See Also
+    --------
+    scipy.misc.toimage : Implicitly used to convert `arr` according to `mode`.
+    scipy.ndimage.zoom : More generic implementation that does not use PIL.
+
+    """
+    im = toimage(arr, mode=mode)
+    ts = type(size)
+    if numpy.issubdtype(ts, int):
+        percent = size / 100.0
+        size = tuple((numpy.array(im.size) * percent).astype(int))
+    elif numpy.issubdtype(type(size), float):
+        size = tuple((numpy.array(im.size) * size).astype(int))
+    else:
+        size = (size[1], size[0])
+    func = {'nearest': 0, 'lanczos': 1, 'bilinear': 2,
+            'bicubic': 3, 'cubic': 3}
+    imnew = im.resize(size, resample=func[interp])
+    return fromimage(imnew)
+
+
+def imfilter(arr, ftype):
+    """
+    Simple filtering of an image.
+
+    This function is only available if Python Imaging Library (PIL) is
+    installed.
+
+    Parameters
+    ----------
+    arr : ndarray
+        The array of Image in which the filter is to be applied.
+    ftype : str
+        The filter that has to be applied. Legal values are:
+        'blur', 'contour', 'detail', 'edge_enhance', 'edge_enhance_more',
+        'emboss', 'find_edges', 'smooth', 'smooth_more', 'sharpen'.
+
+    Returns
+    -------
+    imfilter : ndarray
+        The array with filter applied.
+
+    Raises
+    ------
+    ValueError
+        *Unknown filter type.*  If the filter you are trying
+        to apply is unsupported.
+
+    """
+    _tdict = {'blur': ImageFilter.BLUR,
+              'contour': ImageFilter.CONTOUR,
+              'detail': ImageFilter.DETAIL,
+              'edge_enhance': ImageFilter.EDGE_ENHANCE,
+              'edge_enhance_more': ImageFilter.EDGE_ENHANCE_MORE,
+              'emboss': ImageFilter.EMBOSS,
+              'find_edges': ImageFilter.FIND_EDGES,
+              'smooth': ImageFilter.SMOOTH,
+              'smooth_more': ImageFilter.SMOOTH_MORE,
+              'sharpen': ImageFilter.SHARPEN
+              }
+
+    im = toimage(arr)
+    if ftype not in _tdict:
+        raise ValueError("Unknown filter type.")
+    return fromimage(im.filter(_tdict[ftype]))
