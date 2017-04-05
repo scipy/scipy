@@ -170,13 +170,15 @@ class TestConvolve(_TestConvolve):
         args = [(t1, t2, mode) for t1 in types for t2 in types
                                for mode in ['valid', 'full', 'same']]
 
+        # These are random arrays, which means test is much stronger than
+        # convolving testing by convolving two np.ones arrays
+        np.random.seed(42)
         array_types = {'i': np.random.choice([0, 1], size=n),
                        'f': np.random.randn(n)}
         array_types['b'] = array_types['u'] = array_types['i']
-        array_types['c'] = array_types['f'] + 0.5j * array_types['f']
+        array_types['c'] = array_types['f'] + 0.5j*array_types['f']
 
         for t1, t2, mode in args:
-            np.random.seed(42)
             x1 = array_types[np.dtype(t1).kind].astype(t1)
             x2 = array_types[np.dtype(t2).kind].astype(t2)
 
@@ -189,12 +191,16 @@ class TestConvolve(_TestConvolve):
                 assert_equal(choose_conv_method(x1, x2), 'direct')
                 continue
 
+            # Found by experiment. Found approx smallest value for (rtol, atol)
+            # threshold to have tests pass.
             if any([t in {'complex64', 'float32'} for t in [t1, t2]]):
-                kwargs = {'rtol': 8.0e-3, 'atol': 1e-3}
+                kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
             elif 'float16' in [t1, t2]:
-                kwargs = {'rtol': 1e-2, 'atol': 1e-5}
+                # atol is default for np.allclose
+                kwargs = {'rtol': 1e-3, 'atol': 1e-8}
             else:
-                kwargs = {'rtol': 1e-5, 'atol': 1e-5}
+                # defaults for np.allclose (different from assert_allclose)
+                kwargs = {'rtol': 1e-5, 'atol': 1e-8}
 
             assert_allclose(results['fft'], results['direct'], **kwargs)
 
