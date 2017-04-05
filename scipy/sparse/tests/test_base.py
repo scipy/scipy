@@ -4319,17 +4319,8 @@ class _NonCanonicalMixin(object):
         # check that at least one explicit zero
         if has_zeros:
             assert_((NC.data == 0).any())
-        # check that NC has duplicates (which are not explicit zeros)
-        '''
-        if NC.sum():
-            NC_has_duplicates = False
-            nonzeros = list(zip(*NC.nonzero()))
-            current_nz = nonzeros.pop()
-            while nonzeros and not NC_has_duplicates:
-                i, j = next_nz = nonzeros.pop()
-                NC_has_duplicates += current_nz == next_nz and NC[i, j] != 0
-            assert_(NC_has_duplicates)
-        '''
+        # TODO check that NC has duplicates (which are not explicit zeros)
+        
         return NC
 
     @dec.skipif(True, 'bool(matrix) counts explicit zeros')
