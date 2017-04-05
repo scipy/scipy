@@ -858,12 +858,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 minor_indices, minor_index, side='left')
             insert_pos_right = insert_pos_left + np.searchsorted(
                 minor_indices[insert_pos_left:], minor_index, side='right')
-            if insert_pos_left == insert_pos_right:
-                return self.dtype.type(0)
-            else:
-                return self.data[start + insert_pos_left]
+            return self.data[start + insert_pos_left:
+                             start + insert_pos_right].sum(dtype=self.dtype)
         else:
-            # can use np.add(..., where) from numpy 1.7
             return np.compress(minor_index == self.indices[start:end],
                                self.data[start:end]).sum(dtype=self.dtype)
 
