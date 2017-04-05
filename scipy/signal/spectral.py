@@ -1207,7 +1207,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         if freq_axis < 0:
             freq_axis = Zxx.ndim + freq_axis
         if time_axis < 0:
-            time = Zxx.ndim + time_axis
+            time_axis = Zxx.ndim + time_axis
         zouter = list(range(Zxx.ndim))
         for ax in sorted([time_axis, freq_axis], reverse=True):
             zouter.pop(ax)
