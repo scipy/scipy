@@ -92,13 +92,14 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
 
     Parameters
     ----------
-    points : ndarray of floats, shape (n, D)
-        Data point coordinates. Can either be an array of
-        shape (n, D), or a tuple of `ndim` arrays.
-    values : ndarray of float or complex, shape (n,)
+    points : 2-D ndarray of floats with shape (n, D), or tuple of 1-D ndarrays
+        Data point coordinates. Can either be a 2-D ndarray with
+        shape (n, D), or a length D tuple of 1-D ndarrays with shape (n,).
+    values : 1-D ndarray of float or complex with shape (n,)
         Data values.
-    xi : 2-D ndarray of float or tuple of 1-D array, shape (M, D)
-        Points at which to interpolate data.
+    xi : 2-D ndarray of floats with shape (m, D), or tuple of ndarrays
+        Points at which to interpolate data. Can either be a 2-D ndarray with
+        shape (m, D), or a length D tuple of ndarrays with identical dimensions.
     method : {'linear', 'nearest', 'cubic'}, optional
         Method of interpolation. One of
 
