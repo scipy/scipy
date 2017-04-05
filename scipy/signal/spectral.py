@@ -1675,17 +1675,13 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if same_data and mode != 'stft':
         result = result.real
 
-    # Output is going to have new last axis for window index
-    if axis != -1:
-        # Specify as positive axis index
-        if axis < 0:
-            axis = len(result.shape)-1-axis
+    # Output is going to have new last axis for time/window index, so a
+    # negative axis index shifts down one
+    if axis < 0:
+        axis -= 1
 
-        # Roll frequency axis back to axis where the data came from
-        result = np.rollaxis(result, -1, axis)
-    else:
-        # Make sure window/time index is last axis
-        result = np.rollaxis(result, -1, -2)
+    # Roll frequency axis back to axis where the data came from
+    result = np.rollaxis(result, -1, axis)
 
     return freqs, time, result
 
