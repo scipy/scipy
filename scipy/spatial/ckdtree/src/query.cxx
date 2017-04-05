@@ -452,12 +452,12 @@ query_single_point(const ckdtree *self,
     }
     /* fill output arrays with sorted neighbors */
     int j = nk - 1;
-    while(k[j] > neighbors.n) {
-        j--;
-    }
-    for (i=neighbors.n-1; i>=0; --i) {
+    /* k must be sorted; to avoid making this O(n * nk). */
+    for(i = neighbors.n - 1; i >=0; --i) {
         neighbor = neighbors.pop();
-        if(i + 1 != k[j]) continue;
+        while(j >= 0 && i + 1 < k[j]) j --;
+        if(j < 0 || i + 1 > k[j]) continue;
+        /* if we are here i + 1 == k[j], we found a match */
         result_indices[j] = neighbor.contents.intdata;
         if (NPY_LIKELY(p == 2.0))
             result_distances[j] = std::sqrt(-neighbor.priority);
@@ -465,7 +465,6 @@ query_single_point(const ckdtree *self,
             result_distances[j] = -neighbor.priority;
         else
             result_distances[j] = std::pow((-neighbor.priority),(1./p));
-        --j;
     }
 
 }
