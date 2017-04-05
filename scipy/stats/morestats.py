@@ -2698,7 +2698,7 @@ def _circfuncs_common(samples, high, low):
     if samples.size == 0:
         return np.nan, np.nan
 
-    ang = (samples - low)*2*pi / (high - low)
+    ang = (samples - low)*2.*pi / (high - low)
     return samples, ang
 
 
