@@ -508,6 +508,22 @@ class TestWelch(TestCase):
             assert_allclose(np.sqrt(np.trapz(p_dens, freq)), A*np.sqrt(2)/2,
                             rtol=1e-3)
 
+    def test_axis_rolling(self):
+        np.random.seed(1234)
+
+        x_flat = np.random.randn(1024)
+        _, p_flat = welch(x_flat)
+
+        for a in range(3):
+            newshape = [1,]*3
+            newshape[a] = -1
+            x = x_flat.reshape(newshape)
+
+            _, p_plus = welch(x, axis=a)  # Positive axis index
+            _, p_minus = welch(x, axis=a-x.ndim)  # Negative axis index
+
+            assert_equal(p_flat, p_plus.squeeze(), err_msg=a)
+            assert_equal(p_flat, p_minus.squeeze(), err_msg=a-x.ndim)
 
 class TestCSD:
     def test_pad_shorter_x(self):
@@ -1318,6 +1334,32 @@ class TestSTFT(TestCase):
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
             assert_allclose(xc, xcr, err_msg=msg)
+
+    def test_axis_rolling(self):
+        np.random.seed(1234)
+
+        x_flat = np.random.randn(1024)
+        _, _, z_flat = stft(x_flat)
+
+        for a in range(3):
+            newshape = [1,]*3
+            newshape[a] = -1
+            x = x_flat.reshape(newshape)
+
+            _, _, z_plus = stft(x, axis=a)  # Positive axis index
+            _, _, z_minus = stft(x, axis=a-x.ndim)  # Negative axis index
+
+            assert_equal(z_flat, z_plus.squeeze(), err_msg=a)
+            assert_equal(z_flat, z_minus.squeeze(), err_msg=a-x.ndim)
+
+        # z_flat has shape [n_freq, n_time]
+
+        # Test vs. transpose
+        _, x_transpose_m = istft(z_flat.T, time_axis=-2, freq_axis=-1)
+        _, x_transpose_p = istft(z_flat.T, time_axis=0, freq_axis=1)
+
+        assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
+        assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')
 
 if __name__ == "__main__":
     run_module_suite()
