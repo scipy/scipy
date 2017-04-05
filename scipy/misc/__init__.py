@@ -26,11 +26,8 @@ below are not available without it.
    imrotate - Rotate an image counter-clockwise [requires Pillow]
    imsave - Save an array to an image file [requires Pillow] 
    imshow - Simple showing of an image through an external viewer [requires Pillow]
-   info - Get help information for a function, class, or module
    lena - Get classic image processing example image Lena
    toimage - Takes a numpy array and returns a PIL image [requires Pillow]
-   source - Print function source code
-   who - Print the Numpy arrays in the given dictionary
 
 
 Deprecated aliases:
@@ -38,15 +35,18 @@ Deprecated aliases:
 .. autosummary::
    :toctree: generated/
 
-   comb - Combinations of N things taken k at a time, "N choose k" (imported from scipy.special)
+   comb - Combinations of N things taken k at a time, "N choose k" (imported from `scipy.special`)
    factorial  - The factorial function, ``n! = special.gamma(n+1)``
-                (imported from scipy.special)
-   factorial2 - Double factorial, ``(n!)!`` (imported from scipy.special)
-   factorialk - ``(...((n!)!)!...)!`` where there are k '!' (imported from scipy.special)
+                (imported from `scipy.special`)
+   factorial2 - Double factorial, ``(n!)!`` (imported from `scipy.special`)
+   factorialk - ``(...((n!)!)!...)!`` where there are k '!' (imported from `scipy.special`)
    logsumexp - Compute the log of the sum of exponentials of input elements
-               (imported from scipy.special)
+               (imported from `scipy.special`)
    pade - Pade approximation to function as the ratio of two polynomials.
-          (imported from scipy.interpolate)
+          (imported from `scipy.interpolate`)
+   info - Get help information for a function, class, or module. (imported from `numpy`)
+   source - Print function source code. (imported from `numpy`)
+   who - Print the Numpy arrays in the given dictionary. (imported from `numpy`) 
 
 """
 
@@ -57,7 +57,7 @@ __all__ = ['who', 'source', 'info', 'doccer', 'pade',
 
 from . import doccer
 from .common import *
-from numpy import who, source, info as _info
+from numpy import who as _who, source as _source, info as _info
 import numpy as np
 from scipy.interpolate._pade import pade as _pade
 from scipy.special import (comb as _comb, logsumexp as _lsm,
@@ -77,7 +77,12 @@ _msg = ("Importing `pade` from scipy.misc is deprecated in scipy 1.0.0. Use "
         "`scipy.interpolate.pade` instead.")
 pade = np.deprecate(_pade, message=_msg)
 
+_msg = ("Importing `%(name)s` from scipy.misc is deprecated in scipy 1.0.0. Use "
+        "`numpy.%(name)s` instead.")
+who = np.deprecate(_who, message=_msg % {"name": "who"})
+source = np.deprecate(_source, message=_msg % {"name": "source"})
 
+@np.deprecate(message=_msg % {"name": "info.(..., toplevel='scipy')"})
 def info(object=None,maxwidth=76,output=sys.stdout,toplevel='scipy'):
     return _info(object, maxwidth, output, toplevel)
 info.__doc__ = _info.__doc__
