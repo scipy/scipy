@@ -4319,7 +4319,17 @@ class _NonCanonicalMixin(object):
         # check that at least one explicit zero
         if has_zeros:
             assert_((NC.data == 0).any())
-
+        # check that NC has duplicates (which are not explicit zeros)
+        '''
+        if NC.sum():
+            NC_has_duplicates = False
+            nonzeros = list(zip(*NC.nonzero()))
+            current_nz = nonzeros.pop()
+            while nonzeros and not NC_has_duplicates:
+                i, j = next_nz = nonzeros.pop()
+                NC_has_duplicates += current_nz == next_nz and NC[i, j] != 0
+            assert_(NC_has_duplicates)
+        '''
         return NC
 
     @dec.skipif(True, 'bool(matrix) counts explicit zeros')
@@ -4354,6 +4364,10 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
         M[i,j] = 0
         return M
 
+class _NonCanonicalSortedCompressedMixin(_NonCanonicalCompressedMixin):
+    def _arg1_for_noncanonical(self, M):
+        """Return non-canonical constructor arg1 equivalent to M"""
+        return _same_sum_duplicate(M.data, M.indices, indptr=M.indptr)
 
 class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
     @dec.knownfailureif(True, 'inverse broken with non-canonical matrix')
@@ -4364,14 +4378,26 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
     def test_solve(self):
         pass
 
+class _NonCanonicalSortedCSMixin(_NonCanonicalSortedCompressedMixin):
+    @dec.knownfailureif(True, 'inverse broken with non-canonical matrix')
+    def test_inv(self):
+        pass
+
+    @dec.knownfailureif(True, 'solve broken with non-canonical matrix')
+    def test_solve(self):
+        pass
 
 class TestCSRNonCanonical(_NonCanonicalCSMixin, TestCSR):
     pass
 
+class TestCSRNonCanonicalSorted(_NonCanonicalSortedCSMixin, TestCSR):
+    pass
 
 class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
     pass
 
+class TestCSCNonCanonicalSorted(_NonCanonicalSortedCSMixin, TestCSC):
+    pass
 
 class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     def _insert_explicit_zero(self, M, i, j):
@@ -4387,6 +4413,19 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     def test_expm(self):
         pass
 
+class TestBSRNonCanonicalSorted(_NonCanonicalSortedCompressedMixin, TestBSR):
+    def _insert_explicit_zero(self, M, i, j):
+        x = M.tocsr()
+        x[i,j] = 0
+        return x.tobsr(blocksize=M.blocksize)
+
+    @dec.knownfailureif(True, 'diagonal broken with non-canonical BSR')
+    def test_diagonal(self):
+        pass
+
+    @dec.knownfailureif(True, 'expm broken with non-canonical BSR')
+    def test_expm(self):
+        pass
 
 class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
     def _arg1_for_noncanonical(self, M):
