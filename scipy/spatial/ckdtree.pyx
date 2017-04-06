@@ -654,7 +654,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         k : list of integer or integer
             The list of k-th nearest neighbors to return. If k is an 
             integer it is treated as a list of [1, ... k] (range(1, k+1)).
-            Note that the counting starts from 1; the result is undefined
+            Note that the counting starts from 1.
             if k is not sorted.
         eps : non-negative float
             Return approximate nearest neighbors; the k-th returned value 
@@ -749,10 +749,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         retshape = np.shape(x)[:-1]
         n = <np.intp_t> np.prod(retshape)
         xx = np.ascontiguousarray(x_arr).reshape(n, self.m)
+
+        # The C++ function touches all dd and ii entries,
+        # setting the missing values.
+
         dd = np.empty((n,len(k)),dtype=np.float64)
-        dd.fill(INFINITY)
         ii = np.empty((n,len(k)),dtype=np.intp)
-        ii.fill(self.n)
 
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.
