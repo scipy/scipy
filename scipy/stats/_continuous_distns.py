@@ -5442,6 +5442,32 @@ class rv_scatter(rv_continuous):
     Examples
     --------
 
+    Create a bimodal distribution
+
+    >>> from scipy.stats import rv_scatter
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+
+    >>> x = [0, 0.2, 0.8, 1, 1.5, 2, 2.5]
+    >>> y = [0, 1, 1, 0, 0, 1, 0]
+    >>> rv = rv_scatter((x, y))
+
+    PDF and CDF are normalised
+
+    >>> rv.pdf(0.5)
+    0.76923076923076916
+    >>> rv.cdf(2.5)
+    1.0
+    >>> xv = np.linspace(-0.1, 2.6, 201)
+    >>> plt.plot(xv, rv.pdf(xv), label='PDF')
+    >>> plt.plot(xv, rv.cdf(xv), label='CDF')
+    >>> plt.show()
+
+    Random variates follow the original scatter points
+
+    >>> n = rv.rvs(size=10000)
+    >>> plt.hist(n, bins=100)
+    >>> plt.show()
     """
     _support_mask = rv_continuous._support_mask
 
