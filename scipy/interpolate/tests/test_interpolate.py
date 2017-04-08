@@ -276,6 +276,15 @@ class TestInterp1D(object):
             assert_equal(yp.dtype, dtyp)
             assert_allclose(yp, y, atol=1e-15)
 
+    def test_slinear_dtypes(self):
+        # regression test for gh-7273: 1D slinear interpolation failes with
+        # float32 inputs
+        x = np.arange(0, 10, dtype=np.float32)
+        y = np.exp(-x/3.0)
+        f = interp1d(x, y, kind='slinear', bounds_error=False)
+        xnew = np.arange(0, 9, 0.1)
+        ynew = f(xnew)   # use interpolation function returned by `interp1d`        
+
     def test_cubic(self):
         # Check the actual implementation of spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='cubic')
