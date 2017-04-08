@@ -29,6 +29,19 @@ def _get_dtype(dtype):
         return np.float_
 
 
+def _as_float_array(x, check_finite=False):
+    """Convert the input into a C contiguous float array.
+
+    NB: Upcasts half- and single-precision floats to double precision.
+    """
+    x = np.ascontiguousarray(x)
+    dtyp = _get_dtype(x.dtype)
+    x = x.astype(dtyp, copy=False)
+    if check_finite and not np.isfinite(x).all():
+        raise ValueError("Array must not contain infs or nans.")
+    return x
+
+
 class BSpline(object):
     r"""Univariate spline in the B-spline basis.
 
@@ -495,16 +508,6 @@ def _not_a_knot(x, k):
 def _augknt(x, k):
     """Construct a knot vector appropriate for the order-k interpolation."""
     return np.r_[(x[0],)*k, x, (x[-1],)*k]
-
-
-def _as_float_array(x, check_finite=False):
-    """Convert the input into a C contiguous float array."""
-    x = np.ascontiguousarray(x)
-    if not np.issubdtype(x.dtype, np.inexact):
-        x = x.astype(float)
-    if check_finite and not np.isfinite(x).all():
-        raise ValueError("Array must not contain infs or nans.")
-    return x
 
 
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
