@@ -1383,7 +1383,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """
-    A wrapper around LAPACK's xGEBAL routine family for matrix balancing.
+    Compute a diagonal similarity transformation for row/column balancing.
 
     The balancing tries to equalize the row and column 1-norms by applying
     a similarity transformation such that the magnitude variation of the
@@ -1429,8 +1429,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         integer powers of 2 to avoid numerical truncation errors.
     scale, perm : (n,) ndarray
         If ``separate`` keyword is set to True then instead of the array
-        ``T`` above, the scaling and the permutation vector is given
-        separately without allocating the full array ``T``.
+        ``T`` above, the scaling and the permutation vectors are given
+        separately as a tuple without allocating the full array ``T``.
 
     .. versionadded:: 0.19.0
 
@@ -1446,6 +1446,9 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     which have been implemented since LAPACK v3.5.0. Before this version
     there are corner cases where balancing can actually worsen the
     conditioning. See [3]_ for such examples.
+
+    The code is a wrapper around LAPACK's xGEBAL routine family for matrix
+    balancing.
 
     Examples
     --------
@@ -1519,4 +1522,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     if separate:
         return B, (scaling, perm)
 
-    return B, np.diag(scaling)[perm, :]
+    # get the inverse permutation
+    iperm = np.empty_like(perm)
+    iperm[perm] = np.arange(n)
+
+    return B, np.diag(scaling)[iperm, :]
