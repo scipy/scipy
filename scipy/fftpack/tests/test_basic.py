@@ -581,6 +581,7 @@ class TestFftn(TestCase):
 
         assert_array_almost_equal(fftn(x),fftn(x,axes=(-3,-2,-1)))  # kji_space
         assert_array_almost_equal(fftn(x),fftn(x,axes=(0,1,2)))
+        assert_array_almost_equal(fftn(x,axes=(0, 2)),fftn(x,axes=(0,-1)))
         y = fftn(x,axes=(2,1,0))  # ijk_space
         assert_array_almost_equal(swapaxes(y,-1,-3),fftn(ijk_space))
         y = fftn(x,axes=(2,0,1))  # ikj_space
