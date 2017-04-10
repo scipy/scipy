@@ -388,6 +388,72 @@ class TestSLSQP(TestCase):
             with assert_raises(ValueError):
                 minimize(self.fun, [-1.0, 1.0], bounds=bounds, method='SLSQP')
 
+    def test_bounds_clipping(self):
+        #
+        # SLSQP returns bogus results for initial guess out of bounds, gh-6859
+        #
+        def f(x):
+            return (x[0] - 1)**2
+
+        sol = minimize(f, [10], method='slsqp', bounds=[(None, 0)])
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+
+        sol = minimize(f, [-10], method='slsqp', bounds=[(2, None)])
+        assert_(sol.success)
+        assert_allclose(sol.x, 2, atol=1e-10)
+
+        sol = minimize(f, [-10], method='slsqp', bounds=[(None, 0)])
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+
+        sol = minimize(f, [10], method='slsqp', bounds=[(2, None)])
+        assert_(sol.success)
+        assert_allclose(sol.x, 2, atol=1e-10)
+
+        sol = minimize(f, [-0.5], method='slsqp', bounds=[(-1, 0)])
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+
+        sol = minimize(f, [10], method='slsqp', bounds=[(-1, 0)])
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+
+    def test_infeasible_initial(self):
+        # Check SLSQP behavior with infeasible initial point
+        def f(x):
+            x, = x
+            return x*x - 2*x + 1
+
+        cons_u = [{'type': 'ineq', 'fun': lambda x: 0 - x}]
+        cons_l = [{'type': 'ineq', 'fun': lambda x: x - 2}]
+        cons_ul = [{'type': 'ineq', 'fun': lambda x: 0 - x},
+                   {'type': 'ineq', 'fun': lambda x: x + 1}]
+
+        sol = minimize(f, [10], method='slsqp', constraints=cons_u)
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+
+        sol = minimize(f, [-10], method='slsqp', constraints=cons_l)
+        assert_(sol.success)
+        assert_allclose(sol.x, 2, atol=1e-10)
+
+        sol = minimize(f, [-10], method='slsqp', constraints=cons_u)
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+
+        sol = minimize(f, [10], method='slsqp', constraints=cons_l)
+        assert_(sol.success)
+        assert_allclose(sol.x, 2, atol=1e-10)
+
+        sol = minimize(f, [-0.5], method='slsqp', constraints=cons_ul)
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+
+        sol = minimize(f, [10], method='slsqp', constraints=cons_ul)
+        assert_(sol.success)
+        assert_allclose(sol.x, 0, atol=1e-10)
+
 
 if __name__ == "__main__":
     run_module_suite()
