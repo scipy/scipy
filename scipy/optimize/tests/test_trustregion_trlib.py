@@ -45,19 +45,20 @@ class TestTRLIBQuadraticSubproblem(TestCase):
                 np.linalg.norm(H.dot(p) + subprob.lam * p + g),
                 0.0)
         # check trust region constraint
-        assert_almost_equal( np.linalg.norm(p), trust_radius)
+        assert_almost_equal(np.linalg.norm(p), trust_radius)
 
         trust_radius = 0.5
         p, hits_boundary = subprob.solve(trust_radius)
 
-        assert_array_almost_equal(p, np.array([-0.46125446,  0., -0.19298788]))
+        assert_array_almost_equal(p,
+                np.array([-0.46125446, 0., -0.19298788]))
         assert_equal(hits_boundary, True)
         # check kkt satisfaction
         assert_almost_equal(
                 np.linalg.norm(H.dot(p) + subprob.lam * p + g),
                 0.0)
         # check trust region constraint
-        assert_almost_equal( np.linalg.norm(p), trust_radius)
+        assert_almost_equal(np.linalg.norm(p), trust_radius)
 
     def test_for_the_hard_case(self):
 
@@ -85,7 +86,7 @@ class TestTRLIBQuadraticSubproblem(TestCase):
                 np.linalg.norm(H.dot(p) + subprob.lam * p + g),
                 0.0)
         # check trust region constraint
-        assert_almost_equal( np.linalg.norm(p), trust_radius)
+        assert_almost_equal(np.linalg.norm(p), trust_radius)
 
         trust_radius = 0.5
         p, hits_boundary = subprob.solve(trust_radius)
@@ -96,7 +97,7 @@ class TestTRLIBQuadraticSubproblem(TestCase):
                 np.linalg.norm(H.dot(p) + subprob.lam * p + g),
                 0.0)
         # check trust region constraint
-        assert_almost_equal( np.linalg.norm(p), trust_radius)
+        assert_almost_equal(np.linalg.norm(p), trust_radius)
 
 if __name__ == '__main__':
     run_module_suite()

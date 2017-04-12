@@ -1,7 +1,7 @@
 from ._trustregion import (_minimize_trust_region)
 from ._trlib import (TRLIBQuadraticSubproblem)
 
-__all__ = ['_minimize_trustregion_trlib']
+__all__ = ['_minimize_trust_trlib']
 
 def _minimize_trust_trlib(fun, x0, args=(), jac=None, hess=None,
         hessp=None, inexact=True, **trust_region_options):
