@@ -215,8 +215,6 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
 
             y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n), j = 0..n-1
 
-        Note that ``y(-j) = y(n-j).conjugate()``.
-
     See Also
     --------
     ifft : Inverse FFT
@@ -231,10 +229,6 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     transform, the frequencies of the result are [0, 1, 2, 3, -4, -3, -2, -1].
     To rearrange the fft output so that the zero-frequency component is
     centered, like [-4, -3, -2, -1,  0,  1,  2,  3], use `fftshift`.
-
-    For `n` even, ``A[n/2]`` contains the sum of the positive and
-    negative-frequency terms.  For `n` even and `x` real, ``A[n/2]`` will
-    always be real.
 
     Both single and double precision routines are implemented.  Half precision
     inputs will be converted to single precision.  Non floating-point inputs
@@ -395,8 +389,6 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
 
           y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k*2*pi/n)
           j = 0..n-1
-
-        Note that ``y(-j) == y(n-j).conjugate()``.
 
     See Also
     --------
@@ -579,7 +571,6 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
          x[k_1,..,k_d] * prod[i=1..d] exp(-sqrt(-1)*2*pi/n_i * j_i * k_i)
 
     where d = len(x.shape) and n = x.shape.
-    Note that ``y[..., -j_i, ...] = y[..., n_i-j_i, ...].conjugate()``.
 
     Parameters
     ----------
