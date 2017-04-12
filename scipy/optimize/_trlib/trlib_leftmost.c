@@ -33,13 +33,14 @@ trlib_int_t trlib_leftmost(
     trlib_int_t ret = 0, curit = 0;
     if(! warm) {
         ret = 0; trlib_int_t curret = 0;
-        for(trlib_int_t ii = 0; ii < nirblk; ++ii) {
+        trlib_int_t ii = 0;
+        for(ii = 0; ii < nirblk; ++ii) {
             curret = trlib_leftmost_irreducible(irblk[ii+1]-irblk[ii], diag+irblk[ii], offdiag+irblk[ii], 0, 0.0, itmax,
                 tol_abs, verbose, unicode, prefix, fout, timing, leftmost+ii, &curit);
             if (curret == 0) { ret = curret; }
         }
         *ileftmost = 0;
-        for(trlib_int_t ii = 1; ii < nirblk; ++ii) {
+        for(ii = 1; ii < nirblk; ++ii) {
             if (leftmost[ii] < leftmost[*ileftmost]) { *ileftmost = ii; }
         }
     }
@@ -81,6 +82,7 @@ trlib_int_t trlib_leftmost_irreducible(
 
     trlib_int_t continue_outer_loop = 0;    // local spaghetti code control variable
     trlib_int_t model_type = 0;
+    trlib_int_t ii = 0;
 
     // trivial case: one-dimensional. return diagonal value
     if (n == 1) { *leftmost = diag[0]; TRLIB_RETURN(TRLIB_LMR_CONV) }
@@ -95,7 +97,7 @@ trlib_int_t trlib_leftmost_irreducible(
     oabs0 = fabs(offdiag[0]); oabs1 = fabs(offdiag[n-2]);
     low = fmin( diag[0] - oabs0, diag[n-1] - oabs1 );
     up  = fmax( diag[0] + oabs0, diag[n-1] - oabs1 );
-    for( trlib_int_t ii = 1; ii < n-1; ++ii ) {
+    for(ii = 1; ii < n-1; ++ii ) {
         oabs1 = fabs(offdiag[ii]);
         low = fmin( low, diag[ii] - oabs0 - oabs1 );
         up  = fmax( up,  diag[ii] + oabs0 + oabs1 );

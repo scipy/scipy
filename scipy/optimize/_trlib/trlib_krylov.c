@@ -126,6 +126,7 @@ trlib_int_t trlib_krylov_min_internal(
     trlib_flt_t sp_Msp = 0.0; // (s+, Ms+)
     trlib_flt_t eta_i = 0.0; // forcing parameter
     trlib_flt_t eta_b = 0.0; // forcing parameter
+    trlib_int_t cit = 0;     // loop counter for convergence history
 
     if (init == TRLIB_CLS_INIT)       { *status = TRLIB_CLS_INIT; }
     if (init == TRLIB_CLS_HOTSTART)   { *status = TRLIB_CLS_HOTSTART; }
@@ -329,7 +330,7 @@ trlib_int_t trlib_krylov_min_internal(
                 // test if convergence is unlikely
                 if ( !(*interior) && earlyterm && *ii > 10 && convhist[*ii-10] > 1e-1 * convhist[*ii]) { 
                     trlib_int_t doit = 1;
-                    for(trlib_int_t cit = *ii-10; cit < *ii; ++cit) { if( convhist[cit+1] > convhist[cit] ) doit = 0; }
+                    for(cit = *ii-10; cit < *ii; ++cit) { if( convhist[cit+1] > convhist[cit] ) doit = 0; }
                     if(doit) {
                         TRLIB_PRINTLN_2("Early exit as boundary case for the last ten iterations without significant progress")
                         if(*interior) { *ityp = TRLIB_CLT_CG; *action = TRLIB_CLA_TRIVIAL; returnvalue = TRLIB_CLR_UNLIKE_CONV; break; }
@@ -649,7 +650,7 @@ trlib_int_t trlib_krylov_min_internal(
                 // test if convergence is unlikely
                 if ( !(*interior) && earlyterm && *ii > 10 && convhist[*ii-10] > 1e-1 * convhist[*ii]) { 
                     trlib_int_t doit = 1;
-                    for(trlib_int_t cit = *ii-10; cit < *ii; ++cit) { if( convhist[cit+1] > convhist[cit] ) doit = 0; }
+                    for(cit = *ii-10; cit < *ii; ++cit) { if( convhist[cit+1] > convhist[cit] ) doit = 0; }
                     if(doit) {
                         TRLIB_PRINTLN_2("Early exit as boundary case for the last ten iterations without significant progress")
                         *ityp = TRLIB_CLT_L; *action = TRLIB_CLA_RETRANSF; returnvalue = TRLIB_CLR_UNLIKE_CONV; break;
@@ -759,7 +760,8 @@ trlib_int_t trlib_krylov_min(
 
 
 trlib_int_t trlib_krylov_prepare_memory(trlib_int_t itmax, trlib_flt_t *fwork) {
-    for(trlib_int_t jj = 23+11*itmax; jj<24+12*itmax; ++jj) { *(fwork+jj) = 1.0; } // everything to 1.0 in ones
+    trlib_int_t jj = 0;
+    for(jj = 23+11*itmax; jj<24+12*itmax; ++jj) { *(fwork+jj) = 1.0; } // everything to 1.0 in ones
     memset(fwork+17+2*itmax, 0, itmax*sizeof(trlib_flt_t)); // neglin = - gamma_0 e1, thus set neglin[1:] = 0
     return 0;
 }

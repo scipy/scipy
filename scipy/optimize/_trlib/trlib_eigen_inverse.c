@@ -76,11 +76,13 @@ trlib_int_t trlib_eigen_inverse(
     
     // try with TRLIB_EIR_N_STARTVEC different start vectors and hope that it converges for one
     seeds[0] = time(NULL);
-    for( trlib_int_t jj = 1; jj < TRLIB_EIR_N_STARTVEC; ++jj ) { seeds[jj] = rand(); }
-    for( trlib_int_t jj = 0; jj < TRLIB_EIR_N_STARTVEC; ++jj ) {
+    trlib_int_t jj = 0;
+    trlib_int_t kk = 0;
+    for(jj = 1; jj < TRLIB_EIR_N_STARTVEC; ++jj ) { seeds[jj] = rand(); }
+    for(jj = 0; jj < TRLIB_EIR_N_STARTVEC; ++jj ) {
         *iter_inv = 0;
         srand((unsigned) seeds[jj]);
-        for( trlib_int_t kk = 0; kk < n; ++kk ) { eig[kk] = ((trlib_flt_t)rand()/(trlib_flt_t)RAND_MAX); }
+        for(kk = 0; kk < n; ++kk ) { eig[kk] = ((trlib_flt_t)rand()/(trlib_flt_t)RAND_MAX); }
 
         TRLIB_DNRM2(invnorm, &n, eig, &inc) invnorm = 1.0/invnorm;
         TRLIB_DSCAL(&n, &invnorm, eig, &inc) // normalize eig
@@ -108,11 +110,11 @@ trlib_int_t trlib_eigen_inverse(
     // no convergence with any of the starting values.
     // take the seed with least residual and redo computation
     trlib_int_t seedpivot = 0;
-    for(int jj = 0; jj < TRLIB_EIR_N_STARTVEC; ++jj) { if (residuals[jj] < residuals[seedpivot]) { seedpivot = jj; } }
+    for(jj = 0; jj < TRLIB_EIR_N_STARTVEC; ++jj) { if (residuals[jj] < residuals[seedpivot]) { seedpivot = jj; } }
 
     *iter_inv = 0;
     srand((unsigned) seeds[seedpivot]);
-    for( trlib_int_t kk = 0; kk < n; ++kk ) { eig[kk] = ((trlib_flt_t)rand()/(trlib_flt_t)RAND_MAX); }
+    for(kk = 0; kk < n; ++kk ) { eig[kk] = ((trlib_flt_t)rand()/(trlib_flt_t)RAND_MAX); }
 
     TRLIB_DNRM2(invnorm, &n, eig, &inc) invnorm = 1.0/invnorm;
     TRLIB_DSCAL(&n, &invnorm, eig, &inc) // normalize eig

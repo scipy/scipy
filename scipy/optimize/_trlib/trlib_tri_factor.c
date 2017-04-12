@@ -605,7 +605,8 @@ trlib_int_t trlib_tri_factor_regularize_posdef(
     if (diag[0] <= tol_away) { regdiag[0] = security_step*tol_away; }
     diag_fac = diag[0] + regdiag[0];
 
-    for(int pivot = 0; pivot < n-1; ++pivot) {
+    trlib_int_t pivot = 0;
+    for(pivot = 0; pivot < n-1; ++pivot) {
         regdiag[pivot+1] = 0.0;
         if ( diag[pivot+1] - offdiag[pivot]*offdiag[pivot]/diag_fac <= tol_away * diag_fac ) {
             regdiag[pivot+1] = security_step * fabs(offdiag[pivot]*offdiag[pivot]/diag_fac - diag[pivot+1]);
