@@ -610,6 +610,17 @@ class TestResample(TestCase):
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
 
+        # More tests of fft method (Master 0.18.1 fails these)
+        if method == 'fft':
+            x1 = np.array([1.+0.j,0.+0.j])
+            y1_test = signal.resample(x1,4)
+            y1_true = np.array([1.+0.j,0.5+0.j,0.+0.j,0.5+0.j])  # upsampling a complex array
+            assert_allclose(y1_test, y1_true, atol=1e-12)
+            x2 = np.array([1.,0.5,0.,0.5])
+            y2_test = signal.resample(x2,2)  # downsampling a real array
+            y2_true = np.array([1.,0.])
+            assert_allclose(y2_test, y2_true, atol=1e-12)
+
     def test_poly_vs_filtfilt(self):
         # Check that up=1.0 gives same answer as filtfilt + slicing
         random_state = np.random.RandomState(17)
