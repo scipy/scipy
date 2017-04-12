@@ -34,6 +34,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-slsqp
    optimize.minimize-dogleg
    optimize.minimize-trustncg
+   optimize.minimize-trusttrlib
    optimize.minimize-trustexact
 
 The `minimize_scalar` function supports the following methods:

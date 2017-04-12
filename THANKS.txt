@@ -180,6 +180,7 @@ Cathy Douglass for bug fixes in ndimage.
 Adam Cox for contributions to scipy.constants.
 Charles Masson for the Wasserstein and the Cramér-von Mises statistical
     distances.
+Felix Lenders for implementing trust-trlib method.
 
 Institutions
 ------------

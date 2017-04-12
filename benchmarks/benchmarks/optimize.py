@@ -209,7 +209,8 @@ class _BenchOptimizers(Benchmark):
         if methods is None:
             methods = ["COBYLA", 'Powell',
                        'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
-                       "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact']
+                       "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
+                       'trust-trlib']
 
         fonly_methods = ["COBYLA", 'Powell']
         for method in fonly_methods:
@@ -233,7 +234,7 @@ class _BenchOptimizers(Benchmark):
                 self.add_result(res, t1-t0, method)
 
         hessian_methods = ["Newton-CG", 'dogleg', 'trust-ncg',
-                           'trust-exact']
+                           'trust-exact', 'trlib-trlib']
         if self.hess is not None:
             for method in hessian_methods:
                 if method not in methods:
@@ -254,7 +255,8 @@ class BenchSmoothUnbounded(Benchmark):
          'sin_1d', 'booth', 'beale', 'LJ'],
         ["COBYLA", 'Powell',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
-         "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact'],
+         "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
+         'trust-trlib'],
         ["mean_nfev", "mean_time"]
     ]
     param_names = ["test function", "solver", "result type"]
