@@ -433,7 +433,7 @@ def _chirp_phase(t, f0, t1, f1, method='linear', vertex_zero=True):
     """
     Calculate the phase used by chirp_phase to generate its output.
 
-    See `chirp_phase` for a description of the arguments.
+    See `chirp` for a description of the arguments.
 
     """
     t = asarray(t)
