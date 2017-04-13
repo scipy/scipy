@@ -3936,6 +3936,34 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
     .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+
+    Examples
+    --------
+    Suppose we have the summary data for two samples, as follows::
+
+                         Sample   Sample
+                   Size   Mean   Variance
+        Sample 1    13    15.0     87.5
+        Sample 2    11    12.0     39.0
+
+    Apply the t-test to this data (with the assumption that the population
+    variances are equal):
+
+    >>> from scipy.stats import ttest_ind_from_stats
+    >>> ttest_ind_from_stats(mean1=15.0, std1=np.sqrt(87.5), nobs1=13,
+    ...                      mean2=12.0, std2=np.sqrt(39.0), nobs2=11)
+    Ttest_indResult(statistic=0.90513580933102689, pvalue=0.37519967975814872)
+
+    For comparison, here is the data from which those summary statistics
+    were taken.  With this data, we can compute the same result using
+    `scipy.stats.ttest_ind`:
+
+    >>> a = np.array([1, 3, 4, 6, 11, 13, 15, 19, 22, 24, 25, 26, 26])
+    >>> b = np.array([2, 4, 6, 9, 11, 13, 14, 15, 18, 19, 21])
+    >>> from scipy.stats import ttest_ind
+    >>> ttest_ind(a, b)
+    Ttest_indResult(statistic=0.905135809331027, pvalue=0.37519967975814861)
+
     """
     if equal_var:
         df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
