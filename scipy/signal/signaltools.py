@@ -2233,16 +2233,16 @@ def resample(x, num, t=None, axis=0, window=None):
     sl[axis] = slice(-(N - 1) // 2, None)
     Y[sl] = X[sl]
 
-    if N%2==0: # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
-        if N<Nx: # if downsampling
-            sl[axis] = slice(N//2,N//2+1,None) # select the component at frequency N/2
-            Y[sl]+=X[sl] # add the component of X at N/2 
-        elif N<num: # if upsampling
-            sl[axis] = slice(num-N//2,num-N//2+1,None) # select the component at frequency -N/2
-            Y[sl]/=2 # halve the component at -N/2 
-            temp=Y[sl]
-            sl[axis] = slice(N//2,N//2+1,None) # select the component at +N/2
-            Y[sl]=temp # set that equal to the component at -N/2
+    if N % 2 == 0:  # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
+        if N < Nx:  # if downsampling
+            sl[axis] = slice(N//2,N//2+1,None)  # select the component at frequency N/2
+            Y[sl] += X[sl]  # add the component of X at N/2 
+        elif N < num:  # if upsampling
+            sl[axis] = slice(num-N//2,num-N//2+1,None)  # select the component at frequency -N/2
+            Y[sl] /= 2  # halve the component at -N/2 
+            temp = Y[sl]
+            sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
+            Y[sl] = temp  # set that equal to the component at -N/2
 
     y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
