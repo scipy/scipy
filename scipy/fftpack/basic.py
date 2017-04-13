@@ -238,6 +238,9 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
 
+    Note that if ``x`` is real-valued then ``A[j] == A[n-j].conjugate()``.
+    If ``x`` is real-valued and ``n`` is even then ``A[n/2]`` is real. 
+    
     If the data type of `x` is real, a "real FFT" algorithm is automatically
     used, which roughly halves the computation time.  To increase efficiency
     a little further, use `rfft`, which does the same calculation, but only
@@ -600,6 +603,9 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
 
     Notes
     -----
+    If ``x`` is real-valued, then 
+    ``y[..., j_i, ...] == y[..., n_i-j_i, ...].conjugate()``.
+    
     Both single and double precision routines are implemented.  Half precision
     inputs will be converted to single precision.  Non floating-point inputs
     will be converted to double precision.  Long-double precision inputs are
