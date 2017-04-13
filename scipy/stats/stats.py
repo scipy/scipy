@@ -3892,8 +3892,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     """
     T-test for means of two independent samples from descriptive statistics.
 
-    This is a two-sided test for the null hypothesis that 2 independent samples
-    have identical average (expected) values.
+    This is a two-sided test for the null hypothesis that two independent
+    samples have identical average (expected) values.
 
     Parameters
     ----------
@@ -3922,7 +3922,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     pvalue : float or array
         The two-tailed p-value.
 
-    See also
+    See Also
     --------
     scipy.stats.ttest_ind
 
