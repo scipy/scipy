@@ -108,7 +108,7 @@ Correlation Functions
    weightedtau
    linregress
    theilslopes
-   kendalltau_distance
+   rank_distance
 
 Inferential Stats
 -----------------
@@ -192,7 +192,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'signaltonoise', 'sem', 'zmap', 'zscore', 'iqr', 'threshold',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
-           'kendalltau', 'weightedtau', 'kendalltau_distance',
+           'kendalltau', 'weightedtau', 'rank_distance',
            'linregress', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
@@ -5591,144 +5591,87 @@ def rankdata(a, method='average'):
     return .5 * (count[dense] + count[dense - 1] + 1)
 
 
-def kendalltau_distance(x, y, rank=False, norm=False, nan_policy='propagate'):
+def rank_distance(x, y, weights=None, method='spearman'):
     """
-    Kendall tau rank distance.
-
-    The Kendall tau ranking distance is a metric that counts the number
-    of pairwise disagreements between two ranking list.
-    Distance will be equal to 0 if the two lists are identical and 
-    n*(n-1)/2 (where n is the list size) if one list is the reverse
-    of the other. 
-    Often Kendall tau distance is normalized by dividing
-    by n(n-1)/2 so a value of 1 indicates maximum disagreement.
-
-    Kendall tau distance in Rankings: A permutation (or ranking) is an array
-    of N integers where each of the integers between 0 and N-1 appears exactly
-    once. The Kendall tau distance between two rankings is the number of pairs
-    that are in different order in the two rankings.
+    Distance measure between rankings.
 
     Parameters
     ----------
-    a, b: array_like
-        1-D arrays of the same shape.
-    norm: bool, optional
-        If True, the result is normalized by n(n-1)/2.
-        The default is False.
-    rank: bool, optional
-        If True, function result is distance between two rankings(number of
-        pairs that are in different order in the two rankings).
-        The default is False.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+    x, y: array-like
+        1-D permutations of [1..N] vector
+    weights: array-like, optional
+        1-D array of weights. Default None equals to unit weights.
+    method: {'spearman'm 'kendalltau'}, optional
+        Defines the method to find distance:
+        'spearman' - sum of absolute distance between same elements
+        in x and y.
+        'kendalltau' - number of inverions needed to bring x to y.
+        Default is 'spearman'.
 
-    Returns
+    Return
+    ------
+    distance: float
+        Distance between x and y.
+
+    Example
     -------
-    distance: int or float
-        The Kendall tau ranking distance.
-
-    Notes
-    -----
-    Ranking array of size n is array with values from 0 to n-1 without
-    missing values(values can be shuffled).
-
-    Examples
-    --------
-    >>> from scipy.stats import kendalltau_distance
-    >>> x = [1, 2, 3, 4, 5]
-    >>> y = [3, 4, 1, 2, 5]
-    >>> kendalltau_distance(x, y)
-    4.0
-    >>> kendalltau_distance(x, y, norm=True)
-    0.4
-    >>> x = [0, 3, 1, 6, 2, 5, 4]
-    >>> y = [1, 0, 3, 6, 4, 2, 5]
-    >>> kendalltau_distance(x, y)
+    >>> from scipy.stats import rank_distance
+    >>> rank_distance([1,3,4,2],[2,3,1,4])
     6.0
-    >>> kendalltau_distance(x, y, rank=True)
+    >>> rank_distance([1,3,4,2],[2,3,1,4], method='kendalltau')
     4.0
-    >>> kendalltau_distance(x, y, rank=True, norm=True)
-    0.19047619047619047
     """
-    x = ma.asarray(x)
+    x = np.asarray(x)
     y = np.asarray(y)
 
+    if np.unique(x).size != x.size or np.unique(y).size != y.size:
+        raise ValueError("x and y must have only unique elements")
+
     if x.size != y.size:
-        raise ValueError("Input arrays must be the same size")
+        raise ValueError("x and y have different size")
 
-    x_contains_nan, nan_policy = _contains_nan(x, nan_policy)
-    y_contains_nan, nan_policy = _contains_nan(y, nan_policy)
-
-    if (x_contains_nan or y_contains_nan) and nan_policy == 'propagate':
-        return np.nan 
-
-    if not x.size or not y.size:
-        return np.nan
-
-    if x_contains_nan or y_contains_nan:
-        m = ma.mask_or(ma.getmask(ma.masked_invalid(x)),
-                       ma.getmask(ma.masked_invalid(y)))
-        x = ma.array(x, mask=m).compressed()
-        y = ma.array(y, mask=m).compressed()
-
-    if rank:
-        count = _kendalltau_distance(x, y)
+    if weights is None:
+        weights = np.ones(x.size - 1)
     else:
-        count = 0
-        for i in xrange(x.size):
-            for j in xrange(i + 1, x.size):
-                if ((x[i] > x[j] and y[i] > y[j])
-                        or (x[i] < x[j] and y[i] < y[j])):
-                    count += 1
+        weights = np.asarray(weights)
+        if weights.size < (x.size - 1):
+            raise ValueError("weights vector have a small size")
 
-        count = x.size * (x.size - 1) / 2 - count
-
-    if norm:
-        count = count / (x.size * (x.size - 1) / 2.0)
-
-    return count
+    if method == 'spearman':
+        return _spearman_footrule(x, y, weights)
+    elif method == 'kendalltau':
+        return _kendalltau_distance(x, y, weights)
+    else:
+        raise ValueError("unknown value for method parameter.")
 
 
-def _kendalltau_distance(x, y):
-    xinv = np.zeros((x.size))
+def _spearman_footrule(x, y, weights):
+    distance = 0
+
     for i in xrange(x.size):
-        xinv[x[i]] = i
+        x_index = np.where(x == x[i])[0][0]
+        y_index = np.where(y == x[i])[0][0]
+        pair = np.abs(x_index - y_index)
+        min_index = np.minimum(x_index, y_index)
+        for j in xrange(pair):
+            distance += weights[min_index + j]
 
-    ynew = np.zeros((x.size))
-    for i in xrange(x.size):
-        ynew[i] = xinv[y[i]]
-
-    return _merge_sort(ynew)[1]
+    return distance
 
 
-def _merge(x, y, pairs):
-    result = []
-    i = 0
-    j = 0
+def _kendalltau_distance(x, y, weights):
+    distance = 0
+    n = x.size - 1
 
-    while i < x.size and j < y.size:
-        if x[i] <= y[j]:
-            result.append(x[i])
-            i += 1
-        else:
-            pairs += x.size - i
-            result.append(y[j])
+    for i in xrange(n - 1, -1, -1):
+        key = x[i]
+        j = i + 1
+
+        while j <= n and np.where(y == key)[0] > np.where(y == x[j])[0]:
+            x[j - 1] = x[j]
+            distance += weights[j - 1]
             j += 1
 
-    if i == x.size:
-        result.extend(y[j:])
-    else:
-        result.extend(x[i:])
+        x[j - 1] = key
 
-    return (np.asarray(result), pairs)
-
-
-def _merge_sort(x, pairs=0.):
-    if x.size > 1:
-        left, pairs = _merge_sort(x[0: x.size // 2], pairs)
-        right, pairs = _merge_sort(x[x.size // 2:], pairs)
-        return _merge(left, right, pairs)
-    else:
-        return (x, pairs)
+    return distance

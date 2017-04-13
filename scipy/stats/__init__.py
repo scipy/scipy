@@ -237,7 +237,7 @@ which work for masked arrays.
    linregress
    theilslopes
    f_value
-   kendalltau_distance
+   rank_distance
 
 .. autosummary::
    :toctree: generated/

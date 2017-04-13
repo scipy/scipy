@@ -832,38 +832,45 @@ def test_weightedtau_vs_quadratic():
             np.random.shuffle(rank)
 
 
-def test_kendalltau_distance():
-    x = [0, 9, 3, 5, 6, 2, 1, 8, 7, 4]
-    y = [1, 2, 0, 5, 8, 7, 4, 3, 9, 6]
+class TestRankDistance(TestCase):
+    
+    def test_basic(self):
+        x = [5, 4, 1, 2, 3]
+        y = [1, 4, 5, 3, 2]
 
-    assert_raises(ValueError, stats.kendalltau_distance, x, y[1:])
+        assert_equal(stats.rank_distance(x, y), 6.0)
+        assert_equal(stats.rank_distance(x, y, method='kendalltau'), 4.0)
 
-    assert_equal(stats.kendalltau_distance(x, x), 0)
-    assert_equal(stats.kendalltau_distance(x, x[::-1], rank=True),
-                 len(x) * (len(x) - 1) / 2)
+    def test_max(self):
+        x = [1, 2, 3, 4, 5]
+        y = [5, 4, 3, 2, 1]
 
-    assert_equal(stats.kendalltau_distance(x, y, rank=True), 23)
+        assert_equal(stats.rank_distance(x, y), len(x) * len(x) // 2)
+        assert_equal(stats.rank_distance(x, y, method='kendalltau'),
+                     len(x) * (len(x) - 1) // 2)
 
-    x = [0, 2, 1, 3]
-    y = [1, 2, 0, 3]
+    def test_min(self):
+        x = [1, 2, 3, 4, 5]
 
-    assert_equal(stats.kendalltau_distance(x, y, rank=True), 3)
-    assert_equal(stats.kendalltau_distance(x, y, rank=True, norm=True), 0.5)
+        assert_equal(stats.rank_distance(x, x), 0)
+        assert_equal(stats.rank_distance(x, x, method='kendalltau'), 0)
 
-    x = [1, 4, 9, 6, 3]
-    y = [5, 8, 7, 2, 0]
+    def test_raise(self):
+        assert_raises(ValueError, stats.rank_distance, [], [])
+        assert_raises(ValueError, stats.rank_distance, [1, 2, 3], [1, 2])
+        assert_raises(ValueError, stats.rank_distance, [1, 1, 1], [1, 2])
+        assert_raises(ValueError, stats.rank_distance, [1, 2, 3], [1, 2])
+        assert_raises(ValueError, stats.rank_distance, [1, 2], [1, 2],
+            method='unknown', weights=[])
 
-    assert_equal(stats.kendalltau_distance(x, y), 4)
-    assert_equal(stats.kendalltau_distance(x, y, norm=True), .4)
+    def test_weighted(self):
+        x = [1, 3, 4, 2]
+        y = [2, 3, 1, 4]
+        w = [1, 2, 3]
 
-    # test nan_policy option
-    x = [1, 4, 9, 6, np.nan, 3]
-    y = [5, 8, 7, 2, 3, 0]
-
-    assert_equal(stats.kendalltau_distance(x, y), np.nan)
-    assert_raises(ValueError, stats.kendalltau_distance, x, y,
-                  nan_policy='raise')
-    assert_equal(stats.kendalltau_distance(x, y, nan_policy='omit'), 4)
+        assert_equal(stats.rank_distance(x, y, weights=w), 12.)
+        assert_equal(stats.rank_distance(x, y, weights=w,
+                     method='kendalltau'), 8.)
 
 
 class TestFindRepeats(TestCase):
