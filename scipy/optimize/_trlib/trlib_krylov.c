@@ -248,7 +248,7 @@ trlib_int_t trlib_krylov_min_internal(
                     irblk[*nirblk] = *ii+1;
                     *exit_tri = trlib_tri_factor_min(
                         *nirblk, irblk, delta, gamma, neglin, radius, 100+3*(*ii),
-                        TRLIB_EPS, fmin(tol_rel_b, 1e1*TRLIB_EPS_POW_75), *pos_def, equality,
+                        TRLIB_EPS, 1e-11, *pos_def, equality,
                         warm_lam0, lam0, warm_lam, lam, warm_leftmost, ileftmost, leftmost,
                         &warm_fac0, delta_fac0, gamma_fac0, &warm_fac, delta_fac, gamma_fac,
                         h0, h, ones, fwork_tr, refine, verbose-1, unicode, " TR ", fout,
@@ -393,7 +393,7 @@ trlib_int_t trlib_krylov_min_internal(
                 irblk[*nirblk] = *ii+1;
                 *exit_tri = trlib_tri_factor_min(
                     *nirblk, irblk, delta, gamma, neglin, radius, 100+3*(*ii),
-                    TRLIB_EPS, fmin(tol_rel_b, 1e1*TRLIB_EPS_POW_75), *pos_def, equality,
+                    TRLIB_EPS, 1e-11, *pos_def, equality,
                     warm_lam0, lam0, warm_lam, lam, warm_leftmost, ileftmost, leftmost,
                     &warm_fac0, delta_fac0, gamma_fac0, &warm_fac, delta_fac, gamma_fac,
                     h0, h, ones, fwork_tr, refine, verbose-1, unicode, " TR ", fout,
@@ -465,7 +465,7 @@ trlib_int_t trlib_krylov_min_internal(
                 irblk[1] = *ii+1;
                 *exit_tri = trlib_tri_factor_min(
                     1, irblk, delta, gamma, neglin, radius, 100+3*(*ii),
-                    TRLIB_EPS, fmin(tol_rel_b, 1e1*TRLIB_EPS_POW_75), *pos_def, equality,
+                    TRLIB_EPS, 1e-11, *pos_def, equality,
                     warm_lam0, lam0, warm_lam, lam, warm_leftmost, ileftmost, leftmost,
                     &warm_fac0, delta_fac0, gamma_fac0, &warm_fac, delta_fac, gamma_fac,
                     h0, h, ones, fwork_tr, refine, verbose-1, unicode, " TR ", fout,
@@ -496,7 +496,7 @@ trlib_int_t trlib_krylov_min_internal(
                 irblk[*nirblk] = *ii+1;
                 *exit_tri = trlib_tri_factor_min(
                     *nirblk, irblk, delta, gamma, neglin, radius, 100+3*(*ii),
-                    TRLIB_EPS, fmin(tol_rel_b, 1e1*TRLIB_EPS_POW_75), *pos_def, equality,
+                    TRLIB_EPS, 1e-11, *pos_def, equality,
                     warm_lam0, lam0, warm_lam, lam, warm_leftmost, ileftmost, leftmost,
                     &warm_fac0, delta_fac0, gamma_fac0, &warm_fac, delta_fac, gamma_fac,
                     h0, h, ones, fwork_tr, refine, verbose-1, unicode, " TR ", fout,
@@ -571,7 +571,7 @@ trlib_int_t trlib_krylov_min_internal(
                 irblk[*nirblk] = *ii+1;
                 *exit_tri = trlib_tri_factor_min(
                     *nirblk, irblk, delta, gamma, neglin, radius, 100+3*(*ii),
-                    TRLIB_EPS, fmin(tol_rel_b, 1e1*TRLIB_EPS_POW_75), *pos_def, equality,
+                    TRLIB_EPS, 1e-11, *pos_def, equality,
                     warm_lam0, lam0, warm_lam, lam, warm_leftmost, ileftmost, leftmost,
                     &warm_fac0, delta_fac0, gamma_fac0, &warm_fac, delta_fac, gamma_fac,
                     h0, h, ones, fwork_tr, refine, verbose-1, unicode, " TR ", fout,

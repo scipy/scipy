@@ -11,7 +11,7 @@ def TRLIBQuadraticSubproblem(tol_rel_i=-2.0, tol_rel_b=-3.0):
         def __init__(self, x, fun, jac, hess, hessp):
             super(SP, self).__init__(x, fun, jac, hess, hessp)
     
-            self.itmax = 2*self.jac.shape[0]
+            self.itmax = int(min(1e9/self.jac.shape[0], 2*self.jac.shape[0]))
             
             cdef long itmax, iwork_size, fwork_size, h_pointer
             itmax = self.itmax

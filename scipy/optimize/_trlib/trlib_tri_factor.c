@@ -241,7 +241,7 @@ trlib_int_t trlib_tri_factor_min(
             *iter_newton += 1;
     
             // test if dlam is not tiny or newton limit exceeded, return eventually
-            if (fabs(dlam) <= tol_newton_tiny * fmax(1.0, fabs(*lam0)) || *iter_newton > itmax) {
+            if ( *lam0 + dlam == *lam0 || fabs(dlam) <= tol_newton_tiny * fmax(1.0, fabs(*lam0)) || *iter_newton > itmax) {
                 if (unicode) { TRLIB_PRINTLN_1("%s%e%s%e", "Newton breakdown, d\u03bb = ", dlam, " \u03bb = ", *lam0) }
                 else { TRLIB_PRINTLN_1("%s%e%s%e", "Newton breakdown, dlam = ", dlam, " \u03bb = ", *lam0) }
                 if(*iter_newton > itmax) { ret = TRLIB_TTR_ITMAX; break; }

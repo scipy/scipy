@@ -74,8 +74,8 @@ void dgtsv_(trlib_int_t *n, trlib_int_t *nrhs, trlib_flt_t *dl, trlib_flt_t *d, 
 #define TRLIB_DPTRFS(...) { TRLIB_TIC(start) dptrfs_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[8]) }
 #define TRLIB_DLAGTM(...) { TRLIB_TIC(start) dlagtm_(__VA_ARGS__); TRLIB_DURATION_SUB(start, end, timing[9]) }
 
-#define TRLIB_PRINTLN_1(...) if (verbose > 0) { fprintf(fout, "%s", prefix); fprintf(fout, __VA_ARGS__); fprintf(fout, "\n"); }
-#define TRLIB_PRINTLN_2(...) if (verbose > 1) { fprintf(fout, "%s", prefix); fprintf(fout, __VA_ARGS__); fprintf(fout, "\n"); }
+#define TRLIB_PRINTLN_1(...) if (verbose > 0) { if (fout) { fprintf(fout, "%s", prefix); fprintf(fout, __VA_ARGS__); fprintf(fout, "\n"); } else { printf("%s", prefix); printf(__VA_ARGS__); printf("\n"); } }
+#define TRLIB_PRINTLN_2(...) if (verbose > 1) { if (fout) { fprintf(fout, "%s", prefix); fprintf(fout, __VA_ARGS__); fprintf(fout, "\n"); } else { printf("%s", prefix); printf(__VA_ARGS__); printf("\n"); } }
 
 #define TRLIB_PRINT_VEC(P, N, X) { for(int vc = 0; vc < N; ++vc) { printf("%s %ld: %e\n", P, vc, *(X+vc)); } }
 
