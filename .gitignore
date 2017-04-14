@@ -173,6 +173,7 @@ scipy/optimize/minpack2/minpack2module.c
 scipy/optimize/nnls/_nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
+scipy/optimize/_trlib/_trlib.c
 scipy/signal/_spectral.c
 scipy/signal/_max_len_seq_inner.c
 scipy/signal/_upfirdn_apply.c
