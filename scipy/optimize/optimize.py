@@ -1998,6 +1998,9 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     Uses inverse parabolic interpolation when possible to speed up
     convergence of golden section method.
 
+    brent does not ensure that the located minimum is within the initially
+    specified bracketing interval x1 < xopt < x2. (See 'fminbound'
+    to ensure the same)
     """
     options = {'xtol': tol,
                'maxiter': maxiter}
