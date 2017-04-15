@@ -1149,8 +1149,9 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 
     Returns
     -------
-    nobs : int
+    nobs : int or ndarray of ints
        Number of observations (length of data along `axis`).
+       When 'omit' is chosen as nan_policy, each column is counted separately.
     minmax: tuple of ndarrays or floats
        Minimum and maximum value of data array.
     mean : ndarray or float
