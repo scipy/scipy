@@ -997,6 +997,40 @@ class BivariateSpline(_BivariateSplineBase):
         return dfitpack.dblint(tx,ty,c,kx,ky,xa,xb,ya,yb)
 
 
+    def derivative(self, x, y, dx, dy):
+        """
+        Evaluate the derivative of the spline at points x, y
+
+        Parameters
+        ----------
+        x, y : ndarray
+            Rank-1 arrays specifying the domain over which to evaluate the
+            derivative.
+        dx, dy : int
+            The orders of the partial derivatives in `x` and `y` respectively.
+
+        Returns
+        -------
+        vals : ndarray
+            The derivatives evaluated over the set formed by
+            the cross-product of `x` and `y`.
+
+        """
+
+        if dx < 0 or dy < 0:
+            raise ValueError("order of derivatives must not be negative")
+
+        if dx == 0 and dy == 0:
+            raise ValueError("at least one of dx and dy must be >= 0")
+
+        x = np.asarray(x)
+        y = np.asarray(y)
+
+        tck = self.tck[:3] + self.degrees
+
+        return fitpack.bisplev(x, y, tck, dx, dy)
+
+
 class SmoothBivariateSpline(BivariateSpline):
     """
     Smooth bivariate spline approximation.
