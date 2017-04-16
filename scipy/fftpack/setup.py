@@ -4,10 +4,16 @@ from __future__ import division, print_function, absolute_import
 
 
 from os.path import join
+import os
 
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
+
+    try:
+        toss = os.environ.pop('FFLAGS')
+    except KeyError:
+        pass
 
     config = Configuration('fftpack',parent_package, top_path)
 
