@@ -674,7 +674,7 @@ class IntegratorBase(object):
         raise NotImplementedError('%s does not support run_relax() method' %
                                   self.__class__.__name__)
 
-    # XXX: __str__ method for getting visual state of the integrator
+        # XXX: __str__ method for getting visual state of the integrator
 
 
 def _vode_banded_jac_wrapper(jacfunc, ml, jac_params):
@@ -803,7 +803,7 @@ class vode(IntegratorBase):
 
         if mf == 10:
             lrw = 20 + 16 * n
-        if mf in [11, 12]:
+        elif mf in [11, 12]:
             lrw = 22 + 16 * n + 2 * n * n
         elif mf == 13:
             lrw = 22 + 17 * n
