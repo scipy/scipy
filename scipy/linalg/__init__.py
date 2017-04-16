@@ -112,6 +112,21 @@ Matrix Functions
    fractional_matrix_power - Fractional matrix power
 
 
+Matrix Norms
+============
+
+.. autosummary::
+   :toctree: generated/
+
+   frobenius_norm - Vector 2-norm of the flattened matrix
+   nuclear_norm - The sum of all singular values of the matrix
+   spectral_norm - The largest singular value of the matrix
+   schatten_norm - Vector p-norm of the singular values of the matrix
+   induced_norm - The maximum of the p-norm of Ax for x with unit p-norm
+   ky_fan_norm - The sum of the largest k singular values of the matrix
+   entrywise_norm - Vector p-norm of the flattened matrix or ndarray
+
+
 Matrix Equation Solvers
 =======================
 
@@ -145,6 +160,7 @@ Special Matrices
    invpascal - Inverse Pascal matrix
    toeplitz - Toeplitz matrix
    tri - Construct a matrix filled with ones at and below a given diagonal
+
 
 Low-level routines
 ==================
@@ -183,6 +199,7 @@ from .decomp_svd import *
 from .decomp_schur import *
 from ._decomp_polar import *
 from .matfuncs import *
+from ._matrix_norms import *
 from .blas import *
 from .lapack import *
 from .special_matrices import *
