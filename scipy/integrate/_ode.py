@@ -450,7 +450,7 @@ class ode(object):
                 self._integrator.reset(len(self._y), self.jac is not None)
         else:
             raise ValueError("selected integrator does not support solout,"
-                             + " choose another one")
+                             " choose another one")
 
 
 def _transform_banded_jac(bjac):
@@ -674,7 +674,7 @@ class IntegratorBase(object):
         raise NotImplementedError('%s does not support run_relax() method' %
                                   self.__class__.__name__)
 
-        # XXX: __str__ method for getting visual state of the integrator
+    # XXX: __str__ method for getting visual state of the integrator
 
 
 def _vode_banded_jac_wrapper(jacfunc, ml, jac_params):
@@ -801,24 +801,24 @@ class vode(IntegratorBase):
     def reset(self, n, has_jac):
         mf = self._determine_mf_and_set_bands(has_jac)
 
-        if type(mf) != int or mf < 10 or mf > 25 or (mf >= 16 and mf <= 19):
-            raise ValueError('Unexpected mf=%s' % mf)
-        elif mf == 10:
+        if mf == 10:
             lrw = 20 + 16 * n
-        elif mf <= 12:
+        if mf in [11, 12]:
             lrw = 22 + 16 * n + 2 * n * n
         elif mf == 13:
             lrw = 22 + 17 * n
-        elif mf <= 15:
+        elif mf in [14, 15]:
             lrw = 22 + 18 * n + (3 * self.ml + 2 * self.mu) * n
         elif mf == 20:
             lrw = 20 + 9 * n
-        elif mf <= 22:
+        elif mf in [21, 22]:
             lrw = 22 + 9 * n + 2 * n * n
         elif mf == 23:
             lrw = 22 + 10 * n
-        else:
+        elif mf in [24, 25]:
             lrw = 22 + 11 * n + (3 * self.ml + 2 * self.mu) * n
+        else:
+            raise ValueError('Unexpected mf=%s' % mf)
 
         if mf % 10 in [0, 3]:
             liw = 30
