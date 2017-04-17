@@ -674,7 +674,7 @@ class IntegratorBase(object):
         raise NotImplementedError('%s does not support run_relax() method' %
                                   self.__class__.__name__)
 
-        # XXX: __str__ method for getting visual state of the integrator
+    # XXX: __str__ method for getting visual state of the integrator
 
 
 def _vode_banded_jac_wrapper(jacfunc, ml, jac_params):
