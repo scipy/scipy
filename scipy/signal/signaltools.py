@@ -1444,7 +1444,7 @@ def lfiltic(b, a, y, x=None):
 
 
 def deconvolve(signal, divisor):
-    """Deconvolves ``divisor`` out of ``signal``.
+    """Deconvolves ``divisor`` out of ``signal`` using inverse filtering.
 
     Returns the quotient and remainder such that
     ``signal = convolve(divisor, quotient) + remainder``
@@ -1492,8 +1492,8 @@ def deconvolve(signal, divisor):
         quot = []
         rem = num
     else:
-        input = ones(N - D + 1, float)
-        input[1:] = 0
+        input = zeros(N - D + 1, float)
+        input[0] = 1
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
