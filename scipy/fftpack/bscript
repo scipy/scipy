@@ -6,3 +6,5 @@ def pbuild(context):
                           includes="src", use="dfftpack fftpack CLIB")
     context.tweak_extension("convolve", features="c cshlib bento f2py pyext",
                           includes="src", use="dfftpack fftpack CLIB")
+    context.tweak_extension("_fftl", features="c cshlib bento f2py pyext",
+                          includes="src", use="fftl dfftpack fftpack CLIB")

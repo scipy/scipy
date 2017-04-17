@@ -7,6 +7,9 @@ Library:
     CompiledLibrary: dfftpack
         Sources: 
             src/dfftpack/*.f
+    CompiledLibrary: fftl
+        Sources: 
+            src/fftlog/*.f
     Extension: _fftpack
         Sources:
             src/zfft.c,
@@ -20,3 +23,8 @@ Library:
         Sources:
             src/convolve.c,
             convolve.pyf
+    Extension: _fftl
+        Sources:
+            src/fftlog.c,
+            src/drfft.c,
+            fftl.pyf

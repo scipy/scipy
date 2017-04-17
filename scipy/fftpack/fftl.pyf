@@ -1,0 +1,40 @@
+!%f90 -*- f90 -*-
+! Author: Dieter Werthmüller, January 2017
+
+python module _fftl
+    interface
+
+       subroutine drfftl(x, n, mu, q, dlnr, kr, rk, direction)
+         ! y = drfftl(x[, n, mu, q , dlnr, kr, rk, direction])
+         intent(c) drfftl
+         real*8 intent(c, in, out, copy, out=y) :: x(*)
+         integer optional, depend(x), intent(c, in) :: n=size(x)
+         real*8 optional, intent(c, in) :: mu = 0.5
+         real*8 optional, intent(c, in) :: q = 0
+         real*8 optional, intent(c, in) :: dlnr = 0.2
+         real*8 optional, intent(c, in) :: kr = 1
+         real*8 optional, intent(c, in) :: rk = 1
+         check(n>0&&n<=size(x)) n
+         integer optional, intent(c,in) :: direction = 1
+       end subroutine drfftl
+
+       subroutine getkr(mu, q, dlnr, kr, kropt)
+         real*8 intent(in) :: mu
+         real*8 intent(in) :: q
+         real*8 intent(in) :: dlnr
+         real*8 intent(in, out) :: kr
+         integer intent(in) :: kropt
+       end subroutine getkr
+
+       subroutine destroy_fftl_w_cache()
+         intent(c) destroy_fftl_w_cache
+       end subroutine destroy_fftl_w_cache
+
+       subroutine destroy_fftl_x_cache()
+         intent(c) destroy_fftl_x_cache
+       end subroutine destroy_fftl_x_cache
+
+    end interface 
+end python module _fftl
+
+! See http://cens.ioc.ee/projects/f2py2e/

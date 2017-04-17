@@ -19,6 +19,9 @@ def configuration(parent_package='',top_path=None):
     fftpack_src = [join('src/fftpack','*.f')]
     config.add_library('fftpack', sources=fftpack_src)
 
+    fftl_src = [join('src/fftlog', '*')]
+    config.add_library('fftl', sources=fftl_src)
+
     sources = ['fftpack.pyf','src/zfft.c','src/drfft.c','src/zrfft.c',
                'src/zfftnd.c', 'src/dct.c.src', 'src/dst.c.src']
 
@@ -33,8 +36,13 @@ def configuration(parent_package='',top_path=None):
         libraries=['dfftpack'],
         depends=dfftpack_src,
     )
-    return config
 
+    config.add_extension('_fftl',
+        sources=['fftl.pyf', 'src/fftlog.c', 'src/drfft.c'],
+        libraries=['dfftpack', 'fftpack', 'fftl'],
+        depends=fftl_src)
+
+    return config
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

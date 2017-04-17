@@ -21,6 +21,7 @@ Fast Fourier Transforms (FFTs)
    idct - Inverse discrete cosine transform
    dst - Discrete sine transform
    idst - Inverse discrete sine transform
+   fftlog - Logarithmic FFT (FFTLog)
 
 Differential and pseudo-differential operators
 ==============================================
@@ -50,6 +51,7 @@ Helper functions
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
    next_fast_len - Find the optimal length to zero-pad an FFT for speed
+   fftlogargs - Get input arguments for the logarithmic FFT (fftlog).
 
 Note that ``fftshift``, ``ifftshift`` and ``fftfreq`` are numpy functions
 exposed by ``fftpack``; importing them from ``numpy`` should be preferred.
@@ -90,9 +92,11 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fftfreq', 'rfftfreq',
            'fftshift', 'ifftshift',
            'next_fast_len',
+           'fftlog', 'fftlogargs',
            ]
 
 from .basic import *
+from .logarithmic import *
 from .pseudo_diffs import *
 from .helper import *
 
