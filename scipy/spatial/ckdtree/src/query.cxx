@@ -460,7 +460,7 @@ query_single_point(const ckdtree *self,
 
     /* fill output arrays with sorted neighbors */
     for (i = 0; i < nk; ++i) {
-        if(k[i] - 1 >= nnb) {
+        if(NPY_UNLIKELY(k[i] - 1 >= nnb)) {
             result_indices[i] = self->n;
             result_distances[i] = NPY_INFINITY;
         } else {

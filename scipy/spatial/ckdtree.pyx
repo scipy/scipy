@@ -655,7 +655,6 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             The list of k-th nearest neighbors to return. If k is an 
             integer it is treated as a list of [1, ... k] (range(1, k+1)).
             Note that the counting starts from 1.
-            if k is not sorted.
         eps : non-negative float
             Return approximate nearest neighbors; the k-th returned value 
             is guaranteed to be no further than (1+eps) times the 
