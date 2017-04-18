@@ -1954,7 +1954,7 @@ class Brent:
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     Given a function of one-variable and a possible bracketing interval,
-    return the minimum of the function isolated to a fractional precision of
+    return the local minimum of the function isolated to a fractional precision of
     tol.
 
     Parameters
@@ -1998,9 +1998,11 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     Uses inverse parabolic interpolation when possible to speed up
     convergence of golden section method.
 
-    brent does not ensure that the located minimum is within the initially
-    specified bracketing interval x1 < xopt < x2. (See 'fminbound'
-    to ensure the same)
+    Does not ensure that the located minimum is within the initially
+    specified bracketing interval. (See 'fminbound' to ensure the same)
+    Esentially, this looks for the local minimum of a function even when
+    supplied with a bracketing interval, while fminbound just returns
+    the minimum in the interval it is provided with the function call. 
     """
     options = {'xtol': tol,
                'maxiter': maxiter}
