@@ -1954,8 +1954,8 @@ class Brent:
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
     Given a function of one-variable and a possible bracketing interval,
-    return the local minimum of the function isolated to a fractional precision of
-    tol.
+    return the local minimum of the function isolated to a fractional precision
+    of tol.
 
     Parameters
     ----------
