@@ -161,7 +161,7 @@ cpdef _ndim_coords_from_arrays(points, ndim=None):
     if isinstance(points, tuple) and len(points) == 1:
         # handle argument tuple
         points = points[0]
-    if isinstance(points, tuple):
+    if isinstance(points, tuple) or isinstance(points, list):
         p = np.broadcast_arrays(*points)
         n = len(p)
         for j in range(1, n):
