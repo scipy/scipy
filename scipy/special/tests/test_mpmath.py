@@ -1038,7 +1038,7 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_expm1_complex(self):
         assert_mpmath_equal(sc.expm1,
                             mpmath.expm1,
-                            [ComplexArg()])
+                            [ComplexArg()], rtol=1e-14)
 
     def test_log1p_complex(self):
         assert_mpmath_equal(sc.log1p,
