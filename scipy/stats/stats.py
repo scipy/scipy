@@ -1369,7 +1369,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        The array containing the data to be tested.
+        The array containing the sample to be tested.
     axis : int or None, optional
         Axis along which to compute test. Default is 0. If None,
         compute over the whole array `a`.
@@ -1394,6 +1394,23 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Tests for departure from
            normality", Biometrika, 60, 613-622
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> pts = 1000
+    >>> np.random.seed(28041990)
+    >>> a = np.random.normal(0, 1, size=pts)
+    >>> b = np.random.normal(2, 1, size=pts)
+    >>> x = np.concatenate((a, b))
+    >>> k2, p = stats.normaltest(x)
+    >>> alpha = 1e-3
+    >>> print("p = {:g}".format(p))
+    p = 3.27207e-11
+    >>> if p < alpha:  # null hypothesis: x comes from a normal distribution
+    ...     print("The null hypothesis can be rejected")
+    ... else:
+    ...     print("The null hypothesis cannot be rejected")
+    The null hypothesis can be rejected
     """
     a, axis = _chk_asarray(a, axis)
 
