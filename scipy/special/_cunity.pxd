@@ -105,13 +105,13 @@ cdef inline double complex cexpm1(double complex z) nogil:
 
     if zr <= -40:
         x = -1.0
-    else:
+        y = exp(zr)*sin(zi)
+    elif zr > -1.0:
         ezr = expm1(zr)
         x = ezr*cos(zi) + cosm1(zi)
-    # don't compute exp(zr) too, unless necessary
-    if zr > -1.0:
         y = (ezr + 1.0)*sin(zi)
     else:
+        x = expm1(zr)*cos(zi) + cosm1(zi)
         y = exp(zr)*sin(zi)
 
     return zpack(x, y)
