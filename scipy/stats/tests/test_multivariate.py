@@ -1349,9 +1349,7 @@ class TestRandomCorrelation(TestCase):
         np.random.seed(123)
 
         eigs = [norm(i, np.random.uniform(size=i)) for i in range(2, 6)]
-        eigs.append([4,0,0,0])
-
-        ones = [[1.]*len(e) for e in eigs]
+        ones = [[1.]*i for i in range(2, 6)]
         xs = [random_correlation.rvs(e) for e in eigs]
 
         # Test that determinants are products of eigenvalues
