@@ -106,10 +106,30 @@ class FortranFile(object):
            The data to write.
 
         """
-        s = np.array(s, order='F')
-        np.array([s.nbytes],dtype=self._header_dtype).tofile(self._fp)
-        s.tofile(self._fp)
-        np.array([s.nbytes],dtype=self._header_dtype).tofile(self._fp)
+        try:
+            # test if iterable or list, and encapsulate each item in np.array
+            if isinstance(s, np.ndarray):
+                # np.array and the like (with all elements identical) should be
+                # handled as single elements.
+                raise TypeError
+            else:
+                # 'for-in' raises a TypeError if neither iterable or list
+                s = [np.array(e, order = 'F') for e in s]
+                nb = np.array([np.sum((e.nbytes for e in s))], dtype = self._header_dtype)
+                nb.tofile(self._fp)
+                for e in s:
+                    e.tofile(self._fp)
+
+                nb.tofile(self._fp)
+
+        except TypeError:
+            # single element, encapsulate in np.array
+            s = np.array(s, order = 'F')
+            nb = np.array([s.nbytes], dtype = self._header_dtype)
+
+            nb.tofile(self._fp)
+            s.tofile(self._fp)
+            nb.tofile(self._fp)
 
     def read_record(self, dtype=None):
         """
