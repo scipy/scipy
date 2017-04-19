@@ -94,7 +94,7 @@ class TestExpmActionSimple(TestCase):
                     B = np.random.randn(n, k)
                     observed = _expm_multiply_simple(A, B, t=t)
                     expected = np.dot(scipy.linalg.expm(t*A), B)
-                    assert_allclose(observed, expected)
+                    assert_allclose(observed, expected, equal_nan=True)
 
     def test_scaled_expm_multiply_single_timepoint(self):
         np.random.seed(1234)

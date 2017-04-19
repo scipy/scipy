@@ -2094,7 +2094,8 @@ class TestMoments(TestCase):
         a = np.arange(8).reshape(2, -1).astype(float)
         a[1, 0] = np.nan
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
+        np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15,
+                                   equal_nan=True)
 
     def test_variation(self):
         # variation = samplestd / mean
@@ -2117,7 +2118,8 @@ class TestMoments(TestCase):
         a = np.arange(8).reshape(2, -1).astype(float)
         a[1, 0] = np.nan
         vv = stats.variation(a, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
+        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan],
+                                   atol=1e-15, equal_nan=True)
 
     def test_skewness(self):
         # Scalar test case
@@ -2149,7 +2151,8 @@ class TestMoments(TestCase):
         a = np.arange(8).reshape(2, -1).astype(float)
         a[1, 0] = np.nan
         s = stats.skew(a, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
+        np.testing.assert_allclose(s, [0, np.nan], atol=1e-15,
+                                   equal_nan=True)
 
     def test_kurtosis(self):
         # Scalar test case
@@ -2187,7 +2190,8 @@ class TestMoments(TestCase):
         a = np.arange(8).reshape(2, -1).astype(float)
         a[1, 0] = np.nan
         k = stats.kurtosis(a, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
+        np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15,
+                                   equal_nan=True)
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
@@ -2441,7 +2445,7 @@ class TestPowerDivergence(object):
         ddof = np.asarray(ddof)
         expected_p = stats.distributions.chi2.sf(expected_stat,
                                                  num_obs - 1 - ddof)
-        assert_allclose(p, expected_p)
+        assert_allclose(p, expected_p, equal_nan=True)
 
     def test_basic(self):
         for case in power_div_1d_cases:

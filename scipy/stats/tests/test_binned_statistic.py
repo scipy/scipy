@@ -285,8 +285,8 @@ class TestBinnedStatistic(object):
         stat2, binx2, biny2, bc2 = binned_statistic_2d(
             x, y, [v, w], 'mean', bins=8)
 
-        assert_allclose(stat2[0], stat1v)
-        assert_allclose(stat2[1], stat1w)
+        assert_allclose(stat2[0], stat1v, equal_nan=True)
+        assert_allclose(stat2[1], stat1w, equal_nan=True)
         assert_allclose(binx1v, binx2)
         assert_allclose(biny1w, biny2)
         assert_allclose(bc1v, bc2)
@@ -415,8 +415,8 @@ class TestBinnedStatistic(object):
         stat1w, edges1w, bc1w = binned_statistic_dd(X, w, np.std, bins=8)
         stat2, edges2, bc2 = binned_statistic_dd(X, [v, w], np.std, bins=8)
 
-        assert_allclose(stat2[0], stat1v)
-        assert_allclose(stat2[1], stat1w)
+        assert_allclose(stat2[0], stat1v, equal_nan=True)
+        assert_allclose(stat2[1], stat1w, equal_nan=True)
         assert_allclose(edges1v, edges2)
         assert_allclose(edges1w, edges2)
         assert_allclose(bc1v, bc2)

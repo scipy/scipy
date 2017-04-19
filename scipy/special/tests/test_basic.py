@@ -1635,32 +1635,38 @@ class TestErf(TestCase):
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, -1, 1]
-        assert_allclose(special.erf(vals), expected, rtol=1e-15)
+        assert_allclose(special.erf(vals), expected, rtol=1e-15,
+                        equal_nan=True)
 
     def test_erfc_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, 2, 0]
-        assert_allclose(special.erfc(vals), expected, rtol=1e-15)
+        assert_allclose(special.erfc(vals), expected, rtol=1e-15,
+                        equal_nan=True)
 
     def test_erfcx_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, np.inf, 0]
-        assert_allclose(special.erfcx(vals), expected, rtol=1e-15)
+        assert_allclose(special.erfcx(vals), expected, rtol=1e-15,
+                        equal_nan=True)
 
     def test_erfi_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, -np.inf, np.inf]
-        assert_allclose(special.erfi(vals), expected, rtol=1e-15)
+        assert_allclose(special.erfi(vals), expected, rtol=1e-15,
+                        equal_nan=True)
 
     def test_dawsn_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan, -0.0, 0.0]
-        assert_allclose(special.dawsn(vals), expected, rtol=1e-15)
+        assert_allclose(special.dawsn(vals), expected, rtol=1e-15,
+                        equal_nan=True)
 
     def test_wofz_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
         expected = [np.nan + np.nan * 1.j, 0.-0.j, 0.+0.j]
-        assert_allclose(special.wofz(vals), expected, rtol=1e-15)
+        assert_allclose(special.wofz(vals), expected, rtol=1e-15,
+                        equal_nan=True)
 
 
 class TestEuler(TestCase):
