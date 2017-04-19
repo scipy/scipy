@@ -332,10 +332,10 @@ Hessian product example:
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
-Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``method='trust-trlib'``)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``method='trust-krylov'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Similar to the ``trust-ncg`` method, the ``trust-trlib`` method is a method
+Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
 suitable for large-scale problems as it uses the hessian only as linear
 operator by means of matrix-vector products.
 In contrast to the ``trust-ncg`` method, it solves the quadratic subproblem
@@ -358,7 +358,7 @@ products per subproblem solve in comparison to the ``trust-ncg`` method.
 Full Hessian example:
 """""""""""""""""""""
 
-    >>> res = minimize(rosen, x0, method='trust-trlib',
+    >>> res = minimize(rosen, x0, method='trust-krylov',
     ...                jac=rosen_der, hess=rosen_hess,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
@@ -373,7 +373,7 @@ Full Hessian example:
 Hessian product example:
 """"""""""""""""""""""""
 
-    >>> res = minimize(rosen, x0, method='trust-trlib',
+    >>> res = minimize(rosen, x0, method='trust-krylov',
     ...                jac=rosen_der, hessp=rosen_hess_p,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
@@ -398,7 +398,7 @@ Hessian product example:
 Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-All methods ``Newton-CG``, ``trust-ncg`` and ``trust-trlib`` are suitable for dealing with
+All methods ``Newton-CG``, ``trust-ncg`` and ``trust-krylov`` are suitable for dealing with
 large-scale problems (problems with thousands of variables). That is because the conjugate
 gradient algorithm approximatelly solve the trust-region subproblem (or invert the Hessian)
 by iterations without the explicit Hessian factorization. Since only the product of the Hessian

@@ -1,5 +1,5 @@
 """
-Unit tests for trust-region subproblem solver trlib.
+Unit tests for Krylov space trust-region subproblem solver.
 
 To run it in its simplest form::
   nosetests test_optimize.py
@@ -14,9 +14,9 @@ from numpy.testing import (TestCase, assert_, assert_array_equal,
                            assert_equal, assert_array_almost_equal,
                            assert_array_less, run_module_suite)
 
-TRLIBQP = TRLIBQuadraticSubproblem(tol_rel_i=1e-8, tol_rel_b=1e-6)
+KrylovQP = TRLIBQuadraticSubproblem(tol_rel_i=1e-8, tol_rel_b=1e-6)
 
-class TestTRLIBQuadraticSubproblem(TestCase):
+class TestKrylovQuadraticSubproblem(TestCase):
 
     def test_for_the_easy_case(self):
 
@@ -31,7 +31,7 @@ class TestTRLIBQuadraticSubproblem(TestCase):
         trust_radius = 1.0
 
         # Solve Subproblem
-        subprob = TRLIBQP(x=0,
+        subprob = KrylovQP(x=0,
                           fun=lambda x: 0,
                           jac=lambda x: g,
                           hess=lambda x: None,
@@ -73,7 +73,7 @@ class TestTRLIBQuadraticSubproblem(TestCase):
         trust_radius = 1.0
 
         # Solve Subproblem
-        subprob = TRLIBQP(x=0,
+        subprob = KrylovQP(x=0,
                           fun=lambda x: 0,
                           jac=lambda x: g,
                           hess=lambda x: None,

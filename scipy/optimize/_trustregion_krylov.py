@@ -1,9 +1,9 @@
 from ._trustregion import (_minimize_trust_region)
 from ._trlib import (TRLIBQuadraticSubproblem)
 
-__all__ = ['_minimize_trust_trlib']
+__all__ = ['_minimize_trust_krylov']
 
-def _minimize_trust_trlib(fun, x0, args=(), jac=None, hess=None,
+def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None,
         hessp=None, inexact=True, **trust_region_options):
     """
     Minimization of a scalar function of one or more variables using
@@ -24,7 +24,7 @@ def _minimize_trust_trlib(fun, x0, args=(), jac=None, hess=None,
                          'exact minimization.')
     if hess is None and hessp is None:
         raise ValueError('Either the Hessian or the Hessian-vector product '
-                         'is required for Newton-CG trust-region minimization')
+                         'is required for Krylov trust-region minimization')
     if inexact:
         return _minimize_trust_region(fun, x0, args=args, jac=jac,
                 hess=hess, hessp=hessp,

@@ -84,6 +84,7 @@ This new trust-region method solves the subproblem with higher accuracy at the c
 of more Hessian factorizations (compared to dogleg) and is able to deal with indefinite
 Hessians. It seems very competitive against the other Newton methods implemented in scipy.
 The methods `trust-region-exact` and `trust-trlib` have been added to the
+The methods `trust-region-exact` and `trust-krylov` have been added to the
 function `scipy.optimize.minimize`. These new trust-region methods solve the
 subproblem with higher accuracy at the cost of more Hessian factorizations
 (compared to dogleg) or more matrix vector products (compared to ncg) but
