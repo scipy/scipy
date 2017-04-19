@@ -405,7 +405,7 @@ class ode(object):
             then perform a single integration step and return.
         relax : bool
             If True and if the integrator supports the run_relax method,
-            then integrate until t_1 > t and return.
+            then integrate until t_1 >= t and return.
 
         Returns
         -------
@@ -607,7 +607,7 @@ class complex_ode(ode):
             then perform a single integration step and return.
         relax : bool
             If True and if the integrator supports the run_relax method,
-            then integrate until t_1 > t and return.
+            then integrate until t_1 >= t and return.
 
         Returns
         -------
