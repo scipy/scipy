@@ -450,24 +450,30 @@ query_single_point(const ckdtree *self,
 
         }
     }
-    /* fill output arrays with sorted neighbors */
-    int j = nk - 1;
-    while(k[j] > neighbors.n) {
-        j--;
-    }
-    for (i=neighbors.n-1; i>=0; --i) {
-        neighbor = neighbors.pop();
-        if(i + 1 != k[j]) continue;
-        result_indices[j] = neighbor.contents.intdata;
-        if (NPY_LIKELY(p == 2.0))
-            result_distances[j] = std::sqrt(-neighbor.priority);
-        else if ((p == 1.) || (ckdtree_isinf(p)))
-            result_distances[j] = -neighbor.priority;
-        else
-            result_distances[j] = std::pow((-neighbor.priority),(1./p));
-        --j;
+
+    /* heapsort */
+    std::vector<heapitem> sorted_neighbors(kmax);
+    npy_intp nnb = neighbors.n;
+    for(i = neighbors.n - 1; i >=0; --i) {
+        sorted_neighbors[i] = neighbors.pop();
     }
 
+    /* fill output arrays with sorted neighbors */
+    for (i = 0; i < nk; ++i) {
+        if(NPY_UNLIKELY(k[i] - 1 >= nnb)) {
+            result_indices[i] = self->n;
+            result_distances[i] = NPY_INFINITY;
+        } else {
+            neighbor = sorted_neighbors[k[i] - 1];
+            result_indices[i] = neighbor.contents.intdata;
+            if (NPY_LIKELY(p == 2.0))
+                result_distances[i] = std::sqrt(-neighbor.priority);
+            else if ((p == 1.) || (ckdtree_isinf(p)))
+                result_distances[i] = -neighbor.priority;
+            else
+                result_distances[i] = std::pow((-neighbor.priority),(1./p));
+        }
+    }
 }
 
 /* Query n points for their k nearest neighbors */
