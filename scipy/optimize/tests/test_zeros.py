@@ -4,7 +4,7 @@ from math import sqrt, exp, sin, cos
 
 from numpy.testing import (TestCase, assert_warns, assert_, 
                            run_module_suite, assert_allclose,
-                           assert_equal)
+                           assert_equal, assert_raises)
 from numpy import finfo
 
 from scipy.optimize import zeros as cc
@@ -49,17 +49,22 @@ class TestBasic(TestCase):
         f2_2 = lambda x: exp(x) + cos(x)
 
         for f, f_1, f_2 in [(f1, f1_1, f1_2), (f2, f2_1, f2_2)]:
-            x = zeros.newton(f, 3, tol=1e-6)
-            assert_allclose(f(x), 0, atol=1e-6)
-            x = zeros.newton(f, 3, fprime=f_1, tol=1e-6)
-            assert_allclose(f(x), 0, atol=1e-6)
-            x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, tol=1e-6)
-            assert_allclose(f(x), 0, atol=1e-6)
+            for halt in ['astep', 'rstep', 'afval', 'rfval']:
+                x = zeros.newton(f, 3, halt=halt)
+                assert_allclose(f(x), 0, atol=1e-6)
+                x = zeros.newton(f, 3, fprime=f_1, halt=halt)
+                assert_allclose(f(x), 0, atol=1e-6)
+                x = zeros.newton(f, 3, fprime=f_1, fprime2=f_2, halt=halt)
+                assert_allclose(f(x), 0, atol=1e-6)
 
     def test_deriv_zero_warning(self):
-        func = lambda x: x**2
+        func = lambda x: x**2 + 1
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, cc.newton, func, 0.0, dfunc)
+
+    def test_invalid_halt(self):
+        func = lambda x: x
+        assert_raises(ValueError, cc.newton, func, 0.0, halt="invalid")
 
 
 def test_gh_5555():
@@ -99,6 +104,13 @@ def test_gh_5557():
     for method in methods:
         res = method(f, 0, 1, xtol=atol, rtol=rtol)
         assert_allclose(0.6, res, atol=atol, rtol=rtol)
+
+
+def test_gh_6379():
+    def f(x):
+        return x**4 - x**2 + 1
+
+    assert_raises(RuntimeError, cc.newton, f, 0.001, tol=1e-8, halt='afval')
 
 
 class TestRootResults:
