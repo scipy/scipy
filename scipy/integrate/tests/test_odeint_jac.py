@@ -63,7 +63,8 @@ def check_odeint(jactype):
 
     # It is likely that yfinal and y1 are *exactly* the same, but
     # we'll be cautious and use assert_allclose.
-    assert_allclose(yfinal, y1, rtol=1e-12)
+    ##assert_allclose(yfinal, y1, rtol=1e-12)
+    assert_equal(yfinal, y1)
     assert_equal((odeint_nst, odeint_nfe, odeint_nje), (nst, nfe, nje))
 
 
