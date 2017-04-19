@@ -2,7 +2,7 @@
 
 import tempfile
 import shutil
-from os import path
+from os import path, unlink
 from glob import iglob
 import re
 
@@ -75,3 +75,22 @@ def test_fortranfiles_write():
         finally:
             shutil.rmtree(tmpdir)
 
+
+def test_fortranfile_write_mixed_record():
+    tf = tempfile.mktemp()
+
+    a = [np.float32(2), np.float32(3), np.int32(100)]
+
+    try:
+        with FortranFile(tf, 'w') as f:
+            f.write_record(a)
+
+        with FortranFile(tf, 'r') as f:
+            b = f.read_record('f4,f4,i4')
+
+        assert_equal(b['f0'][0], a[0])
+        assert_equal(b['f1'][0], a[1])
+        assert_equal(b['f2'][0], a[2])
+
+    finally:
+        unlink(tf)
