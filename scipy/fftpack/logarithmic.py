@@ -16,51 +16,53 @@ atexit.register(_fftl.destroy_fftl_w_cache)
 del atexit
 
 
-def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0):
+def fftlog(x, spacing, transform='sine', bias=0.0, kr=1.0, rk=1.0):
     """Fourier transform of a logarithmically spaced periodic sequence.
 
     Fast Fourier transform of a real, discrete periodic sequence of
     logarithmically spaced points.
 
-    `fftlog` computes a discrete version of the Fourier sine (if mu = 1/2) or
-    cosine (if mu = -1/2) transform
+    `fftlog` computes a discrete version of the Fourier sine or cosine
+    transform
 
     .. math::
 
-        \tilde{A} = \sqrt{2/\pi} \int_0^\infty A(r) \sin(kr) dr,
+        G = \sqrt{2/\pi} \int_0^\infty F(r) \sin(kr) dr,
 
-        \tilde{A} = \sqrt{2/\pi} \int_0^\infty A(r) \cos(kr) dr
+        G = \sqrt{2/\pi} \int_0^\infty F(r) \cos(kr) dr
 
 
     by making the substitutions
 
     .. math::
 
-        A(r) = a(r) r^{\mu-1/2},
+        F(r) = f(r) r^{ \mu - 1/2},
 
-        \tilde{A}(k) = \tilde{a}(k) k^{-\mu -1/2}
+        G(k) = g(k) k^{-\mu - 1/2}
 
-    and applying a biased Hankel transform to a(r).
+    and applying a biased Hankel transform to f(r);
+    mu = 1/2 for the sine and -1/2 for the cosine transform.
 
     Parameters
     ----------
     x : array_like, real-valued
-        Array A(r) to transform: a(j) is A(r_j) at r_j = r_c exp[(j-jc) dlnr],
+        Array F(r) to transform: f(j) is F(r_j) at r_j = r_c exp[(j-jc) dlnr],
         where jc = (n+1)/2 = central index of array.
 
-    dlogr : float, optional
+    spacing : float, optional
         Separation between input-points (log10); may be positive or negative.
         Default is 0.01.
 
-    mu : string, optional; {'sine', 'cosine'}
-        Index of J_mu in Hankel transform: 0.5 for a sine transform and -0.5
-        for a cosine transform. Default is 'sine' (0.5).
+    transform : string, optional; {'sine', 'cosine'}
+        Transform type to use, which defines index of J_mu in Hankel transform:
+        mu is 0.5 for a sine transform and -0.5 for a cosine transform. Default
+        is 'sine' (mu=0.5).
 
-    q : float, optional
-        Exponent of power law bias; q may be any real number, positive or
-        negative.  If in doubt, use q = 0, for which case the Hankel transform
+    bias : float, optional
+        Exponent of power law bias; bias may be any real number, positive or
+        negative. If in doubt, use bias = 0, for which case the Hankel transform
         is orthogonal, i.e. self-inverse, provided also that, for n even, kr is
-        low-ringing.  Non-zero q may yield better approximations to the
+        low-ringing. Non-zero bias may yield better approximations to the
         continuous Hankel transform for some functions. Default is 0
         (unbiased).
 
@@ -72,28 +74,15 @@ def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0):
 
     rk : float, optional
         r_c/k_c = r_j/k_j (a constant, the same constant for any j); rk is not
-        (necessarily) the same quantity as kr.  rk is used only to multiply the
+        (necessarily) the same quantity as kr. rk is used only to multiply the
         output array by sqrt(rk)^dir, so if you want to do the normalization
         later, or you don't care about the normalization, you can set rk = 1.
         Default is 1.
 
-    n : int, optional
-        Defines the length of the Fourier transform.  If `n` is not specified
-        (the default) then ``n = x.shape[axis]``.  If ``n < x.shape[axis]``,
-        `x` is truncated, if ``n > x.shape[axis]``, `x` is zero-padded.
-
-    axis : int, optional
-        The axis along which the transform is applied.  The default is the
-        last axis.
-
-    overwrite_x : bool, optional
-        If set to true, the contents of `x` can be overwritten. Default is
-        False.
-
     Returns
     -------
     y : real ndarray
-        Transformed array Ã(k): a(j) is Ã(k_j) at k_j = k_c exp[(j-jc) dlnr].
+        Transformed array G(k): g(j) is G(k_j) at k_j = k_c exp[(j-jc) dlnr].
 
     .. versionadded:: 1.0.0
 
@@ -107,35 +96,43 @@ def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0):
     Examples
     --------
     >>> from scipy.fftpack import fftlog, fftlogargs
-    >>> # Get fftlog-arguments
-    >>> n, dlogr, logrc = 4, .1, 0
-    >>> q = 0
-    >>> mu = 'sine'
-    >>> w, t, kr, rk = fftlogargs(n, dlogr, logrc, mu, q, 1, 1)
+
+    Get fftlog-arguments
+
+    >>> n, spacing, center = 4, .1, 0
+    >>> bias = 0
+    >>> transform = 'sine'
+    >>> w, t, kr, rk = fftlogargs(n, spacing, center, transform, bias, 1, 1)
     >>> rk /= 2/np.pi    # Scale
-    >>> # Analytical solution
+
+    Analytical solution
+
     >>> fw = np.sqrt(np.pi/2/w)  # Frequency domain
     >>> ft = 1/np.sqrt(t)        # Time domain
-    >>> # FFTLog
-    >>> fftl = fftlog(fw, dlogr=dlogr, mu=mu, q=q, kr=kr, rk=rk)
+
+    FFTLog
+
+    >>> fftl = fftlog(fw, spacing, transform, bias, kr, rk)
     >>> fftl *= 2/np.pi  # Scale back
-    >>> # Print result
+
+    Print result
+
     >>> print('Input      :', fw)
-    >>> print('Analytical :', ft)
-    >>> print('fftlog     :', fftl)
     Input      : [ 1.48956664  1.32757767  1.18320484  1.05453243]
+    >>> print('Analytical :', ft)
     Analytical : [ 1.15380264  1.02832769  0.91649802  0.81682972]
+    >>> print('fftlog     :', fftl)
     fftlog     : [ 1.15380264  1.02832769  0.91649802  0.81682972]
 
     """
 
-    # Check that mu is {'sine', or 'cosine'}
-    if mu not in ['sine', 'cosine']:
-        raise ValueError("mu must be either 'sine' or 'cosine'.")
-    if mu == 'sine':
-        nmu = 0.5
+    # Check that transform is {'sine', or 'cosine'}
+    if transform not in ['sine', 'cosine']:
+        raise ValueError("transform must be either 'sine' or 'cosine'.")
+    if transform == 'sine':
+        mu = 0.5
     else:
-        nmu = -0.5
+        mu = -0.5
 
     tmp = _asfarray(x)
 
@@ -143,18 +140,19 @@ def fftlog(x, dlogr, mu='sine', q=0.0, kr=1.0, rk=1.0):
         raise ValueError("Invalid number of FFT data points "
                          "(%d) specified." % len(tmp))
 
-    dlnr = dlogr*np.log(10.0)
+    dlnr = spacing*np.log(10.0)
     n = len(tmp)
     if np.iscomplexobj(tmp):  # Returns complex128
-        y = (_fftl.drfftl(tmp.real, n, nmu, q, dlnr, kr, rk, 1) +
-             1j*_fftl.drfftl(tmp.imag, n, nmu, q, dlnr, kr, rk, 1))
+        y = (_fftl.drfftl(tmp.real, n, mu, bias, dlnr, kr, rk, 1) +
+             1j*_fftl.drfftl(tmp.imag, n, mu, bias, dlnr, kr, rk, 1))
     else:  # Returns float64
-        y = _fftl.drfftl(tmp, n, nmu, q, dlnr, kr, rk, 1)
+        y = _fftl.drfftl(tmp, n, mu, bias, dlnr, kr, rk, 1)
 
     return y
 
 
-def fftlogargs(n, dlogr=0.01, logrc=0.0, mu='sine', q=0, kr=1, kropt=0):
+def fftlogargs(n, spacing=0.01, center=0.0, transform='sine', bias=0, kr=1,
+               kropt=False):
     """FFTLog input parameters (for usage with fftlog).
 
     Return the required input points and the corresponding output points, the
@@ -165,24 +163,25 @@ def fftlogargs(n, dlogr=0.01, logrc=0.0, mu='sine', q=0, kr=1, kropt=0):
     n : int
         Number of samples.
 
-    dlogr : float, optional
+    spacing : float, optional
         Separation between input-points (log10); may be positive or negative.
         Default is 0.01.
 
-    logrc : float, optional
+    center : float, optional
         Central point of periodic interval (log10). Default is 0.
 
-    mu : string, optional; {'sine', 'cosine'}
-        Index of J_mu in Hankel transform: 0.5 for a sine transform and -0.5
-        for a cosine transform. Default is 'sine' (0.5).
+    transform : string, optional; {'sine', 'cosine'}
+        Transform type to use, which defines index of J_mu in Hankel transform:
+        mu is 0.5 for a sine transform and -0.5 for a cosine transform. Default
+        is 'sine' (mu=0.5).
 
-    q : float, optional
-        Exponent of power law bias; q may be any real number, positive or
-        negative.  If in doubt, use q = 0, for which case the Hankel transform
+    bias : float, optional
+        Exponent of power law bias; bias may be any real number, positive or
+        negative. If in doubt, use bias = 0, for which case the Hankel transform
         is orthogonal, i.e. self-inverse, provided also that, for n even, kr is
-        low-ringing.  Non-zero q may yield better approximations to the
+        low-ringing. Non-zero bias may yield better approximations to the
         continuous Hankel transform for some functions. Only used if kropt is
-        1. Default is 0 (unbiased).
+        True. Default is 0 (unbiased).
 
     kr : float, optional
         k_c r_c where c is central point of array
@@ -190,9 +189,9 @@ def fftlogargs(n, dlogr=0.01, logrc=0.0, mu='sine', q=0, kr=1, kropt=0):
         Normally one would choose kr to be about 1 (default) (or 2, or pi, to
         taste). Default is 1.
 
-    kropt : int, optional; {0, 1}
-        - 0 to use input kr as is (default);
-        - 1 to change kr to nearest low-ringing kr, quietly.
+    kropt : bool, optional
+        - False to use input kr as is (default);
+        - True to change kr to nearest low-ringing value.
 
 
     Returns
@@ -202,55 +201,52 @@ def fftlogargs(n, dlogr=0.01, logrc=0.0, mu='sine', q=0, kr=1, kropt=0):
     outpts : ndarray
         Array of length `n`, containing the corresponding output-points.
     kr : float
-        Low-ringing kr if kropt=1; else same as input.
+        Low-ringing kr if kropt=True; else same as input.
     rk : float
-        Inverse of kr, shifted if logrc != 0 and kr != 1.
+        Inverse of kr, shifted if center != 0 and kr != 1.
 
     .. versionadded:: 1.0.0
 
     Examples
     --------
-    >>> from scipy import fftpack
-    >>> n = 4
-    >>> kr = 1
-    >>> kropt = 1
-    >>> outpts = fftpack.fftlogargs(n, kr=kr, kropt=kropt)
-    >>> print('intpts :', outpts[0])
-    >>> print('outpts :', outpts[1])
-    >>> print('kr     :', outpts[2])
-    >>> print('rk     :', outpts[3])
+    >>> from scipy.fftpack import fftlogargs
+    >>> intpts, outpts, kr, rk = fftlogargs(n=4, kr=1, kropt=True)
+    >>> print('intpts :', intpts)
     intpts : [ 0.96605088  0.98855309  1.01157945  1.03514217]
+    >>> print('outpts :', outpts)
     outpts : [ 0.97306236  0.9957279   1.01892138  1.04265511]
+    >>> print('kr     :', kr)
     kr     : 1.0072578812188107
+    >>> print('rk     :', rk)
     rk     : 0.992794416054
 
     """
-    # Check that mu is {'sine', or 'cosine'}; get numeric mu (nmu)
-    if mu not in ['sine', 'cosine']:
-        raise ValueError("mu must be either 'sine' or 'cosine'.")
-    if mu == 'sine':
-        nmu = 0.5
+    # Check that transform is {'sine', or 'cosine'}; get mu
+    if transform not in ['sine', 'cosine']:
+        raise ValueError("transform must be either 'sine' or 'cosine'.")
+    if transform == 'sine':
+        mu = 0.5
     else:
-        nmu = -0.5
+        mu = -0.5
 
     # Central index (1/2 integral if n is even)
     nc = (n + 1)/2.0
 
     # Input points (frequencies)
-    inppts = 10**(logrc + (np.arange(n)+1 - nc)*dlogr)
+    inppts = 10**(center + (np.arange(n)+1 - nc)*spacing)
 
     # Get low-ringing kr
-    if kropt == 1:
-        dlnr = dlogr*np.log(10.0)
-        kr = _fftl.getkr(mu=nmu, q=q, dlnr=dlnr, kr=kr, kropt=kropt)
+    if kropt:
+        dlnr = spacing*np.log(10.0)
+        kr = _fftl.getkr(mu=mu, q=bias, dlnr=dlnr, kr=kr)
 
     # Central point log10(k_c) of periodic interval
-    logkc = np.log10(kr) - logrc
+    logkc = np.log10(kr) - center
 
     # rk = r_c/k_c
-    rk = 10**(logrc - logkc)
+    rk = 10**(center - logkc)
 
     # Output points (times)
-    outpts = 10**(logkc + (np.arange(n)+1 - nc)*dlogr)
+    outpts = 10**(logkc + (np.arange(n)+1 - nc)*spacing)
 
     return inppts, outpts, kr, rk

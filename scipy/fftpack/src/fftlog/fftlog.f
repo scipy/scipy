@@ -808,9 +808,8 @@ c        and at the same time undo the FFTs' multiplication by n
 c
 c=======================================================================
 !      real*8 function krgood(mu,q,dlnr,kr) !%DW replace function with
-      subroutine getkr(mu,q,dlnr,kr,kropt)  !    subroutine
+      subroutine getkr(mu,q,dlnr,kr)        !    subroutine
       real*8 mu,q,dlnr,kr
-      integer kropt !%DW add kropt
 c
 c Use of this routine is optional.
 c
@@ -838,7 +837,6 @@ c        local (automatic) variables
       real*8 arg,iarg,xm,xp,y
       complex*16 zm,zp
 c
-      if (kropt.eq.1) then !%DW put the function in a if-statement
 !      krgood=kr !%DW no krgood, adjust kr in place
       if (dlnr.eq.ZERO) return
       xp=(mu+ONE+q)/TWO
@@ -856,7 +854,6 @@ c        if should ensure arg = +-Infinity dealt with correctly
 c        low-ringing kr
         kr=kr*exp((arg-iarg)*dlnr) !%DW no krgood, adjust kr in place
       endif
-      endif !%DW end  if
       return
       end
 c

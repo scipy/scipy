@@ -70,12 +70,12 @@ class TestFFTLog():
 
 class TestFFTLogargs():
     # Default values in fftlogargs:
-    # - dlogr : 0.01
-    # - logrc : 0.0
-    # - mu : 'sine'
-    # - q : 0
+    # - spacing : 0.01
+    # - center : 0.0
+    # - transform : 'sine'
+    # - bias : 0
     # - kr : 1
-    # - kropt : 0
+    # - kropt : False
 
     def test_kr2(self):  # Test 1: even n, kr = 2
         inppts = [0.96605088, 0.98855309, 1.01157945, 1.03514217]
@@ -88,42 +88,42 @@ class TestFFTLogargs():
         assert_allclose(kr, out[2])
         assert_allclose(rk, out[3])
 
-    def test_kropt1(self):  # Test 2: even n, kropt = 1
+    def test_kropt(self):  # Test 2: even n, kropt = True
         inppts = [0.96605088, 0.98855309, 1.01157945, 1.03514217]
         outpts = [0.97306236, 0.9957279, 1.01892138, 1.04265511]
         kr = 1.0072578812188107
         rk = 0.99279441605358465
-        out = fftlogargs(n=4, kropt=1)
+        out = fftlogargs(n=4, kropt=True)
         assert_allclose(inppts, out[0])
         assert_allclose(outpts, out[1])
         assert_allclose(kr, out[2])
         assert_allclose(rk, out[3])
 
-    def test_cosine(self):  # Test 3: odd n, kr = pi, mu = 'cosine'
+    def test_cosine(self):  # Test 3: odd n, kr = pi, transform = 'cosine'
         inppts = [0.95499259, 0.97723722, 1., 1.02329299, 1.04712855]
         outpts = [3.00019769, 3.07008127, 3.14159265, 3.21476975, 3.28965135]
         kr = 3.141592653589793
         rk = 0.31830988618379069
-        out = fftlogargs(5, mu='cosine', kr=np.pi)
+        out = fftlogargs(5, transform='cosine', kr=np.pi)
         assert_allclose(inppts, out[0])
         assert_allclose(outpts, out[1])
         assert_allclose(kr, out[2])
         assert_allclose(rk, out[3])
 
-    def test_logrc1(self):  # Test 4: odd n, logrc = 1, kropt=1
+    def test_center(self):  # Test 4: odd n, center = 1, kropt=True
         inppts = [9.54992586, 9.77237221, 10., 10.23292992, 10.47128548]
         outpts = [0.09619238, 0.09843299, 0.10072579, 0.10307199, 0.10547285]
         kr = 1.0072578812188107
         rk = 99.279441605358485
-        out = fftlogargs(n=5, logrc=1, kropt=1)
+        out = fftlogargs(n=5, center=1, kropt=True)
         assert_allclose(inppts, out[0])
         assert_allclose(outpts, out[1])
         assert_allclose(kr, out[2])
         assert_allclose(rk, out[3])
 
-    def test_falsemu(self):  # Test 5: wrong mu
+    def test_falsetransform(self):  # Test 5: wrong transform
         with assert_raises(ValueError):
-            fftlogargs(5, mu=1)
+            fftlogargs(5, transform=1)
 
 if __name__ == "__main__":
     run_module_suite()

@@ -18,12 +18,11 @@ python module _fftl
          integer optional, intent(c,in) :: direction = 1
        end subroutine drfftl
 
-       subroutine getkr(mu, q, dlnr, kr, kropt)
+       subroutine getkr(mu, q, dlnr, kr)
          real*8 intent(in) :: mu
          real*8 intent(in) :: q
          real*8 intent(in) :: dlnr
          real*8 intent(in, out) :: kr
-         integer intent(in) :: kropt
        end subroutine getkr
 
        subroutine destroy_fftl_w_cache()
