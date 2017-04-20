@@ -1,7 +1,7 @@
 """
 FFTLog - fftlog.py
 """
-# Created by Dieter Werthmüller, January 2017
+# Created by Dieter Werthmuller, January 2017
 from __future__ import division, print_function, absolute_import
 
 import atexit

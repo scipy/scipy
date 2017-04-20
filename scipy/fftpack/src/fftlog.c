@@ -1,6 +1,6 @@
 /*
   Interface to FFTLog.
-  Author: Dieter Werthmüller, January 2017
+  Author: Dieter Werthmuller, January 2017
  */
 
 #include "fftpack.h"

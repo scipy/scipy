@@ -1,5 +1,5 @@
 !%f90 -*- f90 -*-
-! Author: Dieter Werthmüller, January 2017
+! Author: Dieter Werthmuller, January 2017
 
 python module _fftl
     interface
