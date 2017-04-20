@@ -338,8 +338,8 @@ Trust-Region Truncated Generalized Lanczos / Conjugate Gradient Algorithm (``met
 Similar to the ``trust-ncg`` method, the ``trust-krylov`` method is a method
 suitable for large-scale problems as it uses the hessian only as linear
 operator by means of matrix-vector products.
-In contrast to the ``trust-ncg`` method, it solves the quadratic subproblem
-that determines the step more accurately:
+It solves the quadratic subproblem more accurately than the ``trust-ncg``
+method.
 
 .. math::
    :nowrap:

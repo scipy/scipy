@@ -210,7 +210,7 @@ class _BenchOptimizers(Benchmark):
             methods = ["COBYLA", 'Powell',
                        'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
                        "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-                       'trust-trlib']
+                       'trust-krylov']
 
         fonly_methods = ["COBYLA", 'Powell']
         for method in fonly_methods:

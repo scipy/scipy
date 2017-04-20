@@ -218,11 +218,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     and either the Hessian or a function that computes the product of
     the Hessian with a given vector. Suitable for large-scale problems.
     On indefinite problems it requires usually less iterations than the
-    `trust-ncg` method and recommended for medium and large-scale problems.
+    `trust-ncg` method and is recommended for medium and large-scale problems.
 
     Method :ref:`trust-exact <optimize.minimize-trustexact>`
     is a trust-region method for unconstrained minimization in which
-    quadratic subproblems are solved almost exactly [13]_. This
+    quadratic subproblems are solved almost exactly [14]_, [15]_. This
     algorithm requires the gradient and the Hessian (which is
     *not* required to be positive definite). It is, in many
     situations, the Newton method to converge in fewer iteraction
@@ -318,6 +318,12 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
        Center -- Institute for Flight Mechanics, Koln, Germany.
     .. [13] Conn, A. R., Gould, N. I., and Toint, P. L.
        Trust region methods. 2000. Siam. pp. 169-200.
+    .. [14] F. Lenders, C. Kirches, A. Potschka: "trlib: A vector-free
+       implementation of the GLTR method for iterative solution of
+       the trust region problem", https://arxiv.org/abs/1611.04718
+    .. [15] N. Gould, S. Lucidi, M. Roma, P. Toint: "Solving the
+       Trust-Region Subproblem using the Lanczos Method",
+       SIAM J. Optim., 9(2), 504--525, (1999).
 
     Examples
     --------
