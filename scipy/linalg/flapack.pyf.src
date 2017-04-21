@@ -1204,8 +1204,8 @@ interface
      integer intent(hide),depend(a):: n = shape(a,1)
      integer depend(b),intent(hide):: ldb = shape(b,0)
 
-     <ftype2> dimension(m,n),intent(in,out,copy,out=lqr) :: a
      <ftype2> dimension(m,nrhs),intent(in,out,copy,out=x) :: b
+     <ftype2> dimension(m,n),intent(in,out,copy,out=lqr) :: a
      <ftype2> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
      integer intent(out)::info
 
