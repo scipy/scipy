@@ -1188,6 +1188,53 @@ interface
 
    end subroutine <prefix2c>gesvd_lwork
 
+   subroutine <prefix2>gels(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
+
+   ! x,lqr,info = gels(a,b,lwork=..,overwrite_a=False,overwrite_b=False)
+   ! Solve Minimize 2-norm(A * X - B).
+
+     fortranname <prefix2>gels
+     callstatement (*f2py_func)(trans,&m,&n,&nrhs,a,&lda,b,&ldb,work,&lwork,&info)
+     callprotoargument char*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+     character optional,intent(in),check(*trans=='N'||*trans=='T'):: trans = 'N'
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     integer depend(a),intent(hide):: lda = shape(a,0)
+     integer intent(hide),depend(a):: m = shape(a,0)
+     integer intent(hide),depend(a):: n = shape(a,1)
+     integer depend(b),intent(hide):: ldb = shape(b,0)
+
+     <ftype2> dimension(m,n),intent(in,out,copy,out=lqr) :: a
+     <ftype2> dimension(m,nrhs),intent(in,out,copy,out=x) :: b
+     <ftype2> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
+     integer intent(out)::info
+
+   end subroutine <prefix2>gels
+
+   subroutine <prefix2>gels_lwork(trans,m,n,nrhs,a,lda,b,ldb,work,lwork,info)
+
+   ! work,info = gels_lwork(trans='N',m,n,nrhs)
+   ! Query for optimal lwork size
+
+     fortranname <prefix2>gels
+     callstatement (*f2py_func)(trans,&m,&n,&nrhs,&a,&lda,&b,&ldb,&work,&lwork,&info)
+     callprotoargument char*,int*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,int*
+
+     character optional,intent(in),check(*trans=='N'||*trans=='T'):: trans = 'N'
+     integer intent(in) :: m
+     integer intent(in) :: n
+     integer intent(in) :: nrhs
+     integer depend(m),intent(hide):: lda = m
+     integer depend(m),intent(hide):: ldb = m
+     integer intent(hide) :: lwork = -1
+     <ftype2> intent(hide) :: a
+     <ftype2> intent(hide) :: b
+     <ftype2> intent(out) :: work
+     integer intent(out)::info
+
+   end subroutine <prefix2>gels_lwork
+
+
    subroutine <prefix2>gelss(m,n,minmn,maxmn,nrhs,a,b,s,cond,r,work,lwork,info)
 
    ! v,x,s,rank,work,info = gelss(a,b,cond=-1.0,overwrite_a=0,overwrite_b=0)
