@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array, sqrt
-from numpy.testing import (TestCase, assert_array_almost_equal,
+from numpy.testing import (TestCase, assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose, assert_raises,
                            run_module_suite)
 
@@ -273,6 +273,15 @@ class TestCall(object):
                 assert_almost_equal(p(0.315), np.poly1d(p)(0.315), err_msg=pstr)
         finally:
             np.seterr(**olderr)
+
+
+class TestGenlaguerre(TestCase):
+    def test_regression(self):
+        assert_equal(orth.genlaguerre(1, 1, monic=False)(0), 2.)
+        assert_equal(orth.genlaguerre(1, 1, monic=True)(0), -2.)
+        assert_equal(orth.genlaguerre(1, 1, monic=False), np.poly1d([-1, 2]))
+        assert_equal(orth.genlaguerre(1, 1, monic=True), np.poly1d([1, -2]))
+
 
 def verify_gauss_quad(root_func, eval_func, weight_func, a, b, N,
                       rtol=1e-15, atol=1e-14):
