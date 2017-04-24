@@ -455,6 +455,24 @@ class Test_dfreqresp(TestCase):
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dfreqresp, system)
 
+    def test_from_state_space(self):
+        # H(z) = 2 / z^3 - 0.5 * z^2
+
+        system_TF = dlti([2], [1, -0.5, 0, 0])
+
+        A = np.array([[0.5, 0, 0],
+                      [1, 0, 0],
+                      [0, 1, 0]])
+        B = np.array([[1, 0, 0]]).T
+        C = np.array([[0, 0, 2]])
+        D = 0
+
+        system_SS = dlti(A, B, C, D)
+        w = 10.0**np.arange(-3,0,.5)
+        w1, H1 = dfreqresp(system_TF, w=w)
+        w2, H2 = dfreqresp(system_SS, w=w)
+        assert_almost_equal(H1, H2)
+
     def test_from_zpk(self):
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
         system_ZPK = dlti([],[0.2],0.3)
