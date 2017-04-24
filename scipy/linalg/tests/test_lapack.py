@@ -154,16 +154,18 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work, info = gels_lwork(m,n,nrhs,-1)
+            work, info = gels_lwork(m,n,nrhs)
             lwork = int(np.real(work))
 
-            lqr, x, info = gels(a1, b1, lwork, False, False)
+            lqr, x, info = gels(a1, b1, lwork)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
                                               14.999999999999991], dtype=dtype),
                             rtol=25*np.finfo(dtype).eps)
-            # assert_allclose(s, np.array([12.596017180511966,
-            #                              0.583396253199685], dtype=dtype),
-            #                              rtol=25*np.finfo(dtype).eps)
+            assert_allclose(lqr, np.array([[-8.1240384 , -9.6011363 ],
+                                           [ 0.43840236,  0.90453403],
+                                           [ 0.76720414,  0.90907633]],
+                                          dtype=dtype),
+                            rtol=25*np.finfo(dtype).eps)
 
         for dtype in COMPLEX_DTYPES:
             a1 = np.array([[1.0+4.0j,2.0],
@@ -180,17 +182,20 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work, info = gels_lwork(m,n,nrhs,-1)
+            work, info = gels_lwork(m,n,nrhs)
             lwork = int(np.real(work))
 
-            lqr, x, info = gels(a1, b1, lwork, False, False)
+            lqr, x, info = gels(a1, b1, lwork)
             assert_allclose(x[:-1],
                             np.array([1.161753632288328-1.901075709391912j,
                                       1.735882340522193+1.521240901196909j],
                             dtype=dtype), rtol=25*np.finfo(dtype).eps)
-        #     assert_allclose(s,
-        #                     np.array([13.035514762572043, 4.337666985231382],
-        #                              dtype=dtype), rtol=25*np.finfo(dtype).eps)
+            assert_allclose(lqr,
+                            np.array([[-9.28708781+0.j, -8.08649617+0.17228221j],
+                                      [ 0.35418546-0.08911578j, -6.08842332+0.j],
+                                      [ 0.52542621-0.39872361j, 0.18127551+0.68807219j]],
+                                     dtype=dtype),
+                            rtol=25*np.finfo(dtype).eps)
 
 
     def test_gelsd(self):
