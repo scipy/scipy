@@ -166,10 +166,10 @@ def correlate(in1, in2, mode='full', method='auto'):
         z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
 
     This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')`` then
-      
+
     .. math::
 
-          z[k] = (x * y)(k - N + 1) 
+          z[k] = (x * y)(k - N + 1)
                = \sum_{l=0}^{||x||-1}x_l y_{l-k+N-1}^{*}
 
     for :math:`k = 0, 1, ..., ||x|| + ||y|| - 2`
@@ -1444,7 +1444,7 @@ def lfiltic(b, a, y, x=None):
 
 
 def deconvolve(signal, divisor):
-    """Deconvolves ``divisor`` out of ``signal``.
+    """Deconvolves ``divisor`` out of ``signal`` using inverse filtering.
 
     Returns the quotient and remainder such that
     ``signal = convolve(divisor, quotient) + remainder``
@@ -1492,8 +1492,8 @@ def deconvolve(signal, divisor):
         quot = []
         rem = num
     else:
-        input = ones(N - D + 1, float)
-        input[1:] = 0
+        input = zeros(N - D + 1, float)
+        input[0] = 1
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
@@ -2304,7 +2304,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
 
     The first sample of the returned vector is the same as the first
     sample of the input vector. The spacing between samples is changed
-    from ``dx`` to ``dx * up / float(down)``.
+    from ``dx`` to ``dx * down / float(up)``.
 
     Examples
     --------
