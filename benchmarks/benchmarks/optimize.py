@@ -234,7 +234,7 @@ class _BenchOptimizers(Benchmark):
                 self.add_result(res, t1-t0, method)
 
         hessian_methods = ["Newton-CG", 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trlib-trlib']
+                           'trust-exact', 'trust-krylov']
         if self.hess is not None:
             for method in hessian_methods:
                 if method not in methods:
@@ -256,7 +256,7 @@ class BenchSmoothUnbounded(Benchmark):
         ["COBYLA", 'Powell',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
          "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
-         'trust-trlib'],
+         'trust-krylov'],
         ["mean_nfev", "mean_time"]
     ]
     param_names = ["test function", "solver", "result type"]
