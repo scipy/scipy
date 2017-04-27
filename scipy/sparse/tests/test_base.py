@@ -4300,10 +4300,7 @@ class _NonCanonicalMixin(object):
                                            zero_pos[0][k],
                                            zero_pos[1][k])
 
-        if sorted_indices:
-            arg1 = self._arg1_for_noncanonical(M, sorted_indices)
-        else:
-            arg1 = self._arg1_for_noncanonical(M)
+        arg1 = self._arg1_for_noncanonical(M, sorted_indices)
         if 'shape' not in kwargs:
             kwargs['shape'] = M.shape
         NC = construct(arg1, **kwargs)
@@ -4344,21 +4341,6 @@ class _NonCanonicalMixin(object):
 
 
 class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
-    def _arg1_for_noncanonical(self, M):
-        """Return non-canonical constructor arg1 equivalent to M"""
-        data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
-                                                    indptr=M.indptr)
-        # unsorted
-        for start, stop in izip(indptr, indptr[1:]):
-            indices[start:stop] = indices[start:stop][::-1].copy()
-            data[start:stop] = data[start:stop][::-1].copy()
-        return data, indices, indptr
-
-    def _insert_explicit_zero(self, M, i, j):
-        M[i,j] = 0
-        return M
-
-class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
     def _arg1_for_noncanonical(self, M, sorted_indices=False):
         """Return non-canonical constructor arg1 equivalent to M"""
         data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
@@ -4369,8 +4351,14 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
                 data[start:stop] = data[start:stop][::-1].copy()
         return data, indices, indptr
 
+    def _insert_explicit_zero(self, M, i, j):
+        M[i,j] = 0
+        return M
+
+
+class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
     def test_getelement(self):
-        def check(dtype, sorted_indices=False):
+        def check(dtype, sorted_indices):
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
                 D = array([[1,0,0],
@@ -4400,11 +4388,14 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
     def test_solve(self):
         pass
 
+
 class TestCSRNonCanonical(_NonCanonicalCSMixin, TestCSR):
     pass
 
+
 class TestCSCNonCanonical(_NonCanonicalCSMixin, TestCSC):
     pass
+
 
 class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     def _insert_explicit_zero(self, M, i, j):
@@ -4420,8 +4411,9 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
     def test_expm(self):
         pass
 
+
 class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
-    def _arg1_for_noncanonical(self, M):
+    def _arg1_for_noncanonical(self, M, sorted_indices=None):
         """Return non-canonical constructor arg1 equivalent to M"""
         data, row, col = _same_sum_duplicate(M.data, M.row, M.col)
         return data, (row, col)
