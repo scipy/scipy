@@ -4286,7 +4286,7 @@ def _same_sum_duplicate(data, *inds, **kwargs):
 
 
 class _NonCanonicalMixin(object):
-    def spmatrix(self, D, **kwargs):
+    def spmatrix(self, D, sorted_indices=False, **kwargs):
         """Replace D with a non-canonical equivalent: containing
         duplicate elements and explicit zeros"""
         construct = super(_NonCanonicalMixin, self).spmatrix
@@ -4300,7 +4300,7 @@ class _NonCanonicalMixin(object):
                                            zero_pos[0][k],
                                            zero_pos[1][k])
 
-        arg1 = self._arg1_for_noncanonical(M)
+        arg1 = self._arg1_for_noncanonical(M, sorted_indices)
         if 'shape' not in kwargs:
             kwargs['shape'] = M.shape
         NC = construct(arg1, **kwargs)
@@ -4319,6 +4319,7 @@ class _NonCanonicalMixin(object):
         # check that at least one explicit zero
         if has_zeros:
             assert_((NC.data == 0).any())
+        # TODO check that NC has duplicates (which are not explicit zeros)
 
         return NC
 
@@ -4340,14 +4341,14 @@ class _NonCanonicalMixin(object):
 
 
 class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
-    def _arg1_for_noncanonical(self, M):
+    def _arg1_for_noncanonical(self, M, sorted_indices=False):
         """Return non-canonical constructor arg1 equivalent to M"""
         data, indices, indptr = _same_sum_duplicate(M.data, M.indices,
                                                     indptr=M.indptr)
-        # unsorted
-        for start, stop in izip(indptr, indptr[1:]):
-            indices[start:stop] = indices[start:stop][::-1].copy()
-            data[start:stop] = data[start:stop][::-1].copy()
+        if not sorted_indices:
+            for start, stop in izip(indptr, indptr[1:]):
+                indices[start:stop] = indices[start:stop][::-1].copy()
+                data[start:stop] = data[start:stop][::-1].copy()
         return data, indices, indptr
 
     def _insert_explicit_zero(self, M, i, j):
@@ -4356,6 +4357,29 @@ class _NonCanonicalCompressedMixin(_NonCanonicalMixin):
 
 
 class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
+    def test_getelement(self):
+        def check(dtype, sorted_indices):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+                D = array([[1,0,0],
+                           [4,3,0],
+                           [0,2,0],
+                           [0,0,0]], dtype=dtype)
+                A = self.spmatrix(D, sorted_indices=sorted_indices)
+
+                M,N = D.shape
+
+                for i in range(-M, M):
+                    for j in range(-N, N):
+                        assert_equal(A[i,j], D[i,j])
+
+                for ij in [(0,3),(-1,3),(4,0),(4,3),(4,-1), (1, 2, 3)]:
+                    assert_raises((IndexError, TypeError), A.__getitem__, ij)
+
+        for dtype in supported_dtypes:
+            for sorted_indices in [False, True]:
+                yield check, np.dtype(dtype), sorted_indices
+
     @dec.knownfailureif(True, 'inverse broken with non-canonical matrix')
     def test_inv(self):
         pass
@@ -4389,7 +4413,7 @@ class TestBSRNonCanonical(_NonCanonicalCompressedMixin, TestBSR):
 
 
 class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
-    def _arg1_for_noncanonical(self, M):
+    def _arg1_for_noncanonical(self, M, sorted_indices=None):
         """Return non-canonical constructor arg1 equivalent to M"""
         data, row, col = _same_sum_duplicate(M.data, M.row, M.col)
         return data, (row, col)
