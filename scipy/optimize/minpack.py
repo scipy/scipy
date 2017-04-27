@@ -62,7 +62,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
         The starting estimate for the roots of ``func(x) = 0``.
     args : tuple, optional
         Any extra arguments to `func`.
-    fprime : callable(x), optional
+    fprime : callable ``f(x, *args)``, optional
         A function to compute the Jacobian of `func` with derivatives
         across the rows. By default, the Jacobian will be estimated.
     full_output : bool, optional

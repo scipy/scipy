@@ -1369,7 +1369,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        The array containing the data to be tested.
+        The array containing the sample to be tested.
     axis : int or None, optional
         Axis along which to compute test. Default is 0. If None,
         compute over the whole array `a`.
@@ -1394,6 +1394,23 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Tests for departure from
            normality", Biometrika, 60, 613-622
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> pts = 1000
+    >>> np.random.seed(28041990)
+    >>> a = np.random.normal(0, 1, size=pts)
+    >>> b = np.random.normal(2, 1, size=pts)
+    >>> x = np.concatenate((a, b))
+    >>> k2, p = stats.normaltest(x)
+    >>> alpha = 1e-3
+    >>> print("p = {:g}".format(p))
+    p = 3.27207e-11
+    >>> if p < alpha:  # null hypothesis: x comes from a normal distribution
+    ...     print("The null hypothesis can be rejected")
+    ... else:
+    ...     print("The null hypothesis cannot be rejected")
+    The null hypothesis can be rejected
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -3892,8 +3909,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     """
     T-test for means of two independent samples from descriptive statistics.
 
-    This is a two-sided test for the null hypothesis that 2 independent samples
-    have identical average (expected) values.
+    This is a two-sided test for the null hypothesis that two independent
+    samples have identical average (expected) values.
 
     Parameters
     ----------
@@ -3922,7 +3939,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     pvalue : float or array
         The two-tailed p-value.
 
-    See also
+    See Also
     --------
     scipy.stats.ttest_ind
 
@@ -3936,6 +3953,34 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
     .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+
+    Examples
+    --------
+    Suppose we have the summary data for two samples, as follows::
+
+                         Sample   Sample
+                   Size   Mean   Variance
+        Sample 1    13    15.0     87.5
+        Sample 2    11    12.0     39.0
+
+    Apply the t-test to this data (with the assumption that the population
+    variances are equal):
+
+    >>> from scipy.stats import ttest_ind_from_stats
+    >>> ttest_ind_from_stats(mean1=15.0, std1=np.sqrt(87.5), nobs1=13,
+    ...                      mean2=12.0, std2=np.sqrt(39.0), nobs2=11)
+    Ttest_indResult(statistic=0.90513580933102689, pvalue=0.37519967975814872)
+
+    For comparison, here is the data from which those summary statistics
+    were taken.  With this data, we can compute the same result using
+    `scipy.stats.ttest_ind`:
+
+    >>> a = np.array([1, 3, 4, 6, 11, 13, 15, 19, 22, 24, 25, 26, 26])
+    >>> b = np.array([2, 4, 6, 9, 11, 13, 14, 15, 18, 19, 21])
+    >>> from scipy.stats import ttest_ind
+    >>> ttest_ind(a, b)
+    Ttest_indResult(statistic=0.905135809331027, pvalue=0.37519967975814861)
+
     """
     if equal_var:
         df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)

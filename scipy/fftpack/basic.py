@@ -536,9 +536,11 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
 
     # We ordered axes, because the code below to push axes at the end of the
     # array assumes axes argument is in ascending order.
-    id = numpy.argsort(axes)
-    axes = [axes[i] for i in id]
-    s = [s[i] for i in id]
+    a = numpy.array(axes, numpy.intc)
+    abs_axes = numpy.where(a < 0, a + x.ndim, a)
+    id_ = numpy.argsort(abs_axes)
+    axes = [axes[i] for i in id_]
+    s = [s[i] for i in id_]
 
     # Swap the request axes, last first (i.e. First swap the axis which ends up
     # at -1, then at -2, etc...), such as the request axes on which the

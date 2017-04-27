@@ -81,6 +81,7 @@ cache:
   directories:
     - $HOME/.ccache
 before_install:
+  - export PYTHONFAULTHANDLER=1
   - export PATH=/usr/lib/ccache:$PATH
   - uname -a
   - free -m
