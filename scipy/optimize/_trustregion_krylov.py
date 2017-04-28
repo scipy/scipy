@@ -3,8 +3,8 @@ from ._trlib import (TRLIBQuadraticSubproblem)
 
 __all__ = ['_minimize_trust_krylov']
 
-def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None,
-        hessp=None, inexact=True, **trust_region_options):
+def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
+                           inexact=True, **trust_region_options):
     """
     Minimization of a scalar function of one or more variables using
     a nearly exact trust-region algorithm that only requires matrix
@@ -28,34 +28,36 @@ def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None,
 
     # tol_rel specifies the termination tolerance relative to the initial
     # gradient norm in the krylov subspace iteration.
-    #
-    # - tol_rel_i specifies the tolerance for interior convergence
-    # - tol_rel_b specifies the tolerance for boundary convergence
+
+    # - tol_rel_i specifies the tolerance for interior convergence.
+    # - tol_rel_b specifies the tolerance for boundary convergence.
     #   in nonlinear programming applications it is not necessary to solve
-    #   the boundary case as exact as the interior case
-    #
+    #   the boundary case as exact as the interior case.
+
     # - setting tol_rel_i=-2 leads to a forcing sequence in the krylov
     #   subspace iteration leading to quadratic convergence if eventually
-    #   the trust region stays inactive
+    #   the trust region stays inactive.
     # - setting tol_rel_b=-3 leads to a forcing sequence in the krylov
     #   subspace iteration leading to superlinear convergence as long
-    #   as the iterates hit the trust region boundary
+    #   as the iterates hit the trust region boundary.
+
+    # For details consult the documentation of trlib_krylov_min
+    # in _trlib/trlib_krylov.h
     #
-    # for details consult the documentation of trlib_krylov_min 
-    # in _trlib/trlib_krylov.c
-    #
-    # optimality of this choice of parameters among a range of possibilites
-    # has been tested on the unconstrained subset of the CUTEst library
+    # Optimality of this choice of parameters among a range of possibilites
+    # has been tested on the unconstrained subset of the CUTEst library.
 
     if inexact:
         return _minimize_trust_region(fun, x0, args=args, jac=jac,
-                hess=hess, hessp=hessp,
-                subproblem=TRLIBQuadraticSubproblem(
-                    tol_rel_i=-2.0, tol_rel_b=-3.0),
-                **trust_region_options)
+                                      hess=hess, hessp=hessp,
+                                      subproblem=TRLIBQuadraticSubproblem(
+                                          tol_rel_i=-2.0, tol_rel_b=-3.0
+                                          ),
+                                      **trust_region_options)
     else:
         return _minimize_trust_region(fun, x0, args=args, jac=jac,
-                hess=hess, hessp=hessp,
-                subproblem=TRLIBQuadraticSubproblem(
-                    tol_rel_i=1e-8, tol_rel_b=1e-6),
-                **trust_region_options)
+                                      hess=hess, hessp=hessp,
+                                      subproblem=TRLIBQuadraticSubproblem(
+                                          tol_rel_i=1e-8, tol_rel_b=1e-6
+                                          ),
+                                      **trust_region_options)

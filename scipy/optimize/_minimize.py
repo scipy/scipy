@@ -420,7 +420,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              RuntimeWarning)
     # - hessp
     if meth not in ('newton-cg', 'dogleg', 'trust-ncg',
-            'trust-krylov', '_custom') and hessp is not None:
+                    'trust-krylov', '_custom') and hessp is not None:
         warn('Method %s does not use Hessian-vector product '
                 'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
@@ -501,7 +501,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                                    callback=callback, **options)
     elif meth == 'trust-krylov':
         return _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
-                                   callback=callback, **options)
+                                      callback=callback, **options)
 
     elif meth == 'trust-exact':
         return _minimize_trustregion_exact(fun, x0, args, jac, hess,
