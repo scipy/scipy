@@ -3360,7 +3360,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     Parameters
     ----------
-    x : ndarray
+    x : array_like
         The signal to be downsampled, as an N-dimensional array.
     q : int
         The downsampling factor. For downsampling factors higher than 13, it is
@@ -3397,6 +3397,8 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     The possibility to use instances of ``dlti`` as ``ftype`` was added in
     0.18.0.
     """
+
+    x = asarray(x)
 
     if q != int(q):
         raise ValueError("q must be an integer")
