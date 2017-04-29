@@ -705,7 +705,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         'matrix', or if a ndarray is given instead, it is
         interpreted as initial cluster to use instead.
     iter : int, optional
-        Number of iterations of the k-means algrithm to run. Note
+        Number of iterations of the k-means algorithm to run. Note
         that this differs in meaning from the iters parameter to
         the kmeans function.
     thresh : float, optional
