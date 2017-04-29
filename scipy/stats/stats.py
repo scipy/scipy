@@ -123,6 +123,7 @@ Inferential Stats
    wilcoxon
    kruskal
    friedmanchisquare
+   brunnermunzel
    combine_pvalues
 
 Statistical Distances
@@ -190,7 +191,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
            'rankdata',
-           'combine_pvalues', 'wasserstein_distance', 'energy_distance']
+           'combine_pvalues', 'wasserstein_distance', 'energy_distance',
+           'brunnermunzel']
 
 
 def _chk_asarray(a, axis):
@@ -5161,6 +5163,113 @@ def friedmanchisquare(*args):
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
     return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
+
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
+
+
+def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
+    """
+    Computes the Brunner-Munzel test on samples x and y
+
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    alternative :  'less', 'two-sided', or 'greater'
+        Whether to get the p-value for the one-sided hypothesis ('less'
+        or 'greater') or for the two-sided hypothesis ('two-sided').
+        Defaults value is two-sided.
+    distribution: 't' or 'g_norm'
+        Whether to get the p-value by t-distribution or by standard normal
+        distribution.
+        Defaults value is t.
+
+
+    Returns
+    -------
+    statistic : float
+        The Brunner-Munzer W statistic
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative`.
+
+    Notes
+    -------
+    Brunner and Munzel recommended to estimate the p-value by t-distribution
+    when the size of data is 50 or less. If the size is lower than 10, it would
+    be better to use permuted Brunner Munzel test (see [2]).
+
+    References
+    ----------
+    .. [1] Brunner, E. and Munzel, U. "The nonparametric Benhrens-Fisher
+    problem: Asymptotic theory and a small-sample approximation".
+    Biometrical Journal. Vol. 42(2000): 17-25.
+    .. [2] Neubert, K. and Brunner, E. "A studentized permutation test for the
+    non-parametric Behrens-Fisher problem". Computational Statistics and Data
+    Analysis. Vol. 51(2007): 5192-5204.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x1 = [1,2,1,1,1,1,1,1,1,1,2,4,1,1]
+    >>> x2 = [3,3,4,3,1,2,3,1,1,5,4]
+    >>> w, p_value = stats.brunnermunzel(x1, x2)
+    >>> w
+    3.1374674823029505
+    >>> p_value
+    0.0057862086661515377
+
+    """
+    x = np.asarray(x)
+    y = np.asarray(y)
+    nx = len(x)
+    ny = len(y)
+    if nx == 0 or ny == 0:
+        return np.nan, np.nan
+    nc = len(x) + len(y)
+    rankc = rankdata(np.concatenate((x,y)))
+    rankcx = rankc[0:nx]
+    rankcy = rankc[nx:nx+ny]
+    rankcx_mean = np.mean(rankcx)
+    rankcy_mean = np.mean(rankcy)
+    rankx = rankdata(x)
+    ranky = rankdata(y)
+    rankx_mean = np.mean(rankx)
+    ranky_mean = np.mean(ranky)
+
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2))
+    Sx /= nx - 1
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2))
+    Sy /= ny - 1
+
+    sigmax = Sx / np.power(nc - nx, 2)
+    sigmay = Sx / np.power(nc - ny, 2)
+    sigmac = nc * (sigmax / nx + sigmay / ny)
+
+    wbfn = nx * ny * (rankcy_mean - rankcx_mean)
+    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+
+    if distribution == "t":
+        df = np.power(nx * Sx + ny * Sy,2)
+        df /= np.power(nx * Sx, 2) / (nx - 1) + np.power(ny * Sy,2) / (ny - 1)
+        p = distributions.t.cdf(wbfn, df)
+    elif distribution == "norm":
+        p = distributions.norm.cdf(wbfn)
+    else:
+        raise ValueError(
+            "distribution should be 't' or 'norm'")
+
+    if alternative == "greater":
+        p = p
+    elif alternative == "less":
+        p = 1 - p
+    elif alternative == "two-sided":
+        p = 2 * np.min([p, 1-p])
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
+    return BrunnerMunzelResult(wbfn, p)
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):

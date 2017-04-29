@@ -4265,3 +4265,102 @@ class TestEnergyDistance(object):
             assert_equal(
                 stats.energy_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)
+
+
+class TestBrunnerMunzel(TestCase):
+    # Data from (Lumley, 1996)
+    X = [1,2,1,1,1,1,1,1,1,1,2,4,1,1]
+    Y = [3,3,4,3,1,2,3,1,1,5,4]
+    significant = 14
+
+    def test_brunnermunzel_one_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='less')
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='greater')
+        u3, p3 = stats.brunnermunzel(self.X, self.Y, alternative='greater')
+        u4, p4 = stats.brunnermunzel(self.Y, self.X, alternative='less')
+
+        assert_approx_equal(p1, p2, significant = self.significant)
+        assert_approx_equal(p3, p4, significant = self.significant)
+        assert_(p1 != p3)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(u3, 3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(u4, -3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(p1, 0.0028931043330757342,
+                            significant=self.significant)
+        assert_approx_equal(p3, 0.99710689566692423,
+                            significant=self.significant)
+
+    def test_brunnermunzel_two_sided(self):
+        # Results are compared with R's lawstat package.
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, alternative='two-sided')
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, alternative='two-sided')
+
+        assert_approx_equal(p1, p2, significant = self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant = self.significant)
+
+    def test_brunnermunzel_default(self):
+        # The default value for alternative is two-sided
+        u1, p1 = stats.brunnermunzel(self.X, self.Y)
+        u2, p2 = stats.brunnermunzel(self.Y, self.X)
+
+        assert_approx_equal(p1, p2, significant = self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(p1, 0.0057862086661515377,
+                            significant = self.significant) 
+
+    def test_brunnermunzel_alternative_error(self):
+        alternative = "error"
+        assert_(alternative not in ["two-sided", "greater", "less"])
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative)
+
+    def test_brunnermunzel_distribution_error(self):
+        alternative = "two-sided"
+        distribution = "error"
+        assert_(alternative not in ["t", "norm"])
+        assert_raises(ValueError,
+                      stats.brunnermunzel,
+                      self.X,
+                      self.Y,
+                      alternative,
+                      distribution)
+
+    def test_brunnermunzel_empty_imput(self):
+        u1, p1 = stats.brunnermunzel(self.X, [])
+        u2, p2 = stats.brunnermunzel([], self.Y)
+        u3, p3 = stats.brunnermunzel([], [])
+
+        assert_equal(u1, np.nan)
+        assert_equal(p1, np.nan)
+        assert_equal(u2, np.nan)
+        assert_equal(p2, np.nan)
+        assert_equal(u3, np.nan)
+        assert_equal(p3, np.nan)
+
+    def test_brunnermunzel_distribution_norm(self):
+        u1, p1 = stats.brunnermunzel(self.X, self.Y, distribution="norm")
+        u2, p2 = stats.brunnermunzel(self.Y, self.X, distribution="norm")
+        assert_approx_equal(p1, p2, significant = self.significant)
+        assert_approx_equal(u1, 3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(u2, -3.1374674823029505,
+                            significant = self.significant)
+        assert_approx_equal(p1, 0.0017041417600383024,
+                            significant = self.significant) 
