@@ -2313,6 +2313,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     >>> plt.show()
     """
     x = asarray(x)
+    if up != int(up):
+        raise ValueError("up must be an integer")
+    if down != int(down):
+        raise ValueError("down must be an integer")
     up = int(up)
     down = int(down)
     if up < 1 or down < 1:
@@ -3394,19 +3398,25 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     0.18.0.
     """
 
-    if not isinstance(q, int):
-        raise TypeError("q must be an integer")
+    if q != int(q):
+        raise ValueError("q must be an integer")
 
-    if n is not None and not isinstance(n, int):
-        raise TypeError("n must be an integer")
+    if n is not None and n != int(n):
+        raise ValueError("n must be an integer")
+
+    q = int(q)
 
     if ftype == 'fir':
         if n is None:
             n = 30
+        else:
+            n = int(n)
         system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
     elif ftype == 'iir':
         if n is None:
             n = 8
+        else:
+            n = int(n)
         system = dlti(*cheby1(n, 0.05, 0.8 / q))
     elif isinstance(ftype, dlti):
         system = ftype._as_tf()  # Avoids copying if already in TF form
