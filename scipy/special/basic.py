@@ -39,6 +39,14 @@ __all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
 
 
+def _nonneg_int_or_fail(n, var_name):
+    int_n = int(n)
+    if n != int_n or n < 0:
+        raise ValueError(var_name + " must be a non-negative integer.")
+    else:
+        return int_n
+
+
 def diric(x, n):
     """Periodic sinc function, also called the Dirichlet function.
 
@@ -443,8 +451,7 @@ def jvp(v, z, n=1):
            http://dlmf.nist.gov/10.6.E7
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return jv(v, z)
     else:
@@ -476,8 +483,7 @@ def yvp(v, z, n=1):
            http://dlmf.nist.gov/10.6.E7
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return yv(v, z)
     else:
@@ -530,8 +536,7 @@ def kvp(v, z, n=1):
            http://dlmf.nist.gov/10.29.E5
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return kv(v, z)
     else:
@@ -564,8 +569,7 @@ def ivp(v, z, n=1):
            http://dlmf.nist.gov/10.29.E5
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return iv(v, z)
     else:
@@ -597,8 +601,7 @@ def h1vp(v, z, n=1):
            http://dlmf.nist.gov/10.6.E7
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return hankel1(v, z)
     else:
@@ -681,8 +684,7 @@ def riccati_jn(n, x):
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if (n == 0):
         n1 = 1
     else:
@@ -734,8 +736,7 @@ def riccati_yn(n, x):
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if (n == 0):
         n1 = 1
     else:
@@ -1248,8 +1249,7 @@ def lpn(n, z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if (n < 1):
         n1 = 1
     else:
@@ -1276,8 +1276,7 @@ def lqn(n, z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    if (n != floor(n)) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if (n < 1):
         n1 = 1
     else:
