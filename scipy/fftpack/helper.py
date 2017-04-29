@@ -41,7 +41,7 @@ def rfftfreq(n, d=1.0):
     array([ 0.  ,  1.25,  1.25,  2.5 ,  2.5 ,  3.75,  3.75,  5.  ])
 
     """
-    if not isinstance(n, int) or n < 0:
+    if n != int(n) or n < 0:
         raise ValueError("n = %s is not valid. "
                          "n must be a nonnegative integer." % n)
 
