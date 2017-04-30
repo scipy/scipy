@@ -36,6 +36,9 @@ matrix:
             - libpng-dev
             - zlib1g-dev
             - texlive-fonts-recommended
+            - texlive-latex-extra
+            - texlive-extra-utils
+            - dvipng
     - python: 3.5
       env:
         - TESTMODE=fast
