@@ -14,7 +14,6 @@ in the interval :math:`\left[0,t\right]` for a process satisfying certain "spars
     \begin{eqnarray*} p\left(k;\lambda\right) & = & e^{-\lambda}\frac{\lambda^{k}}{k!}\quad k\geq0,\\ F\left(x;\lambda\right) & = & \sum_{n=0}^{\left\lfloor x\right\rfloor }e^{-\lambda}\frac{\lambda^{n}}{n!}=\frac{1}{\Gamma\left(\left\lfloor x\right\rfloor +1\right)}\int_{\lambda}^{\infty}t^{\left\lfloor x\right\rfloor }e^{-t}dt,\\ \mu & = & \lambda\\ \mu_{2} & = & \lambda\\ \gamma_{1} & = & \frac{1}{\sqrt{\lambda}}\\ \gamma_{2} & = & \frac{1}{\lambda}.\end{eqnarray*}
 
 .. math::
-   :nowrap:
 
     M\left(t\right)=\exp\left[\lambda\left(e^{t}-1\right)\right].
 
