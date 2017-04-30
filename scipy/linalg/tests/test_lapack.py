@@ -10,7 +10,7 @@ import time
 
 from numpy.testing import TestCase, run_module_suite, assert_equal, \
     assert_array_almost_equal, assert_, assert_raises, assert_allclose, \
-    assert_almost_equal
+    assert_almost_equal, assert_array_equal
 
 import numpy as np
 
@@ -144,8 +144,8 @@ class TestLeastSquaresSolvers(TestCase):
                           [4.0,5.0],
                           [7.0,8.0]], dtype=dtype)
             b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
-            gels, gels_lwork = get_lapack_funcs(('gels','gels_lwork'),
-                                                (a1, b1))
+            gels, gels_lwork, geqrf = get_lapack_funcs(
+                    ('gels','gels_lwork', 'geqrf'), (a1, b1))
 
             m, n = a1.shape
             if len(b1.shape) == 2:
@@ -154,26 +154,23 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work, info = gels_lwork(m, n, nrhs)
+            work, info = gels_lwork(m,n,nrhs)
             lwork = int(np.real(work))
 
             lqr, x, info = gels(a1, b1, lwork)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
                                               14.999999999999991], dtype=dtype),
                             rtol=25*np.finfo(dtype).eps)
-            assert_allclose(lqr, np.array([[-8.1240384, -9.6011363],
-                                           [0.43840236, 0.90453403],
-                                           [0.76720414, 0.90907633]],
-                                          dtype=dtype),
-                            rtol=25*np.finfo(dtype).eps)
+            lqr_truth, _, _, _ = geqrf(a1)
+            assert_array_equal(lqr, lqr_truth)
 
         for dtype in COMPLEX_DTYPES:
             a1 = np.array([[1.0+4.0j,2.0],
                           [4.0+0.5j,5.0-3.0j],
                           [7.0-2.0j,8.0+0.7j]], dtype=dtype)
             b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
-            gels, gels_lwork = get_lapack_funcs(('gels','gels_lwork'),
-                                                (a1, b1))
+            gels, gels_lwork, geqrf = get_lapack_funcs(
+                    ('gels','gels_lwork', 'geqrf'), (a1, b1))
 
             m, n = a1.shape
             if len(b1.shape) == 2:
@@ -182,7 +179,7 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work, info = gels_lwork(m, n, nrhs)
+            work, info = gels_lwork(m,n,nrhs)
             lwork = int(np.real(work))
 
             lqr, x, info = gels(a1, b1, lwork)
@@ -190,12 +187,8 @@ class TestLeastSquaresSolvers(TestCase):
                             np.array([1.161753632288328-1.901075709391912j,
                                       1.735882340522193+1.521240901196909j],
                             dtype=dtype), rtol=25*np.finfo(dtype).eps)
-            assert_allclose(lqr,
-                            np.array([[-9.28708781+0.j, -8.08649617+0.17228221j],
-                                      [0.35418546-0.08911578j, -6.08842332+0.j],
-                                      [0.52542621-0.39872361j, 0.18127551+0.68807219j]],
-                                     dtype=dtype),
-                            rtol=25*np.finfo(dtype).eps)
+            lqr_truth, _, _, _ = geqrf(a1)
+            assert_array_equal(lqr, lqr_truth)
 
     def test_gelsd(self):
         for dtype in REAL_DTYPES:
