@@ -6,7 +6,7 @@ PYTHON = python$(PYVER)
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = LANG=C sphinx-build
+SPHINXBUILD   = LANG=C $(PYTHON) $(shell which sphinx-build)
 PAPER         =
 
 FILES=

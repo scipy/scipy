@@ -9,7 +9,7 @@ dependencies:
 
 test:
   override:
-    - python -u runtests.py -g --shell -- -c 'make -C doc html-scipyorg'
+    - python -u runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg'
 
 general:
   artifacts:
