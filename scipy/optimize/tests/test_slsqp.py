@@ -316,7 +316,7 @@ class TestSLSQP(TestCase):
         # Test for Github Issue #5433 and PR #6691
         # Objective function should be able to return length-1 Python list
         #  containing the scalar
-        fmin_slsqp(lambda x: [0], [1, 2, 3])
+        fmin_slsqp(lambda x: [0], [1, 2, 3], iprint=0)
 
     def test_callback(self):
         # Minimize, method='SLSQP': unbounded, approximated jacobian. Check for callback
