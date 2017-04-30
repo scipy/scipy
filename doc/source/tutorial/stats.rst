@@ -17,6 +17,12 @@ details.
 
 Note: This documentation is work in progress.
 
+.. toctree::
+   :maxdepth: 1
+
+   stats/discrete
+   stats/continuous
+
 
 Random Variables
 ----------------
