@@ -19,9 +19,15 @@ needs_sphinx = '1.1'
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.imgmath', 'numpydoc',
+extensions = ['sphinx.ext.autodoc', 'numpydoc',
               'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
               'sphinx.ext.autosummary', 'scipyoptdoc', 'doi_role']
+
+try:
+    import sphinx.ext.imgmath
+    extensions.append('sphinx.ext.imgmath')
+except ImportError:
+    extensions.append('sphinx.ext.pngmath')
 
 # Determine if the matplotlib has a recent enough version of the
 # plot_directive.
@@ -143,6 +149,7 @@ htmlhelp_basename = 'scipy'
 
 imgmath_image_format = 'svg'
 imgmath_use_preview = True
+pngmath_use_preview = True
 
 
 # -----------------------------------------------------------------------------
