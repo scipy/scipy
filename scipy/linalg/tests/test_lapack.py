@@ -154,16 +154,16 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work, info = gels_lwork(m,n,nrhs)
+            work, info = gels_lwork(m, n, nrhs)
             lwork = int(np.real(work))
 
             lqr, x, info = gels(a1, b1, lwork)
             assert_allclose(x[:-1], np.array([-14.333333333333323,
                                               14.999999999999991], dtype=dtype),
                             rtol=25*np.finfo(dtype).eps)
-            assert_allclose(lqr, np.array([[-8.1240384 , -9.6011363 ],
-                                           [ 0.43840236,  0.90453403],
-                                           [ 0.76720414,  0.90907633]],
+            assert_allclose(lqr, np.array([[-8.1240384, -9.6011363],
+                                           [0.43840236, 0.90453403],
+                                           [0.76720414, 0.90907633]],
                                           dtype=dtype),
                             rtol=25*np.finfo(dtype).eps)
 
@@ -182,7 +182,7 @@ class TestLeastSquaresSolvers(TestCase):
                 nrhs = 1
 
             # Request of sizes
-            work, info = gels_lwork(m,n,nrhs)
+            work, info = gels_lwork(m, n, nrhs)
             lwork = int(np.real(work))
 
             lqr, x, info = gels(a1, b1, lwork)
@@ -192,11 +192,10 @@ class TestLeastSquaresSolvers(TestCase):
                             dtype=dtype), rtol=25*np.finfo(dtype).eps)
             assert_allclose(lqr,
                             np.array([[-9.28708781+0.j, -8.08649617+0.17228221j],
-                                      [ 0.35418546-0.08911578j, -6.08842332+0.j],
-                                      [ 0.52542621-0.39872361j, 0.18127551+0.68807219j]],
+                                      [0.35418546-0.08911578j, -6.08842332+0.j],
+                                      [0.52542621-0.39872361j, 0.18127551+0.68807219j]],
                                      dtype=dtype),
                             rtol=25*np.finfo(dtype).eps)
-
 
     def test_gelsd(self):
         for dtype in REAL_DTYPES:
