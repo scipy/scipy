@@ -112,7 +112,7 @@ class Ursem04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-2.0] * self.N, [2.0] * self.N)
+        self._bounds = list(zip([-2.0] * self.N, [2.0] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = -1.5

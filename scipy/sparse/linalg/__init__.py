@@ -42,6 +42,7 @@ Direct methods for linear equation systems:
    :toctree: generated/
 
    spsolve -- Solve the sparse linear system Ax=b
+   spsolve_triangular -- Solve the sparse linear system Ax=b for a triangular matrix
    factorized -- Pre-factorize matrix to a function solving a linear system
    MatrixRankWarning -- Warning on exactly singular matrices
    use_solver -- Select direct solver to use
@@ -121,4 +122,3 @@ from ._expm_multiply import *
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

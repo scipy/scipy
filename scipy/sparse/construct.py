@@ -12,7 +12,7 @@ import numpy as np
 
 from scipy._lib.six import xrange
 
-from .sputils import upcast, get_index_dtype
+from .sputils import upcast, get_index_dtype, isscalarlike
 
 from .csr import csr_matrix
 from .csc import csc_matrix
@@ -134,18 +134,15 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
            [ 0.,  0.,  0.,  0.]])
     """
     # if offsets is not a sequence, assume that there's only one diagonal
-    try:
-        iter(offsets)
-    except TypeError:
+    if isscalarlike(offsets):
         # now check that there's actually only one diagonal
-        try:
-            iter(diagonals[0])
-        except TypeError:
+        if len(diagonals) == 0 or isscalarlike(diagonals[0]):
             diagonals = [np.atleast_1d(diagonals)]
         else:
             raise ValueError("Different number of diagonals and offsets.")
     else:
         diagonals = list(map(np.atleast_1d, diagonals))
+
     offsets = np.atleast_1d(offsets)
 
     # Basic check
@@ -175,11 +172,8 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         offset = offsets[j]
         k = max(0, offset)
         length = min(m + offset, n - offset, K)
-        if length <= 0:
+        if length < 0:
             raise ValueError("Offset %d (index %d) out of bounds" % (offset, j))
-        diagonal = np.asarray(diagonal)
-        if diagonal.ndim == 0:
-            diagonal = diagonal[None]
         try:
             data_arr[j, k:k+length] = diagonal[...,:length]
         except ValueError:
@@ -577,14 +571,22 @@ def bmat(blocks, format=None, dtype=None):
                 if brow_lengths[i] == 0:
                     brow_lengths[i] = A.shape[0]
                 elif brow_lengths[i] != A.shape[0]:
-                    raise ValueError('blocks[%d,:] has incompatible '
-                                     'row dimensions' % i)
+                    msg = ('blocks[{i},:] has incompatible row dimensions. '
+                           'Got blocks[{i},{j}].shape[0] == {got}, '
+                           'expected {exp}.'.format(i=i, j=j,
+                                                    exp=brow_lengths[i],
+                                                    got=A.shape[0]))
+                    raise ValueError(msg)
 
                 if bcol_lengths[j] == 0:
                     bcol_lengths[j] = A.shape[1]
                 elif bcol_lengths[j] != A.shape[1]:
-                    raise ValueError('blocks[:,%d] has incompatible '
-                                     'column dimensions' % j)
+                    msg = ('blocks[:,{j}] has incompatible row dimensions. '
+                           'Got blocks[{i},{j}].shape[1] == {got}, '
+                           'expected {exp}.'.format(i=i, j=j,
+                                                    exp=bcol_lengths[j],
+                                                    got=A.shape[1]))
+                    raise ValueError(msg)
 
     nnz = sum(block.nnz for block in blocks[block_mask])
     if dtype is None:
@@ -698,6 +700,10 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         sampled using the same random state as is used for sampling
         the sparsity structure.
 
+    Returns
+    -------
+    res : sparse matrix
+
     Examples
     --------
     >>> from scipy.sparse import random
@@ -749,9 +755,7 @@ greater than %d - this is not supported on this machine
 
     # Use the algorithm from python's random.sample for k < mn/3.
     if mn < 3*k:
-        # We should use this line, but choice is only available in numpy >= 1.7
-        # ind = random_state.choice(mn, size=k, replace=False)
-        ind = random_state.permutation(mn)[:k]
+        ind = random_state.choice(mn, size=k, replace=False)
     else:
         ind = np.empty(k, dtype=tp)
         selected = set()
@@ -787,9 +791,29 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         Random number generator or random seed. If not given, the singleton
         numpy.random will be used.
 
+    Returns
+    -------
+    res : sparse matrix
+
     Notes
     -----
     Only float types are supported for now.
 
+    See Also
+    --------
+    scipy.sparse.random : Similar function that allows a user-specified random
+        data source.
+
+    Examples
+    --------
+    >>> from scipy.sparse import rand
+    >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
+    >>> matrix
+    <3x4 sparse matrix of type '<type 'numpy.float64'>'
+       with 3 stored elements in Compressed Sparse Row format>
+    >>> matrix.todense()
+    matrix([[ 0.        ,  0.59685016,  0.779691  ,  0.        ],
+            [ 0.        ,  0.        ,  0.        ,  0.44583275],
+            [ 0.        ,  0.        ,  0.        ,  0.        ]])
     """
     return random(m, n, density, format, dtype, random_state)

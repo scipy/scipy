@@ -17,7 +17,8 @@ import itertools
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
                            assert_, TestCase, run_module_suite, dec,
-                           assert_almost_equal, assert_warns)
+                           assert_almost_equal, assert_warns,
+                           assert_array_less)
 
 from scipy._lib._testutils import suppressed_stdout
 from scipy import optimize
@@ -147,14 +148,14 @@ class CheckOptimizeParameterized(CheckOptimize):
                         atol=1e-6)
 
         # Ensure that function call counts are 'known good'; these are from
-        # Scipy 0.7.0. Don't allow them to increase.
-        assert_(self.funccalls == 10, self.funccalls)
-        assert_(self.gradcalls == 8, self.gradcalls)
+        # Scipy 1.0.0. Don't allow them to increase.
+        assert_(self.funccalls == 9, self.funccalls)
+        assert_(self.gradcalls == 7, self.gradcalls)
 
-        # Ensure that the function behaves the same; this is from Scipy 0.7.0
+        # Ensure that the function behaves the same; this is from Scipy 1.0.0
         assert_allclose(self.trace[6:8],
-                        [[0, -5.25060743e-01, 4.87748473e-01],
-                         [0, -5.24885582e-01, 4.87530347e-01]],
+                        [[7.323472e-15, -5.248650e-01, 4.875251e-01],
+                         [7.323472e-15, -5.248650e-01, 4.875251e-01]],
                         atol=1e-14, rtol=1e-7)
 
     @suppressed_stdout
@@ -590,6 +591,32 @@ class TestOptimizeSimple(CheckOptimize):
                                 options={'disp': False, 'maxls': 1})
         assert_(not sol.success)
 
+    def test_minimize_l_bfgs_b_maxfun_interruption(self):
+        # gh-6162
+        f = optimize.rosen
+        g = optimize.rosen_der
+        values = []
+        x0 = np.ones(7) * 1000
+
+        def objfun(x):
+            value = f(x)
+            values.append(value)
+            return value
+
+        # Look for an interesting test case.
+        # Request a maxfun that stops at a particularly bad function
+        # evaluation somewhere between 100 and 300 evaluations.
+        low, medium, high = 30, 100, 300
+        optimize.fmin_l_bfgs_b(objfun, x0, fprime=g, maxfun=high)
+        v, k = max((y, i) for i, y in enumerate(values[medium:]))
+        maxfun = medium + k
+        # If the minimization strategy is reasonable,
+        # the minimize() result should not be worse than the best
+        # of the first 30 function evaluations.
+        target = min(values[:low])
+        xmin, fmin, d = optimize.fmin_l_bfgs_b(f, x0, fprime=g, maxfun=maxfun)
+        assert_array_less(fmin, target)
+
     def test_custom(self):
         # This function comes from the documentation example.
         def custmin(fun, x0, args=(), maxfev=None, stepsize=0.1,
@@ -852,6 +879,16 @@ class TestOptimizeScalar(TestCase):
 
         x = optimize.golden(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
+
+        x = optimize.golden(self.fun, tol=0)
+        assert_allclose(x, self.solution)
+
+        maxiter_test_cases = [0, 1, 5]
+        for maxiter in maxiter_test_cases:
+            x0 = optimize.golden(self.fun, maxiter=0, full_output=True)
+            x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
+            nfev0, nfev = x0[2], x[2]
+            assert_equal(nfev - nfev0, maxiter)
 
     def test_fminbound(self):
         x = optimize.fminbound(self.fun, 0, 1)
@@ -1134,6 +1171,64 @@ class TestBrute:
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),
                         atol=1e-3)
 
+class TestIterationLimits(TestCase):
+    # Tests that optimisation does not give up before trying requested
+    # number of iterations or evaluations. And that it does not succeed
+    # by exceeding the limits.
+    def setUp(self):
+        self.funcalls = 0
+
+    def slow_func(self, v):
+        self.funcalls += 1
+        r,t = np.sqrt(v[0]**2+v[1]**2), np.arctan2(v[0],v[1])
+        return np.sin(r*20 + t)+r*0.5
+
+    def test_neldermead_limit(self):
+        self.check_limits("Nelder-Mead", 200)
+
+    def test_powell_limit(self):
+        self.check_limits("powell", 1000)
+
+    def check_limits(self, method, default_iters):
+        for start_v in [[0.1,0.1], [1,1], [2,2]]:
+            for mfev in [50, 500, 5000]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    assert_(res["nfev"] < mfev)
+                else:
+                    assert_(res["nfev"] >= mfev)
+            for mit in [50, 500,5000]:
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit})
+                if res["success"]:
+                    assert_(res["nit"] <= mit)
+                else:
+                    assert_(res["nit"] >= mit)
+            for mfev,mit in [[50,50], [5000,5000],[5000,np.inf]]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit, "maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    assert_(res["nfev"] < mfev and res["nit"] <= mit)
+                else:
+                    assert_(res["nfev"] >= mfev or res["nit"] >= mit)
+            for mfev,mit in [[np.inf,None], [None,np.inf]]:
+                self.funcalls = 0
+                res = optimize.minimize(self.slow_func, start_v,
+                      method=method, options={"maxiter":mit, "maxfev":mfev})
+                assert_(self.funcalls == res["nfev"])
+                if res["success"]:
+                    if mfev is None:
+                        assert_(res["nfev"] < default_iters*2)
+                    else:
+                        assert_(res["nit"] <= default_iters*2)
+                else:
+                    assert_(res["nfev"] >= default_iters*2 or
+                        res["nit"] >= default_iters*2)
 
 if __name__ == "__main__":
     run_module_suite()

@@ -74,17 +74,16 @@ __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
 
 # TODO:
 #   - implements high level method for running several times k-means with
-#   different initialialization
+#   different initialization
 #   - warning: what happens if different number of clusters ? For now, emit a
 #   warning, but it is not great, because I am not sure it really make sense to
 #   succeed in this case (maybe an exception is better ?)
+
 import warnings
 
-from numpy.random import randint
-from numpy import (shape, zeros, sqrt, argmin, minimum, array, newaxis,
-    common_type, single, double, take, std, mean)
 import numpy as np
 from scipy._lib._util import _asarray_validated
+from scipy._lib import _numpy_compat
 
 from . import _vq
 
@@ -139,7 +138,7 @@ def whiten(obs, check_finite=True):
 
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
-    std_dev = std(obs, axis=0)
+    std_dev = np.std(obs, axis=0)
     zero_std_mask = std_dev == 0
     if zero_std_mask.any():
         std_dev[zero_std_mask] = 1.0
@@ -209,7 +208,7 @@ def vq(obs, code_book, check_finite=True):
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
     code_book = _asarray_validated(code_book, check_finite=check_finite)
-    ct = common_type(obs, code_book)
+    ct = np.common_type(obs, code_book)
 
     c_obs = obs.astype(ct, copy=False)
 
@@ -218,7 +217,7 @@ def vq(obs, code_book, check_finite=True):
     else:
         c_code_book = code_book
 
-    if ct in (single, double):
+    if ct in (np.float32, np.float64):
         results = _vq.vq(c_obs, c_code_book)
     else:
         results = py_vq(obs, code_book)
@@ -274,7 +273,7 @@ def py_vq(obs, code_book, check_finite=True):
         else:
             return _py_vq_1d(obs, code_book)
     else:
-        (n, d) = shape(obs)
+        (n, d) = np.shape(obs)
 
     # code books and observations should have same number of features and same
     # shape
@@ -285,14 +284,14 @@ def py_vq(obs, code_book, check_finite=True):
                          "number of features (eg columns)""" %
                          (code_book.shape[1], d))
 
-    code = zeros(n, dtype=int)
-    min_dist = zeros(n)
+    code = np.zeros(n, dtype=int)
+    min_dist = np.zeros(n)
     for i in range(n):
         dist = np.sum((obs[i] - code_book) ** 2, 1)
-        code[i] = argmin(dist)
+        code[i] = np.argmin(dist)
         min_dist[i] = dist[code[i]]
 
-    return code, sqrt(min_dist)
+    return code, np.sqrt(min_dist)
 
 
 def _py_vq_1d(obs, code_book):
@@ -322,10 +321,10 @@ def _py_vq_1d(obs, code_book):
     for i in range(nc):
         dist[:, i] = np.sum(obs - code_book[i])
     print(dist)
-    code = argmin(dist)
+    code = np.argmin(dist)
     min_dist = dist[code]
 
-    return code, sqrt(min_dist)
+    return code, np.sqrt(min_dist)
 
 
 def py_vq2(obs, code_book, check_finite=True):
@@ -366,7 +365,7 @@ def py_vq2(obs, code_book, check_finite=True):
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
     code_book = _asarray_validated(code_book, check_finite=check_finite)
-    d = shape(obs)[1]
+    d = np.shape(obs)[1]
 
     # code books and observations should have same number of features
     if not d == code_book.shape[1]:
@@ -374,10 +373,10 @@ def py_vq2(obs, code_book, check_finite=True):
             code book(%d) and obs(%d) should have the same
             number of features (eg columns)""" % (code_book.shape[1], d))
 
-    diff = obs[newaxis, :, :] - code_book[:,newaxis,:]
-    dist = sqrt(np.sum(diff * diff, -1))
-    code = argmin(dist, 0)
-    min_dist = minimum.reduce(dist, 0)
+    diff = obs[np.newaxis, :, :] - code_book[:,np.newaxis,:]
+    dist = np.sqrt(np.sum(diff * diff, -1))
+    code = np.argmin(dist, 0)
+    min_dist = np.minimum.reduce(dist, 0)
     # The next line I think is equivalent and should be faster than the one
     # above, but in practice didn't seem to make much difference:
     # min_dist = choose(code,dist)
@@ -389,9 +388,9 @@ def _kmeans(obs, guess, thresh=1e-5):
 
     Returns
     -------
-    code_book :
+    code_book
         the lowest distortion codebook found.
-    avg_dist :
+    avg_dist
         the average distance a observation is from a code in the book.
         Lower means the code_book matches the data better.
 
@@ -417,21 +416,21 @@ def _kmeans(obs, guess, thresh=1e-5):
 
     """
 
-    code_book = array(guess, copy=True)
+    code_book = np.array(guess, copy=True)
     avg_dist = []
-    diff = thresh+1.
+    diff = np.inf
     while diff > thresh:
         nc = code_book.shape[0]
         # compute membership and distances between obs and code_book
         obs_code, distort = vq(obs, code_book)
-        avg_dist.append(mean(distort, axis=-1))
+        avg_dist.append(np.mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
         if(diff > thresh):
             code_book, has_members = _vq.update_cluster_means(obs, obs_code, nc)
             code_book = code_book.compress(has_members, axis=0)
         if len(avg_dist) > 1:
             diff = avg_dist[-2] - avg_dist[-1]
-    # print avg_dist
+
     return code_book, avg_dist[-1]
 
 
@@ -506,6 +505,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     --------
     >>> from numpy import array
     >>> from scipy.cluster.vq import vq, kmeans, whiten
+    >>> import matplotlib.pyplot as plt
     >>> features  = array([[ 1.9,2.3],
     ...                    [ 1.5,2.5],
     ...                    [ 0.8,0.6],
@@ -516,7 +516,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     ...                    [ 0.3,1.5],
     ...                    [ 1.0,1.0]])
     >>> whitened = whiten(features)
-    >>> book = array((whitened[0],whitened[2]))
+    >>> book = np.array((whitened[0],whitened[2]))
     >>> kmeans(whitened,book)
     (array([[ 2.3110306 ,  2.86287398],    # random
            [ 0.93218041,  1.24398691]]), 0.85684700941625547)
@@ -529,6 +529,21 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
            [ 1.32544402,  0.65607529],
            [ 0.40782893,  2.02786907]]), 0.5196582527686241)
 
+    >>> # Create 50 datapoints in two clusters a and b
+    >>> pts = 50
+    >>> a = np.random.multivariate_normal([0, 0], [[4, 1], [1, 4]], size=pts)
+    >>> b = np.random.multivariate_normal([30, 10],
+    ...                                   [[10, 2], [2, 1]],
+    ...                                   size=pts)
+    >>> features = np.concatenate((a, b))
+    >>> # Whiten data
+    >>> whitened = whiten(features)
+    >>> # Find 2 clusters in the data
+    >>> codebook, distortion = kmeans(whitened, 2)
+    >>> # Plot whitened data and cluster centers in red
+    >>> plt.scatter(whitened[:, 0], whitened[:, 1])
+    >>> plt.scatter(codebook[:, 0], codebook[:, 1], c='r')
+    >>> plt.show()
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
     if int(iter) < 1:
@@ -558,7 +573,15 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
             raise ValueError("Asked for 0 cluster ? ")
         for i in range(iter):
             # the initial code book is randomly selected from observations
-            guess = take(obs, randint(0, No, k), 0)
+            k_random_indices = np.random.randint(0, No, k)
+            if np.any(_numpy_compat.unique(k_random_indices,
+                                           return_counts=True)[1] > 1):
+                # randint can give duplicates, which is incorrect.  Only fix
+                # the issue if it occurs, to not change results for users who
+                #  use a random seed and get no duplicates.
+                k_random_indices = np.random.permutation(No)[:k]
+
+            guess = np.take(obs, k_random_indices, 0)
             book, dist = _kmeans(obs, guess, thresh=thresh)
             if dist < best_dist:
                 best_book = book
@@ -682,7 +705,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         'matrix', or if a ndarray is given instead, it is
         interpreted as initial cluster to use instead.
     iter : int, optional
-        Number of iterations of the k-means algrithm to run. Note
+        Number of iterations of the k-means algorithm to run. Note
         that this differs in meaning from the iters parameter to
         the kmeans function.
     thresh : float, optional

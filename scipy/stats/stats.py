@@ -1,6 +1,9 @@
-# Copyright (c) Gary Strangman.  All rights reserved
+# Copyright 2002 Gary Strangman.  All rights reserved
+# Copyright 2002-2016 The SciPy Developers
 #
-# Disclaimer
+# The original code from Gary Strangman was heavily adapted for
+# use in SciPy by Travis Oliphant.  The original code came with the
+# following disclaimer:
 #
 # This software is provided "as-is".  There are no expressed or implied
 # warranties of any kind, including, but not limited to, the warranties
@@ -12,10 +15,7 @@
 # liability or tort (including negligence or otherwise) arising in any way
 # out of the use of this software, even if advised of the possibility of
 # such damage.
-#
 
-#
-# Heavily adapted for use by SciPy 2002 by Travis Oliphant
 """
 A collection of basic statistical functions for python.  The function
 names appear below.
@@ -82,6 +82,9 @@ Variability
     obrientransform
     signaltonoise
     sem
+    zmap
+    zscore
+    iqr
 
 Trimming Functions
 ------------------
@@ -102,6 +105,7 @@ Correlation Functions
    spearmanr
    pointbiserialr
    kendalltau
+   weightedtau
    linregress
    theilslopes
 
@@ -159,20 +163,23 @@ References
 
 from __future__ import division, print_function, absolute_import
 
-from collections import namedtuple
-import math
 import warnings
+import math
+from collections import namedtuple
 
-# Scipy imports.
-from scipy._lib.six import callable, string_types, xrange
+import numpy as np
 from numpy import array, asarray, ma, zeros
+
+from scipy._lib.six import callable, string_types
+from scipy._lib._version import NumpyVersion
 import scipy.special as special
 import scipy.linalg as linalg
-import numpy as np
-from . import distributions, mstats_basic, _stats
+from . import distributions
+from . import mstats_basic
 from ._distn_infrastructure import _lazywhere
 from ._stats_mstats_common import _find_repeats, linregress, theilslopes
-from ._stats import _kendall_condis
+from ._stats import _kendall_dis, _toint64, _weightedrankedtau
+
 
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
@@ -180,10 +187,11 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore', 'histogram',
            'histogram2', 'cumfreq', 'relfreq', 'obrientransform',
-           'signaltonoise', 'sem', 'zmap', 'zscore', 'threshold',
+           'signaltonoise', 'sem', 'zmap', 'zscore', 'iqr', 'threshold',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean', 'f_oneway',
            'pearsonr', 'fisher_exact', 'spearmanr', 'pointbiserialr',
-           'kendalltau', 'linregress', 'theilslopes', 'ttest_1samp',
+           'kendalltau', 'weightedtau',
+           'linregress', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel', 'kstest',
            'chisquare', 'power_divergence', 'ks_2samp', 'mannwhitneyu',
            'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
@@ -250,11 +258,6 @@ def _contains_nan(a, nan_policy='propagate'):
     return (contains_nan, nan_policy)
 
 
-#####################################
-#         CENTRAL TENDENCY          #
-#####################################
-
-
 def gmean(a, axis=0, dtype=None):
     """
     Compute the geometric mean along the specified axis.
@@ -298,9 +301,11 @@ def gmean(a, axis=0, dtype=None):
     arrays automatically mask any non-finite values.
 
     """
-    if not isinstance(a, np.ndarray):  # if not an ndarray object attempt to convert it
+    if not isinstance(a, np.ndarray):
+        # if not an ndarray object attempt to convert it
         log_a = np.log(np.array(a, dtype=dtype))
-    elif dtype:  # Must change the default dtype allowing array type
+    elif dtype:
+        # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
             log_a = np.log(np.ma.asarray(a, dtype=dtype))
         else:
@@ -353,7 +358,8 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a > 0):  # Harmonic mean only defined if greater than zero
+    if np.all(a > 0):
+        # Harmonic mean only defined if greater than zero
         if isinstance(a, np.ma.MaskedArray):
             size = a.count(axis)
         else:
@@ -373,7 +379,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     """
     Returns an array of the modal (most common) value in the passed array.
 
-    If there is more than one such value, only the first is returned.
+    If there is more than one such value, only the smallest is returned.
     The bin-count for the modal bins is also returned.
 
     Parameters
@@ -414,7 +420,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     """
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
-        return np.array([]), np.array([])
+        return ModeResult(np.array([]), np.array([]))
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
@@ -1234,6 +1240,12 @@ def skewtest(a, axis=0, nan_policy='propagate'):
     -----
     The sample size must be at least 8.
 
+    References
+    ----------
+    .. [1] R. B. D'Agostino, A. J. Belanger and R. B. D'Agostino Jr.,
+            "A suggestion for using powerful and informative tests of 
+            normality", American Statistician 44, pp. 316-321, 1990.
+
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1357,7 +1369,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        The array containing the data to be tested.
+        The array containing the sample to be tested.
     axis : int or None, optional
         Axis along which to compute test. Default is 0. If None,
         compute over the whole array `a`.
@@ -1377,11 +1389,28 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     References
     ----------
     .. [1] D'Agostino, R. B. (1971), "An omnibus test of normality for
-           moderate and large sample size," Biometrika, 58, 341-348
+           moderate and large sample size", Biometrika, 58, 341-348
 
-    .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Testing for
-           departures from normality," Biometrika, 60, 613-622
+    .. [2] D'Agostino, R. and Pearson, E. S. (1973), "Tests for departure from
+           normality", Biometrika, 60, 613-622
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> pts = 1000
+    >>> np.random.seed(28041990)
+    >>> a = np.random.normal(0, 1, size=pts)
+    >>> b = np.random.normal(2, 1, size=pts)
+    >>> x = np.concatenate((a, b))
+    >>> k2, p = stats.normaltest(x)
+    >>> alpha = 1e-3
+    >>> print("p = {:g}".format(p))
+    p = 3.27207e-11
+    >>> if p < alpha:  # null hypothesis: x comes from a normal distribution
+    ...     print("The null hypothesis can be rejected")
+    ... else:
+    ...     print("The null hypothesis cannot be rejected")
+    The null hypothesis can be rejected
     """
     a, axis = _chk_asarray(a, axis)
 
@@ -1837,6 +1866,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None, printextras=Fals
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
 
+
 CumfreqResult = namedtuple('CumfreqResult',
                            ('cumcount', 'lowerlimit', 'binsize',
                             'extrapoints'))
@@ -1917,6 +1947,7 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     h, l, b, e = _histogram(a, numbins, defaultreallimits, weights=weights)
     cumhist = np.cumsum(h * 1, axis=0)
     return CumfreqResult(cumhist, l, b, e)
+
 
 RelfreqResult = namedtuple('RelfreqResult',
                            ('frequency', 'lowerlimit', 'binsize',
@@ -2173,8 +2204,8 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
 
 def zscore(a, axis=0, ddof=0):
     """
-    Calculates the z score of each value in the sample, relative to the sample
-    mean and standard deviation.
+    Calculates the z score of each value in the sample, relative to the
+    sample mean and standard deviation.
 
     Parameters
     ----------
@@ -2190,26 +2221,26 @@ def zscore(a, axis=0, ddof=0):
     Returns
     -------
     zscore : array_like
-        The z-scores, standardized by mean and standard deviation of input
-        array `a`.
+        The z-scores, standardized by mean and standard deviation of
+        input array `a`.
 
     Notes
     -----
     This function preserves ndarray subclasses, and works also with
-    matrices and masked arrays (it uses `asanyarray` instead of `asarray`
-    for parameters).
+    matrices and masked arrays (it uses `asanyarray` instead of
+    `asarray` for parameters).
 
     Examples
     --------
-    >>> a = np.array([ 0.7972,  0.0767,  0.4383,  0.7866,  0.8091,  0.1954,
-    ...                0.6307, 0.6599,  0.1065,  0.0508])
+    >>> a = np.array([ 0.7972,  0.0767,  0.4383,  0.7866,  0.8091,
+    ...                0.1954,  0.6307,  0.6599,  0.1065,  0.0508])
     >>> from scipy import stats
     >>> stats.zscore(a)
     array([ 1.1273, -1.247 , -0.0552,  1.0923,  1.1664, -0.8559,  0.5786,
             0.6748, -1.1488, -1.3324])
 
-    Computing along a specified axis, using n-1 degrees of freedom (``ddof=1``)
-    to calculate the standard deviation:
+    Computing along a specified axis, using n-1 degrees of freedom
+    (``ddof=1``) to calculate the standard deviation:
 
     >>> b = np.array([[ 0.3148,  0.0478,  0.6243,  0.4608],
     ...               [ 0.7149,  0.0775,  0.6072,  0.9656],
@@ -2237,9 +2268,9 @@ def zmap(scores, compare, axis=0, ddof=0):
     """
     Calculates the relative z-scores.
 
-    Returns an array of z-scores, i.e., scores that are standardized to zero
-    mean and unit variance, where mean and variance are calculated from the
-    comparison array.
+    Returns an array of z-scores, i.e., scores that are standardized to
+    zero mean and unit variance, where mean and variance are calculated
+    from the comparison array.
 
     Parameters
     ----------
@@ -2264,8 +2295,8 @@ def zmap(scores, compare, axis=0, ddof=0):
     Notes
     -----
     This function preserves ndarray subclasses, and works also with
-    matrices and masked arrays (it uses `asanyarray` instead of `asarray`
-    for parameters).
+    matrices and masked arrays (it uses `asanyarray` instead of
+    `asarray` for parameters).
 
     Examples
     --------
@@ -2283,6 +2314,270 @@ def zmap(scores, compare, axis=0, ddof=0):
                 np.expand_dims(sstd, axis=axis))
     else:
         return (scores - mns) / sstd
+
+
+# Private dictionary initialized only once at module level
+# See https://en.wikipedia.org/wiki/Robust_measures_of_scale
+_scale_conversions = {'raw': 1.0,
+                      'normal': special.erfinv(0.5) * 2.0 * math.sqrt(2.0)}
+
+
+def iqr(x, axis=None, rng=(25, 75), scale='raw', nan_policy='propagate',
+        interpolation='linear', keepdims=False):
+    """
+    Compute the interquartile range of the data along the specified
+    axis.
+
+    The interquartile range (IQR) is the difference between the 75th and
+    25th percentile of the data. It is a measure of the dispersion
+    similar to standard deviation or variance, but is much more robust
+    against outliers [2]_.
+
+    The ``rng`` parameter allows this function to compute other
+    percentile ranges than the actual IQR. For example, setting
+    ``rng=(0, 100)`` is equivalent to `numpy.ptp`.
+
+    The IQR of an empty array is `np.nan`.
+
+    .. versionadded:: 0.18.0
+
+    Parameters
+    ----------
+    x : array_like
+        Input array or object that can be converted to an array.
+    axis : int or sequence of int, optional
+        Axis along which the range is computed. The default is to
+        compute the IQR for the entire array.
+    rng : Two-element sequence containing floats in range of [0,100] optional
+        Percentiles over which to compute the range. Each must be
+        between 0 and 100, inclusive. The default is the true IQR:
+        `(25, 75)`. The order of the elements is not important.
+    scale : scalar or str, optional
+        The numerical value of scale will be divided out of the final
+        result. The following string values are recognized:
+
+          'raw' : No scaling, just return the raw IQR.
+          'normal' : Scale by :math:`2 \\sqrt{2} erf^{-1}(\\frac{1}{2}) \\approx 1.349`.
+
+        The default is 'raw'. Array-like scale is also allowed, as long
+        as it broadcasts correctly to the output such that
+        ``out / scale`` is a valid operation. The output dimensions
+        depend on the input array, `x`, the `axis` argument, and the
+        `keepdims` flag.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate'
+        returns nan, 'raise' throws an error, 'omit' performs the
+        calculations ignoring nan values. Default is 'propagate'.
+    interpolation : {'linear', 'lower', 'higher', 'midpoint', 'nearest'}, optional
+        Specifies the interpolation method to use when the percentile
+        boundaries lie between two data points `i` and `j`:
+
+          * 'linear' : `i + (j - i) * fraction`, where `fraction` is the
+              fractional part of the index surrounded by `i` and `j`.
+          * 'lower' : `i`.
+          * 'higher' : `j`.
+          * 'nearest' : `i` or `j` whichever is nearest.
+          * 'midpoint' : `(i + j) / 2`.
+
+        Default is 'linear'.
+    keepdims : bool, optional
+        If this is set to `True`, the reduced axes are left in the
+        result as dimensions with size one. With this option, the result
+        will broadcast correctly against the original array `x`.
+
+    Returns
+    -------
+    iqr : scalar or ndarray
+        If ``axis=None``, a scalar is returned. If the input contains
+        integers or floats of smaller precision than ``np.float64``, then the
+        output data-type is ``np.float64``. Otherwise, the output data-type is
+        the same as that of the input.
+
+    See Also
+    --------
+    numpy.std, numpy.var
+
+    Examples
+    --------
+    >>> from scipy.stats import iqr
+    >>> x = np.array([[10, 7, 4], [3, 2, 1]])
+    >>> x
+    array([[10,  7,  4],
+           [ 3,  2,  1]])
+    >>> iqr(x)
+    4.0
+    >>> iqr(x, axis=0)
+    array([ 3.5,  2.5,  1.5])
+    >>> iqr(x, axis=1)
+    array([ 3.,  1.])
+    >>> iqr(x, axis=1, keepdims=True)
+    array([[ 3.],
+           [ 1.]])
+
+    Notes
+    -----
+    This function is heavily dependent on the version of `numpy` that is
+    installed. Versions greater than 1.11.0b3 are highly recommended, as they
+    include a number of enhancements and fixes to `numpy.percentile` and
+    `numpy.nanpercentile` that affect the operation of this function. The
+    following modifications apply:
+
+    Below 1.10.0 : `nan_policy` is poorly defined.
+        The default behavior of `numpy.percentile` is used for 'propagate'. This
+        is a hybrid of 'omit' and 'propagate' that mostly yields a skewed
+        version of 'omit' since NaNs are sorted to the end of the data. A
+        warning is raised if there are NaNs in the data.
+    Below 1.9.0: `numpy.nanpercentile` does not exist.
+        This means that `numpy.percentile` is used regardless of `nan_policy`
+        and a warning is issued. See previous item for a description of the
+        behavior.
+    Below 1.9.0: `keepdims` and `interpolation` are not supported.
+        The keywords get ignored with a warning if supplied with non-default
+        values. However, multiple axes are still supported.
+
+    References
+    ----------
+    .. [1] "Interquartile range" https://en.wikipedia.org/wiki/Interquartile_range
+    .. [2] "Robust measures of scale" https://en.wikipedia.org/wiki/Robust_measures_of_scale
+    .. [3] "Quantile" https://en.wikipedia.org/wiki/Quantile
+    """
+    x = asarray(x)
+
+    # This check prevents percentile from raising an error later. Also, it is
+    # consistent with `np.var` and `np.std`.
+    if not x.size:
+        return np.nan
+
+    # An error may be raised here, so fail-fast, before doing lengthy
+    # computations, even though `scale` is not used until later
+    if isinstance(scale, string_types):
+        scale_key = scale.lower()
+        if scale_key not in _scale_conversions:
+            raise ValueError("{0} not a valid scale for `iqr`".format(scale))
+        scale = _scale_conversions[scale_key]
+
+    # Select the percentile function to use based on nans and policy
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+
+    if contains_nan and nan_policy == 'omit':
+        percentile_func = _iqr_nanpercentile
+    else:
+        percentile_func = _iqr_percentile
+
+    if len(rng) != 2:
+        raise TypeError("quantile range must be two element sequence")
+
+    rng = sorted(rng)
+    pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
+                          keepdims=keepdims, contains_nan=contains_nan)
+    out = np.subtract(pct[1], pct[0])
+
+    if scale != 1.0:
+        out /= scale
+
+    return out
+
+
+def _iqr_percentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
+    """
+    Private wrapper that works around older versions of `numpy`.
+
+    While this function is pretty much necessary for the moment, it
+    should be removed as soon as the minimum supported numpy version
+    allows.
+    """
+    if contains_nan and NumpyVersion(np.__version__) < '1.10.0a':
+        # I see no way to avoid the version check to ensure that the corrected
+        # NaN behavior has been implemented except to call `percentile` on a
+        # small array.
+        msg = "Keyword nan_policy='propagate' not correctly supported for " \
+              "numpy versions < 1.10.x. The default behavior of " \
+              "`numpy.percentile` will be used."
+        warnings.warn(msg, RuntimeWarning)
+
+    try:
+        # For older versions of numpy, there are two things that can cause a
+        # problem here: missing keywords and non-scalar axis. The former can be
+        # partially handled with a warning, the latter can be handled fully by
+        # hacking in an implementation similar to numpy's function for
+        # providing multi-axis functionality
+        # (`numpy.lib.function_base._ureduce` for the curious).
+        result = np.percentile(x, q, axis=axis, keepdims=keepdims,
+                               interpolation=interpolation)
+    except TypeError:
+        if interpolation != 'linear' or keepdims:
+            # At time or writing, this means np.__version__ < 1.9.0
+            warnings.warn("Keywords interpolation and keepdims not supported "
+                          "for your version of numpy", RuntimeWarning)
+        try:
+            # Special processing if axis is an iterable
+            original_size = len(axis)
+        except TypeError:
+            # Axis is a scalar at this point
+            pass
+        else:
+            axis = np.unique(np.asarray(axis) % x.ndim)
+            if original_size > axis.size:
+                # mimic numpy if axes are duplicated
+                raise ValueError("duplicate value in axis")
+            if axis.size == x.ndim:
+                # axis includes all axes: revert to None
+                axis = None
+            elif axis.size == 1:
+                # no rolling necessary
+                axis = axis[0]
+            else:
+                # roll multiple axes to the end and flatten that part out
+                for ax in axis[::-1]:
+                    x = np.rollaxis(x, ax, x.ndim)
+                x = x.reshape(x.shape[:-axis.size] +
+                              (np.prod(x.shape[-axis.size:]),))
+                axis = -1
+        result = np.percentile(x, q, axis=axis)
+
+    return result
+
+
+def _iqr_nanpercentile(x, q, axis=None, interpolation='linear', keepdims=False, contains_nan=False):
+    """
+    Private wrapper that works around the following:
+
+      1. A bug in `np.nanpercentile` that was around until numpy version
+         1.11.0.
+      2. A bug in `np.percentile` NaN handling that was fixed in numpy
+         version 1.10.0.
+      3. The non-existence of `np.nanpercentile` before numpy version
+         1.9.0.
+
+    While this function is pretty much necessary for the moment, it
+    should be removed as soon as the minimum supported numpy version
+    allows.
+    """
+    if hasattr(np, 'nanpercentile'):
+        # At time or writing, this means np.__version__ < 1.9.0
+        result = np.nanpercentile(x, q, axis=axis,
+                                  interpolation=interpolation, keepdims=keepdims)
+        # If non-scalar result and nanpercentile does not do proper axis roll.
+        # I see no way of avoiding the version test since dimensions may just
+        # happen to match in the data.
+        if result.ndim > 1 and NumpyVersion(np.__version__) < '1.11.0a':
+            axis = np.asarray(axis)
+            if axis.size == 1:
+                # If only one axis specified, reduction happens along that dimension
+                if axis.ndim == 0:
+                    axis = axis[None]
+                result = np.rollaxis(result, axis[0])
+            else:
+                # If multiple axes, reduced dimeision is last
+                result = np.rollaxis(result, -1)
+    else:
+        msg = "Keyword nan_policy='omit' not correctly supported for numpy " \
+              "versions < 1.9.x. The default behavior of  numpy.percentile " \
+              "will be used."
+        warnings.warn(msg, RuntimeWarning)
+        result = _iqr_percentile(x, q, axis=axis)
+
+    return result
 
 
 #####################################
@@ -2459,12 +2754,7 @@ def trimboth(a, proportiontocut, axis=0):
     if (lowercut >= uppercut):
         raise ValueError("Proportion too big.")
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
@@ -2519,12 +2809,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
         lowercut = int(proportiontocut * nobs)
         uppercut = nobs
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     return atmp[lowercut:uppercut]
 
@@ -2592,12 +2877,7 @@ def trim_mean(a, proportiontocut, axis=0):
     if (lowercut > uppercut):
         raise ValueError("Proportion too big.")
 
-    # np.partition is preferred but it only exist in numpy 1.8.0 and higher,
-    # in those cases we use np.sort
-    try:
-        atmp = np.partition(a, (lowercut, uppercut - 1), axis)
-    except AttributeError:
-        atmp = np.sort(a, axis)
+    atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
     sl = [slice(None)] * atmp.ndim
     sl[axis] = slice(lowercut, uppercut)
@@ -3033,26 +3313,31 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate'):
     """
     a, axisout = _chk_asarray(a, axis)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
-    if contains_nan and nan_policy == 'omit':
+    if a_contains_nan:
         a = ma.masked_invalid(a)
-        b = ma.masked_invalid(b)
-        return mstats_basic.spearmanr(a, b, axis)
 
     if a.size <= 1:
         return SpearmanrResult(np.nan, np.nan)
+        
     ar = np.apply_along_axis(rankdata, axisout, a)
 
     br = None
     if b is not None:
         b, axisout = _chk_asarray(b, axis)
 
-        contains_nan, nan_policy = _contains_nan(b, nan_policy)
+        b_contains_nan, nan_policy = _contains_nan(b, nan_policy)
 
-        if contains_nan and nan_policy == 'omit':
+        if a_contains_nan or b_contains_nan:
             b = ma.masked_invalid(b)
-            return mstats_basic.spearmanr(a, b, axis)
+
+            if nan_policy == 'propagate':
+                rho, pval = mstats_basic.spearmanr(a, b, axis)
+                return SpearmanrResult(rho * np.nan, pval * np.nan)
+
+            if nan_policy == 'omit':
+                return mstats_basic.spearmanr(a, b, axis)
 
         br = np.apply_along_axis(rankdata, axisout, b)
     n = a.shape[axisout]
@@ -3161,6 +3446,7 @@ def pointbiserialr(x, y):
     rpb, prob = pearsonr(x, y)
     return PointbiserialrResult(rpb, prob)
 
+
 KendalltauResult = namedtuple('KendalltauResult', ('correlation', 'pvalue'))
 
 
@@ -3170,8 +3456,9 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     Kendall's tau is a measure of the correspondence between two rankings.
     Values close to 1 indicate strong agreement, values close to -1 indicate
-    strong disagreement.  This is the tau-b version of Kendall's tau which
-    accounts for ties.
+    strong disagreement.  This is the 1945 "tau-b" version of Kendall's
+    tau [2]_, which can account for ties and which reduces to the 1938 "tau-a"
+    version [1]_ in absence of ties.
 
     Parameters
     ----------
@@ -3179,15 +3466,13 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         Arrays of rankings, of the same shape. If arrays are not 1-D, they will
         be flattened to 1-D.
     initial_lexsort : bool, optional
-        Whether to use lexsort or quicksort as the sorting method for the
-        initial sort of the inputs. Default is lexsort (True), for which
-        `kendalltau` is of complexity O(n log(n)). If False, the complexity is
-        O(n^2), but with a smaller pre-factor (so quicksort may be faster for
-        small arrays).
+        Unused (deprecated).
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+        values. Default is 'propagate'. Note that if the input contains nan
+        'omit' delegates to mstats_basic.kendalltau(), which has a different
+        implementation.
 
     Returns
     -------
@@ -3201,10 +3486,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     --------
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
     theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
+    weightedtau : Computes a weighted version of Kendall's tau.
 
     Notes
     -----
-    The definition of Kendall's tau that is used is::
+    The definition of Kendall's tau that is used is [2]_::
 
       tau = (P - Q) / sqrt((P + Q + T) * (P + Q + U))
 
@@ -3215,9 +3501,15 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     References
     ----------
-    W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
-    Ungrouped Data", Journal of the American Statistical Association, Vol. 61,
-    No. 314, Part 1, pp. 436-439, 1966.
+    .. [1] Maurice G. Kendall, "A New Measure of Rank Correlation", Biometrika
+           Vol. 30, No. 1/2, pp. 81-93, 1938.
+    .. [2] Maurice G. Kendall, "The treatment of ties in ranking problems",
+           Biometrika Vol. 33, No. 3, pp. 239-251. 1945.
+    .. [3] Gottfried E. Noether, "Elements of Nonparametric Statistics", John
+           Wiley & Sons, 1967.
+    .. [4] Peter M. Fenwick, "A new data structure for cumulative frequency
+           tables", Software: Practice and Experience, Vol. 24, No. 3,
+           pp. 327-336, 1994.
 
     Examples
     --------
@@ -3228,7 +3520,7 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     >>> tau
     -0.47140452079103173
     >>> p_value
-    0.24821309157521476
+    0.2827454599327748
 
     """
     x = np.asarray(x).ravel()
@@ -3241,8 +3533,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
         return KendalltauResult(np.nan, np.nan)  # Return NaN if arrays are empty
 
     # check both x and y
-    contains_nan, nan_policy = (_contains_nan(x, nan_policy) or
-                                _contains_nan(y, nan_policy))
+    cnx, npx = _contains_nan(x, nan_policy)
+    cny, npy = _contains_nan(y, nan_policy)
+    contains_nan = cnx or cny
+    if npx == 'omit' or npy == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'propagate':
         return KendalltauResult(np.nan, np.nan)
@@ -3257,7 +3552,10 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
 
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
-        return (cnt * (cnt - 1) // 2).sum()
+        cnt = cnt[cnt > 1]
+        return ((cnt * (cnt - 1) // 2).sum(),
+            (cnt * (cnt - 1.) * (cnt - 2)).sum(),
+            (cnt * (cnt - 1.) * (2*cnt + 5)).sum())
 
     size = x.size
     perm = np.argsort(y)  # sort on y and convert y to dense ranks
@@ -3269,27 +3567,213 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate'):
     x, y = x[perm], y[perm]
     x = np.r_[True, x[1:] != x[:-1]].cumsum(dtype=np.intp)
 
-    con, dis = _kendall_condis(x, y)  # concordant & discordant pairs
+    dis = _kendall_dis(x, y)  # discordant pairs
 
     obs = np.r_[True, (x[1:] != x[:-1]) | (y[1:] != y[:-1]), True]
     cnt = np.diff(np.where(obs)[0]).astype('int64', copy=False)
 
     ntie = (cnt * (cnt - 1) // 2).sum()  # joint ties
-    xtie = count_rank_tie(x) - ntie      # ties only in x
-    ytie = count_rank_tie(y) - ntie      # ties only in y
+    xtie, x0, x1 = count_rank_tie(x)     # ties in x, stats
+    ytie, y0, y1 = count_rank_tie(y)     # ties in y, stats
 
-    if con + dis + xtie == 0 or con + dis + ytie == 0:
+    tot = (size * (size - 1)) // 2
+
+    if xtie == tot or ytie == tot:
         return KendalltauResult(np.nan, np.nan)
 
-    tau = (con - dis) / np.sqrt(con + dis + xtie) / np.sqrt(con + dis + ytie)
+    # Note that tot = con + dis + (xtie - ntie) + (ytie - ntie) + ntie
+    #               = con + dis + xtie + ytie - ntie
+    con_minus_dis = tot - xtie - ytie + ntie - 2 * dis
+    tau = con_minus_dis / np.sqrt(tot - xtie) / np.sqrt(tot - ytie)
+    # Limit range to fix computational errors
+    tau = min(1., max(-1., tau))
 
-    # what follows reproduces the ending of Gary Strangman's original
-    # stats.kendalltau() in SciPy
-    svar = (4.0 * size + 10.0) / (9.0 * size * (size - 1))
-    z = tau / np.sqrt(svar)
-    prob = special.erfc(np.abs(z) / 1.4142136)
+    # con_minus_dis is approx normally distributed with this variance [3]_
+    var = (size * (size - 1) * (2.*size + 5) - x1 - y1) / 18. + (
+        2. * xtie * ytie) / (size * (size - 1)) + x0 * y0 / (9. *
+        size * (size - 1) * (size - 2))
+    pvalue = special.erfc(np.abs(con_minus_dis) / np.sqrt(var) / np.sqrt(2))
 
-    return KendalltauResult(tau, prob)
+    # Limit range to fix computational errors
+    return KendalltauResult(min(1., max(-1., tau)), pvalue)
+
+
+WeightedTauResult = namedtuple('WeightedTauResult', ('correlation', 'pvalue'))
+
+
+def weightedtau(x, y, rank=True, weigher=None, additive=True):
+    r"""
+    Computes a weighted version of Kendall's :math:`\tau`.
+
+    The weighted :math:`\tau` is a weighted version of Kendall's
+    :math:`\tau` in which exchanges of high weight are more influential than
+    exchanges of low weight. The default parameters compute the additive
+    hyperbolic version of the index, :math:`\tau_\mathrm h`, which has
+    been shown to provide the best balance between important and
+    unimportant elements [1]_.
+
+    The weighting is defined by means of a rank array, which assigns a
+    nonnegative rank to each element, and a weigher function, which
+    assigns a weight based from the rank to each element. The weight of an
+    exchange is then the sum or the product of the weights of the ranks of
+    the exchanged elements. The default parameters compute
+    :math:`\tau_\mathrm h`: an exchange between elements with rank
+    :math:`r` and :math:`s` (starting from zero) has weight
+    :math:`1/(r+1) + 1/(s+1)`.
+
+    Specifying a rank array is meaningful only if you have in mind an
+    external criterion of importance. If, as it usually happens, you do
+    not have in mind a specific rank, the weighted :math:`\tau` is
+    defined by averaging the values obtained using the decreasing
+    lexicographical rank by (`x`, `y`) and by (`y`, `x`). This is the
+    behavior with default parameters.
+
+    Note that if you are computing the weighted :math:`\tau` on arrays of
+    ranks, rather than of scores (i.e., a larger value implies a lower
+    rank) you must negate the ranks, so that elements of higher rank are
+    associated with a larger value.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Arrays of scores, of the same shape. If arrays are not 1-D, they will
+        be flattened to 1-D.
+    rank: array_like of ints or bool, optional
+        A nonnegative rank assigned to each element. If it is None, the
+        decreasing lexicographical rank by (`x`, `y`) will be used: elements of
+        higher rank will be those with larger `x`-values, using `y`-values to
+        break ties (in particular, swapping `x` and `y` will give a different
+        result). If it is False, the element indices will be used
+        directly as ranks. The default is True, in which case this
+        function returns the average of the values obtained using the
+        decreasing lexicographical rank by (`x`, `y`) and by (`y`, `x`).
+    weigher : callable, optional
+        The weigher function. Must map nonnegative integers (zero
+        representing the most important element) to a nonnegative weight.
+        The default, None, provides hyperbolic weighing, that is,
+        rank :math:`r` is mapped to weight :math:`1/(r+1)`.
+    additive : bool, optional
+        If True, the weight of an exchange is computed by adding the
+        weights of the ranks of the exchanged elements; otherwise, the weights
+        are multiplied. The default is True.
+
+    Returns
+    -------
+    correlation : float
+       The weighted :math:`\tau` correlation index.
+    pvalue : float
+       Presently ``np.nan``, as the null statistics is unknown (even in the
+       additive hyperbolic case).
+
+    See also
+    --------
+    kendalltau : Calculates Kendall's tau.
+    spearmanr : Calculates a Spearman rank-order correlation coefficient.
+    theilslopes : Computes the Theil-Sen estimator for a set of points (x, y).
+
+    Notes
+    -----
+    This function uses an :math:`O(n \log n)`, mergesort-based algorithm
+    [1]_ that is a weighted extension of Knight's algorithm for Kendall's
+    :math:`\tau` [2]_. It can compute Shieh's weighted :math:`\tau` [3]_
+    between rankings without ties (i.e., permutations) by setting
+    `additive` and `rank` to False, as the definition given in [1]_ is a
+    generalization of Shieh's.
+
+    NaNs are considered the smallest possible score.
+
+    .. versionadded:: 0.19.0
+
+    References
+    ----------
+    .. [1] Sebastiano Vigna, "A weighted correlation index for rankings with
+           ties", Proceedings of the 24th international conference on World
+           Wide Web, pp. 1166-1176, ACM, 2015.
+    .. [2] W.R. Knight, "A Computer Method for Calculating Kendall's Tau with
+           Ungrouped Data", Journal of the American Statistical Association,
+           Vol. 61, No. 314, Part 1, pp. 436-439, 1966.
+    .. [3] Grace S. Shieh. "A weighted Kendall's tau statistic", Statistics &
+           Probability Letters, Vol. 39, No. 1, pp. 17-24, 1998.
+
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, 0]
+    >>> tau, p_value = stats.weightedtau(x, y)
+    >>> tau
+    -0.56694968153682723
+    >>> p_value
+    nan
+    >>> tau, p_value = stats.weightedtau(x, y, additive=False)
+    >>> tau
+    -0.62205716951801038
+
+    NaNs are considered the smallest possible score:
+
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, np.nan]
+    >>> tau, _ = stats.weightedtau(x, y)
+    >>> tau
+    -0.56694968153682723
+
+    This is exactly Kendall's tau:
+
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, 0]
+    >>> tau, _ = stats.weightedtau(x, y, weigher=lambda x: 1)
+    >>> tau
+    -0.47140452079103173
+
+    >>> x = [12, 2, 1, 12, 2]
+    >>> y = [1, 4, 7, 1, 0]
+    >>> stats.weightedtau(x, y, rank=None)
+    WeightedTauResult(correlation=-0.4157652301037516, pvalue=nan)
+    >>> stats.weightedtau(y, x, rank=None)
+    WeightedTauResult(correlation=-0.71813413296990281, pvalue=nan)
+
+    """
+    x = np.asarray(x).ravel()
+    y = np.asarray(y).ravel()
+
+    if x.size != y.size:
+        raise ValueError("All inputs to `weightedtau` must be of the same size, "
+                         "found x-size %s and y-size %s" % (x.size, y.size))
+    if not x.size:
+        return WeightedTauResult(np.nan, np.nan)  # Return NaN if arrays are empty
+
+    # If there are NaNs we apply _toint64()
+    if np.isnan(np.min(x)):
+            x = _toint64(x)
+    if np.isnan(np.min(y)):
+            y = _toint64(y)
+
+    # Reduce to ranks unsupported types
+    if x.dtype != y.dtype:
+        if x.dtype != np.int64:
+            x = _toint64(x)
+        if y.dtype != np.int64:
+            y = _toint64(y)
+    else:
+        if x.dtype not in (np.int32, np.int64, np.float32, np.float64):
+            x = _toint64(x)
+            y = _toint64(y)
+
+    if rank is True:
+        return WeightedTauResult((
+            _weightedrankedtau(x, y, None, weigher, additive) +
+            _weightedrankedtau(y, x, None, weigher, additive)
+            ) / 2, np.nan)
+
+    if rank is False:
+        rank = np.arange(x.size, dtype=np.intp)
+    elif rank is not None:
+        rank = np.asarray(rank).ravel()
+        if rank.size != x.size:
+            raise ValueError("All inputs to `weightedtau` must be of the same size, "
+                         "found x-size %s and rank-size %s" % (x.size, rank.size))
+
+    return WeightedTauResult(_weightedrankedtau(x, y, rank, weigher, additive), np.nan)
 
 
 #####################################
@@ -3425,8 +3909,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     """
     T-test for means of two independent samples from descriptive statistics.
 
-    This is a two-sided test for the null hypothesis that 2 independent samples
-    have identical average (expected) values.
+    This is a two-sided test for the null hypothesis that two independent
+    samples have identical average (expected) values.
 
     Parameters
     ----------
@@ -3455,7 +3939,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     pvalue : float or array
         The two-tailed p-value.
 
-    See also
+    See Also
     --------
     scipy.stats.ttest_ind
 
@@ -3469,6 +3953,34 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     .. [1] http://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
     .. [2] http://en.wikipedia.org/wiki/Welch%27s_t_test
+
+    Examples
+    --------
+    Suppose we have the summary data for two samples, as follows::
+
+                         Sample   Sample
+                   Size   Mean   Variance
+        Sample 1    13    15.0     87.5
+        Sample 2    11    12.0     39.0
+
+    Apply the t-test to this data (with the assumption that the population
+    variances are equal):
+
+    >>> from scipy.stats import ttest_ind_from_stats
+    >>> ttest_ind_from_stats(mean1=15.0, std1=np.sqrt(87.5), nobs1=13,
+    ...                      mean2=12.0, std2=np.sqrt(39.0), nobs2=11)
+    Ttest_indResult(statistic=0.90513580933102689, pvalue=0.37519967975814872)
+
+    For comparison, here is the data from which those summary statistics
+    were taken.  With this data, we can compute the same result using
+    `scipy.stats.ttest_ind`:
+
+    >>> a = np.array([1, 3, 4, 6, 11, 13, 15, 19, 22, 24, 25, 26, 26])
+    >>> b = np.array([2, 4, 6, 9, 11, 13, 14, 15, 18, 19, 21])
+    >>> from scipy.stats import ttest_ind
+    >>> ttest_ind(a, b)
+    Ttest_indResult(statistic=0.905135809331027, pvalue=0.37519967975814861)
+
     """
     if equal_var:
         df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
@@ -3482,7 +3994,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
 def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     """
-    Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
+    Calculates the T-test for the means of *two independent* samples of scores.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
     have identical average (expected) values. This test assumes that the
@@ -3501,6 +4013,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
         that assumes equal population variances [1]_.
         If False, perform Welch's t-test, which does not assume equal
         population variance [2]_.
+
         .. versionadded:: 0.11.0
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
@@ -3575,8 +4088,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate'):
     a, b, axis = _chk2_asarray(a, b, axis)
 
     # check both a and b
-    contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
-                                _contains_nan(b, nan_policy))
+    cna, npa = _contains_nan(a, nan_policy)
+    cnb, npb = _contains_nan(b, nan_policy)
+    contains_nan = cna or cnb
+    if npa == 'omit' or npb == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
@@ -3663,13 +4179,19 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate'):
     """
     a, b, axis = _chk2_asarray(a, b, axis)
 
-    # check both a and b
-    contains_nan, nan_policy = (_contains_nan(a, nan_policy) or
-                                _contains_nan(b, nan_policy))
+    cna, npa = _contains_nan(a, nan_policy)
+    cnb, npb = _contains_nan(b, nan_policy)
+    contains_nan = cna or cnb
+    if npa == 'omit' or npb == 'omit':
+        nan_policy = 'omit'
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.ttest_rel(a, b, axis)
+        b = ma.masked_invalid(b)
+        m = ma.mask_or(ma.getmask(a), ma.getmask(b))
+        aa = ma.array(a, mask=m, copy=True)
+        bb = ma.array(b, mask=m, copy=True)
+        return mstats_basic.ttest_rel(aa, bb, axis)
 
     if a.shape[axis] != b.shape[axis]:
         raise ValueError('unequal length arrays')
@@ -4267,21 +4789,13 @@ def ks_2samp(data1, data2):
     """
     data1 = np.sort(data1)
     data2 = np.sort(data2)
-    n1, = data1.shape
-    n2, = data2.shape
-    common_type = np.find_common_type([], [data1.dtype, data2.dtype])
-    if not (np.issubdtype(common_type, np.number) and
-            not np.issubdtype(common_type, np.complexfloating)):
-        raise ValueError('ks_2samp only accepts real inputs')
-    # nans, if any, are at the end after sorting.
-    if np.isnan(data1[-1]) or np.isnan(data2[-1]):
-        raise ValueError('ks_2samp only accepts non-nan inputs')
-    # Absolute KS distance can be computed (less efficiently) as follows:
-    # data_all = np.concatenate([data1, data2])
-    # d = np.max(np.abs(data1.searchsorted(data_all, side='right') / n1 -
-    #                   data2.searchsorted(data_all, side='right') / n2))
-    d = _stats.ks_2samp(np.asarray(data1, common_type),
-                        np.asarray(data2, common_type))
+    n1 = data1.shape[0]
+    n2 = data2.shape[0]
+    data_all = np.concatenate([data1, data2])
+    cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
+    cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
+    d = np.max(np.absolute(cdf1 - cdf2))
+    # Note: d absolute not signed distance
     en = np.sqrt(n1 * n2 / float(n1 + n2))
     try:
         prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
@@ -4633,7 +5147,7 @@ def friedmanchisquare(*args):
     """
     k = len(args)
     if k < 3:
-        raise ValueError('\nLess than 3 levels.  Friedman test not appropriate.\n')
+        raise ValueError('Less than 3 levels.  Friedman test not appropriate.')
 
     n = len(args[0])
     for i in range(1, k):

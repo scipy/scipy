@@ -16,6 +16,7 @@ Each univariate distribution is an instance of a subclass of `rv_continuous`
 
    rv_continuous
    rv_discrete
+   rv_histogram
 
 Continuous distributions
 ========================
@@ -26,6 +27,7 @@ Continuous distributions
    alpha             -- Alpha
    anglit            -- Anglit
    arcsine           -- Arcsine
+   argus             -- Argus
    beta              -- Beta
    betaprime         -- Beta Prime
    bradford          -- Bradford
@@ -72,6 +74,8 @@ Continuous distributions
    invweibull        -- Inverse Weibull
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
+   kappa4            -- Kappa 4 parameter
+   kappa3            -- Kappa 3 parameter
    ksone             -- Kolmogorov-Smirnov one-sided (no stats)
    kstwobign         -- Kolmogorov-Smirnov two-sided test for Large N (no stats)
    laplace           -- Laplace
@@ -127,8 +131,10 @@ Multivariate distributions
    dirichlet             -- Dirichlet
    wishart               -- Wishart
    invwishart            -- Inverse Wishart
+   multinomial           -- Multinomial distribution
    special_ortho_group   -- SO(N) group
    ortho_group           -- O(N) group
+   unitary_group         -- U(N) gropu
    random_correlation    -- random correlation matrices
 
 Discrete distributions
@@ -210,6 +216,7 @@ which work for masked arrays.
    sem
    zmap
    zscore
+   iqr
 
 .. autosummary::
    :toctree: generated/
@@ -227,6 +234,7 @@ which work for masked arrays.
    spearmanr
    pointbiserialr
    kendalltau
+   weightedtau
    linregress
    theilslopes
    f_value

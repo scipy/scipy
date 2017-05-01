@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """ Test functions for the sparse.linalg.eigen.lobpcg module
 """
 from __future__ import division, print_function, absolute_import
@@ -80,7 +79,7 @@ def test_trivial():
 
 
 def test_regression():
-    # https://mail.scipy.org/pipermail/scipy-user/2010-October/026944.html
+    # https://mail.python.org/pipermail/scipy-user/2010-October/026944.html
     n = 10
     X = np.ones((n, 1))
     A = np.identity(n)

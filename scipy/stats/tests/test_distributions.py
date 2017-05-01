@@ -22,7 +22,7 @@ from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy
-
+from test_continuous_basic import distcont
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -42,7 +42,7 @@ dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
          'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
          'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
          'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice']
+         'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus']
 
 
 def _assert_hasattr(a, b, msg=None):
@@ -79,7 +79,7 @@ def test_all_distributions():
             args = tuple(np.sort(np.random.random(nargs)))
         elif dist == 'triang':
             args = tuple(np.random.random(nargs))
-        elif dist == 'reciprocal':
+        elif dist == 'reciprocal' or dist == 'truncnorm':
             vals = np.random.random(nargs)
             vals[1] = vals[0] + 1.0
             args = tuple(vals)
@@ -123,6 +123,27 @@ def test_vonmises_line_support():
 def test_vonmises_numerical():
     vm = stats.vonmises(800)
     assert_almost_equal(vm.cdf(0), 0.5)
+
+
+def test_support():
+    """gh-6235"""
+    def check_open_support(rvs, args):
+        dist = getattr(stats, rvs)
+
+        assert_almost_equal(dist.pdf(dist.a, *args), 0)
+        assert_equal(dist.logpdf(dist.a, *args), -np.inf)
+        assert_almost_equal(dist.pdf(dist.b, *args), 0)
+        assert_equal(dist.logpdf(dist.b, *args), -np.inf)
+
+    dists = ['alpha', 'arcsine', 'betaprime', 'burr', 'burr12',
+             'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
+             'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
+             'powerlognorm', 'rayleigh', 'wald']
+
+    dct = dict(distcont)
+    for dist in dists:
+        args = dct[dist]
+        yield check_open_support, dist, args
 
 
 class TestRandInt(TestCase):
@@ -222,6 +243,16 @@ class TestBernoulli(TestCase):
         b = stats.bernoulli(1.0)
         h = b.entropy()
         assert_equal(h, 0.0)
+
+
+class TestBradford(TestCase):
+    # gh-6216
+    def test_cdf_ppf(self):
+        c = 0.1
+        x = np.logspace(-20, -4)
+        q = stats.bradford.cdf(x, c)
+        xx = stats.bradford.ppf(q, c)
+        assert_allclose(x, xx)
 
 
 class TestNBinom(TestCase):
@@ -470,6 +501,28 @@ class TestLoggamma(TestCase):
                                       decimal=4)
 
 
+class TestLogistic(TestCase):
+    # gh-6226
+    def test_cdf_ppf(self):
+        x = np.linspace(-20, 20)
+        y = stats.logistic.cdf(x)
+        xx = stats.logistic.ppf(y)
+        assert_allclose(x, xx)
+
+    def test_sf_isf(self):
+        x = np.linspace(-20, 20)
+        y = stats.logistic.sf(x)
+        xx = stats.logistic.isf(y)
+        assert_allclose(x, xx)
+
+    def test_extreme_values(self):
+        # p is chosen so that 1 - (1 - p) == p in double precision
+        p = 9.992007221626409e-16
+        desired = 34.53957599234088
+        assert_allclose(stats.logistic.ppf(1 - p), desired)
+        assert_allclose(stats.logistic.isf(p), desired)
+
+
 class TestLogser(TestCase):
     def test_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
@@ -481,6 +534,30 @@ class TestLogser(TestCase):
         val = stats.logser(0.75).rvs(3)
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
+
+    def test_pmf_small_p(self):
+        m = stats.logser.pmf(4, 1e-20)
+        # The expected value was computed using mpmath:
+        #   >>> import mpmath
+        #   >>> mpmath.mp.dps = 64
+        #   >>> k = 4
+        #   >>> p = mpmath.mpf('1e-20')
+        #   >>> float(-(p**k)/k/mpmath.log(1-p))
+        #   2.5e-61
+        # It is also clear from noticing that for very small p,
+        # log(1-p) is approximately -p, and the formula becomes
+        #    p**(k-1) / k
+        assert_allclose(m, 2.5e-61)
+
+    def test_mean_small_p(self):
+        m = stats.logser.mean(1e-8)
+        # The expected mean was computed using mpmath:
+        #   >>> import mpmath
+        #   >>> mpmath.dps = 60
+        #   >>> p = mpmath.mpf('1e-8')
+        #   >>> float(-p / ((1 - p)*mpmath.log(1 - p)))
+        #   1.000000005
+        assert_allclose(m, 1.000000005)
 
 
 class TestPareto(TestCase):
@@ -679,6 +756,64 @@ class TestPearson3(TestCase):
                                5.06649130e-01, 8.41442111e-01], atol=1e-6)
 
 
+class TestKappa4(TestCase):
+    def test_cdf_genpareto(self):
+        # h = 1 and k != 0 is generalized Pareto
+        x = [0.0, 0.1, 0.2, 0.5]
+        h = 1.0
+        for k in [-1.9, -1.0, -0.5, -0.2, -0.1, 0.1, 0.2, 0.5, 1.0,
+                  1.9]:
+            vals = stats.kappa4.cdf(x, h, k)
+            # shape parameter is opposite what is expected
+            vals_comp = stats.genpareto.cdf(x, -k)
+            assert_allclose(vals, vals_comp)
+
+    def test_cdf_genextreme(self):
+        # h = 0 and k != 0 is generalized extreme value
+        x = np.linspace(-5, 5, 10)
+        h = 0.0
+        k = np.linspace(-3, 3, 10)
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.genextreme.cdf(x, k)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_expon(self):
+        # h = 1 and k = 0 is exponential
+        x = np.linspace(0, 10, 10)
+        h = 1.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.expon.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_gumbel_r(self):
+        # h = 0 and k = 0 is gumbel_r
+        x = np.linspace(-5, 5, 10)
+        h = 0.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.gumbel_r.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_logistic(self):
+        # h = -1 and k = 0 is logistic
+        x = np.linspace(-5, 5, 10)
+        h = -1.0
+        k = 0.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.logistic.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+    def test_cdf_uniform(self):
+        # h = 1 and k = 1 is uniform
+        x = np.linspace(-5, 5, 10)
+        h = 1.0
+        k = 1.0
+        vals = stats.kappa4.cdf(x, h, k)
+        vals_comp = stats.uniform.cdf(x)
+        assert_allclose(vals, vals_comp)
+
+
 class TestPoisson(TestCase):
 
     def test_pmf_basic(self):
@@ -794,6 +929,26 @@ class TestInvGamma(TestCase):
             for x, y in zip(mvsk, expected):
                 assert_almost_equal(x, y)
 
+    def test_cdf_ppf(self):
+        # gh-6245
+        x = np.logspace(-2.6, 0)
+        y = stats.invgamma.cdf(x, 1)
+        xx = stats.invgamma.ppf(y, 1)
+        assert_allclose(x, xx)
+
+    def test_sf_isf(self):
+        # gh-6245
+        if sys.maxsize > 2**32:
+            x = np.logspace(2, 100)
+        else:
+            # Invgamme roundtrip on 32-bit systems has relative accuracy
+            # ~1e-15 until x=1e+15, and becomes inf above x=1e+18
+            x = np.logspace(2, 18)
+
+        y = stats.invgamma.sf(x, 1)
+        xx = stats.invgamma.isf(y, 1)
+        assert_allclose(x, xx, rtol=1.0)
+
 
 class TestF(TestCase):
     def test_f_moments(self):
@@ -848,33 +1003,94 @@ class TestRvDiscrete(TestCase):
         h = p.entropy()
         assert_equal(h, 0.0)
 
+    def test_pmf(self):
+        xk = [1, 2, 4]
+        pk = [0.5, 0.3, 0.2]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        x = [[1., 4.],
+             [3., 2]]
+        assert_allclose(rv.pmf(x),
+                        [[0.5, 0.2],
+                         [0., 0.3]], atol=1e-14)
+
+    def test_cdf(self):
+        xk = [1, 2, 4]
+        pk = [0.5, 0.3, 0.2]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        x_values = [-2, 1., 1.1, 1.5, 2.0, 3.0, 4, 5]
+        expected = [0, 0.5, 0.5, 0.5, 0.8, 0.8, 1, 1]
+        assert_allclose(rv.cdf(x_values), expected, atol=1e-14)
+
+        # also check scalar arguments
+        assert_allclose([rv.cdf(xx) for xx in x_values],
+                        expected, atol=1e-14)
+
+    def test_ppf(self):
+        xk = [1, 2, 4]
+        pk = [0.5, 0.3, 0.2]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        q_values = [0.1, 0.5, 0.6, 0.8, 0.9, 1.]
+        expected = [1, 1, 2, 2, 4, 4]
+        assert_allclose(rv.ppf(q_values), expected, atol=1e-14)
+
+        # also check scalar arguments
+        assert_allclose([rv.ppf(q) for q in q_values],
+                        expected, atol=1e-14)
+
+    def test_cdf_ppf_next(self):
+        # copied and special cased from test_discrete_basic
+        vals = ([1, 2, 4, 7, 8], [0.1, 0.2, 0.3, 0.3, 0.1])
+        rv = stats.rv_discrete(values=vals)
+
+        assert_array_equal(rv.ppf(rv.cdf(rv.xk[:-1]) + 1e-8),
+                           rv.xk[1:])
+
+    def test_expect(self):
+        xk = [1, 2, 4, 6, 7, 11]
+        pk = [0.1, 0.2, 0.2, 0.2, 0.2, 0.1]
+        rv = stats.rv_discrete(values=(xk, pk))
+
+        assert_allclose(rv.expect(), np.sum(rv.xk * rv.pk), atol=1e-14)
+
+    def test_bad_input(self):
+        xk = [1, 2, 3]
+        pk = [0.5, 0.5]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
+        pk = [1, 2, 3]
+        assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
+
 
 class TestSkewNorm(TestCase):
 
     def test_normal(self):
         # When the skewness is 0 the distribution is normal
         x = np.linspace(-5, 5, 100)
-        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0), 
+        assert_array_almost_equal(stats.skewnorm.pdf(x, a=0),
                                   stats.norm.pdf(x))
 
     def test_rvs(self):
         shape = (3, 4, 5)
         x = stats.skewnorm.rvs(a=0.75, size=shape)
         assert_equal(shape, x.shape)
-        
+
         x = stats.skewnorm.rvs(a=-3, size=shape)
         assert_equal(shape, x.shape)
-        
+
     def test_moments(self):
         X = stats.skewnorm.rvs(a=4, size=int(1e6), loc=5, scale=2)
-        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
-                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'), 
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
+                                   stats.skewnorm.stats(a=4, loc=5, scale=2, moments='mvsk'),
                                    decimal=2)
-        
+
         X = stats.skewnorm.rvs(a=-4, size=int(1e6), loc=5, scale=2)
-        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)], 
-                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'), 
+        assert_array_almost_equal([np.mean(X), np.var(X), stats.skew(X), stats.kurtosis(X)],
+                                   stats.skewnorm.stats(a=-4, loc=5, scale=2, moments='mvsk'),
                                    decimal=2)
+
 
 class TestExpon(TestCase):
     def test_zero(self):
@@ -1065,6 +1281,28 @@ class TestChi2(TestCase):
                             decimal=14)
         assert_almost_equal(stats.chi2.pdf(100, 100), 0.028162503162596778,
                             decimal=14)
+
+class TestGumbelL(TestCase):
+    # gh-6228
+    def test_cdf_ppf(self):
+        x = np.linspace(-100, -4)
+        y = stats.gumbel_l.cdf(x)
+        xx = stats.gumbel_l.ppf(y)
+        assert_allclose(x, xx)
+
+    def test_logcdf_logsf(self):
+        x = np.linspace(-100, -4)
+        y = stats.gumbel_l.logcdf(x)
+        z = stats.gumbel_l.logsf(x)
+        u = np.exp(y)
+        v = -special.expm1(z)
+        assert_allclose(u, v)
+
+    def test_sf_isf(self):
+        x = np.linspace(-20, 5)
+        y = stats.gumbel_l.sf(x)
+        xx = stats.gumbel_l.isf(y)
+        assert_allclose(x, xx)
 
 
 class TestArrayArgument(TestCase):  # test for ticket:992
@@ -1684,7 +1922,7 @@ class TestExpect(TestCase):
         assert_allclose(res_0,
                         p / (p - 1.) / np.log(1. - p), atol=1e-15)
 
-        # now check it with `loc` 
+        # now check it with `loc`
         res_l = stats.logser.expect(lambda k: k, args=(p,), loc=loc)
         assert_allclose(res_l, res_0 + loc, atol=1e-15)
 
@@ -1745,7 +1983,7 @@ class TestNct(TestCase):
                           [0.00153078, 0.00291093, 0.00525206, 0.00900815]])
         assert_allclose(res, expected, rtol=1e-5)
 
-    def text_variance_gh_issue_2401(self):
+    def test_variance_gh_issue_2401(self):
         # Computation of the variance of a non-central t-distribution resulted
         # in a TypeError: ufunc 'isinf' not supported for the input types,
         # and the inputs could not be safely coerced to any supported types
@@ -1813,6 +2051,17 @@ class TestErlang(TestCase):
             assert_allclose(result_erlang, result_gamma, rtol=1e-3)
 
 
+class TestRayleigh(TestCase):
+    # gh-6227
+    def test_logpdf(self):
+        y = stats.rayleigh.logpdf(50)
+        assert_allclose(y, -1246.0879769945718)
+
+    def test_logsf(self):
+        y = stats.rayleigh.logsf(50)
+        assert_allclose(y, -1250)
+
+
 class TestExponWeib(TestCase):
 
     def test_pdf_logpdf(self):
@@ -1855,6 +2104,98 @@ class TestExponWeib(TestCase):
         logp = stats.exponweib.logpdf(x, a, c)
         expected = stats.expon.logpdf(x)
         assert_allclose(logp, expected)
+
+
+class TestWeibull(TestCase):
+
+    def test_logpdf(self):
+        # gh-6217
+        y = stats.weibull_min.logpdf(0, 1)
+        assert_equal(y, 0)
+
+    def test_with_maxima_distrib(self):
+        # Tests for weibull_min and weibull_max.
+        # The expected values were computed using the symbolic algebra
+        # program 'maxima' with the package 'distrib', which has
+        # 'pdf_weibull' and 'cdf_weibull'.  The mapping between the
+        # scipy and maxima functions is as follows:
+        # -----------------------------------------------------------------
+        # scipy                              maxima
+        # ---------------------------------  ------------------------------
+        # weibull_min.pdf(x, a, scale=b)     pdf_weibull(x, a, b)
+        # weibull_min.logpdf(x, a, scale=b)  log(pdf_weibull(x, a, b))
+        # weibull_min.cdf(x, a, scale=b)     cdf_weibull(x, a, b)
+        # weibull_min.logcdf(x, a, scale=b)  log(cdf_weibull(x, a, b))
+        # weibull_min.sf(x, a, scale=b)      1 - cdf_weibull(x, a, b)
+        # weibull_min.logsf(x, a, scale=b)   log(1 - cdf_weibull(x, a, b))
+        #
+        # weibull_max.pdf(x, a, scale=b)     pdf_weibull(-x, a, b)
+        # weibull_max.logpdf(x, a, scale=b)  log(pdf_weibull(-x, a, b))
+        # weibull_max.cdf(x, a, scale=b)     1 - cdf_weibull(-x, a, b)
+        # weibull_max.logcdf(x, a, scale=b)  log(1 - cdf_weibull(-x, a, b))
+        # weibull_max.sf(x, a, scale=b)      cdf_weibull(-x, a, b)
+        # weibull_max.logsf(x, a, scale=b)   log(cdf_weibull(-x, a, b))
+        # -----------------------------------------------------------------
+        x = 1.5
+        a = 2.0
+        b = 3.0
+
+        # weibull_min
+
+        p = stats.weibull_min.pdf(x, a, scale=b)
+        assert_allclose(p, np.exp(-0.25)/3)
+
+        lp = stats.weibull_min.logpdf(x, a, scale=b)
+        assert_allclose(lp, -0.25 - np.log(3))
+
+        c = stats.weibull_min.cdf(x, a, scale=b)
+        assert_allclose(c, -special.expm1(-0.25))
+
+        lc = stats.weibull_min.logcdf(x, a, scale=b)
+        assert_allclose(lc, np.log(-special.expm1(-0.25)))
+
+        s = stats.weibull_min.sf(x, a, scale=b)
+        assert_allclose(s, np.exp(-0.25))
+
+        ls = stats.weibull_min.logsf(x, a, scale=b)
+        assert_allclose(ls, -0.25)
+
+        # Also test using a large value x, for which computing the survival
+        # function using the CDF would result in 0.
+        s = stats.weibull_min.sf(30, 2, scale=3)
+        assert_allclose(s, np.exp(-100))
+
+        ls = stats.weibull_min.logsf(30, 2, scale=3)
+        assert_allclose(ls, -100)
+
+        # weibull_max
+        x = -1.5
+
+        p = stats.weibull_max.pdf(x, a, scale=b)
+        assert_allclose(p, np.exp(-0.25)/3)
+
+        lp = stats.weibull_max.logpdf(x, a, scale=b)
+        assert_allclose(lp, -0.25 - np.log(3))
+
+        c = stats.weibull_max.cdf(x, a, scale=b)
+        assert_allclose(c, np.exp(-0.25))
+
+        lc = stats.weibull_max.logcdf(x, a, scale=b)
+        assert_allclose(lc, -0.25)
+
+        s = stats.weibull_max.sf(x, a, scale=b)
+        assert_allclose(s, -special.expm1(-0.25))
+
+        ls = stats.weibull_max.logsf(x, a, scale=b)
+        assert_allclose(ls, np.log(-special.expm1(-0.25)))
+
+        # Also test using a value of x close to 0, for which computing the
+        # survival function using the CDF would result in 0.
+        s = stats.weibull_max.sf(-1e-9, 2, scale=3)
+        assert_allclose(s, -special.expm1(-1/9000000000000000000))
+
+        ls = stats.weibull_max.logsf(-1e-9, 2, scale=3)
+        assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
 
 
 class TestRdist(TestCase):
@@ -2489,7 +2830,7 @@ class TestSubclassingNoShapes(TestCase):
         dummy_distr = _distr_gen(name='dummy')
         assert_equal(dummy_distr.numargs, 1)
         assert_equal(dummy_distr.shapes, 'a')
-        res = re.findall('logpdf\(x, a, loc=0, scale=1\)',
+        res = re.findall(r'logpdf\(x, a, loc=0, scale=1\)',
                          dummy_distr.__doc__)
         assert_(len(res) == 1)
 
@@ -2499,7 +2840,7 @@ class TestSubclassingNoShapes(TestCase):
         dummy_distr = _distr6_gen(name='dummy')
         assert_equal(dummy_distr.numargs, 2)
         assert_equal(dummy_distr.shapes, 'a, b')
-        res = re.findall('logpdf\(x, a, b, loc=0, scale=1\)',
+        res = re.findall(r'logpdf\(x, a, b, loc=0, scale=1\)',
                          dummy_distr.__doc__)
         assert_(len(res) == 1)
 
@@ -2536,7 +2877,7 @@ class TestSubclassingNoShapes(TestCase):
 
 @dec.skipif(DOCSTRINGS_STRIPPED)
 def test_docstrings():
-    badones = [',\s*,', '\(\s*,', '^\s*:']
+    badones = [r',\s*,', r'\(\s*,', r'^\s*:']
     for distname in stats.__all__:
         dist = getattr(stats, distname)
         if isinstance(dist, (stats.rv_discrete, stats.rv_continuous)):
@@ -2573,6 +2914,20 @@ def test_rayleigh_accuracy():
     assert_almost_equal(p, 9.0, decimal=15)
 
 
+def test_genextreme_give_no_warnings():
+    """regression test for gh-6219"""
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+
+        p = stats.genextreme.cdf(.5, 0)
+        p = stats.genextreme.pdf(.5, 0)
+        p = stats.genextreme.ppf(.5, 0)
+        p = stats.genextreme.logpdf(-np.inf, 0.0)
+        number_of_warnings_thrown = len(w)
+        assert_equal(number_of_warnings_thrown, 0)
+
+
 def test_genextreme_entropy():
     # regression test for gh-5181
     euler_gamma = 0.5772156649015329
@@ -2594,6 +2949,174 @@ def test_genextreme_entropy():
 
     h = stats.genextreme.entropy(-10)
     assert_allclose(h, 11*euler_gamma + 1, rtol=1e-14)
+
+
+def test_genextreme_sf_isf():
+    # Expected values were computed using mpmath:
+    #
+    #    import mpmath
+    #
+    #    def mp_genextreme_sf(x, xi, mu=0, sigma=1):
+    #        # Formula from wikipedia, which has a sign convention for xi that
+    #        # is the opposite of scipy's shape parameter.
+    #        if xi != 0:
+    #            t = mpmath.power(1 + ((x - mu)/sigma)*xi, -1/xi)
+    #        else:
+    #            t = mpmath.exp(-(x - mu)/sigma)
+    #        return 1 - mpmath.exp(-t)
+    #
+    # >>> mpmath.mp.dps = 1000
+    # >>> s = mp_genextreme_sf(mpmath.mp.mpf("1e8"), mpmath.mp.mpf("0.125"))
+    # >>> float(s)
+    # 1.6777205262585625e-57
+    # >>> s = mp_genextreme_sf(mpmath.mp.mpf("7.98"), mpmath.mp.mpf("-0.125"))
+    # >>> float(s)
+    # 1.52587890625e-21
+    # >>> s = mp_genextreme_sf(mpmath.mp.mpf("7.98"), mpmath.mp.mpf("0"))
+    # >>> float(s)
+    # 0.00034218086528426593
+
+    x = 1e8
+    s = stats.genextreme.sf(x, -0.125)
+    assert_allclose(s, 1.6777205262585625e-57)
+    x2 = stats.genextreme.isf(s, -0.125)
+    assert_allclose(x2, x)
+
+    x = 7.98
+    s = stats.genextreme.sf(x, 0.125)
+    assert_allclose(s, 1.52587890625e-21)
+    x2 = stats.genextreme.isf(s, 0.125)
+    assert_allclose(x2, x)
+
+    x = 7.98
+    s = stats.genextreme.sf(x, 0)
+    assert_allclose(s, 0.00034218086528426593)
+    x2 = stats.genextreme.isf(s, 0)
+    assert_allclose(x2, x)
+
+
+def test_burr12_ppf_small_arg():
+    prob = 1e-16
+    quantile = stats.burr12.ppf(prob, 2, 3)
+    # The expected quantile was computed using mpmath:
+    #   >>> import mpmath
+    #   >>> prob = mpmath.mpf('1e-16')
+    #   >>> c = mpmath.mpf(2)
+    #   >>> d = mpmath.mpf(3)
+    #   >>> float(((1-q)**(-1/d) - 1)**(1/c))
+    #   5.7735026918962575e-09
+    assert_allclose(quantile, 5.7735026918962575e-09)
+
+
+def test_argus_function():
+    # There is no usable reference implementation.
+    # (RooFit implementation returns unreasonable results which are not normalized correctly)
+    # Instead we do some tests if the distribution behaves as expected for different shapes and scales
+    for i in range(1, 10):
+        for j in range(1, 10):
+            assert_equal(stats.argus.pdf(i + 0.001, chi=j, scale=i), 0.0)
+            assert_(stats.argus.pdf(i - 0.001, chi=j, scale=i) > 0.0)
+            assert_equal(stats.argus.pdf(-0.001, chi=j, scale=i), 0.0)
+            assert_(stats.argus.pdf(+0.001, chi=j, scale=i) > 0.0)
+
+    for i in range(1, 10):
+        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0)
+        assert_equal(stats.argus.cdf(1.0, chi=i), 1.0 - stats.argus.sf(1.0, chi=i))
+
+
+class TestHistogram(TestCase):
+    def setUp(self):
+        # We have 8 bins
+        # [1,2), [2,3), [3,4), [4,5), [5,6), [6,7), [7,8), [8,9)
+        # But actually np.histogram will put the last 9 also in the [8,9) bin!
+        # Therefore there is a slight difference below for the last bin, from
+        # what you might have expected.
+        histogram = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
+                                  6, 6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
+        self.template = stats.rv_histogram(histogram)
+        
+        data = stats.norm.rvs(loc=1.0, scale=2.5,size=10000, random_state=123)
+        norm_histogram = np.histogram(data, bins=50)
+        self.norm_template = stats.rv_histogram(norm_histogram)
+
+    def test_pdf(self):
+        values = np.array([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
+                           5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5])
+        pdf_values = np.asarray([0.0/25.0, 0.0/25.0, 1.0/25.0, 1.0/25.0,
+                                 2.0/25.0, 2.0/25.0, 3.0/25.0, 3.0/25.0,
+                                 4.0/25.0, 4.0/25.0, 5.0/25.0, 5.0/25.0,
+                                 4.0/25.0, 4.0/25.0, 3.0/25.0, 3.0/25.0,
+                                 3.0/25.0, 3.0/25.0, 0.0/25.0, 0.0/25.0])
+        assert_allclose(self.template.pdf(values), pdf_values)
+
+        # Test explicitly the corner cases:
+        # As stated above the pdf in the bin [8,9) is greater than
+        # one would naively expect because np.histogram putted the 9
+        # into the [8,9) bin.
+        assert_almost_equal(self.template.pdf(8.0), 3.0/25.0)
+        assert_almost_equal(self.template.pdf(8.5), 3.0/25.0)
+        # 9 is outside our defined bins [8,9) hence the pdf is already 0
+        # for a continuous distribution this is fine, because a single value
+        # does not have a finite probability!
+        assert_almost_equal(self.template.pdf(9.0), 0.0/25.0)
+        assert_almost_equal(self.template.pdf(10.0), 0.0/25.0)
+
+        x = np.linspace(-2, 2, 10)
+        assert_allclose(self.norm_template.pdf(x),
+                        stats.norm.pdf(x, loc=1.0, scale=2.5), rtol=0.1)
+
+    def test_cdf_ppf(self):
+        values = np.array([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5,
+                           5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5])
+        cdf_values = np.asarray([0.0/25.0, 0.0/25.0, 0.0/25.0, 0.5/25.0,
+                                 1.0/25.0, 2.0/25.0, 3.0/25.0, 4.5/25.0,
+                                 6.0/25.0, 8.0/25.0, 10.0/25.0, 12.5/25.0,
+                                 15.0/25.0, 17.0/25.0, 19.0/25.0, 20.5/25.0,
+                                 22.0/25.0, 23.5/25.0, 25.0/25.0, 25.0/25.0])
+        assert_allclose(self.template.cdf(values), cdf_values)
+        # First three and last two values in cdf_value are not unique
+        assert_allclose(self.template.ppf(cdf_values[2:-1]), values[2:-1])
+
+        # Test of cdf and ppf are inverse functions
+        x = np.linspace(1.0, 9.0, 100)
+        assert_allclose(self.template.ppf(self.template.cdf(x)), x)
+        x = np.linspace(0.0, 1.0, 100)
+        assert_allclose(self.template.cdf(self.template.ppf(x)), x)
+        
+        x = np.linspace(-2, 2, 10)
+        assert_allclose(self.norm_template.cdf(x),
+                        stats.norm.cdf(x, loc=1.0, scale=2.5), rtol=0.1)
+
+    def test_rvs(self):
+        N = 10000
+        sample = self.template.rvs(size=N, random_state=123)
+        assert_equal(np.sum(sample < 1.0), 0.0)
+        assert_allclose(np.sum(sample <= 2.0), 1.0/25.0 * N, rtol=0.2)
+        assert_allclose(np.sum(sample <= 2.5), 2.0/25.0 * N, rtol=0.2)
+        assert_allclose(np.sum(sample <= 3.0), 3.0/25.0 * N, rtol=0.1)
+        assert_allclose(np.sum(sample <= 3.5), 4.5/25.0 * N, rtol=0.1)
+        assert_allclose(np.sum(sample <= 4.0), 6.0/25.0 * N, rtol=0.1)
+        assert_allclose(np.sum(sample <= 4.5), 8.0/25.0 * N, rtol=0.1)
+        assert_allclose(np.sum(sample <= 5.0), 10.0/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 5.5), 12.5/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 6.0), 15.0/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 6.5), 17.0/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 7.0), 19.0/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 7.5), 20.5/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 8.0), 22.0/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 8.5), 23.5/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 9.0), 25.0/25.0 * N, rtol=0.05)
+        assert_allclose(np.sum(sample <= 9.0), 25.0/25.0 * N, rtol=0.05)
+        assert_equal(np.sum(sample > 9.0), 0.0)
+
+    def test_munp(self):
+        for n in range(4):
+            assert_allclose(self.norm_template._munp(n),
+                            stats.norm._munp(n, 1.0, 2.5), rtol=0.05)
+    
+    def test_entropy(self):
+        assert_allclose(self.norm_template.entropy(),
+                        stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
 
 if __name__ == "__main__":

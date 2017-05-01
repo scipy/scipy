@@ -1015,7 +1015,7 @@ class BroydenSecond(BroydenFirst):
     -----
     This algorithm implements the inverse Jacobian Quasi-Newton update
 
-    .. math:: H_+ = H + (dx - H df) df^\dagger / ( df^\dagger df)
+    .. math:: H_+ = H + (dx - H df) df^\\dagger / ( df^\\dagger df)
 
     corresponding to Broyden's second method.
 
@@ -1391,10 +1391,10 @@ class KrylovJacobian(Jacobian):
     References
     ----------
     .. [1] D.A. Knoll and D.E. Keyes, J. Comp. Phys. 193, 357 (2004).
-           doi:10.1016/j.jcp.2003.08.010
+           :doi:`10.1016/j.jcp.2003.08.010`
     .. [2] A.H. Baker and E.R. Jessup and T. Manteuffel,
            SIAM J. Matrix Anal. Appl. 26, 962 (2005).
-           doi:10.1137/S0895479803422014
+           :doi:`10.1137/S0895479803422014`
 
     """
 

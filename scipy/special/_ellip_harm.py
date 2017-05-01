@@ -7,11 +7,6 @@ from ._ufuncs import _ellip_harm
 from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
 
 
-# the functions _ellipsoid, _ellipsoid_norm use global variables, the lock
-# protects them if the function is called from multiple threads simultaneously
-_ellip_lock = threading.Lock()
-
-
 def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     r"""
     Ellipsoidal harmonic functions E^p_n(l)
@@ -71,7 +66,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
        re-discovery: open-source implementations of
        ellipsoidal harmonics for problems in potential theory",
        Comput. Sci. Disc. 5, 014006 (2012)
-       doi:10.1088/1749-4699/5/1/014006
+       :doi:`10.1088/1749-4699/5/1/014006`.
     .. [3] David J.and Dechambre P, "Computation of Ellipsoidal
        Gravity Field Harmonics for small solar system bodies"
        pp. 30-36, 2000
@@ -103,11 +98,7 @@ def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):
     return _ellip_harm(h2, k2, n, p, s, signm, signn)
 
 
-# np.vectorize does not work on Cython functions on Numpy < 1.8, so a wrapper is needed
-def _ellip_harm_2_vec(h2, k2, n, p, s):
-    return _ellipsoid(h2, k2, n, p, s)
-
-_ellip_harm_2_vec = np.vectorize(_ellip_harm_2_vec, otypes='d')
+_ellip_harm_2_vec = np.vectorize(_ellipsoid, otypes='d')
 
 
 def ellip_harm_2(h2, k2, n, p, s):
@@ -162,9 +153,8 @@ def ellip_harm_2(h2, k2, n, p, s):
     0.00108056853382
 
     """
-    with _ellip_lock:
-        with np.errstate(all='ignore'):
-            return _ellip_harm_2_vec(h2, k2, n, p, s)
+    with np.errstate(all='ignore'):
+        return _ellip_harm_2_vec(h2, k2, n, p, s)
 
 
 def _ellip_normal_vec(h2, k2, n, p):
@@ -215,6 +205,5 @@ def ellip_normal(h2, k2, n, p):
     1723.38796997
 
     """
-    with _ellip_lock:
-        with np.errstate(all='ignore'):
-            return _ellip_normal_vec(h2, k2, n, p)
+    with np.errstate(all='ignore'):
+        return _ellip_normal_vec(h2, k2, n, p)

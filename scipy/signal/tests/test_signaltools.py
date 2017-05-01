@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 
 import sys
@@ -5,6 +6,7 @@ import sys
 from decimal import Decimal
 from itertools import product
 
+from nose import SkipTest
 from numpy.testing import (
     TestCase, run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
@@ -15,11 +17,11 @@ import numpy as np
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
-    correlate, convolve, convolve2d, fftconvolve, hann,
-    hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, tf2zpk,
-    invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt,
-    sosfilt_zi)
-from scipy.signal.signaltools import _filtfilt_gust
+    correlate, convolve, convolve2d, fftconvolve, hann, choose_conv_method,
+    hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
+    invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
+    sosfilt_zi, tf2zpk)
+from scipy.signal.signaltools import _filtfilt_gust, _fftconvolve_valid
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
@@ -111,7 +113,6 @@ class _TestConvolve(TestCase):
         assert_array_equal(convolve(big, small, 'valid'),
                            out_array[1:3, 1:3, 1:3])
 
-
 class TestConvolve(_TestConvolve):
 
     def test_valid_mode2(self):
@@ -154,6 +155,71 @@ class TestConvolve(_TestConvolve):
 
         self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
+
+    def test_convolve_method(self, n=100):
+        types = sum([t for _, t in np.sctypes.items()], [])
+        types = {np.dtype(t).name for t in types}
+
+        # These types include 'bool' and all precisions (int8, float32, etc)
+        # The removed types throw errors in correlate or fftconvolve
+        for dtype in ['complex256', 'float128', 'str', 'void', 'bytes',
+                      'object', 'unicode', 'string']:
+            if dtype in types:
+                types.remove(dtype)
+
+        args = [(t1, t2, mode) for t1 in types for t2 in types
+                               for mode in ['valid', 'full', 'same']]
+
+        # These are random arrays, which means test is much stronger than
+        # convolving testing by convolving two np.ones arrays
+        np.random.seed(42)
+        array_types = {'i': np.random.choice([0, 1], size=n),
+                       'f': np.random.randn(n)}
+        array_types['b'] = array_types['u'] = array_types['i']
+        array_types['c'] = array_types['f'] + 0.5j*array_types['f']
+
+        for t1, t2, mode in args:
+            x1 = array_types[np.dtype(t1).kind].astype(t1)
+            x2 = array_types[np.dtype(t2).kind].astype(t2)
+            if not _fftconvolve_valid(x1, x2):
+                continue
+
+            results = {key: convolve(x1, x2, method=key, mode=mode)
+                       for key in ['fft', 'direct']}
+
+            assert_equal(results['fft'].dtype, results['direct'].dtype)
+
+            if 'bool' in t1 and 'bool' in t2:
+                assert_equal(choose_conv_method(x1, x2), 'direct')
+                continue
+
+            # Found by experiment. Found approx smallest value for (rtol, atol)
+            # threshold to have tests pass.
+            if any([t in {'complex64', 'float32'} for t in [t1, t2]]):
+                kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
+            elif 'float16' in [t1, t2]:
+                # atol is default for np.allclose
+                kwargs = {'rtol': 1e-3, 'atol': 1e-8}
+            else:
+                # defaults for np.allclose (different from assert_allclose)
+                kwargs = {'rtol': 1e-5, 'atol': 1e-8}
+
+            assert_allclose(results['fft'], results['direct'], **kwargs)
+
+    def test_convolve_method_large_input(self):
+        # This is really a test that convolving two large integers goes to the
+        # direct method even if they're in the fft method.
+        for n in [10, 20, 50, 51, 52, 53, 54, 60, 62]:
+            z = np.array([2**n], dtype=np.int64)
+            fft = convolve(z, z, method='fft')
+            direct = convolve(z, z, method='direct')
+
+            # this is the case when integer precision gets to us
+            # issue #6076 has more detail, hopefully more tests after resolved
+            if n < 50:
+                assert_equal(fft, direct)
+                assert_equal(fft, 2**(2*n))
+                assert_equal(direct, 2**(2*n))
 
 
 class _TestConvolve2d(TestCase):
@@ -484,6 +550,11 @@ class TestResample(TestCase):
         assert_raises(ValueError, signal.resample_poly, sig, 'yo', 1)
         assert_raises(ValueError, signal.resample_poly, sig, 1, 0)
 
+        # test for issue #6505 - should not modify window.shape when axis ≠ 0
+        sig2 = np.tile(np.arange(160), (2,1))
+        signal.resample(sig2, num, axis=-1, window=win)
+        assert_(win.shape == (160,))
+
     def test_fft(self):
         # Test FFT-based resampling
         self._test_data(method='fft')
@@ -553,6 +624,17 @@ class TestResample(TestCase):
             corr = np.corrcoef(y_to, y_resamp)[0, 1]
             assert_(corr > 0.99, msg=corr)
 
+        # More tests of fft method (Master 0.18.1 fails these)
+        if method == 'fft':
+            x1 = np.array([1.+0.j,0.+0.j])
+            y1_test = signal.resample(x1,4)
+            y1_true = np.array([1.+0.j,0.5+0.j,0.+0.j,0.5+0.j])  # upsampling a complex array
+            assert_allclose(y1_test, y1_true, atol=1e-12)
+            x2 = np.array([1.,0.5,0.,0.5])
+            y2_test = signal.resample(x2,2)  # downsampling a real array
+            y2_true = np.array([1.,0.])
+            assert_allclose(y2_test, y2_true, atol=1e-12)
+
     def test_poly_vs_filtfilt(self):
         # Check that up=1.0 gives same answer as filtfilt + slicing
         random_state = np.random.RandomState(17)
@@ -596,6 +678,22 @@ class TestCSpline1DEval(TestCase):
         # make sure interpolated values are on knot points
         assert_array_almost_equal(y2[::10], y, decimal=5)
 
+    def test_complex(self):
+        #  create some smoothly varying complex signal to interpolate
+        x = np.arange(2)
+        y = np.zeros(x.shape, dtype=np.complex64)
+        T = 10.0
+        f = 1.0 / T
+        y = np.exp(2.0J * np.pi * f * x)
+
+        # get the cspline transform
+        cy = signal.cspline1d(y)
+
+        # determine new test x value and interpolate
+        xnew = np.array([0.5])
+        ynew = signal.cspline1d_eval(cy, xnew)
+
+        assert_equal(ynew.dtype, y.dtype)
 
 class TestOrderFilt(TestCase):
 
@@ -1044,6 +1142,20 @@ class _TestCorrelateReal(TestCase):
         y_r = np.array([0, 2, 5, 8, 3]).astype(self.dt)
         return a, b, y_r
 
+    def test_method(self):
+        if self.dt == Decimal:
+            method = choose_conv_method([Decimal(4)], [Decimal(3)])
+            assert_equal(method, 'direct')
+        else:
+            a, b, y_r = self._setup_rank3()
+            y_fft = correlate(a, b, method='fft')
+            y_direct = correlate(a, b, method='direct')
+
+            assert_array_almost_equal(y_r, y_fft)
+            assert_array_almost_equal(y_r, y_direct)
+            assert_equal(y_fft.dtype, self.dt)
+            assert_equal(y_direct.dtype, self.dt)
+
     def test_rank1_valid(self):
         a, b, y_r = self._setup_rank1()
         y = correlate(a, b, 'valid')
@@ -1281,10 +1393,21 @@ class TestLFilterZI(TestCase):
 
 
 class TestFiltFilt(TestCase):
+    filtfilt_kind = 'tf'
+
+    def filtfilt(self, zpk, x, axis=-1, padtype='odd', padlen=None,
+                 method='pad', irlen=None):
+        if self.filtfilt_kind == 'tf':
+            b, a = zpk2tf(*zpk)
+            return filtfilt(b, a, x, axis, padtype, padlen, method, irlen)
+        elif self.filtfilt_kind == 'sos':
+            sos = zpk2sos(*zpk)
+            return sosfiltfilt(sos, x, axis, padtype, padlen)
 
     def test_basic(self):
-        out = signal.filtfilt([1, 2, 3], [1, 2, 3], np.arange(12))
-        assert_equal(out, arange(12))
+        zpk = tf2zpk([1, 2, 3], [1, 2, 3])
+        out = self.filtfilt(zpk, np.arange(12))
+        assert_allclose(out, arange(12), atol=1e-14)
 
     def test_sine(self):
         rate = 2000
@@ -1294,49 +1417,52 @@ class TestFiltFilt(TestCase):
         xhigh = np.sin(250 * 2 * np.pi * t)
         x = xlow + xhigh
 
-        b, a = butter(8, 0.125)
-        z, p, k = tf2zpk(b, a)
+        zpk = butter(8, 0.125, output='zpk')
         # r is the magnitude of the largest pole.
-        r = np.abs(p).max()
+        r = np.abs(zpk[1]).max()
         eps = 1e-5
         # n estimates the number of steps for the
         # transient to decay by a factor of eps.
         n = int(np.ceil(np.log(eps) / np.log(r)))
 
         # High order lowpass filter...
-        y = filtfilt(b, a, x, padlen=n)
+        y = self.filtfilt(zpk, x, padlen=n)
         # Result should be just xlow.
         err = np.abs(y - xlow).max()
         assert_(err < 1e-4)
 
         # A 2D case.
         x2d = np.vstack([xlow, xlow + xhigh])
-        y2d = filtfilt(b, a, x2d, padlen=n, axis=1)
+        y2d = self.filtfilt(zpk, x2d, padlen=n, axis=1)
         assert_equal(y2d.shape, x2d.shape)
         err = np.abs(y2d - xlow).max()
         assert_(err < 1e-4)
 
         # Use the previous result to check the use of the axis keyword.
         # (Regression test for ticket #1620)
-        y2dt = filtfilt(b, a, x2d.T, padlen=n, axis=0)
+        y2dt = self.filtfilt(zpk, x2d.T, padlen=n, axis=0)
         assert_equal(y2d, y2dt.T)
 
     def test_axis(self):
         # Test the 'axis' keyword on a 3D array.
         x = np.arange(10.0 * 11.0 * 12.0).reshape(10, 11, 12)
-        b, a = butter(3, 0.125)
-        y0 = filtfilt(b, a, x, padlen=0, axis=0)
-        y1 = filtfilt(b, a, np.swapaxes(x, 0, 1), padlen=0, axis=1)
+        zpk = butter(3, 0.125, output='zpk')
+        y0 = self.filtfilt(zpk, x, padlen=0, axis=0)
+        y1 = self.filtfilt(zpk, np.swapaxes(x, 0, 1), padlen=0, axis=1)
         assert_array_equal(y0, np.swapaxes(y1, 0, 1))
-        y2 = filtfilt(b, a, np.swapaxes(x, 0, 2), padlen=0, axis=2)
+        y2 = self.filtfilt(zpk, np.swapaxes(x, 0, 2), padlen=0, axis=2)
         assert_array_equal(y0, np.swapaxes(y2, 0, 2))
 
     def test_acoeff(self):
+        if self.filtfilt_kind != 'tf':
+            return  # only necessary for TF
         # test for 'a' coefficient as single number
         out = signal.filtfilt([.5, .5], 1, np.arange(10))
         assert_allclose(out, np.arange(10), rtol=1e-14, atol=1e-14)
 
     def test_gust_simple(self):
+        if self.filtfilt_kind != 'tf':
+            raise SkipTest('gust only implemented for TF systems')
         # The input array has length 2.  The exact solution for this case
         # was computed "by hand".
         x = np.array([1.0, 2.0])
@@ -1349,6 +1475,8 @@ class TestFiltFilt(TestCase):
                             0.25*z1[0] + z2[0] + 0.125*x[0] + 0.25*x[1]])
 
     def test_gust_scalars(self):
+        if self.filtfilt_kind != 'tf':
+            raise SkipTest('gust only implemented for TF systems')
         # The filter coefficients are both scalars, so the filter simply
         # multiplies its input by b/a.  When it is used in filtfilt, the
         # factor is (b/a)**2.
@@ -1358,6 +1486,21 @@ class TestFiltFilt(TestCase):
         y = filtfilt(b, a, x, method="gust")
         expected = (b/a)**2 * x
         assert_allclose(y, expected)
+
+
+class TestSOSFiltFilt(TestFiltFilt):
+    filtfilt_kind = 'sos'
+
+    def test_equivalence(self):
+        """Test equivalence between sosfiltfilt and filtfilt"""
+        x = np.random.RandomState(0).randn(1000)
+        for order in range(1, 6):
+            zpk = signal.butter(order, 0.35, output='zpk')
+            b, a = zpk2tf(*zpk)
+            sos = zpk2sos(*zpk)
+            y = filtfilt(b, a, x)
+            y_sos = sosfiltfilt(sos, x)
+            assert_allclose(y, y_sos, atol=1e-12, err_msg='order=%s' % order)
 
 
 def filtfilt_gust_opt(b, a, x):
@@ -1436,18 +1579,49 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     assert_allclose(zg2, zo2, rtol=1e-9, atol=1e-10)
 
 
+def test_choose_conv_method():
+    for mode in ['valid', 'same', 'full']:
+        for ndims in [1, 2]:
+            n, k, true_method = 8, 6, 'direct'
+            x = np.random.randn(*((n,) * ndims))
+            h = np.random.randn(*((k,) * ndims))
+
+            method = choose_conv_method(x, h, mode=mode)
+            assert_equal(method, true_method)
+
+            method_try, times = choose_conv_method(x, h, mode=mode, measure=True)
+            assert_(method_try in {'fft', 'direct'})
+            assert_(type(times) is dict)
+            assert_('fft' in times.keys() and 'direct' in times.keys())
+
+        n = 10
+        for not_fft_conv_supp in ["complex256", "complex192"]:
+            if hasattr(np, not_fft_conv_supp):
+                x = np.ones(n, dtype=not_fft_conv_supp)
+                h = x.copy()
+                assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+        x = np.array([2**51], dtype=np.int64)
+        h = x.copy()
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+        x = [Decimal(3), Decimal(2)]
+        h = [Decimal(1), Decimal(4)]
+        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
+
+
 def test_filtfilt_gust():
     # Design a filter.
-    b, a = signal.ellip(3, 0.01, 120, 0.0875)
+    z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')
 
     # Find the approximate impulse response length of the filter.
-    z, p, k = tf2zpk(b, a)
     eps = 1e-10
     r = np.max(np.abs(p))
     approx_impulse_len = int(np.ceil(np.log(eps) / np.log(r)))
 
     np.random.seed(123)
 
+    b, a = zpk2tf(z, p, k)
     for irlen in [None, approx_impulse_len]:
         signal_len = 5 * approx_impulse_len
 
@@ -1524,12 +1698,12 @@ class TestDecimate(TestCase):
             # Set up downsampling filters, match v0.17 defaults
             if method == 'fir':
                 n = 30
-                system = signal.lti(signal.firwin(n + 1, 1. / q,
-                                                  window='hamming'), 1.)
+                system = signal.dlti(signal.firwin(n + 1, 1. / q,
+                                                   window='hamming'), 1.)
             elif method == 'iir':
                 n = 8
                 wc = 0.8*np.pi/q
-                system = signal.lti(*signal.cheby1(n, 0.05, wc/np.pi))
+                system = signal.dlti(*signal.cheby1(n, 0.05, wc/np.pi))
 
             # Calculate expected phase response, as unit complex vector
             if zero_phase is False:
@@ -1970,11 +2144,11 @@ class TestSOSFilt(TestCase):
         # Test the use of zi when sosfilt is applied to axis 1 of a 3-d input.
 
         # Input array is x.
-        np.random.seed(159)
-        x = np.random.randint(0, 5, size=(2, 15, 3))
+        x = np.random.RandomState(159).randint(0, 5, size=(2, 15, 3))
 
-        # Design a filter in SOS format.
-        sos = signal.butter(6, 0.35, output='sos')
+        # Design a filter in ZPK format and convert to SOS
+        zpk = signal.butter(6, 0.35, output='zpk')
+        sos = zpk2sos(*zpk)
         nsections = sos.shape[0]
 
         # Filter along this axis.
@@ -1997,6 +2171,19 @@ class TestSOSFilt(TestCase):
         y = np.concatenate((y1, y2), axis=axis)
         assert_allclose(y, yf, rtol=1e-10, atol=1e-13)
         assert_allclose(z2, zf, rtol=1e-10, atol=1e-13)
+
+        # let's try the "step" initial condition
+        zi = sosfilt_zi(sos)
+        zi.shape = [nsections, 1, 2, 1]
+        zi = zi * x[:, 0:1, :]
+        y = sosfilt(sos, x, axis=axis, zi=zi)[0]
+        # check it against the TF form
+        b, a = zpk2tf(*zpk)
+        zi = lfilter_zi(b, a)
+        zi.shape = [1, zi.size, 1]
+        zi = zi * x[:, 0:1, :]
+        y_tf = lfilter(b, a, x, axis=axis, zi=zi)[0]
+        assert_allclose(y, y_tf, rtol=1e-10, atol=1e-13)
 
     def test_bad_zi_shape(self):
         # The shape of zi is checked before using any values in the

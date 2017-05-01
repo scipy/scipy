@@ -67,10 +67,12 @@ dist
 MANIFEST
 # distutils configuration
 site.cfg
+setup.cfg
 # other temporary files
 .coverage
 .deps
 .libs
+.eggs
 
 # Paver generated files #
 #########################
@@ -97,6 +99,7 @@ site.cfg
 ehthumbs.db
 Icon?
 Thumbs.db
+*.dSYM
 
 # Documentation generated files #
 #################################
@@ -111,6 +114,7 @@ benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
 scipy/__config__.py
+scipy/_lib/_ccallback_c.c
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
 scipy/fftpack/_fftpackmodule.c
@@ -121,6 +125,7 @@ scipy/integrate/_dopmodule.c
 scipy/integrate/lsodamodule.c
 scipy/integrate/vodemodule.c
 scipy/interpolate/_ppoly.c
+scipy/interpolate/_bspl.c
 scipy/interpolate/interpnd.c
 scipy/interpolate/src/dfitpack-f2pywrappers.f
 scipy/interpolate/src/dfitpackmodule.c
@@ -155,6 +160,7 @@ scipy/linalg/fblas.pyf
 scipy/linalg/flapack.pyf
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/ndimage/src/_ni_label.c
+scipy/ndimage/src/_cytest.c
 scipy/optimize/cobyla/_cobylamodule.c
 scipy/optimize/lbfgsb/_lbfgsbmodule.c
 scipy/optimize/minpack2/minpack2module.c
@@ -195,7 +201,9 @@ scipy/sparse/sparsetools/other_impl.h
 scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.cxx
 scipy/spatial/ckdtree.h
+scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
+scipy/spatial/_voronoi.c
 scipy/special/_comb.c
 scipy/spatial/qhull_misc_config.h
 scipy/special/_ellip_harm_2.c
@@ -206,6 +214,9 @@ scipy/special/_ufuncs.h
 scipy/special/_ufuncs_cxx.cxx
 scipy/special/_ufuncs_cxx.h
 scipy/special/specfunmodule.c
+scipy/special/cython_special.c
+scipy/special/cython_special.h
+scipy/special/_test_round.c
 scipy/stats/_rank.c
 scipy/stats/mvn-f2pywrappers.f
 scipy/stats/mvnmodule.c

@@ -36,7 +36,7 @@ class Parsopoulos(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
 
         self.global_optimum = [[pi / 2.0, pi]]
         self.fglob = 0
@@ -76,8 +76,8 @@ class Pathological(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                           [100.0] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = 0.
@@ -122,7 +122,7 @@ class Paviani(Benchmark):
     def __init__(self, dimensions=10):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([2.001] * self.N, [9.999] * self.N)
+        self._bounds = list(zip([2.001] * self.N, [9.999] * self.N))
 
         self.global_optimum = [[9.350266 for _ in range(self.N)]]
         self.fglob = -45.7784684040686
@@ -179,7 +179,7 @@ class Penalty01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = list(zip([-50.0] * self.N, [50.0] * self.N))
         self.custom_bounds = ([-5.0, 5.0], [-5.0, 5.0])
 
         self.global_optimum = [[-1.0 for _ in range(self.N)]]
@@ -241,7 +241,7 @@ class Penalty02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = list(zip([-50.0] * self.N, [50.0] * self.N))
         self.custom_bounds = ([-4.0, 4.0], [-4.0, 4.0])
 
         self.global_optimum = [[1.0 for _ in range(self.N)]]
@@ -290,7 +290,7 @@ class PenHolder(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-11.0] * self.N, [11.0] * self.N)
+        self._bounds = list(zip([-11.0] * self.N, [11.0] * self.N))
 
         self.global_optimum = [[-9.646167708023526, 9.646167671043401]]
         self.fglob = -0.9635348327265058
@@ -333,10 +333,10 @@ class PermFunction01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-self.N] * self.N,
-                           [self.N + 1] * self.N)
+        self._bounds = list(zip([-self.N] * self.N,
+                           [self.N + 1] * self.N))
 
-        self.global_optimum = [range(1, self.N + 1)]
+        self.global_optimum = [list(range(1, self.N + 1))]
         self.fglob = 0.0
         self.change_dimensionality = True
 
@@ -381,8 +381,8 @@ class PermFunction02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-self.N] * self.N,
-                           [self.N + 1] * self.N)
+        self._bounds = list(zip([-self.N] * self.N,
+                           [self.N + 1] * self.N))
         self.custom_bounds = ([0, 1.5], [0, 1.0])
 
         self.global_optimum = [1. / arange(1, self.N + 1)]
@@ -438,7 +438,7 @@ class Pinter(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 0.0
@@ -484,7 +484,7 @@ class Plateau(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = list(zip([-5.12] * self.N, [5.12] * self.N))
 
         self.global_optimum = [[0.0 for _ in range(self.N)]]
         self.fglob = 30.0
@@ -523,7 +523,7 @@ class Powell(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-4.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-4.0] * self.N, [5.0] * self.N))
         self.global_optimum = [[0, 0, 0, 0]]
         self.fglob = 0
 
@@ -560,8 +560,8 @@ class PowerSum(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N,
-                           [4.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N,
+                           [4.0] * self.N))
 
         self.global_optimum = [[1.0, 2.0, 2.0, 3.0]]
         self.fglob = 0.0
@@ -601,8 +601,8 @@ class Price01(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-500.0] * self.N,
-                           [500.0] * self.N)
+        self._bounds = list(zip([-500.0] * self.N,
+                           [500.0] * self.N))
         self.custom_bounds = ([-10.0, 10.0], [-10.0, 10.0])
 
         self.global_optimum = [[5.0, 5.0]]
@@ -639,7 +639,7 @@ class Price02(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
         self.global_optimum = [[0.0, 0.0]]
         self.fglob = 0.9
@@ -677,7 +677,7 @@ class Price03(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.0] * self.N, [5.0] * self.N)
+        self._bounds = list(zip([-5.0] * self.N, [5.0] * self.N))
         self.custom_bounds = ([0, 2], [0, 2])
 
         self.global_optimum = [[1.0, 1.0]]
@@ -715,7 +715,7 @@ class Price04(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-50.0] * self.N, [50.0] * self.N)
+        self._bounds = list(zip([-50.0] * self.N, [50.0] * self.N))
         self.custom_bounds = ([0, 2], [0, 2])
 
         self.global_optimum = [[2.0, 4.0]]

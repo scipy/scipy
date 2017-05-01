@@ -21,12 +21,12 @@ class ode
 A generic interface class to numeric integrators. It has the following
 methods::
 
-    integrator = ode(f,jac=None)
-    integrator = integrator.set_integrator(name,**params)
-    integrator = integrator.set_initial_value(y0,t0=0.0)
+    integrator = ode(f, jac=None)
+    integrator = integrator.set_integrator(name, **params)
+    integrator = integrator.set_initial_value(y0, t0=0.0)
     integrator = integrator.set_f_params(*args)
     integrator = integrator.set_jac_params(*args)
-    y1 = integrator.integrate(t1,step=0,relax=0)
+    y1 = integrator.integrate(t1, step=False, relax=False)
     flag = integrator.successful()
 
 class complex_ode
@@ -324,17 +324,17 @@ class ode(object):
     >>> t1 = 10
     >>> dt = 1
     >>> while r.successful() and r.t < t1:
-    ...     print(r.t, r.integrate(r.t+dt))
-    (0, array([-0.71038232+0.23749653j,  0.40000271+0.j        ]))
-    (1.0, array([ 0.19098503-0.52359246j,  0.22222356+0.j        ]))
-    (2.0, array([ 0.47153208+0.52701229j,  0.15384681+0.j        ]))
-    (3.0, array([-0.61905937+0.30726255j,  0.11764744+0.j        ]))
-    (4.0, array([ 0.02340997-0.61418799j,  0.09523835+0.j        ]))
-    (5.0, array([ 0.58643071+0.339819j,  0.08000018+0.j      ]))
-    (6.0, array([-0.52070105+0.44525141j,  0.06896565+0.j        ]))
-    (7.0, array([-0.15986733-0.61234476j,  0.06060616+0.j        ]))
-    (8.0, array([ 0.64850462+0.15048982j,  0.05405414+0.j        ]))
-    (9.0, array([-0.38404699+0.56382299j,  0.04878055+0.j        ]))
+    ...     print(r.t+dt, r.integrate(r.t+dt))
+    (1, array([-0.71038232+0.23749653j,  0.40000271+0.j        ]))
+    (2.0, array([ 0.19098503-0.52359246j,  0.22222356+0.j        ]))
+    (3.0, array([ 0.47153208+0.52701229j,  0.15384681+0.j        ]))
+    (4.0, array([-0.61905937+0.30726255j,  0.11764744+0.j        ]))
+    (5.0, array([ 0.02340997-0.61418799j,  0.09523835+0.j        ]))
+    (6.0, array([ 0.58643071+0.339819j,  0.08000018+0.j      ]))
+    (7.0, array([-0.52070105+0.44525141j,  0.06896565+0.j        ]))
+    (8.0, array([-0.15986733-0.61234476j,  0.06060616+0.j        ]))
+    (9.0, array([ 0.64850462+0.15048982j,  0.05405414+0.j        ]))
+    (10.0, array([-0.38404699+0.56382299j,  0.04878055+0.j        ]))
 
     References
     ----------
@@ -376,7 +376,7 @@ class ode(object):
         ----------
         name : str
             Name of the integrator.
-        integrator_params :
+        integrator_params
             Additional parameters for the integrator.
         """
         integrator = find_integrator(name)
@@ -393,8 +393,32 @@ class ode(object):
             self._integrator.reset(len(self._y), self.jac is not None)
         return self
 
-    def integrate(self, t, step=0, relax=0):
-        """Find y=y(t), set y as an initial condition, and return y."""
+    def integrate(self, t, step=False, relax=False):
+        """Find y=y(t), set y as an initial condition, and return y.
+
+        Parameters
+        ----------
+        t : float
+            The endpoint of the integration step.
+        step : bool
+            If True, and if the integrator supports the step method,
+            then perform a single integration step and return.
+            This parameter is provided in order to expose internals of
+            the implementation, and should not be changed from its default
+            value in most cases.
+        relax : bool
+            If True and if the integrator supports the run_relax method,
+            then integrate until t_1 >= t and return. ``relax`` is not
+            referenced if ``step=True``.
+            This parameter is provided in order to expose internals of
+            the implementation, and should not be changed from its default
+            value in most cases.
+
+        Returns
+        -------
+        y : float
+            The integrated value at t
+        """
         if step and self._integrator.supports_step:
             mth = self._integrator.step
         elif relax and self._integrator.supports_run_relax:
@@ -552,7 +576,7 @@ class complex_ode(ode):
         ----------
         name : str
             Name of the integrator
-        integrator_params :
+        integrator_params
             Additional parameters for the integrator.
         """
         if name == 'zvode':
@@ -578,8 +602,32 @@ class complex_ode(ode):
         self.tmp[1::2] = imag(y)
         return ode.set_initial_value(self, self.tmp, t)
 
-    def integrate(self, t, step=0, relax=0):
-        """Find y=y(t), set y as an initial condition, and return y."""
+    def integrate(self, t, step=False, relax=False):
+        """Find y=y(t), set y as an initial condition, and return y.
+
+        Parameters
+        ----------
+        t : float
+            The endpoint of the integration step.
+        step : bool
+            If True, and if the integrator supports the step method,
+            then perform a single integration step and return.
+            This parameter is provided in order to expose internals of
+            the implementation, and should not be changed from its default
+            value in most cases.
+        relax : bool
+            If True and if the integrator supports the run_relax method,
+            then integrate until t_1 >= t and return. ``relax`` is not
+            referenced if ``step=True``.
+            This parameter is provided in order to expose internals of
+            the implementation, and should not be changed from its default
+            value in most cases.
+
+        Returns
+        -------
+        y : float
+            The integrated value at t
+        """
         y = ode.integrate(self, t, step, relax)
         return y[::2] + 1j * y[1::2]
 

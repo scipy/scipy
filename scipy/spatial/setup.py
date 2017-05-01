@@ -43,8 +43,8 @@ def configuration(parent_package='', top_path=None):
                          sources=['qhull.c'] + qhull_src + [get_qhull_misc_config],
                          **cfg)
 
-    # cKDTree    
-    ckdtree_src = ['query.cxx', 
+    # cKDTree
+    ckdtree_src = ['query.cxx',
                    'build.cxx',
                    'globals.cxx',
                    'cpp_exc.cxx',
@@ -53,20 +53,20 @@ def configuration(parent_package='', top_path=None):
                    'query_ball_point.cxx',
                    'query_ball_tree.cxx',
                    'sparse_distances.cxx']
-                   
+
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
-    
-    ckdtree_headers = ['ckdtree_decl.h', 
-                       'cpp_exc.h', 
+
+    ckdtree_headers = ['ckdtree_decl.h',
+                       'cpp_exc.h',
                        'ckdtree_methods.h',
                        'cpp_utils.h',
                        'rectangle.h',
                        'distance.h',
                        'distance_box.h',
                        'ordered_pair.h']
-                       
+
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
-        
+
     ckdtree_dep = ['ckdtree.cxx'] + ckdtree_headers + ckdtree_src
     config.add_extension('ckdtree',
                          sources=['ckdtree.cxx'] + ckdtree_src,
@@ -79,15 +79,15 @@ def configuration(parent_package='', top_path=None):
         include_dirs=[get_numpy_include_dirs()],
         extra_info=get_misc_info("npymath"))
 
+    config.add_extension('_voronoi',
+                         sources=['_voronoi.c'])
+
+    config.add_extension('_hausdorff',
+                         sources=['_hausdorff.c'])
+
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(maintainer="SciPy Developers",
-          author="Anne Archibald",
-          maintainer_email="scipy-dev@scipy.org",
-          description="Spatial algorithms and data structures",
-          url="https://www.scipy.org",
-          license="SciPy License (BSD Style)",
-          **configuration(top_path='').todict()
-          )
+    setup(**configuration(top_path='').todict())

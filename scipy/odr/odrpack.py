@@ -306,7 +306,7 @@ class RealData(Data):
         If array-like, observed data for the dependent variable of the
         regression. A scalar input implies that the model to be used on
         the data is implicit.
-    sx, sy : array_like, optional
+    sx : array_like, optional
         Standard deviations of `x`.
         `sx` are standard deviations of `x` and are converted to weights by
         dividing 1.0 by their squares.
@@ -837,18 +837,18 @@ class ODR(object):
             res = self.model.fjacd(*arglist)
             if res.shape not in fjacd_perms:
                 raise OdrError(
-                    "fjacd does not output %s-shaped array" % (q, m, n))
+                    "fjacd does not output %s-shaped array" % repr((q, m, n)))
         if self.model.fjacb is not None:
             res = self.model.fjacb(*arglist)
             if res.shape not in fjacb_perms:
                 raise OdrError(
-                    "fjacb does not output %s-shaped array" % (q, p, n))
+                    "fjacb does not output %s-shaped array" % repr((q, p, n)))
 
         # check shape of delta0
 
         if self.delta0 is not None and self.delta0.shape != self.data.x.shape:
             raise OdrError(
-                "delta0 is not a %s-shaped array" % self.data.x.shape)
+                "delta0 is not a %s-shaped array" % repr(self.data.x.shape))
 
         if self.data.x.size == 0:
             warn(("Empty data detected for ODR instance. "

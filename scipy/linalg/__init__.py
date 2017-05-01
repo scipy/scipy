@@ -38,6 +38,7 @@ Basics
    tril - Construct a lower-triangular matrix from a given matrix
    triu - Construct an upper-triangular matrix from a given matrix
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
+   matrix_balance - Balance matrix entries with a similarity transformation
    LinAlgError
 
 Eigenvalue Problems
@@ -120,8 +121,8 @@ Matrix Equation Solvers
    solve_sylvester - Solve the Sylvester matrix equation
    solve_continuous_are - Solve the continuous-time algebraic Riccati equation
    solve_discrete_are - Solve the discrete-time algebraic Riccati equation
+   solve_continuous_lyapunov - Solve the continous-time Lyapunov equation
    solve_discrete_lyapunov - Solve the discrete-time Lyapunov equation
-   solve_lyapunov - Solve the (continous-time) Lyapunov equation
 
 
 Special Matrices
@@ -208,4 +209,3 @@ del k, register_func
 
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

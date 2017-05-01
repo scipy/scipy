@@ -44,7 +44,33 @@ def _make_complex_eigvecs(w, vin, dtype):
     return v
 
 
-def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
+def _make_eigvals(alpha, beta, homogeneous_eigvals):
+    if homogeneous_eigvals:
+        if beta is None:
+            return numpy.vstack((alpha, numpy.ones_like(alpha)))
+        else:
+            return numpy.vstack((alpha, beta))
+    else:
+        if beta is None:
+            return alpha
+        else:
+            w = numpy.empty_like(alpha)
+            alpha_zero = (alpha == 0)
+            beta_zero = (beta == 0)
+            beta_nonzero = ~beta_zero
+            w[beta_nonzero] = alpha[beta_nonzero]/beta[beta_nonzero]
+            # Use numpy.inf for complex values too since
+            # 1/numpy.inf = 0, i.e. it correctly behaves as projective
+            # infinity.
+            w[~alpha_zero & beta_zero] = numpy.inf 
+            if numpy.all(alpha.imag == 0):
+                w[alpha_zero & beta_zero] = numpy.nan
+            else:
+                w[alpha_zero & beta_zero] = complex(numpy.nan, numpy.nan)
+            return w
+
+
+def _geneig(a1, b1, left, right, overwrite_a, overwrite_b, homogeneous_eigvals):
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     res = ggev(a1, b1, lwork=-1)
@@ -52,12 +78,13 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
     if ggev.typecode in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
                                                overwrite_a, overwrite_b)
-        w = alpha / beta
+        w = _make_eigvals(alpha, beta, homogeneous_eigvals)
     else:
         alphar, alphai, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr,
                                                         lwork, overwrite_a,
                                                         overwrite_b)
-        w = (alphar + _I * alphai) / beta
+        alpha = alphar + _I * alphai
+        w = _make_eigvals(alpha, beta, homogeneous_eigvals)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal ggev' %
                          -info)
@@ -65,7 +92,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
         raise LinAlgError("generalized eig algorithm did not converge "
                           "(info=%d)" % info)
 
-    only_real = numpy.logical_and.reduce(numpy.equal(w.imag, 0.0))
+    only_real = numpy.all(w.imag == 0.0)
     if not (ggev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
@@ -90,7 +117,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b):
 
 
 def eig(a, b=None, left=False, right=True, overwrite_a=False,
-        overwrite_b=False, check_finite=True):
+        overwrite_b=False, check_finite=True, homogeneous_eigvals=False):
     """
     Solve an ordinary or generalized eigenvalue problem of a square matrix.
 
@@ -121,11 +148,20 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
+    homogeneous_eigvals : bool, optional
+        If True, return the eigenvalues in homogeneous coordinates.
+        In this case ``w`` is a (2, M) array so that::
+
+            w[1,i] a vr[:,i] = w[0,i] b vr[:,i]
+
+        Default is False.
 
     Returns
     -------
-    w : (M,) double or complex ndarray
-        The eigenvalues, each repeated according to its multiplicity.
+    w : (M,) or (2, M) double or complex ndarray
+        The eigenvalues, each repeated according to its
+        multiplicity. The shape is (M,) unless
+        ``homogeneous_eigvals=True``.
     vl : (M, M) double or complex ndarray
         The normalized left eigenvector corresponding to the eigenvalue
         ``w[i]`` is the column vl[:,i]. Only returned if ``left=True``.
@@ -154,7 +190,8 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
             raise ValueError('expected square matrix')
         if b1.shape != a1.shape:
             raise ValueError('a and b must have the same shape')
-        return _geneig(a1, b1, left, right, overwrite_a, overwrite_b)
+        return _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
+                       homogeneous_eigvals)
 
     geev, geev_lwork = get_lapack_funcs(('geev', 'geev_lwork'), (a1,))
     compute_vl, compute_vr = left, right
@@ -168,6 +205,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                                compute_vl=compute_vl,
                                compute_vr=compute_vr,
                                overwrite_a=overwrite_a)
+        w = _make_eigvals(w, None, homogeneous_eigvals)
     else:
         wr, wi, vl, vr, info = geev(a1, lwork=lwork,
                                     compute_vl=compute_vl,
@@ -175,6 +213,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                                     overwrite_a=overwrite_a)
         t = {'f': 'F', 'd': 'D'}[wr.dtype.char]
         w = wr + _I * wi
+        w = _make_eigvals(w, None, homogeneous_eigvals)
 
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal geev' %
@@ -183,7 +222,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         raise LinAlgError("eig algorithm did not converge (only eigenvalues "
                           "with order >= %d have converged)" % info)
 
-    only_real = numpy.logical_and.reduce(numpy.equal(w.imag, 0.0))
+    only_real = numpy.all(w.imag == 0.0)
     if not (geev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
@@ -274,7 +313,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     Raises
     ------
-    LinAlgError :
+    LinAlgError
         If eigenvalue computation does not converge,
         an error occurred, or b matrix is not definite positive. Note that
         if input matrices are not symmetric or hermitian, no error is reported
@@ -563,7 +602,8 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     return w, v
 
 
-def eigvals(a, b=None, overwrite_a=False, check_finite=True):
+def eigvals(a, b=None, overwrite_a=False, check_finite=True,
+            homogeneous_eigvals=False):
     """
     Compute eigenvalues from an ordinary or generalized eigenvalue problem.
 
@@ -584,13 +624,22 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
     check_finite : bool, optional
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
+        (crashes, non-termination) if the inputs do contain infinities
+        or NaNs.
+    homogeneous_eigvals : bool, optional
+        If True, return the eigenvalues in homogeneous coordinates.
+        In this case ``w`` is a (2, M) array so that::
+
+            w[1,i] a vr[:,i] = w[0,i] b vr[:,i]
+
+        Default is False.
 
     Returns
     -------
-    w : (M,) double or complex ndarray
-        The eigenvalues, each repeated according to its multiplicity,
-        but not in any specific order.
+    w : (M,) or (2, M) double or complex ndarray
+        The eigenvalues, each repeated according to its multiplicity
+        but not in any specific order. The shape is (M,) unless
+        ``homogeneous_eigvals=True``.
 
     Raises
     ------
@@ -605,7 +654,8 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True):
 
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
-               check_finite=check_finite)
+               check_finite=check_finite,
+               homogeneous_eigvals=homogeneous_eigvals)
 
 
 def eigvalsh(a, b=None, lower=True, overwrite_a=False,
@@ -665,7 +715,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
     Raises
     ------
-    LinAlgError :
+    LinAlgError
         If eigenvalue computation does not converge,
         an error occurred, or b matrix is not definite positive. Note that
         if input matrices are not symmetric or hermitian, no error is reported

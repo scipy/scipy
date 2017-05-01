@@ -4,6 +4,8 @@ from __future__ import division, print_function, absolute_import
 
 # Unit Test
 import unittest
+import warnings
+
 from numpy import arange, allclose, ones, isnan
 import numpy as np
 
@@ -22,15 +24,19 @@ class Test(unittest.TestCase):
         N = 5
         x = arange(N)
         y = arange(N)
-        self.assertAllclose(y, nearest(x, y, x+.1))
-        self.assertAllclose(y, nearest(x, y, x-.1))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            self.assertAllclose(y, nearest(x, y, x+.1))
+            self.assertAllclose(y, nearest(x, y, x-.1))
 
     def test_linear(self):
         N = 3000.
         x = arange(N)
         y = arange(N)
         new_x = arange(N)+0.5
-        new_y = linear(x, y, new_x)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            new_y = linear(x, y, new_x)
 
         self.assertAllclose(new_y[:5], [0.5, 1.5, 2.5, 3.5, 4.5])
 
@@ -40,7 +46,9 @@ class Test(unittest.TestCase):
         y = arange(N, dtype=float)
 
         new_x = arange(N // 2) * 2
-        new_y = block_average_above(x, y, new_x)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            new_y = block_average_above(x, y, new_x)
         self.assertAllclose(new_y[:5], [0.0, 0.5, 2.5, 4.5, 6.5])
 
     def test_linear2(self):
@@ -48,7 +56,9 @@ class Test(unittest.TestCase):
         x = arange(N, dtype=float)
         y = ones((100,N)) * arange(N)
         new_x = arange(N) + 0.5
-        new_y = linear(x, y, new_x)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            new_y = linear(x, y, new_x)
         self.assertAllclose(new_y[:5,:5],
                             [[0.5, 1.5, 2.5, 3.5, 4.5],
                              [0.5, 1.5, 2.5, 3.5, 4.5],
@@ -61,7 +71,9 @@ class Test(unittest.TestCase):
         x = arange(N)
         y = arange(N)
         new_x = arange(N)+0.5
-        new_y = logarithmic(x, y, new_x)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            new_y = logarithmic(x, y, new_x)
         correct_y = [np.NaN, 1.41421356, 2.44948974, 3.46410162, 4.47213595]
         self.assertAllclose(new_y[:5], correct_y)
 

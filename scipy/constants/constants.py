@@ -203,6 +203,10 @@ def convert_temperature(val, old_scale, new_scale):
     res : float or array of floats
         Value(s) of the converted temperature(s) expressed in the new scale.
 
+    Notes
+    -----
+    .. versionadded:: 0.18.0
+
     Examples
     --------
     >>> from scipy.constants import convert_temperature
@@ -241,7 +245,7 @@ def convert_temperature(val, old_scale, new_scale):
 
 
 @_np.deprecate(message="scipy.constants.C2K is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_teperature instead. "
+                       "Use scipy.constants.convert_temperature instead. "
                        "Note that the new function has a different signature.")
 def C2K(C):
     """
@@ -277,7 +281,7 @@ def C2K(C):
 
 
 @_np.deprecate(message="scipy.constants.K2C is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_teperature instead. "
+                       "Use scipy.constants.convert_temperature instead. "
                        "Note that the new function has a different signature.")
 def K2C(K):
     """
@@ -313,7 +317,7 @@ def K2C(K):
 
 
 @_np.deprecate(message="scipy.constants.F2C is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_teperature instead. "
+                       "Use scipy.constants.convert_temperature instead. "
                        "Note that the new function has a different signature.")
 def F2C(F):
     """
@@ -348,7 +352,7 @@ def F2C(F):
 
 
 @_np.deprecate(message="scipy.constants.C2F is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_teperature instead. "
+                       "Use scipy.constants.convert_temperature instead. "
                        "Note that the new function has a different signature.")
 def C2F(C):
     """
@@ -383,7 +387,7 @@ def C2F(C):
 
 
 @_np.deprecate(message="scipy.constants.F2K is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_teperature instead. "
+                       "Use scipy.constants.convert_temperature instead. "
                        "Note that the new function has a different signature.")
 def F2K(F):
     """
@@ -420,7 +424,7 @@ def F2K(F):
 
 
 @_np.deprecate(message="scipy.constants.K2F is deprecated in scipy 0.18.0. "
-                       "Use scipy.constants.convert_teperature instead. "
+                       "Use scipy.constants.convert_temperature instead. "
                        "Note that the new function has a different signature.")
 def K2F(K):
     """

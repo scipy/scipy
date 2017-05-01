@@ -26,7 +26,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         Array in which to find the relative extrema.
     comparator : callable
         Function to use to compare two data points.
-        Should take 2 numbers as arguments.
+        Should take two arrays as arguments.
     axis : int, optional
         Axis over which to select from `data`.  Default is 0.
     order : int, optional
@@ -187,7 +187,7 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
         Array in which to find the relative extrema.
     comparator : callable
         Function to use to compare two data points.
-        Should take 2 numbers as arguments.
+        Should take two arrays as arguments.
     axis : int, optional
         Axis over which to select from `data`.  Default is 0.
     order : int, optional
@@ -265,7 +265,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     References
     ----------
     Bioinformatics (2006) 22 (17): 2059-2065.
-    doi: 10.1093/bioinformatics/btl355
+    :doi:`10.1093/bioinformatics/btl355`
     http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
 
     Examples
@@ -384,7 +384,7 @@ def _filter_ridge_lines(cwt, ridge_lines, window_size=None, min_length=None,
 
     References
     ----------
-    Bioinformatics (2006) 22 (17): 2059-2065. doi: 10.1093/bioinformatics/btl355
+    Bioinformatics (2006) 22 (17): 2059-2065. :doi:`10.1093/bioinformatics/btl355`
     http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
 
     """
@@ -448,7 +448,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         If a relative maximum is not found within `max_distances`,
         there will be a gap. A ridge line is discontinued if there are more
         than `gap_thresh` points without connecting a new relative maximum.
-        Default is 2.
+        Default is the first value of the widths array i.e. widths[0].
     min_length : int, optional
         Minimum length a ridge line needs to be acceptable.
         Default is ``cwt.shape[0] / 4``, ie 1/4-th the number of widths.
@@ -464,7 +464,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     Returns
     -------
-    peaks_indices : list
+    peaks_indices : ndarray
         Indices of the locations in the `vector` where peaks were found.
         The list is sorted.
 
@@ -491,7 +491,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     References
     ----------
     .. [1] Bioinformatics (2006) 22 (17): 2059-2065.
-        doi: 10.1093/bioinformatics/btl355
+        :doi:`10.1093/bioinformatics/btl355`
         http://bioinformatics.oxfordjournals.org/content/22/17/2059.long
 
     Examples
@@ -504,6 +504,8 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ([32], array([ 1.6]), array([ 0.9995736]))
 
     """
+    widths = np.asarray(widths)
+
     if gap_thresh is None:
         gap_thresh = np.ceil(widths[0])
     if max_distances is None:
@@ -515,5 +517,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    min_snr=min_snr, noise_perc=noise_perc)
-    max_locs = [x[1][0] for x in filtered]
-    return sorted(max_locs)
+    max_locs = np.asarray([x[1][0] for x in filtered])
+    max_locs.sort()
+
+    return max_locs

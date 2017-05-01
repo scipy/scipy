@@ -55,11 +55,17 @@ For data on a grid:
    RegularGridInterpolator
    RectBivariateSpline
 
-.. seealso:: `scipy.ndimage.interpolation.map_coordinates`
+.. seealso::
+
+    `scipy.ndimage.map_coordinates`
 
 Tensor product polynomials:
 
+.. autosummary::
+   :toctree: generated/
+
    NdPPoly
+
 
 1-D Splines
 ===========
@@ -67,12 +73,11 @@ Tensor product polynomials:
 .. autosummary::
    :toctree: generated/
 
-   UnivariateSpline
-   InterpolatedUnivariateSpline
-   LSQUnivariateSpline
+   BSpline
+   make_interp_spline
+   make_lsq_spline
 
-
-Functional interface to FITPACK functions:
+Functional interface to FITPACK routines:
 
 .. autosummary::
    :toctree: generated/
@@ -86,6 +91,16 @@ Functional interface to FITPACK functions:
    splder
    splantider
    insert
+
+Object-oriented FITPACK interface:
+
+.. autosummary::
+    :toctree: generated/
+
+   UnivariateSpline
+   InterpolatedUnivariateSpline
+   LSQUnivariateSpline
+
 
 
 2-D Splines
@@ -126,11 +141,12 @@ Additional tools
 
    lagrange
    approximate_taylor_polynomial
+   pade
 
 .. seealso::
 
-   `scipy.ndimage.interpolation.map_coordinates`,
-   `scipy.ndimage.interpolation.spline_filter`,
+   `scipy.ndimage.map_coordinates`,
+   `scipy.ndimage.spline_filter`,
    `scipy.signal.resample`,
    `scipy.signal.bspline`,
    `scipy.signal.gauss_spline`,
@@ -171,7 +187,10 @@ from ._cubic import *
 
 from .ndgriddata import *
 
+from ._bsplines import *
+
+from ._pade import *
+
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

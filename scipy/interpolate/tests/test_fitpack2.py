@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Created by Pearu Peterson, June 2003
 from __future__ import division, print_function, absolute_import
 
@@ -146,10 +145,44 @@ class TestUnivariateSpline(TestCase):
         # bail out early if the input data contains nans
         x = np.arange(10, dtype=float)
         y = x**3
+        w = np.ones_like(x)
+        # also test LSQUnivariateSpline [which needs explicit knots]
+        spl = UnivariateSpline(x, y, check_finite=True)
+        t = spl.get_knots()[3:4]  # interior knots w/ default k=3
+        y_end = y[-1]
         for z in [np.nan, np.inf, -np.inf]:
             y[-1] = z
             assert_raises(ValueError, UnivariateSpline,
                     **dict(x=x, y=y, check_finite=True))
+            assert_raises(ValueError, InterpolatedUnivariateSpline,
+                    **dict(x=x, y=y, check_finite=True))
+            assert_raises(ValueError, LSQUnivariateSpline,
+                    **dict(x=x, y=y, t=t, check_finite=True))
+            y[-1] = y_end  # check valid y but invalid w
+            w[-1] = z
+            assert_raises(ValueError, UnivariateSpline,
+                    **dict(x=x, y=y, w=w, check_finite=True))
+            assert_raises(ValueError, InterpolatedUnivariateSpline,
+                    **dict(x=x, y=y, w=w, check_finite=True))
+            assert_raises(ValueError, LSQUnivariateSpline,
+                    **dict(x=x, y=y, t=t, w=w, check_finite=True))
+
+    def test_increasing_x(self):
+        xx = np.arange(10, dtype=float)
+        yy = xx**3
+        x = np.arange(10, dtype=float)
+        x[1] = x[0]
+        y = x**3
+        w = np.ones_like(x)
+        # also test LSQUnivariateSpline [which needs explicit knots]
+        spl = UnivariateSpline(xx, yy, check_finite=True)
+        t = spl.get_knots()[3:4]  # interior knots w/ default k=3
+        assert_raises(ValueError, UnivariateSpline,
+                **dict(x=x, y=y, check_finite=True))
+        assert_raises(ValueError, InterpolatedUnivariateSpline,
+                **dict(x=x, y=y, check_finite=True))
+        assert_raises(ValueError, LSQUnivariateSpline,
+                **dict(x=x, y=y, t=t, w=w, check_finite=True))
 
 
 class TestLSQBivariateSpline(TestCase):

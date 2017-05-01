@@ -78,8 +78,9 @@ csr_matmat_pass2    v iiIITIIT*I*I*T
 csr_diagonal        v iiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
-csr_matvec          v iiIITtTt*T
-csr_matvecs         v iiiIITtTt*T
+csr_todense         v iiIIT*T
+csr_matvec          v iiIITT*T
+csr_matvecs         v iiiIITT*T
 csr_elmul_csr       v iiIITIIT*I*I*T
 csr_eldiv_csr       v iiIITIIT*I*I*T
 csr_plus_csr        v iiIITIIT*I*I*T

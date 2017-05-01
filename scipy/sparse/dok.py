@@ -11,7 +11,7 @@ import operator
 
 import numpy as np
 
-from scipy._lib.six import zip as izip, xrange, iteritems, itervalues
+from scipy._lib.six import zip as izip, xrange, iteritems, iterkeys, itervalues
 
 from .base import spmatrix, isspmatrix
 from .sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
@@ -350,9 +350,13 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return new
 
     def __neg__(self):
+        if self.dtype.kind == 'b':
+            raise NotImplementedError('negating a sparse boolean '
+                                      'matrix is not supported')
         new = dok_matrix(self.shape, dtype=self.dtype)
         for key in self.keys():
             new[key] = -self[key]
+
         return new
 
     def _mul_scalar(self, other):
@@ -470,9 +474,10 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             return coo_matrix(self.shape, dtype=self.dtype)
 
         idx_dtype = get_index_dtype(maxval=max(self.shape))
-        data = np.asarray(_list(self.values()), dtype=self.dtype)
-        indices = np.asarray(_list(self.keys()), dtype=idx_dtype).T
-        A = coo_matrix((data, indices), shape=self.shape, dtype=self.dtype)
+        data = np.fromiter(itervalues(self), dtype=self.dtype, count=self.nnz)
+        I = np.fromiter((i for i,_ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        J = np.fromiter((j for _,j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        A = coo_matrix((data, (I, J)), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
 
@@ -503,7 +508,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         M, N = self.shape
         if newM < M or newN < N:
             # Remove all elements outside new dimensions
-            for (i, j) in list(self.keys()):
+            for (i, j) in _list(self.keys()):
                 if i >= newM or j >= newN:
                     del self[i, j]
         self._shape = shape
@@ -517,6 +522,28 @@ def _list(x):
 
 
 def isspmatrix_dok(x):
+    """Is x of dok_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a dok matrix
+
+    Returns
+    -------
+    bool
+        True if x is a dok matrix, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import dok_matrix, isspmatrix_dok
+    >>> isspmatrix_dok(dok_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import dok_matrix, csr_matrix, isspmatrix_dok
+    >>> isspmatrix_dok(csr_matrix([[5]]))
+    False
+    """
     return isinstance(x, dok_matrix)
 
 

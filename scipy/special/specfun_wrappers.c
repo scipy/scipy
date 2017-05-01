@@ -25,14 +25,16 @@
 
 extern double cephes_struve(double, double);
 
-extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
+extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
+extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*,int*);
 extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
-extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
+extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*,int*);
 extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
 extern void F_FUNC(e1xb,E1XB)(double*,double*);
 extern void F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(eix,EIX)(double*,double*);
+extern void F_FUNC(eixz,EIXZ)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
 extern void F_FUNC(stvh0,STVH0)(double*,double*);
 extern void F_FUNC(stvh1,STVH1)(double*,double*);
@@ -67,17 +69,9 @@ extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*
 /* This must be linked with fortran
  */
 
-npy_cdouble clngamma_wrap( npy_cdouble z) {
-  int kf = 0;
-  npy_cdouble cy;
-
-  F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
-  return cy;
-}
-
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   npy_cdouble outz;
-  int l1, l0;
+  int l1, l0, isfer = 0;
  
  
   l0 = ((c == floor(c)) && (c < 0));
@@ -88,7 +82,18 @@ npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
     IMAG(outz) = 0.0;
     return outz;
   }
-  F_FUNC(hygfz, HYGFZ)(&a, &b, &c, &z, &outz);
+  F_FUNC(hygfz, HYGFZ)(&a, &b, &c, &z, &outz, &isfer);
+  if (isfer == 3) {
+    sf_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
+    REAL(outz) = NPY_INFINITY;
+    IMAG(outz) = 0.0;
+  } else if (isfer == 5) {
+    sf_error("chyp2f1", SF_ERROR_LOSS, NULL);
+  } else if (isfer != 0) {
+    sf_error("chyp2f1", isfer, NULL);
+    REAL(outz) = NPY_NAN;
+    IMAG(outz) = NPY_NAN;
+  }
   return outz;
 }
 
@@ -107,14 +112,21 @@ npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) {
 double hypU_wrap(double a, double b, double x) {
   double out;
   int md; /* method code --- not returned */
+  int isfer = 0;
 
-  F_FUNC(chgu,CHGU)(&a, &b, &x, &out, &md);
+  F_FUNC(chgu,CHGU)(&a, &b, &x, &out, &md, &isfer);
   if (out == 1e300) {
       sf_error("hypU", SF_ERROR_OVERFLOW, NULL);
       out = NPY_INFINITY;
   }
+  if (isfer == 6) {
+    sf_error("hypU", SF_ERROR_NO_RESULT, NULL);
+    out = NPY_NAN;
+  } else if (isfer != 0) {
+    sf_error("hypU", isfer, NULL);
+    out = NPY_NAN;
+  }
   return out;
-  
 }
 
 double hyp1f1_wrap(double a, double b, double x) {
@@ -659,18 +671,33 @@ double pmv_wrap(double m, double v, double x){
 }
 
 
-/* if x > 0 return w1f and w1d.
-    otherwise return w2f and w2d (after abs(x))
+/* 
+ * If x > 0 return w1f and w1d. Otherwise set x = abs(x) and return
+ * w2f and -w2d.
 */
 int pbwa_wrap(double a, double x, double *wf, double *wd) {
   int flag = 0;
   double w1f, w1d, w2f, w2d;
+
+  if (x < -5 || x > 5 || a < -5 || a > 5) {
+    /*
+     * The Zhang and Jin implementation only uses Taylor series;
+     * return NaN outside of the range which they are accurate.
+     */
+    *wf = NPY_NAN;
+    *wd = NPY_NAN;
+    sf_error("pbwa", SF_ERROR_LOSS, NULL);
+    return 0;
+  }
    
-  if (x < 0) {x=-x; flag=1;}
+  if (x < 0) {
+    x = -x;
+    flag = 1;
+  }
   F_FUNC(pbwa,PBWA)(&a, &x, &w1f, &w1d, &w2f, &w2d);
   if (flag) {
     *wf = w2f;
-    *wd = w2d;
+    *wd = -w2d;
   }
   else {
     *wf = w1f;

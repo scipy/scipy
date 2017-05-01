@@ -376,4 +376,26 @@ class dia_matrix(_data_matrix):
 
 
 def isspmatrix_dia(x):
+    """Is x of dia_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a dia matrix
+
+    Returns
+    -------
+    bool
+        True if x is a dia matrix, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import dia_matrix, isspmatrix_dia
+    >>> isspmatrix_dia(dia_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import dia_matrix, csr_matrix, isspmatrix_dia
+    >>> isspmatrix_dia(csr_matrix([[5]]))
+    False
+    """
     return isinstance(x, dia_matrix)

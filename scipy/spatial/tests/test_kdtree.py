@@ -4,12 +4,16 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_equal, assert_array_equal,
-    assert_almost_equal, assert_array_almost_equal, assert_, run_module_suite)
+    assert_almost_equal, assert_array_almost_equal, assert_,
+    assert_raises,
+    run_module_suite)
 
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
 from scipy.spatial.ckdtree import cKDTreeNode
 from scipy.spatial import minkowski_distance
+
+import itertools
 
 def distance_box(a, b, p, boxsize):
     diff = a - b
@@ -100,7 +104,6 @@ class test_random(ConsistencyTests):
         self.x = np.random.randn(self.m)
         self.d = 0.2
         self.k = 10
-
 
 class test_random_far(test_random):
     def setUp(self):
@@ -317,7 +320,7 @@ class test_random_ball_compiled_periodic(ball_consistency):
         return distance_box(a, b, p, 1.0)
 
     def setUp(self):
-        n = 100
+        n = 10000
         m = 4
         np.random.seed(1234)
         self.data = np.random.uniform(size=(n,m))
@@ -1041,7 +1044,7 @@ def test_ckdtree_list_k():
 def test_ckdtree_box():
     # check ckdtree periodic boundary
     n = 2000
-    m = 2
+    m = 3
     k = 3
     np.random.seed(1234)
     data = np.random.uniform(size=(n, m))
@@ -1050,37 +1053,53 @@ def test_ckdtree_box():
     # use the standard python KDTree for the simulated periodic box
     kdtree2 = cKDTree(data, leafsize=1)
 
-    dd, ii = kdtree.query(data, k)
+    for p in [1, 2, 3.0, np.inf]:
+        dd, ii = kdtree.query(data, k, p=p)
 
-    dd1, ii1 = kdtree.query(data + 1.0, k)
-    assert_almost_equal(dd, dd1)
-    assert_equal(ii, ii1)
-    
-    dd1, ii1 = kdtree.query(data - 1.0, k)
-    assert_almost_equal(dd, dd1)
-    assert_equal(ii, ii1)
+        dd1, ii1 = kdtree.query(data + 1.0, k, p=p)
+        assert_almost_equal(dd, dd1)
+        assert_equal(ii, ii1)
+        
+        dd1, ii1 = kdtree.query(data - 1.0, k, p=p)
+        assert_almost_equal(dd, dd1)
+        assert_equal(ii, ii1)
 
-    dd2, ii2 = simulate_periodic_box(kdtree2, data, k, boxsize=1.0)
-    assert_almost_equal(dd, dd2)
-    assert_equal(ii, ii2)
+        dd2, ii2 = simulate_periodic_box(kdtree2, data, k, boxsize=1.0, p=p)
+        assert_almost_equal(dd, dd2)
+        assert_equal(ii, ii2)
+
+def test_ckdtree_box_0boxsize():
+    # check ckdtree periodic boundary that mimics non-periodic
+    n = 2000
+    m = 2
+    k = 3
+    np.random.seed(1234)
+    data = np.random.uniform(size=(n, m))
+    kdtree = cKDTree(data, leafsize=1, boxsize=0.0)
+
+    # use the standard python KDTree for the simulated periodic box
+    kdtree2 = cKDTree(data, leafsize=1)
+
+    for p in [1, 2, np.inf]:
+        dd, ii = kdtree.query(data, k, p=p)
+
+        dd1, ii1 = kdtree2.query(data, k, p=p)
+        assert_almost_equal(dd, dd1)
+        assert_equal(ii, ii1)
 
 def test_ckdtree_box_upper_bounds():
-    data = np.linspace(0, 2, 10).reshape(-1, 1)
-    try:
-        cKDTree(data, leafsize=1, boxsize=1.0)
-    except ValueError:
-        return
-    raise AssertionError("ValueError is not raised")
+    data = np.linspace(0, 2, 10).reshape(-1, 2)
+    data[:, 1] += 10
+    assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=1.0)
+    assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=(0.0, 2.0))
+    # skip a dimension.
+    cKDTree(data, leafsize=1, boxsize=(2.0, 0.0))
 
 def test_ckdtree_box_lower_bounds():
     data = np.linspace(-1, 1, 10)
-    try:
-        cKDTree(data, leafsize=1, boxsize=1.0)
-    except ValueError:
-        return
-    raise AssertionError("ValueError is not raised")
+    assert_raises(ValueError, cKDTree, data, leafsize=1, boxsize=1.0)
 
-def simulate_periodic_box(kdtree, data, k, boxsize):
+def simulate_periodic_box(kdtree, data, k, boxsize, p):
     dd = []
     ii = []
     x = np.arange(3 ** data.shape[1])
@@ -1088,7 +1107,7 @@ def simulate_periodic_box(kdtree, data, k, boxsize):
     nn = nn - 1.0
     for n in nn:
         image = data + n * 1.0 * boxsize
-        dd2, ii2 = kdtree.query(image, k)
+        dd2, ii2 = kdtree.query(image, k, p=p)
         dd2 = dd2.reshape(-1, k)
         ii2 = ii2.reshape(-1, k)
         dd.append(dd2)
@@ -1106,6 +1125,10 @@ def simulate_periodic_box(kdtree, data, k, boxsize):
     
 def test_ckdtree_memuse():
     # unit test adaptation of gh-5630
+
+    # NOTE: this will fail when run via valgrind,
+    # because rss is no longer a reliable memory usage indicator.
+
     try:
         import resource
     except ImportError:
@@ -1140,6 +1163,71 @@ def test_ckdtree_memuse():
     # ideally zero leaks, but errors might accidentally happen
     # outside cKDTree
     assert_(num_leaks < 10)
+
+def test_ckdtree_weights():
+
+    data = np.linspace(0, 1, 4).reshape(-1, 1)
+    tree1 = cKDTree(data, leafsize=1)
+    weights = np.ones(len(data), dtype='f4')
+
+    nw = tree1._build_weights(weights)
+    assert_array_equal(nw, [4, 2, 1, 1, 2, 1, 1])
+
+    assert_raises(ValueError, tree1._build_weights, weights[:-1])
+
+    for i in range(10):
+        # since weights are uniform, these shall agree:
+        c1 = tree1.count_neighbors(tree1, np.linspace(0, 10, i))
+        c2 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                weights=(weights, weights))
+        c3 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                weights=(weights, None))
+        c4 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                weights=(None, weights))
+        c5 = tree1.count_neighbors(tree1, np.linspace(0, 10, i), 
+                weights=weights)
+
+        assert_array_equal(c1, c2)
+        assert_array_equal(c1, c3)
+        assert_array_equal(c1, c4)
+
+    for i in range(len(data)):
+        # this tests removal of one data point by setting weight to 0
+        w1 = weights.copy()
+        w1[i] = 0
+        data2 = data[w1 != 0]
+        w2 = weights[w1 != 0]
+        tree2 = cKDTree(data2)
+
+        c1 = tree1.count_neighbors(tree1, np.linspace(0, 10, 100),
+                weights=(w1, w1))
+        # "c2 is correct"
+        c2 = tree2.count_neighbors(tree2, np.linspace(0, 10, 100))
+
+        assert_array_equal(c1, c2)
+
+        #this asserts for two different trees, singular weights
+        # crashes
+        assert_raises(ValueError, tree1.count_neighbors,
+            tree2, np.linspace(0, 10, 100), weights=w1)
+
+def test_ckdtree_count_neighbous_multiple_r():
+    n = 2000
+    m = 2
+    np.random.seed(1234)
+    data = np.random.normal(size=(n, m))
+    kdtree = cKDTree(data, leafsize=1)
+    r0 = [0, 0.01, 0.01, 0.02, 0.05]
+    i0 = np.arange(len(r0))
+    n0 = kdtree.count_neighbors(kdtree, r0)
+    nnc = kdtree.count_neighbors(kdtree, r0, cumulative=False)
+    assert_equal(n0, nnc.cumsum())
+
+    for i, r in zip(itertools.permutations(i0), 
+                    itertools.permutations(r0)):
+        # permute n0 by i and it shall agree 
+        n = kdtree.count_neighbors(kdtree, r)
+        assert_array_equal(n, n0[list(i)])
     
 def test_len0_arrays():
     # make sure len-0 arrays are handled correctly
@@ -1186,6 +1274,63 @@ def test_len0_arrays():
     y = tree.query_pairs(0.1*mind, output_type='ndarray')
     z = np.empty(shape=(0,2), dtype=np.intp)
     assert_array_equal(y, z)
+
+def test_ckdtree_duplicated_inputs():
+    # check ckdtree with duplicated inputs
+    n = 1024 
+    for m in range(1, 8):
+        data = np.concatenate([
+            np.ones((n // 2, m)) * 1,
+            np.ones((n // 2, m)) * 2], axis=0)
+
+        # it shall not divide more than 3 nodes.
+        # root left (1), and right (2)
+        kdtree = cKDTree(data, leafsize=1)
+        assert_equal(kdtree.size, 3)
+
+        kdtree = cKDTree(data)
+        assert_equal(kdtree.size, 3)
+
+        # if compact_nodes are disabled, the number
+        # of nodes is n (per leaf) + (m - 1)* 2 (splits per dimension) + 1
+        # and the root
+        kdtree = cKDTree(data, compact_nodes=False, leafsize=1)
+        assert_equal(kdtree.size, n + m * 2 - 1)
+
+def test_ckdtree_noncumulative_nondecreasing():
+    # check ckdtree with duplicated inputs
+
+    # it shall not divide more than 3 nodes.
+    # root left (1), and right (2)
+    kdtree = cKDTree([[0]], leafsize=1)
+
+    assert_raises(ValueError, kdtree.count_neighbors,
+        kdtree, [0.1, 0], cumulative=False)
+
+def test_short_knn():
+
+    # The test case is based on github: #6425 by @SteveDoyle2
+
+    xyz = np.array([
+        [0., 0., 0.],
+        [1.01, 0., 0.],
+        [0., 1., 0.],
+        [0., 1.01, 0.],
+        [1., 0., 0.],
+        [1., 1., 0.],],
+    dtype='float64')
+
+    ckdt = cKDTree(xyz)
+
+    deq, ieq = ckdt.query(xyz, k=4, distance_upper_bound=0.2)
+
+    assert_array_almost_equal(deq,
+            [[0., np.inf, np.inf, np.inf],
+            [0., 0.01, np.inf, np.inf],
+            [0., 0.01, np.inf, np.inf],
+            [0., 0.01, np.inf, np.inf],
+            [0., 0.01, np.inf, np.inf],
+            [0., np.inf, np.inf, np.inf]])
 
 if __name__ == "__main__":
     run_module_suite()

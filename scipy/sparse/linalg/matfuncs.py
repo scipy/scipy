@@ -16,7 +16,7 @@ import math
 
 import numpy as np
 
-import scipy.misc
+import scipy.special
 from scipy.linalg.basic import solve, solve_triangular
 
 from scipy.sparse.base import isspmatrix
@@ -50,6 +50,22 @@ def inv(A):
     This computes the sparse inverse of `A`.  If the inverse of `A` is expected
     to be non-sparse, it will likely be faster to convert `A` to dense and use
     scipy.linalg.inv.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import inv
+    >>> A = csc_matrix([[1., 0.], [1., 2.]])
+    >>> Ainv = inv(A)
+    >>> Ainv
+    <2x2 sparse matrix of type '<type 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> A.dot(Ainv)
+    <2x2 sparse matrix of type '<type 'numpy.float64'>'
+        with 2 stored elements in Compressed Sparse Column format>
+    >>> A.dot(Ainv).todense()
+    matrix([[ 1.,  0.],
+            [ 0.,  1.]])
 
     .. versionadded:: 0.12.0
 
@@ -111,28 +127,15 @@ def _ident_like(A):
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
 
-def _count_nonzero(A):
-    # A compatibility function which should eventually disappear.
-    #XXX There should be a better way to do this when A is sparse
-    #    in the traditional sense.
-    if isspmatrix(A):
-        return np.sum(A.toarray() != 0)
-    else:
-        return np.count_nonzero(A)
-
-
 def _is_upper_triangular(A):
     # This function could possibly be of wider interest.
     if isspmatrix(A):
         lower_part = scipy.sparse.tril(A, -1)
-        if lower_part.nnz == 0:
-            # structural upper triangularity
-            return True
-        else:
-            # coincidental upper triangularity
-            return _count_nonzero(lower_part) == 0
+        # Check structural upper triangularity,
+        # then coincidental upper triangularity if needed.
+        return lower_part.nnz == 0 or lower_part.count_nonzero() == 0
     else:
-        return _count_nonzero(np.tril(A, -1)) == 0
+        return not np.tril(A, -1).any()
 
 
 def _smart_matrix_product(A, B, alpha=None, structure=None):
@@ -578,6 +581,23 @@ def expm(A):
            SIAM Journal on Matrix Analysis and Applications.
            31 (3). pp. 970-989. ISSN 1095-7162
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import expm
+    >>> A = csc_matrix([[1, 0, 0], [0, 2, 0], [0, 0, 3]])
+    >>> A.todense()
+    matrix([[1, 0, 0],
+            [0, 2, 0],
+            [0, 0, 3]], dtype=int64)
+    >>> Aexp = expm(A)
+    >>> Aexp
+    <3x3 sparse matrix of type '<type 'numpy.float64'>'
+        with 3 stored elements in Compressed Sparse Column format>
+    >>> Aexp.todense()
+    matrix([[  2.71828183,   0.        ,   0.        ],
+            [  0.        ,   7.3890561 ,   0.        ],
+            [  0.        ,   0.        ,  20.08553692]])
     """
     return _expm(A, use_exact_onenorm='auto')
 
@@ -813,7 +833,7 @@ def _ell(A, m):
 
     # The c_i are explained in (2.2) and (2.6) of the 2005 expm paper.
     # They are coefficients of terms of a generating function series expansion.
-    choose_2p_p = scipy.misc.comb(2*p, p, exact=True)
+    choose_2p_p = scipy.special.comb(2*p, p, exact=True)
     abs_c_recip = float(choose_2p_p * math.factorial(2*p + 1))
 
     # This is explained after Eq. (1.2) of the 2009 expm paper.

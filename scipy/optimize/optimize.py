@@ -30,7 +30,7 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 import numpy
-from scipy._lib.six import callable
+from scipy._lib.six import callable, xrange
 from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
                    vectorize, asarray, sqrt, Inf, asfarray, isinf)
 import numpy as np
@@ -38,6 +38,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy.linalg import get_blas_funcs
 
 
 # standard status messages of optimizers
@@ -167,7 +168,7 @@ def rosen(x):
 
     The function computed is::
 
-        sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0
+        sum(100.0*(x[1:] - x[:-1]**2.0)**2.0 + (1 - x[:-1])**2.0)
 
     Parameters
     ----------
@@ -415,10 +416,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     -------
     disp : bool
         Set to True to print convergence messages.
-    maxiter : int
-        Maximum number of iterations to perform.
-    maxfev : int
-        Maximum number of function evaluations to make.
+    maxiter, maxfev : int
+        Maximum allowed number of iterations and function evaluations.
+        Will default to ``N*200``, where ``N`` is the number of
+        variables, if neither `maxiter` or `maxfev` is set. If both
+        `maxiter` and `maxfev` are set, minimization will stop at the
+        first reached.
     initial_simplex : array_like of shape (N + 1, N)
         Initial simplex. If given, overrides `x0`.
         ``initial_simplex[j,:]`` should contain the coordinates of
@@ -430,6 +433,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fatol : number, optional
         Absolute error in func(xopt) between iterations that is acceptable for
         convergence.
+
     """
     if 'ftol' in unknown_options:
         warnings.warn("ftol is deprecated for Nelder-Mead,"
@@ -490,10 +494,22 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     if retall:
         allvecs = [sim[0]]
 
-    if maxiter is None:
+    # If neither are set, then set both to default
+    if maxiter is None and maxfun is None:
         maxiter = N * 200
-    if maxfun is None:
         maxfun = N * 200
+    elif maxiter is None:
+        # Convert remaining Nones, to np.inf, unless the other is np.inf, in
+        # which case use the default to avoid unbounded iteration
+        if maxfun == np.inf:
+            maxiter = N * 200
+        else:
+            maxiter = np.inf
+    elif maxfun is None:
+        if maxiter == np.inf:
+            maxfun = N * 200
+        else:
+            maxfun = np.inf
 
     one2np1 = list(range(1, N + 1))
     fsim = numpy.zeros((N + 1,), float)
@@ -632,7 +648,7 @@ def approx_fprime(xk, f, epsilon, *args):
         If a scalar, uses the same finite difference delta for all partial
         derivatives.  If an array, should contain one value per element of
         `xk`.
-    \*args : args, optional
+    \\*args : args, optional
         Any other arguments that are to be passed to `f`.
 
     Returns
@@ -686,7 +702,7 @@ def check_grad(func, grad, x0, *args, **kwargs):
     x0 : ndarray
         Points to check `grad` against forward difference approximation of grad
         using `func`.
-    args : \*args, optional
+    args : \\*args, optional
         Extra arguments passed to `func` and `grad`.
     epsilon : float, optional
         Step size used for the finite difference approximation. It defaults to
@@ -901,6 +917,11 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     I = numpy.eye(N, dtype=int)
     Hk = I
 
+    # get needed blas functions
+    syr = get_blas_funcs('syr', dtype='d')  # Symetric rank 1 update
+    syr2 = get_blas_funcs('syr2', dtype='d')  # Symetric rank 2 update
+    symv = get_blas_funcs('symv', dtype='d')  # Symetric matrix-vector product
+
     # Sets the initial step guess to dx ~ 1
     old_fval = f(x0)
     old_old_fval = old_fval + np.linalg.norm(gfk) / 2
@@ -912,7 +933,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     warnflag = 0
     gnorm = vecnorm(gfk, ord=norm)
     while (gnorm > gtol) and (k < maxiter):
-        pk = -numpy.dot(Hk, gfk)
+        pk = symv(-1, Hk, gfk)
         try:
             alpha_k, fc, gc, old_fval, old_old_fval, gfkp1 = \
                      _line_search_wolfe12(f, myfprime, xk, pk, gfk,
@@ -934,7 +955,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         gfk = gfkp1
         if callback is not None:
             callback(xk)
-        k += 1
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
             break
@@ -945,8 +965,9 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             warnflag = 2
             break
 
+        yk_sk = np.dot(yk, sk)
         try:  # this was handled in numeric, let it remaines for more safety
-            rhok = 1.0 / (numpy.dot(yk, sk))
+            rhok = 1.0 / yk_sk
         except ZeroDivisionError:
             rhok = 1000.0
             if disp:
@@ -955,10 +976,31 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
             rhok = 1000.0
             if disp:
                 print("Divide-by-zero encountered: rhok assumed large")
-        A1 = I - sk[:, numpy.newaxis] * yk[numpy.newaxis, :] * rhok
-        A2 = I - yk[:, numpy.newaxis] * sk[numpy.newaxis, :] * rhok
-        Hk = numpy.dot(A1, numpy.dot(Hk, A2)) + (rhok * sk[:, numpy.newaxis] *
-                                                 sk[numpy.newaxis, :])
+
+        # Heristic to adjust Hk for k == 0
+        # described at Nocedal/Wright "Numerical Optimization"
+        # p.143 formula (6.20)
+        if k == 0:
+            Hk = yk_sk / np.dot(yk, yk)*I
+
+        # Implement BFGS update using the formula:
+        # Hk <- Hk + ((Hk yk).T yk+sk.T yk)*(rhok**2)*sk sk.T -rhok*[(Hk yk)sk.T +sk(Hk yk).T]
+        # This formula is equivalent to (6.17) from
+        # Nocedal/Wright "Numerical Optimization"
+        # written in a more efficient way for implementation.
+        Hk_yk = symv(1, Hk, yk)
+        c = rhok**2 * (yk_sk+Hk_yk.dot(yk))
+        Hk = syr2(-rhok, sk, Hk_yk, a=Hk)
+        Hk = syr(c, sk, a=Hk)
+
+        k += 1
+
+    # The matrix Hk is obtained from the
+    # symmetric representation that were being
+    # used to store it.
+    Hk_triu = numpy.triu(Hk)
+    Hk_diag = numpy.diag(Hk)
+    Hk = Hk_triu + Hk_triu.T - numpy.diag(Hk_diag)
 
     fval = old_fval
     if np.isnan(fval):
@@ -1431,12 +1473,30 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     epsilon = eps
     retall = return_all
 
+    def terminate(warnflag, msg):
+        if disp:
+            print(msg)
+            print("         Current function value: %f" % old_fval)
+            print("         Iterations: %d" % k)
+            print("         Function evaluations: %d" % fcalls[0])
+            print("         Gradient evaluations: %d" % gcalls[0])
+            print("         Hessian evaluations: %d" % hcalls)
+        fval = old_fval
+        result = OptimizeResult(fun=fval, jac=gfk, nfev=fcalls[0],
+                                njev=gcalls[0], nhev=hcalls, status=warnflag,
+                                success=(warnflag == 0), message=msg, x=xk,
+                                nit=k)
+        if retall:
+            result['allvecs'] = allvecs
+        return result
+
     x0 = asarray(x0).flatten()
     fcalls, f = wrap_function(f, args)
     gcalls, fprime = wrap_function(fprime, args)
     hcalls = 0
     if maxiter is None:
         maxiter = len(x0)*200
+    cg_maxiter = 20*len(x0)
 
     xtol = len(x0) * avextol
     update = [2 * xtol]
@@ -1447,8 +1507,10 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     old_fval = f(x0)
     old_old_fval = None
     float64eps = numpy.finfo(numpy.float64).eps
-    warnflag = 0
-    while (numpy.add.reduce(numpy.abs(update)) > xtol) and (k < maxiter):
+    while numpy.add.reduce(numpy.abs(update)) > xtol:
+        if k >= maxiter:
+            msg = "Warning: " + _status_message['maxiter']
+            return terminate(1, msg)
         # Compute a search direction pk by applying the CG method to
         #  del2 f(xk) p = - grad f(xk) starting from 0.
         b = -fprime(xk)
@@ -1465,7 +1527,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             A = fhess(*(xk,) + args)
             hcalls = hcalls + 1
 
-        while numpy.add.reduce(numpy.abs(ri)) > termcond:
+        for k2 in xrange(cg_maxiter):
+            if numpy.add.reduce(numpy.abs(ri)) <= termcond:
+                break
             if fhess is None:
                 if fhess_p is None:
                     Ap = approx_fhess_p(xk, psupi, fprime, epsilon)
@@ -1494,6 +1558,11 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             psupi = -ri + betai * psupi
             i = i + 1
             dri0 = dri1          # update numpy.dot(ri,ri) for next time.
+        else:
+            # curvature keeps increasing, bail out
+            msg = ("Warning: CG iterations didn't converge.  The Hessian is not "
+                   "positive definite.")
+            return terminate(3, msg)
 
         pk = xsupi  # search direction is solution to system.
         gfk = -b    # gradient at xk
@@ -1504,8 +1573,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                                           old_fval, old_old_fval)
         except _LineSearchError:
             # Line search failed to find a better solution.
-            warnflag = 2
-            break
+            msg = "Warning: " + _status_message['pr_loss']
+            return terminate(2, msg)
 
         update = alphak * pk
         xk = xk + update        # upcast if necessary
@@ -1514,44 +1583,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if retall:
             allvecs.append(xk)
         k += 1
-
-    fval = old_fval
-    if warnflag == 2:
-        msg = _status_message['pr_loss']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
-    elif k >= maxiter:
-        warnflag = 1
-        msg = _status_message['maxiter']
-        if disp:
-            print("Warning: " + msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
     else:
         msg = _status_message['success']
-        if disp:
-            print(msg)
-            print("         Current function value: %f" % fval)
-            print("         Iterations: %d" % k)
-            print("         Function evaluations: %d" % fcalls[0])
-            print("         Gradient evaluations: %d" % gcalls[0])
-            print("         Hessian evaluations: %d" % hcalls)
-
-    result = OptimizeResult(fun=fval, jac=gfk, nfev=fcalls[0], njev=gcalls[0],
-                            nhev=hcalls, status=warnflag,
-                            success=(warnflag == 0), message=msg, x=xk,
-                            nit=k)
-    if retall:
-        result['allvecs'] = allvecs
-    return result
+        return terminate(0, msg)
 
 
 def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
@@ -2005,7 +2039,8 @@ def _minimize_scalar_brent(func, brack=None, args=(),
                           success=nit < maxiter)
 
 
-def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
+def golden(func, args=(), brack=None, tol=_epsilon,
+           full_output=0, maxiter=5000):
     """
     Return the minimum of a function of one variable.
 
@@ -2029,6 +2064,8 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
         x tolerance stop criterion
     full_output : bool, optional
         If True, return optional outputs.
+    maxiter : int
+        Maximum number of iterations to perform.
 
     See also
     --------
@@ -2041,7 +2078,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
     interval.
 
     """
-    options = {'xtol': tol}
+    options = {'xtol': tol, 'maxiter': maxiter}
     res = _minimize_scalar_golden(func, brack, args, **options)
     if full_output:
         return res['x'], res['fun'], res['nfev']
@@ -2050,7 +2087,7 @@ def golden(func, args=(), brack=None, tol=_epsilon, full_output=0):
 
 
 def _minimize_scalar_golden(func, brack=None, args=(),
-                            xtol=_epsilon, **unknown_options):
+                            xtol=_epsilon, maxiter=5000, **unknown_options):
     """
     Options
     -------
@@ -2082,7 +2119,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")
 
-    _gR = 0.61803399
+    _gR = 0.61803399  # golden ratio conjugate: 2.0/(1.0+sqrt(5.0))
     _gC = 1.0 - _gR
     x3 = xc
     x0 = xa
@@ -2095,7 +2132,10 @@ def _minimize_scalar_golden(func, brack=None, args=(),
     f1 = func(*((x1,) + args))
     f2 = func(*((x2,) + args))
     funcalls += 2
-    while (numpy.abs(x3 - x0) > tol * (numpy.abs(x1) + numpy.abs(x2))):
+    nit = 0
+    for i in xrange(maxiter):
+        if numpy.abs(x3 - x0) <= tol * (numpy.abs(x1) + numpy.abs(x2)):
+            break
         if (f2 < f1):
             x0 = x1
             x1 = x2
@@ -2109,6 +2149,7 @@ def _minimize_scalar_golden(func, brack=None, args=(),
             f2 = f1
             f1 = func(*((x1,) + args))
         funcalls += 1
+        nit += 1
     if (f1 < f2):
         xmin = x1
         fval = f1
@@ -2116,7 +2157,8 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         xmin = x2
         fval = f2
 
-    return OptimizeResult(fun=fval, nfev=funcalls, x=xmin)
+    return OptimizeResult(fun=fval, nfev=funcalls, x=xmin, nit=nit,
+                          success=nit < maxiter)
 
 
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
@@ -2152,7 +2194,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
         Number of function evaluations made.
 
     """
-    _gold = 1.618034
+    _gold = 1.618034  # golden ratio: (1.0+sqrt(5.0))/2.0
     _verysmall_num = 1e-21
     fa = func(*(xa,) + args)
     fb = func(*(xb,) + args)
@@ -2366,10 +2408,12 @@ def _minimize_powell(func, x0, args=(), callback=None,
         Relative error in solution `xopt` acceptable for convergence.
     ftol : float
         Relative error in ``fun(xopt)`` acceptable for convergence.
-    maxiter : int
-        Maximum number of iterations to perform.
-    maxfev : int
-        Maximum number of function evaluations to make.
+    maxiter, maxfev : int
+        Maximum allowed number of iterations and function evaluations.
+        Will default to ``N*1000``, where ``N`` is the number of
+        variables, if neither `maxiter` or `maxfev` is set. If both
+        `maxiter` and `maxfev` are set, minimization will stop at the
+        first reached.
     direc : ndarray
         Initial set of direction vectors for the Powell method.
 
@@ -2384,10 +2428,22 @@ def _minimize_powell(func, x0, args=(), callback=None,
     if retall:
         allvecs = [x]
     N = len(x)
-    if maxiter is None:
+    # If neither are set, then set both to default
+    if maxiter is None and maxfun is None:
         maxiter = N * 1000
-    if maxfun is None:
         maxfun = N * 1000
+    elif maxiter is None:
+        # Convert remaining Nones, to np.inf, unless the other is np.inf, in
+        # which case use the default to avoid unbounded iteration
+        if maxfun == np.inf:
+            maxiter = N * 1000
+        else:
+            maxiter = np.inf
+    elif maxfun is None:
+        if maxiter == np.inf:
+            maxfun = N * 1000
+        else:
+            maxfun = np.inf
 
     if direc is None:
         direc = eye(N, dtype=float)

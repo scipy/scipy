@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Created by Pearu Peterson, September 2002
 
 from __future__ import division, print_function, absolute_import
@@ -197,6 +196,25 @@ class TestSingleFFT(_TestFFTBase):
     @dec.knownfailureif(True, "single-precision FFT implementation is partially disabled, until accuracy issues with large prime powers are resolved")
     def test_notice(self):
         pass
+
+
+class TestFloat16FFT(TestCase):
+
+    def test_1_argument_real(self):
+        x1 = np.array([1, 2, 3, 4], dtype=np.float16)
+        y = fft(x1, n=4)
+        assert_equal(y.dtype, np.complex64)
+        assert_equal(y.shape, (4, ))
+        assert_array_almost_equal(y, direct_dft(x1.astype(np.float32)))
+
+    def test_n_argument_real(self):
+        x1 = np.array([1, 2, 3, 4], dtype=np.float16)
+        x2 = np.array([1, 2, 3, 4], dtype=np.float16)
+        y = fft([x1, x2], n=4)
+        assert_equal(y.dtype, np.complex64)
+        assert_equal(y.shape, (2, 4))
+        assert_array_almost_equal(y[0], direct_dft(x1.astype(np.float32)))
+        assert_array_almost_equal(y[1], direct_dft(x2.astype(np.float32)))
 
 
 class _TestIFFTBase(TestCase):
@@ -494,6 +512,32 @@ class TestFftnSingle(TestCase):
             assert_equal(y1.dtype, np.complex64)
             assert_array_almost_equal_nulp(y1, y2, 2000)
 
+    def test_definition_float16(self):
+        x = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+        y = fftn(np.array(x, np.float16))
+        assert_equal(y.dtype, np.complex64)
+        y_r = np.array(fftn(x), np.complex64)
+        assert_array_almost_equal_nulp(y, y_r)
+
+    def test_float16_input(self):
+        for size in SMALL_COMPOSITE_SIZES + SMALL_PRIME_SIZES:
+            np.random.seed(1234)
+            x = np.random.rand(size, size) + 1j*np.random.rand(size, size)
+            y1 = fftn(x.real.astype(np.float16))
+            y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
+
+            assert_equal(y1.dtype, np.complex64)
+            assert_array_almost_equal_nulp(y1, y2, 5e5)
+
+        for size in LARGE_COMPOSITE_SIZES + LARGE_PRIME_SIZES:
+            np.random.seed(1234)
+            x = np.random.rand(size, 3) + 1j*np.random.rand(size, 3)
+            y1 = fftn(x.real.astype(np.float16))
+            y2 = fftn(x.real.astype(np.float64)).astype(np.complex64)
+
+            assert_equal(y1.dtype, np.complex64)
+            assert_array_almost_equal_nulp(y1, y2, 2e6)
+
 
 class TestFftn(TestCase):
     def setUp(self):
@@ -537,6 +581,7 @@ class TestFftn(TestCase):
 
         assert_array_almost_equal(fftn(x),fftn(x,axes=(-3,-2,-1)))  # kji_space
         assert_array_almost_equal(fftn(x),fftn(x,axes=(0,1,2)))
+        assert_array_almost_equal(fftn(x,axes=(0, 2)),fftn(x,axes=(0,-1)))
         y = fftn(x,axes=(2,1,0))  # ijk_space
         assert_array_almost_equal(swapaxes(y,-1,-3),fftn(ijk_space))
         y = fftn(x,axes=(2,0,1))  # ikj_space

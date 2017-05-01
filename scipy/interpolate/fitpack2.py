@@ -42,7 +42,7 @@ gives the corresponding weighted sum of squared residuals (fp>s).
 """,
                     2:"""
 A theoretically impossible result was found during the iteration
-proces for finding a smoothing spline with fp = s: s too small.
+process for finding a smoothing spline with fp = s: s too small.
 There is an approximation returned but the corresponding weighted sum
 of squared residuals does not satisfy the condition abs(fp-s)/s < tol.""",
                     3:"""
@@ -168,8 +168,12 @@ class UnivariateSpline(object):
                  ext=0, check_finite=False):
 
         if check_finite:
-            if not np.isfinite(x).all() or not np.isfinite(y).all():
+            w_finite = np.isfinite(w).all() if w is not None else True
+            if (not np.isfinite(x).all() or not np.isfinite(y).all() or
+                    not w_finite):
                 raise ValueError("x and y array must not contain NaNs or infs.")
+        if not all(diff(x) > 0.0):
+            raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         try:
@@ -354,7 +358,7 @@ class UnivariateSpline(object):
         >>> spl.integral(0, 3)
         9.0
 
-        which agrees with :math:`\int x^2 dx = x^3 / 3` between the limits
+        which agrees with :math:`\\int x^2 dx = x^3 / 3` between the limits
         of 0 and 3.
 
         A caveat is that this routine assumes the spline to be zero outside of
@@ -450,7 +454,8 @@ class UnivariateSpline(object):
         >>> spl.derivative().roots() / np.pi
         array([ 0.50000001,  1.5       ,  2.49999998])
 
-        This agrees well with roots :math:`\pi/2 + n\pi` of `cos(x) = sin'(x)`.
+        This agrees well with roots :math:`\\pi/2 + n\\pi` of
+        :math:`\\cos(x) = \\sin'(x)`.
 
         """
         tck = fitpack.splder(self._eval_args, n)
@@ -586,9 +591,12 @@ class InterpolatedUnivariateSpline(UnivariateSpline):
                  ext=0, check_finite=False):
 
         if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all()):
+                    not w_finite):
                 raise ValueError("Input must not contain NaNs or infs.")
+        if not all(diff(x) > 0.0):
+            raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         self._data = dfitpack.fpcurf0(x,y,k,w=w,
@@ -722,9 +730,12 @@ class LSQUnivariateSpline(UnivariateSpline):
                  ext=0, check_finite=False):
 
         if check_finite:
+            w_finite = np.isfinite(w).all() if w is not None else True
             if (not np.isfinite(x).all() or not np.isfinite(y).all() or
-                    not np.isfinite(w).all() or not np.isfinite(t).all()):
+                    not w_finite or not np.isfinite(t).all()):
                 raise ValueError("Input(s) must not contain NaNs or infs.")
+        if not all(diff(x) > 0.0):
+            raise ValueError('x must be strictly increasing')
 
         # _data == x,y,w,xb,xe,k,s,n,t,c,fp,fpint,nrdata,ier
         xb = bbox[0]
@@ -1150,19 +1161,19 @@ class RectBivariateSpline(BivariateSpline):
     def __init__(self, x, y, z, bbox=[None] * 4, kx=3, ky=3, s=0):
         x, y = ravel(x), ravel(y)
         if not all(diff(x) > 0.0):
-            raise TypeError('x must be strictly increasing')
+            raise ValueError('x must be strictly increasing')
         if not all(diff(y) > 0.0):
-            raise TypeError('y must be strictly increasing')
+            raise ValueError('y must be strictly increasing')
         if not ((x.min() == x[0]) and (x.max() == x[-1])):
-            raise TypeError('x must be strictly ascending')
+            raise ValueError('x must be strictly ascending')
         if not ((y.min() == y[0]) and (y.max() == y[-1])):
-            raise TypeError('y must be strictly ascending')
+            raise ValueError('y must be strictly ascending')
         if not x.size == z.shape[0]:
-            raise TypeError('x dimension of z must have same number of '
+            raise ValueError('x dimension of z must have same number of '
                             'elements as x')
         if not y.size == z.shape[1]:
-            raise TypeError('y dimension of z must have same number of '
-                            'elements as y')
+            raise ValueError('y dimension of z must have same number of '
+                             'elements as y')
         z = ravel(z)
         xb, xe, yb, ye = bbox
         nx, tx, ny, ty, c, fp, ier = dfitpack.regrid_smth(x, y, z, xb, xe, yb,
@@ -1525,7 +1536,9 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
         (0, pi).
     v : array_like
         1-D array of longitude coordinates in strictly ascending order.
-        Coordinates must be given in radians, and must lie within (0, 2pi).
+        Coordinates must be given in radians. First element (v[0]) must lie
+        within the interval [-pi, pi). Last element (v[-1]) must satisfy
+        v[-1] <= v[0] + 2*pi.
     r : array_like
         2-D array of data with shape ``(u.size, v.size)``.
     s : float, optional
@@ -1670,23 +1683,23 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
         u, v = np.ravel(u), np.ravel(v)
         if not np.all(np.diff(u) > 0.0):
-            raise TypeError('u must be strictly increasing')
+            raise ValueError('u must be strictly increasing')
         if not np.all(np.diff(v) > 0.0):
-            raise TypeError('v must be strictly increasing')
+            raise ValueError('v must be strictly increasing')
 
         if not u.size == r.shape[0]:
-            raise TypeError('u dimension of r must have same number of '
-                            'elements as u')
+            raise ValueError('u dimension of r must have same number of '
+                             'elements as u')
         if not v.size == r.shape[1]:
-            raise TypeError('v dimension of r must have same number of '
-                            'elements as v')
+            raise ValueError('v dimension of r must have same number of '
+                             'elements as v')
 
         if pole_continuity[1] is False and pole_flat[1] is True:
-            raise TypeError('if pole_continuity is False, so must be '
-                            'pole_flat')
+            raise ValueError('if pole_continuity is False, so must be '
+                             'pole_flat')
         if pole_continuity[0] is False and pole_flat[0] is True:
-            raise TypeError('if pole_continuity is False, so must be '
-                            'pole_flat')
+            raise ValueError('if pole_continuity is False, so must be '
+                             'pole_flat')
 
         r = np.ravel(r)
         nu, tu, nv, tv, c, fp, ier = dfitpack.regrid_smth_spher(iopt, ider,

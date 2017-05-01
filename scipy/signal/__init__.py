@@ -9,12 +9,13 @@ Convolution
 .. autosummary::
    :toctree: generated/
 
-   convolve    -- N-dimensional convolution.
-   correlate   -- N-dimensional correlation.
-   fftconvolve -- N-dimensional convolution using the FFT.
-   convolve2d  -- 2-dimensional convolution (more options).
-   correlate2d -- 2-dimensional correlation (more options).
-   sepfir2d    -- Convolve with a 2-D separable FIR filter.
+   convolve           -- N-dimensional convolution.
+   correlate          -- N-dimensional correlation.
+   fftconvolve        -- N-dimensional convolution using the FFT.
+   convolve2d         -- 2-dimensional convolution (more options).
+   correlate2d        -- 2-dimensional correlation (more options).
+   sepfir2d           -- Convolve with a 2-D separable FIR filter.
+   choose_conv_method -- Chooses faster of FFT and direct convolution methods.
 
 B-splines
 =========
@@ -57,9 +58,10 @@ Filtering
    deconvolve    -- 1-d deconvolution using lfilter.
 
    sosfilt       -- 1-dimensional IIR digital linear filtering using
-                 -- a second-order-sections filter representation.
+                 -- a second-order sections filter representation.
    sosfilt_zi    -- Compute an initial state zi for the sosfilt function that
                  -- corresponds to the steady state of the step response.
+   sosfiltfilt   -- A forward-backward filter for second-order sections.
    hilbert       -- Compute 1-D analytic signal, using the Hilbert transform.
    hilbert2      -- Compute 2-D analytic signal, using the Hilbert transform.
 
@@ -78,12 +80,16 @@ Filter design
    bilinear      -- Digital filter from an analog filter using
                     -- the bilinear transform.
    findfreqs     -- Find array of frequencies for computing filter response.
+   firls         -- FIR filter design using least-squares error minimization.
    firwin        -- Windowed FIR filter design, with frequency response
                     -- defined as pass and stop bands.
    firwin2       -- Windowed FIR filter design, with arbitrary frequency
                     -- response.
-   freqs         -- Analog filter frequency response.
-   freqz         -- Digital filter frequency response.
+   freqs         -- Analog filter frequency response from TF coefficients.
+   freqs_zpk     -- Analog filter frequency response from ZPK coefficients.
+   freqz         -- Digital filter frequency response from TF coefficients.
+   freqz_zpk     -- Digital filter frequency response from ZPK coefficients.
+   sosfreqz      -- Digital filter frequency response for SOS format filter.
    group_delay   -- Digital filter group delay.
    iirdesign     -- IIR filter design given bands and gains.
    iirfilter     -- IIR filter design given order and critical frequencies.
@@ -94,6 +100,7 @@ Filter design
                     -- FIR filter attenuation.
    kaiserord     -- Design a Kaiser window to limit ripple and width of
                     -- transition region.
+   minimum_phase -- Convert a linear phase FIR filter to minimum phase.
    savgol_coeffs -- Compute the FIR filter coefficients for a Savitzky-Golay
                     -- filter.
    remez         -- Optimal FIR filter design.
@@ -141,6 +148,8 @@ Matlab-style IIR filter design
    ellip -- Elliptic (Cauer)
    ellipord
    bessel -- Bessel (no order selection available -- try butterod)
+   iirnotch      -- Design second-order IIR notch digital filter.
+   iirpeak       -- Design second-order IIR peak (resonant) digital filter.
 
 Continuous-Time Linear Systems
 ==============================
@@ -148,8 +157,7 @@ Continuous-Time Linear Systems
 .. autosummary::
    :toctree: generated/
 
-   freqresp         -- frequency response of a continuous-time LTI system.
-   lti              -- Linear time invariant system base class.
+   lti              -- Continuous-time linear time invariant system base class.
    StateSpace       -- Linear time invariant system in state space form.
    TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
@@ -159,7 +167,8 @@ Continuous-Time Linear Systems
    impulse2         -- like impulse, but `scipy.integrate.odeint` is used.
    step             -- step response of continous-time LTI system.
    step2            -- like step, but `scipy.integrate.odeint` is used.
-   bode             -- Calculate Bode magnitude and phase data.
+   freqresp         -- frequency response of a continuous-time LTI system.
+   bode             -- Bode magnitude and phase data (continuous-time LTI).
 
 Discrete-Time Linear Systems
 ============================
@@ -167,9 +176,15 @@ Discrete-Time Linear Systems
 .. autosummary::
    :toctree: generated/
 
-   dlsim    -- simulation of output to a discrete-time linear system.
-   dimpulse -- impulse response of a discrete-time LTI system.
-   dstep    -- step response of a discrete-time LTI system.
+   dlti             -- Discrete-time linear time invariant system base class.
+   StateSpace       -- Linear time invariant system in state space form.
+   TransferFunction -- Linear time invariant system in transfer function form.
+   ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
+   dlsim            -- simulation of output to a discrete-time linear system.
+   dimpulse         -- impulse response of a discrete-time LTI system.
+   dstep            -- step response of a discrete-time LTI system.
+   dfreqresp        -- frequency response of a discrete-time LTI system.
+   dbode            -- Bode magnitude and phase data (discrete-time LTI).
 
 LTI Representations
 ===================
@@ -185,23 +200,24 @@ LTI Representations
    zpk2ss        -- zero-pole-gain to state-space.
    ss2tf         -- state-pace to transfer function.
    ss2zpk        -- state-space to pole-zero-gain.
-   sos2zpk       -- second-order-sections to zero-pole-gain.
-   sos2tf        -- second-order-sections to transfer function.
+   sos2zpk       -- second-order sections to zero-pole-gain.
+   sos2tf        -- second-order sections to transfer function.
    cont2discrete -- continuous-time to discrete-time LTI conversion.
    place_poles   -- pole placement.
-   
+
 Waveforms
 =========
 
 .. autosummary::
    :toctree: generated/
 
-   chirp       -- Frequency swept cosine signal, with several freq functions.
-   gausspulse  -- Gaussian modulated sinusoid
-   max_len_seq -- Maximum length sequence
-   sawtooth    -- Periodic sawtooth
-   square      -- Square wave
-   sweep_poly  -- Frequency swept cosine signal; freq is arbitrary polynomial
+   chirp        -- Frequency swept cosine signal, with several freq functions.
+   gausspulse   -- Gaussian modulated sinusoid
+   max_len_seq  -- Maximum length sequence
+   sawtooth     -- Periodic sawtooth
+   square       -- Square wave
+   sweep_poly   -- Frequency swept cosine signal; freq is arbitrary polynomial
+   unit_impulse -- Discrete unit impulse
 
 Window functions
 ================
@@ -269,6 +285,9 @@ Spectral Analysis
    spectrogram    -- Compute the spectrogram
    lombscargle    -- Computes the Lomb-Scargle periodogram
    vectorstrength -- Computes the vector strength
+   stft           -- Compute the Short Time Fourier Transform
+   istft          -- Compute the Inverse Short Time Fourier Transform
+   check_COLA     -- Check the COLA constraint for iSTFT reconstruction
 
 """
 from __future__ import division, print_function, absolute_import
@@ -283,11 +302,10 @@ from ._upfirdn import upfirdn
 from .spline import *
 
 from .bsplines import *
-from .cont2discrete import *
-from .dltisys import *
 from .filter_design import *
 from .fir_filter_design import *
 from .ltisys import *
+from .lti_conversion import *
 from .windows import *
 from .signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
@@ -298,4 +316,3 @@ from ._peak_finding import *
 __all__ = [s for s in dir() if not s.startswith('_')]
 from numpy.testing import Tester
 test = Tester().test
-bench = Tester().bench

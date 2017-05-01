@@ -5,10 +5,10 @@ import warnings
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, assert_raises, TestCase, run_module_suite)
-from scipy.signal.ltisys import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
-                                 bode, freqresp, lsim, impulse, step,
-                                 abcd_normalize, place_poles,
-                                 TransferFunction, StateSpace, ZerosPolesGain)
+from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
+                          dlti, bode, freqresp, lsim, impulse, step,
+                          abcd_normalize, place_poles,
+                          TransferFunction, StateSpace, ZerosPolesGain)
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
@@ -730,17 +730,23 @@ class TestLti(object):
         s = lti([1], [-1])
         assert_(isinstance(s, TransferFunction))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, dlti))
+        assert_(s.dt is None)
 
         # ZerosPolesGain
         s = lti(np.array([]), np.array([-1]), 1)
         assert_(isinstance(s, ZerosPolesGain))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, dlti))
+        assert_(s.dt is None)
 
         # StateSpace
         s = lti([], [-1], 1)
         s = lti([1], [-1], 1, 3)
         assert_(isinstance(s, StateSpace))
         assert_(isinstance(s, lti))
+        assert_(not isinstance(s, dlti))
+        assert_(s.dt is None)
 
 
 class TestStateSpace(object):
@@ -775,24 +781,31 @@ class TestStateSpace(object):
 
         # Getters
         s = StateSpace(1, 1, 1, 1)
-        assert_equal(s.num, [1, 0])
-        assert_equal(s.den, [1, -1])
-        assert_equal(s.poles, [1])
-        assert_equal(s.zeros, [0])
-        assert_equal(s.gain, 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_equal(s.num, [1, 0])
+            assert_equal(s.den, [1, -1])
+            assert_equal(s.poles, [1])
+            assert_equal(s.zeros, [0])
+            assert_equal(s.gain, 1)
 
         # transfer function setters
         s2 = StateSpace(2, 2, 2, 2)
-        s2.num = [1, 0]
-        s2.den = [1, -1]
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.num = [1, 0]
+            s2.den = [1, -1]
+            self._compare_systems(s, s2)
 
         # zpk setters
         s2 = StateSpace(2, 2, 2, 2)
-        s2.poles = 1
-        s2.zeros = 0
-        s2.gain = 1
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_(s.dt is None)
+            s2.poles = 1
+            s2.zeros = 0
+            s2.gain = 1
+            self._compare_systems(s, s2)
 
 
 class TestTransferFunction(object):
@@ -824,28 +837,34 @@ class TestTransferFunction(object):
 
         # Getters
         s = TransferFunction([1, 0], [1, -1])
-        assert_equal(s.poles, [1])
-        assert_equal(s.zeros, [0])
-        assert_equal(s.gain, 1)
-        assert_equal(s.A, 1)
-        assert_equal(s.B, 1)
-        assert_equal(s.C, 1)
-        assert_equal(s.D, 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_equal(s.poles, [1])
+            assert_equal(s.zeros, [0])
+            assert_equal(s.gain, 1)
+            assert_equal(s.A, 1)
+            assert_equal(s.B, 1)
+            assert_equal(s.C, 1)
+            assert_equal(s.D, 1)
 
         # state space setters
         s2 = TransferFunction([2, 3], [4, 5])
-        s2.A = 1
-        s2.B = 1
-        s2.C = 1
-        s2.D = 1
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.A = 1
+            s2.B = 1
+            s2.C = 1
+            s2.D = 1
+            self._compare_systems(s, s2)
 
         # zpk setters
         s2 = TransferFunction([2, 3], [4, 5])
-        s2.poles = 1
-        s2.zeros = 0
-        s2.gain = 1
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.poles = 1
+            s2.zeros = 0
+            s2.gain = 1
+            self._compare_systems(s, s2)
 
 
 class TestZerosPolesGain(object):
@@ -857,9 +876,11 @@ class TestZerosPolesGain(object):
 
     def _compare_systems(self, sys1, sys2):
         #Compare the contents of two systems
-        assert_equal(sys1.poles, sys2.poles)
-        assert_equal(sys1.zeros, sys2.zeros)
-        assert_equal(sys1.gain, sys2.gain)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_equal(sys1.poles, sys2.poles)
+            assert_equal(sys1.zeros, sys2.zeros)
+            assert_equal(sys1.gain, sys2.gain)
 
     def test_conversion(self):
         #Check the conversion functions
@@ -878,26 +899,32 @@ class TestZerosPolesGain(object):
 
         # Getters
         s = ZerosPolesGain(0, 1, 1)
-        assert_equal(s.num, [1, 0])
-        assert_equal(s.den, [1, -1])
-        assert_equal(s.A, 1)
-        assert_equal(s.B, 1)
-        assert_equal(s.C, 1)
-        assert_equal(s.D, 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            assert_equal(s.num, [1, 0])
+            assert_equal(s.den, [1, -1])
+            assert_equal(s.A, 1)
+            assert_equal(s.B, 1)
+            assert_equal(s.C, 1)
+            assert_equal(s.D, 1)
 
         # state space setters
         s2 = ZerosPolesGain([2], [6], 3)
-        s2.A = 1
-        s2.B = 1
-        s2.C = 1
-        s2.D = 1
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.A = 1
+            s2.B = 1
+            s2.C = 1
+            s2.D = 1
+            self._compare_systems(s, s2)
 
         # tf setters
         s2 = ZerosPolesGain([2], [5], 3)
-        s2.num = [1, 0]
-        s2.den = [1, -1]
-        self._compare_systems(s, s2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            s2.num = [1, 0]
+            s2.den = [1, -1]
+            self._compare_systems(s, s2)
 
 
 class Test_abcd_normalize(object):
@@ -1136,8 +1163,8 @@ class Test_bode(object):
 
 class Test_freqresp(object):
 
-    def test_real_part_manual(self):
-        # Test freqresp() real part calculation (manual sanity check).
+    def test_output_manual(self):
+        # Test freqresp() output calculation (manual sanity check).
         # 1st order low-pass filter: H(s) = 1 / (s + 1),
         #   re(H(s=0.1)) ~= 0.99
         #   re(H(s=1)) ~= 0.5
@@ -1146,41 +1173,20 @@ class Test_freqresp(object):
         w = [0.1, 1, 10]
         w, H = freqresp(system, w=w)
         expected_re = [0.99, 0.5, 0.0099]
-        assert_almost_equal(H.real, expected_re, decimal=1)
-
-    def test_imag_part_manual(self):
-        # Test freqresp() imaginary part calculation (manual sanity check).
-        # 1st order low-pass filter: H(s) = 1 / (s + 1),
-        #   im(H(s=0.1)) ~= -0.099
-        #   im(H(s=1)) ~= -0.5
-        #   im(H(s=10)) ~= -0.099
-        system = lti([1], [1, 1])
-        w = [0.1, 1, 10]
-        w, H = freqresp(system, w=w)
         expected_im = [-0.099, -0.5, -0.099]
+        assert_almost_equal(H.real, expected_re, decimal=1)
         assert_almost_equal(H.imag, expected_im, decimal=1)
 
-    def test_real_part(self):
-        # Test freqresp() real part calculation.
+    def test_output(self):
+        # Test freqresp() output calculation.
         # 1st order low-pass filter: H(s) = 1 / (s + 1)
         system = lti([1], [1, 1])
         w = [0.1, 1, 10, 100]
         w, H = freqresp(system, w=w)
-        jw = w * 1j
-        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
-        expected_re = y.real
-        assert_almost_equal(H.real, expected_re)
-
-    def test_imag_part(self):
-        # Test freqresp() imaginary part calculation.
-        # 1st order low-pass filter: H(s) = 1 / (s + 1)
-        system = lti([1], [1, 1])
-        w = [0.1, 1, 10, 100]
-        w, H = freqresp(system, w=w)
-        jw = w * 1j
-        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
-        expected_im = y.imag
-        assert_almost_equal(H.imag, expected_im)
+        s = w * 1j
+        expected = np.polyval(system.num, s) / np.polyval(system.den, s)
+        assert_almost_equal(H.real, expected.real)
+        assert_almost_equal(H.imag, expected.imag)
 
     def test_freq_range(self):
         # Test that freqresp() finds a reasonable frequency range.
@@ -1215,8 +1221,20 @@ class Test_freqresp(object):
             warnings.simplefilter("ignore", BadCoefficients)
             system = lti(A, B, C, D)
             w, H = freqresp(system, n=100)
-        expected_magnitude = np.sqrt(1.0 / (1.0 + w**6))
-        assert_almost_equal(np.abs(H), expected_magnitude)
+        s = w * 1j
+        expected = (1.0 / (1.0 + 2*s + 2*s**2 + s**3))
+        assert_almost_equal(H.real, expected.real)
+        assert_almost_equal(H.imag, expected.imag)
+
+    def test_from_zpk(self):
+        # 4th order low-pass filter: H(s) = 1 / (s + 1)
+        system = lti([],[-1]*4,[1])
+        w = [0.1, 1, 10, 100]
+        w, H = freqresp(system, w=w)
+        s = w * 1j
+        expected = 1 / (s + 1)**4
+        assert_almost_equal(H.real, expected.real)
+        assert_almost_equal(H.imag, expected.imag)
 
 
 if __name__ == "__main__":

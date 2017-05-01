@@ -73,6 +73,7 @@ extern int fresnl(double xxa, double *ssa, double *cca);
 extern double Gamma(double x);
 extern double lgam(double x);
 extern double lgam_sgn(double x, int *sign);
+extern double lgam1p(double x);
 extern double gdtr(double a, double b, double x);
 extern double gdtrc(double a, double b, double x);
 extern int gels(double A[], double R[], int M, double EPS, double AUX[]);
@@ -85,6 +86,7 @@ extern double i1(double x);
 extern double i1e(double x);
 extern double igamc(double a, double x);
 extern double igam(double a, double x);
+extern double igam_fac(double a, double x);
 extern double igami(double a, double y0);
 extern double incbet(double aa, double bb, double xx);
 extern double incbi(double aa, double bb, double yy0);
@@ -152,6 +154,7 @@ extern double tandg(double x);
 extern double cotdg(double x);
 extern double tanh(double x);
 extern double log1p(double x);
+extern double log1pmx(double x);
 extern double expm1(double x);
 extern double cosm1(double x);
 extern double yn(int n, double x);
@@ -160,4 +163,10 @@ extern double zetac(double x);
 extern int drand(double *a);
 
 double yv(double v, double x);
+
+extern double lanczos_sum(double x);
+extern double lanczos_sum_expg_scaled(double x);
+extern double lanczos_sum_near_1(double dx);
+extern double lanczos_sum_near_2(double dx);
+
 #endif

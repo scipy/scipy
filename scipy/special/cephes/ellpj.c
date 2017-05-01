@@ -61,20 +61,20 @@
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
  */
 
+/* Scipy changes:
+ * - 07-18-2016: improve evaluation of dn near quarter periods
+ */
+
 #include "mconf.h"
 extern double MACHEP;
 
-int ellpj(u, m, sn, cn, dn, ph)
-double u, m;
-double *sn, *cn, *dn, *ph;
+int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
 {
-    double ai, b, phi, t, twon;
+  double ai, b, phi, t, twon, dnfac;
     double a[9], c[9];
     int i;
 
-
     /* Check for special cases */
-
     if (m < 0.0 || m > 1.0 || cephes_isnan(m)) {
 	mtherr("ellpj", DOMAIN);
 	*sn = NPY_NAN;
@@ -93,7 +93,6 @@ double *sn, *cn, *dn, *ph;
 	*dn = 1.0 - 0.5 * m * t * t;
 	return (0);
     }
-
     if (m >= 0.9999999999) {
 	ai = 0.25 * (1.0 - m);
 	b = cosh(u);
@@ -108,8 +107,7 @@ double *sn, *cn, *dn, *ph;
 	return (0);
     }
 
-
-    /*     A. G. M. scale          */
+    /* A. G. M. scale. See DLMF 20.20(ii) */
     a[0] = 1.0;
     b = sqrt(1.0 - m);
     c[0] = sqrt(m);
@@ -131,7 +129,6 @@ double *sn, *cn, *dn, *ph;
     }
 
   done:
-
     /* backward recurrence */
     phi = twon * a[i] * u;
     do {
@@ -144,7 +141,13 @@ double *sn, *cn, *dn, *ph;
     *sn = sin(phi);
     t = cos(phi);
     *cn = t;
-    *dn = t / cos(phi - b);
+    dnfac = cos(phi - b);
+    /* See discussion after DLMF 22.20.5 */
+    if (fabs(dnfac) < 0.1) {
+    	*dn = sqrt(1 - m*(*sn)*(*sn));
+    } else {
+    	*dn = t / dnfac;
+    }
     *ph = phi;
     return (0);
 }

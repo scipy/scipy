@@ -67,7 +67,6 @@ Subpackage          Description
 :mod:`spatial`      Spatial data structures and algorithms
 :mod:`special`      Special functions
 :mod:`stats`        Statistical distributions and functions
-:mod:`weave`        C/C++ integration
 ==================  ======================================================
 
 Scipy sub-packages need to be imported separately, for example::
@@ -111,7 +110,7 @@ documentation string for the object passed to the ``help`` command are
 printed to standard output (or to a writeable object passed as the
 third argument). The second keyword argument of ``numpy.info`` defines
 the maximum width of the line for printing. If a module is passed as
-the argument to help than a list of the functions and classes defined
+the argument to ``help`` then a list of the functions and classes defined
 in that module is printed. For example:
 
 .. literalinclude:: examples/1-1

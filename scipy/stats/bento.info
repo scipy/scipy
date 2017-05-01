@@ -10,5 +10,5 @@ Library:
         Sources: statlib.pyf
     Extension: mvn
         Sources: mvn.pyf, mvndst.f
-    Extension: vonmises_cython
-        Sources: vonmises_cython.c
+    Extension: _stats
+        Sources: _stats.c

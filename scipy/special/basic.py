@@ -9,22 +9,24 @@ import warnings
 import numpy as np
 import math
 from scipy._lib.six import xrange
-from numpy import (pi, asarray, floor, isscalar, iscomplex, real, imag, sqrt,
-                   where, mgrid, sin, place, issubdtype, extract,
-                   less, inexact, nan, zeros, atleast_1d, sinc)
+from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
+                   imag, sqrt, where, mgrid, sin, place, issubdtype,
+                   extract, less, inexact, nan, zeros, sinc)
+from . import _ufuncs as ufuncs
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, _zeta, hankel1, hankel2, yv, kv, _gammaln,
-                      ndtri, errprint, poch, binom, hyp0f1)
+                      psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
+                      poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
 
+
 __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
            'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk',
-           'erf_zeros', 'erfcinv', 'erfinv', 'errprint', 'euler', 'factorial',
+           'erf_zeros', 'erfcinv', 'erfinv', 'euler', 'factorial',
            'factorialk', 'factorial2', 'fresnel_zeros',
-           'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
+           'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
            'jnjnp_zeros', 'jnp_zeros', 'jnyn_zeros', 'jv', 'jvp', 'kei_zeros',
            'keip_zeros', 'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv',
@@ -34,14 +36,7 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'polygamma', 'pro_cv_seq', 'psi', 'riccati_jn', 'riccati_yn',
            'sinc', 'sph_in', 'sph_inkn',
            'sph_jn', 'sph_jnyn', 'sph_kn', 'sph_yn', 'y0_zeros', 'y1_zeros',
-           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta',
-           'SpecialFunctionWarning']
-
-
-class SpecialFunctionWarning(Warning):
-    """Warning that can be issued with ``errprint(True)``"""
-    pass
-warnings.simplefilter("always", category=SpecialFunctionWarning)
+           'y1p_zeros', 'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
 
 
 def diric(x, n):
@@ -143,47 +138,6 @@ def diric(x, n):
     dsub = extract(mask, denom)
     place(y, mask, sin(nsub*xsub)/(nsub*dsub))
     return y
-
-
-def gammaln(x):
-    """
-    Logarithm of the absolute value of the Gamma function for real inputs.
-
-    Parameters
-    ----------
-    x : array-like
-        Values on the real line at which to compute ``gammaln``
-
-    Returns
-    -------
-    gammaln : ndarray
-        Values of ``gammaln`` at x.
-
-    See Also
-    --------
-    gammasgn : sign of the gamma function
-    loggamma : principal branch of the logarithm of the gamma function
-
-    Notes
-    -----
-    When used in conjunction with `gammasgn`, this function is useful
-    for working in logspace on the real axis without having to deal with
-    complex numbers, via the relation ``exp(gammaln(x)) = gammasgn(x)*gamma(x)``.
-
-    Note that `gammaln` currently accepts complex-valued inputs, but it is not
-    the same function as for real-valued inputs, and the branch is not
-    well-defined --- using `gammaln` with complex is deprecated and will be
-    disallowed in future Scipy versions.
-
-    For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
-
-    """
-    if np.iscomplexobj(x):
-        warnings.warn(("Use of gammaln for complex arguments is "
-                       "deprecated as of scipy 0.18.0. Use "
-                       "scipy.special.loggamma instead."),
-                      DeprecationWarning)
-    return _gammaln(x)
 
 
 def jnjnp_zeros(nt):
@@ -1336,7 +1290,7 @@ def mathieu_odd_coef(m, q):
 
 
 def lpmn(m, n, z):
-    """Associated Legendre function of the first kind, Pmn(z).
+    """Sequence of associated Legendre functions of the first kind.
 
     Computes the associated Legendre function of the first kind of order m and
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
@@ -1394,15 +1348,14 @@ def lpmn(m, n, z):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        sv = errprint(0)
-        if abs(z) < 1:
-            # Ferrer function; DLMF 14.9.3
-            fixarr = where(mf > nf, 0.0,
-                           (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-        else:
-            # Match to clpmn; DLMF 14.9.13
-            fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
-        sv = errprint(sv)
+        with ufuncs.errstate(all='ignore'):
+            if abs(z) < 1:
+                # Ferrer function; DLMF 14.9.3
+                fixarr = where(mf > nf, 0.0,
+                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+            else:
+                # Match to clpmn; DLMF 14.9.13
+                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
     p, pd = specfun.lpmn(mp, n, z)
@@ -1413,7 +1366,7 @@ def lpmn(m, n, z):
 
 
 def clpmn(m, n, z, type=3):
-    """Associated Legendre function of the first kind, Pmn(z).
+    """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
     degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
@@ -1478,13 +1431,12 @@ def clpmn(m, n, z, type=3):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        sv = errprint(0)
-        if type == 2:
-            fixarr = where(mf > nf, 0.0,
-                           (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-        else:
-            fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
-        sv = errprint(sv)
+        with ufuncs.errstate(all='ignore'):
+            if type == 2:
+                fixarr = where(mf > nf, 0.0,
+                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
+            else:
+                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
     p, pd = specfun.clpmn(mp, n, real(z), imag(z), type)
@@ -1495,7 +1447,7 @@ def clpmn(m, n, z, type=3):
 
 
 def lqmn(m, n, z):
-    """Associated Legendre function of the second kind, Qmn(z).
+    """Sequence of associated Legendre functions of the second kind.
 
     Computes the associated Legendre function of the second kind of order m and
     degree n, ``Qmn(z)`` = :math:`Q_n^m(z)`, and its derivative, ``Qmn'(z)``.
@@ -1588,7 +1540,7 @@ def euler(n):
 
 
 def lpn(n, z):
-    """Legendre functions of the first kind, Pn(z).
+    """Legendre function of the first kind.
 
     Compute sequence of Legendre functions of the first kind (polynomials),
     Pn(z) and derivatives for all degrees from 0 to n (inclusive).
@@ -1618,7 +1570,7 @@ def lpn(n, z):
 
 
 def lqn(n, z):
-    """Legendre functions of the second kind, Qn(z).
+    """Legendre function of the second kind.
 
     Compute sequence of Legendre functions of the second kind, Qn(z) and
     derivatives for all degrees from 0 to n (inclusive).
@@ -2068,11 +2020,11 @@ def obl_cv_seq(m, n, c):
 
 
 def ellipk(m):
-    """Complete elliptic integral of the first kind.
+    r"""Complete elliptic integral of the first kind.
 
     This function is defined as
 
-    .. math:: K(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
 
     Parameters
     ----------
@@ -2089,6 +2041,12 @@ def ellipk(m):
     For more precision around point m = 1, use `ellipkm1`, which this
     function calls.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [1]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind around m = 1
@@ -2096,6 +2054,11 @@ def ellipk(m):
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
 
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
 
     """
     return ellipkm1(1 - asarray(m))
@@ -2139,8 +2102,12 @@ def comb(N, k, exact=False, repetition=False):
 
     Returns
     -------
-    val : int, ndarray
+    val : int, float, ndarray
         The total number of combinations.
+
+    See Also
+    --------
+    binom : Binomial coefficient ufunc
 
     Notes
     -----
@@ -2282,7 +2249,7 @@ def factorial(n, exact=False):
     With ``exact=False`` the factorial is approximated using the gamma
     function:
 
-    .. math:: n! = \Gamma(n+1)
+    .. math:: n! = \\Gamma(n+1)
 
     Examples
     --------
@@ -2464,3 +2431,4 @@ def zeta(x, q=None, out=None):
     if q is None:
         q = 1
     return _zeta(x, q, out)
+

@@ -128,12 +128,17 @@ def _asfarray(x):
         # 'dtype' attribute does not ensure that the
         # object is an ndarray (e.g. Series class
         # from the pandas library)
+        if x.dtype == numpy.half:
+            # no half-precision routines, so convert to single precision
+            return numpy.asarray(x, dtype=numpy.float32)
         return numpy.asarray(x, dtype=x.dtype)
     else:
         # We cannot use asfarray directly because it converts sequences of
         # complex to sequence of real
         ret = numpy.asarray(x)
-        if ret.dtype.char not in numpy.typecodes["AllFloat"]:
+        if ret.dtype == numpy.half:
+            return numpy.asarray(ret, dtype=numpy.float32)
+        elif ret.dtype.char not in numpy.typecodes["AllFloat"]:
             return numpy.asfarray(x)
         return ret
 
@@ -210,8 +215,6 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
 
             y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k* 2*pi/n), j = 0..n-1
 
-        Note that ``y(-j) = y(n-j).conjugate()``.
-
     See Also
     --------
     ifft : Inverse FFT
@@ -227,12 +230,16 @@ def fft(x, n=None, axis=-1, overwrite_x=False):
     To rearrange the fft output so that the zero-frequency component is
     centered, like [-4, -3, -2, -1,  0,  1,  2,  3], use `fftshift`.
 
-    For `n` even, ``A[n/2]`` contains the sum of the positive and
-    negative-frequency terms.  For `n` even and `x` real, ``A[n/2]`` will
-    always be real.
+    Both single and double precision routines are implemented.  Half precision
+    inputs will be converted to single precision.  Non floating-point inputs
+    will be converted to double precision.  Long-double precision inputs are
+    not supported.
 
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
+
+    Note that if ``x`` is real-valued then ``A[j] == A[n-j].conjugate()``.
+    If ``x`` is real-valued and ``n`` is even then ``A[n/2]`` is real.
 
     If the data type of `x` is real, a "real FFT" algorithm is automatically
     used, which roughly halves the computation time.  To increase efficiency
@@ -312,6 +319,11 @@ def ifft(x, n=None, axis=-1, overwrite_x=False):
 
     Notes
     -----
+    Both single and double precision routines are implemented.  Half precision
+    inputs will be converted to single precision.  Non floating-point inputs
+    will be converted to double precision.  Long-double precision inputs are
+    not supported.
+
     This function is most efficient when `n` is a power of two, and least
     efficient when `n` is prime.
 
@@ -381,8 +393,6 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
           y(j) = sum[k=0..n-1] x[k] * exp(-sqrt(-1)*j*k*2*pi/n)
           j = 0..n-1
 
-        Note that ``y(-j) == y(n-j).conjugate()``.
-
     See Also
     --------
     fft, irfft, scipy.fftpack.basic
@@ -390,6 +400,11 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     Notes
     -----
     Within numerical accuracy, ``y == rfft(irfft(y))``.
+
+    Both single and double precision routines are implemented.  Half precision
+    inputs will be converted to single precision.  Non floating-point inputs
+    will be converted to double precision.  Long-double precision inputs are
+    not supported.
 
     Examples
     --------
@@ -516,9 +531,11 @@ def _raw_fftnd(x, s, axes, direction, overwrite_x, work_function):
 
     # We ordered axes, because the code below to push axes at the end of the
     # array assumes axes argument is in ascending order.
-    id = numpy.argsort(axes)
-    axes = [axes[i] for i in id]
-    s = [s[i] for i in id]
+    a = numpy.array(axes, numpy.intc)
+    abs_axes = numpy.where(a < 0, a + x.ndim, a)
+    id_ = numpy.argsort(abs_axes)
+    axes = [axes[i] for i in id_]
+    s = [s[i] for i in id_]
 
     # Swap the request axes, last first (i.e. First swap the axis which ends up
     # at -1, then at -2, etc...), such as the request axes on which the
@@ -557,7 +574,6 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
          x[k_1,..,k_d] * prod[i=1..d] exp(-sqrt(-1)*2*pi/n_i * j_i * k_i)
 
     where d = len(x.shape) and n = x.shape.
-    Note that ``y[..., -j_i, ...] = y[..., n_i-j_i, ...].conjugate()``.
 
     Parameters
     ----------
@@ -584,6 +600,16 @@ def fftn(x, shape=None, axes=None, overwrite_x=False):
     See Also
     --------
     ifftn
+
+    Notes
+    -----
+    If ``x`` is real-valued, then
+    ``y[..., j_i, ...] == y[..., n_i-j_i, ...].conjugate()``.
+
+    Both single and double precision routines are implemented.  Half precision
+    inputs will be converted to single precision.  Non floating-point inputs
+    will be converted to double precision.  Long-double precision inputs are
+    not supported.
 
     Examples
     --------

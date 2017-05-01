@@ -27,7 +27,7 @@ submodules.
 Developer's Guide
 -----------------
 
-Explainations of how to start contributing to SciPy, and descriptions of
+Explanations of how to start contributing to SciPy, and descriptions of
 maintenance activities and policies.
 
 .. toctree::
@@ -35,6 +35,14 @@ maintenance activities and policies.
 
    hacking
    dev/index
+
+To get an overview of where help or new features are desired or planned, see
+the roadmap:
+
+.. toctree::
+   :maxdepth: 1
+
+   roadmap
 
 API Reference
 -------------
@@ -65,4 +73,4 @@ parameters available for the algorithms.
    special
    stats
    stats.mstats
-   weave
+   ccallback

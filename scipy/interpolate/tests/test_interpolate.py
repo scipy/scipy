@@ -14,7 +14,7 @@ from scipy._lib.six import xrange
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
          RegularGridInterpolator, LinearNDInterpolator, NearestNDInterpolator,
-         RectBivariateSpline, interpn, NdPPoly)
+         RectBivariateSpline, interpn, NdPPoly, BSpline)
 
 from scipy.special import poch, gamma
 
@@ -23,6 +23,8 @@ from scipy.interpolate import _ppoly
 from scipy._lib._gcutils import assert_deallocated
 
 from scipy.integrate import nquad
+
+from scipy.special import binom
 
 
 class TestInterp2D(TestCase):
@@ -132,14 +134,9 @@ class TestInterp1D(object):
         # are given to the constructor.
 
         # These should all work.
-        interp1d(self.x10, self.y10, kind='linear')
-        interp1d(self.x10, self.y10, kind='cubic')
-        interp1d(self.x10, self.y10, kind='slinear')
-        interp1d(self.x10, self.y10, kind='quadratic')
-        interp1d(self.x10, self.y10, kind='zero')
-        interp1d(self.x10, self.y10, kind='nearest')
-        interp1d(self.x10, self.y10, kind='nearest', fill_value="extrapolate")
-        interp1d(self.x10, self.y10, kind='linear', fill_value="extrapolate")
+        for kind in ('nearest', 'zero', 'linear', 'slinear', 'quadratic', 'cubic'):
+            interp1d(self.x10, self.y10, kind=kind)
+            interp1d(self.x10, self.y10, kind=kind, fill_value="extrapolate")
         interp1d(self.x10, self.y10, kind='linear', fill_value=(-1, 1))
         interp1d(self.x10, self.y10, kind='linear',
                  fill_value=np.array([-1]))
@@ -161,11 +158,6 @@ class TestInterp1D(object):
                  fill_value=(np.ones(10), np.ones(10)))
         interp1d(self.x2, self.y210, kind='linear', axis=0,
                  fill_value=(np.ones(10), -1))
-
-        # extrapolation is only allowed for nearest & linear methods
-        for kind in ('cubic', 'slinear', 'zero', 'quadratic'):
-            assert_raises(ValueError, interp1d, self.x10, self.y10, kind=kind,
-                          fill_value="extrapolate")
 
         # x array must be 1D.
         assert_raises(ValueError, interp1d, self.x25, self.y10)
@@ -251,20 +243,24 @@ class TestInterp1D(object):
                                   interp10_y_2d_unsorted(self.x10))
 
     def test_linear(self):
+        for kind in ['linear', 'slinear']:
+            self._check_linear(kind)
+
+    def _check_linear(self, kind):
         # Check the actual implementation of linear interpolation.
-        interp10 = interp1d(self.x10, self.y10)
+        interp10 = interp1d(self.x10, self.y10, kind=kind)
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array([1.2]))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2.4, 5.6, 6.0]))
 
         # test fill_value="extrapolate"
-        extrapolator = interp1d(self.x10, self.y10, kind='linear',
+        extrapolator = interp1d(self.x10, self.y10, kind=kind,
                                 fill_value='extrapolate')
         assert_allclose(extrapolator([-1., 0, 9, 11]),
                         [-1, 0, 9, 11], rtol=1e-14)
 
-        opts = dict(kind='linear',
+        opts = dict(kind=kind,
                     fill_value='extrapolate',
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
@@ -307,14 +303,13 @@ class TestInterp1D(object):
                     bounds_error=True)
         assert_raises(ValueError, interp1d, self.x10, self.y10, **opts)
 
-    @dec.knownfailureif(True, "zero-order splines fail for the last point")
     def test_zero(self):
         # Check the actual implementation of zero-order spline interpolation.
         interp10 = interp1d(self.x10, self.y10, kind='zero')
         assert_array_almost_equal(interp10(self.x10), self.y10)
         assert_array_almost_equal(interp10(1.2), np.array(1.))
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
-                                  np.array([2., 6., 6.]))
+                                  np.array([2., 5., 6.]))
 
     def _bounds_check(self, kind='linear'):
         # Test that our handling of out-of-bounds input is correct.
@@ -571,7 +566,8 @@ class TestInterp1D(object):
             assert_array_almost_equal(z(x2).shape, b, err_msg=kind)
 
     def test_nd(self):
-        for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest'):
+        for kind in ('linear', 'cubic', 'slinear', 'quadratic', 'nearest',
+                     'zero'):
             self._nd_check_interp(kind)
             self._nd_check_shape(kind)
 
@@ -597,14 +593,6 @@ class TestInterp1D(object):
             self._check_complex(np.complex64, kind)
             self._check_complex(np.complex128, kind)
 
-    @dec.knownfailureif(True, "zero-order splines fail for the last point")
-    def test_nd_zero_spline(self):
-        # zero-order splines don't get the last point right,
-        # see test_zero above
-        #yield self._nd_check_interp, 'zero'
-        #yield self._nd_check_interp, 'zero'
-        pass
-
     def test_circular_refs(self):
         # Test interp1d can be automatically garbage collected
         x = np.linspace(0, 1)
@@ -613,6 +601,41 @@ class TestInterp1D(object):
         with assert_deallocated(interp1d, x, y) as interp:
             new_y = interp([0.1, 0.2])
             del interp
+
+    def test_overflow_nearest(self):
+        # Test that the x range doesn't overflow when given integers as input
+        x = np.array([0, 50, 127], dtype=np.int8)
+        ii = interp1d(x, x, kind='nearest')
+        assert_array_almost_equal(ii(x), x)
+
+    def test_local_nans(self):
+        # check that for local interpolation kinds (slinear, zero) a single nan
+        # only affects its local neighborhood
+        x = np.arange(10).astype(float)
+        y = x.copy()
+        y[6] = np.nan
+        for kind in ('zero', 'slinear'):
+            ir = interp1d(x, y, kind=kind)
+            vals = ir([4.9, 7.0])
+            assert_(np.isfinite(vals).all())
+
+    def test_spline_nans(self):
+        # Backwards compat: a single nan makes the whole spline interpolation
+        # return nans in an array of the correct shape. And it doesn't raise,
+        # just quiet nans because of backcompat.
+        x = np.arange(8).astype(float)
+        y = x.copy()
+        yn = y.copy()
+        yn[3] = np.nan
+
+        for kind in ['quadratic', 'cubic']:
+            ir = interp1d(x, y, kind=kind)
+            irn = interp1d(x, yn, kind=kind)
+            for xnew in (6, [1, 6], [[1, 6], [3, 5]]):
+                xnew = np.asarray(xnew)
+                out, outn = ir(x), irn(x)
+                assert_(np.isnan(outn).all())
+                assert_equal(out.shape, outn.shape)
 
 
 class TestLagrange(TestCase):
@@ -712,6 +735,11 @@ class TestPPolyCommon(TestCase):
         assert_raises(ValueError, PPoly, c, x)
         assert_raises(ValueError, BPoly, c, x)
 
+    def test_ctor_c(self):
+        # wrong shape: `c` must be at least 2-dimensional
+        with assert_raises(ValueError):
+            PPoly([1, 2], [0, 1])
+
     def test_extend(self):
         # Test adding new points to the piecewise polynomial
         np.random.seed(1234)
@@ -724,8 +752,8 @@ class TestPPolyCommon(TestCase):
             pp = cls(c[:,:9], x[:10])
             pp.extend(c[:,9:], x[10:])
 
-            pp2 = cls(c[:,10:], x[10:])
-            pp2.extend(c[:,:10], x[:10], right=False)
+            pp2 = cls(c[:, 10:], x[10:])
+            pp2.extend(c[:, :10], x[:10])
 
             pp3 = cls(c, x)
 
@@ -758,6 +786,27 @@ class TestPPolyCommon(TestCase):
 
             assert_allclose(pp1(xi1), pp_comb(xi1))
             assert_allclose(pp2(xi2), pp_comb(xi2))
+
+    def test_extend_descending(self):
+        np.random.seed(0)
+
+        order = 3
+        x = np.sort(np.random.uniform(0, 10, 20))
+        c = np.random.rand(order + 1, x.shape[0] - 1, 2, 3)
+
+        for cls in (PPoly, BPoly):
+            p = cls(c, x)
+
+            p1 = cls(c[:, :9], x[:10])
+            p1.extend(c[:, 9:], x[10:])
+
+            p2 = cls(c[:, 10:], x[10:])
+            p2.extend(c[:, :10], x[:10])
+
+            assert_array_equal(p1.c, p.c)
+            assert_array_equal(p1.x, p.x)
+            assert_array_equal(p2.c, p.c)
+            assert_array_equal(p2.x, p.x)
 
     def test_shape(self):
         np.random.seed(1234)
@@ -876,6 +925,66 @@ class TestPPoly(TestCase):
         assert_allclose(p(0.3), 1*0.3**2 + 2*0.3 + 3)
         assert_allclose(p(0.7), 4*(0.7-0.5)**2 + 5*(0.7-0.5) + 6)
 
+    def test_periodic(self):
+        c = np.array([[1, 4], [2, 5], [3, 6]])
+        x = np.array([0, 0.5, 1])
+        p = PPoly(c, x, extrapolate='periodic')
+
+        assert_allclose(p(1.3), 1 * 0.3 ** 2 + 2 * 0.3 + 3)
+        assert_allclose(p(-0.3), 4 * (0.7 - 0.5) ** 2 + 5 * (0.7 - 0.5) + 6)
+
+        assert_allclose(p(1.3, 1), 2 * 0.3 + 2)
+        assert_allclose(p(-0.3, 1), 8 * (0.7 - 0.5) + 5)
+
+    def test_descending(self):
+        def binom_matrix(power):
+            n = np.arange(power + 1).reshape(-1, 1)
+            k = np.arange(power + 1)
+            B = binom(n, k)
+            return B[::-1, ::-1]
+
+        np.random.seed(0)
+
+        power = 3
+        for m in [10, 20, 30]:
+            x = np.sort(np.random.uniform(0, 10, m + 1))
+            ca = np.random.uniform(-2, 2, size=(power + 1, m))
+
+            h = np.diff(x)
+            h_powers = h[None, :] ** np.arange(power + 1)[::-1, None]
+            B = binom_matrix(power)
+            cap = ca * h_powers
+            cdp = np.dot(B.T, cap)
+            cd = cdp / h_powers
+
+            pa = PPoly(ca, x, extrapolate=True)
+            pd = PPoly(cd[:, ::-1], x[::-1], extrapolate=True)
+
+            x_test = np.random.uniform(-10, 20, 100)
+            assert_allclose(pa(x_test), pd(x_test), rtol=1e-13)
+            assert_allclose(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
+
+            pa_d = pa.derivative()
+            pd_d = pd.derivative()
+
+            assert_allclose(pa_d(x_test), pd_d(x_test), rtol=1e-13)
+
+            # Antiderivatives won't be equal because fixing continuity is
+            # done in the reverse order, but surely the differences should be
+            # equal.
+            pa_i = pa.antiderivative()
+            pd_i = pd.antiderivative()
+            for a, b in np.random.uniform(-10, 20, (5, 2)):
+                int_a = pa.integrate(a, b)
+                int_d = pd.integrate(a, b)
+                assert_allclose(int_a, int_d, rtol=1e-13)
+                assert_allclose(pa_i(b) - pa_i(a), pd_i(b) - pd_i(a),
+                                rtol=1e-13)
+
+            roots_d = pd.roots()
+            roots_a = pa.roots()
+            assert_allclose(roots_a, np.sort(roots_d), rtol=1e-12)
+
     def test_multi_shape(self):
         c = np.random.rand(6, 2, 1, 2, 3)
         x = np.array([0, 0.5, 1])
@@ -884,8 +993,7 @@ class TestPPoly(TestCase):
         assert_equal(p.c.shape, c.shape)
         assert_equal(p(0.3).shape, c.shape[2:])
 
-        assert_equal(p(np.random.rand(5,6)).shape,
-                     (5,6) + c.shape[2:])
+        assert_equal(p(np.random.rand(5, 6)).shape, (5, 6) + c.shape[2:])
 
         dp = p.derivative()
         assert_equal(dp.c.shape, (5, 2, 1, 2, 3))
@@ -924,6 +1032,18 @@ class TestPPoly(TestCase):
 
         xi = np.linspace(0, 1, 200)
         assert_allclose(pp(xi), splev(xi, spl))
+
+        # make sure .from_spline accepts BSpline objects
+        b = BSpline(*spl)
+        ppp = PPoly.from_spline(b)
+        assert_allclose(ppp(xi), b(xi))
+
+        # BSpline's extrapolate attribute propagates unless overridden
+        t, c, k = spl
+        for extrap in (None, True, False):
+            b = BSpline(t, c, k, extrapolate=extrap)
+            p = PPoly.from_spline(b)
+            assert_equal(p.extrapolate, b.extrapolate)
 
     def test_derivative_simple(self):
         np.random.seed(1234)
@@ -1077,6 +1197,30 @@ class TestPPoly(TestCase):
         assert_allclose(ig, ipp(b) - ipp(a))
 
         assert_(np.isnan(pp.integrate(a, b, extrapolate=False)).all())
+
+    def test_integrate_periodic(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        P = PPoly(c, x, extrapolate='periodic')
+        I = P.antiderivative()
+
+        period_int = I(4) - I(1)
+
+        assert_allclose(P.integrate(1, 4), period_int)
+        assert_allclose(P.integrate(-10, -7), period_int)
+        assert_allclose(P.integrate(-10, -4), 2 * period_int)
+
+        assert_allclose(P.integrate(1.5, 2.5), I(2.5) - I(1.5))
+        assert_allclose(P.integrate(3.5, 5), I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5 + 12, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5) + 4 * period_int)
+
+        assert_allclose(P.integrate(0, -1), I(2) - I(3))
+        assert_allclose(P.integrate(-9, -10), I(2) - I(3))
+        assert_allclose(P.integrate(0, -10), I(2) - I(3) - 3 * period_int)
 
     def test_roots(self):
         x = np.linspace(0, 1, 31)**2
@@ -1273,6 +1417,52 @@ class TestBPoly(TestCase):
                              2 * 4 * 0.7 * 0.3**3 +
                                  0.3**4)
 
+    def test_periodic(self):
+        x = [0, 1, 3]
+        c = [[3, 0], [0, 0], [0, 2]]
+        # [3*(1-x)**2, 2*((x-1)/2)**2]
+        bp = BPoly(c, x, extrapolate='periodic')
+
+        assert_allclose(bp(3.4), 3 * 0.6**2)
+        assert_allclose(bp(-1.3), 2 * (0.7/2)**2)
+
+        assert_allclose(bp(3.4, 1), -6 * 0.6)
+        assert_allclose(bp(-1.3, 1), 2 * (0.7/2))
+
+    def test_descending(self):
+        np.random.seed(0)
+
+        power = 3
+        for m in [10, 20, 30]:
+            x = np.sort(np.random.uniform(0, 10, m + 1))
+            ca = np.random.uniform(-0.1, 0.1, size=(power + 1, m))
+            # We need only to flip coefficients to get it right!
+            cd = ca[::-1].copy()
+
+            pa = BPoly(ca, x, extrapolate=True)
+            pd = BPoly(cd[:, ::-1], x[::-1], extrapolate=True)
+
+            x_test = np.random.uniform(-10, 20, 100)
+            assert_allclose(pa(x_test), pd(x_test), rtol=1e-13)
+            assert_allclose(pa(x_test, 1), pd(x_test, 1), rtol=1e-13)
+
+            pa_d = pa.derivative()
+            pd_d = pd.derivative()
+
+            assert_allclose(pa_d(x_test), pd_d(x_test), rtol=1e-13)
+
+            # Antiderivatives won't be equal because fixing continuity is
+            # done in the reverse order, but surely the differences should be
+            # equal.
+            pa_i = pa.antiderivative()
+            pd_i = pd.antiderivative()
+            for a, b in np.random.uniform(-10, 20, (5, 2)):
+                int_a = pa.integrate(a, b)
+                int_d = pd.integrate(a, b)
+                assert_allclose(int_a, int_d, rtol=1e-12)
+                assert_allclose(pa_i(b) - pa_i(a), pd_i(b) - pd_i(a),
+                                rtol=1e-12)
+
     def test_multi_shape(self):
         c = np.random.rand(6, 2, 1, 2, 3)
         x = np.array([0, 0.5, 1])
@@ -1434,6 +1624,30 @@ class TestBPolyCalculus(TestCase):
         b1 = BPoly(c, x, extrapolate=False)
         assert_(np.isnan(b1.integrate(0, 2)))
         assert_allclose(b1.integrate(0, 2, extrapolate=True), 2., atol=1e-14)
+
+    def test_integrate_periodic(self):
+        x = np.array([1, 2, 4])
+        c = np.array([[0., 0.], [-1., -1.], [2., -0.], [1., 2.]])
+
+        P = BPoly.from_power_basis(PPoly(c, x), extrapolate='periodic')
+        I = P.antiderivative()
+
+        period_int = I(4) - I(1)
+
+        assert_allclose(P.integrate(1, 4), period_int)
+        assert_allclose(P.integrate(-10, -7), period_int)
+        assert_allclose(P.integrate(-10, -4), 2 * period_int)
+
+        assert_allclose(P.integrate(1.5, 2.5), I(2.5) - I(1.5))
+        assert_allclose(P.integrate(3.5, 5), I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5 + 12, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5))
+        assert_allclose(P.integrate(3.5, 5 + 12),
+                        I(2) - I(1) + I(4) - I(3.5) + 4 * period_int)
+
+        assert_allclose(P.integrate(0, -1), I(2) - I(3))
+        assert_allclose(P.integrate(-9, -10), I(2) - I(3))
+        assert_allclose(P.integrate(0, -10), I(2) - I(3) - 3 * period_int)
 
     def test_antider_neg(self):
         # .derivative(-nu) ==> .andiderivative(nu) and vice versa

@@ -1,4 +1,3 @@
-#! /usr/bin/env python
 #
 # Author: Damian Eads
 # Date: April 17, 2008
@@ -36,18 +35,21 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (TestCase, run_module_suite, dec, assert_raises,
-                           assert_allclose, assert_equal, assert_)
+                           assert_allclose, assert_equal, assert_, assert_warns)
 
 from scipy._lib.six import xrange, u
 
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
-    linkage, from_mlab_linkage, to_mlab_linkage, num_obs_linkage, inconsistent,
-    cophenet, fclusterdata, fcluster, is_isomorphic, single, leaders,
+    ClusterWarning, linkage, from_mlab_linkage, to_mlab_linkage,
+    num_obs_linkage, inconsistent, cophenet, fclusterdata, fcluster,
+    is_isomorphic, single, leaders, complete, weighted, centroid,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette, cut_tree, _order_cluster_tree)
+    set_link_color_palette, cut_tree, _order_cluster_tree,
+    _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
+from scipy.cluster._hierarchy import Heap
 
 import hierarchy_test_data
 
@@ -66,6 +68,13 @@ except:
 
 
 class TestLinkage(object):
+    def test_linkage_non_finite_elements_in_distance_matrix(self):
+        # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
+        # Exception expected.
+        y = np.zeros((6,))
+        y[0] = np.nan
+        assert_raises(ValueError, linkage, y)
+
     def test_linkage_empty_distance_matrix(self):
         # Tests linkage(Y) where Y is a 0x4 linkage matrix. Exception expected.
         y = np.zeros((0,))
@@ -94,6 +103,46 @@ class TestLinkage(object):
         y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
                                          metric="euclidean")
         Z = linkage(y, method)
+        assert_allclose(Z, expectedZ, atol=1e-06)
+
+    def test_compare_with_trivial(self):
+        rng = np.random.RandomState(0)
+        n = 20
+        X = rng.rand(n, 2)
+        d = pdist(X)
+
+        for method, code in _LINKAGE_METHODS.items():
+            Z_trivial = _hierarchy.linkage(d, n, code)
+            Z = linkage(d, method)
+            assert_allclose(Z_trivial, Z, rtol=1e-14, atol=1e-15)
+
+
+class TestLinkageTies(object):
+    _expectations = {
+        'single': np.array([[0, 1, 1.41421356, 2],
+                            [2, 3, 1.41421356, 3]]),
+        'complete': np.array([[0, 1, 1.41421356, 2],
+                              [2, 3, 2.82842712, 3]]),
+        'average': np.array([[0, 1, 1.41421356, 2],
+                             [2, 3, 2.12132034, 3]]),
+        'weighted': np.array([[0, 1, 1.41421356, 2],
+                              [2, 3, 2.12132034, 3]]),
+        'centroid': np.array([[0, 1, 1.41421356, 2],
+                              [2, 3, 2.12132034, 3]]),
+        'median': np.array([[0, 1, 1.41421356, 2],
+                            [2, 3, 2.12132034, 3]]),
+        'ward': np.array([[0, 1, 1.41421356, 2],
+                          [2, 3, 2.44948974, 3]]),
+    }
+
+    def test_linkage_ties(self):
+        for method in ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward']:
+            yield self.check_linkage_ties, method
+
+    def check_linkage_ties(self, method):
+        X = np.array([[-1, -1], [0, 0], [1, 1]])
+        Z = linkage(X, method=method)
+        expectedZ = self._expectations[method]
         assert_allclose(Z, expectedZ, atol=1e-06)
 
 
@@ -272,7 +321,11 @@ class TestIsIsomorphic(object):
         # nonisomorphic.)
         for nc in [2, 3, 5]:
             yield self.help_is_isomorphic_randperm, 1000, nc, True, 5
-
+            
+    def test_is_isomorphic_7(self):
+        # Regression test for gh-6271
+        assert_(not is_isomorphic([1, 2, 3], [1, 1, 1]))
+    
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         for k in range(3):
             a = np.int_(np.random.rand(nobs) * nclusters)
@@ -898,6 +951,14 @@ def calculate_maximum_inconsistencies(Z, R, k=3):
     return B
 
 
+def within_tol(a, b, tol):
+    return np.abs(a - b).max() < tol
+
+
+def test_unsupported_uncondensed_distance_matrix_linkage_warning():
+    assert_warns(ClusterWarning, linkage, [[0, 1], [1, 0]])
+
+
 def test_euclidean_linkage_value_error():
     for method in scipy.cluster.hierarchy._EUCLIDEAN_METHODS:
         assert_raises(ValueError, linkage, [[1, 1], [1, 1]],
@@ -946,6 +1007,38 @@ def test_cut_tree():
                  cut_tree(Z, height=[5, 10]))
     assert_equal(cutree[:, np.searchsorted(heights, [10, 5])],
                  cut_tree(Z, height=[10, 5]))
+
+
+def test_Heap():
+    values = np.array([2, -1, 0, -1.5, 3])
+    heap = Heap(values)
+
+    pair = heap.get_min()
+    assert_equal(pair['key'], 3)
+    assert_equal(pair['value'], -1.5)
+
+    heap.remove_min()
+    pair = heap.get_min()
+    assert_equal(pair['key'], 1)
+    assert_equal(pair['value'], -1)
+
+    heap.change_value(1, 2.5)
+    pair = heap.get_min()
+    assert_equal(pair['key'], 2)
+    assert_equal(pair['value'], 0)
+
+    heap.remove_min()
+    heap.remove_min()
+
+    heap.change_value(1, 10)
+    pair = heap.get_min()
+    assert_equal(pair['key'], 4)
+    assert_equal(pair['value'], 3)
+
+    heap.remove_min()
+    pair = heap.get_min()
+    assert_equal(pair['key'], 1)
+    assert_equal(pair['value'], 10)
 
 
 if __name__ == "__main__":

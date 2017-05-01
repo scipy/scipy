@@ -23,7 +23,7 @@ def linear_sum_assignment(cost_matrix):
     assigned to column j. Then the optimal assignment has cost
 
     .. math::
-        \min \sum_i \sum_j C_{i,j} X_{i,j}
+        \\min \\sum_i \\sum_j C_{i,j} X_{i,j}
 
     s.t. each row is assignment to at most one column, and each column to at
     most one row.
@@ -83,6 +83,17 @@ def linear_sum_assignment(cost_matrix):
     if len(cost_matrix.shape) != 2:
         raise ValueError("expected a matrix (2-d array), got a %r array"
                          % (cost_matrix.shape,))
+
+    if not (np.issubdtype(cost_matrix.dtype, np.number) or
+            cost_matrix.dtype == np.dtype(np.bool)):
+        raise ValueError("expected a matrix containing numerical entries, got %s"
+                         % (cost_matrix.dtype,))
+
+    if np.any(np.isinf(cost_matrix) | np.isnan(cost_matrix)):
+        raise ValueError("matrix contains invalid numeric entries")
+
+    if cost_matrix.dtype == np.dtype(np.bool):
+        cost_matrix = cost_matrix.astype(np.int)
 
     # The algorithm expects more columns than rows in the cost matrix.
     if cost_matrix.shape[1] < cost_matrix.shape[0]:

@@ -120,7 +120,8 @@
     An example of using qh_new_qhull is user_eg_r.c
 */
 int qh_new_qhull(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc,
-                char *qhull_cmd, FILE *outfile, FILE *errfile) {
+                char *qhull_cmd, FILE *outfile, FILE *errfile,
+                coordT* feaspoint) {
   int exitcode, hulldim;
   boolT new_ismalloc;
   coordT *new_points;
@@ -150,7 +151,26 @@ int qh_new_qhull(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc
       /* points is an array of halfspaces,
          the last coordinate of each halfspace is its offset */
       hulldim= dim-1;
-      qh_setfeasible(qh, hulldim);
+      if(feaspoint)
+      {
+        coordT* coords;
+        coordT* value;
+        int i;
+        if (!(qh->feasible_point= (pointT*)qh_malloc(hulldim * sizeof(coordT)))) {
+          qh_fprintf(qh, qh->ferr, 6079, "qhull error: insufficient memory for 'Hn,n,n'\n");
+          qh_errexit(qh, qh_ERRmem, NULL, NULL);
+        }
+        coords = qh->feasible_point;
+        value = feaspoint;
+        for(i = 0; i < hulldim; ++i)
+        {
+          *(coords++) = *(value++);
+        }
+      }
+      else
+      {
+        qh_setfeasible(qh, hulldim);
+      }
       new_points= qh_sethalfspace_all(qh, dim, numpoints, points, qh->feasible_point);
       new_ismalloc= True;
       if (ismalloc)

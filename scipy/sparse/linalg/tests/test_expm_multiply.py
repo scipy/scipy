@@ -190,6 +190,25 @@ class TestExpmActionInterval(TestCase):
                     for solution, t in zip(X, samples):
                         assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
 
+    def test_sparse_expm_multiply_interval_dtypes(self):
+        # Test A & B int
+        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        B = np.ones(5, dtype=int)
+        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
+        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+    
+        # Test A complex, B int
+        A = scipy.sparse.diags(-1j*np.arange(5),format='csr', dtype=complex)
+        B = np.ones(5, dtype=int)
+        Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)),format='csr')
+        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+    
+        # Test A int, B complex
+        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        B = 1j*np.ones(5, dtype=complex)
+        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
+        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+
     def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
 

@@ -36,7 +36,7 @@ class Damavandi(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, 2)
 
-        self._bounds = zip([0.0] * self.N, [14.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [14.0] * self.N))
 
         self.global_optimum = [[2 for _ in range(self.N)]]
         self.fglob = np.nan
@@ -97,7 +97,7 @@ class Deb01(Benchmark):
 
         self.change_dimensionality = True
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.3, -0.3]]
         self.fglob = -1.0
@@ -138,7 +138,7 @@ class Deb03(Benchmark):
 
         self.change_dimensionality = True
 
-        self._bounds = zip([-1.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([-1.0] * self.N, [1.0] * self.N))
 
         self.global_optimum = [[0.93388314, 0.68141781]]
         self.fglob = -1.0
@@ -176,7 +176,7 @@ class Decanomial(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(0, 2.5), (-2, -4)]
 
         self.global_optimum = [[2.0, -3.0]]
@@ -240,7 +240,7 @@ class Deceptive(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([0.0] * self.N, [1.0] * self.N)
+        self._bounds = list(zip([0.0] * self.N, [1.0] * self.N))
 
         alpha = arange(1.0, self.N + 1.0) / (self.N + 1.0)
 
@@ -302,7 +302,7 @@ class DeckkersAarts(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-20.0] * self.N, [20.0] * self.N)
+        self._bounds = list(zip([-20.0] * self.N, [20.0] * self.N))
         self.custom_bounds = ([-1, 1], [14, 16])
 
         self.global_optimum = [[0.0, 14.9451209]]
@@ -349,7 +349,7 @@ class DeflectedCorrugatedSpring(Benchmark):
         Benchmark.__init__(self, dimensions)
 
         alpha = 5.0
-        self._bounds = zip([0] * self.N, [2 * alpha] * self.N)
+        self._bounds = list(zip([0] * self.N, [2 * alpha] * self.N))
 
         self.global_optimum = [[alpha for _ in range(self.N)]]
         self.fglob = -1.0
@@ -395,7 +395,7 @@ class DeVilliersGlasser01(Benchmark):
     def __init__(self, dimensions=4):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([1.0] * self.N, [100.0] * self.N)
+        self._bounds = list(zip([1.0] * self.N, [100.0] * self.N))
 
         self.global_optimum = [[60.137, 1.371, 3.112, 1.761]]
         self.fglob = 0.0
@@ -441,7 +441,7 @@ class DeVilliersGlasser02(Benchmark):
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([1.0] * self.N, [60.0] * self.N)
+        self._bounds = list(zip([1.0] * self.N, [60.0] * self.N))
 
         self.global_optimum = [[53.81, 1.27, 3.012, 2.13, 0.507]]
         self.fglob = 0.0
@@ -487,7 +487,7 @@ class DixonPrice(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-10.0] * self.N, [10.0] * self.N)
+        self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
         self.custom_bounds = [(-2, 3), (-2, 3)]
 
         self.global_optimum = [[2.0 ** (-(2.0 ** i - 2.0) / 2.0 ** i)
@@ -531,8 +531,8 @@ class Dolan(Benchmark):
     def __init__(self, dimensions=5):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-100.0] * self.N,
-                           [100.0] * self.N)
+        self._bounds = list(zip([-100.0] * self.N,
+                                [100.0] * self.N))
 
         self.global_optimum = [[-74.10522498, 44.33511286, 6.21069214,
                                18.42772233, -16.5839403]]
@@ -570,7 +570,7 @@ class DropWave(Benchmark):
     def __init__(self, dimensions=2):
         Benchmark.__init__(self, dimensions)
 
-        self._bounds = zip([-5.12] * self.N, [5.12] * self.N)
+        self._bounds = list(zip([-5.12] * self.N, [5.12] * self.N))
 
         self.global_optimum = [[0 for _ in range(self.N)]]
         self.fglob = -1.0

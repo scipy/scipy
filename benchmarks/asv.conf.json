@@ -11,7 +11,7 @@
 
     // The URL of the source code repository for the project being
     // benchmarked
-    "repo": "https://github.com/scipy/scipy.git",
+    "repo": "..",
     "dvcs": "git",
     "branches": ["master", "maintenance/0.15.x", "maintenance/0.14.x"],
 
@@ -29,7 +29,7 @@
     "matrix": {
         "numpy": ["1.8.2"],
         "Tempita": ["0.5.2"],
-        "Cython": ["0.22"],
+        "Cython": ["0.23.4"],
 	"six": [],
     },
 

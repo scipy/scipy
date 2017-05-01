@@ -10,6 +10,7 @@ from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
 from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
+from scipy.interpolate.dfitpack import regrid_smth
 
 
 def data_file(basename):
@@ -364,6 +365,20 @@ class TestSplder(object):
         spl2 = insert(0.5, self.spl, m=4)
         assert_raises(ValueError, splder, spl2, 1)
 
+    def test_multidim(self):
+        # c can have trailing dims
+        for n in range(3):
+            t, c, k = self.spl
+            c2 = np.c_[c, c, c]
+            c2 = np.dstack((c2, c2))
+
+            spl2 = splantider((t, c2, k), n)
+            spl3 = splder(spl2, n)
+
+            assert_allclose(t, spl3[0])
+            assert_allclose(c2, spl3[1])
+            assert_equal(k, spl3[2])
+
 
 class TestBisplrep(object):
     def test_overflow(self):
@@ -425,6 +440,26 @@ def test_splev_der_k():
     x = [t[0] - 1., t[-1] + 1.]
     tck2 = splder((t, c, k), k)
     assert_allclose(splev(x, (t, c, k), k), splev(x, tck2))
+
+
+def test_bisplev_integer_overflow():
+    np.random.seed(1)
+
+    x = np.linspace(0, 1, 11)
+    y = x
+    z = np.random.randn(11, 11).ravel()
+    kx = 1
+    ky = 1
+
+    nx, tx, ny, ty, c, fp, ier = regrid_smth(
+        x, y, z, None, None, None, None, kx=kx, ky=ky, s=0.0)
+    tck = (tx[:nx], ty[:ny], c[:(nx - kx - 1) * (ny - ky - 1)], kx, ky)
+
+    xp = np.zeros([2621440])
+    yp = np.zeros([2621440])
+
+    assert_raises((RuntimeError, MemoryError), bisplev, xp, yp, tck)
+
 
 if __name__ == "__main__":
     run_module_suite()

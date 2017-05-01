@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function, absolute_import
 
 import datetime
@@ -233,11 +232,11 @@ class DateAttributeTest(TestCase):
     def test_datetime_missing(self):
         expected = np.array([
             'nat',
-            '2004-12-01T23:59Z',
+            '2004-12-01T23:59',
             'nat',
             'nat',
-            '2013-11-30T04:55Z',
-            '1631-10-15T20:04Z'
+            '2013-11-30T04:55',
+            '1631-10-15T20:04'
         ], dtype='datetime64[m]')
 
         assert_array_equal(self.data["attr_datetime_missing"], expected)

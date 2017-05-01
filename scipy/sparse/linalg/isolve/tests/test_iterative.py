@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """ Test functions for the sparse.linalg.isolve module
 """
 

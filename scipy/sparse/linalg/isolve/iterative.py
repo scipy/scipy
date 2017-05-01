@@ -76,8 +76,8 @@ def set_docstring(header, Ainfo, footer=''):
     return combine
 
 
-@set_docstring('Use BIConjugate Gradient iteration to solve A x = b',
-               'The real or complex N-by-N matrix of the linear system\n'
+@set_docstring('Use BIConjugate Gradient iteration to solve ``Ax = b``.',
+               'The real or complex N-by-N matrix of the linear system.\n'
                'It is required that the linear operator can produce\n'
                '``Ax`` and ``A^T x``.')
 @non_reentrant()
@@ -143,9 +143,9 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=Non
     return postprocess(x), info
 
 
-@set_docstring('Use BIConjugate Gradient STABilized iteration to solve A x = b',
-               'The real or complex N-by-N matrix of the linear system\n'
-               '``A`` must represent a hermitian, positive definite matrix')
+@set_docstring('Use BIConjugate Gradient STABilized iteration to solve '
+               '``Ax = b``.',
+               'The real or complex N-by-N matrix of the linear system.')
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
@@ -204,9 +204,9 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback
     return postprocess(x), info
 
 
-@set_docstring('Use Conjugate Gradient iteration to solve A x = b',
-               'The real or complex N-by-N matrix of the linear system\n'
-               '``A`` must represent a hermitian, positive definite matrix')
+@set_docstring('Use Conjugate Gradient iteration to solve ``Ax = b``.',
+               'The real or complex N-by-N matrix of the linear system.\n'
+               '``A`` must represent a hermitian, positive definite matrix.')
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
@@ -265,8 +265,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None)
     return postprocess(x), info
 
 
-@set_docstring('Use Conjugate Gradient Squared iteration to solve A x = b',
-               'The real-valued N-by-N matrix of the linear system')
+@set_docstring('Use Conjugate Gradient Squared iteration to solve ``Ax = b``.',
+               'The real-valued N-by-N matrix of the linear system.')
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None):
     A,M,x,b,postprocess = make_system(A,M,x0,b,xtype)
@@ -328,7 +328,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M=None, callback=None
 @non_reentrant()
 def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=None, callback=None, restrt=None):
     """
-    Use Generalized Minimal RESidual iteration to solve A x = b.
+    Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
 
     Parameters
     ----------
@@ -399,6 +399,17 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
       M_x = lambda x: spla.spsolve(P, x)
       M = spla.LinearOperator((n, n), M_x)
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import gmres
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> b = np.array([2, 4, -1], dtype=float)
+    >>> x, exitCode = gmres(A, b)
+    >>> print(exitCode)            # 0 indicates successful convergence
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
     """
 
     # Change 'restrt' keyword to 'restart'
@@ -491,7 +502,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, xtype=None, M=Non
 
 @non_reentrant()
 def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, callback=None):
-    """Use Quasi-Minimal Residual iteration to solve A x = b
+    """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
     Parameters
     ----------
@@ -545,6 +556,17 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, xtype=None, M1=None, M2=None, cal
     --------
     LinearOperator
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import qmr
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> b = np.array([2, 4, -1], dtype=float)
+    >>> x, exitCode = qmr(A, b)
+    >>> print(exitCode)            # 0 indicates successful convergence
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
     """
     A_ = A
     A,M,x,b,postprocess = make_system(A,None,x0,b,xtype)

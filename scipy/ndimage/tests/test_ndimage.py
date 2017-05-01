@@ -64,6 +64,14 @@ class TestNdimage:
         # list of boundary modes:
         self.modes = ['nearest', 'wrap', 'reflect', 'mirror', 'constant']
 
+        # Fail on warnings.
+        self.saved_warning_settings = warnings.catch_warnings()
+        self.saved_warning_settings.__enter__()
+        warnings.simplefilter("error")
+
+    def tearDown(self):
+        self.saved_warning_settings.__exit__()
+
     def test_correlate01(self):
         array = numpy.array([1, 2])
         weights = numpy.array([2])
@@ -2021,6 +2029,42 @@ class TestNdimage:
                                                 order=order)
             assert_array_almost_equal(out1, out2)
 
+    def test_affine_transform26(self):
+        # test homogeneous coordinates
+        data = numpy.array([[4, 1, 3, 2],
+                            [7, 6, 8, 5],
+                            [3, 5, 3, 6]])
+        for order in range(0, 6):
+            if (order > 1):
+                filtered = ndimage.spline_filter(data, order=order)
+            else:
+                filtered = data
+            tform_original = numpy.eye(2)
+            offset_original = -numpy.ones((2, 1))
+            tform_h1 = numpy.hstack((tform_original, offset_original))
+            tform_h2 = numpy.vstack((tform_h1, [[0, 0, 1]]))
+            out1 = ndimage.affine_transform(filtered, tform_original,
+                                            offset_original.ravel(),
+                                            order=order, prefilter=False)
+            out2 = ndimage.affine_transform(filtered, tform_h1, order=order,
+                                            prefilter=False)
+            out3 = ndimage.affine_transform(filtered, tform_h2, order=order,
+                                            prefilter=False)
+            for out in [out1, out2, out3]:
+                assert_array_almost_equal(out, [[0, 0, 0, 0],
+                                                [0, 4, 1, 3],
+                                                [0, 7, 6, 8]])
+
+    def test_affine_transform27(self):
+        # test valid homogeneous transformation matrix
+        data = numpy.array([[4, 1, 3, 2],
+                            [7, 6, 8, 5],
+                            [3, 5, 3, 6]])
+        tform_h1 = numpy.hstack((numpy.eye(2), -numpy.ones((2, 1))))
+        tform_h2 = numpy.vstack((tform_h1, [[5, 2, 1]]))
+        numpy.testing.assert_raises(ValueError,
+                                    ndimage.affine_transform, data, tform_h2)
+
     def test_shift01(self):
         data = numpy.array([1])
         for order in range(0, 6):
@@ -2119,13 +2163,9 @@ class TestNdimage:
         assert_array_equal(out,arr)
 
     def test_zoom3(self):
-        err = numpy.seterr(invalid='ignore')
         arr = numpy.array([[1, 2]])
-        try:
-            out1 = ndimage.zoom(arr, (2, 1))
-            out2 = ndimage.zoom(arr, (1,2))
-        finally:
-            numpy.seterr(**err)
+        out1 = ndimage.zoom(arr, (2, 1))
+        out2 = ndimage.zoom(arr, (1,2))
 
         assert_array_almost_equal(out1, numpy.array([[1, 2], [1, 2]]))
         assert_array_almost_equal(out2, numpy.array([[1, 1, 2, 2]]))
@@ -2143,24 +2183,15 @@ class TestNdimage:
 
     def test_zoom_infinity(self):
         # Ticket #1419 regression test
-        err = numpy.seterr(divide='ignore')
-
-        try:
-            dim = 8
-            ndimage.zoom(numpy.zeros((dim, dim)), 1./dim, mode='nearest')
-        finally:
-            numpy.seterr(**err)
+        dim = 8
+        ndimage.zoom(numpy.zeros((dim, dim)), 1./dim, mode='nearest')
 
     def test_zoom_zoomfactor_one(self):
         # Ticket #1122 regression test
         arr = numpy.zeros((1, 5, 5))
         zoom = (1.0, 2.0, 2.0)
 
-        err = numpy.seterr(invalid='ignore')
-        try:
-            out = ndimage.zoom(arr, zoom, cval=7)
-        finally:
-            numpy.seterr(**err)
+        out = ndimage.zoom(arr, zoom, cval=7)
         ref = numpy.zeros((1, 10, 10))
         assert_array_almost_equal(out, ref)
 

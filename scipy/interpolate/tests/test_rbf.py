@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Created by John Travers, Robert Hetland, 2007
 """ Test functions for rbf module """
 from __future__ import division, print_function, absolute_import

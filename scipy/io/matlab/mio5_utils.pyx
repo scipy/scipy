@@ -245,7 +245,8 @@ cdef class VarReader5:
 
         Does necessary swapping and takes account of SDE formats
 
-        Data may be returned in data_ptr, if this was an SDE
+        Data may be returned in data_ptr, if this was an SDE.
+        data_ptr must point to a buffer of size >= 4 bytes.
 
         Returns 1 for success, full format; 2 for success, SDE format; -1
         if error arises
@@ -365,7 +366,8 @@ cdef class VarReader5:
     cdef int read_element_into(self,
                                cnp.uint32_t *mdtype_ptr,
                                cnp.uint32_t *byte_count_ptr,
-                               void *ptr) except -1:
+                               void *ptr,
+                               cnp.uint32_t max_byte_count) except -1:
         ''' Read element into pre-allocated memory in `ptr`
 
         Parameters
@@ -375,8 +377,9 @@ cdef class VarReader5:
         byte_count_ptr : uint32_t*
            pointer to uint32_t value to which we write the byte count
         ptr : void*
-           memory location into which to read.  Memory is assumed large
-           enough to contain read data
+           memory buffer into which to read
+        max_byte_count : uint32_t
+           size of the buffer pointed to by ptr
 
         Returns
         -------
@@ -388,12 +391,16 @@ cdef class VarReader5:
         '''
         cdef:
            int mod8
+        if max_byte_count < 4:
+            raise ValueError('Unexpected amount of data to read (malformed input file?)')
         cdef int res = self.cread_tag(
             mdtype_ptr,
             byte_count_ptr,
             <char *>ptr)
         cdef cnp.uint32_t byte_count = byte_count_ptr[0]
         if res == 1: # full format
+            if byte_count > max_byte_count:
+                raise ValueError('Unexpected amount of data to read (malformed input file?)')
             res = self.cstream.read_into(ptr, byte_count)
             # Seek to next 64-bit boundary
             mod8 = byte_count % 8
@@ -485,7 +492,7 @@ cdef class VarReader5:
             raise TypeError('Expecting miINT8 as data type')
         return data
 
-    cdef int read_into_int32s(self, cnp.int32_t *int32p) except -1:
+    cdef int read_into_int32s(self, cnp.int32_t *int32p, cnp.uint32_t max_byte_count) except -1:
         ''' Read int32 values into pre-allocated memory
 
         Byteswap as necessary.  Specializes ``read_element_into``
@@ -493,6 +500,7 @@ cdef class VarReader5:
         Parameters
         ----------
         int32p : int32 pointer
+        max_count : uint32_t
 
         Returns
         -------
@@ -502,7 +510,7 @@ cdef class VarReader5:
         cdef:
             cnp.uint32_t mdtype, byte_count, n_ints
             int i, check_ints=0
-        self.read_element_into(&mdtype, &byte_count, <void *>int32p)
+        self.read_element_into(&mdtype, &byte_count, <void *>int32p, max_byte_count)
         if mdtype == miUINT32:
             check_ints = 1
         elif mdtype != miINT32:
@@ -596,7 +604,7 @@ cdef class VarReader5:
             header.name = None
             header.dims = None
             return header
-        header.n_dims = self.read_into_int32s(header.dims_ptr)
+        header.n_dims = self.read_into_int32s(header.dims_ptr, sizeof(header.dims_ptr))
         if header.n_dims > _MAT_MAXDIMS:
             raise ValueError('Too many dimensions (%d) for numpy arrays'
                              % header.n_dims)
@@ -896,7 +904,7 @@ cdef class VarReader5:
             list field_names
             object name
         # Read field names into list
-        cdef int res = self.read_into_int32s(&namelength)
+        cdef int res = self.read_into_int32s(&namelength, 4)
         if res != 1:
             raise ValueError('Only one value for namelength')
         cdef object names = self.read_int8_string()

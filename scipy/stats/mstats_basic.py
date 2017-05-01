@@ -156,7 +156,13 @@ def find_repeats(arr):
     # Make sure we get a copy. ma.compressed promises a "new array", but can
     # actually return a reference.
     compr = np.asarray(ma.compressed(arr), dtype=np.float64)
-    if compr is arr or compr.base is arr:
+    try:
+        need_copy = np.may_share_memory(compr, arr)
+    except AttributeError:
+        # numpy < 1.8.2 bug: np.may_share_memory([], []) raises,
+        # while in numpy 1.8.2 and above it just (correctly) returns False.
+        need_copy = False
+    if need_copy:
         compr = compr.copy()
     return _find_repeats(compr)
 
@@ -393,7 +399,6 @@ def pearsonr(x,y):
     # point arithmetic.
     r = min(r, 1.0)
     r = max(r, -1.0)
-    df = n - 2
 
     if r is masked or abs(r) == 1.0:
         prob = 0.
@@ -417,7 +422,7 @@ def spearmanr(x, y, use_ties=True):
     Spearman correlation does not assume that both datasets are normally
     distributed. Like other correlation coefficients, this one varies
     between -1 and +1 with 0 implying no correlation. Correlations of -1 or
-    +1 imply an exact linear relationship. Positive correlations imply that
+    +1 imply a monotonic relationship. Positive correlations imply that
     as `x` increases, so does `y`. Negative correlations imply that as `x`
     increases, `y` decreases.
 
@@ -454,7 +459,10 @@ def spearmanr(x, y, use_ties=True):
     (x, y) = (x.ravel(), y.ravel())
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
-    n -= m.sum()
+    # need int() here, otherwise numpy defaults to 32 bit
+    # integer on all Windows architectures, causing overflow.
+    # int() will keep it infinite precision.
+    n -= int(m.sum())
     if m is not nomask:
         x = ma.array(x, mask=m, copy=True)
         y = ma.array(y, mask=m, copy=True)
@@ -524,7 +532,10 @@ def kendalltau(x, y, use_ties=True, use_missing=False):
     if m is not nomask:
         x = ma.array(x, mask=m, copy=True)
         y = ma.array(y, mask=m, copy=True)
-        n -= m.sum()
+        # need int() here, otherwise numpy defaults to 32 bit
+        # integer on all Windows architectures, causing overflow.
+        # int() will keep it infinite precision.
+        n -= int(m.sum())
 
     if n < 2:
         return KendalltauResult(np.nan, np.nan)

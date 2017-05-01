@@ -17,6 +17,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['approx_jacobian','fmin_slsqp']
 
+import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import zeros, array, linalg, append, asfarray, concatenate, finfo, \
                   sqrt, vstack, exp, inf, where, isfinite, atleast_1d
@@ -79,7 +80,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     Parameters
     ----------
     func : callable f(x,*args)
-        Objective function.
+        Objective function.  Must return a scalar.
     x0 : 1-D ndarray of float
         Initial guess for the independent variable(s).
     eqcons : list, optional
@@ -327,23 +328,32 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Decompose bounds into xl and xu
     if bounds is None or len(bounds) == 0:
-        xl, xu = array([-1.0E12]*n), array([1.0E12]*n)
+        xl = np.empty(n, dtype=float)
+        xu = np.empty(n, dtype=float)
+        xl.fill(np.nan)
+        xu.fill(np.nan)
     else:
         bnds = array(bounds, float)
         if bnds.shape[0] != n:
             raise IndexError('SLSQP Error: the length of bounds is not '
                              'compatible with that of x0.')
 
-        bnderr = where(bnds[:, 0] > bnds[:, 1])[0]
+        bnderr = bnds[:, 0] > bnds[:, 1]
         if bnderr.any():
             raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
                              ', '.join(str(b) for b in bnderr))
         xl, xu = bnds[:, 0], bnds[:, 1]
 
-        # filter -inf, inf and NaN values
+        # Mark infinite bounds with nans; the Fortran code understands this
         infbnd = ~isfinite(bnds)
-        xl[infbnd[:, 0]] = -1.0E12
-        xu[infbnd[:, 1]] = 1.0E12
+        xl[infbnd[:, 0]] = np.nan
+        xu[infbnd[:, 1]] = np.nan
+
+    # Clip initial guess to bounds (SLSQP may fail with bounds-infeasible initial point)
+    have_bound = np.isfinite(xl)
+    x[have_bound] = np.clip(x[have_bound], xl[have_bound], np.inf)
+    have_bound = np.isfinite(xu)
+    x[have_bound] = np.clip(x[have_bound], -np.inf, xu[have_bound])
 
     # Initialize the iteration counter and the mode value
     mode = array(0,int)
@@ -361,6 +371,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Compute objective function
             fx = func(x)
+            try:
+                fx = float(np.asarray(fx))
+            except (TypeError, ValueError):
+                raise ValueError("Objective function must return a scalar")
             # Compute the constraints
             if cons['eq']:
                 c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
@@ -429,8 +443,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         print("            Function evaluations:", feval[0])
         print("            Gradient evaluations:", geval[0])
 
-    return OptimizeResult(x=x, fun=fx, jac=g, nit=int(majiter), nfev=feval[0],
-                          njev=geval[0], status=int(mode),
+    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
+                          nfev=feval[0], njev=geval[0], status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
 
 

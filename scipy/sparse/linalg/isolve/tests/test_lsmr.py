@@ -20,11 +20,13 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import array, arange, eye, zeros, ones, sqrt, transpose, hstack
 from numpy.linalg import norm
-from numpy.testing import run_module_suite, assert_almost_equal
+from numpy.testing import (run_module_suite, assert_almost_equal,
+                           assert_array_almost_equal)
 
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg.interface import aslinearoperator
 from scipy.sparse.linalg import lsmr
+from test_lsqr import G, b
 
 
 class TestLSMR:
@@ -70,6 +72,17 @@ class TestLSMR:
         x = lsmr(A, b)[0]
         assert_almost_equal(norm(A.dot(x) - b.ravel()), 0)
 
+    def testInitialization(self):
+        # Test that the default setting is not modified
+        x_ref = lsmr(G, b)[0]
+        x0 = zeros(b.shape)
+        x = lsmr(G, b, x0=x0)[0]
+        assert_array_almost_equal(x_ref, x)
+
+        # Test warm-start with single iteration
+        x0 = lsmr(G, b, maxiter=1)[0]
+        x = lsmr(G, b, x0=x0)[0]
+        assert_array_almost_equal(x_ref, x)
 
 class TestLSMRReturns:
     def setUp(self):

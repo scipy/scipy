@@ -9,9 +9,10 @@ import glob
 
 from numpy.testing import (assert_equal, dec, decorate_methods,
                            TestCase, run_module_suite, assert_allclose,
-                           assert_array_equal)
+                           assert_array_equal, assert_raises)
 
 from scipy import misc
+from numpy.ma.testutils import assert_mask_equal
 
 try:
     import PIL.Image
@@ -64,7 +65,7 @@ class TestPILUtil(TestCase):
         x = np.array([0, 1, 2], np.uint8)
         y = np.array([0, 1, 2])
         assert_equal(misc.bytescale(x), x)
-        assert_equal(misc.bytescale(y), [0, 127, 255])
+        assert_equal(misc.bytescale(y), [0, 128, 255])
 
     def test_bytescale_keywords(self):
         x = np.array([40, 60, 120, 200, 300, 500])
@@ -73,6 +74,44 @@ class TestPILUtil(TestCase):
         res_cmincmax = misc.bytescale(x, cmin=60, cmax=300)
         assert_equal(res_cmincmax, [0, 0, 64, 149, 255, 255])
         assert_equal(misc.bytescale(np.array([3, 3, 3]), low=4), [4, 4, 4])
+
+    def test_bytescale_cscale_lowhigh(self):
+        a = np.arange(10)
+        actual = misc.bytescale(a, cmin=3, cmax=6, low=100, high=200)
+        expected = [100, 100, 100, 100, 133, 167, 200, 200, 200, 200]
+        assert_equal(actual, expected)
+
+    def test_bytescale_mask(self):
+        a = np.ma.MaskedArray(data=[1, 2, 3], mask=[False, False, True])
+        actual = misc.bytescale(a)
+        expected = [0, 255, 3]
+        assert_equal(expected, actual)
+        assert_mask_equal(a.mask, actual.mask)
+        self.assertTrue(isinstance(actual, np.ma.MaskedArray))
+
+    def test_bytescale_rounding(self):
+        a = np.array([-0.5, 0.5, 1.5, 2.5, 3.5])
+        actual = misc.bytescale(a, cmin=0, cmax=10, low=0, high=10)
+        expected = [0, 1, 2, 3, 4]
+        assert_equal(actual, expected)
+
+    def test_bytescale_low_greaterthan_high(self):
+        with assert_raises(ValueError):
+            misc.bytescale(np.arange(3), low=10, high=5)
+
+    def test_bytescale_low_lessthan_0(self):
+        with assert_raises(ValueError):
+            misc.bytescale(np.arange(3), low=-1)
+
+    def test_bytescale_high_greaterthan_255(self):
+        with assert_raises(ValueError):
+            misc.bytescale(np.arange(3), high=256)
+
+    def test_bytescale_low_equals_high(self):
+        a = np.arange(3)
+        actual = misc.bytescale(a, low=10, high=10)
+        expected = [10, 10, 10]
+        assert_equal(actual, expected)
 
     def test_imsave(self):
         picdir = os.path.join(datapath, "data")
@@ -144,7 +183,8 @@ def test_imread_indexed_png():
                       [0, 31, 255, 255]]], dtype=np.uint8)
 
     filename = os.path.join(datapath, 'data', 'foo3x5x4indexed.png')
-    im = misc.imread(filename)
+    with open(filename, 'rb') as f:
+        im = misc.imread(f)
     assert_array_equal(im, data)
 
 
@@ -192,10 +232,7 @@ def test_imread_4bit():
     with open(filename, 'rb') as f:
         im = misc.imread(f)
     assert_equal(im.dtype, np.uint8)
-    # When the oldest supported version of numpy is 1.7, the following
-    # line can be change to
-    #   j, i = np.meshgrid(np.arange(12), np.arange(31), indexing='ij')
-    j, i = [k.T for k in np.meshgrid(np.arange(12), np.arange(31))]
+    j, i = np.meshgrid(np.arange(12), np.arange(31), indexing='ij')
     expected = 17*(np.maximum(j, i) % 16).astype(np.uint8)
     assert_equal(im, expected)
 

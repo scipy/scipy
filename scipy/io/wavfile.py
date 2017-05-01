@@ -196,7 +196,7 @@ def read(filename, mmap=False):
     Returns
     -------
     rate : int
-        Sample rate of wav file. 
+        Sample rate of wav file.
     data : numpy array
         Data read from wav file.  Data-type is determined from the file;
         see Notes.
@@ -241,12 +241,18 @@ def read(filename, mmap=False):
         while fid.tell() < file_size:
             # read the next chunk
             chunk_id = fid.read(4)
+
+            if not chunk_id:
+                raise ValueError("Unexpected end of file.")
+            elif len(chunk_id) < 4:
+                raise ValueError("Incomplete wav chunk.")
+
             if chunk_id == b'fmt ':
                 fmt_chunk_received = True
                 fmt_chunk = _read_fmt_chunk(fid, is_big_endian)
                 format_tag, channels, fs = fmt_chunk[1:4]
                 bit_depth = fmt_chunk[6]
-                if bit_depth not in (8, 16, 32, 64, 128):
+                if bit_depth not in (8, 16, 32, 64, 96, 128):
                     raise ValueError("Unsupported bit depth: the wav file "
                                      "has {}-bit data.".format(bit_depth))
             elif chunk_id == b'fact':

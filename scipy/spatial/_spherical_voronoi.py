@@ -15,10 +15,7 @@ import numpy as np
 import numpy.matlib
 import scipy
 import itertools
-from scipy._lib._version import NumpyVersion
-
-# Whether Numpy has stacked matrix linear algebra
-HAS_NUMPY_VEC_DET = (NumpyVersion(np.__version__) >= '1.8.0')
+from . import _voronoi
 
 __all__ = ['SphericalVoronoi']
 
@@ -50,16 +47,10 @@ def calc_circumcenters(tetrahedrons):
     dy = np.delete(d, 2, axis=2)
     dz = np.delete(d, 3, axis=2)
 
-    if HAS_NUMPY_VEC_DET:
-        dx = np.linalg.det(dx)
-        dy = -np.linalg.det(dy)
-        dz = np.linalg.det(dz)
-        a = np.linalg.det(a)
-    else:
-        dx = np.array([np.linalg.det(m) for m in dx])
-        dy = -np.array([np.linalg.det(m) for m in dy])
-        dz = np.array([np.linalg.det(m) for m in dz])
-        a = np.array([np.linalg.det(m) for m in a])
+    dx = np.linalg.det(dx)
+    dy = -np.linalg.det(dy)
+    dz = np.linalg.det(dz)
+    a = np.linalg.det(a)
 
     nominator = np.vstack((dx, dy, dz))
     denominator = 2*a
@@ -244,6 +235,7 @@ class SphericalVoronoi:
 
         # add the center to each of the simplices in tri to get the same
         # tetrahedrons we'd have gotten from Delaunay tetrahedralization
+        # tetrahedrons will have shape: (2N-4, 4, 3)
         tetrahedrons = self._tri.points[self._tri.simplices]
         tetrahedrons = np.insert(
             tetrahedrons,
@@ -253,9 +245,11 @@ class SphericalVoronoi:
         )
 
         # produce circumcenters of tetrahedrons from 3D Delaunay
+        # circumcenters will have shape: (2N-4, 3)
         circumcenters = calc_circumcenters(tetrahedrons)
 
         # project tetrahedron circumcenters to the surface of the sphere
+        # self.vertices will have shape: (2N-4, 3)
         self.vertices = project_to_sphere(
             circumcenters,
             self.center,
@@ -263,22 +257,27 @@ class SphericalVoronoi:
         )
 
         # calculate regions from triangulation
-        generator_indices = np.arange(self.points.shape[0])
-        filter_tuple = np.where((np.expand_dims(self._tri.simplices,
-                                -1) == generator_indices).any(axis=1))
+        # simplex_indices will have shape: (2N-4,)
+        simplex_indices = np.arange(self._tri.simplices.shape[0])
+        # tri_indices will have shape: (6N-12,)
+        tri_indices = np.column_stack([simplex_indices, simplex_indices,
+            simplex_indices]).ravel()
+        # point_indices will have shape: (6N-12,)
+        point_indices = self._tri.simplices.ravel()
 
-        list_tuples_associations = zip(filter_tuple[1],
-                                       filter_tuple[0])
-
-        list_tuples_associations = sorted(list_tuples_associations,
-                                          key=lambda t: t[0])
+        # array_associations will have shape: (6N-12, 2)
+        array_associations = np.dstack((point_indices, tri_indices))[0]
+        array_associations = array_associations[np.lexsort((
+                                                array_associations[...,1],
+                                                array_associations[...,0]))]
+        array_associations = array_associations.astype(np.intp)
 
         # group by generator indices to produce
         # unsorted regions in nested list
         groups = []
-        for k, g in itertools.groupby(list_tuples_associations,
+        for k, g in itertools.groupby(array_associations,
                                       lambda t: t[0]):
-            groups.append([element[1] for element in list(g)])
+            groups.append(list(list(zip(*list(g)))[1]))
 
         self.regions = groups
 
@@ -304,23 +303,5 @@ class SphericalVoronoi:
          of its surrounding region.
         """
 
-        for n in range(0, len(self.regions)):
-            remaining = self.regions[n][:]
-            sorted_vertices = []
-            current_simplex = remaining[0]
-            current_vertex = [k for k in self._tri.simplices[current_simplex]
-                              if k != n][0]
-            remaining.remove(current_simplex)
-            sorted_vertices.append(current_simplex)
-            while remaining:
-                current_simplex = [
-                    s for s in remaining
-                    if current_vertex in self._tri.simplices[s]
-                    ][0]
-                current_vertex = [
-                    s for s in self._tri.simplices[current_simplex]
-                    if s != n and s != current_vertex
-                    ][0]
-                remaining.remove(current_simplex)
-                sorted_vertices.append(current_simplex)
-            self.regions[n] = sorted_vertices
+        _voronoi.sort_vertices_of_regions(self._tri.simplices,
+                                                   self.regions)

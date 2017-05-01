@@ -10,6 +10,8 @@ scipy/special/_ufuncs_cxx.pyx binary
 scipy/special/_ufuncs_cxx.pxd binary
 scipy/special/_ufuncs.pyx binary
 scipy/special/_ufuncs_defs.h binary
+scipy/special/cython_special.pxd binary
+scipy/special/cython_special.pyx binary
 scipy/linalg/_blas_subroutine_wrappers.f binary
 scipy/linalg/_blas_subroutines.h binary
 scipy/linalg/_lapack_subroutine_wrappers.f binary
@@ -53,3 +55,6 @@ scipy/sparse/sparsetools/dia.py binary
 scipy/sparse/sparsetools/dia_wrap.cxx binary
 scipy/sparse/sparsetools/csgraph.py binary
 scipy/sparse/sparsetools/csgraph_wrap.cxx binary
+
+# Release notes, reduce number of conflicts.
+doc/release/*.rst merge=union

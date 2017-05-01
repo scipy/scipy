@@ -1,13 +1,15 @@
 from __future__ import division, print_function, absolute_import
 
+import warnings
+
 import numpy as np
 from numpy.testing import TestCase, run_module_suite, assert_raises, \
         assert_almost_equal, assert_array_almost_equal, assert_equal, \
-        assert_
+        assert_, assert_allclose, assert_warns
 from scipy.special import sinc
 
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-        firwin, firwin2, freqz, remez
+        firwin, firwin2, freqz, remez, firls, minimum_phase
 
 
 def test_kaiser_beta():
@@ -383,12 +385,171 @@ class TestRemez(TestCase):
         Hmag = abs(H)
 
         # should have a zero at 0 and pi (in this case close to zero)
-        assert_((Hmag[[0,-1]] < 0.02).all(), "Zero at zero and pi")
+        assert_((Hmag[[0, -1]] < 0.02).all(), "Zero at zero and pi")
 
         # check that the pass band is close to unity
-        idx = (f > a) * (f < 0.5-a)
+        idx = np.logical_and(f > a, f < 0.5-a)
         assert_((abs(Hmag[idx] - 1) < 0.015).all(), "Pass Band Close To Unity")
 
+    def test_compare(self):
+        # test comparison to MATLAB
+        k = [0.024590270518440, -0.041314581814658, -0.075943803756711,
+             -0.003530911231040, 0.193140296954975, 0.373400753484939,
+             0.373400753484939, 0.193140296954975, -0.003530911231040,
+             -0.075943803756711, -0.041314581814658, 0.024590270518440]
+        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        assert_allclose(h, k)
+
+        h = [-0.038976016082299, 0.018704846485491, -0.014644062687875,
+             0.002879152556419, 0.016849978528150, -0.043276706138248,
+             0.073641298245579, -0.103908158578635, 0.129770906801075,
+             -0.147163447297124, 0.153302248456347, -0.147163447297124,
+             0.129770906801075, -0.103908158578635, 0.073641298245579,
+             -0.043276706138248, 0.016849978528150, 0.002879152556419,
+             -0.014644062687875, 0.018704846485491, -0.038976016082299]
+        assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.), h)
+
+
+class TestFirls(TestCase):
+
+    def test_bad_args(self):
+        # even numtaps
+        assert_raises(ValueError, firls, 10, [0.1, 0.2], [0, 0])
+        # odd bands
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.4], [0, 0, 0])
+        # len(bands) != len(desired)
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.3, 0.4], [0, 0, 0])
+        # non-monotonic bands
+        assert_raises(ValueError, firls, 11, [0.2, 0.1], [0, 0])
+        assert_raises(ValueError, firls, 11, [0.1, 0.2, 0.3, 0.3], [0] * 4)
+        assert_raises(ValueError, firls, 11, [0.3, 0.4, 0.1, 0.2], [0] * 4)
+        assert_raises(ValueError, firls, 11, [0.1, 0.3, 0.2, 0.4], [0] * 4)
+        # negative desired
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [-1, 1])
+        # len(weight) != len(pairs)
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [1, 2])
+        # negative weight
+        assert_raises(ValueError, firls, 11, [0.1, 0.2], [0, 0], [-1])
+
+    def test_firls(self):
+        N = 11  # number of taps in the filter
+        a = 0.1  # width of the transition band
+
+        # design a halfband symmetric low-pass filter
+        h = firls(11, [0, a, 0.5-a, 0.5], [1, 1, 0, 0], nyq=0.5)
+
+        # make sure the filter has correct # of taps
+        assert_equal(len(h), N)
+
+        # make sure it is symmetric
+        midx = (N-1) // 2
+        assert_array_almost_equal(h[:midx], h[:-midx-1:-1])
+
+        # make sure the center tap is 0.5
+        assert_almost_equal(h[midx], 0.5)
+
+        # For halfband symmetric, odd coefficients (except the center)
+        # should be zero (really small)
+        hodd = np.hstack((h[1:midx:2], h[-midx+1::2]))
+        assert_array_almost_equal(hodd, 0)
+
+        # now check the frequency response
+        w, H = freqz(h, 1)
+        f = w/2/np.pi
+        Hmag = np.abs(H)
+
+        # check that the pass band is close to unity
+        idx = np.logical_and(f > 0, f < a)
+        assert_array_almost_equal(Hmag[idx], 1, decimal=3)
+
+        # check that the stop band is close to zero
+        idx = np.logical_and(f > 0.5-a, f < 0.5)
+        assert_array_almost_equal(Hmag[idx], 0, decimal=3)
+
+    def test_compare(self):
+        # compare to OCTAVE output
+        taps = firls(9, [0, 0.5, 0.55, 1], [1, 1, 0, 0], [1, 2])
+        # >> taps = firls(8, [0 0.5 0.55 1], [1 1 0 0], [1, 2]);
+        known_taps = [-6.26930101730182e-04, -1.03354450635036e-01,
+                      -9.81576747564301e-03, 3.17271686090449e-01,
+                      5.11409425599933e-01, 3.17271686090449e-01,
+                      -9.81576747564301e-03, -1.03354450635036e-01,
+                      -6.26930101730182e-04]
+        assert_allclose(taps, known_taps)
+
+        # compare to MATLAB output
+        taps = firls(11, [0, 0.5, 0.5, 1], [1, 1, 0, 0], [1, 2])
+        # >> taps = firls(10, [0 0.5 0.5 1], [1 1 0 0], [1, 2]);
+        known_taps = [
+            0.058545300496815, -0.014233383714318, -0.104688258464392,
+            0.012403323025279, 0.317930861136062, 0.488047220029700,
+            0.317930861136062, 0.012403323025279, -0.104688258464392,
+            -0.014233383714318, 0.058545300496815]
+        assert_allclose(taps, known_taps)
+
+        # With linear changes:
+        taps = firls(7, (0, 1, 2, 3, 4, 5), [1, 0, 0, 1, 1, 0], nyq=10)
+        # >> taps = firls(6, [0, 0.1, 0.2, 0.3, 0.4, 0.5], [1, 0, 0, 1, 1, 0])
+        known_taps = [
+            1.156090832768218, -4.1385894727395849, 7.5288619164321826,
+            -8.5530572592947856, 7.5288619164321826, -4.1385894727395849,
+            1.156090832768218]
+        assert_allclose(taps, known_taps)
+
+
+class TestMinimumPhase(TestCase):
+
+    def test_bad_args(self):
+        # not enough taps
+        assert_raises(ValueError, minimum_phase, [1.])
+        assert_raises(ValueError, minimum_phase, [1., 1.])
+        assert_raises(ValueError, minimum_phase, np.ones(10) * 1j)
+        assert_raises(ValueError, minimum_phase, 'foo')
+        assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
+        assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            assert_warns(RuntimeWarning, minimum_phase, np.arange(3))
+
+    def test_homomorphic(self):
+        # check that it can recover frequency responses of arbitrary
+        # linear-phase filters
+
+        # for some cases we can get the actual filter back
+        h = [1, -1]
+        h_new = minimum_phase(np.convolve(h, h[::-1]))
+        assert_allclose(h_new, h, rtol=0.05)
+
+        # but in general we only guarantee we get the magnitude back
+        rng = np.random.RandomState(0)
+        for n in (2, 3, 10, 11, 15, 16, 17, 20, 21, 100, 101):
+            h = rng.randn(n)
+            h_new = minimum_phase(np.convolve(h, h[::-1]))
+            assert_allclose(np.abs(np.fft.fft(h_new)),
+                            np.abs(np.fft.fft(h)), rtol=1e-4)
+
+    def test_hilbert(self):
+        # compare to MATLAB output of reference implementation
+
+        # f=[0 0.3 0.5 1];
+        # a=[1 1 0 0];
+        # h=remez(11,f,a);
+        h = remez(12, [0, 0.3, 0.5, 1], [1, 0], Hz=2.)
+        k = [0.349585548646686, 0.373552164395447, 0.326082685363438,
+             0.077152207480935, -0.129943946349364, -0.059355880509749]
+        m = minimum_phase(h, 'hilbert')
+        assert_allclose(m, k, rtol=1e-3)
+
+        # f=[0 0.8 0.9 1];
+        # a=[0 0 1 1];
+        # h=remez(20,f,a);
+        h = remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.)
+        k = [0.232486803906329, -0.133551833687071, 0.151871456867244,
+             -0.157957283165866, 0.151739294892963, -0.129293146705090,
+             0.100787844523204, -0.065832656741252, 0.035361328741024,
+             -0.014977068692269, -0.158416139047557]
+        m = minimum_phase(h, 'hilbert', n_fft=2**19)
+        assert_allclose(m, k, rtol=1e-3)
 
 if __name__ == "__main__":
     run_module_suite()

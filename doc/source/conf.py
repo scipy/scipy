@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'numpydoc',
               'sphinx.ext.intersphinx', 'sphinx.ext.coverage',
-              'sphinx.ext.autosummary', 'scipyoptdoc']
+              'sphinx.ext.autosummary', 'scipyoptdoc', 'doi_role']
 
 # Determine if the matplotlib has a recent enough version of the
 # plot_directive.

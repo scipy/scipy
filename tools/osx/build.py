@@ -36,7 +36,7 @@ def remove_dirs():
 
 def build_dist():
     print 'Building distribution... (using sudo)'
-    cmd = 'sudo python setupegg.py bdist_mpkg'
+    cmd = 'sudo python setup.py bdist_mpkg'
     shellcmd(cmd)
 
 def build_dmg():

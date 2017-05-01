@@ -15,7 +15,7 @@ counterparts, it is called the discrete Fourier transform (DFT).  The DFT has
 become a mainstay of numerical computing in part because of a very fast
 algorithm for computing it, called the Fast Fourier Transform (FFT), which was
 known to Gauss (1805) and was brought to light in its current form by Cooley
-and Tukey [CT65]_.  Press et al. [NR]_ provide an accessible introduction to
+and Tukey [CT65]_.  Press et al. [NR07]_ provide an accessible introduction to
 Fourier analysis and its applications.
 
 .. note::
@@ -44,7 +44,7 @@ and the inverse transform is defined as follows
 
 .. math::
 
-    x[n] = \frac{1}{N} \sum_{n=0}^{N-1} e^{2 \pi j \frac{k n}{N} } y[k] \, .
+    x[n] = \frac{1}{N} \sum_{k=0}^{N-1} e^{2 \pi j \frac{k n}{N} } y[k] \, .
 
 These transforms can be calculated by means of :func:`fft` and :func:`ifft`,
 respectively as shown in the following example.
@@ -97,9 +97,9 @@ The example plots the FFT of the sum of two sines.
     >>> x = np.linspace(0.0, N*T, N)
     >>> y = np.sin(50.0 * 2.0*np.pi*x) + 0.5*np.sin(80.0 * 2.0*np.pi*x)
     >>> yf = fft(y)
-    >>> xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
+    >>> xf = np.linspace(0.0, 1.0/(2.0*T), N//2)
     >>> import matplotlib.pyplot as plt
-    >>> plt.plot(xf, 2.0/N * np.abs(yf[0:N/2]))
+    >>> plt.plot(xf, 2.0/N * np.abs(yf[0:N//2]))
     >>> plt.grid()
     >>> plt.show()
 
@@ -129,8 +129,8 @@ truncated for illustrative purposes).
     >>> ywf = fft(y*w)
     >>> xf = np.linspace(0.0, 1.0/(2.0*T), N/2)
     >>> import matplotlib.pyplot as plt
-    >>> plt.semilogy(xf[1:N/2], 2.0/N * np.abs(yf[1:N/2]), '-b')
-    >>> plt.semilogy(xf[1:N/2], 2.0/N * np.abs(ywf[1:N/2]), '-r')
+    >>> plt.semilogy(xf[1:N//2], 2.0/N * np.abs(yf[1:N//2]), '-b')
+    >>> plt.semilogy(xf[1:N//2], 2.0/N * np.abs(ywf[1:N//2]), '-r')
     >>> plt.legend(['FFT', 'FFT w. window'])
     >>> plt.grid()
     >>> plt.show()
@@ -492,7 +492,7 @@ References
         machine calculation of complex Fourier series," *Math. Comput.*
         19: 297-301.
 
-.. [NR] Press, W., Teukolsky, S., Vetterline, W.T., and Flannery, B.P.,
+.. [NR07] Press, W., Teukolsky, S., Vetterline, W.T., and Flannery, B.P.,
         2007, *Numerical Recipes: The Art of Scientific Computing*, ch.
         12-13.  Cambridge Univ. Press, Cambridge, UK.
 

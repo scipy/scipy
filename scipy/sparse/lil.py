@@ -149,6 +149,8 @@ class lil_matrix(spmatrix, IndexMixin):
                                           self.__class__.__name__)
         self._shape = shape
 
+    set_shape.__doc__ = spmatrix.set_shape.__doc__
+
     shape = property(fget=spmatrix.get_shape, fset=set_shape)
 
     def __iadd__(self,other):
@@ -438,15 +440,18 @@ class lil_matrix(spmatrix, IndexMixin):
     reshape.__doc__ = spmatrix.reshape.__doc__
 
     def toarray(self, order=None, out=None):
-        """See the docstring for `spmatrix.toarray`."""
         d = self._process_toarray_args(order, out)
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
                 d[i, j] = self.data[i][pos]
         return d
 
+    toarray.__doc__ = spmatrix.toarray.__doc__
+
     def transpose(self, axes=None, copy=False):
         return self.tocsr().transpose(axes=axes, copy=copy).tolil()
+
+    transpose.__doc__ = spmatrix.transpose.__doc__
 
     def tolil(self, copy=False):
         if copy:
@@ -521,4 +526,26 @@ def _prepare_index_for_memoryview(i, j, x=None):
 
 
 def isspmatrix_lil(x):
+    """Is x of lil_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a lil matrix
+
+    Returns
+    -------
+    bool
+        True if x is a lil matrix, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import lil_matrix, isspmatrix_lil
+    >>> isspmatrix_lil(lil_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import lil_matrix, csr_matrix, isspmatrix_lil
+    >>> isspmatrix_lil(csr_matrix([[5]]))
+    False
+    """
     return isinstance(x, lil_matrix)

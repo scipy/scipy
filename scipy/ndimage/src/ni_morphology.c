@@ -279,7 +279,6 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
     } else {
         return 1;
     }
-    return PyErr_Occurred() ? 0 : 1;
 }
 
 #define CASE_ERODE_POINT2(_struct_size, _offsets, _coordinate_offsets, \

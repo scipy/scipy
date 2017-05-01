@@ -573,8 +573,8 @@ class _PowerLinearOperator(LinearOperator):
             raise ValueError('LinearOperator expected as A')
         if A.shape[0] != A.shape[1]:
             raise ValueError('square LinearOperator expected, got %r' % A)
-        if not isintlike(p):
-            raise ValueError('integer expected as p')
+        if not isintlike(p) or p < 0:
+            raise ValueError('non-negative integer expected as p')
 
         super(_PowerLinearOperator, self).__init__(_get_dtype([A]), A.shape)
         self.args = (A, p)

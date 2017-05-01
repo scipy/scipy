@@ -72,14 +72,19 @@ class _UpFIRDn(object):
             raise ValueError('Both up and down must be >= 1')
         # This both transposes, and "flips" each phase for filtering
         self._h_trans_flip = _pad_h(h, self._up)
+        self._h_trans_flip = np.ascontiguousarray(self._h_trans_flip)
 
-    def apply_filter(self, x):
-        """Apply the prepared filter to a 1D signal x"""
-        output_len = _output_len(len(self._h_trans_flip), len(x),
+    def apply_filter(self, x, axis=-1):
+        """Apply the prepared filter to the specified axis of a nD signal x"""
+        output_len = _output_len(len(self._h_trans_flip), x.shape[axis],
                                  self._up, self._down)
-        out = np.zeros(output_len, dtype=self._output_type)
-        _apply(np.asarray(x, self._output_type), self._h_trans_flip, out,
-               self._up, self._down)
+        output_shape = np.asarray(x.shape)
+        output_shape[axis] = output_len
+        out = np.zeros(output_shape, dtype=self._output_type, order='C')
+        axis = axis % x.ndim
+        _apply(np.asarray(x, self._output_type),
+               self._h_trans_flip, out,
+               self._up, self._down, axis)
         return out
 
 
@@ -174,4 +179,5 @@ def upfirdn(h, x, up=1, down=1, axis=-1):
     """
     x = np.asarray(x)
     ufd = _UpFIRDn(h, x.dtype, up, down)
-    return np.apply_along_axis(ufd.apply_filter, axis, x)
+    # This is equivalent to (but faster than) using np.apply_along_axis
+    return ufd.apply_filter(x, axis)

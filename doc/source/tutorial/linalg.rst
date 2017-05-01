@@ -156,7 +156,7 @@ Solving linear system
 Solving linear systems of equations is straightforward using the scipy
 command :obj:`linalg.solve`. This command expects an input matrix and
 a right-hand-side vector. The solution vector is then computed. An
-option for entering a symmetrix matrix is offered which can speed up
+option for entering a symmetric matrix is offered which can speed up
 the processing when applicable.  As an example, suppose it is desired
 to solve the following simultaneous equations:
 
@@ -901,7 +901,7 @@ Finally, any arbitrary function that takes one complex number and
 returns a complex number can be called as a matrix function using the
 command :obj:`linalg.funm`. This command takes the matrix and an
 arbitrary Python function. It then implements an algorithm from Golub
-and Van Loan's book "Matrix Computations" to compute function applied
+and Van Loan's book "Matrix Computations" to compute the function applied
 to the matrix using a Schur decomposition.  Note that *the function
 needs to accept complex numbers* as input in order to work with this
 algorithm. For example the following code computes the zeroth-order

@@ -1088,7 +1088,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
         the operation ``A * x``, where A is a real or complex square matrix.
     k : int, optional
         The number of eigenvalues and eigenvectors desired.
-        `k` must be smaller than N. It is not possible to compute all
+        `k` must be smaller than N-1. It is not possible to compute all
         eigenvectors of a matrix.
     M : ndarray, sparse matrix or LinearOperator, optional
         An array, sparse matrix, or LinearOperator representing
@@ -1704,6 +1704,16 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     This is a naive implementation using ARPACK as an eigensolver
     on A.H * A or A * A.H, depending on which one is more efficient.
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import svds, eigs
+    >>> A = csc_matrix([[1, 0, 0], [5, 0, 2], [0, -1, 0], [0, 0, 3]], dtype=float)
+    >>> u, s, vt = svds(A, k=2)
+    >>> s
+    array([ 2.75193379,  5.6059665 ])
+    >>> np.sqrt(eigs(A.dot(A.T), k=2)[0]).real
+    array([ 5.6059665 ,  2.75193379])
     """
     if not (isinstance(A, LinearOperator) or isspmatrix(A)):
         A = np.asarray(A)
