@@ -240,12 +240,10 @@ class spmatrix(object):
                              "element is ambiguous. Use a.any() or a.all().")
     __nonzero__ = __bool__
 
-    # What should len(sparse) return? For consistency with dense matrices,
-    # perhaps it should be the number of rows?  But for some uses the number of
-    # non-zeros is more important.  For now, raise an exception!
+    # Return the number of rows for consistency with dense matrixes
+    # so that you can interface with existing code more easily
     def __len__(self):
-        raise TypeError("sparse matrix length is ambiguous; use getnnz()"
-                        " or shape[0]")
+        return self.shape[0]
 
     def asformat(self, format):
         """Return this matrix in a given sparse format
