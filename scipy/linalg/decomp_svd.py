@@ -87,7 +87,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     >>> sigma = np.zeros((m, n))
     >>> for i in range(min(m, n)):
     ...     sigma[i, i] = s[i]
-    >>> a1 = np.dot(U, np.dot(sigma, vh))
+    >>> a1 = np.dot(U, np.dot(sigma, Vh))
     >>> np.allclose(a, a1)
     True
 
