@@ -586,6 +586,10 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         The solution to the system ``T x = b``.  Shape of return matches shape
         of `b`.
 
+    See Also
+    --------
+    toeplitz : Toeplitz matrix
+
     Notes
     -----
     The solution is computed using Levinson-Durbin recursion, which is faster
@@ -729,7 +733,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     See Also
     --------
-    circulant
+    circulant : circulant matrix
 
     Notes
     -----
