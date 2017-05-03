@@ -5167,37 +5167,52 @@ def friedmanchisquare(*args):
 BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
 
 
-def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
+def brunnermunzel(x, y, alternative="two-sided", distribution="t", nan_policy='propagate'):
     """
     Computes the Brunner-Munzel test on samples x and y
+
+    The Brunner-Munzel test is a nonparametric test of the null hypothesis that
+    when values are taken one by one from each group, the probabilities of
+    getting large values in both groups are equal.
+    Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
+    assumption of equivariance of two groups. Note that this does not assume the
+    distributions are same. This test works on two independent samples, which
+    may have different sizes.
 
     Parameters
     ----------
     x, y : array_like
         Array of samples, should be one-dimensional.
-    alternative :  'less', 'two-sided', or 'greater'
+    alternative :  'less', 'two-sided', or 'greater', optional
         Whether to get the p-value for the one-sided hypothesis ('less'
         or 'greater') or for the two-sided hypothesis ('two-sided').
-        Defaults value is two-sided.
-    distribution: 't' or 'g_norm'
+        Defaults value is 'two-sided' .
+    distribution: 't' or 'normal', optional
         Whether to get the p-value by t-distribution or by standard normal
         distribution.
-        Defaults value is t.
-
+        Defaults value is 't' .
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
 
     Returns
     -------
     statistic : float
-        The Brunner-Munzer W statistic
+        The Brunner-Munzer W statistic.
     pvalue : float
         p-value assuming an t distribution. One-sided or
-        two-sided, depending on the choice of `alternative`.
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    mannwhitneyu : Mann-Whitney rank test on two samples.
 
     Notes
     -------
     Brunner and Munzel recommended to estimate the p-value by t-distribution
     when the size of data is 50 or less. If the size is lower than 10, it would
-    be better to use permuted Brunner Munzel test (see [2]).
+    be better to use permuted Brunner Munzel test (see [2]_).
 
     References
     ----------
