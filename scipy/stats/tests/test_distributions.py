@@ -7,6 +7,7 @@ import warnings
 import re
 import sys
 import pickle
+import os
 
 from numpy.testing import (TestCase, run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
@@ -1303,6 +1304,69 @@ class TestGumbelL(TestCase):
         y = stats.gumbel_l.sf(x)
         xx = stats.gumbel_l.isf(y)
         assert_allclose(x, xx)
+        
+class TestLevyStable(TestCase):
+    def test_pdf(self):
+        # test values against Nolan's stable.exe output
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-pdf-sample-data.npy')))
+        
+        # test single data points (uses quad)
+        for (x, density, alpha, beta) in data:
+            pdf = stats.levy_stable.pdf(x, alpha, beta, scale=1, loc=0)
+            assert_almost_equal(pdf, density)
+            
+        # test bulk data (uses fft)
+        xs = data[:,(0,)]
+        density = data[:,(1,)]
+        alphas = data[:,(2,)]
+        betas = data[:,(3,)]
+        pdf = stats.levy_stable.pdf(xs, alphas, betas, scale=1, loc=0)
+        assert_almost_equal(pdf, density, 4)
+
+    def test_cdf(self):
+        # test values against Nolan's stable.exe output
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-cdf-sample-data.npy')))
+        
+        # test single data points
+        for (x, cdf_test, alpha, beta) in data:
+            cdf = stats.levy_stable.cdf(x, alpha, beta, scale=1, loc=0)
+            assert_almost_equal(cdf, cdf_test, 2)
+            
+        # test bulk data (uses fft)
+        xs = data[:,(0,)]
+        cdf_test = data[:,(1,)]
+        alphas = data[:,(2,)]
+        betas = data[:,(3,)]
+        cdf = stats.levy_stable.cdf(xs, alphas, betas, scale=1, loc=0)
+        assert_almost_equal(cdf, cdf_test, 2)
+    
+    def test_fit(self):
+        # contruct data to have percentiles that match
+        # example in McCulloch 1986.
+        x = [-.05413,-.05413,
+               0.,0.,0.,0.,
+               .00533,.00533,.00533,.00533,.00533,
+               .03354,.03354,.03354,.03354,.03354,
+               .05309,.05309,.05309,.05309,.05309]
+        alpha1, beta1, loc1, scale1 = stats.levy_stable._fitstart(x)
+        assert_almost_equal(alpha1, 1.48, 2)
+        assert_almost_equal(beta1, -.22, 2)
+        assert_almost_equal(scale1, 0.01717, 4)
+        assert_almost_equal(loc1, 0.00233, 2) # to 2 dps due to rounding error in McCulloch86
+        
+        param_sets = [
+            [(1.48,-.22), 0.00233, 0.01717]
+            ]
+
+        for args, loc, scale in param_sets:
+            x = stats.levy_stable.rvs(*args, loc=loc, scale=scale, size=10000)
+            alpha1, beta1, loc1, scale1 = stats.levy_stable.fit(x)
+            assert_allclose(alpha1, args[0], rtol=.05, atol=0)
+            assert_allclose(beta1, args[1], rtol=.1, atol=.1)
+            assert_allclose(loc1, loc, rtol=0, atol=0.01)
+            assert_allclose(scale1, scale, rtol=.05, atol=0)
 
 
 class TestArrayArgument(TestCase):  # test for ticket:992
