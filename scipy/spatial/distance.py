@@ -611,10 +611,12 @@ def jaccard(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    dist = (np.double(np.bitwise_and((u != v),
-                                     np.bitwise_or(u != 0, v != 0)).sum()) /
-            np.double(np.bitwise_or(u != 0, v != 0).sum()))
-    return dist
+
+    a = np.double(np.bitwise_and((u != v),
+                  np.bitwise_or(u != 0, v != 0)).sum())
+    b = np.double(np.bitwise_or(u != 0, v != 0).sum())
+
+    return (a / b) if b != 0 else 0
 
 
 def kulsinski(u, v):
