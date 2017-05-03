@@ -5267,27 +5267,28 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t", nan_policy='p
     rankx_mean = np.mean(rankx)
     ranky_mean = np.mean(ranky)
 
-    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2))
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
     Sx /= nx - 1
-    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2))
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
     Sy /= ny - 1
 
-    sigmax = Sx / np.power(nc - nx, 2)
-    sigmay = Sx / np.power(nc - ny, 2)
-    sigmac = nc * (sigmax / nx + sigmay / ny)
+    sigmax = Sx / np.power(nc - nx, 2.0)
+    sigmay = Sx / np.power(nc - ny, 2.0)
 
     wbfn = nx * ny * (rankcy_mean - rankcx_mean)
     wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
 
     if distribution == "t":
-        df = np.power(nx * Sx + ny * Sy,2)
-        df /= np.power(nx * Sx, 2) / (nx - 1) + np.power(ny * Sy,2) / (ny - 1)
+        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
+        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
+        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df = df_numer / df_denom
         p = distributions.t.cdf(wbfn, df)
-    elif distribution == "norm":
+    elif distribution == "normal":
         p = distributions.norm.cdf(wbfn)
     else:
         raise ValueError(
-            "distribution should be 't' or 'norm'")
+            "distribution should be 't' or 'normal'")
 
     if alternative == "greater":
         p = p
