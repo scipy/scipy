@@ -31,6 +31,7 @@ __all__ = ['argstoarray',
            'ttest_ind','ttest_rel','tvar',
            'variation',
            'winsorize',
+           'brunnermunzel',
            ]
 
 import numpy as np
@@ -2615,3 +2616,95 @@ def friedmanchisquare(*args):
 
     return FriedmanchisquareResult(chisq,
                                    distributions.chi2.sf(chisq, k-1))
+
+
+BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
+
+
+def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
+    """
+    Computes the Brunner-Munzel test on samples x and y
+
+    Missing values in `x` and/or `y` are discarded.
+
+    Parameters
+    ----------
+    x, y : array_like
+        Array of samples, should be one-dimensional.
+    alternative :  'less', 'two-sided', or 'greater', optional
+        Whether to get the p-value for the one-sided hypothesis ('less'
+        or 'greater') or for the two-sided hypothesis ('two-sided').
+        Defaults value is 'two-sided' .
+    distribution: 't' or 'normal', optional
+        Whether to get the p-value by t-distribution or by standard normal
+        distribution.
+        Defaults value is 't' .
+
+    Returns
+    -------
+    statistic : float
+        The Brunner-Munzer W statistic.
+    pvalue : float
+        p-value assuming an t distribution. One-sided or
+        two-sided, depending on the choice of `alternative` and `distribution`.
+
+    See Also
+    --------
+    mannwhitneyu : Mann-Whitney rank test on two samples.
+
+    Notes
+    -------
+    For more details on `brunnermunzel`, see `stats.brunnermunzel`.
+
+    """
+    x = ma.asarray(x).compressed().view(ndarray)
+    y = ma.asarray(y).compressed().view(ndarray)
+    nx = len(x)
+    ny = len(y)
+    if nx == 0 or ny == 0:
+        return BrunnerMunzelResult(np.nan, np.nan)
+    nc = nx + ny
+    rankc = rankdata(np.concatenate((x,y)))
+    rankcx = rankc[0:nx]
+    rankcy = rankc[nx:nx+ny]
+    rankcx_mean = np.mean(rankcx)
+    rankcy_mean = np.mean(rankcy)
+    rankx = rankdata(x)
+    ranky = rankdata(y)
+    rankx_mean = np.mean(rankx)
+    ranky_mean = np.mean(ranky)
+
+    Sx = np.sum(np.power(rankcx - rankx - rankcx_mean + rankx_mean, 2.0))
+    Sx /= nx - 1
+    Sy = np.sum(np.power(rankcy - ranky - rankcy_mean + ranky_mean, 2.0))
+    Sy /= ny - 1
+
+    sigmax = Sx / np.power(nc - nx, 2.0)
+    sigmay = Sx / np.power(nc - ny, 2.0)
+
+    wbfn = nx * ny * (rankcy_mean - rankcx_mean)
+    wbfn /= (nx + ny) * np.sqrt(nx * Sx + ny * Sy)
+
+    if distribution == "t":
+        df_numer = np.power(nx * Sx + ny * Sy, 2.0)
+        df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
+        df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
+        df = df_numer / df_denom
+        p = distributions.t.cdf(wbfn, df)
+    elif distribution == "normal":
+        p = distributions.norm.cdf(wbfn)
+    else:
+        raise ValueError(
+            "distribution should be 't' or 'normal'")
+
+    if alternative == "greater":
+        p = p
+    elif alternative == "less":
+        p = 1 - p
+    elif alternative == "two-sided":
+        p = 2 * np.min([p, 1-p])
+    else:
+        raise ValueError(
+            "alternative should be 'less', 'greater' or 'two-sided'")
+
+    return BrunnerMunzelResult(wbfn, p) 

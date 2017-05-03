@@ -86,6 +86,7 @@ is a relatively new package, some API changes are still possible.
    trimmed_std
    trimmed_var
    ttest_1samp
+   brunnermunzel
 
 """
 from __future__ import division, print_function, absolute_import

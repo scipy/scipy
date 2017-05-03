@@ -5237,11 +5237,26 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t", nan_policy='p
     """
     x = np.asarray(x)
     y = np.asarray(y)
+
+    # check both x and y
+    cnx, npx = _contains_nan(x, nan_policy)
+    cny, npy = _contains_nan(y, nan_policy)
+    contains_nan = cnx or cny
+    if npx == "omit" or npy == "omit":
+        nan_policy = "omit"
+
+    if contains_nan and nan_policy == "propagate":
+        return BrunnerMunzelResult(np.nan, np.nan)
+    elif contains_nan and nan_policy == "omit":
+        x = ma.masked_invalid(x)
+        y = ma.masked_invalid(y)
+        return mstats_basic.brunnermunzel(x, y, alternative, distribution)
+
     nx = len(x)
     ny = len(y)
     if nx == 0 or ny == 0:
-        return np.nan, np.nan
-    nc = len(x) + len(y)
+        return BrunnerMunzelResult(np.nan, np.nan)
+    nc = nx + ny
     rankc = rankdata(np.concatenate((x,y)))
     rankcx = rankc[0:nx]
     rankcy = rankc[nx:nx+ny]
