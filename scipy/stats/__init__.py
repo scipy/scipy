@@ -255,6 +255,7 @@ which work for masked arrays.
    wilcoxon
    kruskal
    friedmanchisquare
+   brunnermunzel
    combine_pvalues
    jarque_bera
 
