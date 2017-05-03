@@ -5217,11 +5217,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t", nan_policy='p
     References
     ----------
     .. [1] Brunner, E. and Munzel, U. "The nonparametric Benhrens-Fisher
-    problem: Asymptotic theory and a small-sample approximation".
-    Biometrical Journal. Vol. 42(2000): 17-25.
+           problem: Asymptotic theory and a small-sample approximation".
+           Biometrical Journal. Vol. 42(2000): 17-25.
     .. [2] Neubert, K. and Brunner, E. "A studentized permutation test for the
-    non-parametric Behrens-Fisher problem". Computational Statistics and Data
-    Analysis. Vol. 51(2007): 5192-5204.
+           non-parametric Behrens-Fisher problem". Computational Statistics and
+           Data Analysis. Vol. 51(2007): 5192-5204.
 
     Examples
     --------
