@@ -3078,7 +3078,7 @@ class levy_stable_gen(rv_continuous):
         if np.shape(x) != np.shape(beta):
             beta = np.full(np.shape(x), beta)
 
-        data_in = np.stack((x, alpha, beta), axis=-1)
+        data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
         fft_min_points_threshold = 5 if not hasattr(self, 'pdf_fft_min_points_threshold') else self.pdf_fft_min_points_threshold
         fft_grid_spacing = 0.01 if not hasattr(self, 'pdf_fft_grid_spacing') else self.pdf_fft_grid_spacing
@@ -3116,7 +3116,7 @@ class levy_stable_gen(rv_continuous):
         if np.shape(x) != np.shape(beta):
             beta = np.full(np.shape(x), beta)
 
-        data_in = np.stack((x, alpha, beta), axis=-1)
+        data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
         
         fft_grid_spacing = 0.01 if not hasattr(self, 'pdf_fft_grid_spacing') else self.pdf_fft_grid_spacing

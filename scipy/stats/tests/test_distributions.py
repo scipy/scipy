@@ -1351,7 +1351,7 @@ class TestLevyStable(TestCase):
                .03354,.03354,.03354,.03354,.03354,
                .05309,.05309,.05309,.05309,.05309]
         alpha1, beta1, loc1, scale1 = stats.levy_stable._fitstart(x)
-        assert_almost_equal(alpha1, 1.48, 2)
+        assert_allclose(alpha1, 1.48, rtol=0, atol=0.01)
         assert_almost_equal(beta1, -.22, 2)
         assert_almost_equal(scale1, 0.01717, 4)
         assert_almost_equal(loc1, 0.00233, 2) # to 2 dps due to rounding error in McCulloch86
