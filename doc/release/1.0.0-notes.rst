@@ -45,7 +45,7 @@ faster convergence.
 `scipy.optimize` improvements
 -----------------------------
 
-The method `trust-region-exact` was added to the function `scipy.optimize.minimize`.
+The method `trust-exact` was added to the function `scipy.optimize.minimize`.
 This new trust-region method solves the subproblem with higher accuracy at the cost
 of more Hessian factorizations (compared to dogleg) and is able to deal with indefinite
 Hessians. It seems very competitive against the other Newton methods implemented in scipy.
