@@ -1306,7 +1306,8 @@ class TestGumbelL(TestCase):
         assert_allclose(x, xx)
         
 class TestLevyStable(TestCase):
-    def test_pdf(self):
+    @dec.slow
+    def test_pdf_quad(self):
         # test values against Nolan's stable.exe output
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-pdf-sample-data.npy')))
@@ -1315,6 +1316,11 @@ class TestLevyStable(TestCase):
         for (x, density, alpha, beta) in data:
             pdf = stats.levy_stable.pdf(x, alpha, beta, scale=1, loc=0)
             assert_almost_equal(pdf, density)
+            
+    def test_pdf_fft(self):
+        # test values against Nolan's stable.exe output
+        data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                 'data/stable-pdf-sample-data.npy')))
             
         # test bulk data (uses fft)
         xs = data[:,(0,)]
@@ -1328,11 +1334,6 @@ class TestLevyStable(TestCase):
         # test values against Nolan's stable.exe output
         data = np.load(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                  'data/stable-cdf-sample-data.npy')))
-        
-        # test single data points
-        for (x, cdf_test, alpha, beta) in data:
-            cdf = stats.levy_stable.cdf(x, alpha, beta, scale=1, loc=0)
-            assert_almost_equal(cdf, cdf_test, 2)
             
         # test bulk data (uses fft)
         xs = data[:,(0,)]
