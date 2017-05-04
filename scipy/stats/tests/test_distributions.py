@@ -1354,7 +1354,7 @@ class TestLevyStable(TestCase):
         assert_allclose(alpha1, 1.48, rtol=0, atol=0.01)
         assert_almost_equal(beta1, -.22, 2)
         assert_almost_equal(scale1, 0.01717, 4)
-        assert_almost_equal(loc1, 0.00233, 2) # to 2 dps due to rounding error in McCulloch86
+        assert_almost_equal(loc1, 0.00233, 2)  # to 2 dps due to rounding error in McCulloch86
         
         param_sets = [
             [(1.48,-.22), 0.00233, 0.01717]
