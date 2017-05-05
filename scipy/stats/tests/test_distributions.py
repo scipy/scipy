@@ -1369,6 +1369,17 @@ class TestLevyStable(TestCase):
             assert_allclose(loc1, loc, rtol=0, atol=0.01)
             assert_allclose(scale1, scale, rtol=.05, atol=0)
 
+    def test_stats(self):
+        param_sets = [
+            [(1.48,-.22, 0, 1), (0,2,np.NaN,np.NaN)],
+            [(2,.9, 10, 1.5), (10,4.5,0,0)]
+        ]
+        for args, exp_stats in param_sets:
+            mean, var, skew, kurt = stats.levy_stable.stats(args[0], args[1], loc=args[2], scale=args[3], moments='mvsk')
+            assert_almost_equal(mean, exp_stats[0])
+            assert_almost_equal(var, exp_stats[1])
+            assert_almost_equal(skew, exp_stats[2])
+            assert_almost_equal(kurt, exp_stats[3])
 
 class TestArrayArgument(TestCase):  # test for ticket:992
     def test_noexception(self):

@@ -2977,21 +2977,23 @@ class levy_stable_gen(rv_continuous):
     Levy-stable distribution (only random variates available -- ignore other
     docs)
     
-    The distribution has characteristic function:
+    The distribution has characteristic function::
     
-        exp(i*t*mu-(abs(c*t)**alpha)*(1-i*beta*sign(t)*Phi(alpha, t)))
+        cf = exp(i*t*mu-(abs(c*t)**alpha)*(1-i*beta*sign(t)*Phi(alpha, t)))
         
-        where
-            Phi = tan(pi*alpha/2), if alpha != 1 
-                  -2*log(np.abs(t))/pi, otherwise
+    where::
+    
+        Phi = tan(pi*alpha/2), if alpha != 1 
+              -2*log(np.abs(t))/pi, otherwise
              
+    The probability density function for `levy_stable` is is::
     
-    The probability density function is:
+        levy_stable.pdf(x) = integral( exp(-i*x*t) * cf / (2*pi) )
+        
+    where ``-Inf < t < Inf``. This integral does not have a known closed form.
     
-        {integral of exp(-i*x*t) * {charactistic function} over reals (R)} / (2*pi)
-    
-    For evaluation of pdf uses either direct integration if number of points less than
-    self.pdf_fft_min_points_threshold (defaults to 5) otherwise uses FFT of characteristic 
+    For evaluation of pdf we use either direct integration if number of points less than
+    self.pdf_fft_min_points_threshold (defaults to 5) otherwise we use FFT of characteristic 
     function. To increase accuracy of FFT calculation one can specify 
     self.pdf_fft_grid_spacing (defaults to 0.01) and pdf_fft_n_points_two_power (defaults to
     a value that covers the input range * 4). Setting pdf_fft_n_points_two_power to 16 should 
@@ -3000,6 +3002,15 @@ class levy_stable_gen(rv_continuous):
     Fitting uses McCulloch's 1986 quantile estimation method.
 
     %(after_notes)s
+    
+    References
+    ----------
+    McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
+    Communications in Statistics - Simulation and Computation 15, 11091136.
+    
+    Mittnik, S.T. rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
+    of stable Paretian models, 
+    Mathematical and Computer Modelling, Volume 29, Issue 10, 1999, Pages 275-293, 
 
     %(example)s
 
@@ -3265,6 +3276,12 @@ class levy_stable_gen(rv_continuous):
         """
         return self._fitstart(data, *args, **kwds)
     
+    def _stats(self, alpha, beta):
+        mu = 0 
+        mu2 = 2
+        g1 = 0. if alpha == 2. else np.NaN
+        g2 = 0. if alpha == 2. else np.NaN 
+        return mu, mu2, g1, g2
 levy_stable = levy_stable_gen(name='levy_stable')
 
 
