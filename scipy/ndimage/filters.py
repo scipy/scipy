@@ -135,6 +135,12 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Examples
+    --------
+    >>> from scipy.ndimage import correlate1d
+    >>> correlate1d([2, 8, 0, 4, 1, 9, 9, 0], weights=[1, 3])
+    array([ 8, 26,  8, 12,  7, 28, 36,  9])
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -179,6 +185,11 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     convolve1d : ndarray
         Convolved array with same shape as input
 
+    Examples
+    --------
+    >>> from scipy.ndimage import convolve1d
+    >>> convolve1d([2, 8, 0, 4, 1, 9, 9, 0], weights=[1, 3])
+    array([14, 24,  4, 13, 12, 36, 27,  0])
     """
     weights = weights[::-1]
     origin = -origin
@@ -278,7 +289,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
 
 @docfiller
 def gaussian_filter(input, sigma, order=0, output=None,
-                  mode="reflect", cval=0.0, truncate=4.0):
+                    mode="reflect", cval=0.0, truncate=4.0):
     """Multidimensional Gaussian filter.
 
     Parameters
@@ -444,8 +455,9 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
 def generic_laplace(input, derivative2, output=None, mode="reflect",
                     cval=0.0,
                     extra_arguments=(),
-                    extra_keywords = None):
-    """N-dimensional Laplace filter using a provided second derivative function
+                    extra_keywords=None):
+    """
+    N-dimensional Laplace filter using a provided second derivative function.
 
     Parameters
     ----------
@@ -561,8 +573,8 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
 
 @docfiller
 def generic_gradient_magnitude(input, derivative, output=None,
-                mode="reflect", cval=0.0,
-                extra_arguments=(), extra_keywords = None):
+                               mode="reflect", cval=0.0,
+                               extra_arguments=(), extra_keywords=None):
     """Gradient magnitude using a provided gradient function.
 
     Parameters
@@ -608,7 +620,7 @@ def generic_gradient_magnitude(input, derivative, output=None,
 
 @docfiller
 def gaussian_gradient_magnitude(input, sigma, output=None,
-                mode="reflect", cval=0.0, **kwargs):
+                                mode="reflect", cval=0.0, **kwargs):
     """Multidimensional gradient magnitude using Gaussian derivatives.
 
     Parameters
@@ -736,7 +748,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     output : ndarray, optional
         The `output` parameter passes an array in which to store the
         filter output. Output array should have different name as
-        compared to input array to avoid aliasing errors.  
+        compared to input array to avoid aliasing errors.
     mode : {'reflect','constant','nearest','mirror', 'wrap'}, optional
         the `mode` parameter determines how the array borders are
         handled. For 'constant' mode, values beyond borders are set to be
@@ -745,8 +757,8 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
     origin : array_like, optional
-        The `origin` parameter controls the placement of the filter, 
-        relative to the centre of the current element of the input.  
+        The `origin` parameter controls the placement of the filter,
+        relative to the centre of the current element of the input.
         Default of 0 is equivalent to ``(0,)*input.ndim``.
 
     Returns
@@ -853,6 +865,12 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     %(mode)s
     %(cval)s
     %(origin)s
+
+    Examples
+    --------
+    >>> from scipy.ndimage import uniform_filter1d
+    >>> uniform_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
+    array([4, 3, 4, 1, 4, 6, 6, 3])
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -920,7 +938,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     modes = _ni_support._normalize_sequence(mode, input.ndim)
     axes = list(range(input.ndim))
     axes = [(axes[ii], sizes[ii], origins[ii], modes[ii])
-                           for ii in range(len(axes)) if sizes[ii] > 1]
+            for ii in range(len(axes)) if sizes[ii] > 1]
     if len(axes) > 0:
         for axis, size, origin, mode in axes:
             uniform_filter1d(input, int(size), axis, output, mode,
@@ -960,6 +978,13 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     ----------
     .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
     .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
+
+
+    Examples
+    --------
+    >>> from scipy.ndimage import minimum_filter1d
+    >>> minimum_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
+    array([2, 0, 0, 0, 1, 1, 0, 0])
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -1012,6 +1037,11 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     .. [1] http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.2777
     .. [2] http://www.richardhartersworld.com/cri/2001/slidingmin.html
 
+    Examples
+    --------
+    >>> from scipy.ndimage import maximum_filter1d
+    >>> maximum_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
+    array([8, 8, 8, 4, 9, 9, 9, 9])
     """
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
@@ -1064,7 +1094,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         modes = _ni_support._normalize_sequence(mode, input.ndim)
         axes = list(range(input.ndim))
         axes = [(axes[ii], sizes[ii], origins[ii], modes[ii])
-                               for ii in range(len(axes)) if sizes[ii] > 1]
+                for ii in range(len(axes)) if sizes[ii] > 1]
         if minimum:
             filter_ = minimum_filter1d
         else:
@@ -1097,8 +1127,8 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
 
 @docfiller
 def minimum_filter(input, size=None, footprint=None, output=None,
-      mode="reflect", cval=0.0, origin=0):
-    """Calculates a multi-dimensional minimum filter.
+                   mode="reflect", cval=0.0, origin=0):
+    """Calculate a multi-dimensional minimum filter.
 
     Parameters
     ----------
@@ -1134,8 +1164,8 @@ def minimum_filter(input, size=None, footprint=None, output=None,
 
 @docfiller
 def maximum_filter(input, size=None, footprint=None, output=None,
-      mode="reflect", cval=0.0, origin=0):
-    """Calculates a multi-dimensional maximum filter.
+                   mode="reflect", cval=0.0, origin=0):
+    """Calculate a multi-dimensional maximum filter.
 
     Parameters
     ----------
@@ -1171,7 +1201,7 @@ def maximum_filter(input, size=None, footprint=None, output=None,
 
 @docfiller
 def _rank_filter(input, rank, size=None, footprint=None, output=None,
-     mode="reflect", cval=0.0, origin=0, operation='rank'):
+                 mode="reflect", cval=0.0, origin=0, operation='rank'):
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -1224,8 +1254,8 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
 
 @docfiller
 def rank_filter(input, rank, size=None, footprint=None, output=None,
-      mode="reflect", cval=0.0, origin=0):
-    """Calculates a multi-dimensional rank filter.
+                mode="reflect", cval=0.0, origin=0):
+    """Calculate a multi-dimensional rank filter.
 
     Parameters
     ----------
@@ -1266,7 +1296,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
 def median_filter(input, size=None, footprint=None, output=None,
                   mode="reflect", cval=0.0, origin=0):
     """
-    Calculates a multidimensional median filter.
+    Calculate a multidimensional median filter.
 
     Parameters
     ----------
@@ -1302,8 +1332,8 @@ def median_filter(input, size=None, footprint=None, output=None,
 
 @docfiller
 def percentile_filter(input, percentile, size=None, footprint=None,
-                 output=None, mode="reflect", cval=0.0, origin=0):
-    """Calculates a multi-dimensional percentile filter.
+                      output=None, mode="reflect", cval=0.0, origin=0):
+    """Calculate a multi-dimensional percentile filter.
 
     Parameters
     ----------
@@ -1337,13 +1367,13 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     >>> plt.show()
     """
     return _rank_filter(input, percentile, size, footprint, output, mode,
-                                   cval, origin, 'percentile')
+                        cval, origin, 'percentile')
 
 
 @docfiller
 def generic_filter1d(input, function, filter_size, axis=-1,
-                 output=None, mode="reflect", cval=0.0, origin=0,
-                 extra_arguments=(), extra_keywords = None):
+                     output=None, mode="reflect", cval=0.0, origin=0,
+                     extra_arguments=(), extra_keywords=None):
     """Calculate a one-dimensional filter along the given axis.
 
     `generic_filter1d` iterates over the lines of the array, calling the
@@ -1375,11 +1405,11 @@ def generic_filter1d(input, function, filter_size, axis=-1,
 
     .. code:: c
 
-       int function(double *input_line, npy_intp input_length, 
-                    double *output_line, npy_intp output_length, 
+       int function(double *input_line, npy_intp input_length,
+                    double *output_line, npy_intp output_length,
                     void *user_data)
-       int function(double *input_line, intptr_t input_length, 
-                    double *output_line, intptr_t output_length, 
+       int function(double *input_line, intptr_t input_length,
+                    double *output_line, intptr_t output_length,
                     void *user_data)
 
     The calling function iterates over the lines of the input and output
@@ -1390,16 +1420,16 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     is passed through ``input_length``. The callback function should apply
     the filter and store the result in the array passed through
     ``output_line``. The length of the output line is passed through
-    ``output_length``. ``user_data`` is the data pointer provided 
+    ``output_length``. ``user_data`` is the data pointer provided
     to `scipy.LowLevelCallable` as-is.
 
-    The callback function must return an integer error status that is zero 
+    The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
     normally set the python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
-    In addition, some other low-level function pointer specifications 
+    In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
@@ -1418,15 +1448,16 @@ def generic_filter1d(input, function, filter_size, axis=-1,
         raise ValueError('invalid origin')
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.generic_filter1d(input, function, filter_size, axis, output,
-                      mode, cval, origin, extra_arguments, extra_keywords)
+                               mode, cval, origin, extra_arguments,
+                               extra_keywords)
     return return_value
 
 
 @docfiller
 def generic_filter(input, function, size=None, footprint=None,
                    output=None, mode="reflect", cval=0.0, origin=0,
-                   extra_arguments=(), extra_keywords = None):
-    """Calculates a multi-dimensional filter using the given function.
+                   extra_arguments=(), extra_keywords=None):
+    """Calculate a multi-dimensional filter using the given function.
 
     At each element the provided function is called. The input values
     within the filter footprint at that element are passed to the function
@@ -1452,9 +1483,9 @@ def generic_filter(input, function, size=None, footprint=None,
 
     .. code:: c
 
-       int callback(double *buffer, npy_intp filter_size, 
+       int callback(double *buffer, npy_intp filter_size,
                     double *return_value, void *user_data)
-       int callback(double *buffer, intptr_t filter_size, 
+       int callback(double *buffer, intptr_t filter_size,
                     double *return_value, void *user_data)
 
     The calling function iterates over the elements of the input and
@@ -1462,16 +1493,16 @@ def generic_filter(input, function, size=None, footprint=None,
     elements within the footprint of the filter at the current element are
     passed through the ``buffer`` parameter, and the number of elements
     within the footprint through ``filter_size``. The calculated value is
-    returned in ``return_value``. ``user_data`` is the data pointer provided 
+    returned in ``return_value``. ``user_data`` is the data pointer provided
     to `scipy.LowLevelCallable` as-is.
 
-    The callback function must return an integer error status that is zero 
+    The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
     normally set the python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
-    In addition, some other low-level function pointer specifications 
+    In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
@@ -1501,5 +1532,5 @@ def generic_filter(input, function, size=None, footprint=None,
     output, return_value = _ni_support._get_output(output, input)
     mode = _ni_support._extend_mode_to_code(mode)
     _nd_image.generic_filter(input, function, footprint, output, mode,
-                         cval, origins, extra_arguments, extra_keywords)
+                             cval, origins, extra_arguments, extra_keywords)
     return return_value
