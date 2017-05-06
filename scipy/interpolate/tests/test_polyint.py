@@ -264,6 +264,16 @@ class CheckKrogh(TestCase):
 
         assert_allclose(abs((f(x) - offset_cdf) / f.derivative(x, 1)), 0, atol=1e-10)
 
+    def test_derivatives_complex(self):
+        # regression test for gh-7381: krogh.derivatives(0) fails complex y
+        x, y = np.array([-1, -1, 0, 1, 1]), np.array([1, 1.0j, 0, -1, 1.0j])
+        func = KroghInterpolator(x, y)
+        cmplx = func.derivatives(0)
+
+        cmplx2 = (KroghInterpolator(x, y.real).derivatives(0) +
+                  1j*KroghInterpolator(x, y.imag).derivatives(0))
+        assert_allclose(cmplx, cmplx2, atol=1e-15)
+
 
 class CheckTaylor(TestCase):
     def test_exponential(self):

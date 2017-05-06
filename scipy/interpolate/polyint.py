@@ -334,7 +334,7 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         pi = np.zeros((n, len(x)))
         w = np.zeros((n, len(x)))
         pi[0] = 1
-        p = np.zeros((len(x), self.r))
+        p = np.zeros((len(x), self.r), dtype=self.dtype)
         p += self.c[0,np.newaxis,:]
 
         for k in xrange(1,n):
