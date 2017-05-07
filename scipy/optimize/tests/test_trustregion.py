@@ -73,7 +73,7 @@ class TestTrustRegionSolvers(TestCase):
             r_ncg = minimize(f, x0, jac=g, hess=h, tol=1e-8,
                              method='newton-cg', options={'return_all': True})
             r_iterative = minimize(f, x0, jac=g, hess=h, tol=1e-8,
-                                   method='trust-region-exact',
+                                   method='trust-exact',
                                    options={'return_all': True})
             assert_allclose(self.x_opt, r_dogleg['x'])
             assert_allclose(self.x_opt, r_trust_ncg['x'])

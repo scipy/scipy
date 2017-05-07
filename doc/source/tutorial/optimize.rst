@@ -338,7 +338,7 @@ Hessian product example:
     array([1., 1., 1., 1., 1.])
 
 
-Trust-Region Nearly Exact Algorithm (``method='trust-region-exact'``)
+Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Both methods ``Newton-CG`` and ``trust-ncg`` are suitable for dealing with
@@ -359,7 +359,7 @@ trust-region methods. The Hessian product option is not supported by this algori
 example using the Rosenbrock function follows:
 
 
-    >>> res = minimize(rosen, x0, method='trust-region-exact',
+    >>> res = minimize(rosen, x0, method='trust-exact',
     ...                jac=rosen_der, hess=rosen_hess,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
