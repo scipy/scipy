@@ -3107,8 +3107,8 @@ class levy_stable_gen(rv_continuous):
                 q = np.ceil(np.log(2*np.max(np.abs(_x))/h)/np.log(2)) + 2 if fft_n_points_two_power is None else fft_n_points_two_power
                 
                 density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
-                f = interpolate.interp1d(density_x, density)
-                data_out[data_mask] = np.real(f(_x))
+                f = interpolate.interp1d(density_x, np.real(density))
+                data_out[data_mask] = f(_x)
                 
         return data_out.T[0]
 
@@ -3138,7 +3138,7 @@ class levy_stable_gen(rv_continuous):
             q = 16 if fft_n_points_two_power is None else fft_n_points_two_power
             
             density_x, density = levy_stable_gen._pdf_from_cf_with_fft(lambda t: levy_stable_gen._cf(t, _alpha, _beta), h=h, q=q)
-            f = interpolate.InterpolatedUnivariateSpline(density_x, density)
+            f = interpolate.InterpolatedUnivariateSpline(density_x, np.real(density))
             data_out[data_mask] = np.array([f.integral(self.a, x_1) for x_1 in _x]).reshape(data_out[data_mask].shape)
                 
         return data_out.T[0]
