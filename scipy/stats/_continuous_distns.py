@@ -2999,18 +2999,17 @@ class levy_stable_gen(rv_continuous):
     a value that covers the input range * 4). Setting pdf_fft_n_points_two_power to 16 should 
     be sufficiently accurate in most cases at the expense of CPU time.
     
-    Fitting uses McCulloch's 1986 quantile estimation method.
+    Fitting uses quantile estimation method in [MC].
 
     %(after_notes)s
     
     References
-    ----------
-    McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
-    Communications in Statistics - Simulation and Computation 15, 11091136.
-    
-    Mittnik, S.T. rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
-    of stable Paretian models, 
-    Mathematical and Computer Modelling, Volume 29, Issue 10, 1999, Pages 275-293, 
+    ----------    
+    [MC] McCulloch, J., 1986. Simple consistent estimators of stable distribution parameters.
+         Communications in Statistics - Simulation and Computation 15, 11091136.
+    [MS] Mittnik, S.T. Rachev, T. Doganoglu, D. Chenyao, 1999. Maximum likelihood estimation 
+         of stable Paretian models, Mathematical and Computer Modelling, Volume 29, Issue 10, 
+         1999, Pages 275-293.
 
     %(example)s
 
@@ -3066,7 +3065,7 @@ class levy_stable_gen(rv_continuous):
     @staticmethod
     def _pdf_from_cf_with_fft(cf, h=0.01, q=9):
         """Calculates pdf from cf using fft. Using region around 0 with N=2**q points
-        separated by distance h. As suggested in Mittnik 1999 - MLE of Stable Paritian Models
+        separated by distance h. As suggested by [MS].
         """
         N = 2**q
         n = np.arange(1,N+1)
@@ -3083,11 +3082,7 @@ class levy_stable_gen(rv_continuous):
         
         x = np.asarray(x).reshape(1, -1)[0,:]
         
-        if np.shape(x) != np.shape(alpha):
-            alpha = np.full(np.shape(x), alpha)
-            
-        if np.shape(x) != np.shape(beta):
-            beta = np.full(np.shape(x), beta)
+        x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
 
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
@@ -3121,11 +3116,7 @@ class levy_stable_gen(rv_continuous):
 
         x = np.asarray(x).reshape(1, -1)[0,:]
         
-        if np.shape(x) != np.shape(alpha):
-            alpha = np.full(np.shape(x), alpha)
-            
-        if np.shape(x) != np.shape(beta):
-            beta = np.full(np.shape(x), beta)
+        x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
 
         data_in = np.dstack((x, alpha, beta))[0]
         data_out = np.empty(shape=(len(data_in),1))
