@@ -213,7 +213,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     the Hessian with a given vector. Suitable for large-scale problems.
 
     Method :ref:`trust-krylov <optimize.minimize-trustkrylov>` uses
-    the Newton GLTR trust-region algorithm [13]_ for unconstrained
+    the Newton GLTR trust-region algorithm [14]_, [15]_ for unconstrained
     minimization. This algorithm requires the gradient
     and either the Hessian or a function that computes the product of
     the Hessian with a given vector. Suitable for large-scale problems.
@@ -222,7 +222,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
     Method :ref:`trust-exact <optimize.minimize-trustexact>`
     is a trust-region method for unconstrained minimization in which
-    quadratic subproblems are solved almost exactly [14]_, [15]_. This
+    quadratic subproblems are solved almost exactly [13]_. This
     algorithm requires the gradient and the Hessian (which is
     *not* required to be positive definite). It is, in many
     situations, the Newton method to converge in fewer iteraction
@@ -502,7 +502,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'trust-krylov':
         return _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
                                       callback=callback, **options)
-
     elif meth == 'trust-exact':
         return _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                            callback=callback, **options)
