@@ -2361,7 +2361,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     n_out = n_out // down + bool(n_out % down)
 
     if isinstance(window, (list, np.ndarray)):
-        window = asarray(window)
+        window = array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
         half_len = (window.size - 1) // 2

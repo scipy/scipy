@@ -567,6 +567,14 @@ class TestResample(TestCase):
         # Test external specification of downsampling filter
         self._test_data(method='polyphase', ext=True)
 
+    def test_mutable_window(self):
+        # Test that a mutable window is not modified
+        impulse = np.zeros(3)
+        window = np.random.RandomState(0).randn(2)
+        window_orig = window.copy()
+        signal.resample_poly(impulse, 5, 1, window=window)
+        assert_array_equal(window, window_orig)
+
     def _test_data(self, method, ext=False):
         # Test resampling of sinusoids and random noise (1-sec)
         rate = 100
