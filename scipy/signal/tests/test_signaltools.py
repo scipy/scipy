@@ -573,7 +573,7 @@ class TestResample(TestCase):
         window = np.random.RandomState(0).randn(2)
         window_orig = window.copy()
         signal.resample_poly(impulse, 5, 1, window=window)
-        np.testing.assert_allclose(window, window_orig, atol=1e-7)
+        assert_array_equal(window, window_orig)
 
     def _test_data(self, method, ext=False):
         # Test resampling of sinusoids and random noise (1-sec)
