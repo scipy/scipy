@@ -2188,6 +2188,10 @@ def resample(x, num, t=None, axis=0, window=None):
     If `t` is not None, then it represents the old sample positions,
     and the new sample positions will be returned as well as the new
     samples.
+    
+    As noted, `resample` uses FFT transformations, which can be very
+    slow if the number of input samples is large and prime, see
+    `scipy.fftpack.fft`.
 
     As noted, `resample` uses FFT transformations, which can be very
     slow if the number of input or output samples is large and prime;
