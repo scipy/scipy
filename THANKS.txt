@@ -177,6 +177,7 @@ Dominic Antonacci for statistics documentation.
 David Hagen for the object-oriented ODE solver interface.
 Arno Onken for contributions to scipy.stats.
 Cathy Douglass for bug fixes in ndimage.
+Adam Cox for contributions to scipy.constants.
 
 Institutions
 ------------
