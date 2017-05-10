@@ -125,29 +125,6 @@ Binary prefixes
 ``yobi``      :math:`2^{80}`
 ============  =================================================================
 
-Weight
-------
-
-=================  ============================================================
-``gram``           :math:`10^{-3}` kg
-``metric_ton``     :math:`10^{3}` kg
-``grain``          one grain in kg
-``lb``             one pound (avoirdupous) in kg
-``pound``          one pound (avoirdupous) in kg
-``oz``             one ounce in kg
-``ounce``          one ounce in kg
-``stone``          one stone in kg
-``grain``          one grain in kg
-``long_ton``       one long ton in kg
-``short_ton``      one short ton in kg
-``troy_ounce``     one Troy ounce in kg
-``troy_pound``     one Troy pound in kg
-``carat``          one carat in kg
-``m_u``            atomic mass constant (in kg)
-``u``              atomic mass constant (in kg)
-``atomic_mass``    atomic mass constant (in kg)
-=================  ============================================================
-
 Angle
 -----
 
@@ -287,6 +264,30 @@ Power
 ``hp``                one horsepower in watts
 ``horsepower``        one horsepower in watts
 ====================  =======================================================
+
+Mass
+------
+
+=================  ============================================================
+``gram``           :math:`10^{-3}` kg
+``metric_ton``     :math:`10^{3}` kg
+``grain``          one grain in kg
+``lb``             one pound (avoirdupous) in kg
+``pound``          one pound (avoirdupous) in kg
+``slug``           one slug in kg
+``oz``             one ounce in kg
+``ounce``          one ounce in kg
+``stone``          one stone in kg
+``grain``          one grain in kg
+``long_ton``       one long ton in kg
+``short_ton``      one short ton in kg
+``troy_ounce``     one Troy ounce in kg
+``troy_pound``     one Troy pound in kg
+``carat``          one carat in kg
+``m_u``            atomic mass constant (in kg)
+``u``              atomic mass constant (in kg)
+``atomic_mass``    atomic mass constant (in kg)
+=================  ============================================================
 
 Force
 -----

@@ -73,11 +73,12 @@ sigma = Stefan_Boltzmann = _cd('Stefan-Boltzmann constant')
 Wien = _cd('Wien wavelength displacement law constant')
 Rydberg = _cd('Rydberg constant')
 
-# weight in kg
+# mass in kg
 gram = 1e-3
 metric_ton = 1e3
 grain = 64.79891e-6
 lb = pound = 7000 * grain  # avoirdupois
+slug = pound * g / (12 * 0.0254)  # lbf/foot
 oz = ounce = pound / 16
 stone = 14 * pound
 long_ton = 2240 * pound
