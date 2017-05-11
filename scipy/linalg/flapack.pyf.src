@@ -1203,7 +1203,9 @@ interface
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
      integer depend(b),intent(hide):: ldb = shape(b,0)
-
+     integer optional,intent(in),depend(nrhs,m,n),&
+          check(lwork>=1||lwork==-1) &
+          :: lwork=MAX( 1, MIN(m,n) + MAX(MIN(m,n), nrhs ) )
      <ftype2> dimension(m,nrhs),intent(in,out,copy,out=x) :: b
      <ftype2> dimension(m,n),intent(in,out,copy,out=lqr) :: a
      <ftype2> depend(lwork),dimension(MAX(lwork,1)),intent(hide,cache):: work
@@ -1249,6 +1251,9 @@ interface
      integer intent(hide),depend(a):: m = shape(a,0)
      integer intent(hide),depend(a):: n = shape(a,1)
      integer depend(b),intent(hide):: ldb = shape(b,0)
+     integer optional,intent(in),depend(nrhs,m,n),&
+          check(lwork>=1||lwork==-1) &
+          :: lwork=MAX( 1, MIN(m,n) + MAX(MIN(m,n), nrhs ) )
 
      <ftype2c> dimension(m,n),intent(in,out,copy,out=lqr) :: a
      <ftype2c> dimension(m,nrhs),intent(in,out,copy,out=x) :: b
