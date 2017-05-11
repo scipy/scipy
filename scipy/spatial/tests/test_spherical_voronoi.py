@@ -80,9 +80,12 @@ class TestSphericalVoronoi(TestCase):
         center = np.array([1, 2, 3])
         radius = 2
         s1 = SphericalVoronoi(self.points)
-        s2 = SphericalVoronoi(self.points, radius)
-        s3 = SphericalVoronoi(self.points, None, center)
-        s4 = SphericalVoronoi(self.points, radius, center)
+        # user input checks in SphericalVoronoi now require
+        # the radius / center to match the generators so adjust
+        # accordingly here
+        s2 = SphericalVoronoi(self.points * radius, radius)
+        s3 = SphericalVoronoi(self.points + center, None, center)
+        s4 = SphericalVoronoi(self.points * radius + center, radius, center)
         assert_array_equal(s1.center, np.array([0, 0, 0]))
         self.assertEqual(s1.radius, 1)
         assert_array_equal(s2.center, np.array([0, 0, 0]))
@@ -152,8 +155,13 @@ class TestSphericalVoronoi(TestCase):
     def test_incorrect_radius_handling(self):
         # an exception should be raised if the radius provided
         # cannot possibly match the input generators
-        # currently, only sensitive to the generators clearly
-        # belonging to a data set with a greater radius than provided
         with assert_raises(ValueError):
             sv = spherical_voronoi.SphericalVoronoi(self.points,
                                                     radius=0.98)
+
+    def test_incorrect_center_handling(self):
+        # an exception should be raised if the center provided
+        # cannot possibly match the input generators
+        with assert_raises(ValueError):
+            sv = spherical_voronoi.SphericalVoronoi(self.points,
+                                                    center=[0.1,0,0])

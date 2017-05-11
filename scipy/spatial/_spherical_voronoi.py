@@ -20,6 +20,17 @@ from scipy.spatial.distance import pdist
 
 __all__ = ['SphericalVoronoi']
 
+def sphere_check(points, radius, center):
+    """ Determines distance of generators from theoretical sphere
+    surface.
+
+    """
+    actual_squared_radii = (((points[...,0] - center[0]) ** 2) +
+                            ((points[...,1] - center[1]) ** 2) +
+                            ((points[...,2] - center[2]) ** 2))
+    max_discrepancy = (actual_squared_radii - (radius ** 2)).max()
+    return abs(max_discrepancy)
+
 def calc_circumcenters(tetrahedrons):
     """ Calculates the cirumcenters of the circumspheres of tetrahedrons.
 
@@ -199,7 +210,7 @@ class SphericalVoronoi:
 
     """
 
-    def __init__(self, points, radius=None, center=None):
+    def __init__(self, points, radius=None, center=None, threshold=1e-06):
         """
         Initializes the object and starts the computation of the Voronoi
         diagram.
@@ -213,7 +224,7 @@ class SphericalVoronoi:
         """
 
         self.points = points
-        if pdist(self.points).min() == 0:
+        if pdist(self.points).min() <= threshold:
             raise ValueError("Duplicate generators present.")
         if np.any(center):
             self.center = center
@@ -223,7 +234,10 @@ class SphericalVoronoi:
             self.radius = radius
         else:
             self.radius = 1
-        if pdist(self.points).max() > (2. * self.radius):
+        max_discrepancy = sphere_check(self.points,
+                                       self.radius,
+                                       self.center)
+        if max_discrepancy >= threshold:
             raise ValueError("Radius inconsistent with generators.")
         self.vertices = None
         self.regions = None
