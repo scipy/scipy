@@ -105,6 +105,10 @@ class SphericalVoronoi:
         Radius of the sphere (Default: 1)
     center : ndarray of floats, shape (3,)
         Center of sphere (Default: origin)
+    threshold : float
+        Threshold for detecting duplicate points and
+        mismatches between points and sphere parameters.
+        (Default: 1e-06)
 
     Attributes
     ----------
