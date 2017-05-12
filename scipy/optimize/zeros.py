@@ -365,14 +365,14 @@ def brentq(f, a, b, args=(),
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter must be nonnegative. For nice functions, Brent's
-        method will often satisfy the above condition will ``xtol/2``
+        method will often satisfy the above condition with ``xtol/2``
         and ``rtol/2``. [Brent1973]_
     rtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter cannot be smaller than its default value of
         ``4*np.finfo(float).eps``. For nice functions, Brent's
-        method will often satisfy the above condition will ``xtol/2``
+        method will often satisfy the above condition with ``xtol/2``
         and ``rtol/2``. [Brent1973]_
     maxiter : number, optional
         if convergence is not achieved in maxiter iterations, an error is
@@ -470,13 +470,13 @@ def brenth(f, a, b, args=(),
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter must be nonnegative. As with `brentq`, for nice
         functions the method will often satisfy the above condition
-        will ``xtol/2`` and ``rtol/2``.
+        with ``xtol/2`` and ``rtol/2``.
     rtol : number, optional
         The computed root ``x0`` will satisfy ``np.allclose(x, x0,
         atol=xtol, rtol=rtol)``, where ``x`` is the exact root. The
         parameter cannot be smaller than its default value of
         ``4*np.finfo(float).eps``. As with `brentq`, for nice functions
-        the method will often satisfy the above condition will
+        the method will often satisfy the above condition with
         ``xtol/2`` and ``rtol/2``.
     maxiter : number, optional
         if convergence is not achieved in maxiter iterations, an error is
