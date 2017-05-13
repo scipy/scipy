@@ -2415,8 +2415,19 @@ def factorialk(n, k, exact=True):
 
 def zeta(x, q=None, out=None):
     r"""
-    Riemann zeta function.
+    Riemann or Hurwitz zeta function.
 
+    Parameters
+    ----------
+    x : array_like of float
+        Input data, must be real
+    q : array_like of float
+        Input data, must be real
+    out : ndarray, optional
+        Output array for the computed values.
+
+    Notes
+    -----
     The two-argument version is the Hurwitz zeta function:
 
     .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},
