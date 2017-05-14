@@ -71,7 +71,7 @@ def solve_sylvester(a, b, q):
     >>> a = np.array([[-3, -2, 0], [-1, -1, 3], [3, -5, -1]])
     >>> b = np.array([[1]])
     >>> q = np.array([[1],[2],[3]])
-    >>> x = sp.linalg.solve_sylvester(a, b, q)
+    >>> x = linalg.solve_sylvester(a, b, q)
     >>> x
     array([[ 0.0625],
            [-0.5625],
