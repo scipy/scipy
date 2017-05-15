@@ -61,8 +61,25 @@ def lagrange(x, w):
     -------
     lagrange : numpy.poly1d instance
         The Lagrange interpolating polynomial.
+    
+    Examples
+    --------
+    Interpolate f(x) = x^3 by 3 points. 
 
+    >>> from scipy.interpolate import lagrange
+    >>> x = [1, 2, 3]
+    >>> y = [1, 8, 27]
+    >>> poly = lagrange(x, y)
+    
+    Since there are only 3 points, Lagrange polynomial has degree 2.
+
+    >>> from numpy.polynomial.polynomial import Polynomial
+    >>> print (Polynomial(poly))
+    poly([  6. -11.   6.])
+            
+    Polynomial coefficients are in order of increasing degree, so Lagrange polynomial is 6 - 11x + 6x^2
     """
+
     M = len(x)
     p = poly1d(0.0)
     for j in xrange(M):
