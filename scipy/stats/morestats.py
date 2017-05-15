@@ -943,8 +943,8 @@ def boxcox(x, lmbda=None, alpha=None):
 
     Parameters
     ----------
-    x : ndarray
-        Input array.  Should be 1-dimensional.
+    x : array_like
+        One-dimensional input array.
     lmbda : {None, scalar}, optional
         If `lmbda` is not None, do the transformation for that value.
 
@@ -1024,6 +1024,11 @@ def boxcox(x, lmbda=None, alpha=None):
 
     """
     x = np.asarray(x)
+
+    # For backward compatibility, only do this validation when lmbda is None.
+    if lmbda is None and len(x.shape) != 1:
+        raise ValueError("Data must be 1-dimensional.")
+
     if x.size == 0:
         return x
 
