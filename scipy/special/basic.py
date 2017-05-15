@@ -2102,7 +2102,7 @@ def comb(N, k, exact=False, repetition=False):
 
     Returns
     -------
-    val : int, float, ndarray
+    val : float or an int(depending on the value of `exact`), ndarray
         The total number of combinations.
 
     See Also
