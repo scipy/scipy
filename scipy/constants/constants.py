@@ -78,7 +78,8 @@ gram = 1e-3
 metric_ton = 1e3
 grain = 64.79891e-6
 lb = pound = 7000 * grain  # avoirdupois
-slug = pound * g / (12 * 0.0254)  # lbf/foot
+blob = slinch = pound * g / 0.0254  # lbf*s**2/in (added in 1.0.0)
+slug = blob / 12  # lbf*s**2/foot (added in 1.0.0)
 oz = ounce = pound / 16
 stone = 14 * pound
 long_ton = 2240 * pound

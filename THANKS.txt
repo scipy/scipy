@@ -176,6 +176,7 @@ Roman Feldbauer for improvements in scipy.sparse
 Dominic Antonacci for statistics documentation.
 David Hagen for the object-oriented ODE solver interface.
 Arno Onken for contributions to scipy.stats.
+Adam Cox for contributions to scipy.constants.
 
 Institutions
 ------------
