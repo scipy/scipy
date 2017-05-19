@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import sys
 import numpy as np
 import scipy.sparse
 
@@ -60,7 +61,9 @@ def save_npz(file, matrix, compressed=True):
             [4, 0, 0]], dtype=int64)
     """
 
-    arrays_dict = dict(format=matrix.format, shape=matrix.shape, data=matrix.data)
+    arrays_dict = dict(format=matrix.format.encode('ascii'),
+                       shape=matrix.shape,
+                       data=matrix.data)
     if matrix.format in ('csc', 'csr', 'bsr'):
         arrays_dict.update(indices=matrix.indices, indptr=matrix.indptr)
     elif matrix.format == 'dia':
@@ -129,6 +132,13 @@ def load_npz(file):
             matrix_format = loaded['format']
         except KeyError:
             raise ValueError('The file {} does not contain a sparse matrix.'.format(file))
+
+        matrix_format = matrix_format.item()
+
+        if sys.version_info[0] >= 3 and not isinstance(matrix_format, str):
+            # Play safe with Python 2 vs 3 backward compatibility;
+            # files saved with Scipy < 1.0.0 may contain unicode or bytes.
+            matrix_format = matrix_format.decode('ascii')
 
         try:
             cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
