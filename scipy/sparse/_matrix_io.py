@@ -1,5 +1,18 @@
+from __future__ import division, print_function, absolute_import
+
 import numpy as np
 import scipy.sparse
+
+from scipy._lib._version import NumpyVersion
+
+__all__ = ['save_npz', 'load_npz']
+
+
+if NumpyVersion(np.__version__) >= '1.10.0':
+    # Make loading safe vs. malicious input
+    PICKLE_KWARGS = dict(allow_pickle=False)
+else:
+    PICKLE_KWARGS = dict()
 
 
 def save_npz(file, matrix, compressed=True):
@@ -111,22 +124,23 @@ def load_npz(file):
             [4, 0, 0]], dtype=int64)
     """
 
-    loaded = np.load(file)
-    try:
-        matrix_format = loaded['format']
-    except KeyError:
-        raise ValueError('The file {} does not contain a sparse matrix.'.format(file))
+    with np.load(file, **PICKLE_KWARGS) as loaded:
+        try:
+            matrix_format = loaded['format']
+        except KeyError:
+            raise ValueError('The file {} does not contain a sparse matrix.'.format(file))
 
-    try:
-        cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
-    except AttributeError:
-        raise ValueError('Unknown matrix format "{}"'.format(matrix_format))
+        try:
+            cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
+        except AttributeError:
+            raise ValueError('Unknown matrix format "{}"'.format(matrix_format))
 
-    if matrix_format in ('csc', 'csr', 'bsr'):
-        return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])
-    elif matrix_format == 'dia':
-        return cls((loaded['data'], loaded['offsets']), shape=loaded['shape'])
-    elif matrix_format == 'coo':
-        return cls((loaded['data'], (loaded['row'], loaded['col'])), shape=loaded['shape'])
-    else:
-        raise NotImplementedError('Load is not implemented for sparse matrix of format {}.'.format(matrix_format))
+        if matrix_format in ('csc', 'csr', 'bsr'):
+            return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])
+        elif matrix_format == 'dia':
+            return cls((loaded['data'], loaded['offsets']), shape=loaded['shape'])
+        elif matrix_format == 'coo':
+            return cls((loaded['data'], (loaded['row'], loaded['col'])), shape=loaded['shape'])
+        else:
+            raise NotImplementedError('Load is not implemented for '
+                                      'sparse matrix of format {}.'.format(matrix_format))
