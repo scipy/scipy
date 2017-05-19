@@ -235,7 +235,7 @@ def bisect(f, a, b, args=(),
 
     See Also
     --------
-    brentq, brenth, bisect, newton
+    brentq, brenth, ridder, newton
     fixed_point : scalar fixed-point finder
     fsolve : n-dimensional root-finding
 
@@ -452,7 +452,7 @@ def brenth(f, a, b, args=(),
     between the arguments a and b that uses hyperbolic extrapolation instead of
     inverse quadratic extrapolation. There was a paper back in the 1980's ...
     f(a) and f(b) cannot have the same signs. Generally on a par with the
-    brent routine, but not as heavily tested.  It is a safe version of the
+    brentq routine, but not as heavily tested.  It is a safe version of the
     secant method that uses hyperbolic extrapolation. The version here is by
     Chuck Harris.
 
@@ -514,7 +514,7 @@ def brenth(f, a, b, args=(),
 
     fsolve : n-dimensional root-finding
 
-    brentq, brenth, ridder, bisect, newton : one-dimensional root-finding
+    brentq, ridder, bisect, newton : one-dimensional root-finding
 
     fixed_point : scalar fixed-point finder
 
