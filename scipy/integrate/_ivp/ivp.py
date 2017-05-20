@@ -375,6 +375,52 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     .. [11] `Cauchy-Riemann equations
              <https://en.wikipedia.org/wiki/Cauchy-Riemann_equations>`_ on
              Wikipedia.
+
+    Examples
+    --------
+    Basic exponential decay showing automatically chosen time points.
+    
+    >>> from scipy.integrate import solve_ivp
+    >>> def exponential_decay(t, y): return -0.5 * y
+    >>> sol = solve_ivp(exponential_decay, [0, 10], [2, 4, 8])
+    >>> print(sol.t)
+    [  0.           0.11487653   1.26364188   3.06061781   4.85759374
+       6.65456967   8.4515456   10.        ]
+    >>> print(sol.y)
+    [[ 2.          1.88836035  1.06327177  0.43319312  0.17648948  0.0719045
+       0.02929499  0.01350938]
+     [ 4.          3.7767207   2.12654355  0.86638624  0.35297895  0.143809
+       0.05858998  0.02701876]
+     [ 8.          7.5534414   4.25308709  1.73277247  0.7059579   0.287618
+       0.11717996  0.05403753]]
+       
+    Specifying points where the solution is desired.
+    
+    >>> sol = solve_ivp(exponential_decay, [0, 10], [2, 4, 8], 
+    ...                 t_eval=[0, 1, 2, 4, 10])
+    >>> print(sol.t)
+    [ 0  1  2  4 10]
+    >>> print(sol.y)
+    [[ 2.          1.21305369  0.73534021  0.27066736  0.01350938]
+     [ 4.          2.42610739  1.47068043  0.54133472  0.02701876]
+     [ 8.          4.85221478  2.94136085  1.08266944  0.05403753]]
+
+    Cannon fired upward with terminal event upon impact. The ``terminal`` and 
+    ``direction`` fields of an event are applied by monkey patching a function.
+    Here ``y[0]`` is position and ``y[1]`` is velocity. The projectile starts at
+    position 0 with velocity +10. Note that the integration never reaches t=100
+    because the event is terminal.
+    
+    >>> def upward_cannon(t, y): return [y[1], -0.5]
+    >>> def hit_ground(t, y): return y[1]
+    >>> hit_ground.terminal = True
+    >>> hit_ground.direction = -1
+    >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], events=hit_ground)
+    >>> print(sol.t_events)
+    [array([ 20.])]
+    >>> print(sol.t)
+    [  0.00000000e+00   9.99900010e-05   1.09989001e-03   1.10988901e-02
+       1.11088891e-01   1.11098890e+00   1.11099890e+01   2.00000000e+01]
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
