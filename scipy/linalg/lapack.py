@@ -482,14 +482,12 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
         used, otherwise the most generic type in arrays will be used.
 
     dtype : str or dtype, optional
-        Data-type specifier. Not used if ``arrays`` is non-empty.
-
+        Data-type specifier. Not used if `arrays` is non-empty.
 
     Returns
     -------
     funcs : list
         List containing the found function(s).
-
 
     Notes
     -----
@@ -499,7 +497,7 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
 
     In LAPACK, the naming convention is that all functions start with a
     type prefix, which depends on the type of the principal
-    matrix. These can be one of {`'s'`, `'d'`, `'c'`, `'z'`} for the numpy
+    matrix. These can be one of {'s', 'd', 'c', 'z'} for the numpy
     types {float32, float64, complex64, complex128} respectively, and
     are stored in attribute ``typecode`` of the returned functions.
 
@@ -509,14 +507,14 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     norm of an array. We pass our array in order to get the correct 'lange'
     flavor.
 
-    >>> from scipy.linalg import lapack as lap
+    >>> import scipy.linalg as LA
     >>> a = np.random.rand(3,2)
-    >>> x_lange = lap.get_lapack_funcs('lange', (a,))
-    >>> x_lange
-    <fortran dlange>
-    >>> x_lange = lap.get_lapack_funcs('lange',(a*1j,))
-    >>> x_lange
-    <fortran zlange>
+    >>> x_lange = LA.get_lapack_funcs('lange', (a,))
+    >>> x_lange.typecode
+    'd'
+    >>> x_lange = LA.get_lapack_funcs('lange',(a*1j,))
+    >>> x_lange.typecode
+    'z'
 
     Several LAPACK routines work best when its internal WORK array has
     the optimal size (big enough for fast computation and small enough to
@@ -524,17 +522,13 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     to the function which is often wrapped as a standalone function and
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
-    >>> from scipy.linalg import lapack as lap
+    >>> import scipy.linalg as LA
     >>> a = np.random.rand(1000,1000)
     >>> b = np.random.rand(1000,1)*1j
     >>> # We pick up zsysv and zsysv_lwork due to b array
-    ... xsysv, xlwork = lap.get_lapack_funcs(('sysv', 'sysv_lwork'), (a, b))
-    >>> opt_lwork = lap._compute_lwork(xlwork, a.shape[0])
-    >>> udut, ipiv, x, info = xsysv(a, b, lwork=opt_lwork)
-
-    Note that it is also possible to call ``xlwork`` directly too. However it
-    is recommended to use ``_compute_lwork`` instead, especially if large
-    array sizes are involved.
+    ... xsysv, xlwork = LA.get_lapack_funcs(('sysv', 'sysv_lwork'), (a, b))
+    >>> opt_lwork, _ = xlwork(a.shape[0])  # returns a complex for 'z' prefix
+    >>> udut, ipiv, x, info = xsysv(a, b, lwork=int(opt_lwork.real))
 
     """
     return _get_funcs(names, arrays, dtype,
