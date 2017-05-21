@@ -26,6 +26,19 @@ def _minimize_dogleg(fun, x0, args=(), jac=None, hess=None,
     gtol : float
         Gradient norm must be less than `gtol` before successful
         termination.
+    callback : callable
+        Callback function called after each iteration. Two different
+        signatures are allowed:
+
+            - ``callback(xk, fk, nfev, gk, njev, nhev, nit)``
+            - ``callback(xk)``
+
+        where ``xk`` is the current parameter vector, ``fk`` is the function
+        evaluated at ``xk``, ``nfev`` is the number of functions calls,
+        ``gk`` is the gradient evaluated at ``xk`` (or ``None`` if it has
+        not been computed for the current iteration), ``njev`` is the
+        number of gradient calls , ``nhev`` is the number of Hessian calls and
+        ``nit`` is the number of iterations.
 
     """
     if jac is None:

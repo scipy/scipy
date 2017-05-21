@@ -433,6 +433,16 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fatol : number, optional
         Absolute error in func(xopt) between iterations that is acceptable for
         convergence.
+    callback : callable
+        Callback function called after each iteration. Two different
+        signatures are allowed:
+
+            - ``callback(xk, fk, nfev, nit)``
+            - ``callback(xk)``
+
+        where ``xk`` is the current parameter vector, ``fk`` is the function
+        evaluated at ``xk``, ``nfev`` is the number of functions calls and
+        ``nit`` is the number of iterations.
 
     """
     if 'ftol' in unknown_options:
@@ -579,10 +589,13 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         sim = numpy.take(sim, ind, 0)
         fsim = numpy.take(fsim, ind, 0)
         if callback is not None:
-            callback(sim[0])
-        iterations += 1
+            try:
+                callback(sim[0], fsim[0], fcalls[0], iterations)
+            except:
+                callback(sim[0])
         if retall:
             allvecs.append(sim[0])
+        iterations += 1
 
     x = sim[0]
     fval = numpy.min(fsim)
@@ -893,6 +906,17 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         Order of norm (Inf is max, -Inf is min).
     eps : float or ndarray
         If `jac` is approximated, use this value for the step size.
+    callback : callable
+        Callback function called after each iteration. Two different
+        signatures are allowed:
+
+            - ``callback(xk, fk, nfev, gk, njev, nit)``
+            - ``callback(xk)``
+
+        where ``xk`` is the current parameter vector, ``fk`` is the function
+        evaluated at ``xk``, ``fcalls`` is the number of functions calls,
+        ``gk`` is the gradient evaluated at ``xk``, ``njev`` is the number
+        of functions calls and ``nit`` is the number of iterations.
 
     """
     _check_unknown_options(unknown_options)
@@ -953,8 +977,6 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
 
         yk = gfkp1 - gfk
         gfk = gfkp1
-        if callback is not None:
-            callback(xk)
         gnorm = vecnorm(gfk, ord=norm)
         if (gnorm <= gtol):
             break
@@ -994,6 +1016,12 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
         Hk = syr(c, sk, a=Hk)
 
         k += 1
+
+        if callback is not None:
+            try:
+                callback(xk, old_fval, func_calls[0], gfk, grad_calls[0], k)
+            except:
+                callback(xk)
 
     # The matrix Hk is obtained from the
     # symmetric representation that were being
@@ -1236,6 +1264,17 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         Order of norm (Inf is max, -Inf is min).
     eps : float or ndarray
         If `jac` is approximated, use this value for the step size.
+    callback : callable
+        Callback function called after each iteration. Two different
+        signatures are allowed:
+
+            - ``callback(xk, fk, nfev, gk, njev, nit)``
+            - ``callback(xk)``
+
+        where ``xk`` is the current parameter vector, ``fk`` is the function
+        evaluated at ``xk``, ``nfev`` is the number of functions calls,
+        ``gk`` is the gradient evaluated at ``xk``, ``njev`` is the number
+        of gradien calls and ``nit`` is the number of iterations.
 
     """
     _check_unknown_options(unknown_options)
@@ -1287,9 +1326,13 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
         pk = -gfkp1 + beta_k * pk
         gfk = gfkp1
         gnorm = vecnorm(gfk, ord=norm)
-        if callback is not None:
-            callback(xk)
         k += 1
+
+        if callback is not None:
+            try:
+                callback(xk, old_fval, func_calls[0], gfk, grad_calls[0], k)
+            except:
+                callback(xk)
 
     fval = old_fval
     if warnflag == 2:
@@ -1460,6 +1503,18 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         Maximum number of iterations to perform.
     eps : float or ndarray
         If `jac` is approximated, use this value for the step size.
+    callback : callable
+        Callback function called after each iteration. Two different
+        signatures are allowed:
+
+            - ``callback(xk, fk, nfev, gk, njev, nhev, nit)``
+            - ``callback(xk)``
+
+        where ``xk`` is the current parameter vector, ``fk`` is the function
+        evaluated at ``xk``, ``nfev`` is the number of functions calls,
+        ``gk`` is the gradient evaluated at ``xk``, ``njev`` is the number
+        of gradient calls , ``nhev`` is the number of Hessian calls and
+        ``nit`` is the number of iterations.
 
     """
     _check_unknown_options(unknown_options)
@@ -1576,13 +1631,20 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
             msg = "Warning: " + _status_message['pr_loss']
             return terminate(2, msg)
 
+        k += 1
+        if callback is not None:
+            try:
+                callback(xk, old_old_fval, fcalls[0], gfk,
+                         gcalls[0], hcalls, k)
+            except:
+                callback(xk)
+
         update = alphak * pk
         xk = xk + update        # upcast if necessary
-        if callback is not None:
-            callback(xk)
         if retall:
             allvecs.append(xk)
-        k += 1
+
+
     else:
         msg = _status_message['success']
         return terminate(0, msg)
@@ -2416,6 +2478,16 @@ def _minimize_powell(func, x0, args=(), callback=None,
         first reached.
     direc : ndarray
         Initial set of direction vectors for the Powell method.
+    callback : callable
+        Callback function called after each iteration. Two different
+        signatures are allowed:
+
+            - ``callback(xk, fk, nfev, nit)``
+            - ``callback(xk)``
+
+        where ``xk`` is the current parameter vector, ``fk`` is the function
+        evaluated at ``xk``, ``nfev`` is the number of functions calls and
+        ``nit`` is the number of iterations.
 
     """
     _check_unknown_options(unknown_options)
@@ -2468,7 +2540,10 @@ def _minimize_powell(func, x0, args=(), callback=None,
                 bigind = i
         iter += 1
         if callback is not None:
-            callback(x)
+            try:
+                callback(x, fval, fcalls[0], iter)
+            except:
+                callback(x)
         if retall:
             allvecs.append(x)
         bnd = ftol * (numpy.abs(fx) + numpy.abs(fval)) + 1e-20

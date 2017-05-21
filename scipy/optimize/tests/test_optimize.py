@@ -1129,6 +1129,73 @@ class TestOptimizeResultAttributes(TestCase):
                 assert_(attribute in dir(res))
 
 
+class TestCallback(TestCase):
+    def setUp(self):
+        self.x0 = [5, 5]
+        self.func = optimize.rosen
+        self.jac = optimize.rosen_der
+        self.hess = optimize.rosen_hess
+        self.hessp = optimize.rosen_hess_prod
+        self.bounds = [(0., 10.), (0., 10.)]
+
+    def test_callback(self):
+        global kk
+        kk = 0
+
+        def cb1(xk):
+            return
+
+        def cb2(xk, fk, nfev, nit):
+            # Test nit
+            global kk
+            kk += 1
+            assert_(nit == kk)
+
+            # Test fk
+            assert_allclose(self.func(xk), fk)
+
+        def cb3(xk, fk, nfev, gk, njev, nit):
+            # Test nit
+            global kk
+            kk += 1
+            assert_(nit == kk)
+
+            # Test fk
+            assert_allclose(self.func(xk), fk)
+
+            # Test gk
+            assert_allclose(self.jac(xk), gk)
+
+        def cb4(xk, fk, nfev, gk, njev, nhev, nit):
+            # Test nit
+            global kk
+            kk += 1
+            assert_(nit == kk)
+
+            # Test fk
+            assert_allclose(self.func(xk), fk)
+
+            # Test gk
+            if gk is not None:
+                assert_allclose(self.jac(xk), gk)
+
+        callbacks = [[cb1, cb2], [cb1, cb3], [cb1, cb4]]
+        methods = [['Nelder-Mead', 'Powell'], ['CG', 'BFGS'],
+                   ['Newton-CG', 'dogleg', 'trust-ncg']]
+        i = 0
+        for i in [0, 1, 2]:
+            for method in methods[i]:
+                for callback in callbacks[i]:
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        kk = 0
+                        res = optimize.minimize(self.func, self.x0,
+                                                method=method, jac=self.jac,
+                                                hess=self.hess,
+                                                hessp=self.hessp,
+                                                callback=callback)
+
+
 class TestBrute:
     # Test the "brute force" method
     def setUp(self):

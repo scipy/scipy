@@ -135,7 +135,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         For method-specific options, see :func:`show_options()`.
     callback : callable, optional
         Called after each iteration, as ``callback(xk)``, where ``xk`` is the
-        current parameter vector.
+        current parameter vector. Some of the solvers (namelly Nelder-Mead,
+        Powell, CG, BFGS, Newton-CG, dogleg, trust-ncg, trust-exact) allows
+        alternative signatures with additional parameters. Look into the
+        solver specific documentation for a complete description.
 
     Returns
     -------
