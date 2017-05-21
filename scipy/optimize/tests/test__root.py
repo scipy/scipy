@@ -45,3 +45,9 @@ class TestRoot(object):
             x, y = z
             return np.array([x**3 - 1, y**3 - f])
         root(func, [1.1, 1.1], args=1.5)
+
+    def test_initial_guess(self):
+        # github issue #7332
+        def func(x):
+            return (x - 1)**2 - 1
+        root(func,1.0)

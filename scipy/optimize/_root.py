@@ -20,6 +20,7 @@ from .minpack import _root_hybr, leastsq
 from ._spectral import _root_df_sane
 from . import nonlin
 
+EPS = np.MachAr().eps
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
          options=None):
@@ -168,6 +169,27 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         else:
             jac = None
 
+    if method=='hybr':
+        x0_array = np.atleast_1d(x0)
+        args1 = ()
+        epsilon = EPS**(1. / 2) * np.maximum(np.abs(x0_array), 0.1)
+        f0 = fun(*((x0_array,) + args1))
+        dim = np.atleast_1d(f0).shape 
+        grad = np.zeros((len(x0_array),) + dim, np.promote_types(float, x0_array.dtype))
+        ei = np.zeros((len(x0_array),), float)
+        for k in range(len(x0_array)):
+            ei[k] = 1.0
+            d = epsilon * ei
+            grad[k] = (fun(*((x0_array + d,) + args1)) - f0) / d[k]
+            ei[k] = 0.0
+
+        tol_jac = 1e-5
+        grad[np.abs(grad) < tol_jac] = 0
+        a = grad == 0
+        if a.all() == True:
+            warn('Initial guess makes the derivative of the function null when method %s is used making output incorrect. To correct it, either change the initial guess, change the method or change the step length for the forward-difference approximation of the Jacobian' %method, RuntimeWarning)
+    
+    
     # set default tolerances
     if tol is not None:
         options = dict(options)
