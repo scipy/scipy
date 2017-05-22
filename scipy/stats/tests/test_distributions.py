@@ -135,7 +135,7 @@ def test_support():
         assert_almost_equal(dist.pdf(dist.b, *args), 0)
         assert_equal(dist.logpdf(dist.b, *args), -np.inf)
 
-    dists = ['alpha', 'arcsine', 'betaprime', 'burr', 'burr12',
+    dists = ['alpha', 'betaprime', 'burr', 'burr12',
              'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
              'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
              'powerlognorm', 'rayleigh', 'wald']
