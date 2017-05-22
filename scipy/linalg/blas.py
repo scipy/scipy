@@ -197,6 +197,18 @@ def find_best_blas_type(arrays=(), dtype=None):
     prefer_fortran : bool
         Whether to prefer Fortran order routines over C order.
 
+    Examples
+    --------
+    >>> import scipy.linalg.blas as bla
+    >>> a = np.random.rand(10,15)
+    >>> b = np.asfortranarray(a)  # Change the memory layout order
+    >>> bla.find_best_blas_type((a,))
+    ('d', dtype('float64'), False)
+    >>> bla.find_best_blas_type((a*1j,))
+    ('z', dtype('complex128'), False)
+    >>> bla.find_best_blas_type((b,))
+    ('d', dtype('float64'), True)
+
     """
     dtype = _np.dtype(dtype)
     prefer_fortran = False
@@ -306,6 +318,18 @@ def get_blas_funcs(names, arrays=(), dtype=None):
     types {float32, float64, complex64, complex128} respectively.
     The code and the dtype are stored in attributes `typecode` and `dtype`
     of the returned functions.
+
+    Examples
+    --------
+    >>> import scipy.linalg as LA
+    >>> a = np.random.rand(3,2)
+    >>> x_gemv = LA.get_blas_funcs('gemv', (a,))
+    >>> x_gemv.typecode
+    'd'
+    >>> x_gemv = LA.get_blas_funcs('gemv',(a*1j,))
+    >>> x_gemv.typecode
+    'z'
+
     """
     return _get_funcs(names, arrays, dtype,
                       "BLAS", _fblas, _cblas, "fblas", "cblas",
