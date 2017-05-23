@@ -17,6 +17,7 @@ from ._lsq.least_squares import prepare_bounds
 
 
 error = _minpack.error
+EPS = np.MachAr().eps
 
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
 
@@ -204,6 +205,22 @@ def _root_hybr(func, x0, args=(), jac=None,
     """
     _check_unknown_options(unknown_options)
     epsfcn = eps
+
+    x0_array = np.atleast_1d(x0)
+    args1 = ()
+    epsilon = EPS**(1. / 2) * np.maximum(np.abs(x0_array), 0.1)
+    f0 = func(*((x0_array,) + args1))
+    dim = np.atleast_1d(f0).shape 
+    grad = np.zeros((len(x0_array),) + dim, np.promote_types(float, x0_array.dtype))
+    ei = np.zeros((len(x0_array),), float)
+    for k in range(len(x0_array)):
+        ei[k] = 1.0
+        d = epsilon * ei
+        grad[k] = (func(*((x0_array + d,) + args1)) - f0) / d[k]
+        ei[k] = 0.0
+
+    if np.allclose(np.abs(grad),0,atol=xtol) == True:
+        raise Exception('Initial guess makes the derivative of the fucntion zero')
 
     x0 = asarray(x0).flatten()
     n = len(x0)

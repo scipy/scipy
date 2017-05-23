@@ -13,7 +13,7 @@ from numpy import array, float64, matrix
 
 from scipy import optimize
 from scipy.special import lambertw
-from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
+from scipy.optimize.minpack import leastsq, curve_fit, fixed_point, _root_hybr
 from scipy._lib._numpy_compat import _assert_warns
 from scipy.optimize import OptimizeWarning
 
@@ -181,6 +181,11 @@ class TestRootHybr(TestCase):
                                     initial_guess, args=(Qtot, k),
                                     method='hybr', jac=True).x
         assert_array_almost_equal(final_flows, np.ones(4))
+
+    def test_derivative(self):
+        def func(x):
+            return (x - 1)**2 - 1
+        self.assertRaises(Exception,_root_hybr,(func,1.0))
 
 
 class TestRootLM(TestCase):
