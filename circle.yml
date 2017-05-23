@@ -1,6 +1,6 @@
 dependencies:
   override:
-    - sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g-dev texlive-fonts-recommended
+    - sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g-dev texlive-fonts-recommended texlive-latex-extra texlive-extra-utils dvipng
     - pip install -q --install-option="--no-cython-compile" Cython==0.23.4
     - pip install -q numpy
     - pip install -q nose mpmath argparse Pillow codecov matplotlib Sphinx==1.5.5
@@ -9,7 +9,7 @@ dependencies:
 
 test:
   override:
-    - python -u runtests.py -g --shell -- -c 'make -C doc html-scipyorg'
+    - python -u runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg'
 
 general:
   artifacts:

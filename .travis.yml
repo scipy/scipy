@@ -36,6 +36,9 @@ matrix:
             - libpng-dev
             - zlib1g-dev
             - texlive-fonts-recommended
+            - texlive-latex-extra
+            - texlive-extra-utils
+            - dvipng
     - python: 3.5
       env:
         - TESTMODE=fast
@@ -152,7 +155,7 @@ after_success:
         eval `ssh-agent -s`
         ssh-add tools/ci/devdocs-deploy.key
         git clone git@github.com:scipy/devdocs.git devdocs
-        python -u $OPTIMIZE runtests.py -g --shell -- -c 'make -C doc html-scipyorg'
+        python -u $OPTIMIZE runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg'
         pushd devdocs
         (git checkout --orphan tmp && git branch -D gh-pages || true)
         git checkout --orphan gh-pages
