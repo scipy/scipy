@@ -25,8 +25,8 @@ import textwrap
 import warnings
 
 
-if sys.version_info[:2] < (2, 6) or (3, 0) <= sys.version_info[0:2] < (3, 2):
-    raise RuntimeError("Python version 2.6, 2.7 or >= 3.2 required.")
+if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 4):
+    raise RuntimeError("Python version 2.7 or >= 3.4 required.")
 
 if sys.version_info[0] < 3:
     import __builtin__ as builtins
@@ -58,8 +58,8 @@ Operating System :: MacOS
 
 """
 
-MAJOR = 0
-MINOR = 19
+MAJOR = 1
+MINOR = 0
 MICRO = 0
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
@@ -367,7 +367,7 @@ def setup_package():
     metadata = dict(
         name='scipy',
         maintainer="SciPy Developers",
-        maintainer_email="scipy-dev@scipy.org",
+        maintainer_email="scipy-dev@python.org",
         description=DOCLINES[0],
         long_description="\n".join(DOCLINES[2:]),
         url="https://www.scipy.org",
@@ -379,6 +379,7 @@ def setup_package():
         test_suite='nose.collector',
         setup_requires=build_requires,
         install_requires=build_requires,
+        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
     )
 
     if "--force" in sys.argv:

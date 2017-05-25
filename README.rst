@@ -54,9 +54,10 @@ The user's site is:
 Mailing Lists
 -------------
 
-Please see the developer's list here:
+The addresses and archives for the developer and user mailing lists can be
+found here:
 
-    http://projects.scipy.org/mailman/listinfo/scipy-dev
+    http://scipy.org/scipylib/mailing-lists.html
 
 
 Latest source code

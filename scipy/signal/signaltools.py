@@ -166,10 +166,10 @@ def correlate(in1, in2, mode='full', method='auto'):
         z[...,k,...] = sum[..., i_l, ...] x[..., i_l,...] * conj(y[..., i_l - k,...])
 
     This way, if x and y are 1-D arrays and ``z = correlate(x, y, 'full')`` then
-      
+
     .. math::
 
-          z[k] = (x * y)(k - N + 1) 
+          z[k] = (x * y)(k - N + 1)
                = \sum_{l=0}^{||x||-1}x_l y_{l-k+N-1}^{*}
 
     for :math:`k = 0, 1, ..., ||x|| + ||y|| - 2`
@@ -675,6 +675,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
+    if _numeric_arrays([volume, kernel], kinds='b'):
+        return 'direct'
+
     if _numeric_arrays([volume, kernel]):
         if _fftconv_faster(volume, kernel, mode):
             return 'fft'
@@ -784,9 +787,10 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
-        if volume.dtype.kind in 'ui':
+        result_type = np.result_type(volume, kernel)
+        if result_type.kind in {'u', 'i'}:
             out = np.around(out)
-        return out.astype(volume.dtype)
+        return out.astype(result_type)
 
     # fastpath to faster numpy.convolve for 1d inputs when possible
     if _np_conv_ok(volume, kernel, mode):
@@ -1444,7 +1448,7 @@ def lfiltic(b, a, y, x=None):
 
 
 def deconvolve(signal, divisor):
-    """Deconvolves ``divisor`` out of ``signal``.
+    """Deconvolves ``divisor`` out of ``signal`` using inverse filtering.
 
     Returns the quotient and remainder such that
     ``signal = convolve(divisor, quotient) + remainder``
@@ -1492,8 +1496,8 @@ def deconvolve(signal, divisor):
         quot = []
         rem = num
     else:
-        input = ones(N - D + 1, float)
-        input[1:] = 0
+        input = zeros(N - D + 1, float)
+        input[0] = 1
         quot = lfilter(num, den, input)
         rem = num - convolve(den, quot, mode='full')
     return quot, rem
@@ -2232,6 +2236,18 @@ def resample(x, num, t=None, axis=0, window=None):
     Y[sl] = X[sl]
     sl[axis] = slice(-(N - 1) // 2, None)
     Y[sl] = X[sl]
+
+    if N % 2 == 0:  # special treatment if low number of points is even. So far we have set Y[-N/2]=X[-N/2]
+        if N < Nx:  # if downsampling
+            sl[axis] = slice(N//2,N//2+1,None)  # select the component at frequency N/2
+            Y[sl] += X[sl]  # add the component of X at N/2
+        elif N < num:  # if upsampling
+            sl[axis] = slice(num-N//2,num-N//2+1,None)  # select the component at frequency -N/2
+            Y[sl] /= 2  # halve the component at -N/2
+            temp = Y[sl]
+            sl[axis] = slice(N//2,N//2+1,None)  # select the component at +N/2
+            Y[sl] = temp  # set that equal to the component at -N/2
+
     y = fftpack.ifft(Y, axis=axis) * (float(num) / float(Nx))
 
     if x.dtype.char not in ['F', 'D']:
@@ -2304,7 +2320,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
 
     The first sample of the returned vector is the same as the first
     sample of the input vector. The spacing between samples is changed
-    from ``dx`` to ``dx * up / float(down)``.
+    from ``dx`` to ``dx * down / float(up)``.
 
     Examples
     --------
@@ -2345,7 +2361,7 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     n_out = n_out // down + bool(n_out % down)
 
     if isinstance(window, (list, np.ndarray)):
-        window = asarray(window)
+        window = array(window)  # use array to force a copy (we modify it)
         if window.ndim > 1:
             raise ValueError('window must be 1-D')
         half_len = (window.size - 1) // 2
@@ -3320,7 +3336,7 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     return y
 
 
-def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
+def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     """
     Downsample the signal after applying an anti-aliasing filter.
 
@@ -3345,11 +3361,8 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
     zero_phase : bool, optional
         Prevent phase shift by filtering with `filtfilt` instead of `lfilter`
         when using an IIR filter, and shifting the outputs back by the filter's
-        group delay when using an FIR filter. A value of ``True`` is
-        recommended, since a phase shift is generally not desired. Using
-        ``None`` defaults to ``False`` for backwards compatibility. This
-        default will change to ``True`` in a future release, so it is best to
-        set this argument explicitly.
+        group delay when using an FIR filter. The default value of ``True`` is
+        recommended, since a phase shift is generally not desired.
 
         .. versionadded:: 0.18.0
 
@@ -3389,14 +3402,6 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=None):
         n = np.max((system.num.size, system.den.size)) - 1
     else:
         raise ValueError('invalid ftype')
-
-    if zero_phase is None:
-        warnings.warn(" Note: Decimate's zero_phase keyword argument will "
-                      "default to True in a future release. Until then, "
-                      "decimate defaults to one-way filtering for backwards "
-                      "compatibility. Ideally, always set this argument "
-                      "explicitly.", FutureWarning)
-        zero_phase = False
 
     sl = [slice(None)] * x.ndim
 

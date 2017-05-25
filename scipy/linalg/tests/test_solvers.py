@@ -9,7 +9,7 @@ from numpy.testing import assert_raises, assert_array_almost_equal
 from numpy.testing.noseclasses import KnownFailureTest
 
 from scipy.linalg import solve_sylvester
-from scipy.linalg import solve_lyapunov, solve_discrete_lyapunov
+from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
 from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve
 
@@ -76,8 +76,15 @@ class TestSolveLyapunov(TestCase):
          (np.array(np.matrix([0, 3]).T * np.matrix([0, 3]).T.T))),
         ]
 
+    def test_continuous_squareness_and_shape(self):
+        nsq = np.ones((3, 2))
+        sq = np.eye(3)
+        assert_raises(ValueError, solve_continuous_lyapunov, nsq, sq)
+        assert_raises(ValueError, solve_continuous_lyapunov, sq, nsq)
+        assert_raises(ValueError, solve_continuous_lyapunov, sq, np.eye(2))
+
     def check_continuous_case(self, a, q):
-        x = solve_lyapunov(a, q)
+        x = solve_continuous_lyapunov(a, q)
         assert_array_almost_equal(
                           np.dot(a, x) + np.dot(x, a.conj().transpose()), q)
 
@@ -277,8 +284,8 @@ def test_solve_continuous_are():
     #
     # If the test is failing use "None" for that entry.
     #
-    min_decimal = (14, 12, 14, 14, 11, 6, None, 5, 7, 14, 14,
-                   None, 10, 14, 13, 14, None, 12, None, None)
+    min_decimal = (14, 12, 13, 14, 11, 6, None, 5, 7, 14, 14,
+                   None, 9, 14, 13, 14, None, 12, None, None)
 
     def _test_factory(case, dec):
         """Checks if 0 = XA + A'X - XB(R)^{-1} B'X + Q is true"""

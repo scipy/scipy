@@ -81,9 +81,18 @@ class BaseQuadraticSubproblem(object):
         b = 2 * np.dot(z, d)
         c = np.dot(z, z) - trust_radius**2
         sqrt_discriminant = math.sqrt(b*b - 4*a*c)
-        ta = (-b - sqrt_discriminant) / (2*a)
-        tb = (-b + sqrt_discriminant) / (2*a)
-        return ta, tb
+
+        # The following calculation is mathematically
+        # equivalent to:
+        # ta = (-b - sqrt_discriminant) / (2*a)
+        # tb = (-b + sqrt_discriminant) / (2*a)
+        # but produce smaller round off errors.
+        # Look at Matrix Computation p.97
+        # for a better justification.
+        aux = b + math.copysign(sqrt_discriminant, b)
+        ta = -aux / (2*a)
+        tb = -2*c / aux
+        return sorted([ta, tb])
 
     def solve(self, trust_radius):
         raise NotImplementedError('The solve method should be implemented by '
@@ -118,6 +127,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
     It is not supposed to be called directly.
     """
     _check_unknown_options(unknown_options)
+
     if jac is None:
         raise ValueError('Jacobian is currently required for trust-region '
                          'methods')

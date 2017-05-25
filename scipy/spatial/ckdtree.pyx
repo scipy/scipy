@@ -543,14 +543,15 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             self.boxsize_data = None
         else:
             boxsize_arr = np.empty(2 * self.m, dtype=np.float64)
-            boxsize_arr[:] = boxsize
+            boxsize_arr[:self.m] = boxsize
             boxsize_arr[self.m:] = 0.5 * boxsize_arr[:self.m]
             # FIXME: how to use a matching del if new is used?
             self.boxsize_data = boxsize_arr
             self.boxsize = boxsize_arr[:self.m].copy()
-            if (self.data >= self.boxsize[None, :]).any():
+            periodic_mask = self.boxsize > 0
+            if ((self.data >= self.boxsize[None, :])[:, periodic_mask]).any():
                 raise ValueError("Some input data are greater than the size of the periodic box.")
-            if (self.data < 0).any():
+            if ((self.data < 0)[:, periodic_mask]).any():
                 raise ValueError("Negative input data are outside of the periodic box.")
 
         self.maxes = np.ascontiguousarray(np.amax(self.data,axis=0), dtype=np.float64)
@@ -747,10 +748,12 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         retshape = np.shape(x)[:-1]
         n = <np.intp_t> np.prod(retshape)
         xx = np.ascontiguousarray(x_arr).reshape(n, self.m)
+
+        # The C++ function touches all dd and ii entries,
+        # setting the missing values.
+
         dd = np.empty((n,len(k)),dtype=np.float64)
-        dd.fill(INFINITY)
         ii = np.empty((n,len(k)),dtype=np.intp)
-        ii.fill(self.n)
 
         # Do the query in an external C++ function. 
         # The GIL will be released in the external query function.

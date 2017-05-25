@@ -1585,15 +1585,31 @@ class TestMatrix_Balance(TestCase):
 
     def test_perm_and_scaling(self):
         # Matrix with its diagonal removed
-        A = np.array([[0., 0., 0., 0., 0.000002],
-                      [0., 0., 0., 0., 0.],
-                      [2., 2., 0., 0., 0.],
-                      [2., 2., 0., 0., 0.],
-                      [0., 0., 0.000002, 0., 0.]])
+        cases = (  # Case 0
+                 np.array([[0., 0., 0., 0., 0.000002],
+                           [0., 0., 0., 0., 0.],
+                           [2., 2., 0., 0., 0.],
+                           [2., 2., 0., 0., 0.],
+                           [0., 0., 0.000002, 0., 0.]]),
+                 #  Case 1 user reported GH-7258
+                 np.array([[-0.5, 0., 0., 0.],
+                           [0., -1., 0., 0.],
+                           [1., 0., -0.5, 0.],
+                           [0., 1., 0., -1.]]),
+                 #  Case 2 user reported GH-7258
+                 np.array([[-3., 0., 1., 0.],
+                           [-1., -1., -0., 1.],
+                           [-3., -0., -0., 0.],
+                           [-1., -0., 1., -1.]])
+                 )
 
-        x, y = matrix_balance(A)
-        x, (s, p) = matrix_balance(A, separate=1)
-        assert_allclose(y, np.diag(s)[p, :])
+        for A in cases:
+            x, y = matrix_balance(A)
+            x, (s, p) = matrix_balance(A, separate=1)
+            ip = np.empty_like(p)
+            ip[p] = np.arange(A.shape[0])
+            assert_allclose(y, np.diag(s)[ip, :])
+            assert_allclose(solve(y, A).dot(y), x)
 
 
 if __name__ == "__main__":

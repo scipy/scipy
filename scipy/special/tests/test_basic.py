@@ -154,7 +154,7 @@ class TestCephes(TestCase):
 
     def test_betaln(self):
         assert_equal(cephes.betaln(1,1),0.0)
-        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes._gammaln(1e-200))
+        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes.gammaln(1e-200))
         assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447,
                         rtol=1e-14, atol=0)
 
@@ -377,7 +377,7 @@ class TestCephes(TestCase):
         assert_equal(cephes.gammainccinv(5,1),0.0)
 
     def test_gammaln(self):
-        cephes._gammaln(10)
+        cephes.gammaln(10)
 
     def test_gammasgn(self):
         vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)
@@ -1622,13 +1622,15 @@ class TestErf(TestCase):
         assert_equal(i,0)
 
     def test_errprint(self):
-        a = special.errprint()
-        b = 1-a  # a is the state 1-a inverts state
-        c = special.errprint(b)  # returns last state 'a'
-        assert_equal(a,c)
-        d = special.errprint(a)  # returns to original state
-        assert_equal(d,b)  # makes sure state was returned
-        # assert_equal(d,1-a)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            a = special.errprint()
+            b = 1-a  # a is the state 1-a inverts state
+            c = special.errprint(b)  # returns last state 'a'
+            assert_equal(a,c)
+            d = special.errprint(a)  # returns to original state
+            assert_equal(d,b)  # makes sure state was returned
+            # assert_equal(d,1-a)
 
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
@@ -3294,7 +3296,7 @@ def test_legacy():
 
 @with_special_errors
 def test_error_raising():
-    assert_raises(special.SpecialFunctionWarning, special.iv, 1, 1e99j)
+    assert_raises(special.SpecialFunctionError, special.iv, 1, 1e99j)
 
 
 def test_xlogy():

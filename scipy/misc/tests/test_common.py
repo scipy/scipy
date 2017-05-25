@@ -1,20 +1,27 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_equal, assert_
+import warnings
+
+from numpy.testing import assert_equal, assert_allclose
 
 from scipy.misc import pade, logsumexp, face, ascent
 from scipy.special import logsumexp as sc_logsumexp
-from scipy.interpolate import pade as i_pade
 
 
 def test_logsumexp():
     # make sure logsumexp can be imported from either scipy.misc or
     # scipy.special
-    assert_(logsumexp is sc_logsumexp)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        assert_allclose(logsumexp([0, 1]),
+                        sc_logsumexp([0, 1]), atol=1e-16)
 
 
 def test_pade():
-    assert_(pade is i_pade)
+    # make sure scipy.misc.pade exists
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        pade([1, 2], 1)
 
 
 def test_face():

@@ -349,6 +349,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         xl[infbnd[:, 0]] = np.nan
         xu[infbnd[:, 1]] = np.nan
 
+    # Clip initial guess to bounds (SLSQP may fail with bounds-infeasible initial point)
+    have_bound = np.isfinite(xl)
+    x[have_bound] = np.clip(x[have_bound], xl[have_bound], np.inf)
+    have_bound = np.isfinite(xu)
+    x[have_bound] = np.clip(x[have_bound], -np.inf, xu[have_bound])
+
     # Initialize the iteration counter and the mode value
     mode = array(0,int)
     acc = array(acc,float)
@@ -364,9 +370,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         if mode == 0 or mode == 1:  # objective and constraint evaluation requird
 
             # Compute objective function
+            fx = func(x)
             try:
-                fx = float(np.asarray(func(x)))
-            except:
+                fx = float(np.asarray(fx))
+            except (TypeError, ValueError):
                 raise ValueError("Objective function must return a scalar")
             # Compute the constraints
             if cons['eq']:

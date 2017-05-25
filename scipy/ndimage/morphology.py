@@ -880,7 +880,7 @@ def binary_propagation(input, structure=None, mask=None,
     Notes
     -----
     This function is functionally equivalent to calling binary_dilation
-    with the number of iterations less then one: iterative dilation until
+    with the number of iterations less than one: iterative dilation until
     the result does not change anymore.
 
     The succession of an erosion and propagation inside the original image

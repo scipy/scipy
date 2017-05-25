@@ -29,13 +29,7 @@ def configuration(parent_package='', top_path=None):
 
     return config
 
+
 if __name__ == '__main__':
     from numpy.distutils.core import setup
-    setup(maintainer="SciPy Developers",
-          author="Eric Jones",
-          maintainer_email="scipy-dev@scipy.org",
-          description="Clustering Algorithms (Information Theory)",
-          url="https://www.scipy.org",
-          license="SciPy License (BSD Style)",
-          **configuration(top_path='').todict()
-          )
+    setup(**configuration(top_path='').todict())

@@ -137,9 +137,9 @@ through the ``jac`` parameter as illustrated below.
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 51                     # may vary
-             Function evaluations: 63
-             Gradient evaluations: 63
+             Iterations: 32                     # may vary
+             Function evaluations: 34
+             Gradient evaluations: 34
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
@@ -147,11 +147,9 @@ through the ``jac`` parameter as illustrated below.
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The method which requires the fewest function calls and is therefore often
-the fastest method to minimize functions of many variables uses the
-Newton-Conjugate Gradient algorithm. This method is a modified Newton's
+Newton-Conjugate Gradient algorithm is a modified Newton's
 method and uses a conjugate gradient algorithm to (approximately) invert
-the local Hessian.  Newton's method is based on fitting the function
+the local Hessian [NW]_.  Newton's method is based on fitting the function
 locally to a quadratic form:
 
 .. math::
@@ -276,6 +274,108 @@ Rosenbrock function using :func:`minimize` follows:
              Hessian evaluations: 44
     >>> res.x
     array([1., 1., 1., 1., 1.])
+
+
+According to [NW]_ p. 170 the ``Newton-CG`` algorithm can be inefficient
+when the Hessian is ill-condiotioned because of the poor quality search directions
+provided by the method in those situations. The method ``trust-ncg``,
+according to the authors, deals more effectively with this problematic situation
+and will be described next.
+
+Trust-Region Newton-Conjugate-Gradient Algorithm (``method='trust-ncg'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``Newton-CG`` method is a line search method: it finds a direction
+of search minimizing a quadratic approximation of the function and then uses
+a line search algorithm to find the (nearly) optimal step size in that direction.
+An alternative approach is to, first, fix the step size limit :math:`\Delta` and then find the
+optimal step :math:`\mathbf{p}` inside the given trust-radius by solving
+the following quadratic subproblem:
+
+.. math::
+   :nowrap:
+
+   \begin{eqnarray*}
+      \min_{\mathbf{p}} f\left(\mathbf{x}_{k}\right)+\nabla f\left(\mathbf{x}_{k}\right)\cdot\mathbf{p}+\frac{1}{2}\mathbf{p}^{T}\mathbf{H}\left(\mathbf{x}_{k}\right)\mathbf{p};&\\
+      \text{subject to: } \|\mathbf{p}\|\le \Delta.&
+    \end{eqnarray*}
+
+The solution is then updated :math:`\mathbf{x}_{k+1} = \mathbf{x}_{k} + \mathbf{p}` and
+the trust-radius :math:`\Delta` is adjusted according to the degree of agreement of the quadratic
+model with the real function. This family of methods is known as trust-region methods.
+The ``trust-ncg`` algorithm is a trust-region method that uses a conjugate gradient algorithm
+to solve the trust-region subproblem [NW]_.
+
+
+Full Hessian example:
+"""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-ncg',
+    ...                jac=rosen_der, hess=rosen_hess,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 20                    # may vary
+             Function evaluations: 21
+             Gradient evaluations: 20
+             Hessian evaluations: 19
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+Hessian product example:
+""""""""""""""""""""""""
+
+    >>> res = minimize(rosen, x0, method='trust-ncg',
+    ...                jac=rosen_der, hessp=rosen_hess_p,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 20                    # may vary
+             Function evaluations: 21
+             Gradient evaluations: 20
+             Hessian evaluations: 0
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+
+Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Both methods ``Newton-CG`` and ``trust-ncg`` are suitable for dealing with
+large-scale problems (problems with thousands of variables). That is because the conjugate
+gradient algorithm approximatelly solve the trust-region subproblem (or invert the Hessian)
+by iterations without the explicit Hessian factorization. Since only the product of the Hessian
+with an arbitrary vector is needed, the algorithm is specially suited for dealing
+with sparse Hessians, allowing low storage requirements and significant time savings for
+those sparse problems.
+
+For medium-size problems, for which the storage and factorization cost of the Hessian are not critical,
+it is possible to obtain a solution within fewer iteration by solving the trust-region subproblems
+almost exactly. To achieve that, a certain nonlinear equations is solved iteratively for each quadratic
+subproblem [CGT]_. This solution requires usually 3 or 4 Cholesky factorizations of the
+Hessian matrix. As the result, the method converges in fewer number of iterations
+and takes fewer evaluations of the objective function than the other implemented
+trust-region methods. The Hessian product option is not supported by this algorithm. An
+example using the Rosenbrock function follows:
+
+
+    >>> res = minimize(rosen, x0, method='trust-exact',
+    ...                jac=rosen_der, hess=rosen_hess,
+    ...                options={'gtol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 13                    # may vary
+             Function evaluations: 14
+             Gradient evaluations: 13
+             Hessian evaluations: 14
+    >>> res.x
+    array([1., 1., 1., 1., 1.])
+
+    
+.. [NW] J. Nocedal, S.J. Wright "Numerical optimization."
+	2nd edition. Springer Science (2006).
+.. [CGT] Conn, A. R., Gould, N. I., & Toint, P. L. 
+        "Trust region methods". Siam. (2000). pp. 169-200.
 
 
 .. _tutorial-sqlsp:

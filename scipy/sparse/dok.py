@@ -522,6 +522,28 @@ def _list(x):
 
 
 def isspmatrix_dok(x):
+    """Is x of dok_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a dok matrix
+
+    Returns
+    -------
+    bool
+        True if x is a dok matrix, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import dok_matrix, isspmatrix_dok
+    >>> isspmatrix_dok(dok_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import dok_matrix, csr_matrix, isspmatrix_dok
+    >>> isspmatrix_dok(csr_matrix([[5]]))
+    False
+    """
     return isinstance(x, dok_matrix)
 
 

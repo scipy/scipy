@@ -25,6 +25,11 @@ def add_newdoc(place, name, doc):
     docdict['.'.join((place, name))] = doc
 
 
+add_newdoc("scipy.special", "_sf_error_test_function",
+    """
+    Private function; do not use.
+    """)
+    
 add_newdoc("scipy.special", "sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
@@ -208,6 +213,25 @@ add_newdoc("scipy.special", "airy",
     .. [2] Donald E. Amos, "AMOS, A Portable Package for Bessel Functions
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/.org/amos/
+
+    Examples
+    --------
+    Compute the Airy functions on the interval [-15, 5].
+
+    >>> from scipy import special
+    >>> x = np.linspace(-15, 5, 201)
+    >>> ai, aip, bi, bip = special.airy(x)
+
+    Plot Ai(x) and Bi(x).
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(x, ai, 'r', label='Ai(x)')
+    >>> plt.plot(x, bi, 'b--', label='Bi(x)')
+    >>> plt.ylim(-0.5, 1.0)
+    >>> plt.grid()
+    >>> plt.legend(loc='upper left')
+    >>> plt.show()
+
     """)
 
 add_newdoc("scipy.special", "airye",
@@ -1070,14 +1094,14 @@ add_newdoc("scipy.special", "dawsn",
     """)
 
 add_newdoc("scipy.special", "ellipe",
-    """
+    r"""
     ellipe(m)
 
     Complete elliptic integral of the second kind
 
     This function is defined as
 
-    .. math:: E(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{1/2} dt
+    .. math:: E(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{1/2} dt
 
     Parameters
     ----------
@@ -1095,14 +1119,20 @@ add_newdoc("scipy.special", "ellipe",
 
     For `m > 0` the computation uses the approximation,
 
-    .. math:: E(m) \\approx P(1-m) - (1-m) \\log(1-m) Q(1-m),
+    .. math:: E(m) \approx P(1-m) - (1-m) \log(1-m) Q(1-m),
 
     where :math:`P` and :math:`Q` are tenth-order polynomials.  For
     `m < 0`, the relation
 
-    .. math:: E(m) = E(m/(m - 1)) \\sqrt(1-m)
+    .. math:: E(m) = E(m/(m - 1)) \sqrt(1-m)
 
     is used.
+
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
 
     See Also
     --------
@@ -1115,17 +1145,20 @@ add_newdoc("scipy.special", "ellipe",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
 add_newdoc("scipy.special", "ellipeinc",
-    """
+    r"""
     ellipeinc(phi, m)
 
     Incomplete elliptic integral of the second kind
 
     This function is defined as
 
-    .. math:: E(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{1/2} dt
+    .. math:: E(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{1/2} dt
 
     Parameters
     ----------
@@ -1146,6 +1179,12 @@ add_newdoc("scipy.special", "ellipeinc",
 
     Computation uses arithmetic-geometric means algorithm.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
@@ -1157,6 +1196,9 @@ add_newdoc("scipy.special", "ellipeinc",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
 add_newdoc("scipy.special", "ellipj",
@@ -1263,14 +1305,14 @@ add_newdoc("scipy.special", "ellipkm1",
     """)
 
 add_newdoc("scipy.special", "ellipkinc",
-    """
+    r"""
     ellipkinc(phi, m)
 
     Incomplete elliptic integral of the first kind
 
     This function is defined as
 
-    .. math:: K(\\phi, m) = \\int_0^{\\phi} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(\phi, m) = \int_0^{\phi} [1 - m \sin(t)^2]^{-1/2} dt
 
     This function is also called `F(phi, m)`.
 
@@ -1292,6 +1334,12 @@ add_newdoc("scipy.special", "ellipkinc",
     Wrapper for the Cephes [1]_ routine `ellik`.  The computation is
     carried out using the arithmetic-geometric mean algorithm.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [2]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1
@@ -1303,6 +1351,9 @@ add_newdoc("scipy.special", "ellipkinc",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
+    .. [2] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
     """)
 
 add_newdoc("scipy.special", "entr",
@@ -2114,6 +2165,10 @@ add_newdoc('scipy.special', 'expit',
         An ndarray of the same shape as x. Its entries
         are expit of the corresponding entry of x.
 
+    See Also
+    --------
+    logit
+
     Notes
     -----
     As a ufunc expit takes a number of optional
@@ -2121,6 +2176,30 @@ add_newdoc('scipy.special', 'expit',
     see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 
     .. versionadded:: 0.10.0
+
+    Examples
+    --------
+    >>> from scipy.special import expit, logit
+
+    >>> expit([-np.inf, -1.5, 0, 1.5, np.inf])
+    array([ 0.        ,  0.18242552,  0.5       ,  0.81757448,  1.        ])
+
+    `logit` is the inverse of `expit`:
+
+    >>> logit(expit([-2.5, 0, 3.1, 5.0]))
+    array([-2.5,  0. ,  3.1,  5. ])
+
+    Plot expit(x) for x in [-6, 6]:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-6, 6, 121)
+    >>> y = expit(x)
+    >>> plt.plot(x, y)
+    >>> plt.grid()
+    >>> plt.xlim(-6, 6)
+    >>> plt.xlabel('x')
+    >>> plt.title('expit(x)')
+    >>> plt.show()
 
     """)
 
@@ -2359,6 +2438,50 @@ add_newdoc("scipy.special", "gamma",
     The gamma function is often referred to as the generalized
     factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
     n!`` for natural number *n*.
+
+    Parameters
+    ----------
+    z : float or complex array_like
+
+    Returns
+    -------
+    float or complex
+        The value(s) of gamma(z)
+
+    Examples
+    --------
+    >>> from scipy.special import gamma, factorial
+
+    >>> gamma([0, 0.5, 1, 5])
+    array([         inf,   1.77245385,   1.        ,  24.        ])
+
+    >>> z = 2.5 + 1j
+    >>> gamma(z)
+    (0.77476210455108352+0.70763120437959293j)
+    >>> gamma(z+1), z*gamma(z)  # Recurrence property
+    ((1.2292740569981171+2.5438401155000685j),
+     (1.2292740569981158+2.5438401155000658j))
+
+    >>> gamma(0.5)**2  # gamma(0.5) = sqrt(pi)
+    3.1415926535897927
+
+    Plot gamma(x) for real x
+
+    >>> x = np.linspace(-3.5, 5.5, 2251)
+    >>> y = gamma(x)
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(x, y, 'b', alpha=0.6, label='gamma(x)')
+    >>> k = np.arange(1, 7)
+    >>> plt.plot(k, factorial(k-1), 'k*', alpha=0.6,
+    ...          label='(x-1)!, x = 1, 2, ...')
+    >>> plt.xlim(-3.5, 5.5)
+    >>> plt.ylim(-10, 25)
+    >>> plt.grid()
+    >>> plt.xlabel('x')
+    >>> plt.legend(loc='lower right')
+    >>> plt.show()
+
     """)
 
 add_newdoc("scipy.special", "gammainc",
@@ -2443,9 +2566,32 @@ add_newdoc("scipy.special", "gammaincinv",
     Returns `x` such that ``gammainc(a, x) = y``.
     """)
 
-add_newdoc("scipy.special", "_gammaln",
+add_newdoc("scipy.special", "gammaln",
     """
-    Internal function, use ``gammaln`` instead.
+    Logarithm of the absolute value of the Gamma function.
+
+    Parameters
+    ----------
+    x : array-like
+        Values on the real line at which to compute ``gammaln``
+
+    Returns
+    -------
+    gammaln : ndarray
+        Values of ``gammaln`` at x.
+
+    See Also
+    --------
+    gammasgn : sign of the gamma function
+    loggamma : principal branch of the logarithm of the gamma function
+
+    Notes
+    -----
+    When used in conjunction with `gammasgn`, this function is useful
+    for working in logspace on the real axis without having to deal with
+    complex numbers, via the relation ``exp(gammaln(x)) = gammasgn(x)*gamma(x)``.
+
+    For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
     """)
 
 add_newdoc("scipy.special", "gammasgn",
@@ -4210,6 +4356,10 @@ add_newdoc('scipy.special', 'logit',
         An ndarray of the same shape as x. Its entries
         are logit of the corresponding entry of x.
 
+    See Also
+    --------
+    expit
+
     Notes
     -----
     As a ufunc logit takes a number of optional
@@ -4217,6 +4367,30 @@ add_newdoc('scipy.special', 'logit',
     see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
 
     .. versionadded:: 0.10.0
+
+    Examples
+    --------
+    >>> from scipy.special import logit, expit
+
+    >>> logit([0, 0.25, 0.5, 0.75, 1])
+    array([       -inf, -1.09861229,  0.        ,  1.09861229,         inf])
+
+    `expit` is the inverse of `logit`:
+
+    >>> expit(logit([0.1, 0.75, 0.999]))
+    array([ 0.1  ,  0.75 ,  0.999])
+
+    Plot logit(x) for x in [0, 1]:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 501)
+    >>> y = logit(x)
+    >>> plt.plot(x, y)
+    >>> plt.grid()
+    >>> plt.ylim(-6, 6)
+    >>> plt.xlabel('x')
+    >>> plt.title('logit(x)')
+    >>> plt.show()
 
     """)
 
@@ -5290,24 +5464,46 @@ add_newdoc("scipy.special", "pbvv",
     """)
 
 add_newdoc("scipy.special", "pbwa",
-    """
+    r"""
     pbwa(a, x)
 
-    Parabolic cylinder function W
+    Parabolic cylinder function W.
 
-    Returns the parabolic cylinder function W(a, x) in w and the
-    derivative, W'(a, x) in wp.
+    The function is a particular solution to the differential equation
 
-    .. warning::
+    .. math::
 
-       May not be accurate for large (>5) arguments in a and/or x.
+        y'' + \left(\frac{1}{4}x^2 - a\right)y = 0,
+
+    for a full definition see section 12.14 in [1]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Real parameter
+    x : array_like
+        Real argument
 
     Returns
     -------
-    w
+    w : scalar or ndarray
         Value of the function
-    wp
-        Value of the derivative vs x
+    wp : scalar or ndarray
+        Value of the derivative in x
+
+    Notes
+    -----
+    The function is a wrapper for a Fortran routine by Zhang and Jin
+    [2]_. The implementation is accurate only for ``|a|, |x| < 5`` and
+    returns NaN outside that range.
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 14.30.
+           http://dlmf.nist.gov/14.30
+    .. [2] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           http://jin.ece.illinois.edu/specfunc.html
     """)
 
 add_newdoc("scipy.special", "pdtr",

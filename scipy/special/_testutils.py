@@ -1,7 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import warnings
 
 from distutils.version import LooseVersion
 
@@ -60,14 +59,9 @@ def with_special_errors(func):
     loss of precision, etc.)
     """
     def wrapper(*a, **kw):
-        old_filters = list(getattr(warnings, 'filters', []))
-        old_errprint = sc.errprint(1)
-        warnings.filterwarnings("error", category=sc.SpecialFunctionWarning)
-        try:
-            return func(*a, **kw)
-        finally:
-            sc.errprint(old_errprint)
-            setattr(warnings, 'filters', old_filters)
+        with sc.errstate(all='raise'):
+            res = func(*a, **kw)
+        return res
     wrapper.__name__ = func.__name__
     wrapper.__doc__ = func.__doc__
     return wrapper

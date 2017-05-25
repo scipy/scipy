@@ -196,7 +196,7 @@ TROUBLESHOOTING
 ===============
 
 If you experience problems when building/installing/testing SciPy, you
-can ask help from scipy-user@scipy.org or scipy-dev@scipy.org mailing
+can ask help from scipy-user@python.org or scipy-dev@python.org mailing
 lists. Please include the following information in your message:
 
 NOTE: You can generate some of the following information (items 1-5,7)

@@ -96,6 +96,17 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     .. [2] A.H. Baker, PhD thesis, University of Colorado (2003).
              http://amath.colorado.edu/activities/thesis/allisonb/Thesis.ps
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import lgmres
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> b = np.array([2, 4, -1], dtype=float)
+    >>> x, exitCode = lgmres(A, b)
+    >>> print(exitCode)            # 0 indicates successful convergence
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
     """
     A,M,x,b,postprocess = make_system(A,M,x0,b)
 

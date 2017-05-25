@@ -7,14 +7,148 @@ import numpy as np
 from scipy import fftpack
 from . import signaltools
 from .windows import get_window
-from ._spectral import lombscargle
-from ._arraytools import even_ext
+from ._spectral import _lombscargle
+from ._arraytools import const_ext, even_ext, odd_ext, zero_ext
 import warnings
 
 from scipy._lib.six import string_types
 
 __all__ = ['periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
            'spectrogram', 'stft', 'istft', 'check_COLA']
+
+
+def lombscargle(x,
+                y,
+                freqs,
+                precenter=False,
+                normalize=False):
+    """
+    lombscargle(x, y, freqs)
+
+    Computes the Lomb-Scargle periodogram.
+    
+    The Lomb-Scargle periodogram was developed by Lomb [1]_ and further
+    extended by Scargle [2]_ to find, and test the significance of weak
+    periodic signals with uneven temporal sampling.
+
+    When *normalize* is False (default) the computed periodogram
+    is unnormalized, it takes the value ``(A**2) * N/4`` for a harmonic
+    signal with amplitude A for sufficiently large N.
+
+    When *normalize* is True the computed periodogram is is normalized by
+    the residuals of the data around a constant reference model (at zero).
+
+    Input arrays should be one-dimensional and will be cast to float64.
+
+    Parameters
+    ----------
+    x : array_like
+        Sample times.
+    y : array_like
+        Measurement values.
+    freqs : array_like
+        Angular frequencies for output periodogram.
+    precenter : bool, optional
+        Pre-center amplitudes by subtracting the mean.
+    normalize : bool, optional
+        Compute normalized periodogram.
+
+    Returns
+    -------
+    pgram : array_like
+        Lomb-Scargle periodogram.
+
+    Raises
+    ------
+    ValueError
+        If the input arrays `x` and `y` do not have the same shape.
+
+    Notes
+    -----
+    This subroutine calculates the periodogram using a slightly
+    modified algorithm due to Townsend [3]_ which allows the
+    periodogram to be calculated using only a single pass through
+    the input arrays for each frequency.
+
+    The algorithm running time scales roughly as O(x * freqs) or O(N^2)
+    for a large number of samples and frequencies.
+
+    References
+    ----------
+    .. [1] N.R. Lomb "Least-squares frequency analysis of unequally spaced
+           data", Astrophysics and Space Science, vol 39, pp. 447-462, 1976
+
+    .. [2] J.D. Scargle "Studies in astronomical time series analysis. II - 
+           Statistical aspects of spectral analysis of unevenly spaced data",
+           The Astrophysical Journal, vol 263, pp. 835-853, 1982
+
+    .. [3] R.H.D. Townsend, "Fast calculation of the Lomb-Scargle
+           periodogram using graphics processing units.", The Astrophysical
+           Journal Supplement Series, vol 191, pp. 247-253, 2010
+
+    Examples
+    --------
+    >>> import scipy.signal
+    >>> import matplotlib.pyplot as plt
+
+    First define some input parameters for the signal:
+
+    >>> A = 2.
+    >>> w = 1.
+    >>> phi = 0.5 * np.pi
+    >>> nin = 1000
+    >>> nout = 100000
+    >>> frac_points = 0.9 # Fraction of points to select
+     
+    Randomly select a fraction of an array with timesteps:
+
+    >>> r = np.random.rand(nin)
+    >>> x = np.linspace(0.01, 10*np.pi, nin)
+    >>> x = x[r >= frac_points]
+     
+    Plot a sine wave for the selected times:
+
+    >>> y = A * np.sin(w*x+phi)
+
+    Define the array of frequencies for which to compute the periodogram:
+    
+    >>> f = np.linspace(0.01, 10, nout)
+     
+    Calculate Lomb-Scargle periodogram:
+
+    >>> import scipy.signal as signal
+    >>> pgram = signal.lombscargle(x, y, f, normalize=True)
+
+    Now make a plot of the input data:
+
+    >>> plt.subplot(2, 1, 1)
+    >>> plt.plot(x, y, 'b+')
+
+    Then plot the normalized periodogram:
+
+    >>> plt.subplot(2, 1, 2)
+    >>> plt.plot(f, pgram)
+    >>> plt.show()
+
+    """
+
+    x = np.asarray(x, dtype=np.float64)
+    y = np.asarray(y, dtype=np.float64)
+    freqs = np.asarray(freqs, dtype=np.float64)
+
+    assert x.ndim == 1
+    assert y.ndim == 1
+    assert freqs.ndim == 1
+
+    if precenter:
+        pgram = _lombscargle(x, y - y.mean(), freqs)
+    else:
+        pgram = _lombscargle(x, y, freqs)
+
+    if normalize:
+        pgram *= 2 / np.dot(y, y)
+
+    return pgram
 
 
 def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
@@ -29,10 +163,12 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be nperseg.
-        Defaults to 'boxcar'.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to 'boxcar'.
     nfft : int, optional
         Length of the FFT used. If `None` the length of `x` will be
         used.
@@ -165,10 +301,12 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be nperseg.
-        Defaults to a Hann window.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -214,8 +352,8 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     Notes
     -----
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements. For the default 'hann' window an overlap
-    of 50% is a reasonable trade off between accurately estimating the
+    and on your requirements. For the default Hann window an overlap of
+    50% is a reasonable trade off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
@@ -305,10 +443,12 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         Sampling frequency of the `x` and `y` time series. Defaults
         to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be nperseg.
-        Defaults to a Hann window.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -362,8 +502,8 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     zero-padded to match.
 
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements. For the default 'hann' window an overlap
-    of 50% is a reasonable trade off between accurately estimating the
+    and on your requirements. For the default Hann window an overlap of
+    50% is a reasonable trade off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
@@ -436,9 +576,11 @@ def spectrogram(x, fs=1.0, window=('tukey',.25), nperseg=None, noverlap=None,
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be nperseg.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg.
         Defaults to a Tukey window with shape parameter of 0.25.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
@@ -586,9 +728,11 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
     Parameters
     ----------
     window : str or tuple or array_like
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be `nperseg`.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg.
     nperseg : int
         Length of each segment.
     noverlap : int
@@ -702,7 +846,7 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
 
 
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
-         detrend=False, return_onesided=True, boundary='even', padded=True,
+         detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1):
     r"""
     Compute the Short Time Fourier Transform (STFT).
@@ -717,10 +861,12 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     fs : float, optional
         Sampling frequency of the `x` time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be nperseg.
-        Defaults to a Hann window.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to 256.
     noverlap : int, optional
@@ -742,14 +888,14 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         data, a two-sided spectrum is always returned. Defaults to
         `True`.
     boundary : str or None, optional
-        Specifies whether the input signal is extended, and how to
-        generate the new values, in order to center the first windowed
-        segment on the first input point. This has the benefit of
-        enabling reconstruction of the first input point when the
+        Specifies whether the input signal is extended at both ends, and
+        how to generate the new values, in order to center the first
+        windowed segment on the first input point. This has the benefit
+        of enabling reconstruction of the first input point when the
         employed window function starts at zero. Valid options are
-        ``['even', None]``. Defaults to 'even', for even extension. I.e.
-        ``[1, 2, 3, 4]`` is extended to ``[2, 1, 2, 3, 4, 3]`` for
-        ``nperseg=3``.
+        ``['even', 'odd', 'constant', 'zeros', None]``. Defaults to
+        'zeros', for zero padding extension. I.e. ``[1, 2, 3, 4]`` is
+        extended to ``[0, 1, 2, 3, 4, 0]`` for ``nperseg=3``.
     padded : bool, optional
         Specifies whether the input signal is zero-padded at the end to
         make the signal fit exactly into an integer number of window
@@ -859,11 +1005,13 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     fs : float, optional
         Sampling frequency of the time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be `nperseg`.
-        Defaults to a Hann window. Must match the window used to
-        generate the STFT for faithful inversion.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window. Must match the window used to generate the
+        STFT for faithful inversion.
     nperseg : int, optional
         Number of data points corresponding to each STFT segment. This
         parameter must be specified if the number of data points per
@@ -983,7 +1131,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     Compare the cleaned signal with the original and true carrier signals.
 
     >>> plt.figure()
-    >>> plt.plot(time, x, time, xrec.real, time, carrier)
+    >>> plt.plot(time, x, time, xrec, time, carrier)
     >>> plt.xlim([2, 2.1])
     >>> plt.xlabel('Time [sec]')
     >>> plt.ylabel('Signal')
@@ -994,7 +1142,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     since some of the coefficients of the transient were also removed:
 
     >>> plt.figure()
-    >>> plt.plot(time, x, time, xrec.real, time, carrier)
+    >>> plt.plot(time, x, time, xrec, time, carrier)
     >>> plt.xlim([0, 0.1])
     >>> plt.xlabel('Time [sec]')
     >>> plt.ylabel('Signal')
@@ -1140,10 +1288,12 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         Sampling frequency of the `x` and `y` time series. Defaults
         to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be `nperseg`.
-        Defaults to a Hann window.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -1181,8 +1331,8 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     Notes
     --------
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements. For the default 'hann' window an overlap
-    of 50% is a reasonable trade off between accurately estimating the
+    and on your requirements. For the default Hann window an overlap of
+    50% is a reasonable trade off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
@@ -1258,10 +1408,12 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     fs : float, optional
         Sampling frequency of the time series. Defaults to 1.0.
     window : str or tuple or array_like, optional
-        Desired window to use. See `get_window` for a list of windows
-        and required parameters. If `window` is array_like it will be
-        used directly as the window and its length must be `nperseg`.
-        Defaults to 'hann'.
+        Desired window to use. If `window` is a string or tuple, it is
+        passed to `get_window` to generate the window values, which are
+        DFT-even by default. See `get_window` for a list of windows and
+        required parameters. If `window` is array_like it will be used
+        directly as the window and its length must be nperseg. Defaults
+        to a Hann window.
     nperseg : int, optional
         Length of each segment. Defaults to None, but if window is str or
         tuple, is set to 256, and if window is array_like, is set to the
@@ -1295,12 +1447,13 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         Defines what kind of return values are expected. Defaults to
         'psd'.
     boundary : str or None, optional
-        Specifies whether the input signal is extended, and how to
-        generate the new values, in order to center the first windowed
-        segment on the first input point. This has the benefit of
-        enabling reconstruction of the first input point when the
+        Specifies whether the input signal is extended at both ends, and
+        how to generate the new values, in order to center the first
+        windowed segment on the first input point. This has the benefit
+        of enabling reconstruction of the first input point when the
         employed window function starts at zero. Valid options are
-        ``['even', None]``. Defaults to `None`.
+        ``['even', 'odd', 'constant', 'zeros', None]``. Defaults to
+        `None`.
     padded : bool, optional
         Specifies whether the input signal is zero-padded at the end to
         make the signal fit exactly into an integer number of window
@@ -1333,9 +1486,15 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         raise ValueError("Unknown value for mode %s, must be one of: "
                          "{'psd', 'stft'}" % mode)
 
-    if boundary not in ['even', None]:
-        raise ValueError("Unknown value for boundary option %s, must be one "
-                         "of: {'even', None}" % boundary)
+    boundary_funcs = {'even': even_ext,
+                      'odd': odd_ext,
+                      'constant': const_ext,
+                      'zeros': zero_ext,
+                      None: None}
+
+    if boundary not in boundary_funcs:
+        raise ValueError("Unknown boundary option '{0}', must be one of: {1}"
+                          .format(boundary, list(boundary_funcs.keys())))
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
@@ -1417,15 +1576,14 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     # Padding occurs after boundary extension, so that the extended signal ends
     # in zeros, instead of introducing an impulse at the end.
     # I.e. if x = [..., 3, 2]
-    # even_ext then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
-    # pad then even_ext -> [..., 3, 2, 0, 0, 0, 2, 3]
+    # extend then pad -> [..., 3, 2, 2, 3, 0, 0, 0]
+    # pad then extend -> [..., 3, 2, 0, 0, 0, 2, 3]
 
-    if boundary == 'even':
-        # Even extension means first window doesn't get distorted by a
-        # shift in the DC signal level as much when x[0] != 0
-        x = even_ext(x, nperseg//2, axis=-1)
+    if boundary is not None:
+        ext_func = boundary_funcs[boundary]
+        x = ext_func(x, nperseg//2, axis=-1)
         if not same_data:
-            y = even_ext(y, nperseg//2, axis=-1)
+            y = ext_func(y, nperseg//2, axis=-1)
 
     if padded:
         # Pad to integer number of windowed segments
@@ -1644,3 +1802,4 @@ def _triage_segments(window, nperseg,input_length):
                 raise ValueError("value specified for nperseg is different from"
                                  " length of window")
     return win, nperseg
+

@@ -290,6 +290,12 @@ class NullSlice(Benchmark):
         k = 1000
         self.X = sparse.rand(n, k, format=format, density=density)
 
+    def time_getrow(self, density, format):
+        self.X.getrow(100)
+
+    def time_getcol(self, density, format):
+        self.X.getcol(100)
+
     def time_3_rows(self, density, format):
         self.X[[0, 100, 105], :]
 
@@ -337,3 +343,32 @@ class Sum(Benchmark):
 
     def time_sum_axis1(self, density, format):
         self.X.sum(axis=1)
+
+
+class Iteration(Benchmark):
+    params = [[0.05, 0.01], ['csr', 'csc', 'lil']]
+    param_names = ['density', 'format']
+
+    def setup(self, density, format):
+        n = 500
+        k = 1000
+        self.X = sparse.rand(n, k, format=format, density=density)
+
+    def time_iteration(self, density, format):
+        for row in self.X:
+            pass
+
+
+class Densify(Benchmark):
+    params = [
+        ['dia', 'csr', 'csc', 'dok', 'lil', 'coo', 'bsr'],
+        ['C', 'F'],
+    ]
+    param_names = ['format', 'order']
+
+    def setup(self, format, order):
+        self.X = sparse.rand(1000, 1000, format=format, density=0.01)
+
+    def time_toarray(self, format, order):
+        self.X.toarray(order=order)
+

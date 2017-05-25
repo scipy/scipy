@@ -69,14 +69,6 @@ extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*
 /* This must be linked with fortran
  */
 
-npy_cdouble clngamma_wrap( npy_cdouble z) {
-  int kf = 0;
-  npy_cdouble cy;
-
-  F_FUNC(cgama,CGAMA)(CADDR(z), &kf, CADDR(cy));
-  return cy;
-}
-
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   npy_cdouble outz;
   int l1, l0, isfer = 0;
@@ -679,18 +671,33 @@ double pmv_wrap(double m, double v, double x){
 }
 
 
-/* if x > 0 return w1f and w1d.
-    otherwise return w2f and w2d (after abs(x))
+/* 
+ * If x > 0 return w1f and w1d. Otherwise set x = abs(x) and return
+ * w2f and -w2d.
 */
 int pbwa_wrap(double a, double x, double *wf, double *wd) {
   int flag = 0;
   double w1f, w1d, w2f, w2d;
+
+  if (x < -5 || x > 5 || a < -5 || a > 5) {
+    /*
+     * The Zhang and Jin implementation only uses Taylor series;
+     * return NaN outside of the range which they are accurate.
+     */
+    *wf = NPY_NAN;
+    *wd = NPY_NAN;
+    sf_error("pbwa", SF_ERROR_LOSS, NULL);
+    return 0;
+  }
    
-  if (x < 0) {x=-x; flag=1;}
+  if (x < 0) {
+    x = -x;
+    flag = 1;
+  }
   F_FUNC(pbwa,PBWA)(&a, &x, &w1f, &w1d, &w2f, &w2d);
   if (flag) {
     *wf = w2f;
-    *wd = w2d;
+    *wd = -w2d;
   }
   else {
     *wf = w1f;

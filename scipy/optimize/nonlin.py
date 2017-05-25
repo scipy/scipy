@@ -168,7 +168,7 @@ _doc_parts = dict(
     F : function(x) -> f
         Function whose root to find; should take and return an array-like
         object.
-    x0 : array_like
+    xin : array_like
         Initial guess for the solution
     """.strip(),
     params_extra="""
