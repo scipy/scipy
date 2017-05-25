@@ -340,7 +340,7 @@ class TestUtilities(object):
 
         # Check that there are not too many invalid simplices
         bad_count = np.isnan(tri.transform[:,0,0]).sum()
-        assert_(bad_count < 20, bad_count)
+        assert_(bad_count < 21, bad_count)
 
         # Check the transforms
         self._check_barycentric_transforms(tri)

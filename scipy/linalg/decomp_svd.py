@@ -18,21 +18,21 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     """
     Singular Value Decomposition.
 
-    Factorizes the matrix a into two unitary matrices U and Vh, and
-    a 1-D array s of singular values (real, non-negative) such that
-    ``a == U*S*Vh``, where S is a suitably shaped matrix of zeros with
-    main diagonal s.
+    Factorizes the matrix `a` into two unitary matrices ``U`` and ``Vh``, and
+    a 1-D array ``s`` of singular values (real, non-negative) such that
+    ``a == U @ S @ Vh``, where ``S`` is a suitably shaped matrix of zeros with
+    main diagonal ``s``.
 
     Parameters
     ----------
     a : (M, N) array_like
         Matrix to decompose.
     full_matrices : bool, optional
-        If True, `U` and `Vh` are of shape ``(M,M)``, ``(N,N)``.
-        If False, the shapes are ``(M,K)`` and ``(K,N)``, where
-        ``K = min(M,N)``.
+        If True (default), `U` and `Vh` are of shape ``(M, M)``, ``(N, N)``.
+        If False, the shapes are ``(M, K)`` and ``(K, N)``, where
+        ``K = min(M, N)``.
     compute_uv : bool, optional
-        Whether to compute also `U` and `Vh` in addition to `s`.
+        Whether to compute also ``U`` and ``Vh`` in addition to ``s``.
         Default is True.
     overwrite_a : bool, optional
         Whether to overwrite `a`; may improve performance.
@@ -53,15 +53,15 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     -------
     U : ndarray
         Unitary matrix having left singular vectors as columns.
-        Of shape ``(M,M)`` or ``(M,K)``, depending on `full_matrices`.
+        Of shape ``(M, M)`` or ``(M, K)``, depending on `full_matrices`.
     s : ndarray
         The singular values, sorted in non-increasing order.
         Of shape (K,), with ``K = min(M, N)``.
     Vh : ndarray
         Unitary matrix having right singular vectors as rows.
-        Of shape ``(N,N)`` or ``(K,N)`` depending on `full_matrices`.
+        Of shape ``(N, N)`` or ``(K, N)`` depending on `full_matrices`.
 
-    For ``compute_uv=False``, only `s` is returned.
+    For ``compute_uv=False``, only ``s`` is returned.
 
     Raises
     ------
@@ -76,15 +76,28 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     Examples
     --------
     >>> from scipy import linalg
-    >>> a = np.random.randn(9, 6) + 1.j*np.random.randn(9, 6)
+    >>> m, n = 9, 6
+    >>> a = np.random.randn(m, n) + 1.j*np.random.randn(m, n)
     >>> U, s, Vh = linalg.svd(a)
-    >>> U.shape, Vh.shape, s.shape
-    ((9, 9), (6, 6), (6,))
+    >>> U.shape,  s.shape, Vh.shape
+    ((9, 9), (6,), (6, 6))
+
+    Reconstruct the original matrix from the decomposition:
+
+    >>> sigma = np.zeros((m, n))
+    >>> for i in range(min(m, n)):
+    ...     sigma[i, i] = s[i]
+    >>> a1 = np.dot(U, np.dot(sigma, Vh))
+    >>> np.allclose(a, a1)
+    True
+
+    Alternatively, use ``full_matrices=False`` (notice that the shape of
+    ``U`` is then ``(m, n)`` instead of ``(m, m)``):
 
     >>> U, s, Vh = linalg.svd(a, full_matrices=False)
-    >>> U.shape, Vh.shape, s.shape
-    ((9, 6), (6, 6), (6,))
-    >>> S = linalg.diagsvd(s, 6, 6)
+    >>> U.shape, s.shape, Vh.shape
+    ((9, 6), (6,), (6, 6))
+    >>> S = np.diag(s)
     >>> np.allclose(a, np.dot(U, np.dot(S, Vh)))
     True
 
@@ -163,10 +176,50 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     >>> svdvals(a)
     array([], dtype=float64)
 
-    See also
+    See Also
     --------
     svd : Compute the full singular value decomposition of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
+
+    Examples
+    --------
+    >>> from scipy.linalg import svdvals
+    >>> m = np.array([[1.0, 0.0],
+    ...               [2.0, 3.0],
+    ...               [1.0, 1.0],
+    ...               [0.0, 2.0],
+    ...               [1.0, 0.0]])
+    >>> svdvals(m)
+    array([ 4.28091555,  1.63516424])
+
+    We can verify the maximum singular value of `m` by computing the maximum
+    length of `m.dot(u)` over all the unit vectors `u` in the (x,y) plane.
+    We approximate "all" the unit vectors with a large sample.  Because
+    of linearity, we only need the unit vectors with angles in [0, pi].
+
+    >>> t = np.linspace(0, np.pi, 2000)
+    >>> u = np.array([np.cos(t), np.sin(t)])
+    >>> np.linalg.norm(m.dot(u), axis=0).max()
+    4.2809152422538475
+
+    `p` is a projection matrix with rank 1.  With exact arithmetic,
+    its singular values would be [1, 0, 0, 0].
+
+    >>> v = np.array([0.1, 0.3, 0.9, 0.3])
+    >>> p = np.outer(v, v)
+    >>> svdvals(p)
+    array([  1.00000000e+00,   2.02021698e-17,   1.56692500e-17,
+             8.15115104e-34])
+
+    The singular values of an orthogonal matrix are all 1.  Here we
+    create a random orthogonal matrix by using the `rvs()` method of
+    `scipy.stats.ortho_group`.
+
+    >>> from scipy.stats import ortho_group
+    >>> np.random.seed(123)
+    >>> orth = ortho_group.rvs(4)
+    >>> svdvals(orth)
+    array([ 1.,  1.,  1.,  1.])
 
     """
     a = _asarray_validated(a, check_finite=check_finite)

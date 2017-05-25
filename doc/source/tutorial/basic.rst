@@ -180,10 +180,8 @@ result:
     array([1, 6, 1, 2])
 
 This particular function could have been written in vector form
-without the use of :obj:`vectorize` . But, what if the function you
-have written is the result of some optimization or integration
-routine. Such functions can likely only be vectorized using
-``vectorize.``
+without the use of :obj:`vectorize`. However, functions that employ optimization 
+or integration routines can likely only be vectorized using ``vectorize.``
 
 Type handling
 ^^^^^^^^^^^^^

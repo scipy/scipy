@@ -139,7 +139,7 @@ eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.px
 exp10 -- exp10: d->d                                       -- cephes.h
 exp2 -- exp2: d->d                                         -- cephes.h
 gamma -- Gamma: d->d, cgamma: D->D                         -- cephes.h, _loggamma.pxd
-_gammaln -- lgam: d->d, clngamma_wrap: D->D                -- cephes.h, specfun_wrappers.h
+gammaln -- lgam: d->d                                      -- cephes.h
 gammasgn -- gammasgn: d->d                                 -- c_misc/misc.h
 i0 -- i0: d->d                                             -- cephes.h
 i0e -- i0e: d->d                                           -- cephes.h

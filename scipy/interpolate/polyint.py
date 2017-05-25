@@ -334,24 +334,24 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         pi = np.zeros((n, len(x)))
         w = np.zeros((n, len(x)))
         pi[0] = 1
-        p = np.zeros((len(x), self.r))
-        p += self.c[0,np.newaxis,:]
+        p = np.zeros((len(x), self.r), dtype=self.dtype)
+        p += self.c[0, np.newaxis, :]
 
-        for k in xrange(1,n):
+        for k in xrange(1, n):
             w[k-1] = x - self.xi[k-1]
-            pi[k] = w[k-1]*pi[k-1]
-            p += pi[k,:,np.newaxis]*self.c[k]
+            pi[k] = w[k-1] * pi[k-1]
+            p += pi[k, :, np.newaxis] * self.c[k]
 
-        cn = np.zeros((max(der,n+1), len(x), r), dtype=self.dtype)
-        cn[:n+1,:,:] += self.c[:n+1,np.newaxis,:]
+        cn = np.zeros((max(der, n+1), len(x), r), dtype=self.dtype)
+        cn[:n+1, :, :] += self.c[:n+1, np.newaxis, :]
         cn[0] = p
-        for k in xrange(1,n):
-            for i in xrange(1,n-k+1):
-                pi[i] = w[k+i-1]*pi[i-1]+pi[i]
-                cn[k] = cn[k]+pi[i,:,np.newaxis]*cn[k+i]
+        for k in xrange(1, n):
+            for i in xrange(1, n-k+1):
+                pi[i] = w[k+i-1]*pi[i-1] + pi[i]
+                cn[k] = cn[k] + pi[i, :, np.newaxis]*cn[k+i]
             cn[k] *= factorial(k)
 
-        cn[n,:,:] = 0
+        cn[n, :, :] = 0
         return cn[:der]
 
 

@@ -21,12 +21,12 @@ class ode
 A generic interface class to numeric integrators. It has the following
 methods::
 
-    integrator = ode(f,jac=None)
-    integrator = integrator.set_integrator(name,**params)
-    integrator = integrator.set_initial_value(y0,t0=0.0)
+    integrator = ode(f, jac=None)
+    integrator = integrator.set_integrator(name, **params)
+    integrator = integrator.set_initial_value(y0, t0=0.0)
     integrator = integrator.set_f_params(*args)
     integrator = integrator.set_jac_params(*args)
-    y1 = integrator.integrate(t1,step=0,relax=0)
+    y1 = integrator.integrate(t1, step=False, relax=False)
     flag = integrator.successful()
 
 class complex_ode
@@ -393,8 +393,32 @@ class ode(object):
             self._integrator.reset(len(self._y), self.jac is not None)
         return self
 
-    def integrate(self, t, step=0, relax=0):
-        """Find y=y(t), set y as an initial condition, and return y."""
+    def integrate(self, t, step=False, relax=False):
+        """Find y=y(t), set y as an initial condition, and return y.
+
+        Parameters
+        ----------
+        t : float
+            The endpoint of the integration step.
+        step : bool
+            If True, and if the integrator supports the step method,
+            then perform a single integration step and return.
+            This parameter is provided in order to expose internals of
+            the implementation, and should not be changed from its default
+            value in most cases.
+        relax : bool
+            If True and if the integrator supports the run_relax method,
+            then integrate until t_1 >= t and return. ``relax`` is not
+            referenced if ``step=True``.
+            This parameter is provided in order to expose internals of
+            the implementation, and should not be changed from its default
+            value in most cases.
+
+        Returns
+        -------
+        y : float
+            The integrated value at t
+        """
         if step and self._integrator.supports_step:
             mth = self._integrator.step
         elif relax and self._integrator.supports_run_relax:
@@ -578,8 +602,32 @@ class complex_ode(ode):
         self.tmp[1::2] = imag(y)
         return ode.set_initial_value(self, self.tmp, t)
 
-    def integrate(self, t, step=0, relax=0):
-        """Find y=y(t), set y as an initial condition, and return y."""
+    def integrate(self, t, step=False, relax=False):
+        """Find y=y(t), set y as an initial condition, and return y.
+
+        Parameters
+        ----------
+        t : float
+            The endpoint of the integration step.
+        step : bool
+            If True, and if the integrator supports the step method,
+            then perform a single integration step and return.
+            This parameter is provided in order to expose internals of
+            the implementation, and should not be changed from its default
+            value in most cases.
+        relax : bool
+            If True and if the integrator supports the run_relax method,
+            then integrate until t_1 >= t and return. ``relax`` is not
+            referenced if ``step=True``.
+            This parameter is provided in order to expose internals of
+            the implementation, and should not be changed from its default
+            value in most cases.
+
+        Returns
+        -------
+        y : float
+            The integrated value at t
+        """
         y = ode.integrate(self, t, step, relax)
         return y[::2] + 1j * y[1::2]
 

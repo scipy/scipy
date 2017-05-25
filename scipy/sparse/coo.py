@@ -488,9 +488,20 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         self.row = self.row[mask]
         self.col = self.col[mask]
 
-    ###########################
-    # Multiplication handlers #
-    ###########################
+    #######################
+    # Arithmetic handlers #
+    #######################
+
+    def _add_dense(self, other):
+        if other.shape != self.shape:
+            raise ValueError('Incompatible shapes.')
+        dtype = upcast_char(self.dtype.char, other.dtype.char)
+        result = np.array(other, dtype=dtype, copy=True)
+        fortran = int(result.flags.f_contiguous)
+        M, N = self.shape
+        coo_todense(M, N, self.nnz, self.row, self.col, self.data,
+                    result.ravel('A'), fortran)
+        return np.matrix(result, copy=False)
 
     def _mul_vector(self, other):
         #output array
@@ -508,4 +519,26 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
 
 def isspmatrix_coo(x):
+    """Is x of coo_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a coo matrix
+
+    Returns
+    -------
+    bool
+        True if x is a coo matrix, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import coo_matrix, isspmatrix_coo
+    >>> isspmatrix_coo(coo_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import coo_matrix, csr_matrix, isspmatrix_coo
+    >>> isspmatrix_coo(csr_matrix([[5]]))
+    False
+    """
     return isinstance(x, coo_matrix)

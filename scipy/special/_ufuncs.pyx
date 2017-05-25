@@ -1202,10 +1202,6 @@ from _legacy cimport ellip_harmonic_unsafe as _func_ellip_harmonic_unsafe
 ctypedef double _proto_ellip_harmonic_unsafe_t(double, double, double, double, double, double, double) nogil
 cdef _proto_ellip_harmonic_unsafe_t *_proto_ellip_harmonic_unsafe_t_var = &_func_ellip_harmonic_unsafe
 cdef extern from "_ufuncs_defs.h":
-    cdef double _func_lgam "lgam"(double) nogil
-cdef extern from "_ufuncs_defs.h":
-    cdef double complex _func_clngamma_wrap "clngamma_wrap"(double complex) nogil
-cdef extern from "_ufuncs_defs.h":
     cdef double _func_igam_fac "igam_fac"(double, double) nogil
 from lambertw cimport lambertw_scalar as _func_lambertw_scalar
 ctypedef double complex _proto_lambertw_scalar_t(double complex, long, double) nogil
@@ -1563,6 +1559,8 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_igami "igami"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_gammaincinv "gammaincinv"(double, double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_lgam "lgam"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_gammasgn "gammasgn"(double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2009,38 +2007,6 @@ ufunc__ellip_harm_data[0] = &ufunc__ellip_harm_ptr[2*0]
 ufunc__ellip_harm_data[1] = &ufunc__ellip_harm_ptr[2*1]
 ufunc__ellip_harm_data[2] = &ufunc__ellip_harm_ptr[2*2]
 _ellip_harm = np.PyUFunc_FromFuncAndData(ufunc__ellip_harm_loops, ufunc__ellip_harm_data, ufunc__ellip_harm_types, 3, 7, 1, 0, "_ellip_harm", ufunc__ellip_harm_doc, 0)
-
-cdef np.PyUFuncGenericFunction ufunc__gammaln_loops[4]
-cdef void *ufunc__gammaln_ptr[8]
-cdef void *ufunc__gammaln_data[4]
-cdef char ufunc__gammaln_types[8]
-cdef char *ufunc__gammaln_doc = (
-    "Internal function, use ``gammaln`` instead.")
-ufunc__gammaln_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
-ufunc__gammaln_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
-ufunc__gammaln_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
-ufunc__gammaln_loops[3] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
-ufunc__gammaln_types[0] = <char>NPY_FLOAT
-ufunc__gammaln_types[1] = <char>NPY_FLOAT
-ufunc__gammaln_types[2] = <char>NPY_DOUBLE
-ufunc__gammaln_types[3] = <char>NPY_DOUBLE
-ufunc__gammaln_types[4] = <char>NPY_CFLOAT
-ufunc__gammaln_types[5] = <char>NPY_CFLOAT
-ufunc__gammaln_types[6] = <char>NPY_CDOUBLE
-ufunc__gammaln_types[7] = <char>NPY_CDOUBLE
-ufunc__gammaln_ptr[2*0] = <void*>_func_lgam
-ufunc__gammaln_ptr[2*0+1] = <void*>(<char*>"_gammaln")
-ufunc__gammaln_ptr[2*1] = <void*>_func_lgam
-ufunc__gammaln_ptr[2*1+1] = <void*>(<char*>"_gammaln")
-ufunc__gammaln_ptr[2*2] = <void*>_func_clngamma_wrap
-ufunc__gammaln_ptr[2*2+1] = <void*>(<char*>"_gammaln")
-ufunc__gammaln_ptr[2*3] = <void*>_func_clngamma_wrap
-ufunc__gammaln_ptr[2*3+1] = <void*>(<char*>"_gammaln")
-ufunc__gammaln_data[0] = &ufunc__gammaln_ptr[2*0]
-ufunc__gammaln_data[1] = &ufunc__gammaln_ptr[2*1]
-ufunc__gammaln_data[2] = &ufunc__gammaln_ptr[2*2]
-ufunc__gammaln_data[3] = &ufunc__gammaln_ptr[2*3]
-_gammaln = np.PyUFunc_FromFuncAndData(ufunc__gammaln_loops, ufunc__gammaln_data, ufunc__gammaln_types, 4, 1, 1, 0, "_gammaln", ufunc__gammaln_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__igam_fac_loops[2]
 cdef void *ufunc__igam_fac_ptr[4]
@@ -2515,7 +2481,25 @@ cdef char *ufunc_airy_doc = (
     "       http://www.netlib.org/cephes/index.html\n"
     ".. [2] Donald E. Amos, \"AMOS, A Portable Package for Bessel Functions\n"
     "       of a Complex Argument and Nonnegative Order\",\n"
-    "       http://netlib.org/amos/.org/amos/")
+    "       http://netlib.org/amos/.org/amos/\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    "Compute the Airy functions on the interval [-15, 5].\n"
+    "\n"
+    ">>> from scipy import special\n"
+    ">>> x = np.linspace(-15, 5, 201)\n"
+    ">>> ai, aip, bi, bip = special.airy(x)\n"
+    "\n"
+    "Plot Ai(x) and Bi(x).\n"
+    "\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    ">>> plt.plot(x, ai, 'r', label='Ai(x)')\n"
+    ">>> plt.plot(x, bi, 'b--', label='Bi(x)')\n"
+    ">>> plt.ylim(-0.5, 1.0)\n"
+    ">>> plt.grid()\n"
+    ">>> plt.legend(loc='upper left')\n"
+    ">>> plt.show()")
 ufunc_airy_loops[0] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_f_ffff
 ufunc_airy_loops[1] = <np.PyUFuncGenericFunction>loop_i_d_dddd_As_d_dddd
 ufunc_airy_loops[2] = <np.PyUFuncGenericFunction>loop_i_D_DDDD_As_F_FFFF
@@ -4033,6 +4017,12 @@ cdef char *ufunc_ellipe_doc = (
     "\n"
     "is used.\n"
     "\n"
+    "The parameterization in terms of :math:`m` follows that of section\n"
+    "17.2 in [2]_. Other parameterizations in terms of the\n"
+    "complementary parameter :math:`1 - m`, modular angle\n"
+    ":math:`\\sin^2(\\alpha) = m`, or modulus :math:`k^2 = m` are also\n"
+    "used, so be careful that you choose the correct parameter.\n"
+    "\n"
     "See Also\n"
     "--------\n"
     "ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1\n"
@@ -4043,7 +4033,10 @@ cdef char *ufunc_ellipe_doc = (
     "References\n"
     "----------\n"
     ".. [1] Cephes Mathematical Functions Library,\n"
-    "       http://www.netlib.org/cephes/index.html")
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Milton Abramowitz and Irene A. Stegun, eds.\n"
+    "       Handbook of Mathematical Functions with Formulas,\n"
+    "       Graphs, and Mathematical Tables. New York: Dover, 1972.")
 ufunc_ellipe_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_ellipe_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_ellipe_types[0] = <char>NPY_FLOAT
@@ -4090,6 +4083,12 @@ cdef char *ufunc_ellipeinc_doc = (
     "\n"
     "Computation uses arithmetic-geometric means algorithm.\n"
     "\n"
+    "The parameterization in terms of :math:`m` follows that of section\n"
+    "17.2 in [2]_. Other parameterizations in terms of the\n"
+    "complementary parameter :math:`1 - m`, modular angle\n"
+    ":math:`\\sin^2(\\alpha) = m`, or modulus :math:`k^2 = m` are also\n"
+    "used, so be careful that you choose the correct parameter.\n"
+    "\n"
     "See Also\n"
     "--------\n"
     "ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1\n"
@@ -4100,7 +4099,10 @@ cdef char *ufunc_ellipeinc_doc = (
     "References\n"
     "----------\n"
     ".. [1] Cephes Mathematical Functions Library,\n"
-    "       http://www.netlib.org/cephes/index.html")
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Milton Abramowitz and Irene A. Stegun, eds.\n"
+    "       Handbook of Mathematical Functions with Formulas,\n"
+    "       Graphs, and Mathematical Tables. New York: Dover, 1972.")
 ufunc_ellipeinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ellipeinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_ellipeinc_types[0] = <char>NPY_FLOAT
@@ -4224,6 +4226,12 @@ cdef char *ufunc_ellipkinc_doc = (
     "Wrapper for the Cephes [1]_ routine `ellik`.  The computation is\n"
     "carried out using the arithmetic-geometric mean algorithm.\n"
     "\n"
+    "The parameterization in terms of :math:`m` follows that of section\n"
+    "17.2 in [2]_. Other parameterizations in terms of the\n"
+    "complementary parameter :math:`1 - m`, modular angle\n"
+    ":math:`\\sin^2(\\alpha) = m`, or modulus :math:`k^2 = m` are also\n"
+    "used, so be careful that you choose the correct parameter.\n"
+    "\n"
     "See Also\n"
     "--------\n"
     "ellipkm1 : Complete elliptic integral of the first kind, near `m` = 1\n"
@@ -4234,7 +4242,10 @@ cdef char *ufunc_ellipkinc_doc = (
     "References\n"
     "----------\n"
     ".. [1] Cephes Mathematical Functions Library,\n"
-    "       http://www.netlib.org/cephes/index.html")
+    "       http://www.netlib.org/cephes/index.html\n"
+    ".. [2] Milton Abramowitz and Irene A. Stegun, eds.\n"
+    "       Handbook of Mathematical Functions with Formulas,\n"
+    "       Graphs, and Mathematical Tables. New York: Dover, 1972.")
 ufunc_ellipkinc_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_ellipkinc_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_ellipkinc_types[0] = <char>NPY_FLOAT
@@ -5876,13 +5887,41 @@ cdef char *ufunc_expit_doc = (
     "    An ndarray of the same shape as x. Its entries\n"
     "    are expit of the corresponding entry of x.\n"
     "\n"
+    "See Also\n"
+    "--------\n"
+    "logit\n"
+    "\n"
     "Notes\n"
     "-----\n"
     "As a ufunc expit takes a number of optional\n"
     "keyword arguments. For more information\n"
     "see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
     "\n"
-    ".. versionadded:: 0.10.0")
+    ".. versionadded:: 0.10.0\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> from scipy.special import expit, logit\n"
+    "\n"
+    ">>> expit([-np.inf, -1.5, 0, 1.5, np.inf])\n"
+    "array([ 0.        ,  0.18242552,  0.5       ,  0.81757448,  1.        ])\n"
+    "\n"
+    "`logit` is the inverse of `expit`:\n"
+    "\n"
+    ">>> logit(expit([-2.5, 0, 3.1, 5.0]))\n"
+    "array([-2.5,  0. ,  3.1,  5. ])\n"
+    "\n"
+    "Plot expit(x) for x in [-6, 6]:\n"
+    "\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    ">>> x = np.linspace(-6, 6, 121)\n"
+    ">>> y = expit(x)\n"
+    ">>> plt.plot(x, y)\n"
+    ">>> plt.grid()\n"
+    ">>> plt.xlim(-6, 6)\n"
+    ">>> plt.xlabel('x')\n"
+    ">>> plt.title('expit(x)')\n"
+    ">>> plt.show()")
 ufunc_expit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
 ufunc_expit_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_expit_loops[2] = <np.PyUFuncGenericFunction>loop_g_g__As_g_g
@@ -6301,7 +6340,50 @@ cdef char *ufunc_gamma_doc = (
     "\n"
     "The gamma function is often referred to as the generalized\n"
     "factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =\n"
-    "n!`` for natural number *n*.")
+    "n!`` for natural number *n*.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "z : float or complex array_like\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "float or complex\n"
+    "    The value(s) of gamma(z)\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> from scipy.special import gamma, factorial\n"
+    "\n"
+    ">>> gamma([0, 0.5, 1, 5])\n"
+    "array([         inf,   1.77245385,   1.        ,  24.        ])\n"
+    "\n"
+    ">>> z = 2.5 + 1j\n"
+    ">>> gamma(z)\n"
+    "(0.77476210455108352+0.70763120437959293j)\n"
+    ">>> gamma(z+1), z*gamma(z)  # Recurrence property\n"
+    "((1.2292740569981171+2.5438401155000685j),\n"
+    " (1.2292740569981158+2.5438401155000658j))\n"
+    "\n"
+    ">>> gamma(0.5)**2  # gamma(0.5) = sqrt(pi)\n"
+    "3.1415926535897927\n"
+    "\n"
+    "Plot gamma(x) for real x\n"
+    "\n"
+    ">>> x = np.linspace(-3.5, 5.5, 2251)\n"
+    ">>> y = gamma(x)\n"
+    "\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    ">>> plt.plot(x, y, 'b', alpha=0.6, label='gamma(x)')\n"
+    ">>> k = np.arange(1, 7)\n"
+    ">>> plt.plot(k, factorial(k-1), 'k*', alpha=0.6,\n"
+    "...          label='(x-1)!, x = 1, 2, ...')\n"
+    ">>> plt.xlim(-3.5, 5.5)\n"
+    ">>> plt.ylim(-10, 25)\n"
+    ">>> plt.grid()\n"
+    ">>> plt.xlabel('x')\n"
+    ">>> plt.legend(loc='lower right')\n"
+    ">>> plt.show()")
 ufunc_gamma_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
 ufunc_gamma_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_gamma_loops[2] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
@@ -6477,6 +6559,49 @@ ufunc_gammaincinv_ptr[2*1+1] = <void*>(<char*>"gammaincinv")
 ufunc_gammaincinv_data[0] = &ufunc_gammaincinv_ptr[2*0]
 ufunc_gammaincinv_data[1] = &ufunc_gammaincinv_ptr[2*1]
 gammaincinv = np.PyUFunc_FromFuncAndData(ufunc_gammaincinv_loops, ufunc_gammaincinv_data, ufunc_gammaincinv_types, 2, 2, 1, 0, "gammaincinv", ufunc_gammaincinv_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_gammaln_loops[2]
+cdef void *ufunc_gammaln_ptr[4]
+cdef void *ufunc_gammaln_data[2]
+cdef char ufunc_gammaln_types[4]
+cdef char *ufunc_gammaln_doc = (
+    "Logarithm of the absolute value of the Gamma function.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array-like\n"
+    "    Values on the real line at which to compute ``gammaln``\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "gammaln : ndarray\n"
+    "    Values of ``gammaln`` at x.\n"
+    "\n"
+    "See Also\n"
+    "--------\n"
+    "gammasgn : sign of the gamma function\n"
+    "loggamma : principal branch of the logarithm of the gamma function\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "When used in conjunction with `gammasgn`, this function is useful\n"
+    "for working in logspace on the real axis without having to deal with\n"
+    "complex numbers, via the relation ``exp(gammaln(x)) = gammasgn(x)*gamma(x)``.\n"
+    "\n"
+    "For complex-valued log-gamma, use `loggamma` instead of `gammaln`.")
+ufunc_gammaln_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_gammaln_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_gammaln_types[0] = <char>NPY_FLOAT
+ufunc_gammaln_types[1] = <char>NPY_FLOAT
+ufunc_gammaln_types[2] = <char>NPY_DOUBLE
+ufunc_gammaln_types[3] = <char>NPY_DOUBLE
+ufunc_gammaln_ptr[2*0] = <void*>_func_lgam
+ufunc_gammaln_ptr[2*0+1] = <void*>(<char*>"gammaln")
+ufunc_gammaln_ptr[2*1] = <void*>_func_lgam
+ufunc_gammaln_ptr[2*1+1] = <void*>(<char*>"gammaln")
+ufunc_gammaln_data[0] = &ufunc_gammaln_ptr[2*0]
+ufunc_gammaln_data[1] = &ufunc_gammaln_ptr[2*1]
+gammaln = np.PyUFunc_FromFuncAndData(ufunc_gammaln_loops, ufunc_gammaln_data, ufunc_gammaln_types, 2, 1, 1, 0, "gammaln", ufunc_gammaln_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_gammasgn_loops[2]
 cdef void *ufunc_gammasgn_ptr[4]
@@ -9481,13 +9606,41 @@ cdef char *ufunc_logit_doc = (
     "    An ndarray of the same shape as x. Its entries\n"
     "    are logit of the corresponding entry of x.\n"
     "\n"
+    "See Also\n"
+    "--------\n"
+    "expit\n"
+    "\n"
     "Notes\n"
     "-----\n"
     "As a ufunc logit takes a number of optional\n"
     "keyword arguments. For more information\n"
     "see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_\n"
     "\n"
-    ".. versionadded:: 0.10.0")
+    ".. versionadded:: 0.10.0\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> from scipy.special import logit, expit\n"
+    "\n"
+    ">>> logit([0, 0.25, 0.5, 0.75, 1])\n"
+    "array([       -inf, -1.09861229,  0.        ,  1.09861229,         inf])\n"
+    "\n"
+    "`expit` is the inverse of `logit`:\n"
+    "\n"
+    ">>> expit(logit([0.1, 0.75, 0.999]))\n"
+    "array([ 0.1  ,  0.75 ,  0.999])\n"
+    "\n"
+    "Plot logit(x) for x in [0, 1]:\n"
+    "\n"
+    ">>> import matplotlib.pyplot as plt\n"
+    ">>> x = np.linspace(0, 1, 501)\n"
+    ">>> y = logit(x)\n"
+    ">>> plt.plot(x, y)\n"
+    ">>> plt.grid()\n"
+    ">>> plt.ylim(-6, 6)\n"
+    ">>> plt.xlabel('x')\n"
+    ">>> plt.title('logit(x)')\n"
+    ">>> plt.show()")
 ufunc_logit_loops[0] = <np.PyUFuncGenericFunction>loop_f_f__As_f_f
 ufunc_logit_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
 ufunc_logit_loops[2] = <np.PyUFuncGenericFunction>loop_g_g__As_g_g
@@ -11347,21 +11500,43 @@ cdef char ufunc_pbwa_types[8]
 cdef char *ufunc_pbwa_doc = (
     "pbwa(a, x)\n"
     "\n"
-    "Parabolic cylinder function W\n"
+    "Parabolic cylinder function W.\n"
     "\n"
-    "Returns the parabolic cylinder function W(a, x) in w and the\n"
-    "derivative, W'(a, x) in wp.\n"
+    "The function is a particular solution to the differential equation\n"
     "\n"
-    ".. warning::\n"
+    ".. math::\n"
     "\n"
-    "   May not be accurate for large (>5) arguments in a and/or x.\n"
+    "    y'' + \\left(\\frac{1}{4}x^2 - a\\right)y = 0,\n"
+    "\n"
+    "for a full definition see section 12.14 in [1]_.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "a : array_like\n"
+    "    Real parameter\n"
+    "x : array_like\n"
+    "    Real argument\n"
     "\n"
     "Returns\n"
     "-------\n"
-    "w\n"
+    "w : scalar or ndarray\n"
     "    Value of the function\n"
-    "wp\n"
-    "    Value of the derivative vs x")
+    "wp : scalar or ndarray\n"
+    "    Value of the derivative in x\n"
+    "\n"
+    "Notes\n"
+    "-----\n"
+    "The function is a wrapper for a Fortran routine by Zhang and Jin\n"
+    "[2]_. The implementation is accurate only for ``|a|, |x| < 5`` and\n"
+    "returns NaN outside that range.\n"
+    "\n"
+    "References\n"
+    "----------\n"
+    ".. [1] Digital Library of Mathematical Functions, 14.30.\n"
+    "       http://dlmf.nist.gov/14.30\n"
+    ".. [2] Zhang, Shanjie and Jin, Jianming. \"Computation of Special\n"
+    "       Functions\", John Wiley and Sons, 1996.\n"
+    "       http://jin.ece.illinois.edu/specfunc.html")
 ufunc_pbwa_loops[0] = <np.PyUFuncGenericFunction>loop_i_dd_dd_As_ff_ff
 ufunc_pbwa_loops[1] = <np.PyUFuncGenericFunction>loop_i_dd_dd_As_dd_dd
 ufunc_pbwa_types[0] = <char>NPY_FLOAT

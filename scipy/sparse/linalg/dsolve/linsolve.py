@@ -95,6 +95,16 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     resulting X is dense, the construction of this sparse result will be
     relatively expensive.  In that case, consider converting A to a dense
     matrix and using scipy.linalg.solve or its variants.
+
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import spsolve
+    >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
+    >>> B = csc_matrix([[2, 0], [-1, 0], [2, 0]], dtype=float)
+    >>> x = spsolve(A, B)
+    >>> np.allclose(A.dot(x).todense(), B.todense())
+    True
     """
     if not (isspmatrix_csc(A) or isspmatrix_csr(A)):
         A = csc_matrix(A)
@@ -246,6 +256,19 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     ----------
     .. [1] SuperLU http://crd.lbl.gov/~xiaoye/SuperLU/
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import splu
+    >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
+    >>> B = splu(A)
+    >>> x = np.array([1., 2., 3.], dtype=float)
+    >>> B.solve(x)
+    array([ 1. , -3. , -1.5])
+    >>> A.dot(B.solve(x))
+    array([ 1.,  2.,  3.])
+    >>> B.solve(A.dot(x))
+    array([ 1.,  2.,  3.])
     """
 
     if not isspmatrix_csc(A):
@@ -309,6 +332,19 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     This function uses the SuperLU library.
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import spilu
+    >>> A = csc_matrix([[1., 0., 0.], [5., 0., 2.], [0., -1., 0.]], dtype=float)
+    >>> B = spilu(A)
+    >>> x = np.array([1., 2., 3.], dtype=float)
+    >>> B.solve(x)
+    array([ 1. , -3. , -1.5])
+    >>> A.dot(B.solve(x))
+    array([ 1.,  2.,  3.])
+    >>> B.solve(A.dot(x))
+    array([ 1.,  2.,  3.])
     """
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
@@ -422,6 +458,16 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     Notes
     -----
     .. versionadded:: 0.19.0
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.linalg import spsolve_triangular
+    >>> A = csr_matrix([[3, 0, 0], [1, -1, 0], [2, 0, 1]], dtype=float)
+    >>> B = np.array([[2, 0], [-1, 0], [2, 0]], dtype=float)
+    >>> x = spsolve_triangular(A, B)
+    >>> np.allclose(A.dot(x), B)
+    True
     """
 
     # Check the input for correct type and format.

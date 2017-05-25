@@ -327,60 +327,22 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Arithmatic operator overrides #
     #################################
 
-    def __add__(self,other):
-        # First check if argument is a scalar
-        if isscalarlike(other):
-            if other == 0:
-                return self.copy()
-            else:  # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a nonzero scalar to a '
-                                          'sparse matrix is not supported')
-        elif isspmatrix(other):
-            if (other.shape != self.shape):
-                raise ValueError("inconsistent shapes")
+    def _add_dense(self, other):
+        if other.shape != self.shape:
+            raise ValueError('Incompatible shapes.')
+        dtype = upcast_char(self.dtype.char, other.dtype.char)
+        order = self._swap('CF')[0]
+        result = np.array(other, dtype=dtype, order=order, copy=True)
+        M, N = self._swap(self.shape)
+        y = result if result.flags.c_contiguous else result.T
+        _sparsetools.csr_todense(M, N, self.indptr, self.indices, self.data, y)
+        return np.matrix(result, copy=False)
 
-            return self._binopt(other,'_plus_')
-        elif isdense(other):
-            # Convert this matrix to a dense matrix and add them
-            return self.todense() + other
-        else:
-            return NotImplemented
+    def _add_sparse(self, other):
+        return self._binopt(other, '_plus_')
 
-    def __radd__(self,other):
-        return self.__add__(other)
-
-    def __sub__(self,other):
-        # First check if argument is a scalar
-        if isscalarlike(other):
-            if other == 0:
-                return self.copy()
-            else:  # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a nonzero scalar to a '
-                                          'sparse matrix is not supported')
-        elif isspmatrix(other):
-            if (other.shape != self.shape):
-                raise ValueError("inconsistent shapes")
-
-            return self._binopt(other,'_minus_')
-        elif isdense(other):
-            # Convert this matrix to a dense matrix and subtract them
-            return self.todense() - other
-        else:
-            return NotImplemented
-
-    def __rsub__(self,other):  # other - self
-        # note: this can't be replaced by other + (-self) for unsigned types
-        if isscalarlike(other):
-            if other == 0:
-                return -self.copy()
-            else:  # Now we would add this scalar to every element.
-                raise NotImplementedError('adding a nonzero scalar to a '
-                                          'sparse matrix is not supported')
-        elif isdense(other):
-            # Convert this matrix to a dense matrix and subtract them
-            return other - self.todense()
-        else:
-            return NotImplemented
+    def _sub_sparse(self, other):
+        return self._binopt(other, '_minus_')
 
     def multiply(self, other):
         """Point-wise multiplication by another matrix, vector, or
@@ -873,24 +835,34 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.check_format(full_check=False)
 
-    def _get_single_element(self,row,col):
+    def _get_single_element(self, row, col):
         M, N = self.shape
         if (row < 0):
             row += M
         if (col < 0):
             col += N
         if not (0 <= row < M) or not (0 <= col < N):
-            raise IndexError("index out of bounds")
+            raise IndexError("index out of bounds: 0<=%d<%d, 0<=%d<%d" %
+                             (row, M, col, N))
 
-        major_index, minor_index = self._swap((row,col))
-
-        # TODO make use of sorted indices (if present)
+        major_index, minor_index = self._swap((row, col))
 
         start = self.indptr[major_index]
-        end = self.indptr[major_index+1]
-        # can use np.add(..., where) from numpy 1.7
-        return np.compress(minor_index == self.indices[start:end],
-                           self.data[start:end]).sum(dtype=self.dtype)
+        end = self.indptr[major_index + 1]
+
+        if self.has_sorted_indices:
+            # Copies may be made, if dtypes of indices are not identical
+            minor_index = self.indices.dtype.type(minor_index)
+            minor_indices = self.indices[start:end]
+            insert_pos_left = np.searchsorted(
+                minor_indices, minor_index, side='left')
+            insert_pos_right = insert_pos_left + np.searchsorted(
+                minor_indices[insert_pos_left:], minor_index, side='right')
+            return self.data[start + insert_pos_left:
+                             start + insert_pos_right].sum(dtype=self.dtype)
+        else:
+            return np.compress(minor_index == self.indices[start:end],
+                               self.data[start:end]).sum(dtype=self.dtype)
 
     def _get_submatrix(self, slice0, slice1):
         """Return a submatrix of this matrix (new matrix is created)."""
@@ -960,8 +932,23 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
     def toarray(self, order=None, out=None):
-        """See the docstring for `spmatrix.toarray`."""
-        return self.tocoo(copy=False).toarray(order=order, out=out)
+        if out is None and order is None:
+            order = self._swap('cf')[0]
+        out = self._process_toarray_args(order, out)
+        if not (out.flags.c_contiguous or out.flags.f_contiguous):
+            raise ValueError('Output array must be C or F contiguous')
+        # align ideal order with output array order
+        if out.flags.c_contiguous:
+            x = self.tocsr()
+            y = out
+        else:
+            x = self.tocsc()
+            y = out.T
+        M, N = x._swap(x.shape)
+        _sparsetools.csr_todense(M, N, x.indptr, x.indices, x.data, y)
+        return out
+
+    toarray.__doc__ = spmatrix.toarray.__doc__
 
     ##############################################################
     # methods that examine or modify the internal data structure #

@@ -15,7 +15,7 @@ Description:
     scientists and engineers. If you need to manipulate numbers on a computer
     and display or publish the results, give SciPy a try!
 Maintainer: SciPy Developers
-MaintainerEmail: scipy-dev@scipy.org
+MaintainerEmail: scipy-dev@python.org
 License: BSD
 Platforms: Windows,Linux,Solaris,Mac OS-X,Unix
 Classifiers:

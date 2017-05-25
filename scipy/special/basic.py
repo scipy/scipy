@@ -14,8 +14,8 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    extract, less, inexact, nan, zeros, sinc)
 from . import _ufuncs as ufuncs
 from ._ufuncs import (ellipkm1, mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, _zeta, hankel1, hankel2, yv, kv, _gammaln,
-                      ndtri, poch, binom, hyp0f1)
+                      psi, _zeta, hankel1, hankel2, yv, kv, ndtri,
+                      poch, binom, hyp0f1)
 from . import specfun
 from . import orthogonal
 from ._comb import _comb_int
@@ -26,7 +26,7 @@ __all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk',
            'erf_zeros', 'erfcinv', 'erfinv', 'euler', 'factorial',
            'factorialk', 'factorial2', 'fresnel_zeros',
-           'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'gammaln', 'h1vp',
+           'fresnelc_zeros', 'fresnels_zeros', 'gamma', 'h1vp',
            'h2vp', 'hankel1', 'hankel2', 'hyp0f1', 'iv', 'ivp', 'jn_zeros',
            'jnjnp_zeros', 'jnp_zeros', 'jnyn_zeros', 'jv', 'jvp', 'kei_zeros',
            'keip_zeros', 'kelvin_zeros', 'ker_zeros', 'kerp_zeros', 'kv',
@@ -138,47 +138,6 @@ def diric(x, n):
     dsub = extract(mask, denom)
     place(y, mask, sin(nsub*xsub)/(nsub*dsub))
     return y
-
-
-def gammaln(x):
-    """
-    Logarithm of the absolute value of the Gamma function for real inputs.
-
-    Parameters
-    ----------
-    x : array-like
-        Values on the real line at which to compute ``gammaln``
-
-    Returns
-    -------
-    gammaln : ndarray
-        Values of ``gammaln`` at x.
-
-    See Also
-    --------
-    gammasgn : sign of the gamma function
-    loggamma : principal branch of the logarithm of the gamma function
-
-    Notes
-    -----
-    When used in conjunction with `gammasgn`, this function is useful
-    for working in logspace on the real axis without having to deal with
-    complex numbers, via the relation ``exp(gammaln(x)) = gammasgn(x)*gamma(x)``.
-
-    Note that `gammaln` currently accepts complex-valued inputs, but it is not
-    the same function as for real-valued inputs, and the branch is not
-    well-defined --- using `gammaln` with complex is deprecated and will be
-    disallowed in future Scipy versions.
-
-    For complex-valued log-gamma, use `loggamma` instead of `gammaln`.
-
-    """
-    if np.iscomplexobj(x):
-        warnings.warn(("Use of gammaln for complex arguments is "
-                       "deprecated as of scipy 0.18.0. Use "
-                       "scipy.special.loggamma instead."),
-                      DeprecationWarning)
-    return _gammaln(x)
 
 
 def jnjnp_zeros(nt):
@@ -2061,11 +2020,11 @@ def obl_cv_seq(m, n, c):
 
 
 def ellipk(m):
-    """Complete elliptic integral of the first kind.
+    r"""Complete elliptic integral of the first kind.
 
     This function is defined as
 
-    .. math:: K(m) = \\int_0^{\\pi/2} [1 - m \\sin(t)^2]^{-1/2} dt
+    .. math:: K(m) = \int_0^{\pi/2} [1 - m \sin(t)^2]^{-1/2} dt
 
     Parameters
     ----------
@@ -2082,6 +2041,12 @@ def ellipk(m):
     For more precision around point m = 1, use `ellipkm1`, which this
     function calls.
 
+    The parameterization in terms of :math:`m` follows that of section
+    17.2 in [1]_. Other parameterizations in terms of the
+    complementary parameter :math:`1 - m`, modular angle
+    :math:`\sin^2(\alpha) = m`, or modulus :math:`k^2 = m` are also
+    used, so be careful that you choose the correct parameter.
+
     See Also
     --------
     ellipkm1 : Complete elliptic integral of the first kind around m = 1
@@ -2089,6 +2054,11 @@ def ellipk(m):
     ellipe : Complete elliptic integral of the second kind
     ellipeinc : Incomplete elliptic integral of the second kind
 
+    References
+    ----------
+    .. [1] Milton Abramowitz and Irene A. Stegun, eds.
+           Handbook of Mathematical Functions with Formulas,
+           Graphs, and Mathematical Tables. New York: Dover, 1972.
 
     """
     return ellipkm1(1 - asarray(m))
@@ -2132,7 +2102,7 @@ def comb(N, k, exact=False, repetition=False):
 
     Returns
     -------
-    val : int, ndarray
+    val : int, float, ndarray
         The total number of combinations.
 
     See Also
@@ -2445,8 +2415,19 @@ def factorialk(n, k, exact=True):
 
 def zeta(x, q=None, out=None):
     r"""
-    Riemann zeta function.
+    Riemann or Hurwitz zeta function.
 
+    Parameters
+    ----------
+    x : array_like of float
+        Input data, must be real
+    q : array_like of float, optional
+        Input data, must be real.  Defaults to Riemann zeta.
+    out : ndarray, optional
+        Output array for the computed values.
+
+    Notes
+    -----
     The two-argument version is the Hurwitz zeta function:
 
     .. math:: \zeta(x, q) = \sum_{k=0}^{\infty} \frac{1}{(k + q)^x},

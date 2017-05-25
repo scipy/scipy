@@ -272,6 +272,24 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     -----
     .. versionadded:: 0.9.0
 
+    Examples
+    --------
+    Solve the lower triangular system a x = b, where::
+
+             [3  0  0  0]       [4]
+        a =  [2  1  0  0]   b = [2]
+             [1  0  1  0]       [4]
+             [1  1  1  1]       [2]
+
+    >>> from scipy.linalg import solve_triangular
+    >>> a = np.array([[3, 0, 0, 0], [2, 1, 0, 0], [1, 0, 1, 0], [1, 1, 1, 1]])
+    >>> b = np.array([4, 2, 4, 2])
+    >>> x = solve_triangular(a, b, lower=True)
+    >>> x
+    array([ 1.33333333, -0.66666667,  2.66666667, -1.33333333])
+    >>> a.dot(x)  # Check the result
+    array([ 4.,  2.,  4.,  2.])
+
     """
 
     # Deprecate keyword "debug"
@@ -341,6 +359,34 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     x : (M,) or (M, K) ndarray
         The solution to the system a x = b.  Returned shape depends on the
         shape of `b`.
+
+    Examples
+    --------
+    Solve the banded system a x = b, where::
+
+            [5  2 -1  0  0]       [0]
+            [1  4  2 -1  0]       [1]
+        a = [0  1  3  2 -1]   b = [2]
+            [0  0  1  2  2]       [2]
+            [0  0  0  1  1]       [3]
+
+    There is one nonzero diagonal below the main diagonal (l = 1), and
+    two above (u = 2).  The diagonal banded form of the matrix is::
+
+             [*  * -1 -1 -1]
+        ab = [*  2  2  2  2]
+             [5  4  3  2  1]
+             [1  1  1  1  *]
+
+    >>> from scipy.linalg import solve_banded
+    >>> ab = np.array([[0,  0, -1, -1, -1],
+    ...                [0,  2,  2,  2,  2],
+    ...                [5,  4,  3,  2,  1],
+    ...                [1,  1,  1,  1,  0]])
+    >>> b = np.array([0, 1, 2, 2, 3])
+    >>> x = solve_banded((1, 2), ab, b)
+    >>> x
+    array([-2.37288136,  3.93220339, -4.        ,  4.3559322 , -1.3559322 ])
 
     """
 
@@ -436,6 +482,49 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
         The solution to the system a x = b.  Shape of return matches shape
         of `b`.
 
+    Examples
+    --------
+    Solve the banded system A x = b, where::
+
+            [ 4  2 -1  0  0  0]       [1]
+            [ 2  5  2 -1  0  0]       [2]
+        A = [-1  2  6  2 -1  0]   b = [2]
+            [ 0 -1  2  7  2 -1]       [3]
+            [ 0  0 -1  2  8  2]       [3]
+            [ 0  0  0 -1  2  9]       [3]
+
+    >>> from scipy.linalg import solveh_banded
+
+    `ab` contains the main diagonal and the nonzero diagonals below the
+    main diagonal.  That is, we use the lower form:
+
+    >>> ab = np.array([[ 4,  5,  6,  7, 8, 9],
+    ...                [ 2,  2,  2,  2, 2, 0],
+    ...                [-1, -1, -1, -1, 0, 0]])
+    >>> b = np.array([1, 2, 2, 3, 3, 3])
+    >>> x = solveh_banded(ab, b, lower=True)
+    >>> x
+    array([ 0.03431373,  0.45938375,  0.05602241,  0.47759104,  0.17577031,
+            0.34733894])
+
+
+    Solve the Hermitian banded system H x = b, where::
+
+            [ 8   2-1j   0     0  ]        [ 1  ]
+        H = [2+1j  5     1j    0  ]    b = [1+1j]
+            [ 0   -1j    9   -2-1j]        [1-2j]
+            [ 0    0   -2+1j   6  ]        [ 0  ]
+
+    In this example, we put the upper diagonals in the array `hb`:
+
+    >>> hb = np.array([[0, 2-1j, 1j, -2-1j],
+    ...                [8,  5,    9,   6  ]])
+    >>> b = np.array([1, 1+1j, 1-2j, 0])
+    >>> x = solveh_banded(hb, b)
+    >>> x
+    array([ 0.07318536-0.02939412j,  0.11877624+0.17696461j,
+            0.10077984-0.23035393j, -0.00479904-0.09358128j])
+
     """
     a1 = _asarray_validated(ab, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
@@ -497,10 +586,43 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         The solution to the system ``T x = b``.  Shape of return matches shape
         of `b`.
 
+    See Also
+    --------
+    toeplitz : Toeplitz matrix
+
     Notes
     -----
     The solution is computed using Levinson-Durbin recursion, which is faster
     than generic least-squares methods, but can be less numerically stable.
+
+    Examples
+    --------
+    Solve the Toeplitz system T x = b, where::
+
+            [ 1 -1 -2 -3]       [1]
+        T = [ 3  1 -1 -2]   b = [2]
+            [ 6  3  1 -1]       [2]
+            [10  6  3  1]       [5]
+
+    To specify the Toeplitz matrix, only the first column and the first
+    row are needed.
+
+    >>> c = np.array([1, 3, 6, 10])    # First column of T
+    >>> r = np.array([1, -1, -2, -3])  # First row of T
+    >>> b = np.array([1, 2, 2, 5])
+
+    >>> from scipy.linalg import solve_toeplitz, toeplitz
+    >>> x = solve_toeplitz((c, r), b)
+    >>> x
+    array([ 1.66666667, -1.        , -2.66666667,  2.33333333])
+
+    Check the result by creating the full Toeplitz matrix and
+    multiplying it by `x`.  We should get `b`.
+
+    >>> T = toeplitz(c, r)
+    >>> T.dot(x)
+    array([ 1.,  2.,  2.,  5.])
+
     """
     # If numerical stability of this algorithm is a problem, a future
     # developer might consider implementing other O(N^2) Toeplitz solvers,
@@ -611,7 +733,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     See Also
     --------
-    circulant
+    circulant : circulant matrix
 
     Notes
     -----
@@ -914,7 +1036,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    lapack_driver: str, optional
+    lapack_driver : str, optional
         Which LAPACK driver is used to solve the least-squares problem.
         Options are ``'gelsd'``, ``'gelsy'``, ``'gelss'``. Default
         (``'gelsd'``) is a good choice.  However, ``'gelsy'`` can be slightly
@@ -929,7 +1051,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         Least-squares solution.  Return shape matches shape of `b`.
     residues : () or (1,) or (K,) ndarray
         Sums of residues, squared 2-norm for each column in ``b - a x``.
-        If rank of matrix a is ``< N`` or ``> M``, or ``'gelsy'`` is used,
+        If rank of matrix a is ``< N`` or ``N > M``, or ``'gelsy'`` is used,
         this is an empty array. If b was 1-D, this is an (1,) shape array,
         otherwise the shape is (K,).
     rank : int
@@ -1265,7 +1387,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """
-    A wrapper around LAPACK's xGEBAL routine family for matrix balancing.
+    Compute a diagonal similarity transformation for row/column balancing.
 
     The balancing tries to equalize the row and column 1-norms by applying
     a similarity transformation such that the magnitude variation of the
@@ -1311,8 +1433,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         integer powers of 2 to avoid numerical truncation errors.
     scale, perm : (n,) ndarray
         If ``separate`` keyword is set to True then instead of the array
-        ``T`` above, the scaling and the permutation vector is given
-        separately without allocating the full array ``T``.
+        ``T`` above, the scaling and the permutation vectors are given
+        separately as a tuple without allocating the full array ``T``.
 
     .. versionadded:: 0.19.0
 
@@ -1328,6 +1450,9 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     which have been implemented since LAPACK v3.5.0. Before this version
     there are corner cases where balancing can actually worsen the
     conditioning. See [3]_ for such examples.
+
+    The code is a wrapper around LAPACK's xGEBAL routine family for matrix
+    balancing.
 
     Examples
     --------
@@ -1401,4 +1526,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     if separate:
         return B, (scaling, perm)
 
-    return B, np.diag(scaling)[perm, :]
+    # get the inverse permutation
+    iperm = np.empty_like(perm)
+    iperm[perm] = np.arange(n)
+
+    return B, np.diag(scaling)[iperm, :]

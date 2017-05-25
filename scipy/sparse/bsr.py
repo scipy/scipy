@@ -330,6 +330,9 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
         """Multiply this sparse matrix by other matrix."""
         return self * other
 
+    def _add_dense(self, other):
+        return self.tocoo(copy=False)._add_dense(other)
+
     def _mul_vector(self, other):
         M,N = self.shape
         R,C = self.blocksize
@@ -477,6 +480,11 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
         from .coo import coo_matrix
         return coo_matrix((data,(row,col)), shape=self.shape)
+
+    def toarray(self, order=None, out=None):
+        return self.tocoo(copy=False).toarray(order=order, out=out)
+
+    toarray.__doc__ = spmatrix.toarray.__doc__
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
@@ -665,4 +673,26 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
 
 
 def isspmatrix_bsr(x):
+    """Is x of a bsr_matrix type?
+
+    Parameters
+    ----------
+    x
+        object to check for being a bsr matrix
+
+    Returns
+    -------
+    bool
+        True if x is a bsr matrix, False otherwise
+
+    Examples
+    --------
+    >>> from scipy.sparse import bsr_matrix, isspmatrix_bsr
+    >>> isspmatrix_bsr(bsr_matrix([[5]]))
+    True
+
+    >>> from scipy.sparse import bsr_matrix, csr_matrix, isspmatrix_bsr
+    >>> isspmatrix_bsr(csr_matrix([[5]]))
+    False
+    """
     return isinstance(x, bsr_matrix)

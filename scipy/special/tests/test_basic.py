@@ -154,7 +154,7 @@ class TestCephes(TestCase):
 
     def test_betaln(self):
         assert_equal(cephes.betaln(1,1),0.0)
-        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes._gammaln(1e-200))
+        assert_allclose(cephes.betaln(-100.3, 1e-200), cephes.gammaln(1e-200))
         assert_allclose(cephes.betaln(0.0342, 170), 3.1811881124242447,
                         rtol=1e-14, atol=0)
 
@@ -377,7 +377,7 @@ class TestCephes(TestCase):
         assert_equal(cephes.gammainccinv(5,1),0.0)
 
     def test_gammaln(self):
-        cephes._gammaln(10)
+        cephes.gammaln(10)
 
     def test_gammasgn(self):
         vals = np.array([-4, -3.5, -2.3, 1, 4.2], np.float64)

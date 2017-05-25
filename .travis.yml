@@ -81,6 +81,7 @@ cache:
   directories:
     - $HOME/.ccache
 before_install:
+  - export PYTHONFAULTHANDLER=1
   - export PATH=/usr/lib/ccache:$PATH
   - uname -a
   - free -m
@@ -111,7 +112,7 @@ before_install:
   - if [ "${USE_WHEEL}" == "1" ]; then pip install wheel; fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
-        travis_retry pip install matplotlib Sphinx==1.2.3
+        travis_retry pip install matplotlib Sphinx==1.5.5
     fi
   - python -V
   - popd

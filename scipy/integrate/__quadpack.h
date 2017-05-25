@@ -138,7 +138,6 @@ init_multivariate_data(ccallback_t *callback, int ndim, PyObject *extra_argument
     p[0] = 0;
     for (i = 0; i < size; ++i) {
         PyObject *item;
-        double value;
 
         item = PyTuple_GET_ITEM(extra_arguments, i);
         p[i+1] = PyFloat_AsDouble(item);
@@ -242,34 +241,47 @@ double quad_thunk(double *x)
     int error = 0;
 
     if (callback->py_function) {
-        PyObject *arg1, *argobj, *arglist, *res, *res2;
+        PyObject *arg1 = NULL, *argobj = NULL, *arglist = NULL, *res = NULL;
         PyObject *extra_arguments = (PyObject *)callback->info_p;
-
-        arg1 = PyTuple_New(1);
-        if (arg1 == NULL) {
-            goto error;
-        }
 
         argobj = PyFloat_FromDouble(*x);
         if (argobj == NULL) {
-            goto error;
+            error = 1;
+            goto done;
         }
+
+        arg1 = PyTuple_New(1);
+        if (arg1 == NULL) {
+            error = 1;
+            goto done;
+        }
+
         PyTuple_SET_ITEM(arg1, 0, argobj);
+        argobj = NULL;
 
         arglist = PySequence_Concat(arg1, extra_arguments);
         if (arglist == NULL) {
-            goto error;
+            error = 1;
+            goto done;
         }
 
         res = PyEval_CallObject(callback->py_function, arglist);
         if (res == NULL) {
-            goto error;
+            error = 1;
+            goto done;
         }
 
         result = PyFloat_AsDouble(res);
         if (PyErr_Occurred()) {
-            goto error;
+            error = 1;
+            goto done;
         }
+
+    done:
+        Py_XDECREF(arg1);
+        Py_XDECREF(argobj);
+        Py_XDECREF(arglist);
+        Py_XDECREF(res);
     }
     else {
         switch (callback->signature->value) {
@@ -296,12 +308,6 @@ double quad_thunk(double *x)
         }
     }
 
-    goto done;
-
-error:
-    error = 1;
-    
-done:
     if (error) {
         longjmp(callback->error_buf, 1);
     }

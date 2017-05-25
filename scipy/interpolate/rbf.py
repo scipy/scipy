@@ -98,9 +98,9 @@ class Rbf(object):
             def euclidean_norm(x1, x2):
                 return sqrt( ((x1 - x2)**2).sum(axis=0) )
 
-        which is called with x1=x1[ndims,newaxis,:] and
-        x2=x2[ndims,:,newaxis] such that the result is a matrix of the
-        distances from each point in x1 to each point in x2.
+        which is called with ``x1 = x1[ndims, newaxis, :]`` and
+        ``x2 = x2[ndims, : ,newaxis]`` such that the result is a matrix of the
+        distances from each point in ``x1`` to each point in ``x2``.
 
     Examples
     --------
@@ -197,7 +197,6 @@ class Rbf(object):
             raise ValueError("All arrays must be equal length.")
 
         self.norm = kwargs.pop('norm', self._euclidean_norm)
-        r = self._call_norm(self.xi, self.xi)
         self.epsilon = kwargs.pop('epsilon', None)
         if self.epsilon is None:
             # default epsilon is the "the average distance between nodes" based
@@ -218,8 +217,14 @@ class Rbf(object):
         for item, value in kwargs.items():
             setattr(self, item, value)
 
-        self.A = self._init_function(r) - np.eye(self.N)*self.smooth
         self.nodes = linalg.solve(self.A, self.di)
+
+    @property
+    def A(self):
+        # this only exists for backwards compatibility: self.A was available
+        # and, at least technically, public.
+        r = self._call_norm(self.xi, self.xi)
+        return self._init_function(r) - np.eye(self.N)*self.smooth
 
     def _call_norm(self, x1, x2):
         if len(x1.shape) == 1:

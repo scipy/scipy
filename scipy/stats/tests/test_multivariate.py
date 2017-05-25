@@ -22,10 +22,11 @@ from scipy.stats import multivariate_normal
 from scipy.stats import matrix_normal
 from scipy.stats import special_ortho_group, ortho_group
 from scipy.stats import random_correlation
+from scipy.stats import unitary_group
 from scipy.stats import dirichlet, beta
 from scipy.stats import wishart, multinomial, invwishart, chi2, invgamma
-from scipy.stats import norm
-from scipy.stats import ks_2samp
+from scipy.stats import norm, uniform
+from scipy.stats import ks_2samp, kstest
 from scipy.stats import binom
 
 from scipy.integrate import romb
@@ -39,6 +40,8 @@ class TestMultivariateNormal(TestCase):
         cov = np.identity(2)
         assert_raises(ValueError, multivariate_normal.pdf, (0, 1), mu, cov)
         assert_raises(ValueError, multivariate_normal.pdf, (0, 1, 2), mu, cov)
+        assert_raises(ValueError, multivariate_normal.cdf, (0, 1), mu, cov)
+        assert_raises(ValueError, multivariate_normal.cdf, (0, 1, 2), mu, cov)
 
     def test_scalar_values(self):
         np.random.seed(1234)
@@ -54,6 +57,18 @@ class TestMultivariateNormal(TestCase):
         cov = np.abs(np.random.randn(5))  # Diagonal values for cov. matrix
         pdf = multivariate_normal.pdf(x, mean, cov)
         assert_equal(pdf.ndim, 0)
+
+        # When evaluated on scalar data, the cdf should return a scalar
+        x, mean, cov = 1.5, 1.7, 2.5
+        cdf = multivariate_normal.cdf(x, mean, cov)
+        assert_equal(cdf.ndim, 0)
+
+        # When evaluated on a single vector, the cdf should return a scalar
+        x = np.random.randn(5)
+        mean = np.random.randn(5)
+        cov = np.abs(np.random.randn(5))  # Diagonal values for cov. matrix
+        cdf = multivariate_normal.cdf(x, mean, cov)
+        assert_equal(cdf.ndim, 0)
 
     def test_logpdf(self):
         # Check that the log of the pdf is in fact the logpdf
@@ -75,6 +90,29 @@ class TestMultivariateNormal(TestCase):
         # check whether default values are being used
         d3 = multivariate_normal.logpdf(x, None, 1)
         d4 = multivariate_normal.pdf(x, None, 1)
+        assert_allclose(d1, np.log(d2))
+        assert_allclose(d3, np.log(d4))
+
+    def test_logcdf(self):
+        # Check that the log of the cdf is in fact the logcdf
+        np.random.seed(1234)
+        x = np.random.randn(5)
+        mean = np.random.randn(5)
+        cov = np.abs(np.random.randn(5))
+        d1 = multivariate_normal.logcdf(x, mean, cov)
+        d2 = multivariate_normal.cdf(x, mean, cov)
+        assert_allclose(d1, np.log(d2))
+
+    def test_logcdf_default_values(self):
+        # Check that the log of the cdf is in fact the logcdf
+        # with default parameters Mean=None and cov = 1
+        np.random.seed(1234)
+        x = np.random.randn(5)
+        d1 = multivariate_normal.logcdf(x)
+        d2 = multivariate_normal.cdf(x)
+        # check whether default values are being used
+        d3 = multivariate_normal.logcdf(x, None, 1)
+        d4 = multivariate_normal.cdf(x, None, 1)
         assert_allclose(d1, np.log(d2))
         assert_allclose(d3, np.log(d4))
 
@@ -176,6 +214,10 @@ class TestMultivariateNormal(TestCase):
                 actual = multivariate_normal.pdf(X[i, j], mean, cov)
                 desired = multivariate_normal.pdf(X, mean, cov)[i, j]
                 assert_allclose(actual, desired)
+                # Repeat for cdf
+                actual = multivariate_normal.cdf(X[i, j], mean, cov)
+                desired = multivariate_normal.cdf(X, mean, cov)[i, j]
+                assert_allclose(actual, desired, atol=1e-5)
 
     def test_normal_1D(self):
         # The probability density function for a 1D normal variable should
@@ -185,6 +227,10 @@ class TestMultivariateNormal(TestCase):
         scale = cov**0.5
         d1 = norm.pdf(x, mean, scale)
         d2 = multivariate_normal.pdf(x, mean, cov)
+        assert_allclose(d1, d2)
+        # The same should hold for the cumulative distribution function
+        d1 = norm.cdf(x, mean, scale)
+        d2 = multivariate_normal.cdf(x, mean, cov)
         assert_allclose(d1, d2)
 
     def test_marginalization(self):
@@ -222,6 +268,9 @@ class TestMultivariateNormal(TestCase):
         assert_allclose(norm_frozen.pdf(x), multivariate_normal.pdf(x, mean, cov))
         assert_allclose(norm_frozen.logpdf(x),
                         multivariate_normal.logpdf(x, mean, cov))
+        assert_allclose(norm_frozen.cdf(x), multivariate_normal.cdf(x, mean, cov))
+        assert_allclose(norm_frozen.logcdf(x),
+                        multivariate_normal.logcdf(x, mean, cov))
 
     def test_pseudodet_pinv(self):
         # Make sure that pseudo-inverse and pseudo-det agree on cutoff
@@ -272,6 +321,8 @@ class TestMultivariateNormal(TestCase):
         assert_raises(e, multivariate_normal, mean, cov)
         assert_raises(e, multivariate_normal.pdf, x, mean, cov)
         assert_raises(e, multivariate_normal.logpdf, x, mean, cov)
+        assert_raises(e, multivariate_normal.cdf, x, mean, cov)
+        assert_raises(e, multivariate_normal.logcdf, x, mean, cov)
 
     def test_R_values(self):
         # Compare the multivariate pdf with some values precomputed
@@ -298,6 +349,23 @@ class TestMultivariateNormal(TestCase):
 
         pdf = multivariate_normal.pdf(r, mean, cov)
         assert_allclose(pdf, r_pdf, atol=1e-10)
+
+        # Compare the multivariate cdf with some values precomputed
+        # in R version 3.3.2 (2016-10-31) on Debian GNU/Linux.
+
+        # The values below were generated by the following R-script:
+        # > library(mnormt)
+        # > x <- seq(0, 2, length=5)
+        # > y <- 3*x - 2
+        # > z <- x + cos(y)
+        # > mu <- c(1, 3, 2)
+        # > Sigma <- matrix(c(1,2,0,2,5,0.5,0,0.5,3), 3, 3)
+        # > r_cdf <- pmnorm(cbind(x,y,z), mu, Sigma)
+        r_cdf = np.array([0.0017866215, 0.0267142892, 0.0857098761,
+                          0.1063242573, 0.2501068509])
+
+        cdf = multivariate_normal.cdf(r, mean, cov)
+        assert_allclose(cdf, r_cdf, atol=1e-5)
 
     def test_multivariate_normal_rvs_zero_covariance(self):
         mean = np.zeros(2)
@@ -1402,6 +1470,51 @@ class TestRandomCorrelation(TestCase):
         m = random_correlation._to_corr(m0.copy())
         assert_allclose(m[0,0], 1)
 
+
+class TestUnitaryGroup(TestCase):
+    def test_reproducibility(self):
+        np.random.seed(514)
+        x = unitary_group.rvs(3)
+        x2 = unitary_group.rvs(3, random_state=514)
+
+        expected = np.array([[0.308771+0.360312j, 0.044021+0.622082j, 0.160327+0.600173j],
+                             [0.732757+0.297107j, 0.076692-0.4614j, -0.394349+0.022613j],
+                             [-0.148844+0.357037j, -0.284602-0.557949j, 0.607051+0.299257j]])
+
+        assert_array_almost_equal(x, expected)
+        assert_array_almost_equal(x2, expected)
+
+    def test_invalid_dim(self):
+        assert_raises(ValueError, unitary_group.rvs, None)
+        assert_raises(ValueError, unitary_group.rvs, (2, 2))
+        assert_raises(ValueError, unitary_group.rvs, 1)
+        assert_raises(ValueError, unitary_group.rvs, 2.5)
+
+    def test_unitarity(self):
+        xs = [unitary_group.rvs(dim)
+              for dim in range(2,12)
+              for i in range(3)]
+
+        # Test that these are unitary matrices
+        for x in xs:
+            assert_allclose(np.dot(x, x.conj().T), np.eye(x.shape[0]), atol=1e-15)
+
+    def test_haar(self):
+        # Test that the eigenvalues, which lie on the unit circle in
+        # the complex plane, are uncorrelated.
+
+        # Generate samples
+        dim = 5
+        samples = 1000  # Not too many, or the test takes too long
+        np.random.seed(514)  # Note that the test is sensitive to seed too
+        xs = unitary_group.rvs(dim, size=samples)
+
+        # The angles "x" of the eigenvalues should be uniformly distributed
+        # Overall this seems to be a necessary but weak test of the distribution.
+        eigs = np.vstack(scipy.linalg.eigvals(x) for x in xs)
+        x = np.arctan2(eigs.imag, eigs.real)
+        res = kstest(x.ravel(), uniform(-np.pi, 2*np.pi).cdf)
+        assert_(res.pvalue > 0.05)
 
 def check_pickling(distfn, args):
     # check that a distribution instance pickles and unpickles

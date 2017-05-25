@@ -180,8 +180,6 @@ struct BoxDist1D {
         const npy_intp k
         )
     {
-        npy_float64 minout, maxout;
-
         npy_float64 s, t, tmin, tmax;
         npy_float64 fb = tree->raw_boxsize_data[k];
         npy_float64 hb = tree->raw_boxsize_data[k + tree->m];

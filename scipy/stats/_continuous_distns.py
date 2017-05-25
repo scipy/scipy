@@ -1890,13 +1890,19 @@ class genextreme_gen(rv_continuous):
         v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
 
         # skewness
-        sk1 = np.where(c < -1./3, np.nan,
-                       np.sign(c)*(-g3+(g2+2*g2mg12)*g1)/((g2mg12)**(3./2.)))
+        sk1 = _lazywhere(c >= -1./3,
+                         (c, g1, g2, g3, g2mg12),
+                         lambda c, g1, g2, g3, g2gm12:
+                             np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
+                         fillvalue=np.nan)
         sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
 
         # kurtosis
-        ku1 = np.where(c < -1./4, np.nan,
-                       (g4+(-4*g3+3*(g2+g2mg12)*g1)*g1)/((g2mg12)**2))
+        ku1 = _lazywhere(c >= -1./4,
+                         (g1, g2, g3, g4, g2mg12),
+                         lambda g1, g2, g3, g4, g2mg12:
+                             (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2,
+                         fillvalue=np.nan)
         ku = np.where(abs(c) <= (eps)**0.23, 12.0/5.0, ku1-3.0)
         return m, v, sk, ku
 
