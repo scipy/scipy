@@ -65,6 +65,7 @@ class spmatrix(object):
     cannot be instantiated.  Most of the work is provided by subclasses.
     """
 
+    __array_ufunc__ = None
     __array_priority__ = 10.1
     ndim = 2
 
