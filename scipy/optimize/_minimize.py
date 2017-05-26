@@ -56,9 +56,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Parameters
     ----------
     fun : callable
-        Objective function.
+        The objective function to be minimized. Must be in the form
+        ``f(x, *args)``. The optimizing argument, ``x``, is a 1-D array
+        of points, and ``args`` is a tuple of any additional fixed parameters
+        needed to completely specify the function.
     x0 : ndarray
-        Initial guess.
+        Initial guess. ``len(x0)`` is the dimensionality of the minimization
+        problem.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (Jacobian, Hessian).
