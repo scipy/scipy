@@ -96,6 +96,7 @@ from .qhull import *
 from ._spherical_voronoi import SphericalVoronoi
 from ._plotutils import *
 from ._procrustes import procrustes
+from ._polygon_surface_area import poly_area
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 __all__ += ['distance']
