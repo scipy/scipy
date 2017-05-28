@@ -830,6 +830,15 @@ def test_wilcoxon_arg_type():
     _ = stats.wilcoxon(arr, zero_method="zsplit")
     _ = stats.wilcoxon(arr, zero_method="wilcox")
 
+def test_wilcoxon_arg_type():
+    # Should be able to accept list as arguments.
+    # Address issue 6070.
+    arr = [1, 2, 3, 0, -1, 3]
+    
+    _ = stats.wilcoxon(arr, zero_method="pratt")
+    _ = stats.wilcoxon(arr, zero_method="zsplit")
+    _ = stats.wilcoxon(arr, zero_method="wilcox")
+
 
 class TestKstat(TestCase):
     def test_moments_normal_distribution(self):
