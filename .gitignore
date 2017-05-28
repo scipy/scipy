@@ -11,6 +11,7 @@
 .project
 .pydevproject
 *.rej
+.ropeproject/
 .settings/
 .*.sw[nop]
 .sw[nop]
@@ -226,4 +227,3 @@ scipy/stats/_stats.c
 scipy/version.py
 scipy/special/_exprel.c
 scipy/optimize/_group_columns.c
-
