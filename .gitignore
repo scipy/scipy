@@ -27,6 +27,7 @@ tags
 *.exe
 *.l[ao]
 *.o
+*.o.d
 *.py[ocd]
 *.so
 _configtest.c
