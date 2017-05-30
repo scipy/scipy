@@ -199,7 +199,7 @@ def get_date_format(atrv):
             datetime_unit = "s"
         if "SSS" in pattern:
             pattern = pattern.replace("SSS", "%f")
-            datetime_unit = "s"
+            datetime_unit = "us"
         if "SS" in pattern:
             pattern = pattern.replace("SS", "%f")
             datetime_unit = "us"

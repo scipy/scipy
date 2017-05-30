@@ -259,7 +259,8 @@ class DateAttributeTest(TestCase):
                               microsecond=123400),
         ])
 
-        assert_array_equal(data["attr_datetime_microsec"], expected)
+        assert_array_equal(data["attr_datetime_microsec2"], expected)
+        assert_array_equal(data["attr_datetime_microsec3"], expected)
 
 
 if __name__ == "__main__":

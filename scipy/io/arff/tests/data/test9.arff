@@ -1,8 +1,9 @@
 @RELATION test9
 
-@ATTRIBUTE attr_datetime_microsec	DATE "yyyy-MM-dd HH:mm:SS"
+@ATTRIBUTE attr_datetime_microsec2	DATE "yyyy-MM-dd HH:mm:SS"
+@ATTRIBUTE attr_datetime_microsec3	DATE "yyyy-MM-dd HH:mm:SSS"
 
 @DATA
-"1999-01-31 00:01:12"
-"2004-12-01 23:59:123"
-"1817-04-28 13:00:1234"
+"1999-01-31 00:01:12", "1999-01-31 00:01:12"
+"2004-12-01 23:59:123", "2004-12-01 23:59:123"
+"1817-04-28 13:00:1234", "1817-04-28 13:00:1234"
