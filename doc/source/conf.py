@@ -141,7 +141,7 @@ html_file_suffix = '.html'
 
 htmlhelp_basename = 'scipy'
 
-mathjax_path = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 
 
 # -----------------------------------------------------------------------------
