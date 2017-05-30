@@ -272,15 +272,13 @@ class arcsine_gen(rv_continuous):
 
         arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
 
-    for ``0 < x < 1``.
+    for ``0 <= x <= 1``.
 
     %(after_notes)s
 
     %(example)s
 
     """
-    _support_mask = rv_continuous._open_support_mask
-
     def _pdf(self, x):
         return 1.0/np.pi/np.sqrt(x*(1-x))
 
