@@ -33,6 +33,8 @@ Moments
 -------
 
 .. math::
+   :nowrap:
+
     \begin{eqnarray*}
     \mu & = & 0 \\
     m_{n} & = & 0 \\
