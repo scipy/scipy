@@ -621,6 +621,14 @@ class TestPareto(TestCase):
             assert_allclose(s, (2*5.5/1.5) * np.sqrt(2.5/4.5))
             assert_allclose(k, 6*(4.5**3 + 4.5**2 - 6*4.5 - 2)/(4.5*1.5*0.5))
 
+    def test_sf(self):
+        x = 1e9
+        b = 2
+        scale = 1.5
+        p = stats.pareto.sf(x, b, loc=0, scale=scale)
+        expected = (scale/x)**b   # 2.25e-18
+        assert_allclose(p, expected)
+
 
 class TestGenpareto(TestCase):
     def test_ab(self):
