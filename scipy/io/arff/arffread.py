@@ -27,10 +27,6 @@ __all__ = ['MetaData', 'loadarff', 'ArffError', 'ParseArffError']
 #    is lost!
 #   - Replace ValueError by ParseError or something
 
-# We know can handle the following:
-#   - numeric and nominal attributes
-#   - missing values for numeric attributes
-
 r_meta = re.compile(r'^\s*@')
 # Match a comment
 r_comment = re.compile(r'^%')
@@ -177,6 +173,8 @@ def get_date_format(atrv):
     if m:
         pattern = m.group(1).strip()
         # convert time pattern from Java's SimpleDateFormat to C's format
+        # FIXME the Java spec appears to allow different numbers of repeating
+        # letters than just the ones hardcoded below
         datetime_unit = None
         if "yyyy" in pattern:
             pattern = pattern.replace("yyyy", "%Y")
@@ -199,6 +197,12 @@ def get_date_format(atrv):
         if "ss" in pattern:
             pattern = pattern.replace("ss", "%S")
             datetime_unit = "s"
+        if "SSS" in pattern:
+            pattern = pattern.replace("SSS", "%f")
+            datetime_unit = "s"
+        if "SS" in pattern:
+            pattern = pattern.replace("SS", "%f")
+            datetime_unit = "us"
         if "z" in pattern or "Z" in pattern:
             raise ValueError("Date type attributes with time zone not "
                              "supported, yet")
@@ -497,16 +501,13 @@ def loadarff(f):
     Notes
     -----
 
-    This function should be able to read most arff files. Not
-    implemented functionality include:
+    This function should be able to read most ARFF files. It does not handle
+    timezones in date attributes.
 
-    * date type attributes
-    * string type attributes
-
-    It can read files with numeric and nominal attributes.  It cannot read
-    files with sparse data ({} in the file).  However, this function can
-    read files with missing data (? in the file), representing the data
-    points as NaNs.
+    It can read files with numeric, nominal, string, and date attributes.
+    It cannot read files with sparse data ({} in the file).  However, this
+    function can read files with missing data (? in the file), representing
+    the data points as NaNs.
 
     Examples
     --------
