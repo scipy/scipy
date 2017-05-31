@@ -551,13 +551,14 @@ class TestSpsolveTriangular(TestCase):
             return A
 
         np.random.seed(1234)
-        for n in (10, 10**2, 10**3):
-            for m in (1, 10):
-                b = np.random.rand(n, m)
-                for lower in (True, False):
-                    A = random_triangle_matrix(n, lower=lower)
-                    x = spsolve_triangular(A, b, lower=lower)
-                    assert_array_almost_equal(A.dot(x), b)
+        for lower in (True, False):
+            for n in (10, 10**2, 10**3):
+                A = random_triangle_matrix(n, lower=lower)
+                for m in (1, 10):
+                    for b in (np.random.rand(n, m),
+                              np.random.randint(-9, 9, (n, m))):
+                        x = spsolve_triangular(A, b, lower=lower)
+                        assert_array_almost_equal(A.dot(x), b)
 
 
 if __name__ == "__main__":
