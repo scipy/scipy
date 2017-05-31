@@ -443,7 +443,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
         Allow overwriting data in `b`.
         Enabling gives a performance gain. Default is False.
         If `overwrite_b` is True, it should be ensured that
-        `b` has not int as dtype.
+        `b` has an appropriate dtype to be able to store the result.
 
     Returns
     -------
@@ -502,8 +502,14 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     if overwrite_b:
         if not np.issubdtype(b.dtype, np.inexact):
             raise ValueError(
-                'b has an integer data type and overwrite_b is True.'
-                'Please set overwrite_b to False.')
+                'b has an integer data type. '
+                'Hence b can not store the result. '
+                'But overwrite_b is True. Please set overwrite_b to False.')
+        if np.issubdtype(b.dtype, np.float) and np.issubdtype(A.dtype, np.complex):
+            raise ValueError(
+                'b has an float data type and A has an complex data type.'
+                'Hence b can not store the result. '
+                'But overwrite_b is True. Please set overwrite_b to False.')
         x = b
     else:
         x_dtype = np.result_type(A.data, b, np.float)
