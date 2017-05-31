@@ -479,7 +479,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
         A = A.copy()
 
     if A.shape[0] != A.shape[1]:
-        raise ValueError('A must be a square matrix but its shape is {}.'.format(A.shape))
+        raise ValueError(
+            'A must be a square matrix but its shape is {}.'.format(A.shape))
 
     A.eliminate_zeros()
     A.sort_indices()
@@ -487,9 +488,11 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     b = np.asanyarray(b)
 
     if b.ndim not in [1, 2]:
-        raise ValueError('b must have 1 or 2 dims but its shape is {}.'.format(b.shape))
+        raise ValueError(
+            'b must have 1 or 2 dims but its shape is {}.'.format(b.shape))
     if A.shape[0] != b.shape[0]:
-        raise ValueError('The size of the dimensions of A must be equal to '
+        raise ValueError(
+            'The size of the dimensions of A must be equal to '
             'the size of the first dimension of b but the shape of A is '
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
@@ -506,27 +509,29 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     if lower:
         row_indices = range(len(b))
     else:
-        row_indices = range(len(b)-1, -1, -1)
+        row_indices = range(len(b) - 1, -1, -1)
 
     # Fill x iteratively.
     for i in row_indices:
 
         # Get indices for i-th row.
         indptr_start = A.indptr[i]
-        indptr_stop = A.indptr[i+1]
+        indptr_stop = A.indptr[i + 1]
         if lower:
-            A_diagonal_index_row_i = indptr_stop-1
-            A_off_diagonal_indices_row_i = slice(indptr_start,indptr_stop-1)
+            A_diagonal_index_row_i = indptr_stop - 1
+            A_off_diagonal_indices_row_i = slice(indptr_start, indptr_stop - 1)
         else:
             A_diagonal_index_row_i = indptr_start
-            A_off_diagonal_indices_row_i = slice(indptr_start+1,indptr_stop)
+            A_off_diagonal_indices_row_i = slice(indptr_start + 1, indptr_stop)
 
         # Check regularity and triangularity of A.
         if indptr_stop <= indptr_start or A.indices[A_diagonal_index_row_i] < i:
-            raise LinAlgError('A is singular: '
+            raise LinAlgError(
+                'A is singular: '
                 '{}th diagonal is zero!'.format(i))
         if A.indices[A_diagonal_index_row_i] > i:
-            raise LinAlgError('A is no triangular matrix: entry '
+            raise LinAlgError(
+                'A is no triangular matrix: entry '
                 '[{},{}] is not zero!'.format(i, A.indices[A_diagonal_index_row_i]))
 
         # Incorporate off-diagonal entries.
