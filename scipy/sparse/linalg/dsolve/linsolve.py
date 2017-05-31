@@ -493,11 +493,14 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
             'the size of the first dimension of b but the shape of A is '
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
-    # Init x as copy of b.
+    # Init x as (a copy of) b.
     if overwrite_b:
+        if issubclass(b.dtype.type, np.integer):
+            warn('b has an integer data type and overwrite_b is true. '
+                 'This can lead to inaccurate results.')
         x = b
     else:
-        x = b.copy()
+        x = b.astype(np.float, copy=True)
 
     # Choose forward or backward order.
     if lower:
