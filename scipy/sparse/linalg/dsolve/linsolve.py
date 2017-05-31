@@ -442,6 +442,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     overwrite_b : bool, optional
         Allow overwriting data in `b`.
         Enabling gives a performance gain. Default is False.
+        If `overwrite_b` is True, it should be ensured that
+        `b` has not int as dtype.
 
     Returns
     -------
@@ -498,12 +500,14 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
 
     # Init x as (a copy of) b.
     if overwrite_b:
-        if issubclass(b.dtype.type, np.integer):
-            warn('b has an integer data type and overwrite_b is true. '
-                 'This can lead to inaccurate results.')
+        if not np.issubdtype(b.dtype, np.inexact):
+            raise ValueError(
+                'b has an integer data type and overwrite_b is True.'
+                'Please set overwrite_b to False.')
         x = b
     else:
-        x = b.astype(np.float, copy=True)
+        x_dtype = np.result_type(A.data, b, np.float)
+        x = b.astype(b_dtype, copy=True)
 
     # Choose forward or backward order.
     if lower:
