@@ -507,7 +507,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
         x = b
     else:
         x_dtype = np.result_type(A.data, b, np.float)
-        x = b.astype(b_dtype, copy=True)
+        x = b.astype(x_dtype, copy=True)
 
     # Choose forward or backward order.
     if lower:
