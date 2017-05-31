@@ -48,3 +48,17 @@ class TestSimpleAreas(object):
         with assert_raises(ValueError):
             psa.poly_area(vertices=vertices,
                           radius=radius)
+
+    @given(floats(min_value=1e-20, max_value=1e20),
+           floats(min_value=1e-20, max_value=1e20))
+    def test_planar_triangle_area(self, base, height):
+        # simple triangle area test
+        # confirm that base * height / 2 result
+        # is respected for a variety of base and
+        # height values
+        triangle_vertices = np.array([[0,0,0],
+                                      [base,0,0],
+                                      [base / 2.,height,0]])
+        expected = 0.5 * base * height
+        actual = psa.poly_area(vertices=triangle_vertices)
+        assert_equal(actual, expected)
