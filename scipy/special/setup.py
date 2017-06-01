@@ -71,7 +71,7 @@ def configuration(parent_package='',top_path=None):
 
     # Extension _ufuncs
     headers = ['*.h', join('c_misc', '*.h'), join('cephes', '*.h')]
-    ufuncs_src = ['_ufuncs.c', 'sf_error.c', '_logit.c.src',
+    ufuncs_src = ['_ufuncs.c', 'sf_error.c', '_logit.c.src', "_csqrt.c.src",
                   "amos_wrappers.c", "cdf_wrappers.c", "specfun_wrappers.c"]
     ufuncs_dep = (headers + ufuncs_src + amos_src + c_misc_src + cephes_src
                   + mach_src + cdf_src + specfun_src)
