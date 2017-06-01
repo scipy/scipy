@@ -2300,6 +2300,41 @@ class TestOrdQZWorkspaceSize(TestCase):
             [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
 
 
+class TestOrdQZWorkspaceSize(TestCase):
+
+    def setUp(self):
+        seed(12345)
+
+    def test_decompose(self):
+
+        N = 202
+
+        # raises error if lwork parameter to dtrsen is too small
+        for ddtype in [np.float32, np.float64]:
+            A = random((N,N)).astype(ddtype)
+            B = random((N,N)).astype(ddtype)
+            # sort = lambda alphar, alphai, beta: alphar**2 + alphai**2< beta**2
+            sort = lambda alpha, beta: alpha < beta
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='real')
+
+        for ddtype in [np.complex, np.complex64]:
+            A = random((N,N)).astype(ddtype)
+            B = random((N,N)).astype(ddtype)
+            sort = lambda alpha, beta: alpha < beta
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='complex')
+
+    @dec.slow
+    def test_decompose_ouc(self):
+
+        N = 202
+
+        # segfaults if lwork parameter to dtrsen is too small
+        for ddtype in [np.float32, np.float64, np.complex, np.complex64]:
+            A = random((N,N)).astype(ddtype)
+            B = random((N,N)).astype(ddtype)
+            [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
+
+
 class TestDatacopied(TestCase):
 
     def test_datacopied(self):
