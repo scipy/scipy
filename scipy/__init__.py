@@ -58,6 +58,14 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['test']
 
+# prevent interference with KeyboardInterrupt on Windows
+# due to MKL Fortran libraries
+import os as _os
+if _os.name == 'nt':
+    from scipy import _fortran_fix
+    del _fortran_fix
+del _os
+
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
     raise ImportError("Cannot import scipy when running from numpy source directory.")
