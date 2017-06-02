@@ -1401,7 +1401,7 @@ class TestMatrixNorms(object):
                     # This is a consequence of using LAPACK.
                     if not np.allclose(actual, desired):
                         desired = np.linalg.norm(A.astype(t_high), ord=order)
-                        np.assert_allclose(actual, desired)
+                        assert_allclose(actual, desired)
 
     def test_axis_kwd(self):
         a = np.array([[[2, 1], [3, 4]]] * 2, 'd')
