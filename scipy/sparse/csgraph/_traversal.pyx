@@ -427,12 +427,12 @@ cpdef depth_first_order(csgraph, i_start,
     Returns
     -------
     node_array : ndarray, one dimension
-        The breadth-first list of nodes, starting with specified node.  The
+        The depth-first list of nodes, starting with specified node.  The
         length of node_array is the number of nodes reachable from the
         specified node.
     predecessors : ndarray, one dimension
         Returned only if return_predecessors is True.
-        The length-N list of predecessors of each node in a breadth-first
+        The length-N list of predecessors of each node in a depth-first
         tree.  If node i is in the tree, then its parent is given by
         predecessors[i]. If node i is not in the tree (and for the parent
         node) then predecessors[i] = -9999.
