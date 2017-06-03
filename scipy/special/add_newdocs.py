@@ -7,7 +7,7 @@
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
 #
-# Note : After editing this file and commiting changes, please run
+# Note : After editing this file and committing changes, please run
 # generate_funcs.py and commit the changes as a separate commit with a comment
 # such as : GEN: special: run generate_ufuncs.py
 
@@ -29,7 +29,7 @@ add_newdoc("scipy.special", "_sf_error_test_function",
     """
     Private function; do not use.
     """)
-    
+
 add_newdoc("scipy.special", "sph_harm",
     r"""
     sph_harm(m, n, theta, phi)
@@ -442,8 +442,8 @@ add_newdoc("scipy.special", "bdtrik",
     Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
     cumulative incomplete beta distribution.
 
-    Computation of `k` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `k`.
+    Computation of `k` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `k`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -492,8 +492,8 @@ add_newdoc("scipy.special", "bdtrin",
     Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the
     cumulative incomplete beta distribution.
 
-    Computation of `n` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `n`.
+    Computation of `n` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `n`.
 
     Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.
 
@@ -516,7 +516,7 @@ add_newdoc("scipy.special", "binom",
     See Also
     --------
     comb : The number of combinations of N things taken k at a time.
-    
+
     """)
 
 add_newdoc("scipy.special", "btdtria",
@@ -557,9 +557,9 @@ add_newdoc("scipy.special", "btdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `a`.
+    monotonicity of `p` with `a`.
 
     References
     ----------
@@ -610,9 +610,9 @@ add_newdoc("scipy.special", "btdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `b`.
+    monotonicity of `p` with `b`.
 
     References
     ----------
@@ -1838,7 +1838,7 @@ add_newdoc("scipy.special", "eval_sh_chebyt",
     roots_sh_chebyt : roots and quadrature weights of shifted
                       Chebyshev polynomials of the first kind
     sh_chebyt : shifted Chebyshev polynomial object
-    eval_chebyt : evalaute Chebyshev polynomials of the first kind
+    eval_chebyt : evaluate Chebyshev polynomials of the first kind
     numpy.polynomial.chebyshev.Chebyshev : Chebyshev series
     """)
 
@@ -2509,7 +2509,7 @@ add_newdoc("scipy.special", "gammainc",
     gammaincc : regularized upper incomplete gamma function
     gammaincinv : inverse to ``gammainc`` versus ``x``
     gammainccinv : inverse to ``gammaincc`` versus ``x``
-        
+
     References
     ----------
     .. [1] Maddock et. al., "Incomplete Gamma Functions",
@@ -2541,7 +2541,7 @@ add_newdoc("scipy.special", "gammaincc",
     gammainc : regularized lower incomplete gamma function
     gammaincinv : inverse to ``gammainc`` versus ``x``
     gammainccinv : inverse to ``gammaincc`` versus ``x``
-        
+
     References
     ----------
     .. [1] Maddock et. al., "Incomplete Gamma Functions",
@@ -2748,9 +2748,9 @@ add_newdoc("scipy.special", "gdtria",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `a` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `a`.
+    monotonicity of `p` with `a`.
 
     References
     ----------
@@ -2817,9 +2817,9 @@ add_newdoc("scipy.special", "gdtrib",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `b` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `b`.
+    monotonicity of `p` with `b`.
 
     References
     ----------
@@ -2887,9 +2887,9 @@ add_newdoc("scipy.special", "gdtrix",
     Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.
 
     The cumulative distribution function `p` is computed using a routine by
-    DiDinato and Morris [2]_.  Computation of `x` involves a seach for a value
+    DiDinato and Morris [2]_.  Computation of `x` involves a search for a value
     that produces the desired value of `p`.  The search relies on the
-    monotinicity of `p` with `x`.
+    monotonicity of `p` with `x`.
 
     References
     ----------
@@ -3112,7 +3112,7 @@ add_newdoc("scipy.special", "huber",
 
     """)
 
-add_newdoc("scipy.special", "hyp0f1", 
+add_newdoc("scipy.special", "hyp0f1",
     r"""
     hyp0f1(v, x)
 
@@ -3602,10 +3602,10 @@ add_newdoc("scipy.special", "iv",
     expansions are applied.
 
     For complex `z` and positive `v`, the AMOS [2]_ `zbesi` routine is
-    called. It uses a power series for small `z`, the asymptitic expansion
+    called. It uses a power series for small `z`, the asymptotic expansion
     for large `abs(z)`, the Miller algorithm normalized by the Wronskian
     and a Neumann series for intermediate magnitudes, and the uniform
-    asymptitic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
+    asymptotic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large
     orders.  Backward recurrence is used to generate sequences or reduce
     orders when necessary.
 
@@ -3659,9 +3659,9 @@ add_newdoc("scipy.special", "ive",
     Notes
     -----
     For positive `v`, the AMOS [1]_ `zbesi` routine is called. It uses a
-    power series for small `z`, the asymptitic expansion for large
+    power series for small `z`, the asymptotic expansion for large
     `abs(z)`, the Miller algorithm normalized by the Wronskian and a
-    Neumann series for intermediate magnitudes, and the uniform asymptitic
+    Neumann series for intermediate magnitudes, and the uniform asymptotic
     expansions for :math:`I_v(z)` and :math:`J_v(z)` for large orders.
     Backward recurrence is used to generate sequences or reduce orders when
     necessary.
@@ -4817,7 +4817,7 @@ add_newdoc("scipy.special", "nbdtri",
     ----------
     .. [1] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
-    
+
     """)
 
 add_newdoc("scipy.special", "nbdtrik",
@@ -4838,12 +4838,12 @@ add_newdoc("scipy.special", "nbdtrik",
         The target number of successes (positive int).
     p : array_like
         Probability of success in a single event (float).
-    
+
     Returns
     -------
     k : ndarray
         The maximum number of allowed failures such that `nbdtr(k, n, p) = y`.
-    
+
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
@@ -4862,8 +4862,8 @@ add_newdoc("scipy.special", "nbdtrik",
     is used to reduce calculation of the cumulative distribution function to
     that of a regularized incomplete beta :math:`I`.
 
-    Computation of `k` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `k`.
+    Computation of `k` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `k`.
 
     References
     ----------
@@ -4894,12 +4894,12 @@ add_newdoc("scipy.special", "nbdtrin",
         The probability of `k` or fewer failures before `n` successes (float).
     p : array_like
         Probability of success in a single event (float).
-    
+
     Returns
     -------
     n : ndarray
         The number of successes `n` such that `nbdtr(k, n, p) = y`.
-    
+
     See also
     --------
     nbdtr : Cumulative distribution function of the negative binomial.
@@ -4918,8 +4918,8 @@ add_newdoc("scipy.special", "nbdtrin",
     is used to reduce calculation of the cumulative distribution function to
     that of a regularized incomplete beta :math:`I`.
 
-    Computation of `n` involves a seach for a value that produces the desired
-    value of `y`.  The search relies on the monotinicity of `y` with `n`.
+    Computation of `n` involves a search for a value that produces the desired
+    value of `y`.  The search relies on the monotonicity of `y` with `n`.
 
     References
     ----------
@@ -5652,7 +5652,7 @@ add_newdoc("scipy.special", "pro_rad2",
     """
     pro_rad2(m, n, c, x)
 
-    Prolate spheroidal radial function of the secon kind and its derivative
+    Prolate spheroidal radial function of the second kind and its derivative
 
     Computes the prolate spheroidal radial function of the second kind
     and its derivative (with respect to `x`) for mode parameters m>=0
@@ -5883,7 +5883,7 @@ add_newdoc("scipy.special", "sici",
     The sine integral is
 
     .. math::
-    
+
       \int_0^x \frac{\sin{t}}{t}dt
 
     and the cosine integral is
@@ -6189,13 +6189,13 @@ add_newdoc("scipy.special", "y0",
 
     Notes
     -----
-    
+
     The domain is divided into the intervals [0, 5] and (5, infinity). In the
     first interval a rational approximation :math:`R(x)` is employed to
     compute,
-    
+
     .. math::
-        
+
         Y_0(x) = R(x) + \frac{2 \log(x) J_0(x)}{\pi},
 
     where :math:`J_0` is the Bessel function of the first kind of order 0.
@@ -6248,7 +6248,7 @@ add_newdoc("scipy.special", "y1",
     j1
     yn
     yv
-    
+
     References
     ----------
     .. [1] Cephes Mathematical Functions Library,
