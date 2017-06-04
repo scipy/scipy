@@ -100,6 +100,14 @@ Global Optimization
    brute - Brute force searching optimizer
    differential_evolution - stochastic minimization using differential evolution
 
+Linear programming
+------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   lp_solve - Solves a linear programming problem using a two-phase method
+
 Rosenbrock function
 -------------------
 
