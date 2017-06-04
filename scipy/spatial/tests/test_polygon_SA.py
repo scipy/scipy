@@ -108,3 +108,4 @@ class TestRadianAreas(object):
         actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
                                     radius=radius)
         assert_equal(actual_area, expected_area)
+        assert_equal(actual_area_reverse, expected_area)
