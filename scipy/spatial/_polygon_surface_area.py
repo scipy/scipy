@@ -57,7 +57,7 @@ def poly_area(vertices, radius=None):
             area_sum += delta_x * new_vertices[i][1] 
         area = -0.5 * area_sum
     
-    return area
+    return abs(area)
 
 
 

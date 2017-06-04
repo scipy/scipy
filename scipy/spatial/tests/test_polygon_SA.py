@@ -62,3 +62,49 @@ class TestSimpleAreas(object):
         expected = 0.5 * base * height
         actual = psa.poly_area(vertices=triangle_vertices)
         assert_equal(actual, expected)
+
+class TestRadianAreas(object):
+    # compare spherical polygon surface areas
+    # with values calculated using another well-known
+    # approach
+    # see: Weisstein, Eric W. "Spherical Polygon." From MathWorld--A Wolfram Web Resource. http://mathworld.wolfram.com/SphericalPolygon.html
+    # which cites: Beyer, W. H. CRC Standard Mathematical Tables, 28th ed. Boca Raton, FL: CRC Press, p. 131, 1987.
+    # see also: Bevis and Cambereri (1987) Mathematical Geology 19: 335-346.
+    # the above authors cite the angle-based equation used for reference
+    # calcs here as well-known and stated frequently in handbooks of mathematics
+
+    def _angle_area(self, sum_radian_angles, n_vertices, radius):
+        # suface area of spherical polygon using
+        # alternate approach
+        area = (sum_radian_angles - (n_vertices - 2) * np.pi) * (radius ** 2)
+        return area
+
+    @given(floats(min_value=1e-20,
+                  max_value=1e20)) 
+    def test_double_octant_area_both_orders(self, radius):
+        # the octant of a sphere (1/8 of total area;
+        # 1/4 of a hemisphere) is known to have 3
+        # right angles
+        # if we extend the octant to include both poles
+        # of the sphere as vertices we end up with a 
+        # diamond-shaped area with angles that can
+        # be logically deduced
+        # equatorial vertices should have angles that double
+        # to pi
+        # polar vertices should retain right angles at pi/2
+
+        expected_area = self._angle_area((2 * np.pi) + (np.pi),
+                                          4,
+                                          radius)
+
+        sample_vertices = np.array([[-1,0,0],
+                                    [0,0,1],
+                                    [0,1,0],
+                                    [0,0,-1]]) * radius
+
+        # check cw and ccw vertex sorting
+        actual_area = psa.poly_area(vertices=sample_vertices,
+                                    radius=radius)
+        actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
+                                    radius=radius)
+        assert_equal(actual_area, expected_area)
