@@ -607,7 +607,7 @@ def test_classes():
         assert_(solver.njev >= 0)
         assert_(solver.nlu >= 0)
         sol = solver.dense_output()
-        assert_equal(sol(5), y0)
+        assert_allclose(sol(5), y0, rtol=1e-15, atol=0)
 
 
 def test_OdeSolution():
