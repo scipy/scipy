@@ -2065,6 +2065,17 @@ class TestNdimage:
         numpy.testing.assert_raises(ValueError,
                                     ndimage.affine_transform, data, tform_h2)
 
+    def test_affine_transform28(self):
+        # 1d affine transform given output ndarray with non-native endianness
+        # See issue #7388
+        data = numpy.ones((2, 2))
+        for out in [numpy.empty_like(data),
+                    numpy.empty_like(data).astype(data.dtype.newbyteorder())]:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", UserWarning)
+                ndimage.affine_transform(data, [1, 1], output=out)
+            assert_array_almost_equal(out, [[1, 1], [1, 1]])
+
     def test_shift01(self):
         data = numpy.array([1])
         for order in range(0, 6):
