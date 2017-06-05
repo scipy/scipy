@@ -444,12 +444,25 @@ LAPACK 3.6.0 in favor of the `*ggev` family of routines.
 The corresponding wrappers will be removed from SciPy in
 a future release."""
 
-cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
-dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
-sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
-zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
+try:
+    cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
+    dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
+    sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
+    zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
+except:
+    # In certain cases where the deprecated routines are not
+    # existing we *must* force a custom deprecation routine
+    # Seems like the deprecated sources does not always enter the
+    # _flapack.so library.
+    def _gegv(*args, **kwargs):
+        pass
+    cgegv = _np.deprecate(_gegv, old_name='cgegv', message=_dep_message)
+    dgegv = _np.deprecate(_gegv, old_name='dgegv', message=_dep_message)
+    sgegv = _np.deprecate(_gegv, old_name='sgegv', message=_dep_message)
+    zgegv = _np.deprecate(_gegv, old_name='zgegv', message=_dep_message)
 
-# Modyfy _flapack in this scope so the deprecation warnings apply to
+
+# Modify _flapack in this scope so the deprecation warnings apply to
 # functions returned by get_lapack_funcs.
 _flapack.cgegv = cgegv
 _flapack.dgegv = dgegv
