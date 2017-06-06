@@ -176,7 +176,7 @@ Roman Feldbauer for improvements in scipy.sparse
 Dominic Antonacci for statistics documentation.
 David Hagen for the object-oriented ODE solver interface.
 Arno Onken for contributions to scipy.stats.
-Cathy Douglass for a bug fix in ndimage.
+Cathy Douglass for bug fixes in ndimage.
 
 Institutions
 ------------

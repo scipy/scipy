@@ -56,7 +56,9 @@ def _fix_endianness(f):
     def wrapper(*args, **kwargs):
         output = kwargs.get("output")
         result = f(*args, **kwargs)
-        if isinstance(output, numpy.ndarray) and not output.dtype.isnative:
+        if isinstance(output, numpy.dtype) and not output.isnative:
+            result.byteswap(True)
+        elif isinstance(output, numpy.ndarray) and not output.dtype.isnative:
             output.byteswap(True)
         return result
 
