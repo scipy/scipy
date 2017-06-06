@@ -410,7 +410,7 @@ class interp1d(_Interpolator1D):
         self.copy = copy
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
-            order = {'nearest': 0, 'zero': 0, 'slinear': 1,
+            order = {'zero': 0, 'slinear': 1,
                      'quadratic': 2, 'cubic': 3}[kind]
             kind = 'spline'
         elif isinstance(kind, int):
