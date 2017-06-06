@@ -31,6 +31,7 @@ test5 = pjoin(data_path, 'test5.arff')
 test6 = pjoin(data_path, 'test6.arff')
 test7 = pjoin(data_path, 'test7.arff')
 test8 = pjoin(data_path, 'test8.arff')
+test9 = pjoin(data_path, 'test9.arff')
 expect4_data = [(0.1, 0.2, 0.3, 0.4, 'class1'),
                 (-0.1, -0.2, -0.3, -0.4, 'class2'),
                 (1, 2, 3, 4, 'class3')]
@@ -242,7 +243,25 @@ class DateAttributeTest(TestCase):
         assert_array_equal(self.data["attr_datetime_missing"], expected)
 
     def test_datetime_timezone(self):
+        # This method reads a separate test file from the one in setUp
         assert_raises(ValueError, loadarff, test8)
+
+    def test_datetime_microsec(self):
+        # This method reads a separate test file from the one in setUp,
+        # and uses local variables instance of instance properties.
+        data, meta = loadarff(test9)
+        expected = np.array([
+            datetime.datetime(year=1999, month=1, day=31, hour=0, minute=1,
+                              microsecond=120000),
+            datetime.datetime(year=2004, month=12, day=1, hour=23, minute=59,
+                              microsecond=123000),
+            datetime.datetime(year=1817, month=4, day=28, hour=13, minute=0,
+                              microsecond=123400),
+        ])
+
+        assert_array_equal(data["attr_datetime_microsec2"], expected)
+        assert_array_equal(data["attr_datetime_microsec3"], expected)
+
 
 if __name__ == "__main__":
     run_module_suite()
