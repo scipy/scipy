@@ -821,6 +821,11 @@ class TestKappa4(TestCase):
         vals_comp = stats.uniform.cdf(x)
         assert_allclose(vals, vals_comp)
 
+    def test_integers_ctor(self):
+        # regression test for gh-7416: _argcheck fails for integer h and k
+        # in numpy 1.12
+        stats.kappa4(1, 2)
+
 
 class TestPoisson(TestCase):
 

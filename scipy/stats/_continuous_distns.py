@@ -24,6 +24,14 @@ from ._distn_infrastructure import (get_distribution_names, _kurtosis,
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 
+# In numpy 1.12 and above, np.power refuses to raise integers to negative
+# powers, and `np.float_power` is a new replacement. 
+try:
+    float_power = np.float_power
+except AttributeError:
+    float_power = np.power
+
+
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
     """General Kolmogorov-Smirnov one-sided test.
@@ -3462,7 +3470,7 @@ class kappa4_gen(rv_continuous):
                     np.logical_and(h <= 0, k < 0)]
 
         def f0(h, k):
-            return (1.0 - h**(-k))/k
+            return (1.0 - float_power(h, -k))/k
 
         def f1(h, k):
             return np.log(h)
