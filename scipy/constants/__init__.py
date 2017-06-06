@@ -125,7 +125,7 @@ Binary prefixes
 ``yobi``      :math:`2^{80}`
 ============  =================================================================
 
-Weight
+Mass
 ------
 
 =================  ============================================================
@@ -134,6 +134,9 @@ Weight
 ``grain``          one grain in kg
 ``lb``             one pound (avoirdupous) in kg
 ``pound``          one pound (avoirdupous) in kg
+``blob``           one inch version of a slug in kg (added in 1.0.0)
+``slinch``         one inch version of a slug in kg (added in 1.0.0)
+``slug``           one slug in kg (added in 1.0.0)
 ``oz``             one ounce in kg
 ``ounce``          one ounce in kg
 ``stone``          one stone in kg
