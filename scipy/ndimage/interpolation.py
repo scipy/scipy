@@ -34,6 +34,7 @@ import math
 import numpy
 from . import _ni_support
 from . import _nd_image
+from functools import wraps
 
 import warnings
 
@@ -44,6 +45,24 @@ __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
 def _extend_mode_to_code(mode):
     mode = _ni_support._extend_mode_to_code(mode)
     return mode
+
+
+def _fix_endianness(f):
+    """
+    Decorator to work around endianness issues in _nd_image.geometric_transform
+    and _nd_image.zoom_shift
+    """
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        output = kwargs.get("output")
+        result = f(*args, **kwargs)
+        if isinstance(output, numpy.dtype) and not output.isnative:
+            result.byteswap(True)
+        elif isinstance(output, numpy.ndarray) and not output.dtype.isnative:
+            output.byteswap(True)
+        return result
+
+    return wrapper
 
 
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
@@ -121,22 +140,7 @@ def spline_filter(input, order=3, output=numpy.float64):
     return return_value
 
 
-def _geometric_transform(input, mapping, coordinates, matrix, offset, output,
-                         order, mode, cval, extra_arguments, extra_keywords):
-    """
-    Wrapper around _nd_image.geometric_transform to work around
-    endianness issues
-    """
-    _nd_image.geometric_transform(
-        input, mapping, coordinates, matrix, offset, output,
-        order, mode, cval, extra_arguments, extra_keywords)
-
-    if output is not None and not output.dtype.isnative:
-        output.byteswap(True)
-
-    return output
-
-
+@_fix_endianness
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
@@ -254,11 +258,13 @@ def geometric_transform(input, mapping, output_shape=None,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    _geometric_transform(filtered, mapping, None, None, None, output,
-                         order, mode, cval, extra_arguments, extra_keywords)
+    _nd_image.geometric_transform(filtered, mapping, None, None, None, output,
+                                  order, mode, cval, extra_arguments,
+                                  extra_keywords)
     return return_value
 
 
+@_fix_endianness
 def map_coordinates(input, coordinates, output=None, order=3,
                     mode='constant', cval=0.0, prefilter=True):
     """
@@ -353,11 +359,12 @@ def map_coordinates(input, coordinates, output=None, order=3,
         filtered = input
     output, return_value = _ni_support._get_output(output, input,
                                                    shape=output_shape)
-    _geometric_transform(filtered, None, coordinates, None, None,
-                         output, order, mode, cval, None, None)
+    _nd_image.geometric_transform(filtered, None, coordinates, None, None,
+                                  output, order, mode, cval, None, None)
     return return_value
 
 
+@_fix_endianness
 def affine_transform(input, matrix, offset=0.0, output_shape=None,
                      output=None, order=3,
                      mode='constant', cval=0.0, prefilter=True):
@@ -496,8 +503,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval)
     else:
-        _geometric_transform(filtered, None, None, matrix, offset,
-                             output, order, mode, cval, None, None)
+        _nd_image.geometric_transform(filtered, None, None, matrix, offset,
+                                      output, order, mode, cval, None, None)
     return return_value
 
 
