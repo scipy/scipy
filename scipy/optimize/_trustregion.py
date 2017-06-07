@@ -124,7 +124,8 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
             If True, print convergence message.
         inexact : bool
             Accuracy to solve subproblems. If True requires less nonlinear
-            iterations, but more vector products.
+            iterations, but more vector products. Only effective for method
+            trust-krylov.
 
     This function is called by the `minimize` function.
     It is not supposed to be called directly.
