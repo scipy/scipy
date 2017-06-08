@@ -100,7 +100,7 @@ basic answer is: decisions are made by consensus, by everyone who chooses to
 participate in the discussion on the mailing list.  This includes developers,
 other users and yourself.  Aiming for consensus in the discussion is important
 -- SciPy is a project by and for the scientific Python community.  In those
-rare cases that agreement cannot be reached, the `maintainers`_ of the module
+rare cases that agreement cannot be reached, the maintainers of the module
 in question can decide the issue.
 
 
@@ -255,7 +255,6 @@ Useful SciPy documents
   - NumPy/SciPy `testing guidelines`_
   - `SciPy API`_
   - The `SciPy Roadmap`_
-  - SciPy `maintainers`_
   - NumPy/SciPy `git workflow`_
   - How to submit a good `bug report`_
 
@@ -453,8 +452,6 @@ various assert functions.
 .. _git workflow: http://docs.scipy.org/doc/numpy/dev/gitwash/index.html
 
 .. _Github help pages: https://help.github.com/articles/set-up-git/
-
-.. _maintainers: https://github.com/scipy/scipy/blob/master/doc/MAINTAINERS.rst.txt
 
 .. _issue list: https://github.com/scipy/scipy/issues
 
