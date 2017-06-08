@@ -26,6 +26,20 @@ class TestSimpleAreas(object):
 
     @given(floats(min_value=1e-20,
                   max_value=1e20)) 
+    def test_half_hemisphere_area_reverse_order(self, radius):
+        # the area of half a hemisphere should
+        # be 1/4 the area of the entire sphere
+        # reverse order of vertex sorting
+        vertices = np.array([[0,0,1],
+                             [1,0,0],
+                             [-1,0,0]]) * radius
+        expected_area = np.pi * (radius ** 2)
+        actual_area = psa.poly_area(vertices=vertices,
+                                    radius=radius)
+        assert_equal(actual_area, expected_area)
+
+    @given(floats(min_value=1e-20,
+                  max_value=1e20))
     def test_quarter_hemisphere_area(self, radius):
         # the area of 1/4 of a hemisphere should
         # be 1/8 the area of the entire sphere
@@ -59,6 +73,21 @@ class TestSimpleAreas(object):
         triangle_vertices = np.array([[0,0,0],
                                       [base,0,0],
                                       [base / 2.,height,0]])
+        expected = 0.5 * base * height
+        actual = psa.poly_area(vertices=triangle_vertices)
+        assert_equal(actual, expected)
+
+    @given(floats(min_value=1e-20, max_value=1e20),
+           floats(min_value=1e-20, max_value=1e20))
+    def test_planar_triangle_area_reverse(self, base, height):
+        # simple triangle area test
+        # confirm that base * height / 2 result
+        # is respected for a variety of base and
+        # height values
+        # reverse vertex sort order
+        triangle_vertices = np.array([[base / 2.,height,0],
+                                      [base,0,0],
+                                      [0,0,0]])
         expected = 0.5 * base * height
         actual = psa.poly_area(vertices=triangle_vertices)
         assert_equal(actual, expected)
