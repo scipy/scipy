@@ -50,7 +50,7 @@ class TestSmirnov(TestCase):
 
     def test_n_equals_1(self):
         x = np.linspace(0, 1, 101, endpoint=True)
-        dataset = np.stack([[1]*len(x), x, 1-x], axis=1)
+        dataset = np.column_stack([[1]*len(x), x, 1-x])
         # dataset = np.asarray(dataset)
         FuncData(smirnov, dataset, (0, 1), 2, rtol=_rtol).check()
 
@@ -58,7 +58,7 @@ class TestSmirnov(TestCase):
         x = np.linspace(0.5, 1, 101, endpoint=True)
         p = np.power(1-x, 2)
         n = np.array([2] * len(x))
-        dataset = np.stack([n, x, p], axis=1)
+        dataset = np.column_stack([n, x, p])
         # dataset = np.asarray(dataset)
         FuncData(smirnov, dataset, (0, 1), 2, rtol=_rtol).check()
 
@@ -66,7 +66,7 @@ class TestSmirnov(TestCase):
         x = np.linspace(0.7, 1, 31, endpoint=True)
         p = np.power(1-x, 3)
         n = np.array([3] * len(x))
-        dataset = np.stack([n, x, p], axis=1)
+        dataset = np.column_stack([n, x, p])
         # dataset = np.asarray(dataset)
         FuncData(smirnov, dataset, (0, 1), 2, rtol=_rtol).check()
 
@@ -128,7 +128,7 @@ class TestSmirnovi(TestCase):
         x = np.linspace(0.5, 1, 101, endpoint=True)
         p = np.power(1-x, 2)
         n = np.array([2] * len(x))
-        dataset = np.stack([n, p, x], axis=1)
+        dataset = np.column_stack([n, p, x])
         # dataset = np.asarray(dataset)
         FuncData(smirnovi, dataset, (0, 1), 2, rtol=_rtol).check()
 
@@ -137,7 +137,7 @@ class TestSmirnovi(TestCase):
         x = np.linspace(0.7, 1, 31, endpoint=True)
         p = np.power(1-x, 3)
         n = np.array([3] * len(x))
-        dataset = np.stack([n, p, x], axis=1)
+        dataset = np.column_stack([n, p, x])
         # dataset = np.asarray(dataset)
         FuncData(smirnovi, dataset, (0, 1), 2, rtol=_rtol).check()
 
