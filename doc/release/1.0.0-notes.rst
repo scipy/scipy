@@ -88,6 +88,10 @@ Name - (accessing/setting has been removed) - (setting has been removed)
 * ZerosPolesGain (``A``, ``B``, ``C``, ``D``, ``num``, ``den``) - ()
 
 
+The method ``var`` for the Dirichlet distribution of `scipy.stats.multivariate`
+now returns a scalar rather than an ndarray when the length of alpha is 1.
+
+
 Other changes
 =============
 

@@ -708,16 +708,26 @@ class TestDirichlet(TestCase):
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
-    def test_simple_values(self):
-        alpha = np.array([1, 1])
+    def test_mean_and_var(self):
+        alpha = np.array([1., 0.8, 0.2])
         d = dirichlet(alpha)
 
-        assert_almost_equal(d.mean(), 0.5)
-        assert_almost_equal(d.var(), 1. / 12.)
+        expected_var = [1. / 12., 0.08, 0.03]
+        expected_mean = [0.5, 0.4, 0.1]
 
-        b = beta(1, 1)
-        assert_almost_equal(d.mean(), b.mean())
-        assert_almost_equal(d.var(), b.var())
+        assert_array_almost_equal(d.var(), expected_var)
+        assert_array_almost_equal(d.mean(), expected_mean)
+
+    def test_scalar_values(self):
+        alpha = np.array([0.2])
+        d = dirichlet(alpha)
+
+        # For alpha of length 1, mean and var should be scalar instead of array
+        assert_equal(d.mean().ndim, 0)
+        assert_equal(d.var().ndim, 0)
+
+        assert_equal(d.pdf([1.]).ndim, 0)
+        assert_equal(d.logpdf([1.]).ndim, 0)
 
     def test_K_and_K_minus_1_calls_equal(self):
         # Test that calls with K and K-1 entries yield the same results.
