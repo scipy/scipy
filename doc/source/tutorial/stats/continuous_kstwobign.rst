@@ -7,13 +7,13 @@ KStwo Distribution
 This is the limiting distribution of the normalized maximum absolute differences between an
 empirical distribution function, computed from n samples or observations,
 and a comparison (or target) cumulative distribution function.  (KSone is the distribution
-of the unnormalized positive differences, :math:`D_n^+)`.)
+of the unnormalized positive differences, :math:`D_n^+`.)
 
 Writing :math:`D_n = \sup_t \left|F_{target}(t)-F_{empirical,n}(t)\right|`,
 the normalization factor is :math:`\sqrt{n}`, and KStwo is the limiting distribution
 of the :math:`\sqrt{n} D_n` values as :math:`n\rightarrow\infty`.
 
-Note that :math:`D_n=max(D_n^+, D_n^-)`, but :math:`D_n^+` and :math:`D_n^-` are not independent.
+Note that :math:`D_n=\max(D_n^+, D_n^-)`, but :math:`D_n^+` and :math:`D_n^-` are not independent.
 
 KStwo can also be used with the differences between two empirical distribution functions,
 for sets of observations with m and n samples respectively, when m and n are "big".
