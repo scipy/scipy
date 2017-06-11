@@ -473,7 +473,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         Returns
         -------
-        pdf : ndarray
+        pdf : ndarray or scalar
             Log of the probability density function evaluated at `x`
 
         Notes
@@ -499,7 +499,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         Returns
         -------
-        pdf : ndarray
+        pdf : ndarray or scalar
             Probability density function evaluated at `x`
 
         Notes
@@ -565,7 +565,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         Returns
         -------
-        cdf : ndarray
+        cdf : ndarray or scalar
             Log of the cumulative distribution function evaluated at `x`
 
         Notes
@@ -604,7 +604,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         Returns
         -------
-        cdf : ndarray
+        cdf : ndarray or scalar
             Cumulative distribution function evaluated at `x`
 
         Notes
@@ -1379,7 +1379,7 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        pdf : ndarray
+        pdf : ndarray or scalar
             Log of the probability density function evaluated at `x`.
 
         """
@@ -1401,7 +1401,7 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        pdf : ndarray
+        pdf : ndarray or scalar
             The probability density function evaluated at `x`.
 
         """
@@ -1421,8 +1421,8 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        mu : scalar
-            Mean of the Dirichlet distribution
+        mu : ndarray or scalar
+            Mean of the Dirichlet distribution.
 
         """
         alpha = _dirichlet_check_parameters(alpha)
@@ -1440,8 +1440,8 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        v : scalar
-            Variance of the Dirichlet distribution
+        v : ndarray or scalar
+            Variance of the Dirichlet distribution.
 
         """
 
@@ -1449,7 +1449,7 @@ class dirichlet_gen(multi_rv_generic):
 
         alpha0 = np.sum(alpha)
         out = (alpha * (alpha0 - alpha)) / ((alpha0 * alpha0) * (alpha0 + 1))
-        return out
+        return _squeeze_output(out)
 
     def entropy(self, alpha):
         """
