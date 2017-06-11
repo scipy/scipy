@@ -903,6 +903,11 @@ Available Functions
         double smirnovi(long, double)
         double smirnovi(double, double)
 
+- :py:func:`~scipy.special.smirnovp`::
+
+        double smirnovp(long, double)
+        double smirnovp(double, double)
+
 - :py:func:`~scipy.special.spence`::
 
         double spence(double)
@@ -1586,6 +1591,11 @@ cdef extern from "_ufuncs_defs.h":
 from _legacy cimport smirnovi_unsafe as _func_smirnovi_unsafe
 ctypedef double _proto_smirnovi_unsafe_t(double, double) nogil
 cdef _proto_smirnovi_unsafe_t *_proto_smirnovi_unsafe_t_var = &_func_smirnovi_unsafe
+cdef extern from "_ufuncs_defs.h":
+    cdef npy_double _func_smirnovp "smirnovp"(npy_int, npy_double)nogil
+from _legacy cimport smirnovp_unsafe as _func_smirnovp_unsafe
+ctypedef double _proto_smirnovp_unsafe_t(double, double) nogil
+cdef _proto_smirnovp_unsafe_t *_proto_smirnovp_unsafe_t_var = &_func_smirnovp_unsafe
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_spence "spence"(npy_double)nogil
 from _spence cimport cspence as _func_cspence
@@ -3179,6 +3189,15 @@ cpdef double smirnovi(dl_number_t x0, double x1) nogil:
         return _func_smirnovi(x0, x1)
     elif dl_number_t is double:
         return _func_smirnovi_unsafe(x0, x1)
+    else:
+        return NPY_NAN
+
+cpdef double smirnovp(dl_number_t x0, double x1) nogil:
+    """See the documentation for scipy.special.smirnovp"""
+    if dl_number_t is long:
+        return _func_smirnovp(x0, x1)
+    elif dl_number_t is double:
+        return _func_smirnovp_unsafe(x0, x1)
     else:
         return NPY_NAN
 
