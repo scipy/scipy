@@ -5,6 +5,28 @@ from numpy.testing import assert_equal, assert_raises
 from hypothesis import given
 from hypothesis.strategies import floats
 
+class TestDegenerateInput(object):
+    # tests for problematic input
+
+    @given(floats(min_value=1e-20,
+                  max_value=1e20),
+           floats(min_value=1e-22,
+                 max_value=1e-2))
+    def test_duplicate_filter(self, radius,
+                              threshold):
+        # check that a ValueError is raised
+        # for duplicate polygon vertices
+        # within a user-specified threshold
+        vertices = np.array([[-1,0,0],
+                             [1,0,0],
+                             [0,0,1]]) * radius
+        vertices = np.concatenate((vertices,
+                                   vertices))
+        with assert_raises(ValueError):
+            psa.poly_area(vertices,
+                          radius,
+                          threshold)
+
 class TestSimpleAreas(object):
     # test polygon surface area calculations
     # for known / straightforward cases

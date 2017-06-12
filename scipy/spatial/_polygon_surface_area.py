@@ -7,6 +7,7 @@ Polygon Surface Area Code
 """
 
 import numpy as np
+from scipy.spatial.distance import pdist
 
 #
 # Copyright (C)  James Nichols and Tyler Reddy
@@ -25,15 +26,16 @@ def _vertex_index_strider(index, num_vertices):
         forward_index = 0
     return forward_index, backward_index
 
-def poly_area(vertices, radius=None):
+def poly_area(vertices, radius=None, threshold=1e-21):
     # calculate the surface area of a planar or spherical polygon
     # crude pure Python implementation for handling a single
     # polygon at a time
     # based on JPL Publication 07-3 by Chamberlain and Duquette (2007)
     # for planar polygons we currently still require x,y,z coords
     # can just set i.e., z = 0 for all vertices
-    # TODO: check for duplicate vertices in input (and corresponding
-    # unit test?)
+    if pdist(vertices).min() < threshold:
+        raise ValueError("Duplicate vertices detected within threshold.")
+
     num_vertices = vertices.shape[0]
     area_sum = 0
 
