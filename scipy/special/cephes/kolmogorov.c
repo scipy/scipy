@@ -24,6 +24,7 @@
 
 
 #include "mconf.h"
+#include "float.h"
 extern double MAXLOG;
 
 /* Exact Smirnov statistic, for one-sided test.  */
@@ -70,30 +71,102 @@ double smirnov(int n, double e)
 
 
 /* Kolmogorov's limiting distribution of two-sided test, returns
- * probability that sqrt(n) * max deviation > y,
- * or that max deviation > y/sqrt(n).
+ * probability that sqrt(n) * max deviation > x,
+ * or that max deviation > x/sqrt(n).
  * The approximation is useful for the tail of the distribution
  * when n is large.  */
-double kolmogorov(double y)
-{
-    double p, t, r, sign, x;
 
-    if (y < 1.1e-16)
+ /* Two series for kolmogorov(x), a Jacobi theta function
+  *  sum (-1)^k exp(-2k^2 x^2) (over all integer k); or
+  *  sqrt(2pi)/x * sum exp((2k-1)^2pi^2/(8x^2)) (over positive integer k)
+ *  The first is good for x not close to 0, the second for x close to 0
+ */
+#define X_MIN_USE_ORIGINAL 0.5
+#define KOLMOG_RTOL (DBL_EPSILON)
+
+double kolmogorov(double x)
+{
+    double p, t;
+
+    if (x <= 0)
 	return 1.0;
-    x = -2.0 * y * y;
-    sign = 1.0;
-    p = 0.0;
-    r = 1.0;
-    do {
-	t = exp(x * r * r);
-	p += sign * t;
-	if (t == 0.0)
-	    break;
-	r += 1.0;
-	sign = -sign;
+
+    if (x >= X_MIN_USE_ORIGINAL) {
+	double alpha = -2.0 * x * x;
+	double sign = 1.0;
+	double r = 1.0;
+	p = 0.0;
+	do {
+	    t = exp(alpha * r * r);
+	    p += sign * t;
+	    if (t == 0.0)
+		break;
+	    r += 1.0;
+	    sign = -sign;
+	}
+	while ((t / p) > KOLMOG_RTOL);
+	p = 2*p;
+    }  else {
+	double alpha = - NPY_PI * NPY_PI / (8 * x * x);
+	double r = 1;
+	p = 0.0;
+	do {
+	    t = exp(alpha * r * r);
+	    p += t;
+	    if (fabs(t) == 0.0)
+		break;
+	    r +=  2;
+	} while ((t / p) >= KOLMOG_RTOL);
+	p *= sqrt(2 * NPY_PI) / x;
+	p = 1 - p;
     }
-    while ((t / p) > 1.1e-16);
-    return (p + p);
+    return p;
+}
+
+
+double kolmogorovp(double x)
+{
+    double pp, t;
+
+    if (x <= 0)
+	return 0.0;
+
+    if (x >= X_MIN_USE_ORIGINAL) {
+	double alpha = -2.0 * x * x;
+	double sign = 1.0;
+	double r = 1.0;
+	pp = 0.0;
+	do {
+	    double r2 = r*r;
+	    t = exp(alpha * r2);
+	    if (t == 0.0)
+		break;
+	    pp += sign * t * r2;
+	    r += 1.0;
+	    sign = -sign;
+	}  while ((t / pp) > KOLMOG_RTOL);
+	pp = -8 * pp;
+    } else {
+	double alpha = - NPY_PI * NPY_PI / (8 * x * x);
+	double r = 1;
+	double pp1 = 0.0;
+	double sqrt2pi = sqrt(2 * NPY_PI);
+	pp = 0.0;
+	do {
+	    double r2 = r*r;
+	    double q2n = exp(alpha * r2);
+	    t = r2 * q2n;
+	    pp += t;
+	    pp1 += q2n;
+	    if (t == 0.0)
+		break;
+	    r +=  2;
+	} while ((t / pp) >= KOLMOG_RTOL);
+	pp1 *= sqrt2pi/x/x;
+	pp *= pow(NPY_PI, 2) * sqrt2pi / pow(x, 4) / 4;
+	pp = -pp + pp1;
+    }
+    return pp;
 }
 
 /* Functional inverse of Smirnov distribution
@@ -136,42 +209,62 @@ double smirnovi(int n, double p)
 
 
 /* Functional inverse of Kolmogorov statistic for two-sided test.
- * Finds y such that kolmogorov(y) = p.
- * If e = smirnovi (n,p), then kolmogi(2 * p) / sqrt(n) should
- * be close to e.  */
+ * Finds x such that kolmogorov(x) = p.
+ * If x = smirnovi (n, p), then kolmogi(2 * p) / sqrt(n) should
+ * be close to x.  */
 double kolmogi(double p)
 {
-    double y, t, dpdy;
+    double x, t;
     int iterations;
 
-    if (!(p > 0.0 && p <= 1.0)) {
+    if (!(p >= 0.0 && p <= 1.0)) {
 	mtherr("kolmogi", DOMAIN);
 	return (NPY_NAN);
     }
     if ((1.0 - p) < 1e-16)
 	return 0.0;
-    /* Start with approximation p = 2 exp(-2 y^2).  */
-    y = sqrt(-0.5 * log(0.5 * p));
+
+    /* For x between 0.5 and 1, kolmogorov(x) is close to the straight line
+     connecting (0.5, 1) to (1.0, 0.25). I.e. p ~ (-6x+7)/4.
+     Otherwise use the approximation p ~ 2 exp(-2x^2) */
+    if (p > 0.25) {
+	x = (7-4*p)/6.0;
+    } else {
+	x = sqrt(-0.5 * log(0.5 * p));
+    }
+
     iterations = 0;
     do {
-	/* Use approximate derivative in Newton iteration. */
-	t = -2.0 * y;
-	dpdy = 4.0 * t * exp(t * y);
-	if (fabs(dpdy) > 0.0)
-	    t = (p - kolmogorov(y)) / dpdy;
-	else {
+	double x0 = x;
+	double val = kolmogorov(x0);
+	double df = val - p;
+	double dpdy;
+	if (fabs(df) == 0) {
+	    break;
+	}
+	dpdy = kolmogorovp(x0);
+	if (fabs(dpdy) <= 0.0) {
 	    mtherr("kolmogi", UNDERFLOW);
 	    return 0.0;
 	}
-	y = y + t;
+	t = df/dpdy;
+	x = x0 - t;
+
+	if (fabs(t/x) < KOLMOG_RTOL) {
+	break;
+	}
+
 	if (++iterations > MAXITER) {
 	    mtherr("kolmogi", TOOMANY);
-	    return (y);
+	    break;
 	}
-    }
-    while (fabs(t / y) > 1.0e-10);
-    return (y);
+    } while(1);
+    // while (fabs(t / x) > 1.0e-10);
+    return (x);
 }
+
+
+
 
 
 /* Type in a number.  */
