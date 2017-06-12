@@ -1019,11 +1019,13 @@ class spmatrix(object):
             return (inter_self * (1.0 / self.shape[1])).sum(
                 axis=1, dtype=res_dtype, out=out)
 
-    def diagonal(self):
+    def diagonal(self, k=0):
         """Returns the main diagonal of the matrix
         """
-        # TODO support k != 0
-        return self.tocsr().diagonal()
+        M, N = self.shape
+        if (k > 0 and k >= N) or (k < 0 and -k >= M):
+            raise ValueError("k exceeds matrix dimensions")
+        return self.tocsr().diagonal(k=k)
 
     def setdiag(self, values, k=0):
         """
