@@ -44,7 +44,7 @@ def poly_area(vertices, radius=None):
         lambda_vals = np.arctan2(vertices[...,1], vertices[...,0]) # longitudes
         phi_vals = np.arcsin(vertices[...,2] / radius) # latitudes
 
-        for i in xrange(0, num_vertices):
+        for i in range(0, num_vertices):
             forward_index, backward_index = _vertex_index_strider(i, num_vertices)
             delta_lambda = (lambda_vals[forward_index] -
                             lambda_vals[backward_index])
@@ -54,7 +54,7 @@ def poly_area(vertices, radius=None):
         # suggests we should not do that!
         area = (radius ** 2) * area_sum
     else: # planar polygon
-        for i in xrange(0, num_vertices):
+        for i in range(0, num_vertices):
             forward_index, backward_index = _vertex_index_strider(i, num_vertices)
             delta_x = (vertices[forward_index][0] -
                        vertices[backward_index][0])
