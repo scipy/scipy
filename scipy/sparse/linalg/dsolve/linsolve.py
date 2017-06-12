@@ -505,10 +505,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
             x = b
         else:
             raise ValueError(
-                'b has dtype {} '.format(b.dtype)
-                'and A has dtype {}. '.format(A.data.dtype)
-                'Hence b can not store the result. But overwrite_b is True. '
-                'Please set overwrite_b to False.')
+                'b has dtype {} and A has dtype {}. Hence b can not store the '
+                'result. But overwrite_b is True. Please set overwrite_b to '
+                'False.'.format(b.dtype, A.data.dtype))
     else:
         x = b.astype(x_dtype, copy=True)
 
