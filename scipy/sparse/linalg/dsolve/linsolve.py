@@ -499,20 +499,17 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
     # Init x as (a copy of) b.
+    x_dtype = np.result_type(A.data, b, np.float)
     if overwrite_b:
-        if not np.issubdtype(b.dtype, np.inexact):
+        if np.can_cast(b.dtype, x_dtype, casting='same_kind'):
+            x = b
+        else:
             raise ValueError(
-                'b has an integer data type. '
-                'Hence b can not store the result. '
-                'But overwrite_b is True. Please set overwrite_b to False.')
-        if np.issubdtype(b.dtype, np.float) and np.issubdtype(A.dtype, np.complex):
-            raise ValueError(
-                'b has an float data type and A has an complex data type.'
-                'Hence b can not store the result. '
-                'But overwrite_b is True. Please set overwrite_b to False.')
-        x = b
+                'b has dtype {} '.format(b.dtype)
+                'and A has dtype {}. '.format(A.data.dtype)
+                'Hence b can not store the result. But overwrite_b is True. '
+                'Please set overwrite_b to False.')
     else:
-        x_dtype = np.result_type(A.data, b, np.float)
         x = b.astype(x_dtype, copy=True)
 
     # Choose forward or backward order.
