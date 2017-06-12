@@ -15,6 +15,16 @@ import numpy as np
 #
 # Distributed under the same BSD license as Scipy.
 
+def _vertex_index_strider(index, num_vertices):
+    # handle the wrapping / iteration over
+    # polygon vertices in either CW or CCW
+    # sort order
+    forward_index = index + 1
+    backward_index = index - 1
+    if forward_index > (num_vertices - 1):
+        forward_index = 0
+    return forward_index, backward_index
+
 def poly_area(vertices, radius=None):
     # calculate the surface area of a planar or spherical polygon
     # crude pure Python implementation for handling a single
@@ -35,10 +45,7 @@ def poly_area(vertices, radius=None):
         phi_vals = np.arcsin(vertices[...,2] / radius) # latitudes
 
         for i in xrange(0, num_vertices):
-            forward_index = i + 1
-            backward_index = i - 1
-            if forward_index > (num_vertices - 1):
-                forward_index = 0
+            forward_index, backward_index = _vertex_index_strider(i, num_vertices)
             delta_lambda = (lambda_vals[forward_index] -
                             lambda_vals[backward_index])
             area_sum += delta_lambda * np.sin(phi_vals[i])
@@ -48,10 +55,7 @@ def poly_area(vertices, radius=None):
         area = (radius ** 2) * area_sum
     else: # planar polygon
         for i in xrange(0, num_vertices):
-            forward_index = i + 1
-            backward_index = i - 1
-            if forward_index > (num_vertices - 1):
-                forward_index = 0
+            forward_index, backward_index = _vertex_index_strider(i, num_vertices)
             delta_x = (vertices[forward_index][0] -
                        vertices[backward_index][0])
             area_sum += delta_x * vertices[i][1]
