@@ -10,9 +10,10 @@
 #include "dense.h"
 
 /*
- * Extract main diagonal of CSR matrix A
+ * Extract k-th diagonal of CSR matrix A
  *
  * Input Arguments:
+ *   I  k             - diagonal to extract
  *   I  n_row         - number of rows in A
  *   I  n_col         - number of columns in A
  *   I  Ap[n_row+1]   - row pointer
@@ -34,10 +35,10 @@ template <class I, class T>
 void csr_diagonal(const I k,
                   const I n_row,
                   const I n_col,
-	              const I Ap[],
-	              const I Aj[],
-	              const T Ax[],
-	                    T Yx[])
+                  const I Ap[],
+                  const I Aj[],
+                  const T Ax[],
+                        T Yx[])
 {
     const I first_row = (k >= 0) ? 0 : -k;
     const I first_col = (k >= 0) ? k : 0;
@@ -101,10 +102,10 @@ void expandptr(const I n_row,
 template <class I, class T>
 void csr_scale_rows(const I n_row,
                     const I n_col,
-	                const I Ap[],
-	                const I Aj[],
-	                      T Ax[],
-	                const T Xx[])
+                    const I Ap[],
+                    const I Aj[],
+                          T Ax[],
+                    const T Xx[])
 {
     for(I i = 0; i < n_row; i++){
         for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
@@ -123,10 +124,10 @@ void csr_scale_rows(const I n_row,
 template <class I, class T>
 void csr_scale_columns(const I n_row,
                        const I n_col,
-	                   const I Ap[],
-	                   const I Aj[],
-	                         T Ax[],
-	                   const T Xx[])
+                       const I Ap[],
+                       const I Aj[],
+                             T Ax[],
+                       const T Xx[])
 {
     const I nnz = Ap[n_row];
     for(I i = 0; i < nnz; i++){
@@ -201,15 +202,15 @@ I csr_count_blocks(const I n_row,
  */
 template <class I, class T>
 void csr_tobsr(const I n_row,
-	           const I n_col,
-	           const I R,
-	           const I C,
-	           const I Ap[],
-	           const I Aj[],
-	           const T Ax[],
-	                 I Bp[],
+               const I n_col,
+               const I R,
+               const I C,
+               const I Ap[],
+               const I Aj[],
+               const T Ax[],
+                     I Bp[],
                      I Bj[],
-	                 T Bx[])
+                     T Bx[])
 {
     std::vector<T*> blocks(n_col/C + 1, (T*)0 );
 
@@ -415,13 +416,13 @@ void csr_sort_indices(const I n_row,
  */
 template <class I, class T>
 void csr_tocsc(const I n_row,
-	           const I n_col,
-	           const I Ap[],
-	           const I Aj[],
-	           const T Ax[],
-	                 I Bp[],
-	                 I Bi[],
-	                 T Bx[])
+               const I n_col,
+               const I Ap[],
+               const I Aj[],
+               const T Ax[],
+                     I Bp[],
+                     I Bi[],
+                     T Bx[])
 {
     const I nnz = Ap[n_row];
 
@@ -485,13 +486,13 @@ void csr_tocsc(const I n_row,
  */
 template <class I, class T>
 void csr_toell(const I n_row,
-	           const I n_col,
-	           const I Ap[],
-	           const I Aj[],
-	           const T Ax[],
+               const I n_col,
+               const I Ap[],
+               const I Aj[],
+               const T Ax[],
                const I row_length,
-	                 I Bj[],
-	                 T Bx[])
+                     I Bj[],
+                     T Bx[])
 {
     const npy_intp ell_nnz = (npy_intp)row_length * n_row;
     std::fill(Bj, Bj + ell_nnz, 0);
@@ -606,16 +607,16 @@ void csr_matmat_pass1(const I n_row,
  */
 template <class I, class T>
 void csr_matmat_pass2(const I n_row,
-      	              const I n_col,
-      	              const I Ap[],
-      	              const I Aj[],
-      	              const T Ax[],
-      	              const I Bp[],
-      	              const I Bj[],
-      	              const T Bx[],
-      	                    I Cp[],
-      	                    I Cj[],
-      	                    T Cx[])
+                      const I n_col,
+                      const I Ap[],
+                      const I Aj[],
+                      const T Ax[],
+                      const I Bp[],
+                      const I Bj[],
+                      const T Bx[],
+                            I Cp[],
+                            I Cj[],
+                            T Cx[])
 {
     std::vector<I> next(n_col,-1);
     std::vector<T> sums(n_col, 0);
@@ -909,45 +910,45 @@ void csr_binop_csr(const I n_row,
 /* element-wise binary operations*/
 template <class I, class T, class T2>
 void csr_ne_csr(const I n_row, const I n_col,
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                const I Ap[], const I Aj[], const T Ax[],
+                const I Bp[], const I Bj[], const T Bx[],
+                      I Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
 }
 
 template <class I, class T, class T2>
 void csr_lt_csr(const I n_row, const I n_col,
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                const I Ap[], const I Aj[], const T Ax[],
+                const I Bp[], const I Bj[], const T Bx[],
+                      I Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
 }
 
 template <class I, class T, class T2>
 void csr_gt_csr(const I n_row, const I n_col,
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                const I Ap[], const I Aj[], const T Ax[],
+                const I Bp[], const I Bj[], const T Bx[],
+                      I Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
 }
 
 template <class I, class T, class T2>
 void csr_le_csr(const I n_row, const I n_col,
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                const I Ap[], const I Aj[], const T Ax[],
+                const I Bp[], const I Bj[], const T Bx[],
+                      I Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
 }
 
 template <class I, class T, class T2>
 void csr_ge_csr(const I n_row, const I n_col,
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                const I Ap[], const I Aj[], const T Ax[],
+                const I Bp[], const I Bj[], const T Bx[],
+                      I Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
 }
@@ -1119,12 +1120,12 @@ void csr_eliminate_zeros(const I n_row,
  */
 template <class I, class T>
 void csr_matvec(const I n_row,
-	            const I n_col,
-	            const I Ap[],
-	            const I Aj[],
-	            const T Ax[],
-	            const T Xx[],
-	                  T Yx[])
+                const I n_col,
+                const I Ap[],
+                const I Aj[],
+                const T Ax[],
+                const T Xx[],
+                      T Yx[])
 {
     for(I i = 0; i < n_row; i++){
         T sum = Yx[i];
@@ -1155,13 +1156,13 @@ void csr_matvec(const I n_row,
  */
 template <class I, class T>
 void csr_matvecs(const I n_row,
-	             const I n_col,
+                 const I n_col,
                  const I n_vecs,
-	             const I Ap[],
-	             const I Aj[],
-	             const T Ax[],
-	             const T Xx[],
-	                   T Yx[])
+                 const I Ap[],
+                 const I Aj[],
+                 const T Ax[],
+                 const T Xx[],
+                       T Yx[])
 {
     for(I i = 0; i < n_row; i++){
         T * y = Yx + (npy_intp)n_vecs * i;
@@ -1179,17 +1180,17 @@ void csr_matvecs(const I n_row,
 
 template<class I, class T>
 void get_csr_submatrix(const I n_row,
-		               const I n_col,
-		               const I Ap[],
-		               const I Aj[],
-		               const T Ax[],
-		               const I ir0,
-		               const I ir1,
-		               const I ic0,
-		               const I ic1,
-		               std::vector<I>* Bp,
-		               std::vector<I>* Bj,
-		               std::vector<T>* Bx)
+                       const I n_col,
+                       const I Ap[],
+                       const I Aj[],
+                       const T Ax[],
+                       const I ir0,
+                       const I ir1,
+                       const I ic0,
+                       const I ic1,
+                       std::vector<I>* Bp,
+                       std::vector<I>* Bj,
+                       std::vector<T>* Bx)
 {
     I new_n_row = ir1 - ir0;
     //I new_n_col = ic1 - ic0;  //currently unused
@@ -1387,13 +1388,13 @@ void csr_sample_values(const I n_row,
  */
 template <class I>
 int csr_sample_offsets(const I n_row,
-                        const I n_col,
-                        const I Ap[],
-                        const I Aj[],
-                        const I n_samples,
-                        const I Bi[],
-                        const I Bj[],
-                              I Bp[])
+                       const I n_col,
+                       const I Ap[],
+                       const I Aj[],
+                       const I n_samples,
+                       const I Bi[],
+                       const I Bj[],
+                             I Bp[])
 {
     const I nnz = Ap[n_row];
     const I threshold = nnz / 10; // constant is arbitrary
@@ -1438,13 +1439,13 @@ int csr_sample_offsets(const I n_row,
             for(I jj = row_start; jj < row_end; jj++)
             {
                 if (Aj[jj] == j) {
-                	offset = jj;
-                	for (jj++; jj < row_end; jj++) {
-                		if (Aj[jj] == j) {
-                			offset = -2;
-                			return 1;
-                		}
-					}
+                    offset = jj;
+                    for (jj++; jj < row_end; jj++) {
+                        if (Aj[jj] == j) {
+                            offset = -2;
+                            return 1;
+                        }
+                    }
                 }
             }
             Bp[n] = offset;

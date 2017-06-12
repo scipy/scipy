@@ -521,7 +521,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             raise ValueError("k exceeds matrix dimensions")
         fn = getattr(_sparsetools, self.format + "_diagonal")
         y = np.empty(min(M + (k if k < 0 else 0),
-                         N - (k if k >=0 else 0)),
+                         N - (k if k >= 0 else 0)),
                      dtype=upcast(self.dtype))
         fn(k, self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
         return y
