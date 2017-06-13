@@ -79,9 +79,10 @@ The cross-class properties of `scipy.signal.lti` systems have been removed.
 The following properties/setters have been removed:
 
 Name - (accessing/setting has been removed) - (setting has been removed)
-* StateSpace - (`num`, `den`, `gain`) - (`zeros`, `poles`)
-* TransferFunction (`A`, `B`, `C`, `D`, `gain`) - (`zeros`, `poles`)
-* ZerosPolesGain (`A`, `B`, `C`, `D`, `num`, `den`) - ()
+
+* StateSpace - (``num``, ``den``, ``gain``) - (``zeros``, ``poles``)
+* TransferFunction (``A``, ``B``, ``C``, ``D``, ``gain``) - (``zeros``, ``poles``)
+* ZerosPolesGain (``A``, ``B``, ``C``, ``D``, ``num``, ``den``) - ()
 
 
 Other changes
