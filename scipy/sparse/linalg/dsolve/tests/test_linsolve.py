@@ -516,7 +516,7 @@ class TestSpsolveTriangular(TestCase):
 
     def test_singular(self):
         n = 5
-        A = csr_matrix((n,n))
+        A = csr_matrix((n, n))
         b = np.arange(n)
         for lower in (True, False):
             assert_raises(scipy.linalg.LinAlgError, spsolve_triangular, A, b, lower=lower)
@@ -547,17 +547,20 @@ class TestSpsolveTriangular(TestCase):
                 A = scipy.sparse.triu(A)
             A = A.tocsr(copy=False)
             for i in range(n):
-                A[i,i] = np.random.rand() + 1
+                A[i, i] = np.random.rand() + 1
             return A
 
         np.random.seed(1234)
-        for n in (10, 10**2, 10**3):
-            for m in (1, 10):
-                b = np.random.rand(n, m)
-                for lower in (True, False):
-                    A = random_triangle_matrix(n, lower=lower)
-                    x = spsolve_triangular(A, b, lower=lower)
-                    assert_array_almost_equal(A.dot(x), b)
+        for lower in (True, False):
+            for n in (10, 10**2, 10**3):
+                A = random_triangle_matrix(n, lower=lower)
+                for m in (1, 10):
+                    for b in (np.random.rand(n, m),
+                              np.random.randint(-9, 9, (n, m)),
+                              np.random.randint(-9, 9, (n, m)) +
+                              np.random.randint(-9, 9, (n, m)) * 1j):
+                        x = spsolve_triangular(A, b, lower=lower)
+                        assert_array_almost_equal(A.dot(x), b)
 
 
 if __name__ == "__main__":
