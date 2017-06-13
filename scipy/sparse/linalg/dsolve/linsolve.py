@@ -505,9 +505,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
             x = b
         else:
             raise ValueError(
-                'b has dtype {} and A has dtype {}. Hence b can not store the '
-                'result. But overwrite_b is True. Please set overwrite_b to '
-                'False.'.format(b.dtype, A.data.dtype))
+                'Cannot overwrite b (dtype {}) with result '
+                'of type {}.'.format(b.dtype, x_dtype))
     else:
         x = b.astype(x_dtype, copy=True)
 
@@ -533,12 +532,11 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
         # Check regularity and triangularity of A.
         if indptr_stop <= indptr_start or A.indices[A_diagonal_index_row_i] < i:
             raise LinAlgError(
-                'A is singular: '
-                '{}th diagonal is zero!'.format(i))
+                'A is singular: diagonal {} is zero.'.format(i))
         if A.indices[A_diagonal_index_row_i] > i:
             raise LinAlgError(
-                'A is no triangular matrix: entry '
-                '[{},{}] is not zero!'.format(i, A.indices[A_diagonal_index_row_i]))
+                'A is not triangular: A[{}, {}] is nonzero.'
+                ''.format(i, A.indices[A_diagonal_index_row_i]))
 
         # Incorporate off-diagonal entries.
         A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]
