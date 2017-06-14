@@ -610,7 +610,7 @@ class TestLingprogSimplex(LinprogCommonTests):
         assert_allclose(last_xk[0], res.x)
 
 
-class TestLingprogIP(LinprogCommonTests):
+class TestLinprogIP(LinprogCommonTests):
     method = "interior-point"
 
     def test_magic_square_bug_7044(self):
@@ -755,6 +755,30 @@ class TestLingprogIP(LinprogCommonTests):
         res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, method=self.method)
         _assert_infeasible(res)
         assert_equal(res.nit, 0)
+        
+    def test_infeasible_ub(self):
+        # detected in presolve?
+        c = [1]
+        A_ub = [[2]]
+        b_ub = 4
+        bounds = (5,6)
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, 
+                      method=self.method)
+        _assert_infeasible(res)
+        assert_equal(res.nit, 0)
+        
+    def test_equal_bounds_no_presolve(self):
+        # There was a bug when a lower and upper bound were equal but
+        # presolve was not on to eliminate the variable. The bound
+        # was being converted to an equality constraint, but the bound
+        # was not eliminated, leading to issues in postprocessing.
+        c = [1, 2]
+        A_ub = [[1, 2],[1.1, 2.2]]
+        b_ub = [4, 8]
+        bounds = [(1,2), (2,2)]
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds, 
+                      method=self.method, options={"presolve":False})
+        _assert_infeasible(res)
         
     def test_callback(self):
         def f():
