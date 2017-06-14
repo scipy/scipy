@@ -672,12 +672,10 @@ def _get_Abc(
                 A_eq = np.hstack((A_eq, -A_eq[:, i:i + 1]))
                 c = np.concatenate((c, [-c[i]]))
                 n_x = len(c)
-            elif lb == ub:  # this shouldn't happen if preprocessing is on
-                # bounds equal: convert to equality constraint
-                Arow = np.zeros((1, n_x))
-                Arow[0, i] = 1
-                A_eq = np.vstack((A_eq, Arow))
-                b_eq = np.concatenate((b_eq, np.array([1])))
+            # if preprocessing is on, lb == ub can't happen
+            # if preprocessing is off, then it would be best to convert that
+            # to an equality constraint, but it's tricky to make the other 
+            # required modifications from inside here.
             else:
                 if lb is None:
                     # unbounded below: substitute xi = -xi' (unbounded above)
@@ -1856,7 +1854,7 @@ def _linprog_ip(
            for large scale linear programming. HEC/Universite de Geneve, 1996.
 
     """
-    
+
     _check_unknown_options(unknown_options)
     
     if callback is not None:
