@@ -77,6 +77,12 @@ cache:
   directories:
     - $HOME/.ccache
 before_install:
+  # Work in our own virtualenv to isolate from travis-ci packages.
+  - python -m pip install --upgrade pip
+  - pip install --upgrade virtualenv
+  - virtualenv --python=python venv
+  - source venv/bin/activate
+  - python --version # just to check
   - export PYTHONFAULTHANDLER=1
   - export PATH=/usr/lib/ccache:$PATH
   - uname -a
