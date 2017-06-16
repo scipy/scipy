@@ -35,6 +35,10 @@ def use_solver(**kwargs):
     useUmfpack : bool, optional
         Use UMFPACK over SuperLU. Has effect only if scikits.umfpack is
         installed. Default: True
+    assumeSortedIndices : bool, optional
+        Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
+        Has effect only if useUmfpack is True and scikits.umfpack is installed.
+        Default: False
 
     Notes
     -----
@@ -50,8 +54,8 @@ def use_solver(**kwargs):
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
-
-    #TODO: pass other options to scikit
+    if useUmfpack and 'assumeSortedIndices' in kwargs:
+        umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
 def _get_umf_family(A):
     """Get umfpack family string given the sparse matrix dtype."""
