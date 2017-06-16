@@ -27,6 +27,10 @@ def configuration(parent_package='', top_path=None):
         sources=[('_hierarchy.c')],
         include_dirs=[get_numpy_include_dirs()])
 
+    config.add_extension('_optimal_leaf_ordering',
+        sources=[('_optimal_leaf_ordering.c')],
+        include_dirs=[get_numpy_include_dirs()])
+
     return config
 
 
