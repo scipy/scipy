@@ -11,7 +11,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_equal,
                            assert_almost_equal)
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
-                          dfreqresp, dbode)
+                          dfreqresp, dbode, BadCoefficients)
 
 
 class TestDLTI(TestCase):
@@ -568,8 +568,11 @@ class Test_dfreqresp(TestCase):
 
         system_SS = dlti(A, B, C, D)
         w = 10.0**np.arange(-3,0,.5)
-        w1, H1 = dfreqresp(system_TF, w=w)
-        w2, H2 = dfreqresp(system_SS, w=w)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
+            w1, H1 = dfreqresp(system_TF, w=w)
+            w2, H2 = dfreqresp(system_SS, w=w)
+
         assert_almost_equal(H1, H2)
 
     def test_from_zpk(self):
