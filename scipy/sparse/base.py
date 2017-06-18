@@ -1022,9 +1022,6 @@ class spmatrix(object):
     def diagonal(self, k=0):
         """Returns the main diagonal of the matrix
         """
-        M, N = self.shape
-        if (k > 0 and k >= N) or (k < 0 and -k >= M):
-            raise ValueError("k exceeds matrix dimensions")
         return self.tocsr().diagonal(k=k)
 
     def setdiag(self, values, k=0):

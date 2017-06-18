@@ -293,16 +293,19 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
                 (self.shape + (self.dtype.type, self.nnz) + self.blocksize +
                  (format,)))
 
-    def diagonal(self):
-        """Returns the main diagonal of the matrix
-        """
-        M,N = self.shape
-        R,C = self.blocksize
-        y = np.empty(min(M,N), dtype=upcast(self.dtype))
-        _sparsetools.bsr_diagonal(M//R, N//C, R, C,
+    def diagonal(self, k=0):
+        rows, cols = self.shape
+        if k <= -rows or k >= cols:
+            raise ValueError("k exceeds matrix dimensions")
+        R, C = self.blocksize
+        y = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
+                     dtype=upcast(self.dtype))
+        _sparsetools.bsr_diagonal(k, rows // R, cols // C, R, C,
                                   self.indptr, self.indices,
                                   np.ravel(self.data), y)
         return y
+
+    diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     ##########################
     # NotImplemented methods #
