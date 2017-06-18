@@ -60,6 +60,7 @@ tree objects.
    leaves_list
    to_tree
    cut_tree
+   optimal_leaf_ordering
 
 These are predicates for checking the validity of linkage and
 inconsistency matrices as well as for checking isomorphism of two
@@ -190,8 +191,9 @@ __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
            'is_monotonic', 'is_valid_im', 'is_valid_linkage', 'leaders',
            'leaves_list', 'linkage', 'maxRstat', 'maxdists', 'maxinconsts',
-           'median', 'num_obs_linkage', 'set_link_color_palette', 'single',
-           'to_mlab_linkage', 'to_tree', 'ward', 'weighted', 'distance']
+           'median', 'num_obs_linkage', 'optimal_leaf_ordering',
+           'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
+           'ward', 'weighted', 'distance']
 
 
 class ClusterWarning(UserWarning):
@@ -630,11 +632,11 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         function for a list of valid distance metrics. A custom distance
         function can also be used.
     optimal_ordering : bool, optional
-        If True, the linkage matrix will be reordering so that the distance
+        If True, the linkage matrix will be reordered so that the distance
         between successive leaves is minimal. This results in a more intuitive
         tree structure when the data are visualized. defaults to False, because
-        this algorithm can be slow, particularly on large datasets [2]_. See also
-        the ``optimal_leaf_ordering`` function.
+        this algorithm can be slow, particularly on large datasets [2]_. See 
+        also the `optimal_leaf_ordering` function.
         
         .. versionadded:: 1.0.0
 
@@ -716,20 +718,16 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     method_code = _LINKAGE_METHODS[method]
 
     if method == 'single':
-        if optimal_ordering:
-            return optimal_leaf_ordering(_hierarchy.mst_single_linkage(y, n), y)
-        else:
-            return _hierarchy.mst_single_linkage(y, n)
+        result =  _hierarchy.mst_single_linkage(y, n)
     elif method in ['complete', 'average', 'weighted', 'ward']:
-        if optimal_ordering:
-            return optimal_leaf_ordering(_hierarchy.nn_chain(y, n, method_code), y)
-        else:
-            return _hierarchy.nn_chain(y, n, method_code)
+        result = _hierarchy.nn_chain(y, n, method_code)
     else:
-        if optimal_ordering:
-            return optimal_leaf_ordering(_hierarchy.fast_linkage(y, n, method_code), y)
-        else:
-            return _hierarchy.fast_linkage(y, n, method_code)
+        result = _hierarchy.fast_linkage(y, n, method_code)
+
+    if optimal_ordering:
+        return optimal_leaf_ordering(result, y)
+    else:
+        return result
 
 
 
@@ -1166,19 +1164,19 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     
     Returns
     -------
-    Z' : ndarray
+    Z_ordered : ndarray
         A copy of the linkage matrix Z, reordered to minimize the distance
         between adjacent leaves.
 
     Examples
     --------
-    >>> import scipy.cluster.hierarchy as sch
+    >>> from scipy.cluster import hierarchy
     >>> np.random.seed(23)
     >>> X = np.random.randn(10,10)
-    >>> Z = sch.ward(X)
-    >>> sch.leaves_list(Z)
+    >>> Z = hierarchy.ward(X)
+    >>> hierarchy.leaves_list(Z)
     array([1, 2, 9, 0, 5, 3, 6, 7, 4, 8], dtype=int32)
-    >>> sch.leaves_list(sch.optimal_leaf_ordering(Z, X))
+    >>> hierarchy.leaves_list(hierarchy.optimal_leaf_ordering(Z, X))
     array([1, 9, 2, 5, 0, 3, 6, 7, 4, 8], dtype=int32)
     
     """

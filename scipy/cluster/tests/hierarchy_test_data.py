@@ -59,6 +59,7 @@ linkage_ytdist_weighted = array([[2., 5., 138., 2.],
                                  [1., 6., 347.5, 3.],
                                  [8., 9., 670.125, 6.]])
 
+# the optimal leaf ordering of linkage_ytdist_single
 linkage_ytdist_single_olo = array([[5., 2., 138., 2.],
                                    [4., 3., 219., 2.],
                                    [7., 0., 255., 3.],
@@ -89,6 +90,13 @@ linkage_X_ward = array([[3., 4., 0.36265956, 2.],
                         [0., 2., 2.55760419, 2.],
                         [6., 8., 9.10208346, 4.],
                         [7., 9., 24.7784379, 6.]])
+
+# the optimal leaf ordering of linkage_X_ward
+linkage_X_ward_olo = array([[4., 3., 0.36265956, 2.],
+                            [5., 1., 1.77045373, 2.],
+                            [2., 0., 2.55760419, 2.],
+                            [6., 8., 9.10208346, 4.],
+                            [7., 9., 24.7784379 , 6.]])
 
 inconsistent_ytdist = {
     1: array([[138., 0., 1., 0.],
