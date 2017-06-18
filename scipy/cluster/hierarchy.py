@@ -175,7 +175,7 @@ import bisect
 from collections import deque
 
 import numpy as np
-from . import _hierarchy, _optimal_leaf_ordering
+from . import _hierarchy
 import scipy.spatial.distance as distance
 
 from scipy._lib.six import string_types
@@ -481,7 +481,7 @@ def ward(y):
     return linkage(y, method='ward', metric='euclidean')
 
 
-def linkage(y, method='single', metric='euclidean', optimal_leaf_ordering=False):
+def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     """
     Perform hierarchical/agglomerative clustering.
 
@@ -629,7 +629,7 @@ def linkage(y, method='single', metric='euclidean', optimal_leaf_ordering=False)
         observation vectors; ignored otherwise. See the ``pdist``
         function for a list of valid distance metrics. A custom distance
         function can also be used.
-    optimal_leaf_ordering : bool, optional
+    optimal_ordering : bool, optional
         If True, the linkage matrix will be reordering so that the distance
         between successive leaves is minimal. This results in a more intuitive
         tree structure when the data are visualized. defaults to False, because
@@ -716,18 +716,18 @@ def linkage(y, method='single', metric='euclidean', optimal_leaf_ordering=False)
     method_code = _LINKAGE_METHODS[method]
 
     if method == 'single':
-        if optimal_leaf_ordering:
-            return _optimal_leaf_ordering.optimal_leaf_ordering(_hierarchy.mst_single_linkage(y, n), y)
+        if optimal_ordering:
+            return optimal_leaf_ordering(_hierarchy.mst_single_linkage(y, n), y)
         else:
             return _hierarchy.mst_single_linkage(y, n)
     elif method in ['complete', 'average', 'weighted', 'ward']:
-        if optimal_leaf_ordering:
-            return _optimal_leaf_ordering.optimal_leaf_ordering(_hierarchy.nn_chain(y, n, method_code), y)
+        if optimal_ordering:
+            return optimal_leaf_ordering(_hierarchy.nn_chain(y, n, method_code), y)
         else:
             return _hierarchy.nn_chain(y, n, method_code)
     else:
-        if optimal_leaf_ordering:
-            return _optimal_leaf_ordering.optimal_leaf_ordering(_hierarchy.fast_linkage(y, n, method_code), y)
+        if optimal_ordering:
+            return optimal_leaf_ordering(_hierarchy.fast_linkage(y, n, method_code), y)
         else:
             return _hierarchy.fast_linkage(y, n, method_code)
 
@@ -1182,6 +1182,8 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     array([1, 9, 2, 5, 0, 3, 6, 7, 4, 8], dtype=int32)
     
     """
+    from . import _optimal_leaf_ordering
+
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
