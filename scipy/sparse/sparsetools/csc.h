@@ -97,7 +97,7 @@ void csc_diagonal(const I k,
                   const I Aj[],
                   const T Ax[],
                         T Yx[])
-{ csr_diagonal(k, n_col, n_row, Ap, Aj, Ax, Yx); }
+{ csr_diagonal(-k, n_col, n_row, Ap, Aj, Ax, Yx); }
 
 
 template <class I, class T>

@@ -643,13 +643,13 @@ class _TestCommon:
     def test_abs(self):
         A = matrix([[-1, 0, 17],[0, -5, 0],[1, -4, 0],[0,0,0]],'d')
         assert_equal(abs(A),abs(self.spmatrix(A)).todense())
-        
+
     def test_elementwise_power(self):
-        A = matrix([[-4, -3, -2],[-1, 0, 1],[2, 3, 4]], 'd')        
+        A = matrix([[-4, -3, -2],[-1, 0, 1],[2, 3, 4]], 'd')
         assert_equal(np.power(A, 2), self.spmatrix(A).power(2).todense())
-                
+
         #it's element-wise power function, input has to be a scalar
-        assert_raises(NotImplementedError, self.spmatrix(A).power, A)       
+        assert_raises(NotImplementedError, self.spmatrix(A).power, A)
 
     def test_neg(self):
         A = matrix([[-1, 0, 17], [0, -5, 0], [1, -4, 0], [0, 0, 0]], 'd')
@@ -685,7 +685,12 @@ class _TestCommon:
         mats.append(kron(mats[3],[[1,2,3,4]]))
 
         for m in mats:
-            assert_equal(self.spmatrix(m).diagonal(),diag(m))
+            rows, cols = array(m).shape
+            sparse_mat = self.spmatrix(m)
+            for k in range(-rows + 1, cols):
+                assert_equal(sparse_mat.diagonal(k=k), diag(m, k=k))
+            assert_raises(ValueError, sparse_mat.diagonal, -rows)
+            assert_raises(ValueError, sparse_mat.diagonal, cols)
 
         # Test all-zero matrix.
         assert_equal(self.spmatrix((40, 16130)).diagonal(), np.zeros(40))

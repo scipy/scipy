@@ -384,9 +384,13 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     todok.__doc__ = spmatrix.todok.__doc__
 
-    def diagonal(self):
-        diag = np.zeros(min(self.shape), dtype=self.dtype)
-        diag_mask = self.row == self.col
+    def diagonal(self, k=0):
+        rows, cols = self.shape
+        if k <= -rows or k >= cols:
+            raise ValueError("k exceeds matrix dimensions")
+        diag = np.zeros(min(rows + min(k, 0), cols - max(k, 0)),
+                        dtype=self.dtype)
+        diag_mask = (self.row + k) == self.col
 
         if self.has_canonical_format:
             row = self.row[diag_mask]
@@ -395,7 +399,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             row, _, data = self._sum_duplicates(self.row[diag_mask],
                                                 self.col[diag_mask],
                                                 self.data[diag_mask])
-        diag[row] = data
+        diag[row + min(k, 0)] = data
 
         return diag
 
