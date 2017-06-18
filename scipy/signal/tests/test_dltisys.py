@@ -324,13 +324,6 @@ class TestStateSpaceDisc(object):
                        np.array([[1, 0]]), np.array([[0]]), dt=dt)
         s = StateSpace(1, 1, 1, 1, dt=True)
 
-    def _compare_systems(self, sys1, sys2):
-        # Compare the contents of two systems
-        assert_equal(sys1.A, sys2.A)
-        assert_equal(sys1.B, sys2.B)
-        assert_equal(sys1.C, sys2.C)
-        assert_equal(sys1.D, sys2.D)
-
     def test_conversion(self):
         # Check the conversion functions
         s = StateSpace(1, 2, 3, 4, dt=0.05)
@@ -350,28 +343,6 @@ class TestStateSpaceDisc(object):
         s = StateSpace(1, 1, 1, 1, dt=0.05)
         assert_equal(s.poles, [1])
         assert_equal(s.zeros, [0])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            assert_equal(s.gain, 1)
-            assert_equal(s.num, [1, 0])
-            assert_equal(s.den, [1, -1])
-
-        # transfer function setters
-        s2 = StateSpace(2, 2, 2, 2, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.num = [1, 0]
-            s2.den = [1, -1]
-            self._compare_systems(s, s2)
-
-        # zpk setters
-        s2 = StateSpace(2, 2, 2, 2, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.poles = 1
-            s2.zeros = 0
-            s2.gain = 1
-            self._compare_systems(s, s2)
 
 
 class TestTransferFunction(object):
@@ -382,11 +353,6 @@ class TestTransferFunction(object):
         s = TransferFunction([1], [2], dt=dt)
         s = TransferFunction(np.array([1]), np.array([2]), dt=dt)
         s = TransferFunction(1, 1, dt=True)
-
-    def _compare_systems(self, sys1, sys2):
-        # Compare the contents of two systems
-        assert_equal(sys1.num, sys2.num)
-        assert_equal(sys1.den, sys2.den)
 
     def test_conversion(self):
         # Check the conversion functions
@@ -407,32 +373,6 @@ class TestTransferFunction(object):
         s = TransferFunction([1, 0], [1, -1], dt=0.05)
         assert_equal(s.poles, [1])
         assert_equal(s.zeros, [0])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            assert_equal(s.gain, 1)
-            assert_equal(s.A, 1)
-            assert_equal(s.B, 1)
-            assert_equal(s.C, 1)
-            assert_equal(s.D, 1)
-
-        # state space setters
-        s2 = TransferFunction([2, 3], [4, 5], dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.A = 1
-            s2.B = 1
-            s2.C = 1
-            s2.D = 1
-            self._compare_systems(s, s2)
-
-        # zpk setters
-        s2 = TransferFunction([2, 3], [4, 5], dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.poles = 1
-            s2.zeros = 0
-            s2.gain = 1
-            self._compare_systems(s, s2)
 
 
 class TestZerosPolesGain(object):
@@ -444,12 +384,6 @@ class TestZerosPolesGain(object):
         s = ZerosPolesGain(np.array([1]), np.array([2]), 1, dt=dt)
         s = ZerosPolesGain(1, 1, 1, dt=True)
 
-    def _compare_systems(self, sys1, sys2):
-        # Compare the contents of two systems
-        assert_equal(sys1.poles, sys2.poles)
-        assert_equal(sys1.zeros, sys2.zeros)
-        assert_equal(sys1.gain, sys2.gain)
-
     def test_conversion(self):
         # Check the conversion functions
         s = ZerosPolesGain(1, 2, 3, dt=0.05)
@@ -460,39 +394,6 @@ class TestZerosPolesGain(object):
         # Make sure copies work
         assert_(ZerosPolesGain(s) is not s)
         assert_(s.to_zpk() is not s)
-
-    def test_properties(self):
-        # Test setters/getters for cross class properties.
-        # This implicitly tests to_ss() and to_tf()
-
-        # Getters
-        s = ZerosPolesGain(0, 1, 1, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            assert_equal(s.num, [1, 0])
-            assert_equal(s.den, [1, -1])
-            assert_equal(s.A, 1)
-            assert_equal(s.B, 1)
-            assert_equal(s.C, 1)
-            assert_equal(s.D, 1)
-
-        # state space setters
-        s2 = ZerosPolesGain([2], [6], 3, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.A = 1
-            s2.B = 1
-            s2.C = 1
-            s2.D = 1
-            self._compare_systems(s, s2)
-
-        # tf setters
-        s2 = ZerosPolesGain([2], [5], 3, dt=0.05)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            s2.num = [1, 0]
-            s2.den = [1, -1]
-            self._compare_systems(s, s2)
 
 
 class Test_dfreqresp(TestCase):
