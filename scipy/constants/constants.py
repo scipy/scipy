@@ -123,6 +123,7 @@ micron = 1e-6
 au = astronomical_unit = 149597870691.0
 light_year = Julian_year * c
 parsec = au / arcsec
+R_earth = 6378136
 
 # pressure in pascal
 atm = atmosphere = _cd('standard atmosphere')
