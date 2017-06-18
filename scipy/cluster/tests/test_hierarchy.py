@@ -117,7 +117,7 @@ class TestLinkage(object):
             assert_allclose(Z_trivial, Z, rtol=1e-14, atol=1e-15)
 
     def test_optimal_leaf_ordering(self):
-        Z = linkage(hierarchy_test_data.ytdist, optimal_leaf_ordering=True)
+        Z = linkage(hierarchy_test_data.ytdist, optimal_ordering=True)
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_single_olo')
         assert_allclose(Z, expectedZ, atol=1e-10)
 
