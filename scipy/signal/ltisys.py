@@ -1353,6 +1353,14 @@ class StateSpace(LinearTimeInvariant):
         order above ensures standard Matrix multiplication rules apply.
         """
         if isinstance(other, StateSpace):
+            # Disallow mix of discrete and continuous systems.
+            if type(other) is not type(self):
+                raise TypeError('Cannot add {} and {}'.format(type(self),
+                                                              type(other)))
+
+            if self.dt != other.dt:
+                raise TypeError('Cannot multiply systems with different `dt`.')
+
             n1 = self.A.shape[0]
             n2 = other.A.shape[0]
 
@@ -1404,6 +1412,13 @@ class StateSpace(LinearTimeInvariant):
         result.
         """
         if isinstance(other, StateSpace):
+            # Disallow mix of discrete and continuous systems.
+            if type(other) is not type(self):
+                raise TypeError('Cannot add {} and {}'.format(type(self),
+                                                              type(other)))
+
+            if self.dt != other.dt:
+                raise TypeError('Cannot add systems with different `dt`.')
             # Interconnection of systems
             # x1' = A1 x1 + B1 u
             # y1  = C1 x1 + D1 u
@@ -1422,18 +1437,15 @@ class StateSpace(LinearTimeInvariant):
             d = self.D + other.D
             return StateSpace(a, b, c, d)
 
-        # A scalar/matrix is really just a static system (A=0, B=0, C=0)
-        return StateSpace(self.A, self.B, self.C, self.D + other)
-
-    def __radd__(self, other):
-        """Add a scalar"""
-        return self + other
+        other = np.atleast_2d(other)
+        if self.D.shape == other.shape:
+            # A scalar/matrix is really just a static system (A=0, B=0, C=0)
+            return StateSpace(self.A, self.B, self.C, self.D + other)
+        else:
+            raise ValueError('Other needs to have compatible dimensions.')
 
     def __sub__(self, other):
         return self + (-other)
-
-    def __rsub__(self, other):
-        return other + (-self)
 
     @property
     def A(self):

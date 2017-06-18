@@ -785,7 +785,7 @@ class TestStateSpace(object):
         s1 = StateSpace(np.array([[-0.5, 0.7], [0.3, -0.8]]),
                         np.array([[1], [0]]),
                         np.array([[1, 0]]),
-                        np.array([[0]])
+                        np.array([[0]]),
                         )
 
         s2 = StateSpace(np.array([[-0.2, -0.1], [0.4, -0.1]]),
@@ -793,6 +793,9 @@ class TestStateSpace(object):
                         np.array([[1, 0]]),
                         np.array([[0]])
                         )
+
+        s_discrete = s1.to_discrete(0.1)
+        s2_discrete = s2.to_discrete(0.2)
 
         # Impulse response
         t = np.linspace(0, 1, 100)
@@ -810,20 +813,32 @@ class TestStateSpace(object):
                         lsim(s1, U=lsim(s2, U=u, T=t)[1], T=t)[1],
                         atol=1e-5)
 
+        with assert_raises(TypeError):
+            s1 * s_discrete
+
+        with assert_raises(TypeError):
+            # Check different discretization constants
+            s_discrete * s2_discrete
+
         # Test addition
         assert_allclose(lsim(s1 + 2, U=u, T=t)[1],
                         2 * u + lsim(s1, U=u, T=t)[1])
 
-        assert_allclose(lsim(2 + s1, U=u, T=t)[1],
-                        2 * u + lsim(s1, U=u, T=t)[1])
+        # Check for dimension missmatch
+        with assert_raises(ValueError):
+            s1 + np.array([1, 2])
+
+        with assert_raises(TypeError):
+            s1 + s_discrete
+
+        with assert_raises(TypeError):
+            # Check different discretization constants
+            s_discrete + s2_discrete
 
         assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
 
         # Test substraction
-        assert_allclose(lsim(2 - s1, U=u, T=t)[1],
-                        2 * u - lsim(s1, U=u, T=t)[1])
-
         assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
                         -2 * u + lsim(s1, U=u, T=t)[1])
 
