@@ -718,7 +718,7 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     method_code = _LINKAGE_METHODS[method]
 
     if method == 'single':
-        result =  _hierarchy.mst_single_linkage(y, n)
+        result = _hierarchy.mst_single_linkage(y, n)
     elif method in ['complete', 'average', 'weighted', 'ward']:
         result = _hierarchy.nn_chain(y, n, method_code)
     else:
@@ -728,7 +728,6 @@ def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
         return optimal_leaf_ordering(result, y)
     else:
         return result
-
 
 
 class ClusterNode:
@@ -1175,9 +1174,9 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     >>> X = np.random.randn(10,10)
     >>> Z = hierarchy.ward(X)
     >>> hierarchy.leaves_list(Z)
-    array([1, 2, 9, 0, 5, 3, 6, 7, 4, 8], dtype=int32)
+    array([0, 5, 3, 9, 6, 8, 1, 4, 2, 7], dtype=int32)
     >>> hierarchy.leaves_list(hierarchy.optimal_leaf_ordering(Z, X))
-    array([1, 9, 2, 5, 0, 3, 6, 7, 4, 8], dtype=int32)
+    array([3, 9, 0, 5, 8, 2, 7, 4, 1, 6], dtype=int32)
     
     """
     from . import _optimal_leaf_ordering
