@@ -149,6 +149,8 @@ Mass
 ``m_u``            atomic mass constant (in kg)
 ``u``              atomic mass constant (in kg)
 ``atomic_mass``    atomic mass constant (in kg)
+``M_sun``          solar mass (in kg)
+``solar_mass``     solar mass (in kg)
 =================  ============================================================
 
 Angle
