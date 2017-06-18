@@ -8,6 +8,7 @@ Polygon Surface Area Code
 
 import numpy as np
 from scipy.spatial.distance import pdist
+from . import _surface_area
 
 #
 # Copyright (C)  James Nichols and Tyler Reddy
@@ -26,7 +27,8 @@ def _vertex_index_strider(index, num_vertices):
         forward_index = 0
     return forward_index, backward_index
 
-def poly_area(vertices, radius=None, threshold=1e-21):
+def poly_area(vertices, radius=None, threshold=1e-21,
+              cython=None):
     # calculate the surface area of a planar or spherical polygon
     # crude pure Python implementation for handling a single
     # polygon at a time
@@ -56,12 +58,15 @@ def poly_area(vertices, radius=None, threshold=1e-21):
         # suggests we should not do that!
         area = (radius ** 2) * area_sum
     else: # planar polygon
-        for i in range(0, num_vertices):
-            forward_index, backward_index = _vertex_index_strider(i, num_vertices)
-            delta_x = (vertices[forward_index][0] -
-                       vertices[backward_index][0])
-            area_sum += delta_x * vertices[i][1]
-        area = -0.5 * area_sum
+        if cython is None:
+            for i in range(0, num_vertices):
+                forward_index, backward_index = _vertex_index_strider(i, num_vertices)
+                delta_x = (vertices[forward_index][0] -
+                           vertices[backward_index][0])
+                area_sum += delta_x * vertices[i][1]
+            area = -0.5 * area_sum
+        else: # cython code for planar polygon SA
+            area = _surface_area.planar_polygon_area(vertices)
     
     return abs(area)
 

@@ -74,6 +74,8 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_hausdorff',
                          sources=['_hausdorff.c'])
 
+    config.add_extension('_surface_area',
+                         sources=['_surface_area.c'])
     # Add license files
     config.add_data_files('qhull/COPYING.txt')
 

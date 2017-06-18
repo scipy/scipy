@@ -7,6 +7,8 @@ from hypothesis.strategies import floats
 
 class TestDegenerateInput(object):
     # tests for problematic input
+    def setUp(self):
+        self.cython = None
 
     @given(floats(min_value=1e-20,
                   max_value=1e20),
@@ -25,11 +27,18 @@ class TestDegenerateInput(object):
         with assert_raises(ValueError):
             psa.poly_area(vertices,
                           radius,
-                          threshold)
+                          threshold,
+                          cython=self.cython)
+
+class TestDegenerateInputCython(TestDegenerateInput):
+    def setUp(self):
+        self.cython = 1
 
 class TestSimpleAreas(object):
     # test polygon surface area calculations
     # for known / straightforward cases
+    def setUp(self):
+        self.cython = None
 
     # property test random subset of all floats 
     # for the radius value
@@ -43,7 +52,8 @@ class TestSimpleAreas(object):
                              [0,0,1]]) * radius
         expected_area = np.pi * (radius ** 2)
         actual_area = psa.poly_area(vertices=vertices,
-                                    radius=radius)
+                                    radius=radius,
+                                    cython=self.cython)
         assert_equal(actual_area, expected_area)
 
     @given(floats(min_value=1e-20,
@@ -57,7 +67,8 @@ class TestSimpleAreas(object):
                              [-1,0,0]]) * radius
         expected_area = np.pi * (radius ** 2)
         actual_area = psa.poly_area(vertices=vertices,
-                                    radius=radius)
+                                    radius=radius,
+                                    cython=self.cython)
         assert_equal(actual_area, expected_area)
 
     @given(floats(min_value=1e-20,
@@ -70,7 +81,8 @@ class TestSimpleAreas(object):
                              [0,0,1]]) * radius
         expected_area = (np.pi * (radius ** 2)) / 2.
         actual_area = psa.poly_area(vertices=vertices,
-                                    radius=radius)
+                                    radius=radius,
+                                    cython=self.cython)
         assert_equal(actual_area, expected_area)
 
     @given(floats(min_value=-1e20,
@@ -83,7 +95,8 @@ class TestSimpleAreas(object):
                              [0,0,1]]) * radius
         with assert_raises(ValueError):
             psa.poly_area(vertices=vertices,
-                          radius=radius)
+                          radius=radius,
+                          cython=self.cython)
 
     @given(floats(min_value=1e-20, max_value=1e20),
            floats(min_value=1e-20, max_value=1e20))
@@ -96,7 +109,8 @@ class TestSimpleAreas(object):
                                       [base,0,0],
                                       [base / 2.,height,0]])
         expected = 0.5 * base * height
-        actual = psa.poly_area(vertices=triangle_vertices)
+        actual = psa.poly_area(vertices=triangle_vertices,
+                               cython=self.cython)
         assert_equal(actual, expected)
 
     @given(floats(min_value=1e-20, max_value=1e20),
@@ -111,8 +125,13 @@ class TestSimpleAreas(object):
                                       [base,0,0],
                                       [0,0,0]])
         expected = 0.5 * base * height
-        actual = psa.poly_area(vertices=triangle_vertices)
+        actual = psa.poly_area(vertices=triangle_vertices,
+                               cython=self.cython)
         assert_equal(actual, expected)
+
+class TestSimpleAreasCython(TestSimpleAreas):
+    def setUp(self):
+        self.cython=1
 
 class TestRadianAreas(object):
     # compare spherical polygon surface areas
@@ -123,6 +142,8 @@ class TestRadianAreas(object):
     # see also: Bevis and Cambereri (1987) Mathematical Geology 19: 335-346.
     # the above authors cite the angle-based equation used for reference
     # calcs here as well-known and stated frequently in handbooks of mathematics
+    def setUp(self):
+        self.cython=None
 
     def _angle_area(self, sum_radian_angles, n_vertices, radius):
         # suface area of spherical polygon using
@@ -155,8 +176,14 @@ class TestRadianAreas(object):
 
         # check cw and ccw vertex sorting
         actual_area = psa.poly_area(vertices=sample_vertices,
-                                    radius=radius)
+                                    radius=radius,
+                                    cython=self.cython)
         actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
-                                    radius=radius)
+                                    radius=radius,
+                                    cython=self.cython)
         assert_equal(actual_area, expected_area)
         assert_equal(actual_area_reverse, expected_area)
+
+class TestRadianAreasCython(TestRadianAreas):
+    def setUp(self):
+        self.cython = 1
