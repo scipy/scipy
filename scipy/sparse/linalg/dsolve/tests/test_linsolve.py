@@ -18,7 +18,11 @@ from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
         MatrixRankWarning, _superlu, spsolve_triangular)
 
-warnings.simplefilter('ignore',SparseEfficiencyWarning)
+from scipy._lib._numpy_compat import suppress_warnings
+
+
+sup_sparse_efficiency = suppress_warnings()
+sup_sparse_efficiency.filter(SparseEfficiencyWarning)
 
 # TODO add more comprehensive tests
 use_solver(useUmfpack=False)
@@ -100,38 +104,37 @@ class TestLinsolve(TestCase):
         x2 = spsolve(As, Bs)
         assert_array_almost_equal(x, x2.todense())
 
+    @sup_sparse_efficiency
     def test_non_square(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            # A is not square.
-            A = ones((3, 4))
-            b = ones((4, 1))
-            assert_raises(ValueError, spsolve, A, b)
-            # A2 and b2 have incompatible shapes.
-            A2 = csc_matrix(eye(3))
-            b2 = array([1.0, 2.0])
-            assert_raises(ValueError, spsolve, A2, b2)
+        # A is not square.
+        A = ones((3, 4))
+        b = ones((4, 1))
+        assert_raises(ValueError, spsolve, A, b)
+        # A2 and b2 have incompatible shapes.
+        A2 = csc_matrix(eye(3))
+        b2 = array([1.0, 2.0])
+        assert_raises(ValueError, spsolve, A2, b2)
 
+    @sup_sparse_efficiency
     def test_example_comparison(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            row = array([0,0,1,2,2,2])
-            col = array([0,2,2,0,1,2])
-            data = array([1,2,3,-4,5,6])
-            sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
-            M = sM.todense()
+        row = array([0,0,1,2,2,2])
+        col = array([0,2,2,0,1,2])
+        data = array([1,2,3,-4,5,6])
+        sM = csr_matrix((data,(row,col)), shape=(3,3), dtype=float)
+        M = sM.todense()
 
-            row = array([0,0,1,1,0,0])
-            col = array([0,2,1,1,0,0])
-            data = array([1,1,1,1,1,1])
-            sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
-            N = sN.todense()
+        row = array([0,0,1,1,0,0])
+        col = array([0,2,1,1,0,0])
+        data = array([1,1,1,1,1,1])
+        sN = csr_matrix((data, (row,col)), shape=(3,3), dtype=float)
+        N = sN.todense()
 
-            sX = spsolve(sM, sN)
-            X = scipy.linalg.solve(M, N)
+        sX = spsolve(sM, sN)
+        X = scipy.linalg.solve(M, N)
 
-            assert_array_almost_equal(X, sX.todense())
+        assert_array_almost_equal(X, sX.todense())
 
+    @sup_sparse_efficiency
     def test_shape_compatibility(self):
         A = csc_matrix([[1., 0], [0, 2]])
         bs = [
@@ -186,6 +189,7 @@ class TestLinsolve(TestCase):
         b = csc_matrix((1, 3))
         assert_raises(ValueError, spsolve, A, b)
 
+    @sup_sparse_efficiency
     def test_ndarray_support(self):
         A = array([[1., 2.], [2., 0.]])
         x = array([[1., 1.], [0.5, -0.5]])
@@ -304,40 +308,36 @@ class TestSplu(object):
             x = lu.solve(b, 'H')
             check(A.T.conj(), b, x, msg)
 
+    @sup_sparse_efficiency
     def test_splu_smoketest(self):
         # Check that splu works at all
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+        def check(A, b, x, msg=""):
+            eps = np.finfo(A.dtype).eps
+            r = A * x
+            assert_(abs(r - b).max() < 1e3*eps, msg)
 
-            def check(A, b, x, msg=""):
-                eps = np.finfo(A.dtype).eps
-                r = A * x
-                assert_(abs(r - b).max() < 1e3*eps, msg)
+        self._smoketest(splu, check, np.float32)
+        self._smoketest(splu, check, np.float64)
+        self._smoketest(splu, check, np.complex64)
+        self._smoketest(splu, check, np.complex128)
 
-            self._smoketest(splu, check, np.float32)
-            self._smoketest(splu, check, np.float64)
-            self._smoketest(splu, check, np.complex64)
-            self._smoketest(splu, check, np.complex128)
-
+    @sup_sparse_efficiency
     def test_spilu_smoketest(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
+        errors = []
 
-            errors = []
+        def check(A, b, x, msg=""):
+            r = A * x
+            err = abs(r - b).max()
+            assert_(err < 1e-2, msg)
+            if b.dtype in (np.float64, np.complex128):
+                errors.append(err)
 
-            def check(A, b, x, msg=""):
-                r = A * x
-                err = abs(r - b).max()
-                assert_(err < 1e-2, msg)
-                if b.dtype in (np.float64, np.complex128):
-                    errors.append(err)
+        self._smoketest(spilu, check, np.float32)
+        self._smoketest(spilu, check, np.float64)
+        self._smoketest(spilu, check, np.complex64)
+        self._smoketest(spilu, check, np.complex128)
 
-            self._smoketest(spilu, check, np.float32)
-            self._smoketest(spilu, check, np.float64)
-            self._smoketest(spilu, check, np.complex64)
-            self._smoketest(spilu, check, np.complex128)
-
-            assert_(max(errors) > 1e-5)
+        assert_(max(errors) > 1e-5)
 
     def test_spilu_drop_rule(self):
         # Test passing in the drop_rule argument to spilu.
@@ -440,6 +440,7 @@ class TestSplu(object):
             assert_raises(TypeError, lu.solve,
                           b.astype(np.complex128))
 
+    @sup_sparse_efficiency
     def test_superlu_dlamch_i386_nan(self):
         # SuperLU 4.3 calls some functions returning floats without
         # declaring them. On i386@linux call convention, this fails to
@@ -456,6 +457,7 @@ class TestSplu(object):
         B = A.A
         assert_(not np.isnan(B).any())
 
+    @sup_sparse_efficiency
     def test_lu_attr(self):
 
         def check(dtype, complex_2=False):
