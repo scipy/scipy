@@ -109,6 +109,11 @@ static double _kolmogorov(double x, int complement)
 	}
 	while ((t / p) > KOLMOG_RTOL);
 	p = 2*p;
+	if (p > 1) {
+	    p = 1;
+	} else if (p < 0) {
+	    p = 0;
+	}
 	if (complement) {
 	    p = 1-p;
 	}
@@ -126,6 +131,11 @@ static double _kolmogorov(double x, int complement)
 	    r +=  2;
 	} while ((t / p) >= KOLMOG_RTOL);
 	p *= sqrt(2 * NPY_PI) / x;
+	if (p > 1) {
+	    p = 1;
+	} else if (p < 0) {
+	    p = 0;
+	}
 	if (!complement) {
 	    p = 1-p;
 	}
