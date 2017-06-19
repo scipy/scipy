@@ -1,7 +1,6 @@
 import numpy as np
 cimport numpy as np
 cimport cython
-from libc.math cimport abs
 
 cdef int vertex_index_strider(int index, int num_vertices):
     cdef int forward_index
@@ -11,6 +10,7 @@ cdef int vertex_index_strider(int index, int num_vertices):
     return forward_index
 
 @cython.boundscheck(False)
+@cython.wraparound(False)
 def planar_polygon_area(double[:,::1] vertices):
     cdef int N = vertices.shape[0]
     cdef int i, forward_index, backward_index
@@ -24,4 +24,4 @@ def planar_polygon_area(double[:,::1] vertices):
                    vertices[backward_index][0])
         area += delta_x * vertices[i][1]
     area *= 0.5
-    return abs(area)
+    return area
