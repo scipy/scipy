@@ -35,6 +35,9 @@ Iterating over and slicing of CSC and CSR matrices is now faster by up to ~35%.
 
 The ``tocsr`` method of COO matrices is now several times faster.
 
+The ``diagonal`` method of sparse matrices now takes a parameter, indicating
+which diagonal to return.
+
 
 `scipy.sparse.linalg` improvements
 ----------------------------------

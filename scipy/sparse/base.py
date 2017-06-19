@@ -1020,7 +1020,28 @@ class spmatrix(object):
                 axis=1, dtype=res_dtype, out=out)
 
     def diagonal(self, k=0):
-        """Returns the main diagonal of the matrix
+        """Returns the k-th diagonal of the matrix.
+
+        Parameters
+        ----------
+        k : int, optional
+            Which diagonal to set, corresponding to elements a[i, i+k].
+            Default: 0 (the main diagonal).
+
+            .. versionadded: 1.0
+
+        See also
+        --------
+        numpy.diagonal : Equivalent numpy function.
+
+        Examples
+        --------
+        >>> from scipy.sparse import csr_matrix
+        >>> A = csr_matrix([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+        >>> A.diagonal()
+        array([1, 0, 5])
+        >>> A.diagonal(k=1)
+        array([2, 3])
         """
         return self.tocsr().diagonal(k=k)
 
