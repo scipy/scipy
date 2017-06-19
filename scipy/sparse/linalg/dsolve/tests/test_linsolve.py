@@ -310,6 +310,9 @@ class TestSplu(object):
 
     @sup_sparse_efficiency
     def test_splu_smoketest(self):
+        self._internal_test_splu_smoketest()
+
+    def _internal_test_splu_smoketest(self):
         # Check that splu works at all
         def check(A, b, x, msg=""):
             eps = np.finfo(A.dtype).eps
@@ -323,6 +326,9 @@ class TestSplu(object):
 
     @sup_sparse_efficiency
     def test_spilu_smoketest(self):
+        self._internal_test_spilu_smoketest()
+
+    def _internal_test_spilu_smoketest(self):
         errors = []
 
         def check(A, b, x, msg=""):
@@ -339,6 +345,7 @@ class TestSplu(object):
 
         assert_(max(errors) > 1e-5)
 
+    @sup_sparse_efficiency
     def test_spilu_drop_rule(self):
         # Test passing in the drop_rule argument to spilu.
         A = identity(2)
@@ -492,14 +499,15 @@ class TestSplu(object):
         check(np.complex64, True)
         check(np.complex128, True)
 
+    @sup_sparse_efficiency
     def test_threads_parallel(self):
         oks = []
 
         def worker():
             try:
                 self.test_splu_basic()
-                self.test_splu_smoketest()
-                self.test_spilu_smoketest()
+                self._internal_test_splu_smoketest()
+                self._internal_test_spilu_smoketest()
                 oks.append(True)
             except:
                 pass
@@ -523,6 +531,7 @@ class TestSpsolveTriangular(TestCase):
         for lower in (True, False):
             assert_raises(scipy.linalg.LinAlgError, spsolve_triangular, A, b, lower=lower)
 
+    @sup_sparse_efficiency
     def test_bad_shape(self):
         # A is not square.
         A = np.zeros((3, 4))
@@ -533,6 +542,7 @@ class TestSpsolveTriangular(TestCase):
         b2 = array([1.0, 2.0])
         assert_raises(ValueError, spsolve_triangular, A2, b2)
 
+    @sup_sparse_efficiency
     def test_input_types(self):
         A = array([[1., 0.], [1., 2.]])
         b = array([[2., 0.], [2., 2.]])
@@ -540,6 +550,7 @@ class TestSpsolveTriangular(TestCase):
             x = spsolve_triangular(matrix_type(A), b, lower=True)
             assert_array_almost_equal(A.dot(x), b)
 
+    @sup_sparse_efficiency
     def test_random(self):
         def random_triangle_matrix(n, lower=True):
             A = scipy.sparse.random(n, n, density=0.1, format='coo')
