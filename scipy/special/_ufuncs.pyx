@@ -1686,9 +1686,15 @@ from _legacy cimport kn_unsafe as _func_kn_unsafe
 ctypedef double _proto_kn_unsafe_t(double, double) nogil
 cdef _proto_kn_unsafe_t *_proto_kn_unsafe_t_var = &_func_kn_unsafe
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_kolmogc "kolmogc"(double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_kolmogci "kolmogci"(double) nogil
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_kolmogi "kolmogi"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_kolmogorov "kolmogorov"(double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_kolmogp "kolmogp"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cbesk_wrap_real "cbesk_wrap_real"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2867,8 +2873,8 @@ cdef char *ufunc_bdtrik_doc = (
     "Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the\n"
     "cumulative incomplete beta distribution.\n"
     "\n"
-    "Computation of `k` involves a seach for a value that produces the desired\n"
-    "value of `y`.  The search relies on the monotinicity of `y` with `k`.\n"
+    "Computation of `k` involves a search for a value that produces the desired\n"
+    "value of `y`.  The search relies on the monotonicity of `y` with `k`.\n"
     "\n"
     "Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.\n"
     "\n"
@@ -2935,8 +2941,8 @@ cdef char *ufunc_bdtrin_doc = (
     "Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the\n"
     "cumulative incomplete beta distribution.\n"
     "\n"
-    "Computation of `n` involves a seach for a value that produces the desired\n"
-    "value of `y`.  The search relies on the monotinicity of `y` with `n`.\n"
+    "Computation of `n` involves a search for a value that produces the desired\n"
+    "value of `y`.  The search relies on the monotonicity of `y` with `n`.\n"
     "\n"
     "Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.\n"
     "\n"
@@ -3518,9 +3524,9 @@ cdef char *ufunc_btdtria_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `a` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `a`.\n"
+    "monotonicity of `p` with `a`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -3589,9 +3595,9 @@ cdef char *ufunc_btdtrib_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `b` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `b`.\n"
+    "monotonicity of `p` with `b`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -5469,7 +5475,7 @@ cdef char *ufunc_eval_sh_chebyt_doc = (
     "roots_sh_chebyt : roots and quadrature weights of shifted\n"
     "                  Chebyshev polynomials of the first kind\n"
     "sh_chebyt : shifted Chebyshev polynomial object\n"
-    "eval_chebyt : evalaute Chebyshev polynomials of the first kind\n"
+    "eval_chebyt : evaluate Chebyshev polynomials of the first kind\n"
     "numpy.polynomial.chebyshev.Chebyshev : Chebyshev series")
 ufunc_eval_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -6811,9 +6817,9 @@ cdef char *ufunc_gdtria_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `a` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `a`.\n"
+    "monotonicity of `p` with `a`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -6899,9 +6905,9 @@ cdef char *ufunc_gdtrib_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `b` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `b`.\n"
+    "monotonicity of `p` with `b`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -6988,9 +6994,9 @@ cdef char *ufunc_gdtrix_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `x` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `x` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `x`.\n"
+    "monotonicity of `p` with `x`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -8301,10 +8307,10 @@ cdef char *ufunc_iv_doc = (
     "expansions are applied.\n"
     "\n"
     "For complex `z` and positive `v`, the AMOS [2]_ `zbesi` routine is\n"
-    "called. It uses a power series for small `z`, the asymptitic expansion\n"
+    "called. It uses a power series for small `z`, the asymptotic expansion\n"
     "for large `abs(z)`, the Miller algorithm normalized by the Wronskian\n"
     "and a Neumann series for intermediate magnitudes, and the uniform\n"
-    "asymptitic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large\n"
+    "asymptotic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large\n"
     "orders.  Backward recurrence is used to generate sequences or reduce\n"
     "orders when necessary.\n"
     "\n"
@@ -8389,9 +8395,9 @@ cdef char *ufunc_ive_doc = (
     "Notes\n"
     "-----\n"
     "For positive `v`, the AMOS [1]_ `zbesi` routine is called. It uses a\n"
-    "power series for small `z`, the asymptitic expansion for large\n"
+    "power series for small `z`, the asymptotic expansion for large\n"
     "`abs(z)`, the Miller algorithm normalized by the Wronskian and a\n"
-    "Neumann series for intermediate magnitudes, and the uniform asymptitic\n"
+    "Neumann series for intermediate magnitudes, and the uniform asymptotic\n"
     "expansions for :math:`I_v(z)` and :math:`J_v(z)` for large orders.\n"
     "Backward recurrence is used to generate sequences or reduce orders when\n"
     "necessary.\n"
@@ -9191,6 +9197,58 @@ ufunc_kn_data[1] = &ufunc_kn_ptr[2*1]
 ufunc_kn_data[2] = &ufunc_kn_ptr[2*2]
 kn = np.PyUFunc_FromFuncAndData(ufunc_kn_loops, ufunc_kn_data, ufunc_kn_types, 3, 2, 1, 0, "kn", ufunc_kn_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_kolmogc_loops[2]
+cdef void *ufunc_kolmogc_ptr[4]
+cdef void *ufunc_kolmogc_data[2]
+cdef char ufunc_kolmogc_types[4]
+cdef char *ufunc_kolmogc_doc = (
+    "kolmogc(y)\n"
+    "\n"
+    "Cumulative distribution function of Kolmogorov distribution\n"
+    "\n"
+    "Returns the cumulative distribution function of\n"
+    "Kolmogorov's limiting distribution (Kn* for large n) of a\n"
+    "two-sided test for equality between an empirical and a theoretical\n"
+    "distribution. It is equal to the (limit as n->infinity of the)\n"
+    "probability that sqrt(n) * max absolute deviation <= y.")
+ufunc_kolmogc_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_kolmogc_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_kolmogc_types[0] = <char>NPY_FLOAT
+ufunc_kolmogc_types[1] = <char>NPY_FLOAT
+ufunc_kolmogc_types[2] = <char>NPY_DOUBLE
+ufunc_kolmogc_types[3] = <char>NPY_DOUBLE
+ufunc_kolmogc_ptr[2*0] = <void*>_func_kolmogc
+ufunc_kolmogc_ptr[2*0+1] = <void*>(<char*>"kolmogc")
+ufunc_kolmogc_ptr[2*1] = <void*>_func_kolmogc
+ufunc_kolmogc_ptr[2*1+1] = <void*>(<char*>"kolmogc")
+ufunc_kolmogc_data[0] = &ufunc_kolmogc_ptr[2*0]
+ufunc_kolmogc_data[1] = &ufunc_kolmogc_ptr[2*1]
+kolmogc = np.PyUFunc_FromFuncAndData(ufunc_kolmogc_loops, ufunc_kolmogc_data, ufunc_kolmogc_types, 2, 1, 1, 0, "kolmogc", ufunc_kolmogc_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_kolmogci_loops[2]
+cdef void *ufunc_kolmogci_ptr[4]
+cdef void *ufunc_kolmogci_data[2]
+cdef char ufunc_kolmogci_types[4]
+cdef char *ufunc_kolmogci_doc = (
+    "kolmogci(p)\n"
+    "\n"
+    "Inverse function to kolmogc\n"
+    "\n"
+    "Returns y such that ``kolmogc(y) == p``.")
+ufunc_kolmogci_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_kolmogci_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_kolmogci_types[0] = <char>NPY_FLOAT
+ufunc_kolmogci_types[1] = <char>NPY_FLOAT
+ufunc_kolmogci_types[2] = <char>NPY_DOUBLE
+ufunc_kolmogci_types[3] = <char>NPY_DOUBLE
+ufunc_kolmogci_ptr[2*0] = <void*>_func_kolmogci
+ufunc_kolmogci_ptr[2*0+1] = <void*>(<char*>"kolmogci")
+ufunc_kolmogci_ptr[2*1] = <void*>_func_kolmogci
+ufunc_kolmogci_ptr[2*1+1] = <void*>(<char*>"kolmogci")
+ufunc_kolmogci_data[0] = &ufunc_kolmogci_ptr[2*0]
+ufunc_kolmogci_data[1] = &ufunc_kolmogci_ptr[2*1]
+kolmogci = np.PyUFunc_FromFuncAndData(ufunc_kolmogci_loops, ufunc_kolmogci_data, ufunc_kolmogci_types, 2, 1, 1, 0, "kolmogci", ufunc_kolmogci_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_kolmogi_loops[2]
 cdef void *ufunc_kolmogi_ptr[4]
 cdef void *ufunc_kolmogi_data[2]
@@ -9242,6 +9300,28 @@ ufunc_kolmogorov_ptr[2*1+1] = <void*>(<char*>"kolmogorov")
 ufunc_kolmogorov_data[0] = &ufunc_kolmogorov_ptr[2*0]
 ufunc_kolmogorov_data[1] = &ufunc_kolmogorov_ptr[2*1]
 kolmogorov = np.PyUFunc_FromFuncAndData(ufunc_kolmogorov_loops, ufunc_kolmogorov_data, ufunc_kolmogorov_types, 2, 1, 1, 0, "kolmogorov", ufunc_kolmogorov_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_kolmogp_loops[2]
+cdef void *ufunc_kolmogp_ptr[4]
+cdef void *ufunc_kolmogp_data[2]
+cdef char ufunc_kolmogp_types[4]
+cdef char *ufunc_kolmogp_doc = (
+    "kolmogp(y)\n"
+    "\n"
+    "Derivative of kolmogorov.")
+ufunc_kolmogp_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_kolmogp_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_kolmogp_types[0] = <char>NPY_FLOAT
+ufunc_kolmogp_types[1] = <char>NPY_FLOAT
+ufunc_kolmogp_types[2] = <char>NPY_DOUBLE
+ufunc_kolmogp_types[3] = <char>NPY_DOUBLE
+ufunc_kolmogp_ptr[2*0] = <void*>_func_kolmogp
+ufunc_kolmogp_ptr[2*0+1] = <void*>(<char*>"kolmogp")
+ufunc_kolmogp_ptr[2*1] = <void*>_func_kolmogp
+ufunc_kolmogp_ptr[2*1+1] = <void*>(<char*>"kolmogp")
+ufunc_kolmogp_data[0] = &ufunc_kolmogp_ptr[2*0]
+ufunc_kolmogp_data[1] = &ufunc_kolmogp_ptr[2*1]
+kolmogp = np.PyUFunc_FromFuncAndData(ufunc_kolmogp_loops, ufunc_kolmogp_data, ufunc_kolmogp_types, 2, 1, 1, 0, "kolmogp", ufunc_kolmogp_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_kv_loops[4]
 cdef void *ufunc_kv_ptr[8]
@@ -10440,8 +10520,8 @@ cdef char *ufunc_nbdtrik_doc = (
     "is used to reduce calculation of the cumulative distribution function to\n"
     "that of a regularized incomplete beta :math:`I`.\n"
     "\n"
-    "Computation of `k` involves a seach for a value that produces the desired\n"
-    "value of `y`.  The search relies on the monotinicity of `y` with `k`.\n"
+    "Computation of `k` involves a search for a value that produces the desired\n"
+    "value of `y`.  The search relies on the monotonicity of `y` with `k`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -10514,8 +10594,8 @@ cdef char *ufunc_nbdtrin_doc = (
     "is used to reduce calculation of the cumulative distribution function to\n"
     "that of a regularized incomplete beta :math:`I`.\n"
     "\n"
-    "Computation of `n` involves a seach for a value that produces the desired\n"
-    "value of `y`.  The search relies on the monotinicity of `y` with `n`.\n"
+    "Computation of `n` involves a search for a value that produces the desired\n"
+    "value of `y`.  The search relies on the monotonicity of `y` with `n`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -11925,7 +12005,7 @@ cdef char ufunc_pro_rad2_types[12]
 cdef char *ufunc_pro_rad2_doc = (
     "pro_rad2(m, n, c, x)\n"
     "\n"
-    "Prolate spheroidal radial function of the secon kind and its derivative\n"
+    "Prolate spheroidal radial function of the second kind and its derivative\n"
     "\n"
     "Computes the prolate spheroidal radial function of the second kind\n"
     "and its derivative (with respect to `x`) for mode parameters m>=0\n"

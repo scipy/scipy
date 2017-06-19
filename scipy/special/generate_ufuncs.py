@@ -226,6 +226,9 @@ keip -- keip_wrap: d->d                                    -- specfun_wrappers.h
 _zeta -- zeta: dd->d                                       -- cephes.h
 kolmogorov -- kolmogorov: d->d                             -- cephes.h
 kolmogi -- kolmogi: d->d                                   -- cephes.h
+kolmogc -- kolmogc: d->d                                   -- cephes.h
+kolmogp -- kolmogp: d->d                                   -- cephes.h
+kolmogci -- kolmogci: d->d                                 -- cephes.h
 besselpoly -- besselpoly: ddd->d                           -- c_misc/misc.h
 btdtria -- cdfbet3_wrap: ddd->d                            -- cdf_wrappers.h
 btdtrib -- cdfbet4_wrap: ddd->d                            -- cdf_wrappers.h

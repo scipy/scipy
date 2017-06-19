@@ -4201,6 +4201,35 @@ add_newdoc("scipy.special", "kolmogorov",
     probability that sqrt(n) * max absolute deviation > y.
     """)
 
+add_newdoc("scipy.special", "kolmogc",
+    """
+    kolmogc(y)
+
+    Cumulative distribution function of Kolmogorov distribution
+
+    Returns the cumulative distribution function of
+    Kolmogorov's limiting distribution (Kn* for large n) of a
+    two-sided test for equality between an empirical and a theoretical
+    distribution. It is equal to the (limit as n->infinity of the)
+    probability that sqrt(n) * max absolute deviation <= y.
+    """)
+
+add_newdoc("scipy.special", "kolmogp",
+    """
+    kolmogp(y)
+
+    Derivative of kolmogorov.
+    """)
+
+add_newdoc("scipy.special", "kolmogci",
+    """
+    kolmogci(p)
+
+    Inverse function to kolmogc
+
+    Returns y such that ``kolmogc(y) == p``.
+    """)
+
 add_newdoc("scipy.special", "kv",
     r"""
     kv(v, z)

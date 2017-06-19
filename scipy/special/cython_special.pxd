@@ -143,8 +143,11 @@ cpdef double ker(double x0) nogil
 cpdef double kerp(double x0) nogil
 cpdef double kl_div(double x0, double x1) nogil
 cpdef double kn(dl_number_t x0, double x1) nogil
+cpdef double kolmogc(double x0) nogil
+cpdef double kolmogci(double x0) nogil
 cpdef double kolmogi(double x0) nogil
 cpdef double kolmogorov(double x0) nogil
+cpdef double kolmogp(double x0) nogil
 cpdef Dd_number_t kv(double x0, Dd_number_t x1) nogil
 cpdef Dd_number_t kve(double x0, Dd_number_t x1) nogil
 cpdef Dd_number_t log1p(Dd_number_t x0) nogil

@@ -200,6 +200,9 @@ extern double smirnov (int n, double e );
 extern double smirnovi (int n, double p );
 extern double kolmogorov ( double x );
 extern double kolmogi ( double p );
+extern double kolmogp ( double x );
+extern double kolmogc ( double x );
+extern double kolmogci ( double p );
 
 extern double lanczos_sum_expg_scaled( double x );
   

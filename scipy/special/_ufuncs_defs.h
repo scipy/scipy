@@ -128,8 +128,11 @@ npy_int kelvin_wrap(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy
 npy_double ker_wrap(npy_double);
 npy_double kerp_wrap(npy_double);
 npy_double cbesk_wrap_real_int(npy_int, npy_double);
+npy_double kolmogc(npy_double);
+npy_double kolmogci(npy_double);
 npy_double kolmogi(npy_double);
 npy_double kolmogorov(npy_double);
+npy_double kolmogp(npy_double);
 npy_double cbesk_wrap_real(npy_double, npy_double);
 npy_cdouble cbesk_wrap(npy_double, npy_cdouble);
 npy_double cbesk_wrap_e_real(npy_double, npy_double);

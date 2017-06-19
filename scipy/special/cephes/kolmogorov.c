@@ -74,23 +74,26 @@ double smirnov(int n, double e)
  * probability that sqrt(n) * max deviation > x,
  * or that max deviation > x/sqrt(n).
  * The approximation is useful for the tail of the distribution
- * when n is large.  */
+ * when n is large.
+ * If complement, return 1-p == Pr(max deviation <= x/sqrt(n))
+ */
 
  /* Two series for kolmogorov(x), a Jacobi theta function
-  *  sum (-1)^k exp(-2k^2 x^2) (over all integer k); or
-  *  sqrt(2pi)/x * sum exp((2k-1)^2pi^2/(8x^2)) (over positive integer k)
- *  The first is good for x not close to 0, the second for x close to 0
+  *  sum (-1)^k exp(-2k^2 x^2)   (sum over all integer k); or
+  *  sqrt(2pi)/x * sum exp((2k-1)^2pi^2/(8x^2))   (sum over positive integer k)
+  *  The second is good for x close to 1, the first for x nearer to 1 (and above)
  */
-#define X_MIN_USE_ORIGINAL 0.5
+#define X_MIN_USE_ORIGINAL 1.0
 #define KOLMOG_RTOL (DBL_EPSILON)
 
-double kolmogorov(double x)
+static double _kolmogorov(double x, int complement)
 {
+    /* If complement, return 1-p */
     double p, t;
 
-    if (x <= 0)
-	return 1.0;
-
+    if (x <= 0) {
+	return (complement ? 0 : 1.0);
+    }
     if (x >= X_MIN_USE_ORIGINAL) {
 	double alpha = -2.0 * x * x;
 	double sign = 1.0;
@@ -106,10 +109,15 @@ double kolmogorov(double x)
 	}
 	while ((t / p) > KOLMOG_RTOL);
 	p = 2*p;
-    }  else {
+	if (complement) {
+	    p = 1-p;
+	}
+    } else {
 	double alpha = - NPY_PI * NPY_PI / (8 * x * x);
 	double r = 1;
 	p = 0.0;
+	/* For 0 < x <= 0.0406, the first term in the series is <= ~np.exp(-748) which is 0
+	For ~0.0406 <= x <= ~0.0418, the intermediate computation involves denormalized doubles.     */
 	do {
 	    t = exp(alpha * r * r);
 	    p += t;
@@ -118,13 +126,24 @@ double kolmogorov(double x)
 	    r +=  2;
 	} while ((t / p) >= KOLMOG_RTOL);
 	p *= sqrt(2 * NPY_PI) / x;
-	p = 1 - p;
+	if (!complement) {
+	    p = 1-p;
+	}
     }
     return p;
 }
 
+double kolmogorov(double x)
+{
+    return _kolmogorov(x, 0);
+}
 
-double kolmogorovp(double x)
+double kolmogc(double x)
+{
+    return _kolmogorov(x, 1);
+}
+
+double kolmogp(double x)
 {
     double pp, t;
 
@@ -207,12 +226,11 @@ double smirnovi(int n, double p)
     return (e);
 }
 
-
 /* Functional inverse of Kolmogorov statistic for two-sided test.
- * Finds x such that kolmogorov(x) = p.
+ * Finds x such that kolmogorov(x) = p (or 1-p if complement is True).
  * If x = smirnovi (n, p), then kolmogi(2 * p) / sqrt(n) should
  * be close to x.  */
-double kolmogi(double p)
+static double _kolmogi(double p, int complement)
 {
     double x, t;
     int iterations;
@@ -221,37 +239,47 @@ double kolmogi(double p)
 	mtherr("kolmogi", DOMAIN);
 	return (NPY_NAN);
     }
-    if ((1.0 - p) < 1e-16)
-	return 0.0;
+    if (p == 0) {
+	return (complement ? 0.0 : (NPY_NAN));
+    }
+    if (fabs(1.0 - p) < 1e-16) {
+	return (complement ? (NPY_NAN) : 0);
+    }
 
     /* For x between 0.5 and 1, kolmogorov(x) is close to the straight line
      connecting (0.5, 1) to (1.0, 0.25). I.e. p ~ (-6x+7)/4.
      Otherwise use the approximation p ~ 2 exp(-2x^2) */
-    if (p > 0.25) {
-	x = (7-4*p)/6.0;
+    if (!complement) {
+	x = ((p > 0.25) ? (7-4*p)/6.0 : sqrt(-0.5 * log(0.5 * p)));
     } else {
-	x = sqrt(-0.5 * log(0.5 * p));
+	x = ((p < 0.75) ? (3+4*p)/6.0 : sqrt(-0.5 * (log(0.5) + log1p(-p))));
     }
-
     iterations = 0;
     do {
 	double x0 = x;
-	double val = kolmogorov(x0);
+	double val = _kolmogorov(x0, complement);
 	double df = val - p;
 	double dpdy;
 	if (fabs(df) == 0) {
 	    break;
 	}
-	dpdy = kolmogorovp(x0);
+	dpdy = kolmogp(x0);
 	if (fabs(dpdy) <= 0.0) {
 	    mtherr("kolmogi", UNDERFLOW);
 	    return 0.0;
 	}
+	if (complement) {
+	    dpdy = -dpdy;
+	}
 	t = df/dpdy;
 	x = x0 - t;
+	if (x < 0) {
+	    t = x0/2;
+	    x = x0 - t;
+	}
 
 	if (fabs(t/x) < KOLMOG_RTOL) {
-	break;
+	    break;
 	}
 
 	if (++iterations > MAXITER) {
@@ -263,8 +291,21 @@ double kolmogi(double p)
     return (x);
 }
 
+/* Functional inverse of Kolmogorov statistic for two-sided test.
+ * Finds x such that kolmogorov(x) = p.
+ */
+double kolmogi(double p)
+{
+     return _kolmogi(p, 0);
+}
 
-
+/* Functional inverse of Kolmogorov statistic for two-sided test.
+ * Finds x such that kolmogc(x) = p (or kolmogorov(x) = 1-p).
+ */
+double kolmogci(double p)
+{
+     return _kolmogi(p, 1);
+}
 
 
 /* Type in a number.  */
