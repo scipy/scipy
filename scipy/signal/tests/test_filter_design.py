@@ -175,7 +175,6 @@ class TestTf2zpk(TestCase):
         assert_array_almost_equal(z, z_r)
         assert_array_almost_equal(p, p_r)
 
-    @dec.skipif(True, "Problem with warning filters, to be fixed by gh-5796")
     def test_bad_filter(self):
         # Regression test for #651: better handling of badly conditioned
         # filter coefficients.

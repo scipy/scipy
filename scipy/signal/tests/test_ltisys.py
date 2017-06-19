@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, assert_raises, TestCase, run_module_suite)
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
@@ -386,8 +387,8 @@ class TestSS2TF:
 
 class TestLsim(object):
     def lti_nowarn(self, *args):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", BadCoefficients)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients)
             system = lti(*args)
         return system
 
@@ -523,8 +524,8 @@ class Test_lsim2(object):
         D = np.zeros((1, 2))
 
         t = np.linspace(0, 10.0, 101)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", BadCoefficients)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients)
             tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
@@ -1052,8 +1053,8 @@ class Test_bode(object):
         B = np.array([[0.0], [0.0], [1.0]])
         C = np.array([[1.0, 0.0, 0.0]])
         D = np.array([[0.0]])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", BadCoefficients)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients)
             system = lti(A, B, C, D)
             w, mag, phase = bode(system, n=100)
 
@@ -1117,8 +1118,8 @@ class Test_freqresp(object):
         B = np.array([[0.0],[0.0],[1.0]])
         C = np.array([[1.0, 0.0, 0.0]])
         D = np.array([[0.0]])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", BadCoefficients)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients)
             system = lti(A, B, C, D)
             w, H = freqresp(system, n=100)
         s = w * 1j
