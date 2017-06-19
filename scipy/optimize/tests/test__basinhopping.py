@@ -390,6 +390,13 @@ class Test_Metropolis(TestCase):
         assert_(one_accept)
         assert_(one_reject)
 
+    def test_GH7495(self):
+        # an overflow in exp was producing a RuntimeWarning
+        # create own object here in case someone changes self.T
+        met = Metropolis(2)
+        with np.errstate(over='raise'):
+            met.accept_reject(0, 2000)
+
 
 class Test_AdaptiveStepsize(TestCase):
     def setUp(self):
