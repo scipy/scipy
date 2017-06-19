@@ -1,12 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import dec, assert_, assert_array_equal
+from scipy._lib._numpy_compat import suppress_warnings
 
 try:
     import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection
+    from matplotlib import MatplotlibDeprecationWarning
     has_matplotlib = True
 except:
     has_matplotlib = False
@@ -25,7 +27,10 @@ class TestPlotting:
         fig = plt.figure()
         obj = Delaunay(self.points)
         s_before = obj.simplices.copy()
-        r = delaunay_plot_2d(obj, ax=fig.gca())
+        with suppress_warnings as sup:
+            # filter can be removed when matplotlib 1.x is dropped
+            sup.filter(message="The ishold function was deprecated in version")
+            r = delaunay_plot_2d(obj, ax=fig.gca())
         assert_array_equal(obj.simplices, s_before)  # shouldn't modify
         assert_(r is fig)
         delaunay_plot_2d(obj, ax=fig.gca())
@@ -35,7 +40,10 @@ class TestPlotting:
         # Smoke test
         fig = plt.figure()
         obj = Voronoi(self.points)
-        r = voronoi_plot_2d(obj, ax=fig.gca())
+        with suppress_warnings as sup:
+            # filter can be removed when matplotlib 1.x is dropped
+            sup.filter(message="The ishold function was deprecated in version")
+            r = voronoi_plot_2d(obj, ax=fig.gca())
         assert_(r is fig)
         voronoi_plot_2d(obj)
         voronoi_plot_2d(obj, show_vertices=False)
@@ -45,6 +53,9 @@ class TestPlotting:
         # Smoke test
         fig = plt.figure()
         tri = ConvexHull(self.points)
-        r = convex_hull_plot_2d(tri, ax=fig.gca())
+        with suppress_warnings as sup:
+            # filter can be removed when matplotlib 1.x is dropped
+            sup.filter(message="The ishold function was deprecated in version")
+            r = convex_hull_plot_2d(tri, ax=fig.gca())
         assert_(r is fig)
         convex_hull_plot_2d(tri)

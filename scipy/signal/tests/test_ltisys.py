@@ -213,6 +213,7 @@ class TestPlacePoles(TestCase):
         # Should not raise ValueError as the poles can be placed but should
         # raise a warning as the convergence is not reached
         with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             fsf = place_poles(A, B, (-1,-2,-3,-4), rtol=1e-16, maxiter=42)
             assert_(len(w) == 1)
             assert_(issubclass(w[-1].category, UserWarning))
