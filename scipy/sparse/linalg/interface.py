@@ -473,7 +473,7 @@ class _CustomLinearOperator(LinearOperator):
     def _rmatvec(self, x):
         func = self.__rmatvec_impl
         if func is None:
-            raise NotImplemented("rmatvec is not defined")
+            raise NotImplementedError("rmatvec is not defined")
         return self.__rmatvec_impl(x)
 
     def _adjoint(self):

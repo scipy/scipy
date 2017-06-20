@@ -3494,7 +3494,7 @@ def ellipap(N, rp, rs):
                       disp=0)
     if m < 0 or m > 1:
         m = optimize.fminbound(_kratio, 0, 1, args=(krat,), maxfun=250,
-                               maxiter=250, disp=0)
+                               disp=0)
 
     capk = special.ellipk(m)
 
