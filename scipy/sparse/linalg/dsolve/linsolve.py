@@ -406,7 +406,6 @@ def factorized(A):
             A = csc_matrix(A)
             warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
-        A.sort_indices()
         A = A.asfptype()  # upcast to a floating point format
 
         if A.dtype.char not in 'dD':

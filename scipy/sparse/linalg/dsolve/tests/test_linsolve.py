@@ -7,7 +7,10 @@ from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
 from numpy.testing import (run_module_suite, dec,
         assert_array_almost_equal, assert_raises, assert_almost_equal,
-        assert_equal, assert_array_equal, assert_, assert_allclose)
+        assert_equal, assert_array_equal, assert_, assert_allclose,
+        assert_warns)
+
+from scipy._lib._numpy_compat import assert_raises_regex
 
 import scipy.linalg
 from scipy.linalg import norm, inv
@@ -36,6 +39,121 @@ def toarray(a):
         return a.toarray()
     else:
         return a
+
+
+class TestFactorized(object):
+    def setUp(self):
+        n = 5
+        d = arange(n) + 1
+        self.n = n
+        self.A = spdiags((d, 2*d, d[::-1]), (-3, 0, 5), n, n).tocsc()
+        random.seed(1234)
+
+    def _check_singular(self):
+        A = csc_matrix((5,5), dtype='d')
+        b = ones(5)
+        assert_array_almost_equal(0. * b, factorized(A)(b))
+
+    def _check_non_singular(self):
+        # Make a diagonal dominant, to make sure it is not singular
+        n = 5
+        a = csc_matrix(random.rand(n, n))
+        b = ones(n)
+
+        expected = splu(a).solve(b)
+        assert_array_almost_equal(factorized(a)(b), expected)
+
+    def test_singular_without_umfpack(self):
+        use_solver(useUmfpack=False)
+        assert_raises_regex(RuntimeError, "Factor is exactly singular", self._check_singular)
+
+    @dec.skipif(not has_umfpack)
+    def test_singular_with_umfpack(self):
+        use_solver(useUmfpack=True)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "divide by zero encountered in double_scalars")
+            assert_warns(umfpack.UmfpackWarning, self._check_singular)
+
+    def test_non_singular_without_umfpack(self):
+        use_solver(useUmfpack=False)
+        self._check_non_singular()
+
+    @dec.skipif(not has_umfpack)
+    def test_non_singular_with_umfpack(self):
+        use_solver(useUmfpack=True)
+        self._check_non_singular()
+
+    def test_cannot_factorize_nonsquare_matrix_without_umfpack(self):
+        use_solver(useUmfpack=False)
+        assert_raises_regex(ValueError, "can only factor square matrices",
+                            factorized, self.A[:,:4])
+
+    @dec.skipif(not has_umfpack)
+    def test_factorizes_nonsquare_matrix_with_umfpack(self):
+        use_solver(useUmfpack=True)
+        # does not raise
+        factorized(self.A[:,:4])
+
+    def test_call_with_incorrectly_sized_matrix_without_umfpack(self):
+        use_solver(useUmfpack=False)
+        solve = factorized(self.A)
+        b = random.rand(4)
+        B = random.rand(4, 3)
+        BB = random.rand(self.n, 3, 9)
+
+        assert_raises_regex(ValueError, "is of incompatible size", solve, b)
+        assert_raises_regex(ValueError, "is of incompatible size", solve, B)
+        assert_raises_regex(ValueError, "object too deep for desired array", solve, BB)
+
+    @dec.skipif(not has_umfpack)
+    def test_call_with_incorrectly_sized_matrix_with_umfpack(self):
+        use_solver(useUmfpack=True)
+        solve = factorized(self.A)
+        b = random.rand(4)
+        B = random.rand(4, 3)
+        BB = random.rand(self.n, 3, 9)
+
+        # does not raise
+        solve(b)
+        assert_raises_regex(ValueError, "object too deep for desired array", solve, B)
+        assert_raises_regex(ValueError, "object too deep for desired array", solve, BB)
+
+    def test_call_with_cast_to_complex_without_umfpack(self):
+        use_solver(useUmfpack=False)
+        solve = factorized(self.A)
+        b = random.rand(4)
+        for t in [np.complex64, np.complex128]:
+            assert_raises_regex(TypeError, "Cannot cast array data", solve,
+                                b.astype(t))
+
+    @dec.skipif(not has_umfpack)
+    def test_call_with_cast_to_complex_with_umfpack(self):
+        use_solver(useUmfpack=True)
+        solve = factorized(self.A)
+        b = random.rand(4)
+        for t in [np.complex64, np.complex128]:
+            assert_warns(np.ComplexWarning, solve, b.astype(t))
+
+    @dec.skipif(not has_umfpack)
+    def test_assume_sorted_indices_flag(self):
+        # a sparse matrix with unsorted indices
+        unsorted_inds = np.array([2, 0, 1, 0])
+        data = np.array([10, 16, 5, 0.4])
+        indptr = np.array([0, 1, 2, 4])
+        A = csc_matrix((data, unsorted_inds, indptr), (3, 3))
+        b = ones(3)
+
+        # should raise when incorrectly assuming indices are sorted
+        use_solver(useUmfpack=True, assumeSortedIndices=True)
+        assert_raises_regex(RuntimeError, "UMFPACK_ERROR_invalid_matrix", factorized, A)
+
+        # should sort indices and succeed when not assuming indices are sorted
+        use_solver(useUmfpack=True, assumeSortedIndices=False)
+        expected = splu(A.copy()).solve(b)
+
+        assert_equal(A.has_sorted_indices, 0)
+        assert_array_almost_equal(factorized(A)(b), expected)
+        assert_equal(A.has_sorted_indices, 1)
 
 
 class TestLinsolve(object):
