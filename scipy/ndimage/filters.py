@@ -1066,11 +1066,10 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 raise RuntimeError("no footprint provided")
             separable = True
         else:
-            footprint = numpy.asarray(footprint)
-            footprint = footprint.astype(bool)
+            footprint = numpy.asarray(footprint, dtype=bool)
             if not footprint.any():
                 raise ValueError("All-zero footprint is not supported.")
-            if numpy.alltrue(numpy.ravel(footprint), axis=0):
+            if footprint.all():
                 size = footprint.shape
                 footprint = None
                 separable = True
@@ -1082,8 +1081,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         if footprint is None:
             footprint = numpy.ones(structure.shape, bool)
         else:
-            footprint = numpy.asarray(footprint)
-            footprint = footprint.astype(bool)
+            footprint = numpy.asarray(footprint, dtype=bool)
     input = numpy.asarray(input)
     if numpy.iscomplexobj(input):
         raise TypeError('Complex type not supported')
@@ -1519,8 +1517,7 @@ def generic_filter(input, function, size=None, footprint=None,
         sizes = _ni_support._normalize_sequence(size, input.ndim)
         footprint = numpy.ones(sizes, dtype=bool)
     else:
-        footprint = numpy.asarray(footprint)
-        footprint = footprint.astype(bool)
+        footprint = numpy.asarray(footprint, dtype=bool)
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
         raise RuntimeError('filter footprint array has incorrect shape.')
