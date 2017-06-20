@@ -5,7 +5,7 @@ import threading
 import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
-from numpy.testing import (run_module_suite,
+from numpy.testing import (run_module_suite, dec,
         assert_array_almost_equal, assert_raises, assert_almost_equal,
         assert_equal, assert_array_equal, assert_, assert_allclose)
 
@@ -15,7 +15,7 @@ from scipy.sparse import (spdiags, SparseEfficiencyWarning, csc_matrix,
         csr_matrix, identity, isspmatrix, dok_matrix, lil_matrix, bsr_matrix)
 from scipy.sparse.linalg import SuperLU
 from scipy.sparse.linalg.dsolve import (spsolve, use_solver, splu, spilu,
-        MatrixRankWarning, _superlu, spsolve_triangular)
+        MatrixRankWarning, _superlu, spsolve_triangular, factorized)
 
 from scipy._lib._numpy_compat import suppress_warnings
 
@@ -23,9 +23,13 @@ from scipy._lib._numpy_compat import suppress_warnings
 sup_sparse_efficiency = suppress_warnings()
 sup_sparse_efficiency.filter(SparseEfficiencyWarning)
 
-# TODO add more comprehensive tests
-use_solver(useUmfpack=False)
-
+# scikits.umfpack is not a SciPy dependency but it is optionally used in
+# dsolve, so check whether it's available
+try:
+    import scikits.umfpack as umfpack
+    has_umfpack = True
+except ImportError:
+    has_umfpack = False
 
 def toarray(a):
     if isspmatrix(a):
@@ -35,12 +39,15 @@ def toarray(a):
 
 
 class TestLinsolve(object):
+    def setUp(self):
+        use_solver(useUmfpack=False)
+
     def test_singular(self):
         A = csc_matrix((5,5), dtype='d')
         b = array([1, 2, 3, 4, 5],dtype='d')
         with suppress_warnings() as sup:
             sup.filter(MatrixRankWarning, "Matrix is exactly singular")
-            x = spsolve(A, b, use_umfpack=False)
+            x = spsolve(A, b)
         assert_(not np.isfinite(x).any())
 
     def test_singular_gh_3312(self):
@@ -54,7 +61,7 @@ class TestLinsolve(object):
         try:
             # should either raise a runtimeerror or return value
             # appropriate for singular input
-            x = spsolve(A, b, use_umfpack=False)
+            x = spsolve(A, b)
             assert_(not np.isfinite(x).any())
         except RuntimeError:
             pass
@@ -132,7 +139,9 @@ class TestLinsolve(object):
         assert_array_almost_equal(X, sX.todense())
 
     @sup_sparse_efficiency
+    @dec.skipif(not has_umfpack)
     def test_shape_compatibility(self):
+        use_solver(useUmfpack=True)
         A = csc_matrix([[1., 0], [0, 2]])
         bs = [
             [1, 6],
@@ -266,6 +275,7 @@ class TestLinsolve(object):
 
 class TestSplu(object):
     def setUp(self):
+        use_solver(useUmfpack=False)
         n = 40
         d = arange(n) + 1
         self.n = n
@@ -520,6 +530,8 @@ class TestSplu(object):
 
 
 class TestSpsolveTriangular(object):
+    def setUp(self):
+        use_solver(useUmfpack=False)
 
     def test_singular(self):
         n = 5
