@@ -1951,7 +1951,7 @@ def _zpkbilinear(z, p, k, fs):
 
     degree = _relative_degree(z, p)
 
-    fs2 = 2*fs
+    fs2 = 2.0*fs
 
     # Bilinear transform the poles and zeros
     z_z = (fs2 + z) / (fs2 - z)
