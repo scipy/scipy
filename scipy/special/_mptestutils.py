@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import os
 import sys
 import time
 
@@ -129,13 +130,25 @@ def get_args(argspec, n):
         args = np.array(np.broadcast_arrays(*np.ix_(*args))).reshape(nargs, -1).T
 
     return args
-    
+
 
 class MpmathData(object):
     def __init__(self, scipy_func, mpmath_func, arg_spec, name=None,
-                 dps=None, prec=None, n=5000, rtol=1e-7, atol=1e-300,
+                 dps=None, prec=None, n=None, rtol=1e-7, atol=1e-300,
                  ignore_inf_sign=False, distinguish_nan_and_inf=True,
                  nan_ok=True, param_filter=None):
+
+        # mpmath tests are really slow (see gh-6989).  Use a small number of
+        # points by default, increase back to 5000 (old default) if XSLOW is
+        # set
+        if n is None:
+            try:
+                is_xslow = int(os.environ.get('SCIPY_XSLOW', '0'))
+            except ValueError:
+                is_xslow = False
+
+            n = 5000 if is_xslow else 500
+
         self.scipy_func = scipy_func
         self.mpmath_func = mpmath_func
         self.arg_spec = arg_spec

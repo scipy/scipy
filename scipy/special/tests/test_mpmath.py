@@ -1336,9 +1336,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
     def test_hyp0f1(self):
         # mpmath reports no convergence unless maxterms is large enough
         KW = dict(maxprec=400, maxterms=1500)
+        # n=500 (non-xslow default) fails for one bad point
         assert_mpmath_equal(sc.hyp0f1,
                             lambda a, x: mpmath.hyp0f1(a, x, **KW),
-                            [Arg(-1e7, 1e7), Arg(0, 1e5)])
+                            [Arg(-1e7, 1e7), Arg(0, 1e5)],
+                            n=5000)
         # NB: The range of the second parameter ("z") is limited from below
         # because of an overflow in the intermediate calculations. The way
         # for fix it is to implement an asymptotic expansion for Bessel J
@@ -1733,9 +1735,11 @@ class TestSystematic(with_metaclass(DecoratorMeta, object)):
             else:
                 v = mpmath.rgamma(x)
             return v
+        # n=500 (non-xslow default) fails for one bad point
         assert_mpmath_equal(sc.rgamma,
                             rgamma,
                             [Arg()],
+                            n=5000,
                             ignore_inf_sign=True)
 
     def test_rgamma_complex(self):
