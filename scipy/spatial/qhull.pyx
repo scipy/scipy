@@ -1847,6 +1847,14 @@ class Delaunay(_QhullUser):
     >>> tri.find_simplex(p)
     array([ 1, -1, 1], dtype=int32)
 
+    The returned integers in the array are the indices of the simplex the 
+    corresponding point is in. If -1 is returned, the point is in no simplex.
+    
+    >>> p = np.array([(0.1, 0.2), (0.5, 1.05)])
+    >>> tri.simplices[tri.find_simplex(p)]
+    array([[3, 1, 0],
+       [3, 1, 0]], dtype=int32)
+    
     We can also compute barycentric coordinates in triangle 1 for
     these points:
 
