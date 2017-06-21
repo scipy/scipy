@@ -14,7 +14,7 @@ def configuration(parent_package='',top_path=None):
     if not lapack_opt:
         raise NotFoundError('no lapack/blas resources found')
 
-    config = Configuration('arpack',parent_package,top_path)
+    config = Configuration('arpack', parent_package, top_path)
 
     arpack_sources = [join('ARPACK','SRC', '*.f')]
     arpack_sources.extend([join('ARPACK','UTIL', '*.f')])
