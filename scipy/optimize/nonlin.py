@@ -543,7 +543,7 @@ class Jacobian(object):
         self.dtype = F.dtype
         if self.__class__.setup is Jacobian.setup:
             # Call on the first point unless overridden
-            self.update(self, x, F)
+            self.update(x, F)
 
 
 class InverseJacobian(object):

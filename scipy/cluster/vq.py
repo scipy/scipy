@@ -425,9 +425,8 @@ def _kmeans(obs, guess, thresh=1e-5):
         obs_code, distort = vq(obs, code_book)
         avg_dist.append(np.mean(distort, axis=-1))
         # recalc code_book as centroids of associated obs
-        if(diff > thresh):
-            code_book, has_members = _vq.update_cluster_means(obs, obs_code, nc)
-            code_book = code_book.compress(has_members, axis=0)
+        code_book, has_members = _vq.update_cluster_means(obs, obs_code, nc)
+        code_book = code_book.compress(has_members, axis=0)
         if len(avg_dist) > 1:
             diff = avg_dist[-2] - avg_dist[-1]
 
