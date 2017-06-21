@@ -44,19 +44,21 @@ def poly_area(vertices, radius=None, threshold=1e-21,
     if radius is not None: # spherical polygons
         if radius <= 0.0:
             raise ValueError('radius must be > 0.0')
+        if cython is None:
 
-        lambda_vals = np.arctan2(vertices[...,1], vertices[...,0]) # longitudes
-        phi_vals = np.arcsin(vertices[...,2] / radius) # latitudes
+            lambda_vals = np.arctan2(vertices[...,1], vertices[...,0]) # longitudes
+            phi_vals = np.arcsin(vertices[...,2] / radius) # latitudes
 
-        for i in range(0, num_vertices):
-            forward_index, backward_index = _vertex_index_strider(i, num_vertices)
-            delta_lambda = (lambda_vals[forward_index] -
-                            lambda_vals[backward_index])
-            area_sum += delta_lambda * np.sin(phi_vals[i])
-        
-        # the paper divides by 2 here, but my testing
-        # suggests we should not do that!
-        area = (radius ** 2) * area_sum
+            for i in range(0, num_vertices):
+                forward_index, backward_index = _vertex_index_strider(i, num_vertices)
+                delta_lambda = (lambda_vals[forward_index] -
+                                lambda_vals[backward_index])
+                area_sum += delta_lambda * np.sin(phi_vals[i])
+            # the paper divides by 2 here, but my testing
+            # suggests we should not do that!
+            area = (radius ** 2) * area_sum
+        else: # cython code for spherical polygon SA
+            area = _surface_area.spherical_polygon_area(vertices, radius)
     else: # planar polygon
         if cython is None:
             for i in range(0, num_vertices):

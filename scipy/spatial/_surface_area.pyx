@@ -25,3 +25,21 @@ def planar_polygon_area(double[:,::1] vertices):
         area += delta_x * vertices[i][1]
     area *= 0.5
     return area
+
+def spherical_polygon_area(double[:,:] vertices, double radius):
+    cdef double [:] lambda_vals = np.arctan2(vertices[...,1],
+                                             vertices[...,0])
+    cdef double [:] phi_vals = np.arcsin(np.asarray(vertices[...,2]) / radius)
+    cdef int N = vertices.shape[0]
+    cdef int i, forward_index, backward_index
+    cdef double area = 0
+    cdef double delta_lambda
+
+    for i in range(N):
+        forward_index = vertex_index_strider(i, N)
+        backward_index = i - 1
+        delta_lambda = (lambda_vals[forward_index] -
+                        lambda_vals[backward_index])
+        area += delta_lambda * np.sin(phi_vals[i])
+    area = (radius ** 2) * area
+    return area
