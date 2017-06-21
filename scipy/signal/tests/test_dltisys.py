@@ -11,7 +11,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_equal,
                            assert_almost_equal)
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
-                          dfreqresp, dbode)
+                          dfreqresp, dbode, BadCoefficients)
 
 
 class TestDLTI(TestCase):
@@ -553,6 +553,27 @@ class Test_dfreqresp(TestCase):
         # Raise an error for continuous-time systems
         system = lti([1], [1, 1])
         assert_raises(AttributeError, dfreqresp, system)
+
+    def test_from_state_space(self):
+        # H(z) = 2 / z^3 - 0.5 * z^2
+
+        system_TF = dlti([2], [1, -0.5, 0, 0])
+
+        A = np.array([[0.5, 0, 0],
+                      [1, 0, 0],
+                      [0, 1, 0]])
+        B = np.array([[1, 0, 0]]).T
+        C = np.array([[0, 0, 2]])
+        D = 0
+
+        system_SS = dlti(A, B, C, D)
+        w = 10.0**np.arange(-3,0,.5)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", BadCoefficients)
+            w1, H1 = dfreqresp(system_TF, w=w)
+            w2, H2 = dfreqresp(system_SS, w=w)
+
+        assert_almost_equal(H1, H2)
 
     def test_from_zpk(self):
         # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),

@@ -1,5 +1,19 @@
+from __future__ import division, print_function, absolute_import
+
+import sys
 import numpy as np
 import scipy.sparse
+
+from scipy._lib._version import NumpyVersion
+
+__all__ = ['save_npz', 'load_npz']
+
+
+if NumpyVersion(np.__version__) >= '1.10.0':
+    # Make loading safe vs. malicious input
+    PICKLE_KWARGS = dict(allow_pickle=False)
+else:
+    PICKLE_KWARGS = dict()
 
 
 def save_npz(file, matrix, compressed=True):
@@ -47,7 +61,9 @@ def save_npz(file, matrix, compressed=True):
             [4, 0, 0]], dtype=int64)
     """
 
-    arrays_dict = dict(format=matrix.format, shape=matrix.shape, data=matrix.data)
+    arrays_dict = dict(format=matrix.format.encode('ascii'),
+                       shape=matrix.shape,
+                       data=matrix.data)
     if matrix.format in ('csc', 'csr', 'bsr'):
         arrays_dict.update(indices=matrix.indices, indptr=matrix.indptr)
     elif matrix.format == 'dia':
@@ -88,22 +104,30 @@ def load_npz(file):
     numpy.load: Load several arrays from a ``.npz`` archive.
     """
 
-    loaded = np.load(file)
-    try:
-        matrix_format = loaded['format']
-    except KeyError:
-        raise ValueError('The file {} does not contain a sparse matrix.'.format(file))
+    with np.load(file, **PICKLE_KWARGS) as loaded:
+        try:
+            matrix_format = loaded['format']
+        except KeyError:
+            raise ValueError('The file {} does not contain a sparse matrix.'.format(file))
 
-    try:
-        cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
-    except AttributeError:
-        raise ValueError('Unknown matrix format "{}"'.format(matrix_format))
+        matrix_format = matrix_format.item()
 
-    if matrix_format in ('csc', 'csr', 'bsr'):
-        return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])
-    elif matrix_format == 'dia':
-        return cls((loaded['data'], loaded['offsets']), shape=loaded['shape'])
-    elif matrix_format == 'coo':
-        return cls((loaded['data'], (loaded['row'], loaded['col'])), shape=loaded['shape'])
-    else:
-        raise NotImplementedError('Load is not implemented for sparse matrix of format {}.'.format(matrix_format))
+        if sys.version_info[0] >= 3 and not isinstance(matrix_format, str):
+            # Play safe with Python 2 vs 3 backward compatibility;
+            # files saved with Scipy < 1.0.0 may contain unicode or bytes.
+            matrix_format = matrix_format.decode('ascii')
+
+        try:
+            cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
+        except AttributeError:
+            raise ValueError('Unknown matrix format "{}"'.format(matrix_format))
+
+        if matrix_format in ('csc', 'csr', 'bsr'):
+            return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])
+        elif matrix_format == 'dia':
+            return cls((loaded['data'], loaded['offsets']), shape=loaded['shape'])
+        elif matrix_format == 'coo':
+            return cls((loaded['data'], (loaded['row'], loaded['col'])), shape=loaded['shape'])
+        else:
+            raise NotImplementedError('Load is not implemented for '
+                                      'sparse matrix of format {}.'.format(matrix_format))

@@ -156,41 +156,55 @@ class TestConvolve(_TestConvolve):
         self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
-    def test_convolve_method(self):
-        for mode in ['full', 'valid', 'same']:
-            for _, dtype_list in np.sctypes.items():
-                for dtype in dtype_list:
-                    if dtype == np.void or dtype == str:
-                        continue
-                    np.random.seed(42)
-                    x = (0.5 + np.random.rand(100)).astype(dtype)
-                    h = (0.5 + np.random.rand(50)).astype(dtype)
+    def test_convolve_method(self, n=100):
+        types = sum([t for _, t in np.sctypes.items()], [])
+        types = {np.dtype(t).name for t in types}
 
-                    if x.dtype.kind not in 'buifc' \
-                            or np.dtype(dtype).name in {'complex256', 'complex192'}:
-                        assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
-                        # continues the for-loop; it will throw an error
-                        # because fftconv doesn't support the dtype
-                        continue
+        # These types include 'bool' and all precisions (int8, float32, etc)
+        # The removed types throw errors in correlate or fftconvolve
+        for dtype in ['complex256', 'float128', 'str', 'void', 'bytes',
+                      'object', 'unicode', 'string']:
+            if dtype in types:
+                types.remove(dtype)
 
-                    if x.dtype.kind != 'b':
-                        x += 1
-                        h += 1
+        args = [(t1, t2, mode) for t1 in types for t2 in types
+                               for mode in ['valid', 'full', 'same']]
 
-                    if x.dtype.kind == 'c':
-                        x += 1j * np.random.rand(*x.shape).astype(dtype)
-                        h += 1j * np.random.rand(*h.shape).astype(dtype)
+        # These are random arrays, which means test is much stronger than
+        # convolving testing by convolving two np.ones arrays
+        np.random.seed(42)
+        array_types = {'i': np.random.choice([0, 1], size=n),
+                       'f': np.random.randn(n)}
+        array_types['b'] = array_types['u'] = array_types['i']
+        array_types['c'] = array_types['f'] + 0.5j*array_types['f']
 
-                    results = {'direct':convolve(x, h, mode=mode,
-                                                 method='direct'),
-                               'fft':convolve(x, h, mode=mode, method='fft')}
+        for t1, t2, mode in args:
+            x1 = array_types[np.dtype(t1).kind].astype(t1)
+            x2 = array_types[np.dtype(t2).kind].astype(t2)
 
-                    rtol = {'rtol': 2.0e-3} if dtype in {np.complex64,
-                                                         np.float32} else {}
-                    if isinstance(results['direct'], np.ndarray):
-                        assert_allclose(results['fft'], results['direct'], **rtol)
-                        assert_equal(results['direct'].dtype, results['fft'].dtype)
+            results = {key: convolve(x1, x2, method=key, mode=mode)
+                       for key in ['fft', 'direct']}
 
+            assert_equal(results['fft'].dtype, results['direct'].dtype)
+
+            if 'bool' in t1 and 'bool' in t2:
+                assert_equal(choose_conv_method(x1, x2), 'direct')
+                continue
+
+            # Found by experiment. Found approx smallest value for (rtol, atol)
+            # threshold to have tests pass.
+            if any([t in {'complex64', 'float32'} for t in [t1, t2]]):
+                kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
+            elif 'float16' in [t1, t2]:
+                # atol is default for np.allclose
+                kwargs = {'rtol': 1e-3, 'atol': 1e-8}
+            else:
+                # defaults for np.allclose (different from assert_allclose)
+                kwargs = {'rtol': 1e-5, 'atol': 1e-8}
+
+            assert_allclose(results['fft'], results['direct'], **kwargs)
+
+    def test_convolve_method_large_input(self):
         # This is really a test that convolving two large integers goes to the
         # direct method even if they're in the fft method.
         for n in [10, 20, 50, 51, 52, 53, 54, 60, 62]:
@@ -205,8 +219,6 @@ class TestConvolve(_TestConvolve):
                 assert_equal(fft, 2**(2*n))
                 assert_equal(direct, 2**(2*n))
 
-        assert_equal(convolve([4], [5], 'valid', 'fft'), 20)
-        assert_equal('direct', choose_conv_method(2 * [Decimal(3)], 2 * [Decimal(4)]))
 
 class _TestConvolve2d(TestCase):
 

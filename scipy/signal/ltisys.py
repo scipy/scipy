@@ -3555,18 +3555,21 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     >>> plt.show()
 
     """
-    if isinstance(system, dlti):
-        if isinstance(system, (TransferFunction, ZerosPolesGain)):
-            sys = system
-        else:
-            sys = system._as_zpk()
-    elif isinstance(system, lti):
-        raise AttributeError('dfreqresp can only be used with discrete-time '
-                             'systems.')
-    else:
-        sys = dlti(*system[:-1], dt=system[-1])._as_zpk()
+    if not isinstance(system, dlti):
+        if isinstance(system, lti):
+            raise AttributeError('dfreqresp can only be used with '
+                                 'discrete-time systems.')
 
-    if sys.inputs != 1 or sys.outputs != 1:
+        system = dlti(*system[:-1], dt=system[-1])
+
+    if isinstance(system, StateSpace):
+        # No SS->ZPK code exists right now, just SS->TF->ZPK
+        system = system._as_tf()
+
+    if not isinstance(system, (TransferFunction, ZerosPolesGain)):
+        raise ValueError('Unknown system type')
+
+    if system.inputs != 1 or system.outputs != 1:
         raise ValueError("dfreqresp requires a SISO (single input, single "
                          "output) system.")
 
@@ -3575,14 +3578,14 @@ def dfreqresp(system, w=None, n=10000, whole=False):
     else:
         worN = n
 
-    if isinstance(sys, TransferFunction):
+    if isinstance(system, TransferFunction):
         # Convert numerator and denominator from polynomials in the variable
         # 'z' to polynomials in the variable 'z^-1', as freqz expects.
-        num, den = TransferFunction._z_to_zinv(sys.num.ravel(), sys.den)
+        num, den = TransferFunction._z_to_zinv(system.num.ravel(), system.den)
         w, h = freqz(num, den, worN=worN, whole=whole)
 
     elif isinstance(system, ZerosPolesGain):
-        w, h = freqz_zpk(sys.zeros, sys.poles, sys.gain, worN=worN,
+        w, h = freqz_zpk(system.zeros, system.poles, system.gain, worN=worN,
                          whole=whole)
 
     return w, h

@@ -675,6 +675,9 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
+    if _numeric_arrays([volume, kernel], kinds='b'):
+        return 'direct'
+
     if _numeric_arrays([volume, kernel]):
         if _fftconv_faster(volume, kernel, mode):
             return 'fft'
@@ -784,9 +787,10 @@ def convolve(in1, in2, mode='full', method='auto'):
 
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
-        if volume.dtype.kind in 'ui':
+        result_type = np.result_type(volume, kernel)
+        if result_type.kind in {'u', 'i'}:
             out = np.around(out)
-        return out.astype(volume.dtype)
+        return out.astype(result_type)
 
     # fastpath to faster numpy.convolve for 1d inputs when possible
     if _np_conv_ok(volume, kernel, mode):
