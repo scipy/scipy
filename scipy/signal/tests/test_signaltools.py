@@ -162,8 +162,8 @@ class TestConvolve(_TestConvolve):
 
         # These types include 'bool' and all precisions (int8, float32, etc)
         # The removed types throw errors in correlate or fftconvolve
-        for dtype in ['complex256', 'float128', 'str', 'void', 'bytes',
-                      'object', 'unicode', 'string']:
+        for dtype in ['complex256', 'complex192', 'float128', 'float96',
+                      'str', 'void', 'bytes', 'object', 'unicode', 'string']:
             if dtype in types:
                 types.remove(dtype)
 
