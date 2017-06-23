@@ -21,7 +21,7 @@ from scipy.signal import (
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk)
-from scipy.signal.signaltools import _filtfilt_gust, _fftconvolve_valid
+from scipy.signal.signaltools import _filtfilt_gust
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
@@ -162,8 +162,8 @@ class TestConvolve(_TestConvolve):
 
         # These types include 'bool' and all precisions (int8, float32, etc)
         # The removed types throw errors in correlate or fftconvolve
-        for dtype in ['complex256', 'float128', 'str', 'void', 'bytes',
-                      'object', 'unicode', 'string']:
+        for dtype in ['complex256', 'complex192', 'float128', 'float96',
+                      'str', 'void', 'bytes', 'object', 'unicode', 'string']:
             if dtype in types:
                 types.remove(dtype)
 
@@ -181,8 +181,6 @@ class TestConvolve(_TestConvolve):
         for t1, t2, mode in args:
             x1 = array_types[np.dtype(t1).kind].astype(t1)
             x2 = array_types[np.dtype(t2).kind].astype(t2)
-            if not _fftconvolve_valid(x1, x2):
-                continue
 
             results = {key: convolve(x1, x2, method=key, mode=mode)
                        for key in ['fft', 'direct']}
