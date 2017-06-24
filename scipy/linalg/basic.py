@@ -1084,6 +1084,13 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         nrhs = 1
     if m != b1.shape[0]:
         raise ValueError('incompatible dimensions')
+    if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
+        x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
+        if n == 0:
+            residues = np.linalg.norm(b1, axis=0)**2
+        else:
+            residues = np.empty((0,))
+        return x, residues, 0, np.empty((0,))
 
     driver = lapack_driver
     if driver is None:
