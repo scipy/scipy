@@ -362,11 +362,11 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 {
     char *po, *pi, *pc = NULL;
     npy_intp **edge_offsets = NULL, **data_offsets = NULL, filter_size;
-    npy_intp ftmp[MAXDIM], *fcoordinates = NULL, *foffsets = NULL;
+    npy_intp ftmp[NPY_MAXDIMS], *fcoordinates = NULL, *foffsets = NULL;
     npy_intp cstride = 0, kk, hh, ll, jj;
     npy_intp size;
-    double **splvals = NULL, icoor[MAXDIM];
-    npy_intp idimensions[MAXDIM], istrides[MAXDIM];
+    double **splvals = NULL, icoor[NPY_MAXDIMS];
+    npy_intp idimensions[NPY_MAXDIMS], istrides[NPY_MAXDIMS];
     NI_Iterator io, ic;
     Float64 *matrix = matrix_ar ? (Float64*)PyArray_DATA(matrix_ar) : NULL;
     Float64 *shift = shift_ar ? (Float64*)PyArray_DATA(shift_ar) : NULL;
@@ -672,9 +672,9 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 {
     char *po, *pi;
     npy_intp **zeros = NULL, **offsets = NULL, ***edge_offsets = NULL;
-    npy_intp ftmp[MAXDIM], *fcoordinates = NULL, *foffsets = NULL;
-    npy_intp jj, hh, kk, filter_size, odimensions[MAXDIM];
-    npy_intp idimensions[MAXDIM], istrides[MAXDIM];
+    npy_intp ftmp[NPY_MAXDIMS], *fcoordinates = NULL, *foffsets = NULL;
+    npy_intp jj, hh, kk, filter_size, odimensions[NPY_MAXDIMS];
+    npy_intp idimensions[NPY_MAXDIMS], istrides[NPY_MAXDIMS];
     npy_intp size;
     double ***splvals = NULL;
     NI_Iterator io;
