@@ -9,6 +9,7 @@ from numpy.testing import (TestCase, run_module_suite, assert_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_allclose, assert_, assert_raises,
                            assert_almost_equal)
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,
                           dfreqresp, dbode, BadCoefficients)
@@ -445,8 +446,9 @@ class Test_dfreqresp(TestCase):
         # integrator, pole at zero: H(s) = 1 / s
         system = TransferFunction([1], [1, -1], dt=0.1)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, message="divide by zero")
+            sup.filter(RuntimeWarning, message="invalid value encountered")
             w, H = dfreqresp(system, n=2)
         assert_equal(w[0], 0.)  # a fail would give not-a-number
 
@@ -469,8 +471,8 @@ class Test_dfreqresp(TestCase):
 
         system_SS = dlti(A, B, C, D)
         w = 10.0**np.arange(-3,0,.5)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", BadCoefficients)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients)
             w1, H1 = dfreqresp(system_TF, w=w)
             w2, H2 = dfreqresp(system_SS, w=w)
 
@@ -540,8 +542,9 @@ class Test_bode(object):
         # integrator, pole at zero: H(s) = 1 / s
         system = TransferFunction([1], [1, -1], dt=0.1)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, message="divide by zero")
+            sup.filter(RuntimeWarning, message="invalid value encountered")
             w, mag, phase = dbode(system, n=2)
         assert_equal(w[0], 0.)  # a fail would give not-a-number
 
