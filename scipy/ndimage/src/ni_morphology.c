@@ -946,7 +946,7 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
                                                                  PyArrayObject* features)
 {
     int ii;
-    npy_intp coor[NI_MAXDIM], mx = 0, jj;
+    npy_intp coor[NPY_MAXDIMS], mx = 0, jj;
     npy_intp *tmp = NULL, **f = NULL, *g = NULL;
     char *pi, *pf;
     Float64 *sampling = sampling_arr ? ((void *)PyArray_DATA(sampling_arr)) : NULL;

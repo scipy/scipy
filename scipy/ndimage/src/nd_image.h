@@ -66,10 +66,6 @@ typedef enum
          tDefault=NPY_FLOAT64
 } NumarrayType;
 
-#define NI_MAXDIM NPY_MAXDIMS
-
-#define MAXDIM NPY_MAXDIMS
-
 #define HAS_UINT64 1
 
 

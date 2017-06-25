@@ -103,10 +103,10 @@ int NI_NormalizeType(int type_num)
 /* the iterator structure: */
 typedef struct {
     int rank_m1;
-    npy_intp dimensions[MAXDIM];
-    npy_intp coordinates[MAXDIM];
-    npy_intp strides[MAXDIM];
-    npy_intp backstrides[MAXDIM];
+    npy_intp dimensions[NPY_MAXDIMS];
+    npy_intp coordinates[NPY_MAXDIMS];
+    npy_intp strides[NPY_MAXDIMS];
+    npy_intp backstrides[NPY_MAXDIMS];
 } NI_Iterator;
 
 /* initialize iterations over single array elements: */
@@ -232,8 +232,8 @@ int NI_LineBufferToArray(NI_LineBuffer*, char*);
 
 /* the filter iterator structure: */
 typedef struct {
-    npy_intp strides[MAXDIM], backstrides[MAXDIM];
-    npy_intp bound1[MAXDIM], bound2[MAXDIM];
+    npy_intp strides[NPY_MAXDIMS], backstrides[NPY_MAXDIMS];
+    npy_intp bound1[NPY_MAXDIMS], bound2[NPY_MAXDIMS];
 } NI_FilterIterator;
 
 /* Initialize a filter iterator: */
@@ -243,7 +243,7 @@ int NI_InitFilterIterator(int, npy_intp*, npy_intp, npy_intp*,
 /* Calculate the offsets to the filter points, for all border regions and
      the interior of the array: */
 int NI_InitFilterOffsets(PyArrayObject*, Bool*, npy_intp*,
-                         npy_intp*, NI_ExtendMode, npy_intp**, 
+                         npy_intp*, NI_ExtendMode, npy_intp**,
                          npy_intp*, npy_intp**);
 
 /* Move to the next point in an array, possible changing the filter

@@ -451,7 +451,7 @@ NI_InitFilterIterator(int rank, npy_intp *filter_shape,
                     npy_intp *origins, NI_FilterIterator *iterator)
 {
     int ii;
-    npy_intp fshape[MAXDIM], forigins[MAXDIM];
+    npy_intp fshape[NPY_MAXDIMS], forigins[NPY_MAXDIMS];
 
     for(ii = 0; ii < rank; ii++) {
         fshape[ii] = *filter_shape++;
@@ -490,8 +490,8 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     int rank, ii;
     npy_intp kk, ll, filter_size = 1, offsets_size = 1, max_size = 0;
     npy_intp max_stride = 0, *ashape = NULL, *astrides = NULL;
-    npy_intp footprint_size = 0, coordinates[MAXDIM], position[MAXDIM];
-    npy_intp fshape[MAXDIM], forigins[MAXDIM], *po, *pc = NULL;
+    npy_intp footprint_size = 0, coordinates[NPY_MAXDIMS], position[NPY_MAXDIMS];
+    npy_intp fshape[NPY_MAXDIMS], forigins[NPY_MAXDIMS], *po, *pc = NULL;
 
     rank = array->nd;
     ashape = array->dimensions;
