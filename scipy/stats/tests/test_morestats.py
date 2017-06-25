@@ -11,7 +11,7 @@ from numpy.random import RandomState
 from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
     assert_raises, assert_, assert_allclose, assert_equal, dec, assert_warns)
-
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy import stats
 from common_tests import check_named_results
 
@@ -266,8 +266,8 @@ class TestAndersonKSamp(TestCase):
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
         assert_warns(UserWarning, stats.anderson_ksamp, (t1, t2, t3, t4),
                      midrank=False)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
 
         assert_almost_equal(Tk, 4.449, 3)
@@ -284,8 +284,8 @@ class TestAndersonKSamp(TestCase):
         t2 = np.array([39.2, 39.3, 39.7, 41.4, 41.8, 42.9, 43.3, 45.8])
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4), midrank=True)
 
         assert_almost_equal(Tk, 4.480, 3)
@@ -316,8 +316,8 @@ class TestAndersonKSamp(TestCase):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
                                               t9, t10, t11, t12, t13, t14),
                                              midrank=False)
@@ -349,8 +349,8 @@ class TestAndersonKSamp(TestCase):
         t13 = [487, 18, 100, 7, 98, 5, 85, 91, 43, 230, 3, 130]
         t14 = [102, 209, 14, 57, 54, 32, 67, 59, 134, 152, 27, 14, 230, 66,
                61, 34]
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             Tk, tm, p = stats.anderson_ksamp((t1, t2, t3, t4, t5, t6, t7, t8,
                                               t9, t10, t11, t12, t13, t14),
                                              midrank=True)
@@ -380,8 +380,8 @@ class TestAndersonKSamp(TestCase):
         t3 = np.array([34.0, 35.0, 39.0, 40.0, 43.0, 43.0, 44.0, 45.0])
         t4 = np.array([34.0, 34.8, 34.8, 35.4, 37.2, 37.8, 41.2, 42.8])
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', message='approximate p-value')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, message='approximate p-value')
             res = stats.anderson_ksamp((t1, t2, t3, t4), midrank=False)
 
         attributes = ('statistic', 'critical_values', 'significance_level')
@@ -393,7 +393,8 @@ class TestAnsari(TestCase):
     def test_small(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with warnings.catch_warnings(record=True):  # Ties preclude use ...
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
             W, pval = stats.ansari(x, y)
         assert_almost_equal(W, 23.5, 11)
         assert_almost_equal(pval, 0.13499256881897437, 11)
@@ -405,9 +406,8 @@ class TestAnsari(TestCase):
                            100, 96, 108, 103, 104, 114, 114, 113, 108,
                            106, 99))
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                        message="Ties preclude use of exact statistic.")
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
             W, pval = stats.ansari(ramsay, parekh)
 
         assert_almost_equal(W, 185.5, 11)
@@ -425,7 +425,8 @@ class TestAnsari(TestCase):
     def test_result_attributes(self):
         x = [1, 2, 3, 3, 4]
         y = [3, 2, 6, 1, 6, 1, 4, 1]
-        with warnings.catch_warnings(record=True):  # Ties preclude use ...
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Ties preclude use of exact statistic.")
             res = stats.ansari(x, y)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
