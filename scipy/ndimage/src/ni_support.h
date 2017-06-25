@@ -52,9 +52,6 @@ typedef enum {
     NI_EXTEND_DEFAULT = NI_EXTEND_MIRROR
 } NI_ExtendMode;
 
-/* maximum size of error message buffer */
-#define NI_MAX_ERR_MSG 400
-
 
 /******************************************************************/
 /* Misc */
@@ -218,13 +215,13 @@ int NI_InitLineBuffer(PyArrayObject*, int, npy_intp, npy_intp, npy_intp,
                                             double*, NI_ExtendMode, double, NI_LineBuffer*);
 
 /* Extend a line in memory to implement boundary conditions: */
-int NI_ExtendLine(double*, npy_intp, npy_intp, npy_intp, NI_ExtendMode, double, char*);
+int NI_ExtendLine(double*, npy_intp, npy_intp, npy_intp, NI_ExtendMode, double);
 
 /* Copy a line from an array to a buffer: */
-int NI_ArrayToLineBuffer(NI_LineBuffer*, npy_intp*, int*, char*);
+int NI_ArrayToLineBuffer(NI_LineBuffer*, npy_intp*, int*);
 
 /* Copy a line from a buffer to an array: */
-int NI_LineBufferToArray(NI_LineBuffer*, char*);
+int NI_LineBufferToArray(NI_LineBuffer*);
 
 /******************************************************************/
 /* Multi-dimensional filter support functions */
@@ -243,7 +240,7 @@ int NI_InitFilterIterator(int, npy_intp*, npy_intp, npy_intp*,
 /* Calculate the offsets to the filter points, for all border regions and
      the interior of the array: */
 int NI_InitFilterOffsets(PyArrayObject*, Bool*, npy_intp*,
-                         npy_intp*, NI_ExtendMode, npy_intp**, 
+                         npy_intp*, NI_ExtendMode, npy_intp**,
                          npy_intp*, npy_intp**);
 
 /* Move to the next point in an array, possible changing the filter
