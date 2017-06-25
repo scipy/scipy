@@ -291,7 +291,7 @@ exit:
 
 int
 NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
-                                     int axis, PyArrayObject *output, NI_ExtendMode mode,
+                   int axis, PyArrayObject *output, NI_ExtendMode mode,
                    double cval, npy_intp origin)
 {
     npy_intp lines, kk, ll, length, size1, size2;
@@ -335,13 +335,13 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
             double tmp = 0.0;
             double *l1 = iline;
             double *l2 = iline + filter_size;
-            for(ll = 0; ll < filter_size; ll++)
+            for (ll = 0; ll < filter_size; ++ll) {
                 tmp += iline[ll];
-            tmp /= (double)filter_size;
-            oline[0] = tmp;
-            for(ll = 1; ll < length; ll++) {
-                tmp += (*l2++ - *l1++) / (double)filter_size;
-                oline[ll] = tmp;
+            }
+            oline[0] = tmp / filter_size;
+            for (ll = 1; ll < length; ++ll) {
+                tmp += *l2++ - *l1++;
+                oline[ll] = tmp / filter_size;
             }
         }
         /* copy lines from buffer to array: */
