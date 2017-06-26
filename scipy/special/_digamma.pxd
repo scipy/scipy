@@ -12,9 +12,9 @@
 
 import cython
 from libc.math cimport ceil, fabs, M_PI
-from _complexstuff cimport number_t, nan, zlog, zabs, zdiv
-from _trig cimport sinpi, cospi
-cimport sf_error
+from ._complexstuff cimport number_t, nan, zlog, zabs, zdiv
+from ._trig cimport sinpi, cospi
+from . cimport sf_error
 
 cdef extern from "cephes.h":
     double zeta(double x, double q) nogil

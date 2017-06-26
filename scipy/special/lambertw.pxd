@@ -24,13 +24,13 @@
 
 import cython
 
-cimport sf_error
+from . cimport sf_error
 
 cdef extern from "math.h":
     double exp(double x) nogil
     double log(double x) nogil
 
-from _complexstuff cimport *
+from ._complexstuff cimport *
 
 # Heavy lifting is here:
 

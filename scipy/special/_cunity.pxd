@@ -1,6 +1,6 @@
 cimport numpy as np
 from libc.math cimport fabs, sin, cos, exp
-from _complexstuff cimport (
+from ._complexstuff cimport (
     zisfinite, zabs, zpack, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
 

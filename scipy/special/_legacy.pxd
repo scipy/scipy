@@ -7,11 +7,11 @@ Here, we define such unsafe wrappers manually.
 
 """
 
-cimport sf_error
+from . cimport sf_error
 
-from _ellip_harm cimport ellip_harmonic
+from ._ellip_harm cimport ellip_harmonic
 
-from sph_harm cimport sph_harmonic
+from .sph_harm cimport sph_harmonic
 
 cdef extern from "cephes.h":
     double bdtrc(int k, int n, double p) nogil
