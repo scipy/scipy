@@ -203,15 +203,13 @@ def _gaussian_kernel1d(sigma, order, radius):
     Computes a 1D Gaussian convolution kernel.
     """
     if order < 0:
-        raise ValueError('order must be non-hegative')
-    p = numpy.polynomial.polynomial.Polynomial([0, 0, -0.5 / (sigma * sigma)])
+        raise ValueError('order must be non-negative')
+    p = numpy.polynomial.Polynomial([0, 0, -0.5 / (sigma * sigma)])
     x = numpy.arange(-radius, radius + 1)
     phi_x = numpy.exp(p(x), dtype=numpy.double)
-    # Normalizing by the kernel sum for backwards compatibility. Should
-    # this perhaps be phi /= sigma * sqrt(2 * pi) instead?
     phi_x /= phi_x.sum()
     if order > 0:
-        q = numpy.polynomial.polynomial.Polynomial([1])
+        q = numpy.polynomial.Polynomial([1])
         p_deriv = p.deriv()
         for _ in range(order):
             # f(x) = q(x) * phi(x) = q(x) * exp(p(x))
