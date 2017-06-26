@@ -1856,7 +1856,7 @@ class Delaunay(_QhullUser):
     >>> p_valids = np.array([(0.1, 0.2), (0.5, 1.05)])
     >>> tri.simplices[tri.find_simplex(p_valids)]
     array([[3, 1, 0],                 # may vary
-       [3, 1, 0]], dtype=int32)
+           [3, 1, 0]], dtype=int32)
     
     We can also compute barycentric coordinates in triangle 1 for
     these points:
