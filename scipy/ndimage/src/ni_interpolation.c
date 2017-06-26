@@ -206,9 +206,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
     npy_intp kk, ll, lines, len;
     double *buffer = NULL, weight, pole[2];
     NI_LineBuffer iline_buffer, oline_buffer;
-    char errmsg[NI_MAX_ERR_MSG];
     NPY_BEGIN_THREADS_DEF;
-    errmsg[0] = 0;
 
     len = input->nd > 0 ? input->dimensions[axis] : 1;
     if (len < 1)
@@ -260,8 +258,9 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
     /* iterate over all the array lines: */
     do {
         /* copy lines from array to buffer: */
-        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more, errmsg))
+        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more)) {
             goto exit;
+        }
         /* iterate over the lines in the buffer: */
         for(kk = 0; kk < lines; kk++) {
             /* get line: */
@@ -303,15 +302,13 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
             }
         }
         /* copy lines from buffer to array: */
-        if (!NI_LineBufferToArray(&oline_buffer, errmsg))
+        if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
+        }
     } while(more);
 
  exit:
     NPY_END_THREADS;
-    if (errmsg[0] != 0) {
-        PyErr_SetString(PyExc_RuntimeError, errmsg);
-    }
     free(buffer);
     return PyErr_Occurred() ? 0 : 1;
 }
