@@ -28,6 +28,9 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_ndimage_ARRAY_API
+
 #define ND_IMPORT_ARRAY
 #include "nd_image.h"
 #undef ND_IMPORT_ARRAY
@@ -1050,7 +1053,7 @@ static PyMethodDef methods[] = {
     {"distance_transform_op", (PyCFunction)Py_DistanceTransformOnePass,
      METH_VARARGS, NULL},
     {"euclidean_feature_transform",
-     (PyCFunction)Py_EuclideanFeatureTransform, 
+     (PyCFunction)Py_EuclideanFeatureTransform,
      METH_VARARGS, NULL},
     {"binary_erosion",        (PyCFunction)Py_BinaryErosion,
      METH_VARARGS, NULL},

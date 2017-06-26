@@ -29,6 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_ndimage_ARRAY_API
+
 #include "ni_support.h"
 #include "ni_morphology.h"
 #include <stdlib.h>
@@ -100,9 +102,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
     NPY_BEGIN_THREADS_DEF;
 
     ps = (Bool*)PyArray_DATA(strct);
-    ssize = 1;
-    for(kk = 0; kk < strct->nd; kk++)
-        ssize *= strct->dimensions[kk];
+    ssize = PyArray_SIZE(strct);
     for(jj = 0; jj < ssize; jj++)
         if (ps[jj]) ++struct_size;
     if (mask) {
@@ -111,9 +111,11 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
         pm = (void *)PyArray_DATA(mask);
     }
     /* calculate the filter offsets: */
-    if (!NI_InitFilterOffsets(input, ps, strct->dimensions, origins,
-                                    NI_EXTEND_CONSTANT, &offsets, &border_flag_value, NULL))
+    if (!NI_InitFilterOffsets(input, ps, PyArray_DIMS(strct), origins,
+                              NI_EXTEND_CONSTANT, &offsets, &border_flag_value,
+                              NULL)) {
         goto exit;
+    }
     /* initialize input element iterator: */
     if (!NI_InitPointIterator(input, &ii))
         goto exit;
@@ -121,18 +123,18 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
     if (!NI_InitPointIterator(output, &io))
         goto exit;
     /* initialize filter iterator: */
-    if (!NI_InitFilterIterator(input->nd, strct->dimensions, struct_size,
-                                                         input->dimensions, origins, &fi))
+    if (!NI_InitFilterIterator(PyArray_NDIM(input), PyArray_DIMS(strct),
+                               struct_size, PyArray_DIMS(input), origins,
+                               &fi)) {
         goto exit;
+    }
 
     NPY_BEGIN_THREADS;
 
     /* get data pointers an size: */
     pi = (void *)PyArray_DATA(input);
     po = (void *)PyArray_DATA(output);
-    size = 1;
-    for(kk = 0; kk < input->nd; kk++)
-        size *= input->dimensions[kk];
+    size = PyArray_SIZE(input);
     if (invert) {
         bdr_value = bdr_value ? 0 : 1;
         true = 0;
@@ -143,12 +145,13 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
         false = 0;
     }
     if (coordinate_list) {
-        block_size = LIST_SIZE / input->nd / sizeof(int);
+        block_size = LIST_SIZE / PyArray_NDIM(input) / sizeof(int);
         if (block_size < 1)
             block_size = 1;
         if (block_size > size)
             block_size = size;
-        *coordinate_list = NI_InitCoordinateList(block_size, input->nd);
+        *coordinate_list = NI_InitCoordinateList(block_size,
+                                                 PyArray_NDIM(input));
         if (NPY_UNLIKELY(!*coordinate_list)) {
             NPY_END_THREADS;
             PyErr_NoMemory();
@@ -163,7 +166,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
     for(jj = 0; jj < size; jj++) {
         int pchange = 0;
         if (mask) {
-            switch(NI_NormalizeType(mask->descr->type_num)) {
+            switch(NI_NormalizeType(PyArray_TYPE(mask))) {
             CASE_GET_MASK(msk_value, pm, Bool);
             CASE_GET_MASK(msk_value, pm, UInt8);
             CASE_GET_MASK(msk_value, pm, UInt16);
@@ -183,7 +186,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
                 return 0;
             }
         }
-        switch (NI_NormalizeType(input->descr->type_num)) {
+        switch (NI_NormalizeType(PyArray_TYPE(input))) {
         CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Bool, msk_value,
                                                 bdr_value, border_flag_value, center_is_true,
                                                 true, false, pchange);
@@ -224,7 +227,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
-        switch (NI_NormalizeType(output->descr->type_num)) {
+        switch (NI_NormalizeType(PyArray_TYPE(output))) {
         CASE_OUTPUT(po, out, Bool);
         CASE_OUTPUT(po, out, UInt8);
         CASE_OUTPUT(po, out, UInt16);
@@ -255,8 +258,9 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
                     }
                     current = block->coordinates;
                 }
-                for(kk = 0; kk < input->nd; kk++)
+                for (kk = 0; kk < PyArray_NDIM(input); kk++) {
                     *current++ = ii.coordinates[kk];
+                }
                 block->size++;
             }
         }
@@ -320,7 +324,7 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
     npy_intp struct_size = 0, *offsets = NULL, oo, jj, ssize;
     npy_intp *coordinate_offsets = NULL, size = 0;
     npy_intp *current_coordinates1 = NULL, *current_coordinates2 = NULL;
-    npy_intp kk, border_flag_value, current = 0;
+    npy_intp border_flag_value, current = 0;
     int true, false;
     NI_Iterator ii, mi;
     NI_FilterIterator fi, ci;
@@ -331,30 +335,32 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
     NPY_BEGIN_THREADS_DEF;
 
     ps = (Bool*)PyArray_DATA(strct);
-    ssize = 1;
-    for(kk = 0; kk < strct->nd; kk++)
-        ssize *= strct->dimensions[kk];
+    ssize = PyArray_SIZE(strct);
     for(jj = 0; jj < ssize; jj++)
         if (ps[jj]) ++struct_size;
 
     /* calculate the filter offsets: */
-    if (!NI_InitFilterOffsets(array, ps, strct->dimensions, origins,
-                                                        NI_EXTEND_CONSTANT, &offsets,
-                                                        &border_flag_value, &coordinate_offsets))
+    if (!NI_InitFilterOffsets(array, ps, PyArray_DIMS(strct), origins,
+                              NI_EXTEND_CONSTANT, &offsets,
+                              &border_flag_value, &coordinate_offsets)) {
         goto exit;
+    }
 
     /* initialize input element iterator: */
     if (!NI_InitPointIterator(array, &ii))
         goto exit;
 
     /* initialize filter iterator: */
-    if (!NI_InitFilterIterator(array->nd, strct->dimensions, struct_size,
-                                                         array->dimensions, origins, &fi))
+    if (!NI_InitFilterIterator(PyArray_NDIM(array), PyArray_DIMS(strct),
+                               struct_size, PyArray_DIMS(array), origins,
+                               &fi)) {
         goto exit;
-    if (!NI_InitFilterIterator(array->nd, strct->dimensions,
-                                                         struct_size * array->nd, array->dimensions,
-                                                         origins, &ci))
+    }
+    if (!NI_InitFilterIterator(PyArray_NDIM(array), PyArray_DIMS(strct),
+                               struct_size * PyArray_NDIM(array),
+                               PyArray_DIMS(array), origins, &ci)) {
         goto exit;
+    }
 
     /* get data pointers and size: */
     ibase = pi = (void *)PyArray_DATA(array);
@@ -373,9 +379,7 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
             return 0;
         pm = (void *)PyArray_DATA(mask);
 
-        size = 1;
-        for(kk = 0; kk < array->nd; kk++)
-            size *= array->dimensions[kk];
+        size = PyArray_SIZE(array);
 
         for(jj = 0; jj < size; jj++) {
             if (*(Int8*)pm) {
@@ -387,7 +391,7 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
             NI_ITERATOR_NEXT2(ii, mi,  pi, pm)
         }
         NI_ITERATOR_RESET(ii)
-                pi = (void *)PyArray_DATA(array);
+        pi = (void *)PyArray_DATA(array);
     }
 
     list1 = NI_InitCoordinateList((*iclist)->block_size, (*iclist)->rank);
@@ -424,53 +428,64 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
         NI_ITERATOR_GOTO(ii, current_coordinates1, ibase, pi);
         NI_FILTER_GOTO(fi, ii, 0, oo);
 
-        switch (NI_NormalizeType(array->descr->type_num)) {
+        switch (NI_NormalizeType(PyArray_TYPE(array))) {
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, Bool, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          Bool, mklist);
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, UInt8, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          UInt8, mklist);
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, UInt16, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          UInt16, mklist);
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, UInt32, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          UInt32, mklist);
 #if HAS_UINT64
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, UInt64, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          UInt64, mklist);
 #endif
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, Int8, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          Int8, mklist);
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, Int16, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          Int16, mklist);
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, Int32, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          Int32, mklist);
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, Int64, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          Int64, mklist);
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, Float32, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          Float32, mklist);
         CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                                            oo, array->nd, list1, list2, current_coordinates1,
-                                            current_coordinates2, block1, block2,
-                                            border_flag_value, true, false, Float64, mklist);
+                          oo, PyArray_NDIM(array), list1, list2,
+                          current_coordinates1, current_coordinates2,
+                          block1, block2, border_flag_value, true, false,
+                          Float64, mklist);
         default:
             NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
@@ -484,8 +499,9 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
                 current_coordinates1 = block1->coordinates;
                 current = 0;
             }
-        } else {
-            current_coordinates1 += array->nd;
+        }
+        else {
+            current_coordinates1 += PyArray_NDIM(array);
         }
     }
 
@@ -548,9 +564,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
             goto exit;
     }
 
-    size = 1;
-    for(kk = 0; kk < input->nd; kk++)
-        size *= input->dimensions[kk];
+    size = PyArray_SIZE(input);
     pi = (void *)PyArray_DATA(input);
 
     if (!NI_InitPointIterator(input, &ii))
@@ -566,9 +580,11 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
             temp->next = border_elements;
             border_elements = temp;
             temp->index = jj;
-            temp->coordinates = malloc(input->nd * sizeof(npy_intp));
-            for(kk = 0; kk < input->nd; kk++)
+            temp->coordinates = malloc(PyArray_NDIM(input) *
+                                       sizeof(npy_intp));
+            for (kk = 0; kk < PyArray_NDIM(input); kk++) {
                 temp->coordinates[kk] = ii.coordinates[kk];
+            }
         }
         NI_ITERATOR_NEXT(ii, pi);
     }
@@ -586,7 +602,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
                 temp = border_elements;
                 while(temp) {
                     double d = 0.0, t;
-                    for(kk = 0; kk < input->nd; kk++) {
+                    for (kk = 0; kk < PyArray_NDIM(input); kk++) {
                         t = ii.coordinates[kk] - temp->coordinates[kk];
                         if (sampling)
                             t *= sampling[kk];
@@ -627,7 +643,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
                 while(temp) {
                     unsigned int d = 0;
                     npy_intp t;
-                    for(kk = 0; kk < input->nd; kk++) {
+                    for (kk = 0; kk < PyArray_NDIM(input); kk++) {
                         t = ii.coordinates[kk] - temp->coordinates[kk];
                         if (t < 0)
                             t = -t;
@@ -686,7 +702,6 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
                                 PyArrayObject* distances,
                                 PyArrayObject *features)
 {
-    int kk;
     npy_intp jj, ii, ssize, size, filter_size, mask_value, *oo;
     npy_intp *foffsets = NULL, *foo = NULL, *offsets = NULL;
     Bool *ps, *pf = NULL, *footprint = NULL;
@@ -695,9 +710,7 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
     NI_Iterator di, fi;
     NPY_BEGIN_THREADS_DEF;
 
-    ssize = 1;
-    for(kk = 0; kk < strct->nd; kk++)
-        ssize *= strct->dimensions[kk];
+    ssize = PyArray_SIZE(strct);
 
     /* we only use the first half of the structure data, so we make a
          temporary structure for use with the filter functions: */
@@ -717,19 +730,21 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
         footprint[jj] = 0;
     /* get data and size */
     pd = (void *)PyArray_DATA(distances);
-    size = 1;
-    for(kk = 0; kk < distances->nd; kk++)
-        size *= distances->dimensions[kk];
+    size = PyArray_SIZE(distances);
     if (!NI_InitPointIterator(distances, &di))
         goto exit;
     /* calculate the filter offsets: */
-    if (!NI_InitFilterOffsets(distances, footprint, strct->dimensions, NULL,
-                                                    NI_EXTEND_CONSTANT, &offsets, &mask_value, NULL))
+    if (!NI_InitFilterOffsets(distances, footprint, PyArray_DIMS(strct), NULL,
+                              NI_EXTEND_CONSTANT, &offsets, &mask_value,
+                              NULL)) {
         goto exit;
+    }
     /* initialize filter iterator: */
-    if (!NI_InitFilterIterator(distances->nd, strct->dimensions,
-                                                    filter_size, distances->dimensions, NULL, &si))
+    if (!NI_InitFilterIterator(PyArray_NDIM(distances), PyArray_DIMS(strct),
+                               filter_size, PyArray_DIMS(distances), NULL,
+                               &si)) {
         goto exit;
+    }
 
     if (features) {
         npy_intp dummy;
@@ -738,13 +753,17 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
         if (!NI_InitPointIterator(features, &fi))
             goto exit;
         /* calculate the filter offsets: */
-        if (!NI_InitFilterOffsets(features, footprint, strct->dimensions,
-                                                NULL, NI_EXTEND_CONSTANT, &foffsets, &dummy, NULL))
+        if (!NI_InitFilterOffsets(features, footprint, PyArray_DIMS(strct),
+                                  NULL, NI_EXTEND_CONSTANT, &foffsets, &dummy,
+                                  NULL)) {
             goto exit;
+        }
         /* initialize filter iterator: */
-        if (!NI_InitFilterIterator(distances->nd, strct->dimensions,
-                                                     filter_size, distances->dimensions, NULL, &ti))
+        if (!NI_InitFilterIterator(PyArray_NDIM(distances),
+                                   PyArray_DIMS(strct), filter_size,
+                                   PyArray_DIMS(distances), NULL, &ti)) {
             goto exit;
+        }
     }
 
     NPY_BEGIN_THREADS;
@@ -954,27 +973,30 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
 
     pi = (void *)PyArray_DATA(input);
     pf = (void *)PyArray_DATA(features);
-    for(ii = 0; ii < input->nd; ii++) {
+    for (ii = 0; ii < PyArray_NDIM(input); ii++) {
         coor[ii] = 0;
-        if (input->dimensions[ii] > mx)
-            mx = input->dimensions[ii];
+        if (PyArray_DIMS(input)[ii] > mx) {
+            mx = PyArray_DIM(input, ii);
+        }
     }
 
     /* Some temporaries */
     f = malloc(mx * sizeof(npy_intp*));
     g = malloc(mx * sizeof(npy_intp));
-    tmp = malloc(mx * input->nd * sizeof(npy_intp));
+    tmp = malloc(mx * PyArray_NDIM(input) * sizeof(npy_intp));
     if (!f || !g || !tmp) {
         PyErr_NoMemory();
         goto exit;
     }
-    for(jj = 0; jj < mx; jj++)
-        f[jj] = tmp + jj * input->nd;
+    for(jj = 0; jj < mx; jj++) {
+        f[jj] = tmp + jj * PyArray_NDIM(input);
+    }
 
     /* First call of recursive feature transform */
     NPY_BEGIN_THREADS;
-    _ComputeFT(pi, pf, input->dimensions, input->strides, features->strides,
-               input->nd, input->nd - 1, coor, f, g, features, sampling);
+    _ComputeFT(pi, pf, PyArray_DIMS(input), PyArray_STRIDES(input),
+               PyArray_STRIDES(features), PyArray_NDIM(input),
+               PyArray_NDIM(input) - 1, coor, f, g, features, sampling);
     NPY_END_THREADS;
 
  exit:

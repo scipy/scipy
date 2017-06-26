@@ -29,6 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define PY_ARRAY_UNIQUE_SYMBOL _scipy_ndimage_ARRAY_API
+
 #include "ni_support.h"
 #include "ni_measure.h"
 #include <stdlib.h>
@@ -75,7 +77,6 @@ break
 int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
                                      npy_intp* regions)
 {
-    int kk;
     npy_intp size, jj;
     NI_Iterator ii;
     char *pi;
@@ -85,41 +86,40 @@ int NI_FindObjects(PyArrayObject* input, npy_intp max_label,
 
     /* get input data, size and iterator: */
     pi = (void *)PyArray_DATA(input);
-    size = 1;
-    for(kk = 0; kk < input->nd; kk++)
-        size *= input->dimensions[kk];
+    size = PyArray_SIZE(input);
     if (!NI_InitPointIterator(input, &ii))
         goto exit;
-    if (input->nd > 0) {
-        for(jj = 0; jj < 2 * input->nd * max_label; jj++)
+    if (PyArray_NDIM(input) > 0) {
+        for (jj = 0; jj < 2 * PyArray_NDIM(input) * max_label; jj++) {
             regions[jj] = -1;
+        }
     } else {
         for(jj = 0; jj < max_label; jj++)
             regions[jj] = -1;
     }
     /* iterate over all points: */
     for(jj = 0 ; jj < size; jj++) {
-        switch (NI_NormalizeType(input->descr->type_num)) {
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii,  Bool);
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii, UInt8);
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii, UInt16);
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii, UInt32);
+        switch (NI_NormalizeType(PyArray_TYPE(input))) {
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input), max_label, ii,  Bool);
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input), max_label, ii, UInt8);
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input), max_label, ii, UInt16);
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input), max_label, ii, UInt32);
 #if HAS_UINT64
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii, UInt64);
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input), max_label, ii, UInt64);
 #endif
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii, Int8);
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii, Int16);
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii, Int32);
-        CASE_FIND_OBJECT_POINT(pi, regions, input->nd, input->dimensions,
-                                                     max_label, ii, Int64);
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input), max_label, ii, Int8);
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input), max_label, ii, Int16);
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input),  max_label, ii, Int32);
+        CASE_FIND_OBJECT_POINT(pi, regions, PyArray_NDIM(input),
+                               PyArray_DIMS(input), max_label, ii, Int64);
             break;
         default:
             NPY_END_THREADS;
@@ -322,7 +322,6 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
     char *pi = NULL, *pm = NULL;
     NI_Iterator ii, mi;
     npy_intp jj, size, idx = 0, label = 1, doit = 1;
-    int qq;
     NPY_BEGIN_THREADS_DEF;
 
     /* input iterator: */
@@ -339,9 +338,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
     NPY_BEGIN_THREADS;
 
     /* input size: */
-    size = 1;
-    for(qq = 0; qq < input->nd; qq++)
-        size *= input->dimensions[qq];
+    size = PyArray_SIZE(input);
     for(jj = 0; jj < n_results; jj++) {
         if (sum)
             sum[jj] = 0.0;
@@ -360,7 +357,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
     }
     /* iterate over array: */
     for(jj = 0; jj < size; jj++) {
-        NI_GET_LABEL(pm, label, NI_NormalizeType(labels->descr->type_num));
+        NI_GET_LABEL(pm, label, NI_NormalizeType(PyArray_TYPE(labels)));
         if (min_label >= 0) {
             if (label >= min_label && label <= max_label) {
                 idx = indices[label - min_label];
@@ -373,7 +370,7 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
         }
         if (doit) {
             double val;
-            NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
+            NI_GET_VALUE(pi, val, NI_NormalizeType(PyArray_TYPE(input)));
             if (sum)
                 sum[idx] += val;
             if (total)
@@ -424,7 +421,8 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
                 pm = (void *)PyArray_DATA(labels);
             }
             for(jj = 0; jj < size; jj++) {
-                NI_GET_LABEL(pm, label, NI_NormalizeType(labels->descr->type_num));
+                NI_GET_LABEL(pm, label,
+                             NI_NormalizeType(PyArray_TYPE(labels)));
                 if (min_label >= 0) {
                     if (label >= min_label && label <= max_label) {
                         idx = indices[label - min_label];
@@ -437,7 +435,8 @@ int NI_Statistics(PyArrayObject *input, PyArrayObject *labels,
                 }
                 if (doit) {
                     double val;
-                    NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
+                    NI_GET_VALUE(pi, val,
+                                 NI_NormalizeType(PyArray_TYPE(input)));
                     val = val - sum[idx] / total[idx];
                     variance[idx] += val * val;
                 }
@@ -465,7 +464,6 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
     NI_Iterator ii, mi;
     npy_intp jj, kk, size, idx = 0, label = 1, doit = 1;
     double *sum = NULL;
-    int qq;
     NPY_BEGIN_THREADS_DEF;
 
     /* input iterator: */
@@ -479,9 +477,7 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
         pm = (void *)PyArray_DATA(labels);
     }
     /* input size: */
-    size = 1;
-    for(qq = 0; qq < input->nd; qq++)
-        size *= input->dimensions[qq];
+    size = PyArray_SIZE(input);
     sum = malloc(n_results * sizeof(double));
     if (!sum) {
         PyErr_NoMemory();
@@ -492,12 +488,13 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
 
     for(jj = 0; jj < n_results; jj++) {
         sum[jj] = 0.0;
-        for(kk = 0; kk < input->nd; kk++)
-            center_of_mass[jj * input->nd + kk] = 0.0;
+        for (kk = 0; kk < PyArray_NDIM(input); kk++) {
+            center_of_mass[jj * PyArray_NDIM(input) + kk] = 0.0;
+        }
     }
     /* iterate over array: */
     for(jj = 0; jj < size; jj++) {
-        NI_GET_LABEL(pm, label, NI_NormalizeType(labels->descr->type_num));
+        NI_GET_LABEL(pm, label, NI_NormalizeType(PyArray_TYPE(labels)));
         if (min_label >= 0) {
             if (label >= min_label && label <= max_label) {
                 idx = indices[label - min_label];
@@ -510,10 +507,12 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
         }
         if (doit) {
             double val;
-            NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
+            NI_GET_VALUE(pi, val, NI_NormalizeType(PyArray_TYPE(input)));
             sum[idx] += val;
-            for(kk = 0; kk < input->nd; kk++)
-                center_of_mass[idx * input->nd + kk] += val * ii.coordinates[kk];
+            for (kk = 0; kk < PyArray_NDIM(input); kk++) {
+                center_of_mass[idx * PyArray_NDIM(input) + kk] +=
+                                                     val * ii.coordinates[kk];
+            }
         }
         if (labels) {
             NI_ITERATOR_NEXT2(ii, mi, pi, pm);
@@ -522,8 +521,9 @@ int NI_CenterOfMass(PyArrayObject *input, PyArrayObject *labels,
         }
     }
     for(jj = 0; jj < n_results; jj++)
-        for(kk = 0; kk < input->nd; kk++)
-            center_of_mass[jj * input->nd + kk] /= sum[jj];
+        for (kk = 0; kk < PyArray_NDIM(input); kk++) {
+            center_of_mass[jj * PyArray_NDIM(input) + kk] /= sum[jj];
+        }
  exit:
     NPY_END_THREADS;
     free(sum);
@@ -541,7 +541,6 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
     npy_intp jj, kk, size, idx = 0, label = 1, doit = 1;
     Int32 **ph = NULL;
     double bsize;
-    int qq;
     NPY_BEGIN_THREADS_DEF;
 
     /* input iterator: */
@@ -569,12 +568,10 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
     }
     bsize = (max - min) / (double)nbins;
     /* input size: */
-    size = 1;
-    for(qq = 0; qq < input->nd; qq++)
-        size *= input->dimensions[qq];
+    size = PyArray_SIZE(input);
     /* iterate over array: */
     for(jj = 0; jj < size; jj++) {
-        NI_GET_LABEL(pm, label, NI_NormalizeType(labels->descr->type_num));
+        NI_GET_LABEL(pm, label, NI_NormalizeType(PyArray_TYPE(labels)));
         if (min_label >= 0) {
             if (label >= min_label && label <= max_label) {
                 idx = indices[label - min_label];
@@ -588,7 +585,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
         if (doit) {
             npy_intp bin;
             double val;
-            NI_GET_VALUE(pi, val, NI_NormalizeType(input->descr->type_num));
+            NI_GET_VALUE(pi, val, NI_NormalizeType(PyArray_TYPE(input)));
             if (val >= min && val < max) {
                 bin = (npy_intp)((val - min) / bsize);
                 ++(ph[idx][bin]);
@@ -692,16 +689,12 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
 
     i_contiguous = PyArray_ISCONTIGUOUS(input);
     o_contiguous = PyArray_ISCONTIGUOUS(output);
-    ssize = 1;
-    for(ll = 0; ll < strct->nd; ll++)
-        ssize *= strct->dimensions[ll];
-    if (input->nd > WS_MAXDIM) {
+    ssize = PyArray_SIZE(strct);
+    if (PyArray_NDIM(input) > WS_MAXDIM) {
         PyErr_SetString(PyExc_RuntimeError, "too many dimensions");
         goto exit;
     }
-    size = 1;
-    for(ll = 0; ll < input->nd; ll++)
-        size *= input->dimensions[ll];
+    size = PyArray_SIZE(input);
     /* Storage for the temporary queue data. */
     temp = malloc(size * sizeof(NI_WatershedElement));
     if (!temp) {
@@ -718,7 +711,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     maxval = 0;
     for(jj = 0; jj < size; jj++) {
         npy_intp ival = 0;
-        switch(NI_NormalizeType(input->descr->type_num)) {
+        switch(NI_NormalizeType(PyArray_TYPE(input))) {
         CASE_GET_INPUT(ival, pi, UInt8);
         CASE_GET_INPUT(ival, pi, UInt16);
         default:
@@ -752,12 +745,13 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     pm = (void *)PyArray_DATA(markers);
     pl = (void *)PyArray_DATA(output);
     /* initialize all nodes */
-    for(ll = 0; ll < input->nd; ll++)
+    for (ll = 0; ll < PyArray_NDIM(input); ll++) {
         coordinates[ll] = 0;
+    }
     for(jj = 0; jj < size; jj++) {
         /* get marker */
         int label = 0;
-        switch(NI_NormalizeType(markers->descr->type_num)) {
+        switch(NI_NormalizeType(PyArray_TYPE(markers))) {
         CASE_GET_LABEL(label, pm, UInt8);
         CASE_GET_LABEL(label, pm, UInt16);
         CASE_GET_LABEL(label, pm, UInt32);
@@ -773,7 +767,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
-        switch(NI_NormalizeType(output->descr->type_num)) {
+        switch(NI_NormalizeType(PyArray_TYPE(output))) {
         CASE_PUT_LABEL(label, pl, UInt8);
         CASE_PUT_LABEL(label, pl, UInt16);
         CASE_PUT_LABEL(label, pl, UInt32);
@@ -821,13 +815,14 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
             temp[jj].next = NULL;
             temp[jj].prev = NULL;
         }
-        for(ll = input->nd - 1; ll >= 0; ll--)
-            if (coordinates[ll] < input->dimensions[ll] - 1) {
+        for (ll = PyArray_NDIM(input) - 1; ll >= 0; ll--) {
+            if (coordinates[ll] < PyArray_DIMS(input)[ll] - 1) {
                 coordinates[ll]++;
                 break;
             } else {
                 coordinates[ll] = 0;
             }
+        }
     }
 
     pl = (void *)PyArray_DATA(output);
@@ -842,29 +837,33 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
         PyErr_NoMemory();
         goto exit;
     }
-    strides[input->nd - 1] = 1;
-    for(ll = input->nd - 2; ll >= 0; ll--)
-        strides[ll] = input->dimensions[ll + 1] * strides[ll + 1];
-    for(ll = 0; ll < input->nd; ll++)
+    strides[PyArray_NDIM(input) - 1] = 1;
+    for (ll = PyArray_NDIM(input) - 2; ll >= 0; ll--) {
+        strides[ll] = PyArray_DIM(input, ll + 1) * strides[ll + 1];
+    }
+    for (ll = 0; ll < PyArray_NDIM(input); ll++) {
         coordinates[ll] = -1;
+    }
     for(kk = 0; kk < nneigh; kk++)
         nstrides[kk] = 0;
     jj = 0;
     for(kk = 0; kk < ssize; kk++) {
         if (ps[kk]) {
             int offset = 0;
-            for(ll = 0; ll < input->nd; ll++)
+            for (ll = 0; ll < PyArray_NDIM(input); ll++) {
                 offset += coordinates[ll] * strides[ll];
+            }
             if (offset != 0)
                 nstrides[jj++] += offset;
         }
-        for(ll = input->nd - 1; ll >= 0; ll--)
+        for (ll = PyArray_NDIM(input) - 1; ll >= 0; ll--) {
             if (coordinates[ll] < 1) {
                 coordinates[ll]++;
                 break;
             } else {
                 coordinates[ll] = -1;
             }
+        }
     }
     /* Propagation phase: */
     for(jj = 0; jj <= maxval; jj++) {
@@ -885,9 +884,9 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                 p_index += nstrides[hh];
                 /* check if the neighbor is within the extent of the array: */
                 idx = p_index;
-                for (qq = 0; qq < input->nd; qq++) {
+                for (qq = 0; qq < PyArray_NDIM(input); qq++) {
                     cc = idx / strides[qq];
-                    if (cc < 0 || cc >= input->dimensions[qq]) {
+                    if (cc < 0 || cc >= PyArray_DIM(input, qq)) {
                         outside = 1;
                         break;
                     }
@@ -898,17 +897,19 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                     if (!(p->done)) {
                         /* If the neighbor was not processed yet: */
                         int max, pval, vval, wvp, pcost, label, p_idx, v_idx;
-                        switch(NI_NormalizeType(input->descr->type_num)) {
-                        CASE_WINDEX1(v_index, p_index, strides, input->strides,
-                                                 input->nd, i_contiguous, p_idx, v_idx, pi,
-                                                 vval, pval, UInt8);
-                        CASE_WINDEX1(v_index, p_index, strides, input->strides,
-                                                 input->nd, i_contiguous, p_idx, v_idx, pi,
-                                                 vval, pval, UInt16);
+                        switch(NI_NormalizeType(PyArray_TYPE(input))) {
+                        CASE_WINDEX1(v_index, p_index, strides,
+                                     PyArray_STRIDES(input),
+                                     PyArray_NDIM(input), i_contiguous,
+                                     p_idx, v_idx, pi, vval, pval, UInt8);
+                        CASE_WINDEX1(v_index, p_index, strides,
+                                     PyArray_STRIDES(input),
+                                     PyArray_NDIM(input), i_contiguous, p_idx,
+                                     v_idx, pi, vval, pval, UInt16);
                         default:
                             NPY_END_THREADS;
                             PyErr_SetString(PyExc_RuntimeError,
-                                                            "data type not supported");
+                                            "data type not supported");
                             goto exit;
                         }
                         /* Calculate cost: */
@@ -924,54 +925,86 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
                                  adapt the cost and the label of the neighbor: */
                             int idx;
                             p->cost = max;
-                            switch(NI_NormalizeType(output->descr->type_num)) {
-                            CASE_WINDEX2(v_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, UInt8);
-                            CASE_WINDEX2(v_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, UInt16);
-                            CASE_WINDEX2(v_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, UInt32);
+                            switch(NI_NormalizeType(PyArray_TYPE(output))) {
+                            CASE_WINDEX2(v_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, UInt8);
+                            CASE_WINDEX2(v_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, UInt16);
+                            CASE_WINDEX2(v_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, UInt32);
 #if HAS_UINT64
-                            CASE_WINDEX2(v_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, UInt64);
+                            CASE_WINDEX2(v_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, UInt64);
 #endif
-                            CASE_WINDEX2(v_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, Int8);
-                            CASE_WINDEX2(v_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, Int16);
-                            CASE_WINDEX2(v_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, Int32);
-                            CASE_WINDEX2(v_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, Int64);
+                            CASE_WINDEX2(v_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, Int8);
+                            CASE_WINDEX2(v_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, Int16);
+                            CASE_WINDEX2(v_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, Int32);
+                            CASE_WINDEX2(v_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, Int64);
                             default:
                                 NPY_END_THREADS;
                                 PyErr_SetString(PyExc_RuntimeError,
-                                                                "data type not supported");
+                                                "data type not supported");
                                 goto exit;
                             }
-                            switch(NI_NormalizeType(output->descr->type_num)) {
-                            CASE_WINDEX3(p_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, UInt8);
-                            CASE_WINDEX3(p_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, UInt16);
-                            CASE_WINDEX3(p_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, UInt32);
+                            switch(NI_NormalizeType(PyArray_TYPE(output))) {
+                            CASE_WINDEX3(p_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, UInt8);
+                            CASE_WINDEX3(p_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, UInt16);
+                            CASE_WINDEX3(p_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, UInt32);
 #if HAS_UINT64
-                            CASE_WINDEX3(p_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, UInt64);
+                            CASE_WINDEX3(p_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, UInt64);
 #endif
-                            CASE_WINDEX3(p_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, Int8);
-                            CASE_WINDEX3(p_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, Int16);
-                            CASE_WINDEX3(p_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, Int32);
-                            CASE_WINDEX3(p_index, strides, output->strides, input->nd,
-                                                     idx, o_contiguous, label, pl, Int64);
+                            CASE_WINDEX3(p_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, Int8);
+                            CASE_WINDEX3(p_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, Int16);
+                            CASE_WINDEX3(p_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, Int32);
+                            CASE_WINDEX3(p_index, strides,
+                                         PyArray_STRIDES(output),
+                                         PyArray_NDIM(input),
+                                         idx, o_contiguous, label, pl, Int64);
                             default:
                                 NPY_END_THREADS;
                                 PyErr_SetString(PyExc_RuntimeError,
-                                                                "data type not supported");
+                                                "data type not supported");
                                 goto exit;
                             }
                             /* If the neighbor is in a queue, remove it: */
