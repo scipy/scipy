@@ -372,6 +372,14 @@ def test_minmaximum_filter1d():
     assert_equal([9, 9, 4, 5, 6, 7, 8, 9, 9, 9], out)
 
 
+def test_uniform_filter1d_roundoff_errors():
+    # gh-6930
+    in_ = np.repeat([0, 1, 0], [9, 9, 9])
+    for filter_size in range(3, 10):
+        out = sndi.uniform_filter1d(in_, filter_size)
+        assert_equal(out.sum(), 10 - filter_size)
+
+
 def test_footprint_all_zeros():
     # regression test for gh-6876: footprint of all zeros segfaults
     arr = np.random.randint(0, 100, (100, 100))

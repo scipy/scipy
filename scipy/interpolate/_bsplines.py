@@ -854,7 +854,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
     if x.shape[0] < k+1:
-        raise("Need more x points.")
+        raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):

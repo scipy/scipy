@@ -149,7 +149,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
         if (block_size > size)
             block_size = size;
         *coordinate_list = NI_InitCoordinateList(block_size, input->nd);
-        if (NI_UNLIKELY(!*coordinate_list)) {
+        if (NPY_UNLIKELY(!*coordinate_list)) {
             NPY_END_THREADS;
             PyErr_NoMemory();
             goto exit;
@@ -248,7 +248,7 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
             if (coordinate_list) {
                 if (block == NULL ||  block->size == block_size) {
                     block = NI_CoordinateListAddBlock(*coordinate_list);
-                    if (NI_UNLIKELY(block == NULL)) {
+                    if (NPY_UNLIKELY(block == NULL)) {
                         NPY_END_THREADS;
                         PyErr_NoMemory();
                         goto exit;
@@ -296,7 +296,7 @@ case t ## _type:                                                       \
                 npy_intp *_tc = &(_coordinate_offsets[(_oo + _hh) * _irank]); \
                 if (_block2 == NULL || _block2->size == _list2->block_size) {  \
                     _block2 = NI_CoordinateListAddBlock(_list2);                 \
-                    if (NI_UNLIKELY(_block2 == NULL)) {                                    \
+                    if (NPY_UNLIKELY(_block2 == NULL)) {                                    \
                         NPY_END_THREADS;                                    \
                         PyErr_NoMemory();                                    \
                         goto exit;                                              \
@@ -559,7 +559,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
     for(jj = 0; jj < size; jj++) {
         if (*(Int8*)pi < 0) {
             temp = malloc(sizeof(NI_BorderElement));
-            if (NI_UNLIKELY(!temp)) {
+            if (NPY_UNLIKELY(!temp)) {
                 PyErr_NoMemory();
                 goto exit;
             }
@@ -946,7 +946,7 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
                                                                  PyArrayObject* features)
 {
     int ii;
-    npy_intp coor[NI_MAXDIM], mx = 0, jj;
+    npy_intp coor[NPY_MAXDIMS], mx = 0, jj;
     npy_intp *tmp = NULL, **f = NULL, *g = NULL;
     char *pi, *pf;
     Float64 *sampling = sampling_arr ? ((void *)PyArray_DATA(sampling_arr)) : NULL;

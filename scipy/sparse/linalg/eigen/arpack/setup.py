@@ -9,8 +9,6 @@ def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils import get_g77_abi_wrappers, get_sgemv_fix
 
-    config = Configuration('arpack',parent_package,top_path)
-
     lapack_opt = get_info('lapack_opt')
 
     if not lapack_opt:

@@ -52,29 +52,6 @@ typedef enum {
     NI_EXTEND_DEFAULT = NI_EXTEND_MIRROR
 } NI_ExtendMode;
 
-/* maximum size of error message buffer */
-#define NI_MAX_ERR_MSG 400
-
-
-/******************************************************************/
-/* Misc */
-/******************************************************************/
-
-/* compile time branch prediction hints */
-#ifdef __GNUC__
-  /* Test for GCC > 2.95 */
-  #if __GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95))
-    #define NI_LIKELY(x)   __builtin_expect(!!(x), 1)
-    #define NI_UNLIKELY(x) __builtin_expect(!!(x), 0)
-  #else /* __GNUC__ > 2 ... */
-    #define NI_LIKELY(x)   (x)
-    #define NI_UNLIKELY(x) (x)
-  #endif /* __GNUC__ > 2 ... */
-#else /* __GNUC__ */
-  #define NI_LIKELY(x)   (x)
-  #define NI_UNLIKELY(x) (x)
-#endif /* __GNUC__ */
-
 
 /******************************************************************/
 /* Data types */
@@ -103,10 +80,10 @@ int NI_NormalizeType(int type_num)
 /* the iterator structure: */
 typedef struct {
     int rank_m1;
-    npy_intp dimensions[MAXDIM];
-    npy_intp coordinates[MAXDIM];
-    npy_intp strides[MAXDIM];
-    npy_intp backstrides[MAXDIM];
+    npy_intp dimensions[NPY_MAXDIMS];
+    npy_intp coordinates[NPY_MAXDIMS];
+    npy_intp strides[NPY_MAXDIMS];
+    npy_intp backstrides[NPY_MAXDIMS];
 } NI_Iterator;
 
 /* initialize iterations over single array elements: */
@@ -218,13 +195,13 @@ int NI_InitLineBuffer(PyArrayObject*, int, npy_intp, npy_intp, npy_intp,
                                             double*, NI_ExtendMode, double, NI_LineBuffer*);
 
 /* Extend a line in memory to implement boundary conditions: */
-int NI_ExtendLine(double*, npy_intp, npy_intp, npy_intp, NI_ExtendMode, double, char*);
+int NI_ExtendLine(double*, npy_intp, npy_intp, npy_intp, NI_ExtendMode, double);
 
 /* Copy a line from an array to a buffer: */
-int NI_ArrayToLineBuffer(NI_LineBuffer*, npy_intp*, int*, char*);
+int NI_ArrayToLineBuffer(NI_LineBuffer*, npy_intp*, int*);
 
 /* Copy a line from a buffer to an array: */
-int NI_LineBufferToArray(NI_LineBuffer*, char*);
+int NI_LineBufferToArray(NI_LineBuffer*);
 
 /******************************************************************/
 /* Multi-dimensional filter support functions */
@@ -232,8 +209,8 @@ int NI_LineBufferToArray(NI_LineBuffer*, char*);
 
 /* the filter iterator structure: */
 typedef struct {
-    npy_intp strides[MAXDIM], backstrides[MAXDIM];
-    npy_intp bound1[MAXDIM], bound2[MAXDIM];
+    npy_intp strides[NPY_MAXDIMS], backstrides[NPY_MAXDIMS];
+    npy_intp bound1[NPY_MAXDIMS], bound2[NPY_MAXDIMS];
 } NI_FilterIterator;
 
 /* Initialize a filter iterator: */
@@ -243,7 +220,7 @@ int NI_InitFilterIterator(int, npy_intp*, npy_intp, npy_intp*,
 /* Calculate the offsets to the filter points, for all border regions and
      the interior of the array: */
 int NI_InitFilterOffsets(PyArrayObject*, Bool*, npy_intp*,
-                         npy_intp*, NI_ExtendMode, npy_intp**, 
+                         npy_intp*, NI_ExtendMode, npy_intp**,
                          npy_intp*, npy_intp**);
 
 /* Move to the next point in an array, possible changing the filter

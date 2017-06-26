@@ -45,9 +45,7 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
     double *ibuffer = NULL, *obuffer = NULL;
     Float64 *fw;
     NI_LineBuffer iline_buffer, oline_buffer;
-    char errmsg[NI_MAX_ERR_MSG];
     NPY_BEGIN_THREADS_DEF;
-    errmsg[0] = 0;
 
     /* test for symmetry or anti-symmetry: */
     filter_size = weights->dimensions[0];
@@ -93,8 +91,9 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
     /* iterate over all the array lines: */
     do {
         /* copy lines from array to buffer: */
-        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more, errmsg))
+        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more)) {
             goto exit;
+        }
         /* iterate over the lines in the buffers: */
         for(ii = 0; ii < lines; ii++) {
             /* get lines: */
@@ -125,14 +124,12 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
             }
         }
         /* copy lines from buffer to array: */
-        if (!NI_LineBufferToArray(&oline_buffer, errmsg))
+        if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
+        }
     } while(more);
 exit:
     NPY_END_THREADS;
-    if (errmsg[0] != 0) {
-        PyErr_SetString(PyExc_RuntimeError, errmsg);
-    }
     free(ibuffer);
     free(obuffer);
     return PyErr_Occurred() ? 0 : 1;
@@ -291,16 +288,14 @@ exit:
 
 int
 NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
-                                     int axis, PyArrayObject *output, NI_ExtendMode mode,
+                   int axis, PyArrayObject *output, NI_ExtendMode mode,
                    double cval, npy_intp origin)
 {
     npy_intp lines, kk, ll, length, size1, size2;
     int more;
     double *ibuffer = NULL, *obuffer = NULL;
     NI_LineBuffer iline_buffer, oline_buffer;
-    char errmsg[NI_MAX_ERR_MSG];
     NPY_BEGIN_THREADS_DEF;
-    errmsg[0] = 0;
 
     size1 = filter_size / 2;
     size2 = filter_size - size1 - 1;
@@ -324,8 +319,9 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
     /* iterate over all the array lines: */
     do {
         /* copy lines from array to buffer: */
-        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more, errmsg))
+        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more)) {
             goto exit;
+        }
         /* iterate over the lines in the buffers: */
         for(kk = 0; kk < lines; kk++) {
             /* get lines: */
@@ -335,25 +331,23 @@ NI_UniformFilter1D(PyArrayObject *input, npy_intp filter_size,
             double tmp = 0.0;
             double *l1 = iline;
             double *l2 = iline + filter_size;
-            for(ll = 0; ll < filter_size; ll++)
+            for (ll = 0; ll < filter_size; ++ll) {
                 tmp += iline[ll];
-            tmp /= (double)filter_size;
-            oline[0] = tmp;
-            for(ll = 1; ll < length; ll++) {
-                tmp += (*l2++ - *l1++) / (double)filter_size;
-                oline[ll] = tmp;
+            }
+            oline[0] = tmp / filter_size;
+            for (ll = 1; ll < length; ++ll) {
+                tmp += *l2++ - *l1++;
+                oline[ll] = tmp / filter_size;
             }
         }
         /* copy lines from buffer to array: */
-        if (!NI_LineBufferToArray(&oline_buffer, errmsg))
+        if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
+        }
     } while(more);
 
  exit:
     NPY_END_THREADS;
-    if (errmsg[0] != 0) {
-        PyErr_SetString(PyExc_RuntimeError, errmsg);
-    }
     free(ibuffer);
     free(obuffer);
     return PyErr_Occurred() ? 0 : 1;
@@ -386,9 +380,7 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
         npy_intp death;
     } *ring = NULL, *minpair, *end, *last;
 
-    char errmsg[NI_MAX_ERR_MSG];
     NPY_BEGIN_THREADS_DEF;
-    errmsg[0] = 0;
 
     size1 = filter_size / 2;
     size2 = filter_size - size1 - 1;
@@ -420,8 +412,9 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
     /* iterate over all the array lines: */
     do {
         /* copy lines from array to buffer: */
-        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more, errmsg))
+        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more)) {
             goto exit;
+        }
         /* iterate over the lines in the buffers: */
         for(kk = 0; kk < lines; kk++) {
             /* get lines: */
@@ -469,15 +462,13 @@ NI_MinOrMaxFilter1D(PyArrayObject *input, npy_intp filter_size,
             }
         }
         /* copy lines from buffer to array: */
-        if (!NI_LineBufferToArray(&oline_buffer, errmsg))
+        if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
+        }
     } while(more);
 
  exit:
     NPY_END_THREADS;
-    if (errmsg[0] != 0) {
-        PyErr_SetString(PyExc_RuntimeError, errmsg);
-    }
     free(ibuffer);
     free(obuffer);
     free(ring);
@@ -836,10 +827,8 @@ int NI_GenericFilter1D(PyArrayObject *input,
     length = input->nd > 0 ? input->dimensions[axis] : 1;
     /* iterate over all the array lines: */
     do {
-        char errmsg[NI_MAX_ERR_MSG];
         /* copy lines from array to buffer: */
-        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more, errmsg)) {
-            PyErr_SetString(PyExc_RuntimeError, errmsg);
+        if (!NI_ArrayToLineBuffer(&iline_buffer, &lines, &more)) {
             goto exit;
         }
         /* iterate over the lines in the buffers: */
@@ -848,15 +837,15 @@ int NI_GenericFilter1D(PyArrayObject *input,
             double *iline = NI_GET_LINE(iline_buffer, ii);
             double *oline = NI_GET_LINE(oline_buffer, ii);
             if (!function(iline, length + size1 + size2, oline, length, data)) {
-                if (!PyErr_Occurred())
+                if (!PyErr_Occurred()) {
                     PyErr_SetString(PyExc_RuntimeError,
-                                                    "unknown error in line processing function");
+                                "unknown error in line processing function");
+                }
                 goto exit;
             }
         }
         /* copy lines from buffer to array: */
-        if (!NI_LineBufferToArray(&oline_buffer, errmsg)) {
-            PyErr_SetString(PyExc_RuntimeError, errmsg);
+        if (!NI_LineBufferToArray(&oline_buffer)) {
             goto exit;
         }
     } while(more);

@@ -11,6 +11,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            dec)
 from numpy import array, spacing, sin, pi, sort
 
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
@@ -174,15 +175,12 @@ class TestTf2zpk(TestCase):
         assert_array_almost_equal(z, z_r)
         assert_array_almost_equal(p, p_r)
 
-    @dec.skipif(True, "Problem with warning filters, to be fixed by gh-5796")
     def test_bad_filter(self):
         # Regression test for #651: better handling of badly conditioned
         # filter coefficients.
-        warnings.simplefilter("error", BadCoefficients)
-        try:
+        with suppress_warnings():
+            warnings.simplefilter("error", BadCoefficients)
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
-        finally:
-            warnings.simplefilter("always", BadCoefficients)
 
 
 class TestZpk2Tf(TestCase):
@@ -2897,11 +2895,9 @@ class TestGroupDelay(TestCase):
         b = np.convolve([1, -z1], [1, -z2])
         a = np.convolve([1, -p1], [1, -p2])
         w = np.array([0.1 * pi, 0.25 * pi, -0.5 * pi, -0.8 * pi])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            assert_warns(UserWarning, group_delay, (b, a), w=w)
-            w, gd = group_delay((b, a), w=w)
-            assert_allclose(gd, 0)
+
+        w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
+        assert_allclose(gd, 0)
 
 
 if __name__ == "__main__":

@@ -1120,8 +1120,8 @@ class FusedFunc(Func):
             for n, fused_type in enumerate(fused_types):
                 code = codes[n]
                 fused_codes.append(underscore(CY_TYPES[code]))
-                for n, outvar in enumerate(self.outvars):
-                    if self.outtypes[n] == fused_type:
+                for nn, outvar in enumerate(self.outvars):
+                    if self.outtypes[nn] == fused_type:
                         line = "{}[0] = {}".format(outvar, NAN_VALUE[code])
                         decs.append(line)
             if m == 0:

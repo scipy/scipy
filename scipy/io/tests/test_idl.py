@@ -432,6 +432,7 @@ def test_invalid_pointer():
     # Since it's difficult to artificially produce such files, the file used
     # here has been edited to force the pointer reference to be invalid.
     with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
         s = readsav(path.join(DATA_PATH, 'invalid_pointer.sav'), verbose=False)
     assert_(len(w) == 1)
     assert_(str(w[0].message) == ("Variable referenced by pointer not found in "

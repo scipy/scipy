@@ -854,9 +854,9 @@ def pascal(n, kind='symmetric', exact=True):
     else:
         L_n = comb(*np.ogrid[:n, :n])
 
-    if kind is 'lower':
+    if kind == 'lower':
         p = L_n
-    elif kind is 'upper':
+    elif kind == 'upper':
         p = L_n.T
     else:
         p = np.dot(L_n, L_n.T)

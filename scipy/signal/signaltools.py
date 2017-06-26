@@ -502,28 +502,6 @@ def _np_conv_ok(volume, kernel, mode):
     return np_conv_ok and (volume.size >= kernel.size or mode != 'same')
 
 
-def _fftconvolve_valid(volume, kernel):
-    # fftconvolve doesn't support complex256
-    for not_fft_conv_supp in ["complex256", "complex192"]:
-        if hasattr(np, not_fft_conv_supp):
-            if volume.dtype == not_fft_conv_supp or kernel.dtype == not_fft_conv_supp:
-                return False
-
-    # for integer input,
-    # catch when more precision required than float provides (representing a
-    # integer as float can lose precision in fftconvolve if larger than 2**52)
-    if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
-        max_value = int(np.abs(volume).max()) * int(np.abs(kernel).max())
-        max_value *= int(min(volume.size, kernel.size))
-        if max_value > 2**np.finfo('float').nmant - 1:
-            return False
-
-    if _numeric_arrays([volume, kernel]):
-        return False
-
-    return True
-
-
 def _timeit_fast(stmt="pass", setup="pass", repeat=3):
     """
     Returns the time the statement/function took, in seconds.

@@ -11,6 +11,7 @@ from numpy.testing import (
     TestCase, run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_raises, assert_allclose, assert_, dec)
+from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, arange
 import numpy as np
 
@@ -20,8 +21,9 @@ from scipy.signal import (
     correlate, convolve, convolve2d, fftconvolve, hann, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
-    sosfilt_zi, tf2zpk)
-from scipy.signal.signaltools import _filtfilt_gust, _fftconvolve_valid
+    sosfilt_zi, tf2zpk, BadCoefficients)
+from scipy.signal.signaltools import _filtfilt_gust
+
 
 if sys.version_info.major >= 3 and sys.version_info.minor >= 5:
     from math import gcd
@@ -162,8 +164,8 @@ class TestConvolve(_TestConvolve):
 
         # These types include 'bool' and all precisions (int8, float32, etc)
         # The removed types throw errors in correlate or fftconvolve
-        for dtype in ['complex256', 'float128', 'str', 'void', 'bytes',
-                      'object', 'unicode', 'string']:
+        for dtype in ['complex256', 'complex192', 'float128', 'float96',
+                      'str', 'void', 'bytes', 'object', 'unicode', 'string']:
             if dtype in types:
                 types.remove(dtype)
 
@@ -181,8 +183,6 @@ class TestConvolve(_TestConvolve):
         for t1, t2, mode in args:
             x1 = array_types[np.dtype(t1).kind].astype(t1)
             x2 = array_types[np.dtype(t2).kind].astype(t2)
-            if not _fftconvolve_valid(x1, x2):
-                continue
 
             results = {key: convolve(x1, x2, method=key, mode=mode)
                        for key in ['fft', 'direct']}
@@ -1674,10 +1674,14 @@ class TestDecimate(TestCase):
         assert_equal(d1.shape, (30, 15))
 
     def test_phaseshift_FIR(self):
-        self._test_phaseshift(method='fir', zero_phase=False)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients, "Badly conditioned filter")
+            self._test_phaseshift(method='fir', zero_phase=False)
 
     def test_zero_phase_FIR(self):
-        self._test_phaseshift(method='fir', zero_phase=True)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients, "Badly conditioned filter")
+            self._test_phaseshift(method='fir', zero_phase=True)
 
     def test_phaseshift_IIR(self):
         self._test_phaseshift(method='iir', zero_phase=False)

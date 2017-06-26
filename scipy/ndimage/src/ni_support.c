@@ -196,7 +196,7 @@ int NI_InitLineBuffer(PyArrayObject *array, int axis, npy_intp size1,
 
 /* Extend a line in memory to implement boundary conditions: */
 int NI_ExtendLine(double *line, npy_intp length, npy_intp size1,
-                  npy_intp size2, NI_ExtendMode mode, double constant_value, char * errmsg)
+                  npy_intp size2, NI_ExtendMode mode, double constant_value)
 {
     npy_intp ii, jj, length1, nextend, rextend;
     double *l1, *l2, *l3, val;
@@ -312,7 +312,7 @@ int NI_ExtendLine(double *line, npy_intp length, npy_intp size1,
             *l1++ = constant_value;
         break;
     default:
-        PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "mode not supported");
+        PyErr_Format(PyExc_RuntimeError, "mode %d not supported", mode);
         return 0;
     }
     return 1;
@@ -333,8 +333,7 @@ break
 
 /* Copy a line from an array to a buffer: */
 int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
-                         npy_intp *number_of_lines, int *more,
-                         char * errmsg)
+                         npy_intp *number_of_lines, int *more)
 {
     double *pb = buffer->buffer_data;
     char *pa;
@@ -363,19 +362,20 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float32);
             CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float64);
         default:
-            PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "array type %d not supported",
-                          buffer->array_type);
+            PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
+                         buffer->array_type);
             return 0;
         }
         /* goto next line in the array: */
         NI_ITERATOR_NEXT(buffer->iterator, buffer->array_data);
         /* implement boundary conditions to the line: */
-        if (buffer->size1 + buffer->size2 > 0)
+        if (buffer->size1 + buffer->size2 > 0) {
             if (!NI_ExtendLine(pb - buffer->size1, length, buffer->size1,
-                                                 buffer->size2, buffer->extend_mode,
-                                                 buffer->extend_value,
-                                                 errmsg))
+                               buffer->size2, buffer->extend_mode,
+                               buffer->extend_value)) {
                 return 0;
+            }
+        }
         /* The number of the array lines copied: */
         ++(buffer->next_line);
         /* keep track of (and return) the number of lines in the buffer: */
@@ -399,7 +399,7 @@ case t ## _type:                                                  \
 break
 
 /* Copy a line from a buffer to an array: */
-int NI_LineBufferToArray(NI_LineBuffer *buffer, char * errmsg)
+int NI_LineBufferToArray(NI_LineBuffer *buffer)
 {
     double *pb = buffer->buffer_data;
     char *pa;
@@ -427,7 +427,8 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer, char * errmsg)
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float32);
             CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float64);
         default:
-            PyOS_snprintf(errmsg, NI_MAX_ERR_MSG, "array type not supported");
+            PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
+                         buffer->array_type);
             return 0;
         }
         /* move to the next line in the array: */
@@ -451,7 +452,7 @@ NI_InitFilterIterator(int rank, npy_intp *filter_shape,
                     npy_intp *origins, NI_FilterIterator *iterator)
 {
     int ii;
-    npy_intp fshape[MAXDIM], forigins[MAXDIM];
+    npy_intp fshape[NPY_MAXDIMS], forigins[NPY_MAXDIMS];
 
     for(ii = 0; ii < rank; ii++) {
         fshape[ii] = *filter_shape++;
@@ -490,8 +491,8 @@ int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
     int rank, ii;
     npy_intp kk, ll, filter_size = 1, offsets_size = 1, max_size = 0;
     npy_intp max_stride = 0, *ashape = NULL, *astrides = NULL;
-    npy_intp footprint_size = 0, coordinates[MAXDIM], position[MAXDIM];
-    npy_intp fshape[MAXDIM], forigins[MAXDIM], *po, *pc = NULL;
+    npy_intp footprint_size = 0, coordinates[NPY_MAXDIMS], position[NPY_MAXDIMS];
+    npy_intp fshape[NPY_MAXDIMS], forigins[NPY_MAXDIMS], *po, *pc = NULL;
 
     rank = array->nd;
     ashape = array->dimensions;
