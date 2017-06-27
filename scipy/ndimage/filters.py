@@ -198,6 +198,27 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     return correlate1d(input, weights, axis, output, mode, cval, origin)
 
 
+def _gaussian_kernel1d(sigma, order, radius):
+    """
+    Computes a 1D Gaussian convolution kernel.
+    """
+    if order < 0:
+        raise ValueError('order must be non-negative')
+    p = numpy.polynomial.Polynomial([0, 0, -0.5 / (sigma * sigma)])
+    x = numpy.arange(-radius, radius + 1)
+    phi_x = numpy.exp(p(x), dtype=numpy.double)
+    phi_x /= phi_x.sum()
+    if order > 0:
+        q = numpy.polynomial.Polynomial([1])
+        p_deriv = p.deriv()
+        for _ in range(order):
+            # f(x) = q(x) * phi(x) = q(x) * exp(p(x))
+            # f'(x) = (q'(x) + q(x) * p'(x)) * phi(x)
+            q = q.deriv() + q * p_deriv
+        phi_x *= q(x)
+    return phi_x
+
+
 @docfiller
 def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
                       mode="reflect", cval=0.0, truncate=4.0):
@@ -209,11 +230,10 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     sigma : scalar
         standard deviation for Gaussian kernel
     %(axis)s
-    order : {0, 1, 2, 3}, optional
+    order : int, optional
         An order of 0 corresponds to convolution with a Gaussian
-        kernel. An order of 1, 2, or 3 corresponds to convolution with
-        the first, second or third derivatives of a Gaussian. Higher
-        order derivatives are not implemented
+        kernel. A positive order corresponds to convolution with
+        that derivative of a Gaussian.
     %(output)s
     %(mode)s
     %(cval)s
@@ -244,46 +264,11 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     >>> plt.grid()
     >>> plt.show()
     """
-    if order not in range(4):
-        raise ValueError('Order outside 0..3 not implemented')
     sd = float(sigma)
     # make the radius of the filter equal to truncate standard deviations
     lw = int(truncate * sd + 0.5)
-    weights = [0.0] * (2 * lw + 1)
-    weights[lw] = 1.0
-    sum = 1.0
-    sd = sd * sd
-    # calculate the kernel:
-    for ii in range(1, lw + 1):
-        tmp = math.exp(-0.5 * float(ii * ii) / sd)
-        weights[lw + ii] = tmp
-        weights[lw - ii] = tmp
-        sum += 2.0 * tmp
-    for ii in range(2 * lw + 1):
-        weights[ii] /= sum
-    # implement first, second and third order derivatives:
-    if order == 1:  # first derivative
-        weights[lw] = 0.0
-        for ii in range(1, lw + 1):
-            x = float(ii)
-            tmp = -x / sd * weights[lw + ii]
-            weights[lw + ii] = -tmp
-            weights[lw - ii] = tmp
-    elif order == 2:  # second derivative
-        weights[lw] *= -1.0 / sd
-        for ii in range(1, lw + 1):
-            x = float(ii)
-            tmp = (x * x / sd - 1.0) * weights[lw + ii] / sd
-            weights[lw + ii] = tmp
-            weights[lw - ii] = tmp
-    elif order == 3:  # third derivative
-        weights[lw] = 0.0
-        sd2 = sd * sd
-        for ii in range(1, lw + 1):
-            x = float(ii)
-            tmp = (3.0 - x * x / sd) * x * weights[lw + ii] / sd2
-            weights[lw + ii] = -tmp
-            weights[lw - ii] = tmp
+    # Since we are calling correlate, not convolve, revert the kernel
+    weights = _gaussian_kernel1d(sigma, order, lw)[::-1]
     return correlate1d(input, weights, axis, output, mode, cval, 0)
 
 
@@ -300,13 +285,11 @@ def gaussian_filter(input, sigma, order=0, output=None,
         deviations of the Gaussian filter are given for each axis as a
         sequence, or as a single number, in which case it is equal for
         all axes.
-    order : {0, 1, 2, 3} or sequence from same set, optional
+    order : int or sequence of ints, optional
         The order of the filter along each axis is given as a sequence
         of integers, or as a single number.  An order of 0 corresponds
-        to convolution with a Gaussian kernel. An order of 1, 2, or 3
-        corresponds to convolution with the first, second or third
-        derivatives of a Gaussian. Higher order derivatives are not
-        implemented
+        to convolution with a Gaussian kernel. A positive order
+        corresponds to convolution with that derivative of a Gaussian.
     %(output)s
     %(mode_multiple)s
     %(cval)s
@@ -360,8 +343,6 @@ def gaussian_filter(input, sigma, order=0, output=None,
     input = numpy.asarray(input)
     output, return_value = _ni_support._get_output(output, input)
     orders = _ni_support._normalize_sequence(order, input.ndim)
-    if not set(orders).issubset(set(range(4))):
-        raise ValueError('Order outside 0..4 not implemented')
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
     axes = list(range(input.ndim))
