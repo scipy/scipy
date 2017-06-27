@@ -29,11 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define PY_ARRAY_UNIQUE_SYMBOL _scipy_ndimage_ARRAY_API
-
 #include "ni_support.h"
 #include "ni_filters.h"
-#include <stdlib.h>
 #include <math.h>
 
 #define BUFFER_SIZE 256000

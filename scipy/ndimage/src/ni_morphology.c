@@ -29,8 +29,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define PY_ARRAY_UNIQUE_SYMBOL _scipy_ndimage_ARRAY_API
-
 #include "ni_support.h"
 #include "ni_morphology.h"
 #include <stdlib.h>
