@@ -3,6 +3,8 @@
 # Requires Cython version 0.17 or greater due to type templating.
 ######################################################################
 
+from __future__ import absolute_import
+
 cimport cython
 from cython cimport sizeof
 import numpy as np

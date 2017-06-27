@@ -5,6 +5,8 @@ Tools and utilities for working with compressed sparse graphs
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2012
 
+from __future__ import absolute_import
+
 import numpy as np
 cimport numpy as np
 
@@ -323,7 +325,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
         The N x N directed compressed-sparse representation of the tree drawn
         from csgraph which is encoded by the predecessor list.
     """
-    from _validation import validate_graph
+    from ._validation import validate_graph
     csgraph = validate_graph(csgraph, directed, dense_output=False)
 
     N = csgraph.shape[0]
@@ -397,7 +399,7 @@ def construct_dist_matrix(graph,
     point i to point j.  If no path exists between point i and j, then
     predecessors[i, j] = -9999
     """
-    from _validation import validate_graph
+    from ._validation import validate_graph
     graph = validate_graph(graph, directed, dtype=DTYPE,
                            csr_output=False,
                            copy_if_dense=not directed)

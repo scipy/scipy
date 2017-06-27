@@ -7,10 +7,12 @@ Original C version by Damian Eads.
 Translated to Cython by David Warde-Farley, October 2009.
 """
 
+from __future__ import absolute_import
+
 cimport cython
 import numpy as np
 cimport numpy as np
-from cluster_blas cimport f_dgemm, f_sgemm
+from .cluster_blas cimport f_dgemm, f_sgemm
 
 from libc.math cimport sqrt
 

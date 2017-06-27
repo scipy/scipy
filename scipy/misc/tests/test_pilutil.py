@@ -4,13 +4,12 @@ import os.path
 import tempfile
 import shutil
 import numpy as np
-import warnings
 import glob
 
 from numpy.testing import (assert_equal, dec, decorate_methods,
                            TestCase, run_module_suite, assert_allclose,
                            assert_array_equal, assert_raises)
-
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy import misc
 from numpy.ma.testutils import assert_mask_equal
 
@@ -116,19 +115,23 @@ class TestPILUtil(TestCase):
     def test_imsave(self):
         picdir = os.path.join(datapath, "data")
         for png in glob.iglob(picdir + "/*.png"):
-            with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+            with suppress_warnings() as sup:
+                # PIL causes a Py3k ResourceWarning
+                sup.filter(message="unclosed file")
                 img = misc.imread(png)
             tmpdir = tempfile.mkdtemp()
             try:
                 fn1 = os.path.join(tmpdir, 'test.png')
                 fn2 = os.path.join(tmpdir, 'testimg')
-                # PIL ResourceWarning
-                with warnings.catch_warnings(record=True):
+                with suppress_warnings() as sup:
+                    # PIL causes a Py3k ResourceWarning
+                    sup.filter(message="unclosed file")
                     misc.imsave(fn1, img)
                     misc.imsave(fn2, img, 'PNG')
 
-                # PIL ResourceWarning
-                with warnings.catch_warnings(record=True):
+                with suppress_warnings() as sup:
+                    # PIL causes a Py3k ResourceWarning
+                    sup.filter(message="unclosed file")
                     data1 = misc.imread(fn1)
                     data2 = misc.imread(fn2)
                 assert_allclose(data1, img)

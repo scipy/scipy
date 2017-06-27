@@ -1,12 +1,11 @@
 # Created by Pearu Peterson, June 2003
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, assert_allclose, assert_raises, TestCase,
         run_module_suite)
+from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
 from scipy.interpolate.fitpack import bisplrep, bisplev
 from scipy.interpolate.fitpack2 import (UnivariateSpline,
@@ -194,8 +193,10 @@ class TestLSQBivariateSpline(TestCase):
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with warnings.catch_warnings(record=True):  # coefficients of the ...
+        with suppress_warnings() as sup:
+            r = sup.record(UserWarning, "\nThe coefficients of the spline")
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
+            assert_equal(len(r), 1)
 
         assert_almost_equal(lut(2,2), 3.)
 
@@ -206,9 +207,9 @@ class TestLSQBivariateSpline(TestCase):
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with warnings.catch_warnings():
+        with suppress_warnings() as sup:
             # This seems to fail (ier=1, see ticket 1642).
-            warnings.simplefilter('ignore', UserWarning)
+            sup.filter(UserWarning, "\nThe coefficients of the spline")
             lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
 
         tx, ty = lut.get_knots()
@@ -232,8 +233,10 @@ class TestLSQBivariateSpline(TestCase):
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with warnings.catch_warnings(record=True):  # coefficients of the ...
-            lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
+        with suppress_warnings() as sup:
+            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+            lut = LSQBivariateSpline(x, y, z, tx, ty, kx=1, ky=1)
+            assert_equal(len(r), 1)
         tx, ty = lut.get_knots()
         tz = lut(tx, ty)
         trpz = .25*(diff(tx)[:,None]*diff(ty)[None,:]
@@ -250,8 +253,10 @@ class TestLSQBivariateSpline(TestCase):
         s = 0.1
         tx = [1+s,3-s]
         ty = [1+s,3-s]
-        with warnings.catch_warnings(record=True):  # coefficients of the ...
-            lut = LSQBivariateSpline(x,y,z,tx,ty,kx=1,ky=1)
+        with suppress_warnings() as sup:
+            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+            lut = LSQBivariateSpline(x, y, z, tx, ty, kx=1, ky=1)
+            assert_equal(len(r), 1)
 
         assert_array_equal(lut([], []), np.zeros((0,0)))
         assert_array_equal(lut([], [], grid=False), np.zeros((0,)))
@@ -283,9 +288,9 @@ class TestSmoothBivariateSpline(TestCase):
         y = [1,2,3,1,2,3,1,2,3]
         z = array([0,7,8,3,4,7,1,3,4])
 
-        with warnings.catch_warnings():
+        with suppress_warnings() as sup:
             # This seems to fail (ier=1, see ticket 1642).
-            warnings.simplefilter('ignore', UserWarning)
+            sup.filter(UserWarning, "\nThe required storage space")
             lut = SmoothBivariateSpline(x, y, z, kx=1, ky=1, s=0)
 
         tx = [1,2,4]

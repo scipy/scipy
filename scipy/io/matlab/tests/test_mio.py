@@ -21,6 +21,7 @@ import gzip
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
                            assert_equal, assert_raises, run_module_suite,
                            assert_)
+from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy as np
 from numpy import array
@@ -1204,7 +1205,8 @@ def test_miuint32_compromise():
     assert_equal(res['an_array'], np.arange(10)[None, :])
     # mat file with miUINT32 for miINT32, with negative value
     filename = pjoin(test_data_path, 'bad_miuint32.mat')
-    with warnings.catch_warnings(record=True):  # Py3k ResourceWarning
+    with suppress_warnings() as sup:
+        sup.filter(message="unclosed file")  # Py3k ResourceWarning
         assert_raises(ValueError, loadmat, filename)
 
 
@@ -1215,7 +1217,8 @@ def test_miutf8_for_miint8_compromise():
     assert_equal(res['array_name'], [[1]])
     # mat file with non-ascii utf8 name raises error
     filename = pjoin(test_data_path, 'bad_miutf8_array_name.mat')
-    with warnings.catch_warnings(record=True):  # Py3k ResourceWarning
+    with suppress_warnings() as sup:
+        sup.filter(message="unclosed file")  # Py3k ResourceWarning
         assert_raises(ValueError, loadmat, filename)
 
 

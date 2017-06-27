@@ -10,12 +10,14 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
+from __future__ import absolute_import
+
 import threading
 import numpy as np
 cimport numpy as np
 cimport cython
-cimport qhull
-cimport setlist
+from . cimport qhull
+from . cimport setlist
 from libc cimport stdio, stdlib
 from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
 

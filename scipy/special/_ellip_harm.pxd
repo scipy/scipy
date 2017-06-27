@@ -30,7 +30,7 @@
 
 import cython
 
-cimport sf_error
+from . cimport sf_error
 
 from libc.math cimport sqrt, fabs, pow
 from libc.stdlib cimport malloc, free

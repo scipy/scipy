@@ -127,6 +127,11 @@ else:
         kw['extra_argv'] = list(kw.get('extra_argv', [])) + underscore_paths
         return test._tester.test(*a, **kw)
 
-    test._tester = Tester()
+    if ".dev0" in __version__:
+        mode = "develop"
+    else:
+        mode = "release"
+    test._tester = Tester(raise_warnings=mode)
     test.__doc__ = test._tester.test.__doc__
     test.__test__ = False  # Prevent nose from treating test() as a test
+

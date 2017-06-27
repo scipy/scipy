@@ -266,7 +266,13 @@ def main(argv):
             extra_argv = extra_argv + tests[1:]
             kw['extra_argv'] = extra_argv
             from numpy.testing import Tester
-            return Tester(tests[0]).test(*a, **kw)
+            from scipy.version import version as __version__
+
+            if ".dev0" in __version__:
+                mode = "develop"
+            else:
+                mode = "release"
+            return Tester(tests[0], raise_warnings=mode).test(*a, **kw)
     else:
         __import__(PROJECT_MODULE)
         test = sys.modules[PROJECT_MODULE].test

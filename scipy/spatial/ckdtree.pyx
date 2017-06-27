@@ -6,6 +6,8 @@
 
 # distutils: language = c++
 
+from __future__ import absolute_import
+
 import numpy as np
 import scipy.sparse
 

@@ -1329,6 +1329,8 @@ Raw function pointers (Fortran-style pointer arguments):
 # these wrappers should not be used.
 # The original libraries should be linked directly.
 
+from __future__ import absolute_import
+
 cdef extern from "fortran_defs.h":
     pass
 

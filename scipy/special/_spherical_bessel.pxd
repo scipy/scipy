@@ -26,9 +26,9 @@ import cython
 from libc.math cimport cos, sin, sqrt, M_PI_2
 
 from numpy cimport npy_cdouble
-from _complexstuff cimport *
+from ._complexstuff cimport *
 
-cimport sf_error
+from . cimport sf_error
 
 cdef extern from "amos_wrappers.h":
     npy_cdouble cbesi_wrap( double v, npy_cdouble z) nogil

@@ -12,7 +12,7 @@
 # Released under the same license as Scipy.
 
 import cython
-from _complexstuff cimport zlog1, zabs, zdiv
+from ._complexstuff cimport zlog1, zabs, zdiv
 
 # Relative tolerance for the series
 DEF TOL = 2.220446092504131e-16

@@ -2,8 +2,8 @@ from libc.math cimport pow, sqrt, floor, log, log1p, exp, M_PI, fabs
 from numpy.math cimport NAN, isinf
 cimport numpy as np
 
-from _xlogy cimport xlogy
-from _complexstuff cimport (
+from ._xlogy cimport xlogy
+from ._complexstuff cimport (
     zsqrt, zpow, zabs, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
 

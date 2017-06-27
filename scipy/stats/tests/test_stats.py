@@ -18,7 +18,7 @@ from numpy.testing import (TestCase, assert_, assert_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_raises, run_module_suite, assert_allclose,
                            dec)
-from scipy._lib._numpy_compat import assert_raises_regex
+from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
@@ -553,8 +553,7 @@ def test_spearmanr():
     check_named_results(res, attributes)
 
     # with only ties in one or both inputs
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
+    with np.errstate(invalid="ignore"):
         assert_equal(stats.spearmanr([2,2,2], [2,2,2]), (np.nan, np.nan))
         assert_equal(stats.spearmanr([2,0,2], [2,2,2]), (np.nan, np.nan))
         assert_equal(stats.spearmanr([2,2,2], [2,0,2]), (np.nan, np.nan))
@@ -997,8 +996,7 @@ class TestRegression(TestCase):
         x = np.arange(10.)
         x[9] = np.nan
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+        with np.errstate(invalid="ignore"):
             assert_array_equal(stats.linregress(x, x),
                                (np.nan, np.nan, np.nan, np.nan, np.nan))
 
@@ -1054,8 +1052,9 @@ class TestHistogram(TestCase):
                                           -1.2222222222222223, 0.44444444444444448, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning,
+                           message="`histogram` is deprecated")
                 given_results = stats.histogram(inputs)
 
             assert_array_almost_equal(expected_results[0], given_results[0],
@@ -1065,8 +1064,8 @@ class TestHistogram(TestCase):
                                     decimal=2)
 
     def test_empty(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, message="`histogram` is deprecated")
             res = stats.histogram([])
 
         # expected values
@@ -1096,8 +1095,9 @@ class TestHistogram(TestCase):
                                           -1.5, 1.0, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning,
+                           message="`histogram` is deprecated")
                 given_results = stats.histogram(inputs, numbins=5)
 
             assert_array_almost_equal(expected_results[0], given_results[0],
@@ -1134,8 +1134,9 @@ class TestHistogram(TestCase):
                                           -1.1052631578947367, 0.21052631578947367, 0)),
                        )
         for inputs, expected_results in basic_tests:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning,
+                           message="`histogram` is deprecated")
                 given_results = stats.histogram(inputs, numbins=20)
 
             assert_array_almost_equal(expected_results[0], given_results[0],
@@ -1145,8 +1146,8 @@ class TestHistogram(TestCase):
                                     decimal=2)
 
     def test_histogram_result_attributes(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, message="`histogram` is deprecated")
             res = stats.histogram(self.low_range, numbins=20)
 
         attributes = ('count', 'lowerlimit', 'binsize', 'extrapoints')
@@ -1464,9 +1465,12 @@ class TestMode(TestCase):
 
     def test_strings(self):
         data1 = ['rain', 'showers', 'showers']
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, ".*checked for nan values")
             vals = stats.mode(data1)
+            assert_equal(len(r), 1)
+
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
@@ -1475,9 +1479,10 @@ class TestMode(TestCase):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
         arr[:] = objects
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, ".*checked for nan values")
             vals = stats.mode(arr)
+            assert_equal(len(r), 1)
         assert_equal(vals[0][0], 10)
         assert_equal(vals[1][0], 2)
 
@@ -1505,9 +1510,10 @@ class TestMode(TestCase):
         arr[:] = points
         assert_(len(set(points)) == 4)
         assert_equal(np.unique(arr).shape, (4,))
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=RuntimeWarning)
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, ".*checked for nan values")
             vals = stats.mode(arr)
+            assert_equal(len(r), 1)
 
         assert_equal(vals[0][0], Point(2))
         assert_equal(vals[1][0], 4)
@@ -1543,8 +1549,8 @@ class TestVariability(TestCase):
 
         # y = stats.signaltonoise(self.shoes[0])
         # assert_approx_equal(y,4.5709967)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated")
             y = stats.signaltonoise(self.testcase)
         assert_approx_equal(y, 2.236067977)
 
@@ -1554,8 +1560,8 @@ class TestVariability(TestCase):
 
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=RuntimeWarning)
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             y = stats.sem(self.scalar_testcase)
         assert_(np.isnan(y))
 
@@ -2201,8 +2207,8 @@ class TestMoments(TestCase):
 class TestThreshold(TestCase):
     def test_basic(self):
         a = [-1, 2, 3, 4, 5, -1, -2]
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`threshold` is deprecated")
             assert_array_equal(stats.threshold(a), a)
             assert_array_equal(stats.threshold(a, 3, None, 0),
                                [0, 0, 3, 4, 5, 0, 0])
@@ -2225,8 +2231,8 @@ class TestStudentTest(TestCase):
     P2_0 = 0.2254033
 
     def test_onesample(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=RuntimeWarning)
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             t, p = stats.ttest_1samp(4., 3.)
         assert_(np.isnan(t))
         assert_(np.isnan(p))
@@ -2259,8 +2265,7 @@ class TestStudentTest(TestCase):
         np.random.seed(7654567)
         x = stats.norm.rvs(loc=5, scale=10, size=51)
         x[50] = np.nan
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=RuntimeWarning)
+        with np.errstate(invalid="ignore"):
             assert_array_equal(stats.ttest_1samp(x, 5.0), (np.nan, np.nan))
 
             assert_array_almost_equal(stats.ttest_1samp(x, 5.0, nan_policy='omit'),
@@ -2428,15 +2433,19 @@ class TestPowerDivergence(object):
         else:
             b = np.broadcast(f_obs, f_exp)
             num_obs = b.shape[axis]
-        stat, p = stats.power_divergence(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
-                                         axis=axis, lambda_=lambda_)
-        assert_allclose(stat, expected_stat)
 
-        if lambda_ == 1 or lambda_ == "pearson":
-            # Also test stats.chisquare.
-            stat, p = stats.chisquare(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
-                                      axis=axis)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "Mean of empty slice")
+            stat, p = stats.power_divergence(
+                                f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                                axis=axis, lambda_=lambda_)
             assert_allclose(stat, expected_stat)
+
+            if lambda_ == 1 or lambda_ == "pearson":
+                # Also test stats.chisquare.
+                stat, p = stats.chisquare(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
+                                          axis=axis)
+                assert_allclose(stat, expected_stat)
 
         ddof = np.asarray(ddof)
         expected_p = stats.distributions.chi2.sf(expected_stat,
@@ -2548,7 +2557,6 @@ class TestPowerDivergence(object):
 
     def test_empty_cases(self):
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
             for case in power_div_empty_cases:
                 yield (self.check_power_divergence,
                        case.f_obs, case.f_exp, case.ddof, case.axis,
@@ -2623,8 +2631,8 @@ def test_chisquare_masked_arrays():
     # Empty arrays:
     # A data set with length 0 returns a masked scalar.
     with np.errstate(invalid='ignore'):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "Mean of empty slice")
             chisq, p = stats.chisquare(np.ma.array([]))
     assert_(isinstance(chisq, np.ma.MaskedArray))
     assert_equal(chisq.shape, ())
@@ -2641,8 +2649,8 @@ def test_chisquare_masked_arrays():
     # empty3.T is an array containing 3 data sets, each with length 0,
     # so an array of size (3,) is returned, with all values masked.
     with np.errstate(invalid='ignore'):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "Mean of empty slice")
             chisq, p = stats.chisquare(empty3.T)
 
     assert_(isinstance(chisq, np.ma.MaskedArray))
@@ -2844,8 +2852,8 @@ def test_ttest_rel():
     assert_array_almost_equal([t,p],tpr)
 
     # test scalars
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
+    with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+        sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_rel(4., 3.)
     assert_(np.isnan(t))
     assert_(np.isnan(p))
@@ -2875,28 +2883,25 @@ def test_ttest_rel():
     y = (stats.norm.rvs(loc=5, scale=10, size=501) +
          stats.norm.rvs(scale=0.2, size=501))
     y[500] = np.nan
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
+
+    with np.errstate(invalid="ignore"):
         assert_array_equal(stats.ttest_rel(x, x), (np.nan, np.nan))
 
-        assert_array_almost_equal(stats.ttest_rel(x, y, nan_policy='omit'),
-                                  (0.25299925303978066, 0.8003729814201519))
-        assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='raise')
-        assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='foobar')
+    assert_array_almost_equal(stats.ttest_rel(x, y, nan_policy='omit'),
+                              (0.25299925303978066, 0.8003729814201519))
+    assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='raise')
+    assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='foobar')
 
-        # test zero division problem
-        t, p = stats.ttest_rel([0, 0, 0], [1, 1, 1])
-        assert_equal((np.abs(t), p), (np.inf, 0))
+    # test zero division problem
+    t, p = stats.ttest_rel([0, 0, 0], [1, 1, 1])
+    assert_equal((np.abs(t), p), (np.inf, 0))
+    with np.errstate(invalid="ignore"):
         assert_equal(stats.ttest_rel([0, 0, 0], [0, 0, 0]), (np.nan, np.nan))
 
-    olderr = np.seterr(all='ignore')
-    try:
         # check that nan in input array result in nan output
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_rel(anan, np.zeros((2, 2))),
                      ([0, np.nan], [1, np.nan]))
-    finally:
-        np.seterr(**olderr)
 
     # test incorrect input shape raise an error
     x = np.arange(24)
@@ -2964,8 +2969,8 @@ def test_ttest_ind():
                               [t, p])
 
     # test scalars
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
+    with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+        sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_ind(4., 3.)
     assert_(np.isnan(t))
     assert_(np.isnan(p))
@@ -2989,28 +2994,25 @@ def test_ttest_ind():
     x[500] = np.nan
     y = stats.norm.rvs(loc=5, scale=10, size=500)
 
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
+    with np.errstate(invalid="ignore"):
         assert_array_equal(stats.ttest_ind(x, y), (np.nan, np.nan))
 
-        assert_array_almost_equal(stats.ttest_ind(x, y, nan_policy='omit'),
-                                  (0.24779670949091914, 0.80434267337517906))
-        assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='raise')
-        assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
+    assert_array_almost_equal(stats.ttest_ind(x, y, nan_policy='omit'),
+                              (0.24779670949091914, 0.80434267337517906))
+    assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='raise')
+    assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
 
-        # test zero division problem
-        t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
-        assert_equal((np.abs(t), p), (np.inf, 0))
+    # test zero division problem
+    t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
+    assert_equal((np.abs(t), p), (np.inf, 0))
+    
+    with np.errstate(invalid="ignore"):
         assert_equal(stats.ttest_ind([0, 0, 0], [0, 0, 0]), (np.nan, np.nan))
 
-    olderr = np.seterr(all='ignore')
-    try:
         # check that nan in input array result in nan output
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2))),
                      ([0, np.nan], [1, np.nan]))
-    finally:
-        np.seterr(**olderr)
 
 
 def test_ttest_ind_with_uneq_var():
@@ -3107,21 +3109,17 @@ def test_ttest_ind_with_uneq_var():
     assert_equal(t.shape, (3, 2))
 
     # test zero division problem
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
-        t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
-        assert_equal((np.abs(t), p), (np.inf, 0))
+    t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
+    assert_equal((np.abs(t), p), (np.inf, 0))
+    with np.errstate(all='ignore'):
         assert_equal(stats.ttest_ind([0, 0, 0], [0, 0, 0], equal_var=False),
                      (np.nan, np.nan))
 
-    olderr = np.seterr(all='ignore')
-    try:
         # check that nan in input array result in nan output
         anan = np.array([[1, np.nan], [-1, 1]])
         assert_equal(stats.ttest_ind(anan, np.zeros((2, 2)), equal_var=False),
                      ([0, np.nan], [1, np.nan]))
-    finally:
-        np.seterr(**olderr)
+
 
 def test_ttest_ind_nan_2nd_arg():
     # regression test for gh-6134: nans in the second arg were not handled
@@ -3180,25 +3178,21 @@ def test_ttest_1samp_new():
     assert_equal(t1.shape, (n1,n2))
 
     # test zero division problem
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
-        t, p = stats.ttest_1samp([0, 0, 0], 1)
-        assert_equal((np.abs(t), p), (np.inf, 0))
+    t, p = stats.ttest_1samp([0, 0, 0], 1)
+    assert_equal((np.abs(t), p), (np.inf, 0))
+
+    with np.errstate(all='ignore'):
         assert_equal(stats.ttest_1samp([0, 0, 0], 0), (np.nan, np.nan))
 
-    olderr = np.seterr(all='ignore')
-    try:
         # check that nan in input array result in nan output
         anan = np.array([[1, np.nan],[-1, 1]])
         assert_equal(stats.ttest_1samp(anan, 0), ([0, np.nan], [1, np.nan]))
-    finally:
-        np.seterr(**olderr)
 
 
 class TestDescribe(TestCase):
     def test_describe_scalar(self):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=RuntimeWarning)
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             n, mm, m, v, sk, kurt = stats.describe(4.)
         assert_equal(n, 1)
         assert_equal(mm, (4.0, 4.0))
@@ -3321,17 +3315,20 @@ def test_normalitytests():
 
     x = np.arange(10.)
     x[9] = np.nan
-    assert_array_equal(stats.skewtest(x), (np.nan, np.nan))
+    with np.errstate(invalid="ignore"):
+        assert_array_equal(stats.skewtest(x), (np.nan, np.nan))
 
     expected = (1.0184643553962129, 0.30845733195153502)
     assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
 
-    assert_raises(ValueError, stats.skewtest, x, nan_policy='raise')
+    with np.errstate(all='ignore'):
+        assert_raises(ValueError, stats.skewtest, x, nan_policy='raise')
     assert_raises(ValueError, stats.skewtest, x, nan_policy='foobar')
 
     x = np.arange(30.)
     x[29] = np.nan
-    assert_array_equal(stats.kurtosistest(x), (np.nan, np.nan))
+    with np.errstate(all='ignore'):
+        assert_array_equal(stats.kurtosistest(x), (np.nan, np.nan))
 
     expected = (-2.2683547379505273, 0.023307594135872967)
     assert_array_almost_equal(stats.kurtosistest(x, nan_policy='omit'),
@@ -3340,7 +3337,8 @@ def test_normalitytests():
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='raise')
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='foobar')
 
-    assert_array_equal(stats.normaltest(x), (np.nan, np.nan))
+    with np.errstate(all='ignore'):
+        assert_array_equal(stats.normaltest(x), (np.nan, np.nan))
 
     expected = (6.2260409514287449, 0.04446644248650191)
     assert_array_almost_equal(stats.normaltest(x, nan_policy='omit'), expected)
@@ -3442,8 +3440,9 @@ class TestMannWhitneyU(TestCase):
 
     def test_mannwhitneyu_default(self):
         # The default value for alternative is None
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Calling `mannwhitneyu` without .*`alternative`")
             u1, p1 = stats.mannwhitneyu(self.X, self.Y)
             u2, p2 = stats.mannwhitneyu(self.Y, self.X)
             u3, p3 = stats.mannwhitneyu(self.X, self.Y, alternative=None)
@@ -3490,8 +3489,9 @@ class TestMannWhitneyU(TestCase):
 
     def test_mannwhitneyu_no_correct_default(self):
         # The default value for alternative is None
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Calling `mannwhitneyu` without .*`alternative`")
             u1, p1 = stats.mannwhitneyu(self.X, self.Y, False)
             u2, p2 = stats.mannwhitneyu(self.Y, self.X, False)
             u3, p3 = stats.mannwhitneyu(self.X, self.Y, False,
@@ -3547,7 +3547,7 @@ class TestMannWhitneyU(TestCase):
     def test_mannwhitneyu_result_attributes(self):
         # test for namedtuple attribute results
         attributes = ('statistic', 'pvalue')
-        res = stats.mannwhitneyu(self.X, self.Y)
+        res = stats.mannwhitneyu(self.X, self.Y, alternative="less")
         check_named_results(res, attributes)
 
 

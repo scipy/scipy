@@ -12,7 +12,7 @@ References
 [1] Knuth, "The Art of Computer Programming, Volume II"
 
 """
-from _complexstuff cimport zabs
+from ._complexstuff cimport zabs
 
 cdef extern from "_c99compat.h":
     double sc_fma(double x, double y, double z) nogil
