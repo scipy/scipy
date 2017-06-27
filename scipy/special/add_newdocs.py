@@ -5957,6 +5957,14 @@ add_newdoc("scipy.special", "smirnovi",
     Returns ``e`` such that ``smirnov(n, e) = y``.
     """)
 
+add_newdoc("scipy.special", "smirnovp",
+    """
+    smirnovp(n, y)
+
+    Derivative of `smirnov`
+    """)
+
+
 add_newdoc("scipy.special", "spence",
     r"""
     spence(z, out=None)

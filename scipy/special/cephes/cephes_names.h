@@ -91,6 +91,7 @@
 #define zetac cephes_zetac
 #define smirnov cephes_smirnov
 #define smirnovi cephes_smirnovi
+#define smirnovp cephes_smirnovp
 #define kolmogorov cephes_kolmogorov
 #define kolmogi cephes_kolmogi
 

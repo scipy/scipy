@@ -255,6 +255,7 @@ def test_cython_api():
         (special.sindg, cython_special.sindg, ('d',), None),
         (special.smirnov, cython_special.smirnov, ('ld', 'dd'), None),
         (special.smirnovi, cython_special.smirnovi, ('ld', 'dd'), None),
+        (special.smirnovp, cython_special.smirnovp, ('ld', 'dd'), None),
         (special.spence, cython_special.spence, ('d', 'D'), None),
         (special.sph_harm, cython_special.sph_harm, ('lldd', 'dddd'), None),
         (special.stdtr, cython_special.stdtr, ('dd',), None),

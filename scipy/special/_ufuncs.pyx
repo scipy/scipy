@@ -1879,6 +1879,11 @@ from _legacy cimport smirnovi_unsafe as _func_smirnovi_unsafe
 ctypedef double _proto_smirnovi_unsafe_t(double, double) nogil
 cdef _proto_smirnovi_unsafe_t *_proto_smirnovi_unsafe_t_var = &_func_smirnovi_unsafe
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_smirnovp "smirnovp"(int, double) nogil
+from _legacy cimport smirnovp_unsafe as _func_smirnovp_unsafe
+ctypedef double _proto_smirnovp_unsafe_t(double, double) nogil
+cdef _proto_smirnovp_unsafe_t *_proto_smirnovp_unsafe_t_var = &_func_smirnovp_unsafe
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_spence "spence"(double) nogil
 from _spence cimport cspence as _func_cspence
 ctypedef double complex _proto_cspence_t(double complex) nogil
@@ -2867,8 +2872,8 @@ cdef char *ufunc_bdtrik_doc = (
     "Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the\n"
     "cumulative incomplete beta distribution.\n"
     "\n"
-    "Computation of `k` involves a seach for a value that produces the desired\n"
-    "value of `y`.  The search relies on the monotinicity of `y` with `k`.\n"
+    "Computation of `k` involves a search for a value that produces the desired\n"
+    "value of `y`.  The search relies on the monotonicity of `y` with `k`.\n"
     "\n"
     "Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.\n"
     "\n"
@@ -2935,8 +2940,8 @@ cdef char *ufunc_bdtrin_doc = (
     "Formula 26.5.24 of [1]_ is used to reduce the binomial distribution to the\n"
     "cumulative incomplete beta distribution.\n"
     "\n"
-    "Computation of `n` involves a seach for a value that produces the desired\n"
-    "value of `y`.  The search relies on the monotinicity of `y` with `n`.\n"
+    "Computation of `n` involves a search for a value that produces the desired\n"
+    "value of `y`.  The search relies on the monotonicity of `y` with `n`.\n"
     "\n"
     "Wrapper for the CDFLIB [2]_ Fortran routine `cdfbin`.\n"
     "\n"
@@ -3518,9 +3523,9 @@ cdef char *ufunc_btdtria_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `a` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `a`.\n"
+    "monotonicity of `p` with `a`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -3589,9 +3594,9 @@ cdef char *ufunc_btdtrib_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfbet`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `b` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `b`.\n"
+    "monotonicity of `p` with `b`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -5469,7 +5474,7 @@ cdef char *ufunc_eval_sh_chebyt_doc = (
     "roots_sh_chebyt : roots and quadrature weights of shifted\n"
     "                  Chebyshev polynomials of the first kind\n"
     "sh_chebyt : shifted Chebyshev polynomial object\n"
-    "eval_chebyt : evalaute Chebyshev polynomials of the first kind\n"
+    "eval_chebyt : evaluate Chebyshev polynomials of the first kind\n"
     "numpy.polynomial.chebyshev.Chebyshev : Chebyshev series")
 ufunc_eval_sh_chebyt_loops[0] = <np.PyUFuncGenericFunction>loop_d_ld__As_ld_d
 ufunc_eval_sh_chebyt_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
@@ -6811,9 +6816,9 @@ cdef char *ufunc_gdtria_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `a` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `a` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `a`.\n"
+    "monotonicity of `p` with `a`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -6899,9 +6904,9 @@ cdef char *ufunc_gdtrib_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `b` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `b` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `b`.\n"
+    "monotonicity of `p` with `b`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -6988,9 +6993,9 @@ cdef char *ufunc_gdtrix_doc = (
     "Wrapper for the CDFLIB [1]_ Fortran routine `cdfgam`.\n"
     "\n"
     "The cumulative distribution function `p` is computed using a routine by\n"
-    "DiDinato and Morris [2]_.  Computation of `x` involves a seach for a value\n"
+    "DiDinato and Morris [2]_.  Computation of `x` involves a search for a value\n"
     "that produces the desired value of `p`.  The search relies on the\n"
-    "monotinicity of `p` with `x`.\n"
+    "monotonicity of `p` with `x`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -8301,10 +8306,10 @@ cdef char *ufunc_iv_doc = (
     "expansions are applied.\n"
     "\n"
     "For complex `z` and positive `v`, the AMOS [2]_ `zbesi` routine is\n"
-    "called. It uses a power series for small `z`, the asymptitic expansion\n"
+    "called. It uses a power series for small `z`, the asymptotic expansion\n"
     "for large `abs(z)`, the Miller algorithm normalized by the Wronskian\n"
     "and a Neumann series for intermediate magnitudes, and the uniform\n"
-    "asymptitic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large\n"
+    "asymptotic expansions for :math:`I_v(z)` and :math:`J_v(z)` for large\n"
     "orders.  Backward recurrence is used to generate sequences or reduce\n"
     "orders when necessary.\n"
     "\n"
@@ -8389,9 +8394,9 @@ cdef char *ufunc_ive_doc = (
     "Notes\n"
     "-----\n"
     "For positive `v`, the AMOS [1]_ `zbesi` routine is called. It uses a\n"
-    "power series for small `z`, the asymptitic expansion for large\n"
+    "power series for small `z`, the asymptotic expansion for large\n"
     "`abs(z)`, the Miller algorithm normalized by the Wronskian and a\n"
-    "Neumann series for intermediate magnitudes, and the uniform asymptitic\n"
+    "Neumann series for intermediate magnitudes, and the uniform asymptotic\n"
     "expansions for :math:`I_v(z)` and :math:`J_v(z)` for large orders.\n"
     "Backward recurrence is used to generate sequences or reduce orders when\n"
     "necessary.\n"
@@ -10440,8 +10445,8 @@ cdef char *ufunc_nbdtrik_doc = (
     "is used to reduce calculation of the cumulative distribution function to\n"
     "that of a regularized incomplete beta :math:`I`.\n"
     "\n"
-    "Computation of `k` involves a seach for a value that produces the desired\n"
-    "value of `y`.  The search relies on the monotinicity of `y` with `k`.\n"
+    "Computation of `k` involves a search for a value that produces the desired\n"
+    "value of `y`.  The search relies on the monotonicity of `y` with `k`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -10514,8 +10519,8 @@ cdef char *ufunc_nbdtrin_doc = (
     "is used to reduce calculation of the cumulative distribution function to\n"
     "that of a regularized incomplete beta :math:`I`.\n"
     "\n"
-    "Computation of `n` involves a seach for a value that produces the desired\n"
-    "value of `y`.  The search relies on the monotinicity of `y` with `n`.\n"
+    "Computation of `n` involves a search for a value that produces the desired\n"
+    "value of `y`.  The search relies on the monotonicity of `y` with `n`.\n"
     "\n"
     "References\n"
     "----------\n"
@@ -11925,7 +11930,7 @@ cdef char ufunc_pro_rad2_types[12]
 cdef char *ufunc_pro_rad2_doc = (
     "pro_rad2(m, n, c, x)\n"
     "\n"
-    "Prolate spheroidal radial function of the secon kind and its derivative\n"
+    "Prolate spheroidal radial function of the second kind and its derivative\n"
     "\n"
     "Computes the prolate spheroidal radial function of the second kind\n"
     "and its derivative (with respect to `x`) for mode parameters m>=0\n"
@@ -12518,6 +12523,37 @@ ufunc_smirnovi_data[0] = &ufunc_smirnovi_ptr[2*0]
 ufunc_smirnovi_data[1] = &ufunc_smirnovi_ptr[2*1]
 ufunc_smirnovi_data[2] = &ufunc_smirnovi_ptr[2*2]
 smirnovi = np.PyUFunc_FromFuncAndData(ufunc_smirnovi_loops, ufunc_smirnovi_data, ufunc_smirnovi_types, 3, 2, 1, 0, "smirnovi", ufunc_smirnovi_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_smirnovp_loops[3]
+cdef void *ufunc_smirnovp_ptr[6]
+cdef void *ufunc_smirnovp_data[3]
+cdef char ufunc_smirnovp_types[9]
+cdef char *ufunc_smirnovp_doc = (
+    "smirnovp(n, y)\n"
+    "\n"
+    "Derivative of `smirnov`")
+ufunc_smirnovp_loops[0] = <np.PyUFuncGenericFunction>loop_d_id__As_ld_d
+ufunc_smirnovp_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_smirnovp_loops[2] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_smirnovp_types[0] = <char>NPY_LONG
+ufunc_smirnovp_types[1] = <char>NPY_DOUBLE
+ufunc_smirnovp_types[2] = <char>NPY_DOUBLE
+ufunc_smirnovp_types[3] = <char>NPY_FLOAT
+ufunc_smirnovp_types[4] = <char>NPY_FLOAT
+ufunc_smirnovp_types[5] = <char>NPY_FLOAT
+ufunc_smirnovp_types[6] = <char>NPY_DOUBLE
+ufunc_smirnovp_types[7] = <char>NPY_DOUBLE
+ufunc_smirnovp_types[8] = <char>NPY_DOUBLE
+ufunc_smirnovp_ptr[2*0] = <void*>_func_smirnovp
+ufunc_smirnovp_ptr[2*0+1] = <void*>(<char*>"smirnovp")
+ufunc_smirnovp_ptr[2*1] = <void*>_func_smirnovp_unsafe
+ufunc_smirnovp_ptr[2*1+1] = <void*>(<char*>"smirnovp")
+ufunc_smirnovp_ptr[2*2] = <void*>_func_smirnovp_unsafe
+ufunc_smirnovp_ptr[2*2+1] = <void*>(<char*>"smirnovp")
+ufunc_smirnovp_data[0] = &ufunc_smirnovp_ptr[2*0]
+ufunc_smirnovp_data[1] = &ufunc_smirnovp_ptr[2*1]
+ufunc_smirnovp_data[2] = &ufunc_smirnovp_ptr[2*2]
+smirnovp = np.PyUFunc_FromFuncAndData(ufunc_smirnovp_loops, ufunc_smirnovp_data, ufunc_smirnovp_types, 3, 2, 1, 0, "smirnovp", ufunc_smirnovp_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_spence_loops[4]
 cdef void *ufunc_spence_ptr[8]

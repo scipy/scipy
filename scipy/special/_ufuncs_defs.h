@@ -199,6 +199,7 @@ npy_int sici(npy_double, npy_double *, npy_double *);
 npy_double sindg(npy_double);
 npy_double smirnov(npy_int, npy_double);
 npy_double smirnovi(npy_int, npy_double);
+npy_double smirnovp(npy_int, npy_double);
 npy_double spence(npy_double);
 npy_double cdft1_wrap(npy_double, npy_double);
 npy_double cdft3_wrap(npy_double, npy_double);

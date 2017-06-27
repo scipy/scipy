@@ -249,6 +249,7 @@ Raw Statistical Functions
    chndtrix     -- Inverse to `chndtr` vs `x`
    smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function
    smirnovi     -- Inverse to `smirnov`
+   smirnovp     -- Derivative of `smirnov`
    kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution
    kolmogi      -- Inverse function to kolmogorov
    tklmbda      -- Tukey-Lambda cumulative distribution function

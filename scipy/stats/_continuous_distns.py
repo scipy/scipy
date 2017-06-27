@@ -42,8 +42,18 @@ class ksone_gen(rv_continuous):
     def _cdf(self, x, n):
         return 1.0 - sc.smirnov(n, x)
 
+    def _sf(self, x, n):
+        return sc.smirnov(n, x)
+
+    def _pdf(self, x, n):
+        return -sc.smirnovp(n, x)
+
     def _ppf(self, q, n):
         return sc.smirnovi(n, 1.0 - q)
+
+    def _isf(self, q, n):
+        return sc.smirnovi(n, q)
+
 ksone = ksone_gen(a=0.0, name='ksone')
 
 

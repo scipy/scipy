@@ -214,6 +214,7 @@ cdef void sici(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1) nogil
 cpdef double sindg(double x0) nogil
 cpdef double smirnov(dl_number_t x0, double x1) nogil
 cpdef double smirnovi(dl_number_t x0, double x1) nogil
+cpdef double smirnovp(dl_number_t x0, double x1) nogil
 cpdef Dd_number_t spence(Dd_number_t x0) nogil
 cpdef double complex sph_harm(dl_number_t x0, dl_number_t x1, double x2, double x3) nogil
 cpdef double stdtr(double x0, double x1) nogil
