@@ -1421,8 +1421,9 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        mu : scalar
-            Mean of the Dirichlet distribution
+        mu : ndarray
+            Mean of the Dirichlet distribution.
+            An array of the same shape as alpha.
 
         """
         alpha = _dirichlet_check_parameters(alpha)
@@ -1440,8 +1441,9 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        v : scalar
-            Variance of the Dirichlet distribution
+        v : ndarray
+            Variance of the Dirichlet distribution.
+            An array of the same shape as alpha.
 
         """
 
