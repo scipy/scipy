@@ -24,7 +24,7 @@ def _vertex_index_strider(index, num_vertices):
     # sort order
     forward_index = index + 1
     backward_index = index - 1
-    if forward_index > (num_vertices - 1):
+    if forward_index >= num_vertices:
         forward_index = 0
     return forward_index, backward_index
 
