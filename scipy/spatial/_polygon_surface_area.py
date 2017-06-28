@@ -6,6 +6,7 @@ Polygon Surface Area Code
 
 """
 
+from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.spatial.distance import pdist
 from . import _surface_area
