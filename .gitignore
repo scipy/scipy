@@ -220,6 +220,7 @@ scipy/sparse/sparsetools/sparsetools_impl.h
 scipy/spatial/ckdtree.cxx
 scipy/spatial/ckdtree.h
 scipy/spatial/_hausdorff.c
+scipy/spatial/_surface_area.c
 scipy/spatial/qhull.c
 scipy/spatial/_voronoi.c
 scipy/special/_comb.c
