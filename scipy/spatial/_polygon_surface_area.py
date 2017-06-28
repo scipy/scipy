@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.spatial.distance import pdist
 from . import _surface_area
+from six.moves import xrange
 
 #
 # Copyright (C)  James Nichols and Tyler Reddy
@@ -50,7 +51,7 @@ def poly_area(vertices, radius=None, threshold=1e-21,
             lambda_vals = np.arctan2(vertices[...,1], vertices[...,0]) # longitudes
             phi_vals = np.arcsin(vertices[...,2] / radius) # latitudes
 
-            for i in range(0, num_vertices):
+            for i in xrange(num_vertices):
                 forward_index, backward_index = _vertex_index_strider(i, num_vertices)
                 delta_lambda = (lambda_vals[forward_index] -
                                 lambda_vals[backward_index])
@@ -62,7 +63,7 @@ def poly_area(vertices, radius=None, threshold=1e-21,
             area = _surface_area.spherical_polygon_area(vertices, radius)
     else: # planar polygon
         if cython is None:
-            for i in range(0, num_vertices):
+            for i in xrange(num_vertices):
                 forward_index, backward_index = _vertex_index_strider(i, num_vertices)
                 delta_x = (vertices[forward_index][0] -
                            vertices[backward_index][0])
