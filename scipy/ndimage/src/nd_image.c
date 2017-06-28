@@ -77,19 +77,19 @@ satisfies(PyArrayObject *a, int requirements, NumarrayType t)
     if (PyArray_ISCARRAY(a)) {
         return type_ok;
     }
-    if (PyArray_ISBYTESWAPPED(a) && (requirements & NPY_NOTSWAPPED)) {
+    if (PyArray_ISBYTESWAPPED(a) && (requirements & NPY_ARRAY_NOTSWAPPED)) {
         return 0;
     }
-    if (!PyArray_ISALIGNED(a) && (requirements & NPY_ALIGNED)) {
+    if (!PyArray_ISALIGNED(a) && (requirements & NPY_ARRAY_ALIGNED)) {
         return 0;
     }
-    if (!PyArray_ISCONTIGUOUS(a) && (requirements & NPY_CONTIGUOUS)) {
+    if (!PyArray_ISCONTIGUOUS(a) && (requirements & NPY_ARRAY_C_CONTIGUOUS)) {
         return 0;
     }
-    if (!PyArray_ISWRITEABLE(a) && (requirements & NPY_WRITEABLE)) {
+    if (!PyArray_ISWRITEABLE(a) && (requirements & NPY_ARRAY_WRITEABLE)) {
         return 0;
     }
-    if (requirements & NPY_ENSURECOPY) {
+    if (requirements & NPY_ARRAY_ENSURECOPY) {
         return 0;
     }
     return type_ok;
@@ -101,7 +101,7 @@ NA_OutputArray(PyObject *a, NumarrayType t, int requires)
     PyArray_Descr *dtype;
     PyArrayObject *ret;
 
-    if (!PyArray_Check(a) || !PyArray_ISWRITEABLE(a)) {
+    if (!PyArray_Check(a) || !PyArray_ISWRITEABLE((PyArrayObject *)a)) {
         PyErr_Format(PyExc_TypeError,
                      "NA_OutputArray: only writeable arrays work for output.");
         return NULL;
@@ -112,18 +112,19 @@ NA_OutputArray(PyObject *a, NumarrayType t, int requires)
         return (PyArrayObject *)a;
     }
     if (t == tAny) {
-        dtype = PyArray_DESCR(a);
+        dtype = PyArray_DESCR((PyArrayObject *)a);
         Py_INCREF(dtype);
     }
     else {
         dtype = PyArray_DescrFromType(t);
     }
-    ret = (PyArrayObject *)PyArray_Empty(PyArray_NDIM(a), PyArray_DIMS(a),
+    ret = (PyArrayObject *)PyArray_Empty(PyArray_NDIM((PyArrayObject *)a),
+                                         PyArray_DIMS((PyArrayObject *)a),
                                          dtype, 0);
-    PyArray_ENABLEFLAGS(ret, NPY_UPDATEIFCOPY);
+    PyArray_ENABLEFLAGS(ret, NPY_ARRAY_UPDATEIFCOPY);
     Py_INCREF(a);
     PyArray_SetBaseObject(ret, a);
-    PyArray_CLEARFLAGS(a, NPY_WRITEABLE);
+    PyArray_CLEARFLAGS((PyArrayObject *)a, NPY_ARRAY_WRITEABLE);
 
     return ret;
 }
@@ -139,7 +140,7 @@ copy from the temporary back to the original.
 static PyArrayObject *
 NA_IoArray(PyObject *a, NumarrayType t, int requires)
 {
-    PyArrayObject *shadow = NA_InputArray(a, t, requires | NPY_UPDATEIFCOPY);
+    PyArrayObject *shadow = NA_InputArray(a, t, requires | NPY_ARRAY_UPDATEIFCOPY);
 
     if (!shadow){
         return NULL;
@@ -276,7 +277,7 @@ NA_NewArray(void *buffer, NumarrayType type, int ndim, npy_intp *shape)
 static int
 NI_ObjectToInputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_InputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+    *array = NA_InputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -288,7 +289,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
         *array = NULL;
         return 1;
     } else {
-        *array = NA_InputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+        *array = NA_InputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
         return *array ? 1 : 0;
     }
 }
@@ -297,7 +298,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_OutputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+    *array = NA_OutputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -309,7 +310,7 @@ NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
         *array = NULL;
         return 1;
     } else {
-        *array = NA_OutputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+        *array = NA_OutputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
         return *array ? 1 : 0;
     }
 }
@@ -318,7 +319,7 @@ NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToIoArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_IoArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+    *array = NA_IoArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -327,7 +328,7 @@ static npy_intp
 NI_ObjectToLongSequenceAndLength(PyObject *object, npy_intp **sequence)
 {
     npy_intp *pa, ii;
-    PyArrayObject *array = NA_InputArray(object, NPY_INTP, NPY_CARRAY);
+    PyArrayObject *array = NA_InputArray(object, NPY_INTP, NPY_ARRAY_CARRAY);
     npy_intp length = PyArray_SIZE(array);
 
     *sequence = (npy_intp*)malloc(length * sizeof(npy_intp));
@@ -995,9 +996,9 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     if (max_label < 0)
         max_label = 0;
     if (max_label > 0) {
-        if (input->nd > 0) {
-            regions = (npy_intp*)malloc(2 * max_label * input->nd *
-                                                             sizeof(npy_intp));
+        if (PyArray_NDIM(input) > 0) {
+            regions = (npy_intp*)malloc(2 * max_label * PyArray_NDIM(input) *
+                                        sizeof(npy_intp));
         } else {
             regions = (npy_intp*)malloc(max_label * sizeof(npy_intp));
         }
@@ -1017,16 +1018,18 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     }
 
     for(ii = 0; ii < max_label; ii++) {
-        npy_intp idx = input->nd > 0 ? 2 * input->nd * ii : ii;
+        npy_intp idx =
+                PyArray_NDIM(input) > 0 ? 2 * PyArray_NDIM(input) * ii : ii;
         if (regions[idx] >= 0) {
-            PyObject *tuple = PyTuple_New(input->nd);
+            PyObject *tuple = PyTuple_New(PyArray_NDIM(input));
             if (!tuple) {
                 PyErr_NoMemory();
                 goto exit;
             }
-            for(jj = 0; jj < input->nd; jj++) {
+            for(jj = 0; jj < PyArray_NDIM(input); jj++) {
                 start = PyLong_FromSsize_t(regions[idx + jj]);
-                end = PyLong_FromSsize_t(regions[idx + jj + input->nd]);
+                end = PyLong_FromSsize_t(regions[idx + jj +
+                                             PyArray_NDIM(input)]);
                 if (!start || !end) {
                     PyErr_NoMemory();
                     goto exit;
