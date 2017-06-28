@@ -1,7 +1,8 @@
 from __future__ import print_function
 import numpy as np
 from scipy.spatial import _polygon_surface_area as psa
-from numpy.testing import assert_equal, assert_raises
+from numpy.testing import (assert_equal, assert_raises,
+                           assert_allclose)
 from hypothesis import given
 from hypothesis.strategies import floats
 
@@ -54,7 +55,7 @@ class TestSimpleAreas(object):
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
                                     cython=self.cython)
-        assert_equal(actual_area, expected_area)
+        assert_allclose(actual_area, expected_area)
 
     @given(floats(min_value=1e-20,
                   max_value=1e20)) 
@@ -69,7 +70,7 @@ class TestSimpleAreas(object):
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
                                     cython=self.cython)
-        assert_equal(actual_area, expected_area)
+        assert_allclose(actual_area, expected_area)
 
     @given(floats(min_value=1e-20,
                   max_value=1e20))
@@ -83,7 +84,7 @@ class TestSimpleAreas(object):
         actual_area = psa.poly_area(vertices=vertices,
                                     radius=radius,
                                     cython=self.cython)
-        assert_equal(actual_area, expected_area)
+        assert_allclose(actual_area, expected_area)
 
     @given(floats(min_value=-1e20,
                   max_value=0.0)) 
@@ -111,7 +112,7 @@ class TestSimpleAreas(object):
         expected = 0.5 * base * height
         actual = psa.poly_area(vertices=triangle_vertices,
                                cython=self.cython)
-        assert_equal(actual, expected)
+        assert_allclose(actual, expected)
 
     @given(floats(min_value=1e-20, max_value=1e20),
            floats(min_value=1e-20, max_value=1e20))
@@ -127,7 +128,7 @@ class TestSimpleAreas(object):
         expected = 0.5 * base * height
         actual = psa.poly_area(vertices=triangle_vertices,
                                cython=self.cython)
-        assert_equal(actual, expected)
+        assert_allclose(actual, expected)
 
 class TestSimpleAreasCython(TestSimpleAreas):
     def setUp(self):
@@ -181,8 +182,8 @@ class TestRadianAreas(object):
         actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
                                     radius=radius,
                                     cython=self.cython)
-        assert_equal(actual_area, expected_area)
-        assert_equal(actual_area_reverse, expected_area)
+        assert_allclose(actual_area, expected_area)
+        assert_allclose(actual_area_reverse, expected_area)
 
 class TestRadianAreasCython(TestRadianAreas):
     def setUp(self):
