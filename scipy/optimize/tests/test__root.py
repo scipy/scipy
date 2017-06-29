@@ -45,3 +45,4 @@ class TestRoot(object):
             x, y = z
             return np.array([x**3 - 1, y**3 - f])
         root(func, [1.1, 1.1], args=1.5)
+

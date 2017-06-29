@@ -168,6 +168,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
         else:
             jac = None
 
+    
     # set default tolerances
     if tol is not None:
         options = dict(options)
