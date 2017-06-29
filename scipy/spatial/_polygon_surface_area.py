@@ -44,8 +44,9 @@ def poly_area(vertices, radius=None, threshold=1e-21,
     area_sum = 0
 
     if radius is not None: # spherical polygons
-        if radius <= 0.0:
-            raise ValueError('radius must be > 0.0')
+        if radius <= threshold:
+            err_str = 'radius must be > {threshold}'.format(threshold=threshold)
+            raise ValueError(err_str)
         if cython is None:
 
             lambda_vals = np.arctan2(vertices[...,1], vertices[...,0]) # longitudes
