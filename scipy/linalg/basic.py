@@ -1049,11 +1049,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     -------
     x : (N,) or (N, K) ndarray
         Least-squares solution.  Return shape matches shape of `b`.
-    residues : () or (1,) or (K,) ndarray
+    residues : (0,) or () or (K,) ndarray
         Sums of residues, squared 2-norm for each column in ``b - a x``.
         If rank of matrix a is ``< N`` or ``N > M``, or ``'gelsy'`` is used,
-        this is an empty array. If b was 1-D, this is an (1,) shape array,
-        otherwise the shape is (K,).
+        this is a lenght zero array. If b was 1-D, this is a () shape array
+        (numpy scalar), otherwise the shape is (K,).
     rank : int
         Effective rank of matrix `a`.
     s : (min(M,N),) ndarray or None
