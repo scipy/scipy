@@ -53,10 +53,10 @@ typedef struct {
 /* Numarray Helper Functions */
 
 static PyArrayObject*
-NA_InputArray(PyObject *a, NumarrayType t, int requires)
+NA_InputArray(PyObject *a, enum NPY_TYPES t, int requires)
 {
     PyArray_Descr *descr;
-    if (t == tAny) {
+    if (t == NPY_NOTYPE) {
         descr = NULL;
     }
     else {
@@ -70,9 +70,10 @@ NA_InputArray(PyObject *a, NumarrayType t, int requires)
 the specified type.
 */
 static int
-satisfies(PyArrayObject *a, int requirements, NumarrayType t)
+satisfies(PyArrayObject *a, int requirements, enum NPY_TYPES t)
 {
-    int type_ok = (t == tAny) || PyArray_EquivTypenums(PyArray_TYPE(a), t);
+    int type_ok = (t == NPY_NOTYPE) ||
+                   PyArray_EquivTypenums(PyArray_TYPE(a), t);
 
     if (PyArray_ISCARRAY(a)) {
         return type_ok;
@@ -96,7 +97,7 @@ satisfies(PyArrayObject *a, int requirements, NumarrayType t)
 }
 
 static PyArrayObject *
-NA_OutputArray(PyObject *a, NumarrayType t, int requires)
+NA_OutputArray(PyObject *a, enum NPY_TYPES t, int requires)
 {
     PyArray_Descr *dtype;
     PyArrayObject *ret;
@@ -111,7 +112,7 @@ NA_OutputArray(PyObject *a, NumarrayType t, int requires)
         Py_INCREF(a);
         return (PyArrayObject *)a;
     }
-    if (t == tAny) {
+    if (t == NPY_NOTYPE) {
         dtype = PyArray_DESCR((PyArrayObject *)a);
         Py_INCREF(dtype);
     }
@@ -138,7 +139,7 @@ Unlike NA_InputArray, deallocating any resulting temporary array results in a
 copy from the temporary back to the original.
 */
 static PyArrayObject *
-NA_IoArray(PyObject *a, NumarrayType t, int requires)
+NA_IoArray(PyObject *a, enum NPY_TYPES t, int requires)
 {
     PyArrayObject *shadow = NA_InputArray(a, t, requires | NPY_ARRAY_UPDATEIFCOPY);
 
@@ -180,7 +181,7 @@ NA_ByteOrder(void)
 
 /* ignores bytestride */
 static PyArrayObject *
-NA_NewAllFromBuffer(int ndim, npy_intp *shape, NumarrayType type,
+NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
                     PyObject *bufferObject, npy_intp byteoffset,
                     npy_intp bytestride, int byteorder, int aligned,
                     int writeable)
@@ -188,8 +189,8 @@ NA_NewAllFromBuffer(int ndim, npy_intp *shape, NumarrayType type,
     PyArrayObject *self = NULL;
     PyArray_Descr *dtype;
 
-    if (type == tAny) {
-        type = tDefault;
+    if (type == NPY_NOTYPE) {
+        type = NPY_DOUBLE;
     }
 
     dtype = PyArray_DescrFromType(type);
@@ -237,7 +238,7 @@ NA_NewAllFromBuffer(int ndim, npy_intp *shape, NumarrayType type,
 }
 
 static PyArrayObject *
-NA_NewAll(int ndim, npy_intp *shape, NumarrayType type,
+NA_NewAll(int ndim, npy_intp *shape, enum NPY_TYPES type,
           void *buffer, npy_intp byteoffset, npy_intp bytestride,
           int byteorder, int aligned, int writeable)
 {
@@ -267,7 +268,7 @@ references a C_array: aligned, !byteswapped, contiguous, ...
 Call with buffer==NULL to allocate storage.
 */
 static PyArrayObject *
-NA_NewArray(void *buffer, NumarrayType type, int ndim, npy_intp *shape)
+NA_NewArray(void *buffer, enum NPY_TYPES type, int ndim, npy_intp *shape)
 {
     return (PyArrayObject *)NA_NewAll(ndim, shape, type, buffer, 0, 0,
                                       NA_ByteOrder(), 1, 1);
@@ -277,7 +278,7 @@ NA_NewArray(void *buffer, NumarrayType type, int ndim, npy_intp *shape)
 static int
 NI_ObjectToInputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_InputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
+    *array = NA_InputArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -289,7 +290,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
         *array = NULL;
         return 1;
     } else {
-        *array = NA_InputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
+        *array = NA_InputArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
         return *array ? 1 : 0;
     }
 }
@@ -298,7 +299,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_OutputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
+    *array = NA_OutputArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -310,7 +311,7 @@ NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
         *array = NULL;
         return 1;
     } else {
-        *array = NA_OutputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
+        *array = NA_OutputArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
         return *array ? 1 : 0;
     }
 }
@@ -319,7 +320,7 @@ NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToIoArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_IoArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
+    *array = NA_IoArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -590,8 +591,8 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
 #if PY_VERSION_HEX < 0x03000000
     } else if (PyCObject_Check(fnc)) {
         /* 'Legacy' low-level callable on Py2 */
-	func = PyCObject_AsVoidPtr(fnc);
-	data = PyCObject_GetDesc(fnc);
+        func = PyCObject_AsVoidPtr(fnc);
+        data = PyCObject_GetDesc(fnc);
 #endif
     } else {
         int ret;
@@ -710,8 +711,8 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
 #if PY_VERSION_HEX < 0x03000000
     } else if (PyCObject_Check(fnc)) {
         /* 'Legacy' low-level callable on Py2 */
-	func = PyCObject_AsVoidPtr(fnc);
-	data = PyCObject_GetDesc(fnc);
+        func = PyCObject_AsVoidPtr(fnc);
+        data = PyCObject_GetDesc(fnc);
 #endif
     } else {
         int ret;
@@ -907,7 +908,7 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
             goto exit;
         }
         if (PyCapsule_CheckExact(fnc) && PyCapsule_GetName(fnc) == NULL) {
-	    func = PyCapsule_GetPointer(fnc, NULL);
+            func = PyCapsule_GetPointer(fnc, NULL);
             data = PyCapsule_GetContext(fnc);
 #if PY_VERSION_HEX < 0x03000000
         } else if (PyCObject_Check(fnc)) {
