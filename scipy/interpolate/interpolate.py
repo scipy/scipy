@@ -41,7 +41,7 @@ def prod(x):
 
 
 def lagrange(x, w):
-    """
+    r"""
     Return a Lagrange interpolating polynomial.
 
     Given two 1-D arrays `x` and `w,` returns the Lagrange interpolating
@@ -59,24 +59,32 @@ def lagrange(x, w):
 
     Returns
     -------
-    lagrange : numpy.poly1d instance
+    lagrange : `numpy.poly1d` instance
         The Lagrange interpolating polynomial.
     
     Examples
     --------
-    Interpolate f(x) = x^3 by 3 points. 
+    Interpolate :math:`f(x) = x^3` by 3 points.
 
     >>> from scipy.interpolate import lagrange
-    >>> x = [1, 2, 3]
-    >>> y = [1, 8, 27]
+    >>> x = np.array([0, 1, 2])
+    >>> y = x**3
     >>> poly = lagrange(x, y)
     
-    Since there are only 3 points, Lagrange polynomial has degree 2.
+    Since there are only 3 points, Lagrange polynomial has degree 2. Explicitly,
+    it is given by
 
-    >>> import numpy as np
-    >>> print (np.poly1d(poly))
-       2
-    6 x - 11 x + 6
+    .. math::
+
+        \begin{aligned}
+            L(x) &= 1\times \frac{x (x - 2)}{-1} + 8\times \frac{x (x-1)}{2} \\
+                 &= x (-2 + 3x)
+        \end{aligned}
+
+    >>> from numpy.polynomial.polynomial import Polynomial
+    >>> Polynomial(poly).coef
+    array([ 3., -2.,  0.])
+
     """
 
     M = len(x)
