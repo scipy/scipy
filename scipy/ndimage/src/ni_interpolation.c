@@ -208,7 +208,7 @@ int NI_SplineFilter1D(PyArrayObject *input, int order, int axis,
     NI_LineBuffer iline_buffer, oline_buffer;
     NPY_BEGIN_THREADS_DEF;
 
-    len = input->nd > 0 ? input->dimensions[axis] : 1;
+    len = PyArray_NDIM(input) > 0 ? PyArray_DIM(input, axis) : 1;
     if (len < 1)
         goto exit;
 
@@ -372,12 +372,12 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
     NPY_BEGIN_THREADS;
 
-    for(kk = 0; kk < input->nd; kk++) {
-        idimensions[kk] = input->dimensions[kk];
-        istrides[kk] = input->strides[kk];
+    for(kk = 0; kk < PyArray_NDIM(input); kk++) {
+        idimensions[kk] = PyArray_DIM(input, kk);
+        istrides[kk] = PyArray_STRIDE(input, kk);
     }
-    irank = input->nd;
-    orank = output->nd;
+    irank = PyArray_NDIM(input);
+    orank = PyArray_NDIM(output);
 
     /* if the mapping is from array coordinates: */
     if (coordinates) {
@@ -466,9 +466,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         }
     }
 
-    size = 1;
-    for(qq = 0; qq < output->nd; qq++)
-        size *= output->dimensions[qq];
+    size = PyArray_SIZE(output);
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
         int constant = 0, edge = 0;
@@ -495,7 +493,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
         } else if (coordinates) {
             /* mapping is from an coordinates array: */
             char *p = pc;
-            switch (NI_NormalizeType(coordinates->descr->type_num)) {
+            switch (NI_NormalizeType(PyArray_TYPE(coordinates))) {
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, Bool);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, UInt8);
                 CASE_MAP_COORDINATES(p, icoor, irank, cstride, UInt16);
@@ -567,7 +565,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
 
         if (!constant) {
             npy_intp *ff = fcoordinates;
-            const int type_num = NI_NormalizeType(input->descr->type_num);
+            const int type_num = NI_NormalizeType(PyArray_TYPE(input));
             t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
                 double coeff = 0.0;
@@ -615,7 +613,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             t = cval;
         }
         /* store output value: */
-        switch (NI_NormalizeType(output->descr->type_num)) {
+        switch (NI_NormalizeType(PyArray_TYPE(output))) {
             CASE_INTERP_OUT(po, t, Bool);
             CASE_INTERP_OUT_UINT(po, t, UInt8, 0, MAX_UINT8);
             CASE_INTERP_OUT_UINT(po, t, UInt16, 0, MAX_UINT16);
@@ -682,12 +680,12 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
     NPY_BEGIN_THREADS;
 
-    for(kk = 0; kk < input->nd; kk++) {
-        idimensions[kk] = input->dimensions[kk];
-        istrides[kk] = input->strides[kk];
-        odimensions[kk] = output->dimensions[kk];
+    for (kk = 0; kk < PyArray_NDIM(input); kk++) {
+        idimensions[kk] = PyArray_DIM(input, kk);
+        istrides[kk] = PyArray_STRIDE(input, kk);
+        odimensions[kk] = PyArray_DIM(output, kk);
     }
-    rank = input->nd;
+    rank = PyArray_NDIM(input);
 
     /* if the mode is 'constant' we need some temps later: */
     if (mode == NI_EXTEND_CONSTANT) {
@@ -842,9 +840,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             }
         }
     }
-    size = 1;
-    for(qq = 0; qq < output->nd; qq++)
-        size *= output->dimensions[qq];
+    size = PyArray_SIZE(output);
     for(kk = 0; kk < size; kk++) {
         double t = 0.0;
         npy_intp edge = 0, oo = 0, zero = 0;
@@ -862,7 +858,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
 
         if (!zero) {
             npy_intp *ff = fcoordinates;
-            const int type_num = NI_NormalizeType(input->descr->type_num);
+            const int type_num = NI_NormalizeType(PyArray_TYPE(input));
             t = 0.0;
             for(hh = 0; hh < filter_size; hh++) {
                 npy_intp idx = 0;
@@ -912,7 +908,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
             t = cval;
         }
         /* store output: */
-        switch (NI_NormalizeType(output->descr->type_num)) {
+        switch (NI_NormalizeType(PyArray_TYPE(output))) {
             CASE_INTERP_OUT(po, t, Bool);
             CASE_INTERP_OUT_UINT(po, t, UInt8, 0, MAX_UINT8);
             CASE_INTERP_OUT_UINT(po, t, UInt16, 0, MAX_UINT16);

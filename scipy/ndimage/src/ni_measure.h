@@ -32,8 +32,6 @@
 #ifndef NI_MEASURE_H
 #define NI_MEASURE_H
 
-#include "nd_image.h"
-
 /* structure for array regions to find objects: */
 typedef struct {
     int start[NPY_MAXDIMS], end[NPY_MAXDIMS];

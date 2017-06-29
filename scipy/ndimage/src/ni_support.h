@@ -32,7 +32,16 @@
 #ifndef NI_SUPPORT_H
 #define NI_SUPPORT_H
 
+/*
+ * The NO_ARRAY_IMPORT tells numpy that the compilation unit will reuse
+ * the numpy API initialized in another compilation unit. The compilation
+ * unit that initializes the shared numpy API by calling import_array()
+ * must bypass this by explicitly including nd_image.h before ni_support.h.
+ */
+#define NO_ARRAY_IMPORT
 #include "nd_image.h"
+#undef NO_ARRAY_IMPORT
+
 #include <stdlib.h>
 #include <float.h>
 #include <limits.h>

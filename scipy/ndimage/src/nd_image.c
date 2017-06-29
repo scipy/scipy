@@ -28,10 +28,14 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#define ND_IMPORT_ARRAY
+
+/*
+ * The order of these first two imports should not be changed, see the note
+ * in ni_support.h for details.
+ */
 #include "nd_image.h"
-#undef ND_IMPORT_ARRAY
 #include "ni_support.h"
+
 #include "ni_filters.h"
 #include "ni_fourier.h"
 #include "ni_morphology.h"
@@ -46,11 +50,234 @@ typedef struct {
     PyObject *extra_keywords;
 } NI_PythonCallbackData;
 
+/* Numarray Helper Functions */
+
+static PyArrayObject*
+NA_InputArray(PyObject *a, NumarrayType t, int requires)
+{
+    PyArray_Descr *descr;
+    if (t == tAny) {
+        descr = NULL;
+    }
+    else {
+        descr = PyArray_DescrFromType(t);
+    }
+    return (PyArrayObject *) PyArray_CheckFromAny(a, descr, 0, 0, requires,
+                                                  NULL);
+}
+
+/* satisfies ensures that 'a' meets a set of requirements and matches
+the specified type.
+*/
+static int
+satisfies(PyArrayObject *a, int requirements, NumarrayType t)
+{
+    int type_ok = (t == tAny) || PyArray_EquivTypenums(PyArray_TYPE(a), t);
+
+    if (PyArray_ISCARRAY(a)) {
+        return type_ok;
+    }
+    if (PyArray_ISBYTESWAPPED(a) && (requirements & NPY_ARRAY_NOTSWAPPED)) {
+        return 0;
+    }
+    if (!PyArray_ISALIGNED(a) && (requirements & NPY_ARRAY_ALIGNED)) {
+        return 0;
+    }
+    if (!PyArray_ISCONTIGUOUS(a) && (requirements & NPY_ARRAY_C_CONTIGUOUS)) {
+        return 0;
+    }
+    if (!PyArray_ISWRITEABLE(a) && (requirements & NPY_ARRAY_WRITEABLE)) {
+        return 0;
+    }
+    if (requirements & NPY_ARRAY_ENSURECOPY) {
+        return 0;
+    }
+    return type_ok;
+}
+
+static PyArrayObject *
+NA_OutputArray(PyObject *a, NumarrayType t, int requires)
+{
+    PyArray_Descr *dtype;
+    PyArrayObject *ret;
+
+    if (!PyArray_Check(a) || !PyArray_ISWRITEABLE((PyArrayObject *)a)) {
+        PyErr_Format(PyExc_TypeError,
+                     "NA_OutputArray: only writeable arrays work for output.");
+        return NULL;
+    }
+
+    if (satisfies((PyArrayObject *)a, requires, t)) {
+        Py_INCREF(a);
+        return (PyArrayObject *)a;
+    }
+    if (t == tAny) {
+        dtype = PyArray_DESCR((PyArrayObject *)a);
+        Py_INCREF(dtype);
+    }
+    else {
+        dtype = PyArray_DescrFromType(t);
+    }
+    ret = (PyArrayObject *)PyArray_Empty(PyArray_NDIM((PyArrayObject *)a),
+                                         PyArray_DIMS((PyArrayObject *)a),
+                                         dtype, 0);
+    PyArray_ENABLEFLAGS(ret, NPY_ARRAY_UPDATEIFCOPY);
+    Py_INCREF(a);
+    PyArray_SetBaseObject(ret, a);
+    PyArray_CLEARFLAGS((PyArrayObject *)a, NPY_ARRAY_WRITEABLE);
+
+    return ret;
+}
+
+/* NA_IoArray is a combination of NA_InputArray and NA_OutputArray.
+
+Unlike NA_OutputArray, if a temporary is required it is initialized to a copy
+of the input array.
+
+Unlike NA_InputArray, deallocating any resulting temporary array results in a
+copy from the temporary back to the original.
+*/
+static PyArrayObject *
+NA_IoArray(PyObject *a, NumarrayType t, int requires)
+{
+    PyArrayObject *shadow = NA_InputArray(a, t, requires | NPY_ARRAY_UPDATEIFCOPY);
+
+    if (!shadow){
+        return NULL;
+    }
+
+    /* Guard against non-writable, but otherwise satisfying requires.
+         In this case,  shadow == a.
+    */
+    if (!PyArray_ISWRITEABLE(shadow)) {
+        PyErr_Format(PyExc_TypeError,
+                     "NA_IoArray: I/O array must be writable array");
+        PyArray_XDECREF_ERR(shadow);
+        return NULL;
+    }
+
+    return shadow;
+}
+
+#define NUM_LITTLE_ENDIAN 0
+#define NUM_BIG_ENDIAN 1
+
+static int
+NA_ByteOrder(void)
+{
+    unsigned int byteorder_test;
+    byteorder_test = 1;
+    if (*((char *) &byteorder_test)) {
+        return NUM_LITTLE_ENDIAN;
+    }
+    else {
+        return NUM_BIG_ENDIAN;
+    }
+}
+
+#undef NUM_BIG_ENDIAN
+#undef NUM_LITTLE_ENDIAN
+
+/* ignores bytestride */
+static PyArrayObject *
+NA_NewAllFromBuffer(int ndim, npy_intp *shape, NumarrayType type,
+                    PyObject *bufferObject, npy_intp byteoffset,
+                    npy_intp bytestride, int byteorder, int aligned,
+                    int writeable)
+{
+    PyArrayObject *self = NULL;
+    PyArray_Descr *dtype;
+
+    if (type == tAny) {
+        type = tDefault;
+    }
+
+    dtype = PyArray_DescrFromType(type);
+    if (dtype == NULL){
+        return NULL;
+    }
+
+    if (byteorder != NA_ByteOrder()) {
+        PyArray_Descr *temp;
+        temp = PyArray_DescrNewByteorder(dtype, NPY_SWAP);
+        Py_DECREF(dtype);
+        if (temp == NULL) {
+            return NULL;
+        }
+        dtype = temp;
+    }
+
+    if (bufferObject == Py_None || bufferObject == NULL) {
+        self = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type, dtype,
+                                                     ndim, shape, NULL, NULL,
+                                                     0, NULL);
+    }
+    else {
+        npy_intp size = 1;
+        int i;
+        PyArrayObject *newself;
+        PyArray_Dims newdims;
+        for(i=0; i<ndim; i++) {
+            size *= shape[i];
+        }
+        self = (PyArrayObject *)PyArray_FromBuffer(bufferObject, dtype,
+                                                   size, byteoffset);
+        if (self == NULL){
+            return self;
+        }
+        newdims.len = ndim;
+        newdims.ptr = shape;
+        newself = (PyArrayObject *)PyArray_Newshape(self, &newdims,
+                                                    NPY_CORDER);
+        Py_DECREF(self);
+        self = newself;
+    }
+
+    return self;
+}
+
+static PyArrayObject *
+NA_NewAll(int ndim, npy_intp *shape, NumarrayType type,
+          void *buffer, npy_intp byteoffset, npy_intp bytestride,
+          int byteorder, int aligned, int writeable)
+{
+    PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type, Py_None,
+                                                byteoffset, bytestride,
+                                                byteorder, aligned, writeable);
+
+    if (result) {
+        if (!PyArray_Check((PyObject *) result)) {
+            PyErr_Format(PyExc_TypeError, "NA_NewAll: non-NumArray result");
+            result = NULL;
+        }
+        else {
+            if (buffer) {
+                memcpy(PyArray_DATA(result), buffer, PyArray_NBYTES(result));
+            }
+            else {
+                memset(PyArray_DATA(result), 0, PyArray_NBYTES(result));
+            }
+        }
+    }
+    return  result;
+}
+
+/* Create a new numarray which is initially a C_array, or which
+references a C_array: aligned, !byteswapped, contiguous, ...
+Call with buffer==NULL to allocate storage.
+*/
+static PyArrayObject *
+NA_NewArray(void *buffer, NumarrayType type, int ndim, npy_intp *shape)
+{
+    return (PyArrayObject *)NA_NewAll(ndim, shape, type, buffer, 0, 0,
+                                      NA_ByteOrder(), 1, 1);
+}
+
 /* Convert an input array of any type, not necessarily contiguous */
 static int
 NI_ObjectToInputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_InputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+    *array = NA_InputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -62,7 +289,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
         *array = NULL;
         return 1;
     } else {
-        *array = NA_InputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+        *array = NA_InputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
         return *array ? 1 : 0;
     }
 }
@@ -71,7 +298,7 @@ NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_OutputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+    *array = NA_OutputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -83,7 +310,7 @@ NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
         *array = NULL;
         return 1;
     } else {
-        *array = NA_OutputArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+        *array = NA_OutputArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
         return *array ? 1 : 0;
     }
 }
@@ -92,7 +319,7 @@ NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
 static int
 NI_ObjectToIoArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_IoArray(object, tAny, NPY_ALIGNED|NPY_NOTSWAPPED);
+    *array = NA_IoArray(object, tAny, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
     return *array ? 1 : 0;
 }
 
@@ -101,7 +328,7 @@ static npy_intp
 NI_ObjectToLongSequenceAndLength(PyObject *object, npy_intp **sequence)
 {
     npy_intp *pa, ii;
-    PyArrayObject *array = NA_InputArray(object, NPY_INTP, NPY_CARRAY);
+    PyArrayObject *array = NA_InputArray(object, NPY_INTP, NPY_ARRAY_CARRAY);
     npy_intp length = PyArray_SIZE(array);
 
     *sequence = (npy_intp*)malloc(length * sizeof(npy_intp));
@@ -769,9 +996,9 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     if (max_label < 0)
         max_label = 0;
     if (max_label > 0) {
-        if (input->nd > 0) {
-            regions = (npy_intp*)malloc(2 * max_label * input->nd *
-                                                             sizeof(npy_intp));
+        if (PyArray_NDIM(input) > 0) {
+            regions = (npy_intp*)malloc(2 * max_label * PyArray_NDIM(input) *
+                                        sizeof(npy_intp));
         } else {
             regions = (npy_intp*)malloc(max_label * sizeof(npy_intp));
         }
@@ -791,16 +1018,18 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
     }
 
     for(ii = 0; ii < max_label; ii++) {
-        npy_intp idx = input->nd > 0 ? 2 * input->nd * ii : ii;
+        npy_intp idx =
+                PyArray_NDIM(input) > 0 ? 2 * PyArray_NDIM(input) * ii : ii;
         if (regions[idx] >= 0) {
-            PyObject *tuple = PyTuple_New(input->nd);
+            PyObject *tuple = PyTuple_New(PyArray_NDIM(input));
             if (!tuple) {
                 PyErr_NoMemory();
                 goto exit;
             }
-            for(jj = 0; jj < input->nd; jj++) {
+            for(jj = 0; jj < PyArray_NDIM(input); jj++) {
                 start = PyLong_FromSsize_t(regions[idx + jj]);
-                end = PyLong_FromSsize_t(regions[idx + jj + input->nd]);
+                end = PyLong_FromSsize_t(regions[idx + jj +
+                                             PyArray_NDIM(input)]);
                 if (!start || !end) {
                     PyErr_NoMemory();
                     goto exit;
@@ -1050,7 +1279,7 @@ static PyMethodDef methods[] = {
     {"distance_transform_op", (PyCFunction)Py_DistanceTransformOnePass,
      METH_VARARGS, NULL},
     {"euclidean_feature_transform",
-     (PyCFunction)Py_EuclideanFeatureTransform, 
+     (PyCFunction)Py_EuclideanFeatureTransform,
      METH_VARARGS, NULL},
     {"binary_erosion",        (PyCFunction)Py_BinaryErosion,
      METH_VARARGS, NULL},
