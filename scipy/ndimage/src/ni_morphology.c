@@ -38,49 +38,52 @@
 
 #define LIST_SIZE 100000
 
-#define CASE_GET_MASK(_msk_value, _pm, _type) \
-case t ## _type:                              \
-    _msk_value = *(_type*)_pm ? 1 : 0;          \
+#define CASE_GET_MASK(_TYPE, _type, _msk_value, _pm) \
+case _TYPE:                                          \
+    _msk_value = *(_type *)_pm ? 1 : 0;              \
     break
 
-#define CASE_OUTPUT(_po, _out, _type) \
-case t ## _type:                      \
-    *(_type*)_po = (_type)_out;         \
+#define CASE_OUTPUT(_TYPE, _type, _po, _out) \
+case _TYPE:                                  \
+    *(_type *)_po = (_type)_out;             \
     break
 
-#define CASE_NI_ERODE_POINT(_pi, _out, _offsets, _filter_size, _type, \
-                                                        _mv,  _border_value, _bv, _center_is_true,\
-                                                        _true, _false, _changed)                  \
-case t ## _type:                                                      \
+#define CASE_NI_ERODE_POINT(_TYPE, _type, _pi, _out, _offsets,        \
+                            _filter_size, _mv,  _border_value, _bv,   \
+                            _center_is_true, _true, _false, _changed) \
+case _TYPE:                                                           \
 {                                                                     \
-    npy_intp _ii, _oo;                                                  \
-    int _in = *(_type*)_pi ? 1 : 0;                                     \
-    if (_mv) {                                                          \
-        if (_center_is_true && _in == false) {                            \
-            _changed = 0;                                                   \
-            _out = _in;                                                     \
-        } else {                                                          \
-            _out = _true;                                                   \
-            for(_ii = 0; _ii < _filter_size; _ii++) {                       \
-                _oo = _offsets[_ii];                                          \
-                if (_oo == _bv) {                                             \
-                    if (!_border_value) {                                       \
-                        _out = _false;                                            \
-                        break;                                                    \
-                    }                                                           \
-                } else {                                                      \
-                    int _nn = *(_type*)(_pi + _oo) ? _true : _false;            \
-                    if (!_nn) {                                                 \
-                        _out = _false;                                            \
-                        break;                                                    \
-                    }                                                           \
-                }                                                             \
-            }                                                               \
-            _changed = _out != _in;                                         \
-        }                                                                 \
-    } else {                                                            \
-        _out = _in;                                                       \
-    }                                                                   \
+    npy_intp _ii, _oo;                                                \
+    int _in = *(_type *)_pi ? 1 : 0;                                  \
+    if (_mv) {                                                        \
+        if (_center_is_true && _in == false) {                        \
+            _changed = 0;                                             \
+            _out = _in;                                               \
+        }                                                             \
+        else {                                                        \
+            _out = _true;                                             \
+            for (_ii = 0; _ii < _filter_size; _ii++) {                \
+                _oo = _offsets[_ii];                                  \
+                if (_oo == _bv) {                                     \
+                    if (!_border_value) {                             \
+                        _out = _false;                                \
+                        break;                                        \
+                    }                                                 \
+                }                                                     \
+                else {                                                \
+                    int _nn = *(_type *)(_pi + _oo) ? _true : _false; \
+                    if (!_nn) {                                       \
+                        _out = _false;                                \
+                        break;                                        \
+                    }                                                 \
+                }                                                     \
+            }                                                         \
+            _changed = _out != _in;                                   \
+        }                                                             \
+    }                                                                 \
+    else {                                                            \
+        _out = _in;                                                   \
+    }                                                                 \
 }                                                                     \
 break
 
@@ -164,81 +167,98 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
     for(jj = 0; jj < size; jj++) {
         int pchange = 0;
         if (mask) {
-            switch(NI_NormalizeType(PyArray_TYPE(mask))) {
-            CASE_GET_MASK(msk_value, pm, Bool);
-            CASE_GET_MASK(msk_value, pm, UInt8);
-            CASE_GET_MASK(msk_value, pm, UInt16);
-            CASE_GET_MASK(msk_value, pm, UInt32);
-#if HAS_UINT64
-            CASE_GET_MASK(msk_value, pm, UInt64);
-#endif
-            CASE_GET_MASK(msk_value, pm, Int8);
-            CASE_GET_MASK(msk_value, pm, Int16);
-            CASE_GET_MASK(msk_value, pm, Int32);
-            CASE_GET_MASK(msk_value, pm, Int64);
-            CASE_GET_MASK(msk_value, pm, Float32);
-            CASE_GET_MASK(msk_value, pm, Float64);
-            default:
+            switch(PyArray_TYPE(mask)) {
+                CASE_GET_MASK(NPY_BOOL, npy_bool, msk_value, pm);
+                CASE_GET_MASK(NPY_UBYTE, npy_ubyte, msk_value, pm);
+                CASE_GET_MASK(NPY_USHORT, npy_ushort, msk_value, pm);
+                CASE_GET_MASK(NPY_UINT, npy_uint, msk_value, pm);
+                CASE_GET_MASK(NPY_ULONG, npy_ulong, msk_value, pm);
+                CASE_GET_MASK(NPY_ULONGLONG, npy_ulonglong, msk_value, pm);
+                CASE_GET_MASK(NPY_BYTE, npy_byte, msk_value, pm);
+                CASE_GET_MASK(NPY_SHORT, npy_short, msk_value, pm);
+                CASE_GET_MASK(NPY_INT, npy_int, msk_value, pm);
+                CASE_GET_MASK(NPY_LONG, npy_long, msk_value, pm);
+                CASE_GET_MASK(NPY_LONGLONG, npy_longlong, msk_value, pm);
+                CASE_GET_MASK(NPY_FLOAT, npy_float, msk_value, pm);
+                CASE_GET_MASK(NPY_DOUBLE, npy_double, msk_value, pm);
+             default:
                 NPY_END_THREADS;
                 PyErr_SetString(PyExc_RuntimeError, "data type not supported");
                 return 0;
             }
         }
-        switch (NI_NormalizeType(PyArray_TYPE(input))) {
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Bool, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, UInt8, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, UInt16, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, UInt32, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-#if HAS_UINT64
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, UInt64, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-#endif
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Int8, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Int16, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Int32, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Int64, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Float32, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
-        CASE_NI_ERODE_POINT(pi, out, oo, struct_size, Float64, msk_value,
-                                                bdr_value, border_flag_value, center_is_true,
-                                                true, false, pchange);
+        switch (PyArray_TYPE(input)) {
+            CASE_NI_ERODE_POINT(NPY_BOOL, npy_bool,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_UBYTE, npy_ubyte,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_USHORT, npy_ushort,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_UINT, npy_uint,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_ULONG, npy_ulong,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_ULONGLONG, npy_ulonglong,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_BYTE, npy_byte,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_SHORT, npy_short,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_INT, npy_int,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_LONG, npy_long,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_LONGLONG, npy_longlong,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_FLOAT, npy_float,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
+            CASE_NI_ERODE_POINT(NPY_DOUBLE, npy_double,
+                                pi, out, oo, struct_size, msk_value,
+                                bdr_value, border_flag_value, center_is_true,
+                                true, false, pchange);
         default:
             NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
             goto exit;
         }
-        switch (NI_NormalizeType(PyArray_TYPE(output))) {
-        CASE_OUTPUT(po, out, Bool);
-        CASE_OUTPUT(po, out, UInt8);
-        CASE_OUTPUT(po, out, UInt16);
-        CASE_OUTPUT(po, out, UInt32);
-#if HAS_UINT64
-        CASE_OUTPUT(po, out, UInt64);
-#endif
-        CASE_OUTPUT(po, out, Int8);
-        CASE_OUTPUT(po, out, Int16);
-        CASE_OUTPUT(po, out, Int32);
-        CASE_OUTPUT(po, out, Int64);
-        CASE_OUTPUT(po, out, Float32);
-        CASE_OUTPUT(po, out, Float64);
+        switch (PyArray_TYPE(output)) {
+            CASE_OUTPUT(NPY_BOOL, npy_bool, po, out);
+            CASE_OUTPUT(NPY_UBYTE, npy_ubyte, po, out);
+            CASE_OUTPUT(NPY_USHORT, npy_ushort, po, out);
+            CASE_OUTPUT(NPY_UINT, npy_uint, po, out);
+            CASE_OUTPUT(NPY_ULONG, npy_ulong, po, out);
+            CASE_OUTPUT(NPY_ULONGLONG, npy_ulonglong, po, out);
+            CASE_OUTPUT(NPY_BYTE, npy_byte, po, out);
+            CASE_OUTPUT(NPY_SHORT, npy_short, po, out);
+            CASE_OUTPUT(NPY_INT, npy_int, po, out);
+            CASE_OUTPUT(NPY_LONG, npy_long, po, out);
+            CASE_OUTPUT(NPY_LONGLONG, npy_longlong, po, out);
+            CASE_OUTPUT(NPY_FLOAT, npy_float, po, out);
+            CASE_OUTPUT(NPY_DOUBLE, npy_double, po, out);
         default:
             NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
@@ -283,36 +303,38 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
     }
 }
 
-#define CASE_ERODE_POINT2(_struct_size, _offsets, _coordinate_offsets, \
-                                                    _pi, _oo, _irank, _list1, _list2,            \
-                                                    _current_coors1, _current_coors2, _block1,   \
-                                                    _block2, _bf_value, _true, _false, _type,    \
-                                                    _mklist)                                     \
-case t ## _type:                                                       \
-{                                                                      \
+#define CASE_ERODE_POINT2(_TYPE, _type, _struct_size, _offsets,               \
+                          _coordinate_offsets, _pi, _oo, _irank,              \
+                          _list1, _list2,                                     \
+                          _current_coors1, _current_coors2,                   \
+                          _block1, _block2,                                   \
+                          _bf_value, _true, _false, _mklist)                  \
+case _TYPE:                                                                   \
+{                                                                             \
     npy_intp _hh, _kk;                                                        \
-    for(_hh = 0; _hh < _struct_size; _hh++) {                            \
+    for (_hh = 0; _hh < _struct_size; _hh++) {                                \
         npy_intp _to = _offsets[_oo + _hh];                                   \
-        if (_to != _bf_value && *(_type*)(_pi + _to) == _true) {           \
-            if (_mklist) {                                                   \
+        if (_to != _bf_value && *(_type *)(_pi + _to) == _true) {             \
+            if (_mklist) {                                                    \
                 npy_intp *_tc = &(_coordinate_offsets[(_oo + _hh) * _irank]); \
-                if (_block2 == NULL || _block2->size == _list2->block_size) {  \
-                    _block2 = NI_CoordinateListAddBlock(_list2);                 \
-                    if (NPY_UNLIKELY(_block2 == NULL)) {                                    \
-                        NPY_END_THREADS;                                    \
-                        PyErr_NoMemory();                                    \
-                        goto exit;                                              \
-                    }                                                       \
-                    _current_coors2 = _block2->coordinates;                      \
-                }                                                              \
-                for(_kk = 0; _kk < _irank; _kk++)                              \
-                    *_current_coors2++ = _current_coors1[_kk] + _tc[_kk];        \
-                _block2->size++;                                               \
-            }                                                                \
-            *(_type*)(_pi + _to) = _false;                                   \
-        }                                                                  \
-    }                                                                    \
-}                                                                      \
+                if (_block2 == NULL || _block2->size == _list2->block_size) { \
+                    _block2 = NI_CoordinateListAddBlock(_list2);              \
+                    if (NPY_UNLIKELY(_block2 == NULL)) {                      \
+                        NPY_END_THREADS;                                      \
+                        PyErr_NoMemory();                                     \
+                        goto exit;                                            \
+                    }                                                         \
+                    _current_coors2 = _block2->coordinates;                   \
+                }                                                             \
+                for (_kk = 0; _kk < _irank; _kk++) {                          \
+                    *_current_coors2++ = _current_coors1[_kk] + _tc[_kk];     \
+                }                                                             \
+                _block2->size++;                                              \
+            }                                                                 \
+            *(_type *)(_pi + _to) = _false;                                   \
+        }                                                                     \
+    }                                                                         \
+}                                                                             \
 break
 
 int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
@@ -426,64 +448,85 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
         NI_ITERATOR_GOTO(ii, current_coordinates1, ibase, pi);
         NI_FILTER_GOTO(fi, ii, 0, oo);
 
-        switch (NI_NormalizeType(PyArray_TYPE(array))) {
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          Bool, mklist);
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          UInt8, mklist);
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          UInt16, mklist);
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          UInt32, mklist);
-#if HAS_UINT64
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          UInt64, mklist);
-#endif
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          Int8, mklist);
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          Int16, mklist);
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          Int32, mklist);
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          Int64, mklist);
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          Float32, mklist);
-        CASE_ERODE_POINT2(struct_size, offsets, coordinate_offsets, pi,
-                          oo, PyArray_NDIM(array), list1, list2,
-                          current_coordinates1, current_coordinates2,
-                          block1, block2, border_flag_value, true, false,
-                          Float64, mklist);
+        switch (PyArray_TYPE(array)) {
+            CASE_ERODE_POINT2(NPY_BOOL, npy_bool,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_UBYTE, npy_ubyte,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_USHORT, npy_ushort,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_UINT, npy_uint,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_ULONG, npy_ulong,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_ULONGLONG, npy_ulonglong,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_BYTE, npy_byte,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_SHORT, npy_short,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_INT, npy_int,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_LONG, npy_long,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_LONGLONG, npy_longlong,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_FLOAT, npy_float,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
+            CASE_ERODE_POINT2(NPY_DOUBLE, npy_double,
+                              struct_size, offsets, coordinate_offsets,
+                              pi, oo, PyArray_NDIM(array), list1, list2,
+                              current_coordinates1, current_coordinates2,
+                              block1, block2, border_flag_value,
+                              true, false, mklist);
         default:
             NPY_END_THREADS;
             PyErr_SetString(PyExc_RuntimeError, "data type not supported");
