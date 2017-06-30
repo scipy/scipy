@@ -29,6 +29,33 @@ def _vertex_index_strider(index, num_vertices):
         forward_index = 0
     return forward_index, backward_index
 
+def _planar_polygon_area(vertices):
+    num_vertices = vertices.shape[0]
+    area_sum = 0
+    for i in xrange(num_vertices):
+        forward_index, backward_index = _vertex_index_strider(i, num_vertices)
+        delta_x = (vertices[forward_index][0] -
+                   vertices[backward_index][0])
+        area_sum += delta_x * vertices[i][1]
+    area = -0.5 * area_sum
+    return area
+
+def _spherical_polygon_area(vertices, radius):
+    num_vertices = vertices.shape[0]
+    area_sum = 0
+    lambda_vals = np.arctan2(vertices[...,1], vertices[...,0]) # longitudes
+    phi_vals = np.arcsin(vertices[...,2] / radius) # latitudes
+
+    for i in xrange(num_vertices):
+        forward_index, backward_index = _vertex_index_strider(i, num_vertices)
+        delta_lambda = (lambda_vals[forward_index] -
+                        lambda_vals[backward_index])
+        area_sum += delta_lambda * np.sin(phi_vals[i])
+    # the paper divides by 2 here, but my testing
+    # suggests we should not do that!
+    area = (radius ** 2) * area_sum
+    return area
+
 def poly_area(vertices, radius=None, threshold=1e-21,
               cython=None):
     # calculate the surface area of a planar or spherical polygon
@@ -45,36 +72,17 @@ def poly_area(vertices, radius=None, threshold=1e-21,
                                             threshold=threshold)
         raise ValueError(err_str)
 
-    num_vertices = vertices.shape[0]
-    area_sum = 0
-
     if radius is not None: # spherical polygons
         if radius <= threshold:
             err_str = 'radius must be > {threshold}'.format(threshold=threshold)
             raise ValueError(err_str)
         if cython is None:
-
-            lambda_vals = np.arctan2(vertices[...,1], vertices[...,0]) # longitudes
-            phi_vals = np.arcsin(vertices[...,2] / radius) # latitudes
-
-            for i in xrange(num_vertices):
-                forward_index, backward_index = _vertex_index_strider(i, num_vertices)
-                delta_lambda = (lambda_vals[forward_index] -
-                                lambda_vals[backward_index])
-                area_sum += delta_lambda * np.sin(phi_vals[i])
-            # the paper divides by 2 here, but my testing
-            # suggests we should not do that!
-            area = (radius ** 2) * area_sum
+            area = _spherical_polygon_area(vertices, radius)
         else: # cython code for spherical polygon SA
             area = _surface_area.spherical_polygon_area(vertices, radius)
     else: # planar polygon
         if cython is None:
-            for i in xrange(num_vertices):
-                forward_index, backward_index = _vertex_index_strider(i, num_vertices)
-                delta_x = (vertices[forward_index][0] -
-                           vertices[backward_index][0])
-                area_sum += delta_x * vertices[i][1]
-            area = -0.5 * area_sum
+            area = _planar_polygon_area(vertices)
         else: # cython code for planar polygon SA
             area = _surface_area.planar_polygon_area(vertices)
     
