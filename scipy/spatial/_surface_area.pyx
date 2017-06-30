@@ -1,6 +1,7 @@
 import numpy as np
 cimport numpy as np
 cimport cython
+from libc.math cimport sin
 
 cdef int vertex_index_strider(int index, int num_vertices):
     cdef int forward_index
@@ -40,6 +41,6 @@ def spherical_polygon_area(double[:,:] vertices, double radius):
         backward_index = i - 1
         delta_lambda = (lambda_vals[forward_index] -
                         lambda_vals[backward_index])
-        area += delta_lambda * np.sin(phi_vals[i])
+        area += delta_lambda * sin(phi_vals[i])
     area = (radius ** 2) * area
     return area
