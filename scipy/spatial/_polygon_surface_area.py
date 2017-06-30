@@ -37,8 +37,13 @@ def poly_area(vertices, radius=None, threshold=1e-21,
     # based on JPL Publication 07-3 by Chamberlain and Duquette (2007)
     # for planar polygons we currently still require x,y,z coords
     # can just set i.e., z = 0 for all vertices
-    if pdist(vertices).min() < threshold:
-        raise ValueError("Duplicate vertices detected within threshold.")
+    min_vertex_dist = pdist(vertices).min()
+    if min_vertex_dist < threshold:
+        err_str = '''Duplicate vertices detected based on minimum
+                     distance {min_vertex_dist} and threshold value
+                     {threshold}.'''.format(min_vertex_dist=min_vertex_dist,
+                                            threshold=threshold)
+        raise ValueError(err_str)
 
     num_vertices = vertices.shape[0]
     area_sum = 0

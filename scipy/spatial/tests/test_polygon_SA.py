@@ -1,8 +1,10 @@
 from __future__ import print_function
 import numpy as np
 from scipy.spatial import _polygon_surface_area as psa
+from scipy.spatial.distance import pdist
 from numpy.testing import (assert_equal, assert_raises,
-                           assert_allclose)
+                           assert_allclose,
+                           assert_raises_regex)
 from hypothesis import given
 from hypothesis.strategies import floats
 
@@ -20,12 +22,19 @@ class TestDegenerateInput(object):
         # check that a ValueError is raised
         # for duplicate polygon vertices
         # within a user-specified threshold
+        # ensure that the error message string
+        # contains the correct values as well
         vertices = np.array([[-1,0,0],
                              [1,0,0],
                              [0,0,1]]) * radius
         vertices = np.concatenate((vertices,
                                    vertices))
-        with assert_raises(ValueError):
+        min_dist = pdist(vertices).min()
+        expected_str = '''Duplicate vertices detected based on minimum
+                     distance {min_dist} and threshold value
+                     {threshold}.'''.format(min_dist=min_dist,
+                                            threshold=threshold)
+        with assert_raises_regex(ValueError, expected_str):
             psa.poly_area(vertices,
                           radius,
                           threshold,
