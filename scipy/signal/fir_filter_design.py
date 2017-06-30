@@ -1081,7 +1081,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
            doi: 10.1109/ICASSP.1999.756179
     .. [2] X. Chen and T. W. Parks, "Design of optimal minimum phase FIR
            filters by direct factorization," Signal Processing,
-           vol. 10, no. 4, pp. 369–383, Jun. 1986.
+           vol. 10, no. 4, pp. 369-383, Jun. 1986.
     .. [3] T. Saramaki, "Finite Impulse Response Filter Design," in
            Handbook for Digital Signal Processing, chapter 4,
            New York: Wiley-Interscience, 1993.
