@@ -186,7 +186,7 @@ typedef struct {
     npy_intp size1, size2, array_lines, next_line;
     NI_Iterator iterator;
     char* array_data;
-    NumarrayType array_type;
+    enum NPY_TYPES array_type;
     NI_ExtendMode extend_mode;
     double extend_value;
 } NI_LineBuffer;

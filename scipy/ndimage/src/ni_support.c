@@ -296,15 +296,15 @@ int NI_ExtendLine(double *buffer, npy_intp line_length,
 }
 
 
-#define CASE_COPY_DATA_TO_LINE(_pi, _po, _length, _stride, _type) \
-case t ## _type:                                                  \
-{                                                                 \
-    npy_intp _ii;                                                  \
-    for(_ii = 0; _ii < _length; _ii++) {                            \
-        _po[_ii] = (double)*(_type*)_pi;                              \
-        _pi += _stride;                                               \
-    }                                                               \
-}                                                                 \
+#define CASE_COPY_DATA_TO_LINE(_TYPE, _type, _pi, _po, _length, _stride) \
+case _TYPE:                                                              \
+{                                                                        \
+    npy_intp _ii;                                                        \
+    for (_ii = 0; _ii < _length; ++_ii) {                                \
+        _po[_ii] = (double)*(_type *)_pi;                                \
+        _pi += _stride;                                                  \
+    }                                                                    \
+}                                                                        \
 break
 
 
@@ -325,19 +325,32 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
         pa = buffer->array_data;
         /* copy the data from the array to the buffer: */
         switch (buffer->array_type) {
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Bool);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, UInt8);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, UInt16);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, UInt32);
-#if HAS_UINT64
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, UInt64);
-#endif
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int8);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int16);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int32);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Int64);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float32);
-            CASE_COPY_DATA_TO_LINE(pa, pb, length, buffer->line_stride, Float64);
+            CASE_COPY_DATA_TO_LINE(NPY_BOOL, npy_bool,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_UBYTE, npy_ubyte,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_USHORT, npy_ushort,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_UINT, npy_uint,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_ULONG, npy_ulong,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_ULONGLONG, npy_ulonglong,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_BYTE, npy_byte,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_SHORT, npy_short,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_INT, npy_int,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_LONG, npy_long,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_LONGLONG, npy_longlong,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_FLOAT, npy_float,
+                                   pa, pb, length, buffer->line_stride);
+            CASE_COPY_DATA_TO_LINE(NPY_DOUBLE, npy_double,
+                                   pa, pb, length, buffer->line_stride);
         default:
             PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
                          buffer->array_type);
@@ -364,15 +377,15 @@ int NI_ArrayToLineBuffer(NI_LineBuffer *buffer,
     return 1;
 }
 
-#define CASE_COPY_LINE_TO_DATA(_pi, _po, _length, _stride, _type) \
-case t ## _type:                                                  \
-{                                                                 \
-    npy_intp _ii;                                                  \
-    for(_ii = 0; _ii < _length; _ii++) {                            \
-        *(_type*)_po = (_type)_pi[_ii];                               \
-        _po += _stride;                                               \
-    }                                                               \
-}                                                                 \
+#define CASE_COPY_LINE_TO_DATA(_TYPE, _type, _pi, _po, _length, _stride) \
+case _TYPE:                                                              \
+{                                                                        \
+    npy_intp _ii;                                                        \
+    for (_ii = 0; _ii < _length; ++_ii) {                                \
+        *(_type *)_po = (_type)_pi[_ii];                                 \
+        _po += _stride;                                                  \
+    }                                                                    \
+}                                                                        \
 break
 
 /* Copy a line from a buffer to an array: */
@@ -390,19 +403,32 @@ int NI_LineBufferToArray(NI_LineBuffer *buffer)
         pa = buffer->array_data;
         /* copy data from the buffer to the array: */
         switch (buffer->array_type) {
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Bool);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, UInt8);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, UInt16);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, UInt32);
-#if HAS_UINT64
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, UInt64);
-#endif
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int8);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int16);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int32);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Int64);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float32);
-            CASE_COPY_LINE_TO_DATA(pb, pa, length, buffer->line_stride, Float64);
+            CASE_COPY_LINE_TO_DATA(NPY_BOOL, npy_bool,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_UBYTE, npy_ubyte,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_USHORT, npy_ushort,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_UINT, npy_uint,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_ULONG, npy_ulong,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_ULONGLONG, npy_ulonglong,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_BYTE, npy_byte,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_SHORT, npy_short,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_INT, npy_int,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_LONG, npy_long,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_LONGLONG, npy_longlong,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_FLOAT, npy_float,
+                                   pb, pa, length, buffer->line_stride);
+            CASE_COPY_LINE_TO_DATA(NPY_DOUBLE, npy_double,
+                                   pb, pa, length, buffer->line_stride);
         default:
             PyErr_Format(PyExc_RuntimeError, "array type %d not supported",
                          buffer->array_type);
