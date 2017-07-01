@@ -18,6 +18,7 @@ from numpy.testing import (run_module_suite, assert_raises,
                            assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
                            assert_array_equal, dec)
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
@@ -1208,38 +1209,45 @@ class TestLstsq(object):
                                           err_msg="driver: %s" % lapack_driver)
 
     def test_check_finite(self):
-        for dtype in REAL_DTYPES:
-            a = np.array(((1, 20), (-30, 4)), dtype=dtype)
-            for bt in (((1, 0), (0, 1)), (1, 0),
-                       ((2, 1), (-30, 4))):
-                for lapack_driver in TestLstsq.lapack_drivers:
-                        for overwrite in (True, False):
-                            for check_finite in (True, False):
-                                b = np.array(bt, dtype=dtype)
-                                # Store values in case they are overwritten
-                                # later
-                                a1 = a.copy()
-                                b1 = b.copy()
-                                try:
-                                    out = lstsq(a1, b1,
-                                                lapack_driver=lapack_driver,
-                                                check_finite=check_finite,
-                                                overwrite_a=overwrite,
-                                                overwrite_b=overwrite)
-                                except LstsqLapackError:
-                                    if lapack_driver is None:
-                                        mesg = ('LstsqLapackError raised with '
+        with suppress_warnings() as sup:
+            # On (some) OSX this tests triggers a warning (gh-7538)
+            sup.filter(RuntimeWarning,
+                       "internal gelsd driver lwork query error,.*"
+                       "Falling back to 'gelss' driver.")
+            for dtype in REAL_DTYPES:
+                a = np.array(((1, 20), (-30, 4)), dtype=dtype)
+                for bt in (((1, 0), (0, 1)), (1, 0),
+                           ((2, 1), (-30, 4))):
+                    for lapack_driver in TestLstsq.lapack_drivers:
+                            for overwrite in (True, False):
+                                for check_finite in (True, False):
+                                    b = np.array(bt, dtype=dtype)
+                                    # Store values in case they are overwritten
+                                    # later
+                                    a1 = a.copy()
+                                    b1 = b.copy()
+                                    try:
+                                        out = lstsq(a1, b1,
+                                                    lapack_driver=lapack_driver,
+                                                    check_finite=check_finite,
+                                                    overwrite_a=overwrite,
+                                                    overwrite_b=overwrite)
+                                    except LstsqLapackError:
+                                        if lapack_driver is None:
+                                            mesg = (
+                                                'LstsqLapackError raised with '
                                                 'lapack_driver being None.')
-                                        raise AssertionError(mesg)
-                                    else:
-                                        # can't proceed,
-                                        # skip to the next iteration
-                                        continue
-                                x = out[0]
-                                r = out[2]
-                                assert_(r == 2, 'expected efficient rank 2, '
-                                                'got %s' % r)
-                                assert_allclose(
+                                            raise AssertionError(mesg)
+                                        else:
+                                            # can't proceed,
+                                            # skip to the next iteration
+                                            continue
+                                    x = out[0]
+                                    r = out[2]
+                                    assert_(r == 2,
+                                            'expected efficient rank 2, '
+                                            'got %s' % r)
+                                    assert_allclose(
                                           dot(a, x), b,
                                           rtol=25 * _eps_cast(a.dtype),
                                           atol=25 * _eps_cast(a.dtype),
