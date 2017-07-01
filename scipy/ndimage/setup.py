@@ -24,6 +24,11 @@ def configuration(parent_package='', top_path=None):
         include_dirs=include_dirs,
         **numpy_nodepr_api)
 
+    config.add_extension("_ni_iterators",
+        sources=["src/ni_iterator_pywrap.c", "src/ni_iterators.c"],
+        include_dirs=include_dirs,
+        **numpy_nodepr_api)
+
     # Cython wants the .c and .pyx to have the underscore.
     config.add_extension("_ni_label",
                          sources=["src/_ni_label.c",],
