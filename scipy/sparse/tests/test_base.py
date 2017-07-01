@@ -33,6 +33,7 @@ import random
 from numpy.testing import (assert_raises, assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
         dec, run_module_suite, assert_allclose)
+from scipy._lib._numpy_compat import suppress_warnings
 
 import scipy.linalg
 
@@ -45,7 +46,6 @@ from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib._version import NumpyVersion
 from scipy._lib.decorator import decorator
-from scipy._lib._numpy_compat import suppress_warnings
 
 import nose
 try:
@@ -71,21 +71,16 @@ np.add(_UFuncCheck(), np.array([1]))
 # Only test matmul operator (A @ B) when available (Python 3.5+)
 TEST_MATMUL = hasattr(operator, 'matmul')
 
+# Decorators to ignore the commen sparse efficiency (and complex) warnings
+# Two decorators are necessary, due to some nested calls and the inability
+# to enter a context twice.
 sup_sparse_efficiency = suppress_warnings()
 sup_sparse_efficiency.filter(SparseEfficiencyWarning)
-sup_complex = suppress_warnings()
-sup_complex.filter(ComplexWarning)
-
 sup_sparse_efficiency2 = suppress_warnings()
 sup_sparse_efficiency2.filter(SparseEfficiencyWarning)
 
-
-def setup_module():
-    sup_sparse_efficiency.__enter__()
-
-
-def teardown_module():
-    sup_sparse_efficiency.__exit__()
+sup_complex = suppress_warnings()
+sup_complex.filter(ComplexWarning)
 
 
 def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
@@ -247,10 +242,6 @@ class _TestCommon:
     """test common functionality shared by all sparse formats"""
     math_dtypes = supported_dtypes
 
-    # XXX: __init__ method that will be called at test collection time.
-    #      It also requires the extra warning suppression decorator.
-    #      This should be implemented in a different way.
-    @sup_sparse_efficiency2
     def __init__(self):
         # Canonical data.
         self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
@@ -701,6 +692,7 @@ class _TestCommon:
         assert_equal(self.spmatrix((40, 16130)).diagonal(), np.zeros(40))
 
     @dec.slow
+    @sup_sparse_efficiency
     def test_setdiag_comprehensive(self):
         def dense_setdiag(a, v, k):
             v = np.asarray(v)
@@ -754,6 +746,7 @@ class _TestCommon:
                     for k2 in np.random.choice(ks, size=min(len(ks), 5)):
                         check_setdiag(a, b, k2)
 
+    @sup_sparse_efficiency
     def test_setdiag(self):
         # simple test cases
         m = self.spmatrix(np.eye(3))
@@ -982,6 +975,7 @@ class _TestCommon:
         assert_array_almost_equal(dat_mean, datsp_mean)
         assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
+    @sup_sparse_efficiency
     def test_expm(self):
         M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], float)
         sM = self.spmatrix(M, shape=(3,3), dtype=float)
@@ -995,6 +989,7 @@ class _TestCommon:
         sNexp = expm(sN).todense()
         assert_array_almost_equal((sNexp - Nexp), zeros((3, 3)))
 
+    @sup_sparse_efficiency
     def test_inv(self):
         def check(dtype):
             M = array([[1, 0, 2], [0, 0, 3], [-4, 5, 6]], dtype)
@@ -1684,6 +1679,7 @@ class _TestCommon:
 
             yield check, dtype
 
+    @sup_sparse_efficiency
     def test_maximum_minimum(self):
         A_dense = np.array([[1, 0, 3], [0, 4, 5], [0, 0, 0]])
         B_dense = np.array([[1, 1, 2], [0, 3, 6], [1, -1, 0]])
@@ -2146,6 +2142,7 @@ class _TestGetSet:
         for dtype in supported_dtypes:
             yield check, np.dtype(dtype)
 
+    @sup_sparse_efficiency
     def test_setelement(self):
         def check(dtype):
             A = self.spmatrix((3,4), dtype=dtype)
@@ -2174,6 +2171,7 @@ class _TestGetSet:
         for dtype in supported_dtypes:
             yield check, np.dtype(dtype)
 
+    @sup_sparse_efficiency
     def test_negative_index_assignment(self):
         # Regression test for github issue 4428.
 
@@ -2185,6 +2183,7 @@ class _TestGetSet:
         for dtype in self.math_dtypes:
             yield check, np.dtype(dtype)
 
+    @sup_sparse_efficiency
     def test_scalar_assign_2(self):
         n, m = (5, 10)
 
@@ -2200,6 +2199,7 @@ class _TestGetSet:
                      (array(-1), array(-2))]:
             _test_set(i, j, 1)
 
+    @sup_sparse_efficiency
     def test_index_scalar_assign(self):
         A = self.spmatrix((5, 5))
         B = np.zeros((5, 5))
@@ -2211,6 +2211,7 @@ class _TestGetSet:
 
 
 class _TestSolve:
+    @sup_sparse_efficiency
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils
         # Wagner for a 64-bit machine, 02 March 2005 (EJS)
@@ -2434,6 +2435,7 @@ class _TestSlicing:
 
 
 class _TestSlicingAssign:
+    @sup_sparse_efficiency
     def test_slice_scalar_assign(self):
         A = self.spmatrix((5, 5))
         B = np.zeros((5, 5))
@@ -2445,6 +2447,7 @@ class _TestSlicingAssign:
             C[3::-1,4:] = 9
         assert_array_equal(A.toarray(), B)
 
+    @sup_sparse_efficiency
     def test_slice_assign_2(self):
         n, m = (5, 10)
 
@@ -2460,6 +2463,7 @@ class _TestSlicingAssign:
                      (array(2), slice(5, -2))]:
             _test_set(i, j)
 
+    @sup_sparse_efficiency
     def test_self_self_assignment(self):
         # Tests whether a row of one lil_matrix can be assigned to
         # another.
@@ -2481,6 +2485,7 @@ class _TestSlicingAssign:
         B[:-1,0] = A[0,:].T
         assert_array_equal(A[0,:].A.T, B[:-1,0].A)
 
+    @sup_sparse_efficiency
     def test_slice_assignment(self):
         B = self.spmatrix((4,3))
         B[0,0] = 5
@@ -2499,6 +2504,7 @@ class _TestSlicingAssign:
         B[:2,:2] = csc_matrix(array(block))
         assert_array_equal(B.todense()[:2,:2],block)
 
+    @sup_sparse_efficiency
     def test_sparsity_modifying_assignment(self):
         B = self.spmatrix((4,3))
         B[0,0] = 5
@@ -2510,6 +2516,7 @@ class _TestSlicingAssign:
         B[:3] = csr_matrix(np.eye(3))
         assert_array_equal(B.toarray(), expected)
 
+    @sup_sparse_efficiency
     def test_set_slice(self):
         A = self.spmatrix((5,10))
         B = matrix(zeros((5,10), float))
@@ -2767,6 +2774,7 @@ class _TestFancyIndexingAssign:
         assert_raises((IndexError, ValueError, TypeError), A.__setitem__, "foo", 2)
         assert_raises((IndexError, ValueError, TypeError), A.__setitem__, (2, "foo"), 5)
 
+    @sup_sparse_efficiency
     def test_fancy_indexing_set(self):
         n, m = (5, 10)
 
@@ -2785,6 +2793,7 @@ class _TestFancyIndexingAssign:
         for i, j in [(np.arange(3), np.arange(3)), ((0, 3, 4), (1, 2, 4))]:
             _test_set_slice(i, j)
 
+    @sup_sparse_efficiency
     def test_fancy_assignment_dtypes(self):
         def check(dtype):
             A = self.spmatrix((5, 5), dtype=dtype)
@@ -2798,6 +2807,7 @@ class _TestFancyIndexingAssign:
         for dtype in supported_dtypes:
             yield check, np.dtype(dtype)
 
+    @sup_sparse_efficiency
     def test_sequence_assignment(self):
         A = self.spmatrix((4,3))
         B = self.spmatrix(eye(3,4))
@@ -2934,6 +2944,7 @@ class _TestFancyMultidimAssign:
         assert_raises(IndexError, S.__setitem__, (I_bad,J), C)
         assert_raises(IndexError, S.__setitem__, (I,J_bad), C)
 
+    @sup_sparse_efficiency
     def test_fancy_indexing_multidim_set(self):
         n, m = (5, 10)
 
@@ -4250,6 +4261,7 @@ def _same_sum_duplicate(data, *inds, **kwargs):
 
 
 class _NonCanonicalMixin(object):
+    @sup_sparse_efficiency2
     def spmatrix(self, D, sorted_indices=False, **kwargs):
         """Replace D with a non-canonical equivalent: containing
         duplicate elements and explicit zeros"""
