@@ -365,8 +365,8 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     double **splvals = NULL, icoor[NPY_MAXDIMS];
     npy_intp idimensions[NPY_MAXDIMS], istrides[NPY_MAXDIMS];
     NI_Iterator io, ic;
-    Float64 *matrix = matrix_ar ? (Float64*)PyArray_DATA(matrix_ar) : NULL;
-    Float64 *shift = shift_ar ? (Float64*)PyArray_DATA(shift_ar) : NULL;
+    npy_double *matrix = matrix_ar ? (npy_double*)PyArray_DATA(matrix_ar) : NULL;
+    npy_double *shift = shift_ar ? (npy_double*)PyArray_DATA(shift_ar) : NULL;
     int irank = 0, orank, qq;
     NPY_BEGIN_THREADS_DEF;
 
@@ -483,7 +483,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
             NPY_BEGIN_THREADS;
         } else if (matrix) {
             /* do an affine transformation: */
-            Float64 *p = matrix;
+            npy_double *p = matrix;
             for(hh = 0; hh < irank; hh++) {
                 icoor[hh] = 0.0;
                 for(ll = 0; ll < orank; ll++)
@@ -695,8 +695,8 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     npy_intp size;
     double ***splvals = NULL;
     NI_Iterator io;
-    Float64 *zooms = zoom_ar ? (Float64*)PyArray_DATA(zoom_ar) : NULL;
-    Float64 *shifts = shift_ar ? (Float64*)PyArray_DATA(shift_ar) : NULL;
+    npy_double *zooms = zoom_ar ? (npy_double*)PyArray_DATA(zoom_ar) : NULL;
+    npy_double *shifts = shift_ar ? (npy_double*)PyArray_DATA(shift_ar) : NULL;
     int rank = 0, qq;
     NPY_BEGIN_THREADS_DEF;
 

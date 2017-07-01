@@ -189,7 +189,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
     char *pi, *po;
     double *parameters = NULL, **params = NULL;
     npy_intp kk, hh, size;
-    Float64 *iparameters = (void *)PyArray_DATA(parameter_array);
+    npy_double *iparameters = (void *)PyArray_DATA(parameter_array);
     NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the parameters: */
@@ -468,7 +468,7 @@ int NI_FourierShift(PyArrayObject *input, PyArrayObject* shift_array,
     char *pi, *po;
     double *shifts = NULL, **params = NULL;
     npy_intp kk, hh, size;
-    Float64 *ishifts = (void *)PyArray_DATA(shift_array);
+    npy_double *ishifts = (void *)PyArray_DATA(shift_array);
     NPY_BEGIN_THREADS_DEF;
 
     /* precalculate the shifts: */

@@ -37,7 +37,7 @@
 #include <assert.h>
 
 typedef struct {
-    Int32 index1, index2;
+    npy_int32 index1, index2;
     void* next;
 } _index_pair;
 
@@ -465,7 +465,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
     char *pi = NULL, *pm = NULL;
     NI_Iterator ii, mi;
     npy_intp jj, kk, size, idx = 0, label = 1, doit = 1;
-    Int32 **ph = NULL;
+    npy_int32 **ph = NULL;
     double bsize;
     NPY_BEGIN_THREADS_DEF;
 
@@ -479,7 +479,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
             goto exit;
         pm = (void *)PyArray_DATA(labels);
     }
-    ph = malloc(n_results * sizeof(Int32*));
+    ph = malloc(n_results * sizeof(npy_int32*));
     if (!ph) {
         PyErr_NoMemory();
         goto exit;
@@ -488,7 +488,7 @@ int NI_Histogram(PyArrayObject *input, PyArrayObject *labels,
     NPY_BEGIN_THREADS;
 
     for(jj = 0; jj < n_results; jj++) {
-            ph[jj] = (Int32*)PyArray_DATA(histograms[jj]);
+            ph[jj] = (npy_int32*)PyArray_DATA(histograms[jj]);
             for(kk = 0; kk < nbins; kk++)
                     ph[jj][kk] = 0;
     }
@@ -609,7 +609,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     npy_intp *nstrides = NULL, nneigh, ssize;
     int i_contiguous, o_contiguous;
     NI_WatershedElement *temp = NULL, **first = NULL, **last = NULL;
-    Bool *ps = NULL;
+    npy_bool *ps = NULL;
     NI_Iterator mi, ii, li;
     NPY_BEGIN_THREADS_DEF;
 
@@ -752,7 +752,7 @@ int NI_WatershedIFT(PyArrayObject* input, PyArrayObject* markers,
     }
 
     pl = (void *)PyArray_DATA(output);
-    ps = (Bool*)PyArray_DATA(strct);
+    ps = (npy_bool*)PyArray_DATA(strct);
     nneigh = 0;
     for (kk = 0; kk < ssize; kk++)
         if (ps[kk] && kk != (ssize / 2))
