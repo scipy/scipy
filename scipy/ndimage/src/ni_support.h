@@ -99,7 +99,7 @@ typedef struct {
 int NI_InitPointIterator(PyArrayObject*, NI_Iterator*);
 
 /* initialize iterations over an arbritrary sub-space: */
-int NI_SubspaceIterator(NI_Iterator*, UInt32);
+int NI_SubspaceIterator(NI_Iterator*, npy_int32);
 
 /* initialize iteration over array lines: */
 int NI_LineIterator(NI_Iterator*, int);
@@ -228,7 +228,7 @@ int NI_InitFilterIterator(int, npy_intp*, npy_intp, npy_intp*,
 
 /* Calculate the offsets to the filter points, for all border regions and
      the interior of the array: */
-int NI_InitFilterOffsets(PyArrayObject*, Bool*, npy_intp*,
+int NI_InitFilterOffsets(PyArrayObject*, npy_bool*, npy_intp*,
                          npy_intp*, NI_ExtendMode, npy_intp**,
                          npy_intp*, npy_intp**);
 

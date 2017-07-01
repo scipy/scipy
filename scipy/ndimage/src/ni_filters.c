@@ -42,7 +42,7 @@ int NI_Correlate1D(PyArrayObject *input, PyArrayObject *weights,
     int symmetric = 0, more;
     npy_intp ii, jj, ll, lines, length, size1, size2, filter_size;
     double *ibuffer = NULL, *obuffer = NULL;
-    Float64 *fw;
+    npy_double *fw;
     NI_LineBuffer iline_buffer, oline_buffer;
     NPY_BEGIN_THREADS_DEF;
 
@@ -160,21 +160,21 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
                  PyArrayObject* output, NI_ExtendMode mode,
                  double cvalue, npy_intp *origins)
 {
-    Bool *pf = NULL;
+    npy_bool *pf = NULL;
     npy_intp fsize, jj, kk, filter_size = 0, border_flag_value;
     npy_intp *offsets = NULL, *oo, size;
     NI_FilterIterator fi;
     NI_Iterator ii, io;
     char *pi, *po;
-    Float64 *pw;
-    Float64 *ww = NULL;
+    npy_double *pw;
+    npy_double *ww = NULL;
     int err = 0;
     NPY_BEGIN_THREADS_DEF;
 
     /* get the the footprint: */
     fsize = PyArray_SIZE(weights);
-    pw = (Float64*)PyArray_DATA(weights);
-    pf = malloc(fsize * sizeof(Bool));
+    pw = (npy_double*)PyArray_DATA(weights);
+    pf = malloc(fsize * sizeof(npy_bool));
     if (!pf) {
         PyErr_NoMemory();
         goto exit;
@@ -188,7 +188,7 @@ int NI_Correlate(PyArrayObject* input, PyArrayObject* weights,
         }
     }
     /* copy the weights to contiguous memory: */
-    ww = malloc(filter_size * sizeof(Float64));
+    ww = malloc(filter_size * sizeof(npy_double));
     if (!ww) {
         PyErr_NoMemory();
         goto exit;
@@ -531,7 +531,7 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
                       NI_ExtendMode mode, double cvalue, npy_intp *origins,
                       int minimum)
 {
-    Bool *pf = NULL;
+    npy_bool *pf = NULL;
     npy_intp fsize, jj, kk, filter_size = 0, border_flag_value;
     npy_intp *offsets = NULL, *oo, size;
     NI_FilterIterator fi;
@@ -539,12 +539,12 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
     char *pi, *po;
     int err = 0;
     double *ss = NULL;
-    Float64 *ps;
+    npy_double *ps;
     NPY_BEGIN_THREADS_DEF;
 
     /* get the the footprint: */
     fsize = PyArray_SIZE(footprint);
-    pf = (Bool*)PyArray_DATA(footprint);
+    pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {
         if (pf[jj]) {
             ++filter_size;
@@ -558,7 +558,7 @@ int NI_MinOrMaxFilter(PyArrayObject* input, PyArrayObject* footprint,
             goto exit;
         }
         /* copy the weights to contiguous memory: */
-        ps = (Float64*)PyArray_DATA(structure);
+        ps = (npy_double*)PyArray_DATA(structure);
         jj = 0;
         for(kk = 0; kk < fsize; kk++)
             if (pf[kk])
@@ -730,14 +730,14 @@ int NI_RankFilter(PyArrayObject* input, int rank,
     NI_FilterIterator fi;
     NI_Iterator ii, io;
     char *pi, *po;
-    Bool *pf = NULL;
+    npy_bool *pf = NULL;
     double *buffer = NULL;
     int err = 0;
     NPY_BEGIN_THREADS_DEF;
 
     /* get the the footprint: */
     fsize = PyArray_SIZE(footprint);
-    pf = (Bool*)PyArray_DATA(footprint);
+    pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {
         if (pf[jj]) {
             ++filter_size;
@@ -939,7 +939,7 @@ int NI_GenericFilter(PyArrayObject* input,
             PyArrayObject* footprint, PyArrayObject* output,
             NI_ExtendMode mode, double cvalue, npy_intp *origins)
 {
-    Bool *pf = NULL;
+    npy_bool *pf = NULL;
     npy_intp fsize, jj, filter_size = 0, border_flag_value;
     npy_intp *offsets = NULL, *oo, size;
     NI_FilterIterator fi;
@@ -949,7 +949,7 @@ int NI_GenericFilter(PyArrayObject* input,
 
     /* get the the footprint: */
     fsize = PyArray_SIZE(footprint);
-    pf = (Bool*)PyArray_DATA(footprint);
+    pf = (npy_bool*)PyArray_DATA(footprint);
     for(jj = 0; jj < fsize; jj++) {
         if (pf[jj])
             ++filter_size;

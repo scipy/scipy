@@ -97,12 +97,12 @@ int NI_BinaryErosion(PyArrayObject* input, PyArrayObject* strct,
     int kk, true, false, msk_value;
     NI_Iterator ii, io, mi;
     NI_FilterIterator fi;
-    Bool *ps, out = 0;
+    npy_bool *ps, out = 0;
     char *pi, *po, *pm = NULL;
     NI_CoordinateBlock *block = NULL;
     NPY_BEGIN_THREADS_DEF;
 
-    ps = (Bool*)PyArray_DATA(strct);
+    ps = (npy_bool*)PyArray_DATA(strct);
     ssize = PyArray_SIZE(strct);
     for(jj = 0; jj < ssize; jj++)
         if (ps[jj]) ++struct_size;
@@ -348,13 +348,13 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
     int true, false;
     NI_Iterator ii, mi;
     NI_FilterIterator fi, ci;
-    Bool *ps;
+    npy_bool *ps;
     char *pi, *ibase, *pm = NULL;
     NI_CoordinateBlock *block1 = NULL, *block2 = NULL;
     NI_CoordinateList *list1 = NULL, *list2 = NULL;
     NPY_BEGIN_THREADS_DEF;
 
-    ps = (Bool*)PyArray_DATA(strct);
+    ps = (npy_bool*)PyArray_DATA(strct);
     ssize = PyArray_SIZE(strct);
     for(jj = 0; jj < ssize; jj++)
         if (ps[jj]) ++struct_size;
@@ -402,11 +402,11 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
         size = PyArray_SIZE(array);
 
         for(jj = 0; jj < size; jj++) {
-            if (*(Int8*)pm) {
-                *(Int8*)pm = -1;
+            if (*(npy_int8*)pm) {
+                *(npy_int8*)pm = -1;
             } else {
-                *(Int8*)pm = (Int8)*(Bool*)pi;
-                *(Bool*)pi = false;
+                *(npy_int8*)pm = (npy_int8)*(npy_bool*)pi;
+                *(npy_bool*)pi = false;
             }
             NI_ITERATOR_NEXT2(ii, mi,  pi, pm)
         }
@@ -552,9 +552,9 @@ int NI_BinaryErosion2(PyArrayObject* array, PyArrayObject* strct,
         pi = (void *)PyArray_DATA(array);
         pm = (void *)PyArray_DATA(mask);
         for(jj = 0; jj < size; jj++) {
-            int value = *(Int8*)pm;
+            int value = *(npy_int8*)pm;
             if (value >= 0)
-                *(Bool*)pi = value;
+                *(npy_bool*)pi = value;
             NI_ITERATOR_NEXT2(ii, mi,  pi, pm)
         }
     }
@@ -589,7 +589,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
     NI_BorderElement *border_elements = NULL, *temp;
     NI_Iterator ii, di, fi;
     char *pi, *pd = NULL, *pf = NULL;
-    Float64 *sampling = sampling_arr ? (void *)PyArray_DATA(sampling_arr) : NULL;
+    npy_double *sampling = sampling_arr ? (void *)PyArray_DATA(sampling_arr) : NULL;
     NPY_BEGIN_THREADS_DEF;
 
     /* check the output arrays: */
@@ -612,7 +612,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
         goto exit;
 
     for(jj = 0; jj < size; jj++) {
-        if (*(Int8*)pi < 0) {
+        if (*(npy_int8*)pi < 0) {
             temp = malloc(sizeof(NI_BorderElement));
             if (NPY_UNLIKELY(!temp)) {
                 PyErr_NoMemory();
@@ -638,7 +638,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
     switch(metric) {
     case NI_DISTANCE_EUCLIDIAN:
         for(jj = 0; jj < size; jj++) {
-            if (*(Int8*)pi > 0) {
+            if (*(npy_int8*)pi > 0) {
                 double distance = DBL_MAX;
                 temp = border_elements;
                 while(temp) {
@@ -657,14 +657,14 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
                     temp = temp->next;
                 }
                 if (distances)
-                    *(Float64*)pd = sqrt(distance);
+                    *(npy_double*)pd = sqrt(distance);
                 if (features)
-                    *(Int32*)pf = min_index;
+                    *(npy_int32*)pf = min_index;
             } else {
                 if (distances)
-                    *(Float64*)pd = 0.0;
+                    *(npy_double*)pd = 0.0;
                 if (features)
-                    *(Int32*)pf = jj;
+                    *(npy_int32*)pf = jj;
             }
             if (features && distances) {
                 NI_ITERATOR_NEXT3(ii, di, fi, pi, pd, pf);
@@ -678,7 +678,7 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
     case NI_DISTANCE_CITY_BLOCK:
     case NI_DISTANCE_CHESSBOARD:
         for(jj = 0; jj < size; jj++) {
-            if (*(Int8*)pi > 0) {
+            if (*(npy_int8*)pi > 0) {
                 unsigned int distance = UINT_MAX;
                 temp = border_elements;
                 while(temp) {
@@ -703,14 +703,14 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
                     temp = temp->next;
                 }
                 if (distances)
-                    *(UInt32*)pd = distance;
+                    *(npy_int32*)pd = distance;
                 if (features)
-                    *(Int32*)pf = min_index;
+                    *(npy_int32*)pf = min_index;
             } else {
                 if (distances)
-                    *(UInt32*)pd = 0;
+                    *(npy_int32*)pd = 0;
                 if (features)
-                    *(Int32*)pf = jj;
+                    *(npy_int32*)pf = jj;
             }
             if (features && distances) {
                 NI_ITERATOR_NEXT3(ii, di, fi, pi, pd, pf);
@@ -745,7 +745,7 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
 {
     npy_intp jj, ii, ssize, size, filter_size, mask_value, *oo;
     npy_intp *foffsets = NULL, *foo = NULL, *offsets = NULL;
-    Bool *ps, *pf = NULL, *footprint = NULL;
+    npy_bool *ps, *pf = NULL, *footprint = NULL;
     char *pd;
     NI_FilterIterator si, ti;
     NI_Iterator di, fi;
@@ -755,12 +755,12 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
 
     /* we only use the first half of the structure data, so we make a
          temporary structure for use with the filter functions: */
-    footprint = malloc(ssize * sizeof(Bool));
+    footprint = malloc(ssize * sizeof(npy_bool));
     if (!footprint) {
         PyErr_NoMemory();
         goto exit;
     }
-    ps = (Bool*)PyArray_DATA(strct);
+    ps = (npy_bool*)PyArray_DATA(strct);
     filter_size = 0;
     for(jj = 0; jj < ssize / 2; jj++) {
         footprint[jj] = ps[jj];
@@ -813,16 +813,16 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
     if (features)
         foo = foffsets;
     for(jj = 0; jj < size; jj++) {
-        Int32 value = *(Int32*)pd;
+        npy_int32 value = *(npy_int32*)pd;
         if (value != 0) {
-            Int32 min = value;
+            npy_int32 min = value;
             npy_intp min_offset = 0;
             /* iterate over structuring element: */
             for(ii = 0; ii < filter_size; ii++) {
                 npy_intp offset = oo[ii];
-                Int32 tt = -1;
+                npy_int32 tt = -1;
                 if (offset < mask_value)
-                    tt = *(Int32*)(pd + offset);
+                    tt = *(npy_int32*)(pd + offset);
                 if (tt >= 0) {
                     if ((min < 0) || (tt + 1 < min)) {
                         min = tt + 1;
@@ -831,9 +831,9 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
                     }
                 }
             }
-            *(Int32*)pd = min;
+            *(npy_int32*)pd = min;
             if (features)
-                *(Int32*)pf = *(Int32*)(pf + min_offset);
+                *(npy_int32*)pf = *(npy_int32*)(pf + min_offset);
         }
         if (features) {
             NI_FILTER_NEXT(ti, fi, foo, pf);
@@ -851,16 +851,16 @@ int NI_DistanceTransformOnePass(PyArrayObject *strct,
 
 static void _VoronoiFT(char *pf, npy_intp len, npy_intp *coor, int rank,
                        int d, npy_intp stride, npy_intp cstride,
-                       npy_intp **f, npy_intp *g, const Float64 *sampling)
+                       npy_intp **f, npy_intp *g, const npy_double *sampling)
 {
     npy_intp l = -1, ii, maxl, idx1, idx2;
     npy_intp jj;
 
     for(ii = 0; ii < len; ii++)
         for(jj = 0; jj < rank; jj++)
-            f[ii][jj] = *(Int32*)(pf + ii * stride + cstride * jj);
+            f[ii][jj] = *(npy_int32*)(pf + ii * stride + cstride * jj);
     for(ii = 0; ii < len; ii++) {
-        if (*(Int32*)(pf + ii * stride) >= 0) {
+        if (*(npy_int32*)(pf + ii * stride) >= 0) {
             double fd = f[ii][d];
             double wR = 0.0;
             for(jj = 0; jj < rank; jj++) {
@@ -930,7 +930,7 @@ static void _VoronoiFT(char *pf, npy_intp len, npy_intp *coor, int rank,
             }
             idx1 = g[l];
             for(jj = 0; jj < rank; jj++)
-                *(Int32*)(pf + ii * stride + jj * cstride) = f[idx1][jj];
+                *(npy_int32*)(pf + ii * stride + jj * cstride) = f[idx1][jj];
         }
     }
 }
@@ -941,7 +941,7 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
                        const npy_intp *istrides, const npy_intp *fstrides,
                        int rank, int d, npy_intp *coor, npy_intp **f,
                        npy_intp *g, PyArrayObject *features,
-                       const Float64 *sampling)
+                       const npy_double *sampling)
 {
     npy_intp kk;
     npy_intp jj;
@@ -949,14 +949,14 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
     if (d == 0) {
         char *tf1 = pf;
         for(jj = 0; jj < ishape[0]; jj++) {
-            if (*(Int8*)pi) {
-                *(Int32*)tf1 = -1;
+            if (*(npy_int8*)pi) {
+                *(npy_int32*)tf1 = -1;
             } else {
                 char *tf2 = tf1;
-                *(Int32*)tf2 = jj;
+                *(npy_int32*)tf2 = jj;
                 for(kk = 1; kk < rank; kk++) {
                     tf2 += fstrides[0];
-                    *(Int32*)tf2 = coor[kk];
+                    *(npy_int32*)tf2 = coor[kk];
                 }
             }
             pi += istrides[0];
@@ -965,7 +965,7 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
         _VoronoiFT(pf, ishape[0], coor, rank, 0, fstrides[1], fstrides[0], f,
                              g, sampling);
     } else {
-        UInt32 axes = 0;
+        npy_int32 axes = 0;
         char *tf = pf;
         npy_intp size = 1;
         NI_Iterator ii;
@@ -979,7 +979,7 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
         }
 
         for(jj = 0; jj < d; jj++) {
-            axes |= (UInt32)1 << (jj + 1);
+            axes |= (npy_int32)1 << (jj + 1);
             size *= ishape[jj];
         }
         NI_InitPointIterator(features, &ii);
@@ -1009,7 +1009,7 @@ int NI_EuclideanFeatureTransform(PyArrayObject* input,
     npy_intp coor[NPY_MAXDIMS], mx = 0, jj;
     npy_intp *tmp = NULL, **f = NULL, *g = NULL;
     char *pi, *pf;
-    Float64 *sampling = sampling_arr ? ((void *)PyArray_DATA(sampling_arr)) : NULL;
+    npy_double *sampling = sampling_arr ? ((void *)PyArray_DATA(sampling_arr)) : NULL;
     NPY_BEGIN_THREADS_DEF;
 
     pi = (void *)PyArray_DATA(input);

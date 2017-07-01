@@ -53,12 +53,12 @@ int NI_InitPointIterator(PyArrayObject *array, NI_Iterator *iterator)
 
 
 /* initialize iteration over a lower sub-space: */
-int NI_SubspaceIterator(NI_Iterator *iterator, UInt32 axes)
+int NI_SubspaceIterator(NI_Iterator *iterator, npy_int32 axes)
 {
     int ii, last = 0;
 
     for(ii = 0; ii <= iterator->rank_m1; ii++) {
-        if (axes & (((UInt32)1) << ii)) {
+        if (axes & (((npy_int32)1) << ii)) {
             if (last != ii) {
                 iterator->dimensions[last] = iterator->dimensions[ii];
                 iterator->strides[last] = iterator->strides[ii];
@@ -74,7 +74,7 @@ int NI_SubspaceIterator(NI_Iterator *iterator, UInt32 axes)
 /* initialize iteration over array lines: */
 int NI_LineIterator(NI_Iterator *iterator, int axis)
 {
-    UInt32 axes = ((UInt32)1) << axis;
+    npy_int32 axes = ((npy_int32)1) << axis;
     return NI_SubspaceIterator(iterator, ~axes);
 }
 
@@ -486,7 +486,7 @@ NI_InitFilterIterator(int rank, npy_intp *filter_shape,
 
 /* Calculate the offsets to the filter points, for all border regions and
      the interior of the array: */
-int NI_InitFilterOffsets(PyArrayObject *array, Bool *footprint,
+int NI_InitFilterOffsets(PyArrayObject *array, npy_bool *footprint,
          npy_intp *filter_shape, npy_intp* origins,
          NI_ExtendMode mode, npy_intp **offsets, npy_intp *border_flag_value,
          npy_intp **coordinate_offsets)
