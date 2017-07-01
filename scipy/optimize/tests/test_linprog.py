@@ -1,5 +1,5 @@
 """
-Unit test for Linear Programming via Simplex Algorithm.
+Unit test for Linear Programming
 """
 from __future__ import division, print_function, absolute_import
 
