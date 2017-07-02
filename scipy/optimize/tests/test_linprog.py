@@ -677,7 +677,6 @@ class TestLinprogIP(LinprogCommonTests):
                 bounds=bounds,
                 method=self.method)
         _assert_success(sol, desired_fun=-1.191)
-        
 
     def test_bug_5400(self):
         # https://github.com/scipy/scipy/issues/5400
