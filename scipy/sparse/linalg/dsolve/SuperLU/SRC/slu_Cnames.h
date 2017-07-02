@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 /*! @file slu_Cnames.h
  * \brief Macros defining how C routines will be called
  *
@@ -19,7 +29,6 @@
 #ifndef __SUPERLU_CNAMES /* allow multiple inclusions */
 #define __SUPERLU_CNAMES
 
-#include "scipy_slu_config.h"
 
 #define ADD_       0
 #define ADD__      1

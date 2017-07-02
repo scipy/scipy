@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file dpanel_bmod.c
  * \brief Performs numeric block updates
@@ -218,7 +228,7 @@ dpanel_bmod (
 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #else
- 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
+		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, TriTmp, &incx );
 #endif
 #else		
@@ -397,12 +407,6 @@ dpanel_bmod (
 		    STRSV( ftcs1, ftcs2, ftcs3, &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #else
-#if SCIPY_FIX
-		    if (nsupr < segsze) {
-			/* Fail early rather than passing in invalid parameters to TRSV. */
-			ABORT("failed to factorize matrix");
-		    }
-#endif
 		    dtrsv_( "L", "N", "U", &segsze, &lusup[luptr], 
 			   &nsupr, tempv, &incx );
 #endif

@@ -1,3 +1,13 @@
+/*! \file
+Copyright (c) 2003, The Regents of the University of California, through
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
+
+All rights reserved. 
+
+The source code is distributed under BSD license, see the file License.txt
+at the top-level directory.
+*/
 
 /*! @file dsnode_bmod.c
  * \brief Performs numeric block updates within the relaxed snode.
@@ -94,12 +104,6 @@ dsnode_bmod (
 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
-#if SCIPY_FIX
-	if (nsupr < nsupc) {
-	    /* Fail early rather than passing in invalid parameters to DTRSV. */
-	    ABORT("failed to factorize matrix");
-	}
-#endif
 	dtrsv_( "L", "N", "U", &nsupc, &lusup[luptr], &nsupr, 
 	      &lusup[ufirst], &incx );
 	dgemv_( "N", &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
