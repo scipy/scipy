@@ -314,7 +314,7 @@ case _TYPE:                                                                   \
     npy_intp _hh, _kk;                                                        \
     for (_hh = 0; _hh < _struct_size; _hh++) {                                \
         npy_intp _to = _offsets[_oo + _hh];                                   \
-        if (_to != _bf_value && *(_type *)(_pi + _to) == _true) {             \
+        if (_to != _bf_value && *(_type *)(_pi + _to) == (_type)_true) {      \
             if (_mklist) {                                                    \
                 npy_intp *_tc = &(_coordinate_offsets[(_oo + _hh) * _irank]); \
                 if (_block2 == NULL || _block2->size == _list2->block_size) { \
@@ -703,12 +703,12 @@ int NI_DistanceTransformBruteForce(PyArrayObject* input, int metric,
                     temp = temp->next;
                 }
                 if (distances)
-                    *(npy_int32*)pd = distance;
+                    *(npy_uint32*)pd = distance;
                 if (features)
                     *(npy_int32*)pf = min_index;
             } else {
                 if (distances)
-                    *(npy_int32*)pd = 0;
+                    *(npy_uint32*)pd = 0;
                 if (features)
                     *(npy_int32*)pf = jj;
             }
@@ -965,7 +965,7 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
         _VoronoiFT(pf, ishape[0], coor, rank, 0, fstrides[1], fstrides[0], f,
                              g, sampling);
     } else {
-        npy_int32 axes = 0;
+        npy_uint32 axes = 0;
         char *tf = pf;
         npy_intp size = 1;
         NI_Iterator ii;
@@ -979,7 +979,7 @@ static void _ComputeFT(char *pi, char *pf, npy_intp *ishape,
         }
 
         for(jj = 0; jj < d; jj++) {
-            axes |= (npy_int32)1 << (jj + 1);
+            axes |= (npy_uint32)1 << (jj + 1);
             size *= ishape[jj];
         }
         NI_InitPointIterator(features, &ii);
