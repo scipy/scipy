@@ -9,6 +9,7 @@ from numpy.testing import (assert_, assert_array_almost_equal, assert_allclose,
 
 from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns
+import warnings
 
 def magic_square(n):
     np.random.seed(0)
@@ -333,8 +334,10 @@ class LinprogCommonTests(object):
                           method=self.method,
                           callback=lambda x, **kwargs: None)
         else:
-            res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
-              method=self.method)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                res = linprog(c=cost, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                  method=self.method)
         _assert_success(res, desired_fun=14)
 
     def test_simplex_algorithm_wikipedia_example(self):
@@ -381,7 +384,9 @@ class LinprogCommonTests(object):
             res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, method=self.method,
                           callback=lambda x, **kwargs: None)
         else:
-            res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, method=self.method)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, method=self.method)
         _assert_success(res, desired_fun=-1.77,
                         desired_x=[0.3, 0.2, 0.0, 0.0, 0.1, 0.3])
 
@@ -512,9 +517,15 @@ class LinprogCommonTests(object):
         b_eq = np.random.rand(m)
         A_ub = [[1, 0, 1, 1]]
         b_ub = 3
-        res = linprog(c, A_ub, b_ub, A_eq, b_eq,
-                      bounds=[(-10, 10), (-10, 10), (-10, None), (None, None)],
-                      options={"presolve": True}, method=self.method)
+        if self.method == "simplex":
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq,
+                          bounds=[(-10, 10), (-10, 10), (-10, None), 
+                                  (None, None)],
+                          method=self.method)
+        else:
+            res = linprog(c, A_ub, b_ub, A_eq, b_eq,
+                          bounds=[(-10, 10), (-10, 10), (-10, None), (None, None)],
+                          options={"presolve": True}, method=self.method)
         _assert_success(res, desired_fun=-9.7087836730413404)
 
     def test_singleton_row_eq_2(self):
@@ -541,7 +552,9 @@ class LinprogCommonTests(object):
         b0 = np.random.rand(m)
         A0[-1, :] = 2 * A0[-2, :]
         b0[-1] *= -1
-        res = linprog(c, A_eq = A0, b_eq = b0, method=self.method)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = linprog(c, A_eq = A0, b_eq = b0, method=self.method)
         _assert_infeasible(res)
 
     def test_bounded_below_only(self):
@@ -616,19 +629,23 @@ class TestLinprogIP(LinprogCommonTests):
     def test_magic_square_bug_7044(self):
         # test linprog with a problem with a rank-deficient A_eq matrix
         A, b, c, N = magic_square(3)
-        res = linprog(
-            c, A_eq=A, b_eq=b, bounds=(
-                0, 1), options={
-                "sparse": True}, method=self.method)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = linprog(
+                c, A_eq=A, b_eq=b, bounds=(
+                    0, 1), options={
+                    "sparse": True}, method=self.method)
         _assert_success(res, desired_fun=1.730550597)
 
     def test_magic_square_sparse_no_presolve(self):
         # test linprog with a problem with a rank-deficient A_eq matrix
         A, b, c, N = magic_square(3)
-        res = linprog(
-            c, A_eq=A, b_eq=b, bounds=(
-                0, 1), options={
-                "sparse": True, "presolve": False}, method=self.method)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = linprog(
+                c, A_eq=A, b_eq=b, bounds=(
+                    0, 1), options={
+                    "sparse": True, "presolve": False}, method=self.method)
         _assert_success(res, desired_fun=1.730550597)
 
     def test_bug_6690(self):
@@ -648,15 +665,19 @@ class TestLinprogIP(LinprogCommonTests):
              [0.37, 0.02, 2.86, 0.86, 1.18, 0.5, 1.76, 0.17, 0.32, -0.15]]).T
         c = np.array([-1.64, 0.7, 1.8, -1.06, -1.16,
                       0.26, 2.13, 1.53, 0.66, 0.28])
-        sol = linprog(
-            c,
-            A_ub=A_ub,
-            b_ub=b_ub,
-            A_eq=A_eq,
-            b_eq=b_eq,
-            bounds=bounds,
-            method=self.method)
+        
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            sol = linprog(
+                c,
+                A_ub=A_ub,
+                b_ub=b_ub,
+                A_eq=A_eq,
+                b_eq=b_eq,
+                bounds=bounds,
+                method=self.method)
         _assert_success(sol, desired_fun=-1.191)
+        
 
     def test_bug_5400(self):
         # https://github.com/scipy/scipy/issues/5400
@@ -808,8 +829,10 @@ class TestLinprogIP(LinprogCommonTests):
         # 40 constraints) generated by https://gist.github.com/denis-bz/8647461
         # use "improved" initial point
         A,b,c = lpgen_2d(20,20)
-        res = linprog(c,A_ub=A,b_ub=b, method=self.method, 
-                      options={"ip":True})
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = linprog(c,A_ub=A,b_ub=b, method=self.method, 
+                          options={"ip":True})
         _assert_success(res, desired_fun=-64.049494229)
         
     def test_maxiter(self):
