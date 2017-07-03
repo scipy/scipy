@@ -197,3 +197,36 @@ class TestRadianAreas(object):
 class TestRadianAreasCython(TestRadianAreas):
     def setUp(self):
         self.cython = 1
+
+class TestConvolutedAreas(object):
+    # test more convoluted / tricky shapes
+    # as input for surface area calculations
+
+    def setUp(self):
+        self.cython = None
+
+    @given(floats(min_value=1e-20,
+                  max_value=1e20))
+    def test_spherical_three_sixteen(self, radius):
+        # a 5 vertex spherical polygon consisting of
+        # an octant (1/8 total sphere area) and
+        # half an octant (1/16 total sphere area)
+        expected_area = 4. * np.pi * (radius ** 2) * (3./16.)
+        sample_vertices = np.array([[0,0,1],
+                                    [-1,0,0],
+                                    [0,0,-1],
+                                    [0,1,0],
+                                    [-0.5,0.5,0]]) * radius
+        # check cw and ccw vertex sorting
+        actual_area = psa.poly_area(vertices=sample_vertices,
+                                    radius=radius,
+                                    cython=self.cython)
+        actual_area_reverse = psa.poly_area(vertices=sample_vertices[::-1],
+                                    radius=radius,
+                                    cython=self.cython)
+        assert_allclose(actual_area, expected_area)
+        assert_allclose(actual_area_reverse, expected_area)
+
+class TestConvolutedAreasCython(TestConvolutedAreas):
+    def setUp(self):
+        self.cython = 1
