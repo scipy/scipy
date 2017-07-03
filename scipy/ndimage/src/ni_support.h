@@ -38,9 +38,9 @@
  * unit that initializes the shared numpy API by calling import_array()
  * must bypass this by explicitly including nd_image.h before ni_support.h.
  */
-#define NO_ARRAY_IMPORT
+#define NO_IMPORT_ARRAY
 #include "nd_image.h"
-#undef NO_ARRAY_IMPORT
+#undef NO_IMPORT_ARRAY
 
 #include <stdlib.h>
 #include <float.h>
