@@ -27,6 +27,7 @@ def planar_polygon_area(double[:,::1] vertices):
     area *= 0.5
     return area
 
+@cython.boundscheck(False)
 def spherical_polygon_area(double[:,:] vertices, double radius):
     cdef double [:] lambda_vals = np.arctan2(vertices[...,1],
                                              vertices[...,0])
