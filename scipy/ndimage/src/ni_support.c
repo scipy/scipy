@@ -53,12 +53,12 @@ int NI_InitPointIterator(PyArrayObject *array, NI_Iterator *iterator)
 
 
 /* initialize iteration over a lower sub-space: */
-int NI_SubspaceIterator(NI_Iterator *iterator, npy_int32 axes)
+int NI_SubspaceIterator(NI_Iterator *iterator, npy_uint32 axes)
 {
     int ii, last = 0;
 
     for(ii = 0; ii <= iterator->rank_m1; ii++) {
-        if (axes & (((npy_int32)1) << ii)) {
+        if (axes & (((npy_uint32)1) << ii)) {
             if (last != ii) {
                 iterator->dimensions[last] = iterator->dimensions[ii];
                 iterator->strides[last] = iterator->strides[ii];
@@ -74,7 +74,7 @@ int NI_SubspaceIterator(NI_Iterator *iterator, npy_int32 axes)
 /* initialize iteration over array lines: */
 int NI_LineIterator(NI_Iterator *iterator, int axis)
 {
-    npy_int32 axes = ((npy_int32)1) << axis;
+    npy_int32 axes = ((npy_uint32)1) << axis;
     return NI_SubspaceIterator(iterator, ~axes);
 }
 

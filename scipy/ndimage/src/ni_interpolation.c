@@ -367,7 +367,7 @@ NI_GeometricTransform(PyArrayObject *input, int (*map)(npy_intp*, double*,
     NI_Iterator io, ic;
     npy_double *matrix = matrix_ar ? (npy_double*)PyArray_DATA(matrix_ar) : NULL;
     npy_double *shift = shift_ar ? (npy_double*)PyArray_DATA(shift_ar) : NULL;
-    int irank = 0, orank, qq;
+    int irank = 0, orank;
     NPY_BEGIN_THREADS_DEF;
 
     NPY_BEGIN_THREADS;
@@ -697,7 +697,7 @@ int NI_ZoomShift(PyArrayObject *input, PyArrayObject* zoom_ar,
     NI_Iterator io;
     npy_double *zooms = zoom_ar ? (npy_double*)PyArray_DATA(zoom_ar) : NULL;
     npy_double *shifts = shift_ar ? (npy_double*)PyArray_DATA(shift_ar) : NULL;
-    int rank = 0, qq;
+    int rank = 0;
     NPY_BEGIN_THREADS_DEF;
 
     NPY_BEGIN_THREADS;
