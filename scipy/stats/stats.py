@@ -4789,25 +4789,29 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
 
 
-def ks_2samp(data1, data2):
+def ks_2samp(data1, data2, alternative='two_sided'):
     """
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
 
     This is a two-sided test for the null hypothesis that 2 independent samples
-    are drawn from the same continuous distribution.
+    are drawn from the same continuous distribution. The alternative hypothesis
+    can be either 'two-sided' (default), 'less' or 'greater'
 
     Parameters
     ----------
     data1, data2 : sequence of 1-D ndarrays
         two arrays of sample observations assumed to be drawn from a continuous
         distribution, sample sizes can be different
+    alternative : {'two-sided', 'less','greater'}, optional
+        Defines the alternative hypothesis (see explanation above).
+        Default is 'two-sided'
 
     Returns
     -------
     statistic : float
-        KS statistic
+        KS statistic, either D, D+ or D-.
     pvalue : float
-        two-tailed p-value
+        One-tailed or two-tailed p-value.
 
     Notes
     -----
@@ -4815,8 +4819,7 @@ def ks_2samp(data1, data2):
     that, like in the case of the one-sample K-S test, the distribution is
     assumed to be continuous.
 
-    This is the two-sided test, one-sided tests are not implemented.
-    The test uses the two-sided asymptotic Kolmogorov-Smirnov distribution.
+    The test uses the asymptotic Kolmogorov-Smirnov distribution.
 
     If the K-S statistic is small or the p-value is high, then we cannot
     reject the hypothesis that the distributions of the two samples
@@ -4856,17 +4859,24 @@ def ks_2samp(data1, data2):
     data2 = np.sort(data2)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
+    en = np.sqrt(n1 * n2 / float(n1 + n2))
     data_all = np.concatenate([data1, data2])
     cdf1 = np.searchsorted(data1, data_all, side='right') / (1.0*n1)
     cdf2 = np.searchsorted(data2, data_all, side='right') / (1.0*n2)
-    d = np.max(np.absolute(cdf1 - cdf2))
-    # Note: d absolute not signed distance
-    en = np.sqrt(n1 * n2 / float(n1 + n2))
-    try:
-        prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
-    except:
-        prob = 1.0
-
+    if alternative == 'two-sided':
+        d = np.max(np.absolute(cdf1 - cdf2))
+        # Note: d absolute not signed distance
+        try:
+            prob = distributions.kstwobign.sf((en + 0.12 + 0.11 / en) * d)
+        except:
+            prob = 1.0
+    elif alternative == 'less':
+        d = np.max(cdf1 - cdf2)
+    elif alternative == 'greater':
+        d = np.max(cdf2 - cdf1)
+    if alternative in ['less', 'greater']:
+        lambd = (en + 0.12 + 0.11 / en) * d
+        prob = np.exp(-2 * lambd * lambd)
     return Ks_2sampResult(d, prob)
 
 
