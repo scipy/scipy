@@ -402,5 +402,39 @@ def test_footprint_all_zeros():
         sndi.maximum_filter(arr, footprint=kernel)
 
 
+class TestPILUtil(TestCase):
+    def test_imresize(self):
+        im = np.random.random((10, 20))
+        for T in np.sctypes['float'] + [float]:
+            # 1.1 rounds to below 1.1 for float16, 1.101 works
+            im1 = sndi.imresize(im, T(1.101))
+            assert_equal(im1.shape, (11, 22))
+
+    def test_imresize2(self):
+        im = np.random.random((20, 30))
+        im2 = sndi.imresize(im, (30, 40), interp='bicubic')
+        assert_equal(im2.shape, (30, 40))
+
+    def test_imresize3(self):
+        im = np.random.random((15, 30))
+        im2 = sndi.imresize(im, (30, 60), interp='nearest')
+        assert_equal(im2.shape, (30, 60))
+
+    def test_imresize4(self):
+        im = np.array([[1, 2],
+                       [3, 4]])
+        # Check that resizing by target size, float and int are the same
+        im2 = sndi.imresize(im, (4, 4), mode='F')  # output size
+        im3 = sndi.imresize(im, 2., mode='F')  # fraction
+        im4 = sndi.imresize(im, 200, mode='F')  # percentage
+        assert_equal(im2, im3)
+        assert_equal(im2, im4)
+
+    def test_imresize5(self):
+        im = np.random.random((25, 15))
+        im2 = sndi.imresize(im, (30, 60), interp='lanczos')
+        assert_equal(im2.shape, (30, 60))
+
+
 if __name__ == "__main__":
     run_module_suite(argv=sys.argv)

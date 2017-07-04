@@ -34,8 +34,13 @@ import math
 import numpy
 from . import _ni_support
 from . import _nd_image
-from scipy.misc import doccer
+from scipy.misc import doccer, toimage, fromimage
 from scipy._lib._version import NumpyVersion
+
+try:
+    from PIL import ImageFilter
+except ImportError:
+    import ImageFilter
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -1512,3 +1517,135 @@ def generic_filter(input, function, size=None, footprint=None,
     _nd_image.generic_filter(input, function, footprint, output, mode,
                              cval, origins, extra_arguments, extra_keywords)
     return return_value
+
+
+def imrotate(arr, angle, interp='bilinear'):
+    """
+    Rotate an image counter-clockwise by angle degrees.
+
+    This function is only available if Python Imaging Library (PIL) is
+    installed.
+
+    Parameters
+    ----------
+    arr : ndarray
+        Input array of image to be rotated.
+    angle : float
+        The angle of rotation.
+    interp : str, optional
+        Interpolation
+
+        - 'nearest' :  for nearest neighbor
+        - 'bilinear' : for bilinear
+        - 'lanczos' : for lanczos
+        - 'cubic' : for bicubic
+        - 'bicubic' : for bicubic
+
+    Returns
+    -------
+    imrotate : ndarray
+        The rotated array of image.
+
+    """
+    arr = numpy.asarray(arr)
+    func = {'nearest': 0, 'lanczos': 1, 'bilinear': 2,
+            'bicubic': 3, 'cubic': 3}
+    im = toimage(arr)
+    im = im.rotate(angle, resample=func[interp])
+    return fromimage(im)
+
+
+def imresize(arr, size, interp='bilinear', mode=None):
+    """
+    Resize an image.
+
+    This function is only available if Python Imaging Library (PIL) is
+    installed.
+
+    Parameters
+    ----------
+    arr : ndarray
+        The array of image to be resized.
+
+    size : int, float or tuple
+        * int   - Percentage of current size.
+        * float - Fraction of current size.
+        * tuple - Size of the output image.
+
+    interp : str, optional
+        Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear',
+        'bicubic' or 'cubic').
+
+    mode : str, optional
+        The PIL image mode ('P', 'L', etc.) to convert `arr` before resizing.
+
+    Returns
+    -------
+    imresize : ndarray
+        The resized array of image.
+
+    See Also
+    --------
+    scipy.misc.toimage : Implicitly used to convert `arr` according to `mode`.
+    scipy.ndimage.zoom : More generic implementation that does not use PIL.
+
+    """
+    im = toimage(arr, mode=mode)
+    ts = type(size)
+    if numpy.issubdtype(ts, int):
+        percent = size / 100.0
+        size = tuple((numpy.array(im.size) * percent).astype(int))
+    elif numpy.issubdtype(type(size), float):
+        size = tuple((numpy.array(im.size) * size).astype(int))
+    else:
+        size = (size[1], size[0])
+    func = {'nearest': 0, 'lanczos': 1, 'bilinear': 2,
+            'bicubic': 3, 'cubic': 3}
+    imnew = im.resize(size, resample=func[interp])
+    return fromimage(imnew)
+
+
+def imfilter(arr, ftype):
+    """
+    Simple filtering of an image.
+
+    This function is only available if Python Imaging Library (PIL) is
+    installed.
+
+    Parameters
+    ----------
+    arr : ndarray
+        The array of Image in which the filter is to be applied.
+    ftype : str
+        The filter that has to be applied. Legal values are:
+        'blur', 'contour', 'detail', 'edge_enhance', 'edge_enhance_more',
+        'emboss', 'find_edges', 'smooth', 'smooth_more', 'sharpen'.
+
+    Returns
+    -------
+    imfilter : ndarray
+        The array with filter applied.
+
+    Raises
+    ------
+    ValueError
+        *Unknown filter type.*  If the filter you are trying
+        to apply is unsupported.
+
+    """
+    _tdict = {'blur': ImageFilter.BLUR,
+              'contour': ImageFilter.CONTOUR,
+              'detail': ImageFilter.DETAIL,
+              'edge_enhance': ImageFilter.EDGE_ENHANCE,
+              'edge_enhance_more': ImageFilter.EDGE_ENHANCE_MORE,
+              'emboss': ImageFilter.EMBOSS,
+              'find_edges': ImageFilter.FIND_EDGES,
+              'smooth': ImageFilter.SMOOTH,
+              'smooth_more': ImageFilter.SMOOTH_MORE,
+              'sharpen': ImageFilter.SHARPEN
+              }
+
+    im = toimage(arr)
+    if ftype not in _tdict:
+        raise ValueError("Unknown filter type.")
+    return fromimage(im.filter(_tdict[ftype]))
