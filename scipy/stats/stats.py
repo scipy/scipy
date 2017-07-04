@@ -4789,7 +4789,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 Ks_2sampResult = namedtuple('Ks_2sampResult', ('statistic', 'pvalue'))
 
 
-def ks_2samp(data1, data2, alternative='two_sided'):
+def ks_2samp(data1, data2, alternative='two-sided'):
     """
     Compute the Kolmogorov-Smirnov statistic on 2 samples.
 
