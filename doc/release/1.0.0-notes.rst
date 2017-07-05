@@ -64,6 +64,9 @@ providing the cumulative distribution function of the multivariate normal
 distribution.  The underlying code is the classic one by Alan Genz (see
 `scipy/stats/mvndst.f`).
 
+New statistical distance functions were added, namely `wasserstein` for the
+first Wasserstein distance and `cramer` for the Cramér-von Mises distance.
+
 
 Deprecated features
 ===================

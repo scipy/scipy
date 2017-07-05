@@ -292,6 +292,12 @@ which work for masked arrays.
    chisqprob
    betai
 
+.. autosummary::
+   :toctree: generated/
+
+   wasserstein
+   cramer
+
 Circular statistical functions
 ==============================
 

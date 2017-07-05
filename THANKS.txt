@@ -178,6 +178,8 @@ David Hagen for the object-oriented ODE solver interface.
 Arno Onken for contributions to scipy.stats.
 Cathy Douglass for bug fixes in ndimage.
 Adam Cox for contributions to scipy.constants.
+Charles Masson for the Wasserstein and the Cramér-von Mises statistical
+    distances.
 
 Institutions
 ------------
@@ -189,3 +191,4 @@ UC Berkeley for providing travel money and hosting numerous sprints.
 The University of Stellenbosch for funding the development of
     the SciKits portal.
 Google Inc. for updating documentation of hypergeometric distribution.
+Datadog Inc. for contributions to scipy.stats.
