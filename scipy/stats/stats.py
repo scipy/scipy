@@ -4825,6 +4825,10 @@ def ks_2samp(data1, data2, alternative='two-sided'):
     reject the hypothesis that the distributions of the two samples
     are the same.
 
+    For the one-sided alternative hypothesis, 'less' tests whether the CDF
+    of data1 is less than that of data2. If this is true then the values of
+    data1 tend to be greater than those of data2.
+
     Examples
     --------
     >>> from scipy import stats
@@ -4871,9 +4875,9 @@ def ks_2samp(data1, data2, alternative='two-sided'):
         except:
             prob = 1.0
     elif alternative == 'less':
-        d = np.max(cdf1 - cdf2)
-    elif alternative == 'greater':
         d = np.max(cdf2 - cdf1)
+    elif alternative == 'greater':
+        d = np.max(cdf1 - cdf2)
     if alternative in ['less', 'greater']:
         lambd = (en + 0.12 + 0.11 / en) * d
         prob = np.exp(-2 * lambd * lambd)
