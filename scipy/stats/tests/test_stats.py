@@ -4204,3 +4204,160 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
+
+
+class TestCdfDistanceValidation(TestCase):
+    """
+    Test that _cdf_distance() (via wasserstein()) raises ValueErrors for bad
+    inputs.
+    """
+
+    def test_distinct_value_and_weight_lengths(self):
+        # When the number of weights does not match the number of values,
+        # a ValueError should be raised.
+        assert_raises(ValueError, stats.wasserstein, [1], [2], [4], [3, 1])
+        assert_raises(ValueError, stats.wasserstein, [1], [2], [1, 0])
+
+    def test_zero_weight(self):
+        # When a distribution is given zero weight, a ValueError should be
+        # raised.
+        assert_raises(ValueError, stats.wasserstein, [0, 1], [2], [0, 0])
+        assert_raises(ValueError, stats.wasserstein, [0, 1], [2], [3, 1], [0])
+
+    def test_negative_weights(self):
+        # A ValueError should be raised if there are any negative weights.
+        assert_raises(ValueError, stats.wasserstein,
+                      [0, 1], [2, 2], [1, 1], [3, -1])
+
+    def test_empty_distribution(self):
+        # A ValueError should be raised when trying to measure the distance
+        # between something and nothing.
+        assert_raises(ValueError, stats.wasserstein, [], [2, 2])
+        assert_raises(ValueError, stats.wasserstein, [1], [])
+
+    def test_inf_weight(self):
+        # An inf weight is not valid.
+        assert_raises(ValueError, stats.wasserstein,
+                      [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
+
+
+class TestWasserstein(TestCase):
+    """ Tests for wasserstein() output values.
+    """
+
+    def test_simple(self):
+        # For basic distributions, the value of the Wasserstein distance is
+        # straightforward.
+        assert_almost_equal(stats.wasserstein([0, 1], [0], [1, 1], [1]), .5)
+        assert_almost_equal(stats.wasserstein([0, 1], [0], [3, 1], [1]), .25)
+        assert_almost_equal(stats.wasserstein([0, 2], [0], [1, 1], [1]), 1)
+        assert_almost_equal(stats.wasserstein([0, 1, 2], [1, 2, 3]), 1)
+
+    def test_same_distribution(self):
+        # Any distribution moved to itself should have a Wasserstein distance of
+        # zero.
+        assert_equal(stats.wasserstein([1, 2, 3], [2, 1, 3]), 0)
+        assert_equal(
+            stats.wasserstein([1, 1, 1, 4], [4, 1], [1, 1, 1, 1], [1, 3]),
+            0)
+
+    def test_shift(self):
+        # If the whole distribution is shifted by x, then the Wasserstein
+        # distance should be x.
+        assert_almost_equal(stats.wasserstein([0], [1]), 1)
+        assert_almost_equal(stats.wasserstein([-5], [5]), 10)
+        assert_almost_equal(
+            stats.wasserstein([1, 2, 3, 4, 5], [11, 12, 13, 14, 15]),
+            10)
+        assert_almost_equal(
+            stats.wasserstein([4.5, 6.7, 2.1], [4.6, 7, 9.2],
+                              [3, 1, 1], [1, 3, 1]),
+            2.5)
+
+    def test_combine_weights(self):
+        # Assigning a weight w to a value is equivalent to including that value
+        # w times in the value array with weight of 1.
+        assert_almost_equal(
+            stats.wasserstein([0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
+                              [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
+            stats.wasserstein([5, 0, 1], [0, 4, 3], [1, 2, 4], [1, 2, 4]))
+
+    def test_collapse(self):
+        # Collapsing a distribution to a point distribution at zero is
+        # equivalent to taking the average of the absolute values of the values.
+        u = np.arange(-10, 30, 0.3)
+        v = np.zeros_like(u)
+        assert_almost_equal(stats.wasserstein(u, v), np.mean(np.abs(u)))
+
+        u_weights = np.arange(len(u))
+        v_weights = u_weights[::-1]
+        assert_almost_equal(
+            stats.wasserstein(u, v, u_weights, v_weights),
+            np.average(np.abs(u), weights=u_weights))
+
+    def test_zero_weight(self):
+        # Values with zero weight have no impact on the Wasserstein distance.
+        assert_almost_equal(
+            stats.wasserstein([1, 2, 100000], [1, 1], [1, 1, 0], [1, 1]),
+            stats.wasserstein([1, 2], [1, 1], [1, 1], [1, 1]))
+
+    def test_inf_values(self):
+        # Inf values can lead to an inf distance or trigger a RuntimeWarning
+        # (and return NaN) if the distance is undefined.
+        assert_equal(stats.wasserstein([1, 2, np.inf], [1, 1]), np.inf)
+        assert_equal(stats.wasserstein([1, 2, np.inf], [-np.inf, 1]), np.inf)
+        assert_equal(stats.wasserstein([1, -np.inf, np.inf], [1, 1]), np.inf)
+        assert_raises(RuntimeWarning, stats.wasserstein,
+                      [1, 2, np.inf], [np.inf, 1])
+
+
+class TestCramer(TestCase):
+    """ Tests for cramer() output values.
+    """
+
+    def test_simple(self):
+        # For basic distributions, the value of the Cramer distance is
+        # straightforward.
+        assert_almost_equal(stats.cramer([0, 1], [0], [1, 1], [1]), .5)
+        assert_almost_equal(stats.cramer([0, 1], [0], [3, 1], [1]), .25)
+        assert_almost_equal(stats.cramer([0, 2], [0], [1, 1], [1]), 2**.5*.5)
+        assert_almost_equal(
+            stats.cramer([0, 1, 2], [1, 2, 3]),
+            (3*(1./3**2))**.5)
+
+    def test_same_distribution(self):
+        # Any distribution moved to itself should have a Cramer distance of
+        # zero.
+        assert_equal(stats.cramer([1, 2, 3], [2, 1, 3]), 0)
+        assert_equal(
+            stats.cramer([1, 1, 1, 4], [4, 1], [1, 1, 1, 1], [1, 3]),
+            0)
+
+    def test_shift(self):
+        # If a single-point distribution is shifted by x, then the Cramer
+        # distance should be sqrt(x).
+        assert_almost_equal(stats.cramer([0], [1]), 1)
+        assert_almost_equal(stats.cramer([-5], [5]), 10**.5)
+
+    def test_combine_weights(self):
+        # Assigning a weight w to a value is equivalent to including that value
+        # w times in the value array with weight of 1.
+        assert_almost_equal(
+            stats.cramer([0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
+                         [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
+            stats.cramer([5, 0, 1], [0, 4, 3], [1, 2, 4], [1, 2, 4]))
+
+    def test_zero_weight(self):
+        # Values with zero weight have no impact on the Cramer distance.
+        assert_almost_equal(
+            stats.cramer([1, 2, 100000], [1, 1], [1, 1, 0], [1, 1]),
+            stats.cramer([1, 2], [1, 1], [1, 1], [1, 1]))
+
+    def test_inf_values(self):
+        # Inf values can lead to an inf distance or trigger a RuntimeWarning
+        # (and return NaN) if the distance is undefined.
+        assert_equal(stats.cramer([1, 2, np.inf], [1, 1]), np.inf)
+        assert_equal(stats.cramer([1, 2, np.inf], [-np.inf, 1]), np.inf)
+        assert_equal(stats.cramer([1, -np.inf, np.inf], [1, 1]), np.inf)
+        assert_raises(RuntimeWarning, stats.cramer, [1, 2, np.inf], [np.inf, 1])
+
