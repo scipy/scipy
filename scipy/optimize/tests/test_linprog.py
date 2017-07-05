@@ -4,11 +4,9 @@ Unit test for Linear Programming
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_, assert_array_almost_equal, assert_allclose,
-        assert_almost_equal, assert_raises, assert_equal)
+from numpy.testing import (assert_, assert_allclose, assert_raises, assert_equal)
 
 from scipy.optimize import linprog, OptimizeWarning
-import warnings
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
 
@@ -67,7 +65,6 @@ def magic_square(n):
 
     A = np.array(np.vstack(A_list), dtype=float)
     b = np.array(b_list, dtype=float)
-    # c = np.zeros(A.shape[1],dtype= float)
     c = np.random.rand(A.shape[1])
 
     return A, b, c, numbers

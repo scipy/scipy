@@ -4,7 +4,8 @@ Unit test for Linear Programming via Simplex Algorithm.
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_, assert_raises, run_module_suite)
+from numpy.testing import (assert_, assert_raises, 
+                           assert_allclose, run_module_suite, )
 
 
 from scipy.optimize._linprog_ip import _clean_inputs
@@ -54,11 +55,11 @@ def test_aliasing2():
 
     outputs = _clean_inputs(c, A_ub, b_ub, A_eq, b_eq, bounds)
 
-    assert_(np.allclose(c, c_copy), "c modified by _clean_inputs")
-    assert_(np.allclose(A_ub, A_ub_copy), "A_ub modified by _clean_inputs")
-    assert_(np.allclose(b_ub, b_ub_copy), "b_ub modified by _clean_inputs")
-    assert_(np.allclose(A_eq, A_eq_copy), "A_eq modified by _clean_inputs")
-    assert_(np.allclose(b_eq, b_eq_copy), "b_eq modified by _clean_inputs")
+    assert_allclose(c, c_copy, err_msg="c modified by _clean_inputs")
+    assert_allclose(A_ub, A_ub_copy, err_msg="A_ub modified by _clean_inputs")
+    assert_allclose(b_ub, b_ub_copy, err_msg="b_ub modified by _clean_inputs")
+    assert_allclose(A_eq, A_eq_copy, err_msg="A_eq modified by _clean_inputs")
+    assert_allclose(b_eq, b_eq_copy, err_msg="b_eq modified by _clean_inputs")
     assert_(bounds == bounds_copy, "bounds modified by _clean_inputs")
 
 
@@ -267,11 +268,11 @@ def test__clean_inputs1():
         A_eq=A_eq,
         b_eq=b_eq,
         bounds=bounds)
-    assert_(np.allclose(outputs[0], np.array(c)), "")
-    assert_(np.allclose(outputs[1], np.array(A_ub)), "")
-    assert_(np.allclose(outputs[2], np.array(b_ub)), "")
-    assert_(np.allclose(outputs[3], np.array(A_eq)), "")
-    assert_(np.allclose(outputs[4], np.array(b_eq)), "")
+    assert_allclose(outputs[0], np.array(c))
+    assert_allclose(outputs[1], np.array(A_ub))
+    assert_allclose(outputs[2], np.array(b_ub))
+    assert_allclose(outputs[3], np.array(A_eq))
+    assert_allclose(outputs[4], np.array(b_eq))
     assert_(outputs[5] == [(0, None)] * 2, "")
 
     assert_(outputs[0].shape == (2,), "")
@@ -295,11 +296,11 @@ def test__clean_inputs2():
         A_eq=A_eq,
         b_eq=b_eq,
         bounds=bounds)
-    assert_(np.allclose(outputs[0], np.array(c)), "")
-    assert_(np.allclose(outputs[1], np.array(A_ub)), "")
-    assert_(np.allclose(outputs[2], np.array(b_ub)), "")
-    assert_(np.allclose(outputs[3], np.array(A_eq)), "")
-    assert_(np.allclose(outputs[4], np.array(b_eq)), "")
+    assert_allclose(outputs[0], np.array(c))
+    assert_allclose(outputs[1], np.array(A_ub))
+    assert_allclose(outputs[2], np.array(b_ub))
+    assert_allclose(outputs[3], np.array(A_eq))
+    assert_allclose(outputs[4], np.array(b_eq))
     assert_(outputs[5] == [(0, 1)], "")
 
     assert_(outputs[0].shape == (1,), "")
@@ -323,9 +324,9 @@ def test__clean_inputs3():
         A_eq=A_eq,
         b_eq=b_eq,
         bounds=bounds)
-    assert_(np.allclose(outputs[0], np.array([1, 2])), "")
-    assert_(np.allclose(outputs[2], np.array([1, 2])), "")
-    assert_(np.allclose(outputs[4], np.array([1, 2])), "")
+    assert_allclose(outputs[0], np.array([1, 2]))
+    assert_allclose(outputs[2], np.array([1, 2]))
+    assert_allclose(outputs[4], np.array([1, 2]))
     assert_(outputs[5] == [(0, 1)] * 2, "")
 
     assert_(outputs[0].shape == (2,), "")
