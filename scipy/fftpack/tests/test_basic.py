@@ -127,7 +127,7 @@ def direct_irdft(x):
     return direct_idft(x1).real
 
 
-class _TestFFTBase(TestCase):
+class _TestFFTBase(object):
     def setUp(self):
         self.cdt = None
         self.rdt = None
@@ -217,7 +217,7 @@ class TestFloat16FFT(TestCase):
         assert_array_almost_equal(y[1], direct_dft(x2.astype(np.float32)))
 
 
-class _TestIFFTBase(TestCase):
+class _TestIFFTBase(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -311,7 +311,7 @@ class TestSingleIFFT(_TestIFFTBase):
         self.rdt = np.float32
 
 
-class _TestRFFTBase(TestCase):
+class _TestRFFTBase(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -378,7 +378,7 @@ class TestRFFTSingle(_TestRFFTBase):
         self.rdt = np.float32
 
 
-class _TestIRFFTBase(TestCase):
+class _TestIRFFTBase(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -696,7 +696,7 @@ class TestFftn(TestCase):
         assert_raises(ValueError, fftn, [[1,1],[2,2]], (4, -3))
 
 
-class _TestIfftn(TestCase):
+class _TestIfftn(object):
     dtype = None
     cdtype = None
 

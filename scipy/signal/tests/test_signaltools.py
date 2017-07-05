@@ -31,7 +31,7 @@ else:
     from fractions import gcd
 
 
-class _TestConvolve(TestCase):
+class _TestConvolve(object):
 
     def test_basic(self):
         a = [3, 4, 5, 6, 5, 4]
@@ -155,8 +155,8 @@ class TestConvolve(_TestConvolve):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
     def test_convolve_method(self, n=100):
         types = sum([t for _, t in np.sctypes.items()], [])
@@ -222,7 +222,7 @@ class TestConvolve(_TestConvolve):
                 assert_equal(direct, 2**(2*n))
 
 
-class _TestConvolve2d(TestCase):
+class _TestConvolve2d(object):
 
     def test_2d_arrays(self):
         a = [[1, 2, 3], [3, 4, 5]]
@@ -294,8 +294,8 @@ class _TestConvolve2d(TestCase):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
 
 
 class TestConvolve2d(_TestConvolve2d):
@@ -472,8 +472,8 @@ class TestFFTConvolve(TestCase):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
 
 
 class TestMedFilt(TestCase):
@@ -710,7 +710,7 @@ class TestOrderFilt(TestCase):
                            [2, 3, 2])
 
 
-class _TestLinearFilter(TestCase):
+class _TestLinearFilter(object):
     def generate(self, shape):
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
         return self.convert_dtype(x)
@@ -1140,7 +1140,7 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
-class _TestCorrelateReal(TestCase):
+class _TestCorrelateReal(object):
     dt = None
 
     def _setup_rank1(self):
@@ -1249,8 +1249,8 @@ class _TestCorrelateReal(TestCase):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, correlate, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, correlate, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
 
 
 def _get_testcorrelate_class(datatype, base):
@@ -1267,7 +1267,7 @@ for datatype in [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
     globals()[cls.__name__] = cls
 
 
-class _TestCorrelateComplex(TestCase):
+class _TestCorrelateComplex(object):
     # The numpy data type to use.
     dt = None
 
@@ -1369,8 +1369,8 @@ class TestCorrelate2d(TestCase):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
 
 
 # Create three classes, one for each complex data type. The actual class

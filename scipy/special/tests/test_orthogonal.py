@@ -139,7 +139,7 @@ class TestHermite(TestCase):
         assert_array_almost_equal(H5.c,he5.c,13)
 
 
-class _test_sh_legendre(TestCase):
+class _test_sh_legendre(object):
 
     def test_sh_legendre(self):
         # P*_n(x) = P_n(2x-1)
@@ -164,7 +164,7 @@ class _test_sh_legendre(TestCase):
         assert_array_almost_equal(Ps5.c,pse5.c,12)
 
 
-class _test_sh_chebyt(TestCase):
+class _test_sh_chebyt(object):
 
     def test_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
@@ -189,7 +189,7 @@ class _test_sh_chebyt(TestCase):
         assert_array_almost_equal(Ts5.c,tse5.c,12)
 
 
-class _test_sh_chebyu(TestCase):
+class _test_sh_chebyu(object):
 
     def test_sh_chebyu(self):
         # U*_n(x) = U_n(2x-1)
@@ -214,7 +214,7 @@ class _test_sh_chebyu(TestCase):
         assert_array_almost_equal(Us5.c,use5.c,11)
 
 
-class _test_sh_jacobi(TestCase):
+class _test_sh_jacobi(object):
     def test_sh_jacobi(self):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
         conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)

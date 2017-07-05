@@ -80,7 +80,7 @@ class TestComplex(TestCase):
         assert_array_almost_equal(x, y)
 
 
-class _TestDCTBase(TestCase):
+class _TestDCTBase(object):
     def setUp(self):
         self.rdt = None
         self.dec = 14
@@ -202,7 +202,7 @@ class TestDCTIIIInt(_TestDCTIIIBase):
         self.type = 3
 
 
-class _TestIDCTBase(TestCase):
+class _TestIDCTBase(object):
     def setUp(self):
         self.rdt = None
         self.dec = 14
@@ -288,7 +288,7 @@ class TestIDCTIIIInt(_TestIDCTBase):
         self.type = 3
 
 
-class _TestDSTBase(TestCase):
+class _TestDSTBase(object):
     def setUp(self):
         self.rdt = None  # dtype
         self.dec = None  # number of decimals to match
@@ -370,7 +370,7 @@ class TestDSTIIIInt(_TestDSTBase):
         self.type = 3
 
 
-class _TestIDSTBase(TestCase):
+class _TestIDSTBase(object):
     def setUp(self):
         self.rdt = None
         self.dec = None
