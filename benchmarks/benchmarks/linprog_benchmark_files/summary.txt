@@ -1,6 +1,13 @@
-*	Original SIF (MPS) files from http://www.cuter.rl.ac.uk/Problems/netlib.shtml
-*	Converted to numpy arrays by Matt Haberland	
+*	This file is for documentation only; it is not referenced in any code.
+*	The .npz files in this directory contain c, A_ub, b_ub, A_eq, b_eq, and
+*	bound arrays that define ~100 Netlib LP Test Problems summarized below.
+*	Original SIF (MPS) files from:
+*	http://www.cuter.rl.ac.uk/Problems/netlib.shtml
+*	Converted to numpy arrays by Matt Haberland	according to format rules:
+*	http://lpsolve.sourceforge.net/5.5/mps-format.htm
 * 	Summary herein from http://www.netlib.org/lp/data/readme
+*	Note: B/R refers to whether the original problem contains BOUNDS/RANGES.
+*		 Problems with RANGES are not included because I'm lazy.
 *Name      Rows   Cols   Nonzeros    Bytes  BR     Optimal Value
 *
 25FV47      822   1571    11127      70477        5.5018458883E+03
@@ -57,9 +64,9 @@ PILOT-WE    723   2789     9218      79972  B    -2.7201027439E+06
 PILOT4      411   1000     5145      40936  B    -2.5811392641E+03
 PILOT87    2031   4883    73804     514192  B     3.0171072827E+02
 PILOTNOV    976   2172    13129      89779  B    -4.4972761882E+03
-QAP8        913   1632     8304 (see NOTES)       2.0350000000E+02
-QAP12      3193   8856    44244 (see NOTES)       5.2289435056E+02
-QAP15      6331  22275   110700 (see NOTES)       1.0409940410E+03
+QAP8        913   1632     8304                   2.0350000000E+02
+QAP12      3193   8856    44244                   5.2289435056E+02
+QAP15      6331  22275   110700                   1.0409940410E+03
 RECIPE       92    180      752       6210  B    -2.6661600000E+02
 SC105       106    103      281       3307       -5.2202061212E+01
 SC205       206    203      552       6380       -5.2202061212E+01
@@ -94,8 +101,8 @@ STANDATA    360   1075     3038      26135  B     1.2576995000E+03
 STANDMPS    468   1075     3686      29839  B     1.4060175000E+03
 STOCFOR1    118    111      474       4247       -4.1131976219E+04
 STOCFOR2   2158   2031     9492      79845       -3.9024408538E+04
-STOCFOR3  16676  15695    74004 (see NOTES)      -3.9976661576E+04
-TRUSS      1001   8806    36642 (see NOTES)       4.5881584719E+05
+STOCFOR3  16676  15695    74004                  -3.9976661576E+04
+TRUSS      1001   8806    36642                   4.5881584719E+05
 TUFF        334    587     4523      29439  B     2.9214776509E-01
 VTP-BASE    199    203      914       8175  B     1.2983146246E+05
 WOOD1P      245   2594    70216     328905        1.4429024116E+00

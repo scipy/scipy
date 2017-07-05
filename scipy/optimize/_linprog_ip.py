@@ -10,8 +10,8 @@ import scipy.sparse as sps
 from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
-#from scipy.optimize import _check_unknown_options
 from scipy.optimize._remove_redundancy import _remove_redundancy
+
 
 def _clean_inputs(
         c,
@@ -333,7 +333,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     undo: list of tuples
         (index, value) pairs that record the original index and fixed value
         for each variable removed from the problem
-    complete: boolean
+    complete: bool
         Whether the solution is complete (solved or determined to be infeasible
         or unbounded in presolve)
     status : int
@@ -740,7 +740,7 @@ def _postprocess(
         Original equality constraint vector.
     bounds : sequence of tuples
         Bounds, as modified in presolve
-    complete : boolean
+    complete : bool
         Whether the solution is was determined in presolve (True if so)
     undo: list of tuples
         (index, value) pairs that record the original index and fixed value
@@ -845,19 +845,19 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
 
     Parameters
     ----------
-    sparse : boolean
+    sparse : bool
         True if the system to be solved is sparse. This is typically set
         True when the original A_ub and A_eq matrices are sparse.
-    lstsq : boolean
+    lstsq : bool
         True if the system is ill-conditioned and/or (nearly) singular and
         thus a more robust least-squares solver is desired. This is sometimes
         needed as the solution is approached.
-    sym_pos : boolean
+    sym_pos : bool
         True if the system matrix is symmetric positive definite
         Sometimes this needs to be set false as the solution is approached,
         even when the system be symmetric positive definite, due to numerical
         difficulties.
-    cholesky : boolean
+    cholesky : bool
         True if the system is to be solved by explicit Cholesky decomposition
         followed by explicit forward/backward substitution. This is
         occasionally faster for very large, symmetric positive definite
@@ -871,15 +871,10 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
 
     """
     if sparse:
-        if lstsq or sym_pos == False:
-            # solve = lambda M, r: sps.linalg.lsqr(M, r)[0]
+        if lstsq or not(sym_pos):
             def solve(M, r, sym_pos=False): 
                 return sps.linalg.lsqr(M, r)[0]
-#                return sps.linalg.lsqr(M, r, atol = 0, btol = 0, 
-#                                       iter_lim=5000)[0] # force it to work...
         else:
-            # solve = lambda M, r: sps.linalg.spsolve(
-            # M, r, permc_spec="MMD_AT_PLUS_A")
             def solve(M, r): 
                 return sps.linalg.spsolve(M, r, permc_spec="MMD_AT_PLUS_A")
             # in tests MMD_AT_PLUS_A was often fastest.
@@ -887,7 +882,6 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
 
     else:
         if lstsq:  # sometimes necessary as solution is approached
-            # solve = lambda M, r: sp.linalg.lstsq(M, r)[0]
             def solve(M, r): 
                 return sp.linalg.lstsq(M, r)[0]
         elif cholesky:
@@ -895,8 +889,6 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
         else:
             # this seems to cache the matrix factorization, so solving
             # with multiple right hand sides is much faster
-            # solve = lambda M, r, sym_pos = sym_pos: sp.linalg.solve(
-            # M, r, sym_pos=sym_pos)
             def solve(M, r, sym_pos=sym_pos): 
                 return sp.linalg.solve(M, r, sym_pos=sym_pos)
 
@@ -930,31 +922,31 @@ def _get_delta(
     Parameters
     ----------
     As defined in [1], except:
-    sparse : boolean
+    sparse : bool
         True if the system to be solved is sparse. This is typically set
         True when the original A_ub and A_eq matrices are sparse.
-    lstsq : boolean
+    lstsq : bool
         True if the system is ill-conditioned and/or (nearly) singular and
         thus a more robust least-squares solver is desired. This is sometimes
         needed as the solution is approached.
-    sym_pos : boolean
+    sym_pos : bool
         True if the system matrix is symmetric positive definite
         Sometimes this needs to be set false as the solution is approached,
         even when the system be symmetric positive definite, due to numerical
         difficulties.
-    cholesky : boolean
+    cholesky : bool
         True if the system is to be solved by explicit Cholesky decomposition
         followed by explicit forward/backward substitution. This is
         occasionally faster for very large, symmetric positive definite
         systems when a system with the same matrix is to be solved with
         several right hand sides.
-    pc : boolean
+    pc : bool
         True if the predictor-corrector method of Mehrota is to be used. This
         is almost always (if not always) beneficial. Even though it requires
         the solution of an additional linear system, the factorization
         is typically (implicitly) reused so solution is efficient, and the
         number of algorithm iterations is typically reduced.
-    ip : boolean
+    ip : bool
         True if the improved initial point suggestion due to [1] section 4.3
         is desired. It's unclear whether this is beneficial.
 
@@ -1272,26 +1264,20 @@ def _indicators(A, b, c, c0, x, y, z, tau, kappa):
     x0, y0, z0, tau0, kappa0 = _get_blind_start(A.shape)
 
     # See [1], Section 4 - The Homogeneous Algorithm, Equation 8.8
-    # r_p = lambda x, tau: b * tau - A.dot(x)
     def r_p(x, tau): 
         return b * tau - A.dot(x)
 
-    # r_d = lambda y, z, tau: c * tau - A.T.dot(y) - z
     def r_d(y, z, tau): 
         return c * tau - A.T.dot(y) - z
 
-    # r_g = lambda x, y, kappa: kappa + c.dot(x) - b.dot(y)
     def r_g(x, y, kappa): 
         return kappa + c.dot(x) - b.dot(y)
 
     # np.dot unpacks if they are arrays of size one
-    # mu = lambda x, tau, z, kappa: (
-    # x.dot(z) + np.dot(tau, kappa)) / (len(x) + 1)
     def mu(x, tau, z, kappa): 
         return (x.dot(z) + np.dot(tau, kappa)) / (len(x) + 1)
 
     obj = c.dot(x / tau) + c0
-    # norm = lambda a: np.linalg.norm(a)
 
     def norm(a): 
         return np.linalg.norm(a)
@@ -1327,7 +1313,7 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
         The (normalized) path parameter, see [1] 4.5
     obj : float
         The objective function value of the current iterate
-    header : boolean
+    header : bool
         True if a header is to be printed
 
     References
@@ -1388,32 +1374,32 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         The desired reduction of the path parameter mu (see  [3])
     maxiter : int
         The maximum number of iterations of the algorithm.
-    disp : boolean
+    disp : bool
         Set to ``True`` if indicators of optimization status are to be printed 
         to the console each iteration.
     tol : float
         Termination tolerance; see [1]_ Section 4.5.
-    sparse : boolean
+    sparse : bool
         Set to ``True`` if the problem is to be treated as sparse. However,
         the inputs ``A_eq`` and ``A_ub`` should nonetheless be provided as 
         (dense) arrays rather than sparse matrices.
-    lstsq : boolean
+    lstsq : bool
         Set to ``True`` if the problem is expected to be very poorly 
         conditioned. This should always be left as ``False`` unless severe 
         numerical difficulties are frequently encountered, and a better option
         would be to improve the formulation of the problem.
-    sym_pos : boolean
+    sym_pos : bool
         Leave ``True`` if the problem is expected to yield a well conditioned
         symmetric positive definite normal equation matrix (almost always).
-    cholesky : boolean
+    cholesky : bool
         Set to ``True`` if the normal equations are to be solved by explicit 
         Cholesky decomposition followed by explicit forward/backward 
         substitution. This can be faster for very large, dense problems, but 
         should typically be left ``False``.
-    pc : boolean
+    pc : bool
         Leave ``True`` if the predictor-corrector method of Mehrota is to be 
         used. This is almost always (if not always) beneficial.
-    ip : boolean
+    ip : bool
         Set to ``True`` if the improved initial point suggestion due to [1]_ 
         Section 4.3 is desired. It's unclear whether this is beneficial.
 
@@ -1479,7 +1465,6 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             # [1] Section 4.4
             gamma = 1
 
-            # eta = lambda g: 1
             def eta(g): 
                 return 1
         else:
@@ -1489,7 +1474,6 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             gamma = 0 if pc else beta * np.mean(z * x)
             # [1] Section 4.1
 
-            # eta = lambda g=gamma: 1 - g
             def eta(g=gamma): 
                 return 1 - g
 
@@ -1501,10 +1485,11 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
 
             if ip:  # initial point
                 # [1] 4.4
-                # Formula after 8.23 takes a full step regardless if this will take
-                # it negative
+                # Formula after 8.23 takes a full step regardless if this will 
+                # take it negative
                 x, y, z, tau, kappa = _do_step(
-                    x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha=1)
+                    x, y, z, tau, kappa, d_x, d_y, 
+                    d_z, d_tau, d_kappa, alpha=1)
                 x[x < 1] = 1
                 z[z < 1] = 1
                 tau = max(1, tau)
@@ -1512,16 +1497,8 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 ip = False  # done with initial point
             else:
                 # [1] Section 4.3
-                alpha = _get_step(
-                    x,
-                    d_x,
-                    z,
-                    d_z,
-                    tau,
-                    d_tau,
-                    kappa,
-                    d_kappa,
-                    alpha0)
+                alpha = _get_step(x, d_x, z, d_z, tau, 
+                                  d_tau, kappa, d_kappa, alpha0)
                 # [1] Equation 8.9
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
@@ -1628,7 +1605,7 @@ def _linprog_ip(
     -------
     maxiter : int (default = 1000)
         The maximum number of iterations of the algorithm.
-    disp : boolean (default = False)
+    disp : bool (default = False)
         Set to ``True`` if indicators of optimization status are to be printed
         to the console each iteration.
     tol : float (default = 1e-8)
@@ -1640,34 +1617,34 @@ def _linprog_ip(
     beta : float (default = 0.1)
         The desired reduction of the path parameter \mu (see [3]_) when
         Mehrota's predictor-corrector is not in use (uncommon).
-    sparse : boolean (default = False)
+    sparse : bool (default = False)
         Set to ``True`` if the problem is to be treated as sparse. Try setting
         this to ``True`` if your constraint matrices contain mostly zeros and 
         the problem is relatively large.  However, the constraint matrices must
         nonetheless be provided as (dense) arrays.
-    lstsq : boolean (default = False)
+    lstsq : bool (default = False)
         Set to ``True`` if the problem is expected to be very poorly 
         conditioned. This should always be left ``False`` unless severe 
         numerical difficulties are encountered. Leave this at the default 
         unless you receive a warning message suggesting otherwise.
-    sym_pos : boolean (default = True)
+    sym_pos : bool (default = True)
         Leave ``True`` if the problem is expected to yield a well conditioned
         symmetric positive definite normal equation matrix
         (almost always). Leave this at the default unless you receive
         a warning message suggesting otherwise.
-    cholesky : boolean (default = False)
+    cholesky : bool (default = False)
         Set to ``True`` if the normal equations are to be solved by explicit
         Cholesky decomposition followed by explicit forward/backward
         substitution. This is slightly faster for very large, dense
         problems, but should typically be set ``False``.
-    pc : boolean (default = True)
+    pc : bool (default = True)
         Leave ``True`` if the predictor-corrector method of Mehrota is to be
         used. This is almost always (if not always) beneficial.
-    ip : boolean (default = False)
+    ip : bool (default = False)
         Set to ``True`` if the improved initial point suggestion due to [1]_
         Section 4.3 is desired. Whether this is beneficial or not
         depends on the problem.
-    presolve : boolean (default = True)
+    presolve : bool (default = True)
         Leave ``True`` if presolve routine should be run. The presolve routine 
         is almost always useful because it can detect trivial infeasibilities
         and unboundedness, eliminate fixed variables, and remove redundancies. 

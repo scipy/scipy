@@ -1029,5 +1029,4 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         return _linprog_ip(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                                 bounds=bounds, callback=callback, **options)
     else:
-        print(meth)
         raise ValueError('Unknown solver %s' % method)
