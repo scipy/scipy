@@ -33,7 +33,7 @@ cs = None
 fname = None
 
 
-def setup():
+def setup_module():
     val = b'a\x00string'
     global fs, gs, cs, fname
     fd, fname = mkstemp()
@@ -45,7 +45,7 @@ def setup():
     cs = cStringIO(val)
 
 
-def teardown():
+def teardown_module():
     global fname, fs
     fs.close()
     del fs
@@ -66,17 +66,17 @@ def test_tell_seek():
     for s in (fs, gs, cs):
         st = make_stream(s)
         res = st.seek(0)
-        yield assert_equal, res, 0
-        yield assert_equal, st.tell(), 0
+        assert_equal(res, 0)
+        assert_equal(st.tell(), 0)
         res = st.seek(5)
-        yield assert_equal, res, 0
-        yield assert_equal, st.tell(), 5
+        assert_equal(res, 0)
+        assert_equal(st.tell(), 5)
         res = st.seek(2, 1)
-        yield assert_equal, res, 0
-        yield assert_equal, st.tell(), 7
+        assert_equal(res, 0)
+        assert_equal(st.tell(), 7)
         res = st.seek(-2, 2)
-        yield assert_equal, res, 0
-        yield assert_equal, st.tell(), 6
+        assert_equal(res, 0)
+        assert_equal(st.tell(), 6)
 
 
 def test_read():
@@ -85,24 +85,24 @@ def test_read():
         st = make_stream(s)
         st.seek(0)
         res = st.read(-1)
-        yield assert_equal, res, b'a\x00string'
+        assert_equal(res, b'a\x00string')
         st.seek(0)
         res = st.read(4)
-        yield assert_equal, res, b'a\x00st'
+        assert_equal(res, b'a\x00st')
         # read into
         st.seek(0)
         res = _read_into(st, 4)
-        yield assert_equal, res, b'a\x00st'
+        assert_equal(res, b'a\x00st')
         res = _read_into(st, 4)
-        yield assert_equal, res, b'ring'
-        yield assert_raises, IOError, _read_into, st, 2
+        assert_equal(res, b'ring')
+        assert_raises(IOError, _read_into, st, 2)
         # read alloc
         st.seek(0)
         res = _read_string(st, 4)
-        yield assert_equal, res, b'a\x00st'
+        assert_equal(res, b'a\x00st')
         res = _read_string(st, 4)
-        yield assert_equal, res, b'ring'
-        yield assert_raises, IOError, _read_string, st, 2
+        assert_equal(res, b'ring')
+        assert_raises(IOError, _read_string, st, 2)
 
 
 class TestZlibInputStream(object):
