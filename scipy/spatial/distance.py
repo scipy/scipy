@@ -1364,6 +1364,11 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
+
+    if scipy.sparse.issparse(X):
+         raise NotImplementedError("pdist does not support sparse matrices, use skearn's pairwise_distances\nhttp://scikit-learn.org/stable/modules/generated/sklearn.metrics.pairwise.pairwise_distances.html\n")
+
+
     X = np.asarray(X, order='c')
 
     # The C code doesn't do striding.
