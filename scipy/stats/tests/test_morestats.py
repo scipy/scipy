@@ -13,7 +13,7 @@ from numpy.testing import (run_module_suite, assert_array_equal,
     assert_raises, assert_, assert_allclose, assert_equal, dec, assert_warns)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import stats
-from common_tests import check_named_results
+from .common_tests import check_named_results
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available

@@ -11,7 +11,7 @@ from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_less, assert_raises, assert_,
                            run_module_suite)
 
-from test_continuous_basic import check_distribution_rvs
+from .test_continuous_basic import check_distribution_rvs
 
 import numpy
 import numpy as np
@@ -31,7 +31,7 @@ from scipy.stats import binom
 
 from scipy.integrate import romb
 
-from common_tests import check_random_state_property
+from .common_tests import check_random_state_property
 
 
 class TestMultivariateNormal(object):

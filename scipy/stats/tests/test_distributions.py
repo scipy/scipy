@@ -24,7 +24,7 @@ from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy
-from test_continuous_basic import distcont
+from .test_continuous_basic import distcont
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1

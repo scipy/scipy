@@ -51,7 +51,7 @@ from scipy.cluster.hierarchy import (
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
 
-import hierarchy_test_data
+from . import hierarchy_test_data
 
 
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so

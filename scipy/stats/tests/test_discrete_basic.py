@@ -5,12 +5,12 @@ import numpy as np
 from scipy._lib.six import xrange
 
 from scipy import stats
-from common_tests import (check_normalization, check_moment, check_mean_expect,
-                          check_var_expect, check_skew_expect,
-                          check_kurt_expect, check_entropy,
-                          check_private_entropy, check_edge_support,
-                          check_named_args, check_random_state_property,
-                          check_pickling, check_rvs_broadcast)
+from .common_tests import (check_normalization, check_moment, check_mean_expect,
+                           check_var_expect, check_skew_expect,
+                           check_kurt_expect, check_entropy,
+                           check_private_entropy, check_edge_support,
+                           check_named_args, check_random_state_property,
+                           check_pickling, check_rvs_broadcast)
 from scipy.stats._distr_params import distdiscrete
 knf = npt.dec.knownfailureif
 

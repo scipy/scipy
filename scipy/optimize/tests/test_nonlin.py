@@ -12,7 +12,7 @@ from numpy import matrix, diag, dot
 from numpy.linalg import inv
 import numpy as np
 
-from test_minpack import pressure_network
+from .test_minpack import pressure_network
 
 SOLVERS = {'anderson': nonlin.anderson, 'diagbroyden': nonlin.diagbroyden,
            'linearmixing': nonlin.linearmixing, 'excitingmixing': nonlin.excitingmixing,

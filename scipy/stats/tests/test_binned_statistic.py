@@ -6,7 +6,7 @@ from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
 
 from scipy._lib.six import u
-from common_tests import check_named_results
+from .common_tests import check_named_results
 
 
 class TestBinnedStatistic(object):

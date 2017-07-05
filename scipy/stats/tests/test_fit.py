@@ -7,7 +7,7 @@ from numpy.testing import dec, assert_allclose
 
 from scipy import stats
 
-from test_continuous_basic import distcont
+from .test_continuous_basic import distcont
 
 # this is not a proper statistical test for convergence, but only
 # verifies that the estimate and true values don't differ by too much
