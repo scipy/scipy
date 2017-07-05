@@ -77,7 +77,7 @@ class Netlib(Benchmark):
         self.b_ub = data["b_ub"]
         self.b_eq = data["b_eq"]
         self.bounds = (0,None)
-        self.obj  = float(data["obj"].flatten()[0])
+        self.obj = float(data["obj"].flatten()[0])
     
     def time_netlib(self, meth, prob):
         res = linprog(c = self.c,
