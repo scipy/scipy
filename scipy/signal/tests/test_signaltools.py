@@ -1792,14 +1792,14 @@ class TestHilbert(object):
         a = np.arange(18).reshape(3, 6)
         # test axis
         aa = hilbert(a, axis=-1)
-        yield assert_equal, hilbert(a.T, axis=0), aa.T
+        assert_equal(hilbert(a.T, axis=0), aa.T)
         # test 1d
-        yield assert_equal, hilbert(a[0]), aa[0]
+        assert_equal(hilbert(a[0]), aa[0])
 
         # test N
         aan = hilbert(a, N=20, axis=-1)
-        yield assert_equal, aan.shape, [3, 20]
-        yield assert_equal, hilbert(a.T, N=20, axis=0).shape, [20, 3]
+        assert_equal(aan.shape, [3, 20])
+        assert_equal(hilbert(a.T, N=20, axis=0).shape, [20, 3])
         # the next test is just a regression test,
         # no idea whether numbers make sense
         a0hilb = np.array([0.000000000000000e+00 - 1.72015830311905j,
@@ -1822,7 +1822,7 @@ class TestHilbert(object):
                            3.552713678800501e-16 - 0.403810179797771j,
                            8.881784197001253e-17 - 0.751023775297729j,
                            9.444121133484362e-17 - 0.79252210110103j])
-        yield assert_almost_equal, aan[0], a0hilb, 14, 'N regression'
+        assert_almost_equal(aan[0], a0hilb, 14, 'N regression')
 
 
 class TestHilbert2(object):

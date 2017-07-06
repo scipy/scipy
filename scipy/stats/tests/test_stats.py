@@ -2283,18 +2283,18 @@ def test_percentileofscore():
     for (kind, result) in [('mean', 35.0),
                            ('strict', 30.0),
                            ('weak', 40.0)]:
-        yield assert_equal, pcos(np.arange(10) + 1,
+        assert_equal(pcos(np.arange(10) + 1,
                                                     4, kind=kind), \
-                                                    result
+                                                    result)
 
     # multiple - 2
     for (kind, result) in [('rank', 45.0),
                            ('strict', 30.0),
                            ('weak', 50.0),
                            ('mean', 40.0)]:
-        yield assert_equal, pcos([1,2,3,4,4,5,6,7,8,9],
+        assert_equal(pcos([1,2,3,4,4,5,6,7,8,9],
                                                     4, kind=kind), \
-                                                    result
+                                                    result)
 
     # multiple - 3
     assert_equal(pcos([1,2,3,4,4,4,5,6,7,8], 4), 50.0)
@@ -2303,60 +2303,60 @@ def test_percentileofscore():
                            ('strict', 30.0),
                            ('weak', 60.0)]:
 
-        yield assert_equal, pcos([1,2,3,4,4,4,5,6,7,8],
+        assert_equal(pcos([1,2,3,4,4,4,5,6,7,8],
                                                     4, kind=kind), \
-                                                    result
+                                                    result)
 
     # missing
     for kind in ('rank', 'mean', 'strict', 'weak'):
-        yield assert_equal, pcos([1,2,3,5,6,7,8,9,10,11],
+        assert_equal(pcos([1,2,3,5,6,7,8,9,10,11],
                                                     4, kind=kind), \
-                                                    30
+                                                    30)
 
     # larger numbers
     for (kind, result) in [('mean', 35.0),
                            ('strict', 30.0),
                            ('weak', 40.0)]:
-        yield assert_equal, \
+        assert_equal(
               pcos([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 40,
-                   kind=kind), result
+                   kind=kind), result)
 
     for (kind, result) in [('mean', 45.0),
                            ('strict', 30.0),
                            ('weak', 60.0)]:
-        yield assert_equal, \
+        assert_equal(
               pcos([10, 20, 30, 40, 40, 40, 50, 60, 70, 80],
-                   40, kind=kind), result
+                   40, kind=kind), result)
 
     for kind in ('rank', 'mean', 'strict', 'weak'):
-        yield assert_equal, \
+        assert_equal(
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   40, kind=kind), 30.0
+                   40, kind=kind), 30.0)
 
     # boundaries
     for (kind, result) in [('rank', 10.0),
                            ('mean', 5.0),
                            ('strict', 0.0),
                            ('weak', 10.0)]:
-        yield assert_equal, \
+        assert_equal(
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   10, kind=kind), result
+                   10, kind=kind), result)
 
     for (kind, result) in [('rank', 100.0),
                            ('mean', 95.0),
                            ('strict', 90.0),
                            ('weak', 100.0)]:
-        yield assert_equal, \
+        assert_equal(
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   110, kind=kind), result
+                   110, kind=kind), result)
 
     # out of bounds
     for (kind, score, result) in [('rank', 200, 100.0),
                                   ('mean', 200, 100.0),
                                   ('mean', 0, 0.0)]:
-        yield assert_equal, \
+        assert_equal(
               pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   score, kind=kind), result
+                   score, kind=kind), result)
 
     assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
 
@@ -3298,19 +3298,19 @@ def test_normalitytests():
     x = np.array((-2,-1,0,1,2,3)*4)**2
     attributes = ('statistic', 'pvalue')
 
-    yield assert_array_almost_equal, stats.normaltest(x), (st_normal, pv_normal)
+    assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
     check_named_results(stats.normaltest(x), attributes)
-    yield assert_array_almost_equal, stats.skewtest(x), (st_skew, pv_skew)
+    assert_array_almost_equal(stats.skewtest(x), (st_skew, pv_skew))
     check_named_results(stats.skewtest(x), attributes)
-    yield assert_array_almost_equal, stats.kurtosistest(x), (st_kurt, pv_kurt)
+    assert_array_almost_equal(stats.kurtosistest(x), (st_kurt, pv_kurt))
     check_named_results(stats.kurtosistest(x), attributes)
 
     # Test axis=None (equal to axis=0 for 1-D input)
-    yield (assert_array_almost_equal, stats.normaltest(x, axis=None),
+    assert_array_almost_equal(stats.normaltest(x, axis=None),
            (st_normal, pv_normal))
-    yield (assert_array_almost_equal, stats.skewtest(x, axis=None),
+    assert_array_almost_equal(stats.skewtest(x, axis=None),
            (st_skew, pv_skew))
-    yield (assert_array_almost_equal, stats.kurtosistest(x, axis=None),
+    assert_array_almost_equal(stats.kurtosistest(x, axis=None),
            (st_kurt, pv_kurt))
 
     x = np.arange(10.)

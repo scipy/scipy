@@ -69,12 +69,12 @@ def test_gaussian_kernel1d():
 def test_orders_gauss():
     # Check order inputs to Gaussians
     arr = np.zeros((1,))
-    yield assert_equal, 0, sndi.gaussian_filter(arr, 1, order=0)
-    yield assert_equal, 0, sndi.gaussian_filter(arr, 1, order=3)
-    yield assert_raises, ValueError, sndi.gaussian_filter, arr, 1, -1
-    yield assert_equal, 0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=0)
-    yield assert_equal, 0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=3)
-    yield assert_raises, ValueError, sndi.gaussian_filter1d, arr, 1, -1, -1
+    assert_equal(0, sndi.gaussian_filter(arr, 1, order=0))
+    assert_equal(0, sndi.gaussian_filter(arr, 1, order=3))
+    assert_raises(ValueError, sndi.gaussian_filter, arr, 1, -1)
+    assert_equal(0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=0))
+    assert_equal(0, sndi.gaussian_filter1d(arr, 1, axis=-1, order=3))
+    assert_raises(ValueError, sndi.gaussian_filter1d, arr, 1, -1, -1)
 
 
 def test_valid_origins():

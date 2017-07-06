@@ -86,16 +86,16 @@ class TestExpM(TestCase):
 
     def test_misc_types(self):
         A = expm(np.array([[1]]))
-        yield assert_allclose, expm(((1,),)), A
-        yield assert_allclose, expm([[1]]), A
-        yield assert_allclose, expm(np.matrix([[1]])), A
-        yield assert_allclose, expm(np.array([[1]])), A
-        yield assert_allclose, expm(csc_matrix([[1]])), A
+        assert_allclose(expm(((1,),)), A)
+        assert_allclose(expm([[1]]), A)
+        assert_allclose(expm(np.matrix([[1]])), A)
+        assert_allclose(expm(np.array([[1]])), A)
+        assert_allclose(expm(csc_matrix([[1]])).A, A)
         B = expm(np.array([[1j]]))
-        yield assert_allclose, expm(((1j,),)), B
-        yield assert_allclose, expm([[1j]]), B
-        yield assert_allclose, expm(np.matrix([[1j]])), B
-        yield assert_allclose, expm(csc_matrix([[1j]])), B
+        assert_allclose(expm(((1j,),)), B)
+        assert_allclose(expm([[1j]]), B)
+        assert_allclose(expm(np.matrix([[1j]])), B)
+        assert_allclose(expm(csc_matrix([[1j]])).A, B)
 
     def test_bidiagonal_sparse(self):
         A = csc_matrix([
