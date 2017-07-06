@@ -1953,7 +1953,7 @@ class Brent:
 
 def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     """
-    Given a function of one-variable and a possible bracketl, return
+    Given a function of one-variable and a possible bracket, return
     the local minimum of the function isolated to a fractional precision
     of tol.
 
@@ -1999,7 +1999,7 @@ def brent(func, args=(), brack=None, tol=1.48e-8, full_output=0, maxiter=500):
     convergence of golden section method.
 
     Does not ensure that the minimum lies in the range specified by
-    `brack`. See `fminbound`
+    `brack`. See `fminbound`.
     
     Examples
     --------
