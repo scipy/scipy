@@ -224,8 +224,8 @@ def _clean_inputs(
                         str(b) +
                         ": exactly one lower bound and one upper bound must "
                         "be specified for each element of x")
-        elif len(bounds) == 2 and np.isreal(bounds[0]) \
-                and np.isreal(bounds[1]):
+        elif (len(bounds) == 2 and np.isreal(bounds[0])
+                and np.isreal(bounds[1])):
             bounds = [(bounds[0], bounds[1])] * n_x
         else:
             raise ValueError(
@@ -397,12 +397,12 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
                 np.abs(b_eq) > tol)):  # test_zero_row_1
             # infeasible if RHS is not zero
             status = 2
-            message = "The problem is (trivially) infeasible due to a row " \
-                "of zeros in the equality constraint matrix with a nonzero " \
-                "corresponding constraint value."
+            message = ("The problem is (trivially) infeasible due to a row "
+                "of zeros in the equality constraint matrix with a nonzero "
+                "corresponding constraint value.")
             complete = True
-            return c, c0, A_ub, b_ub, A_eq, b_eq, bounds, \
-                x, undo, complete, status, message
+            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
+                x, undo, complete, status, message)
         else:  # test_zero_row_2
             # if RHS is zero, we can eliminate this equation entirely
             A_eq = A_eq[np.logical_not(zero_row)]
@@ -414,12 +414,12 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
         if np.any(np.logical_and(zero_row, b_ub < -tol)):  # test_zero_row_1
             # infeasible if RHS is less than zero (because LHS is zero)
             status = 2
-            message = "The problem is (trivially) infeasible due to a row " \
-                "of zeros in the equality constraint matrix with a nonzero " \
-                "corresponding  constraint value."
+            message = ("The problem is (trivially) infeasible due to a row "
+                "of zeros in the equality constraint matrix with a nonzero "
+                "corresponding  constraint value.")
             complete = True
-            return c, c0, A_ub, b_ub, A_eq, b_eq, bounds, \
-                x, undo, complete, status, message
+            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
+                x, undo, complete, status, message)
         else:  # test_zero_row_2
             # if LHS is >= 0, we can eliminate this constraint entirely
             A_ub = A_ub[np.logical_not(zero_row)]
@@ -437,13 +437,13 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
             np.logical_and(zero_col, c > 0)]
         if np.any(np.isinf(x)):  # if an unconstrained variable has no bound
             status = 3
-            message = "If feasible, the problem is (trivially) unbounded " \
-                "due  to a zero column in the constraint matrices. If you " \
-                "wish to check whether the problem is infeasible, turn " \
-                "presolve off."
+            message = ("If feasible, the problem is (trivially) unbounded "
+                "due  to a zero column in the constraint matrices. If you "
+                "wish to check whether the problem is infeasible, turn "
+                "presolve off.")
             complete = True
-            return c, c0, A_ub, b_ub, A_eq, b_eq, bounds, \
-                x, undo, complete, status, message
+            return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
+                x, undo, complete, status, message)
         # variables will equal upper/lower bounds will be removed later
         lb[np.logical_and(zero_col, c < 0)] = ub[
             np.logical_and(zero_col, c < 0)]
@@ -461,12 +461,12 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
             if not lb[col] - tol <= val <= ub[col] + tol:
                 # infeasible if fixed value is not within bounds
                 status = 2
-                message = "The problem is (trivially) infeasible because a " \
-                    "singleton row in the equality constraints is " \
-                    "inconsistent with the bounds."
+                message = ("The problem is (trivially) infeasible because a "
+                    "singleton row in the equality constraints is "
+                    "inconsistent with the bounds.")
                 complete = True
-                return c, c0, A_ub, b_ub, A_eq, b_eq, bounds, \
-                    x, undo, complete, status, message
+                return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
+                    x, undo, complete, status, message)
             else:
                 # sets upper and lower bounds at that fixed value - variable
                 # will be removed later
@@ -498,11 +498,11 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
                     lb[col] = val
             if complete:
                 status = 2
-                message = "The problem is (trivially) infeasible because a " \
-                    "singleton row in the upper bound constraints is " \
-                    "inconsistent with the bounds."
-                return c, c0, A_ub, b_ub, A_eq, b_eq, bounds, \
-                    x, undo, complete, status, message
+                message = ("The problem is (trivially) infeasible because a "
+                    "singleton row in the upper bound constraints is "
+                    "inconsistent with the bounds.")
+                return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
+                    x, undo, complete, status, message)
         A_ub = A_ub[np.logical_not(singleton_row), :]
         b_ub = b_ub[np.logical_not(singleton_row)]
 
@@ -528,20 +528,20 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
         # test_empty_constraint_1
         if c.size == 0:
             status = 0
-            message = "The solution was determined in presolve as there are \
-            no non-trivial constraints."
-        elif np.any(np.logical_and(c < 0, ub == np.inf)) or \
-                np.any(np.logical_and(c > 0, lb == -np.inf)):
+            message = ("The solution was determined in presolve as there are"
+                       "no non-trivial constraints.")
+        elif (np.any(np.logical_and(c < 0, ub == np.inf)) or
+                np.any(np.logical_and(c > 0, lb == -np.inf))):
                 # test_no_constraints()
             status = 3
-            message = "If feasible, the problem is (trivially) unbounded " \
-                "because there are no constraints and at least one element " \
-                "of c is negative. If you wish to check whether the " \
-                "problem is infeasible, turn presolve off."
+            message = ("If feasible, the problem is (trivially) unbounded "
+                "because there are no constraints and at least one element "
+                "of c is negative. If you wish to check whether the "
+                "problem is infeasible, turn presolve off.")
         else:  # test_empty_constraint_2
             status = 0
-            message = "The solution was determined in presolve as there are " \
-                "no non-trivial constraints."
+            message = ("The solution was determined in presolve as there are "
+                "no non-trivial constraints.")
         complete = True
         x[c < 0] = ub[c < 0]
         x[c > 0] = lb[c > 0]
@@ -570,8 +570,8 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
         if status != 0:
             complete = True
 
-    return c, c0, A_ub, b_ub, A_eq, b_eq, bounds, \
-        x, undo, complete, status, message
+    return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
+        x, undo, complete, status, message)
 
 
 def _get_Abc(
@@ -835,13 +835,13 @@ def _postprocess(
     if status == 0 and (np.isnan(x).any() or np.isnan(fun) or
                         np.isnan(slack).any() or np.isnan(con).any()):
         status = 4
-        message = "Numerical difficulties were encountered but no errors " \
-                  "were raised. This is known to occur if the 'presolve' " \
-                  "option is False, 'sparse' is True, and A_eq includes " \
-                  "redundant rows. If you encounter this under different " \
-                  "circumstances, please submit a bug report. Otherwise, " \
-                  "remove linearly dependent equations from your equality " \
-                  "constraints or enable presolve."
+        message = ("Numerical difficulties were encountered but no errors "
+                  "were raised. This is known to occur if the 'presolve' "
+                  "option is False, 'sparse' is True, and A_eq includes "
+                  "redundant rows. If you encounter this under different "
+                  "circumstances, please submit a bug report. Otherwise, "
+                  "remove linearly dependent equations from your equality "
+                  "constraints or enable presolve.")
 
     return x, fun, slack, con, status, message
 
@@ -1020,8 +1020,8 @@ def _get_delta(
         if i == 1:
             if ip:  # if the correction is to get "initial point"
                 # Reference [1] Eq. 8.23
-                rhatxs = (1 - alpha) * gamma * mu - \
-                    x * z - alpha**2 * d_x * d_z
+                rhatxs = ((1 - alpha) * gamma * mu -
+                    x * z - alpha**2 * d_x * d_z)
                 rhattk = np.array(
                     (1 -
                      alpha) *
@@ -1088,8 +1088,8 @@ def _get_delta(
                 solve = _get_solver(sparse, lstsq, sym_pos)
 
         # [1] Results after 8.29
-        d_tau = (rhatg + 1 / tau * rhattk - (-c.dot(u) + b.dot(v))) / \
-            (1 / tau * kappa + (-c.dot(p) + b.dot(q)))
+        d_tau = ((rhatg + 1 / tau * rhattk - (-c.dot(u) + b.dot(v))) / 
+            (1 / tau * kappa + (-c.dot(p) + b.dot(q))))
         d_x = u + p * d_tau
         d_y = v + q * d_tau
 
@@ -1199,7 +1199,7 @@ def _get_message(status):
         A string descriptor of the exit status of the optimization.
 
     """
-    messages = \
+    messages = (
         ["Optimization terminated successfully.",
          "The iteration limit was reached before the algorithm converged.",
          "The algorithm terminated successfully and determined that the "
@@ -1211,7 +1211,7 @@ def _get_message(status):
          "independence of linear equality constraints, and reasonable "
          "scaling and matrix condition numbers. If you continue to "
          "encounter this error, please submit a bug report."
-         ]
+         ])
     return messages[status]
 
 
@@ -1531,8 +1531,8 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
 
         # [1] 4.5
-        inf1 = rho_p < tol and rho_d < tol and rho_g < tol and tau < tol * \
-            max(1, kappa)
+        inf1 = (rho_p < tol and rho_d < tol and rho_g < tol and tau < tol *
+            max(1, kappa))
         inf2 = rho_mu < tol and tau < tol * min(1, kappa)
         if inf1 or inf2:
             # [1] Lemma 8.4 / Theorem 8.3
@@ -1627,7 +1627,7 @@ def _linprog_ip(
         The maximal step size for Mehrota's predictor-corrector search
         direction; see beta3 of [1]_ Table 8.1.
     beta : float (default = 0.1)
-        The desired reduction of the path parameter \mu (see [3]_) when
+        The desired reduction of the path parameter `mu` (see [3]_) when
         Mehrota's predictor-corrector is not in use (uncommon).
     sparse : bool (default = False)
         Set to ``True`` if the problem is to be treated as sparse. Try setting
@@ -1897,8 +1897,8 @@ def _linprog_ip(
     # Solve trivial problem, eliminate variables, tighten bounds, etc...
     c0 = 0  # we might get a constant term in the objective
     if presolve is True:
-        c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, undo, complete, status, \
-            message = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds)
+        (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, undo, complete, status,
+            message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds)
 
     # If not solved in presolve, solve it
     if not complete:
