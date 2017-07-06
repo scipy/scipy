@@ -216,7 +216,7 @@ def test_cont_basic_slow():
         if distname not in distslow:
             continue
 
-        if distname is 'levy_stable':
+        if distname == 'levy_stable':
             continue
 
         yield check, distname, arg
@@ -229,7 +229,7 @@ def test_moments():
             warnings.filterwarnings('ignore',
                                     category=integrate.IntegrationWarning)
 
-            if distname is 'levy_stable':
+            if distname == 'levy_stable':
                 return
 
             try:

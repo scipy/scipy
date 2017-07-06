@@ -2283,18 +2283,14 @@ def test_percentileofscore():
     for (kind, result) in [('mean', 35.0),
                            ('strict', 30.0),
                            ('weak', 40.0)]:
-        assert_equal(pcos(np.arange(10) + 1,
-                                                    4, kind=kind), \
-                                                    result)
+        assert_equal(pcos(np.arange(10) + 1, 4, kind=kind), result)
 
     # multiple - 2
     for (kind, result) in [('rank', 45.0),
                            ('strict', 30.0),
                            ('weak', 50.0),
                            ('mean', 40.0)]:
-        assert_equal(pcos([1,2,3,4,4,5,6,7,8,9],
-                                                    4, kind=kind), \
-                                                    result)
+        assert_equal(pcos([1,2,3,4,4,5,6,7,8,9], 4, kind=kind), result)
 
     # multiple - 3
     assert_equal(pcos([1,2,3,4,4,4,5,6,7,8], 4), 50.0)
@@ -2303,15 +2299,11 @@ def test_percentileofscore():
                            ('strict', 30.0),
                            ('weak', 60.0)]:
 
-        assert_equal(pcos([1,2,3,4,4,4,5,6,7,8],
-                                                    4, kind=kind), \
-                                                    result)
+        assert_equal(pcos([1,2,3,4,4,4,5,6,7,8], 4, kind=kind), result)
 
     # missing
     for kind in ('rank', 'mean', 'strict', 'weak'):
-        assert_equal(pcos([1,2,3,5,6,7,8,9,10,11],
-                                                    4, kind=kind), \
-                                                    30)
+        assert_equal(pcos([1,2,3,5,6,7,8,9,10,11], 4, kind=kind), 30)
 
     # larger numbers
     for (kind, result) in [('mean', 35.0),
