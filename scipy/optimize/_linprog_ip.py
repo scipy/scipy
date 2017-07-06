@@ -78,7 +78,7 @@ def _clean_inputs(
             raise TypeError
         try:
             c = np.asarray(c, dtype=float).copy().squeeze()
-        except:
+        except BaseException:
             raise TypeError
         if c.size == 1:
             c = c.reshape((-1))
@@ -101,7 +101,7 @@ def _clean_inputs(
             A_ub = np.zeros(
                 (0, n_x), dtype=float) if A_ub is None else np.asarray(
                 A_ub, dtype=float).copy()
-        except:
+        except BaseException:
             raise TypeError
         n_ub = len(A_ub)
         if len(A_ub.shape) != 2 or A_ub.shape[1] != len(c):
@@ -123,7 +123,7 @@ def _clean_inputs(
             b_ub = np.array(
                 [], dtype=float) if b_ub is None else np.asarray(
                 b_ub, dtype=float).copy().squeeze()
-        except:
+        except BaseException:
             raise TypeError
         if b_ub.size == 1:
             b_ub = b_ub.reshape((-1))
@@ -150,7 +150,7 @@ def _clean_inputs(
             A_eq = np.zeros(
                 (0, n_x), dtype=float) if A_eq is None else np.asarray(
                 A_eq, dtype=float).copy()
-        except:
+        except BaseException:
             raise TypeError
         n_eq = len(A_eq)
         if len(A_eq.shape) != 2 or A_eq.shape[1] != len(c):
@@ -172,7 +172,7 @@ def _clean_inputs(
             b_eq = np.array(
                 [], dtype=float) if b_eq is None else np.asarray(
                 b_eq, dtype=float).copy().squeeze()
-        except:
+        except BaseException:
             raise TypeError
         if b_eq.size == 1:
             b_eq = b_eq.reshape((-1))
@@ -213,7 +213,7 @@ def _clean_inputs(
         elif len(bounds) == n_x:
             try:
                 len(bounds[0])
-            except:
+            except BaseException:
                 bounds = [(bounds[0], bounds[1])] * n_x
             for i, b in enumerate(bounds):
                 if len(b) != 2:
@@ -674,7 +674,7 @@ def _get_Abc(
                 n_x = len(c)
             # if preprocessing is on, lb == ub can't happen
             # if preprocessing is off, then it would be best to convert that
-            # to an equality constraint, but it's tricky to make the other 
+            # to an equality constraint, but it's tricky to make the other
             # required modifications from inside here.
             else:
                 if lb is None:
@@ -872,46 +872,46 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
     """
     if sparse:
         if lstsq or not(sym_pos):
-            def solve(M, r, sym_pos=False): 
+            def solve(M, r, sym_pos=False):
                 return sps.linalg.lsqr(M, r)[0]
         else:
-            def solve(M, r): 
+            def solve(M, r):
                 return sps.linalg.spsolve(M, r, permc_spec="MMD_AT_PLUS_A")
             # in tests MMD_AT_PLUS_A was often fastest.
             # should this be exposed as an option?
 
     else:
         if lstsq:  # sometimes necessary as solution is approached
-            def solve(M, r): 
+            def solve(M, r):
                 return sp.linalg.lstsq(M, r)[0]
         elif cholesky:
             solve = _fb_subs
         else:
             # this seems to cache the matrix factorization, so solving
             # with multiple right hand sides is much faster
-            def solve(M, r, sym_pos=sym_pos): 
+            def solve(M, r, sym_pos=sym_pos):
                 return sp.linalg.solve(M, r, sym_pos=sym_pos)
 
     return solve
 
 
 def _get_delta(
-            A,
-            b,
-            c,
-            x,
-            y,
-            z,
-            tau,
-            kappa,
-            gamma,
-            eta,
-            sparse=False,
-            lstsq=False,
-            sym_pos=False,
-            cholesky=False,
-            pc=True,
-            ip=False):
+    A,
+    b,
+    c,
+    x,
+    y,
+    z,
+    tau,
+    kappa,
+    gamma,
+    eta,
+    sparse=False,
+    lstsq=False,
+    sym_pos=False,
+    cholesky=False,
+    pc=True,
+        ip=False):
     """
     Given standard form problem defined by A, b, and c; current variable
     estimates x, y, z, tau, and kappa; algorithmic parameters gamma and eta;
@@ -1192,14 +1192,14 @@ def _get_message(status):
     messages = \
         ["Optimization terminated successfully.",
          "The iteration limit was reached before the algorithm converged.",
-         "The algorithm terminated successfully and determined that the " 
+         "The algorithm terminated successfully and determined that the "
          "problem is infeasible.",
-         "The algorithm terminated successfully and determined that the " 
+         "The algorithm terminated successfully and determined that the "
          "problem is unbounded.",
-         "Numerical difficulties were encountered before the problem " 
-         "converged. Please check your problem formulation for errors, " 
-         "independence of linear equality constraints, and reasonable " 
-         "scaling and matrix condition numbers. If you continue to " 
+         "Numerical difficulties were encountered before the problem "
+         "converged. Please check your problem formulation for errors, "
+         "independence of linear equality constraints, and reasonable "
+         "scaling and matrix condition numbers. If you continue to "
          "encounter this error, please submit a bug report."
          ]
     return messages[status]
@@ -1264,22 +1264,22 @@ def _indicators(A, b, c, c0, x, y, z, tau, kappa):
     x0, y0, z0, tau0, kappa0 = _get_blind_start(A.shape)
 
     # See [1], Section 4 - The Homogeneous Algorithm, Equation 8.8
-    def r_p(x, tau): 
+    def r_p(x, tau):
         return b * tau - A.dot(x)
 
-    def r_d(y, z, tau): 
+    def r_d(y, z, tau):
         return c * tau - A.T.dot(y) - z
 
-    def r_g(x, y, kappa): 
+    def r_g(x, y, kappa):
         return kappa + c.dot(x) - b.dot(y)
 
     # np.dot unpacks if they are arrays of size one
-    def mu(x, tau, z, kappa): 
+    def mu(x, tau, z, kappa):
         return (x.dot(z) + np.dot(tau, kappa)) / (len(x) + 1)
 
     obj = c.dot(x / tau) + c0
 
-    def norm(a): 
+    def norm(a):
         return np.linalg.norm(a)
 
     # See [1], Section 4.5 - The Stopping Criteria
@@ -1341,7 +1341,7 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
         obj))
 
 
-def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, 
+def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             sparse, lstsq, sym_pos, cholesky, pc, ip):
     """
     Solve a linear programming problem in standard form:
@@ -1375,32 +1375,32 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     maxiter : int
         The maximum number of iterations of the algorithm.
     disp : bool
-        Set to ``True`` if indicators of optimization status are to be printed 
+        Set to ``True`` if indicators of optimization status are to be printed
         to the console each iteration.
     tol : float
         Termination tolerance; see [1]_ Section 4.5.
     sparse : bool
         Set to ``True`` if the problem is to be treated as sparse. However,
-        the inputs ``A_eq`` and ``A_ub`` should nonetheless be provided as 
+        the inputs ``A_eq`` and ``A_ub`` should nonetheless be provided as
         (dense) arrays rather than sparse matrices.
     lstsq : bool
-        Set to ``True`` if the problem is expected to be very poorly 
-        conditioned. This should always be left as ``False`` unless severe 
+        Set to ``True`` if the problem is expected to be very poorly
+        conditioned. This should always be left as ``False`` unless severe
         numerical difficulties are frequently encountered, and a better option
         would be to improve the formulation of the problem.
     sym_pos : bool
         Leave ``True`` if the problem is expected to yield a well conditioned
         symmetric positive definite normal equation matrix (almost always).
     cholesky : bool
-        Set to ``True`` if the normal equations are to be solved by explicit 
-        Cholesky decomposition followed by explicit forward/backward 
-        substitution. This can be faster for very large, dense problems, but 
+        Set to ``True`` if the normal equations are to be solved by explicit
+        Cholesky decomposition followed by explicit forward/backward
+        substitution. This can be faster for very large, dense problems, but
         should typically be left ``False``.
     pc : bool
-        Leave ``True`` if the predictor-corrector method of Mehrota is to be 
+        Leave ``True`` if the predictor-corrector method of Mehrota is to be
         used. This is almost always (if not always) beneficial.
     ip : bool
-        Set to ``True`` if the improved initial point suggestion due to [1]_ 
+        Set to ``True`` if the improved initial point suggestion due to [1]_
         Section 4.3 is desired. It's unclear whether this is beneficial.
 
     Returns
@@ -1465,7 +1465,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             # [1] Section 4.4
             gamma = 1
 
-            def eta(g): 
+            def eta(g):
                 return 1
         else:
             # gamma = 0 in predictor step according to [1] 4.1
@@ -1474,7 +1474,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             gamma = 0 if pc else beta * np.mean(z * x)
             # [1] Section 4.1
 
-            def eta(g=gamma): 
+            def eta(g=gamma):
                 return 1 - g
 
         try:
@@ -1485,10 +1485,10 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
 
             if ip:  # initial point
                 # [1] 4.4
-                # Formula after 8.23 takes a full step regardless if this will 
+                # Formula after 8.23 takes a full step regardless if this will
                 # take it negative
                 x, y, z, tau, kappa = _do_step(
-                    x, y, z, tau, kappa, d_x, d_y, 
+                    x, y, z, tau, kappa, d_x, d_y,
                     d_z, d_tau, d_kappa, alpha=1)
                 x[x < 1] = 1
                 z[z < 1] = 1
@@ -1497,14 +1497,14 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 ip = False  # done with initial point
             else:
                 # [1] Section 4.3
-                alpha = _get_step(x, d_x, z, d_z, tau, 
+                alpha = _get_step(x, d_x, z, d_z, tau,
                                   d_tau, kappa, d_kappa, alpha0)
                 # [1] Equation 8.9
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y, d_z, d_tau, d_kappa, alpha)
 
         except (LinAlgError, FloatingPointError):
-            # this can happen when sparse solver is used and presolve 
+            # this can happen when sparse solver is used and presolve
             # is turned off. I've never seen it otherwise.
             status = 4
             message = _get_message(status)
@@ -1591,7 +1591,7 @@ def _linprog_ip(
         2-D array which, when matrix-multiplied by `x`, gives the values of the
         equality constraints at `x`.
     b_eq : array_like, optional
-        1-D array of values representing the right hand side of each equality 
+        1-D array of values representing the right hand side of each equality
         constraint (row) in `A_eq`.
     bounds : sequence, optional
         ``(min, max)`` pairs for each element in `x`, defining
@@ -1600,7 +1600,7 @@ def _linprog_ip(
         bounds are ``(0, None)`` (non-negative).
         If a sequence containing a single tuple is provided, then ``min`` and
         ``max`` will be applied to all variables in the problem.
-        
+
     Options
     -------
     maxiter : int (default = 1000)
@@ -1619,13 +1619,13 @@ def _linprog_ip(
         Mehrota's predictor-corrector is not in use (uncommon).
     sparse : bool (default = False)
         Set to ``True`` if the problem is to be treated as sparse. Try setting
-        this to ``True`` if your constraint matrices contain mostly zeros and 
+        this to ``True`` if your constraint matrices contain mostly zeros and
         the problem is relatively large.  However, the constraint matrices must
         nonetheless be provided as (dense) arrays.
     lstsq : bool (default = False)
-        Set to ``True`` if the problem is expected to be very poorly 
-        conditioned. This should always be left ``False`` unless severe 
-        numerical difficulties are encountered. Leave this at the default 
+        Set to ``True`` if the problem is expected to be very poorly
+        conditioned. This should always be left ``False`` unless severe
+        numerical difficulties are encountered. Leave this at the default
         unless you receive a warning message suggesting otherwise.
     sym_pos : bool (default = True)
         Leave ``True`` if the problem is expected to yield a well conditioned
@@ -1645,14 +1645,14 @@ def _linprog_ip(
         Section 4.3 is desired. Whether this is beneficial or not
         depends on the problem.
     presolve : bool (default = True)
-        Leave ``True`` if presolve routine should be run. The presolve routine 
+        Leave ``True`` if presolve routine should be run. The presolve routine
         is almost always useful because it can detect trivial infeasibilities
-        and unboundedness, eliminate fixed variables, and remove redundancies. 
-        One circumstance in which it might be turned off (set ``False``) is 
+        and unboundedness, eliminate fixed variables, and remove redundancies.
+        One circumstance in which it might be turned off (set ``False``) is
         when it detects that the problem is trivially unbounded; it is possible
-        that that the problem is truly infeasibile but this has not been 
+        that that the problem is truly infeasibile but this has not been
         detected.
-        
+
     Returns
     -------
     A `scipy.optimize.OptimizeResult` consisting of the following fields:
@@ -1673,138 +1673,138 @@ def _linprog_ip(
             solution.
         status : int
             An integer representing the exit status of the optimization::
-                
+
                  0 : Optimization terminated successfully
                  1 : Iteration limit reached
                  2 : Problem appears to be infeasible
                  3 : Problem appears to be unbounded
                  4 : Serious numerical difficulties encountered
-                 
+
         nit : int
             The number of iterations performed.
         message : str
             A string descriptor of the exit status of the optimization.
-    
+
     Notes
     -----
-    
-    This method implements the algorithm outlined in [1]_ with ideas from [5]_ 
+
+    This method implements the algorithm outlined in [1]_ with ideas from [5]_
     and a structure inspired by the simpler methods of [3]_ and [4]_.
-    
-    First, a presolve procedure based on [5]_ attempts to identify trivial 
-    infeasibilities, trivial unboundedness, and potential problem 
+
+    First, a presolve procedure based on [5]_ attempts to identify trivial
+    infeasibilities, trivial unboundedness, and potential problem
     simplifications. Specifically, it checks for:
-        
+
     - rows of zeros in `A_eq` or `A_ub`, representing trivial constraints;
-    - columns of zeros in both `A_eq` and `A_ub`, representing unconstrained 
+    - columns of zeros in both `A_eq` and `A_ub`, representing unconstrained
       variables;
     - column singletons in `A_eq`, representing fixed variables; and
-    - column singletons in `A_ub`, representing simple bounds. 
-    
-    If presolve reveals that the problem is unbounded (e.g. an unconstrained 
-    and unbounded variable has negative cost) or infeasible (e.g. a row of 
-    zeros in `A_eq` corresponds with a nonzero in `b_eq`), the solver 
-    terminates with the appropriate status code. Note that presolve terminates 
-    as soon as any sign of unboundedness is detected; consequently, a problem 
-    may be reported as unbounded when in reality the problem is infeasible 
-    (but infeasibility has not been detected yet). Therefore, if the output 
-    message states that unboundedness is detected in presolve and it is 
-    necessary to know whether the problem is actually infeasible, the option 
+    - column singletons in `A_ub`, representing simple bounds.
+
+    If presolve reveals that the problem is unbounded (e.g. an unconstrained
+    and unbounded variable has negative cost) or infeasible (e.g. a row of
+    zeros in `A_eq` corresponds with a nonzero in `b_eq`), the solver
+    terminates with the appropriate status code. Note that presolve terminates
+    as soon as any sign of unboundedness is detected; consequently, a problem
+    may be reported as unbounded when in reality the problem is infeasible
+    (but infeasibility has not been detected yet). Therefore, if the output
+    message states that unboundedness is detected in presolve and it is
+    necessary to know whether the problem is actually infeasible, the option
     `presolve=False` should be set.
-    
-    If neither infeasibility nor unboundedness are detected in a single pass 
-    of the presolve check, bounds are tightened where possible and fixed 
-    variables are removed from the problem. Then, singular value decomposition 
-    is used to identify linearly dependent rows of the `A_eq` matrix, which 
-    are removed (unless they represent an infeasibility) to avoid numerical 
-    difficulties in the primary solve routine. 
-    
-    Several potential improvements can be made here: additional presolve 
-    checks outlined in [5]_ should be implemented, the presolve routine should 
-    be run multiple times (until no further simplifications can be made), a 
-    more efficient method for detecting redundancy (e.g. that of [2]_) should 
+
+    If neither infeasibility nor unboundedness are detected in a single pass
+    of the presolve check, bounds are tightened where possible and fixed
+    variables are removed from the problem. Then, singular value decomposition
+    is used to identify linearly dependent rows of the `A_eq` matrix, which
+    are removed (unless they represent an infeasibility) to avoid numerical
+    difficulties in the primary solve routine.
+
+    Several potential improvements can be made here: additional presolve
+    checks outlined in [5]_ should be implemented, the presolve routine should
+    be run multiple times (until no further simplifications can be made), a
+    more efficient method for detecting redundancy (e.g. that of [2]_) should
     be used, and presolve should be implemented for sparse matrices.
-    
-    After presolve, the problem is transformed to standard form by converting 
-    the (tightened) simple bounds to upper bound constraints, introducing 
-    non-negative slack variables for inequality constraints, and expressing 
+
+    After presolve, the problem is transformed to standard form by converting
+    the (tightened) simple bounds to upper bound constraints, introducing
+    non-negative slack variables for inequality constraints, and expressing
     unbounded variables as the difference between two non-negative variables.
-    
-    The primal-dual path following method begins with initial 'guesses' of 
-    the primal and dual variables of the standard form problem and iteratively 
-    attempts to solve the (nonlinear) Karush-Kuhn-Tucker conditions for the 
-    problem with a gradually reduced logarithmic barrier term added to the 
-    objective. This particular implementation uses a homogeneous self-dual 
-    formulation, which provides certificates of infeasibility or unboundedness 
+
+    The primal-dual path following method begins with initial 'guesses' of
+    the primal and dual variables of the standard form problem and iteratively
+    attempts to solve the (nonlinear) Karush-Kuhn-Tucker conditions for the
+    problem with a gradually reduced logarithmic barrier term added to the
+    objective. This particular implementation uses a homogeneous self-dual
+    formulation, which provides certificates of infeasibility or unboundedness
     where applicable.
-    
-    The default initial point for the primal and dual variables is that 
-    defined in [1]_ Section 4.4 Equation 8.22. Optionally (by setting initial 
-    point option `ip=True`), a (potentially) improved starting point can be 
+
+    The default initial point for the primal and dual variables is that
+    defined in [1]_ Section 4.4 Equation 8.22. Optionally (by setting initial
+    point option `ip=True`), a (potentially) improved starting point can be
     calculated according to the additional recommendations of [1]_ Section 4.4.
-    
-    A search direction is calculated using the predictor-corrector method 
-    (single correction) proposed by Mehrota and detailed in [1]_ Section 4.1.  
-    (A potential improvement would be to implement the method of multiple 
-    corrections described in [1]_ Section 4.2.) In practice, this is 
-    accomplished by solving the normal equations, [1]_ Section 5.1 Equations 
-    8.31 and 8.32, derived from the Newton equations [1]_ Section 5 Equations 
-    8.25 (compare to [1]_ Section 4 Equations 8.6-8.8). The advantage of 
-    solving the normal equations rather than 8.25 directly is that the 
-    matrices involved are symmetric positive definite, so Cholesky 
-    decomposition can be used rather than the more expensive LU factorization. 
-    
-    In code, this is accomplished using `scipy.linalg.solve` with 
-    `sym_pos=True`. Based on speed tests, this appears to cache the 
-    Cholesky decomposition of the matrix for later use, which is beneficial 
-    as the same system is solved four times with different right hand sides 
-    in each iteration of the algorithm. However, for very large, dense 
-    systems, it may be beneficial for the Cholesky decomposition to be 
-    calculated explicitly using `scipy.linalg.cholesky` and the decomposed 
-    systems to be solved by explicit forward/backward substitutions via 
-    `scipy.linalg.solve_triangular`; this is possible by setting the option 
+
+    A search direction is calculated using the predictor-corrector method
+    (single correction) proposed by Mehrota and detailed in [1]_ Section 4.1.
+    (A potential improvement would be to implement the method of multiple
+    corrections described in [1]_ Section 4.2.) In practice, this is
+    accomplished by solving the normal equations, [1]_ Section 5.1 Equations
+    8.31 and 8.32, derived from the Newton equations [1]_ Section 5 Equations
+    8.25 (compare to [1]_ Section 4 Equations 8.6-8.8). The advantage of
+    solving the normal equations rather than 8.25 directly is that the
+    matrices involved are symmetric positive definite, so Cholesky
+    decomposition can be used rather than the more expensive LU factorization.
+
+    In code, this is accomplished using `scipy.linalg.solve` with
+    `sym_pos=True`. Based on speed tests, this appears to cache the
+    Cholesky decomposition of the matrix for later use, which is beneficial
+    as the same system is solved four times with different right hand sides
+    in each iteration of the algorithm. However, for very large, dense
+    systems, it may be beneficial for the Cholesky decomposition to be
+    calculated explicitly using `scipy.linalg.cholesky` and the decomposed
+    systems to be solved by explicit forward/backward substitutions via
+    `scipy.linalg.solve_triangular`; this is possible by setting the option
     `cholesky=True`.
-    
-    In problems with redundancy (e.g. if presolve is turned off with option 
-    `presolve=False`) or if the matrices become ill-conditioned (e.g. as the 
-    solution is approached and some decision variables approach zero), 
-    Cholesky decomposition can fail. Should this occur, successively more 
-    robust solvers (`scipy.linalg.solve` with `sym_pos=False` then 
-    `scipy.linalg.lstsq`) are tried, at the cost of computational efficiency. 
-    These solvers can be used from the outset by setting the options 
+
+    In problems with redundancy (e.g. if presolve is turned off with option
+    `presolve=False`) or if the matrices become ill-conditioned (e.g. as the
+    solution is approached and some decision variables approach zero),
+    Cholesky decomposition can fail. Should this occur, successively more
+    robust solvers (`scipy.linalg.solve` with `sym_pos=False` then
+    `scipy.linalg.lstsq`) are tried, at the cost of computational efficiency.
+    These solvers can be used from the outset by setting the options
     `sym_pos=False` and `lstsq=True`, respectively.
-    
-    Note that with the option `sparse=True`, the normal equations are solved 
-    using `scipy.sparse.linalg.spsolve`. Unfortunately, this uses the more 
-    expensive LU decomposition from the outset, but for large, sparse problems, 
-    the use of sparse linear algebra techniques improves the solve speed 
-    despite the use of LU rather than Cholesky decomposition. A simple 
-    improvement would be to use the sparse Cholesky decomposition of `CHOLMOD` 
+
+    Note that with the option `sparse=True`, the normal equations are solved
+    using `scipy.sparse.linalg.spsolve`. Unfortunately, this uses the more
+    expensive LU decomposition from the outset, but for large, sparse problems,
+    the use of sparse linear algebra techniques improves the solve speed
+    despite the use of LU rather than Cholesky decomposition. A simple
+    improvement would be to use the sparse Cholesky decomposition of `CHOLMOD`
     via `scikit-sparse` when available.
-    
-    Other potential improvements for combatting issues associated with dense 
-    columns in otherwise sparse problems are outlined in [1]_ Section 5.3 and 
-    [7]_ Section 4.1-4.2; the latter also discusses the alleviation of 
-    accuracy issues associated with the substitution approach to free 
+
+    Other potential improvements for combatting issues associated with dense
+    columns in otherwise sparse problems are outlined in [1]_ Section 5.3 and
+    [7]_ Section 4.1-4.2; the latter also discusses the alleviation of
+    accuracy issues associated with the substitution approach to free
     variables.
-    
-    After calculating the search direction, the maximum possible step size 
-    that does not activate the non-negativity constraints is calculated, and 
-    the smaller of this step size and unity is applied (as in [1]_ Section 
+
+    After calculating the search direction, the maximum possible step size
+    that does not activate the non-negativity constraints is calculated, and
+    the smaller of this step size and unity is applied (as in [1]_ Section
     4.1. [1]_ Section 4.3 suggests improvements for choosing the step size.
-    
-    The new point is tested according to the termination conditions of [1]_ 
-    Section 4.5. The same tolerance, which can be set using the `tol` option, 
-    is used for all checks. (A potential improvement would be to expose 
-    the different tolerances to be set independently.) If optimality, 
-    unboundedness, or infeasibility is detected, the solve procedure 
+
+    The new point is tested according to the termination conditions of [1]_
+    Section 4.5. The same tolerance, which can be set using the `tol` option,
+    is used for all checks. (A potential improvement would be to expose
+    the different tolerances to be set independently.) If optimality,
+    unboundedness, or infeasibility is detected, the solve procedure
     terminates; otherwise it repeats.
-    
-    If optimality is achieved, a postsolve procedure undoes transformations 
-    associated with presolve and converting to standard form. It then 
-    calculates the residuals (equality constraint violations, which should 
-    be very small) and slacks (difference between the left and right hand 
-    sides of the upper bound constraints) of the original problem, which are 
+
+    If optimality is achieved, a postsolve procedure undoes transformations
+    associated with presolve and converting to standard form. It then
+    calculates the residuals (equality constraint violations, which should
+    be very small) and slacks (difference between the left and right hand
+    sides of the upper bound constraints) of the original problem, which are
     returned with the solution in an `OptimizeResult` object.
 
     References
@@ -1827,17 +1827,17 @@ def _linprog_ip(
            programming." Mathematical Programming 71.2 (1995): 221-245.
     .. [6] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
            programming." Athena Scientific 1 (1997): 997.
-    .. [7] Andersen, Erling D., et al. Implementation of interior point methods 
+    .. [7] Andersen, Erling D., et al. Implementation of interior point methods
            for large scale linear programming. HEC/Universite de Geneve, 1996.
 
     """
 
     _check_unknown_options(unknown_options)
-    
+
     if callback is not None:
         raise NotImplementedError("method 'interior-point' does not support "
                                   "callback functions.")
-             
+
         # These should be warnings, not Errors
     if sparse and lstsq:
         warn("Invalid option combination 'sparse':True "
@@ -1893,9 +1893,9 @@ def _linprog_ip(
         # Convert problem to standard form
         A, b, c, c0 = _get_Abc(c, c0, A_ub, b_ub, A_eq, b_eq, bounds, undo)
         # Solve the problem
-        x, status, message, iteration = _ip_hsd(A, b, c, c0, alpha0, beta, 
-                                                maxiter, disp, tol, sparse, 
-                                                lstsq, sym_pos, cholesky, 
+        x, status, message, iteration = _ip_hsd(A, b, c, c0, alpha0, beta,
+                                                maxiter, disp, tol, sparse,
+                                                lstsq, sym_pos, cholesky,
                                                 pc, ip)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc...
