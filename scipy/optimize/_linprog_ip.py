@@ -30,17 +30,17 @@ def _clean_inputs(
     c : array_like
         Coefficients of the linear objective function to be minimized.
     A_ub : array_like, optional
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        upper-bound inequality constraints at x.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the upper-bound inequality constraints at ``x``.
     b_ub : array_like, optional
         1-D array of values representing the upper-bound of each inequality
-        constraint (row) in A_ub.
+        constraint (row) in ``A_ub``.
     A_eq : array_like, optional
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the equality constraints at ``x``.
     b_eq : array_like, optional
         1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq.
+        (row) in ``A_eq``.
     bounds : sequence, optional
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
@@ -54,17 +54,17 @@ def _clean_inputs(
     c : 1-D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        upper-bound inequality constraints at x.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the upper-bound inequality constraints at ``x``.
     b_ub : 1-D array
         1-D array of values representing the upper-bound of each inequality
-        constraint (row) in A_ub.
+        constraint (row) in ``A_ub``.
     A_eq : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the equality constraints at ``x``.
     b_eq : 1-D array
         1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq.
+        (row) in ``A_eq``.
     bounds : sequence of tuples
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
@@ -286,17 +286,17 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     c : 1-D array
         Coefficients of the linear objective function to be minimized.
     A_ub : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        upper-bound inequality constraints at x.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the upper-bound inequality constraints at ``x``.
     b_ub : 1-D array
         1-D array of values representing the upper-bound of each inequality
-        constraint (row) in A_ub.
+        constraint (row) in ``A_ub``.
     A_eq : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the equality constraints at ``x``.
     b_eq : 1-D array
         1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq.
+        (row) in ``A_eq``.
     bounds : sequence of tuples
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
@@ -310,18 +310,19 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
         Constant term in objective function due to fixed (and eliminated)
         variables.
     A_ub : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        upper-bound inequality constraints at x. Unnecessary rows/columns
-        have been removed.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the upper-bound inequality constraints at ``x``. Unnecessary
+        rows/columns have been removed.
     b_ub : 1-D array
         1-D array of values representing the upper-bound of each inequality
-        constraint (row) in A_ub. Unnecessary elements have been removed.
+        constraint (row) in ``A_ub``. Unnecessary elements have been removed.
     A_eq : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x. Unnecessary rows/columns have been removed.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the equality constraints at ``x``. Unnecessary rows/columns have been
+        removed.
     b_eq : 1-D array
         1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq. Unnecessary elements have been removed.
+        (row) in ``A_eq``. Unnecessary elements have been removed.
     bounds : sequence of tuples
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
@@ -337,11 +338,13 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
         Whether the solution is complete (solved or determined to be infeasible
         or unbounded in presolve)
     status : int
-        An integer representing the exit status of the optimization:
+        An integer representing the exit status of the optimization::
+
          0 : Optimization terminated successfully
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
+
     message : str
         A string descriptor of the exit status of the optimization.
 
@@ -606,25 +609,26 @@ def _get_Abc(
         Constant term in objective function due to fixed (and eliminated)
         variables.
     A_ub : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        upper-bound inequality constraints at x. Unnecessary rows/columns
-        have been removed.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the upper-bound inequality constraints at ``x``. Unnecessary
+        rows/columns have been removed.
     b_ub : 1-D array
         1-D array of values representing the upper-bound of each inequality
-        constraint (row) in A_ub. Unnecessary elements have been removed.
+        constraint (row) in ``A_ub``. Unnecessary elements have been removed.
     A_eq : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x. Unnecessary rows/columns have been removed.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the equality constraints at ``x``. Unnecessary rows/columns have been
+        removed.
     b_eq : 1-D array
         1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq. Unnecessary elements have been removed.
+        (row) in ``A_eq``. Unnecessary elements have been removed.
     bounds : sequence of tuples
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for each of ``min`` or
         ``max`` when there is no bound in that direction. Bounds have been
         tightened where possible.
     undo: list of tuples
-        (index, value) pairs that record the original index and fixed value
+        (`index`, `value`) pairs that record the original index and fixed value
         for each variable removed from the problem
 
     Returns
@@ -741,17 +745,19 @@ def _postprocess(
     bounds : sequence of tuples
         Bounds, as modified in presolve
     complete : bool
-        Whether the solution is was determined in presolve (True if so)
+        Whether the solution is was determined in presolve (``True`` if so)
     undo: list of tuples
-        (index, value) pairs that record the original index and fixed value
+        (`index`, `value`) pairs that record the original index and fixed value
         for each variable removed from the problem
     status : int
         An integer representing the exit status of the optimization::
+
              0 : Optimization terminated successfully
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
              4 : Serious numerical difficulties encountered
+
     message : str
         A string descriptor of the exit status of the optimization.
 
@@ -763,17 +769,19 @@ def _postprocess(
         optimal objective value for original problem
     slack: 1-D array
         The (non-negative) slack in the upper bound constraints, that is,
-        b_ub - A_ub * x
+        ``b_ub - A_ub * x``
     con : 1-D array
         The (nominally zero) residuals of the equality constraints, that is,
-        b - A_eq * x
+        ``b - A_eq * x``
     status : int
         An integer representing the exit status of the optimization::
+
              0 : Optimization terminated successfully
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
              4 : Serious numerical difficulties encountered
+
     message : str
         A string descriptor of the exit status of the optimization.
 
@@ -847,7 +855,7 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
     ----------
     sparse : bool
         True if the system to be solved is sparse. This is typically set
-        True when the original A_ub and A_eq matrices are sparse.
+        True when the original ``A_ub`` and ``A_eq`` arrays are sparse.
     lstsq : bool
         True if the system is ill-conditioned and/or (nearly) singular and
         thus a more robust least-squares solver is desired. This is sometimes
@@ -913,18 +921,19 @@ def _get_delta(
     pc=True,
         ip=False):
     """
-    Given standard form problem defined by A, b, and c; current variable
-    estimates x, y, z, tau, and kappa; algorithmic parameters gamma and eta;
-    and options sparse, lstsq, sym_pos, cholesky, pc (predictor-corrector),
-    and ip (initial point improvement), get the search direction for
-    increments to the variable estimates.
+    Given standard form problem defined by ``A``, ``b``, and ``c``; 
+    current variable estimates ``x``, ``y``, ``z``, ``tau``, and ``kappa``; 
+    algorithmic parameters ``gamma and ``eta;
+    and options ``sparse``, ``lstsq``, ``sym_pos``, ``cholesky``, ``pc`` 
+    (predictor-corrector), and ``ip`` (initial point improvement), 
+    get the search direction for increments to the variable estimates.
 
     Parameters
     ----------
     As defined in [1], except:
     sparse : bool
         True if the system to be solved is sparse. This is typically set
-        True when the original A_ub and A_eq matrices are sparse.
+        True when the original ``A_ub`` and ``A_eq`` arrays are sparse.
     lstsq : bool
         True if the system is ill-conditioned and/or (nearly) singular and
         thus a more robust least-squares solver is desired. This is sometimes
@@ -1102,8 +1111,8 @@ def _get_delta(
 
 def _fb_subs(L, r):
     """
-    Given lower triangular Cholesky factor L and right-hand side r, solve the
-    system L L^T = r by substitution.
+    Given lower triangular Cholesky factor ``L`` and right-hand side ``r``,
+    solve the system ``L L^T = r`` by substitution.
 
     Parameters
     ----------
@@ -1176,7 +1185,8 @@ def _get_message(status):
     Parameters
     ----------
     status : int
-        An integer representing the exit status of the optimization:
+        An integer representing the exit status of the optimization::
+
          0 : Optimization terminated successfully
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
@@ -1356,11 +1366,11 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     Parameters
     ----------
     A : 2-D array
-        2-D array which, when matrix-multiplied by x, gives the values of the
-        equality constraints at x (for standard form problem).
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the equality constraints at ``x`` (for standard form problem).
     b : 1-D array
         1-D array of values representing the RHS of each equality constraint
-        (row) in A (for standard form problem).
+        (row) in ``A`` (for standard form problem).
     c : 1-D array
         Coefficients of the linear objective function to be minimized (for
         standard form problem).
@@ -1369,7 +1379,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         variables. (Purely for display.)
     alpha0 : float
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see \beta3 of [1] Table 8.1
+        direction; see beta3 of [1] Table 8.1
     beta : float
         The desired reduction of the path parameter mu (see  [3])
     maxiter : int
@@ -1408,12 +1418,14 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     x_hat : float
         Solution vector (for standard form problem).
     status : int
-        An integer representing the exit status of the optimization:
+        An integer representing the exit status of the optimization::
+
          0 : Optimization terminated successfully
          1 : Iteration limit reached
          2 : Problem appears to be infeasible
          3 : Problem appears to be unbounded
          4 : Serious numerical difficulties encountered.
+
     message : str
         A string descriptor of the exit status of the optimization.
     iteration : int
@@ -1569,32 +1581,32 @@ def _linprog_ip(
     equality constraints, linear inequality constraints, and simple bounds
     using the interior point method of [1]_.
 
-    Linear Programming is intended to solve problems of the following form:
+    Linear Programming is intended to solve problems of the following form::
 
-    Minimize:     c^T * x
-
-    Subject to:   A_ub * x <= b_ub
-                  A_eq * x == b_eq
-                  bounds[i][0] < x_i < bounds[i][1]
+        Minimize:     c^T * x
+    
+        Subject to:   A_ub * x <= b_ub
+                      A_eq * x == b_eq
+                      bounds[i][0] < x_i < bounds[i][1]
 
     Parameters
     ----------
     c : array_like
         Coefficients of the linear objective function to be minimized.
     A_ub : array_like, optional
-        2-D array which, when matrix-multiplied by `x`, gives the values of
-        the upper-bound inequality constraints at `x`.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the upper-bound inequality constraints at ``x``.
     b_ub : array_like, optional
         1-D array of values representing the upper-bound of each inequality
-        constraint (row) in `A_ub`.
+        constraint (row) in ``A_ub``.
     A_eq : array_like, optional
-        2-D array which, when matrix-multiplied by `x`, gives the values of the
-        equality constraints at `x`.
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
+        the equality constraints at ``x``.
     b_eq : array_like, optional
         1-D array of values representing the right hand side of each equality
-        constraint (row) in `A_eq`.
+        constraint (row) in ``A_eq``.
     bounds : sequence, optional
-        ``(min, max)`` pairs for each element in `x`, defining
+        ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use ``None`` for one of ``min`` or
         ``max`` when there is no bound in that direction. By default
         bounds are ``(0, None)`` (non-negative).
@@ -1613,7 +1625,7 @@ def _linprog_ip(
         see [1]_ Section 4.5.
     alpha0 : float (default = 0.99995)
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see \beta3 of [1]_ Table 8.1.
+        direction; see beta3 of [1]_ Table 8.1.
     beta : float (default = 0.1)
         The desired reduction of the path parameter \mu (see [3]_) when
         Mehrota's predictor-corrector is not in use (uncommon).
@@ -1655,7 +1667,7 @@ def _linprog_ip(
 
     Returns
     -------
-    A `scipy.optimize.OptimizeResult` consisting of the following fields:
+    A ``scipy.optimize.OptimizeResult`` consisting of the following fields:
 
         x : ndarray
             The independent variable vector which optimizes the linear
@@ -1695,15 +1707,15 @@ def _linprog_ip(
     infeasibilities, trivial unboundedness, and potential problem
     simplifications. Specifically, it checks for:
 
-    - rows of zeros in `A_eq` or `A_ub`, representing trivial constraints;
-    - columns of zeros in both `A_eq` and `A_ub`, representing unconstrained
+    - rows of zeros in ``A_eq`` or ``A_ub``, representing trivial constraints;
+    - columns of zeros in ``A_eq`` `and` ``A_ub``, representing unconstrained
       variables;
-    - column singletons in `A_eq`, representing fixed variables; and
-    - column singletons in `A_ub`, representing simple bounds.
+    - column singletons in ``A_eq``, representing fixed variables; and
+    - column singletons in ``A_ub``, representing simple bounds.
 
     If presolve reveals that the problem is unbounded (e.g. an unconstrained
     and unbounded variable has negative cost) or infeasible (e.g. a row of
-    zeros in `A_eq` corresponds with a nonzero in `b_eq`), the solver
+    zeros in ``A_eq`` corresponds with a nonzero in ``b_eq``), the solver
     terminates with the appropriate status code. Note that presolve terminates
     as soon as any sign of unboundedness is detected; consequently, a problem
     may be reported as unbounded when in reality the problem is infeasible
@@ -1715,7 +1727,7 @@ def _linprog_ip(
     If neither infeasibility nor unboundedness are detected in a single pass
     of the presolve check, bounds are tightened where possible and fixed
     variables are removed from the problem. Then, singular value decomposition
-    is used to identify linearly dependent rows of the `A_eq` matrix, which
+    is used to identify linearly dependent rows of the ``A_eq`` matrix, which
     are removed (unless they represent an infeasibility) to avoid numerical
     difficulties in the primary solve routine.
 
@@ -1740,7 +1752,7 @@ def _linprog_ip(
 
     The default initial point for the primal and dual variables is that
     defined in [1]_ Section 4.4 Equation 8.22. Optionally (by setting initial
-    point option `ip=True`), a (potentially) improved starting point can be
+    point option ``ip=True``), a (potentially) improved starting point can be
     calculated according to the additional recommendations of [1]_ Section 4.4.
 
     A search direction is calculated using the predictor-corrector method
@@ -1754,33 +1766,33 @@ def _linprog_ip(
     matrices involved are symmetric positive definite, so Cholesky
     decomposition can be used rather than the more expensive LU factorization.
 
-    In code, this is accomplished using `scipy.linalg.solve` with
-    `sym_pos=True`. Based on speed tests, this appears to cache the
+    In code, this is accomplished using ``scipy.linalg.solve`` with
+    ``sym_pos=True``. Based on speed tests, this appears to cache the
     Cholesky decomposition of the matrix for later use, which is beneficial
     as the same system is solved four times with different right hand sides
     in each iteration of the algorithm. However, for very large, dense
     systems, it may be beneficial for the Cholesky decomposition to be
-    calculated explicitly using `scipy.linalg.cholesky` and the decomposed
+    calculated explicitly using ``scipy.linalg.cholesky`` and the decomposed
     systems to be solved by explicit forward/backward substitutions via
-    `scipy.linalg.solve_triangular`; this is possible by setting the option
-    `cholesky=True`.
+    ``scipy.linalg.solve_triangular``; this is possible by setting the option
+    ``cholesky=True``.
 
     In problems with redundancy (e.g. if presolve is turned off with option
-    `presolve=False`) or if the matrices become ill-conditioned (e.g. as the
+    ``presolve=False``) or if the matrices become ill-conditioned (e.g. as the
     solution is approached and some decision variables approach zero),
     Cholesky decomposition can fail. Should this occur, successively more
-    robust solvers (`scipy.linalg.solve` with `sym_pos=False` then
-    `scipy.linalg.lstsq`) are tried, at the cost of computational efficiency.
+    robust solvers (``scipy.linalg.solve`` with ``sym_pos=False`` then
+    ``scipy.linalg.lstsq``) are tried, at the cost of computational efficiency.
     These solvers can be used from the outset by setting the options
-    `sym_pos=False` and `lstsq=True`, respectively.
+    ``sym_pos=False`` and ``lstsq=True``, respectively.
 
-    Note that with the option `sparse=True`, the normal equations are solved
-    using `scipy.sparse.linalg.spsolve`. Unfortunately, this uses the more
+    Note that with the option ``sparse=True``, the normal equations are solved
+    using ``scipy.sparse.linalg.spsolve``. Unfortunately, this uses the more
     expensive LU decomposition from the outset, but for large, sparse problems,
     the use of sparse linear algebra techniques improves the solve speed
     despite the use of LU rather than Cholesky decomposition. A simple
-    improvement would be to use the sparse Cholesky decomposition of `CHOLMOD`
-    via `scikit-sparse` when available.
+    improvement would be to use the sparse Cholesky decomposition of
+    ``CHOLMOD` via ``scikit-sparse`` when available.
 
     Other potential improvements for combatting issues associated with dense
     columns in otherwise sparse problems are outlined in [1]_ Section 5.3 and
@@ -1794,7 +1806,7 @@ def _linprog_ip(
     4.1. [1]_ Section 4.3 suggests improvements for choosing the step size.
 
     The new point is tested according to the termination conditions of [1]_
-    Section 4.5. The same tolerance, which can be set using the `tol` option,
+    Section 4.5. The same tolerance, which can be set using the ``tol`` option,
     is used for all checks. (A potential improvement would be to expose
     the different tolerances to be set independently.) If optimality,
     unboundedness, or infeasibility is detected, the solve procedure
@@ -1805,7 +1817,7 @@ def _linprog_ip(
     calculates the residuals (equality constraint violations, which should
     be very small) and slacks (difference between the left and right hand
     sides of the upper bound constraints) of the original problem, which are
-    returned with the solution in an `OptimizeResult` object.
+    returned with the solution in an ``OptimizeResult`` object.
 
     References
     ----------
