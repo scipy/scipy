@@ -65,7 +65,7 @@ def linprog_verbose_callback(xk, **kwargs):
 
     saved_printoptions = np.get_printoptions()
     np.set_printoptions(linewidth=500,
-                        formatter={'float':lambda x: "{0: 12.4f}".format(x)})
+                        formatter={'float': lambda x: "{0: 12.4f}".format(x)})
     if complete:
         print("--------- Iteration Complete - Phase {0:d} -------\n".format(phase))
         print("Tableau:")
@@ -265,8 +265,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
         optimization.
     phase : int
         The phase of the optimization being executed.  In phase 1 a basic
-        feasible solution is sought and the T has an additional row representing
-        an alternate objective function.
+        feasible solution is sought and the T has an additional row
+        representing an alternate objective function.
     callback : callable, optional
         If a callback function is provided, it will be called within each
         iteration of the simplex algorithm. The callback must have the
@@ -364,10 +364,10 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
             solution[:] = 0
             solution[basis[:m]] = T[:m, -1]
             callback(solution[:n], **{"tableau": T,
-                                      "phase":phase,
-                                      "nit":nit,
-                                      "pivot":(pivrow, pivcol),
-                                      "basis":basis,
+                                      "phase": phase,
+                                      "nit": nit,
+                                      "pivot": (pivrow, pivcol),
+                                      "basis": basis,
                                       "complete": complete and phase == 2})
 
         if not complete:
@@ -390,8 +390,8 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
 
 
 def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, maxiter=1000, disp=False, callback=None,
-            tol=1.0E-12, bland=False, **unknown_options):
+                     bounds=None, maxiter=1000, disp=False, callback=None,
+                     tol=1.0E-12, bland=False, **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
     simplex algorithm.
@@ -418,8 +418,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         1-D array of values representing the RHS of each equality constraint
         (row) in A_eq.
     bounds : array_like
-        The bounds for each independent variable in the solution, which can take
-        one of three forms::
+        The bounds for each independent variable in the solution, which can
+        take one of three forms::
         None : The default bounds, all variables are non-negative.
         (lb, ub) : If a 2-element sequence is provided, the same
                   lower bound (lb) and upper bound (ub) will be applied
@@ -447,9 +447,9 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     disp : bool
         If True, print exit status message to sys.stdout
     tol : float
-        The tolerance which determines when a solution is "close enough" to zero
-        in Phase 1 to be considered a basic feasible solution or close enough
-        to positive to to serve as an optimal solution.
+        The tolerance which determines when a solution is "close enough" to
+        zero in Phase 1 to be considered a basic feasible solution or close
+        enough to positive to to serve as an optimal solution.
     bland : bool
         If True, use Bland's anti-cycling rule [3] to choose pivots to
         prevent cycling.  If False, choose pivots which should lead to a
@@ -459,7 +459,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Returns
     -------
     A `scipy.optimize.OptimizeResult` consisting of the following fields:
-        
+
         x : ndarray
             The independent variable vector which optimizes the linear
             programming problem.
@@ -474,12 +474,12 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             solution.
         status : int
             An integer representing the exit status of the optimization::
-                
+
              0 : Optimization terminated successfully
              1 : Iteration limit reached
              2 : Problem appears to be infeasible
              3 : Problem appears to be unbounded
-             
+
         nit : int
             The number of iterations performed.
         message : str
@@ -527,7 +527,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     References
     ----------
     .. [1] Dantzig, George B., Linear programming and extensions. Rand
-           Corporation Research Study Princeton Univ. Press, Princeton, NJ, 1963
+           Corporation Research Study Princeton Univ. Press, Princeton, NJ,
+           1963
     .. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
            Mathematical Programming", McGraw-Hill, Chapter 4.
     .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
@@ -574,7 +575,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         if len(bounds) != n:
             status = -1
             message = ("Invalid input for linprog with method = 'simplex'.  "
-                      "Length of bounds is inconsistent with the length of c")
+                       "Length of bounds is inconsistent with the length of c")
         else:
             try:
                 for i in range(n):
@@ -607,7 +608,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         if(L[i] > U[i]):
             status = -1
             message = ("Invalid input for linprog with method = 'simplex'.  "
-                       "Lower bound %d is greater than upper bound %d" % (i, i))
+                       "Lower bound %d is greater than upper bound%d" % (i, i))
 
         if np.isinf(L[i]) and L[i] > 0:
             status = -1
@@ -669,7 +670,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     # The total number of constraints
     m = mub+meq
 
-    # The number of slack variables (one for each of the upper-bound constraints)
+    # The number of slack variables (one for each upper-bound constraints)
     n_slack = mub
 
     # The number of artificial variables (one for each lower-bound and equality
@@ -782,8 +783,8 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         message = messages[status]
         if disp:
             print(message)
-        return OptimizeResult(x=np.nan, fun=-T[-1, -1], nit=nit1, status=status,
-                      message=message, success=False)
+        return OptimizeResult(x=np.nan, fun=-T[-1, -1], nit=nit1,
+                              status=status, message=message, success=False)
 
     # Phase 2
     nit2, status = _solve_simplex(T, n, basis, maxiter=maxiter-nit1, phase=2,
@@ -821,8 +822,9 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             print(messages[status])
             print("         Iterations: {0:d}".format(nit2))
 
-    return OptimizeResult(x=x, fun=obj, nit=int(nit2), status=status, slack=slack,
-                  message=messages[status], success=(status == 0))
+    return OptimizeResult(x=x, fun=obj, nit=int(nit2), status=status,
+                          slack=slack, message=messages[status],
+                          success=(status == 0))
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
@@ -864,13 +866,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will be applied to all variables in the problem.
     method : str, optional
         Type of solver.  :ref:`'simplex' <optimize.linprog-simplex>`
-        and :ref:`'interior point' <optimize.linprog-interior-point>` 
+        and :ref:`'interior point' <optimize.linprog-interior-point>`
         are supported.
     callback : callable, optional (simplex only)
         If a callback function is provide, it will be called within each
-        iteration of the simplex algorithm. The callback must have the signature
-        `callback(xk, **kwargs)` where xk is the current solution vector
-        and kwargs is a dictionary containing the following::
+        iteration of the simplex algorithm. The callback must have the
+        signature `callback(xk, **kwargs)` where xk is the current solution
+        vector and kwargs is a dictionary containing the following::
 
             "tableau" : The current Simplex algorithm tableau
             "nit" : The current iteration.
@@ -925,7 +927,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Notes
     -----
     This section describes the available solvers that can be selected by the
-    'method' parameter. The default method is :ref:`Simplex <optimize.linprog-simplex>`.
+    'method' parameter. The default method
+    is :ref:`Simplex <optimize.linprog-simplex>`.
     :ref:`Interior point <optimize.linprog-interior-point>` is also available.
 
     Method *Simplex* uses the Simplex algorithm (as it relates to Linear
@@ -933,18 +936,19 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     should be reasonably reliable and fast.
 
     .. versionadded:: 0.15.0
-    
-    Method *interior-point* uses the primal-dual path following algorithm 
+
+    Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm is intended to provide a faster
     and/or more reliable alternative to *simplex*, especially for large,
     sparse problems. Note, however, that the solution returned may be less
-    accurate than that of the simplex method and may not correspond with a 
+    accurate than that of the simplex method and may not correspond with a
     vertex of the polytope defined by the constraints.
 
     References
     ----------
     .. [1] Dantzig, George B., Linear programming and extensions. Rand
-           Corporation Research Study Princeton Univ. Press, Princeton, NJ, 1963
+           Corporation Research Study Princeton Univ. Press, Princeton, NJ,
+           1963
     .. [2] Hillier, S.H. and Lieberman, G.J. (1995), "Introduction to
            Mathematical Programming", McGraw-Hill, Chapter 4.
     .. [3] Bland, Robert G. New finite pivoting rules for the simplex method.
@@ -967,8 +971,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
            programming." Mathematical Programming 71.2 (1995): 221-245.
     .. [9] Bertsimas, Dimitris, and J. Tsitsiklis. "Introduction to linear
            programming." Athena Scientific 1 (1997): 997.
-    .. [10] Andersen, Erling D., et al. Implementation of interior point  
-            methods for large scale linear programming. HEC/Universite de 
+    .. [10] Andersen, Erling D., et al. Implementation of interior point
+            methods for large scale linear programming. HEC/Universite de
             Geneve, 1996.
 
     Examples
@@ -1027,6 +1031,6 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                                 bounds=bounds, callback=callback, **options)
     elif meth == 'interior-point':
         return _linprog_ip(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                                bounds=bounds, callback=callback, **options)
+                           bounds=bounds, callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
