@@ -397,7 +397,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     simplex algorithm.::
 
         minimize:     c^T * x
-    
+
         subject to:   A_ub * x <= b_ub
                       A_eq * x == b_eq
 
@@ -406,13 +406,13 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     c : array_like
         Coefficients of the linear objective function to be minimized.
     A_ub : array_like
-        2-D array which, when matrix-multiplied by ``x``, gives the values of 
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
         the upper-bound inequality constraints at ``x``.
     b_ub : array_like
         1-D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : array_like
-        2-D array which, when matrix-multiplied by ``x``, gives the values of 
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
         the equality constraints at ``x``.
     b_eq : array_like
         1-D array of values representing the RHS of each equality constraint
@@ -420,7 +420,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     bounds : array_like
         The bounds for each independent variable in the solution, which can
         take one of three forms::
-            
+
         None : The default bounds, all variables are non-negative.
         (lb, ub) : If a 2-element sequence is provided, the same
                   lower bound (lb) and upper bound (ub) will be applied
@@ -429,13 +429,13 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                   each variable x_i will be bounded by lb[i] and ub[i].
         Infinite bounds are specified using -np.inf (negative)
         or np.inf (positive).
-        
+
     callback : callable
         If a callback function is provide, it will be called within each
         iteration of the simplex algorithm. The callback must have the
         signature ``callback(xk, **kwargs)`` where ``xk`` is the current s
         olution vector and kwargs is a dictionary containing the following::
-            
+
         "tableau" : The current Simplex algorithm tableau
         "nit" : The current iteration.
         "pivot" : The pivot (row, column) used for the next iteration.
@@ -840,7 +840,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Linear Programming is intended to solve the following problem form::
 
         Minimize:     c^T * x
-    
+
         Subject to:   A_ub * x <= b_ub
                       A_eq * x == b_eq
 
@@ -855,7 +855,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         1-D array of values representing the upper-bound of each inequality
         constraint (row) in ``A_ub``.
     A_eq : array_like, optional
-        2-D array which, when matrix-multiplied by ``x``, gives the values of 
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
         the equality constraints at ``x``.
     b_eq : array_like, optional
         1-D array of values representing the RHS of each equality constraint
