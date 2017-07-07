@@ -160,58 +160,33 @@ NA_IoArray(PyObject *a, enum NPY_TYPES t, int requires)
     return shadow;
 }
 
+/*
+ * Creates a new numpy array of the requested type and shape, and either
+ * copies into it the contents of buffer, or sets it to all zeros if
+ * buffer is NULL.
+ */
 static PyArrayObject *
-NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type)
+NA_NewArray(void *buffer, enum NPY_TYPES type, int ndim, npy_intp *shape)
 {
-    PyArrayObject *self = NULL;
-    PyArray_Descr *dtype;
+    PyArrayObject *result;
 
     if (type == NPY_NOTYPE) {
         type = NPY_DOUBLE;
     }
 
-    dtype = PyArray_DescrFromType(type);
-    if (dtype == NULL){
+    result = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, type);
+    if (result == NULL) {
         return NULL;
     }
 
-    self = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type, dtype,
-                                                 ndim, shape, NULL, NULL,
-                                                 0, NULL);
-
-    return self;
-}
-
-static PyArrayObject *
-NA_NewAll(int ndim, npy_intp *shape, enum NPY_TYPES type, void *buffer)
-{
-    PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type);
-
-    if (result) {
-        if (!PyArray_Check((PyObject *) result)) {
-            PyErr_Format(PyExc_TypeError, "NA_NewAll: non-NumArray result");
-            result = NULL;
-        }
-        else {
-            if (buffer) {
-                memcpy(PyArray_DATA(result), buffer, PyArray_NBYTES(result));
-            }
-            else {
-                memset(PyArray_DATA(result), 0, PyArray_NBYTES(result));
-            }
-        }
+    if (buffer == NULL) {
+        memset(PyArray_DATA(result), 0, PyArray_NBYTES(result));
     }
-    return  result;
-}
+    else {
+        memcpy(PyArray_DATA(result), buffer, PyArray_NBYTES(result));
+    }
 
-/* Create a new numarray which is initially a C_array, or which
-references a C_array: aligned, !byteswapped, contiguous, ...
-Call with buffer==NULL to allocate storage.
-*/
-static PyArrayObject *
-NA_NewArray(void *buffer, enum NPY_TYPES type, int ndim, npy_intp *shape)
-{
-    return (PyArrayObject *)NA_NewAll(ndim, shape, type, buffer);
+    return result;
 }
 
 /* Convert an input array of any type, not necessarily contiguous */
