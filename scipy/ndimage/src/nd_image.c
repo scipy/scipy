@@ -160,29 +160,10 @@ NA_IoArray(PyObject *a, enum NPY_TYPES t, int requires)
     return shadow;
 }
 
-#define NUM_LITTLE_ENDIAN 0
-#define NUM_BIG_ENDIAN 1
-
-static int
-NA_ByteOrder(void)
-{
-    unsigned int byteorder_test;
-    byteorder_test = 1;
-    if (*((char *) &byteorder_test)) {
-        return NUM_LITTLE_ENDIAN;
-    }
-    else {
-        return NUM_BIG_ENDIAN;
-    }
-}
-
-#undef NUM_BIG_ENDIAN
-#undef NUM_LITTLE_ENDIAN
-
 /* ignores bytestride */
 static PyArrayObject *
 NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
-                    npy_intp byteoffset, npy_intp bytestride, int byteorder)
+                    npy_intp byteoffset, npy_intp bytestride)
 {
     PyArrayObject *self = NULL;
     PyArray_Descr *dtype;
@@ -196,16 +177,6 @@ NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
         return NULL;
     }
 
-    if (byteorder != NA_ByteOrder()) {
-        PyArray_Descr *temp;
-        temp = PyArray_DescrNewByteorder(dtype, NPY_SWAP);
-        Py_DECREF(dtype);
-        if (temp == NULL) {
-            return NULL;
-        }
-        dtype = temp;
-    }
-
     self = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type, dtype,
                                                  ndim, shape, NULL, NULL,
                                                  0, NULL);
@@ -215,11 +186,10 @@ NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
 
 static PyArrayObject *
 NA_NewAll(int ndim, npy_intp *shape, enum NPY_TYPES type,
-          void *buffer, npy_intp byteoffset, npy_intp bytestride,
-          int byteorder)
+          void *buffer, npy_intp byteoffset, npy_intp bytestride)
 {
     PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type, byteoffset,
-                                                bytestride, byteorder);
+                                                bytestride);
 
     if (result) {
         if (!PyArray_Check((PyObject *) result)) {
@@ -245,8 +215,7 @@ Call with buffer==NULL to allocate storage.
 static PyArrayObject *
 NA_NewArray(void *buffer, enum NPY_TYPES type, int ndim, npy_intp *shape)
 {
-    return (PyArrayObject *)NA_NewAll(ndim, shape, type, buffer, 0, 0,
-                                      NA_ByteOrder());
+    return (PyArrayObject *)NA_NewAll(ndim, shape, type, buffer, 0, 0);
 }
 
 /* Convert an input array of any type, not necessarily contiguous */
