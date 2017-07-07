@@ -1329,9 +1329,9 @@ class TestDocstring(object):
     def test_docstrings(self):
         # See ticket #761
         if stats.rayleigh.__doc__ is not None:
-            self.assertTrue("rayleigh" in stats.rayleigh.__doc__.lower())
+            assert_("rayleigh" in stats.rayleigh.__doc__.lower())
         if stats.bernoulli.__doc__ is not None:
-            self.assertTrue("bernoulli" in stats.bernoulli.__doc__.lower())
+            assert_("bernoulli" in stats.bernoulli.__doc__.lower())
 
     def test_no_name_arg(self):
         # If name is not given, construction shouldn't fail.  See #1508.

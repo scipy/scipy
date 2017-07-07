@@ -4,7 +4,7 @@ from subprocess import call, PIPE, Popen
 import sys
 import re
 
-from numpy.testing import dec
+from numpy.testing import dec, assert_
 from numpy.compat import asbytes
 
 from scipy.linalg import _flapack as flapack
@@ -50,7 +50,7 @@ class TestF77Mismatch(object):
         f = FindDependenciesLdd()
         deps = f.grep_dependencies(flapack.__file__,
                                    ['libg2c', 'libgfortran'])
-        self.assertFalse(len(deps) > 1,
+        assert_(not (len(deps) > 1),
 """Both g77 and gfortran runtimes linked in scipy.linalg.flapack ! This is
 likely to cause random crashes and wrong results. See numpy INSTALL.rst.txt for
 more information.""")

@@ -82,13 +82,13 @@ class TestSphericalVoronoi(object):
         s3 = SphericalVoronoi(self.points, None, center)
         s4 = SphericalVoronoi(self.points, radius, center)
         assert_array_equal(s1.center, np.array([0, 0, 0]))
-        self.assertEqual(s1.radius, 1)
+        assert_equal(s1.radius, 1)
         assert_array_equal(s2.center, np.array([0, 0, 0]))
-        self.assertEqual(s2.radius, 2)
+        assert_equal(s2.radius, 2)
         assert_array_equal(s3.center, center)
-        self.assertEqual(s3.radius, 1)
+        assert_equal(s3.radius, 1)
         assert_array_equal(s4.center, center)
-        self.assertEqual(s4.radius, radius)
+        assert_equal(s4.radius, radius)
 
     def test_vertices_regions_translation_invariance(self):
         sv_origin = SphericalVoronoi(self.points)

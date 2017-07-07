@@ -8,7 +8,8 @@ import glob
 
 from numpy.testing import (assert_equal, dec, decorate_methods,
                            run_module_suite, assert_allclose,
-                           assert_array_equal, assert_raises)
+                           assert_array_equal, assert_raises,
+                           assert_)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import misc
 from numpy.ma.testutils import assert_mask_equal
@@ -86,7 +87,7 @@ class TestPILUtil(object):
         expected = [0, 255, 3]
         assert_equal(expected, actual)
         assert_mask_equal(a.mask, actual.mask)
-        self.assertTrue(isinstance(actual, np.ma.MaskedArray))
+        assert_(isinstance(actual, np.ma.MaskedArray))
 
     def test_bytescale_rounding(self):
         a = np.array([-0.5, 0.5, 1.5, 2.5, 3.5])

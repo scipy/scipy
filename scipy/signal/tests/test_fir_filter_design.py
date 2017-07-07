@@ -45,7 +45,7 @@ class TestFirwin(object):
         for freq, expected in expected_response:
             actual = abs(np.sum(h*np.exp(-1.j*np.pi*m*freq)))
             mse = abs(actual-expected)**2
-            self.assertTrue(mse < tol, 'response not as expected, mse=%g > %g'
+            assert_(mse < tol, 'response not as expected, mse=%g > %g'
                % (mse, tol))
 
     def test_response(self):
@@ -120,7 +120,7 @@ class TestFirwin(object):
                     cutoff = [0] + cutoff
                 else:
                     cutoff = cutoff + [1]
-            self.assertTrue(self.mse(h, [cutoff]) < self.mse(hs, [cutoff]),
+            assert_(self.mse(h, [cutoff]) < self.mse(hs, [cutoff]),
                 'least squares violation')
             self.check_response(hs, [expected_response], 1e-12)
 

@@ -53,7 +53,7 @@ class TestProcrustes(object):
 
         # at worst, data3 is an 'L' with one point off by .5
         m1, m3, disp13 = procrustes(self.data1, self.data3)
-        #self.assertTrue(disp13 < 0.5 ** 2)
+        #assert_(disp13 < 0.5 ** 2)
 
     def test_procrustes2(self):
         # procrustes disparity should not depend on order of matrices

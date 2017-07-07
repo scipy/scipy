@@ -135,26 +135,26 @@ class TestDifferentialEvolutionSolver(object):
                                              self.bounds,
                                              mutation=mutation)
 
-        self.assertEqual(solver.dither, list(mutation))
+        assert_equal(solver.dither, list(mutation))
 
     def test_invalid_mutation_values_arent_accepted(self):
         func = rosen
         mutation = (0.5, 3)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
                           mutation=mutation)
 
         mutation = (-1, 1)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
                           mutation=mutation)
 
         mutation = (0.1, np.nan)
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           DifferentialEvolutionSolver,
                           func,
                           self.bounds,
@@ -234,7 +234,7 @@ class TestDifferentialEvolutionSolver(object):
         # test that passing an invalid strategy raises ValueError
         func = rosen
         bounds = [(-3, 3)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds,
@@ -244,17 +244,17 @@ class TestDifferentialEvolutionSolver(object):
         # test that the bounds checking works
         func = rosen
         bounds = [(-3, None)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
         bounds = [(-3)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
         bounds = [(-3, 3), (3, 4, 5)]
-        self.assertRaises(ValueError,
+        assert_raises(ValueError,
                           differential_evolution,
                           func,
                           bounds)
