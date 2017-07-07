@@ -239,31 +239,18 @@ NI_ObjectToIoArray(PyObject *object, PyArrayObject **array)
     return *array ? 1 : 0;
 }
 
-/* Convert an Long sequence */
-static npy_intp
-NI_ObjectToLongSequenceAndLength(PyObject *object, npy_intp **sequence)
-{
-    npy_intp *pa, ii;
-    PyArrayObject *array = NA_InputArray(object, NPY_INTP, NPY_ARRAY_CARRAY);
-    npy_intp length = PyArray_SIZE(array);
-
-    *sequence = (npy_intp*)malloc(length * sizeof(npy_intp));
-    if (!*sequence) {
-        PyErr_NoMemory();
-        Py_XDECREF(array);
-        return -1;
-    }
-    pa = (npy_intp*)PyArray_DATA(array);
-    for(ii = 0; ii < length; ii++)
-        (*sequence)[ii] = pa[ii];
-    Py_XDECREF(array);
-    return length;
-}
-
+/* Checks that an origin value was received for each array dimension. */
 static int
-NI_ObjectToLongSequence(PyObject *object, npy_intp **sequence)
+_validate_origin(PyArrayObject *array, PyArray_Dims origin)
 {
-    return NI_ObjectToLongSequenceAndLength(object, sequence) >= 0;
+    if (origin.len != PyArray_NDIM(array)) {
+        PyErr_Format(PyExc_ValueError,
+                     "Invalid %d element 'origin' sequence for "
+                     "%d-dimensional input array.",
+                     origin.len, PyArray_NDIM(array));
+        return 0;
+    }
+    return 1;
 }
 
 /*********************************************************************/
@@ -297,24 +284,29 @@ exit:
 static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *weights = NULL;
-    npy_intp *origin = NULL;
+    PyArray_Dims origin;
     int mode;
     double cval;
 
     if (!PyArg_ParseTuple(args, "O&O&O&idO&", NI_ObjectToInputArray, &input,
                           NI_ObjectToInputArray, &weights,
                           NI_ObjectToOutputArray, &output,
-                         &mode, &cval,
-                         NI_ObjectToLongSequence, &origin))
+                          &mode, &cval,
+                          PyArray_IntpConverter, &origin)) {
         goto exit;
+    }
+    if (!_validate_origin(input, origin)) {
+        goto exit;
+    }
     if (!NI_Correlate(input, weights, output, (NI_ExtendMode)mode, cval,
-                                        origin))
+                      origin.ptr)) {
         goto exit;
+    }
 exit:
     Py_XDECREF(input);
     Py_XDECREF(weights);
     Py_XDECREF(output);
-    free(origin);
+    free(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -366,35 +358,40 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
     PyArrayObject *structure = NULL;
-    npy_intp *origin = NULL;
+    PyArray_Dims origin;
     int mode, minimum;
     double cval;
 
     if (!PyArg_ParseTuple(args, "O&O&O&O&idO&i",
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToInputArray, &footprint,
-                                        NI_ObjectToOptionalInputArray, &structure,
+                          NI_ObjectToOptionalInputArray, &structure,
                           NI_ObjectToOutputArray, &output,
                           &mode, &cval,
-                          NI_ObjectToLongSequence, &origin,
-                          &minimum))
+                          PyArray_IntpConverter, &origin,
+                          &minimum)) {
         goto exit;
+    }
+    if (!_validate_origin(input, origin)) {
+        goto exit;
+    }
     if (!NI_MinOrMaxFilter(input, footprint, structure, output,
-                                                (NI_ExtendMode)mode, cval, origin, minimum))
+                           (NI_ExtendMode)mode, cval, origin.ptr, minimum)) {
         goto exit;
+    }
 exit:
     Py_XDECREF(input);
     Py_XDECREF(footprint);
     Py_XDECREF(structure);
     Py_XDECREF(output);
-    free(origin);
+    free(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
 static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
-    npy_intp *origin = NULL;
+    PyArray_Dims origin;
     int mode, rank;
     double cval;
 
@@ -403,16 +400,21 @@ static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
                           NI_ObjectToInputArray, &footprint,
                           NI_ObjectToOutputArray, &output,
                           &mode, &cval,
-                                        NI_ObjectToLongSequence, &origin))
+                          PyArray_IntpConverter, &origin)) {
         goto exit;
+    }
+    if (!_validate_origin(input, origin)) {
+        goto exit;
+    }
     if (!NI_RankFilter(input, rank, footprint, output, (NI_ExtendMode)mode,
-                                         cval, origin))
+                       cval, origin.ptr)) {
         goto exit;
+    }
 exit:
     Py_XDECREF(input);
     Py_XDECREF(footprint);
     Py_XDECREF(output);
-    free(origin);
+    free(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -578,7 +580,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
     int mode;
-    npy_intp *origin = NULL;
+    PyArray_Dims origin;
     double cval;
     ccallback_t callback;
     static ccallback_signature_t callback_signatures[] = {
@@ -608,9 +610,13 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
                           NI_ObjectToInputArray, &footprint,
                           NI_ObjectToOutputArray, &output,
                           &mode, &cval,
-                                                NI_ObjectToLongSequence, &origin,
-                                                &extra_arguments, &extra_keywords))
+                          PyArray_IntpConverter, &origin,
+                          &extra_arguments, &extra_keywords)) {
         goto exit;
+    }
+    if (!_validate_origin(input, origin)) {
+        goto exit;
+    }
     if (!PyTuple_Check(extra_arguments)) {
         PyErr_SetString(PyExc_RuntimeError, "extra_arguments must be a tuple");
         goto exit;
@@ -650,8 +656,9 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
         }
     }
     if (!NI_GenericFilter(input, func, data, footprint, output,
-                                                (NI_ExtendMode)mode, cval, origin))
+                          (NI_ExtendMode)mode, cval, origin.ptr)) {
         goto exit;
+    }
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
         ccallback_release(&callback);
@@ -659,7 +666,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(output);
     Py_XDECREF(footprint);
-    free(origin);
+    free(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -1090,21 +1097,26 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
     int border_value, invert, center_is_true;
     int changed = 0, return_coordinates;
     NI_CoordinateList *coordinate_list = NULL;
-    npy_intp *origins = NULL;
+    PyArray_Dims origin;
 
     if (!PyArg_ParseTuple(args, "O&O&O&O&iO&iii",
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToInputArray, &strct,
-                                                NI_ObjectToOptionalInputArray, &mask,
+                          NI_ObjectToOptionalInputArray, &mask,
                           NI_ObjectToOutputArray, &output,
                           &border_value,
-                          NI_ObjectToLongSequence, &origins,
-                          &invert, &center_is_true, &return_coordinates))
+                          PyArray_IntpConverter, &origin,
+                          &invert, &center_is_true, &return_coordinates)) {
         goto exit;
+    }
+    if (!_validate_origin(input, origin)) {
+        goto exit;
+    }
     if (!NI_BinaryErosion(input, strct, mask, output, border_value,
-                                                origins, invert, center_is_true, &changed,
-                                                return_coordinates ? &coordinate_list : NULL))
+                          origin.ptr, invert, center_is_true, &changed,
+                          return_coordinates ? &coordinate_list : NULL)) {
         goto exit;
+    }
     if (return_coordinates) {
         cobj = NpyCapsule_FromVoidPtr(coordinate_list, _FreeCoordinateList);
     }
@@ -1113,7 +1125,7 @@ exit:
     Py_XDECREF(strct);
     Py_XDECREF(mask);
     Py_XDECREF(output);
-    free(origins);
+    free(origin.ptr);
     if (PyErr_Occurred()) {
         Py_XDECREF(cobj);
         return NULL;
@@ -1131,23 +1143,28 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     PyArrayObject *array = NULL, *strct = NULL, *mask = NULL;
     PyObject *cobj = NULL;
     int invert, niter;
-    npy_intp *origins = NULL;
+    PyArray_Dims origin;
 
     if (!PyArg_ParseTuple(args, "O&O&O&iO&iO",
                           NI_ObjectToIoArray, &array,
                           NI_ObjectToInputArray, &strct,
                           NI_ObjectToOptionalInputArray,
                           &mask, &niter,
-                          NI_ObjectToLongSequence, &origins,
-                          &invert, &cobj))
+                          PyArray_IntpConverter, &origin,
+                          &invert, &cobj)) {
         goto exit;
-
+    }
+    if (!_validate_origin(array, origin)) {
+        goto exit;
+    }
     if (NpyCapsule_Check(cobj)) {
         NI_CoordinateList *cobj_data = NpyCapsule_AsVoidPtr(cobj);
-        if (!NI_BinaryErosion2(array, strct, mask, niter, origins, invert,
-                                                     &cobj_data))
+        if (!NI_BinaryErosion2(array, strct, mask, niter, origin.ptr, invert,
+                               &cobj_data)) {
             goto exit;
-    } else {
+        }
+    }
+    else {
         PyErr_SetString(PyExc_RuntimeError, "cannot convert CObject");
         goto exit;
     }
@@ -1155,7 +1172,7 @@ exit:
     Py_XDECREF(array);
     Py_XDECREF(strct);
     Py_XDECREF(mask);
-    free(origins);
+    free(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
