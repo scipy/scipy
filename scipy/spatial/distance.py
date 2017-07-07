@@ -1365,11 +1365,9 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
-
     if issparse(X):
-         raise TypeError("pdist does not support sparse matrix input," + \
+         raise TypeError("pdist does not support sparse matrix input," +
                          " use sklearn's pairwise_distances instead.")
-
 
     X = np.asarray(X, order='c')
 
