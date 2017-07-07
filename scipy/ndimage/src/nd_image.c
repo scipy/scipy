@@ -160,10 +160,8 @@ NA_IoArray(PyObject *a, enum NPY_TYPES t, int requires)
     return shadow;
 }
 
-/* ignores bytestride */
 static PyArrayObject *
-NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
-                    npy_intp byteoffset, npy_intp bytestride)
+NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type)
 {
     PyArrayObject *self = NULL;
     PyArray_Descr *dtype;
@@ -185,11 +183,9 @@ NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
 }
 
 static PyArrayObject *
-NA_NewAll(int ndim, npy_intp *shape, enum NPY_TYPES type,
-          void *buffer, npy_intp byteoffset, npy_intp bytestride)
+NA_NewAll(int ndim, npy_intp *shape, enum NPY_TYPES type, void *buffer)
 {
-    PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type, byteoffset,
-                                                bytestride);
+    PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type);
 
     if (result) {
         if (!PyArray_Check((PyObject *) result)) {
@@ -215,7 +211,7 @@ Call with buffer==NULL to allocate storage.
 static PyArrayObject *
 NA_NewArray(void *buffer, enum NPY_TYPES type, int ndim, npy_intp *shape)
 {
-    return (PyArrayObject *)NA_NewAll(ndim, shape, type, buffer, 0, 0);
+    return (PyArrayObject *)NA_NewAll(ndim, shape, type, buffer);
 }
 
 /* Convert an input array of any type, not necessarily contiguous */
