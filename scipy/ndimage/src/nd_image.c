@@ -182,8 +182,7 @@ NA_ByteOrder(void)
 /* ignores bytestride */
 static PyArrayObject *
 NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
-                    npy_intp byteoffset, npy_intp bytestride, int byteorder,
-                    int aligned, int writeable)
+                    npy_intp byteoffset, npy_intp bytestride, int byteorder)
 {
     PyArrayObject *self = NULL;
     PyArray_Descr *dtype;
@@ -217,11 +216,10 @@ NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
 static PyArrayObject *
 NA_NewAll(int ndim, npy_intp *shape, enum NPY_TYPES type,
           void *buffer, npy_intp byteoffset, npy_intp bytestride,
-          int byteorder, int aligned, int writeable)
+          int byteorder)
 {
     PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type, byteoffset,
-                                                bytestride, byteorder,
-                                                aligned, writeable);
+                                                bytestride, byteorder);
 
     if (result) {
         if (!PyArray_Check((PyObject *) result)) {
@@ -248,7 +246,7 @@ static PyArrayObject *
 NA_NewArray(void *buffer, enum NPY_TYPES type, int ndim, npy_intp *shape)
 {
     return (PyArrayObject *)NA_NewAll(ndim, shape, type, buffer, 0, 0,
-                                      NA_ByteOrder(), 1, 1);
+                                      NA_ByteOrder());
 }
 
 /* Convert an input array of any type, not necessarily contiguous */
