@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-    TestCase, run_module_suite, assert_raises, assert_allclose, assert_equal,
+    run_module_suite, assert_raises, assert_allclose, assert_equal,
     assert_)
 from numpy.testing.decorators import skipif
 
@@ -71,7 +71,7 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
-class TestWhiten(TestCase):
+class TestWhiten(object):
     def test_whiten(self):
         desired = np.array([[5.08738849, 2.97091878],
                             [3.19909255, 0.69660580],
@@ -111,7 +111,7 @@ class TestWhiten(TestCase):
                 assert_raises(ValueError, whiten, obs)
 
 
-class TestVq(TestCase):
+class TestVq(object):
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         for tp in np.array, np.matrix:
@@ -185,7 +185,7 @@ class TestVq(TestCase):
         assert_array_equal(codes0, codes1)
 
 
-class TestKMean(TestCase):
+class TestKMean(object):
     def test_large_features(self):
         # Generate a data set with large values, and run kmeans on it to
         # (regression for 1077).

@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 from os.path import join, dirname
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_equal, TestCase
+from numpy.testing import assert_array_almost_equal, assert_equal
 
 from scipy.fftpack.realtransforms import dct, idct, dst, idst
 
@@ -48,7 +48,7 @@ def fftw_dst_ref(type, size, dt):
     return x, y, dt
 
 
-class TestComplex(TestCase):
+class TestComplex(object):
     def test_dct_complex64(self):
         y = dct(1j*np.arange(5, dtype=np.complex64))
         x = 1j*dct(np.arange(5))

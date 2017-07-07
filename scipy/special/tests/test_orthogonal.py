@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array, sqrt
-from numpy.testing import (TestCase, assert_array_almost_equal, assert_equal,
+from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose, assert_raises,
                            run_module_suite)
 
@@ -13,7 +13,7 @@ from scipy.special import gamma
 import scipy.special.orthogonal as orth
 
 
-class TestCheby(TestCase):
+class TestCheby(object):
     def test_chebyc(self):
         C0 = orth.chebyc(0)
         C1 = orth.chebyc(1)
@@ -76,7 +76,7 @@ class TestCheby(TestCase):
         assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
 
-class TestGegenbauer(TestCase):
+class TestGegenbauer(object):
 
     def test_gegenbauer(self):
         a = 5*np.random.random() - 0.5
@@ -100,7 +100,7 @@ class TestGegenbauer(TestCase):
                                                0,15*orth.poch(a,3),0])/15.0,11)
 
 
-class TestHermite(TestCase):
+class TestHermite(object):
     def test_hermite(self):
         H0 = orth.hermite(0)
         H1 = orth.hermite(1)
@@ -276,7 +276,7 @@ class TestCall(object):
             np.seterr(**olderr)
 
 
-class TestGenlaguerre(TestCase):
+class TestGenlaguerre(object):
     def test_regression(self):
         assert_equal(orth.genlaguerre(1, 1, monic=False)(0), 2.)
         assert_equal(orth.genlaguerre(1, 1, monic=True)(0), -2.)

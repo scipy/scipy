@@ -3,7 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, assert_, assert_allclose, assert_equal, run_module_suite
+from numpy.testing import assert_, assert_allclose, assert_equal, run_module_suite
 
 import numpy as np
 from numpy import zeros, array, allclose
@@ -39,7 +39,7 @@ def do_solve(**kw):
     return x0, count_0
 
 
-class TestLGMRES(TestCase):
+class TestLGMRES(object):
     def test_preconditioner(self):
         # Check that preconditioning works
         pc = splu(Am.tocsc())

@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_, assert_raises, TestCase, run_module_suite)
+                           assert_, assert_raises, run_module_suite)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -35,7 +35,7 @@ def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
             raise ValueError("Can't find pole " + str(p1) + " in " + str(P2))
 
 
-class TestPlacePoles(TestCase):
+class TestPlacePoles(object):
 
     def _check(self, A, B, P, **kwargs):
         """

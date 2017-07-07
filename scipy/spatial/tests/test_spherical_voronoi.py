@@ -1,8 +1,7 @@
 from __future__ import print_function
 import numpy as np
 import itertools
-from numpy.testing import (TestCase,
-                           assert_equal,
+from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
@@ -10,7 +9,7 @@ from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 
 
-class TestCircumcenters(TestCase):
+class TestCircumcenters(object):
 
     def test_circumcenters(self):
         tetrahedrons = np.array([
@@ -34,7 +33,7 @@ class TestCircumcenters(TestCase):
         assert_array_almost_equal(result, expected)
 
 
-class TestProjectToSphere(TestCase):
+class TestProjectToSphere(object):
 
     def test_unit_sphere(self):
         points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
@@ -61,7 +60,7 @@ class TestProjectToSphere(TestCase):
         assert_array_almost_equal(translated, projected)
 
 
-class TestSphericalVoronoi(TestCase):
+class TestSphericalVoronoi(object):
 
     def setUp(self):
         self.points = np.array([

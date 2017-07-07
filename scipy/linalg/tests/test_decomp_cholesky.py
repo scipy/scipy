@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal
 
 from numpy import array, transpose, dot, conjugate, zeros_like
 from numpy.random import random
@@ -10,7 +10,7 @@ from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded, \
 from scipy.linalg._testutils import assert_no_overwrite
 
 
-class TestCholesky(TestCase):
+class TestCholesky(object):
 
     def test_simple(self):
         a = [[8,2,3],[2,9,3],[3,3,6]]
@@ -67,7 +67,7 @@ class TestCholesky(TestCase):
             assert_array_almost_equal(cholesky(a,lower=1),c)
 
 
-class TestCholeskyBanded(TestCase):
+class TestCholeskyBanded(object):
     """Tests for cholesky_banded() and cho_solve_banded."""
 
     def test_check_finite(self):

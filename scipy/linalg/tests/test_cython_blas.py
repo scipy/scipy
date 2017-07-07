@@ -1,9 +1,9 @@
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_allclose,
+from numpy.testing import (run_module_suite, assert_allclose,
                            assert_equal)
 import scipy.linalg.cython_blas as blas
 
-class test_dgemm(TestCase):
+class TestDGEMM(object):
     
     def test_transposes(self):
 
@@ -46,7 +46,7 @@ class test_dgemm(TestCase):
         blas._test_dgemm(1., b.T, a.T, 0., c.T)
         assert_allclose(c, b.T.dot(a.T).T)
         
-class test_wfunc_pointers(TestCase):
+class TestWfuncPointers(object):
     """ Test the function pointers that are expected to fail on
     Mac OS X without the additional entry statement in their definitions
     in fblas_l1.pyf.src. """

@@ -3,13 +3,13 @@ from __future__ import division, print_function, absolute_import
 import math
 import numpy as np
 
-from numpy.testing import assert_allclose, TestCase, run_module_suite, \
+from numpy.testing import assert_allclose, run_module_suite, \
      assert_
 
 from scipy.optimize import fmin_cobyla, minimize
 
 
-class TestCobyla(TestCase):
+class TestCobyla(object):
     def setUp(self):
         self.x0 = [4.95, 0.66]
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]

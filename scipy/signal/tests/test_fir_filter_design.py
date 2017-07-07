@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_raises, \
+from numpy.testing import run_module_suite, assert_raises, \
         assert_almost_equal, assert_array_almost_equal, assert_equal, \
         assert_, assert_allclose, assert_warns
 from scipy.special import sinc
@@ -36,7 +36,7 @@ def test_kaiserord():
     assert_equal((numtaps, beta), (2, 0.0))
 
 
-class TestFirwin(TestCase):
+class TestFirwin(object):
 
     def check_response(self, h, expected_response, tol=.05):
         N = len(h)
@@ -125,7 +125,7 @@ class TestFirwin(TestCase):
             self.check_response(hs, [expected_response], 1e-12)
 
 
-class TestFirWinMore(TestCase):
+class TestFirWinMore(object):
     """Different author, different style, different tests..."""
 
     def test_lowpass(self):
@@ -240,7 +240,7 @@ class TestFirWinMore(TestCase):
         assert_raises(ValueError, firwin, 40, [.25, 0.5])
 
 
-class TestFirwin2(TestCase):
+class TestFirwin2(object):
 
     def test_invalid_args(self):
         # `freq` and `gain` have different lengths.
@@ -357,7 +357,7 @@ class TestFirwin2(TestCase):
         assert_array_almost_equal(taps1, taps2)
 
 
-class TestRemez(TestCase):
+class TestRemez(object):
 
     def test_bad_args(self):
         assert_raises(ValueError, remez, 11, [0.1, 0.4], [1], type='pooka')
@@ -410,7 +410,7 @@ class TestRemez(TestCase):
         assert_allclose(remez(21, [0, 0.8, 0.9, 1], [0, 1], Hz=2.), h)
 
 
-class TestFirls(TestCase):
+class TestFirls(object):
 
     def test_bad_args(self):
         # even numtaps
@@ -497,7 +497,7 @@ class TestFirls(TestCase):
         assert_allclose(taps, known_taps)
 
 
-class TestMinimumPhase(TestCase):
+class TestMinimumPhase(object):
 
     def test_bad_args(self):
         # not enough taps

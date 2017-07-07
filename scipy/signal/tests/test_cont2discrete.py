@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, \
+from numpy.testing import run_module_suite, \
                           assert_array_almost_equal, assert_almost_equal, \
                           assert_allclose
 
@@ -13,7 +13,7 @@ from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2, lti
 # March 29, 2011
 
 
-class TestC2D(TestCase):
+class TestC2D(object):
     def test_zoh(self):
         ac = np.eye(2)
         bc = 0.5 * np.ones((2, 1))
@@ -303,7 +303,7 @@ class TestC2D(TestCase):
         assert_allclose(den, den1, rtol=1e-13)
         assert_allclose(den, den2, rtol=1e-13)
 
-class TestC2dLti(TestCase):
+class TestC2dLti(object):
     def test_c2d_ss(self):
         # StateSpace
         A = np.array([[-0.3, 0.1], [0.2, -0.7]])
@@ -336,7 +336,7 @@ class TestC2dLti(TestCase):
         assert_allclose(sys.den, den_res, atol=0.02)
         assert_allclose(sys.num, num_res, atol=0.02)
 
-class TestC2dLti(TestCase):
+class TestC2dLti(object):
     def test_c2d_ss(self):
         # StateSpace
         A = np.array([[-0.3, 0.1], [0.2, -0.7]])

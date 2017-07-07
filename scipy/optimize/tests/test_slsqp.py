@@ -3,7 +3,7 @@ Unit test for SLSQP optimization.
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (assert_, assert_array_almost_equal, TestCase,
+from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal, run_module_suite,
                            assert_raises)
 import numpy as np
@@ -26,7 +26,7 @@ class MyCallBack(object):
         self.ncalls += 1
 
 
-class TestSLSQP(TestCase):
+class TestSLSQP(object):
     """
     Test SLSQP algorithm using Example 14.4 from Numerical Methods for
     Engineers by Steven Chapra and Raymond Canale.

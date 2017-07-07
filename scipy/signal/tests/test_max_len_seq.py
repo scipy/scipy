@@ -1,14 +1,14 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (TestCase, assert_raises, run_module_suite,
+from numpy.testing import (assert_raises, run_module_suite,
                            assert_allclose, assert_array_equal)
 from numpy.fft import fft, ifft
 
 from scipy.signal import max_len_seq
 
 
-class TestMLS(TestCase):
+class TestMLS(object):
 
     def test_mls_inputs(self):
         # can't all be zero state

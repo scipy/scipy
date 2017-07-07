@@ -5,7 +5,7 @@ import warnings
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_raises, assert_array_equal,
-        dec, TestCase, run_module_suite, assert_allclose)
+        dec, run_module_suite, assert_allclose)
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
@@ -27,7 +27,7 @@ from scipy.integrate import nquad
 from scipy.special import binom
 
 
-class TestInterp2D(TestCase):
+class TestInterp2D(object):
     def test_interp2d(self):
         y, x = mgrid[0:2:20j, 0:pi:21j]
         z = sin(x+0.5*y)
@@ -655,7 +655,7 @@ class TestInterp1D(object):
                 assert_equal(out.shape, outn.shape)
 
 
-class TestLagrange(TestCase):
+class TestLagrange(object):
 
     def test_lagrange(self):
         p = poly1d([5,2,1,4,3])
@@ -665,7 +665,7 @@ class TestLagrange(TestCase):
         assert_array_almost_equal(p.coeffs,pl.coeffs)
 
 
-class TestAkima1DInterpolator(TestCase):
+class TestAkima1DInterpolator(object):
     def test_eval(self):
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
@@ -744,7 +744,7 @@ class TestAkima1DInterpolator(TestCase):
             raise
 
 
-class TestPPolyCommon(TestCase):
+class TestPPolyCommon(object):
     # test basic functionality for PPoly and BPoly
     def test_sort_check(self):
         c = np.array([[1, 4], [2, 5], [3, 6]])
@@ -887,7 +887,7 @@ class TestPPolyCommon(TestCase):
                 assert_raises(ValueError, cls, **dict(c=c, x=x, axis=axis))
 
 
-class TestPolySubclassing(TestCase):
+class TestPolySubclassing(object):
     class P(PPoly):
         pass
 
@@ -934,7 +934,7 @@ class TestPolySubclassing(TestCase):
         assert_equal(bp.__class__, self.B)
 
 
-class TestPPoly(TestCase):
+class TestPPoly(object):
     def test_simple(self):
         c = np.array([[1, 4], [2, 5], [3, 6]])
         x = np.array([0, 0.5, 1])
@@ -1395,7 +1395,7 @@ class TestPPoly(TestCase):
                 assert_allclose(pp.roots(), [1, -1])
 
 
-class TestBPoly(TestCase):
+class TestBPoly(object):
     def test_simple(self):
         x = [0, 1]
         c = [[3]]
@@ -1525,7 +1525,7 @@ class TestBPoly(TestCase):
                 assert_(not np.isnan(bp_d([-0.1, 2.1])).any())
 
 
-class TestBPolyCalculus(TestCase):
+class TestBPolyCalculus(object):
     def test_derivative(self):
         x = [0, 1, 3]
         c = [[3, 0], [0, 0], [0, 2]]
@@ -1680,7 +1680,7 @@ class TestBPolyCalculus(TestCase):
                         atol=1e-12, rtol=1e-12)
 
 
-class TestPolyConversions(TestCase):
+class TestPolyConversions(object):
     def test_bp_from_pp(self):
         x = [0, 1, 3]
         c = [[3, 2], [1, 8], [4, 3]]
@@ -1717,7 +1717,7 @@ class TestPolyConversions(TestCase):
         assert_allclose(bp(xp), bp1(xp))
 
 
-class TestBPolyFromDerivatives(TestCase):
+class TestBPolyFromDerivatives(object):
     def test_make_poly_1(self):
         c1 = BPoly._construct_from_derivatives(0, 1, [2], [3])
         assert_allclose(c1, [2., 3.])
@@ -1880,7 +1880,7 @@ class TestBPolyFromDerivatives(TestCase):
         orders = 1
 
 
-class TestPpform(TestCase):
+class TestPpform(object):
     def test_shape(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
@@ -2279,7 +2279,7 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
     return out
 
 
-class TestRegularGridInterpolator(TestCase):
+class TestRegularGridInterpolator(object):
     def _get_sample_4d(self):
         # create a 4d grid of 3 points in each dimension
         points = [(0., .5, 1.)] * 4
@@ -2524,7 +2524,7 @@ class MyValue(object):
         raise RuntimeError("No array representation")
 
 
-class TestInterpN(TestCase):
+class TestInterpN(object):
     def _sample_2d_data(self):
         x = np.arange(1, 6)
         x = np.array([.5, 2., 3., 4., 5.5])

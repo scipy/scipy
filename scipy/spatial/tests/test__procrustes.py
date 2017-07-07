@@ -1,13 +1,13 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_allclose,
+from numpy.testing import (run_module_suite, assert_allclose,
                            assert_equal, assert_almost_equal, assert_raises)
 
 from scipy.spatial import procrustes
 
 
-class ProcrustesTests(TestCase):
+class TestProcrustes(object):
     def setUp(self):
         """creates inputs"""
         # an L

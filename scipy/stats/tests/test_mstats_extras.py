@@ -15,15 +15,11 @@ import numpy.ma as ma
 import scipy.stats.mstats as ms
 #import scipy.stats.mmorestats as mms
 
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import run_module_suite, assert_equal, \
     assert_almost_equal, assert_
 
 
-class TestMisc(TestCase):
-
-    def __init__(self, *args, **kwargs):
-        TestCase.__init__(self, *args, **kwargs)
-
+class TestMisc(object):
     def test_mjci(self):
         "Tests the Marits-Jarrett estimator"
         data = ma.array([77, 87, 88,114,151,210,219,246,253,262,
@@ -56,11 +52,7 @@ class TestMisc(TestCase):
 #..............................................................................
 
 
-class TestQuantiles(TestCase):
-
-    def __init__(self, *args, **kwargs):
-        TestCase.__init__(self, *args, **kwargs)
-
+class TestQuantiles(object):
     def test_hdquantiles(self):
         data = [0.706560797,0.727229578,0.990399276,0.927065621,0.158953014,
             0.887764025,0.239407086,0.349638551,0.972791145,0.149789972,

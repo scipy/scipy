@@ -13,7 +13,7 @@ import sys
 import warnings
 from collections import namedtuple
 
-from numpy.testing import (TestCase, assert_, assert_equal,
+from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_raises, run_module_suite, assert_allclose,
@@ -54,7 +54,7 @@ HUGE = array([1e+12,2e+12,3e+12,4e+12,5e+12,6e+12,7e+12,8e+12,9e+12], float)
 TINY = array([1e-12,2e-12,3e-12,4e-12,5e-12,6e-12,7e-12,8e-12,9e-12], float)
 ROUND = array([0.5,1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5], float)
 
-class TestTrimmedStats(TestCase):
+class TestTrimmedStats(object):
     # TODO: write these tests to handle missing values properly
     dprec = np.finfo(np.float64).precision
 
@@ -136,7 +136,7 @@ class TestTrimmedStats(TestCase):
                             significant=self.dprec)
 
 
-class TestCorrPearsonr(TestCase):
+class TestCorrPearsonr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
         All the correlations, except for ZERO and MISS, shoud be exactly 1.
@@ -273,7 +273,7 @@ class TestCorrPearsonr(TestCase):
         assert_approx_equal(prob, 1.0/3)
 
 
-class TestFisherExact(TestCase):
+class TestFisherExact(object):
     """Some tests to show that fisher_exact() works correctly.
 
     Note that in SciPy 0.9.0 this was not working well for large numbers due to
@@ -403,7 +403,7 @@ class TestFisherExact(TestCase):
         odds, pvalue = stats.fisher_exact([[1, 2], [9, 84419233]])
 
 
-class TestCorrSpearmanr(TestCase):
+class TestCorrSpearmanr(object):
     """ W.II.D. Compute a correlation matrix on all the variables.
 
         All the correlations, except for ZERO and MISS, shoud be exactly 1.
@@ -608,7 +608,7 @@ def test_spearmanr():
     y.append(3.0)
     assert_almost_equal(stats.spearmanr(x, y, nan_policy='omit')[0], 0.998)
 
-class TestCorrSpearmanrTies(TestCase):
+class TestCorrSpearmanrTies(object):
     """Some tests of tie-handling by the spearmanr function."""
 
     def test_tie1(self):
@@ -831,7 +831,7 @@ def test_weightedtau_vs_quadratic():
             np.random.shuffle(rank)
 
 
-class TestFindRepeats(TestCase):
+class TestFindRepeats(object):
 
     def test_basic(self):
         a = [1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 5]
@@ -847,7 +847,7 @@ class TestFindRepeats(TestCase):
             assert_array_equal(counts, [])
 
 
-class TestRegression(TestCase):
+class TestRegression(object):
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
         # The constant should be 99999990 and the regression coefficient should be 1.
@@ -1016,7 +1016,7 @@ def test_theilslopes():
     assert_almost_equal(lower, 3.71, decimal=2)
 
 
-class TestHistogram(TestCase):
+class TestHistogram(object):
     # Tests that histogram works as it should, and keeps old behaviour
     #
     # what is untested:
@@ -1185,7 +1185,7 @@ def test_relfreq():
     assert_array_almost_equal(relfreqs, relfreqs2)
 
 
-class TestGMean(TestCase):
+class TestGMean(object):
 
     def test_1D_list(self):
         a = (1,2,3,4)
@@ -1231,7 +1231,7 @@ class TestGMean(TestCase):
         assert_approx_equal(actual, 1e200, significant=13)
 
 
-class TestHMean(TestCase):
+class TestHMean(object):
     def test_1D_list(self):
         a = (1,2,3,4)
         actual = stats.hmean(a)
@@ -1272,7 +1272,7 @@ class TestHMean(TestCase):
         assert_array_almost_equal(actual1, desired1, decimal=14)
 
 
-class TestScoreatpercentile(TestCase):
+class TestScoreatpercentile(object):
     def setUp(self):
         self.a1 = [3, 4, 5, 10, -3, -5, 6]
         self.a2 = [3, -6, -2, 8, 7, 4, 2, 1]
@@ -1426,7 +1426,7 @@ class TestItemfreq(object):
         assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
 
-class TestMode(TestCase):
+class TestMode(object):
     def test_empty(self):
         vals, counts = stats.mode([])
         assert_equal(vals, np.array([]))
@@ -1538,7 +1538,7 @@ class TestMode(TestCase):
         assert_raises(ValueError, stats.mode, data1, nan_policy='foobar')
 
 
-class TestVariability(TestCase):
+class TestVariability(object):
 
     testcase = [1,2,3,4]
     scalar_testcase = 4.
@@ -1704,7 +1704,7 @@ def _check_warnings(warn_list, expected_type, expected_len):
         assert_(warn_.category is expected_type)
 
 
-class TestIQR(TestCase):
+class TestIQR(object):
 
     def test_basic(self):
         x = np.arange(8) * 0.5
@@ -2041,7 +2041,7 @@ class TestIQR(TestCase):
         assert_raises(ValueError, stats.iqr, x, scale='foobar')
 
 
-class TestMoments(TestCase):
+class TestMoments(object):
     """
         Comparison numbers are found using R v.1.5.1
         note that length(testcase) = 4
@@ -2204,7 +2204,7 @@ class TestMoments(TestCase):
                             stats.moment(self.testcase_moment_accuracy, 42))
 
 
-class TestThreshold(TestCase):
+class TestThreshold(object):
     def test_basic(self):
         a = [-1, 2, 3, 4, 5, -1, -2]
         with suppress_warnings() as sup:
@@ -2218,7 +2218,7 @@ class TestThreshold(TestCase):
                                [0, 2, 3, 4, 0, 0, 0])
 
 
-class TestStudentTest(TestCase):
+class TestStudentTest(object):
     X1 = np.array([-1, 0, 1])
     X2 = np.array([0, 1, 2])
     T1_0 = 0
@@ -3181,7 +3181,7 @@ def test_ttest_1samp_new():
         assert_equal(stats.ttest_1samp(anan, 0), ([0, np.nan], [1, np.nan]))
 
 
-class TestDescribe(TestCase):
+class TestDescribe(object):
     def test_describe_scalar(self):
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
@@ -3339,14 +3339,14 @@ def test_normalitytests():
     assert_raises(ValueError, stats.normaltest, x, nan_policy='foobar')
 
 
-class TestRankSums(TestCase):
+class TestRankSums(object):
     def test_ranksums_result_attributes(self):
         res = stats.ranksums(np.arange(5), np.arange(25))
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
 
-class TestJarqueBera(TestCase):
+class TestJarqueBera(object):
     def test_jarque_bera_stats(self):
         np.random.seed(987654321)
         x = np.random.normal(0, 1, 100000)
@@ -3386,7 +3386,7 @@ def test_kurtosistest_too_few_samples():
     assert_raises(ValueError, stats.kurtosistest, x)
 
 
-class TestMannWhitneyU(TestCase):
+class TestMannWhitneyU(object):
     X = [19.8958398126694, 19.5452691647182, 19.0577309166425, 21.716543054589,
          20.3269502208702, 20.0009273294025, 19.3440043632957, 20.4216806548105,
          19.0649894736528, 18.7808043120398, 19.3680942943298, 19.4848044069953,
@@ -3672,7 +3672,7 @@ class HarMeanTestCase:
         self.do(np.matrix(a), b, axis=1)
 
 
-class TestHarMean(HarMeanTestCase, TestCase):
+class TestHarMean(HarMeanTestCase):
     def do(self, a, b, axis=None, dtype=None):
         x = stats.hmean(a, axis=axis, dtype=dtype)
         assert_almost_equal(b, x)
@@ -3788,7 +3788,7 @@ class GeoMeanTestCase:
             np.seterr(**olderr)
 
 
-class TestGeoMean(GeoMeanTestCase, TestCase):
+class TestGeoMean(GeoMeanTestCase):
     def do(self, a, b, axis=None, dtype=None):
         # Note this doesn't test when axis is not specified
         x = stats.gmean(a, axis=axis, dtype=dtype)
@@ -4040,7 +4040,7 @@ class TestSigamClip(object):
         attributes = ('clipped', 'lower', 'upper')
         check_named_results(res, attributes)
 
-class TestFOneWay(TestCase):
+class TestFOneWay(object):
     def test_trivial(self):
         # A trivial test of stats.f_oneway, with F=0.
         F, p = stats.f_oneway([0,2], [0,2])
@@ -4098,7 +4098,7 @@ class TestFOneWay(TestCase):
                             err_msg='Failing testcase: %s' % test_case)
 
 
-class TestKruskal(TestCase):
+class TestKruskal(object):
     def test_simple(self):
         x = [1]
         y = [2]
@@ -4174,7 +4174,7 @@ class TestKruskal(TestCase):
         assert_raises(ValueError, stats.kruskal, x, x, nan_policy='foobar')
 
 
-class TestCombinePvalues(TestCase):
+class TestCombinePvalues(object):
 
     def test_fisher(self):
         # Example taken from http://en.wikipedia.org/wiki/Fisher's_exact_test#Example

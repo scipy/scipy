@@ -3,12 +3,12 @@ from __future__ import division, print_function, absolute_import
 # Scipy imports.
 import numpy as np
 from numpy import pi
-from numpy.testing import (assert_array_almost_equal, TestCase,
+from numpy.testing import (assert_array_almost_equal,
                            run_module_suite, assert_equal, assert_warns)
 from scipy.odr import Data, Model, ODR, RealData, OdrStop, OdrWarning
 
 
-class TestODR(TestCase):
+class TestODR(object):
 
     # Bad Data for 'x'
 

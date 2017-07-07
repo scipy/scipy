@@ -1,13 +1,13 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import run_module_suite, assert_equal, \
     assert_array_equal, dec
 
 from scipy.stats import rankdata, tiecorrect
 
 
-class TestTieCorrect(TestCase):
+class TestTieCorrect(object):
 
     def test_empty(self):
         """An empty array requires no correction, should return 1.0."""
@@ -73,7 +73,7 @@ class TestTieCorrect(TestCase):
         assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
 
 
-class TestRankData(TestCase):
+class TestRankData(object):
 
     def test_empty(self):
         """stats.rankdata([]) should return an empty array."""

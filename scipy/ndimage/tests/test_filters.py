@@ -6,7 +6,7 @@ import numpy as np
 
 from numpy.testing import (assert_equal, assert_raises, assert_allclose,
                            assert_array_equal, assert_almost_equal,
-                           TestCase, run_module_suite)
+                           run_module_suite)
 
 import scipy.ndimage as sndi
 from scipy.ndimage.filters import _gaussian_kernel1d
@@ -301,7 +301,7 @@ def test_gaussian_truncate():
     assert_equal(n, 15)
 
 
-class TestThreading(TestCase):
+class TestThreading(object):
     def check_func_thread(self, n, fun, args, out):
         from threading import Thread
         thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]}) for x in range(n)]

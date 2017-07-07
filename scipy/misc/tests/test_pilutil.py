@@ -7,7 +7,7 @@ import numpy as np
 import glob
 
 from numpy.testing import (assert_equal, dec, decorate_methods,
-                           TestCase, run_module_suite, assert_allclose,
+                           run_module_suite, assert_allclose,
                            assert_array_equal, assert_raises)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import misc
@@ -27,7 +27,7 @@ _pilskip = dec.skipif(not _have_PIL, 'Need to import PIL for this test')
 datapath = os.path.dirname(__file__)
 
 
-class TestPILUtil(TestCase):
+class TestPILUtil(object):
     def test_imresize(self):
         im = np.random.random((10, 20))
         for T in np.sctypes['float'] + [float]:

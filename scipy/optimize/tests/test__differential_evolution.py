@@ -6,12 +6,12 @@ from scipy.optimize._differentialevolution import DifferentialEvolutionSolver
 from scipy.optimize import differential_evolution
 import numpy as np
 from scipy.optimize import rosen
-from numpy.testing import (assert_equal, TestCase, assert_allclose,
+from numpy.testing import (assert_equal, assert_allclose,
                            run_module_suite, assert_almost_equal,
                            assert_string_equal, assert_raises, assert_)
 
 
-class TestDifferentialEvolutionSolver(TestCase):
+class TestDifferentialEvolutionSolver(object):
 
     def setUp(self):
         self.old_seterr = np.seterr(invalid='raise')

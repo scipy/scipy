@@ -2,19 +2,18 @@
 """
 from __future__ import division, print_function, absolute_import
 
-# Unit Test
-import unittest
 import warnings
 
 from numpy import arange, allclose, ones, isnan
 import numpy as np
+from numpy.testing import run_module_suite
 
 # functionality to be tested
 from scipy.interpolate.interpolate_wrapper import (linear, logarithmic,
     block_average_above, nearest)
 
 
-class Test(unittest.TestCase):
+class Test(object):
 
     def assertAllclose(self, x, y, rtol=1.0e-5):
         for i, xi in enumerate(x):
@@ -82,5 +81,5 @@ class Test(unittest.TestCase):
         for test_name in test_list:
             exec("self.%s()" % test_name)
 
-if __name__ == '__main__':
-    unittest.main()
+if __name__ == "__main__":
+    run_module_suite()

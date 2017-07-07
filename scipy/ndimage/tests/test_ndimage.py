@@ -33,7 +33,6 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import math
 import sys
-from unittest import expectedFailure
 
 import numpy
 from numpy import fft

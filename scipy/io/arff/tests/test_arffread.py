@@ -12,7 +12,7 @@ else:
 
 import numpy as np
 
-from numpy.testing import (TestCase, assert_array_almost_equal,
+from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_equal, assert_,
                            assert_raises, dec, run_module_suite)
 
@@ -43,7 +43,7 @@ expect_missing['yop'] = expect_missing_raw[:, 0]
 expect_missing['yap'] = expect_missing_raw[:, 1]
 
 
-class DataTest(TestCase):
+class TestData(object):
     def test1(self):
         # Parsing trivial file with nothing.
         self._test(test4)
@@ -75,14 +75,14 @@ class DataTest(TestCase):
         assert_(repr(meta1) == repr(meta2))
 
 
-class MissingDataTest(TestCase):
+class TestMissingData(object):
     def test_missing(self):
         data, meta = loadarff(missing)
         for i in ['yop', 'yap']:
             assert_array_almost_equal(data[i], expect_missing[i])
 
 
-class NoDataTest(TestCase):
+class TestNoData(object):
     def test_nodata(self):
         # The file nodata.arff has no data in the @DATA section.
         # Reading it should result in an array with length 0.
@@ -97,7 +97,7 @@ class NoDataTest(TestCase):
         assert_equal(data.size, 0)
 
 
-class HeaderTest(TestCase):
+class TestHeader(object):
     def test_type_parsing(self):
         # Test parsing type of attribute from their value.
         ofile = open(test2)
@@ -177,7 +177,7 @@ class HeaderTest(TestCase):
         assert_(attrs[1][1] == 'DATE "yy-MM-dd HH:mm:ss z"')
 
 
-class DateAttributeTest(TestCase):
+class TestDateAttribute(object):
     def setUp(self):
         self.data, self.meta = loadarff(test7)
 

@@ -2,14 +2,14 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from numpy.testing import TestCase, assert_equal, assert_raises
+from numpy.testing import assert_equal, assert_raises
 
 from scipy.io.harwell_boeing._fortran_format_parser import \
         FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat, \
         number_digits
 
 
-class TestFortranFormatParser(TestCase):
+class TestFortranFormatParser(object):
     def setUp(self):
         self.parser = FortranFormatParser()
 
@@ -44,7 +44,7 @@ class TestFortranFormatParser(TestCase):
         _test_invalid("(E4.E3)")
 
 
-class TestIntFormat(TestCase):
+class TestIntFormat(object):
     def test_to_fortran(self):
         f = [IntFormat(10), IntFormat(12, 10), IntFormat(12, 10, 3)]
         res = ["(I10)", "(I12.10)", "(3I12.10)"]
@@ -60,7 +60,7 @@ class TestIntFormat(TestCase):
             assert_equal(IntFormat.from_number(i).__dict__, j.__dict__)
 
 
-class TestExpFormat(TestCase):
+class TestExpFormat(object):
     def test_to_fortran(self):
         f = [ExpFormat(10, 5), ExpFormat(12, 10), ExpFormat(12, 10, min=3),
              ExpFormat(10, 5, repeat=3)]

@@ -6,7 +6,7 @@ import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    TestCase, run_module_suite, assert_allclose, assert_equal, assert_,
+    run_module_suite, assert_allclose, assert_equal, assert_,
     assert_raises)
 
 from scipy.interpolate import (
@@ -143,7 +143,7 @@ def test_complex():
         yield _check_complex, ip
 
 
-class CheckKrogh(TestCase):
+class TestKrogh(object):
     def setUp(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
@@ -281,7 +281,7 @@ class CheckKrogh(TestCase):
         assert_allclose(cmplx, cmplx2, atol=1e-15)
 
 
-class CheckTaylor(TestCase):
+class TestTaylor(object):
     def test_exponential(self):
         degree = 5
         p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
@@ -291,7 +291,7 @@ class CheckTaylor(TestCase):
         assert_almost_equal(p(0),0)
 
 
-class CheckBarycentric(TestCase):
+class TestBarycentric(object):
     def setUp(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
@@ -350,7 +350,7 @@ class CheckBarycentric(TestCase):
         assert_almost_equal(P(self.test_xs),barycentric_interpolate(self.xs,self.ys,self.test_xs))
 
 
-class TestPCHIP(TestCase):
+class TestPCHIP(object):
     def _make_random(self, npts=20):
         np.random.seed(1234)
         xi = np.sort(np.random.random(npts))

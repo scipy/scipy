@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_array_equal,
-                           assert_raises, run_module_suite, TestCase)
+                           assert_raises, run_module_suite)
 
 import scipy.ndimage as ndimage
 
@@ -20,7 +20,7 @@ types = [np.int8, np.uint8, np.int16,
 np.mod(1., 1)  # Silence fmod bug on win-amd64. See #1408 and #1238.
 
 
-class Test_measurements_stats(TestCase):
+class Test_measurements_stats(object):
     """ndimage.measurements._stats() is a utility function used by other functions."""
 
     def test_a(self):
@@ -87,7 +87,7 @@ class Test_measurements_stats(TestCase):
             assert_array_equal(centers, [0.5, 8.0])
 
 
-class Test_measurements_select(TestCase):
+class Test_measurements_select(object):
     """ndimage.measurements._select() is a utility function used by other functions."""
 
     def test_basic(self):

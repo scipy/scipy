@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
+from numpy.testing import (run_module_suite, assert_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_allclose, assert_, assert_raises,
                            assert_almost_equal)
@@ -15,7 +15,7 @@ from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           dfreqresp, dbode, BadCoefficients)
 
 
-class TestDLTI(TestCase):
+class TestDLTI(object):
 
     def test_dlsim(self):
 
@@ -397,7 +397,7 @@ class TestZerosPolesGain(object):
         assert_(s.to_zpk() is not s)
 
 
-class Test_dfreqresp(TestCase):
+class Test_dfreqresp(object):
 
     def test_manual(self):
         # Test dfreqresp() real part calculation (manual sanity check).

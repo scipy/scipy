@@ -13,7 +13,7 @@ import warnings
 import numpy as np
 from numpy import array, eye, exp, random
 from numpy.linalg import matrix_power
-from numpy.testing import (TestCase, run_module_suite,
+from numpy.testing import (run_module_suite,
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
         assert_array_almost_equal_nulp)
 
@@ -71,7 +71,7 @@ def test_onenorm_matrix_power_nnm():
             assert_allclose(observed, expected)
 
 
-class TestExpM(TestCase):
+class TestExpM(object):
     def test_zero_ndarray(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
@@ -491,7 +491,7 @@ class TestExpM(TestCase):
         assert_allclose(actual, desired)
 
 
-class TestOperators(TestCase):
+class TestOperators(object):
 
     def test_product_operator(self):
         random.seed(1234)

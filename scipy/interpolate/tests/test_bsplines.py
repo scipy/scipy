@@ -3,7 +3,7 @@ from __future__ import division, absolute_import, print_function
 import warnings
 
 import numpy as np
-from numpy.testing import (run_module_suite, TestCase, assert_equal,
+from numpy.testing import (run_module_suite, assert_equal,
         assert_allclose, assert_raises, assert_)
 from numpy.testing.decorators import knownfailureif
 
@@ -16,7 +16,7 @@ from scipy.interpolate._bsplines import _not_a_knot, _augknt
 import scipy.interpolate._fitpack_impl as _impl
 
 
-class TestBSpline(TestCase):
+class TestBSpline(object):
 
     def test_ctor(self):
         # knots should be an ordered 1D array of finite real numbers
@@ -687,7 +687,7 @@ class TestInterop(object):
         assert_(isinstance(bn2, BSpline))
         assert_(isinstance(tck_n2, tuple))   # back-compat: tck in, tck out
 
-class TestInterp(TestCase):
+class TestInterp(object):
     #
     # Test basic ways of constructing interpolating splines.
     #
@@ -987,7 +987,7 @@ def make_lsq_full_matrix(x, y, t, k=3):
     return c, (A, Y)
 
 
-class TestLSQ(TestCase):
+class TestLSQ(object):
     #
     # Test make_lsq_spline
     #

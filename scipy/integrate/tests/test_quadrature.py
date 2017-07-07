@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 import numpy as np
 from numpy import cos, sin, pi
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import run_module_suite, assert_equal, \
     assert_almost_equal, assert_allclose, assert_
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
@@ -29,7 +29,7 @@ class TestFixedQuad(object):
         assert_allclose(got, expected, rtol=1e-12)
 
 
-class TestQuadrature(TestCase):
+class TestQuadrature(object):
     def quad(self, x, a, b, args):
         raise NotImplementedError
 
@@ -158,7 +158,7 @@ class TestQuadrature(TestCase):
         assert_equal(simps(y, x=x, even='last'), 14)
 
 
-class TestCumtrapz(TestCase):
+class TestCumtrapz(object):
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
         y = x

@@ -13,7 +13,7 @@ Run tests if linalg is not installed:
 """
 
 import numpy as np
-from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_raises, assert_, assert_allclose,
                            run_module_suite, dec)
@@ -117,7 +117,7 @@ def random_rot(dim):
     return H
 
 
-class TestEigVals(TestCase):
+class TestEigVals(object):
 
     def test_simple(self):
         a = [[1,2,3],[1,2,3],[2,5,6]]
@@ -360,11 +360,8 @@ class TestEig(object):
         assert_raises(ValueError, eig, B, A)
 
 
-class TestEigBanded(TestCase):
-
-    def __init__(self, *args):
-        TestCase.__init__(self, *args)
-
+class TestEigBanded(object):
+    def setup(self):
         self.create_bandmat()
 
     def create_bandmat(self):
@@ -726,11 +723,8 @@ def test_eigh_integer():
     w,z = eigh(a,b)
 
 
-class TestLU(TestCase):
-
-    def __init__(self, *args, **kw):
-        TestCase.__init__(self, *args, **kw)
-
+class TestLU(object):
+    def setup(self):
         self.a = array([[1,2,3],[1,2,3],[2,5,6]])
         self.ca = array([[1,2,3],[1,2,3],[2,5j,6]])
         # Those matrices are more robust to detect problems in permutation
@@ -823,7 +817,7 @@ class TestLUSingle(TestLU):
         self.cmed = self.vrect.astype(complex64)
 
 
-class TestLUSolve(TestCase):
+class TestLUSolve(object):
     def setUp(self):
         seed(1234)
 
@@ -852,7 +846,7 @@ class TestLUSolve(TestCase):
         assert_array_almost_equal(x1,x2)
 
 
-class TestSVD_GESDD(TestCase):
+class TestSVD_GESDD(object):
     def setUp(self):
         self.lapack_driver = 'gesdd'
         seed(1234)
@@ -995,7 +989,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
         seed(1234)
 
 
-class TestSVDVals(TestCase):
+class TestSVDVals(object):
 
     def test_empty(self):
         for a in [[]], np.empty((2, 0)), np.ones((0, 3)):
@@ -1052,13 +1046,13 @@ class TestSVDVals(TestCase):
         svdvals(a)
 
 
-class TestDiagSVD(TestCase):
+class TestDiagSVD(object):
 
     def test_simple(self):
         assert_array_almost_equal(diagsvd([1,0,0],3,3),[[1,0,0],[0,0,0],[0,0,0]])
 
 
-class TestQR(TestCase):
+class TestQR(object):
 
     def setUp(self):
         seed(1234)
@@ -1599,7 +1593,7 @@ class TestQR(TestCase):
         assert_raises(Exception, qr, (a,), {'lwork':0})
         assert_raises(Exception, qr, (a,), {'lwork':2})
 
-class TestRQ(TestCase):
+class TestRQ(object):
 
     def setUp(self):
         seed(1234)
@@ -1707,7 +1701,7 @@ transp = transpose
 any = sometrue
 
 
-class TestSchur(TestCase):
+class TestSchur(object):
 
     def test_simple(self):
         a = [[8,12,3],[2,9,3],[10,3,6]]
@@ -1798,7 +1792,7 @@ class TestSchur(TestCase):
         assert_array_almost_equal(dot(dot(z,t),transp(conj(z))),a)
 
 
-class TestHessenberg(TestCase):
+class TestHessenberg(object):
 
     def test_simple(self):
         a = [[-149, -50,-154],
@@ -1875,7 +1869,7 @@ class TestHessenberg(TestCase):
         assert_array_almost_equal(h2, b)
 
 
-class TestQZ(TestCase):
+class TestQZ(object):
     def setUp(self):
         seed(12345)
 
@@ -2058,7 +2052,7 @@ def _make_pos(X):
     return np.sign(X)*X
 
 
-class TestOrdQZ(TestCase):
+class TestOrdQZ(object):
     @classmethod
     def setupClass(cls):
         # http://www.nag.com/lapack-ex/node119.html
@@ -2265,7 +2259,7 @@ class TestOrdQZ(TestCase):
                 assert_allclose(expected_eigvals, x)
 
 
-class TestOrdQZWorkspaceSize(TestCase):
+class TestOrdQZWorkspaceSize(object):
 
     def setUp(self):
         seed(12345)
@@ -2300,7 +2294,7 @@ class TestOrdQZWorkspaceSize(TestCase):
             [S,T,alpha,beta,U,V] = ordqz(A,B,sort='ouc')
 
 
-class TestDatacopied(TestCase):
+class TestDatacopied(object):
 
     def test_datacopied(self):
         from scipy.linalg.decomp import _datacopied

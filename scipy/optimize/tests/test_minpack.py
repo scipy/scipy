@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, TestCase, run_module_suite, assert_raises,
+        assert_array_almost_equal, run_module_suite, assert_raises,
         assert_allclose)
 import numpy as np
 from numpy import array, float64, matrix
@@ -100,7 +100,7 @@ def pressure_network_fun_and_grad(flow_rates, Qtot, k):
             pressure_network_jacobian(flow_rates, Qtot, k))
 
 
-class TestFSolve(TestCase):
+class TestFSolve(object):
     def test_pressure_network_no_gradient(self):
         # fsolve without gradient, equal pipes -> equal flows.
         k = np.ones(4) * 0.5
@@ -151,7 +151,7 @@ class TestFSolve(TestCase):
         assert_allclose(func(p), [0, 0], atol=1e-3)
 
 
-class TestRootHybr(TestCase):
+class TestRootHybr(object):
     def test_pressure_network_no_gradient(self):
         # root/hybr without gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
@@ -183,7 +183,7 @@ class TestRootHybr(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
-class TestRootLM(TestCase):
+class TestRootLM(object):
     def test_pressure_network_no_gradient(self):
         # root/lm without gradient, equal pipes -> equal flows
         k = np.ones(4) * 0.5
@@ -194,7 +194,7 @@ class TestRootLM(TestCase):
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
-class TestLeastSq(TestCase):
+class TestLeastSq(object):
     def setUp(self):
         x = np.linspace(0, 10, 40)
         a,b,c = 3.1, 42, -304.2
@@ -275,7 +275,7 @@ class TestLeastSq(TestCase):
         assert_((func(p1,x,y)**2).sum() < 1e-4 * (func(p0,x,y)**2).sum())
 
 
-class TestCurveFit(TestCase):
+class TestCurveFit(object):
     def setUp(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
         self.x = array([1.0, 2.0, 3.0, 4.0])
@@ -589,7 +589,7 @@ class TestCurveFit(TestCase):
                 assert_allclose(pcov1, pcov2, atol=1e-14)
 
 
-class TestFixedPoint(TestCase):
+class TestFixedPoint(object):
 
     def test_scalar_trivial(self):
         # f(x) = 2x; fixed point should be x=0

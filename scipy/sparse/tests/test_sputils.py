@@ -3,12 +3,12 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
+from numpy.testing import (run_module_suite, assert_equal,
                            assert_raises)
 from scipy.sparse import sputils
 
 
-class TestSparseUtils(TestCase):
+class TestSparseUtils(object):
 
     def test_upcast(self):
         assert_equal(sputils.upcast('intc'), np.intc)

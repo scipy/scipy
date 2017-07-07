@@ -4,7 +4,7 @@ import sys
 import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_, TestCase, run_module_suite, dec,
+from numpy.testing import (assert_, run_module_suite, dec,
         assert_allclose, assert_array_less, assert_almost_equal, assert_raises)
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy._lib.six import xrange
@@ -24,7 +24,7 @@ def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
         assert_array_less(err, errTol)
 
 
-class TestCtypesQuad(TestCase):
+class TestCtypesQuad(object):
     def setUp(self):
         if sys.platform == 'win32':
             if sys.version_info < (3, 5):
@@ -118,7 +118,7 @@ class TestCtypesQuad(TestCase):
                 assert_raises(ValueError, quad, func, 0, pi)
 
 
-class TestMultivariateCtypesQuad(TestCase):
+class TestMultivariateCtypesQuad(object):
     def setUp(self):
         self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
@@ -162,7 +162,7 @@ class TestMultivariateCtypesQuad(TestCase):
         assert_(fast < 0.5*slow, (fast, slow))
 
 
-class TestQuad(TestCase):
+class TestQuad(object):
     def test_typical(self):
         # 1) Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
@@ -271,7 +271,7 @@ class TestQuad(TestCase):
                      2*8/3.0 * (b**4.0 - a**4.0))
 
 
-class TestNQuad(TestCase):
+class TestNQuad(object):
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +

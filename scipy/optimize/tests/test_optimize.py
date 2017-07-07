@@ -16,7 +16,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
-                           assert_, TestCase, run_module_suite, dec,
+                           assert_, run_module_suite, dec,
                            assert_almost_equal, assert_warns,
                            assert_array_less)
 
@@ -821,7 +821,7 @@ class TestOptimizeSimple(CheckOptimize):
                 pass
 
 
-class TestLBFGSBBounds(TestCase):
+class TestLBFGSBBounds(object):
     def setUp(self):
         self.bounds = ((1, None), (None, None))
         self.solution = (1, 0)
@@ -857,7 +857,7 @@ class TestLBFGSBBounds(TestCase):
         assert_allclose(res.x, self.solution, atol=1e-6)
 
 
-class TestOptimizeScalar(TestCase):
+class TestOptimizeScalar(object):
     def setUp(self):
         self.solution = 1.5
 
@@ -1049,7 +1049,7 @@ class TestNewtonCg(object):
         assert_allclose(sol.fun, himmelblau_min, atol=1e-4)
 
 
-class TestRosen(TestCase):
+class TestRosen(object):
 
     def test_hess(self):
         # Compare rosen_hess(x) times p with rosen_hess_prod(x,p).  See gh-1775
@@ -1108,7 +1108,7 @@ def test_minimize_multiple_constraints():
     assert_allclose(res.x, [125, 0, 0], atol=1e-10)
 
 
-class TestOptimizeResultAttributes(TestCase):
+class TestOptimizeResultAttributes(object):
     # Test that all minimizers return an OptimizeResult containing
     # all the OptimizeResult attributes
     def setUp(self):
@@ -1182,7 +1182,7 @@ class TestBrute:
         assert_allclose(resbrute[1], self.func(self.solution, *self.params),
                         atol=1e-3)
 
-class TestIterationLimits(TestCase):
+class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested
     # number of iterations or evaluations. And that it does not succeed
     # by exceeding the limits.

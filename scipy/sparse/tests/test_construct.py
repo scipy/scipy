@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array, matrix
-from numpy.testing import (TestCase, run_module_suite, assert_equal, assert_,
+from numpy.testing import (run_module_suite, assert_equal, assert_,
         assert_array_equal, assert_raises, assert_array_almost_equal_nulp)
 from scipy._lib._numpy_compat import assert_raises_regex
 
@@ -29,7 +29,7 @@ def _sprandn(m, n, density=0.01, format="coo", dtype=None, random_state=None):
                             random_state, data_rvs)
 
 
-class TestConstructUtils(TestCase):
+class TestConstructUtils(object):
     def test_spdiags(self):
         diags1 = array([[1, 2, 3, 4, 5]])
         diags2 = array([[1, 2, 3, 4, 5],
