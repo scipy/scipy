@@ -120,6 +120,7 @@ from scipy._lib.six import xrange
 from . import _distance_wrap
 from . import _hausdorff
 from ..linalg import norm
+from ..sparse import issparse
 
 def _copy_array_if_base_present(a):
     """
@@ -1365,8 +1366,9 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
     # with a more succinct, verifiable, but less efficient implementation.
 
 
-    if scipy.sparse.issparse(X):
-         raise TypeError("pdist does not support sparse matrix input, use skearn's pairwise_distances instead")
+    if issparse(X):
+         raise TypeError("pdist does not support sparse matrix input," + \
+                         " use skearn's pairwise_distances instead.")
 
 
     X = np.asarray(X, order='c')
