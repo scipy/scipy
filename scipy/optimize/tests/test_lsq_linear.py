@@ -16,7 +16,7 @@ b = np.array([0.074, 1.014, -0.383])
 
 
 class BaseMixin(object):
-    def __init__(self):
+    def setup(self):
         self.rnd = np.random.RandomState(0)
 
     def test_dense_no_bounds(self):

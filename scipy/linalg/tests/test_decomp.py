@@ -799,8 +799,8 @@ class TestLU(object):
 
 class TestLUSingle(TestLU):
     """LU testers for single precision, real and double"""
-    def __init__(self, *args, **kw):
-        TestLU.__init__(self, *args, **kw)
+    def setup(self):
+        TestLU.setup(self)
 
         self.a = self.a.astype(float32)
         self.ca = self.ca.astype(complex64)

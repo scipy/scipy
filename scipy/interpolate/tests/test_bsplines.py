@@ -494,7 +494,7 @@ class TestInterop(object):
     #
     # Test that FITPACK-based spl* functions can deal with BSpline objects
     #
-    def __init__(self):
+    def setup(self):
         xx = np.linspace(0, 4.*np.pi, 41)
         yy = np.cos(xx)
         b = make_interp_spline(xx, yy)
