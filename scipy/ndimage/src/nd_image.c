@@ -182,9 +182,8 @@ NA_ByteOrder(void)
 /* ignores bytestride */
 static PyArrayObject *
 NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
-                    PyObject *bufferObject, npy_intp byteoffset,
-                    npy_intp bytestride, int byteorder, int aligned,
-                    int writeable)
+                    npy_intp byteoffset, npy_intp bytestride, int byteorder,
+                    int aligned, int writeable)
 {
     PyArrayObject *self = NULL;
     PyArray_Descr *dtype;
@@ -208,31 +207,9 @@ NA_NewAllFromBuffer(int ndim, npy_intp *shape, enum NPY_TYPES type,
         dtype = temp;
     }
 
-    if (bufferObject == Py_None || bufferObject == NULL) {
-        self = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type, dtype,
-                                                     ndim, shape, NULL, NULL,
-                                                     0, NULL);
-    }
-    else {
-        npy_intp size = 1;
-        int i;
-        PyArrayObject *newself;
-        PyArray_Dims newdims;
-        for(i=0; i<ndim; i++) {
-            size *= shape[i];
-        }
-        self = (PyArrayObject *)PyArray_FromBuffer(bufferObject, dtype,
-                                                   size, byteoffset);
-        if (self == NULL){
-            return self;
-        }
-        newdims.len = ndim;
-        newdims.ptr = shape;
-        newself = (PyArrayObject *)PyArray_Newshape(self, &newdims,
-                                                    NPY_CORDER);
-        Py_DECREF(self);
-        self = newself;
-    }
+    self = (PyArrayObject *)PyArray_NewFromDescr(&PyArray_Type, dtype,
+                                                 ndim, shape, NULL, NULL,
+                                                 0, NULL);
 
     return self;
 }
@@ -242,9 +219,9 @@ NA_NewAll(int ndim, npy_intp *shape, enum NPY_TYPES type,
           void *buffer, npy_intp byteoffset, npy_intp bytestride,
           int byteorder, int aligned, int writeable)
 {
-    PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type, Py_None,
-                                                byteoffset, bytestride,
-                                                byteorder, aligned, writeable);
+    PyArrayObject *result = NA_NewAllFromBuffer(ndim, shape, type, byteoffset,
+                                                bytestride, byteorder,
+                                                aligned, writeable);
 
     if (result) {
         if (!PyArray_Check((PyObject *) result)) {
