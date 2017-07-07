@@ -1368,7 +1368,7 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
 
     if issparse(X):
          raise TypeError("pdist does not support sparse matrix input," + \
-                         " use skearn's pairwise_distances instead.")
+                         " use sklearn's pairwise_distances instead.")
 
 
     X = np.asarray(X, order='c')
