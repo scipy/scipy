@@ -2,7 +2,7 @@
 Unit tests for TNC optimization routine from tnc.py
 """
 
-from numpy.testing import (assert_allclose, assert_equal, TestCase,
+from numpy.testing import (assert_allclose, assert_equal,
                            run_module_suite)
 
 from scipy import optimize
@@ -10,7 +10,7 @@ import numpy as np
 from math import pow
 
 
-class TestTnc(TestCase):
+class TestTnc(object):
     """TNC non-linear optimization.
 
     These tests are taken from Prof. K. Schittkowski's test examples

@@ -7,7 +7,7 @@ import warnings
 
 import numpy as np
 
-from numpy.testing import (TestCase, assert_equal, assert_array_equal,
+from numpy.testing import (assert_equal, assert_array_equal,
      assert_, assert_allclose, assert_raises, run_module_suite)
 
 from numpy import zeros, arange, array, abs, max, ones, eye, iscomplexobj
@@ -283,7 +283,7 @@ def _check_reentrancy(solver, is_reentrant):
 
 #------------------------------------------------------------------------------
 
-class TestQMR(TestCase):
+class TestQMR(object):
     def test_leftright_precond(self):
         """Check that QMR works with left and right preconditioners"""
 
@@ -325,7 +325,7 @@ class TestQMR(TestCase):
             assert_normclose(A*x, b, tol=1e-8)
 
 
-class TestGMRES(TestCase):
+class TestGMRES(object):
     def test_callback(self):
 
         def store_residual(r, rvec):

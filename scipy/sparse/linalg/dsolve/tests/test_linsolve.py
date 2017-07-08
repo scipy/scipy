@@ -6,7 +6,7 @@ import threading
 import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
-from numpy.testing import (TestCase, run_module_suite,
+from numpy.testing import (run_module_suite,
         assert_array_almost_equal, assert_raises, assert_almost_equal,
         assert_equal, assert_array_equal, assert_, assert_allclose)
 
@@ -35,7 +35,7 @@ def toarray(a):
         return a
 
 
-class TestLinsolve(TestCase):
+class TestLinsolve(object):
     def test_singular(self):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=MatrixRankWarning)
@@ -522,7 +522,7 @@ class TestSplu(object):
         assert_equal(len(oks), 20)
 
 
-class TestSpsolveTriangular(TestCase):
+class TestSpsolveTriangular(object):
 
     def test_singular(self):
         n = 5

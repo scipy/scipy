@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal, assert_,
-        decorators, TestCase, run_module_suite)
+        decorators, run_module_suite)
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg._onenormest import _onenormest_core, _algorithm_2_2
@@ -40,7 +40,7 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
         return MatrixProductOperator(self.B.T, self.A.T)
 
 
-class TestOnenormest(TestCase):
+class TestOnenormest(object):
 
     @decorators.slow
     @decorators.skipif(True, 'this test is annoyingly slow')
@@ -235,7 +235,7 @@ class TestOnenormest(TestCase):
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
 
-class TestAlgorithm_2_2(TestCase):
+class TestAlgorithm_2_2(object):
 
     def test_randn_inv(self):
         np.random.seed(1234)

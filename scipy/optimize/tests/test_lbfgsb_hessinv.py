@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_, TestCase, run_module_suite, assert_allclose
+from numpy.testing import assert_, run_module_suite, assert_allclose
 import scipy.linalg
 from scipy.optimize import minimize
 

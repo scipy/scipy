@@ -14,7 +14,7 @@ from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
 import numpy.linalg as linalg
 from numpy.random import random
 
-from numpy.testing import (TestCase, run_module_suite, assert_raises,
+from numpy.testing import (run_module_suite, assert_raises,
                            assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
                            assert_array_equal, dec)
@@ -59,7 +59,7 @@ def _eps_cast(dtyp):
     return np.finfo(dt).eps
 
 
-class TestSolveBanded(TestCase):
+class TestSolveBanded(object):
 
     def test_real(self):
         a = array([[1.0, 20, 0, 0],
@@ -198,7 +198,7 @@ class TestSolveBanded(TestCase):
         assert_array_almost_equal(dot(a, x), b)
 
 
-class TestSolveHBanded(TestCase):
+class TestSolveHBanded(object):
 
     def test_01_upper(self):
         # Solve
@@ -513,7 +513,7 @@ class TestSolveHBanded(TestCase):
         assert_array_almost_equal(x, [0.0, 1.0, 0.0, 0.0])
 
 
-class TestSolve(TestCase):
+class TestSolve(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -777,7 +777,7 @@ class TestSolve(TestCase):
                             err_msg=err_msg)
 
 
-class TestSolveTriangular(TestCase):
+class TestSolveTriangular(object):
 
     def test_simple(self):
         """
@@ -819,7 +819,7 @@ class TestSolveTriangular(TestCase):
         assert_array_almost_equal(sol, [1, 0])
 
 
-class TestInv(TestCase):
+class TestInv(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -862,7 +862,7 @@ class TestInv(TestCase):
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
 
 
-class TestDet(TestCase):
+class TestDet(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -909,7 +909,7 @@ def direct_lstsq(a, b, cmplx=0):
     return solve(a1, b1)
 
 
-class TestLstsq(TestCase):
+class TestLstsq(object):
 
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
 
@@ -1246,7 +1246,7 @@ class TestLstsq(TestCase):
                                           err_msg="driver: %s" % lapack_driver)
 
 
-class TestPinv(TestCase):
+class TestPinv(object):
 
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
@@ -1296,7 +1296,7 @@ class TestPinv(TestCase):
         assert_array_almost_equal(a_pinv, a_pinv2)
 
 
-class TestPinvSymmetric(TestCase):
+class TestPinvSymmetric(object):
 
     def test_simple_real(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
@@ -1462,7 +1462,7 @@ class TestOverwrite(object):
         assert_no_overwrite(pinvh, [(3, 3)])
 
 
-class TestSolveCirculant(TestCase):
+class TestSolveCirculant(object):
 
     def test_basic1(self):
         c = np.array([1, 2, 3, 5])
@@ -1547,7 +1547,7 @@ class TestSolveCirculant(TestCase):
         assert_allclose(x, y)
 
 
-class TestMatrix_Balance(TestCase):
+class TestMatrix_Balance(object):
 
     def test_string_arg(self):
         assert_raises(ValueError, matrix_balance, 'Some string for fail')

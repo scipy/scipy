@@ -8,7 +8,7 @@ import warnings
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (TestCase, run_module_suite, assert_array_equal,
+from numpy.testing import (run_module_suite, assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
     assert_raises, assert_, assert_allclose, assert_equal, dec, assert_warns)
 from scipy._lib._numpy_compat import suppress_warnings
@@ -36,7 +36,7 @@ g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
 
 
-class TestBayes_mvs(TestCase):
+class TestBayes_mvs(object):
     def test_basic(self):
         # Expected values in this test simply taken from the function.  For
         # some checks regarding correctness of implementation, see review in
@@ -67,7 +67,7 @@ class TestBayes_mvs(TestCase):
             check_named_results(i, attributes)
 
 
-class TestMvsdist(TestCase):
+class TestMvsdist(object):
     def test_basic(self):
         data = [6, 9, 12, 7, 8, 8, 13]
         mean, var, std = stats.mvsdist(data)
@@ -100,7 +100,7 @@ class TestMvsdist(TestCase):
             [x.mean() for x in stats.mvsdist([1, 2, 3, 4, 5])]
 
 
-class TestShapiro(TestCase):
+class TestShapiro(object):
     def test_basic(self):
         x1 = [0.11, 7.87, 4.61, 10.14, 7.95, 3.14, 0.46,
               4.43, 0.21, 4.75, 0.71, 1.52, 3.24,
@@ -168,7 +168,7 @@ class TestShapiro(TestCase):
         assert_almost_equal(pw, 1.0)
 
 
-class TestAnderson(TestCase):
+class TestAnderson(object):
     def test_normal(self):
         rs = RandomState(1234567890)
         x1 = rs.standard_exponential(size=50)
@@ -254,7 +254,7 @@ class TestAnderson(TestCase):
         assert_(A2 > crit2[-1])
 
 
-class TestAndersonKSamp(TestCase):
+class TestAndersonKSamp(object):
     def test_example1a(self):
         # Example data from Scholz & Stephens (1987), originally
         # published in Lehmann (1995, Nonparametrics, Statistical
@@ -388,7 +388,7 @@ class TestAndersonKSamp(TestCase):
         check_named_results(res, attributes)
 
 
-class TestAnsari(TestCase):
+class TestAnsari(object):
 
     def test_small(self):
         x = [1, 2, 3, 3, 4]
@@ -432,7 +432,7 @@ class TestAnsari(TestCase):
         check_named_results(res, attributes)
 
 
-class TestBartlett(TestCase):
+class TestBartlett(object):
 
     def test_data(self):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
@@ -455,7 +455,7 @@ class TestBartlett(TestCase):
         assert_equal((np.nan, np.nan), stats.bartlett(*args))
 
 
-class TestLevene(TestCase):
+class TestLevene(object):
 
     def test_data(self):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
@@ -518,7 +518,7 @@ class TestLevene(TestCase):
         check_named_results(res, attributes)
 
 
-class TestBinomP(TestCase):
+class TestBinomP(object):
 
     def test_data(self):
         pval = stats.binom_test(100, 250)
@@ -553,7 +553,7 @@ class TestBinomP(TestCase):
         assert_almost_equal(res, 0.0437479701823997)
 
 
-class TestFligner(TestCase):
+class TestFligner(object):
 
     def test_data(self):
         # numbers from R: fligner.test in package stats
@@ -614,7 +614,7 @@ class TestFligner(TestCase):
         assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
 
-class TestMood(TestCase):
+class TestMood(object):
     def test_mood(self):
         # numbers from R: mood.test in package stats
         x1 = np.arange(5)
@@ -717,7 +717,7 @@ class TestMood(TestCase):
         assert_raises(ValueError, stats.mood, [1], [])
 
 
-class TestProbplot(TestCase):
+class TestProbplot(object):
 
     def test_basic(self):
         np.random.seed(12345)
@@ -832,7 +832,7 @@ def test_wilcoxon_arg_type():
     _ = stats.wilcoxon(arr, zero_method="wilcox")
 
 
-class TestKstat(TestCase):
+class TestKstat(object):
     def test_moments_normal_distribution(self):
         np.random.seed(32149)
         data = np.random.randn(12345)
@@ -865,7 +865,7 @@ class TestKstat(TestCase):
             assert_raises(ValueError, stats.kstat, data, n=n)
 
 
-class TestKstatVar(TestCase):
+class TestKstatVar(object):
     def test_empty_input(self):
         assert_raises(ValueError, stats.kstatvar, [])
 
@@ -882,7 +882,7 @@ class TestKstatVar(TestCase):
         assert_raises(ValueError, stats.kstatvar, data, n=n)
 
 
-class TestPpccPlot(TestCase):
+class TestPpccPlot(object):
     def setUp(self):
         np.random.seed(7654321)
         self.x = stats.loggamma.rvs(5, size=500) + 5
@@ -938,7 +938,7 @@ class TestPpccPlot(TestCase):
         assert_allclose(ppcc, np.zeros(80, dtype=float))
 
 
-class TestPpccMax(TestCase):
+class TestPpccMax(object):
     def test_ppcc_max_bad_arg(self):
         # Raise ValueError when given an invalid distribution.
         data = [1]
@@ -981,7 +981,7 @@ class TestPpccMax(TestCase):
                             -0.71215366521264145, decimal=5)
 
 
-class TestBoxcox_llf(TestCase):
+class TestBoxcox_llf(object):
 
     def test_basic(self):
         np.random.seed(54321)
@@ -1014,7 +1014,7 @@ class TestBoxcox_llf(TestCase):
         assert_(np.isnan(stats.boxcox_llf(1, [])))
 
 
-class TestBoxcox(TestCase):
+class TestBoxcox(object):
 
     def test_fixed_lmbda(self):
         np.random.seed(12345)
@@ -1069,7 +1069,7 @@ class TestBoxcox(TestCase):
         assert_(stats.boxcox([]).shape == (0,))
 
 
-class TestBoxcoxNormmax(TestCase):
+class TestBoxcoxNormmax(object):
     def setUp(self):
         np.random.seed(12345)
         self.x = stats.loggamma.rvs(5, size=50) + 5
@@ -1091,7 +1091,7 @@ class TestBoxcoxNormmax(TestCase):
         assert_allclose(maxlog_all, [1.804465, 1.758101], rtol=1e-6)
 
 
-class TestBoxcoxNormplot(TestCase):
+class TestBoxcoxNormplot(object):
     def setUp(self):
         np.random.seed(7654321)
         self.x = stats.loggamma.rvs(5, size=500) + 5
@@ -1128,7 +1128,7 @@ class TestBoxcoxNormplot(TestCase):
         assert_(stats.boxcox_normplot([], 0, 1).size == 0)
 
 
-class TestCircFuncs(TestCase):
+class TestCircFuncs(object):
     def test_circfuncs(self):
         x = np.array([355, 5, 2, 359, 10, 350])
         M = stats.circmean(x, high=360)
@@ -1297,7 +1297,7 @@ def test_wilcoxon_tie():
     assert_allclose(p, expected_p, rtol=1e-6)
 
 
-class TestMedianTest(TestCase):
+class TestMedianTest(object):
 
     def test_bad_n_samples(self):
         # median_test requires at least two samples.

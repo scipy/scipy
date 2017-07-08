@@ -113,7 +113,7 @@ class TestBounds(object):
 
 
 class TestQuadraticFunction(object):
-    def __init__(self):
+    def setup(self):
         self.J = np.array([
             [0.1, 0.2],
             [-1.0, 1.0],

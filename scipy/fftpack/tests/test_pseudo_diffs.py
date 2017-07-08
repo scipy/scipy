@@ -11,7 +11,7 @@ Run tests if fftpack is not installed:
   python tests/test_pseudo_diffs.py [<level>]
 """
 
-from numpy.testing import (TestCase, assert_equal, assert_almost_equal,
+from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, run_module_suite)
 from scipy.fftpack import (diff, fft, ifft, tilbert, itilbert, hilbert,
                            ihilbert, shift, fftfreq, cs_diff, sc_diff,
@@ -81,7 +81,7 @@ def direct_shift(x,a,period=None):
     return ifft(fft(x)*exp(k*a)).real
 
 
-class TestDiff(TestCase):
+class TestDiff(object):
 
     def test_definition(self):
         for n in [16,17,64,127,32]:
@@ -190,7 +190,7 @@ class TestDiff(TestCase):
                 assert_array_almost_equal(diff(diff(f,-k),k),f)
 
 
-class TestTilbert(TestCase):
+class TestTilbert(object):
 
     def test_definition(self):
         for h in [0.1,0.5,1,5.5,10]:
@@ -224,7 +224,7 @@ class TestTilbert(TestCase):
                 assert_array_almost_equal(tilbert(itilbert(f,h),h),f)
 
 
-class TestITilbert(TestCase):
+class TestITilbert(object):
 
     def test_definition(self):
         for h in [0.1,0.5,1,5.5,10]:
@@ -239,7 +239,7 @@ class TestITilbert(TestCase):
                                           direct_itilbert(sin(2*x),h))
 
 
-class TestHilbert(TestCase):
+class TestHilbert(object):
 
     def test_definition(self):
         for n in [16,17,64,127]:
@@ -281,7 +281,7 @@ class TestHilbert(TestCase):
             assert_array_almost_equal(hilbert(ihilbert(f)),f)
 
 
-class TestIHilbert(TestCase):
+class TestIHilbert(object):
 
     def test_definition(self):
         for n in [16,17,64,127]:
@@ -303,7 +303,7 @@ class TestIHilbert(TestCase):
             assert_array_almost_equal(y,y2)
 
 
-class TestShift(TestCase):
+class TestShift(object):
 
     def test_definition(self):
         for n in [18,17,64,127,32,2048,256]:

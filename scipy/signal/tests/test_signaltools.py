@@ -8,7 +8,7 @@ from itertools import product
 
 from nose import SkipTest
 from numpy.testing import (
-    TestCase, run_module_suite, assert_equal,
+    run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_raises, assert_allclose, assert_, dec)
 from scipy._lib._numpy_compat import suppress_warnings
@@ -31,7 +31,7 @@ else:
     from fractions import gcd
 
 
-class _TestConvolve(TestCase):
+class _TestConvolve(object):
 
     def test_basic(self):
         a = [3, 4, 5, 6, 5, 4]
@@ -155,8 +155,8 @@ class TestConvolve(_TestConvolve):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
     def test_convolve_method(self, n=100):
         types = sum([t for _, t in np.sctypes.items()], [])
@@ -222,7 +222,7 @@ class TestConvolve(_TestConvolve):
                 assert_equal(direct, 2**(2*n))
 
 
-class _TestConvolve2d(TestCase):
+class _TestConvolve2d(object):
 
     def test_2d_arrays(self):
         a = [[1, 2, 3], [3, 4, 5]]
@@ -294,8 +294,8 @@ class _TestConvolve2d(TestCase):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
 
 
 class TestConvolve2d(_TestConvolve2d):
@@ -343,7 +343,7 @@ class TestConvolve2d(_TestConvolve2d):
                 signal.convolve(a, b, mode=mode))
 
 
-class TestFFTConvolve(TestCase):
+class TestFFTConvolve(object):
 
     def test_real(self):
         x = array([1, 2, 3])
@@ -472,11 +472,11 @@ class TestFFTConvolve(TestCase):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, fftconvolve, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, fftconvolve, *(b, a), **{'mode': 'valid'})
 
 
-class TestMedFilt(TestCase):
+class TestMedFilt(object):
 
     def test_basic(self):
         f = [[50, 50, 50, 50, 50, 92, 18, 27, 65, 46],
@@ -519,7 +519,7 @@ class TestMedFilt(TestCase):
         assert_(signal.medfilt(a, 1) == 5.)
 
 
-class TestWiener(TestCase):
+class TestWiener(object):
 
     def test_basic(self):
         g = array([[5, 6, 4, 3],
@@ -534,7 +534,7 @@ class TestWiener(TestCase):
         assert_array_almost_equal(signal.wiener(g, mysize=3), h, decimal=6)
 
 
-class TestResample(TestCase):
+class TestResample(object):
 
     def test_basic(self):
         # Some basic tests
@@ -672,7 +672,7 @@ class TestResample(TestCase):
                 assert_allclose(yf, y, atol=1e-7, rtol=1e-7)
 
 
-class TestCSpline1DEval(TestCase):
+class TestCSpline1DEval(object):
 
     def test_basic(self):
         y = array([1, 2, 3, 4, 3, 2, 1, 2, 3.0])
@@ -703,14 +703,14 @@ class TestCSpline1DEval(TestCase):
 
         assert_equal(ynew.dtype, y.dtype)
 
-class TestOrderFilt(TestCase):
+class TestOrderFilt(object):
 
     def test_basic(self):
         assert_array_equal(signal.order_filter([1, 2, 3], [1, 0, 1], 1),
                            [2, 3, 2])
 
 
-class _TestLinearFilter(TestCase):
+class _TestLinearFilter(object):
     def generate(self, shape):
         x = np.linspace(0, np.prod(shape) - 1, np.prod(shape)).reshape(shape)
         return self.convert_dtype(x)
@@ -1140,7 +1140,7 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
-class _TestCorrelateReal(TestCase):
+class _TestCorrelateReal(object):
     dt = None
 
     def _setup_rank1(self):
@@ -1249,8 +1249,8 @@ class _TestCorrelateReal(TestCase):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, correlate, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, correlate, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
 
 
 def _get_testcorrelate_class(datatype, base):
@@ -1267,7 +1267,7 @@ for datatype in [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
     globals()[cls.__name__] = cls
 
 
-class _TestCorrelateComplex(TestCase):
+class _TestCorrelateComplex(object):
     # The numpy data type to use.
     dt = None
 
@@ -1339,7 +1339,7 @@ class _TestCorrelateComplex(TestCase):
         assert_equal(y.dtype, self.dt)
 
 
-class TestCorrelate2d(TestCase):
+class TestCorrelate2d(object):
 
     def test_consistency_correlate_funcs(self):
         # Compare np.correlate, signal.correlate, signal.correlate2d
@@ -1369,8 +1369,8 @@ class TestCorrelate2d(TestCase):
         a = np.arange(1, 7).reshape((2, 3))
         b = np.arange(-6, 0).reshape((3, 2))
 
-        self.assertRaises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
-        self.assertRaises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
+        assert_raises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
+        assert_raises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
 
 
 # Create three classes, one for each complex data type. The actual class
@@ -1381,7 +1381,7 @@ for datatype in [np.csingle, np.cdouble, np.clongdouble]:
     globals()[cls.__name__] = cls
 
 
-class TestLFilterZI(TestCase):
+class TestLFilterZI(object):
 
     def test_basic(self):
         a = np.array([1.0, -1.0, 0.5])
@@ -1400,7 +1400,7 @@ class TestLFilterZI(TestCase):
         assert_allclose(zi2, zi1, rtol=1e-12)
 
 
-class TestFiltFilt(TestCase):
+class TestFiltFilt(object):
     filtfilt_kind = 'tf'
 
     def filtfilt(self, zpk, x, axis=-1, padtype='odd', padlen=None,
@@ -1649,7 +1649,7 @@ def test_filtfilt_gust():
     yield check_filtfilt_gust, b, a, (length,), 0, approx_impulse_len
 
 
-class TestDecimate(TestCase):
+class TestDecimate(object):
     def test_bad_args(self):
         x = np.arange(12)
         assert_raises(TypeError, signal.decimate, x, q=0.5, n=1)
@@ -1792,14 +1792,14 @@ class TestHilbert(object):
         a = np.arange(18).reshape(3, 6)
         # test axis
         aa = hilbert(a, axis=-1)
-        yield assert_equal, hilbert(a.T, axis=0), aa.T
+        assert_equal(hilbert(a.T, axis=0), aa.T)
         # test 1d
-        yield assert_equal, hilbert(a[0]), aa[0]
+        assert_equal(hilbert(a[0]), aa[0])
 
         # test N
         aan = hilbert(a, N=20, axis=-1)
-        yield assert_equal, aan.shape, [3, 20]
-        yield assert_equal, hilbert(a.T, N=20, axis=0).shape, [20, 3]
+        assert_equal(aan.shape, [3, 20])
+        assert_equal(hilbert(a.T, N=20, axis=0).shape, [20, 3])
         # the next test is just a regression test,
         # no idea whether numbers make sense
         a0hilb = np.array([0.000000000000000e+00 - 1.72015830311905j,
@@ -1822,7 +1822,7 @@ class TestHilbert(object):
                            3.552713678800501e-16 - 0.403810179797771j,
                            8.881784197001253e-17 - 0.751023775297729j,
                            9.444121133484362e-17 - 0.79252210110103j])
-        yield assert_almost_equal, aan[0], a0hilb, 14, 'N regression'
+        assert_almost_equal(aan[0], a0hilb, 14, 'N regression')
 
 
 class TestHilbert2(object):
@@ -1843,7 +1843,7 @@ class TestHilbert2(object):
         assert_raises(ValueError, hilbert2, x, N=(2,))
 
 
-class TestPartialFractionExpansion(TestCase):
+class TestPartialFractionExpansion(object):
     def test_invresz_one_coefficient_bug(self):
         # Regression test for issue in gh-4646.
         r = [1]
@@ -1900,7 +1900,7 @@ class TestPartialFractionExpansion(TestCase):
         assert_raises(ValueError, invres, r, p, k, rtype='median')
 
 
-class TestVectorstrength(TestCase):
+class TestVectorstrength(object):
 
     def test_single_1dperiod(self):
         events = np.array([.5])
@@ -2049,7 +2049,7 @@ class TestVectorstrength(TestCase):
         assert_raises(ValueError, vectorstrength, events, period)
 
 
-class TestSOSFilt(TestCase):
+class TestSOSFilt(object):
 
     # For sosfilt we only test a single datatype. Since sosfilt wraps
     # to lfilter under the hood, it's hopefully good enough to ensure

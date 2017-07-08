@@ -34,7 +34,7 @@
 
 import numpy as np
 from itertools import product
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
+from numpy.testing import (run_module_suite, assert_equal,
                            assert_raises, assert_allclose)
 
 from scipy.signal import upfirdn, firwin, lfilter
@@ -103,7 +103,7 @@ class UpFIRDnCase(object):
         assert_allclose(yr, y)
 
 
-class test_upfirdn(TestCase):
+class TestUpfirdn(object):
 
     def test_valid_input(self):
         assert_raises(ValueError, upfirdn, [1], [1], 1, 0)  # up or down < 1

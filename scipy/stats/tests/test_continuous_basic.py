@@ -71,15 +71,11 @@ test_histogram_instance = stats.rv_histogram(_h)
 
 def test_cont_basic():
     # this test skips slow distributions
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore',
-                                category=integrate.IntegrationWarning)
-        
-        for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
-            if distname in distslow:
-                continue
-            if distname is 'levy_stable':
-                continue
+
+    def check(distname, arg):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    category=integrate.IntegrationWarning)
             try:
                 distfn = getattr(stats, distname)
             except TypeError:
@@ -92,20 +88,19 @@ def test_cont_basic():
             sv = rvs.var()
             m, v = distfn.stats(*arg)
 
-            yield (check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn,
-                   distname + 'sample mean test')
-            yield check_cdf_ppf, distfn, arg, distname
-            yield check_sf_isf, distfn, arg, distname
-            yield check_pdf, distfn, arg, distname
-            yield check_pdf_logpdf, distfn, arg, distname
-            yield check_cdf_logcdf, distfn, arg, distname
-            yield check_sf_logsf, distfn, arg, distname
+            check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+            check_cdf_ppf(distfn, arg, distname)
+            check_sf_isf(distfn, arg, distname)
+            check_pdf(distfn, arg, distname)
+            check_pdf_logpdf(distfn, arg, distname)
+            check_cdf_logcdf(distfn, arg, distname)
+            check_sf_logsf(distfn, arg, distname)
 
             alpha = 0.01
             if distname == 'rv_histogram_instance':
-                yield check_distribution_rvs, distfn.cdf, arg, alpha, rvs
+                check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
             else:
-                yield check_distribution_rvs, distname, arg, alpha, rvs
+                check_distribution_rvs(distname, arg, alpha, rvs)
 
             locscale_defaults = (0, 1)
             meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
@@ -115,28 +110,41 @@ def test_cont_basic():
                       'pareto': 1.5, 'tukeylambda': 0.3,
                       'rv_histogram_instance': 5.0}
             x = spec_x.get(distname, 0.5)
-            yield check_named_args, distfn, x, arg, locscale_defaults, meths
-            yield check_random_state_property, distfn, arg
-            yield check_pickling, distfn, arg
+            check_named_args(distfn, x, arg, locscale_defaults, meths)
+            check_random_state_property(distfn, arg)
+            check_pickling(distfn, arg)
 
             # Entropy
-            skp = npt.dec.skipif
-            yield check_entropy, distfn, arg, distname
+            check_entropy(distfn, arg, distname)
 
             if distfn.numargs == 0:
-                yield check_vecentropy, distfn, arg
+                check_vecentropy(distfn, arg)
+
             if distfn.__class__._entropy != stats.rv_continuous._entropy:
-                yield check_private_entropy, distfn, arg, stats.rv_continuous
+                check_private_entropy(distfn, arg, stats.rv_continuous)
 
-            yield check_edge_support, distfn, arg
+            check_edge_support(distfn, arg)
 
-            yield check_meth_dtype, distfn, arg, meths
-            yield check_ppf_dtype, distfn, arg
-            yield skp(distname in fails_cmplx)(check_cmplx_deriv), distfn, arg
+            check_meth_dtype(distfn, arg, meths)
+            check_ppf_dtype(distfn, arg)
 
-            knf = npt.dec.knownfailureif
-            yield (knf(distname == 'truncnorm')(check_ppf_private), distfn,
-                   arg, distname)
+            if distname not in fails_cmplx:
+                check_cmplx_deriv(distfn, arg)
+
+            if distname != 'truncnorm':
+                check_ppf_private(distfn, arg, distname)
+
+    for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
+        if distname in distslow:
+            continue
+
+        if distname == 'levy_stable':
+            continue
+
+        yield check, distname, arg
+
+        if distname == 'truncnorm':
+            yield npt.dec.knownfailureif(True)(check), distname
 
 
 def test_levy_stable_random_state_property():
@@ -149,14 +157,11 @@ def test_levy_stable_random_state_property():
 @npt.dec.slow
 def test_cont_basic_slow():
     # same as above for slow distributions
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore',
-                                category=integrate.IntegrationWarning)
-        for distname, arg in distcont[:]:
-            if distname not in distslow:
-                continue
-            if distname is 'levy_stable':
-                continue
+
+    def check(distname, arg):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    category=integrate.IntegrationWarning)
             distfn = getattr(stats, distname)
             np.random.seed(765456)
             sn = 500
@@ -164,18 +169,17 @@ def test_cont_basic_slow():
             sm = rvs.mean()
             sv = rvs.var()
             m, v = distfn.stats(*arg)
-            yield (check_sample_meanvar_, distfn, arg, m, v, sm, sv, sn,
-                   distname + 'sample mean test')
-            yield check_cdf_ppf, distfn, arg, distname
-            yield check_sf_isf, distfn, arg, distname
-            yield check_pdf, distfn, arg, distname
-            yield check_pdf_logpdf, distfn, arg, distname
-            yield check_cdf_logcdf, distfn, arg, distname
-            yield check_sf_logsf, distfn, arg, distname
-            # yield check_oth, distfn, arg # is still missing
+            check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+            check_cdf_ppf(distfn, arg, distname)
+            check_sf_isf(distfn, arg, distname)
+            check_pdf(distfn, arg, distname)
+            check_pdf_logpdf(distfn, arg, distname)
+            check_cdf_logcdf(distfn, arg, distname)
+            check_sf_logsf(distfn, arg, distname)
+            # check_oth(distfn, arg # is still missing)
 
             alpha = 0.01
-            yield check_distribution_rvs, distname, arg, alpha, rvs
+            check_distribution_rvs(distname, arg, alpha, rvs)
 
             locscale_defaults = (0, 1)
             meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
@@ -186,58 +190,79 @@ def test_cont_basic_slow():
                 arg = (1,)
             elif distname == 'ksone':
                 arg = (3,)
-            yield check_named_args, distfn, x, arg, locscale_defaults, meths
-            yield check_random_state_property, distfn, arg
-            yield check_pickling, distfn, arg
+            check_named_args(distfn, x, arg, locscale_defaults, meths)
+            check_random_state_property(distfn, arg)
+            check_pickling(distfn, arg)
 
             # Entropy
-            skp = npt.dec.skipif
-            ks_cond = distname in ['ksone', 'kstwobign']
-            yield skp(ks_cond)(check_entropy), distfn, arg, distname
+            if distname not in ['ksone', 'kstwobign']:
+                check_entropy(distfn, arg, distname)
 
             if distfn.numargs == 0:
-                yield check_vecentropy, distfn, arg
+                check_vecentropy(distfn, arg)
             if (distfn.__class__._entropy != stats.rv_continuous._entropy
                     and distname != 'vonmises'):
-                yield check_private_entropy, distfn, arg, stats.rv_continuous
+                check_private_entropy(distfn, arg, stats.rv_continuous)
 
-            yield check_edge_support, distfn, arg
+            check_edge_support(distfn, arg)
 
-            yield check_meth_dtype, distfn, arg, meths
-            yield check_ppf_dtype, distfn, arg
-            yield skp(distname in fails_cmplx)(check_cmplx_deriv), distfn, arg
+            check_meth_dtype(distfn, arg, meths)
+            check_ppf_dtype(distfn, arg)
+
+            if distname not in fails_cmplx:
+                check_cmplx_deriv(distfn, arg)
+
+    for distname, arg in distcont[:]:
+        if distname not in distslow:
+            continue
+
+        if distname == 'levy_stable':
+            continue
+
+        yield check, distname, arg
 
 
 @npt.dec.slow
 def test_moments():
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore',
-                                category=integrate.IntegrationWarning)
-        knf = npt.dec.knownfailureif
-        fail_normalization = set(['vonmises', 'ksone'])
-        fail_higher = set(['vonmises', 'ksone', 'ncf'])
-        for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
-            if distname is 'levy_stable':
-                continue
+    def check(distname, arg, normalization_ok, higher_ok):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore',
+                                    category=integrate.IntegrationWarning)
+
+            if distname == 'levy_stable':
+                return
+
             try:
                 distfn = getattr(stats, distname)
             except TypeError:
                 distfn = distname
                 distname = 'rv_histogram_instance'
+
             m, v, s, k = distfn.stats(*arg, moments='mvsk')
-            cond1 = distname in fail_normalization
-            cond2 = distname in fail_higher
+
+            if normalization_ok:
+                check_normalization(distfn, arg, distname)
+
+            if higher_ok:
+                check_mean_expect(distfn, arg, m, distname)
+                check_var_expect(distfn, arg, m, v, distname)
+                check_skew_expect(distfn, arg, m, v, s, distname)
+                check_kurt_expect(distfn, arg, m, v, k, distname)
+
+            check_loc_scale(distfn, arg, m, v, distname)
+            check_moment(distfn, arg, m, v, distname)
+
+    fail_normalization = set(['vonmises', 'ksone'])
+    fail_higher = set(['vonmises', 'ksone', 'ncf'])
+
+    for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
+        cond1 = distname not in fail_normalization
+        cond2 = distname not in fail_higher
+        yield check, distname, arg, cond1, cond2
+
+        if not cond1 or not cond2:
             msg = distname + ' fails moments'
-            yield knf(cond1, msg)(check_normalization), distfn, arg, distname
-            yield knf(cond2, msg)(check_mean_expect), distfn, arg, m, distname
-            yield (knf(cond2, msg)(check_var_expect), distfn, arg, m, v,
-                   distname)
-            yield (knf(cond2, msg)(check_skew_expect), distfn, arg, m, v, s,
-                   distname)
-            yield (knf(cond2, msg)(check_kurt_expect), distfn, arg, m, v, k,
-                   distname)
-            yield check_loc_scale, distfn, arg, m, v, distname
-            yield check_moment, distfn, arg, m, v, distname
+            yield npt.dec.knownfailureif(True, msg)(check), distname, arg, True, True
 
 
 def test_rvs_broadcast():

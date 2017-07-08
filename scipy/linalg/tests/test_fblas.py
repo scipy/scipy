@@ -14,7 +14,7 @@ from scipy.linalg import _fblas as fblas
 
 from scipy._lib.six import xrange
 
-from numpy.testing import TestCase, run_module_suite, assert_array_equal, \
+from numpy.testing import run_module_suite, assert_array_equal, \
     assert_allclose, assert_array_almost_equal, assert_
 
 
@@ -107,7 +107,7 @@ class BaseAxpy(object):
         assert_(0)
 
 try:
-    class TestSaxpy(TestCase, BaseAxpy):
+    class TestSaxpy(BaseAxpy):
         blas_func = fblas.saxpy
         dtype = float32
 except AttributeError:
@@ -115,12 +115,12 @@ except AttributeError:
         pass
 
 
-class TestDaxpy(TestCase, BaseAxpy):
+class TestDaxpy(BaseAxpy):
     blas_func = fblas.daxpy
     dtype = float64
 
 try:
-    class TestCaxpy(TestCase, BaseAxpy):
+    class TestCaxpy(BaseAxpy):
         blas_func = fblas.caxpy
         dtype = complex64
 except AttributeError:
@@ -128,7 +128,7 @@ except AttributeError:
         pass
 
 
-class TestZaxpy(TestCase, BaseAxpy):
+class TestZaxpy(BaseAxpy):
     blas_func = fblas.zaxpy
     dtype = complex128
 
@@ -162,7 +162,7 @@ class BaseScal(object):
         assert_(0)
 
 try:
-    class TestSscal(TestCase, BaseScal):
+    class TestSscal(BaseScal):
         blas_func = fblas.sscal
         dtype = float32
 except AttributeError:
@@ -170,12 +170,12 @@ except AttributeError:
         pass
 
 
-class TestDscal(TestCase, BaseScal):
+class TestDscal(BaseScal):
     blas_func = fblas.dscal
     dtype = float64
 
 try:
-    class TestCscal(TestCase, BaseScal):
+    class TestCscal(BaseScal):
         blas_func = fblas.cscal
         dtype = complex64
 except AttributeError:
@@ -183,7 +183,7 @@ except AttributeError:
         pass
 
 
-class TestZscal(TestCase, BaseScal):
+class TestZscal(BaseScal):
     blas_func = fblas.zscal
     dtype = complex128
 
@@ -246,7 +246,7 @@ class BaseCopy(object):
     #    assert_array_equal(x,y)
 
 try:
-    class TestScopy(TestCase, BaseCopy):
+    class TestScopy(BaseCopy):
         blas_func = fblas.scopy
         dtype = float32
 except AttributeError:
@@ -254,12 +254,12 @@ except AttributeError:
         pass
 
 
-class TestDcopy(TestCase, BaseCopy):
+class TestDcopy(BaseCopy):
     blas_func = fblas.dcopy
     dtype = float64
 
 try:
-    class TestCcopy(TestCase, BaseCopy):
+    class TestCcopy(BaseCopy):
         blas_func = fblas.ccopy
         dtype = complex64
 except AttributeError:
@@ -267,7 +267,7 @@ except AttributeError:
         pass
 
 
-class TestZcopy(TestCase, BaseCopy):
+class TestZcopy(BaseCopy):
     blas_func = fblas.zcopy
     dtype = complex128
 
@@ -335,7 +335,7 @@ class BaseSwap(object):
         assert_(0)
 
 try:
-    class TestSswap(TestCase, BaseSwap):
+    class TestSswap(BaseSwap):
         blas_func = fblas.sswap
         dtype = float32
 except AttributeError:
@@ -343,12 +343,12 @@ except AttributeError:
         pass
 
 
-class TestDswap(TestCase, BaseSwap):
+class TestDswap(BaseSwap):
     blas_func = fblas.dswap
     dtype = float64
 
 try:
-    class TestCswap(TestCase, BaseSwap):
+    class TestCswap(BaseSwap):
         blas_func = fblas.cswap
         dtype = complex64
 except AttributeError:
@@ -356,7 +356,7 @@ except AttributeError:
         pass
 
 
-class TestZswap(TestCase, BaseSwap):
+class TestZswap(BaseSwap):
     blas_func = fblas.zswap
     dtype = complex128
 
@@ -460,7 +460,7 @@ class BaseGemv(object):
             pass
 
 try:
-    class TestSgemv(TestCase, BaseGemv):
+    class TestSgemv(BaseGemv):
         blas_func = fblas.sgemv
         dtype = float32
 
@@ -511,12 +511,12 @@ except AttributeError:
         pass
 
 
-class TestDgemv(TestCase, BaseGemv):
+class TestDgemv(BaseGemv):
     blas_func = fblas.dgemv
     dtype = float64
 
 try:
-    class TestCgemv(TestCase, BaseGemv):
+    class TestCgemv(BaseGemv):
         blas_func = fblas.cgemv
         dtype = complex64
 except AttributeError:
@@ -524,7 +524,7 @@ except AttributeError:
         pass
 
 
-class TestZgemv(TestCase, BaseGemv):
+class TestZgemv(BaseGemv):
     blas_func = fblas.zgemv
     dtype = complex128
 
@@ -533,7 +533,7 @@ class TestZgemv(TestCase, BaseGemv):
 ### Test blas ?ger
 ### This will be a mess to test all cases.
 
-class BaseGer(TestCase):
+class BaseGer(object):
     def get_data(self,x_stride=1,y_stride=1):
         from numpy.random import normal, seed
         seed(1234)

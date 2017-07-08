@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import os
 import numpy as np
 
-from numpy.testing import TestCase, run_module_suite
+from numpy.testing import run_module_suite
 from numpy.testing import assert_raises, assert_array_almost_equal
 
 from numpy.testing.noseclasses import KnownFailureTest
@@ -14,7 +14,7 @@ from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve
 
 
-class TestSolveLyapunov(TestCase):
+class TestSolveLyapunov(object):
 
     cases = [
         (np.array([[1, 2], [3, 4]]),
@@ -694,7 +694,7 @@ def test_are_validate_args():
             assert_raises(ValueError, x, sq, sq, sq, sq, sq, nm)
 
 
-class TestSolveSylvester(TestCase):
+class TestSolveSylvester(object):
 
     cases = [
         # a, b, c all real.

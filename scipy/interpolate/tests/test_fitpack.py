@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
-    TestCase, assert_raises, run_module_suite, assert_almost_equal,
+    assert_raises, run_module_suite, assert_almost_equal,
     assert_raises, assert_array_almost_equal)
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
@@ -65,7 +65,7 @@ def put(*a):
         sys.stderr.write("".join(map(str, a)) + "\n")
 
 
-class TestSmokeTests(TestCase):
+class TestSmokeTests(object):
     """
     Smoke tests (with a few asserts) for fitpack routines -- mostly
     check that they are runnable
@@ -258,7 +258,7 @@ class TestSmokeTests(TestCase):
         self.check_5()
 
 
-class TestSplev(TestCase):
+class TestSplev(object):
     def test_1d_shape(self):
         x = [1,2,3,4,5]
         y = [4,5,6,7,8]
@@ -297,7 +297,7 @@ class TestSplev(TestCase):
 
 
 class TestSplder(object):
-    def __init__(self):
+    def setup(self):
         # non-uniform grid, just to make it sure
         x = np.linspace(0, 1, 100)**3
         y = np.sin(20 * x)

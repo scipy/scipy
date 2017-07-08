@@ -34,7 +34,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, dec, assert_raises,
+from numpy.testing import (run_module_suite, dec, assert_raises,
                            assert_allclose, assert_equal, assert_, assert_warns)
 
 from scipy._lib.six import xrange, u
@@ -489,7 +489,7 @@ class TestIsValidInconsistent(object):
             assert_raises(ValueError, is_valid_im, R, throw=True)
 
 
-class TestNumObsLinkage(TestCase):
+class TestNumObsLinkage(object):
     def test_num_obs_linkage_empty(self):
         # Tests num_obs_linkage(Z) with empty linkage.
         Z = np.zeros((0, 4), dtype=np.double)
@@ -550,7 +550,7 @@ class TestLeavesList(object):
                                         + node.get_right().pre_order()))
 
 
-class TestCorrespond(TestCase):
+class TestCorrespond(object):
     def test_correspond_empty(self):
         # Tests correspond(Z, y) with empty linkage and condensed distance matrix.
         y = np.zeros((0,))
@@ -602,7 +602,7 @@ class TestCorrespond(TestCase):
             assert_equal(num_obs_linkage(Z), n)
 
 
-class TestIsMonotonic(TestCase):
+class TestIsMonotonic(object):
     def test_is_monotonic_empty(self):
         # Tests is_monotonic(Z) on an empty linkage.
         Z = np.zeros((0, 4))

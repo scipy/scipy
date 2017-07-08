@@ -90,7 +90,7 @@ class TestLineSearch(object):
 
     # --
 
-    def __init__(self):
+    def setup(self):
         self.scalar_funcs = []
         self.line_funcs = []
         self.N = 20
@@ -110,7 +110,6 @@ class TestLineSearch(object):
                 self.line_funcs.append(
                     (name, bind_index(value, 0), bind_index(value, 1)))
 
-    def setUp(self):
         np.random.seed(1234)
         self.A = np.random.randn(self.N, self.N)
 

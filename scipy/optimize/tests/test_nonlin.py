@@ -4,7 +4,7 @@ May 2007
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, dec, TestCase, run_module_suite
+from numpy.testing import assert_, dec, run_module_suite
 
 from scipy._lib.six import xrange
 from scipy.optimize import nonlin, root
@@ -145,7 +145,7 @@ class TestNonlin(object):
                 yield self._check_root, f, meth
 
 
-class TestSecant(TestCase):
+class TestSecant(object):
     """Check that some Jacobian approximations satisfy the secant condition"""
 
     xs = [np.array([1,2,3,4,5], float),
@@ -221,7 +221,7 @@ class TestSecant(TestCase):
         self._check_secant(nonlin.Anderson, M=3, w0=0, npoints=3)
 
 
-class TestLinear(TestCase):
+class TestLinear(object):
     """Solve a linear equation;
     some methods find the exact solution in a finite number of steps"""
 
@@ -358,7 +358,7 @@ class TestJacobianDotSolve(object):
         self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-3)
 
 
-class TestNonlinOldTests(TestCase):
+class TestNonlinOldTests(object):
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)

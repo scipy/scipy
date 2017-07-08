@@ -7,8 +7,9 @@ import numpy as np
 import glob
 
 from numpy.testing import (assert_equal, dec, decorate_methods,
-                           TestCase, run_module_suite, assert_allclose,
-                           assert_array_equal, assert_raises)
+                           run_module_suite, assert_allclose,
+                           assert_array_equal, assert_raises,
+                           assert_)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import misc
 from numpy.ma.testutils import assert_mask_equal
@@ -27,7 +28,7 @@ _pilskip = dec.skipif(not _have_PIL, 'Need to import PIL for this test')
 datapath = os.path.dirname(__file__)
 
 
-class TestPILUtil(TestCase):
+class TestPILUtil(object):
     def test_imresize(self):
         im = np.random.random((10, 20))
         for T in np.sctypes['float'] + [float]:
@@ -86,7 +87,7 @@ class TestPILUtil(TestCase):
         expected = [0, 255, 3]
         assert_equal(expected, actual)
         assert_mask_equal(a.mask, actual.mask)
-        self.assertTrue(isinstance(actual, np.ma.MaskedArray))
+        assert_(isinstance(actual, np.ma.MaskedArray))
 
     def test_bytescale_rounding(self):
         a = np.array([-0.5, 0.5, 1.5, 2.5, 3.5])

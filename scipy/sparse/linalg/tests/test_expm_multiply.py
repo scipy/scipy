@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_allclose,
+from numpy.testing import (run_module_suite, assert_allclose,
         assert_, assert_equal)
 
 from scipy.sparse import SparseEfficiencyWarning
@@ -20,7 +20,7 @@ def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
 
-class TestExpmActionSimple(TestCase):
+class TestExpmActionSimple(object):
     """
     These tests do not consider the case of multiple time steps in one call.
     """
@@ -133,7 +133,7 @@ class TestExpmActionSimple(TestCase):
         assert_allclose(observed, expected)
 
 
-class TestExpmActionInterval(TestCase):
+class TestExpmActionInterval(object):
 
     def test_sparse_expm_multiply_interval(self):
         with warnings.catch_warnings():

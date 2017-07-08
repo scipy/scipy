@@ -4,7 +4,7 @@ Unit tests for the basin hopping global minimization algorithm.
 from __future__ import division, print_function, absolute_import
 import copy
 
-from numpy.testing import (TestCase, run_module_suite, assert_raises,
+from numpy.testing import (run_module_suite, assert_raises,
                            assert_almost_equal, assert_equal, assert_)
 import numpy as np
 from numpy import cos, sin
@@ -106,7 +106,7 @@ class MyCallBack(object):
             return True
 
 
-class TestBasinHopping(TestCase):
+class TestBasinHopping(object):
 
     def setUp(self):
         """ Tests setup.
@@ -305,7 +305,7 @@ class TestBasinHopping(TestCase):
         assert_equal(np.array(f_1), np.array(f_2))
 
 
-class Test_Storage(TestCase):
+class Test_Storage(object):
     def setUp(self):
         self.x0 = np.array(1)
         self.f0 = 0
@@ -339,7 +339,7 @@ class Test_Storage(TestCase):
         assert_(ret)
 
 
-class Test_RandomDisplacement(TestCase):
+class Test_RandomDisplacement(object):
     def setUp(self):
         self.stepsize = 1.0
         self.displace = RandomDisplacement(stepsize=self.stepsize)
@@ -356,7 +356,7 @@ class Test_RandomDisplacement(TestCase):
         assert_almost_equal(np.var(x), v, 1)
 
 
-class Test_Metropolis(TestCase):
+class Test_Metropolis(object):
     def setUp(self):
         self.T = 2.
         self.met = Metropolis(self.T)
@@ -398,7 +398,7 @@ class Test_Metropolis(TestCase):
             met.accept_reject(0, 2000)
 
 
-class Test_AdaptiveStepsize(TestCase):
+class Test_AdaptiveStepsize(object):
     def setUp(self):
         self.stepsize = 1.
         self.ts = RandomDisplacement(stepsize=self.stepsize)

@@ -247,8 +247,9 @@ class _TestCommon:
     """test common functionality shared by all sparse formats"""
     math_dtypes = supported_dtypes
 
-    # TODO: Why this decorator is necessary when there is a module level
-    #       suppression, is completely puzzeling to me.
+    # XXX: __init__ method that will be called at test collection time.
+    #      It also requires the extra warning suppression decorator.
+    #      This should be implemented in a different way.
     @sup_sparse_efficiency2
     def __init__(self):
         # Canonical data.

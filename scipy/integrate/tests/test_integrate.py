@@ -11,7 +11,7 @@ from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
 from scipy._lib.six import xrange
 
 from numpy.testing import (
-    assert_, TestCase, run_module_suite, assert_array_almost_equal,
+    assert_, run_module_suite, assert_array_almost_equal,
     assert_raises, assert_allclose, assert_array_equal, assert_equal)
 from scipy.integrate import odeint, ode, complex_ode
 
@@ -20,7 +20,7 @@ from scipy.integrate import odeint, ode, complex_ode
 #------------------------------------------------------------------------------
 
 
-class TestOdeint(TestCase):
+class TestOdeint(object):
     # Check integrate.odeint
     def _do_problem(self, problem):
         t = arange(0.0, problem.stop_t, 0.05)
@@ -35,7 +35,7 @@ class TestOdeint(TestCase):
             self._do_problem(problem)
 
 
-class TestODEClass(TestCase):
+class TestODEClass(object):
 
     ode_class = None   # Set in subclass.
 
@@ -211,7 +211,7 @@ class TestComplexOde(TestODEClass):
             self._do_problem(problem, 'dop853')
 
 
-class TestSolout(TestCase):
+class TestSolout(object):
     # Check integrate.ode correctly handles solout for dopri5 and dop853
     def _run_solout_test(self, integrator):
         # Check correct usage of solout
@@ -301,7 +301,7 @@ class TestSolout(TestCase):
             self._run_solout_break_test(integrator)
 
 
-class TestComplexSolout(TestCase):
+class TestComplexSolout(object):
     # Check integrate.ode correctly handles solout for dopri5 and dop853
     def _run_solout_test(self, integrator):
         # Check correct usage of solout
@@ -555,7 +555,6 @@ def jacv(t, x, omega):
 class ODECheckParameterUse(object):
     """Call an ode-class solver with several cases of parameter use."""
 
-    # This class is intentionally not a TestCase subclass.
     # solver_name must be set before tests can be run with this class.
 
     # Set these in subclasses.
@@ -610,27 +609,27 @@ class ODECheckParameterUse(object):
         self._check_solver(solver)
 
 
-class DOPRI5CheckParameterUse(ODECheckParameterUse, TestCase):
+class TestDOPRI5CheckParameterUse(ODECheckParameterUse):
     solver_name = 'dopri5'
     solver_uses_jac = False
 
 
-class DOP853CheckParameterUse(ODECheckParameterUse, TestCase):
+class TestDOP853CheckParameterUse(ODECheckParameterUse):
     solver_name = 'dop853'
     solver_uses_jac = False
 
 
-class VODECheckParameterUse(ODECheckParameterUse, TestCase):
+class TestVODECheckParameterUse(ODECheckParameterUse):
     solver_name = 'vode'
     solver_uses_jac = True
 
 
-class ZVODECheckParameterUse(ODECheckParameterUse, TestCase):
+class TestZVODECheckParameterUse(ODECheckParameterUse):
     solver_name = 'zvode'
     solver_uses_jac = True
 
 
-class LSODACheckParameterUse(ODECheckParameterUse, TestCase):
+class TestLSODACheckParameterUse(ODECheckParameterUse):
     solver_name = 'lsoda'
     solver_uses_jac = True
 

@@ -1,13 +1,13 @@
 import numpy as np
-from numpy.testing import (TestCase,
-                           assert_almost_equal,
+from numpy.testing import (assert_almost_equal,
                            assert_array_equal,
-                           assert_equal)
+                           assert_equal,
+                           assert_)
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
 from scipy._lib._util import check_random_state
 
-class TestHausdorff(TestCase):
+class TestHausdorff(object):
     # Test various properties of the directed Hausdorff code.
 
     def setUp(self):
@@ -35,7 +35,7 @@ class TestHausdorff(TestCase):
 
         forward = directed_hausdorff(self.path_1, self.path_2)[0]
         reverse = directed_hausdorff(self.path_2, self.path_1)[0]
-        self.assertNotEqual(forward, reverse)
+        assert_(forward != reverse)
 
     def test_brute_force_comparison_forward(self):
         # Ensure that the algorithm for directed_hausdorff gives the

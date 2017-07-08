@@ -4,14 +4,14 @@ Sep 2008
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, TestCase, run_module_suite
+from numpy.testing import assert_, run_module_suite
 
 from scipy.optimize import nnls
 from numpy import arange, dot
 from numpy.linalg import norm
 
 
-class TestNNLS(TestCase):
+class TestNNLS(object):
 
     def test_nnls(self):
         a = arange(25.0).reshape(-1,5)

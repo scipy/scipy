@@ -1,9 +1,9 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, \
+from numpy.testing import run_module_suite, \
                           assert_array_almost_equal, assert_almost_equal, \
-                          assert_allclose
+                          assert_allclose, assert_equal
 
 import warnings
 from scipy.signal import cont2discrete as c2d
@@ -13,7 +13,7 @@ from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2, lti
 # March 29, 2011
 
 
-class TestC2D(TestCase):
+class TestC2D(object):
     def test_zoh(self):
         ac = np.eye(2)
         bc = 0.5 * np.ones((2, 1))
@@ -275,7 +275,7 @@ class TestC2D(TestCase):
         tf = ([[1, 0], [1, 1]], [1, 1])
         num, den, dt = c2d(tf, 0.01)
 
-        self.assertEqual(dt, 0.01)  # sanity check
+        assert_equal(dt, 0.01)  # sanity check
         assert_allclose(den, [1, -0.990404983], rtol=1e-3)
         assert_allclose(num, [[1, -1], [1, -0.99004983]], rtol=1e-3)
 
@@ -292,8 +292,8 @@ class TestC2D(TestCase):
         num2, den2, dt2 = c2d(tf2, ts)
 
         # Sanity checks
-        self.assertEqual(dt, dt1)
-        self.assertEqual(dt, dt2)
+        assert_equal(dt, dt1)
+        assert_equal(dt, dt2)
 
         # Check that we get the same results
         assert_allclose(num, np.vstack((num1, num2)), rtol=1e-13)
@@ -303,7 +303,7 @@ class TestC2D(TestCase):
         assert_allclose(den, den1, rtol=1e-13)
         assert_allclose(den, den2, rtol=1e-13)
 
-class TestC2dLti(TestCase):
+class TestC2dLti(object):
     def test_c2d_ss(self):
         # StateSpace
         A = np.array([[-0.3, 0.1], [0.2, -0.7]])
@@ -336,7 +336,7 @@ class TestC2dLti(TestCase):
         assert_allclose(sys.den, den_res, atol=0.02)
         assert_allclose(sys.num, num_res, atol=0.02)
 
-class TestC2dLti(TestCase):
+class TestC2dLti(object):
     def test_c2d_ss(self):
         # StateSpace
         A = np.array([[-0.3, 0.1], [0.2, -0.7]])

@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import array, sqrt
-from numpy.testing import (TestCase, assert_array_almost_equal, assert_equal,
+from numpy.testing import (assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_allclose, assert_raises,
                            run_module_suite)
 
@@ -13,7 +13,7 @@ from scipy.special import gamma
 import scipy.special.orthogonal as orth
 
 
-class TestCheby(TestCase):
+class TestCheby(object):
     def test_chebyc(self):
         C0 = orth.chebyc(0)
         C1 = orth.chebyc(1)
@@ -76,7 +76,7 @@ class TestCheby(TestCase):
         assert_array_almost_equal(U5.c,[32,0,-32,0,6,0],13)
 
 
-class TestGegenbauer(TestCase):
+class TestGegenbauer(object):
 
     def test_gegenbauer(self):
         a = 5*np.random.random() - 0.5
@@ -100,7 +100,7 @@ class TestGegenbauer(TestCase):
                                                0,15*orth.poch(a,3),0])/15.0,11)
 
 
-class TestHermite(TestCase):
+class TestHermite(object):
     def test_hermite(self):
         H0 = orth.hermite(0)
         H1 = orth.hermite(1)
@@ -139,7 +139,7 @@ class TestHermite(TestCase):
         assert_array_almost_equal(H5.c,he5.c,13)
 
 
-class _test_sh_legendre(TestCase):
+class _test_sh_legendre(object):
 
     def test_sh_legendre(self):
         # P*_n(x) = P_n(2x-1)
@@ -164,7 +164,7 @@ class _test_sh_legendre(TestCase):
         assert_array_almost_equal(Ps5.c,pse5.c,12)
 
 
-class _test_sh_chebyt(TestCase):
+class _test_sh_chebyt(object):
 
     def test_sh_chebyt(self):
         # T*_n(x) = T_n(2x-1)
@@ -189,7 +189,7 @@ class _test_sh_chebyt(TestCase):
         assert_array_almost_equal(Ts5.c,tse5.c,12)
 
 
-class _test_sh_chebyu(TestCase):
+class _test_sh_chebyu(object):
 
     def test_sh_chebyu(self):
         # U*_n(x) = U_n(2x-1)
@@ -214,7 +214,7 @@ class _test_sh_chebyu(TestCase):
         assert_array_almost_equal(Us5.c,use5.c,11)
 
 
-class _test_sh_jacobi(TestCase):
+class _test_sh_jacobi(object):
     def test_sh_jacobi(self):
         # G^(p,q)_n(x) = n! gamma(n+p)/gamma(2*n+p) * P^(p-q,q-1)_n(2*x-1)
         conv = lambda n,p: gamma(n+1)*gamma(n+p)/gamma(2*n+p)
@@ -276,7 +276,7 @@ class TestCall(object):
             np.seterr(**olderr)
 
 
-class TestGenlaguerre(TestCase):
+class TestGenlaguerre(object):
     def test_regression(self):
         assert_equal(orth.genlaguerre(1, 1, monic=False)(0), 2.)
         assert_equal(orth.genlaguerre(1, 1, monic=True)(0), -2.)

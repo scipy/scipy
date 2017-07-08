@@ -8,7 +8,7 @@ import sys
 import subprocess
 import time
 
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import run_module_suite, assert_equal, \
     assert_array_almost_equal, assert_, assert_raises, assert_allclose, \
     assert_almost_equal, assert_array_equal
 
@@ -32,7 +32,7 @@ COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
-class TestFlapackSimple(TestCase):
+class TestFlapackSimple(object):
 
     def test_gebal(self):
         a = [[1,2,3],[4,5,6],[7,8,9]]
@@ -125,7 +125,7 @@ class TestFlapackSimple(TestCase):
                     assert_equal(value, ref)
 
 
-class TestLapack(TestCase):
+class TestLapack(object):
 
     def test_flapack(self):
         if hasattr(flapack,'empty_module'):
@@ -137,7 +137,7 @@ class TestLapack(TestCase):
             # clapack module is empty
             pass
 
-class TestLeastSquaresSolvers(TestCase):
+class TestLeastSquaresSolvers(object):
 
     def test_gels(self):
         for dtype in REAL_DTYPES:
@@ -355,7 +355,7 @@ class TestLeastSquaresSolvers(TestCase):
                             dtype=dtype), rtol=25*np.finfo(dtype).eps)
 
 
-class TestRegression(TestCase):
+class TestRegression(object):
 
     def test_ticket_1645(self):
         # Check that RQ routines have correct lwork
@@ -376,7 +376,7 @@ class TestRegression(TestCase):
                 ungrq(rq[-2:], tau, lwork=2)
 
 
-class TestDpotr(TestCase):
+class TestDpotr(object):
     def test_gh_2691(self):
         # 'lower' argument of dportf/dpotri
         for lower in [True, False]:
@@ -395,7 +395,7 @@ class TestDpotr(TestCase):
                 else:
                     assert_allclose(np.triu(dpt), np.triu(inv(a)))
 
-class TestDlasd4(TestCase):
+class TestDlasd4(object):
     def test_sing_val_update(self):
 
         sigmas = np.array([4., 3., 2., 0])

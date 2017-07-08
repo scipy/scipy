@@ -8,7 +8,7 @@ from itertools import product
 import operator
 import nose
 
-from numpy.testing import TestCase, assert_, assert_equal, \
+from numpy.testing import assert_, assert_equal, \
         assert_raises
 
 import numpy as np
@@ -21,7 +21,7 @@ from scipy.sparse.linalg import interface
 TEST_MATMUL = hasattr(operator, 'matmul')
 
 
-class TestLinearOperator(TestCase):
+class TestLinearOperator(object):
     def setUp(self):
         self.A = np.array([[1,2,3],
                            [4,5,6]])
@@ -163,7 +163,7 @@ class TestLinearOperator(TestCase):
         assert_raises(ValueError, operator.matmul, 2, A)
 
 
-class TestAsLinearOperator(TestCase):
+class TestAsLinearOperator(object):
     def setUp(self):
         self.cases = []
 

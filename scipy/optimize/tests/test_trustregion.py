@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
                             rosen_hess_prod)
-from numpy.testing import (TestCase, assert_, assert_equal, assert_allclose,
+from numpy.testing import (assert_, assert_equal, assert_allclose,
                            run_module_suite)
 
 
@@ -28,7 +28,7 @@ class Accumulator:
             self.accum += x
 
 
-class TestTrustRegionSolvers(TestCase):
+class TestTrustRegionSolvers(object):
 
     def setUp(self):
         self.x_opt = [1.0, 1.0]

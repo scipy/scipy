@@ -13,7 +13,7 @@ Run tests if fftpack is not installed:
 
 from numpy.testing import (assert_equal, assert_array_almost_equal,
         assert_array_almost_equal_nulp, assert_raises, run_module_suite,
-        assert_array_less, TestCase, dec)
+        assert_array_less, dec)
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
 from scipy.fftpack import _fftpack as fftpack
 from scipy.fftpack.basic import _is_safe_size
@@ -127,7 +127,7 @@ def direct_irdft(x):
     return direct_idft(x1).real
 
 
-class _TestFFTBase(TestCase):
+class _TestFFTBase(object):
     def setUp(self):
         self.cdt = None
         self.rdt = None
@@ -198,7 +198,7 @@ class TestSingleFFT(_TestFFTBase):
         pass
 
 
-class TestFloat16FFT(TestCase):
+class TestFloat16FFT(object):
 
     def test_1_argument_real(self):
         x1 = np.array([1, 2, 3, 4], dtype=np.float16)
@@ -217,7 +217,7 @@ class TestFloat16FFT(TestCase):
         assert_array_almost_equal(y[1], direct_dft(x2.astype(np.float32)))
 
 
-class _TestIFFTBase(TestCase):
+class _TestIFFTBase(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -311,7 +311,7 @@ class TestSingleIFFT(_TestIFFTBase):
         self.rdt = np.float32
 
 
-class _TestRFFTBase(TestCase):
+class _TestRFFTBase(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -378,7 +378,7 @@ class TestRFFTSingle(_TestRFFTBase):
         self.rdt = np.float32
 
 
-class _TestIRFFTBase(TestCase):
+class _TestIRFFTBase(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -462,7 +462,7 @@ class TestIRFFTSingle(_TestIRFFTBase):
         self.ndec = 5
 
 
-class Testfft2(TestCase):
+class Testfft2(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -480,7 +480,7 @@ class Testfft2(TestCase):
         assert_raises(ValueError, fft2, [[1,1],[2,2]], (4, -3))
 
 
-class TestFftnSingle(TestCase):
+class TestFftnSingle(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -539,7 +539,7 @@ class TestFftnSingle(TestCase):
             assert_array_almost_equal_nulp(y1, y2, 2e6)
 
 
-class TestFftn(TestCase):
+class TestFftn(object):
     def setUp(self):
         np.random.seed(1234)
 
@@ -696,7 +696,7 @@ class TestFftn(TestCase):
         assert_raises(ValueError, fftn, [[1,1],[2,2]], (4, -3))
 
 
-class _TestIfftn(TestCase):
+class _TestIfftn(object):
     dtype = None
     cdtype = None
 
@@ -736,7 +736,7 @@ class TestIfftnSingle(_TestIfftn):
     maxnlp = 3500
 
 
-class TestLongDoubleFailure(TestCase):
+class TestLongDoubleFailure(object):
     def setUp(self):
         np.random.seed(1234)
 

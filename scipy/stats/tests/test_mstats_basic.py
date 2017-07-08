@@ -13,14 +13,14 @@ from numpy.ma import masked, nomask
 import scipy.stats.mstats as mstats
 from scipy import stats
 from common_tests import check_named_results
-from numpy.testing import TestCase, run_module_suite
+from numpy.testing import run_module_suite
 from numpy.testing.decorators import skipif
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_raises, assert_array_equal)
 
 
-class TestMquantiles(TestCase):
+class TestMquantiles(object):
     def test_mquantiles_limit_keyword(self):
         # Regression test for Trac ticket #867
         data = np.array([[6., 7., 1.],
@@ -41,7 +41,7 @@ class TestMquantiles(TestCase):
         assert_almost_equal(quants, desired)
 
 
-class TestGMean(TestCase):
+class TestGMean(object):
     def test_1D(self):
         a = (1,2,3,4)
         actual = mstats.gmean(a)
@@ -85,7 +85,7 @@ class TestGMean(TestCase):
         assert_array_almost_equal(actual, desired, decimal=14)
 
 
-class TestHMean(TestCase):
+class TestHMean(object):
     def test_1D(self):
         a = (1,2,3,4)
         actual = mstats.hmean(a)
@@ -125,10 +125,7 @@ class TestHMean(TestCase):
         assert_array_almost_equal(actual1, desired, decimal=14)
 
 
-class TestRanking(TestCase):
-    def __init__(self, *args, **kwargs):
-        TestCase.__init__(self, *args, **kwargs)
-
+class TestRanking(object):
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
         assert_almost_equal(mstats.rankdata(x),
@@ -150,7 +147,7 @@ class TestRanking(TestCase):
                            [[1,1,1,1,1], [2,2,2,2,2,]])
 
 
-class TestCorr(TestCase):
+class TestCorr(object):
     def test_pearsonr(self):
         # Tests some computations of Pearson's r
         x = ma.arange(10)
@@ -275,7 +272,7 @@ class TestCorr(TestCase):
         check_named_results(res, attributes, ma=True)
 
 
-class TestTrimming(TestCase):
+class TestTrimming(object):
 
     def test_trim(self):
         a = ma.arange(10)
@@ -350,7 +347,7 @@ class TestTrimming(TestCase):
         assert_equal(winsorized.mask, data.mask)
 
 
-class TestMoments(TestCase):
+class TestMoments(object):
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
     # testmathworks comes from documentation for the
@@ -474,7 +471,7 @@ class TestMoments(TestCase):
         assert_equal(im, cp)
 
 
-class TestPercentile(TestCase):
+class TestPercentile(object):
     def setUp(self):
         self.a1 = [3,4,5,10,-3,-5,6]
         self.a2 = [3,-6,-2,8,7,4,2,1]
@@ -495,7 +492,7 @@ class TestPercentile(TestCase):
         assert_equal(mstats.scoreatpercentile(x,50), [1,1,1])
 
 
-class TestVariability(TestCase):
+class TestVariability(object):
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
     """
@@ -535,7 +532,7 @@ class TestVariability(TestCase):
         assert_almost_equal(desired, y, decimal=12)
 
 
-class TestMisc(TestCase):
+class TestMisc(object):
 
     def test_obrientransform(self):
         args = [[5]*5+[6]*11+[7]*9+[8]*3+[9]*2+[10]*2,
@@ -926,7 +923,7 @@ class TestTtest_1samp():
                                (np.nan, np.nan))
 
 
-class TestCompareWithStats(TestCase):
+class TestCompareWithStats(object):
     """
     Class to compare mstats results with stats results.
 

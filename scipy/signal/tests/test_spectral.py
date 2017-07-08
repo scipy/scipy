@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import warnings
 import numpy as np
-from numpy.testing import (assert_, run_module_suite, TestCase, dec,
+from numpy.testing import (assert_, run_module_suite, dec,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, assert_raises,
                            assert_approx_equal)
@@ -12,7 +12,7 @@ from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
 from scipy.signal.spectral import _spectral_helper
 
 
-class TestPeriodogram(TestCase):
+class TestPeriodogram(object):
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -216,7 +216,7 @@ class TestPeriodogram(TestCase):
         assert_(p.dtype == q.dtype)
 
 
-class TestWelch(TestCase):
+class TestWelch(object):
     def test_real_onesided_even(self):
         x = np.zeros(16)
         x[0] = 1
@@ -842,7 +842,7 @@ class TestCSD:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
-class TestCoherence(TestCase):
+class TestCoherence(object):
     def test_identical_input(self):
         x = np.random.randn(20)
         y = np.copy(x)  # So `y is x` -> False
@@ -866,7 +866,7 @@ class TestCoherence(TestCase):
         assert_allclose(C, C1)
 
 
-class TestSpectrogram(TestCase):
+class TestSpectrogram(object):
     def test_average_all_segments(self):
         x = np.random.randn(1024)
 
@@ -918,7 +918,7 @@ class TestSpectrogram(TestCase):
         assert_allclose(f1, f3)
         assert_allclose(p1, p3)
 
-class TestLombscargle(TestCase):
+class TestLombscargle(object):
     def test_frequency(self):
         """Test if frequency location of peak corresponds to frequency of
         generated input signal.
@@ -1065,7 +1065,7 @@ class TestLombscargle(TestCase):
         q = lombscargle(t, x, f*2*np.pi)
 
 
-class TestSTFT(TestCase):
+class TestSTFT(object):
     def test_input_validation(self):
         assert_raises(ValueError, check_COLA, 'hann', -10, 0)
         assert_raises(ValueError, check_COLA, 'hann', 10, 20)

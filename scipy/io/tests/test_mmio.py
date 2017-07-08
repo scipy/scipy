@@ -6,7 +6,7 @@ import shutil
 
 import numpy as np
 from numpy import array, transpose, pi
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
+from numpy.testing import (run_module_suite, assert_equal,
                            assert_array_equal, assert_array_almost_equal,
                            assert_raises)
 
@@ -14,7 +14,7 @@ import scipy.sparse
 from scipy.io.mmio import mminfo, mmread, mmwrite
 
 
-class TestMMIOArray(TestCase):
+class TestMMIOArray(object):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -269,7 +269,7 @@ _over64bit_integer_sparse_example = '''\
 2  2  19223372036854775808
 '''
 
-class TestMMIOReadLargeIntegers(TestCase):
+class TestMMIOReadLargeIntegers(object):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
@@ -449,7 +449,7 @@ _symmetric_pattern_example = '''\
 '''
 
 
-class TestMMIOCoordinate(TestCase):
+class TestMMIOCoordinate(object):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')

@@ -1,8 +1,7 @@
 from __future__ import print_function
 import numpy as np
 import itertools
-from numpy.testing import (TestCase,
-                           assert_equal,
+from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
                            assert_array_almost_equal)
@@ -10,7 +9,7 @@ from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 
 
-class TestCircumcenters(TestCase):
+class TestCircumcenters(object):
 
     def test_circumcenters(self):
         tetrahedrons = np.array([
@@ -34,7 +33,7 @@ class TestCircumcenters(TestCase):
         assert_array_almost_equal(result, expected)
 
 
-class TestProjectToSphere(TestCase):
+class TestProjectToSphere(object):
 
     def test_unit_sphere(self):
         points = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
@@ -61,7 +60,7 @@ class TestProjectToSphere(TestCase):
         assert_array_almost_equal(translated, projected)
 
 
-class TestSphericalVoronoi(TestCase):
+class TestSphericalVoronoi(object):
 
     def setUp(self):
         self.points = np.array([
@@ -83,13 +82,13 @@ class TestSphericalVoronoi(TestCase):
         s3 = SphericalVoronoi(self.points, None, center)
         s4 = SphericalVoronoi(self.points, radius, center)
         assert_array_equal(s1.center, np.array([0, 0, 0]))
-        self.assertEqual(s1.radius, 1)
+        assert_equal(s1.radius, 1)
         assert_array_equal(s2.center, np.array([0, 0, 0]))
-        self.assertEqual(s2.radius, 2)
+        assert_equal(s2.radius, 2)
         assert_array_equal(s3.center, center)
-        self.assertEqual(s3.radius, 1)
+        assert_equal(s3.radius, 1)
         assert_array_equal(s4.center, center)
-        self.assertEqual(s4.radius, radius)
+        assert_equal(s4.radius, radius)
 
     def test_vertices_regions_translation_invariance(self):
         sv_origin = SphericalVoronoi(self.points)

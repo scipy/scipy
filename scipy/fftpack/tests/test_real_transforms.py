@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 from os.path import join, dirname
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_equal, TestCase
+from numpy.testing import assert_array_almost_equal, assert_equal
 
 from scipy.fftpack.realtransforms import dct, idct, dst, idst
 
@@ -48,7 +48,7 @@ def fftw_dst_ref(type, size, dt):
     return x, y, dt
 
 
-class TestComplex(TestCase):
+class TestComplex(object):
     def test_dct_complex64(self):
         y = dct(1j*np.arange(5, dtype=np.complex64))
         x = 1j*dct(np.arange(5))
@@ -80,7 +80,7 @@ class TestComplex(TestCase):
         assert_array_almost_equal(x, y)
 
 
-class _TestDCTBase(TestCase):
+class _TestDCTBase(object):
     def setUp(self):
         self.rdt = None
         self.dec = 14
@@ -202,7 +202,7 @@ class TestDCTIIIInt(_TestDCTIIIBase):
         self.type = 3
 
 
-class _TestIDCTBase(TestCase):
+class _TestIDCTBase(object):
     def setUp(self):
         self.rdt = None
         self.dec = 14
@@ -288,7 +288,7 @@ class TestIDCTIIIInt(_TestIDCTBase):
         self.type = 3
 
 
-class _TestDSTBase(TestCase):
+class _TestDSTBase(object):
     def setUp(self):
         self.rdt = None  # dtype
         self.dec = None  # number of decimals to match
@@ -370,7 +370,7 @@ class TestDSTIIIInt(_TestDSTBase):
         self.type = 3
 
 
-class _TestIDSTBase(TestCase):
+class _TestIDSTBase(object):
     def setUp(self):
         self.rdt = None
         self.dec = None

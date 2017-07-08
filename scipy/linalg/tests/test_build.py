@@ -4,7 +4,7 @@ from subprocess import call, PIPE, Popen
 import sys
 import re
 
-from numpy.testing import TestCase, dec
+from numpy.testing import dec, assert_
 from numpy.compat import asbytes
 
 from scipy.linalg import _flapack as flapack
@@ -43,14 +43,14 @@ class FindDependenciesLdd:
         return founds
 
 
-class TestF77Mismatch(TestCase):
+class TestF77Mismatch(object):
     @dec.skipif(not(sys.platform[:5] == 'linux'),
                 "Skipping fortran compiler mismatch on non Linux platform")
     def test_lapack(self):
         f = FindDependenciesLdd()
         deps = f.grep_dependencies(flapack.__file__,
                                    ['libg2c', 'libgfortran'])
-        self.assertFalse(len(deps) > 1,
+        assert_(not (len(deps) > 1),
 """Both g77 and gfortran runtimes linked in scipy.linalg.flapack ! This is
 likely to cause random crashes and wrong results. See numpy INSTALL.rst.txt for
 more information.""")

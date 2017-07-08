@@ -69,15 +69,14 @@ class TestInt32Overflow(object):
     routines used to suffer from int32 wraparounds; here, we try to
     check that the wraparounds don't occur any more.
     """
-
-    def __init__(self):
-        # choose n large enough
-        self.n = 50000
-        assert self.n**2 > np.iinfo(np.int32).max
+    # choose n large enough
+    n = 50000
 
     @dec.skipif(not sys.platform.startswith('linux'), "test requires Linux")
     @dec.skipif(np.dtype(np.intp).itemsize < 8, "test requires 64-bit system")
     def setUp(self):
+        assert self.n**2 > np.iinfo(np.int32).max
+
         check_free_memory(5000)
 
     def tearDown(self):

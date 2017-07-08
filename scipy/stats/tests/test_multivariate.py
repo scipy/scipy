@@ -9,7 +9,7 @@ import pickle
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_array_less, assert_raises, assert_,
-                           run_module_suite, TestCase)
+                           run_module_suite)
 
 from test_continuous_basic import check_distribution_rvs
 
@@ -34,7 +34,7 @@ from scipy.integrate import romb
 from common_tests import check_random_state_property
 
 
-class TestMultivariateNormal(TestCase):
+class TestMultivariateNormal(object):
     def test_input_shape(self):
         mu = np.arange(3)
         cov = np.identity(2)
@@ -432,7 +432,7 @@ class TestMultivariateNormal(TestCase):
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
-class TestMatrixNormal(TestCase):
+class TestMatrixNormal(object):
 
     def test_bad_input(self):
         # Check that bad inputs raise errors
@@ -608,7 +608,7 @@ class TestMatrixNormal(TestCase):
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
 
-class TestDirichlet(TestCase):
+class TestDirichlet(object):
 
     def test_frozen_dirichlet(self):
         np.random.seed(2846)
@@ -809,7 +809,7 @@ def test_multivariate_normal_dimensions_mismatch():
         assert_equal(str(e)[:len(msg)], msg)
 
 
-class TestWishart(TestCase):
+class TestWishart(object):
     def test_scale_dimensions(self):
         # Test that we can call the Wishart with various scale dimensions
 
@@ -996,7 +996,7 @@ class TestWishart(TestCase):
         alpha = 0.01
         check_distribution_rvs('chi2', args, alpha, rvs)
 
-class TestMultinomial(TestCase):
+class TestMultinomial(object):
     def test_logpmf(self):
         vals1 = multinomial.logpmf((3,4), 7, (0.3, 0.7))
         assert_allclose(vals1, -1.483270127243324, rtol=1e-8)
@@ -1138,7 +1138,7 @@ class TestMultinomial(TestCase):
         assert_allclose(mn_frozen.logpmf(x), multinomial.logpmf(x, n, pvals))
         assert_allclose(mn_frozen.entropy(), multinomial.entropy(n, pvals))
 
-class TestInvwishart(TestCase):
+class TestInvwishart(object):
     def test_frozen(self):
         # Test that the frozen and non-frozen inverse Wishart gives the same
         # answers
@@ -1261,7 +1261,7 @@ class TestInvwishart(TestCase):
         assert_allclose(frozen_iw_rvs, manual_iw_rvs)
 
 
-class TestSpecialOrthoGroup(TestCase):
+class TestSpecialOrthoGroup(object):
     def test_reproducibility(self):
         np.random.seed(514)
         x = special_ortho_group.rvs(3)
@@ -1330,7 +1330,7 @@ class TestSpecialOrthoGroup(TestCase):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
-class TestOrthoGroup(TestCase):
+class TestOrthoGroup(object):
     def test_reproducibility(self):
         np.random.seed(514)
         x = ortho_group.rvs(3)
@@ -1390,7 +1390,7 @@ class TestOrthoGroup(TestCase):
         ks_tests = [ks_2samp(proj[p0], proj[p1])[1] for (p0, p1) in pairs]
         assert_array_less([ks_prob]*len(pairs), ks_tests)
 
-class TestRandomCorrelation(TestCase):
+class TestRandomCorrelation(object):
     def test_reproducibility(self):
         np.random.seed(514)
         eigs = (.5, .8, 1.2, 1.5)
@@ -1481,7 +1481,7 @@ class TestRandomCorrelation(TestCase):
         assert_allclose(m[0,0], 1)
 
 
-class TestUnitaryGroup(TestCase):
+class TestUnitaryGroup(object):
     def test_reproducibility(self):
         np.random.seed(514)
         x = unitary_group.rvs(3)
