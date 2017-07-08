@@ -47,24 +47,6 @@ def _extend_mode_to_code(mode):
     return mode
 
 
-def _fix_endianness(f):
-    """
-    Decorator to work around endianness issues in _nd_image.geometric_transform
-    and _nd_image.zoom_shift
-    """
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        output = kwargs.get("output")
-        result = f(*args, **kwargs)
-        if isinstance(output, numpy.dtype) and not output.isnative:
-            result.byteswap(True)
-        elif isinstance(output, numpy.ndarray) and not output.dtype.isnative:
-            output.byteswap(True)
-        return result
-
-    return wrapper
-
-
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     """
     Calculates a one-dimensional spline filter along the given axis.
@@ -140,7 +122,6 @@ def spline_filter(input, order=3, output=numpy.float64):
     return return_value
 
 
-@_fix_endianness
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
@@ -264,7 +245,6 @@ def geometric_transform(input, mapping, output_shape=None,
     return return_value
 
 
-@_fix_endianness
 def map_coordinates(input, coordinates, output=None, order=3,
                     mode='constant', cval=0.0, prefilter=True):
     """
@@ -364,7 +344,6 @@ def map_coordinates(input, coordinates, output=None, order=3,
     return return_value
 
 
-@_fix_endianness
 def affine_transform(input, matrix, offset=0.0, output_shape=None,
                      output=None, order=3,
                      mode='constant', cval=0.0, prefilter=True):
