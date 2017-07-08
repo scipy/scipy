@@ -1380,9 +1380,9 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         variables. (Purely for display.)
     alpha0 : float
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see beta3 of [1] Table 8.1
+        direction; see :math:`\beta_3`of [1] Table 8.1
     beta : float
-        The desired reduction of the path parameter mu (see  [3])
+        The desired reduction of the path parameter :math:`\mu` (see  [3])
     maxiter : int
         The maximum number of iterations of the algorithm.
     disp : bool
@@ -1582,7 +1582,7 @@ def _linprog_ip(
     equality constraints, linear inequality constraints, and simple bounds
     using the interior point method of [1]_.
 
-    Linear Programming is intended to solve problems of the following form::
+    Linear programming is intended to solve problems of the following form::
 
         Minimize:     c^T * x
 
@@ -1626,9 +1626,9 @@ def _linprog_ip(
         see [1]_ Section 4.5.
     alpha0 : float (default = 0.99995)
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see beta3 of [1]_ Table 8.1.
+        direction; see :math:`\beta_3` of [1]_ Table 8.1.
     beta : float (default = 0.1)
-        The desired reduction of the path parameter `mu` (see [3]_) when
+        The desired reduction of the path parameter :math:`\mu` (see [3]_) when
         Mehrota's predictor-corrector is not in use (uncommon).
     sparse : bool (default = False)
         Set to ``True`` if the problem is to be treated as sparse. Try setting
@@ -1699,7 +1699,7 @@ def _linprog_ip(
             A string descriptor of the exit status of the optimization.
 
     Notes
-    -----
+    -------
 
     This method implements the algorithm outlined in [1]_ with ideas from [5]_
     and a structure inspired by the simpler methods of [3]_ and [4]_.
@@ -1723,7 +1723,7 @@ def _linprog_ip(
     (but infeasibility has not been detected yet). Therefore, if the output
     message states that unboundedness is detected in presolve and it is
     necessary to know whether the problem is actually infeasible, the option
-    `presolve=False` should be set.
+    ``presolve=False`` should be set.
 
     If neither infeasibility nor unboundedness are detected in a single pass
     of the presolve check, bounds are tightened where possible and fixed
@@ -1793,7 +1793,7 @@ def _linprog_ip(
     the use of sparse linear algebra techniques improves the solve speed
     despite the use of LU rather than Cholesky decomposition. A simple
     improvement would be to use the sparse Cholesky decomposition of
-    ``CHOLMOD` via ``scikit-sparse`` when available.
+    ``CHOLMOD`` via ``scikit-sparse`` when available.
 
     Other potential improvements for combatting issues associated with dense
     columns in otherwise sparse problems are outlined in [1]_ Section 5.3 and

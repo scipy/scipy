@@ -859,7 +859,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         the equality constraints at ``x``.
     b_eq : array_like, optional
         1-D array of values representing the RHS of each equality constraint
-        (row) in A_eq.
+        (row) in ``A_eq``.
     bounds : sequence, optional
         ``(min, max)`` pairs for each element in ``x``, defining
         the bounds on that parameter. Use None for one of ``min`` or
@@ -874,8 +874,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     callback : callable, optional (simplex only)
         If a callback function is provide, it will be called within each
         iteration of the simplex algorithm. The callback must have the
-        signature `callback(xk, **kwargs)` where xk is the current solution
-        vector and kwargs is a dictionary containing the following::
+        signature ``callback(xk, **kwargs)`` where ``xk`` is the current
+        solution vector and ``kwargs`` is a dictionary containing the
+        following::
 
             "tableau" : The current Simplex algorithm tableau
             "nit" : The current iteration.
@@ -934,17 +935,17 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     is :ref:`Simplex <optimize.linprog-simplex>`.
     :ref:`Interior point <optimize.linprog-interior-point>` is also available.
 
-    Method *Simplex* uses the Simplex algorithm (as it relates to Linear
-    Programming, NOT the Nelder-Mead Simplex) [1]_, [2]_. This algorithm
-    should be reasonably reliable and fast.
+    Method *simplex* uses the simplex algorithm (as it relates to linear
+    programming, NOT the Nelder-Mead simplex) [1]_, [2]_. This algorithm
+    should be reasonably reliable and fast for small problems.
 
     .. versionadded:: 0.15.0
 
     Method *interior-point* uses the primal-dual path following algorithm
     as outlined in [4]_. This algorithm is intended to provide a faster
-    and/or more reliable alternative to *simplex*, especially for large,
-    sparse problems. Note, however, that the solution returned may be less
-    accurate than that of the simplex method and may not correspond with a
+    and more reliable alternative to *simplex*, especially for large,
+    sparse problems. Note, however, that the solution returned may be slightly
+    less accurate than that of the simplex method and may not correspond with a
     vertex of the polytope defined by the constraints.
 
     References
