@@ -2054,7 +2054,7 @@ def _make_pos(X):
 
 class TestOrdQZ(object):
     @classmethod
-    def setupClass(cls):
+    def setup_class(cls):
         # http://www.nag.com/lapack-ex/node119.html
         A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
                         7.5 + 0.5j],
