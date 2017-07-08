@@ -228,7 +228,7 @@ class BinopTester_with_shape(object):
 # TODO check that spmatrix( ... , copy=X ) is respected
 # TODO test prune
 # TODO test has_sorted_indices
-class _TestCommon:
+class _TestCommon(object):
     """test common functionality shared by all sparse formats"""
     math_dtypes = supported_dtypes
 
@@ -2058,7 +2058,7 @@ class _TestCommon:
         assert_allclose(d.A, (b - c).A)
 
 
-class _TestInplaceArithmetic:
+class _TestInplaceArithmetic(object):
     def test_inplace_dense(self):
         a = np.ones((3, 4))
         b = self.spmatrix(a)
@@ -2156,7 +2156,7 @@ class _TestInplaceArithmetic:
         assert_raises(TypeError, operator.ifloordiv, a, b)
 
 
-class _TestGetSet:
+class _TestGetSet(object):
     def test_getelement(self):
         def check(dtype):
             D = array([[1,0,0],
@@ -2253,7 +2253,7 @@ class _TestGetSet:
         assert_array_equal(A.toarray(), B)
 
 
-class _TestSolve:
+class _TestSolve(object):
     def test_solve(self):
         # Test whether the lu_solve command segfaults, as reported by Nils
         # Wagner for a 64-bit machine, 02 March 2005 (EJS)
@@ -2275,7 +2275,7 @@ class _TestSolve:
         assert_almost_equal(A*x,r)
 
 
-class _TestSlicing:
+class _TestSlicing(object):
     def test_dtype_preservation(self):
         assert_equal(self.spmatrix((1,10), dtype=np.int16)[0,1:5].dtype, np.int16)
         assert_equal(self.spmatrix((1,10), dtype=np.int32)[0,1:5].dtype, np.int32)
@@ -2478,7 +2478,7 @@ class _TestSlicing:
         assert_array_equal(a[..., ..., 1].A, b[..., ..., 1].A.reshape((5,1)))
 
 
-class _TestSlicingAssign:
+class _TestSlicingAssign(object):
     def test_slice_scalar_assign(self):
         A = self.spmatrix((5, 5))
         B = np.zeros((5, 5))
@@ -2614,7 +2614,7 @@ class _TestSlicingAssign:
                        [[1, 2, 4], [0, 1, 3]]), [2, 3, 4])
 
 
-class _TestFancyIndexing:
+class _TestFancyIndexing(object):
     """Tests fancy indexing features.  The tests for any matrix formats
     that implement these features should derive from this class.
     """
@@ -2822,7 +2822,7 @@ def check_remains_sorted(X):
                        'Expected sorted indices, found unsorted')
 
 
-class _TestFancyIndexingAssign:
+class _TestFancyIndexingAssign(object):
     def test_bad_index_assign(self):
         A = self.spmatrix(np.zeros([5, 5]))
         assert_raises((IndexError, ValueError, TypeError), A.__setitem__, "foo", 2)
@@ -2935,7 +2935,7 @@ class _TestFancyIndexingAssign:
         assert_equal(todense(A), B)
 
 
-class _TestFancyMultidim:
+class _TestFancyMultidim(object):
     def test_fancy_indexing_ndarray(self):
         sets = [
             (np.array([[1], [2], [3]]), np.array([3, 4, 2])),
@@ -2970,7 +2970,7 @@ class _TestFancyMultidim:
             assert_raises(IndexError, S.__getitem__, (slice(None), [J, J]))
 
 
-class _TestFancyMultidimAssign:
+class _TestFancyMultidimAssign(object):
     def test_fancy_assign_ndarray(self):
         np.random.seed(1234)
 
@@ -3068,7 +3068,7 @@ class _TestFancyMultidimAssign:
         assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)
 
 
-class _TestArithmetic:
+class _TestArithmetic(object):
     """
     Test real/complex arithmetic
     """
