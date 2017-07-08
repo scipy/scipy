@@ -178,8 +178,7 @@ def main(argv):
         fn = os.path.join(dst_dir, 'coverage_html.js')
         if os.path.isdir(dst_dir) and os.path.isfile(fn):
             shutil.rmtree(dst_dir)
-        extra_argv += ['--cover-html',
-                       '--cover-html-dir='+dst_dir]
+        extra_argv += ['--cov-report=html:' + dst_dir]
 
     if args.refguide_check:
         cmd = [os.path.join(ROOT_DIR, 'tools', 'refguide_check.py'),

@@ -196,7 +196,6 @@ after_success:
   # Upload coverage information
   - if [ "${COVERAGE}" == "--coverage" ]; then
         pushd build/testenv/lib/python*/site-packages/;
-        cp ../../../../test/.coverage .;
         codecov;
         popd;
     fi
