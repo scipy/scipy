@@ -271,9 +271,9 @@ static PyObject *Py_Correlate1D(PyObject *obj, PyObject *args)
                           &origin))
         goto exit;
 
-    if (!NI_Correlate1D(input, weights, axis, output,
-                                            (NI_ExtendMode)mode, cval, origin))
-        goto exit;
+    NI_Correlate1D(input, weights, axis, output, (NI_ExtendMode)mode, cval,
+                   origin);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(weights);
@@ -298,10 +298,10 @@ static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
     if (!_validate_origin(input, origin)) {
         goto exit;
     }
-    if (!NI_Correlate(input, weights, output, (NI_ExtendMode)mode, cval,
-                      origin.ptr)) {
-        goto exit;
-    }
+
+    NI_Correlate(input, weights, output, (NI_ExtendMode)mode, cval,
+                 origin.ptr);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(weights);
@@ -323,9 +323,10 @@ static PyObject *Py_UniformFilter1D(PyObject *obj, PyObject *args)
                           NI_ObjectToOutputArray, &output,
                           &mode, &cval, &origin))
         goto exit;
-    if (!NI_UniformFilter1D(input, filter_size, axis, output,
-                            (NI_ExtendMode)mode, cval, origin))
-        goto exit;
+
+    NI_UniformFilter1D(input, filter_size, axis, output, (NI_ExtendMode)mode,
+                       cval, origin);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(output);
@@ -345,9 +346,10 @@ static PyObject *Py_MinOrMaxFilter1D(PyObject *obj, PyObject *args)
                           NI_ObjectToOutputArray, &output,
                           &mode, &cval, &origin, &minimum))
         goto exit;
-    if (!NI_MinOrMaxFilter1D(input, filter_size, axis, output,
-                                                            (NI_ExtendMode)mode, cval, origin, minimum))
-        goto exit;
+
+    NI_MinOrMaxFilter1D(input, filter_size, axis, output, (NI_ExtendMode)mode,
+                        cval, origin, minimum);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(output);
@@ -375,10 +377,10 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
     if (!_validate_origin(input, origin)) {
         goto exit;
     }
-    if (!NI_MinOrMaxFilter(input, footprint, structure, output,
-                           (NI_ExtendMode)mode, cval, origin.ptr, minimum)) {
-        goto exit;
-    }
+
+    NI_MinOrMaxFilter(input, footprint, structure, output, (NI_ExtendMode)mode,
+                      cval, origin.ptr, minimum);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(footprint);
@@ -406,10 +408,10 @@ static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
     if (!_validate_origin(input, origin)) {
         goto exit;
     }
-    if (!NI_RankFilter(input, rank, footprint, output, (NI_ExtendMode)mode,
-                       cval, origin.ptr)) {
-        goto exit;
-    }
+
+    NI_RankFilter(input, rank, footprint, output, (NI_ExtendMode)mode, cval,
+                  origin.ptr);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(footprint);
@@ -532,9 +534,9 @@ static PyObject *Py_GenericFilter1D(PyObject *obj, PyObject *args)
         }
     }
 
-    if (!NI_GenericFilter1D(input, func, data, filter_size, axis, output,
-                            (NI_ExtendMode)mode, cval, origin))
-        goto exit;
+    NI_GenericFilter1D(input, func, data, filter_size, axis, output,
+                       (NI_ExtendMode)mode, cval, origin);
+
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
         ccallback_release(&callback);
@@ -655,10 +657,10 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
             data = callback.user_data;
         }
     }
-    if (!NI_GenericFilter(input, func, data, footprint, output,
-                          (NI_ExtendMode)mode, cval, origin.ptr)) {
-        goto exit;
-    }
+
+    NI_GenericFilter(input, func, data, footprint, output, (NI_ExtendMode)mode,
+                     cval, origin.ptr);
+
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
         ccallback_release(&callback);
@@ -684,8 +686,7 @@ static PyObject *Py_FourierFilter(PyObject *obj, PyObject *args)
                           &filter_type))
         goto exit;
 
-    if (!NI_FourierFilter(input, parameters, n, axis, output, filter_type))
-        goto exit;
+    NI_FourierFilter(input, parameters, n, axis, output, filter_type);
 
 exit:
     Py_XDECREF(input);
@@ -704,11 +705,10 @@ static PyObject *Py_FourierShift(PyObject *obj, PyObject *args)
                           NI_ObjectToInputArray, &input,
                           NI_ObjectToInputArray, &shifts,
                           &n, &axis,
-                                        NI_ObjectToOutputArray, &output))
+                          NI_ObjectToOutputArray, &output))
         goto exit;
 
-    if (!NI_FourierShift(input, shifts, n, axis, output))
-        goto exit;
+    NI_FourierShift(input, shifts, n, axis, output);
 
 exit:
     Py_XDECREF(input);
@@ -728,8 +728,7 @@ static PyObject *Py_SplineFilter1D(PyObject *obj, PyObject *args)
                           NI_ObjectToOutputArray, &output))
         goto exit;
 
-    if (!NI_SplineFilter1D(input, order, axis, output))
-        goto exit;
+    NI_SplineFilter1D(input, order, axis, output);
 
 exit:
     Py_XDECREF(input);
@@ -860,9 +859,8 @@ static PyObject *Py_GeometricTransform(PyObject *obj, PyObject *args)
         }
     }
 
-    if (!NI_GeometricTransform(input, func, data, matrix, shift, coordinates,
-                                                    output, order, (NI_ExtendMode)mode, cval))
-        goto exit;
+    NI_GeometricTransform(input, func, data, matrix, shift, coordinates,
+                          output, order, (NI_ExtendMode)mode, cval);
 
 exit:
     if (callback.py_function != NULL || callback.c_function != NULL) {
@@ -891,9 +889,7 @@ static PyObject *Py_ZoomShift(PyObject *obj, PyObject *args)
                           &order, &mode, &cval))
         goto exit;
 
-    if (!NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode,
-                                        cval))
-        goto exit;
+    NI_ZoomShift(input, zoom, shift, output, order, (NI_ExtendMode)mode, cval);
 
 exit:
     Py_XDECREF(input);
@@ -1004,8 +1000,7 @@ static PyObject *Py_WatershedIFT(PyObject *obj, PyObject *args)
                     &strct, NI_ObjectToOutputArray, &output))
         goto exit;
 
-    if (!NI_WatershedIFT(input, markers, strct, output))
-        goto exit;
+    NI_WatershedIFT(input, markers, strct, output);
 
 exit:
     Py_XDECREF(input);
@@ -1029,9 +1024,9 @@ static PyObject *Py_DistanceTransformBruteForce(PyObject *obj,
                                                 NI_ObjectToOptionalOutputArray, &output,
                                                 NI_ObjectToOptionalOutputArray, &features))
         goto exit;
-    if (!NI_DistanceTransformBruteForce(input, metric, sampling,
-                                                                            output, features))
-        goto exit;
+
+    NI_DistanceTransformBruteForce(input, metric, sampling, output, features);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(sampling);
@@ -1049,8 +1044,9 @@ static PyObject *Py_DistanceTransformOnePass(PyObject *obj, PyObject *args)
                                                 NI_ObjectToIoArray, &distances,
                                                 NI_ObjectToOptionalOutputArray, &features))
         goto exit;
-    if (!NI_DistanceTransformOnePass(strct, distances, features))
-        goto exit;
+
+    NI_DistanceTransformOnePass(strct, distances, features);
+
 exit:
     Py_XDECREF(strct);
     Py_XDECREF(distances);
@@ -1068,8 +1064,9 @@ static PyObject *Py_EuclideanFeatureTransform(PyObject *obj,
                                                 NI_ObjectToOptionalInputArray, &sampling,
                                                 NI_ObjectToOutputArray, &features))
         goto exit;
-    if (!NI_EuclideanFeatureTransform(input, sampling, features))
-        goto exit;
+
+    NI_EuclideanFeatureTransform(input, sampling, features);
+
 exit:
     Py_XDECREF(input);
     Py_XDECREF(sampling);
@@ -1166,7 +1163,6 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     }
     else {
         PyErr_SetString(PyExc_RuntimeError, "cannot convert CObject");
-        goto exit;
     }
 exit:
     Py_XDECREF(array);
