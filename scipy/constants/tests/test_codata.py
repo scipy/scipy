@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from scipy.constants import constants, codata, find, value
-from numpy.testing import (assert_equal, assert_, run_module_suite,
+from numpy.testing import (assert_equal, assert_,
                            assert_almost_equal)
 
 
@@ -55,6 +55,3 @@ def test_exact_values():
     for key in codata.exact_values:
         assert_((codata.exact_values[key][0] - value(key)) / value(key) == 0)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -16,7 +16,7 @@ from collections import namedtuple
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_raises, run_module_suite, assert_allclose)
+                           assert_raises, assert_allclose)
 import pytest
 from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
 import numpy.ma.testutils as mat
@@ -4202,6 +4202,3 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
-
-if __name__ == "__main__":
-    run_module_suite()

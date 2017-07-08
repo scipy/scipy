@@ -9,7 +9,7 @@ import warnings
 
 import pytest
 from numpy.testing import (
-    run_module_suite, assert_equal,
+    assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_raises, assert_allclose, assert_, assert_warns)
 from scipy._lib._numpy_compat import suppress_warnings
@@ -2246,6 +2246,3 @@ class TestSOSFilt(object):
         # Expected steady state value of the step response of this filter:
         ss = np.prod(sos[:, :3].sum(axis=-1) / sos[:, 3:].sum(axis=-1))
         assert_allclose(y, ss, rtol=1e-13)
-
-if __name__ == "__main__":
-    run_module_suite()

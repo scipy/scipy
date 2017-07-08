@@ -3,7 +3,7 @@ from __future__ import division, absolute_import, print_function
 import re
 
 import scipy
-from numpy.testing import assert_, run_module_suite
+from numpy.testing import assert_
 
 
 def test_valid_scipy_version():
@@ -19,6 +19,3 @@ def test_valid_scipy_version():
 
     assert_(res is not None, scipy.__version__)
 
-
-if __name__ == "__main__":
-    run_module_suite()

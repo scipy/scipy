@@ -3,8 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, assert_allclose, assert_raises,
-        run_module_suite)
+        assert_array_almost_equal, assert_allclose, assert_raises)
 from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
 from scipy.interpolate.fitpack import bisplrep, bisplev
@@ -508,6 +507,3 @@ def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
                 - func(x + eps, y - eps) + func(x - eps, y - eps)) / (2*eps)**2
     else:
         raise ValueError("invalid derivative order")
-
-if __name__ == "__main__":
-    run_module_suite()

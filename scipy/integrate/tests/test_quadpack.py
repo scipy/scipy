@@ -4,7 +4,7 @@ import sys
 import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_, run_module_suite,
+from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal, assert_raises)
 import pytest
 
@@ -409,6 +409,3 @@ class TestNQuad(object):
         except(TypeError):
             assert False
 
-
-if __name__ == "__main__":
-    run_module_suite()

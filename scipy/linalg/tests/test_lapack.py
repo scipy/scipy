@@ -8,7 +8,7 @@ import sys
 import subprocess
 import time
 
-from numpy.testing import run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_array_almost_equal, assert_, assert_raises, assert_allclose, \
     assert_almost_equal, assert_array_equal
 import pytest
@@ -559,6 +559,3 @@ def test_sgesdd_lwork_bug_workaround():
     assert_equal(returncode, 0,
                  "Code apparently failed: " + p.stdout.read())
 
-
-if __name__ == "__main__":
-    run_module_suite()

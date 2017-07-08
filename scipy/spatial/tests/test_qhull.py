@@ -4,7 +4,7 @@ import os
 import copy
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_almost_equal, run_module_suite,
+from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_, assert_allclose, assert_array_equal,
                            assert_raises)
 from scipy._lib.six import xrange
@@ -1012,6 +1012,3 @@ class Test_HalfspaceIntersection(object):
             self.assert_unordered_allclose(inc_hs.intersections, hs.intersections)
 
         inc_hs.close()
-
-if __name__ == "__main__":
-    run_module_suite()

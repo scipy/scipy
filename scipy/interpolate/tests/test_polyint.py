@@ -6,7 +6,7 @@ import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    run_module_suite, assert_allclose, assert_equal, assert_,
+    assert_allclose, assert_equal, assert_,
     assert_raises)
 
 from scipy.interpolate import (
@@ -659,6 +659,3 @@ class TestCubicSpline(object):
         # periodic condition, y[-1] must be equal to y[0]:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
-
-if __name__ == '__main__':
-    run_module_suite()

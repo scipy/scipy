@@ -8,15 +8,12 @@ Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.linalg.test()'
-Run tests if linalg is not installed:
-  python tests/test_decomp.py
 """
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
-                           assert_raises, assert_, assert_allclose,
-                           run_module_suite)
+                           assert_raises, assert_, assert_allclose)
 
 import pytest
 
@@ -2497,6 +2494,3 @@ def test_orth():
     for n in 1, 2, 3, 10, 100:
         _check_orth(n)
 
-
-if __name__ == "__main__":
-    run_module_suite()

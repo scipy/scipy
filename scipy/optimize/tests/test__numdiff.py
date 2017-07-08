@@ -5,7 +5,7 @@ from itertools import product
 
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
-                           assert_, run_module_suite)
+                           assert_)
 from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 from scipy.optimize._numdiff import (
@@ -469,6 +469,3 @@ class TestApproxDerivativeSparse(object):
                                     bounds=(self.lb, self.ub))
         assert_(accuracy < 1e-9)
 
-
-if __name__ == '__main__':
-    run_module_suite()

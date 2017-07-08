@@ -6,7 +6,7 @@ import shutil
 
 import numpy as np
 from numpy import array, transpose, pi
-from numpy.testing import (run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
                            assert_array_equal, assert_array_almost_equal,
                            assert_raises)
 
@@ -641,6 +641,3 @@ class TestMMIOCoordinate(object):
                 assert_array_almost_equal(A.data,
                     [float('%%.%dg' % precision % value)])
 
-
-if __name__ == "__main__":
-    run_module_suite()

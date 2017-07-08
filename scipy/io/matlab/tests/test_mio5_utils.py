@@ -12,7 +12,7 @@ import numpy as np
 
 from nose.tools import (assert_true, assert_equal, assert_raises)
 
-from numpy.testing import (assert_array_equal, run_module_suite)
+from numpy.testing import (assert_array_equal)
 
 from scipy._lib.six import u
 
@@ -184,6 +184,3 @@ def test_zero_byte_string():
     val = c_reader.read_char(hdr)
     assert_array_equal(val, [u(' ')] * 4)
 
-
-if __name__ == "__main__":
-    run_module_suite()

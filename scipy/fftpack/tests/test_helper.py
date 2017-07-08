@@ -12,7 +12,7 @@ Run tests if fftpack is not installed:
 """
 
 from numpy.testing import (assert_array_almost_equal,
-                           run_module_suite, assert_equal, assert_)
+                           assert_equal, assert_)
 from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
 from scipy.fftpack.helper import next_fast_len
 
@@ -159,6 +159,3 @@ class TestNextOptLen(object):
         for x, y in hams.items():
             assert_equal(next_fast_len(x), y)
 
-
-if __name__ == "__main__":
-    run_module_suite()

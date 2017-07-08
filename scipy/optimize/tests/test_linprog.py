@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal, assert_allclose,
-        assert_almost_equal, assert_raises, assert_equal, run_module_suite)
+        assert_almost_equal, assert_raises, assert_equal)
 
 from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns
@@ -449,6 +449,3 @@ def test_basic_artificial_vars():
                   callback=lambda x, **kwargs: None)
     _assert_success(res, desired_fun=0, desired_x=np.zeros_like(c))
 
-
-if __name__ == '__main__':
-    run_module_suite()

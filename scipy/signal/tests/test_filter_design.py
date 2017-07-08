@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns)
+                           assert_allclose, assert_warns)
 from numpy import array, spacing, sin, pi, sort
 import pytest
 
@@ -2897,6 +2897,3 @@ class TestGroupDelay(object):
         w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
         assert_allclose(gd, 0)
 
-
-if __name__ == "__main__":
-    run_module_suite()

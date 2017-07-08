@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.linalg import lstsq
 from numpy.testing import (assert_allclose, assert_equal, assert_,
-                           run_module_suite, assert_raises)
+                           assert_raises)
 from scipy.sparse import rand
 from scipy.sparse.linalg import aslinearoperator
 from scipy.optimize import lsq_linear
@@ -147,6 +147,3 @@ class TestBVLS(BaseMixin):
     method = 'bvls'
     lsq_solvers = ['exact']
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -15,7 +15,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
-                           assert_, run_module_suite,
+                           assert_,
                            assert_almost_equal, assert_warns,
                            assert_array_less)
 import pytest
@@ -1243,6 +1243,3 @@ class TestIterationLimits(object):
                 else:
                     assert_(res["nfev"] >= default_iters*2 or
                         res["nit"] >= default_iters*2)
-
-if __name__ == "__main__":
-    run_module_suite()

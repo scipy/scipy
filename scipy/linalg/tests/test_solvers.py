@@ -3,7 +3,6 @@ from __future__ import division, print_function, absolute_import
 import os
 import numpy as np
 
-from numpy.testing import run_module_suite
 from numpy.testing import assert_raises, assert_array_almost_equal
 import pytest
 
@@ -755,6 +754,3 @@ class TestSolveSylvester(object):
         x = solve_sylvester(a, b, c)
         assert_array_almost_equal(x, np.array([1.0, 1.0]).reshape(-1, 1))
 
-
-if __name__ == "__main__":
-    run_module_suite()

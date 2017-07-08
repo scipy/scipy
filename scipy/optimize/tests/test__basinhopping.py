@@ -4,7 +4,7 @@ Unit tests for the basin hopping global minimization algorithm.
 from __future__ import division, print_function, absolute_import
 import copy
 
-from numpy.testing import (run_module_suite, assert_raises,
+from numpy.testing import (assert_raises,
                            assert_almost_equal, assert_equal, assert_)
 import numpy as np
 from numpy import cos, sin
@@ -442,6 +442,3 @@ class Test_AdaptiveStepsize(object):
             self.takestep.report(False)
         assert_(self.ts.stepsize < self.stepsize)
 
-
-if __name__ == "__main__":
-    run_module_suite()

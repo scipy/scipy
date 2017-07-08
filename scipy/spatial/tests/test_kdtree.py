@@ -5,8 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_equal, assert_array_equal,
     assert_almost_equal, assert_array_almost_equal, assert_,
-    assert_raises,
-    run_module_suite)
+    assert_raises)
 
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
@@ -1331,6 +1330,3 @@ def test_short_knn():
             [0., 0.01, np.inf, np.inf],
             [0., 0.01, np.inf, np.inf],
             [0., np.inf, np.inf, np.inf]])
-
-if __name__ == "__main__":
-    run_module_suite()

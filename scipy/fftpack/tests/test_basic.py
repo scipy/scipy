@@ -12,7 +12,7 @@ Run tests if fftpack is not installed:
 """
 
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-        assert_array_almost_equal_nulp, assert_raises, run_module_suite,
+        assert_array_almost_equal_nulp, assert_raises,
         assert_array_less)
 import pytest
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
@@ -912,6 +912,3 @@ class TestOverwrite(object):
         for dtype in self.dtypes:
             self._check_nd(ifftn, dtype, overwritable)
 
-
-if __name__ == "__main__":
-    run_module_suite()

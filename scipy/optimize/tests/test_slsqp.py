@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import pytest
 from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_allclose, assert_equal, run_module_suite,
+                           assert_allclose, assert_equal,
                            assert_raises)
 import numpy as np
 
@@ -454,6 +454,3 @@ class TestSLSQP(object):
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
-
-if __name__ == "__main__":
-    run_module_suite()

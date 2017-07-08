@@ -1,7 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite
 import pytest
 
 from scipy.special._testutils import MissingModule, check_version
@@ -116,6 +115,3 @@ def test_gammaincc():
                         [IntArg(1, 100), Arg(0, 100)],
                         nan_ok=False, rtol=1e-17, n=50, dps=50)
 
-
-if __name__ == "__main__":
-    run_module_suite()

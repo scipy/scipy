@@ -4,7 +4,6 @@ import os
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
-from numpy.testing import run_module_suite
 from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.special import (
@@ -498,6 +497,3 @@ def _test_factory(test, dtype=np.double):
         finally:
             np.seterr(**olderr)
 
-
-if __name__ == "__main__":
-    run_module_suite()

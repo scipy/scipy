@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_allclose, assert_equal,
+from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal)
 
@@ -289,6 +289,3 @@ def test_sg_filter_interp_edges_3d():
     dy = savgol_filter(z, 7, 3, axis=0, mode='interp', deriv=1, delta=delta)
     assert_allclose(dy, dz, atol=1e-10)
 
-
-if __name__ == "__main__":
-    run_module_suite()

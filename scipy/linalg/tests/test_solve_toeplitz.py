@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg._solve_toeplitz import levinson
 from scipy.linalg import solve, toeplitz, solve_toeplitz
-from numpy.testing import (run_module_suite, assert_equal, assert_allclose,
+from numpy.testing import (assert_equal, assert_allclose,
                            assert_raises)
 import pytest
 
@@ -119,6 +119,3 @@ def test_unstable():
 
     assert_allclose(solution1, solution2)
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -13,7 +13,6 @@ from numpy.ma import masked, nomask
 import scipy.stats.mstats as mstats
 from scipy import stats
 from .common_tests import check_named_results
-from numpy.testing import run_module_suite
 import pytest
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
@@ -1310,6 +1309,3 @@ class TestCompareWithStats(object):
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T, rm[0:len(x)])
 
-
-if __name__ == "__main__":
-    run_module_suite()

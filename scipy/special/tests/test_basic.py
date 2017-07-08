@@ -28,7 +28,7 @@ from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
 import pytest
 from numpy.testing import (assert_equal, assert_almost_equal,
         assert_array_equal, assert_array_almost_equal, assert_approx_equal,
-        assert_, run_module_suite, assert_allclose,
+        assert_, assert_allclose,
         assert_raises, assert_array_almost_equal_nulp)
 
 from scipy import special
@@ -3391,6 +3391,3 @@ def test_pseudo_huber():
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
 
-
-if __name__ == "__main__":
-    run_module_suite()

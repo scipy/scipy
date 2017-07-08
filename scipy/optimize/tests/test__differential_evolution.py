@@ -7,7 +7,7 @@ from scipy.optimize import differential_evolution
 import numpy as np
 from scipy.optimize import rosen
 from numpy.testing import (assert_equal, assert_allclose,
-                           run_module_suite, assert_almost_equal,
+                           assert_almost_equal,
                            assert_string_equal, assert_raises, assert_)
 
 
@@ -426,6 +426,3 @@ class TestDifferentialEvolutionSolver(object):
         assert_equal(solver._nfev, 0)
         assert_(np.all(np.isinf(solver.population_energies)))
 
-
-if __name__ == '__main__':
-    run_module_suite()

@@ -36,7 +36,7 @@ import sys
 import numpy
 from numpy import fft
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
-        run_module_suite, assert_array_almost_equal, assert_almost_equal)
+        assert_array_almost_equal, assert_almost_equal)
 import pytest
 from scipy._lib._numpy_compat import suppress_warnings
 import scipy.ndimage as ndimage
@@ -4611,6 +4611,3 @@ class TestDilateFix:
         result = ndimage.grey_dilation(self.array, size=3)
         assert_array_almost_equal(result, self.dilated3x3)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite, \
+from numpy.testing import \
                           assert_array_almost_equal, assert_almost_equal, \
                           assert_allclose, assert_equal
 
@@ -368,6 +368,3 @@ class TestC2dLti(object):
         # Somehow a lot of numerical errors
         assert_allclose(sys.den, den_res, atol=0.02)
         assert_allclose(sys.num, num_res, atol=0.02)
-
-if __name__ == "__main__":
-    run_module_suite()

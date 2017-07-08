@@ -15,7 +15,7 @@ import numpy.ma as ma
 import scipy.stats.mstats as ms
 #import scipy.stats.mmorestats as mms
 
-from numpy.testing import run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_almost_equal, assert_
 
 
@@ -94,6 +94,3 @@ class TestQuantiles(object):
 
 
 ###############################################################################
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -6,7 +6,7 @@ import sys
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-    run_module_suite, assert_raises, assert_allclose, assert_equal,
+    assert_raises, assert_allclose, assert_equal,
     assert_)
 from scipy._lib._numpy_compat import suppress_warnings
 import pytest
@@ -308,6 +308,3 @@ class TestKMean(object):
         assert_allclose(codebook, expected)
         assert_allclose(distortion, 0.11909166841036592)
 
-
-if __name__ == "__main__":
-    run_module_suite()

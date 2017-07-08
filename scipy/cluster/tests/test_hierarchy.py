@@ -34,7 +34,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_raises,
+from numpy.testing import (assert_raises,
                            assert_allclose, assert_equal, assert_, assert_warns)
 import pytest
 
@@ -1041,6 +1041,3 @@ def test_Heap():
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
 
-
-if __name__ == "__main__":
-    run_module_suite()

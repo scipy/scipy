@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import cos, sin, pi
-from numpy.testing import run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_almost_equal, assert_allclose, assert_
 from scipy._lib._numpy_compat import suppress_warnings
 
@@ -231,6 +231,3 @@ class TestCumtrapz(object):
         y_expected = [1.23, -4.5, -6., -4.5, 0.]
         assert_allclose(y_int, y_expected)
 
-
-if __name__ == "__main__":
-    run_module_suite()

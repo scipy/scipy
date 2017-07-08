@@ -2,8 +2,7 @@
 Unit tests for TNC optimization routine from tnc.py
 """
 
-from numpy.testing import (assert_allclose, assert_equal,
-                           run_module_suite)
+from numpy.testing import assert_allclose, assert_equal
 
 from scipy import optimize
 import numpy as np
@@ -301,6 +300,3 @@ class TestTnc(object):
                         err_msg="TNC failed with status: " +
                                 optimize.tnc.RCSTRINGS[rc])
 
-
-if __name__ == "__main__":
-    run_module_suite()

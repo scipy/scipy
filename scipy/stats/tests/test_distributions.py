@@ -8,7 +8,7 @@ import re
 import sys
 import pickle
 
-from numpy.testing import (run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
     assert_allclose, assert_, assert_raises, assert_warns)
 import pytest
@@ -3127,6 +3127,3 @@ class TestHistogram(object):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
-
-if __name__ == "__main__":
-    run_module_suite()

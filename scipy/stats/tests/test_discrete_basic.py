@@ -236,6 +236,3 @@ def check_scale_docstring(distfn):
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
 
-
-if __name__ == "__main__":
-    npt.run_module_suite()

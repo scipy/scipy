@@ -4,8 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_allclose, assert_equal, assert_,
-        run_module_suite)
+from numpy.testing import assert_allclose, assert_equal, assert_
 import pytest
 import scipy.linalg
 import scipy.sparse.linalg
@@ -253,6 +252,3 @@ class TestAlgorithm_2_2(object):
             # Compute the 1-norm bounds.
             g, ind = _algorithm_2_2(A, A.T, t)
 
-
-if __name__ == '__main__':
-    run_module_suite()

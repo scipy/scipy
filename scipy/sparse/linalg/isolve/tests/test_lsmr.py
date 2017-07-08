@@ -20,7 +20,7 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import array, arange, eye, zeros, ones, sqrt, transpose, hstack
 from numpy.linalg import norm
-from numpy.testing import (run_module_suite, assert_almost_equal,
+from numpy.testing import (assert_almost_equal,
                            assert_array_almost_equal)
 
 from scipy.sparse import coo_matrix
@@ -176,6 +176,4 @@ def lsmrtest(m, n, damp):
     print(' ')
 
 if __name__ == "__main__":
-    # Comment out the next line to run unit tests only
     lsmrtest(20,10,0)
-    run_module_suite()

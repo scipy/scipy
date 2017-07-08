@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
-    assert_raises, run_module_suite, assert_almost_equal,
+    assert_raises, assert_almost_equal,
     assert_raises, assert_array_almost_equal)
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
@@ -460,6 +460,3 @@ def test_bisplev_integer_overflow():
 
     assert_raises((RuntimeError, MemoryError), bisplev, xp, yp, tck)
 
-
-if __name__ == "__main__":
-    run_module_suite()

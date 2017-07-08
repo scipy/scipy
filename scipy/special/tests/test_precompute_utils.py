@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from numpy.testing import run_module_suite
 import pytest
 
 from scipy.special._testutils import MissingModule, check_version
@@ -41,6 +40,3 @@ class TestInversion(object):
             invsincoeffs = lagrange_inversion(sincoeffs)
             mp_assert_allclose(invsincoeffs, asincoeffs, atol=1e-30)
 
-
-if __name__ == "__main__":
-    run_module_suite()

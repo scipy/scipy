@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_, assert_raises, run_module_suite)
+                           assert_, assert_raises)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -1137,6 +1137,3 @@ class Test_freqresp(object):
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
 
-
-if __name__ == "__main__":
-    run_module_suite()

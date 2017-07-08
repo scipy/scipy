@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_, run_module_suite,
+from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, assert_raises,
                            assert_approx_equal)
@@ -1354,6 +1354,3 @@ class TestSTFT(object):
 
         assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
         assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -6,7 +6,7 @@ from os import path
 from glob import iglob
 import re
 
-from numpy.testing import assert_equal, assert_allclose, run_module_suite
+from numpy.testing import assert_equal, assert_allclose
 import numpy as np
 
 from scipy.io import FortranFile
@@ -75,6 +75,3 @@ def test_fortranfiles_write():
         finally:
             shutil.rmtree(tmpdir)
 
-
-if __name__ == "__main__":
-    run_module_suite()

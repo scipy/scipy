@@ -521,6 +521,3 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (16, 2), 0, overwritable)
             self._check_1d(idst, dtype, (2, 16), 1, overwritable)
 
-
-if __name__ == "__main__":
-    np.testing.run_module_suite()

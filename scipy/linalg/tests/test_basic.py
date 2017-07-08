@@ -14,7 +14,7 @@ from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
 import numpy.linalg as linalg
 from numpy.random import random
 
-from numpy.testing import (run_module_suite, assert_raises,
+from numpy.testing import (assert_raises,
                            assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
                            assert_array_equal)
@@ -1620,6 +1620,3 @@ class TestMatrix_Balance(object):
             assert_allclose(y, np.diag(s)[ip, :])
             assert_allclose(solve(y, A).dot(y), x)
 
-
-if __name__ == "__main__":
-    run_module_suite()

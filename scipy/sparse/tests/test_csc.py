@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, run_module_suite, assert_
+from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix, csc_matrix
 
 
@@ -34,6 +34,3 @@ def test_csc_getcol():
         assert_array_almost_equal(arr_col, csc_col.toarray())
         assert_(type(csc_col) is csc_matrix)
 
-
-if __name__ == "__main__":
-    run_module_suite()

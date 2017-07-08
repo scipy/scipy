@@ -120,6 +120,3 @@ def test_expon_fit():
     phat = stats.expon.fit(data, floc=0)
     assert_allclose(phat, [0, 1.0], atol=1e-3)
 
-
-if __name__ == "__main__":
-    np.testing.run_module_suite()

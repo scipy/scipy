@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite, assert_equal, assert_almost_equal, assert_allclose
+from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 from scipy.special import boxcox, boxcox1p, inv_boxcox, inv_boxcox1p
 
 
@@ -106,6 +106,3 @@ def test_inv_boxcox1p_underflow():
     y = inv_boxcox1p(x, lam)
     assert_allclose(y, x, rtol=1e-14)
 
-
-if __name__ == '__main__':
-    run_module_suite()

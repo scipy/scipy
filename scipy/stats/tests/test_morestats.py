@@ -8,7 +8,7 @@ import warnings
 
 import numpy as np
 from numpy.random import RandomState
-from numpy.testing import (run_module_suite, assert_array_equal,
+from numpy.testing import (assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
     assert_raises, assert_, assert_allclose, assert_equal, assert_warns)
 import pytest
@@ -1418,6 +1418,3 @@ class TestMedianTest(object):
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -8,7 +8,7 @@ import glob
 
 import pytest
 from numpy.testing import (assert_equal,
-                           run_module_suite, assert_allclose,
+                           assert_allclose,
                            assert_array_equal, assert_raises,
                            assert_)
 from scipy._lib._numpy_compat import suppress_warnings
@@ -239,6 +239,3 @@ def test_imread_4bit():
     expected = 17*(np.maximum(j, i) % 16).astype(np.uint8)
     assert_equal(im, expected)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -40,7 +40,7 @@ from scipy._lib.six import xrange, u
 
 import numpy as np
 from numpy.linalg import norm
-from numpy.testing import (verbose, run_module_suite, assert_,
+from numpy.testing import (verbose, assert_,
                            assert_raises, assert_array_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
 
@@ -1594,6 +1594,3 @@ def test__validate_vector():
     x = [[1, 2], [3, 4]]
     assert_raises(ValueError, _validate_vector, x)
 
-
-if __name__ == "__main__":
-    run_module_suite()

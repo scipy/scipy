@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import (run_module_suite, assert_allclose,
+from numpy.testing import (assert_allclose,
                            assert_equal)
 import scipy.linalg.cython_blas as blas
 
@@ -118,6 +118,3 @@ class TestWfuncPointers(object):
         assert_allclose(blas._test_zdotu(cx[::2], cy[::2]),
                         -6.5625+31.875j, 10)
 
-
-if __name__ == "__main__":
-    run_module_suite()

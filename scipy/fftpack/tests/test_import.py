@@ -15,7 +15,7 @@ if sys.version_info >= (3, 4):
     from pathlib import Path
     import re
     import tokenize
-    from numpy.testing import assert_, run_module_suite
+    from numpy.testing import assert_
     import scipy
 
     class TestFFTPackImport(object):
@@ -31,6 +31,3 @@ if sys.version_info >= (3, 4):
                     assert_(all(not re.fullmatch(regexp, line)
                                 for line in file),
                             "{0} contains an import from fftpack".format(path))
-
-    if __name__ == "__main__":
-        run_module_suite(argv=sys.argv)

@@ -31,7 +31,7 @@ from numpy import (arange, zeros, array, dot, matrix, asmatrix, asarray,
 import random
 from numpy.testing import (assert_raises, assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
-        run_module_suite, assert_allclose)
+        assert_allclose)
 from scipy._lib._numpy_compat import suppress_warnings
 
 import scipy.linalg
@@ -4642,6 +4642,3 @@ class Test64Bit(object):
         check_limited()
         check_unlimited()
 
-
-if __name__ == "__main__":
-    run_module_suite()

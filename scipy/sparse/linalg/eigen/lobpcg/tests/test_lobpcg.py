@@ -3,7 +3,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_almost_equal, assert_equal,
+from numpy.testing import (assert_almost_equal, assert_equal,
         assert_allclose, assert_array_less, assert_)
 
 from scipy import ones, rand, r_, diag, linalg, eye
@@ -190,6 +190,3 @@ def test_fiedler_large_12():
     # This does not trigger the dense path, because 2*5 <= 12.
     _check_fiedler(12, 2)
 
-
-if __name__ == "__main__":
-    run_module_suite()

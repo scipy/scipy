@@ -5,7 +5,7 @@ import threading
 import numpy as np
 from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
 import numpy.random as random
-from numpy.testing import (run_module_suite, dec,
+from numpy.testing import (
         assert_array_almost_equal, assert_raises, assert_almost_equal,
         assert_equal, assert_array_equal, assert_, assert_allclose,
         assert_warns)
@@ -703,6 +703,3 @@ class TestSpsolveTriangular(object):
                         x = spsolve_triangular(A, b, lower=lower)
                         assert_array_almost_equal(A.dot(x), b)
 
-
-if __name__ == "__main__":
-    run_module_suite()

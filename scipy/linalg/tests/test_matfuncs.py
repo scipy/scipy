@@ -11,7 +11,7 @@ import functools
 
 import numpy as np
 from numpy import array, matrix, identity, dot, sqrt, double
-from numpy.testing import (run_module_suite,
+from numpy.testing import (
         assert_array_equal, assert_array_less, assert_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
         assert_allclose, assert_)
@@ -834,6 +834,3 @@ class TestExpmConditionNumber(object):
             # In the limit as eps approaches zero it should never be greater.
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
 
-
-if __name__ == "__main__":
-    run_module_suite()

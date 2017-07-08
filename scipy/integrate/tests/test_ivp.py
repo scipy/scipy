@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 from itertools import product
-from numpy.testing import (assert_, assert_allclose, run_module_suite,
+from numpy.testing import (assert_, assert_allclose,
                            assert_equal, assert_raises, assert_no_warnings)
 from scipy._lib._numpy_compat import suppress_warnings
 import numpy as np
@@ -727,6 +727,3 @@ def test_num_jac_sparse():
                     rtol=1e-12, atol=1e-14)
     assert_allclose(factor_dense, factor_sparse, rtol=1e-12, atol=1e-14)
 
-
-if __name__ == '__main__':
-    run_module_suite()

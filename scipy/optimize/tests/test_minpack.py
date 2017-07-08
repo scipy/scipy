@@ -4,7 +4,7 @@ Unit tests for optimization routines from minpack.py.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, run_module_suite, assert_raises,
+        assert_array_almost_equal, assert_raises,
         assert_allclose)
 import numpy as np
 from numpy import array, float64, matrix
@@ -668,6 +668,3 @@ class TestFixedPoint(object):
         n = fixed_point(func, n0, method='iteration')
         assert_allclose(n, m)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,7 +1,7 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
         assert_allclose, assert_raises, assert_)
 from scipy._lib._numpy_compat import suppress_warnings
 import pytest
@@ -1068,6 +1068,3 @@ class TestLSQ(object):
             y[-1] = z
             assert_raises(ValueError, make_lsq_spline, x, y, t)
 
-
-if __name__ == "__main__":
-    run_module_suite()

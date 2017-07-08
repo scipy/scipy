@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import run_module_suite, assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose
 from scipy._lib._numpy_compat import suppress_warnings
 import scipy.constants as sc
 
@@ -77,6 +77,3 @@ def test_lambda_to_nu():
 def test_nu_to_lambda():
     assert_equal(sc.nu2lambda(1), sc.speed_of_light)
 
-
-if __name__ == "__main__":
-    run_module_suite()

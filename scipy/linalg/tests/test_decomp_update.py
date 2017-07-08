@@ -4,7 +4,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_raises,
-         assert_equal, run_module_suite)
+         assert_equal)
 from scipy import linalg
 import scipy.linalg._decomp_update as _decomp_update
 from scipy.linalg._decomp_update import *
@@ -1685,7 +1685,4 @@ def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
     res = _decomp_update._form_qTu(q, u)
     assert_allclose(res, expected, rtol=rtol, atol=atol)
 
-
-if __name__ == "__main__":
-    run_module_suite()
  
