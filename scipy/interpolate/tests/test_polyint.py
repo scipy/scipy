@@ -144,7 +144,7 @@ def test_complex():
 
 
 class TestKrogh(object):
-    def setUp(self):
+    def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)
@@ -292,7 +292,7 @@ class TestTaylor(object):
 
 
 class TestBarycentric(object):
-    def setUp(self):
+    def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)

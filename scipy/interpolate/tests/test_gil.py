@@ -14,7 +14,7 @@ from scipy._lib._testutils import knownfailure_overridable
 class TestGIL(object):
     """Check if the GIL is properly released by scipy.interpolate functions."""
 
-    def setUp(self):
+    def setup_method(self):
         self.messages = []
 
     def log(self, message):

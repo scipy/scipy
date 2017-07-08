@@ -74,12 +74,12 @@ class TestInt32Overflow(object):
 
     @dec.skipif(not sys.platform.startswith('linux'), "test requires Linux")
     @dec.skipif(np.dtype(np.intp).itemsize < 8, "test requires 64-bit system")
-    def setUp(self):
+    def setup_method(self):
         assert self.n**2 > np.iinfo(np.int32).max
 
         check_free_memory(5000)
 
-    def tearDown(self):
+    def teardown_method(self):
         gc.collect()
 
     def test_coo_todense(self):

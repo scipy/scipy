@@ -42,7 +42,7 @@ def toarray(a):
 
 
 class TestFactorized(object):
-    def setUp(self):
+    def setup_method(self):
         n = 5
         d = arange(n) + 1
         self.n = n
@@ -157,7 +157,7 @@ class TestFactorized(object):
 
 
 class TestLinsolve(object):
-    def setUp(self):
+    def setup_method(self):
         use_solver(useUmfpack=False)
 
     def test_singular(self):
@@ -392,7 +392,7 @@ class TestLinsolve(object):
 
 
 class TestSplu(object):
-    def setUp(self):
+    def setup_method(self):
         use_solver(useUmfpack=False)
         n = 40
         d = arange(n) + 1
@@ -648,7 +648,7 @@ class TestSplu(object):
 
 
 class TestSpsolveTriangular(object):
-    def setUp(self):
+    def setup_method(self):
         use_solver(useUmfpack=False)
 
     def test_singular(self):

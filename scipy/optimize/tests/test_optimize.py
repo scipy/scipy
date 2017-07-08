@@ -52,7 +52,7 @@ class CheckOptimize(object):
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
     """
-    def setUp(self):
+    def setup_method(self):
         self.F = np.array([[1,1,1],[1,1,0],[1,0,1],[1,0,0],[1,0,0]])
         self.K = np.array([1., 0.3, 0.5])
         self.startparams = np.zeros(3, np.float64)
@@ -822,7 +822,7 @@ class TestOptimizeSimple(CheckOptimize):
 
 
 class TestLBFGSBBounds(object):
-    def setUp(self):
+    def setup_method(self):
         self.bounds = ((1, None), (None, None))
         self.solution = (1, 0)
 
@@ -858,7 +858,7 @@ class TestLBFGSBBounds(object):
 
 
 class TestOptimizeScalar(object):
-    def setUp(self):
+    def setup_method(self):
         self.solution = 1.5
 
     def fun(self, x, a=1.5):
@@ -1111,7 +1111,7 @@ def test_minimize_multiple_constraints():
 class TestOptimizeResultAttributes(object):
     # Test that all minimizers return an OptimizeResult containing
     # all the OptimizeResult attributes
-    def setUp(self):
+    def setup_method(self):
         self.x0 = [5, 5]
         self.func = optimize.rosen
         self.jac = optimize.rosen_der
@@ -1143,7 +1143,7 @@ class TestOptimizeResultAttributes(object):
 
 class TestBrute:
     # Test the "brute force" method
-    def setUp(self):
+    def setup_method(self):
         self.params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
         self.rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
         self.solution = np.array([-1.05665192, 1.80834843])
@@ -1187,7 +1187,7 @@ class TestIterationLimits(object):
     # Tests that optimisation does not give up before trying requested
     # number of iterations or evaluations. And that it does not succeed
     # by exceeding the limits.
-    def setUp(self):
+    def setup_method(self):
         self.funcalls = 0
 
     def slow_func(self, v):

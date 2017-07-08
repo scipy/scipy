@@ -297,7 +297,7 @@ class TestSplev(object):
 
 
 class TestSplder(object):
-    def setup(self):
+    def setup_method(self):
         # non-uniform grid, just to make it sure
         x = np.linspace(0, 1, 100)**3
         y = np.sin(20 * x)

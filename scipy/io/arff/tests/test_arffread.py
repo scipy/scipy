@@ -178,7 +178,7 @@ class TestHeader(object):
 
 
 class TestDateAttribute(object):
-    def setUp(self):
+    def setup_method(self):
         self.data, self.meta = loadarff(test7)
 
     def test_year_attribute(self):

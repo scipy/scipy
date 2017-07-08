@@ -15,11 +15,11 @@ from scipy.io.mmio import mminfo, mmread, mmwrite
 
 
 class TestMMIOArray(object):
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check(self, a, info):
@@ -102,11 +102,11 @@ class TestMMIOArray(object):
 
 
 class TestMMIOSparseCSR(TestMMIOArray):
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check(self, a, info):
@@ -270,11 +270,11 @@ _over64bit_integer_sparse_example = '''\
 '''
 
 class TestMMIOReadLargeIntegers(object):
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check_read(self, example, a, info, dense, over32, over64):
@@ -450,11 +450,11 @@ _symmetric_pattern_example = '''\
 
 
 class TestMMIOCoordinate(object):
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check_read(self, example, a, info):

@@ -883,7 +883,7 @@ class TestKstatVar(object):
 
 
 class TestPpccPlot(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(7654321)
         self.x = stats.loggamma.rvs(5, size=500) + 5
 
@@ -1070,7 +1070,7 @@ class TestBoxcox(object):
 
 
 class TestBoxcoxNormmax(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(12345)
         self.x = stats.loggamma.rvs(5, size=50) + 5
 
@@ -1092,7 +1092,7 @@ class TestBoxcoxNormmax(object):
 
 
 class TestBoxcoxNormplot(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(7654321)
         self.x = stats.loggamma.rvs(5, size=500) + 5
 

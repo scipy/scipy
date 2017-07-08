@@ -13,7 +13,7 @@ from numpy.testing import (assert_equal, assert_allclose,
 
 class TestDifferentialEvolutionSolver(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.old_seterr = np.seterr(invalid='raise')
         self.limits = np.array([[0., 0.],
                                 [2., 2.]])
@@ -32,7 +32,7 @@ class TestDifferentialEvolutionSolver(object):
         population = np.atleast_2d(np.arange(0.1, 0.8, 0.1)).T
         self.dummy_solver2.population = population
 
-    def tearDown(self):
+    def teardown_method(self):
         np.seterr(**self.old_seterr)
 
     def quadratic(self, x):

@@ -193,7 +193,7 @@ class TestRootLM(object):
 
 
 class TestLeastSq(object):
-    def setUp(self):
+    def setup_method(self):
         x = np.linspace(0, 10, 40)
         a,b,c = 3.1, 42, -304.2
         self.x = x
@@ -274,7 +274,7 @@ class TestLeastSq(object):
 
 
 class TestCurveFit(object):
-    def setUp(self):
+    def setup_method(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
         self.x = array([1.0, 2.0, 3.0, 4.0])
 

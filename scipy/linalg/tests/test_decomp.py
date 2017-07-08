@@ -361,7 +361,7 @@ class TestEig(object):
 
 
 class TestEigBanded(object):
-    def setup(self):
+    def setup_method(self):
         self.create_bandmat()
 
     def create_bandmat(self):
@@ -724,7 +724,7 @@ def test_eigh_integer():
 
 
 class TestLU(object):
-    def setup(self):
+    def setup_method(self):
         self.a = array([[1,2,3],[1,2,3],[2,5,6]])
         self.ca = array([[1,2,3],[1,2,3],[2,5j,6]])
         # Those matrices are more robust to detect problems in permutation
@@ -799,8 +799,8 @@ class TestLU(object):
 
 class TestLUSingle(TestLU):
     """LU testers for single precision, real and double"""
-    def setup(self):
-        TestLU.setup(self)
+    def setup_method(self):
+        TestLU.setup_method(self)
 
         self.a = self.a.astype(float32)
         self.ca = self.ca.astype(complex64)
@@ -818,7 +818,7 @@ class TestLUSingle(TestLU):
 
 
 class TestLUSolve(object):
-    def setUp(self):
+    def setup_method(self):
         seed(1234)
 
     def test_lu(self):
@@ -847,7 +847,7 @@ class TestLUSolve(object):
 
 
 class TestSVD_GESDD(object):
-    def setUp(self):
+    def setup_method(self):
         self.lapack_driver = 'gesdd'
         seed(1234)
 
@@ -984,7 +984,7 @@ class TestSVD_GESDD(object):
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
-    def setUp(self):
+    def setup_method(self):
         self.lapack_driver = 'gesvd'
         seed(1234)
 
@@ -1054,7 +1054,7 @@ class TestDiagSVD(object):
 
 class TestQR(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(1234)
 
     def test_simple(self):
@@ -1595,7 +1595,7 @@ class TestQR(object):
 
 class TestRQ(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(1234)
 
     def test_simple(self):
@@ -1870,7 +1870,7 @@ class TestHessenberg(object):
 
 
 class TestQZ(object):
-    def setUp(self):
+    def setup_method(self):
         seed(12345)
 
     def test_qz_single(self):
@@ -2261,7 +2261,7 @@ class TestOrdQZ(object):
 
 class TestOrdQZWorkspaceSize(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(12345)
 
     def test_decompose(self):

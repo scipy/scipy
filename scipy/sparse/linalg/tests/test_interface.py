@@ -22,7 +22,7 @@ TEST_MATMUL = hasattr(operator, 'matmul')
 
 
 class TestLinearOperator(object):
-    def setUp(self):
+    def setup_method(self):
         self.A = np.array([[1,2,3],
                            [4,5,6]])
         self.B = np.array([[1,2],
@@ -164,7 +164,7 @@ class TestLinearOperator(object):
 
 
 class TestAsLinearOperator(object):
-    def setUp(self):
+    def setup_method(self):
         self.cases = []
 
         def make_cases(dtype):

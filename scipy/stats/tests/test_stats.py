@@ -1277,7 +1277,7 @@ class TestHMean(object):
 
 
 class TestScoreatpercentile(object):
-    def setUp(self):
+    def setup_method(self):
         self.a1 = [3, 4, 5, 10, -3, -5, 6]
         self.a2 = [3, -6, -2, 8, 7, 4, 2, 1]
         self.a3 = [3., 4, 5, 10, -3, -5, -6, 7.0]

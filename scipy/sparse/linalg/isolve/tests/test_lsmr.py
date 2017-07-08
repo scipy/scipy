@@ -30,7 +30,7 @@ from .test_lsqr import G, b
 
 
 class TestLSMR:
-    def setUp(self):
+    def setup_method(self):
         self.n = 10
         self.m = 10
 
@@ -85,7 +85,7 @@ class TestLSMR:
         assert_array_almost_equal(x_ref, x)
 
 class TestLSMRReturns:
-    def setUp(self):
+    def setup_method(self):
         self.n = 10
         self.A = lowerBidiagonalMatrix(20,self.n)
         self.xtrue = transpose(arange(self.n,0,-1))

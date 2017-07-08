@@ -478,7 +478,7 @@ def _get_func(func, ps='sdzc'):
 
 class TestBLAS3Symm(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.a = np.array([[1., 2.],
                            [0., 1.]])
         self.b = np.array([[1., 0., 3.],
@@ -521,7 +521,7 @@ class TestBLAS3Symm(object):
 
 
 class TestBLAS3Syrk(object):
-    def setUp(self):
+    def setup_method(self):
         self.a = np.array([[1., 0.],
                            [0., -2.],
                            [2., 3.]])
@@ -557,7 +557,7 @@ class TestBLAS3Syrk(object):
 
 
 class TestBLAS3Syr2k(object):
-    def setUp(self):
+    def setup_method(self):
         self.a = np.array([[1., 0.],
                            [0., -2.],
                            [2., 3.]])
@@ -596,7 +596,7 @@ class TestBLAS3Syr2k(object):
 
 class TestSyHe(object):
     """Quick and simple tests for (zc)-symm, syrk, syr2k."""
-    def setUp(self):
+    def setup_method(self):
         self.sigma_y = np.array([[0., -1.j],
                                  [1.j, 0.]])
 
@@ -635,7 +635,7 @@ class TestSyHe(object):
 
 class TestTRMM(object):
     """Quick and simple tests for dtrmm."""
-    def setUp(self):
+    def setup_method(self):
         self.a = np.array([[1., 2., ],
                            [-2., 1.]])
         self.b = np.array([[3., 4., -1.],

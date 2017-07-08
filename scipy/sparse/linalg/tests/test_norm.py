@@ -14,7 +14,7 @@ from scipy.sparse.linalg import norm as spnorm
 
 
 class TestNorm(object):
-    def setUp(self):
+    def setup_method(self):
         a = np.arange(9) - 4
         b = a.reshape((3, 3))
         self.b = scipy.sparse.csr_matrix(b)

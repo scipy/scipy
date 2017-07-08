@@ -8,7 +8,7 @@ from scipy.spatial import procrustes
 
 
 class TestProcrustes(object):
-    def setUp(self):
+    def setup_method(self):
         """creates inputs"""
         # an L
         self.data1 = np.array([[1, 3], [1, 2], [1, 1], [2, 1]], 'd')

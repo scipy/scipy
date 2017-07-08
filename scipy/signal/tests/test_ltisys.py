@@ -619,12 +619,12 @@ class _TestImpulseFuncs(object):
 
 
 class TestImpulse2(_TestImpulseFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = impulse2
 
 
 class TestImpulse(_TestImpulseFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = impulse
 
 
@@ -696,7 +696,7 @@ class _TestStepFuncs(object):
 
 
 class TestStep2(_TestStepFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = step2
 
     def test_05(self):
@@ -713,7 +713,7 @@ class TestStep2(_TestStepFuncs):
 
 
 class TestStep(_TestStepFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = step
 
     def test_complex_input(self):
@@ -829,7 +829,7 @@ class TestZerosPolesGain(object):
 
 
 class Test_abcd_normalize(object):
-    def setup(self):
+    def setup_method(self):
         self.A = np.array([[1.0, 2.0], [3.0, 4.0]])
         self.B = np.array([[-1.0], [5.0]])
         self.C = np.array([[4.0, 5.0]])

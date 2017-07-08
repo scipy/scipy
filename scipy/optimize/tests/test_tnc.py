@@ -19,7 +19,7 @@ class TestTnc(object):
     http://www.uni-bayreuth.de/departments/math/~kschittkowski/home.htm
 
     """
-    def setUp(self):
+    def setup_method(self):
         # options for minimize
         self.opts = {'disp': False, 'maxiter': 200}
 

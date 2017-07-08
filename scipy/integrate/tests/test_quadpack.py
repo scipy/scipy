@@ -25,7 +25,7 @@ def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
 
 
 class TestCtypesQuad(object):
-    def setUp(self):
+    def setup_method(self):
         if sys.platform == 'win32':
             if sys.version_info < (3, 5):
                 files = [ctypes.util.find_msvcrt()]
@@ -119,7 +119,7 @@ class TestCtypesQuad(object):
 
 
 class TestMultivariateCtypesQuad(object):
-    def setUp(self):
+    def setup_method(self):
         self.lib = ctypes.CDLL(clib_test.__file__)
         restype = ctypes.c_double
         argtypes = (ctypes.c_int, ctypes.c_double)

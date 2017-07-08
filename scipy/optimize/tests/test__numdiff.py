@@ -382,7 +382,7 @@ class TestApproxDerivativesDense(object):
 
 class TestApproxDerivativeSparse(object):
     # Example from Numerical Optimization 2nd edition, p. 198.
-    def setup(self):
+    def setup_method(self):
         np.random.seed(0)
         self.n = 50
         self.lb = -0.1 * (1 + np.arange(self.n))

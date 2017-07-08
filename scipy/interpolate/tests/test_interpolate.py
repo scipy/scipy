@@ -110,7 +110,7 @@ class TestInterp2D(object):
 
 class TestInterp1D(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.x5 = np.arange(5.)
         self.x10 = np.arange(10.)
         self.y10 = np.arange(10.)

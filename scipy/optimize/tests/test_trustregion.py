@@ -30,7 +30,7 @@ class Accumulator:
 
 class TestTrustRegionSolvers(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.x_opt = [1.0, 1.0]
         self.easy_guess = [2.0, 2.0]
         self.hard_guess = [-1.2, 1.0]

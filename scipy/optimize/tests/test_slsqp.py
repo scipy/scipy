@@ -33,7 +33,7 @@ class TestSLSQP(object):
     This example maximizes the function f(x) = 2*x*y + 2*x - x**2 - 2*y**2,
     which has a maximum at x=2, y=1.
     """
-    def setUp(self):
+    def setup_method(self):
         self.opts = {'disp': False}
 
     def fun(self, d, sign=1.0):

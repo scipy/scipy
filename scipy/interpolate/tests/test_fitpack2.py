@@ -327,7 +327,7 @@ class TestSmoothBivariateSpline(object):
 
 
 class TestLSQSphereBivariateSpline(object):
-    def setUp(self):
+    def setup_method(self):
         # define the input data and coordinates
         ntheta, nphi = 70, 90
         theta = linspace(0.5/(ntheta - 1), 1 - 0.5/(ntheta - 1), ntheta) * pi
@@ -356,7 +356,7 @@ class TestLSQSphereBivariateSpline(object):
 
 
 class TestSmoothSphereBivariateSpline(object):
-    def setUp(self):
+    def setup_method(self):
         theta = array([.25*pi, .25*pi, .25*pi, .5*pi, .5*pi, .5*pi, .75*pi,
                        .75*pi, .75*pi])
         phi = array([.5 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi, .5 * pi, pi,

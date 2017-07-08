@@ -10,7 +10,7 @@ from scipy.optimize import fmin_cobyla, minimize
 
 
 class TestCobyla(object):
-    def setUp(self):
+    def setup_method(self):
         self.x0 = [4.95, 0.66]
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]
         self.opts = {'disp': False, 'rhobeg': 1, 'tol': 1e-5,

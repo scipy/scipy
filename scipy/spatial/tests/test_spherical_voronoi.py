@@ -62,7 +62,7 @@ class TestProjectToSphere(object):
 
 class TestSphericalVoronoi(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.points = np.array([
             [-0.78928481, -0.16341094, 0.59188373],
             [-0.66839141, 0.73309634, 0.12578818],

@@ -515,7 +515,7 @@ class TestSolveHBanded(object):
 
 
 class TestSolve(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_20Feb04_bug(self):
@@ -821,7 +821,7 @@ class TestSolveTriangular(object):
 
 
 class TestInv(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_simple(self):
@@ -864,7 +864,7 @@ class TestInv(object):
 
 
 class TestDet(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_simple(self):
@@ -914,7 +914,7 @@ class TestLstsq(object):
 
     lapack_drivers = ('gelsd', 'gelss', 'gelsy', None)
 
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_simple_exact(self):

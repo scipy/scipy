@@ -119,7 +119,7 @@ load_testing_files()
 
 class TestCdist(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
@@ -321,7 +321,7 @@ class TestCdist(object):
 
 class TestPdist(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
@@ -1056,7 +1056,7 @@ def _assert_within_tol(a, b, atol, verbose_=False):
 
 class TestSomeDistanceFunctions(object):
 
-    def setUp(self):
+    def setup_method(self):
         # 1D arrays
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([1.0, 1.0, 5.0])

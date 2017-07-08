@@ -50,7 +50,7 @@ def sumsq(a, b):
 
 
 class TestNdimage:
-    def setUp(self):
+    def setup_method(self):
         # list of numarray data types
         self.integer_types = [numpy.int8, numpy.uint8, numpy.int16,
                 numpy.uint16, numpy.int32, numpy.uint32,
@@ -4590,7 +4590,7 @@ class TestNdimage:
 
 class TestDilateFix:
 
-    def setUp(self):
+    def setup_method(self):
         # dilation related setup
         self.array = numpy.array([[0, 0, 0, 0, 0,],
                                   [0, 0, 0, 0, 0,],
