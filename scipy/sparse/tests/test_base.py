@@ -232,27 +232,28 @@ class _TestCommon:
     """test common functionality shared by all sparse formats"""
     math_dtypes = supported_dtypes
 
-    def __init__(self):
+    @classmethod
+    def init_class(cls):
         # Canonical data.
-        self.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
-        self.datsp = self.spmatrix(self.dat)
+        cls.dat = matrix([[1,0,0,2],[3,0,1,0],[0,2,0,0]],'d')
+        cls.datsp = cls.spmatrix(cls.dat)
 
         # Some sparse and dense matrices with data for every supported
         # dtype.
         # This set union is a workaround for numpy#6295, which means that
         # two np.int64 dtypes don't hash to the same value.
-        self.checked_dtypes = set(supported_dtypes).union(self.math_dtypes)
-        self.dat_dtypes = {}
-        self.datsp_dtypes = {}
-        for dtype in self.checked_dtypes:
-            self.dat_dtypes[dtype] = self.dat.astype(dtype)
-            self.datsp_dtypes[dtype] = self.spmatrix(self.dat.astype(dtype))
+        cls.checked_dtypes = set(supported_dtypes).union(cls.math_dtypes)
+        cls.dat_dtypes = {}
+        cls.datsp_dtypes = {}
+        for dtype in cls.checked_dtypes:
+            cls.dat_dtypes[dtype] = cls.dat.astype(dtype)
+            cls.datsp_dtypes[dtype] = cls.spmatrix(cls.dat.astype(dtype))
 
         # Check that the original data is equivalent to the
         # corresponding dat_dtypes & datsp_dtypes.
-        assert_equal(self.dat, self.dat_dtypes[np.float64])
-        assert_equal(self.datsp.todense(),
-                     self.datsp_dtypes[np.float64].todense())
+        assert_equal(cls.dat, cls.dat_dtypes[np.float64])
+        assert_equal(cls.datsp.todense(),
+                     cls.datsp_dtypes[np.float64].todense())
 
     def test_bool(self):
         def check(dtype):
@@ -277,8 +278,12 @@ class _TestCommon:
             dat = dat + dat
         assert_array_equal(dat, datsp.todense())
 
-    @sup_complex
     def test_eq(self):
+        sup = suppress_warnings()
+        sup.filter(SparseEfficiencyWarning)
+
+        @sup
+        @sup_complex
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
@@ -309,8 +314,12 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             yield skipif_yield(fails, reason=msg)(check), dtype
 
-    @sup_complex
     def test_ne(self):
+        sup = suppress_warnings()
+        sup.filter(SparseEfficiencyWarning)
+
+        @sup
+        @sup_complex
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
@@ -343,8 +352,12 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             yield skipif_yield(fails, reason=msg)(check), dtype
 
-    @sup_complex
     def test_lt(self):
+        sup = suppress_warnings()
+        sup.filter(SparseEfficiencyWarning)
+
+        @sup
+        @sup_complex
         def check(dtype):
             # data
             dat = self.dat_dtypes[dtype]
@@ -407,8 +420,12 @@ class _TestCommon:
             with np.errstate(invalid='ignore'):
                 yield skipif_yield(fails, reason=msg)(check), dtype
 
-    @sup_complex
     def test_gt(self):
+        sup = suppress_warnings()
+        sup.filter(SparseEfficiencyWarning)
+
+        @sup
+        @sup_complex
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
@@ -469,8 +486,12 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             yield skipif_yield(fails, reason=msg)(check), dtype
 
-    @sup_complex
     def test_le(self):
+        sup = suppress_warnings()
+        sup.filter(SparseEfficiencyWarning)
+
+        @sup
+        @sup_complex
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
@@ -527,8 +548,12 @@ class _TestCommon:
         for dtype in self.checked_dtypes:
             yield skipif_yield(fails, reason=msg)(check), dtype
 
-    @sup_complex
     def test_ge(self):
+        sup = suppress_warnings()
+        sup.filter(SparseEfficiencyWarning)
+
+        @sup
+        @sup_complex
         def check(dtype):
             dat = self.dat_dtypes[dtype]
             datsp = self.datsp_dtypes[dtype]
@@ -2438,7 +2463,7 @@ class _TestSlicing:
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
 
-    @pytest.mark.skipif(NumpyVersion(np.__version__) >= '1.9.0.dev')
+    @skipif_yield(NumpyVersion(np.__version__) >= '1.9.0.dev', reason="")
     def test_multiple_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))
         a = self.spmatrix(b)
@@ -3628,6 +3653,8 @@ class TestCSR(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
+TestCSR.init_class()
+
 
 class TestCSC(sparse_test_class()):
     @classmethod
@@ -3773,6 +3800,8 @@ class TestCSC(sparse_test_class()):
         for x in [a, b, c, d, e, f]:
             x + x
 
+TestCSC.init_class()
+
 
 class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
     spmatrix = dok_matrix
@@ -3883,6 +3912,8 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         b = dok_matrix((3,3))
         b[:,0] = 0
         assert_(len(b.keys()) == 0, "Unexpected entries in keys")
+
+TestDOK.init_class()
 
 
 class TestLIL(sparse_test_class(minmax=False)):
@@ -4009,6 +4040,8 @@ class TestLIL(sparse_test_class(minmax=False)):
         a *= 2.
         a[0, :] = 0
 
+TestLIL.init_class()
+
 
 class TestCOO(sparse_test_class(getset=False,
                                 slicing=False, slicing_assign=False,
@@ -4098,6 +4131,8 @@ class TestCOO(sparse_test_class(getset=False,
         assert_((asp.data != 0).all())
         assert_array_equal(asp.A, bsp.A)
 
+TestCOO.init_class()
+
 
 class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=False,
                                 fancy_indexing=False, fancy_assign=False,
@@ -4133,6 +4168,8 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     @pytest.mark.skip(reason='DIA stores extra zeros')
     def test_getnnz_axis(self):
         pass
+
+TestDIA.init_class()
 
 
 class TestBSR(sparse_test_class(getset=False,
@@ -4267,6 +4304,8 @@ class TestBSR(sparse_test_class(getset=False,
         # These shouldn't fail
         for x in [a, b, c, d, e, f]:
             x + x
+
+TestBSR.init_class()
 
 
 #------------------------------------------------------------------------------
