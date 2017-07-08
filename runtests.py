@@ -360,12 +360,14 @@ def build_project(args):
             # process accurately if it produces no output)
             last_blip = time.time()
             last_log_size = os.stat(log_filename).st_size
+            counter = [0]
             while p.poll() is None:
                 time.sleep(0.5)
                 if time.time() - last_blip > 60:
                     log_size = os.stat(log_filename).st_size
                     if log_size > last_log_size:
-                        print("    ... build in progress")
+                        print("    ... build in progress ({})".format(counter[0]))
+                        counter[0] += 1
                         last_blip = time.time()
                         last_log_size = log_size
 
