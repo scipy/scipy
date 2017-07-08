@@ -184,5 +184,6 @@ cs_graph_components = _deprecate(cs_graph_components,
                                           "the docstring for more "
                                           "information."))
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester
