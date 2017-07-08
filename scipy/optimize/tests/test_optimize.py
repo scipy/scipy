@@ -15,9 +15,10 @@ import itertools
 
 import numpy as np
 from numpy.testing import (assert_raises, assert_allclose, assert_equal,
-                           assert_, run_module_suite, dec,
+                           assert_, run_module_suite,
                            assert_almost_equal, assert_warns,
                            assert_array_less)
+import pytest
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._testutils import suppressed_stdout
@@ -713,7 +714,8 @@ class TestOptimizeSimple(CheckOptimize):
                                     options=dict(maxiter=20))
             assert_equal(func(sol.x), sol.fun)
 
-            dec.knownfailureif(method == 'slsqp', "SLSQP returns slightly worse")(lambda: None)()
+            if method == 'slsqp':
+                pytest.xfail("SLSQP returns slightly worse")
             assert_(func(sol.x) <= f0)
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',

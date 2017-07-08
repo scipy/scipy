@@ -6,7 +6,7 @@ from scipy.linalg._solve_toeplitz import levinson
 from scipy.linalg import solve, toeplitz, solve_toeplitz
 from numpy.testing import (run_module_suite, assert_equal, assert_allclose,
                            assert_raises)
-from numpy.testing.decorators import knownfailureif
+import pytest
 
 
 def test_solve_equivalence():
@@ -100,7 +100,7 @@ def test_reflection_coeffs():
     assert_allclose(reflection_coeffs_z, ref_z[:-1])
 
 
-@knownfailureif(True, 'Instability of Levinson iteraton')
+@pytest.mark.xfail(reason='Instability of Levinson iteration')
 def test_unstable():
     # this is a "Gaussian Toeplitz matrix", as mentioned in Example 2 of
     # I. Gohbert, T. Kailath and V. Olshevsky "Fast Gaussian Elimination with

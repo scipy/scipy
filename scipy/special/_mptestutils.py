@@ -5,7 +5,8 @@ import sys
 import time
 
 import numpy as np
-from numpy.testing import dec, assert_
+from numpy.testing import assert_
+import pytest
 
 from scipy._lib.six import reraise
 from scipy.special._testutils import assert_func_equal
@@ -240,7 +241,7 @@ def assert_mpmath_equal(*a, **kw):
 
 
 def nonfunctional_tooslow(func):
-    return dec.skipif(True, "    Test not yet functional (too slow), needs more work.")(func)
+    return pytest.mark.skip(reason="    Test not yet functional (too slow), needs more work.")(func)
 
 
 # ------------------------------------------------------------------------------

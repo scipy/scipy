@@ -2,7 +2,9 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 from scipy._lib._numpy_compat import suppress_warnings
+from scipy._lib._testutils import skipif_yield
 from scipy.integrate import IntegrationWarning
 
 from scipy import stats
@@ -130,6 +132,9 @@ def test_cont_basic():
         if distname != 'truncnorm':
             check_ppf_private(distfn, arg, distname)
 
+    def fail(distname, arg):
+        pytest.xfail(reason=distname)
+
     for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
         if distname in distslow:
             continue
@@ -140,7 +145,7 @@ def test_cont_basic():
         yield check, distname, arg
 
         if distname == 'truncnorm':
-            yield npt.dec.knownfailureif(True)(check), distname
+            yield fail, distname, arg
 
 
 def test_levy_stable_random_state_property():
@@ -150,10 +155,10 @@ def test_levy_stable_random_state_property():
     check_random_state_property(stats.levy_stable, (0.5, 0.1))
 
 
-@npt.dec.slow
 def test_cont_basic_slow():
     # same as above for slow distributions
 
+    @pytest.mark.slow
     def check(distname, arg):
         distfn = getattr(stats, distname)
         np.random.seed(765456)
@@ -215,8 +220,8 @@ def test_cont_basic_slow():
         yield check, distname, arg
 
 
-@npt.dec.slow
 def test_moments():
+    @pytest.mark.slow
     def check(distname, arg, normalization_ok, higher_ok):
         if distname == 'levy_stable':
             return
@@ -246,6 +251,10 @@ def test_moments():
         check_loc_scale(distfn, arg, m, v, distname)
         check_moment(distfn, arg, m, v, distname)
 
+    @pytest.mark.slow
+    def fail(*a, **kw):
+        pytest.xfail()
+
     fail_normalization = set(['vonmises', 'ksone'])
     fail_higher = set(['vonmises', 'ksone', 'ncf'])
 
@@ -255,12 +264,10 @@ def test_moments():
         yield check, distname, arg, cond1, cond2
 
         if not cond1 or not cond2:
-            msg = distname + ' fails moments'
-            yield npt.dec.knownfailureif(True, msg)(check), distname, arg, True, True
+            yield fail, distname, arg, True, True
 
 
 def test_rvs_broadcast():
-    skp = npt.dec.skipif
     for dist, shape_args in distcont:
         # If shape_only is True, it means the _rvs method of the
         # distribution uses more than one random number to generate a random
@@ -291,7 +298,8 @@ def test_rvs_broadcast():
         # bshape holds the expected shape when loc, scale, and the shape
         # parameters are all broadcast together.
         is_too_slow = dist in ['gausshyper', 'genexpon']
-        check_rvs = skp(is_too_slow)(check_rvs_broadcast)
+
+        check_rvs = skipif_yield(is_too_slow, reason="too slow")(check_rvs_broadcast)
         yield check_rvs, distfunc, dist, allargs, bshape, shape_only, 'd'
 
 

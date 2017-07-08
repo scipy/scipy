@@ -6,9 +6,8 @@ import time
 
 import numpy as np
 from numpy.testing import assert_equal, run_module_suite
-from numpy.testing.decorators import slow
+import pytest
 import scipy.interpolate
-from scipy._lib._testutils import knownfailure_overridable
 
 
 class TestGIL(object):
@@ -31,8 +30,8 @@ class TestGIL(object):
 
         return WorkerThread()
 
-    @slow
-    @knownfailure_overridable('race conditions, may depend on system load')
+    @pytest.mark.slow
+    @pytest.mark.xfail(reason='race conditions, may depend on system load')
     def test_rectbivariatespline(self):
         def generate_params(n_points):
             x = y = np.linspace(0, 1000, n_points)

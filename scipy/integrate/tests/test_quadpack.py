@@ -4,8 +4,10 @@ import sys
 import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_, run_module_suite, dec,
+from numpy.testing import (assert_, run_module_suite,
         assert_allclose, assert_array_less, assert_almost_equal, assert_raises)
+import pytest
+
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy._lib.six import xrange
 from scipy._lib._ccallback import LowLevelCallable
@@ -59,7 +61,7 @@ class TestCtypesQuad(object):
         assert_quad(quad(self.lib.cos, 0, 5), quad(math.cos, 0, 5)[0])
         assert_quad(quad(self.lib.tan, 0, 1), quad(math.tan, 0, 1)[0])
 
-    @dec.knownfailureif(True, msg="Unreliable test, see ticket 1684.")
+    @pytest.mark.xfail(reason="Unreliable test, see ticket 1684.")
     def test_improvement(self):
         import time
         start = time.time()

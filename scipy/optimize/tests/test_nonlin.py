@@ -4,7 +4,8 @@ May 2007
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, dec, run_module_suite
+from numpy.testing import assert_, run_module_suite
+import pytest
 
 from scipy._lib.six import xrange
 from scipy.optimize import nonlin, root
@@ -110,7 +111,7 @@ class TestNonlin(object):
                    options={'ftol': f_tol, 'maxiter': 200, 'disp': 0})
         assert_(np.absolute(res.fun).max() < f_tol)
 
-    @dec.knownfailureif(True)
+    @pytest.mark.xfail
     def _check_func_fail(self, *a, **kw):
         pass
 

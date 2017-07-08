@@ -6,7 +6,8 @@ import shutil
 import numpy as np
 import glob
 
-from numpy.testing import (assert_equal, dec, decorate_methods,
+import pytest
+from numpy.testing import (assert_equal,
                            run_module_suite, assert_allclose,
                            assert_array_equal, assert_raises,
                            assert_)
@@ -23,11 +24,11 @@ else:
 
 
 # Function / method decorator for skipping PIL tests on import failure
-_pilskip = dec.skipif(not _have_PIL, 'Need to import PIL for this test')
+_pilskip = pytest.mark.skipif(not _have_PIL, reason='Need to import PIL for this test')
 
 datapath = os.path.dirname(__file__)
 
-
+@_pilskip
 class TestPILUtil(object):
     def test_imresize(self):
         im = np.random.random((10, 20))
@@ -142,9 +143,8 @@ class TestPILUtil(object):
             finally:
                 shutil.rmtree(tmpdir)
 
-decorate_methods(TestPILUtil, _pilskip)
 
-
+@_pilskip
 def tst_fromimage(filename, irange, shape):
     fp = open(filename, "rb")
     img = misc.fromimage(PIL.Image.open(fp))
@@ -155,7 +155,6 @@ def tst_fromimage(filename, irange, shape):
     assert_equal(img.shape, shape)
 
 
-@_pilskip
 def test_fromimage():
     # Test generator for parametric tests
     # Tuples in the list are (filename, (datamin, datamax), shape).

@@ -10,7 +10,8 @@ import numpy as np
 from numpy.random import RandomState
 from numpy.testing import (run_module_suite, assert_array_equal,
     assert_almost_equal, assert_array_less, assert_array_almost_equal,
-    assert_raises, assert_, assert_allclose, assert_equal, dec, assert_warns)
+    assert_raises, assert_, assert_allclose, assert_equal, assert_warns)
+import pytest
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import stats
 from .common_tests import check_named_results
@@ -771,7 +772,7 @@ class TestProbplot(object):
         assert_allclose(osm1, osm2)
         assert_allclose(osr1, osr2)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         np.random.seed(7654321)
         fig = plt.figure()
@@ -907,7 +908,7 @@ class TestPpccPlot(object):
         assert_allclose(svals1, svals3, rtol=1e-20)
         assert_allclose(ppcc1, ppcc3, rtol=1e-20)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()
@@ -1104,7 +1105,7 @@ class TestBoxcoxNormplot(object):
         assert_allclose(lmbdas, np.linspace(-10, 10, num=N))
         assert_allclose(ppcc, ppcc_expected)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_plot_kwarg(self):
         # Check with the matplotlib.pyplot module
         fig = plt.figure()

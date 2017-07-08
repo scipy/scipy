@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 from functools import partial
 from itertools import product
 import operator
-import nose
+import pytest
 
 from numpy.testing import assert_, assert_equal, \
         assert_raises
@@ -144,7 +144,7 @@ class TestLinearOperator(object):
 
     def test_matmul(self):
         if not TEST_MATMUL:
-            raise nose.SkipTest("matmul is only tested in Python 3.5+")
+            pytest.skip("matmul is only tested in Python 3.5+")
 
         D = {'shape': self.A.shape,
              'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),

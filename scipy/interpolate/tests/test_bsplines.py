@@ -3,8 +3,8 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 from numpy.testing import (run_module_suite, assert_equal,
         assert_allclose, assert_raises, assert_)
-from numpy.testing.decorators import knownfailureif
 from scipy._lib._numpy_compat import suppress_warnings
+import pytest
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
@@ -748,7 +748,7 @@ class TestInterp(object):
         assert_allclose([b(x[-1], 1), b(x[-1], 2)],
                         [val for (nu, val) in der_r])
 
-    @knownfailureif(True, 'unstable')
+    @pytest.mark.xfail(reason='unstable')
     def test_cubic_deriv_unstable(self):
         # 1st and 2nd derivative at x[0], no derivative information at x[-1]
         # The problem is not that it fails [who would use this anyway],

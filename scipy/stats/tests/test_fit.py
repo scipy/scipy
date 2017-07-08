@@ -3,7 +3,8 @@ from __future__ import division, print_function, absolute_import
 import os
 
 import numpy as np
-from numpy.testing import dec, assert_allclose
+from numpy.testing import assert_allclose
+import pytest
 
 from scipy import stats
 
@@ -44,7 +45,7 @@ skip_fit = [
 ]
 
 
-@dec.slow
+@pytest.mark.slow
 def test_cont_fit():
     # this tests the closeness of the estimated parameters to the true
     # parameters with fit method of continuous distributions
@@ -66,7 +67,7 @@ def check_cont_fit(distname,arg):
         if xfail:
             msg = "Fitting %s doesn't work reliably yet" % distname
             msg += " [Set environment variable SCIPY_XFAIL=1 to run this test nevertheless.]"
-            dec.knownfailureif(True, msg)(lambda: None)()
+            pytest.xfail(msg)
 
     distfn = getattr(stats, distname)
 

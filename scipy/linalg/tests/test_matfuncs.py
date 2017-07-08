@@ -14,7 +14,8 @@ from numpy import array, matrix, identity, dot, sqrt, double
 from numpy.testing import (run_module_suite,
         assert_array_equal, assert_array_less, assert_equal,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
-        assert_allclose, assert_, decorators)
+        assert_allclose, assert_)
+import pytest
 
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
@@ -552,7 +553,7 @@ class TestFractionalMatrixPower(object):
                 A_power = fractional_matrix_power(A, p)
                 assert_(A_power.dtype.char in complex_dtype_chars)
 
-    @decorators.knownfailureif(True, 'Too unstable across LAPACKs.')
+    @pytest.mark.xfail(reason='Too unstable across LAPACKs.')
     def test_singular(self):
         # Negative fractional powers do not work with singular matrices.
         for matrix_as_list in (
@@ -731,8 +732,8 @@ class TestExpmFrechet(object):
         assert_allclose(sps_expm, blockEnlarge_expm)
         assert_allclose(sps_frechet, blockEnlarge_frechet)
 
-    @decorators.slow
-    @decorators.skipif(True, 'this test is deliberately slow')
+    @pytest.mark.slow
+    @pytest.mark.skip(reason='this test is deliberately slow')
     def test_medium_matrix(self):
         # profile this to see the speed difference
         n = 1000
@@ -795,7 +796,7 @@ class TestExpmConditionNumber(object):
             A = np.random.randn(1, 1)
             assert_allclose(expm_cond(A), np.absolute(A)[0, 0])
 
-    @decorators.slow
+    @pytest.mark.slow
     def test_expm_cond_fuzz(self):
         np.random.seed(12345)
         eps = 1e-5

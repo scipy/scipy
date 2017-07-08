@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 from itertools import product
 
 from numpy.testing import assert_allclose
-from numpy.testing.noseclasses import KnownFailureTest
+import pytest
 
 from scipy import special
 from scipy.special import cython_special
@@ -291,7 +291,7 @@ def test_cython_api():
     def check(param):
         pyfunc, cyfunc, specializations, knownfailure = param
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         # Check which parameters are expected to be fused types
         values = [set() for code in specializations[0]]

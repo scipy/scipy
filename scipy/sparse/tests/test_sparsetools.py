@@ -6,16 +6,17 @@ import gc
 import re
 import threading
 
-from nose import SkipTest
 import numpy as np
-from numpy.testing import (assert_raises, assert_equal, dec, run_module_suite, assert_,
-                           assert_allclose)
+from numpy.testing import (assert_raises, assert_equal, assert_, assert_allclose)
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse.sputils import supported_dtypes
-from scipy._lib._testutils import xslow
+from scipy._lib._testutils import xslow_yield, suppressed_stdout
+
+import pytest
 
 
+@suppressed_stdout
 def test_exception():
     assert_raises(MemoryError, _sparsetools.test_throw_error)
 
@@ -62,6 +63,8 @@ def test_regression_std_vector_dtypes():
         assert_equal(a.getcol(0).todense(), ad[:,0])
 
 
+@pytest.mark.skipif(not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
+                    reason="test requires 64-bit Linux")
 class TestInt32Overflow(object):
     """
     Some of the sparsetools routines use dense 2D matrices whose
@@ -72,12 +75,10 @@ class TestInt32Overflow(object):
     # choose n large enough
     n = 50000
 
-    @dec.skipif(not sys.platform.startswith('linux'), "test requires Linux")
-    @dec.skipif(np.dtype(np.intp).itemsize < 8, "test requires 64-bit system")
     def setup_method(self):
         assert self.n**2 > np.iinfo(np.int32).max
 
-        check_free_memory(5000)
+        check_free_memory(9000)
 
     def teardown_method(self):
         gc.collect()
@@ -100,7 +101,7 @@ class TestInt32Overflow(object):
         del r
         gc.collect()
 
-    @dec.slow
+    @pytest.mark.slow
     def test_matvecs(self):
         # Check *_matvecs routines
         n = self.n
@@ -122,7 +123,7 @@ class TestInt32Overflow(object):
         del b
         gc.collect()
 
-    @dec.slow
+    @pytest.mark.slow
     def test_dia_matvec(self):
         # Check: huge dia_matrix _matvec
         n = self.n
@@ -135,12 +136,12 @@ class TestInt32Overflow(object):
         del data, offsets, m, v, r
         gc.collect()
 
-    @dec.slow
     def test_bsr_1_block(self):
         # Check: huge bsr_matrix (1-block)
         #
         # The point here is that indices inside a block may overflow.
 
+        @pytest.mark.slow
         def check(op):
             n = self.n
             data = np.ones((1, n, n), dtype=np.int8)
@@ -156,13 +157,13 @@ class TestInt32Overflow(object):
                    "sort_indices", "transpose"):
             yield check, op
 
-    @dec.slow
     def test_bsr_n_block(self):
         # Check: huge bsr_matrix (n-block)
         #
         # The point here is that while indices within a block don't
         # overflow, accumulators across many block may.
 
+        @pytest.mark.slow
         def check(op):
             n = self.n
             data = np.ones((n, n, 1), dtype=np.int8)
@@ -178,7 +179,7 @@ class TestInt32Overflow(object):
                    "sort_indices", "transpose"):
             yield check, op
 
-    @xslow
+    @xslow_yield
     def _check_bsr_matvecs(self, m):
         n = self.n
 
@@ -210,12 +211,12 @@ class TestInt32Overflow(object):
         # _sort_indices
         m.sort_indices()
 
-    @xslow
+    @xslow_yield
     def _check_bsr_transpose(self, m):
         # _transpose
         m.transpose()
 
-    @xslow
+    @xslow_yield
     def _check_bsr_matmat(self, m):
         n = self.n
 
@@ -228,7 +229,7 @@ class TestInt32Overflow(object):
         m2.dot(m)  # shouldn't SIGSEGV
 
 
-@dec.skipif(True, "64-bit indices in sparse matrices not available")
+@pytest.mark.skip(reason="64-bit indices in sparse matrices not available")
 def test_csr_matmat_int64_overflow():
     n = 3037000500
     assert n**2 > np.iinfo(np.int64).max
@@ -298,7 +299,7 @@ def check_free_memory(free_mb):
     meminfo = get_mem_info_linux()
 
     if meminfo['memfree'] + meminfo['cached'] < free_mb * 1e6:
-        raise SkipTest("test requires %d MB of free memory" % (int(free_mb),))
+        pytest.skip("test requires %d MB of free memory" % (int(free_mb),))
 
 
 def get_mem_info_linux():
@@ -328,7 +329,3 @@ def get_own_memusage_linux():
         return memusage
 
     return np.nan
-
-
-if __name__ == "__main__":
-    run_module_suite()

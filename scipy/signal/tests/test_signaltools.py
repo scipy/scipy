@@ -7,11 +7,11 @@ from decimal import Decimal
 from itertools import product
 import warnings
 
-from nose import SkipTest
+import pytest
 from numpy.testing import (
     run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_raises, assert_allclose, assert_, dec, assert_warns)
+    assert_raises, assert_allclose, assert_, assert_warns)
 from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, arange
 import numpy as np
@@ -474,7 +474,7 @@ class TestFFTConvolve(object):
         d = np.convolve(a, b, 'full')
         assert_(np.allclose(c, d, rtol=1e-10))
 
-    @dec.slow
+    @pytest.mark.slow
     def test_many_sizes(self):
         np.random.seed(1234)
 
@@ -1501,7 +1501,7 @@ class TestFiltFilt(object):
 
     def test_gust_simple(self):
         if self.filtfilt_kind != 'tf':
-            raise SkipTest('gust only implemented for TF systems')
+            pytest.skip('gust only implemented for TF systems')
         # The input array has length 2.  The exact solution for this case
         # was computed "by hand".
         x = np.array([1.0, 2.0])
@@ -1515,7 +1515,7 @@ class TestFiltFilt(object):
 
     def test_gust_scalars(self):
         if self.filtfilt_kind != 'tf':
-            raise SkipTest('gust only implemented for TF systems')
+            pytest.skip('gust only implemented for TF systems')
         # The filter coefficients are both scalars, so the filter simply
         # multiplies its input by b/a.  When it is used in filtfilt, the
         # factor is (b/a)**2.

@@ -36,10 +36,10 @@ import sys
 import numpy
 from numpy import fft
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
-        run_module_suite, assert_array_almost_equal, assert_almost_equal, dec)
+        run_module_suite, assert_array_almost_equal, assert_almost_equal)
+import pytest
 from scipy._lib._numpy_compat import suppress_warnings
 import scipy.ndimage as ndimage
-from nose import SkipTest
 
 
 eps = 1e-12
@@ -1737,8 +1737,8 @@ class TestNdimage:
             result = out if returned is None else returned
             assert_array_almost_equal(result, expected)
 
-    # do not run on 32 bit or windows (no sparse memory)
-    @dec.skipif('win32' in sys.platform or numpy.intp(0).itemsize < 8)
+    @pytest.mark.skipif('win32' in sys.platform or numpy.intp(0).itemsize < 8,
+                        reason="do not run on 32 bit or windows (no sparse memory)")
     def test_map_coordinates_large_data(self):
         # check crash on large data
         try:
@@ -1748,7 +1748,7 @@ class TestNdimage:
             a[n - 3:,n - 3:] = 0
             ndimage.map_coordinates(a, [[n - 1.5], [n - 1.5]], order=1)
         except MemoryError:
-            raise SkipTest("Not enough memory available")
+            raise pytest.skip("Not enough memory available")
 
     def test_affine_transform01(self):
         data = numpy.array([1])

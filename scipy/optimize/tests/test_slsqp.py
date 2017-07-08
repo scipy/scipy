@@ -3,12 +3,12 @@ Unit test for SLSQP optimization.
 """
 from __future__ import division, print_function, absolute_import
 
+import pytest
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal, run_module_suite,
                            assert_raises)
 import numpy as np
 
-from scipy._lib._testutils import knownfailure_overridable
 from scipy.optimize import fmin_slsqp, minimize
 
 
@@ -353,7 +353,7 @@ class TestSLSQP(object):
         assert_(f2(x) >= -1e-8)
         assert_(sol.success, sol)
 
-    @knownfailure_overridable("This bug is not fixed")
+    @pytest.mark.xfail(reason="This bug is not fixed")
     def test_regression_5743(self):
         # SLSQP must not indicate success for this problem,
         # which is infeasible.

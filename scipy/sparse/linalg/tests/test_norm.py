@@ -5,8 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.linalg import norm as npnorm
-from numpy.testing import (assert_raises, assert_equal, assert_allclose,
-        dec)
+from numpy.testing import (assert_raises, assert_equal, assert_allclose)
 
 from scipy._lib._version import NumpyVersion
 import scipy.sparse
