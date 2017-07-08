@@ -143,15 +143,20 @@ class TestInt32Overflow(object):
 
         @pytest.mark.slow
         def check(op):
-            n = self.n
-            data = np.ones((1, n, n), dtype=np.int8)
-            indptr = np.array([0, 1], dtype=np.int32)
-            indices = np.array([0], dtype=np.int32)
-            m = bsr_matrix((data, indices, indptr), blocksize=(n, n), copy=False)
-            del data, indptr, indices
-            getattr(self, "_check_bsr_" + op)(m)
-            del m
+            def get_matrix():
+                n = self.n
+                data = np.ones((1, n, n), dtype=np.int8)
+                indptr = np.array([0, 1], dtype=np.int32)
+                indices = np.array([0], dtype=np.int32)
+                m = bsr_matrix((data, indices, indptr), blocksize=(n, n), copy=False)
+                del data, indptr, indices
+                return m
+
             gc.collect()
+            try:
+                getattr(self, "_check_bsr_" + op)(get_matrix)
+            finally:
+                gc.collect()
 
         for op in ("matmat", "matvecs", "matvec", "diagonal",
                    "sort_indices", "transpose"):
@@ -165,15 +170,20 @@ class TestInt32Overflow(object):
 
         @pytest.mark.slow
         def check(op):
-            n = self.n
-            data = np.ones((n, n, 1), dtype=np.int8)
-            indptr = np.array([0, n], dtype=np.int32)
-            indices = np.arange(n, dtype=np.int32)
-            m = bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
-            del data, indptr, indices
-            getattr(self, "_check_bsr_" + op)(m)
-            del m
+            def get_matrix():
+                n = self.n
+                data = np.ones((n, n, 1), dtype=np.int8)
+                indptr = np.array([0, n], dtype=np.int32)
+                indices = np.arange(n, dtype=np.int32)
+                m = bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
+                del data, indptr, indices
+                return m
+
             gc.collect()
+            try:
+                getattr(self, "_check_bsr_" + op)(get_matrix)
+            finally:
+                gc.collect()
 
         for op in ("matmat", "matvecs", "matvec", "diagonal",
                    "sort_indices", "transpose"):
@@ -181,48 +191,49 @@ class TestInt32Overflow(object):
 
     @xslow_yield
     def _check_bsr_matvecs(self, m):
+        m = m()
         n = self.n
 
         # _matvecs
         r = m.dot(np.ones((n, 2), dtype=np.int8))
         assert_equal(r[0,0], np.int8(n))
-        del r
-        gc.collect()
 
     def _check_bsr_matvec(self, m):
+        m = m()
         n = self.n
 
         # _matvec
         r = m.dot(np.ones((n,), dtype=np.int8))
         assert_equal(r[0], np.int8(n))
-        del r
-        gc.collect()
 
     def _check_bsr_diagonal(self, m):
+        m = m()
         n = self.n
 
         # _diagonal
         r = m.diagonal()
         assert_equal(r, np.ones(n))
-        del r
-        gc.collect()
 
     def _check_bsr_sort_indices(self, m):
         # _sort_indices
+        m = m()
         m.sort_indices()
 
     @xslow_yield
     def _check_bsr_transpose(self, m):
         # _transpose
+        m = m()
         m.transpose()
 
     @xslow_yield
     def _check_bsr_matmat(self, m):
+        m = m()
         n = self.n
 
         # _bsr_matmat
         m2 = bsr_matrix(np.ones((n, 2), dtype=np.int8), blocksize=(m.blocksize[1], 2))
         m.dot(m2)  # shouldn't SIGSEGV
+        del m2
 
         # _bsr_matmat
         m2 = bsr_matrix(np.ones((2, n), dtype=np.int8), blocksize=(2, m.blocksize[0]))
