@@ -47,24 +47,6 @@ def _extend_mode_to_code(mode):
     return mode
 
 
-def _fix_endianness(f):
-    """
-    Decorator to work around endianness issues in _nd_image.geometric_transform
-    and _nd_image.zoom_shift
-    """
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        output = kwargs.get("output")
-        result = f(*args, **kwargs)
-        if isinstance(output, numpy.dtype) and not output.isnative:
-            result.byteswap(True)
-        elif isinstance(output, numpy.ndarray) and not output.dtype.isnative:
-            output.byteswap(True)
-        return result
-
-    return wrapper
-
-
 def spline_filter1d(input, order=3, axis=-1, output=numpy.float64):
     """
     Calculates a one-dimensional spline filter along the given axis.
@@ -140,7 +122,6 @@ def spline_filter(input, order=3, output=numpy.float64):
     return return_value
 
 
-@_fix_endianness
 def geometric_transform(input, mapping, output_shape=None,
                         output=None, order=3,
                         mode='constant', cval=0.0, prefilter=True,
@@ -204,9 +185,9 @@ def geometric_transform(input, mapping, output_shape=None,
 
     .. code:: c
 
-       int mapping(npy_intp *output_coordinates, double *input_coordinates, 
+       int mapping(npy_intp *output_coordinates, double *input_coordinates,
                    int output_rank, int input_rank, void *user_data)
-       int mapping(intptr_t *output_coordinates, double *input_coordinates, 
+       int mapping(intptr_t *output_coordinates, double *input_coordinates,
                    int output_rank, int input_rank, void *user_data)
 
     The calling function iterates over the elements of the output array,
@@ -215,16 +196,16 @@ def geometric_transform(input, mapping, output_shape=None,
     callback function must return the coordinates at which the input must
     be interpolated in ``input_coordinates``. The rank of the input and
     output arrays are given by ``input_rank`` and ``output_rank``
-    respectively.  ``user_data`` is the data pointer provided 
-    to `scipy.LowLevelCallable` as-is. 
+    respectively.  ``user_data`` is the data pointer provided
+    to `scipy.LowLevelCallable` as-is.
 
-    The callback function must return an integer error status that is zero 
+    The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
     normally set the python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
-    In addition, some other low-level function pointer specifications 
+    In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
@@ -264,7 +245,6 @@ def geometric_transform(input, mapping, output_shape=None,
     return return_value
 
 
-@_fix_endianness
 def map_coordinates(input, coordinates, output=None, order=3,
                     mode='constant', cval=0.0, prefilter=True):
     """
@@ -364,7 +344,6 @@ def map_coordinates(input, coordinates, output=None, order=3,
     return return_value
 
 
-@_fix_endianness
 def affine_transform(input, matrix, offset=0.0, output_shape=None,
                      output=None, order=3,
                      mode='constant', cval=0.0, prefilter=True):

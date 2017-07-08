@@ -52,114 +52,6 @@ typedef struct {
 
 /* Numarray Helper Functions */
 
-static PyArrayObject*
-NA_InputArray(PyObject *a, enum NPY_TYPES t, int requires)
-{
-    PyArray_Descr *descr;
-    if (t == NPY_NOTYPE) {
-        descr = NULL;
-    }
-    else {
-        descr = PyArray_DescrFromType(t);
-    }
-    return (PyArrayObject *) PyArray_CheckFromAny(a, descr, 0, 0, requires,
-                                                  NULL);
-}
-
-/* satisfies ensures that 'a' meets a set of requirements and matches
-the specified type.
-*/
-static int
-satisfies(PyArrayObject *a, int requirements, enum NPY_TYPES t)
-{
-    int type_ok = (t == NPY_NOTYPE) ||
-                   PyArray_EquivTypenums(PyArray_TYPE(a), t);
-
-    if (PyArray_ISCARRAY(a)) {
-        return type_ok;
-    }
-    if (PyArray_ISBYTESWAPPED(a) && (requirements & NPY_ARRAY_NOTSWAPPED)) {
-        return 0;
-    }
-    if (!PyArray_ISALIGNED(a) && (requirements & NPY_ARRAY_ALIGNED)) {
-        return 0;
-    }
-    if (!PyArray_ISCONTIGUOUS(a) && (requirements & NPY_ARRAY_C_CONTIGUOUS)) {
-        return 0;
-    }
-    if (!PyArray_ISWRITEABLE(a) && (requirements & NPY_ARRAY_WRITEABLE)) {
-        return 0;
-    }
-    if (requirements & NPY_ARRAY_ENSURECOPY) {
-        return 0;
-    }
-    return type_ok;
-}
-
-static PyArrayObject *
-NA_OutputArray(PyObject *a, enum NPY_TYPES t, int requires)
-{
-    PyArray_Descr *dtype;
-    PyArrayObject *ret;
-
-    if (!PyArray_Check(a) || !PyArray_ISWRITEABLE((PyArrayObject *)a)) {
-        PyErr_Format(PyExc_TypeError,
-                     "NA_OutputArray: only writeable arrays work for output.");
-        return NULL;
-    }
-
-    if (satisfies((PyArrayObject *)a, requires, t)) {
-        Py_INCREF(a);
-        return (PyArrayObject *)a;
-    }
-    if (t == NPY_NOTYPE) {
-        dtype = PyArray_DESCR((PyArrayObject *)a);
-        Py_INCREF(dtype);
-    }
-    else {
-        dtype = PyArray_DescrFromType(t);
-    }
-    ret = (PyArrayObject *)PyArray_Empty(PyArray_NDIM((PyArrayObject *)a),
-                                         PyArray_DIMS((PyArrayObject *)a),
-                                         dtype, 0);
-    PyArray_ENABLEFLAGS(ret, NPY_ARRAY_UPDATEIFCOPY);
-    Py_INCREF(a);
-    PyArray_SetBaseObject(ret, a);
-    PyArray_CLEARFLAGS((PyArrayObject *)a, NPY_ARRAY_WRITEABLE);
-
-    return ret;
-}
-
-/* NA_IoArray is a combination of NA_InputArray and NA_OutputArray.
-
-Unlike NA_OutputArray, if a temporary is required it is initialized to a copy
-of the input array.
-
-Unlike NA_InputArray, deallocating any resulting temporary array results in a
-copy from the temporary back to the original.
-*/
-static PyArrayObject *
-NA_IoArray(PyObject *a, enum NPY_TYPES t, int requires)
-{
-    PyArrayObject *shadow = NA_InputArray(a, t, requires | NPY_ARRAY_UPDATEIFCOPY);
-
-    if (!shadow){
-        return NULL;
-    }
-
-    /* Guard against non-writable, but otherwise satisfying requires.
-         In this case,  shadow == a.
-    */
-    if (!PyArray_ISWRITEABLE(shadow)) {
-        PyErr_Format(PyExc_TypeError,
-                     "NA_IoArray: I/O array must be writable array");
-        PyArray_XDECREF_ERR(shadow);
-        return NULL;
-    }
-
-    return shadow;
-}
-
 /*
  * Creates a new numpy array of the requested type and shape, and either
  * copies into it the contents of buffer, or sets it to all zeros if
@@ -189,54 +81,79 @@ NA_NewArray(void *buffer, enum NPY_TYPES type, int ndim, npy_intp *shape)
     return result;
 }
 
-/* Convert an input array of any type, not necessarily contiguous */
+/* Converts a Python array-like object into a behaved input array. */
 static int
 NI_ObjectToInputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_InputArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
-    return *array ? 1 : 0;
+    int flags = NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED;
+    *array = (PyArrayObject *)PyArray_CheckFromAny(object, NULL, 0, 0, flags,
+                                                   NULL);
+    return *array != NULL;
 }
 
-/* Convert an input array of any type, not necessarily contiguous */
+/* Like NI_ObjectToInputArray, but with special handling for Py_None. */
 static int
 NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
 {
     if (object == Py_None) {
         *array = NULL;
         return 1;
-    } else {
-        *array = NA_InputArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
-        return *array ? 1 : 0;
     }
+    return NI_ObjectToInputArray(object, array);
 }
 
-/* Convert an output array of any type, not necessarily contiguous */
+/* Converts a Python array-like object into a behaved output array. */
 static int
 NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_OutputArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
-    return *array ? 1 : 0;
+    int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
+    /*
+     * This would also be caught by the PyArray_CheckFromAny call, but
+     * we check it explicitly here to provide a saner error message.
+     */
+    if (PyArray_Check(object) &&
+            !PyArray_ISWRITEABLE((PyArrayObject *)object)) {
+        PyErr_SetString(PyExc_ValueError, "output array is read-only.");
+    return 0;
+    }
+    /*
+     * If the input array is not aligned or is byteswapped, this call
+     * will create a new aligned, native byte order array, and copy the
+     * contents of object into it. For an output array, the copy is
+     * unnecessary, so this could be optimized. It is very easy to not
+     * do NPY_ARRAY_UPDATEIFCOPY right, so we let NumPy do it for us
+     * and pay the performance price.
+     */
+    *array = (PyArrayObject *)PyArray_CheckFromAny(object, NULL, 0, 0, flags,
+                                                   NULL);
+    return *array != NULL;
 }
 
-/* Convert an output array of any type, not necessarily contiguous */
+/* Like NI_ObjectToOutputArray, but with special handling for Py_None. */
 static int
 NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
 {
     if (object == Py_None) {
         *array = NULL;
         return 1;
-    } else {
-        *array = NA_OutputArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
-        return *array ? 1 : 0;
     }
+    return NI_ObjectToOutputArray(object, array);
 }
 
-/* Convert an input/output array of any type, not necessarily contiguous */
+/* Converts a Python array-like object into a behaved input/output array. */
 static int
-NI_ObjectToIoArray(PyObject *object, PyArrayObject **array)
+NI_ObjectToInputOutputArray(PyObject *object, PyArrayObject **array)
 {
-    *array = NA_IoArray(object, NPY_NOTYPE, NPY_ARRAY_ALIGNED|NPY_ARRAY_NOTSWAPPED);
-    return *array ? 1 : 0;
+    /*
+     * This is also done in NI_ObjectToOutputArray, double checking here
+     * to provide a more specific error message.
+     */
+    if (PyArray_Check(object) &&
+            !PyArray_ISWRITEABLE((PyArrayObject *)object)) {
+        PyErr_SetString(PyExc_ValueError, "input/output array is read-only.");
+        return 0;
+    }
+    return NI_ObjectToOutputArray(object, array);
 }
 
 /* Checks that an origin value was received for each array dimension. */
@@ -1041,8 +958,8 @@ static PyObject *Py_DistanceTransformOnePass(PyObject *obj, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "O&O&O&",
                           NI_ObjectToInputArray, &strct,
-                                                NI_ObjectToIoArray, &distances,
-                                                NI_ObjectToOptionalOutputArray, &features))
+                          NI_ObjectToInputOutputArray, &distances,
+                          NI_ObjectToOptionalOutputArray, &features))
         goto exit;
 
     NI_DistanceTransformOnePass(strct, distances, features);
@@ -1143,7 +1060,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     PyArray_Dims origin;
 
     if (!PyArg_ParseTuple(args, "O&O&O&iO&iO",
-                          NI_ObjectToIoArray, &array,
+                          NI_ObjectToInputOutputArray, &array,
                           NI_ObjectToInputArray, &strct,
                           NI_ObjectToOptionalInputArray,
                           &mask, &niter,
