@@ -18,6 +18,7 @@ from numpy.testing.decorators import skipif
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_raises, assert_array_equal)
+from scipy._lib._numpy_compat import suppress_warnings
 
 
 class TestMquantiles(object):
@@ -501,8 +502,8 @@ class TestVariability(object):
     def test_signaltonoise(self):
         # This is not in R, so used:
         #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated!")
             y = mstats.signaltonoise(self.testcase)
         assert_almost_equal(y, 2.236067977)
 
@@ -765,12 +766,10 @@ class TestTtest_rel():
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2),
                                   mask=[[1, 1, 1], [0, 0, 0]])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_array_equal(mstats.ttest_rel(outcome[:, 0], outcome[:, 1]),
-                               (np.nan, np.nan))
-            assert_array_equal(mstats.ttest_rel([np.nan, np.nan], [1.0, 2.0]),
-                               (np.nan, np.nan))
+        for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+            t, p = mstats.ttest_rel(*pair)
+            assert_array_equal(t, (np.nan, np.nan))
+            assert_array_equal(p, (np.nan, np.nan))
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -795,11 +794,11 @@ class TestTtest_rel():
 
     def test_zero_division(self):
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_equal((np.abs(t), p), (np.inf, 0))
-            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0]),
-                               (np.nan, np.nan))
+        assert_equal((np.abs(t), p), (np.inf, 0))
+
+        t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
+        assert_array_equal(t, np.array([np.nan, np.nan]))
+        assert_array_equal(p, np.array([np.nan, np.nan]))
 
 class TestTtest_ind():
     def test_vs_nonmasked(self):
@@ -834,12 +833,10 @@ class TestTtest_ind():
     def test_fully_masked(self):
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_array_equal(mstats.ttest_ind(outcome[:, 0], outcome[:, 1]),
-                               (np.nan, np.nan))
-            assert_array_equal(mstats.ttest_ind([np.nan, np.nan], [1.0, 2.0]),
-                               (np.nan, np.nan))
+        for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+            t, p = mstats.ttest_ind(*pair)
+            assert_array_equal(t, (np.nan, np.nan))
+            assert_array_equal(p, (np.nan, np.nan))
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -855,19 +852,16 @@ class TestTtest_ind():
 
     def test_zero_division(self):
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_equal((np.abs(t), p), (np.inf, 0))
-            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0]),
-                               (np.nan, np.nan))
+        assert_equal((np.abs(t), p), (np.inf, 0))
+
+        t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
+        assert_array_equal(t, (np.nan, np.nan))
+        assert_array_equal(p, (np.nan, np.nan))
 
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_equal((np.abs(t), p), (np.inf, 0))
-            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0],
-                                                equal_var=False),
-                               (np.nan, np.nan))
+        assert_equal((np.abs(t), p), (np.inf, 0))
+        assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0],
+                                            equal_var=False), (np.nan, np.nan))
 
 
 class TestTtest_1samp():
@@ -895,12 +889,11 @@ class TestTtest_1samp():
     def test_fully_masked(self):
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3), mask=[1, 1, 1])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_array_equal(mstats.ttest_1samp(outcome, 0.0),
-                               (np.nan, np.nan))
-            assert_array_equal(mstats.ttest_1samp((np.nan, np.nan), 0.0),
-                               (np.nan, np.nan))
+        expected = (np.nan, np.nan)
+        for pair in [((np.nan, np.nan), 0.0), (outcome, 0.0)]:
+            t, p = mstats.ttest_1samp(*pair)
+            assert_array_equal(p, expected)
+            assert_array_equal(t, expected)
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -916,11 +909,11 @@ class TestTtest_1samp():
 
     def test_zero_division(self):
         t, p = mstats.ttest_1samp([0, 0, 0], 1)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_equal((np.abs(t), p), (np.inf, 0))
-            assert_array_equal(mstats.ttest_1samp([0, 0, 0], 0),
-                               (np.nan, np.nan))
+        assert_equal((np.abs(t), p), (np.inf, 0))
+
+        t, p = mstats.ttest_1samp([0, 0, 0], 0)
+        assert_(np.isnan(t))
+        assert_array_equal(p, (np.nan, np.nan))
 
 
 class TestCompareWithStats(object):
@@ -1052,8 +1045,8 @@ class TestCompareWithStats(object):
             assert_almost_equal(r, rm, 10)
 
     def test_signaltonoise(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated!")
             for n in self.get_n():
                 x, y, xm, ym = self.generate_xy_sample(n)
 
@@ -1067,12 +1060,12 @@ class TestCompareWithStats(object):
 
     def test_betai(self):
         np.random.seed(12345)
-        for i in range(10):
-            a = np.random.rand() * 5.
-            b = np.random.rand() * 200.
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`betai` is deprecated!")
+            for i in range(10):
+                a = np.random.rand() * 5.
+                b = np.random.rand() * 200.
 
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', category=DeprecationWarning)
                 assert_equal(stats.betai(a, b, 0.), 0.)
                 assert_equal(stats.betai(a, b, 1.), 1.)
                 assert_equal(stats.mstats.betai(a, b, 0.), 0.)
@@ -1262,10 +1255,10 @@ class TestCompareWithStats(object):
 
     def test_normaltest(self):
         np.seterr(over='raise')
-        for n in self.get_n():
-            if n > 8:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', category=UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "kurtosistest only valid for n>=20")
+            for n in self.get_n():
+                if n > 8:
                     x, y, xm, ym = self.generate_xy_sample(n)
                     r = stats.normaltest(x)
                     rm = stats.mstats.normaltest(xm)

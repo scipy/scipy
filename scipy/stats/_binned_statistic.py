@@ -5,6 +5,7 @@ import warnings
 import numpy as np
 from scipy._lib.six import callable, xrange
 from collections import namedtuple
+from scipy._lib._numpy_compat import suppress_warnings
 
 __all__ = ['binned_statistic',
            'binned_statistic_2d',
@@ -593,15 +594,12 @@ def binned_statistic_dd(sample, values, statistic='mean',
             for vv in xrange(Vdim):
                 result[vv, i] = np.max(values[vv, binnumbers == i])
     elif callable(statistic):
-        with warnings.catch_warnings():
-            # Numpy generates a warnings for mean/std/... with empty list
-            warnings.filterwarnings('ignore', category=RuntimeWarning)
-            old = np.seterr(invalid='ignore')
-            try:
-                null = statistic([])
-            except:
-                null = np.nan
-            np.seterr(**old)
+        old = np.seterr(invalid='ignore')
+        try:
+            null = statistic([])
+        except:
+            null = np.nan
+        np.seterr(**old)
         result.fill(null)
         for i in np.unique(binnumbers):
             for vv in xrange(Vdim):

@@ -73,66 +73,63 @@ def test_cont_basic():
     # this test skips slow distributions
 
     def check(distname, arg):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    category=integrate.IntegrationWarning)
-            try:
-                distfn = getattr(stats, distname)
-            except TypeError:
-                distfn = distname
-                distname = 'rv_histogram_instance'
-            np.random.seed(765456)
-            sn = 500
-            rvs = distfn.rvs(size=sn, *arg)
-            sm = rvs.mean()
-            sv = rvs.var()
-            m, v = distfn.stats(*arg)
+        try:
+            distfn = getattr(stats, distname)
+        except TypeError:
+            distfn = distname
+            distname = 'rv_histogram_instance'
+        np.random.seed(765456)
+        sn = 500
+        rvs = distfn.rvs(size=sn, *arg)
+        sm = rvs.mean()
+        sv = rvs.var()
+        m, v = distfn.stats(*arg)
 
-            check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
-            check_cdf_ppf(distfn, arg, distname)
-            check_sf_isf(distfn, arg, distname)
-            check_pdf(distfn, arg, distname)
-            check_pdf_logpdf(distfn, arg, distname)
-            check_cdf_logcdf(distfn, arg, distname)
-            check_sf_logsf(distfn, arg, distname)
+        check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+        check_cdf_ppf(distfn, arg, distname)
+        check_sf_isf(distfn, arg, distname)
+        check_pdf(distfn, arg, distname)
+        check_pdf_logpdf(distfn, arg, distname)
+        check_cdf_logcdf(distfn, arg, distname)
+        check_sf_logsf(distfn, arg, distname)
 
-            alpha = 0.01
-            if distname == 'rv_histogram_instance':
-                check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
-            else:
-                check_distribution_rvs(distname, arg, alpha, rvs)
+        alpha = 0.01
+        if distname == 'rv_histogram_instance':
+            check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
+        else:
+            check_distribution_rvs(distname, arg, alpha, rvs)
 
-            locscale_defaults = (0, 1)
-            meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-                     distfn.logsf]
-            # make sure arguments are within support
-            spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
-                      'pareto': 1.5, 'tukeylambda': 0.3,
-                      'rv_histogram_instance': 5.0}
-            x = spec_x.get(distname, 0.5)
-            check_named_args(distfn, x, arg, locscale_defaults, meths)
-            check_random_state_property(distfn, arg)
-            check_pickling(distfn, arg)
+        locscale_defaults = (0, 1)
+        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+                 distfn.logsf]
+        # make sure arguments are within support
+        spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
+                  'pareto': 1.5, 'tukeylambda': 0.3,
+                  'rv_histogram_instance': 5.0}
+        x = spec_x.get(distname, 0.5)
+        check_named_args(distfn, x, arg, locscale_defaults, meths)
+        check_random_state_property(distfn, arg)
+        check_pickling(distfn, arg)
 
-            # Entropy
-            check_entropy(distfn, arg, distname)
+        # Entropy
+        check_entropy(distfn, arg, distname)
 
-            if distfn.numargs == 0:
-                check_vecentropy(distfn, arg)
+        if distfn.numargs == 0:
+            check_vecentropy(distfn, arg)
 
-            if distfn.__class__._entropy != stats.rv_continuous._entropy:
-                check_private_entropy(distfn, arg, stats.rv_continuous)
+        if distfn.__class__._entropy != stats.rv_continuous._entropy:
+            check_private_entropy(distfn, arg, stats.rv_continuous)
 
-            check_edge_support(distfn, arg)
+        check_edge_support(distfn, arg)
 
-            check_meth_dtype(distfn, arg, meths)
-            check_ppf_dtype(distfn, arg)
+        check_meth_dtype(distfn, arg, meths)
+        check_ppf_dtype(distfn, arg)
 
-            if distname not in fails_cmplx:
-                check_cmplx_deriv(distfn, arg)
+        if distname not in fails_cmplx:
+            check_cmplx_deriv(distfn, arg)
 
-            if distname != 'truncnorm':
-                check_ppf_private(distfn, arg, distname)
+        if distname != 'truncnorm':
+            check_ppf_private(distfn, arg, distname)
 
     for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
         if distname in distslow:
@@ -159,58 +156,55 @@ def test_cont_basic_slow():
     # same as above for slow distributions
 
     def check(distname, arg):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    category=integrate.IntegrationWarning)
-            distfn = getattr(stats, distname)
-            np.random.seed(765456)
-            sn = 500
-            rvs = distfn.rvs(size=sn, *arg)
-            sm = rvs.mean()
-            sv = rvs.var()
-            m, v = distfn.stats(*arg)
-            check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
-            check_cdf_ppf(distfn, arg, distname)
-            check_sf_isf(distfn, arg, distname)
-            check_pdf(distfn, arg, distname)
-            check_pdf_logpdf(distfn, arg, distname)
-            check_cdf_logcdf(distfn, arg, distname)
-            check_sf_logsf(distfn, arg, distname)
-            # check_oth(distfn, arg # is still missing)
+        distfn = getattr(stats, distname)
+        np.random.seed(765456)
+        sn = 500
+        rvs = distfn.rvs(size=sn, *arg)
+        sm = rvs.mean()
+        sv = rvs.var()
+        m, v = distfn.stats(*arg)
+        check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+        check_cdf_ppf(distfn, arg, distname)
+        check_sf_isf(distfn, arg, distname)
+        check_pdf(distfn, arg, distname)
+        check_pdf_logpdf(distfn, arg, distname)
+        check_cdf_logcdf(distfn, arg, distname)
+        check_sf_logsf(distfn, arg, distname)
+        # check_oth(distfn, arg # is still missing)
 
-            alpha = 0.01
-            check_distribution_rvs(distname, arg, alpha, rvs)
+        alpha = 0.01
+        check_distribution_rvs(distname, arg, alpha, rvs)
 
-            locscale_defaults = (0, 1)
-            meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-                     distfn.logsf]
-            # make sure arguments are within support
-            x = 0.5
-            if distname == 'invweibull':
-                arg = (1,)
-            elif distname == 'ksone':
-                arg = (3,)
-            check_named_args(distfn, x, arg, locscale_defaults, meths)
-            check_random_state_property(distfn, arg)
-            check_pickling(distfn, arg)
+        locscale_defaults = (0, 1)
+        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+                 distfn.logsf]
+        # make sure arguments are within support
+        x = 0.5
+        if distname == 'invweibull':
+            arg = (1,)
+        elif distname == 'ksone':
+            arg = (3,)
+        check_named_args(distfn, x, arg, locscale_defaults, meths)
+        check_random_state_property(distfn, arg)
+        check_pickling(distfn, arg)
 
-            # Entropy
-            if distname not in ['ksone', 'kstwobign']:
-                check_entropy(distfn, arg, distname)
+        # Entropy
+        if distname not in ['ksone', 'kstwobign']:
+            check_entropy(distfn, arg, distname)
 
-            if distfn.numargs == 0:
-                check_vecentropy(distfn, arg)
-            if (distfn.__class__._entropy != stats.rv_continuous._entropy
-                    and distname != 'vonmises'):
-                check_private_entropy(distfn, arg, stats.rv_continuous)
+        if distfn.numargs == 0:
+            check_vecentropy(distfn, arg)
+        if (distfn.__class__._entropy != stats.rv_continuous._entropy
+                and distname != 'vonmises'):
+            check_private_entropy(distfn, arg, stats.rv_continuous)
 
-            check_edge_support(distfn, arg)
+        check_edge_support(distfn, arg)
 
-            check_meth_dtype(distfn, arg, meths)
-            check_ppf_dtype(distfn, arg)
+        check_meth_dtype(distfn, arg, meths)
+        check_ppf_dtype(distfn, arg)
 
-            if distname not in fails_cmplx:
-                check_cmplx_deriv(distfn, arg)
+        if distname not in fails_cmplx:
+            check_cmplx_deriv(distfn, arg)
 
     for distname, arg in distcont[:]:
         if distname not in distslow:
@@ -225,32 +219,28 @@ def test_cont_basic_slow():
 @npt.dec.slow
 def test_moments():
     def check(distname, arg, normalization_ok, higher_ok):
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                                    category=integrate.IntegrationWarning)
+        if distname == 'levy_stable':
+            return
 
-            if distname == 'levy_stable':
-                return
+        try:
+            distfn = getattr(stats, distname)
+        except TypeError:
+            distfn = distname
+            distname = 'rv_histogram_instance'
 
-            try:
-                distfn = getattr(stats, distname)
-            except TypeError:
-                distfn = distname
-                distname = 'rv_histogram_instance'
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
-            m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        if normalization_ok:
+            check_normalization(distfn, arg, distname)
 
-            if normalization_ok:
-                check_normalization(distfn, arg, distname)
+        if higher_ok:
+            check_mean_expect(distfn, arg, m, distname)
+            check_var_expect(distfn, arg, m, v, distname)
+            check_skew_expect(distfn, arg, m, v, s, distname)
+            check_kurt_expect(distfn, arg, m, v, k, distname)
 
-            if higher_ok:
-                check_mean_expect(distfn, arg, m, distname)
-                check_var_expect(distfn, arg, m, v, distname)
-                check_skew_expect(distfn, arg, m, v, s, distname)
-                check_kurt_expect(distfn, arg, m, v, k, distname)
-
-            check_loc_scale(distfn, arg, m, v, distname)
-            check_moment(distfn, arg, m, v, distname)
+        check_loc_scale(distfn, arg, m, v, distname)
+        check_moment(distfn, arg, m, v, distname)
 
     fail_normalization = set(['vonmises', 'ksone'])
     fail_higher = set(['vonmises', 'ksone', 'ncf'])
