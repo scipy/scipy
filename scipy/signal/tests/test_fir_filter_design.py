@@ -1,7 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 import numpy as np
 from numpy.testing import run_module_suite, assert_raises, \
         assert_almost_equal, assert_array_almost_equal, assert_equal, \
@@ -507,9 +505,7 @@ class TestMinimumPhase(object):
         assert_raises(ValueError, minimum_phase, 'foo')
         assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
         assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            assert_warns(RuntimeWarning, minimum_phase, np.arange(3))
+        assert_warns(RuntimeWarning, minimum_phase, np.arange(3))
 
     def test_homomorphic(self):
         # check that it can recover frequency responses of arbitrary

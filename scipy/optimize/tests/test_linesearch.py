@@ -3,10 +3,9 @@ Tests for line search routines
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 from numpy.testing import assert_, assert_equal, \
      assert_array_almost_equal, assert_array_almost_equal_nulp
+from scipy._lib._numpy_compat import suppress_warnings
 import scipy.optimize.linesearch as ls
 from scipy.optimize.linesearch import LineSearchWarning
 import numpy as np
@@ -192,8 +191,9 @@ class TestLineSearch(object):
             f0 = f(x)
             g0 = fprime(x)
             self.fcount = 0
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', LineSearchWarning)
+            with suppress_warnings() as sup:
+                sup.filter(LineSearchWarning,
+                           "The line search algorithm did not converge")
                 s, fc, gc, fv, ofv, gv = ls.line_search_wolfe2(f, fprime, x, p,
                                                                g0, f0, old_f,
                                                                amax=smax)

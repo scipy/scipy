@@ -1,12 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
 import os.path
-import warnings
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal, assert_equal,
                            assert_almost_equal, assert_array_equal,
                            assert_raises, run_module_suite)
+from scipy._lib._numpy_compat import suppress_warnings
 
 import scipy.ndimage as ndimage
 
@@ -664,13 +664,12 @@ def test_median03():
 def test_variance01():
     olderr = np.seterr(all='ignore')
     try:
-        with warnings.catch_warnings():
-            # Numpy 1.9 gives warnings for mean([])
-            warnings.filterwarnings('ignore', message="Mean of empty slice.")
-            for type in types:
-                input = np.array([], type)
+        for type in types:
+            input = np.array([], type)
+            with suppress_warnings() as sup:
+                sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.variance(input)
-                assert_(np.isnan(output))
+            assert_(np.isnan(output))
     finally:
         np.seterr(**olderr)
 
@@ -718,13 +717,12 @@ def test_variance06():
 def test_standard_deviation01():
     olderr = np.seterr(all='ignore')
     try:
-        with warnings.catch_warnings():
-            # Numpy 1.9 gives warnings for mean([])
-            warnings.filterwarnings('ignore', message="Mean of empty slice.")
-            for type in types:
-                input = np.array([], type)
+        for type in types:
+            input = np.array([], type)
+            with suppress_warnings() as sup:
+                sup.filter(RuntimeWarning, "Mean of empty slice")
                 output = ndimage.standard_deviation(input)
-                assert_(np.isnan(output))
+            assert_(np.isnan(output))
     finally:
         np.seterr(**olderr)
 

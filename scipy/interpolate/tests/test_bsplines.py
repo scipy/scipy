@@ -1,11 +1,10 @@
 from __future__ import division, absolute_import, print_function
 
-import warnings
-
 import numpy as np
 from numpy.testing import (run_module_suite, assert_equal,
         assert_allclose, assert_raises, assert_)
 from numpy.testing.decorators import knownfailureif
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
@@ -521,10 +520,10 @@ class TestInterop(object):
 
         # With n-D coefficients, there's a quirck:
         # splev(x, BSpline) is equivalent to BSpline(x)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            assert_allclose(splev(xnew, b2),
-                            b2(xnew), atol=1e-15, rtol=1e-15)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Calling splev.. with BSpline objects with c.ndim > 1 is not recommended.")
+            assert_allclose(splev(xnew, b2), b2(xnew), atol=1e-15, rtol=1e-15)
 
         # However, splev(x, BSpline.tck) needs some transposes. This is because
         # BSpline interpolates along the first axis, while the legacy FITPACK
@@ -594,10 +593,11 @@ class TestInterop(object):
         assert_allclose(sproot((b.t, b.c, b.k)), roots, atol=1e-7, rtol=1e-7)
 
         # ... and deals with trailing dimensions if coef array is n-D
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Calling sproot.. with BSpline objects with c.ndim > 1 is not recommended.")
             r = sproot(b2, mest=50)
-            r = np.asarray(r)
+        r = np.asarray(r)
 
         assert_equal(r.shape, (3, 2, 4))
         assert_allclose(r - roots, 0, atol=1e-12)
@@ -617,10 +617,10 @@ class TestInterop(object):
                         b.integrate(0, 1), atol=1e-14)
 
         # ... and deals with n-D arrays of coefficients
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            assert_allclose(splint(0, 1, b2),
-                            b2.integrate(0, 1), atol=1e-14)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                       "Calling splint.. with BSpline objects with c.ndim > 1 is not recommended.")
+            assert_allclose(splint(0, 1, b2), b2.integrate(0, 1), atol=1e-14)
 
         # and the legacy behavior is preserved for a tck tuple w/ n-D coef
         c2r = b2.c.transpose(1, 2, 0)

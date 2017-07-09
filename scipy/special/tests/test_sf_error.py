@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import warnings
 
 from numpy.testing import assert_, assert_equal, assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 
 import scipy.special as sc
 from scipy.special._ufuncs import _sf_error_test_function
@@ -114,8 +115,8 @@ def test_errstate_all_but_one():
 
 
 def test_errprint():
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore')
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, "`errprint` is deprecated!")
         flag = sc.errprint(True)
     try:
         assert_(isinstance(flag, bool))
@@ -123,6 +124,6 @@ def test_errprint():
             sc.loggamma(0)
             assert_(w[-1].category is sc.SpecialFunctionWarning)
     finally:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`errprint` is deprecated!")
             sc.errprint(flag)
