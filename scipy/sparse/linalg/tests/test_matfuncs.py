@@ -8,14 +8,13 @@ from __future__ import division, print_function, absolute_import
 
 import math
 
-import warnings
-
 import numpy as np
 from numpy import array, eye, exp, random
 from numpy.linalg import matrix_power
 from numpy.testing import (run_module_suite,
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
         assert_array_almost_equal_nulp)
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
 from scipy.sparse.construct import eye as speye
@@ -130,24 +129,26 @@ class TestExpM(object):
     def test_padecases_dtype_sparse_float(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
         dtype = np.float64
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-                a = scale * speye(3, 3, dtype=dtype, format='csc')
-                e = exp(scale) * eye(3, dtype=dtype)
+        for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
+            a = scale * speye(3, 3, dtype=dtype, format='csc')
+            e = exp(scale) * eye(3, dtype=dtype)
+            with suppress_warnings() as sup:
+                sup.filter(SparseEfficiencyWarning,
+                           "Changing the sparsity structure of a csc_matrix is expensive.")
                 exact_onenorm = _expm(a, use_exact_onenorm=True).toarray()
                 inexact_onenorm = _expm(a, use_exact_onenorm=False).toarray()
-                assert_array_almost_equal_nulp(exact_onenorm, e, nulp=100)
-                assert_array_almost_equal_nulp(inexact_onenorm, e, nulp=100)
+            assert_array_almost_equal_nulp(exact_onenorm, e, nulp=100)
+            assert_array_almost_equal_nulp(inexact_onenorm, e, nulp=100)
 
     def test_padecases_dtype_sparse_complex(self):
         # float32 and complex64 lead to errors in spsolve/UMFpack
         dtype = np.complex128
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
-                a = scale * speye(3, 3, dtype=dtype, format='csc')
-                e = exp(scale) * eye(3, dtype=dtype)
+        for scale in [1e-2, 1e-1, 5e-1, 1, 10]:
+            a = scale * speye(3, 3, dtype=dtype, format='csc')
+            e = exp(scale) * eye(3, dtype=dtype)
+            with suppress_warnings() as sup:
+                sup.filter(SparseEfficiencyWarning,
+                           "Changing the sparsity structure of a csc_matrix is expensive.")
                 assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
