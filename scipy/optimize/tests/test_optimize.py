@@ -11,7 +11,6 @@ To run it in its simplest form::
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import itertools
 
 import numpy as np
@@ -20,6 +19,7 @@ from numpy.testing import (assert_raises, assert_allclose, assert_equal,
                            assert_almost_equal, assert_warns,
                            assert_array_less)
 
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._testutils import suppressed_stdout
 from scipy import optimize
 
@@ -1127,8 +1127,9 @@ class TestOptimizeResultAttributes(object):
                       'message']
         skip = {'COBYLA': ['nit']}
         for method in methods:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
+            with suppress_warnings() as sup:
+                sup.filter(RuntimeWarning,
+                           "Method .+ does not use (gradient|Hessian.*) information")
                 res = optimize.minimize(self.func, self.x0, method=method,
                                         jac=self.jac, hess=self.hess,
                                         hessp=self.hessp)

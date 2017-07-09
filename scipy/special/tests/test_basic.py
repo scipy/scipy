@@ -20,7 +20,6 @@
 from __future__ import division, print_function, absolute_import
 
 import itertools
-import warnings
 
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
@@ -38,6 +37,7 @@ from scipy.special import ellipk, zeta
 from scipy.special._testutils import assert_tol_equal, with_special_errors, \
      assert_func_equal
 
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._version import NumpyVersion
 
 import math
@@ -781,8 +781,8 @@ class TestCephes(object):
         assert_array_equal(val, [0, 0, 0])
 
     def test_pdtri(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "floating point number truncated to an integer")
             cephes.pdtri(0.5,0.5)
 
     def test_pdtrik(self):
@@ -1619,15 +1619,14 @@ class TestErf(object):
         assert_equal(i,0)
 
     def test_errprint(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`errprint` is deprecated!")
             a = special.errprint()
             b = 1-a  # a is the state 1-a inverts state
             c = special.errprint(b)  # returns last state 'a'
-            assert_equal(a,c)
             d = special.errprint(a)  # returns to original state
-            assert_equal(d,b)  # makes sure state was returned
-            # assert_equal(d,1-a)
+        assert_equal(a,c)
+        assert_equal(d,b)  # makes sure state was returned
 
     def test_erf_nan_inf(self):
         vals = [np.nan, -np.inf, np.inf]
@@ -3250,10 +3249,9 @@ def test_agm_simple():
 
 
 def test_legacy():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
-
-        # Legacy behavior: truncating arguments to integers
+    # Legacy behavior: truncating arguments to integers
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "floating point number truncated to an integer")
         assert_equal(special.bdtrc(1, 2, 0.3), special.bdtrc(1.8, 2.8, 0.3))
         assert_equal(special.bdtr(1, 2, 0.3), special.bdtr(1.8, 2.8, 0.3))
         assert_equal(special.bdtri(1, 2, 0.3), special.bdtri(1.8, 2.8, 0.3))

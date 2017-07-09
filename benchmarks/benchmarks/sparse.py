@@ -3,13 +3,13 @@ Simple benchmarks for the sparse module
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import time
 import timeit
 
 import numpy
 import numpy as np
 from numpy import ones, array, asarray, empty, random, zeros
+from scipy._lib._numpy_compat import suppress_warnings
 
 try:
     from scipy import sparse
@@ -273,8 +273,9 @@ class Getset(Benchmark):
         def kernel(A, i, j, v):
             A[i, j] = v
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', SparseEfficiencyWarning)
+        with suppress_warnings() as sup:
+            sup.filter(SparseEfficiencyWarning,
+                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
             return self._timeit(kernel, sparsity_pattern == 'different')
 
     def time_fancy_getitem(self, N, sparsity_pattern, format):

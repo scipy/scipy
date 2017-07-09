@@ -1,8 +1,7 @@
 from __future__ import division, absolute_import, print_function
 
-import warnings
-
 import numpy as np
+from scipy._lib._numpy_compat import suppress_warnings
 
 try:
     import scipy.stats as stats
@@ -16,8 +15,9 @@ class Anderson_KSamp(Benchmark):
         self.rand = [np.random.normal(loc=i, size=1000) for i in range(3)]
 
     def time_anderson_ksamp(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "approximate p-value will be computed by extrapolation")
             stats.anderson_ksamp(self.rand)
 
 

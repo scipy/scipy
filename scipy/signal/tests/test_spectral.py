@@ -1,11 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import numpy as np
 from numpy.testing import (assert_, run_module_suite, dec,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, assert_raises,
                            assert_approx_equal)
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal, fftpack
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
                           spectrogram, stft, istft, check_COLA)
@@ -389,11 +389,10 @@ class TestWelch(object):
         x[0] = 1
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
             f, p = welch(x,window='hann')  # default nperseg
-            f1, p1 = welch(x,window='hann',
-                           nperseg=256)  # user-specified nperseg
+            f1, p1 = welch(x,window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = welch(x, nperseg=8)  # valid nperseg, doesn't give warning
         assert_allclose(f, f2)
         assert_allclose(p, p2)
@@ -401,12 +400,9 @@ class TestWelch(object):
         assert_allclose(p1, p2)
 
     def test_window_long_or_nd(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            assert_raises(ValueError, welch, np.zeros(4), 1,
-                          np.array([1,1,1,1,1]))
-            assert_raises(ValueError, welch, np.zeros(4), 1,
-                          np.arange(6).reshape((2,3)))
+        assert_raises(ValueError, welch, np.zeros(4), 1, np.array([1,1,1,1,1]))
+        assert_raises(ValueError, welch, np.zeros(4), 1,
+                      np.arange(6).reshape((2,3)))
 
     def test_nondefault_noverlap(self):
         x = np.zeros(64)
@@ -742,11 +738,10 @@ class TestCSD:
 
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "nperseg = 256 is greater than input length  = 8, using nperseg = 8")
             f, p = csd(x, x, window='hann')  # default nperseg
-            f1, p1 = csd(x, x, window='hann',
-                         nperseg=256)  # user-specified nperseg
+            f1, p1 = csd(x, x, window='hann', nperseg=256)  # user-specified nperseg
         f2, p2 = csd(x, x, nperseg=8)  # valid nperseg, doesn't give warning
         assert_allclose(f, f2)
         assert_allclose(p, p2)
@@ -754,12 +749,10 @@ class TestCSD:
         assert_allclose(p1, p2)
 
     def test_window_long_or_nd(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
-                          np.array([1,1,1,1,1]))
-            assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
-                          np.arange(6).reshape((2,3)))
+        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
+                      np.array([1,1,1,1,1]))
+        assert_raises(ValueError, csd, np.zeros(4), np.ones(4), 1,
+                      np.arange(6).reshape((2,3)))
 
     def test_nondefault_noverlap(self):
         x = np.zeros(64)
@@ -905,10 +898,10 @@ class TestSpectrogram(object):
 
         #for string-like window, input signal length < nperseg value gives
         #UserWarning, sets nperseg to x.shape[-1]
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            f, _, p = spectrogram(x, fs,
-                                  window=('tukey',0.25))  # default nperseg
+        f, _, p = spectrogram(x, fs, window=('tukey',0.25))  # default nperseg
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "nperseg = 1025 is greater than input length  = 1024, using nperseg = 1024")
             f1, _, p1 = spectrogram(x, fs, window=('tukey',0.25),
                                     nperseg=1025)  # user-specified nperseg
         f2, _, p2 = spectrogram(x, fs, nperseg=256)  # to compare w/default
@@ -1232,8 +1225,9 @@ class TestSTFT(object):
             assert_allclose(x, xr, err_msg=msg)
 
         # Check that asking for onesided switches to twosided
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "Input data is complex, switching to return_onesided=False")
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
                             return_onesided=True)

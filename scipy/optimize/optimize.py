@@ -38,6 +38,7 @@ from .linesearch import (line_search_wolfe1, line_search_wolfe2,
                          line_search_wolfe2 as line_search,
                          LineSearchWarning)
 from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.linalg import get_blas_funcs
 
 
@@ -776,12 +777,13 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
     if ret[0] is None:
         # line search failed: try different one.
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', LineSearchWarning)
-            kwargs2 = {}
-            for key in ('c1', 'c2', 'amax'):
-                if key in kwargs:
-                    kwargs2[key] = kwargs[key]
+        kwargs2 = {}
+        for key in ('c1', 'c2', 'amax'):
+            if key in kwargs:
+                kwargs2[key] = kwargs[key]
+        with suppress_warnings() as sup:
+            sup.filter(LineSearchWarning,
+                       "The line search algorithm did not converge")
             ret = line_search_wolfe2(f, fprime, xk, pk, gfk,
                                      old_fval, old_old_fval,
                                      extra_condition=extra_condition,
