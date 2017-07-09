@@ -161,6 +161,62 @@ add_newdoc("scipy.special", "wrightomega",
 
     """)
 
+
+add_newdoc("scipy.special", "agm",
+    """
+    agm(a, b)
+
+    Compute the arithmetic-geometric mean of `a` and `b`.
+
+    Start with a_0 = a and b_0 = b and iteratively compute::
+
+        a_{n+1} = (a_n + b_n)/2
+        b_{n+1} = sqrt(a_n*b_n)
+
+    a_n and b_n converge to the same limit as n increases; their common
+    limit is agm(a, b).
+
+    Parameters
+    ----------
+    a, b : array_like
+        Real values only.  If the values are both negative, the result
+        is negative.  If one value is negative and the other is positive,
+        `nan` is returned.
+
+    Returns
+    -------
+    float
+        The arithmetic-geometric mean of `a` and `b`.
+
+    Examples
+    --------
+    >>> from scipy.special import agm
+    >>> a, b = 24.0, 6.0
+    >>> agm(a, b)
+    13.458171481725614
+
+    Compare that result to the iteration:
+
+    >>> while a != b:
+    ...     a, b = (a + b)/2, np.sqrt(a*b)
+    ...     print("a = %19.16f  b=%19.16f" % (a, b))
+    ...
+    a = 15.0000000000000000  b=12.0000000000000000
+    a = 13.5000000000000000  b=13.4164078649987388
+    a = 13.4582039324993694  b=13.4581390309909850
+    a = 13.4581714817451772  b=13.4581714817060547
+    a = 13.4581714817256159  b=13.4581714817256159
+
+    When array-like arguments are given, broadcasting applies:
+
+    >>> a = np.array([[1.5], [3], [6]])  # a has shape (3, 1).
+    >>> b = np.array([6, 12, 24, 48])    # b has shape (4,).
+    >>> agm(a, b)
+    array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],
+           [  4.37037309,   6.72908574,  10.84726853,  18.11597502],
+           [  6.        ,   8.74074619,  13.45817148,  21.69453707]])
+    """)
+
 add_newdoc("scipy.special", "airy",
     r"""
     airy(z)

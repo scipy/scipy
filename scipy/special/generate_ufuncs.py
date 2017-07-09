@@ -162,6 +162,7 @@ pdtri -- pdtri: id->d, pdtri_unsafe: dd->d                 -- cephes.h, _legacy.
 yn -- yn: id->d, yn_unsafe: dd->d                          -- cephes.h, _legacy.pxd
 smirnov -- smirnov: id->d, smirnov_unsafe: dd->d           -- cephes.h, _legacy.pxd
 smirnovi -- smirnovi: id->d, smirnovi_unsafe: dd->d        -- cephes.h, _legacy.pxd
+agm -- agm: dd->d                                          -- _agm.pxd
 airy -- airy_wrap: d*dddd->*i, cairy_wrap: D*DDDD->*i      -- amos_wrappers.h
 itairy -- itairy_wrap: d*dddd->*i                          -- specfun_wrappers.h
 airye -- cairy_wrap_e_real: d*dddd->*i, cairy_wrap_e: D*DDDD->*i -- amos_wrappers.h

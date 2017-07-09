@@ -21,7 +21,7 @@ from . import orthogonal
 from ._comb import _comb_int
 
 
-__all__ = ['agm', 'ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
+__all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'ber_zeros', 'bernoulli', 'berp_zeros', 'bessel_diff_formula',
            'bi_zeros', 'clpmn', 'comb', 'digamma', 'diric', 'ellipk',
            'erf_zeros', 'erfcinv', 'erfinv', 'euler', 'factorial',
@@ -2062,24 +2062,6 @@ def ellipk(m):
 
     """
     return ellipkm1(1 - asarray(m))
-
-
-def agm(a, b):
-    """Arithmetic, Geometric Mean.
-
-    Start with a_0=a and b_0=b and iteratively compute
-
-    a_{n+1} = (a_n+b_n)/2
-    b_{n+1} = sqrt(a_n*b_n)
-
-    until a_n=b_n.   The result is agm(a, b)
-
-    agm(a, b)=agm(b, a)
-    agm(a, a) = a
-    min(a, b) < agm(a, b) < max(a, b)
-    """
-    s = a + b + 0.0
-    return (pi / 4) * s / ellipkm1(4 * a * b / s ** 2)
 
 
 def comb(N, k, exact=False, repetition=False):

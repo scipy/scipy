@@ -46,6 +46,7 @@ def _generate_test_points(typecodes):
 
 def test_cython_api():
     params = [
+        (special.agm, cython_special.agm, ('dd',), None),
         (special.airy, cython_special._airy_pywrap, ('d', 'D'), None),
         (special.airye, cython_special._airye_pywrap, ('d', 'D'), None),
         (special.bdtr, cython_special.bdtr, ('lld', 'ddd'), None),

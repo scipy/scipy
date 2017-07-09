@@ -14,6 +14,7 @@ ctypedef fused dl_number_t:
     double
     long
 
+cpdef double agm(double x0, double x1) nogil
 cdef void airy(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) nogil
 cdef void airye(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2, Dd_number_t *y3) nogil
 cpdef double bdtr(dl_number_t x0, dl_number_t x1, double x2) nogil

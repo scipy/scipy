@@ -1279,6 +1279,9 @@ cdef extern from "_ufuncs_defs.h":
     cdef double _func_struve_power_series "struve_power_series"(double, double, int, double *) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_zeta "zeta"(double, double) nogil
+from ._agm cimport agm as _func_agm
+ctypedef double _proto_agm_t(double, double) nogil
+cdef _proto_agm_t *_proto_agm_t_var = &_func_agm
 cdef extern from "_ufuncs_defs.h":
     cdef int _func_airy_wrap "airy_wrap"(double, double *, double *, double *, double *) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2428,6 +2431,78 @@ ufunc__zeta_ptr[2*1+1] = <void*>(<char*>"_zeta")
 ufunc__zeta_data[0] = &ufunc__zeta_ptr[2*0]
 ufunc__zeta_data[1] = &ufunc__zeta_ptr[2*1]
 _zeta = np.PyUFunc_FromFuncAndData(ufunc__zeta_loops, ufunc__zeta_data, ufunc__zeta_types, 2, 2, 1, 0, "_zeta", ufunc__zeta_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_agm_loops[2]
+cdef void *ufunc_agm_ptr[4]
+cdef void *ufunc_agm_data[2]
+cdef char ufunc_agm_types[6]
+cdef char *ufunc_agm_doc = (
+    "agm(a, b)\n"
+    "\n"
+    "Compute the arithmetic-geometric mean of `a` and `b`.\n"
+    "\n"
+    "Start with a_0 = a and b_0 = b and iteratively compute::\n"
+    "\n"
+    "    a_{n+1} = (a_n + b_n)/2\n"
+    "    b_{n+1} = sqrt(a_n*b_n)\n"
+    "\n"
+    "a_n and b_n converge to the same limit as n increases; their common\n"
+    "limit is agm(a, b).\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "a, b : array_like\n"
+    "    Real values only.  If the values are both negative, the result\n"
+    "    is negative.  If one value is negative and the other is positive,\n"
+    "    `nan` is returned.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "float\n"
+    "    The arithmetic-geometric mean of `a` and `b`.\n"
+    "\n"
+    "Examples\n"
+    "--------\n"
+    ">>> from scipy.special import agm\n"
+    ">>> a, b = 24.0, 6.0\n"
+    ">>> agm(a, b)\n"
+    "13.458171481725614\n"
+    "\n"
+    "Compare that result to the iteration:\n"
+    "\n"
+    ">>> while a != b:\n"
+    "...     a, b = (a + b)/2, np.sqrt(a*b)\n"
+    "...     print(\"a = %19.16f  b=%19.16f\" % (a, b))\n"
+    "...\n"
+    "a = 15.0000000000000000  b=12.0000000000000000\n"
+    "a = 13.5000000000000000  b=13.4164078649987388\n"
+    "a = 13.4582039324993694  b=13.4581390309909850\n"
+    "a = 13.4581714817451772  b=13.4581714817060547\n"
+    "a = 13.4581714817256159  b=13.4581714817256159\n"
+    "\n"
+    "When array-like arguments are given, broadcasting applies:\n"
+    "\n"
+    ">>> a = np.array([[1.5], [3], [6]])  # a has shape (3, 1).\n"
+    ">>> b = np.array([6, 12, 24, 48])    # b has shape (4,).\n"
+    ">>> agm(a, b)\n"
+    "array([[  3.36454287,   5.42363427,   9.05798751,  15.53650756],\n"
+    "       [  4.37037309,   6.72908574,  10.84726853,  18.11597502],\n"
+    "       [  6.        ,   8.74074619,  13.45817148,  21.69453707]])")
+ufunc_agm_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc_agm_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc_agm_types[0] = <char>NPY_FLOAT
+ufunc_agm_types[1] = <char>NPY_FLOAT
+ufunc_agm_types[2] = <char>NPY_FLOAT
+ufunc_agm_types[3] = <char>NPY_DOUBLE
+ufunc_agm_types[4] = <char>NPY_DOUBLE
+ufunc_agm_types[5] = <char>NPY_DOUBLE
+ufunc_agm_ptr[2*0] = <void*>_func_agm
+ufunc_agm_ptr[2*0+1] = <void*>(<char*>"agm")
+ufunc_agm_ptr[2*1] = <void*>_func_agm
+ufunc_agm_ptr[2*1+1] = <void*>(<char*>"agm")
+ufunc_agm_data[0] = &ufunc_agm_ptr[2*0]
+ufunc_agm_data[1] = &ufunc_agm_ptr[2*1]
+agm = np.PyUFunc_FromFuncAndData(ufunc_agm_loops, ufunc_agm_data, ufunc_agm_types, 2, 2, 1, 0, "agm", ufunc_agm_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_airy_loops[4]
 cdef void *ufunc_airy_ptr[8]
