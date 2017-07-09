@@ -984,9 +984,15 @@ def _get_delta(
 
     #  Assemble M from [1] Equation 8.31
     Dinv = x / z
-    if sparse:
+    splu = False
+    if sparse and not lstsq:
         # sparse requires Dinv to be diag matrix
         M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
+        try:
+            solve = sps.linalg.splu(M).solve
+            splu = True
+        except:
+            lstsq = True
     else:
         # dense does not; use broadcasting
         M = A.dot(Dinv.reshape(-1, 1) * A.T)
@@ -1052,10 +1058,10 @@ def _get_delta(
             try:
                 solve_this = L if cholesky else M
                 # [1] Equation 8.28
-                p, q = _sym_solve(Dinv, solve_this, A, c, b, solve)
+                p, q = _sym_solve(Dinv, solve_this, A, c, b, solve, splu)
                 # [1] Equation 8.29
                 u, v = _sym_solve(Dinv, solve_this, A, rhatd -
-                                  (1 / x) * rhatxs, rhatp, solve)
+                                  (1 / x) * rhatxs, rhatp, solve, splu)
                 if np.any(np.isnan(p)) or np.any(np.isnan(q)):
                     raise LinAlgError
                 solved = True
@@ -1133,7 +1139,7 @@ def _fb_subs(L, r):
     return x
 
 
-def _sym_solve(Dinv, M, A, r1, r2, solve):
+def _sym_solve(Dinv, M, A, r1, r2, solve, splu = False):
     """
     An implementation of [1] equation 8.31 and 8.32
 
@@ -1147,7 +1153,10 @@ def _sym_solve(Dinv, M, A, r1, r2, solve):
     """
     # [1] 8.31
     r = r2 + A.dot(Dinv * r1)
-    v = solve(M, r)
+    if splu:
+        v = solve(r)
+    else:
+        v = solve(M, r)
     # [1] 8.32
     u = Dinv * (A.T.dot(v) - r1)
     return u, v
@@ -1465,7 +1474,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     message = "Optimization terminated successfully."
 
     if sparse:
-        A = sps.csr_matrix(A)
+        A = sps.csc_matrix(A)
         A.T = A.transpose()  # A.T is defined for sparse matrices but is slow
         # Redefine it to avoid calculating again
         # This is fine as long as A doesn't change
@@ -1626,7 +1635,7 @@ def _linprog_ip(
         see [1]_ Section 4.5.
     alpha0 : float (default = 0.99995)
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see :math:`\beta_3` of [1]_ Table 8.1.
+        direction; see :math:`\\beta_{3}` of [1]_ Table 8.1.
     beta : float (default = 0.1)
         The desired reduction of the path parameter :math:`\mu` (see [3]_) when
         Mehrota's predictor-corrector is not in use (uncommon).
