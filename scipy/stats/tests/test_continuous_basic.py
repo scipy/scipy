@@ -1,11 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 import numpy as np
 import numpy.testing as npt
+from scipy._lib._numpy_compat import suppress_warnings
+from scipy.integrate import IntegrationWarning
 
-from scipy import integrate
 from scipy import stats
 from scipy.special import betainc
 from common_tests import (check_normalization, check_moment, check_mean_expect,
@@ -228,16 +227,21 @@ def test_moments():
             distfn = distname
             distname = 'rv_histogram_instance'
 
-        m, v, s, k = distfn.stats(*arg, moments='mvsk')
+        with suppress_warnings() as sup:
+            sup.filter(IntegrationWarning, "The integral is probably divergent, or slowly convergent.")
+            m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
         if normalization_ok:
             check_normalization(distfn, arg, distname)
 
         if higher_ok:
             check_mean_expect(distfn, arg, m, distname)
-            check_var_expect(distfn, arg, m, v, distname)
-            check_skew_expect(distfn, arg, m, v, s, distname)
-            check_kurt_expect(distfn, arg, m, v, k, distname)
+            with suppress_warnings() as sup:
+                sup.filter(IntegrationWarning,
+                           "The integral is probably divergent, or slowly convergent.")
+                check_skew_expect(distfn, arg, m, v, s, distname)
+                check_var_expect(distfn, arg, m, v, distname)
+                check_kurt_expect(distfn, arg, m, v, k, distname)
 
         check_loc_scale(distfn, arg, m, v, distname)
         check_moment(distfn, arg, m, v, distname)

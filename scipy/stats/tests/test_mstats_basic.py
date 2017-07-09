@@ -766,10 +766,12 @@ class TestTtest_rel():
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2),
                                   mask=[[1, 1, 1], [0, 0, 0]])
-        for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
-            t, p = mstats.ttest_rel(*pair)
-            assert_array_equal(t, (np.nan, np.nan))
-            assert_array_equal(p, (np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+                t, p = mstats.ttest_rel(*pair)
+                assert_array_equal(t, (np.nan, np.nan))
+                assert_array_equal(p, (np.nan, np.nan))
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -796,9 +798,11 @@ class TestTtest_rel():
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
         assert_equal((np.abs(t), p), (np.inf, 0))
 
-        t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
-        assert_array_equal(t, np.array([np.nan, np.nan]))
-        assert_array_equal(p, np.array([np.nan, np.nan]))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
+            assert_array_equal(t, np.array([np.nan, np.nan]))
+            assert_array_equal(p, np.array([np.nan, np.nan]))
 
 class TestTtest_ind():
     def test_vs_nonmasked(self):
@@ -833,10 +837,12 @@ class TestTtest_ind():
     def test_fully_masked(self):
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
-        for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
-            t, p = mstats.ttest_ind(*pair)
-            assert_array_equal(t, (np.nan, np.nan))
-            assert_array_equal(p, (np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+                t, p = mstats.ttest_ind(*pair)
+                assert_array_equal(t, (np.nan, np.nan))
+                assert_array_equal(p, (np.nan, np.nan))
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -854,9 +860,11 @@ class TestTtest_ind():
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
         assert_equal((np.abs(t), p), (np.inf, 0))
 
-        t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
-        assert_array_equal(t, (np.nan, np.nan))
-        assert_array_equal(p, (np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
+            assert_array_equal(t, (np.nan, np.nan))
+            assert_array_equal(p, (np.nan, np.nan))
 
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
         assert_equal((np.abs(t), p), (np.inf, 0))
@@ -890,10 +898,12 @@ class TestTtest_1samp():
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3), mask=[1, 1, 1])
         expected = (np.nan, np.nan)
-        for pair in [((np.nan, np.nan), 0.0), (outcome, 0.0)]:
-            t, p = mstats.ttest_1samp(*pair)
-            assert_array_equal(p, expected)
-            assert_array_equal(t, expected)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [((np.nan, np.nan), 0.0), (outcome, 0.0)]:
+                t, p = mstats.ttest_1samp(*pair)
+                assert_array_equal(p, expected)
+                assert_array_equal(t, expected)
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -911,9 +921,11 @@ class TestTtest_1samp():
         t, p = mstats.ttest_1samp([0, 0, 0], 1)
         assert_equal((np.abs(t), p), (np.inf, 0))
 
-        t, p = mstats.ttest_1samp([0, 0, 0], 0)
-        assert_(np.isnan(t))
-        assert_array_equal(p, (np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_1samp([0, 0, 0], 0)
+            assert_(np.isnan(t))
+            assert_array_equal(p, (np.nan, np.nan))
 
 
 class TestCompareWithStats(object):

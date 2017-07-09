@@ -2515,7 +2515,7 @@ def test_ksone_fit_freeze():
         olderr = np.seterr(invalid='ignore')
         with suppress_warnings() as sup:
             sup.filter(IntegrationWarning,
-                       "The maximum number of subdivisions \(50\) has been achieved.")
+                       "The maximum number of subdivisions .50. has been achieved.")
             sup.filter(RuntimeWarning,
                        "floating point number truncated to an integer")
             stats.ksone.fit(d)
