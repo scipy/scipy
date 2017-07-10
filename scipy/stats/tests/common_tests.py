@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import pickle
 
 import numpy as np
@@ -152,10 +151,8 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
         npt.assert_array_equal(vals, v)
         if 'n' not in k.keys():
             # `n` is first parameter of moment(), so can't be used as named arg
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", UserWarning)
-                npt.assert_equal(distfn.moment(1, *a, **k),
-                                 distfn.moment(1, *shape_args))
+            npt.assert_equal(distfn.moment(1, *a, **k),
+                             distfn.moment(1, *shape_args))
 
     # unknown arguments should not go through:
     k.update({'kaboom': 42})

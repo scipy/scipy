@@ -12,11 +12,13 @@ from numpy.testing import (run_module_suite, assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
     assert_allclose, assert_, assert_raises, assert_warns, dec)
 from nose import SkipTest
+from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy
 import numpy as np
 from numpy import typecodes, array
 from scipy import special
+from scipy.integrate import IntegrationWarning
 import scipy.stats as stats
 from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
@@ -2232,43 +2234,34 @@ class TestTrapz(object):
                                 stats.triang.cdf(x, mode))
 
     def test_reduces_to_uniform(self):
-            x = np.linspace(0, 1, 10)
-
-            old_err = np.seterr(divide='ignore')
-
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', RuntimeWarning)
-                assert_almost_equal(stats.trapz.pdf(x, 0, 1),
-                                    stats.uniform.pdf(x))
-                assert_almost_equal(stats.trapz.cdf(x, 0, 1),
-                                    stats.uniform.cdf(x))
-
-            np.seterr(**old_err)
+        x = np.linspace(0, 1, 10)
+        with suppress_warnings() as sup, np.errstate(divide='ignore'):
+            sup.filter(RuntimeWarning,
+                       "invalid value encountered in true_divide")
+            assert_almost_equal(stats.trapz.pdf(x, 0, 1), stats.uniform.pdf(x))
+            assert_almost_equal(stats.trapz.cdf(x, 0, 1), stats.uniform.cdf(x))
 
     def test_cases(self):
-            old_err = np.seterr(divide='ignore')
+        with suppress_warnings() as sup, np.errstate(divide='ignore'):
+            sup.filter(RuntimeWarning,
+                       "invalid value encountered in true_divide")
 
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', RuntimeWarning)
+            # edge cases
+            assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
+            assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
+            assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
+            assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
 
-                # edge cases
-                assert_almost_equal(stats.trapz.pdf(0, 0, 0), 2)
-                assert_almost_equal(stats.trapz.pdf(1, 1, 1), 2)
-                assert_almost_equal(stats.trapz.pdf(0.5, 0, 0.8), 1.11111111111111111)
-                assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 1.0), 1.11111111111111111)
+            # straightforward case
+            assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
+            assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
+            assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
 
-                # straightforward case
-                assert_almost_equal(stats.trapz.pdf(0.1, 0.2, 0.8), 0.625)
-                assert_almost_equal(stats.trapz.pdf(0.5, 0.2, 0.8), 1.25)
-                assert_almost_equal(stats.trapz.pdf(0.9, 0.2, 0.8), 0.625)
-
-                assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
-                assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
-                assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
-                assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
-                assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
-
-            np.seterr(**old_err)
+            assert_almost_equal(stats.trapz.cdf(0.1, 0.2, 0.8), 0.03125)
+            assert_almost_equal(stats.trapz.cdf(0.2, 0.2, 0.8), 0.125)
+            assert_almost_equal(stats.trapz.cdf(0.5, 0.2, 0.8), 0.5)
+            assert_almost_equal(stats.trapz.cdf(0.9, 0.2, 0.8), 0.96875)
+            assert_almost_equal(stats.trapz.cdf(1.0, 0.2, 0.8), 1.0)
 
     def test_trapz_vect(self):
         # test that array-valued shapes and arguments are handled
@@ -2520,9 +2513,11 @@ def test_ksone_fit_freeze():
 
     try:
         olderr = np.seterr(invalid='ignore')
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
-            warnings.simplefilter('ignore', RuntimeWarning)
+        with suppress_warnings() as sup:
+            sup.filter(IntegrationWarning,
+                       "The maximum number of subdivisions .50. has been achieved.")
+            sup.filter(RuntimeWarning,
+                       "floating point number truncated to an integer")
             stats.ksone.fit(d)
     finally:
         np.seterr(**olderr)
@@ -2641,11 +2636,12 @@ def test_ncx2_tails_ticket_955():
 def test_ncx2_tails_pdf():
     # ncx2.pdf does not return nans in extreme tails(example from gh-1577)
     # NB: this is to check that nan_to_num is not needed in ncx2.pdf
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", RuntimeWarning)
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "divide by zero encountered in log")
         assert_equal(stats.ncx2.pdf(1, np.arange(340, 350), 2), 0)
         logval = stats.ncx2.logpdf(1, np.arange(340, 350), 2)
-        assert_(np.isneginf(logval).all())
+
+    assert_(np.isneginf(logval).all())
 
 
 def test_foldnorm_zero():
