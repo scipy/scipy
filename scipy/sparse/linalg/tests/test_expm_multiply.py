@@ -3,11 +3,10 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 import numpy as np
 from numpy.testing import (run_module_suite, assert_allclose,
         assert_, assert_equal)
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.sparse import SparseEfficiencyWarning
 import scipy.linalg
@@ -108,18 +107,21 @@ class TestExpmActionSimple(object):
         assert_allclose(observed, expected)
 
     def test_sparse_expm_multiply(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            np.random.seed(1234)
-            n = 40
-            k = 3
-            nsamples = 10
-            for i in range(nsamples):
-                A = scipy.sparse.rand(n, n, density=0.05)
-                B = np.random.randn(n, k)
-                observed = expm_multiply(A, B)
+        np.random.seed(1234)
+        n = 40
+        k = 3
+        nsamples = 10
+        for i in range(nsamples):
+            A = scipy.sparse.rand(n, n, density=0.05)
+            B = np.random.randn(n, k)
+            observed = expm_multiply(A, B)
+            with suppress_warnings() as sup:
+                sup.filter(SparseEfficiencyWarning,
+                           "splu requires CSC matrix format")
+                sup.filter(SparseEfficiencyWarning,
+                           "spsolve is more efficient when sparse b is in the CSC matrix format")
                 expected = scipy.linalg.expm(A).dot(B)
-                assert_allclose(observed, expected)
+            assert_allclose(observed, expected)
 
     def test_complex(self):
         A = np.array([
@@ -136,23 +138,26 @@ class TestExpmActionSimple(object):
 class TestExpmActionInterval(object):
 
     def test_sparse_expm_multiply_interval(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=SparseEfficiencyWarning)
-            np.random.seed(1234)
-            start = 0.1
-            stop = 3.2
-            n = 40
-            k = 3
-            endpoint = True
-            for num in (14, 13, 2):
-                A = scipy.sparse.rand(n, n, density=0.05)
-                B = np.random.randn(n, k)
-                v = np.random.randn(n)
-                for target in (B, v):
-                    X = expm_multiply(A, target,
-                            start=start, stop=stop, num=num, endpoint=endpoint)
-                    samples = np.linspace(start=start, stop=stop,
-                            num=num, endpoint=endpoint)
+        np.random.seed(1234)
+        start = 0.1
+        stop = 3.2
+        n = 40
+        k = 3
+        endpoint = True
+        for num in (14, 13, 2):
+            A = scipy.sparse.rand(n, n, density=0.05)
+            B = np.random.randn(n, k)
+            v = np.random.randn(n)
+            for target in (B, v):
+                X = expm_multiply(A, target,
+                        start=start, stop=stop, num=num, endpoint=endpoint)
+                samples = np.linspace(start=start, stop=stop,
+                        num=num, endpoint=endpoint)
+                with suppress_warnings() as sup:
+                    sup.filter(SparseEfficiencyWarning,
+                               "splu requires CSC matrix format")
+                    sup.filter(SparseEfficiencyWarning,
+                               "spsolve is more efficient when sparse b is in the CSC matrix format")
                     for solution, t in zip(X, samples):
                         assert_allclose(solution,
                                 scipy.linalg.expm(t*A).dot(target))
