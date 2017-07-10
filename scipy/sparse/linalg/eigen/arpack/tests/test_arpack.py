@@ -6,8 +6,6 @@ To run tests locally:
 
 """
 
-
-import warnings
 import threading
 
 import numpy as np
@@ -26,21 +24,6 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
 from scipy.linalg import svd, hilbert
 
 from scipy._lib._gcutils import assert_deallocated
-from scipy._lib._numpy_compat import suppress_warnings
-
-
-# eigs() and eigsh() are called many times, so apply a filter for the warnings
-# they generate here.
-sup = suppress_warnings()
-sup.filter(message="Single-precision types in `eigs` and `eighs`")
-
-
-def setup_module():
-    sup.__enter__()
-
-
-def teardown_module():
-    sup.__exit__()
 
 
 # precision for tests
