@@ -574,7 +574,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
             x, undo, complete, status, message)
 
-
+#@profile
 def _get_Abc(
         c,
         c0=0,
@@ -692,6 +692,7 @@ def _get_Abc(
                     # upper bound: add inequality constraint
                     Arow = np.zeros((1, n_x))
                     Arow[0, i] = 1
+                    #TODO: Eliminate this vstack; can take a long time! SIERRA
                     A_ub = np.vstack((A_ub, Arow))
                     b_ub = np.concatenate((b_ub, np.array([ub])))
                 if lb is not None:  # this MUST be if, not elif
@@ -903,7 +904,7 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
 
     return solve
 
-
+#@profile
 def _get_delta(
     A,
     b,
@@ -989,10 +990,12 @@ def _get_delta(
         # sparse requires Dinv to be diag matrix
         M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
         try:
-            solve = sps.linalg.splu(M).solve
+            solve = sps.linalg.splu(M, permc_spec="MMD_AT_PLUS_A").solve
+#            solve = sps.linalg.splu(M).solve
             splu = True
         except:
             lstsq = True
+            solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
     else:
         # dense does not; use broadcasting
         M = A.dot(Dinv.reshape(-1, 1) * A.T)
@@ -1080,6 +1083,7 @@ def _get_delta(
                             "consider setting option 'sym_pos' to False.",
                             OptimizeWarning)
                         sym_pos = False
+                        
                     else:
                         warn(
                             "Solving system with option 'sym_pos':False "
@@ -1093,7 +1097,6 @@ def _get_delta(
                 else:
                     raise e
                 solve = _get_solver(sparse, lstsq, sym_pos)
-
         # [1] Results after 8.29
         d_tau = ((rhatg + 1 / tau * rhattk - (-c.dot(u) + b.dot(v))) /
                  (1 / tau * kappa + (-c.dot(p) + b.dot(q))))
@@ -1138,7 +1141,7 @@ def _fb_subs(L, r):
     x = sp.linalg.solve_triangular(L.T, y, lower=False)
     return x
 
-
+#@profile
 def _sym_solve(Dinv, M, A, r1, r2, solve, splu = False):
     """
     An implementation of [1] equation 8.31 and 8.32
@@ -1564,7 +1567,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     # [1] Statement after Theorem 8.2
     return x_hat, status, message, iteration
 
-
+@profile
 def _linprog_ip(
         c,
         A_ub=None,
