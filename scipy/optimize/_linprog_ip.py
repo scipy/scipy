@@ -574,7 +574,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
             x, undo, complete, status, message)
 
-#@profile
+
 def _get_Abc(
         c,
         c0=0,
@@ -654,9 +654,6 @@ def _get_Abc(
 
     """
 
-    # check/enforce consistency
-    n_x = len(c)
-
     fixed_x = set()
     if len(undo) > 0:
         # these are indices of variables removed from the problem
@@ -673,12 +670,14 @@ def _get_Abc(
         n_bounds = 0
         for i, b in enumerate(bounds):
             lb, ub = b
-            if lb is None and ub is None: n_free += 1
-            elif lb is not None and ub is not None: n_bounds += 1
-            
-        row_index,col_index = A_ub.shape
-        A_ub = np.hstack((A_ub, np.zeros((A_ub.shape[0],n_free))))
-        A_eq = np.hstack((A_eq, np.zeros((A_eq.shape[0],n_free))))
+            if lb is None and ub is None:
+                n_free += 1
+            elif lb is not None and ub is not None:
+                n_bounds += 1
+
+        row_index, col_index = A_ub.shape
+        A_ub = np.hstack((A_ub, np.zeros((A_ub.shape[0], n_free))))
+        A_eq = np.hstack((A_eq, np.zeros((A_eq.shape[0], n_free))))
         c = np.concatenate((c, np.zeros(n_free)))
         A_ub = np.vstack((A_ub, np.zeros((n_bounds, A_ub.shape[1]))))
         b_ub = np.concatenate((b_ub, np.zeros(n_bounds)))
@@ -687,11 +686,10 @@ def _get_Abc(
             lb, ub = b
             if lb is None and ub is None:
                 # unbounded: substitute xi = xi+ + xi-
-                A_ub[:,col_index] = -A_ub[:,i] # A_ub = np.hstack((A_ub, -A_ub[:, i:i + 1]))
-                A_eq[:,col_index] = -A_eq[:,i] # A_eq = np.hstack((A_eq, -A_eq[:, i:i + 1]))
-                c[col_index] = -c[i]           # c = np.concatenate((c, [-c[i]]))
+                A_ub[:, col_index] = -A_ub[:, i]
+                A_eq[:, col_index] = -A_eq[:, i]
+                c[col_index] = -c[i]
                 col_index += 1
-                # n_x = len(c)
             # if preprocessing is on, lb == ub can't happen
             # if preprocessing is off, then it would be best to convert that
             # to an equality constraint, but it's tricky to make the other
@@ -705,11 +703,8 @@ def _get_Abc(
                     A_eq[:, i] *= -1
                 if ub is not None:
                     # upper bound: add inequality constraint
-                    # Arow = np.zeros((1, n_x))
-                    # Arow[0, i] = 1
-                    #TODO: Eliminate this vstack; can take a long time! SIERRA
-                    A_ub[row_index,i] = 1 # A_ub = np.vstack((A_ub, Arow))
-                    b_ub[row_index] = ub  # b_ub = np.concatenate((b_ub, np.array([ub])))
+                    A_ub[row_index, i] = 1
+                    b_ub[row_index] = ub
                     row_index += 1
                 if lb is not None:  # this MUST be if, not elif
                     # lower bound: substitute xi = xi' + lb
@@ -920,7 +915,7 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
 
     return solve
 
-#@profile
+
 def _get_delta(
     A,
     b,
@@ -1006,8 +1001,10 @@ def _get_delta(
         # sparse requires Dinv to be diag matrix
         M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
         try:
+            # TODO: expose permc_spec as option
+            # TODO: try scipy.sparse.linalg.factorized again
+            # TODO: remove or expose scipy.sparse.linalg.spsolve?
             solve = sps.linalg.splu(M, permc_spec="MMD_AT_PLUS_A").solve
-#            solve = sps.linalg.splu(M).solve
             splu = True
         except:
             lstsq = True
@@ -1099,7 +1096,6 @@ def _get_delta(
                             "consider setting option 'sym_pos' to False.",
                             OptimizeWarning)
                         sym_pos = False
-                        
                     else:
                         warn(
                             "Solving system with option 'sym_pos':False "
@@ -1157,8 +1153,8 @@ def _fb_subs(L, r):
     x = sp.linalg.solve_triangular(L.T, y, lower=False)
     return x
 
-#@profile
-def _sym_solve(Dinv, M, A, r1, r2, solve, splu = False):
+
+def _sym_solve(Dinv, M, A, r1, r2, solve, splu=False):
     """
     An implementation of [1] equation 8.31 and 8.32
 
@@ -1583,7 +1579,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     # [1] Statement after Theorem 8.2
     return x_hat, status, message, iteration
 
-#@profile
+
 def _linprog_ip(
         c,
         A_ub=None,
