@@ -204,9 +204,9 @@ def geometric_transform(input, mapping, output_shape=None,
 
     .. code:: c
 
-       int mapping(npy_intp *output_coordinates, double *input_coordinates, 
+       int mapping(npy_intp *output_coordinates, double *input_coordinates,
                    int output_rank, int input_rank, void *user_data)
-       int mapping(intptr_t *output_coordinates, double *input_coordinates, 
+       int mapping(intptr_t *output_coordinates, double *input_coordinates,
                    int output_rank, int input_rank, void *user_data)
 
     The calling function iterates over the elements of the output array,
@@ -215,16 +215,16 @@ def geometric_transform(input, mapping, output_shape=None,
     callback function must return the coordinates at which the input must
     be interpolated in ``input_coordinates``. The rank of the input and
     output arrays are given by ``input_rank`` and ``output_rank``
-    respectively.  ``user_data`` is the data pointer provided 
-    to `scipy.LowLevelCallable` as-is. 
+    respectively.  ``user_data`` is the data pointer provided
+    to `scipy.LowLevelCallable` as-is.
 
-    The callback function must return an integer error status that is zero 
+    The callback function must return an integer error status that is zero
     if something went wrong and one otherwise. If an error occurs, you should
     normally set the python error status with an informative message
     before returning, otherwise a default error message is set by the
     calling function.
 
-    In addition, some other low-level function pointer specifications 
+    In addition, some other low-level function pointer specifications
     are accepted, but these are for backward compatibility only and should
     not be used in new code.
 
@@ -521,7 +521,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     ----------
     input : ndarray
         The input array.
-    shift : float or sequence, optional
+    shift : float or sequence
         The shift along the axes. If a float, `shift` is the same for each
         axis. If a sequence, `shift` should contain one value for each axis.
     output : ndarray or dtype, optional
@@ -583,7 +583,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
     ----------
     input : ndarray
         The input array.
-    zoom : float or sequence, optional
+    zoom : float or sequence
         The zoom factor along the axes. If a float, `zoom` is the same for each
         axis. If a sequence, `zoom` should contain one value for each axis.
     output : ndarray or dtype, optional
