@@ -306,7 +306,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(weights);
     Py_XDECREF(output);
-    free(origin.ptr);
+    PyDimMem_FREE(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -386,7 +386,7 @@ exit:
     Py_XDECREF(footprint);
     Py_XDECREF(structure);
     Py_XDECREF(output);
-    free(origin.ptr);
+    PyDimMem_FREE(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -416,7 +416,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(footprint);
     Py_XDECREF(output);
-    free(origin.ptr);
+    PyDimMem_FREE(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -668,7 +668,7 @@ exit:
     Py_XDECREF(input);
     Py_XDECREF(output);
     Py_XDECREF(footprint);
-    free(origin.ptr);
+    PyDimMem_FREE(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
@@ -1122,7 +1122,7 @@ exit:
     Py_XDECREF(strct);
     Py_XDECREF(mask);
     Py_XDECREF(output);
-    free(origin.ptr);
+    PyDimMem_FREE(origin.ptr);
     if (PyErr_Occurred()) {
         Py_XDECREF(cobj);
         return NULL;
@@ -1168,7 +1168,7 @@ exit:
     Py_XDECREF(array);
     Py_XDECREF(strct);
     Py_XDECREF(mask);
-    free(origin.ptr);
+    PyDimMem_FREE(origin.ptr);
     return PyErr_Occurred() ? NULL : Py_BuildValue("");
 }
 
