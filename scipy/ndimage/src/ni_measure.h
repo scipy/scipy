@@ -32,25 +32,9 @@
 #ifndef NI_MEASURE_H
 #define NI_MEASURE_H
 
-/* structure for array regions to find objects: */
-typedef struct {
-    int start[NPY_MAXDIMS], end[NPY_MAXDIMS];
-} NI_ObjectRegion;
-
 int NI_FindObjects(PyArrayObject*, npy_intp, npy_intp*);
 
-int NI_CenterOfMass(PyArrayObject*, PyArrayObject*, npy_intp, npy_intp,
-                    npy_intp*, npy_intp, double*);
-
-int NI_Histogram(PyArrayObject*, PyArrayObject*, npy_intp, npy_intp,
-                 npy_intp*, npy_intp, PyArrayObject**, double, double,
-                 npy_intp);
-
-int NI_Statistics(PyArrayObject*, PyArrayObject*, npy_intp, npy_intp,
-                  npy_intp*, npy_intp, double*, npy_intp*, double*,
-                  double*, double*, npy_intp*, npy_intp*);
-
 int NI_WatershedIFT(PyArrayObject*, PyArrayObject*, PyArrayObject*,
-                                        PyArrayObject*);
+                    PyArrayObject*);
 
 #endif
