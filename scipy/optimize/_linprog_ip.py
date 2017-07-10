@@ -669,14 +669,29 @@ def _get_Abc(
 
     # modify problem such that all variables have only non-negativity bounds
     if bounds is not None:
+        n_free = 0
+        n_bounds = 0
+        for i, b in enumerate(bounds):
+            lb, ub = b
+            if lb is None and ub is None: n_free += 1
+            elif lb is not None and ub is not None: n_bounds += 1
+            
+        row_index,col_index = A_ub.shape
+        A_ub = np.hstack((A_ub, np.zeros((A_ub.shape[0],n_free))))
+        A_eq = np.hstack((A_eq, np.zeros((A_eq.shape[0],n_free))))
+        c = np.concatenate((c, np.zeros(n_free)))
+        A_ub = np.vstack((A_ub, np.zeros((n_bounds, A_ub.shape[1]))))
+        b_ub = np.concatenate((b_ub, np.zeros(n_bounds)))
+
         for i, b in enumerate(bounds):
             lb, ub = b
             if lb is None and ub is None:
                 # unbounded: substitute xi = xi+ + xi-
-                A_ub = np.hstack((A_ub, -A_ub[:, i:i + 1]))
-                A_eq = np.hstack((A_eq, -A_eq[:, i:i + 1]))
-                c = np.concatenate((c, [-c[i]]))
-                n_x = len(c)
+                A_ub[:,col_index] = -A_ub[:,i] # A_ub = np.hstack((A_ub, -A_ub[:, i:i + 1]))
+                A_eq[:,col_index] = -A_eq[:,i] # A_eq = np.hstack((A_eq, -A_eq[:, i:i + 1]))
+                c[col_index] = -c[i]           # c = np.concatenate((c, [-c[i]]))
+                col_index += 1
+                # n_x = len(c)
             # if preprocessing is on, lb == ub can't happen
             # if preprocessing is off, then it would be best to convert that
             # to an equality constraint, but it's tricky to make the other
@@ -690,11 +705,12 @@ def _get_Abc(
                     A_eq[:, i] *= -1
                 if ub is not None:
                     # upper bound: add inequality constraint
-                    Arow = np.zeros((1, n_x))
-                    Arow[0, i] = 1
+                    # Arow = np.zeros((1, n_x))
+                    # Arow[0, i] = 1
                     #TODO: Eliminate this vstack; can take a long time! SIERRA
-                    A_ub = np.vstack((A_ub, Arow))
-                    b_ub = np.concatenate((b_ub, np.array([ub])))
+                    A_ub[row_index,i] = 1 # A_ub = np.vstack((A_ub, Arow))
+                    b_ub[row_index] = ub  # b_ub = np.concatenate((b_ub, np.array([ub])))
+                    row_index += 1
                 if lb is not None:  # this MUST be if, not elif
                     # lower bound: substitute xi = xi' + lb
                     # now there is a constant term in objective
@@ -1567,7 +1583,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     # [1] Statement after Theorem 8.2
     return x_hat, status, message, iteration
 
-@profile
+#@profile
 def _linprog_ip(
         c,
         A_ub=None,
