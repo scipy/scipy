@@ -896,10 +896,10 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
             def solve(M, r, sym_pos=False):
                 return sps.linalg.lsqr(M, r)[0]
         else:
+            # this is not currently used; it is replaced by splu solve
+            # TODO: expose use of this as an option
             def solve(M, r):
                 return sps.linalg.spsolve(M, r, permc_spec="MMD_AT_PLUS_A")
-            # in tests MMD_AT_PLUS_A was often fastest.
-            # should this be exposed as an option?
 
     else:
         if lstsq:  # sometimes necessary as solution is approached
@@ -932,7 +932,8 @@ def _get_delta(
     sym_pos=False,
     cholesky=False,
     pc=True,
-        ip=False):
+    ip=False,
+        permc_spec='MMD_AT_PLUS_A'):
     """
     Given standard form problem defined by ``A``, ``b``, and ``c``;
     current variable estimates ``x``, ``y``, ``z``, ``tau``, and ``kappa``;
@@ -971,6 +972,21 @@ def _get_delta(
     ip : bool
         True if the improved initial point suggestion due to [1] section 4.3
         is desired. It's unclear whether this is beneficial.
+    permc_spec : str (default = 'MMD_AT_PLUS_A')
+        (Has effect only with ``sparse = True``, ``lstsq = False``, ``sym_pos =
+        True``.) A matrix is factorized in each iteration of the algorithm.
+        This option specifies how to permute the columns of the matrix for
+        sparsity preservation. Acceptable values are:
+
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering.
+
+        This option can impact the convergence of the
+        interior point algorithm; test different values to determine which
+        performs best for your problem. For more information, refer to
+        ``scipy.sparse.linalg.splu``.
 
     Returns
     -------
@@ -1001,10 +1017,9 @@ def _get_delta(
         # sparse requires Dinv to be diag matrix
         M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
         try:
-            # TODO: expose permc_spec as option
             # TODO: try scipy.sparse.linalg.factorized again
             # TODO: remove or expose scipy.sparse.linalg.spsolve?
-            solve = sps.linalg.splu(M, permc_spec="MMD_AT_PLUS_A").solve
+            solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
             splu = True
         except:
             lstsq = True
@@ -1377,7 +1392,7 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
 
 
 def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
-            sparse, lstsq, sym_pos, cholesky, pc, ip):
+            sparse, lstsq, sym_pos, cholesky, pc, ip, permc_spec):
     """
     Solve a linear programming problem in standard form:
 
@@ -1437,6 +1452,21 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     ip : bool
         Set to ``True`` if the improved initial point suggestion due to [1]_
         Section 4.3 is desired. It's unclear whether this is beneficial.
+    permc_spec : str (default = 'MMD_AT_PLUS_A')
+        (Has effect only with ``sparse = True``, ``lstsq = False``, ``sym_pos =
+        True``.) A matrix is factorized in each iteration of the algorithm.
+        This option specifies how to permute the columns of the matrix for
+        sparsity preservation. Acceptable values are:
+
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering.
+
+        This option can impact the convergence of the
+        interior point algorithm; test different values to determine which
+        performs best for your problem. For more information, refer to
+        ``scipy.sparse.linalg.splu``.
 
     Returns
     -------
@@ -1518,7 +1548,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             # Solve [1] 8.6 and 8.7/8.13/8.23
             d_x, d_y, d_z, d_tau, d_kappa = _get_delta(
                 A, b, c, x, y, z, tau, kappa, gamma, eta,
-                sparse, lstsq, sym_pos, cholesky, pc, ip)
+                sparse, lstsq, sym_pos, cholesky, pc, ip, permc_spec)
 
             if ip:  # initial point
                 # [1] 4.4
@@ -1600,6 +1630,7 @@ def _linprog_ip(
         pc=True,
         ip=False,
         presolve=True,
+        permc_spec='MMD_AT_PLUS_A',
         **unknown_options):
     """
     Minimize a linear objective function subject to linear
@@ -1689,6 +1720,21 @@ def _linprog_ip(
         when it detects that the problem is trivially unbounded; it is possible
         that that the problem is truly infeasibile but this has not been
         detected.
+    permc_spec : str (default = 'MMD_AT_PLUS_A')
+        (Has effect only with ``sparse = True``, ``lstsq = False``, ``sym_pos =
+        True``.) A matrix is factorized in each iteration of the algorithm.
+        This option specifies how to permute the columns of the matrix for
+        sparsity preservation. Acceptable values are:
+
+        - ``NATURAL``: natural ordering.
+        - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
+        - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
+        - ``COLAMD``: approximate minimum degree column ordering.
+
+        This option can impact the convergence of the
+        interior point algorithm; test different values to determine which
+        performs best for your problem. For more information, refer to
+        ``scipy.sparse.linalg.splu``.
 
     Returns
     -------
@@ -1875,7 +1921,7 @@ def _linprog_ip(
         raise NotImplementedError("method 'interior-point' does not support "
                                   "callback functions.")
 
-        # These should be warnings, not Errors
+    # These should be warnings, not Errors
     if sparse and lstsq:
         warn("Invalid option combination 'sparse':True "
              "and 'lstsq':True; Sparse least squares is not recommended.",
@@ -1898,6 +1944,14 @@ def _linprog_ip(
              "and 'cholesky':True; option 'cholesky' has no effect when "
              "'lstsq' is set True.",
              OptimizeWarning)
+
+    valid_permc_spec = ('NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', 'COLAMD')
+    if permc_spec.upper() not in valid_permc_spec:
+        warn("Invalid permc_spec option: '" + str(permc_spec) + "'. "
+             "Acceptable values are 'NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A', "
+             "and 'COLAMD'. Reverting to default.",
+             OptimizeWarning)
+        permc_spec = 'MMD_AT_PLUS_A'
 
     # This can be an error
     if not sym_pos and cholesky:
@@ -1933,7 +1987,7 @@ def _linprog_ip(
         x, status, message, iteration = _ip_hsd(A, b, c, c0, alpha0, beta,
                                                 maxiter, disp, tol, sparse,
                                                 lstsq, sym_pos, cholesky,
-                                                pc, ip)
+                                                pc, ip, permc_spec)
 
     # Eliminate artificial variables, re-introduce presolved variables, etc...
     # need modified bounds here to translate variables appropriately
