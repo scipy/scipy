@@ -1686,7 +1686,8 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
     Examples
     --------
-    `fminbound` finds the minimum of the function in the given range. The following examples illustrate the same
+    `fminbound` finds the minimum of the function in the given range.
+    The following examples illustrate the same
 
     >>> def f(x):
     ...     return x**2
