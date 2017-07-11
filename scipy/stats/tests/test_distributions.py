@@ -32,20 +32,26 @@ DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
 
 # Generate test cases to test cdf and distribution consistency.
 # Note that this list does not include all distributions.
-dists = ['uniform', 'norm', 'lognorm', 'expon', 'beta',
-         'powerlaw', 'bradford', 'burr', 'fisk', 'cauchy', 'halfcauchy',
-         'foldcauchy', 'gamma', 'gengamma', 'loggamma',
-         'alpha', 'anglit', 'arcsine', 'betaprime', 'dgamma',
-         'exponnorm', 'exponweib', 'exponpow', 'frechet_l', 'frechet_r',
-         'gilbrat', 'f', 'ncf', 'chi2', 'chi', 'nakagami', 'genpareto',
-         'genextreme', 'genhalflogistic', 'pareto', 'lomax', 'halfnorm',
-         'halflogistic', 'fatiguelife', 'foldnorm', 'ncx2', 't', 'nct',
-         'weibull_min', 'weibull_max', 'dweibull', 'maxwell', 'rayleigh',
-         'genlogistic', 'logistic', 'gumbel_l', 'gumbel_r', 'gompertz',
-         'hypsecant', 'laplace', 'reciprocal', 'trapz', 'triang', 'tukeylambda',
-         'vonmises', 'vonmises_line', 'pearson3', 'gennorm', 'halfgennorm',
-         'rice', 'kappa4', 'kappa3', 'truncnorm', 'argus']
-
+dists = ['alpha', 'anglit', 'arcsine', 'argus',
+         'beta', 'betaprime', 'bradford', 'burr',
+         'cauchy', 'chi', 'chi2',
+         'dgamma', 'dweibull',
+         'expon', 'exponnorm', 'exponpow', 'exponweib',
+         'f', 'fatiguelife', 'fisk', 'foldcauchy', 'foldnorm',
+         'frechet', 'frechet_l', 'frechet_r',
+         'gamma', 'genextreme', 'gengamma', 'genhalflogistic', 'genlogistic',
+         'gennorm', 'genpareto', 'gilbrat', 'gompertz', 'gumbel_l', 'gumbel_r',
+         'halfcauchy', 'halfgennorm', 'halflogistic', 'halfnorm', 'hypsecant',
+         'kappa3', 'kappa4',
+         'laplace', 'loggamma', 'logistic', 'lognorm', 'lomax',
+         'maxwell',
+         'nakagami', 'ncf', 'nct', 'ncx2', 'norm',
+         'pareto', 'pearson3', 'powerlaw',
+         'rayleigh', 'reciprocal', 'rice',
+         't', 'trapz', 'triang', 'truncnorm', 'tukeylambda',
+         'uniform',
+         'vonmises', 'vonmises_line',
+         'weibull_max', 'weibull_min']
 
 def _assert_hasattr(a, b, msg=None):
     if msg is None:
@@ -1416,13 +1422,8 @@ class TestFitMethod(object):
             # Only check the length of the return
             # FIXME: should check the actual results to see if we are 'close'
             #   to what was created --- but what is 'close' enough
-            if dist == 'frechet':
-                assert_(len(vals) == len(args))
-                assert_(len(vals2) == len(args))
-            else:
-                assert_(len(vals) == 2+len(args))
-                assert_(len(vals2) == 2+len(args))
-
+            assert_(len(vals) == 2+len(args))
+            assert_(len(vals2) == 2+len(args))
         for func, dist, args, alpha in test_all_distributions():
             yield check, func, dist, args, alpha
 
@@ -1430,8 +1431,7 @@ class TestFitMethod(object):
     def test_fix_fit(self):
         def check(func, dist, args, alpha):
             # Not sure why 'ncf', and 'beta' are failing
-            # frechet has different len(args) than distfunc.numargs
-            if dist in self.skip + ['frechet']:
+            if dist in self.skip:
                 raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             with np.errstate(all='ignore'):

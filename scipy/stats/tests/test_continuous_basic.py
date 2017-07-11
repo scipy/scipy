@@ -57,7 +57,7 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
-                   'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
+                   'erlang', 'f', 'frechet', 'gamma', 'gausshyper', 'gengamma',
                    'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',

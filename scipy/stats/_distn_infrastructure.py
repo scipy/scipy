@@ -778,8 +778,8 @@ class rv_generic(object):
     def _stats(self, *args, **kwds):
         return None, None, None, None
 
-    #  Central moments
     def _munp(self, n, *args):
+        # "munp" is mu_n', (read "mu sub n prime").  These are the raw moments.
         # Silence floating point warnings from integration.
         olderr = np.seterr(all='ignore')
         vals = self.generic_moment(n, *args)

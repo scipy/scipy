@@ -1530,6 +1530,123 @@ class foldnorm_gen(rv_continuous):
 foldnorm = foldnorm_gen(a=0.0, name='foldnorm')
 
 
+class frechet_gen(rv_continuous):
+    """A Frechet continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    genextreme, weibull_min, invweibull
+
+    Notes
+    -----
+    The probability density function for `frechet` is::
+
+        frechet.pdf(x, alpha) = alpha * x**(-alpha-1) * exp(-x**-alpha)
+
+    for ``x > 0``, ``alpha > 0``.
+
+    The Frechet distribution is a sort of inverse to the Weibull
+    (`weibull_min`) distribution, in the sense that if $X~Frechet$, then
+    $1/X~Weibull$ (though the location and scale parameters will differ).
+    Accordingly, the Frechet distribution is also sometimes called the
+    "generalized inverse Weibull" [1]_.
+
+    The Frechet distribution may also be known as the Frechet-Pareto
+    distribution [2]_, and plays a special role in the study of the
+    distribution of extreme values, where by the
+    Fisher-Tippett-Gnedenko theorem [4]_ it is one of three possible
+    limiting distributions for the maxima of a collection of random
+    variables.  In this context it is also sometimes known as the Type
+    II extreme value distribution.  Historically the term "Frechet
+    distribution" may also have been used to refer to the Weibull
+    distribution, but this usage is no longer current.
+
+    The family of Frechet distributions is a special case of the larger
+    family of Generalized Extreme Value distribution (`genextreme`),
+    corresponding to the case in which the shape parameter (or "extreme
+    value index") is positive [3]_.
+
+    References
+    ----------
+    .. [1] F.R.S. de Gusmao, E.M.M Ortega and G.M. Cordeiro, "The generalized
+           inverse Weibull distribution", Stat. Papers, vol. 52, pp. 591-619,
+           2011.
+
+    .. [2] Beirlant, Jan et al, Statistics of extremes: theory and
+           applications, Wiley, 2006.
+
+    .. [3] http://en.wikipedia.org/wiki/Generalized_extreme_value_distribution
+
+    .. [4] http://en.wikipedia.org/wiki/Fisher-Tippett-Gnedenko_theorem
+
+    %(example)s
+
+    """
+    def _pdf(self, x, alpha):
+        return sc._ufuncs._frechet_pdf(x, alpha)
+
+    def _logpdf(self, x, alpha):
+        return sc._ufuncs._frechet_logpdf(x, alpha)
+
+    def _cdf(self, x, alpha):
+        return sc._ufuncs._frechet_cdf(x, alpha)
+
+    def _sf(self, x, alpha):
+        return sc._ufuncs._frechet_sf(x, alpha)
+
+    def _ppf(self, q, alpha):
+        return sc._ufuncs._frechet_ppf(q, alpha)
+
+    def _isf(self, q, alpha):
+        return sc._ufuncs._frechet_isf(q, alpha)
+
+    def _munp(self, n, alpha):
+        # Raw moments
+        m = np.where(alpha > n, sc.gamma(1 - n/alpha), np.inf)
+        return m
+
+    def _stats(self, alpha):
+        g1 = sc.gamma(1 - 1/alpha)
+        g2 = sc.gamma(1 - 2/alpha)
+        g3 = sc.gamma(1 - 3/alpha)
+        g4 = sc.gamma(1 - 4/alpha)
+        mean = np.where(alpha > 1, g1, np.inf)
+        var = _lazywhere(alpha > 2,
+                         (g1, g2),
+                         f=lambda g1, g2: g2 - g1**2,
+                         fillvalue=np.inf)
+        skew = _lazywhere(alpha > 3,
+                          (g1, g2, g3, var),
+                          f=lambda g1, g2, g3, var: (g3 - 3*g2*g1 + 2*g1**3)/var**1.5,
+                          fillvalue=np.inf)
+        kurt = _lazywhere(alpha > 4,
+                          (g1, g2, g3, g4, var),
+                          f=lambda g1, g2, g3, g4, var: (g4 - 4*g3*g1 + 3*g2**2)/var**2 - 6,
+                          fillvalue=np.inf)
+        return mean, var, skew, kurt
+
+    def _fitstart(self, data, args=None):
+        # The default implementation of _fitstart() is based on the method
+        # of moments.  For sufficiently small shape parameter, the Frechet
+        # distribution has infinite moments, so we'll use a simpler method
+        # to set the starting values for the fit() method.
+        if args is None:
+            args = (1.0,)
+        # Choose loc to be a smidge less than the minimum value in the data.
+        loc = data.min() - 1e-6*data.ptp()
+        # This choice for scale seems to work OK, but there isn't really a
+        # rigorous justification for it.
+        scale = np.log1p(data.std())
+        return args + (loc, scale)
+
+    def _entropy(self, alpha):
+        return 1 + _EULER*(1 + 1/alpha) - np.log(alpha)
+
+frechet = frechet_gen(a=0.0, name='frechet')
+
+
 ## Extreme Value Type II or Frechet
 ## (defined in Regress+ documentation as Extreme LB) as
 ##   a limiting value distribution.
