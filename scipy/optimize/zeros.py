@@ -246,7 +246,6 @@ def bisect(f, a, b, args=(),
     >>> root
     1.0
     >>> root = optimize.bisect(f,-2,2)
-    >>> root
     ValueError: f(a) and f(b) must have different signs
 
     See Also
