@@ -166,7 +166,9 @@ do one of::
 
 This builds Scipy first, so the first time it may take some time.  If
 you specify ``-n``, the tests are run against the version of Scipy (if
-any) found on current PYTHONPATH.
+any) found on current PYTHONPATH.  *Note: if you run into a build issue,
+more detailed build documentation can be found at
+http://scipy.org/scipylib/building/index.html.*
 
 Using ``runtests.py`` is the recommended approach to running tests.
 There are also a number of alternatives to it, for example in-place
