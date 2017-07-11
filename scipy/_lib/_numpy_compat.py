@@ -9,9 +9,30 @@ from warnings import WarningMessage
 import re
 from functools import wraps
 import numpy as np
-from numpy.testing.nosetester import import_nose
 
 from scipy._lib._version import NumpyVersion
+
+
+def import_nose():
+    """ Import nose only when needed.
+    """
+    nose_is_good = True
+    minimum_nose_version = (1, 0, 0)
+    try:
+        import nose
+    except ImportError:
+        nose_is_good = False
+    else:
+        if nose.__versioninfo__ < minimum_nose_version:
+            nose_is_good = False
+
+    if not nose_is_good:
+        msg = ('Need nose >= %d.%d.%d for tests - see '
+               'http://nose.readthedocs.io' %
+               minimum_nose_version)
+        raise ImportError(msg)
+
+    return nose
 
 
 if NumpyVersion(np.__version__) > '1.7.0.dev':
