@@ -1699,7 +1699,7 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     0.0
     >>> minimum = optimize.fminbound(f,1,2)
     >>> minimum
-    -2.7755575615628914e-17
+    1.0000059608609866
     """
     options = {'xatol': xtol,
                'maxiter': maxfun,
