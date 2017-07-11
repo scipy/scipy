@@ -233,6 +233,22 @@ def bisect(f, a, b, args=(),
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
 
+    Examples
+    --------
+    The bisection algorithm fails if `f(a)` and `f(b)` have the same sign.
+    
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.bisect(f,0,2)
+    >>> root
+    1.0
+    >>> root = optimize.fminbound(f,2,2)
+    >>> root
+    ValueError: f(a) and f(b) must have different signs
+
     See Also
     --------
     brentq, brenth, bisect, newton
