@@ -1017,8 +1017,8 @@ def _get_delta(
         # sparse requires Dinv to be diag matrix
         M = A.dot(sps.diags(Dinv, 0, format="csc").dot(A.T))
         try:
-            # TODO: try scipy.sparse.linalg.factorized again
-            # TODO: remove or expose scipy.sparse.linalg.spsolve?
+            # TODO: should use linalg.factorized instead, but I don't have
+            #       umfpack and therefore cannot test its performance
             solve = sps.linalg.splu(M, permc_spec=permc_spec).solve
             splu = True
         except:
@@ -1028,14 +1028,14 @@ def _get_delta(
         # dense does not; use broadcasting
         M = A.dot(Dinv.reshape(-1, 1) * A.T)
 
-    # For very large problems it's more efficient to take Cholesky
+    # For medium-large problems it may be more efficient to take Cholesky
     # decomposition first, then use custom fwd/back solve function _fb_subs
     # multiple times.
-    # For most problems, calling sp.linalg.solve w/ sym_pos = True
-    # is faster. I am pretty certain it caches the factorization for multiple
+    # For small problems tested, calling sp.linalg.solve w/ sym_pos = True
+    # was faster. I am pretty certain it caches the factorization for multiple
     # uses and checks the incoming matrix to see if it's the same as the one
     # it already factorized. (I can't explain the speed otherwise.)
-    if cholesky:
+    if cholesky: # TODO: try cho_factor and cho_solve 
         L = sp.linalg.cholesky(M, lower=True)
 
     # pc: "predictor-corrector" [1] Section 4.1
