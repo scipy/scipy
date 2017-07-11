@@ -182,7 +182,7 @@ class LinprogCommonTests(object):
         _assert_success(res, desired_fun=2, desired_x=[2])
 
     def test_linprog_upper_bound_constraints(self):
-        # Maximize a linear function subject to only linear upper bound 
+        # Maximize a linear function subject to only linear upper bound
         # constraints.
         #  http://www.dam.brown.edu/people/huiwang/classes/am121/Archive/simplex_121_c.pdf
         c = np.array([3, 2]) * -1  # maximize
@@ -654,6 +654,19 @@ class TestLinprogIP(LinprogCommonTests):
                     0, 1), options={
                     "sparse": True, "presolve": False}, method=self.method)
         _assert_success(res, desired_fun=1.730550597)
+
+    def test_sparse_solve_options(self):
+        A, b, c, N = magic_square(3)
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning, "A_eq does not appear...")
+            sup.filter(OptimizeWarning, "Invalid permc_spec option")
+            permc_specs = ('NATURAL', 'MMD_ATA', 'MMD_AT_PLUS_A',
+                           'COLAMD', 'ekki-ekki-ekki')
+            for permc_spec in permc_specs:
+                options = {"sparse": True, "permc_spec": permc_spec}
+                res = linprog(c, A_eq=A, b_eq=b, bounds=(0, 1),
+                              options=options, method=self.method)
+                _assert_success(res, desired_fun=1.730550597)
 
     def test_bug_6690(self):
         # https://github.com/scipy/scipy/issues/6690
