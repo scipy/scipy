@@ -430,6 +430,20 @@ def brentq(f, a, b, args=(),
     -----
     `f` must be continuous.  f(a) and f(b) must have opposite signs.
 
+    Examples
+    --------
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.brentq(f, -2, 0)
+    >>> root
+    -1.0
+
+    >>> root = optimize.brentq(f, 0, 2)
+    >>> root
+    1.0
 
     References
     ----------
@@ -510,6 +524,21 @@ def brenth(f, a, b, args=(),
     r : RootResults (present if ``full_output = True``)
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
+
+    Examples
+    --------
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.brenth(f, -2, 0)
+    >>> root
+    -1.0
+
+    >>> root = optimize.brenth(f, 0, 2)
+    >>> root
+    1.0
 
     See Also
     --------
