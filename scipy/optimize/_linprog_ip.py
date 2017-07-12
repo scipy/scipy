@@ -1030,7 +1030,7 @@ def _get_delta(
     # the one it already factorized. (I can't explain the speed otherwise.)
     if cholesky:
         try:
-            L = sp.linalg.cho_factor(M, lower=True)
+            L = sp.linalg.cho_factor(M)
         except:
             cholesky = False
             solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
