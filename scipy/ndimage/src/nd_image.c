@@ -34,6 +34,7 @@
  * in ni_support.h for details.
  */
 #include "nd_image.h"
+#include "ni_converters.h"
 #include "ni_support.h"
 
 #include "ni_filters.h"
@@ -50,129 +51,89 @@ typedef struct {
     PyObject *extra_keywords;
 } NI_PythonCallbackData;
 
-/* Numarray Helper Functions */
+/*
+ ***********************************************************************
+ ***                        TESTING FUNCTIONS                        ***
+ ***********************************************************************
+ */
+
+static PyObject*
+_none_or_object(PyArrayObject *array)
+{
+    if (array == NULL) {
+        Py_RETURN_NONE;
+    }
+    return (PyObject *)array;
+}
+
+/* Python function to test ndimage array converter functions. */
+static PyObject*
+Py_TestConverters(PyObject *object, PyObject *args)
+{
+    PyArrayObject *input = NULL;
+    PyArrayObject *opt_input = NULL;
+    PyArrayObject *input_output = NULL;
+    PyArrayObject *output = NULL;
+    PyArrayObject *opt_output = NULL;
+    PyArray_Dims origin = {NULL, 0};
+    PyArrayObject *origin_array = NULL;
+    PyArrayObject *zeros_like_origin = NULL;
+
+    if (!PyArg_ParseTuple(args, "O&O&O&O&O&O&",
+                          NI_ObjectToInputArray, &input,
+                          NI_ObjectToOptionalInputArray, &opt_input,
+                          NI_ObjectToInputOutputArray, &input_output,
+                          NI_ObjectToOutputArray, &output,
+                          NI_ObjectToOptionalOutputArray, &opt_output,
+                          PyArray_IntpConverter, &origin)) {
+        goto fail;
+    }
+    if (!_validate_origin(input, origin)) {
+        goto fail;
+    }
+    if (!PyArray_ISBEHAVED_RO(input) ||
+            (opt_input != NULL && !PyArray_ISBEHAVED_RO(opt_input)) ||
+            !PyArray_ISBEHAVED(input_output) ||
+            !PyArray_ISBEHAVED(output) ||
+            (opt_output != NULL && !PyArray_ISBEHAVED(opt_output))) {
+        PyErr_SetString(PyExc_ValueError, "Found misbehaved array");
+        goto fail;
+    }
+    origin_array = NI_NewArray(origin.ptr, NPY_INTP, 1, &origin.len);
+    if (origin_array == NULL) {
+        goto fail;
+    }
+    zeros_like_origin = NI_NewArray(NULL, NPY_INTP, 1, &origin.len);
+    if (zeros_like_origin == NULL) {
+        goto fail;
+    }
+    PyDimMem_FREE(origin.ptr);
+    return Py_BuildValue("N,N,N,N,N,N,N",
+                         (PyObject *)input,
+                         _none_or_object(opt_input),
+                         (PyObject *)input_output,
+                         (PyObject *)output,
+                         _none_or_object(opt_output),
+                         (PyObject *)origin_array,
+                         (PyObject *)zeros_like_origin);
+fail:
+    Py_XDECREF(input);
+    Py_XDECREF(opt_input);
+    Py_XDECREF(input_output);
+    Py_XDECREF(output);
+    Py_XDECREF(opt_output);
+    Py_XDECREF(origin_array);
+    Py_XDECREF(zeros_like_origin);
+    PyDimMem_FREE(origin.ptr);
+
+    return NULL;
+}
 
 /*
- * Creates a new numpy array of the requested type and shape, and either
- * copies into it the contents of buffer, or sets it to all zeros if
- * buffer is NULL.
+ ***********************************************************************
+ ***                        WRAPPER FUNCTIONS                        ***
+ ***********************************************************************
  */
-static PyArrayObject *
-NA_NewArray(void *buffer, enum NPY_TYPES type, int ndim, npy_intp *shape)
-{
-    PyArrayObject *result;
-
-    if (type == NPY_NOTYPE) {
-        type = NPY_DOUBLE;
-    }
-
-    result = (PyArrayObject *)PyArray_SimpleNew(ndim, shape, type);
-    if (result == NULL) {
-        return NULL;
-    }
-
-    if (buffer == NULL) {
-        memset(PyArray_DATA(result), 0, PyArray_NBYTES(result));
-    }
-    else {
-        memcpy(PyArray_DATA(result), buffer, PyArray_NBYTES(result));
-    }
-
-    return result;
-}
-
-/* Converts a Python array-like object into a behaved input array. */
-static int
-NI_ObjectToInputArray(PyObject *object, PyArrayObject **array)
-{
-    int flags = NPY_ARRAY_ALIGNED | NPY_ARRAY_NOTSWAPPED;
-    *array = (PyArrayObject *)PyArray_CheckFromAny(object, NULL, 0, 0, flags,
-                                                   NULL);
-    return *array != NULL;
-}
-
-/* Like NI_ObjectToInputArray, but with special handling for Py_None. */
-static int
-NI_ObjectToOptionalInputArray(PyObject *object, PyArrayObject **array)
-{
-    if (object == Py_None) {
-        *array = NULL;
-        return 1;
-    }
-    return NI_ObjectToInputArray(object, array);
-}
-
-/* Converts a Python array-like object into a behaved output array. */
-static int
-NI_ObjectToOutputArray(PyObject *object, PyArrayObject **array)
-{
-    int flags = NPY_ARRAY_BEHAVED_NS | NPY_ARRAY_UPDATEIFCOPY;
-    /*
-     * This would also be caught by the PyArray_CheckFromAny call, but
-     * we check it explicitly here to provide a saner error message.
-     */
-    if (PyArray_Check(object) &&
-            !PyArray_ISWRITEABLE((PyArrayObject *)object)) {
-        PyErr_SetString(PyExc_ValueError, "output array is read-only.");
-    return 0;
-    }
-    /*
-     * If the input array is not aligned or is byteswapped, this call
-     * will create a new aligned, native byte order array, and copy the
-     * contents of object into it. For an output array, the copy is
-     * unnecessary, so this could be optimized. It is very easy to not
-     * do NPY_ARRAY_UPDATEIFCOPY right, so we let NumPy do it for us
-     * and pay the performance price.
-     */
-    *array = (PyArrayObject *)PyArray_CheckFromAny(object, NULL, 0, 0, flags,
-                                                   NULL);
-    return *array != NULL;
-}
-
-/* Like NI_ObjectToOutputArray, but with special handling for Py_None. */
-static int
-NI_ObjectToOptionalOutputArray(PyObject *object, PyArrayObject **array)
-{
-    if (object == Py_None) {
-        *array = NULL;
-        return 1;
-    }
-    return NI_ObjectToOutputArray(object, array);
-}
-
-/* Converts a Python array-like object into a behaved input/output array. */
-static int
-NI_ObjectToInputOutputArray(PyObject *object, PyArrayObject **array)
-{
-    /*
-     * This is also done in NI_ObjectToOutputArray, double checking here
-     * to provide a more specific error message.
-     */
-    if (PyArray_Check(object) &&
-            !PyArray_ISWRITEABLE((PyArrayObject *)object)) {
-        PyErr_SetString(PyExc_ValueError, "input/output array is read-only.");
-        return 0;
-    }
-    return NI_ObjectToOutputArray(object, array);
-}
-
-/* Checks that an origin value was received for each array dimension. */
-static int
-_validate_origin(PyArrayObject *array, PyArray_Dims origin)
-{
-    if (origin.len != PyArray_NDIM(array)) {
-        PyErr_Format(PyExc_ValueError,
-                     "Invalid %d element 'origin' sequence for "
-                     "%d-dimensional input array.",
-                     origin.len, PyArray_NDIM(array));
-        return 0;
-    }
-    return 1;
-}
-
-/*********************************************************************/
-/* wrapper functions: */
-/*********************************************************************/
 
 static PyObject *Py_Correlate1D(PyObject *obj, PyObject *args)
 {
@@ -201,7 +162,7 @@ exit:
 static PyObject *Py_Correlate(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *weights = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode;
     double cval;
 
@@ -277,7 +238,7 @@ static PyObject *Py_MinOrMaxFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
     PyArrayObject *structure = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, minimum;
     double cval;
 
@@ -310,7 +271,7 @@ exit:
 static PyObject *Py_RankFilter(PyObject *obj, PyObject *args)
 {
     PyArrayObject *input = NULL, *output = NULL, *footprint = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     int mode, rank;
     double cval;
 
@@ -347,8 +308,8 @@ static int Py_Filter1DFunc(double *iline, npy_intp ilen,
     ccallback_t *callback = (ccallback_t *)data;
     NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)callback->info_p;
 
-    py_ibuffer = NA_NewArray(iline, NPY_DOUBLE, 1, &ilen);
-    py_obuffer = NA_NewArray(NULL, NPY_DOUBLE, 1, &olen);
+    py_ibuffer = NI_NewArray(iline, NPY_DOUBLE, 1, &ilen);
+    py_obuffer = NI_NewArray(NULL, NPY_DOUBLE, 1, &olen);
     if (!py_ibuffer || !py_obuffer)
         goto exit;
     tmp = Py_BuildValue("(OO)", py_ibuffer, py_obuffer);
@@ -471,7 +432,7 @@ static int Py_FilterFunc(double *buffer, npy_intp filter_size,
     ccallback_t *callback = (ccallback_t *)data;
     NI_PythonCallbackData *cbdata = (NI_PythonCallbackData*)callback->info_p;
 
-    py_buffer = NA_NewArray(buffer, NPY_DOUBLE, 1, &filter_size);
+    py_buffer = NI_NewArray(buffer, NPY_DOUBLE, 1, &filter_size);
     if (!py_buffer)
         goto exit;
     tmp = Py_BuildValue("(O)", py_buffer);
@@ -499,7 +460,7 @@ static PyObject *Py_GenericFilter(PyObject *obj, PyObject *args)
     void *func = NULL, *data = NULL;
     NI_PythonCallbackData cbdata;
     int mode;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
     double cval;
     ccallback_t callback;
     static ccallback_signature_t callback_signatures[] = {
@@ -1011,7 +972,7 @@ static PyObject *Py_BinaryErosion(PyObject *obj, PyObject *args)
     int border_value, invert, center_is_true;
     int changed = 0, return_coordinates;
     NI_CoordinateList *coordinate_list = NULL;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&O&iO&iii",
                           NI_ObjectToInputArray, &input,
@@ -1057,7 +1018,7 @@ static PyObject *Py_BinaryErosion2(PyObject *obj, PyObject *args)
     PyArrayObject *array = NULL, *strct = NULL, *mask = NULL;
     PyObject *cobj = NULL;
     int invert, niter;
-    PyArray_Dims origin;
+    PyArray_Dims origin = {NULL, 0};
 
     if (!PyArg_ParseTuple(args, "O&O&O&iO&iO",
                           NI_ObjectToInputOutputArray, &array,
@@ -1090,6 +1051,8 @@ exit:
 }
 
 static PyMethodDef methods[] = {
+    {"_test_converters",      (PyCFunction)Py_TestConverters,
+        METH_VARARGS, NULL},
     {"correlate1d",           (PyCFunction)Py_Correlate1D,
      METH_VARARGS, NULL},
     {"correlate",             (PyCFunction)Py_Correlate,
