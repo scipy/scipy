@@ -235,18 +235,15 @@ def bisect(f, a, b, args=(),
 
     Examples
     --------
-    The bisection algorithm fails if `f(a)` and `f(b)` have the same sign.
 
     >>> def f(x):
     ...     return (x**2 - 1)
 
     >>> from scipy import optimize
 
-    >>> root = optimize.bisect(f,0,2)
+    >>> root = optimize.bisect(f, 0, 2)
     >>> root
     1.0
-    >>> root = optimize.bisect(f,-2,2)
-    ValueError: f(a) and f(b) must have different signs
 
     See Also
     --------

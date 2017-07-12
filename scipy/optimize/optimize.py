@@ -1691,13 +1691,13 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
 
     >>> def f(x):
     ...     return x**2
-    
+
     >>> from scipy import optimize
 
-    >>> minimum = optimize.fminbound(f,-1,2)
+    >>> minimum = optimize.fminbound(f, -1, 2)
     >>> minimum
     0.0
-    >>> minimum = optimize.fminbound(f,1,2)
+    >>> minimum = optimize.fminbound(f, 1, 2)
     >>> minimum
     1.0000059608609866
     """
