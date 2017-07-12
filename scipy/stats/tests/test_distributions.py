@@ -53,6 +53,7 @@ dists = ['alpha', 'anglit', 'arcsine', 'argus',
          'vonmises', 'vonmises_line',
          'weibull_max', 'weibull_min']
 
+
 def _assert_hasattr(a, b, msg=None):
     if msg is None:
         msg = '%s does not have attribute %s' % (a, b)
@@ -66,12 +67,16 @@ def test_api_regression():
 
 # check function for test generator
 def check_distribution(dist, args, alpha):
-    D, pval = stats.kstest(dist, '', args=args, N=1000)
-    if (pval < alpha):
+    with suppress_warnings() as sup:
+        # frechet_l and frechet_r are deprecated, so all their methods
+        # generate DeprecationWarnings.
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
         D, pval = stats.kstest(dist, '', args=args, N=1000)
-        assert_(pval > alpha,
-                msg="D = {}; pval = {}; alpha = {}; args = {}".format(
-                    D, pval, alpha, args))
+        if (pval < alpha):
+            D, pval = stats.kstest(dist, '', args=args, N=1000)
+            assert_(pval > alpha,
+                    msg="D = {}; pval = {}; alpha = {}; args = {}".format(
+                        D, pval, alpha, args))
 
 
 # nose test generator
@@ -1415,7 +1420,10 @@ class TestFitMethod(object):
             if dist in self.skip:
                 raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
-            with np.errstate(all='ignore'):
+            with np.errstate(all='ignore'), suppress_warnings() as sup:
+                # frechet_l and frechet_r are deprecated, so all their methods
+                # generate DeprecationWarnings.
+                sup.filter(category=DeprecationWarning, message=".*frechet_")
                 res = distfunc.rvs(*args, **{'size': 200})
                 vals = distfunc.fit(res)
                 vals2 = distfunc.fit(res, optimizer='powell')
@@ -1434,7 +1442,11 @@ class TestFitMethod(object):
             if dist in self.skip:
                 raise SkipTest("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
-            with np.errstate(all='ignore'):
+            with np.errstate(all='ignore'), suppress_warnings() as sup:
+                # frechet_l and frechet_r are deprecated, so all their
+                # methods generate DeprecationWarnings.
+                sup.filter(category=DeprecationWarning,
+                           message=".*frechet_")
                 res = distfunc.rvs(*args, **{'size': 200})
                 vals = distfunc.fit(res, floc=0)
                 vals2 = distfunc.fit(res, fscale=1)
