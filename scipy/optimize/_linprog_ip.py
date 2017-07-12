@@ -859,7 +859,7 @@ def _postprocess(
     return x, fun, slack, con, status, message
 
 
-def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
+def _get_solver(sparse=False, lstsq=False, sym_pos=True, cholesky=True):
     """
     Given solver options, return a handle to the appropriate linear system
     solver.
@@ -876,14 +876,12 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
     sym_pos : bool
         True if the system matrix is symmetric positive definite
         Sometimes this needs to be set false as the solution is approached,
-        even when the system be symmetric positive definite, due to numerical
-        difficulties.
+        even when the system should be symmetric positive definite, due to
+        numerical difficulties.
     cholesky : bool
-        True if the system is to be solved by explicit Cholesky decomposition
-        followed by explicit forward/backward substitution. This is
-        occasionally faster for very large, symmetric positive definite
-        systems when a system with the same matrix is to be solved with
-        several right hand sides.
+        True if the system is to be solved by Cholesky, rather than LU,
+        decomposition. This is typically faster unless the problem is very
+        small or prone to numerical difficulties.
 
     Returns
     -------
@@ -906,7 +904,7 @@ def _get_solver(sparse=False, lstsq=False, sym_pos=False, cholesky=False):
             def solve(M, r):
                 return sp.linalg.lstsq(M, r)[0]
         elif cholesky:
-            solve = _fb_subs
+            solve = sp.linalg.cho_solve
         else:
             # this seems to cache the matrix factorization, so solving
             # with multiple right hand sides is much faster
@@ -929,8 +927,8 @@ def _get_delta(
     eta,
     sparse=False,
     lstsq=False,
-    sym_pos=False,
-    cholesky=False,
+    sym_pos=True,
+    cholesky=True,
     pc=True,
     ip=False,
         permc_spec='MMD_AT_PLUS_A'):
@@ -955,14 +953,12 @@ def _get_delta(
     sym_pos : bool
         True if the system matrix is symmetric positive definite
         Sometimes this needs to be set false as the solution is approached,
-        even when the system be symmetric positive definite, due to numerical
-        difficulties.
+        even when the system should be symmetric positive definite, due to
+        numerical difficulties.
     cholesky : bool
-        True if the system is to be solved by explicit Cholesky decomposition
-        followed by explicit forward/backward substitution. This is
-        occasionally faster for very large, symmetric positive definite
-        systems when a system with the same matrix is to be solved with
-        several right hand sides.
+        True if the system is to be solved by Cholesky, rather than LU,
+        decomposition. This is typically faster unless the problem is very
+        small or prone to numerical difficulties.
     pc : bool
         True if the predictor-corrector method of Mehrota is to be used. This
         is almost always (if not always) beneficial. Even though it requires
@@ -1028,15 +1024,16 @@ def _get_delta(
         # dense does not; use broadcasting
         M = A.dot(Dinv.reshape(-1, 1) * A.T)
 
-    # For medium-large problems it may be more efficient to take Cholesky
-    # decomposition first, then use custom fwd/back solve function _fb_subs
-    # multiple times.
-    # For small problems tested, calling sp.linalg.solve w/ sym_pos = True
-    # was faster. I am pretty certain it caches the factorization for multiple
-    # uses and checks the incoming matrix to see if it's the same as the one
-    # it already factorized. (I can't explain the speed otherwise.)
-    if cholesky: # TODO: try cho_factor and cho_solve 
-        L = sp.linalg.cholesky(M, lower=True)
+    # For some small problems, calling sp.linalg.solve w/ sym_pos = True
+    # may be faster. I am pretty certain it caches the factorization for
+    # multiple uses and checks the incoming matrix to see if it's the same as
+    # the one it already factorized. (I can't explain the speed otherwise.)
+    if cholesky:
+        try:
+            L = sp.linalg.cho_factor(M, lower=True)
+        except:
+            cholesky = False
+            solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
 
     # pc: "predictor-corrector" [1] Section 4.1
     # In development this option could be turned off
@@ -1079,11 +1076,17 @@ def _get_delta(
 
         # sometimes numerical difficulties arise as the solution is approached
         # this loop tries to solve the equations using a sequence of functions
-        # for solve.
-        # 1. _fb_subs: cholesky factorization then forward/back subs,
+        # for solve. For dense systems, the order is:
+        # 1. scipy.linalg.cho_factor/scipy.linalg.cho_solve,
         # 2. scipy.linalg.solve w/ sym_pos = True,
         # 3. scipy.linalg.solve w/ sym_pos = False, and if all else fails
         # 4. scipy.linalg.lstsq
+        # For sparse systems, the order is:
+        # 1. scipy.sparse.linalg.splu
+        # 2. scipy.sparse.linalg.lsqr
+        # TODO: if umfpack is installed, use factorized instead of splu.
+        #       Can't do that now because factorized doesn't pass permc_spec
+        #       to splu if umfpack isn't installed. Also, umfpack not tested.
         solved = False
         while(not solved):
             try:
@@ -1144,29 +1147,6 @@ def _get_delta(
         i += 1
 
     return d_x, d_y, d_z, d_tau, d_kappa
-
-
-def _fb_subs(L, r):
-    """
-    Given lower triangular Cholesky factor ``L`` and right-hand side ``r``,
-    solve the system ``L L^T = r`` by substitution.
-
-    Parameters
-    ----------
-    L : 2-D array (or sparse matrix)
-        Lower triangular matrix, typically a Cholesky factor
-    r : 1-D array
-        Right hand side vector
-
-    Returns
-    -------
-    r : 1-D array
-        Solution of linear system
-
-    """
-    y = sp.linalg.solve_triangular(L, r, lower=True)
-    x = sp.linalg.solve_triangular(L.T, y, lower=False)
-    return x
 
 
 def _sym_solve(Dinv, M, A, r1, r2, solve, splu=False):
@@ -1444,8 +1424,8 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     cholesky : bool
         Set to ``True`` if the normal equations are to be solved by explicit
         Cholesky decomposition followed by explicit forward/backward
-        substitution. This can be faster for very large, dense problems, but
-        should typically be left ``False``.
+        substitution. This is typically faster for moderate, dense problems
+        that are numerically well-behaved.
     pc : bool
         Leave ``True`` if the predictor-corrector method of Mehrota is to be
         used. This is almost always (if not always) beneficial.
@@ -1626,7 +1606,7 @@ def _linprog_ip(
         sparse=False,
         lstsq=False,
         sym_pos=True,
-        cholesky=False,
+        cholesky=True,
         pc=True,
         ip=False,
         presolve=True,
@@ -1700,11 +1680,11 @@ def _linprog_ip(
         symmetric positive definite normal equation matrix
         (almost always). Leave this at the default unless you receive
         a warning message suggesting otherwise.
-    cholesky : bool (default = False)
+    cholesky : bool (default = True)
         Set to ``True`` if the normal equations are to be solved by explicit
         Cholesky decomposition followed by explicit forward/backward
-        substitution. This is slightly faster for very large, dense
-        problems, but should typically be set ``False``.
+        substitution. This is typically faster for moderate, dense problems
+        that are numerically well-behaved.
     pc : bool (default = True)
         Leave ``True`` if the predictor-corrector method of Mehrota is to be
         used. This is almost always (if not always) beneficial.
@@ -1837,16 +1817,14 @@ def _linprog_ip(
     matrices involved are symmetric positive definite, so Cholesky
     decomposition can be used rather than the more expensive LU factorization.
 
-    In code, this is accomplished using ``scipy.linalg.solve`` with
-    ``sym_pos=True``. Based on speed tests, this appears to cache the
-    Cholesky decomposition of the matrix for later use, which is beneficial
+    With the default ``cholesky=True``, this is accomplished using
+    ``scipy.linalg.cho_factor`` followed by forward/backward substitutions
+    via ``scipy.linalg.cho_solve``. With ``cholesky=False`` and
+    ``sym_pos=True``, Cholesky decomposition is performed instead by
+    ``scipy.linalg.solve``. Based on speed tests, this also appears to retain
+    the Cholesky decomposition of the matrix for later use, which is beneficial
     as the same system is solved four times with different right hand sides
-    in each iteration of the algorithm. However, for very large, dense
-    systems, it may be beneficial for the Cholesky decomposition to be
-    calculated explicitly using ``scipy.linalg.cholesky`` and the decomposed
-    systems to be solved by explicit forward/backward substitutions via
-    ``scipy.linalg.solve_triangular``; this is possible by setting the option
-    ``cholesky=True``.
+    in each iteration of the algorithm.
 
     In problems with redundancy (e.g. if presolve is turned off with option
     ``presolve=False``) or if the matrices become ill-conditioned (e.g. as the
@@ -1934,10 +1912,8 @@ def _linprog_ip(
              OptimizeWarning)
 
     if sparse and cholesky:
-        warn("Invalid option combination 'sparse':True "
-             "and 'cholesky':True; option 'cholesky' has no effect when "
-             "'sparse' is set True.",
-             OptimizeWarning)
+        # Cholesky decomposition is not available for sparse problems
+        cholesky = False
 
     if lstsq and cholesky:
         warn("Invalid option combination 'lstsq':True "
@@ -1957,7 +1933,7 @@ def _linprog_ip(
     if not sym_pos and cholesky:
         raise ValueError(
             "Invalid option combination 'sym_pos':False "
-            "and 'cholesky';True: Cholesky decomposition is only possible "
+            "and 'cholesky':True: Cholesky decomposition is only possible "
             "for symmetric positive definite matrices.")
 
     iteration = 0
