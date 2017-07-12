@@ -355,7 +355,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     See also
     --------
     minimize: Interface to minimization algorithms for multivariate
-        functions. See the 'Nelder-Mead' `method` in particular.
+        functions. See the '
+        -Mead' `method` in particular.
 
     Notes
     -----
@@ -407,7 +408,8 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 def _minimize_neldermead(func, x0, args=(), callback=None,
                          maxiter=None, maxfev=None, disp=False,
                          return_all=False, initial_simplex=None,
-                         xatol=1e-4, fatol=1e-4, **unknown_options):
+                         xatol=1e-4, fatol=1e-4, adaptive=False,
+                         **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -433,6 +435,9 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     fatol : number, optional
         Absolute error in func(xopt) between iterations that is acceptable for
         convergence.
+    adaptive : bool, optional
+        Adapt algorithm parameters to dimensionality of problem. Useful for
+        high-dimensional minimization.
 
     """
     if 'ftol' in unknown_options:
@@ -461,11 +466,19 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
     retall = return_all
 
     fcalls, func = wrap_function(func, args)
-
-    rho = 1
-    chi = 2
-    psi = 0.5
-    sigma = 0.5
+           
+    if adaptive:
+        dim = float(len(x0))
+        rho = 1
+        chi = 1 + 2/dim
+        psi = 0.75 - 1/(2*dim)
+        sigma = 1 - 1/dim
+    else:
+        rho = 1
+        chi = 2
+        psi = 0.5
+        sigma = 0.5
+        
     nonzdelt = 0.05
     zdelt = 0.00025
 
