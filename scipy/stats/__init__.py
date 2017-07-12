@@ -50,8 +50,8 @@ Continuous distributions
    fisk              -- Fisk
    foldcauchy        -- Folded Cauchy
    foldnorm          -- Folded Normal
-   frechet_r         -- Frechet Right Sided, Extreme Value Type II (Extreme LB) or weibull_min
-   frechet_l         -- Frechet Left Sided, Weibull_max
+   frechet_r         -- Deprecated. Alias for weibull_min
+   frechet_l         -- Deprecated. Alias for weibull_max
    genlogistic       -- Generalized Logistic
    gennorm           -- Generalized normal
    genpareto         -- Generalized Pareto

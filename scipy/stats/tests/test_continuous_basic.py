@@ -95,62 +95,66 @@ def test_cont_basic(distname, arg):
         distname = 'rv_histogram_instance'
     np.random.seed(765456)
     sn = 500
-    rvs = distfn.rvs(size=sn, *arg)
-    sm = rvs.mean()
-    sv = rvs.var()
-    m, v = distfn.stats(*arg)
+    with suppress_warnings() as sup:
+        # frechet_l and frechet_r are deprecated, so all their
+        # methods generate DeprecationWarnings.
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        rvs = distfn.rvs(size=sn, *arg)
+        sm = rvs.mean()
+        sv = rvs.var()
+        m, v = distfn.stats(*arg)
 
-    check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
-    check_cdf_ppf(distfn, arg, distname)
-    check_sf_isf(distfn, arg, distname)
-    check_pdf(distfn, arg, distname)
-    check_pdf_logpdf(distfn, arg, distname)
-    check_cdf_logcdf(distfn, arg, distname)
-    check_sf_logsf(distfn, arg, distname)
+        check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+        check_cdf_ppf(distfn, arg, distname)
+        check_sf_isf(distfn, arg, distname)
+        check_pdf(distfn, arg, distname)
+        check_pdf_logpdf(distfn, arg, distname)
+        check_cdf_logcdf(distfn, arg, distname)
+        check_sf_logsf(distfn, arg, distname)
 
-    alpha = 0.01
-    if distname == 'rv_histogram_instance':
-        check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
-    else:
-        check_distribution_rvs(distname, arg, alpha, rvs)
+        alpha = 0.01
+        if distname == 'rv_histogram_instance':
+            check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
+        else:
+            check_distribution_rvs(distname, arg, alpha, rvs)
 
-    locscale_defaults = (0, 1)
-    meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-             distfn.logsf]
-    # make sure arguments are within support
-    spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
-              'pareto': 1.5, 'tukeylambda': 0.3,
-              'rv_histogram_instance': 5.0}
-    x = spec_x.get(distname, 0.5)
-    if distname == 'invweibull':
-        arg = (1,)
-    elif distname == 'ksone':
-        arg = (3,)
-    check_named_args(distfn, x, arg, locscale_defaults, meths)
-    check_random_state_property(distfn, arg)
-    check_pickling(distfn, arg)
+        locscale_defaults = (0, 1)
+        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+                 distfn.logsf]
+        # make sure arguments are within support
+        spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
+                  'pareto': 1.5, 'tukeylambda': 0.3,
+                  'rv_histogram_instance': 5.0}
+        x = spec_x.get(distname, 0.5)
+        if distname == 'invweibull':
+            arg = (1,)
+        elif distname == 'ksone':
+            arg = (3,)
+        check_named_args(distfn, x, arg, locscale_defaults, meths)
+        check_random_state_property(distfn, arg)
+        check_pickling(distfn, arg)
 
-    # Entropy
-    if distname not in ['ksone', 'kstwobign']:
-        check_entropy(distfn, arg, distname)
+        # Entropy
+        if distname not in ['ksone', 'kstwobign']:
+            check_entropy(distfn, arg, distname)
 
-    if distfn.numargs == 0:
-        check_vecentropy(distfn, arg)
+        if distfn.numargs == 0:
+            check_vecentropy(distfn, arg)
 
-    if (distfn.__class__._entropy != stats.rv_continuous._entropy
-            and distname != 'vonmises'):
-        check_private_entropy(distfn, arg, stats.rv_continuous)
+        if (distfn.__class__._entropy != stats.rv_continuous._entropy
+                and distname != 'vonmises'):
+            check_private_entropy(distfn, arg, stats.rv_continuous)
 
-    check_edge_support(distfn, arg)
+        check_edge_support(distfn, arg)
 
-    check_meth_dtype(distfn, arg, meths)
-    check_ppf_dtype(distfn, arg)
+        check_meth_dtype(distfn, arg, meths)
+        check_ppf_dtype(distfn, arg)
 
-    if distname not in fails_cmplx:
-        check_cmplx_deriv(distfn, arg)
+        if distname not in fails_cmplx:
+            check_cmplx_deriv(distfn, arg)
 
-    if distname != 'truncnorm':
-        check_ppf_private(distfn, arg, distname)
+        if distname != 'truncnorm':
+            check_ppf_private(distfn, arg, distname)
 
 
 def test_levy_stable_random_state_property():
@@ -187,23 +191,23 @@ def test_moments(distname, arg, normalization_ok, higher_ok):
         distname = 'rv_histogram_instance'
 
     with suppress_warnings() as sup:
-        sup.filter(IntegrationWarning, "The integral is probably divergent, or slowly convergent.")
+        sup.filter(IntegrationWarning,
+                   "The integral is probably divergent, or slowly convergent.")
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
-    if normalization_ok:
-        check_normalization(distfn, arg, distname)
+        if normalization_ok:
+            check_normalization(distfn, arg, distname)
 
-    if higher_ok:
-        check_mean_expect(distfn, arg, m, distname)
-        with suppress_warnings() as sup:
-            sup.filter(IntegrationWarning,
-                       "The integral is probably divergent, or slowly convergent.")
+        if higher_ok:
+            check_mean_expect(distfn, arg, m, distname)
             check_skew_expect(distfn, arg, m, v, s, distname)
             check_var_expect(distfn, arg, m, v, distname)
             check_kurt_expect(distfn, arg, m, v, k, distname)
 
-    check_loc_scale(distfn, arg, m, v, distname)
-    check_moment(distfn, arg, m, v, distname)
+        check_loc_scale(distfn, arg, m, v, distname)
+        check_moment(distfn, arg, m, v, distname)
 
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
