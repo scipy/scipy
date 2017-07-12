@@ -1203,6 +1203,24 @@ cdef _proto_ellip_harmonic_t *_proto_ellip_harmonic_t_var = &_func_ellip_harmoni
 from ._legacy cimport ellip_harmonic_unsafe as _func_ellip_harmonic_unsafe
 ctypedef double _proto_ellip_harmonic_unsafe_t(double, double, double, double, double, double, double) nogil
 cdef _proto_ellip_harmonic_unsafe_t *_proto_ellip_harmonic_unsafe_t_var = &_func_ellip_harmonic_unsafe
+from ._frechet cimport _frechet_cdf as _func__frechet_cdf
+ctypedef double _proto__frechet_cdf_t(double, double) nogil
+cdef _proto__frechet_cdf_t *_proto__frechet_cdf_t_var = &_func__frechet_cdf
+from ._frechet cimport _frechet_isf as _func__frechet_isf
+ctypedef double _proto__frechet_isf_t(double, double) nogil
+cdef _proto__frechet_isf_t *_proto__frechet_isf_t_var = &_func__frechet_isf
+from ._frechet cimport _frechet_logpdf as _func__frechet_logpdf
+ctypedef double _proto__frechet_logpdf_t(double, double) nogil
+cdef _proto__frechet_logpdf_t *_proto__frechet_logpdf_t_var = &_func__frechet_logpdf
+from ._frechet cimport _frechet_pdf as _func__frechet_pdf
+ctypedef double _proto__frechet_pdf_t(double, double) nogil
+cdef _proto__frechet_pdf_t *_proto__frechet_pdf_t_var = &_func__frechet_pdf
+from ._frechet cimport _frechet_ppf as _func__frechet_ppf
+ctypedef double _proto__frechet_ppf_t(double, double) nogil
+cdef _proto__frechet_ppf_t *_proto__frechet_ppf_t_var = &_func__frechet_ppf
+from ._frechet cimport _frechet_sf as _func__frechet_sf
+ctypedef double _proto__frechet_sf_t(double, double) nogil
+cdef _proto__frechet_sf_t *_proto__frechet_sf_t_var = &_func__frechet_sf
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_igam_fac "igam_fac"(double, double) nogil
 from .lambertw cimport lambertw_scalar as _func_lambertw_scalar
@@ -2012,6 +2030,258 @@ ufunc__ellip_harm_data[0] = &ufunc__ellip_harm_ptr[2*0]
 ufunc__ellip_harm_data[1] = &ufunc__ellip_harm_ptr[2*1]
 ufunc__ellip_harm_data[2] = &ufunc__ellip_harm_ptr[2*2]
 _ellip_harm = np.PyUFunc_FromFuncAndData(ufunc__ellip_harm_loops, ufunc__ellip_harm_data, ufunc__ellip_harm_types, 3, 7, 1, 0, "_ellip_harm", ufunc__ellip_harm_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__frechet_cdf_loops[2]
+cdef void *ufunc__frechet_cdf_ptr[4]
+cdef void *ufunc__frechet_cdf_data[2]
+cdef char ufunc__frechet_cdf_types[6]
+cdef char *ufunc__frechet_cdf_doc = (
+    "_frechet_cdf(x, alpha)\n"
+    "\n"
+    "Cumulative distribution function of the Frechet distribution.\n"
+    "\n"
+    "The Frechet distribution is also known as the type II extreme value\n"
+    "distribution.\n"
+    "\n"
+    "This function provides only the shape parameter, `alpha`.  The location\n"
+    "and scale parameters are 0 and 1, respectively.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Values at which to compute the CDF.\n"
+    "alpha : array_like\n"
+    "    The shape parameter of the distribution.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "float\n"
+    "    The values of the CDF.")
+ufunc__frechet_cdf_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__frechet_cdf_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__frechet_cdf_types[0] = <char>NPY_FLOAT
+ufunc__frechet_cdf_types[1] = <char>NPY_FLOAT
+ufunc__frechet_cdf_types[2] = <char>NPY_FLOAT
+ufunc__frechet_cdf_types[3] = <char>NPY_DOUBLE
+ufunc__frechet_cdf_types[4] = <char>NPY_DOUBLE
+ufunc__frechet_cdf_types[5] = <char>NPY_DOUBLE
+ufunc__frechet_cdf_ptr[2*0] = <void*>_func__frechet_cdf
+ufunc__frechet_cdf_ptr[2*0+1] = <void*>(<char*>"_frechet_cdf")
+ufunc__frechet_cdf_ptr[2*1] = <void*>_func__frechet_cdf
+ufunc__frechet_cdf_ptr[2*1+1] = <void*>(<char*>"_frechet_cdf")
+ufunc__frechet_cdf_data[0] = &ufunc__frechet_cdf_ptr[2*0]
+ufunc__frechet_cdf_data[1] = &ufunc__frechet_cdf_ptr[2*1]
+_frechet_cdf = np.PyUFunc_FromFuncAndData(ufunc__frechet_cdf_loops, ufunc__frechet_cdf_data, ufunc__frechet_cdf_types, 2, 2, 1, 0, "_frechet_cdf", ufunc__frechet_cdf_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__frechet_isf_loops[2]
+cdef void *ufunc__frechet_isf_ptr[4]
+cdef void *ufunc__frechet_isf_data[2]
+cdef char ufunc__frechet_isf_types[6]
+cdef char *ufunc__frechet_isf_doc = (
+    "_frechet_isf(q, alpha)\n"
+    "\n"
+    "Inverse of the survival function of the Frechet distribution.\n"
+    "\n"
+    "The Frechet distribution is also known as the type II extreme value\n"
+    "distribution.\n"
+    "\n"
+    "This function provides only the shape parameter, `alpha`.  The location\n"
+    "and scale parameters are 0 and 1, respectively.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "q : array_like\n"
+    "    Values at which to compute the inverse of the survival function.\n"
+    "alpha : array_like\n"
+    "    The shape parameter of the distribution.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "float\n"
+    "    The values of the inverse of the survival function.")
+ufunc__frechet_isf_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__frechet_isf_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__frechet_isf_types[0] = <char>NPY_FLOAT
+ufunc__frechet_isf_types[1] = <char>NPY_FLOAT
+ufunc__frechet_isf_types[2] = <char>NPY_FLOAT
+ufunc__frechet_isf_types[3] = <char>NPY_DOUBLE
+ufunc__frechet_isf_types[4] = <char>NPY_DOUBLE
+ufunc__frechet_isf_types[5] = <char>NPY_DOUBLE
+ufunc__frechet_isf_ptr[2*0] = <void*>_func__frechet_isf
+ufunc__frechet_isf_ptr[2*0+1] = <void*>(<char*>"_frechet_isf")
+ufunc__frechet_isf_ptr[2*1] = <void*>_func__frechet_isf
+ufunc__frechet_isf_ptr[2*1+1] = <void*>(<char*>"_frechet_isf")
+ufunc__frechet_isf_data[0] = &ufunc__frechet_isf_ptr[2*0]
+ufunc__frechet_isf_data[1] = &ufunc__frechet_isf_ptr[2*1]
+_frechet_isf = np.PyUFunc_FromFuncAndData(ufunc__frechet_isf_loops, ufunc__frechet_isf_data, ufunc__frechet_isf_types, 2, 2, 1, 0, "_frechet_isf", ufunc__frechet_isf_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__frechet_logpdf_loops[2]
+cdef void *ufunc__frechet_logpdf_ptr[4]
+cdef void *ufunc__frechet_logpdf_data[2]
+cdef char ufunc__frechet_logpdf_types[6]
+cdef char *ufunc__frechet_logpdf_doc = (
+    "_frechet_logpdf(x, alpha)\n"
+    "\n"
+    "Log of the probability density function of the Frechet distribution.\n"
+    "\n"
+    "The Frechet distribution is also known as the type II extreme value\n"
+    "distribution.\n"
+    "\n"
+    "This function provides only the shape parameter, `alpha`.  The location\n"
+    "and scale parameters are 0 and 1, respectively.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Values at which to compute the log of the PDF.\n"
+    "alpha : array_like\n"
+    "    The shape parameter of the distribution.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "float\n"
+    "    The values of the log of the PDF.")
+ufunc__frechet_logpdf_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__frechet_logpdf_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__frechet_logpdf_types[0] = <char>NPY_FLOAT
+ufunc__frechet_logpdf_types[1] = <char>NPY_FLOAT
+ufunc__frechet_logpdf_types[2] = <char>NPY_FLOAT
+ufunc__frechet_logpdf_types[3] = <char>NPY_DOUBLE
+ufunc__frechet_logpdf_types[4] = <char>NPY_DOUBLE
+ufunc__frechet_logpdf_types[5] = <char>NPY_DOUBLE
+ufunc__frechet_logpdf_ptr[2*0] = <void*>_func__frechet_logpdf
+ufunc__frechet_logpdf_ptr[2*0+1] = <void*>(<char*>"_frechet_logpdf")
+ufunc__frechet_logpdf_ptr[2*1] = <void*>_func__frechet_logpdf
+ufunc__frechet_logpdf_ptr[2*1+1] = <void*>(<char*>"_frechet_logpdf")
+ufunc__frechet_logpdf_data[0] = &ufunc__frechet_logpdf_ptr[2*0]
+ufunc__frechet_logpdf_data[1] = &ufunc__frechet_logpdf_ptr[2*1]
+_frechet_logpdf = np.PyUFunc_FromFuncAndData(ufunc__frechet_logpdf_loops, ufunc__frechet_logpdf_data, ufunc__frechet_logpdf_types, 2, 2, 1, 0, "_frechet_logpdf", ufunc__frechet_logpdf_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__frechet_pdf_loops[2]
+cdef void *ufunc__frechet_pdf_ptr[4]
+cdef void *ufunc__frechet_pdf_data[2]
+cdef char ufunc__frechet_pdf_types[6]
+cdef char *ufunc__frechet_pdf_doc = (
+    "_frechet_pdf(x, alpha)\n"
+    "\n"
+    "Probability density function of the Frechet distribution.\n"
+    "\n"
+    "The Frechet distribution is also known as the type II extreme value\n"
+    "distribution.\n"
+    "\n"
+    "This function provides only the shape parameter, `alpha`.  The location\n"
+    "and scale parameters are 0 and 1, respectively.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Values at which to compute the PDF.\n"
+    "alpha : array_like\n"
+    "    The shape parameter of the distribution.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "float\n"
+    "    The values of the PDF.")
+ufunc__frechet_pdf_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__frechet_pdf_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__frechet_pdf_types[0] = <char>NPY_FLOAT
+ufunc__frechet_pdf_types[1] = <char>NPY_FLOAT
+ufunc__frechet_pdf_types[2] = <char>NPY_FLOAT
+ufunc__frechet_pdf_types[3] = <char>NPY_DOUBLE
+ufunc__frechet_pdf_types[4] = <char>NPY_DOUBLE
+ufunc__frechet_pdf_types[5] = <char>NPY_DOUBLE
+ufunc__frechet_pdf_ptr[2*0] = <void*>_func__frechet_pdf
+ufunc__frechet_pdf_ptr[2*0+1] = <void*>(<char*>"_frechet_pdf")
+ufunc__frechet_pdf_ptr[2*1] = <void*>_func__frechet_pdf
+ufunc__frechet_pdf_ptr[2*1+1] = <void*>(<char*>"_frechet_pdf")
+ufunc__frechet_pdf_data[0] = &ufunc__frechet_pdf_ptr[2*0]
+ufunc__frechet_pdf_data[1] = &ufunc__frechet_pdf_ptr[2*1]
+_frechet_pdf = np.PyUFunc_FromFuncAndData(ufunc__frechet_pdf_loops, ufunc__frechet_pdf_data, ufunc__frechet_pdf_types, 2, 2, 1, 0, "_frechet_pdf", ufunc__frechet_pdf_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__frechet_ppf_loops[2]
+cdef void *ufunc__frechet_ppf_ptr[4]
+cdef void *ufunc__frechet_ppf_data[2]
+cdef char ufunc__frechet_ppf_types[6]
+cdef char *ufunc__frechet_ppf_doc = (
+    "_frechet_ppf(q, alpha)\n"
+    "\n"
+    "Percent point function (i.e. inverse CDF) of the Frechet distribution.\n"
+    "\n"
+    "The Frechet distribution is also known as the type II extreme value\n"
+    "distribution.\n"
+    "\n"
+    "This function provides only the shape parameter, `alpha`.  The location\n"
+    "and scale parameters are 0 and 1, respectively.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "q : array_like\n"
+    "    Values at which to compute the PPF.\n"
+    "alpha : array_like\n"
+    "    The shape parameter of the distribution.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "float\n"
+    "    The values of the PPF.")
+ufunc__frechet_ppf_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__frechet_ppf_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__frechet_ppf_types[0] = <char>NPY_FLOAT
+ufunc__frechet_ppf_types[1] = <char>NPY_FLOAT
+ufunc__frechet_ppf_types[2] = <char>NPY_FLOAT
+ufunc__frechet_ppf_types[3] = <char>NPY_DOUBLE
+ufunc__frechet_ppf_types[4] = <char>NPY_DOUBLE
+ufunc__frechet_ppf_types[5] = <char>NPY_DOUBLE
+ufunc__frechet_ppf_ptr[2*0] = <void*>_func__frechet_ppf
+ufunc__frechet_ppf_ptr[2*0+1] = <void*>(<char*>"_frechet_ppf")
+ufunc__frechet_ppf_ptr[2*1] = <void*>_func__frechet_ppf
+ufunc__frechet_ppf_ptr[2*1+1] = <void*>(<char*>"_frechet_ppf")
+ufunc__frechet_ppf_data[0] = &ufunc__frechet_ppf_ptr[2*0]
+ufunc__frechet_ppf_data[1] = &ufunc__frechet_ppf_ptr[2*1]
+_frechet_ppf = np.PyUFunc_FromFuncAndData(ufunc__frechet_ppf_loops, ufunc__frechet_ppf_data, ufunc__frechet_ppf_types, 2, 2, 1, 0, "_frechet_ppf", ufunc__frechet_ppf_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc__frechet_sf_loops[2]
+cdef void *ufunc__frechet_sf_ptr[4]
+cdef void *ufunc__frechet_sf_data[2]
+cdef char ufunc__frechet_sf_types[6]
+cdef char *ufunc__frechet_sf_doc = (
+    "_frechet_sf(x, alpha)\n"
+    "\n"
+    "Survival function of the Frechet distribution.\n"
+    "\n"
+    "The Frechet distribution is also known as the type II extreme value\n"
+    "distribution.\n"
+    "\n"
+    "This function provides only the shape parameter, `alpha`.  The location\n"
+    "and scale parameters are 0 and 1, respectively.\n"
+    "\n"
+    "Parameters\n"
+    "----------\n"
+    "x : array_like\n"
+    "    Values at which to compute the survival function.\n"
+    "alpha : array_like\n"
+    "    The shape parameter of the distribution.\n"
+    "\n"
+    "Returns\n"
+    "-------\n"
+    "float\n"
+    "    The values of the survival function.")
+ufunc__frechet_sf_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
+ufunc__frechet_sf_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
+ufunc__frechet_sf_types[0] = <char>NPY_FLOAT
+ufunc__frechet_sf_types[1] = <char>NPY_FLOAT
+ufunc__frechet_sf_types[2] = <char>NPY_FLOAT
+ufunc__frechet_sf_types[3] = <char>NPY_DOUBLE
+ufunc__frechet_sf_types[4] = <char>NPY_DOUBLE
+ufunc__frechet_sf_types[5] = <char>NPY_DOUBLE
+ufunc__frechet_sf_ptr[2*0] = <void*>_func__frechet_sf
+ufunc__frechet_sf_ptr[2*0+1] = <void*>(<char*>"_frechet_sf")
+ufunc__frechet_sf_ptr[2*1] = <void*>_func__frechet_sf
+ufunc__frechet_sf_ptr[2*1+1] = <void*>(<char*>"_frechet_sf")
+ufunc__frechet_sf_data[0] = &ufunc__frechet_sf_ptr[2*0]
+ufunc__frechet_sf_data[1] = &ufunc__frechet_sf_ptr[2*1]
+_frechet_sf = np.PyUFunc_FromFuncAndData(ufunc__frechet_sf_loops, ufunc__frechet_sf_data, ufunc__frechet_sf_types, 2, 2, 1, 0, "_frechet_sf", ufunc__frechet_sf_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc__igam_fac_loops[2]
 cdef void *ufunc__igam_fac_ptr[4]
