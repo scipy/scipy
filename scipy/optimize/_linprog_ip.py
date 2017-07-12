@@ -1606,7 +1606,7 @@ def _linprog_ip(
         sparse=False,
         lstsq=False,
         sym_pos=True,
-        cholesky=True,
+        cholesky=False,
         pc=True,
         ip=False,
         presolve=True,
