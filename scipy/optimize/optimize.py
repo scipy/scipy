@@ -355,8 +355,7 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     See also
     --------
     minimize: Interface to minimization algorithms for multivariate
-        functions. See the '
-        -Mead' `method` in particular.
+        functions. See the 'Nelder-Mead' `method` in particular.
 
     Notes
     -----
