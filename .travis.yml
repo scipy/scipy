@@ -131,7 +131,8 @@ before_install:
   # Need to install Cython 0.23.4 from source to avoid errors for Python 3.6
   - travis_retry pip install --install-option="--no-cython-compile" Cython==0.23.4
   - travis_retry pip install $NUMPYSPEC
-  - travis_retry pip install pytest nose mpmath argparse Pillow codecov
+  # Note: install dev version of pytest --- change to standard install after pytest 3.1.4 is released
+  - travis_retry pip install git+https://github.com/pytest-dev/pytest.git@81cec9f5e3416e151939e65174dd64163d7a7b1d nose mpmath argparse Pillow codecov
   - travis_retry pip install --upgrade pip setuptools
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
   - if [ "${TESTMODE}" == "full" ]; then pip install pytest-cov coverage; fi
@@ -163,7 +164,7 @@ script:
         popd
         USE_WHEEL_BUILD="--no-build"
     fi
-  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfeX 2>&1 | tee runtests.log | uniq
+  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX 2>&1 | tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
 after_success:
