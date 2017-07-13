@@ -15,6 +15,7 @@ from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, arange
 import numpy as np
 
+from scipy.ndimage.filters import correlate1d
 from scipy.optimize import fmin
 from scipy import signal
 from scipy.signal import (
@@ -670,6 +671,16 @@ class TestResample(object):
                 hc = convolve(h, h[::-1])
                 y = signal.resample_poly(x, 1, down, window=hc)
                 assert_allclose(yf, y, atol=1e-7, rtol=1e-7)
+
+    def test_correlate1d(self):
+        for down in [2, 4]:
+            for nx in range(1, 40, down):
+                for nweights in (32, 33):
+                    x = np.random.random((nx,))
+                    weights = np.random.random((nweights,))
+                    y_g = correlate1d(x, weights[::-1], mode='constant')
+                    y_s = signal.resample_poly(x, up=1, down=down, window=weights)
+                    assert_allclose(y_g[::down], y_s)
 
 
 class TestCSpline1DEval(object):
