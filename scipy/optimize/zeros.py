@@ -123,6 +123,33 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     sign. The brentq algorithm is recommended for general use in one
     dimensional problems when such an interval has been found.
 
+    Examples
+    --------
+    >>> def f(x):
+    ...     return (x**3 - 1)  # only one real root at x = 1
+    
+    >>> from scipy import optimize
+    
+    >>> # fprime and fprime2 not provided, use secant method
+    >>> root = optimize.newton(f, 1.5)
+    >>> root
+    1.0000000000000016
+    
+    >>> # Only fprime provided, use Newton Raphson method
+    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2)
+    >>> root
+    1.0
+    
+    >>> # fprime2 provided, fprime provided/not provided use parabolic Halley's
+    >>> # method
+    >>> root = optimize.newton(f, 1.5, fprime2=lambda x: 6 * x)
+    >>> root
+    1.0000000000000016
+    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 *
+                           x**2, fprime2=lambda x: 6 * x)
+    >>> root
+    1.0
+
     """
     if tol <= 0:
         raise ValueError("tol too small (%g <= 0)" % tol)
