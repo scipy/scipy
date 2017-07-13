@@ -112,7 +112,7 @@ def split_fortran_files(source_dir, subroutines=None):
         return new_fnames
 
     exclude_pattern = re.compile('_subr_[0-9]')
-    source_fnames = [f for f in glob.glob(os.path.join(source_dir, '*.f'))
+    source_fnames = [f for f in sorted(glob.glob(os.path.join(source_dir, '*.f')))
                              if not exclude_pattern.search(os.path.basename(f))]
     fnames = []
     for source_fname in source_fnames:

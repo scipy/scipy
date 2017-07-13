@@ -18,7 +18,7 @@ def configuration(parent_package='', top_path=None):
     config.add_subpackage('transform')
 
     # qhull
-    qhull_src = list(glob.glob(join(dirname(__file__), 'qhull_src',
+    qhull_src = sorted(glob.glob(join(dirname(__file__), 'qhull_src',
                                     'src', '*.c')))
 
     inc_dirs = [get_python_inc()]
