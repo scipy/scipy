@@ -235,7 +235,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
         before filtering.
     window_length : int
         The length of the filter window (i.e. the number of coefficients).
-        `window_length` must be a positive odd integer. If `mode` is "interp",
+        `window_length` must be a positive odd integer. If `mode` is 'interp',
         `window_length` must be less than or equal to the size of `x`.
     polyorder : int
         The order of the polynomial used to fit the samples.
