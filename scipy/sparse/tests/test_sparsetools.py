@@ -307,6 +307,9 @@ def test_endianness():
 
 
 def check_free_memory(free_mb):
+    if not sys.platform.startswith('linux'):
+        pytest.skip("Test runs only on linux.")
+
     meminfo = get_mem_info_linux()
 
     if meminfo['memfree'] + meminfo['cached'] < free_mb * 1e6:
