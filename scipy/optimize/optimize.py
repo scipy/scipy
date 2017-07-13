@@ -2126,7 +2126,8 @@ def _minimize_scalar_brent(func, brack=None, args=(),
 def golden(func, args=(), brack=None, tol=_epsilon,
            full_output=0, maxiter=5000):
     """
-    Return the minimum of a function of one variable.
+    Return the minimum of a function of one variable using golden section
+    method.
 
     Given a function of one variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
@@ -2160,6 +2161,25 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     -----
     Uses analog of bisection method to decrease the bracketed
     interval.
+
+    Examples
+    --------
+    We illustrate the behaviour of the function when `brack` is of
+    size 2 and 3 respectively. In the case where `brack` is of the
+    form (xa,xb), we can see for the given values, the output need
+    not necessarily lie in the range (xa,xb).
+
+    >>> def f(x):
+    ...     return x**2
+    
+    >>> from scipy import optimize
+
+    >>> minimum = optimize.golden(f,brack=(1,2))
+    >>> minimum
+    1.5717277788484873e-162
+    >>> minimum = optimize.golden(f,brack=(-1,0.5,2))
+    >>> minimum
+    -1.5717277788484873e-162
 
     """
     options = {'xtol': tol, 'maxiter': maxiter}
