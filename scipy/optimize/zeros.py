@@ -274,6 +274,10 @@ def bisect(f, a, b, args=(),
     >>> root
     1.0
 
+    >>> root = optimize.bisect(f, -2, 0)
+    >>> root
+    -1.0
+
     See Also
     --------
     brentq, brenth, bisect, newton
@@ -351,6 +355,22 @@ def ridder(f, a, b, args=(),
 
     The routine used here diverges slightly from standard presentations in
     order to be a bit more careful of tolerance.
+
+    Examples
+    --------
+
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.ridder(f, 0, 2)
+    >>> root
+    1.0
+
+    >>> root = optimize.ridder(f, -2, 0)
+    >>> root
+    -1.0
 
     References
     ----------
