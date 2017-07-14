@@ -2485,7 +2485,7 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
 
     >>> from scipy import optimize
 
-    >>> minimum = optimize.fmin(f, -1)
+    >>> minimum = optimize.fmin_powell(f, -1)
     Optimization terminated successfully.
              Current function value: 0.000000
              Iterations: 2
