@@ -63,26 +63,6 @@ typedef enum {
 
 
 /******************************************************************/
-/* Data types */
-/******************************************************************/
-
-/*
- * Numpy basic types codes correspond to C basic types, but they remain
- * different even if the corresponding types have the same size.
- *
- * Most commonly: int and long, so normalize to long.
- */
-static NPY_INLINE
-int NI_NormalizeType(int type_num)
-{
-#if NPY_SIZEOF_INT == NPY_SIZEOF_LONG
-    if (type_num == NPY_INT)  type_num = NPY_LONG;
-    if (type_num == NPY_UINT) type_num = NPY_ULONG;
-#endif
-    return type_num;
-}
-
-/******************************************************************/
 /* Iterators */
 /******************************************************************/
 
