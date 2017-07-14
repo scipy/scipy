@@ -78,6 +78,12 @@ has been changed to True.
 
 `scipy.special.gammaln` does not accept complex arguments anymore.
 
+The deprecated functions `sph_jn`, `sph_yn`, `sph_jnyn`, `sph_in`,
+`sph_kn`, and `sph_inkn` have been removed. Users should instead use
+the functions `spherical_jn`, `spherical_yn`, `spherical_in`, and
+`spherical_kn`. Be aware that the new functions have different
+signatures.
+
 The cross-class properties of `scipy.signal.lti` systems have been removed.
 The following properties/setters have been removed:
 
@@ -109,4 +115,3 @@ Issues closed
 
 Pull requests
 -------------
-
