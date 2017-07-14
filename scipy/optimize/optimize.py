@@ -373,7 +373,6 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
 
     Examples
     --------
-    
     >>> def f(x):
     ...     return x**2
 
