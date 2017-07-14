@@ -95,11 +95,13 @@ class TestTrimmedStats(object):
 
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.tmin(x), np.nan)
-        assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
-        assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
-        assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
-        assert_raises_regex(ValueError,
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "invalid value*")
+            assert_equal(stats.tmin(x), np.nan)
+            assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
+            assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
+            assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
+            assert_raises_regex(ValueError,
                             "'propagate', 'raise', 'omit'",
                             stats.tmin,
                             x,
@@ -120,10 +122,12 @@ class TestTrimmedStats(object):
 
         x = np.arange(10.)
         x[6] = np.nan
-        assert_equal(stats.tmax(x), np.nan)
-        assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
-        assert_raises(ValueError, stats.tmax, x, nan_policy='raise')
-        assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "invalid value*")
+            assert_equal(stats.tmax(x), np.nan)
+            assert_equal(stats.tmax(x, nan_policy='omit'), 9.)
+            assert_raises(ValueError, stats.tmax, x, nan_policy='raise')
+            assert_raises(ValueError, stats.tmax, x, nan_policy='foobar')
 
     def test_tsem(self):
         y = stats.tsem(X, limits=(3, 8), inclusive=(False, True))
@@ -2997,7 +3001,7 @@ def test_ttest_ind():
     # test zero division problem
     t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
     assert_equal((np.abs(t), p), (np.inf, 0))
-    
+
     with np.errstate(invalid="ignore"):
         assert_equal(stats.ttest_ind([0, 0, 0], [0, 0, 0]), (np.nan, np.nan))
 
