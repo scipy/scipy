@@ -2478,6 +2478,21 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
        fraction of the decrease in the function value from that iteration of
        the inner loop.
 
+    Examples
+    --------
+    >>> def f(x):
+    ...     return x**2
+
+    >>> from scipy import optimize
+
+    >>> minimum = optimize.fmin(f, -1)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 2
+             Function evaluations: 18
+    >>> minimum[0]
+    0.0
+
     References
     ----------
     Powell M.J.D. (1964) An efficient method for finding the minimum of a
