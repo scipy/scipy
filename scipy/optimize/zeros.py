@@ -147,7 +147,8 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     >>> root = optimize.newton(f, 1.5, fprime2=lambda x: 6 * x)
     >>> root
     1.0000000000000016
-    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2, fprime2=lambda x: 6 * x)
+    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2,
+    ...                        fprime2=lambda x: 6 * x)
     >>> root
     1.0
 
