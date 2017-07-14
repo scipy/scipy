@@ -473,7 +473,7 @@ def imresize(arr, size, interp='bilinear', mode=None):
     size : int, float or tuple
         * int   - Percentage of current size.
         * float - Fraction of current size.
-        * tuple - Size of the output image.
+        * tuple - Size of the output image (height, width).
 
     interp : str, optional
         Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear', 'bicubic'
