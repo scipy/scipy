@@ -71,7 +71,6 @@ matrix:
         - NUMPYSPEC=numpy
         - USE_SDIST=1
         - MB_PYTHON_VERSION=3.6
-        - MAC_ARCH="-arch x86_64"
 addons:
   apt:
     packages:
@@ -104,9 +103,9 @@ before_install:
       before_install
       export CXX=clang++
       export CC=clang
-      export CFLAGS=$MAC_ARCH
-      export CXXFLAGS=$MAC_ARCH
-      export FFLAGS==$MAC_ARCH
+      export CFLAGS="-arch x86_64"
+      export CXXFLAGS="-arch x86_64"
+      export FFLAGS=="-arch x86_64"
       printenv
       pip install $NUMPYSPEC
     fi
