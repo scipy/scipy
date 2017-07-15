@@ -3,7 +3,6 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import threading
 import sys
 import timeit
@@ -11,6 +10,7 @@ import timeit
 from . import sigtools, dlti
 from ._upfirdn import upfirdn, _output_len
 from scipy._lib.six import callable
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._version import NumpyVersion
 from scipy import fftpack, linalg
 from numpy import (allclose, angle, arange, argsort, array, asarray,
@@ -1020,8 +1020,9 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', np.ComplexWarning)
+    with suppress_warnings() as sup:
+        sup.filter(np.ComplexWarning,
+                   "Casting complex values to real discards the imaginary part")
         # FIXME: some cast generates a warning here
         out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
 
@@ -1118,8 +1119,9 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', np.ComplexWarning)
+    with suppress_warnings() as sup:
+        sup.filter(np.ComplexWarning,
+                   "Casting complex values to real discards the imaginary part")
         # FIXME: some cast generates a warning here
         out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
 
