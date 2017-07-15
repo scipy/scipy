@@ -152,7 +152,7 @@ class LinearOperator(object):
 
         shape = tuple(shape)
         if not isshape(shape):
-            raise ValueError("invalid shape %r (must be 2-d)" % shape)
+            raise ValueError("invalid shape %r (must be 2-d)" % (shape,))
 
         self.dtype = dtype
         self.shape = shape
