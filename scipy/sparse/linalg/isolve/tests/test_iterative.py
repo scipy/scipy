@@ -162,7 +162,7 @@ def test_maxiter():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        yield check_maxiter, solver, case
+        check_maxiter(solver, case)
 
 
 def assert_normclose(a, b, tol=1e-8):
@@ -195,7 +195,7 @@ def test_convergence():
         for case in params.cases:
             if solver in case.skip:
                 continue
-            yield check_convergence, solver, case
+            check_convergence(solver, case)
 
 
 def check_precond_dummy(solver, case):
@@ -236,7 +236,7 @@ def test_precond_dummy():
     for solver in params.solvers:
         if solver in case.skip:
             continue
-        yield check_precond_dummy, solver, case
+        check_precond_dummy(solver, case)
 
 
 def test_gmres_basic():
@@ -254,7 +254,7 @@ def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
     reentrant = [lgmres, minres]
     for solver in reentrant + non_reentrant:
-        yield _check_reentrancy, solver, solver in reentrant
+        _check_reentrancy(solver, solver in reentrant)
 
 
 def _check_reentrancy(solver, is_reentrant):

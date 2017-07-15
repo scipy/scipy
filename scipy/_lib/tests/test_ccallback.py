@@ -117,7 +117,7 @@ def test_callbacks():
     for caller in sorted(CALLERS.keys()):
         for func in sorted(FUNCS.keys()):
             for user_data in sorted(USER_DATAS.keys()):
-                yield check, caller, func, user_data
+                check(caller, func, user_data)
 
 
 def test_bad_callbacks():
@@ -150,7 +150,7 @@ def test_bad_callbacks():
     for caller in sorted(CALLERS.keys()):
         for func in sorted(BAD_FUNCS.keys()):
             for user_data in sorted(USER_DATAS.keys()):
-                yield check, caller, func, user_data
+                check(caller, func, user_data)
 
 
 def test_signature_override():
@@ -195,4 +195,4 @@ def test_threadsafety():
         assert_equal(results, [2.0**count]*len(threads))
 
     for caller in CALLERS.keys():
-        yield check, caller
+        check(caller)

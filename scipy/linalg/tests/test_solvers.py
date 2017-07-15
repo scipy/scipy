@@ -298,7 +298,7 @@ def test_solve_continuous_are():
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
-        yield _test_factory, case, min_decimal[ind]
+        _test_factory(case, min_decimal[ind])
 
 
 def test_solve_discrete_are():
@@ -519,7 +519,7 @@ def test_solve_discrete_are():
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
-        yield _test_factory, case, min_decimal[ind]
+        _test_factory(case, min_decimal[ind])
 
 
 def test_solve_generalized_continuous_are():
@@ -569,7 +569,7 @@ def test_solve_generalized_continuous_are():
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
-        yield _test_factory, case, min_decimal[ind]
+        _test_factory(case, min_decimal[ind])
 
 
 def test_solve_generalized_discrete_are():
@@ -640,7 +640,7 @@ def test_solve_generalized_discrete_are():
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
     for ind, case in enumerate(cases):
-        yield _test_factory, case, min_decimal[ind]
+        _test_factory(case, min_decimal[ind])
 
 
 def test_are_validate_args():

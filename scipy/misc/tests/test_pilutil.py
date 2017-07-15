@@ -144,8 +144,7 @@ class TestPILUtil(object):
                 shutil.rmtree(tmpdir)
 
 
-@_pilskip
-def tst_fromimage(filename, irange, shape):
+def check_fromimage(filename, irange, shape):
     fp = open(filename, "rb")
     img = misc.fromimage(PIL.Image.open(fp))
     fp.close()
@@ -155,6 +154,7 @@ def tst_fromimage(filename, irange, shape):
     assert_equal(img.shape, shape)
 
 
+@_pilskip
 def test_fromimage():
     # Test generator for parametric tests
     # Tuples in the list are (filename, (datamin, datamax), shape).
@@ -162,7 +162,7 @@ def test_fromimage():
              ('icon_mono.png', (0, 255), (48, 48, 4)),
              ('icon_mono_flat.png', (0, 255), (48, 48, 3))]
     for fn, irange, shape in files:
-        yield tst_fromimage, os.path.join(datapath, 'data', fn), irange, shape
+        check_fromimage(os.path.join(datapath, 'data', fn), irange, shape)
 
 
 @_pilskip

@@ -126,7 +126,7 @@ class TestZlibInputStream(object):
 
         for size in SIZES:
             for read_size in READ_SIZES:
-                yield check, size, read_size
+                check(size, read_size)
 
     def test_read_max_length(self):
         size = 1234

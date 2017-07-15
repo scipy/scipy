@@ -643,11 +643,11 @@ def test_eigh():
                 for turbo in v['turbo']:
                     for eigenvalues in v['eigvals']:
                         for lower in v['lower']:
-                            yield (eigenhproblem_standard,
+                            eigenhproblem_standard(
                                    'ordinary',
                                    dim, typ, overwrite, lower,
                                    turbo, eigenvalues)
-                            yield (eigenhproblem_general,
+                            eigenhproblem_general(
                                    'general ',
                                    dim, typ, overwrite, lower,
                                    turbo, eigenvalues)
@@ -2360,7 +2360,6 @@ def test_aligned_mem_complex():
     eig(z.T, overwrite_a=True)
 
 
-@pytest.mark.xfail(run=False, reason="Ticket #1152, triggers a segfault in rare cases.")
 def check_lapack_misaligned(func, args, kwargs):
     args = list(args)
     for i in range(len(args)):
@@ -2378,6 +2377,7 @@ def check_lapack_misaligned(func, args, kwargs):
                 func(*a,**kwargs)
 
 
+@pytest.mark.xfail(run=False, reason="Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
     M = np.eye(10,dtype=float)
     R = np.arange(100)
@@ -2405,7 +2405,7 @@ def test_lapack_misaligned():
             (hessenberg,(S,),dict(overwrite_a=True)),  # crash
             (schur,(S,),dict(overwrite_a=True)),  # crash
             ]:
-        yield check_lapack_misaligned, func, args, kwargs
+        check_lapack_misaligned(func, args, kwargs)
 # not properly tested
 # cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh, diagsvd
 

@@ -329,4 +329,4 @@ def test_cython_api():
                 assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
 
     for param in params:
-        yield check, param
+        check(param)

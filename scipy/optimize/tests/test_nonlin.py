@@ -120,9 +120,9 @@ class TestNonlin(object):
             for func in SOLVERS.values():
                 if func in f.KNOWN_BAD.values():
                     if func in MUST_WORK.values():
-                        yield self._check_func_fail, f, func
+                        self._check_func_fail(f, func)
                     continue
-                yield self._check_nonlin_func, f, func
+                self._check_nonlin_func(f, func)
 
     def test_tol_norm_called(self):
         # Check that supplying tol_norm keyword to nonlin_solve works
@@ -141,9 +141,9 @@ class TestNonlin(object):
             for meth in SOLVERS:
                 if meth in f.KNOWN_BAD:
                     if meth in MUST_WORK:
-                        yield self._check_func_fail, f, meth
+                        self._check_func_fail(f, meth)
                     continue
-                yield self._check_root, f, meth
+                self._check_root(f, meth)
 
 
 class TestSecant(object):

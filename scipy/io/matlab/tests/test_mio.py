@@ -337,7 +337,7 @@ def test_load():
         files = glob(filt)
         assert_(len(files) > 0,
                 "No files for test %s using filter %s" % (name, filt))
-        yield _load_check_case, name, files, expected
+        _load_check_case(name, files, expected)
 
 
 # generator for whos tests
@@ -350,7 +350,7 @@ def test_whos():
         files = glob(filt)
         assert_(len(files) > 0,
                 "No files for test %s using filter %s" % (name, filt))
-        yield _whos_check_case, name, files, expected, classes
+        _whos_check_case(name, files, expected, classes)
 
 
 # generator for round trip tests
@@ -360,7 +360,7 @@ def test_round_trip():
         name = case['name'] + '_round_trip'
         expected = case['expected']
         for format in (['4', '5'] if case['name'] in case_table4_names else ['5']):
-            yield _rt_check_case, name, expected, format
+            _rt_check_case(name, expected, format)
 
 
 def test_gzip_simple():

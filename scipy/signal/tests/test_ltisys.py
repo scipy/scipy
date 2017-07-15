@@ -238,7 +238,7 @@ class TestPlacePoles(object):
 
 class TestSS2TF:
 
-    def tst_matrix_shapes(self, p, q, r):
+    def check_matrix_shapes(self, p, q, r):
         ss2tf(np.zeros((p, p)),
               np.zeros((p, q)),
               np.zeros((r, p)),
@@ -248,7 +248,7 @@ class TestSS2TF:
         # Each tuple holds:
         #   number of states, number of inputs, number of outputs
         for p, q, r in [(3, 3, 3), (1, 3, 3), (1, 1, 1)]:
-            yield self.tst_matrix_shapes, p, q, r
+            self.check_matrix_shapes(p, q, r)
 
     def test_basic(self):
         # Test a round trip through tf2ss and ss2tf.

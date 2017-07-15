@@ -800,16 +800,16 @@ def test_onetree_query():
     k = 4
     points = np.random.randn(n,k)
     T = KDTree(points)
-    yield check_onetree_query, T, 0.1
+    check_onetree_query(T, 0.1)
 
     points = np.random.randn(3*n,k)
     points[:n] *= 0.001
     points[n:2*n] += 2
     T = KDTree(points)
-    yield check_onetree_query, T, 0.1
-    yield check_onetree_query, T, 0.001
-    yield check_onetree_query, T, 0.00001
-    yield check_onetree_query, T, 1e-6
+    check_onetree_query(T, 0.1)
+    check_onetree_query(T, 0.001)
+    check_onetree_query(T, 0.00001)
+    check_onetree_query(T, 1e-6)
 
 
 def test_onetree_query_compiled():
@@ -818,16 +818,16 @@ def test_onetree_query_compiled():
     k = 4
     points = np.random.randn(n,k)
     T = cKDTree(points)
-    yield check_onetree_query, T, 0.1
+    check_onetree_query(T, 0.1)
 
     points = np.random.randn(3*n,k)
     points[:n] *= 0.001
     points[n:2*n] += 2
     T = cKDTree(points)
-    yield check_onetree_query, T, 0.1
-    yield check_onetree_query, T, 0.001
-    yield check_onetree_query, T, 0.00001
-    yield check_onetree_query, T, 1e-6
+    check_onetree_query(T, 0.1)
+    check_onetree_query(T, 0.001)
+    check_onetree_query(T, 0.00001)
+    check_onetree_query(T, 1e-6)
 
 
 def test_query_pairs_single_node():

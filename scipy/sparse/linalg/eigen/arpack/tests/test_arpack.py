@@ -376,8 +376,8 @@ def test_symmetric_modes():
                 for mattype in params.mattypes:
                     for (sigma, modes) in params.sigmas_modes.items():
                         for mode in modes:
-                            yield (eval_evec, symmetric, D, typ, k, which,
-                                    None, sigma, mattype, None, mode)
+                            eval_evec(symmetric, D, typ, k, which,
+                                      None, sigma, mattype, None, mode)
 
 
 def test_hermitian_modes():
@@ -391,8 +391,8 @@ def test_hermitian_modes():
                     continue  # BE invalid for complex
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_modes:
-                        yield (eval_evec, symmetric, D, typ, k, which,
-                                None, sigma, mattype)
+                        eval_evec(symmetric, D, typ, k, which,
+                                  None, sigma, mattype)
 
 
 def test_symmetric_starting_vector():
@@ -402,7 +402,7 @@ def test_symmetric_starting_vector():
         for D in params.real_test_cases:
             for typ in 'fd':
                 v0 = random.rand(len(D['v0'])).astype(typ)
-                yield (eval_evec, symmetric, D, typ, k, 'LM', v0)
+                eval_evec(symmetric, D, typ, k, 'LM', v0)
 
 
 def test_symmetric_no_convergence():
@@ -430,8 +430,8 @@ def test_real_nonsymmetric_modes():
                 for mattype in params.mattypes:
                     for sigma, OPparts in params.sigmas_OPparts.items():
                         for OPpart in OPparts:
-                            yield (eval_evec, symmetric, D, typ, k, which,
-                                   None, sigma, mattype, OPpart)
+                            eval_evec(symmetric, D, typ, k, which,
+                                      None, sigma, mattype, OPpart)
 
 
 def test_complex_nonsymmetric_modes():
@@ -443,8 +443,8 @@ def test_complex_nonsymmetric_modes():
             for which in params.which:
                 for mattype in params.mattypes:
                     for sigma in params.sigmas_OPparts:
-                        yield (eval_evec, symmetric, D, typ, k, which,
-                               None, sigma, mattype)
+                        eval_evec(symmetric, D, typ, k, which,
+                                  None, sigma, mattype)
 
 
 def test_standard_nonsymmetric_starting_vector():
@@ -457,7 +457,7 @@ def test_standard_nonsymmetric_starting_vector():
                 A = d['mat']
                 n = A.shape[0]
                 v0 = random.rand(n).astype(typ)
-                yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
 
 
 def test_general_nonsymmetric_starting_vector():
@@ -470,7 +470,7 @@ def test_general_nonsymmetric_starting_vector():
                 A = d['mat']
                 n = A.shape[0]
                 v0 = random.rand(n).astype(typ)
-                yield (eval_evec, symmetric, d, typ, k, "LM", v0, sigma)
+                eval_evec(symmetric, d, typ, k, "LM", v0, sigma)
 
 
 def test_standard_nonsymmetric_no_convergence():

@@ -182,7 +182,7 @@ def test_banded_ode_solvers():
              [False, True],      # with_jacobian
              [False, True]]      # banded
         for solver, meth, use_jac, with_jac, banded in itertools.product(*p):
-            yield check_real, idx, solver, meth, use_jac, with_jac, banded
+            check_real(idx, solver, meth, use_jac, with_jac, banded)
 
     # --- Complex arrays for testing the "zvode" solver ---
 
@@ -220,5 +220,5 @@ def test_banded_ode_solvers():
              [False, True],      # with_jacobian
              [False, True]]      # banded
         for meth, use_jac, with_jac, banded in itertools.product(*p):
-            yield check_complex, idx, "zvode", meth, use_jac, with_jac, banded
+            check_complex(idx, "zvode", meth, use_jac, with_jac, banded)
 

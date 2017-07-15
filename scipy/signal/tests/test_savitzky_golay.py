@@ -30,7 +30,7 @@ def test_polyder():
         ([[3, 2, 1], [5, 6, 7]], 3, [[0], [0]]),
     ]
     for p, m, expected in cases:
-        yield check_polyder, np.array(p).T, m, np.array(expected).T
+        check_polyder(np.array(p).T, m, np.array(expected).T)
 
 
 #--------------------------------------------------------------------
@@ -89,7 +89,7 @@ def test_sg_coeffs_compare():
     # Compare savgol_coeffs() to alt_sg_coeffs().
     for window_length in range(1, 8, 2):
         for order in range(window_length):
-            yield compare_coeffs_to_alt, window_length, order
+            compare_coeffs_to_alt(window_length, order)
 
 
 def test_sg_coeffs_exact():

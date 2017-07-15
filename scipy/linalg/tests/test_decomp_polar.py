@@ -83,10 +83,10 @@ def verify_polar(a):
 
 def test_precomputed_cases():
     for a, side, expected_u, expected_p in precomputed_cases:
-        yield check_precomputed_polar, a, side, expected_u, expected_p
+        check_precomputed_polar(a, side, expected_u, expected_p)
 
 
 def test_verify_cases():
     for a in verify_cases:
-        yield verify_polar, a
+        verify_polar(a)
 
