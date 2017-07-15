@@ -9,7 +9,7 @@ from numpy.testing import run_module_suite
 from scipy.special import (
     lpn, lpmn, lpmv, lqn, lqmn, sph_harm, eval_legendre, eval_hermite,
     eval_laguerre, eval_genlaguerre, binom, cbrt, expm1, log1p, zeta,
-    jn, jv, yn, yv, iv, kv, kn, sph_jn, sph_yn,
+    jn, jv, yn, yv, iv, kv, kn,
     gamma, gammaln, gammainc, gammaincc, gammaincinv, gammainccinv, digamma,
     beta, betainc, betaincinv, poch,
     ellipe, ellipeinc, ellipk, ellipkm1, ellipkinc, ellipj,
@@ -180,17 +180,11 @@ def poch_(z, m):
 def poch_minus(z, m):
     return 1.0 / poch(z, -m)
 
-def sph_jn_(n, x):
-    return sph_jn(n.astype('l'), x)[0][-1]
-
 def spherical_jn_(n, x):
     return spherical_jn(n.astype('l'), x)
 
 def spherical_yn_(n, x):
     return spherical_yn(n.astype('l'), x)
-
-def sph_yn_(n, x):
-    return sph_yn(n.astype('l'), x)[0][-1]
 
 def sph_harm_(m, n, theta, phi):
     y = sph_harm(m, n, theta, phi)
@@ -493,19 +487,6 @@ def test_local():
         warnings.simplefilter("ignore", category=IntegrationWarning)
 
         for test in TESTS:
-            yield _test_factory, test
-
-    # sph_jn, sph_yn are deprecated; silence the DeprecationWarning noise 
-    TESTS_DEP = [
-        data(sph_jn_, 'sph_bessel_data_ipp-sph_bessel_data', (0,1), 2,
-            vectorized=False,
-            knownfailure='sph_jn inaccurate at large n, small x'),
-        data(sph_yn_, 'sph_neumann_data_ipp-sph_neumann_data', (0,1), 2,
-            rtol=4e-15, vectorized=False),
-    ]
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=DeprecationWarning)
-        for test in TESTS_DEP:
             yield _test_factory, test
 
 
