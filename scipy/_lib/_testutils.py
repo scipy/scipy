@@ -13,29 +13,11 @@ import warnings
 from scipy._lib.decorator import decorator
 
 
-__all__ = ['suppressed_stdout', 'xslow_yield']
+__all__ = ['skipif_yield', 'xslow_yield']
 
 
 class TestutilDeprecationWarning(DeprecationWarning):
     pass
-
-
-def suppressed_stdout(f):
-    import nose
-
-    def pwrapper(*arg, **kwargs):
-        warnings.warn("scipy._lib._testutils.suppressed_stdout is deprecated "
-                      "-- should use pytest capture fixture instead",
-                      category=TestutilDeprecationWarning, stacklevel=1)
-
-        oldstdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
-        try:
-            return f(*arg, **kwargs)
-        finally:
-            sys.stdout.close()
-            sys.stdout = oldstdout
-    return nose.tools.make_decorator(f)(pwrapper)
 
 
 @decorator
