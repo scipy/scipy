@@ -78,6 +78,7 @@ Py_TestConverters(PyObject *object, PyObject *args)
     PyArray_Dims origin = {NULL, 0};
     PyArrayObject *origin_array = NULL;
     PyArrayObject *zeros_like_origin = NULL;
+    npy_intp shape1d;
 
     if (!PyArg_ParseTuple(args, "O&O&O&O&O&O&",
                           NI_ObjectToInputArray, &input,
@@ -99,11 +100,12 @@ Py_TestConverters(PyObject *object, PyObject *args)
         PyErr_SetString(PyExc_ValueError, "Found misbehaved array");
         goto fail;
     }
-    origin_array = NI_NewArray(origin.ptr, NPY_INTP, 1, &origin.len);
+    shape1d = origin.len;
+    origin_array = NI_NewArray(origin.ptr, NPY_INTP, 1, &shape1d);
     if (origin_array == NULL) {
         goto fail;
     }
-    zeros_like_origin = NI_NewArray(NULL, NPY_INTP, 1, &origin.len);
+    zeros_like_origin = NI_NewArray(NULL, NPY_INTP, 1, &shape1d);
     if (zeros_like_origin == NULL) {
         goto fail;
     }
