@@ -533,44 +533,41 @@ class TestDelaunay(object):
         expected = np.array([(1, 4, 0), (4, 2, 0)])  # from Qhull
         assert_array_equal(tri.simplices, expected)
 
-    def test_incremental(self):
+    @pytest.mark.parametrize("name", sorted(INCREMENTAL_DATASETS))
+    def test_incremental(self, name):
         # Test incremental construction of the triangulation
 
-        def check(name):
-            chunks, opts = INCREMENTAL_DATASETS[name]
-            points = np.concatenate(chunks, axis=0)
+        chunks, opts = INCREMENTAL_DATASETS[name]
+        points = np.concatenate(chunks, axis=0)
 
-            obj = qhull.Delaunay(chunks[0], incremental=True,
-                                 qhull_options=opts)
-            for chunk in chunks[1:]:
-                obj.add_points(chunk)
+        obj = qhull.Delaunay(chunks[0], incremental=True,
+                             qhull_options=opts)
+        for chunk in chunks[1:]:
+            obj.add_points(chunk)
 
-            obj2 = qhull.Delaunay(points)
+        obj2 = qhull.Delaunay(points)
 
-            obj3 = qhull.Delaunay(chunks[0], incremental=True,
-                                  qhull_options=opts)
-            if len(chunks) > 1:
-                obj3.add_points(np.concatenate(chunks[1:], axis=0),
-                                restart=True)
+        obj3 = qhull.Delaunay(chunks[0], incremental=True,
+                              qhull_options=opts)
+        if len(chunks) > 1:
+            obj3.add_points(np.concatenate(chunks[1:], axis=0),
+                            restart=True)
 
-            # Check that the incremental mode agrees with upfront mode
-            if name.startswith('pathological'):
-                # XXX: These produce valid but different triangulations.
-                #      They look OK when plotted, but how to check them?
+        # Check that the incremental mode agrees with upfront mode
+        if name.startswith('pathological'):
+            # XXX: These produce valid but different triangulations.
+            #      They look OK when plotted, but how to check them?
 
-                assert_array_equal(np.unique(obj.simplices.ravel()),
-                                   np.arange(points.shape[0]))
-                assert_array_equal(np.unique(obj2.simplices.ravel()),
-                                   np.arange(points.shape[0]))
-            else:
-                assert_unordered_tuple_list_equal(obj.simplices, obj2.simplices,
-                                                  tpl=sorted_tuple)
-
-            assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
+            assert_array_equal(np.unique(obj.simplices.ravel()),
+                               np.arange(points.shape[0]))
+            assert_array_equal(np.unique(obj2.simplices.ravel()),
+                               np.arange(points.shape[0]))
+        else:
+            assert_unordered_tuple_list_equal(obj.simplices, obj2.simplices,
                                               tpl=sorted_tuple)
 
-        for name in sorted(INCREMENTAL_DATASETS):
-            yield check, name
+        assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
+                                          tpl=sorted_tuple)
 
 
 def assert_hulls_equal(points, facets_1, facets_2):
@@ -637,49 +634,43 @@ class TestConvexHull:
         points_with_nan = np.array([(0,0), (1,1), (2,np.nan)], dtype=np.double)
         assert_raises(ValueError, qhull.ConvexHull, points_with_nan)
 
-    def test_hull_consistency_tri(self):
+    @pytest.mark.parametrize("name", sorted(DATASETS))
+    def test_hull_consistency_tri(self, name):
         # Check that a convex hull returned by qhull in ndim
         # and the hull constructed from ndim delaunay agree
-        def check(name):
-            points = DATASETS[name]
+        points = DATASETS[name]
 
-            tri = qhull.Delaunay(points)
-            hull = qhull.ConvexHull(points)
+        tri = qhull.Delaunay(points)
+        hull = qhull.ConvexHull(points)
 
-            assert_hulls_equal(points, tri.convex_hull, hull.simplices)
+        assert_hulls_equal(points, tri.convex_hull, hull.simplices)
 
-            # Check that the hull extremes are as expected
-            if points.shape[1] == 2:
-                assert_equal(np.unique(hull.simplices), np.sort(hull.vertices))
-            else:
-                assert_equal(np.unique(hull.simplices), hull.vertices)
+        # Check that the hull extremes are as expected
+        if points.shape[1] == 2:
+            assert_equal(np.unique(hull.simplices), np.sort(hull.vertices))
+        else:
+            assert_equal(np.unique(hull.simplices), hull.vertices)
 
-        for name in sorted(DATASETS):
-            yield check, name
-
-    def test_incremental(self):
+    @pytest.mark.parametrize("name", sorted(INCREMENTAL_DATASETS))
+    def test_incremental(self, name):
         # Test incremental construction of the convex hull
-        def check(name):
-            chunks, _ = INCREMENTAL_DATASETS[name]
-            points = np.concatenate(chunks, axis=0)
+        chunks, _ = INCREMENTAL_DATASETS[name]
+        points = np.concatenate(chunks, axis=0)
 
-            obj = qhull.ConvexHull(chunks[0], incremental=True)
-            for chunk in chunks[1:]:
-                obj.add_points(chunk)
+        obj = qhull.ConvexHull(chunks[0], incremental=True)
+        for chunk in chunks[1:]:
+            obj.add_points(chunk)
 
-            obj2 = qhull.ConvexHull(points)
+        obj2 = qhull.ConvexHull(points)
 
-            obj3 = qhull.ConvexHull(chunks[0], incremental=True)
-            if len(chunks) > 1:
-                obj3.add_points(np.concatenate(chunks[1:], axis=0),
-                                restart=True)
+        obj3 = qhull.ConvexHull(chunks[0], incremental=True)
+        if len(chunks) > 1:
+            obj3.add_points(np.concatenate(chunks[1:], axis=0),
+                            restart=True)
 
-            # Check that the incremental mode agrees with upfront mode
-            assert_hulls_equal(points, obj.simplices, obj2.simplices)
-            assert_hulls_equal(points, obj.simplices, obj3.simplices)
-
-        for name in sorted(INCREMENTAL_DATASETS):
-            yield check, name
+        # Check that the incremental mode agrees with upfront mode
+        assert_hulls_equal(points, obj.simplices, obj2.simplices)
+        assert_hulls_equal(points, obj.simplices, obj3.simplices)
 
     def test_vertices_2d(self):
         # The vertices should be in counterclockwise order in 2-D
@@ -784,33 +775,30 @@ class TestVoronoi:
 
         assert_equal(p1, p2)
 
-    def test_ridges(self):
+    @pytest.mark.parametrize("name", sorted(DATASETS))
+    def test_ridges(self, name):
         # Check that the ridges computed by Voronoi indeed separate
         # the regions of nearest neighborhood, by comparing the result
         # to KDTree.
 
-        def check(name):
-            points = DATASETS[name]
+        points = DATASETS[name]
 
-            tree = KDTree(points)
-            vor = qhull.Voronoi(points)
+        tree = KDTree(points)
+        vor = qhull.Voronoi(points)
 
-            for p, v in vor.ridge_dict.items():
-                # consider only finite ridges
-                if not np.all(np.asarray(v) >= 0):
-                    continue
+        for p, v in vor.ridge_dict.items():
+            # consider only finite ridges
+            if not np.all(np.asarray(v) >= 0):
+                continue
 
-                ridge_midpoint = vor.vertices[v].mean(axis=0)
-                d = 1e-6 * (points[p[0]] - ridge_midpoint)
+            ridge_midpoint = vor.vertices[v].mean(axis=0)
+            d = 1e-6 * (points[p[0]] - ridge_midpoint)
 
-                dist, k = tree.query(ridge_midpoint + d, k=1)
-                assert_equal(k, p[0])
+            dist, k = tree.query(ridge_midpoint + d, k=1)
+            assert_equal(k, p[0])
 
-                dist, k = tree.query(ridge_midpoint - d, k=1)
-                assert_equal(k, p[1])
-
-        for name in DATASETS:
-            yield check, name
+            dist, k = tree.query(ridge_midpoint - d, k=1)
+            assert_equal(k, p[1])
 
     def test_furthest_site(self):
         points = [(0, 0), (0, 1), (1, 0), (0.5, 0.5), (1.1, 1.1)]
@@ -836,73 +824,71 @@ class TestVoronoi:
         """
         self._compare_qvoronoi(points, output, furthest_site=True)
 
-    def test_incremental(self):
+    @pytest.mark.parametrize("name", sorted(INCREMENTAL_DATASETS))
+    def test_incremental(self, name):
         # Test incremental construction of the triangulation
 
-        def check(name):
-            chunks, opts = INCREMENTAL_DATASETS[name]
-            points = np.concatenate(chunks, axis=0)
+        if INCREMENTAL_DATASETS[name][0][0].shape[1] > 3:
+            # too slow (testing of the result --- qhull is still fast)
+            return
 
-            obj = qhull.Voronoi(chunks[0], incremental=True,
-                                 qhull_options=opts)
-            for chunk in chunks[1:]:
-                obj.add_points(chunk)
+        chunks, opts = INCREMENTAL_DATASETS[name]
+        points = np.concatenate(chunks, axis=0)
 
-            obj2 = qhull.Voronoi(points)
+        obj = qhull.Voronoi(chunks[0], incremental=True,
+                             qhull_options=opts)
+        for chunk in chunks[1:]:
+            obj.add_points(chunk)
 
-            obj3 = qhull.Voronoi(chunks[0], incremental=True,
-                                 qhull_options=opts)
-            if len(chunks) > 1:
-                obj3.add_points(np.concatenate(chunks[1:], axis=0),
-                                restart=True)
+        obj2 = qhull.Voronoi(points)
 
-            # -- Check that the incremental mode agrees with upfront mode
-            assert_equal(len(obj.point_region), len(obj2.point_region))
-            assert_equal(len(obj.point_region), len(obj3.point_region))
+        obj3 = qhull.Voronoi(chunks[0], incremental=True,
+                             qhull_options=opts)
+        if len(chunks) > 1:
+            obj3.add_points(np.concatenate(chunks[1:], axis=0),
+                            restart=True)
 
-            # The vertices may be in different order or duplicated in
-            # the incremental map
-            for objx in obj, obj3:
-                vertex_map = {-1: -1}
-                for i, v in enumerate(objx.vertices):
-                    for j, v2 in enumerate(obj2.vertices):
-                        if np.allclose(v, v2):
-                            vertex_map[i] = j
+        # -- Check that the incremental mode agrees with upfront mode
+        assert_equal(len(obj.point_region), len(obj2.point_region))
+        assert_equal(len(obj.point_region), len(obj3.point_region))
 
-                def remap(x):
-                    if hasattr(x, '__len__'):
-                        return tuple(set([remap(y) for y in x]))
-                    try:
-                        return vertex_map[x]
-                    except KeyError:
-                        raise AssertionError("incremental result has spurious vertex at %r"
-                                             % (objx.vertices[x],))
+        # The vertices may be in different order or duplicated in
+        # the incremental map
+        for objx in obj, obj3:
+            vertex_map = {-1: -1}
+            for i, v in enumerate(objx.vertices):
+                for j, v2 in enumerate(obj2.vertices):
+                    if np.allclose(v, v2):
+                        vertex_map[i] = j
 
-                def simplified(x):
-                    items = set(map(sorted_tuple, x))
-                    if () in items:
-                        items.remove(())
-                    items = [x for x in items if len(x) > 1]
-                    items.sort()
-                    return items
+            def remap(x):
+                if hasattr(x, '__len__'):
+                    return tuple(set([remap(y) for y in x]))
+                try:
+                    return vertex_map[x]
+                except KeyError:
+                    raise AssertionError("incremental result has spurious vertex at %r"
+                                         % (objx.vertices[x],))
 
-                assert_equal(
-                    simplified(remap(objx.regions)),
-                    simplified(obj2.regions)
-                    )
-                assert_equal(
-                    simplified(remap(objx.ridge_vertices)),
-                    simplified(obj2.ridge_vertices)
-                    )
+            def simplified(x):
+                items = set(map(sorted_tuple, x))
+                if () in items:
+                    items.remove(())
+                items = [x for x in items if len(x) > 1]
+                items.sort()
+                return items
 
-                # XXX: compare ridge_points --- not clear exactly how to do this
+            assert_equal(
+                simplified(remap(objx.regions)),
+                simplified(obj2.regions)
+                )
+            assert_equal(
+                simplified(remap(objx.ridge_vertices)),
+                simplified(obj2.ridge_vertices)
+                )
 
-        for name in sorted(INCREMENTAL_DATASETS):
-            if INCREMENTAL_DATASETS[name][0][0].shape[1] > 3:
-                # too slow (testing of the result --- qhull is still fast)
-                continue
+            # XXX: compare ridge_points --- not clear exactly how to do this
 
-            yield check, name
 
 class Test_HalfspaceIntersection(object):
     def assert_unordered_allclose(self, arr1, arr2, rtol=1e-7):

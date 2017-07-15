@@ -692,7 +692,9 @@ class TestOptimizeSimple(CheckOptimize):
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
-    def test_no_increase(self):
+    @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                              'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'])
+    def test_no_increase(self, method):
         # Check that the solver doesn't return a value worse than the
         # initial point.
 
@@ -704,24 +706,18 @@ class TestOptimizeSimple(CheckOptimize):
             # where line searches start failing
             return 2*(x - 1) * (-1) - 2
 
-        def check(method):
-            x0 = np.array([2.0])
-            f0 = func(x0)
-            jac = bad_grad
-            if method in ['nelder-mead', 'powell', 'cobyla']:
-                jac = None
-            sol = optimize.minimize(func, x0, jac=jac, method=method,
-                                    options=dict(maxiter=20))
-            assert_equal(func(sol.x), sol.fun)
+        x0 = np.array([2.0])
+        f0 = func(x0)
+        jac = bad_grad
+        if method in ['nelder-mead', 'powell', 'cobyla']:
+            jac = None
+        sol = optimize.minimize(func, x0, jac=jac, method=method,
+                                options=dict(maxiter=20))
+        assert_equal(func(sol.x), sol.fun)
 
-            if method == 'slsqp':
-                pytest.xfail("SLSQP returns slightly worse")
-            assert_(func(sol.x) <= f0)
-
-        for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
-                       'newton-cg', 'l-bfgs-b', 'tnc',
-                       'cobyla', 'slsqp']:
-            yield check, method
+        if method == 'slsqp':
+            pytest.xfail("SLSQP returns slightly worse")
+        assert_(func(sol.x) <= f0)
 
     def test_slsqp_respect_bounds(self):
         # Regression test for gh-3108

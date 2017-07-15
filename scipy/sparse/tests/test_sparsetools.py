@@ -11,12 +11,11 @@ from numpy.testing import (assert_raises, assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse.sputils import supported_dtypes
-from scipy._lib._testutils import xslow_yield, suppressed_stdout
+from scipy._lib._testutils import xslow_yield
 
 import pytest
 
 
-@suppressed_stdout
 def test_exception():
     assert_raises(MemoryError, _sparsetools.test_throw_error)
 
@@ -136,58 +135,52 @@ class TestInt32Overflow(object):
         del data, offsets, m, v, r
         gc.collect()
 
-    def test_bsr_1_block(self):
+    @pytest.mark.slow
+    @pytest.mark.parametrize("op", ["matmat", "matvecs", "matvec", "diagonal",
+                                    "sort_indices", "transpose"])
+    def test_bsr_1_block(self, op):
         # Check: huge bsr_matrix (1-block)
         #
         # The point here is that indices inside a block may overflow.
 
-        @pytest.mark.slow
-        def check(op):
-            def get_matrix():
-                n = self.n
-                data = np.ones((1, n, n), dtype=np.int8)
-                indptr = np.array([0, 1], dtype=np.int32)
-                indices = np.array([0], dtype=np.int32)
-                m = bsr_matrix((data, indices, indptr), blocksize=(n, n), copy=False)
-                del data, indptr, indices
-                return m
+        def get_matrix():
+            n = self.n
+            data = np.ones((1, n, n), dtype=np.int8)
+            indptr = np.array([0, 1], dtype=np.int32)
+            indices = np.array([0], dtype=np.int32)
+            m = bsr_matrix((data, indices, indptr), blocksize=(n, n), copy=False)
+            del data, indptr, indices
+            return m
 
+        gc.collect()
+        try:
+            getattr(self, "_check_bsr_" + op)(get_matrix)
+        finally:
             gc.collect()
-            try:
-                getattr(self, "_check_bsr_" + op)(get_matrix)
-            finally:
-                gc.collect()
 
-        for op in ("matmat", "matvecs", "matvec", "diagonal",
-                   "sort_indices", "transpose"):
-            yield check, op
-
-    def test_bsr_n_block(self):
+    @pytest.mark.slow
+    @pytest.mark.parametrize("op", ["matmat", "matvecs", "matvec", "diagonal",
+                                    "sort_indices", "transpose"])
+    def test_bsr_n_block(self, op):
         # Check: huge bsr_matrix (n-block)
         #
         # The point here is that while indices within a block don't
         # overflow, accumulators across many block may.
 
-        @pytest.mark.slow
-        def check(op):
-            def get_matrix():
-                n = self.n
-                data = np.ones((n, n, 1), dtype=np.int8)
-                indptr = np.array([0, n], dtype=np.int32)
-                indices = np.arange(n, dtype=np.int32)
-                m = bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
-                del data, indptr, indices
-                return m
+        def get_matrix():
+            n = self.n
+            data = np.ones((n, n, 1), dtype=np.int8)
+            indptr = np.array([0, n], dtype=np.int32)
+            indices = np.arange(n, dtype=np.int32)
+            m = bsr_matrix((data, indices, indptr), blocksize=(n, 1), copy=False)
+            del data, indptr, indices
+            return m
 
+        gc.collect()
+        try:
+            getattr(self, "_check_bsr_" + op)(get_matrix)
+        finally:
             gc.collect()
-            try:
-                getattr(self, "_check_bsr_" + op)(get_matrix)
-            finally:
-                gc.collect()
-
-        for op in ("matmat", "matvecs", "matvec", "diagonal",
-                   "sort_indices", "transpose"):
-            yield check, op
 
     @xslow_yield
     def _check_bsr_matvecs(self, m):
