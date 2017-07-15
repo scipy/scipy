@@ -258,6 +258,7 @@ class TestKMean(object):
         kmeans2(data, 2)
 
     def test_kmeans2_init(self):
+        np.random.seed(12345)
         data = TESTDATA_2D
 
         kmeans2(data, 3, minit='points')

@@ -9,7 +9,7 @@ from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
 from scipy._lib.six import xrange
-from scipy._lib._numpy_compat import suppress_warnings
+from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
@@ -2700,7 +2700,7 @@ class TestInterpN(object):
             assert_allclose(v1, v2)
 
         # Complex-valued data not supported by spline2fd
-        assert_raises(np.ComplexWarning, interpn, points, values,
+        _assert_warns(np.ComplexWarning, interpn, points, values,
                       sample, method='splinef2d')
 
     def test_duck_typed_values(self):

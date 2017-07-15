@@ -491,7 +491,6 @@ def test_local():
 def _test_factory(test, dtype=np.double):
     """Boost test"""
     with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, "`sph_yn` is deprecated!")
         sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
         olderr = np.seterr(all='ignore')
         try:
