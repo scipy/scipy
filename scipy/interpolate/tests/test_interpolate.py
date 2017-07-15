@@ -1,7 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
 import itertools
-import warnings
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_raises, assert_array_equal,
@@ -10,6 +9,7 @@ from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
 from scipy._lib.six import xrange
+from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
          ppform, splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
@@ -1882,15 +1882,14 @@ class TestBPolyFromDerivatives(object):
 
 class TestPpform(object):
     def test_shape(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-
-            np.random.seed(1234)
-            c = np.random.rand(3, 12, 5, 6, 7)
-            x = np.sort(np.random.rand(13))
+        np.random.seed(1234)
+        c = np.random.rand(3, 12, 5, 6, 7)
+        x = np.sort(np.random.rand(13))
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "ppform is deprecated")
             p = ppform(c, x)
-            xp = np.random.rand(3, 4)
-            assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
+        xp = np.random.rand(3, 4)
+        assert_equal(p(xp).shape, (3, 4, 5, 6, 7))
 
 
 class TestNdPPoly(object):
@@ -2701,10 +2700,8 @@ class TestInterpN(object):
             assert_allclose(v1, v2)
 
         # Complex-valued data not supported by spline2fd
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", category=np.ComplexWarning)
-            assert_raises(np.ComplexWarning, interpn, points, values,
-                          sample, method='splinef2d')
+        _assert_warns(np.ComplexWarning, interpn, points, values,
+                      sample, method='splinef2d')
 
     def test_duck_typed_values(self):
         x = np.linspace(0, 2, 5)

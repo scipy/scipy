@@ -1,11 +1,12 @@
 from __future__ import division, print_function, absolute_import
 
 import os
-import warnings
 
 import numpy as np
 from numpy import arccosh, arcsinh, arctanh
 from numpy.testing import run_module_suite
+from scipy._lib._numpy_compat import suppress_warnings
+
 from scipy.special import (
     lpn, lpmn, lpmv, lqn, lqmn, sph_harm, eval_legendre, eval_hermite,
     eval_laguerre, eval_genlaguerre, binom, cbrt, expm1, log1p, zeta,
@@ -483,20 +484,19 @@ def test_local():
         data_local(ellip_harm, 'ellip',(0, 1, 2, 3, 4), 5, rtol=1e-10, atol=1e-13),
     ]
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=IntegrationWarning)
-
-        for test in TESTS:
-            yield _test_factory, test
+    for test in TESTS:
+        yield _test_factory, test
 
 
 def _test_factory(test, dtype=np.double):
     """Boost test"""
-    olderr = np.seterr(all='ignore')
-    try:
-        test.check(dtype=dtype)
-    finally:
-        np.seterr(**olderr)
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The occurrence of roundoff error is detected")
+        olderr = np.seterr(all='ignore')
+        try:
+            test.check(dtype=dtype)
+        finally:
+            np.seterr(**olderr)
 
 
 if __name__ == "__main__":

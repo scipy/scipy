@@ -8,6 +8,7 @@ DATA_PATH = path.join(path.dirname(__file__), 'data')
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal, run_module_suite,
     assert_)
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.io.idl import readsav
 
@@ -268,8 +269,8 @@ class TestStructures:
 
     def test_arrays_corrupt_idl80(self):
         # test byte arrays with missing nbyte information from IDL 8.0 .sav file
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Not able to verify number of bytes from header")
             s = readsav(path.join(DATA_PATH,'struct_arrays_byte_idl80.sav'),
                         verbose=False)
 

@@ -9,6 +9,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
     run_module_suite, assert_raises, assert_allclose, assert_equal,
     assert_)
 from numpy.testing.decorators import skipif
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
     ClusterError, _krandinit)
@@ -217,9 +218,10 @@ class TestKMean(object):
                          [2.04621601, 0.07401111],
                          [-2.31149087,-0.05160469]])
 
-        kmeans(data, initk)
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning,
+                       "One of the clusters is empty. Re-run kmean with a different initialization")
+            kmeans(data, initk)
             kmeans2(data, initk, missing='warn')
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
@@ -256,17 +258,14 @@ class TestKMean(object):
         kmeans2(data, 2)
 
     def test_kmeans2_init(self):
+        np.random.seed(12345)
         data = TESTDATA_2D
 
         kmeans2(data, 3, minit='points')
         kmeans2(data[:, :1], 3, minit='points')  # special case (1-D)
 
-        # minit='random' can give warnings, filter those
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore',
-                        message="One of the clusters is empty. Re-run")
-            kmeans2(data, 3, minit='random')
-            kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
+        kmeans2(data, 3, minit='random')
+        kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 
     @skipif(sys.platform == 'win32', 'Fails with MemoryError in Wine.')
     def test_krandinit(self):

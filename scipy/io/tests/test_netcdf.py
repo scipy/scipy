@@ -16,6 +16,7 @@ from numpy.testing import (assert_, assert_allclose, assert_raises,
 
 from scipy.io.netcdf import netcdf_file
 
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
@@ -178,15 +179,15 @@ def test_itemset_no_segfault_on_readonly():
     # Regression test for ticket #1202.
     # Open the test file in read-only mode.
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-
-        filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+    filename = pjoin(TEST_DATA_PATH, 'example_1.nc')
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning,
+                   "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
         with netcdf_file(filename, 'r') as f:
             time_var = f.variables['time']
 
-        # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
-        assert_raises(RuntimeError, time_var.assignValue, 42)
+    # time_var.assignValue(42) should raise a RuntimeError--not seg. fault!
+    assert_raises(RuntimeError, time_var.assignValue, 42)
 
 
 def test_write_invalid_dtype():
@@ -265,10 +266,11 @@ def test_mmaps_segfault():
             return f.variables['lat'][:]
 
     # should not crash
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning,
+                   "Cannot close a netcdf_file opened with mmap=True, when netcdf_variables or arrays referring to its data still exist")
         x = doit()
-        x.sum()
+    x.sum()
 
 
 def test_zero_dimensional_var():

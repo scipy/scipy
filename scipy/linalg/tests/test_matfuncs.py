@@ -7,7 +7,6 @@
 from __future__ import division, print_function, absolute_import
 
 import random
-import warnings
 import functools
 
 import numpy as np
@@ -17,7 +16,7 @@ from numpy.testing import (run_module_suite,
         assert_array_almost_equal, assert_array_almost_equal_nulp,
         assert_allclose, assert_, decorators)
 
-from scipy._lib._numpy_compat import _assert_warns
+from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
@@ -582,28 +581,29 @@ class TestFractionalMatrixPower(object):
 
 class TestExpM(object):
     def test_zero(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            a = array([[0.,0],[0,0]])
-            assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+        a = array([[0.,0],[0,0]])
+        assert_array_almost_equal(expm(a),[[1,0],[0,1]])
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`expm.` is deprecated")
             assert_array_almost_equal(expm2(a),[[1,0],[0,1]])
             assert_array_almost_equal(expm3(a),[[1,0],[0,1]])
 
     def test_consistency(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            a = array([[0.,1],[-1,0]])
+        a = array([[0.,1],[-1,0]])
+        b = array([[1j,1],[-1,-2j]])
+
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`expm.` is deprecated")
             assert_array_almost_equal(expm(a), expm2(a))
             assert_array_almost_equal(expm(a), expm3(a))
 
-            a = array([[1j,1],[-1,-2j]])
-            assert_array_almost_equal(expm(a), expm2(a))
-            assert_array_almost_equal(expm(a), expm3(a))
+            assert_array_almost_equal(expm(b), expm2(b))
+            assert_array_almost_equal(expm(b), expm3(b))
 
     def test_npmatrix(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-            a = matrix([[3.,0],[0,-3.]])
+        a = matrix([[3.,0],[0,-3.]])
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`expm2` is deprecated")
             assert_array_almost_equal(expm(a), expm2(a))
 
     def test_single_elt(self):

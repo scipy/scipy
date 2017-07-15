@@ -1,10 +1,10 @@
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import numpy as np
 from numpy import cos, sin, pi
 from numpy.testing import run_module_suite, assert_equal, \
     assert_almost_equal, assert_allclose, assert_
+from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumtrapz, quad, simps, fixed_quad)
@@ -93,10 +93,9 @@ class TestQuadrature(object):
         assert_allclose(val, val2, rtol=1e-8, atol=0)
 
         # should be equal to romb with 2**k+1 samples
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', category=AccuracyWarning)
-            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(),
-                           divmax=4)
+        with suppress_warnings() as sup:
+            sup.filter(AccuracyWarning, "divmax .4. exceeded")
+            val3 = romberg(lambda x: np.cos(0.2*x), x.min(), x.max(), divmax=4)
         assert_allclose(val, val3, rtol=1e-12, atol=0)
 
     def test_non_dtype(self):

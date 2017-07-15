@@ -3,8 +3,6 @@ Unit tests for optimization routines from minpack.py.
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
         assert_array_almost_equal, run_module_suite, assert_raises,
         assert_allclose)
@@ -14,7 +12,7 @@ from numpy import array, float64, matrix
 from scipy import optimize
 from scipy.special import lambertw
 from scipy.optimize.minpack import leastsq, curve_fit, fixed_point
-from scipy._lib._numpy_compat import _assert_warns
+from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.optimize import OptimizeWarning
 
 
@@ -372,18 +370,19 @@ class TestCurveFit(object):
         def f_flat(x, a, b):
             return a*x
 
-        with warnings.catch_warnings():
-            # suppress warnings when testing with inf's
-            warnings.filterwarnings('ignore', category=OptimizeWarning)
-            popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0],
-                                   sigma=sigma)
-            assert_(pcov.shape == (2, 2))
-            pcov_expected = np.array([np.inf]*4).reshape(2, 2)
-            assert_array_equal(pcov, pcov_expected)
+        pcov_expected = np.array([np.inf]*4).reshape(2, 2)
 
-            popt, pcov = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
-            assert_(pcov.shape == (2, 2))
-            assert_array_equal(pcov, pcov_expected)
+        with suppress_warnings() as sup:
+            sup.filter(OptimizeWarning,
+                       "Covariance of the parameters could not be estimated")
+            popt, pcov = curve_fit(f_flat, xdata, ydata, p0=[2, 0], sigma=sigma)
+            popt1, pcov1 = curve_fit(f, xdata[:2], ydata[:2], p0=[2, 0])
+
+        assert_(pcov.shape == (2, 2))
+        assert_array_equal(pcov, pcov_expected)
+
+        assert_(pcov1.shape == (2, 2))
+        assert_array_equal(pcov1, pcov_expected)
 
     def test_array_like(self):
         # Test sequence input.  Regression test for gh-3037.
