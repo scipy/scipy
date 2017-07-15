@@ -1019,12 +1019,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', np.ComplexWarning)
-        # FIXME: some cast generates a warning here
-        out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
-
+    out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
     return out
 
 
@@ -1117,11 +1112,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', np.ComplexWarning)
-        # FIXME: some cast generates a warning here
-        out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+    out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
 
     if swapped_inputs:
         out = out[::-1, ::-1]

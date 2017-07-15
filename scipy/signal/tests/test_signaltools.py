@@ -5,12 +5,13 @@ import sys
 
 from decimal import Decimal
 from itertools import product
+import warnings
 
 from nose import SkipTest
 from numpy.testing import (
     run_module_suite, assert_equal,
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_raises, assert_allclose, assert_, dec)
+    assert_raises, assert_allclose, assert_, dec, assert_warns)
 from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, arange
 import numpy as np
@@ -266,6 +267,36 @@ class _TestConvolve2d(object):
                    [28, 40, 62, 64, 52],
                    [32, 46, 67, 62, 48]])
         assert_array_equal(c, d)
+
+    def test_fillvalue_deprecations(self):
+        # Deprecated 2017-07, scipy version 1.0.0
+        with suppress_warnings() as sup:
+            sup.filter(np.ComplexWarning, "Casting complex values to real")
+            r = sup.record(DeprecationWarning, "could not cast `fillvalue`")
+            convolve2d([[1]], [[1, 2]], fillvalue=1j)
+            assert_(len(r) == 1)
+            warnings.filterwarnings(
+                "error", message="could not cast `fillvalue`",
+                category=DeprecationWarning)
+            assert_raises(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
+                          fillvalue=1j)
+
+        with suppress_warnings():
+            warnings.filterwarnings(
+                "always", message="`fillvalue` must be scalar or an array ",
+                category=DeprecationWarning)
+            assert_warns(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
+                         fillvalue=[1, 2])
+            warnings.filterwarnings(
+                "error", message="`fillvalue` must be scalar or an array ",
+                category=DeprecationWarning)   
+            assert_raises(DeprecationWarning, convolve2d, [[1]], [[1, 2]],
+                          fillvalue=[1, 2])
+
+    def test_fillvalue_empty(self):
+        # Check that fillvalue being empty raises an error:
+        assert_raises(ValueError, convolve2d, [[1]], [[1, 2]],
+                      fillvalue=[])
 
     def test_wrap_boundary(self):
         a = [[1, 2, 3], [3, 4, 5]]
