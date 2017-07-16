@@ -21,6 +21,7 @@ Run tests if sparse is not installed:
 
 import operator
 import contextlib
+import functools
 
 import numpy as np
 from scipy._lib.six import xrange, zip as izip
@@ -3367,6 +3368,7 @@ def _possibly_unimplemented(cls, require=True):
         return cls
     else:
         def wrap(fc):
+            @functools.wraps(fc)
             def wrapper(*a, **kw):
                 try:
                     return fc(*a, **kw)
@@ -3374,7 +3376,6 @@ def _possibly_unimplemented(cls, require=True):
                         IndexError, AttributeError):
                     raise pytest.skip("feature not implemented")
 
-            wrapper.__name__ = fc.__name__
             return wrapper
 
         new_dict = dict(cls.__dict__)
@@ -4505,7 +4506,7 @@ def cases_64bit():
     }
 
     for cls in TEST_CLASSES:
-        for method_name in dir(cls):
+        for method_name in sorted(dir(cls)):
             method = getattr(cls, method_name)
             if (method_name.startswith('test_') and
                     not getattr(method, 'slow', False)):
