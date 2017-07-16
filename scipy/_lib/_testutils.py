@@ -1,5 +1,5 @@
 """
-Generic test utilities and decorators.
+Generic test utilities.
 
 """
 
@@ -8,46 +8,8 @@ from __future__ import division, print_function, absolute_import
 import os
 import sys
 
-import warnings
 
-from scipy._lib.decorator import decorator
-
-
-__all__ = ['skipif_yield', 'xslow_yield']
-
-
-class TestutilDeprecationWarning(DeprecationWarning):
-    pass
-
-
-@decorator
-def xslow_yield(func, *a, **kw):
-    try:
-        v = int(os.environ.get('SCIPY_XSLOW', '0'))
-        if not v:
-            raise ValueError()
-    except ValueError:
-        import pytest
-        pytest.skip("very slow test; set environment variable "
-                    "SCIPY_XSLOW=1 to run it")
-    return func(*a, **kw)
-
-
-def skipif_yield(condition, reason, msg=""):
-    """
-    Similar to pytest.mark.skipif, for use in yield tests.
-
-    For yield tests, pytest.mark.skipif does not work as expected ---
-    if any condition evaluates to true, *all* of the yielded tests are
-    skipped.
-    """
-    @decorator
-    def wrapper(func, *a, **kw):
-        import pytest
-        if condition:
-            pytest.skip(reason)
-        return func(*a, **kw)
-    return wrapper
+__all__ = ['PytestTester']
 
 
 class PytestTester(object):
