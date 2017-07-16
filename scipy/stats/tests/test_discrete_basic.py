@@ -18,114 +18,110 @@ vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
 
 
-def test_discrete_basic():
-    for distname, arg in distdiscrete:
-        try:
-            distfn = getattr(stats, distname)
-        except TypeError:
-            distfn = distname
-            distname = 'sample distribution'
-        np.random.seed(9765456)
-        rvs = distfn.rvs(size=2000, *arg)
-        supp = np.unique(rvs)
-        m, v = distfn.stats(*arg)
-        yield check_cdf_ppf, distfn, arg, supp, distname + ' cdf_ppf'
-
-        yield check_pmf_cdf, distfn, arg, distname
-        yield check_oth, distfn, arg, supp, distname + ' oth'
-        yield check_edge_support, distfn, arg
-
-        alpha = 0.01
-        yield (check_discrete_chisquare, distfn, arg, rvs, alpha,
-               distname + ' chisquare')
-
+def cases_test_discrete_basic():
     seen = set()
     for distname, arg in distdiscrete:
-        if distname in seen:
-            continue
+        yield distname, arg, distname not in seen
         seen.add(distname)
-        try:
-            distfn = getattr(stats, distname)
-        except TypeError:
-            distfn = distname
-            distname = 'sample distribution'
+
+
+@pytest.mark.parametrize('distname,arg,first_case', cases_test_discrete_basic())
+def test_discrete_basic(distname, arg, first_case):
+    try:
+        distfn = getattr(stats, distname)
+    except TypeError:
+        distfn = distname
+        distname = 'sample distribution'
+    np.random.seed(9765456)
+    rvs = distfn.rvs(size=2000, *arg)
+    supp = np.unique(rvs)
+    m, v = distfn.stats(*arg)
+    check_cdf_ppf(distfn, arg, supp, distname + ' cdf_ppf')
+
+    check_pmf_cdf(distfn, arg, distname)
+    check_oth(distfn, arg, supp, distname + ' oth')
+    check_edge_support(distfn, arg)
+
+    alpha = 0.01
+    check_discrete_chisquare(distfn, arg, rvs, alpha,
+           distname + ' chisquare')
+
+    if first_case:
         locscale_defaults = (0,)
         meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
         # make sure arguments are within support
         spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
         k = spec_k.get(distname, 1)
-        yield check_named_args, distfn, k, arg, locscale_defaults, meths
+        check_named_args(distfn, k, arg, locscale_defaults, meths)
         if distname != 'sample distribution':
-            yield check_scale_docstring, distfn
-        yield check_random_state_property, distfn, arg
-        yield check_pickling, distfn, arg
+            check_scale_docstring(distfn)
+        check_random_state_property(distfn, arg)
+        check_pickling(distfn, arg)
 
         # Entropy
-        yield check_entropy, distfn, arg, distname
+        check_entropy(distfn, arg, distname)
         if distfn.__class__._entropy != stats.rv_discrete._entropy:
-            yield check_private_entropy, distfn, arg, stats.rv_discrete
+            check_private_entropy(distfn, arg, stats.rv_discrete)
 
 
-def test_moments():
-    for distname, arg in distdiscrete:
-        try:
-            distfn = getattr(stats, distname)
-        except TypeError:
-            distfn = distname
-            distname = 'sample distribution'
-        m, v, s, k = distfn.stats(*arg, moments='mvsk')
-        yield check_normalization, distfn, arg, distname
+@pytest.mark.parametrize('distname,arg', distdiscrete)
+def test_moments(distname, arg):
+    try:
+        distfn = getattr(stats, distname)
+    except TypeError:
+        distfn = distname
+        distname = 'sample distribution'
+    m, v, s, k = distfn.stats(*arg, moments='mvsk')
+    check_normalization(distfn, arg, distname)
 
-        # compare `stats` and `moment` methods
-        yield check_moment, distfn, arg, m, v, distname
-        yield check_mean_expect, distfn, arg, m, distname
-        yield check_var_expect, distfn, arg, m, v, distname
-        yield check_skew_expect, distfn, arg, m, v, s, distname
+    # compare `stats` and `moment` methods
+    check_moment(distfn, arg, m, v, distname)
+    check_mean_expect(distfn, arg, m, distname)
+    check_var_expect(distfn, arg, m, v, distname)
+    check_skew_expect(distfn, arg, m, v, s, distname)
+    if distname not in ['zipf']:
+        check_kurt_expect(distfn, arg, m, v, k, distname)
 
-        cond = distname in ['zipf']
-        msg = distname + ' fails kurtosis'
-        yield pytest.mark.xfail(condition=cond, reason=msg)(check_kurt_expect), distfn, arg, m, v, k, distname
-
-        # frozen distr moments
-        yield check_moment_frozen, distfn, arg, m, 1
-        yield check_moment_frozen, distfn, arg, v+m*m, 2
+    # frozen distr moments
+    check_moment_frozen(distfn, arg, m, 1)
+    check_moment_frozen(distfn, arg, v+m*m, 2)
 
 
-def test_rvs_broadcast():
-    for dist, shape_args in distdiscrete:
-        # If shape_only is True, it means the _rvs method of the
-        # distribution uses more than one random number to generate a random
-        # variate.  That means the result of using rvs with broadcasting or
-        # with a nontrivial size will not necessarily be the same as using the
-        # numpy.vectorize'd version of rvs(), so we can only compare the shapes
-        # of the results, not the values.
-        # Whether or not a distribution is in the following list is an
-        # implementation detail of the distribution, not a requirement.  If
-        # the implementation the rvs() method of a distribution changes, this
-        # test might also have to be changed.
-        shape_only = dist in ['skellam']
+@pytest.mark.parametrize('dist,shape_args', distdiscrete)
+def test_rvs_broadcast(dist, shape_args):
+    # If shape_only is True, it means the _rvs method of the
+    # distribution uses more than one random number to generate a random
+    # variate.  That means the result of using rvs with broadcasting or
+    # with a nontrivial size will not necessarily be the same as using the
+    # numpy.vectorize'd version of rvs(), so we can only compare the shapes
+    # of the results, not the values.
+    # Whether or not a distribution is in the following list is an
+    # implementation detail of the distribution, not a requirement.  If
+    # the implementation the rvs() method of a distribution changes, this
+    # test might also have to be changed.
+    shape_only = dist in ['skellam']
 
-        try:
-            distfunc = getattr(stats, dist)
-        except TypeError:
-            distfunc = dist
-            dist = 'rv_discrete(values=(%r, %r))' % (dist.xk, dist.pk)
-        loc = np.zeros(2)
-        nargs = distfunc.numargs
-        allargs = []
-        bshape = []
-        # Generate shape parameter arguments...
-        for k in range(nargs):
-            shp = (k + 3,) + (1,)*(k + 1)
-            param_val = shape_args[k]
-            allargs.append(param_val*np.ones(shp, dtype=np.array(param_val).dtype))
-            bshape.insert(0, shp[0])
-        allargs.append(loc)
-        bshape.append(loc.size)
-        # bshape holds the expected shape when loc, scale, and the shape
-        # parameters are all broadcast together.
-        yield check_rvs_broadcast, distfunc, dist, allargs, bshape, shape_only, [np.int_]
+    try:
+        distfunc = getattr(stats, dist)
+    except TypeError:
+        distfunc = dist
+        dist = 'rv_discrete(values=(%r, %r))' % (dist.xk, dist.pk)
+    loc = np.zeros(2)
+    nargs = distfunc.numargs
+    allargs = []
+    bshape = []
+    # Generate shape parameter arguments...
+    for k in range(nargs):
+        shp = (k + 3,) + (1,)*(k + 1)
+        param_val = shape_args[k]
+        allargs.append(param_val*np.ones(shp, dtype=np.array(param_val).dtype))
+        bshape.insert(0, shp[0])
+    allargs.append(loc)
+    bshape.append(loc.size)
+    # bshape holds the expected shape when loc, scale, and the shape
+    # parameters are all broadcast together.
+    check_rvs_broadcast(distfunc, dist, allargs, bshape, shape_only, [np.int_])
 
 
 def check_cdf_ppf(distfn, arg, supp, msg):

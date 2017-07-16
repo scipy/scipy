@@ -45,18 +45,19 @@ skip_fit = [
 ]
 
 
-@pytest.mark.slow
-def test_cont_fit():
+def cases_test_cont_fit():
     # this tests the closeness of the estimated parameters to the true
     # parameters with fit method of continuous distributions
     # Note: is slow, some distributions don't converge with sample size <= 10000
 
     for distname, arg in distcont:
         if distname not in skip_fit:
-            yield check_cont_fit, distname,arg
+            yield distname, arg
 
 
-def check_cont_fit(distname,arg):
+@pytest.mark.slow
+@pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
+def test_cont_fit(distname, arg):
     if distname in failing_fits:
         # Skip failing fits unless overridden
         xfail = True
@@ -110,8 +111,8 @@ def _check_loc_scale_mle_fit(name, data, desired, atol=None):
 
 def test_non_default_loc_scale_mle_fit():
     data = np.array([1.01, 1.78, 1.78, 1.78, 1.88, 1.88, 1.88, 2.00])
-    yield _check_loc_scale_mle_fit, 'uniform', data, [1.01, 0.99], 1e-3
-    yield _check_loc_scale_mle_fit, 'expon', data, [1.01, 0.73875], 1e-3
+    _check_loc_scale_mle_fit('uniform', data, [1.01, 0.99], 1e-3)
+    _check_loc_scale_mle_fit('expon', data, [1.01, 0.73875], 1e-3)
 
 
 def test_expon_fit():

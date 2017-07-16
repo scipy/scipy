@@ -68,8 +68,9 @@ def check_distribution(dist, args, alpha):
                     D, pval, alpha, args))
 
 
-# nose test generator
-def test_all_distributions():
+def cases_test_all_distributions():
+    np.random.seed(1234)
+
     for dist in dists:
         distfunc = getattr(stats, dist)
         nargs = distfunc.numargs
@@ -86,13 +87,18 @@ def test_all_distributions():
             vals[1] = vals[0] + 1.0
             args = tuple(vals)
         elif dist == 'vonmises':
-            yield check_distribution, dist, (10,), alpha
-            yield check_distribution, dist, (101,), alpha
+            yield dist, (10,), alpha
+            yield dist, (101,), alpha
             args = tuple(1.0 + np.random.random(nargs))
         else:
             args = tuple(1.0 + np.random.random(nargs))
 
-        yield check_distribution, dist, args, alpha
+        yield dist, args, alpha
+
+
+@pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
+def test_all_distributions(dist, args, alpha):
+    check_distribution(dist, args, alpha)
 
 
 def check_vonmises_pdf_periodic(k, l, s, x):
@@ -127,25 +133,21 @@ def test_vonmises_numerical():
     assert_almost_equal(vm.cdf(0), 0.5)
 
 
-def test_support():
-    """gh-6235"""
-    def check_open_support(rvs, args):
-        dist = getattr(stats, rvs)
-
-        assert_almost_equal(dist.pdf(dist.a, *args), 0)
-        assert_equal(dist.logpdf(dist.a, *args), -np.inf)
-        assert_almost_equal(dist.pdf(dist.b, *args), 0)
-        assert_equal(dist.logpdf(dist.b, *args), -np.inf)
-
-    dists = ['alpha', 'betaprime', 'burr', 'burr12',
+@pytest.mark.parametrize('dist', ['alpha', 'betaprime', 'burr', 'burr12',
              'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
              'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
-             'powerlognorm', 'rayleigh', 'wald']
-
+             'powerlognorm', 'rayleigh', 'wald'])
+def test_support(dist):
+    """gh-6235"""
     dct = dict(distcont)
-    for dist in dists:
-        args = dct[dist]
-        yield check_open_support, dist, args
+    args = dct[dist]
+
+    dist = getattr(stats, dist)
+
+    assert_almost_equal(dist.pdf(dist.a, *args), 0)
+    assert_equal(dist.logpdf(dist.a, *args), -np.inf)
+    assert_almost_equal(dist.pdf(dist.b, *args), 0)
+    assert_equal(dist.logpdf(dist.b, *args), -np.inf)
 
 
 class TestRandInt(object):
@@ -1403,60 +1405,54 @@ def TestArgsreduce():
 class TestFitMethod(object):
     skip = ['ncf']
 
-    def test_fit(self):
-        @pytest.mark.slow
-        def check(func, dist, args, alpha):
-            if dist in self.skip:
-                pytest.skip("%s fit known to fail" % dist)
-            distfunc = getattr(stats, dist)
-            with np.errstate(all='ignore'):
-                res = distfunc.rvs(*args, **{'size': 200})
-                vals = distfunc.fit(res)
-                vals2 = distfunc.fit(res, optimizer='powell')
-            # Only check the length of the return
-            # FIXME: should check the actual results to see if we are 'close'
-            #   to what was created --- but what is 'close' enough
-            if dist == 'frechet':
-                assert_(len(vals) == len(args))
-                assert_(len(vals2) == len(args))
-            else:
-                assert_(len(vals) == 2+len(args))
-                assert_(len(vals2) == 2+len(args))
+    @pytest.mark.slow
+    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
+    def test_fit(self, dist, args, alpha):
+        if dist in self.skip:
+            pytest.skip("%s fit known to fail" % dist)
+        distfunc = getattr(stats, dist)
+        with np.errstate(all='ignore'):
+            res = distfunc.rvs(*args, **{'size': 200})
+            vals = distfunc.fit(res)
+            vals2 = distfunc.fit(res, optimizer='powell')
+        # Only check the length of the return
+        # FIXME: should check the actual results to see if we are 'close'
+        #   to what was created --- but what is 'close' enough
+        if dist == 'frechet':
+            assert_(len(vals) == len(args))
+            assert_(len(vals2) == len(args))
+        else:
+            assert_(len(vals) == 2+len(args))
+            assert_(len(vals2) == 2+len(args))
 
-        for func, dist, args, alpha in test_all_distributions():
-            yield check, func, dist, args, alpha
-
-    def test_fix_fit(self):
-        @pytest.mark.slow
-        def check(func, dist, args, alpha):
-            # Not sure why 'ncf', and 'beta' are failing
-            # frechet has different len(args) than distfunc.numargs
-            if dist in self.skip + ['frechet']:
-                pytest.skip("%s fit known to fail" % dist)
-            distfunc = getattr(stats, dist)
-            with np.errstate(all='ignore'):
-                res = distfunc.rvs(*args, **{'size': 200})
-                vals = distfunc.fit(res, floc=0)
-                vals2 = distfunc.fit(res, fscale=1)
-                assert_(len(vals) == 2+len(args))
-                assert_(vals[-2] == 0)
-                assert_(vals2[-1] == 1)
-                assert_(len(vals2) == 2+len(args))
-                if len(args) > 0:
-                    vals3 = distfunc.fit(res, f0=args[0])
-                    assert_(len(vals3) == 2+len(args))
-                    assert_(vals3[0] == args[0])
-                if len(args) > 1:
-                    vals4 = distfunc.fit(res, f1=args[1])
-                    assert_(len(vals4) == 2+len(args))
-                    assert_(vals4[1] == args[1])
-                if len(args) > 2:
-                    vals5 = distfunc.fit(res, f2=args[2])
-                    assert_(len(vals5) == 2+len(args))
-                    assert_(vals5[2] == args[2])
-
-        for func, dist, args, alpha in test_all_distributions():
-            yield check, func, dist, args, alpha
+    @pytest.mark.slow
+    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
+    def test_fix_fit(self, dist, args, alpha):
+        # Not sure why 'ncf', and 'beta' are failing
+        # frechet has different len(args) than distfunc.numargs
+        if dist in self.skip + ['frechet']:
+            pytest.skip("%s fit known to fail" % dist)
+        distfunc = getattr(stats, dist)
+        with np.errstate(all='ignore'):
+            res = distfunc.rvs(*args, **{'size': 200})
+            vals = distfunc.fit(res, floc=0)
+            vals2 = distfunc.fit(res, fscale=1)
+            assert_(len(vals) == 2+len(args))
+            assert_(vals[-2] == 0)
+            assert_(vals2[-1] == 1)
+            assert_(len(vals2) == 2+len(args))
+            if len(args) > 0:
+                vals3 = distfunc.fit(res, f0=args[0])
+                assert_(len(vals3) == 2+len(args))
+                assert_(vals3[0] == args[0])
+            if len(args) > 1:
+                vals4 = distfunc.fit(res, f1=args[1])
+                assert_(len(vals4) == 2+len(args))
+                assert_(vals4[1] == args[1])
+            if len(args) > 2:
+                vals5 = distfunc.fit(res, f2=args[2])
+                assert_(len(vals5) == 2+len(args))
+                assert_(vals5[2] == args[2])
 
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.
