@@ -139,18 +139,33 @@ deprecation message for the changed behavior.  This should be part of the
 review process.
 
 
+Reviewing pull requests
+=======================
+
+Reviewing open pull requests (PRs) is very welcome, and a valuable way to help
+increase the speed at which the project moves forward.  We encourage everyone
+to get involved in the review process; it's also a great way to get familiar
+with the code base.  Reviewers should ask themselves some or all of the
+following questions:
+
+- Was this change adequately discussed prior to implementation (relevant for
+  new features and changes in existing behavior)?
+- Is the intended behavior clear under all conditions?
+- What behaviors and corner cases should be verified by unit tests?
+- Is the code easy to understand and to maintain?
+- Does the code meet the quality, test and documentation expectation outline
+  under `Contributing new code`_?
+
+If you have specific knowledge/experience in a particular
+area (say "optimization algorithms" or "special functions") then reviewing PRs
+in that area is especially valuable - sometimes PRs with technical code have to
+wait for a long time to get merged due to a shortage of appropriate reviewers.
+
+
 Other ways to contribute
 ========================
 
 There are many ways to contribute other than contributing code.
-
-Reviewing open pull requests (PRs) is very welcome, and a valuable way to help
-increase the speed at which the project moves forward.  Everyone who feels like
-they are competent to comment on a pull request is invited to do so; if you
-have specific knowledge/experience in a particular area (say "optimization
-algorithms" or "special functions") then reviewing PRs in that area is
-especially valuable - sometimes PRs with technical code have to wait for a long
-time to get merged due to a shortage of appropriate reviewers.
 
 Triaging issues (investigating bug reports for validity and possible actions to
 take) is also a useful activity.  SciPy has many hundreds of open issues;
