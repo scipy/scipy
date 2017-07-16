@@ -1171,58 +1171,59 @@ def test_lfilter_bad_object():
     assert_raises(TypeError, lfilter, [None], [1.0], [1.0, 2.0, 3.0])
 
 
-class _TestCorrelateReal(object):
-    dt = None
+@pytest.mark.parametrize('dt', [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
+                 np.ulonglong, np.ulonglong, np.float32, np.float64,
+                 np.longdouble, Decimal])
+class TestCorrelateReal(object):
+    def _setup_rank1(self, dt):
+        a = np.linspace(0, 3, 4).astype(dt)
+        b = np.linspace(1, 2, 2).astype(dt)
 
-    def _setup_rank1(self):
-        a = np.linspace(0, 3, 4).astype(self.dt)
-        b = np.linspace(1, 2, 2).astype(self.dt)
-
-        y_r = np.array([0, 2, 5, 8, 3]).astype(self.dt)
+        y_r = np.array([0, 2, 5, 8, 3]).astype(dt)
         return a, b, y_r
 
-    def test_method(self):
-        if self.dt == Decimal:
+    def test_method(self, dt):
+        if dt == Decimal:
             method = choose_conv_method([Decimal(4)], [Decimal(3)])
             assert_equal(method, 'direct')
         else:
-            a, b, y_r = self._setup_rank3()
+            a, b, y_r = self._setup_rank3(dt)
             y_fft = correlate(a, b, method='fft')
             y_direct = correlate(a, b, method='direct')
 
             assert_array_almost_equal(y_r, y_fft)
             assert_array_almost_equal(y_r, y_direct)
-            assert_equal(y_fft.dtype, self.dt)
-            assert_equal(y_direct.dtype, self.dt)
+            assert_equal(y_fft.dtype, dt)
+            assert_equal(y_direct.dtype, dt)
 
-    def test_rank1_valid(self):
-        a, b, y_r = self._setup_rank1()
+    def test_rank1_valid(self, dt):
+        a, b, y_r = self._setup_rank1(dt)
         y = correlate(a, b, 'valid')
         assert_array_almost_equal(y, y_r[1:4])
-        assert_equal(y.dtype, self.dt)
+        assert_equal(y.dtype, dt)
 
         # See gh-5897
         y = correlate(b, a, 'valid')
         assert_array_almost_equal(y, y_r[1:4][::-1])
-        assert_equal(y.dtype, self.dt)
+        assert_equal(y.dtype, dt)
 
-    def test_rank1_same(self):
-        a, b, y_r = self._setup_rank1()
+    def test_rank1_same(self, dt):
+        a, b, y_r = self._setup_rank1(dt)
         y = correlate(a, b, 'same')
         assert_array_almost_equal(y, y_r[:-1])
-        assert_equal(y.dtype, self.dt)
+        assert_equal(y.dtype, dt)
 
-    def test_rank1_full(self):
-        a, b, y_r = self._setup_rank1()
+    def test_rank1_full(self, dt):
+        a, b, y_r = self._setup_rank1(dt)
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r)
-        assert_equal(y.dtype, self.dt)
+        assert_equal(y.dtype, dt)
 
-    def _setup_rank3(self):
+    def _setup_rank3(self, dt):
         a = np.linspace(0, 39, 40).reshape((2, 4, 5), order='F').astype(
-            self.dt)
+            dt)
         b = np.linspace(0, 23, 24).reshape((2, 3, 4), order='F').astype(
-            self.dt)
+            dt)
 
         y_r = array([[[0., 184., 504., 912., 1360., 888., 472., 160.],
                       [46., 432., 1062., 1840., 2672., 1698., 864., 266.],
@@ -1244,34 +1245,34 @@ class _TestCorrelateReal(object):
                       [308., 1006., 1950., 2996., 4052., 2400., 1078., 230.],
                       [230., 692., 1290., 1928., 2568., 1458., 596., 78.],
                       [126., 354., 636., 924., 1212., 654., 234., 0.]]],
-                    dtype=self.dt)
+                    dtype=dt)
 
         return a, b, y_r
 
-    def test_rank3_valid(self):
-        a, b, y_r = self._setup_rank3()
+    def test_rank3_valid(self, dt):
+        a, b, y_r = self._setup_rank3(dt)
         y = correlate(a, b, "valid")
         assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5])
-        assert_equal(y.dtype, self.dt)
+        assert_equal(y.dtype, dt)
 
         # See gh-5897
         y = correlate(b, a, "valid")
         assert_array_almost_equal(y, y_r[1:2, 2:4, 3:5][::-1, ::-1, ::-1])
-        assert_equal(y.dtype, self.dt)
+        assert_equal(y.dtype, dt)
 
-    def test_rank3_same(self):
-        a, b, y_r = self._setup_rank3()
+    def test_rank3_same(self, dt):
+        a, b, y_r = self._setup_rank3(dt)
         y = correlate(a, b, "same")
         assert_array_almost_equal(y, y_r[0:-1, 1:-1, 1:-2])
-        assert_equal(y.dtype, self.dt)
+        assert_equal(y.dtype, dt)
 
-    def test_rank3_all(self):
-        a, b, y_r = self._setup_rank3()
+    def test_rank3_all(self, dt):
+        a, b, y_r = self._setup_rank3(dt)
         y = correlate(a, b)
         assert_array_almost_equal(y, y_r)
-        assert_equal(y.dtype, self.dt)
+        assert_equal(y.dtype, dt)
 
-    def test_invalid_shapes(self):
+    def test_invalid_shapes(self, dt):
         # By "invalid," we mean that no one
         # array has dimensions that are all at
         # least as large as the corresponding
@@ -1284,90 +1285,76 @@ class _TestCorrelateReal(object):
         assert_raises(ValueError, correlate, *(b, a), **{'mode': 'valid'})
 
 
-def _get_testcorrelate_class(datatype, base):
-    class TestCorrelateX(base):
-        dt = datatype
-    TestCorrelateX.__name__ = "TestCorrelate%s" % datatype.__name__.title()
-    return TestCorrelateX
-
-
-for datatype in [np.ubyte, np.byte, np.ushort, np.short, np.uint, int,
-                 np.ulonglong, np.ulonglong, np.float32, np.float64,
-                 np.longdouble, Decimal]:
-    cls = _get_testcorrelate_class(datatype, _TestCorrelateReal)
-    globals()[cls.__name__] = cls
-
-
-class _TestCorrelateComplex(object):
-    # The numpy data type to use.
-    dt = None
-
+@pytest.mark.parametrize('dt', [np.csingle, np.cdouble, np.clongdouble])
+class TestCorrelateComplex(object):
     # The decimal precision to be used for comparing results.
     # This value will be passed as the 'decimal' keyword argument of
     # assert_array_almost_equal().
-    decimal = None
 
-    def _setup_rank1(self, mode):
+    def decimal(self, dt):
+        return int(2 * np.finfo(dt).precision / 3)
+
+    def _setup_rank1(self, dt, mode):
         np.random.seed(9)
-        a = np.random.randn(10).astype(self.dt)
-        a += 1j * np.random.randn(10).astype(self.dt)
-        b = np.random.randn(8).astype(self.dt)
-        b += 1j * np.random.randn(8).astype(self.dt)
+        a = np.random.randn(10).astype(dt)
+        a += 1j * np.random.randn(10).astype(dt)
+        b = np.random.randn(8).astype(dt)
+        b += 1j * np.random.randn(8).astype(dt)
 
         y_r = (correlate(a.real, b.real, mode=mode) +
-               correlate(a.imag, b.imag, mode=mode)).astype(self.dt)
+               correlate(a.imag, b.imag, mode=mode)).astype(dt)
         y_r += 1j * (-correlate(a.real, b.imag, mode=mode) +
                      correlate(a.imag, b.real, mode=mode))
         return a, b, y_r
 
-    def test_rank1_valid(self):
-        a, b, y_r = self._setup_rank1('valid')
+    def test_rank1_valid(self, dt):
+        a, b, y_r = self._setup_rank1(dt, 'valid')
         y = correlate(a, b, 'valid')
-        assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        assert_equal(y.dtype, self.dt)
+        assert_array_almost_equal(y, y_r, decimal=self.decimal(dt))
+        assert_equal(y.dtype, dt)
 
         # See gh-5897
         y = correlate(b, a, 'valid')
-        assert_array_almost_equal(y, y_r[::-1].conj(), decimal=self.decimal)
-        assert_equal(y.dtype, self.dt)
+        assert_array_almost_equal(y, y_r[::-1].conj(), decimal=self.decimal(dt))
+        assert_equal(y.dtype, dt)
 
-    def test_rank1_same(self):
-        a, b, y_r = self._setup_rank1('same')
+    def test_rank1_same(self, dt):
+        a, b, y_r = self._setup_rank1(dt, 'same')
         y = correlate(a, b, 'same')
-        assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        assert_equal(y.dtype, self.dt)
+        assert_array_almost_equal(y, y_r, decimal=self.decimal(dt))
+        assert_equal(y.dtype, dt)
 
-    def test_rank1_full(self):
-        a, b, y_r = self._setup_rank1('full')
+    def test_rank1_full(self, dt):
+        a, b, y_r = self._setup_rank1(dt, 'full')
         y = correlate(a, b, 'full')
-        assert_array_almost_equal(y, y_r, decimal=self.decimal)
-        assert_equal(y.dtype, self.dt)
+        assert_array_almost_equal(y, y_r, decimal=self.decimal(dt))
+        assert_equal(y.dtype, dt)
 
-    def test_swap_full(self):
-        d = np.array([0.+0.j, 1.+1.j, 2.+2.j], dtype=self.dt)
-        k = np.array([1.+3.j, 2.+4.j, 3.+5.j, 4.+6.j], dtype=self.dt)
+    def test_swap_full(self, dt):
+        d = np.array([0.+0.j, 1.+1.j, 2.+2.j], dtype=dt)
+        k = np.array([1.+3.j, 2.+4.j, 3.+5.j, 4.+6.j], dtype=dt)
         y = correlate(d, k)
         assert_equal(y, [0.+0.j, 10.-2.j, 28.-6.j, 22.-6.j, 16.-6.j, 8.-4.j])
 
-    def test_swap_same(self):
+    def test_swap_same(self, dt):
         d = [0.+0.j, 1.+1.j, 2.+2.j]
         k = [1.+3.j, 2.+4.j, 3.+5.j, 4.+6.j]
         y = correlate(d, k, mode="same")
         assert_equal(y, [10.-2.j, 28.-6.j, 22.-6.j])
 
-    def test_rank3(self):
-        a = np.random.randn(10, 8, 6).astype(self.dt)
-        a += 1j * np.random.randn(10, 8, 6).astype(self.dt)
-        b = np.random.randn(8, 6, 4).astype(self.dt)
-        b += 1j * np.random.randn(8, 6, 4).astype(self.dt)
+    def test_rank3(self, dt):
+        a = np.random.randn(10, 8, 6).astype(dt)
+        a += 1j * np.random.randn(10, 8, 6).astype(dt)
+        b = np.random.randn(8, 6, 4).astype(dt)
+        b += 1j * np.random.randn(8, 6, 4).astype(dt)
 
         y_r = (correlate(a.real, b.real)
-               + correlate(a.imag, b.imag)).astype(self.dt)
+               + correlate(a.imag, b.imag)).astype(dt)
         y_r += 1j * (-correlate(a.real, b.imag) + correlate(a.imag, b.real))
 
         y = correlate(a, b, 'full')
-        assert_array_almost_equal(y, y_r, decimal=self.decimal - 1)
-        assert_equal(y.dtype, self.dt)
+        assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)
+        assert_equal(y.dtype, dt)
 
 
 class TestCorrelate2d(object):
@@ -1402,14 +1389,6 @@ class TestCorrelate2d(object):
 
         assert_raises(ValueError, signal.correlate2d, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, signal.correlate2d, *(b, a), **{'mode': 'valid'})
-
-
-# Create three classes, one for each complex data type. The actual class
-# name will be TestCorrelateComplex###, where ### is the number of bits.
-for datatype in [np.csingle, np.cdouble, np.clongdouble]:
-    cls = _get_testcorrelate_class(datatype, _TestCorrelateComplex)
-    cls.decimal = int(2 * np.finfo(datatype).precision / 3)
-    globals()[cls.__name__] = cls
 
 
 class TestLFilterZI(object):
