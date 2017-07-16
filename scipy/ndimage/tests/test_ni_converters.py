@@ -4,8 +4,7 @@ import gc
 import itertools
 
 import numpy as np
-from numpy.testing import (assert_, assert_array_equal, assert_raises_regex,
-                           run_module_suite)
+from numpy.testing import assert_, assert_array_equal, assert_raises_regex
 from scipy.ndimage._nd_image import _test_converters
 
 
@@ -198,7 +197,3 @@ class TestNIConverters:
         assert_array_equal(
             (0, 0, 0),
             _test_converters(array1, None, array2, array3, None, origin)[6])
-
-
-if __name__ == "__main__":
-    run_module_suite()
