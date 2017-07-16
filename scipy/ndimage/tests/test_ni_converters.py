@@ -186,7 +186,7 @@ class TestNIConverters:
         array2 = make_array(self.shape)
         array3 = make_array(self.shape)
         assert_raises_regex(
-            TypeError, "an integer is required",
+            TypeError, "object cannot be interpreted",
             _test_converters , array1, None, array2, array3, None, 'letters')
         assert_raises_regex(
             ValueError, "invalid 2 element 'origin' sequence",
