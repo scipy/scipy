@@ -61,8 +61,6 @@ def test_regression_std_vector_dtypes():
         assert_equal(a.getcol(0).todense(), ad[:,0])
 
 
-
-
 @pytest.mark.skipif(not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
                     reason="test requires 64-bit Linux")
 class TestInt32Overflow(object):
@@ -135,7 +133,6 @@ class TestInt32Overflow(object):
         assert_equal(r[0], np.int8(n))
         del data, offsets, m, v, r
         gc.collect()
-
 
     _bsr_ops = [pytest.param("matmat", marks=pytest.mark.xslow),
                 pytest.param("matvecs", marks=pytest.mark.xslow),

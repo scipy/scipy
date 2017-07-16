@@ -4490,7 +4490,6 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         assert_(np.all(np.diff(m.col) >= 0))
 
 
-
 def cases_64bit():
     TEST_CLASSES = [TestBSR, TestCOO, TestCSC, TestCSR, TestDIA,
                     # lil/dok->other conversion operations have get_index_dtype
