@@ -11,7 +11,6 @@ from numpy.testing import (assert_raises, assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse.sputils import supported_dtypes
-from scipy._lib._testutils import xslow_yield
 
 import pytest
 
@@ -60,6 +59,8 @@ def test_regression_std_vector_dtypes():
 
         # getcol is one function using std::vector typemaps, and should not fail
         assert_equal(a.getcol(0).todense(), ad[:,0])
+
+
 
 
 @pytest.mark.skipif(not (sys.platform.startswith('linux') and np.dtype(np.intp).itemsize >= 8),
@@ -135,9 +136,16 @@ class TestInt32Overflow(object):
         del data, offsets, m, v, r
         gc.collect()
 
+
+    _bsr_ops = [pytest.param("matmat", marks=pytest.mark.xslow),
+                pytest.param("matvecs", marks=pytest.mark.xslow),
+                "matvec",
+                "diagonal",
+                "sort_indices",
+                pytest.param("transpose", marks=pytest.mark.xslow)]
+
     @pytest.mark.slow
-    @pytest.mark.parametrize("op", ["matmat", "matvecs", "matvec", "diagonal",
-                                    "sort_indices", "transpose"])
+    @pytest.mark.parametrize("op", _bsr_ops)
     def test_bsr_1_block(self, op):
         # Check: huge bsr_matrix (1-block)
         #
@@ -159,8 +167,7 @@ class TestInt32Overflow(object):
             gc.collect()
 
     @pytest.mark.slow
-    @pytest.mark.parametrize("op", ["matmat", "matvecs", "matvec", "diagonal",
-                                    "sort_indices", "transpose"])
+    @pytest.mark.parametrize("op", _bsr_ops)
     def test_bsr_n_block(self, op):
         # Check: huge bsr_matrix (n-block)
         #
@@ -182,7 +189,6 @@ class TestInt32Overflow(object):
         finally:
             gc.collect()
 
-    @xslow_yield
     def _check_bsr_matvecs(self, m):
         m = m()
         n = self.n
@@ -212,13 +218,11 @@ class TestInt32Overflow(object):
         m = m()
         m.sort_indices()
 
-    @xslow_yield
     def _check_bsr_transpose(self, m):
         # _transpose
         m = m()
         m.transpose()
 
-    @xslow_yield
     def _check_bsr_matmat(self, m):
         m = m()
         n = self.n
