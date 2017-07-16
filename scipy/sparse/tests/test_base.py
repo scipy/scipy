@@ -45,7 +45,6 @@ from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib._version import NumpyVersion
 from scipy._lib.decorator import decorator
-from scipy._lib._testutils import skipif_yield
 
 import pytest
 
@@ -1905,7 +1904,7 @@ class _TestCommon(object):
                      "abs"]:
             check(name)
 
-    @skipif_yield(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
+    @pytest.mark.skipif(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
     def test_binary_ufunc_overrides(self):
         # data
         a = np.array([[1, 2, 3],
@@ -2024,7 +2023,7 @@ class _TestCommon(object):
                     if i == 'sparse' or j == 'sparse':
                         check(i, j, dtype)
 
-    @skipif_yield(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
+    @pytest.mark.skipif(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
     def test_ufunc_object_array(self):
         # This tests compatibility with previous Numpy object array
         # ufunc behavior. See gh-3345.
@@ -2463,7 +2462,7 @@ class _TestSlicing(object):
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
 
-    @skipif_yield(NumpyVersion(np.__version__) >= '1.9.0.dev', reason="")
+    @pytest.mark.skipif(NumpyVersion(np.__version__) >= '1.9.0.dev', reason="")
     def test_multiple_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))
         a = self.spmatrix(b)
@@ -4491,14 +4490,12 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         assert_(np.all(np.diff(m.col) >= 0))
 
 
-class Test64Bit(object):
 
+def cases_64bit():
     TEST_CLASSES = [TestBSR, TestCOO, TestCSC, TestCSR, TestDIA,
                     # lil/dok->other conversion operations have get_index_dtype
                     TestDOK, TestLIL
                     ]
-
-    MAT_CLASSES = [bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix]
 
     # The following features are missing, so skip the tests:
     SKIP_TESTS = {
@@ -4507,6 +4504,25 @@ class Test64Bit(object):
         'test_solve': 'linsolve for 64-bit indices not available',
         'test_scalar_idx_dtype': 'test implemented in base class',
     }
+
+    for cls in TEST_CLASSES:
+        for method_name in dir(cls):
+            method = getattr(cls, method_name)
+            if (method_name.startswith('test_') and
+                    not getattr(method, 'slow', False)):
+                marks = []
+
+                msg = SKIP_TESTS.get(method_name)
+                if bool(msg):
+                    marks += [pytest.mark.skip(reason=msg)]
+                for mname in ['skipif', 'skip', 'xfail', 'xslow']:
+                    if hasattr(method, mname):
+                        marks += [getattr(method, mname)]
+                yield pytest.param(cls, method_name, marks=marks)
+
+
+class Test64Bit(object):
+    MAT_CLASSES = [bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix]
 
     def _create_some_matrix(self, mat_cls, m, n):
         return mat_cls(np.random.rand(m, n))
@@ -4555,11 +4571,9 @@ class Test64Bit(object):
         for mat_cls in self.MAT_CLASSES:
             check(mat_cls)
 
-    def _check_resiliency(self, **kw):
+    def _check_resiliency(self, cls, method_name, **kw):
         # Resiliency test, to check that sparse matrices deal reasonably
         # with varying index data types.
-
-        skip = kw.pop('skip', ())
 
         @with_64bit_maxval_limit(**kw)
         def check(cls, method_name):
@@ -4572,39 +4586,30 @@ class Test64Bit(object):
                 if hasattr(instance, 'teardown_method'):
                     instance.teardown_method()
 
-        for cls in self.TEST_CLASSES:
-            for method_name in dir(cls):
-                method = getattr(cls, method_name)
-                if (method_name.startswith('test_') and
-                        not getattr(method, 'slow', False) and
-                        (cls.__name__ + '.' + method_name) not in skip):
-                    msg = self.SKIP_TESTS.get(method_name)
-                    yield skipif_yield(bool(msg), reason=msg)(check), cls, method_name
+        check(cls, method_name)
 
-    def test_resiliency_limit_10(self):
-        for t in self._check_resiliency(maxval_limit=10):
-            yield t
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_resiliency_limit_10(self, cls, method_name):
+        self._check_resiliency(cls, method_name, maxval_limit=10)
 
-    def test_resiliency_random(self):
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_resiliency_random(self, cls, method_name):
         # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
         # not making copies of index arrays --- this is not
         # necessarily true when we pick the index data type randomly
-        skip = ['TestBSR.test_eliminate_zeros']
+        self._check_resiliency(cls, method_name, random=True)
 
-        for t in self._check_resiliency(random=True, skip=skip):
-            yield t
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_resiliency_all_32(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
 
-    def test_resiliency_all_32(self):
-        for t in self._check_resiliency(fixed_dtype=np.int32):
-            yield t
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_resiliency_all_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
-    def test_resiliency_all_64(self):
-        for t in self._check_resiliency(fixed_dtype=np.int64):
-            yield t
-
-    def test_no_64(self):
-        for t in self._check_resiliency(assert_32bit=True):
-            yield t
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_no_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, assert_32bit=True)
 
     def test_downcast_intp(self):
         # Check that bincount and ufunc.reduceat intp downcasts are
