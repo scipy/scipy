@@ -811,11 +811,11 @@ class TestDendrogram(object):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_plot(self):
         for orientation in ['top', 'bottom', 'left', 'right']:
             self.check_dendrogram_plot(orientation)
 
-    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def check_dendrogram_plot(self, orientation):
         # Tests dendrogram plotting.
         Z = linkage(hierarchy_test_data.ytdist, 'single')
