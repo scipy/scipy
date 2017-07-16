@@ -4401,6 +4401,25 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
             for sorted_indices in [False, True]:
                 yield check, np.dtype(dtype), sorted_indices
 
+    def test_setitem_sparse(self):
+        D = np.eye(3)
+        A = self.spmatrix(D)
+        B = self.spmatrix([[1,2,3]])
+
+        D[1,:] = B.toarray()
+        with suppress_warnings() as sup:
+            sup.filter(SparseEfficiencyWarning,
+                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+            A[1,:] = B
+        assert_array_equal(A.toarray(), D)
+
+        D[:,2] = B.toarray().ravel()
+        with suppress_warnings() as sup:
+            sup.filter(SparseEfficiencyWarning,
+                       "Changing the sparsity structure of a cs[cr]_matrix is expensive")
+            A[:,2] = B.T
+        assert_array_equal(A.toarray(), D)
+
     @dec.knownfailureif(True, 'inverse broken with non-canonical matrix')
     def test_inv(self):
         pass
