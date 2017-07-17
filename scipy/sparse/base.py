@@ -151,7 +151,7 @@ class spmatrix(object):
         """
 
         dtype = np.dtype(dtype)
-        if self.dtype != t:
+        if self.dtype != dtype:
             return self.tocsr().astype(dtype, casting=casting, copy=copy).asformat(self.format)
         elif copy:
             return self.copy()
