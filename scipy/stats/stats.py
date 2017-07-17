@@ -5493,6 +5493,17 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     .. [1] "Wasserstein metric", http://en.wikipedia.org/wiki/Wasserstein_metric
     .. [2] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and Related
            Families of Nonparametric Tests" (2015). :arXiv:`1509.02237`.
+
+    Examples
+    --------
+    >>> from scipy.stats import wasserstein_distance
+    >>> wasserstein_distance([0, 1, 3], [5, 6, 8])
+    5.0
+    >>> wasserstein_distance([0, 1], [0, 1], [3, 1], [2, 2])
+    0.25
+    >>> wasserstein_distance([3.4, 3.9, 7.5, 7.8], [4.5, 1.4],
+    ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
+    4.0781331438047861
     """
     return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
@@ -5564,6 +5575,16 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
 
+    Examples
+    --------
+    >>> from scipy.stats import energy_distance
+    >>> energy_distance([0], [2])
+    2.0000000000000004
+    >>> energy_distance([0, 8], [0, 8], [3, 1], [2, 2])
+    1.0000000000000002
+    >>> energy_distance([0.7, 7.4, 2.4, 6.8], [1.4, 8. ],
+    ...                 [2.1, 4.2, 7.4, 8. ], [7.6, 8.8])
+    0.88003340976158217
     """
     return 2**.5 * _cdf_distance(2, u_values, v_values, u_weights, v_weights)
 
