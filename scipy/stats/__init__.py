@@ -296,7 +296,7 @@ which work for masked arrays.
    :toctree: generated/
 
    wasserstein
-   cramer
+   energy_distance
 
 Circular statistical functions
 ==============================

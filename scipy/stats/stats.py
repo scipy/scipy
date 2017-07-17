@@ -142,7 +142,7 @@ Statistical Distances
    :toctree: generated/
 
    wasserstein
-   cramer
+   energy_distance
 
 ANOVA Functions
 ---------------
@@ -206,7 +206,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata',
-           'combine_pvalues', 'wasserstein', 'cramer']
+           'combine_pvalues', 'wasserstein', 'energy_distance']
 
 
 def _chk_asarray(a, axis):
@@ -5497,16 +5497,34 @@ def wasserstein(u_values, v_values, u_weights=None, v_weights=None):
     return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
 
-def cramer(u_values, v_values, u_weights=None, v_weights=None):
+def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Compute the Cramer-von Mises distance between two 1D distributions.
+    Compute the energy distance between two 1D distributions.
 
-    The Cramer-von Mises distance between the distributions :math:`u` and
-    :math:`v`, whose respective CDFs are :math:`U` and :math:`V`, equals to:
+    The energy distance between two distributions :math:`u` and :math:`v`, whose
+    respective CDFs are :math:`U` and :math:`V`, equals to:
 
     .. math::
 
-        l_2(u, v) = \left( \int_{-\infty}^{+\infty} (U-V)^2 \right)^{1/2}
+        D(u, v) = \left( 2\mathbb E|X - Y| - \mathbb E|X - X'| -
+        \mathbb E|Y - Y'| \right)^{1/2}
+
+    where :math:`X` and :math:`X'` (resp. :math:`Y` and :math:`Y'`) are
+    independent random variables whose probability distribution is :math:`u`
+    (resp. :math:`v`).
+
+    As shown in [2]_, for one-dimensional real-valued variables, the energy
+    distance is linked to the non-distribution-free version of the Cramer-von
+    Mises distance:
+
+    .. math::
+
+        D(u, v) = \sqrt{2} l_2(u, v) = \left( 2 \int_{-\infty}^{+\infty} (U-V)^2
+        \right)^{1/2}
+
+    Note that the common Cramer-von Mises criterion uses the distribution-free
+    version of the distance. See [2]_ (section 2), for more details about both
+    versions of the distance.
 
     .. versionadded:: 1.0.0
 
@@ -5536,17 +5554,18 @@ def cramer(u_values, v_values, u_weights=None, v_weights=None):
 
     References
     ----------
-    .. [1] Szekely "E-statistics: The energy of statistical samples." Bowling
+    .. [1] "Energy distance", https://en.wikipedia.org/wiki/Energy_distance
+    .. [2] Szekely "E-statistics: The energy of statistical samples." Bowling
            Green State University, Department of Mathematics and Statistics,
            Technical Report 02-16 (2002).
-    .. [2] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
+    .. [3] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
            Computational Statistics, 8(1):27-38 (2015).
-    .. [3] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
+    .. [4] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
 
     """
-    return _cdf_distance(2, u_values, v_values, u_weights, v_weights)
+    return 2**.5 * _cdf_distance(2, u_values, v_values, u_weights, v_weights)
 
 
 def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
@@ -5560,7 +5579,7 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
         l_p(u, v) = \left( \int_{-\infty}^{+\infty} |U-V|^p \right)^{1/p}
 
     p is a positive parameter; p = 1 gives the Wasserstein distance, p = 2
-    gives the Cramer-von Mises distance.
+    gives the energy distance.
 
     Parameters
     ----------

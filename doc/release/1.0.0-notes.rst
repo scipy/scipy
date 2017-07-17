@@ -65,7 +65,7 @@ distribution.  The underlying code is the classic one by Alan Genz (see
 `scipy/stats/mvndst.f`).
 
 New statistical distance functions were added, namely `wasserstein` for the
-first Wasserstein distance and `cramer` for the Cramér-von Mises distance.
+first Wasserstein distance and `energy_distance` for the energy distance.
 
 
 Deprecated features

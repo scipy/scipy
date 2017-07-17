@@ -4311,53 +4311,64 @@ class TestWasserstein(TestCase):
                       [1, 2, np.inf], [np.inf, 1])
 
 
-class TestCramer(TestCase):
-    """ Tests for cramer() output values.
+class TestEnergyDistance(TestCase):
+    """ Tests for energy_distance() output values.
     """
 
     def test_simple(self):
-        # For basic distributions, the value of the Cramer distance is
+        # For basic distributions, the value of the energy distance is
         # straightforward.
-        assert_almost_equal(stats.cramer([0, 1], [0], [1, 1], [1]), .5)
-        assert_almost_equal(stats.cramer([0, 1], [0], [3, 1], [1]), .25)
-        assert_almost_equal(stats.cramer([0, 2], [0], [1, 1], [1]), 2**.5*.5)
         assert_almost_equal(
-            stats.cramer([0, 1, 2], [1, 2, 3]),
-            (3*(1./3**2))**.5)
+            stats.energy_distance([0, 1], [0], [1, 1], [1]),
+            2**.5 * .5)
+        assert_almost_equal(stats.energy_distance(
+            [0, 1], [0], [3, 1], [1]),
+            2**.5 * .25)
+        assert_almost_equal(stats.energy_distance(
+            [0, 2], [0], [1, 1], [1]),
+            2 * .5)
+        assert_almost_equal(
+            stats.energy_distance([0, 1, 2], [1, 2, 3]),
+            2**.5 * (3*(1./3**2))**.5)
 
     def test_same_distribution(self):
-        # Any distribution moved to itself should have a Cramer distance of
+        # Any distribution moved to itself should have a energy distance of
         # zero.
-        assert_equal(stats.cramer([1, 2, 3], [2, 1, 3]), 0)
+        assert_equal(stats.energy_distance([1, 2, 3], [2, 1, 3]), 0)
         assert_equal(
-            stats.cramer([1, 1, 1, 4], [4, 1], [1, 1, 1, 1], [1, 3]),
+            stats.energy_distance([1, 1, 1, 4], [4, 1], [1, 1, 1, 1], [1, 3]),
             0)
 
     def test_shift(self):
-        # If a single-point distribution is shifted by x, then the Cramer
-        # distance should be sqrt(x).
-        assert_almost_equal(stats.cramer([0], [1]), 1)
-        assert_almost_equal(stats.cramer([-5], [5]), 10**.5)
+        # If a single-point distribution is shifted by x, then the energy
+        # distance should be sqrt(2) * sqrt(x).
+        assert_almost_equal(stats.energy_distance([0], [1]), 2**.5 * 1)
+        assert_almost_equal(stats.energy_distance([-5], [5]), 2**.5 * 10**.5)
 
     def test_combine_weights(self):
         # Assigning a weight w to a value is equivalent to including that value
         # w times in the value array with weight of 1.
         assert_almost_equal(
-            stats.cramer([0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
-                         [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
-            stats.cramer([5, 0, 1], [0, 4, 3], [1, 2, 4], [1, 2, 4]))
+            stats.energy_distance([0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
+                                  [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
+            stats.energy_distance([5, 0, 1], [0, 4, 3], [1, 2, 4], [1, 2, 4]))
 
     def test_zero_weight(self):
-        # Values with zero weight have no impact on the Cramer distance.
+        # Values with zero weight have no impact on the energy distance.
         assert_almost_equal(
-            stats.cramer([1, 2, 100000], [1, 1], [1, 1, 0], [1, 1]),
-            stats.cramer([1, 2], [1, 1], [1, 1], [1, 1]))
+            stats.energy_distance([1, 2, 100000], [1, 1], [1, 1, 0], [1, 1]),
+            stats.energy_distance([1, 2], [1, 1], [1, 1], [1, 1]))
 
     def test_inf_values(self):
         # Inf values can lead to an inf distance or trigger a RuntimeWarning
         # (and return NaN) if the distance is undefined.
-        assert_equal(stats.cramer([1, 2, np.inf], [1, 1]), np.inf)
-        assert_equal(stats.cramer([1, 2, np.inf], [-np.inf, 1]), np.inf)
-        assert_equal(stats.cramer([1, -np.inf, np.inf], [1, 1]), np.inf)
-        assert_raises(RuntimeWarning, stats.cramer, [1, 2, np.inf], [np.inf, 1])
+        assert_equal(stats.energy_distance([1, 2, np.inf], [1, 1]), np.inf)
+        assert_equal(
+            stats.energy_distance([1, 2, np.inf], [-np.inf, 1]),
+            np.inf)
+        assert_equal(
+            stats.energy_distance([1, -np.inf, np.inf], [1, 1]),
+            np.inf)
+        assert_raises(RuntimeWarning, stats.energy_distance,
+                      [1, 2, np.inf], [np.inf, 1])
 
