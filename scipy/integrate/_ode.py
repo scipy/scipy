@@ -444,6 +444,15 @@ class ode(object):
             self.set_integrator('')
         return self._integrator.success == 1
 
+    def get_return_code(self):
+        """Extracts the return code for the integration to enable better control
+        if the integration fails."""
+        try:
+            self._integrator
+        except AttributeError:
+            self.set_integrator('')
+        return self._integrator.istate
+
     def set_f_params(self, *args):
         """Set extra parameters for user-supplied function f."""
         self.f_params = args
@@ -681,6 +690,7 @@ class IntegratorConcurrencyError(RuntimeError):
 class IntegratorBase(object):
     runner = None  # runner is None => integrator is not available
     success = None  # success==1 if integrator was called successfully
+    istate = None  # istate > 0 means success, istate < 0 means failure
     supports_run_relax = None
     supports_step = None
     supports_solout = False
@@ -910,6 +920,7 @@ class vode(IntegratorBase):
         args = ((f, jac, y0, t0, t1) + tuple(self.call_args) +
                 (f_params, jac_params))
         y1, t, istate = self.runner(*args)
+        self.istate = istate
         if istate < 0:
             unexpected_istate_msg = 'Unexpected istate={:s}'.format(istate)
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
@@ -917,6 +928,7 @@ class vode(IntegratorBase):
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
+            self.istate = 2
         return y1, t
 
     def step(self, *args):
@@ -1074,12 +1086,13 @@ class dopri5(IntegratorBase):
         self.success = 1
 
     def run(self, f, jac, y0, t0, t1, f_params, jac_params):
-        x, y, iwork, idid = self.runner(*((f, t0, y0, t1) +
+        x, y, iwork, istate = self.runner(*((f, t0, y0, t1) +
                                           tuple(self.call_args) + (f_params,)))
-        if idid < 0:
-            unexpected_idid_msg = 'Unexpected idid={:s}'.format(idid)
+        self.istate = istate
+        if istate < 0:
+            unexpected_istate_msg = 'Unexpected istate={:s}'.format(istate)
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(idid, unexpected_idid_msg)))
+                          self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
         return y, x
 
@@ -1246,6 +1259,7 @@ class lsoda(IntegratorBase):
         args = [f, y0, t0, t1] + self.call_args[:-1] + \
                [jac, self.call_args[-1], f_params, 0, jac_params]
         y1, t, istate = self.runner(*args)
+        self.istate = istate
         if istate < 0:
             unexpected_istate_msg = 'Unexpected istate={:s}'.format(istate)
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
@@ -1253,6 +1267,7 @@ class lsoda(IntegratorBase):
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
+            self.istate = 2
         return y1, t
 
     def step(self, *args):
