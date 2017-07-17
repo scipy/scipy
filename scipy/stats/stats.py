@@ -5658,13 +5658,13 @@ def _validate_distribution(values, weights):
         Weights as ndarray.
     """
     # Validate the value array.
-    values = np.array(values, dtype=float)
+    values = np.asarray(values, dtype=float)
     if len(values) == 0:
         raise ValueError("Distribution can't be empty.")
 
     # Validate the weight array, if specified.
     if weights is not None:
-        weights = np.array(weights, dtype=float)
+        weights = np.asarray(weights, dtype=float)
         if len(weights) != len(values):
             raise ValueError('Value and weight array-likes for the same '
                              'empirical distribution must be of the same size.')
