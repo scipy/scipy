@@ -131,19 +131,19 @@ class spmatrix(object):
     def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.
 
-        The data will be copied.
-
         Parameters
         ----------
         dtype : string or numpy dtype
             Typecode or data-type to which to cast the data.
-        casting : {`no`, `equiv`, `safe`, `same_kind`, `unsafe`}, optional
-            Controls what kind of data casting may occur. Defaults to `unsafe` for backwards compatibility.
-            `no` means the data types should not be cast at all.
-            `equiv` means only byte-order changes are allowed.
-            `safe` means only casts which can preserve values are allowed.
-            `same_kind` means only safe casts or casts within a kind, like float64 to float32, are allowed.
-            `unsafe` means any data conversions may be done.
+        casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+            Controls what kind of data casting may occur.
+            Defaults to 'unsafe' for backwards compatibility.
+            'no' means the data types should not be cast at all.
+            'equiv' means only byte-order changes are allowed.
+            'safe' means only casts which can preserve values are allowed.
+            'same_kind' means only safe casts or casts within a kind,
+            like float64 to float32, are allowed.
+            'unsafe' means any data conversions may be done.
         copy : bool, optional
             By default, astype always returns a newly allocated matrix.
             If this is set to false, and `dtype` is satisfied,
