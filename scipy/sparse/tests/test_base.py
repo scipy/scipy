@@ -1146,9 +1146,13 @@ class _TestCommon:
         S = self.spmatrix(D)
 
         for x in supported_dtypes:
-            assert_equal(S.astype(x).dtype, D.astype(x).dtype)  # correct type
-            assert_equal(S.astype(x).toarray(), D.astype(x))        # correct values
-            assert_equal(S.astype(x).format, S.format)           # format preserved
+            D_casted = D.astype(x)
+            for copy in (True, False):
+                S_casted = S.astype(x, copy=copy)
+                assert_equal(S_casted.dtype, D_casted.dtype)  # correct type
+                assert_equal(S_casted.toarray(), D_casted)    # correct values
+                assert_equal(S_casted.format, S.format)       # format preserved
+            assert S_casted.astype(x, copy=False) is S_casted
 
     def test_asfptype(self):
         A = self.spmatrix(arange(6,dtype='int32').reshape(2,3))
