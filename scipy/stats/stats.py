@@ -5434,8 +5434,7 @@ def _betai(a, b, x):
 
 def wasserstein(u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Compute the first Wasserstein distance between two one-dimensional
-    distributions.
+    Compute the first Wasserstein distance between two 1D distributions.
 
     The first Wasserstein distance between the distributions :math:`u` and
     :math:`v` is:
@@ -5500,8 +5499,7 @@ def wasserstein(u_values, v_values, u_weights=None, v_weights=None):
 
 def cramer(u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Compute the Cramer-von Mises distance between two one-dimensional
-    distributions.
+    Compute the Cramer-von Mises distance between two 1D distributions.
 
     The Cramer-von Mises distance between the distributions :math:`u` and
     :math:`v`, whose respective CDFs are :math:`U` and :math:`V`, equals to:
