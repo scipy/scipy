@@ -106,7 +106,6 @@ before_install:
       export CFLAGS="-arch x86_64"
       export CXXFLAGS="-arch x86_64"
       printenv
-      pip install $NUMPYSPEC
     fi
   - python --version # just to check
   - export PYTHONFAULTHANDLER=1
