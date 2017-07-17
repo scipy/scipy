@@ -67,7 +67,8 @@ class _data_matrix(spmatrix):
     def astype(self, dtype, casting='unsafe', copy=True):
         dtype = np.dtype(dtype)
         if self.dtype != dtype:
-            return self._with_data(self._deduped_data().astype(dtype, casting=casting, copy=copy))
+            return self._with_data(
+                self._deduped_data().astype(dtype, casting=casting, copy=copy))
         elif copy:
             return self.copy()
         else:
