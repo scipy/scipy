@@ -5660,7 +5660,7 @@ def _validate_distribution(values, weights):
     # Validate the value array.
     values = np.array(values, dtype=float)
     if len(values) == 0:
-        raise ValueError('Distribution can\'t be empty.')
+        raise ValueError("Distribution can't be empty.")
 
     # Validate the weight array, if specified.
     if weights is not None:
