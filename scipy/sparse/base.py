@@ -128,17 +128,35 @@ class spmatrix(object):
         raise NotImplementedError("Reshaping not implemented for %s." %
                                   self.__class__.__name__)
 
-    def astype(self, t):
+    def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.
 
         The data will be copied.
 
         Parameters
         ----------
-        t : string or numpy dtype
+        dtype : string or numpy dtype
             Typecode or data-type to which to cast the data.
+        casting : {‘no’, ‘equiv’, ‘safe’, ‘same_kind’, ‘unsafe’}, optional
+            Controls what kind of data casting may occur. Defaults to ‘unsafe’ for backwards compatibility.
+            ‘no’ means the data types should not be cast at all.
+            ‘equiv’ means only byte-order changes are allowed.
+            ‘safe’ means only casts which can preserve values are allowed.
+            ‘same_kind’ means only safe casts or casts within a kind, like float64 to float32, are allowed.
+            ‘unsafe’ means any data conversions may be done.
+        copy : bool, optional
+            By default, astype always returns a newly allocated matrix.
+            If this is set to false, and `dtype` is satisfied,
+            this matrix is returned instead of a copy.
         """
-        return self.tocsr().astype(t).asformat(self.format)
+
+        dtype = np.dtype(dtype)
+        if self.dtype != t:
+            return self.tocsr().astype(dtype, casting=casting, copy=copy).asformat(self.format)
+        elif copy:
+            return self.copy()
+        else:
+            return self
 
     def asfptype(self):
         """Upcast matrix to a floating point format (if necessary)"""
