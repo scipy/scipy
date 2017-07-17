@@ -2182,17 +2182,17 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     We illustrate the behaviour of the function when `brack` is of
     size 2 and 3 respectively. In the case where `brack` is of the
     form (xa,xb), we can see for the given values, the output need
-    not necessarily lie in the range (xa,xb).
+    not necessarily lie in the range ``(xa, xb)``.
 
     >>> def f(x):
     ...     return x**2
     
     >>> from scipy import optimize
 
-    >>> minimum = optimize.golden(f,brack=(1,2))
+    >>> minimum = optimize.golden(f, brack=(1, 2))
     >>> minimum
     1.5717277788484873e-162
-    >>> minimum = optimize.golden(f,brack=(-1,0.5,2))
+    >>> minimum = optimize.golden(f, brack=(-1, 0.5, 2))
     >>> minimum
     -1.5717277788484873e-162
 
