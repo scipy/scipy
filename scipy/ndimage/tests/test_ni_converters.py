@@ -4,7 +4,8 @@ import gc
 import itertools
 
 import numpy as np
-from numpy.testing import assert_, assert_array_equal, assert_raises_regex
+from numpy.testing import assert_, assert_array_equal, assert_raises
+from scipy._lib._numpy_compat import assert_raises_regex
 from scipy.ndimage._nd_image import _test_converters
 
 
@@ -184,12 +185,12 @@ class TestNIConverters:
         array1 = make_array(self.shape)
         array2 = make_array(self.shape)
         array3 = make_array(self.shape)
-        assert_raises_regex(
-            TypeError, "object cannot be interpreted",
-            _test_converters , array1, None, array2, array3, None, 'letters')
+        assert_raises(
+            TypeError,
+            _test_converters, array1, None, array2, array3, None, 'letters')
         assert_raises_regex(
             ValueError, "invalid 2 element 'origin' sequence",
-            _test_converters , array1, None, array2, array3, None, (11, 13))
+            _test_converters, array1, None, array2, array3, None, (11, 13))
         origin = (17, 19, 23)
         assert_array_equal(
             origin,
