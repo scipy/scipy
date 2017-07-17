@@ -141,7 +141,7 @@ Statistical Distances
 .. autosummary::
    :toctree: generated/
 
-   wasserstein
+   wasserstein_distance
    energy_distance
 
 ANOVA Functions
@@ -206,7 +206,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'chisqprob', 'betai',
            'f_value_wilks_lambda', 'f_value', 'f_value_multivariate',
            'ss', 'square_of_sums', 'fastsort', 'rankdata',
-           'combine_pvalues', 'wasserstein', 'energy_distance']
+           'combine_pvalues', 'wasserstein_distance', 'energy_distance']
 
 
 def _chk_asarray(a, axis):
@@ -5432,7 +5432,7 @@ def _betai(a, b, x):
 #       STATISTICAL DISTANCES       #
 #####################################
 
-def wasserstein(u_values, v_values, u_weights=None, v_weights=None):
+def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the first Wasserstein distance between two 1D distributions.
 

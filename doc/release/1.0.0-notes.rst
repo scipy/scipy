@@ -64,8 +64,8 @@ providing the cumulative distribution function of the multivariate normal
 distribution.  The underlying code is the classic one by Alan Genz (see
 `scipy/stats/mvndst.f`).
 
-New statistical distance functions were added, namely `wasserstein` for the
-first Wasserstein distance and `energy_distance` for the energy distance.
+New statistical distance functions were added, namely `wasserstein_distance` for
+the first Wasserstein distance and `energy_distance` for the energy distance.
 
 
 Deprecated features

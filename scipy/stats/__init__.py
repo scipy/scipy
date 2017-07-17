@@ -295,7 +295,7 @@ which work for masked arrays.
 .. autosummary::
    :toctree: generated/
 
-   wasserstein
+   wasserstein_distance
    energy_distance
 
 Circular statistical functions
