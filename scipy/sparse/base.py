@@ -163,16 +163,12 @@ class spmatrix(object):
         """Upcast matrix to a floating point format (if necessary)"""
 
         fp_types = ['f', 'd', 'F', 'D']
+        for fp_type in fp_types:
+            if self.dtype <= np.dtype(fp_type):
+                return self.astype(fp_type, copy=False)
 
-        if self.dtype.char in fp_types:
-            return self
-        else:
-            for fp_type in fp_types:
-                if self.dtype <= np.dtype(fp_type):
-                    return self.astype(fp_type)
-
-            raise TypeError('cannot upcast [%s] to a floating '
-                            'point format' % self.dtype.name)
+        raise TypeError('cannot upcast [%s] to a floating '
+                        'point format' % self.dtype.name)
 
     def __iter__(self):
         for r in xrange(self.shape[0]):
