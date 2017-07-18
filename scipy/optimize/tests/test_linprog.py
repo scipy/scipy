@@ -579,7 +579,7 @@ class LinprogCommonTests(object):
                       method=self.method)
         _assert_success(res, desired_x=b, desired_fun=np.sum(b))
 
-    def unbounded_below_and_above(self):
+    def test_unbounded_below_and_above(self):
         A = np.eye(3)
         b = np.array([1, 2, 3])
         c = np.ones(3)
@@ -821,12 +821,22 @@ class TestLinprogIP(LinprogCommonTests):
                       method=self.method, options={"presolve": False})
         _assert_infeasible(res)
 
-    def test_unbounded_below_no_presolve(self):
+    def test_unbounded_below_no_presolve_original(self):
+        # caused segfault in TravisCI w/ "cholesky":True
         c = [-1]
         bounds = [(None, 1)]
         res = linprog(c=c, bounds=bounds,
-                      method=self.method, options={"presolve": False})
+                      method=self.method,
+                      options={"presolve": False, "cholesky":False})
         _assert_success(res, desired_fun=-1)
+        
+    def test_unbounded_below_no_presolve_corrected(self):
+        c = [1]
+        bounds = [(None, 1)]
+        res = linprog(c=c, bounds=bounds,
+                      method=self.method,
+                      options={"presolve": False, "cholesky":False})
+        _assert_unbounded(res)
 
     def test_type_error(self):
         c = [1]

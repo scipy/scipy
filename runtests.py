@@ -294,7 +294,7 @@ def main(argv):
     try:
         os.chdir(test_dir)
         result = test(args.mode,
-                      verbose=2,
+                      verbose=args.verbose,
                       extra_argv=extra_argv,
                       doctests=args.doctests,
                       coverage=args.coverage)
