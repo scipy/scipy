@@ -1493,6 +1493,8 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
     go = rho_p > tol or rho_d > tol or rho_A > tol  # we might get lucky : )
 
     if disp:
+        print("")
+        print("")
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
 
     status = 0
@@ -1601,12 +1603,12 @@ def _linprog_ip(
         alpha0=.99995,
         beta=0.1,
         maxiter=1000,
-        disp=False,
+        disp=True,
         tol=1e-8,
         sparse=False,
         lstsq=False,
         sym_pos=True,
-        cholesky=False,
+        cholesky=True,
         pc=True,
         ip=False,
         presolve=True,
