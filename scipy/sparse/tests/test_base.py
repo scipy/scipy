@@ -3027,15 +3027,16 @@ class _TestFancyMultidimAssign(object):
         D = np.asmatrix(np.random.rand(5, 7))
         S = self.spmatrix(D)
 
-        I = [[1, 2, 3], [3, 4, 2]]
-        J = [[5, 6, 3], [2, 3, 1]]
+        I = [1, 2, 3, 3, 4, 2]
+        J = [5, 6, 3, 2, 3, 1]
 
-        I_bad = [[ii + 5 for ii in i] for i in I]
-        J_bad = [[jj + 7 for jj in j] for j in J]
+        I_bad = [ii + 5 for ii in I]
+        J_bad = [jj + 7 for jj in J]
 
-        C = [1, 2, 3, 4, 5, 6, 7]
-        assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C)
-        assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C)
+        C1 = [1, 2, 3, 4, 5, 6, 7]
+        C2 = np.arange(5)[:, None]
+        assert_raises(IndexError, S.__setitem__, (I_bad, slice(None)), C1)
+        assert_raises(IndexError, S.__setitem__, (slice(None), J_bad), C2)
 
 
 class _TestArithmetic(object):
