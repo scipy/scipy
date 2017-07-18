@@ -4206,7 +4206,7 @@ class TestCombinePvalues(object):
         assert_approx_equal(p, 0.1464, significant=4)
 
 
-class TestCdfDistanceValidation(TestCase):
+class TestCdfDistanceValidation(object):
     """
     Test that _cdf_distance() (via wasserstein_distance()) raises ValueErrors
     for bad inputs.
@@ -4244,7 +4244,7 @@ class TestCdfDistanceValidation(TestCase):
                       [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
 
 
-class TestWassersteinDistance(TestCase):
+class TestWassersteinDistance(object):
     """ Tests for wasserstein_distance() output values.
     """
 
@@ -4334,7 +4334,7 @@ class TestWassersteinDistance(TestCase):
                       [1, 2, np.inf], [np.inf, 1])
 
 
-class TestEnergyDistance(TestCase):
+class TestEnergyDistance(object):
     """ Tests for energy_distance() output values.
     """
 
