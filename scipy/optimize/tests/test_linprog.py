@@ -862,7 +862,7 @@ class TestLinprogIP(LinprogCommonTests):
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
-                          options={"ip": True})
+                          options={"ip": True, "disp":True})
         _assert_success(res, desired_fun=-64.049494229)
 
     def test_maxiter(self):
