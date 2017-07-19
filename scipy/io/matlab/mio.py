@@ -25,21 +25,18 @@ def _open_file(file_like, appendmat):
     """
     try:
         file_like.read(0)
-        return file_like
+        return file_like, False
     except AttributeError:
         pass
 
     try:
-        return open(file_like, 'rb')
-    except IOError as e:
+        return open(file_like, 'rb'), True
+    except IOError:
         # Probably "not found"
         if isinstance(file_like, string_types):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
-                try:
-                    return open(file_like, 'rb')
-                except IOError:
-                    raise
+                return open(file_like, 'rb'), True
         else:
             raise IOError('Reader needs file name or open file-like object')
 
@@ -60,13 +57,16 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     matreader : MatFileReader object
        Initialized instance of MatFileReader class matching the mat file
        type detected in `filename`.
+    file_opened : bool
+       Whether the file was opened by this routine.
+
     """
-    byte_stream = _open_file(file_name, appendmat)
+    byte_stream, file_opened = _open_file(file_name, appendmat)
     mjv, mnv = get_matfile_version(byte_stream)
     if mjv == 0:
-        return MatFile4Reader(byte_stream, **kwargs)
+        return MatFile4Reader(byte_stream, **kwargs), file_opened
     elif mjv == 1:
-        return MatFile5Reader(byte_stream, **kwargs)
+        return MatFile5Reader(byte_stream, **kwargs), file_opened
     elif mjv == 2:
         raise NotImplementedError('Please use HDF reader for matlab v7.3 files')
     else:
@@ -138,13 +138,13 @@ def loadmat(file_name, mdict=None, appendmat=True, **kwargs):
 
     """
     variable_names = kwargs.pop('variable_names', None)
-    MR = mat_reader_factory(file_name, appendmat, **kwargs)
+    MR, file_opened = mat_reader_factory(file_name, appendmat, **kwargs)
     matfile_dict = MR.get_variables(variable_names)
     if mdict is not None:
         mdict.update(matfile_dict)
     else:
         mdict = matfile_dict
-    if isinstance(file_name, string_types):
+    if file_opened:
         MR.mat_stream.close()
     return mdict
 
@@ -253,8 +253,8 @@ def whosmat(file_name, appendmat=True, **kwargs):
     .. versionadded:: 0.12.0
 
     """
-    ML = mat_reader_factory(file_name, **kwargs)
+    ML, file_opened = mat_reader_factory(file_name, **kwargs)
     variables = ML.list_variables()
-    if isinstance(file_name, string_types):
+    if file_opened:
         ML.mat_stream.close()
     return variables

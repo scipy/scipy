@@ -661,7 +661,7 @@ def test_skip_variable():
     #
     # Make the factory
     #
-    factory = mat_reader_factory(filename, struct_as_record=True)
+    factory, file_opened = mat_reader_factory(filename, struct_as_record=True)
     #
     # This is where the factory breaks with an error in MatMatrixGetter.to_next
     #
