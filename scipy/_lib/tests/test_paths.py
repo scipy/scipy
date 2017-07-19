@@ -16,6 +16,7 @@ from numpy.testing import assert_, assert_raises
 
 import scipy.io
 from scipy._lib._tmpdirs import tempdir
+import scipy.sparse
 
 # Bit of a hack to keep the test runner from exploding in Python 2.7.
 # FileNotFoundError was added in Python 3.3.
@@ -60,3 +61,20 @@ class TestPaths(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             path = Path('nonexistent.sav')
             scipy.io.readsav(path)
+
+    def test_hb_read(self):
+        # Save data with string path, load with pathlib.Path
+        with tempdir() as temp_dir:
+            data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
+            path = Path(temp_dir) / 'data.hb'
+            scipy.io.harwell_boeing.hb_write(str(path), data)
+
+            data_new = scipy.io.harwell_boeing.hb_read(path)
+            assert_((data_new != data).nnz == 0)
+
+    def test_hb_write(self):
+        with tempdir() as temp_dir:
+            data = scipy.sparse.csr_matrix(scipy.sparse.eye(3))
+            path = Path(temp_dir) / 'data.hb'
+            scipy.io.harwell_boeing.hb_write(path, data)
+            assert_(path.is_file())
