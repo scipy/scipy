@@ -20,7 +20,8 @@ def _open_file(file_like, appendmat):
     """
     Open `file_like` and return as file-like object. First, check if object is
     already file-like; if so, return it as-is. Otherwise, try to pass it
-    to open().
+    to open(). If that fails, and `file_like` is a string, and `appendmat` is true,
+    append '.mat' and try again.
     """
     try:
         file_like.read(0)
