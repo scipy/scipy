@@ -997,6 +997,10 @@ def _get_delta(
 
     """
 
+    if A.shape[0] == 0:
+        # If there are no constraints, some solvers fail (understandably)
+        # rather than returning empty solution. This gets the job done.
+        sparse, lstsq, sym_pos, cholesky = False, False, True, False
     solve = _get_solver(sparse, lstsq, sym_pos, cholesky)
     n_x = len(x)
 
