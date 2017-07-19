@@ -17,6 +17,11 @@ from numpy.testing import assert_, assert_raises
 import scipy.io
 from scipy._lib._tmpdirs import tempdir
 
+# Bit of a hack to keep the test runner from exploding in Python 2.7.
+# FileNotFoundError was added in Python 3.3.
+if sys.version_info < (3, 3):
+    FileNotFoundError = IOError
+
 @unittest.skipIf(sys.version_info < (3, 6),
                  'Passing path-like objects to IO functions requires Python >= 3.6')
 class TestPaths(unittest.TestCase):
@@ -47,15 +52,11 @@ class TestPaths(unittest.TestCase):
             assert_(contents[0] == ('data', (1, 5), 'int64'))
 
     def test_readsav(self):
-        # I have no idea how to create a valid .sav file from IDL, so let's
+        # I have no idea how to create a valid IDL .sav file, so let's
         # just try to open something that doesn't exist, and ensure that we get
         # a FileNotFoundError (as opposed to a TypeError, if `open` can't
         # understand the argument, or another type of exception if `readsav` is
         # unnecessarily strict in which type it accepts.
-
-        # FileNotFoundError was added in Python 3.3, and this would throw an
-        # IOError in older Python, but this entire test class is skipped in
-        # Python < 3.6 so it's safe to use the newer exception class here.
         with self.assertRaises(FileNotFoundError):
             path = Path('nonexistent.sav')
             scipy.io.readsav(path)
