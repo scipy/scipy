@@ -3,7 +3,7 @@ from __future__ import division, absolute_import, print_function
 import numpy as np
 from numpy.testing import (assert_equal,
         assert_allclose, assert_raises, assert_)
-from scipy._lib._numpy_compat import suppress_warnings
+from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
 import pytest
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
@@ -559,11 +559,18 @@ class TestInterop(object):
         b = BSpline(*tck)
         assert_allclose(y, b(x), atol=1e-15)
 
+    def test_splrep_errors(self):
         # test that both "old" and "new" splrep raise for an n-D ``y`` array
         # with n > 1
+        x, y = self.xx, self.yy
         y2 = np.c_[y, y]
-        assert_raises(Exception, splrep, x, y2)
-        assert_raises(Exception, _impl.splrep, x, y2)
+        msg = "failed in converting 3rd argument `y' of dfitpack.curfit to C/Fortran array"
+        assert_raises_regex(Exception, msg, splrep, x, y2)
+        assert_raises_regex(Exception, msg, _impl.splrep, x, y2)
+
+        # input below minimum size
+        assert_raises_regex(TypeError, "m > k must hold", splrep, x[:3], y[:3])
+        assert_raises_regex(TypeError, "m > k must hold", _impl.splrep, x[:3], y[:3])
 
     def test_splprep(self):
         x = np.arange(15).reshape((3, 5))
@@ -580,10 +587,16 @@ class TestInterop(object):
         assert_allclose(u, u_f, atol=1e-15)
         assert_allclose(splev(u_f, b_f), x, atol=1e-15)
 
+    def test_splprep_errors(self):
         # test that both "old" and "new" code paths raise for x.ndim > 2
-        x1 = np.arange(3*4*5).reshape((3, 4, 5))
-        assert_raises(ValueError, splprep, x1)
-        assert_raises(ValueError, _impl.splprep, x1)
+        x = np.arange(3*4*5).reshape((3, 4, 5))
+        assert_raises_regex(ValueError, "too many values to unpack", splprep, x)
+        assert_raises_regex(ValueError, "too many values to unpack", _impl.splprep, x)
+
+        # input below minimum size
+        x = np.linspace(0, 40, num=3)
+        assert_raises_regex(TypeError, "m > k must hold", splprep, [x])
+        assert_raises_regex(TypeError, "m > k must hold", _impl.splprep, [x])
 
     def test_sproot(self):
         b, b2 = self.b, self.b2
