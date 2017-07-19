@@ -2303,7 +2303,7 @@ interface
 
    end subroutine <prefix>pocon
 
-   subroutine <prefix2>potrf(n,a,info,lower,clean)
+   subroutine <prefix2>potrf(n,a,lda,info,lower,clean)
 
      ! c,info = potrf(a,lower=0,clean=1,overwrite_a=0)
      ! Compute Cholesky decomposition of symmetric positive defined matrix:
@@ -2312,19 +2312,19 @@ interface
      ! C is triangular matrix of the corresponding Cholesky decomposition.
      ! clean==1 zeros strictly lower or upper parts of U or L, respectively
 
-     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&n,&info); if(clean){int i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
+     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){int i,j;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) *(a+j*n+i)=0.0;} else {for(i=0;i\<n;++i) for(j=i+1;j<n;++j) *(a+i*n+j)=0.0;}}
      callprotoargument char*,int*,<ctype2>*,int*,int*
 
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
      integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
-     integer depend(a),intent(hide):: n = shape(a,0)
-     <ftype2> dimension(n,n),intent(in,out,copy,out=c) :: a
-     check(shape(a,0)==shape(a,1)) :: a
+     integer depend(a),intent(hide) :: n = shape(a,0)
+     <ftype2> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+     integer depend(n),intent(hide) :: lda = MAX(1,n)
      integer intent(out) :: info
 
    end subroutine <prefix2>potrf
 
-   subroutine <prefix2c>potrf(n,a,info,lower,clean)
+   subroutine <prefix2c>potrf(n,a,lda,info,lower,clean)
 
      ! c,info = potrf(a,lower=0,clean=1,overwrite_a=0)
      ! Compute Cholesky decomposition of symmetric positive defined matrix:
@@ -2333,14 +2333,14 @@ interface
      ! C is triangular matrix of the corresponding Cholesky decomposition.
      ! clean==1 zeros strictly lower or upper parts of U or L, respectively
 
-     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&n,&info); if(clean){int i,j,k;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}}}
+     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&info); if(clean){int i,j,k;if(lower){for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=j*n+i;(a+k)->r=(a+k)->i=0.0;}} else {for(i=0;i\<n;++i) for(j=i+1;j\<n;++j) {k=i*n+j;(a+k)->r=(a+k)->i=0.0;}}}
      callprotoargument char*,int*,<ctype2c>*,int*,int*
 
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
      integer optional,intent(in),check(clean==0||clean==1) :: clean = 1
      integer depend(a),intent(hide):: n = shape(a,0)
-     <ftype2c> dimension(n,n),intent(in,out,copy,out=c) :: a
-     check(shape(a,0)==shape(a,1)) :: a
+     <ftype2c> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+     integer depend(n),intent(hide) :: lda = MAX(1,n)
      integer intent(out) :: info
 
    end subroutine <prefix2c>potrf
