@@ -1540,7 +1540,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 # [1] 4.4
                 # Formula after 8.23 takes a full step regardless if this will
                 # take it negative
-                alpha = 1
+                alpha = 1.0
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y,
                     d_z, d_tau, d_kappa, alpha)
