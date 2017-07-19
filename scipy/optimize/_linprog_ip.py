@@ -1611,7 +1611,7 @@ def _linprog_ip(
         sparse=False,
         lstsq=False,
         sym_pos=True,
-        cholesky=False,
+        cholesky=None,
         pc=True,
         ip=False,
         presolve=True,
@@ -1918,7 +1918,10 @@ def _linprog_ip(
 
     if sparse and cholesky:
         # Cholesky decomposition is not available for sparse problems
-        cholesky = False
+        warn("Invalid option combination 'sparse':True "
+             "and 'cholesky':True; sparse Colesky decomposition is not "
+             "available.",
+             OptimizeWarning)
 
     if lstsq and cholesky:
         warn("Invalid option combination 'lstsq':True "
@@ -1940,6 +1943,8 @@ def _linprog_ip(
             "Invalid option combination 'sym_pos':False "
             "and 'cholesky':True: Cholesky decomposition is only possible "
             "for symmetric positive definite matrices.")
+
+    cholesky = cholesky is None and sym_pos and not sparse and not lstsq
 
     iteration = 0
     complete = False    # will become True if solved in presolve
