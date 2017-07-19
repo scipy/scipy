@@ -1362,11 +1362,13 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
         print("Primal Feasibility ",
               "Dual Feasibility   ",
               "Duality Gap        ",
-              "Step               ",
+              "Step            ",
               "Path Parameter     ",
               "Objective          ")
 
-    print('{0:<20}{1:<20}{2:<20}{3:<20}{4:<20}{5:<20}'.format(
+    # no clue why this works
+    fmt = '{0:<20.13}{1:<20.13}{2:<20.13}{3:<17.13}{4:<20.13}{5:<20.13}'
+    print(fmt.format(
         rho_p,
         rho_d,
         rho_g,
