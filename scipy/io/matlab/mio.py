@@ -192,16 +192,18 @@ def savemat(file_name, mdict,
     mio4.MatFile4Writer
     mio5.MatFile5Writer
     """
-    file_is_string = isinstance(file_name, string_types)
-    if file_is_string:
-        if appendmat and file_name[-4:] != ".mat":
-            file_name = file_name + ".mat"
-        file_stream = open(file_name, 'wb')
-    else:
-        if not hasattr(file_name, 'write'):
-            raise IOError('Writer needs file name or writeable '
-                           'file-like object')
+    file_opened = False
+    if hasattr(file_name, 'write'):
+        # File-like object already; use as-is
         file_stream = file_name
+    else:
+        if isinstance(file_name, string_types):
+            if appendmat and not file_name.endswith('.mat'):
+                file_name = file_name + ".mat"
+
+        file_stream = open(file_name, 'wb')
+        file_opened = True
+
     if format == '4':
         if long_field_names:
             raise ValueError("Long field names are not available for version 4 files")
@@ -215,7 +217,7 @@ def savemat(file_name, mdict,
     else:
         raise ValueError("Format should be '4' or '5'")
     MW.put_variables(mdict)
-    if file_is_string:
+    if file_opened:
         file_stream.close()
 
 
