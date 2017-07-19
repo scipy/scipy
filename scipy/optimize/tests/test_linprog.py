@@ -827,15 +827,15 @@ class TestLinprogIP(LinprogCommonTests):
         bounds = [(None, 1)]
         res = linprog(c=c, bounds=bounds,
                       method=self.method,
-                      options={"presolve": False, "cholesky":False})
+                      options={"presolve": False, "cholesky": False})
         _assert_success(res, desired_fun=-1)
-        
+
     def test_unbounded_below_no_presolve_corrected(self):
         c = [1]
         bounds = [(None, 1)]
         res = linprog(c=c, bounds=bounds,
                       method=self.method,
-                      options={"presolve": False, "cholesky":False})
+                      options={"presolve": False, "cholesky": False})
         _assert_unbounded(res)
 
     def test_type_error(self):
@@ -862,7 +862,7 @@ class TestLinprogIP(LinprogCommonTests):
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "scipy.linalg.solve\nIll...")
             res = linprog(c, A_ub=A, b_ub=b, method=self.method,
-                          options={"ip": True, "disp":True})
+                          options={"ip": True, "disp": True})
         _assert_success(res, desired_fun=-64.049494229)
 
     def test_maxiter(self):
