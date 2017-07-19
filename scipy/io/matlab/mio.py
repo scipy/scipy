@@ -17,25 +17,31 @@ __all__ = ['mat_reader_factory', 'loadmat', 'savemat', 'whosmat']
 
 
 def _open_file(file_like, appendmat):
-    ''' Open `file_like` and return as file-like object '''
-    if isinstance(file_like, string_types):
-        try:
-            return open(file_like, 'rb')
-        except IOError as e:
+    """
+    Open `file_like` and return as file-like object. First, check if object is
+    already file-like; if so, return it as-is. Otherwise, try to pass it
+    to open(). If that fails, and `file_like` is a string, and `appendmat` is true,
+    append '.mat' and try again.
+    """
+    try:
+        file_like.read(0)
+        return file_like
+    except AttributeError:
+        pass
+
+    try:
+        return open(file_like, 'rb')
+    except IOError as e:
+        # Probably "not found"
+        if isinstance(file_like, string_types):
             if appendmat and not file_like.endswith('.mat'):
                 file_like += '.mat'
                 try:
                     return open(file_like, 'rb')
                 except IOError:
-                    pass  # Rethrow the original exception.
-            raise
-    # not a string - maybe file-like object
-    try:
-        file_like.read(0)
-    except AttributeError:
-        raise IOError('Reader needs file name or open file-like object')
-    return file_like
-
+                    raise
+        else:
+            raise IOError('Reader needs file name or open file-like object')
 
 @docfiller
 def mat_reader_factory(file_name, appendmat=True, **kwargs):
@@ -186,16 +192,18 @@ def savemat(file_name, mdict,
     mio4.MatFile4Writer
     mio5.MatFile5Writer
     """
-    file_is_string = isinstance(file_name, string_types)
-    if file_is_string:
-        if appendmat and file_name[-4:] != ".mat":
-            file_name = file_name + ".mat"
-        file_stream = open(file_name, 'wb')
-    else:
-        if not hasattr(file_name, 'write'):
-            raise IOError('Writer needs file name or writeable '
-                           'file-like object')
+    file_opened = False
+    if hasattr(file_name, 'write'):
+        # File-like object already; use as-is
         file_stream = file_name
+    else:
+        if isinstance(file_name, string_types):
+            if appendmat and not file_name.endswith('.mat'):
+                file_name = file_name + ".mat"
+
+        file_stream = open(file_name, 'wb')
+        file_opened = True
+
     if format == '4':
         if long_field_names:
             raise ValueError("Long field names are not available for version 4 files")
@@ -209,7 +217,7 @@ def savemat(file_name, mdict,
     else:
         raise ValueError("Format should be '4' or '5'")
     MW.put_variables(mdict)
-    if file_is_string:
+    if file_opened:
         file_stream.close()
 
 
