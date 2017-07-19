@@ -40,8 +40,8 @@ class TestPaths(unittest.TestCase):
             path = Path(temp_dir) / 'data.mat'
             scipy.io.savemat(str(path), {'data': self.data})
 
-            data = scipy.io.loadmat(path)
-            assert_((data == self.data).all())
+            mat_contents = scipy.io.loadmat(path)
+            assert_((mat_contents['data'] == self.data).all())
 
     def test_whosmat(self):
         # Save data with string path, load with pathlib.Path
