@@ -1534,9 +1534,10 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
                 # [1] 4.4
                 # Formula after 8.23 takes a full step regardless if this will
                 # take it negative
+                alpha = 1
                 x, y, z, tau, kappa = _do_step(
                     x, y, z, tau, kappa, d_x, d_y,
-                    d_z, d_tau, d_kappa, alpha=1)
+                    d_z, d_tau, d_kappa, alpha)
                 x[x < 1] = 1
                 z[z < 1] = 1
                 tau = max(1, tau)
@@ -1563,7 +1564,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         go = rho_p > tol or rho_d > tol or rho_A > tol
 
         if disp:
-            _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
+            _display_iter(rho_p, rho_d, rho_g, alpha, float(rho_mu), obj)
 
         # [1] 4.5
         inf1 = (rho_p < tol and rho_d < tol and rho_g < tol and tau < tol *
