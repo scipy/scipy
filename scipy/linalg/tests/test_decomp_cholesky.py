@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal, \
+    assert_raises
 
 from numpy import array, transpose, dot, conjugate, zeros_like, empty
 from numpy.random import random
@@ -193,10 +194,11 @@ class TestEmptyArray(object):
         a = empty((0, 0))
         b = array([])
         c = array([[]])
+        d = []
+        e = [[]]
 
         x, _ = cho_factor(a)
-        y, _ = cho_factor(b)
-        z, _ = cho_factor(c)
         assert_array_equal(x, a)
-        assert_array_equal(y, b)
-        assert_array_equal(z, c)
+
+        for x in ([b, c, d, e]):
+            assert_raises(ValueError, cho_factor, x)
