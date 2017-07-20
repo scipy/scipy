@@ -64,7 +64,7 @@ class TestODEClass(object):
 
         assert_array_equal(z, ig.y)
         assert_(ig.successful(), (problem, method))
-        assert_(ig.get_return_code()>0, (problem, method))
+        assert_(ig.get_return_code() > 0, (problem, method))
         assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
 
 
