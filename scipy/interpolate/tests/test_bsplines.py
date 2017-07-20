@@ -598,6 +598,18 @@ class TestInterop(object):
         assert_raises_regex(TypeError, "m > k must hold", splprep, [x])
         assert_raises_regex(TypeError, "m > k must hold", _impl.splprep, [x])
 
+        # automatically calculated parameters are non-increasing
+        # see gh-7589
+        x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
+        assert_raises_regex(ValueError, "Invalid inputs", splprep, [x])
+        assert_raises_regex(ValueError, "Invalid inputs", _impl.splprep, [x])
+
+        # given non-increasing parameter values u
+        x = [1, 3, 2, 4]
+        u = [0, 0.3, 0.2, 1]
+        assert_raises_regex(ValueError, "Invalid inputs", splprep,
+                            *[[x], None, u])
+
     def test_sproot(self):
         b, b2 = self.b, self.b2
         roots = np.array([0.5, 1.5, 2.5, 3.5])*np.pi
