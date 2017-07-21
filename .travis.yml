@@ -63,6 +63,14 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=numpy
+    - os: osx
+      language: generic
+      env:
+        - TESTMODE=fast
+        - COVERAGE=
+        - NUMPYSPEC=numpy
+        - USE_SDIST=1
+        - MB_PYTHON_VERSION=3.6
 addons:
   apt:
     packages:
@@ -78,15 +86,31 @@ cache:
     - $HOME/.ccache
 before_install:
   # Work in our own virtualenv to isolate from travis-ci packages.
-  - python -m pip install --upgrade pip
-  - pip install --upgrade virtualenv
-  - virtualenv --python=python venv
-  - source venv/bin/activate
+  - echo $TRAVIS_OS_NAME
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      python -m pip install --upgrade pip
+      pip install --upgrade virtualenv
+      virtualenv --python=python venv
+      source venv/bin/activate
+      free -m
+    elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew install gcc
+      touch config.sh
+      git clone https://github.com/matthew-brett/multibuild.git
+      source multibuild/common_utils.sh
+      source multibuild/travis_steps.sh
+      before_install
+      export CXX=clang++
+      export CC=clang
+      export CFLAGS="-arch x86_64"
+      export CXXFLAGS="-arch x86_64"
+      printenv
+    fi
   - python --version # just to check
   - export PYTHONFAULTHANDLER=1
   - export PATH=/usr/lib/ccache:$PATH
   - uname -a
-  - free -m
   - df -h
   - ulimit -a
   - mkdir builds
@@ -139,7 +163,7 @@ script:
         popd
         USE_WHEEL_BUILD="--no-build"
     fi
-  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD |& tee runtests.log
+  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD 2>&1 | tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
 after_success:
