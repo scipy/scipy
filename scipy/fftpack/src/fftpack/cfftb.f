@@ -1,4 +1,7 @@
       SUBROUTINE CFFTB (N,C,WSAVE)
+      IMPLICIT NONE
+      INTEGER N, IW1, IW2
+      REAL WSAVE, C
       DIMENSION       C(*)       ,WSAVE(*)
       IF (N .EQ. 1) RETURN
       IW1 = N+N+1
