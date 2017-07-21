@@ -95,14 +95,15 @@ before_install:
       source venv/bin/activate
       free -m
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew install gcc
+      brew install gcc ccache
+      export PATH="/usr/local/opt/ccache/libexec:$PATH"
       touch config.sh
       git clone https://github.com/matthew-brett/multibuild.git
       source multibuild/common_utils.sh
       source multibuild/travis_steps.sh
       before_install
-      export CXX=clang++
-      export CC=clang
+      export CXX="ccache clang++"
+      export CC="ccache clang"
       export CFLAGS="-arch x86_64"
       export CXXFLAGS="-arch x86_64"
       printenv
