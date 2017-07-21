@@ -80,15 +80,18 @@ vote. When it does occur, the BDFL override typically happens in situations
 where there is a deadlock in the Steering Council or if the Steering Council
 asks the BDFL to make a decision on a specific matter. To ensure the
 benevolence of the BDFL, The Project encourages others to fork the project if
-they disagree with the overall direction the BDFL is taking. The BDFL is chair
-of the Steering Council (see below) and may delegate his/her authority on a
-particular decision or set of decisions to any other Council member at his/her
-discretion.
+they disagree with the overall direction the BDFL is taking. The BDFL may
+delegate his/her authority on a particular decision or set of decisions to
+any other Council member at his/her discretion.
 
 The BDFL can appoint his/her successor, but it is expected that the Steering
 Council would be consulted on this decision. If the BDFL is unable to appoint a
 successor, the Steering Council will make this decision - preferably by
 consensus, but if needed by a majority vote.
+
+Note that the BDFL can step down at any time, and acting in good faith, will
+also listen to serious calls to do so.  Also note that the BDFL is more a role
+for fallback decision making rather than that of a director/CEO.
 
 Steering Council
 ----------------
@@ -98,6 +101,11 @@ who have produced contributions that are substantial in quality and quantity,
 and sustained over at least one year. The overall role of the Council is to
 ensure, through working with the BDFL and taking input from the Community, the
 long-term well-being of the project, both technically and as a community.
+
+The Council will have a Chair, who is tasked with keeping the organisational
+aspects of the functioning of the Council and the Project on track.  The
+Council will also appoint a Release Manager for the Project, who has final
+responsibility for one or more releases.
 
 During the everyday project activities, council members participate in all
 discussions, code review and other project activities as peers with all other
@@ -120,7 +128,7 @@ In particular, the Council may:
     and merging pull requests.
 -   Make decisions about the Services that are run by The Project and manage
     those Services for the benefit of the Project and Community.
--   Make decisions when regular community discussion doesn’t produce consensus
+-   Make decisions when regular community discussion does not produce consensus
     on an issue in a reasonable time frame.
 -  Update policy documents such as this one.
 
@@ -149,8 +157,8 @@ evaluated.
 
 If a Council member becomes inactive in the project for a period of one year,
 they will be considered for removal from the Council. Before removal, inactive
-Member will be approached by the BDFL to see if they plan on returning to
-active participation. If not they will be removed immediately upon a Council
+Member will be approached to see if they plan on returning to active
+participation. If not they will be removed immediately upon a Council
 vote. If they plan on returning to active participation soon, they will be
 given a grace period of one year. If they don’t return to active participation
 within that time period they will be removed by vote of the Council without
@@ -165,6 +173,39 @@ attempts at communication and conflict resolution have failed.
 
 A list of current Steering Council Members is maintained at the
 page :ref:`governance-people`.
+
+Council Chair
+~~~~~~~~~~~~~
+
+The Chair will be appointed by the Steering Council. The Chair can stay on as
+long as he/she wants, but may step down at any time and will listen to
+serious calls to do so (similar to the BDFL role). The Chair will be
+responsible for:
+
+- Starting a review of the technical direction of the project (as captured by
+  the :ref:`scipy-roadmap`) bi-yearly, around mid-April and mid-October.
+- At the same times of the year, summarizing any relevant
+  organisational updates and issues in the preceding period, and asking for
+  feedback/suggestions on the mailing list.
+- Ensuring the composition of the Steering Council stays current.
+- Ensuring matters discussed in private by the Steering Council get
+  summarized on the mailing list to keep the Community informed.
+- Ensuring other important organisational documents (e.g. Code of Conduct,
+  Fiscal Sponsorship Agreement) stay current after they are added.
+
+Release Manager
+~~~~~~~~~~~~~~~
+
+The Release Manager has final responsibility for making a release.  This
+includes:
+
+- Proposing of and deciding on the timing of a release.
+- Determining the content of a release in case there is no consensus on a
+  particular change or feature.
+- Creating the release and announcing it on the relevant public channels.
+
+For more details on what those responsibilities look like in practice, see
+:ref:`making-a-release`.
 
 Conflict of interest
 ~~~~~~~~~~~~~~~~~~~~
@@ -183,8 +224,8 @@ All members of the Council, BDFL included, shall disclose to the rest of the
 Council any conflict of interest they may have. Members with a conflict of
 interest in a particular issue may participate in Council discussions on that
 issue, but must recuse themselves from voting on the issue. If the BDFL has
-recused his/herself for a particular decision, they will appoint a substitute
-BDFL for that decision.
+recused his/herself for a particular decision, the Council will appoint a
+substitute BDFL for that decision.
 
 Private communications of the Council
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -194,7 +235,7 @@ public and done in collaboration and discussion with the Project Contributors
 and Community. The Council will have a private mailing list that will be used
 sparingly and only when a specific matter requires privacy. When private
 communications and decisions are needed, the Council will do its best to
-summarize those to the Community after eliding personal/private/sensitive
+summarize those to the Community after removing personal/private/sensitive
 information that should not be posted to the public internet.
 
 Council decision making
@@ -221,7 +262,7 @@ In practice, we anticipate that for most Steering Council decisions
 Institutional Partners and Funding
 ==================================
 
-The Steering Council are the primary leadership for the project. No
+The Steering Council is the primary leadership for the project. No
 outside institution, individual or legal entity has the ability to own,
 control, usurp or influence the project other than by participating in
 the Project as Contributors and Council Members. However, because
@@ -236,9 +277,9 @@ Project Steering Council Member who contributes to the project as part
 of their official duties at an Institutional Partner.
 
 With these definitions, an Institutional Partner is any recognized legal
-entity in any country that employs at least 1
-Institutional Contributor of Institutional Council Member. Institutional
-Partners can be for-profit or non-profit entities.
+entity in any country that employs at least 1 Institutional Contributor or
+Institutional Council Member. Institutional Partners can be for-profit or
+non-profit entities.
 
 Institutions become eligible to become an Institutional Partner by
 employing individuals who actively contribute to The Project as part of
@@ -289,7 +330,7 @@ A list of current Institutional Partners is maintained at the page
 Document history
 ================
 
-https://github.com/numpy/numpy/commits/master/doc/source/dev/governance/governance.rst
+https://github.com/scipy/scipy/commits/master/doc/source/dev/governance/governance.rst
 
 Acknowledgements
 ================
@@ -297,7 +338,6 @@ Acknowledgements
 Substantial portions of this document were adapted from the
 `Jupyter/IPython project's governance document
 <https://github.com/jupyter/governance/blob/master/governance.md>`_ and
-
 `NumPy's governance document
 <https://github.com/numpy/numpy/blob/master/doc/source/dev/governance/governance.rst>`_.
 

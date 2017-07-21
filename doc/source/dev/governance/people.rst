@@ -9,10 +9,9 @@ Benevolent Dictator for Life
 Pauli Virtanen is the Benevolent Dictator for Life (BDFL)
 
 
-Steering council
+Steering Council
 ----------------
 
-* Alex Griffing
 * Anne Archibald
 * Andrew Nelson
 * Charles Harris
@@ -22,17 +21,21 @@ Steering council
 * Eric Moore
 * Eric Quintero
 * Evgeni Burovski
-* Ian Henriksen
 * Jaime Fernández del Río
-* Jake Vanderplas
 * Josef Perktold
 * Josh Wilson
-* Lars Buitinck
 * Matthew Brett
 * Nikolay Mayorov
 * Pauli Virtanen
-* Ralf Gommers
+* Ralf Gommers (Chair)
+* Tyler Reddy
 * Warren Weckesser
+
+
+Release Manager
+---------------
+
+Ralf Gommers is the release manager for the 1.0 release
 
 
 Institutional Partners
