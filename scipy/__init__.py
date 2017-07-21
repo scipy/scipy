@@ -60,7 +60,8 @@ __all__ = ['test']
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
-    raise ImportError("Cannot import scipy when running from numpy source directory.")
+    raise ImportError(
+        "Cannot import scipy when running from numpy source directory.")
 from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
@@ -70,6 +71,9 @@ from numpy import *
 from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
+
+# Allow distributors to run custom init code
+from . import _distributor_init
 
 __all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
@@ -123,7 +127,8 @@ else:
         import os
         underscore_modules = ['_lib', '_build_utils']
         base_dir = os.path.abspath(os.path.dirname(__file__))
-        underscore_paths = [os.path.join(base_dir, name) for name in underscore_modules]
+        underscore_paths = [os.path.join(base_dir, name)
+                            for name in underscore_modules]
         kw['extra_argv'] = list(kw.get('extra_argv', [])) + underscore_paths
         return test._tester.test(*a, **kw)
 
@@ -134,4 +139,3 @@ else:
     test._tester = Tester(raise_warnings=mode)
     test.__doc__ = test._tester.test.__doc__
     test.__test__ = False  # Prevent nose from treating test() as a test
-
