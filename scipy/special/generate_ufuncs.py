@@ -138,6 +138,12 @@ eval_hermite  -- eval_hermite: ld->d                       -- orthogonal_eval.px
 eval_hermitenorm -- eval_hermitenorm: ld->d                -- orthogonal_eval.pxd
 exp10 -- exp10: d->d                                       -- cephes.h
 exp2 -- exp2: d->d                                         -- cephes.h
+_frechet_pdf -- _frechet_pdf: dd->d                        -- _frechet.pxd
+_frechet_logpdf -- _frechet_logpdf: dd->d                  -- _frechet.pxd
+_frechet_cdf -- _frechet_cdf: dd->d                        -- _frechet.pxd
+_frechet_ppf -- _frechet_ppf: dd->d                        -- _frechet.pxd
+_frechet_sf -- _frechet_sf: dd->d                          -- _frechet.pxd
+_frechet_isf -- _frechet_isf: dd->d                        -- _frechet.pxd
 gamma -- Gamma: d->d, cgamma: D->D                         -- cephes.h, _loggamma.pxd
 gammaln -- lgam: d->d                                      -- cephes.h
 gammasgn -- gammasgn: d->d                                 -- c_misc/misc.h

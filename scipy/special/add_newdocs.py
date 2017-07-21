@@ -2590,6 +2590,158 @@ add_newdoc("scipy.special", "fdtridfn",
     finds the F density argument dfn such that ``fdtr(dfn, dfd, x) == p``.
     """)
 
+
+add_newdoc("scipy.special", "_frechet_logpdf",
+    """
+    _frechet_logpdf(x, alpha)
+
+    Log of the probability density function of the Frechet distribution.
+
+    The Frechet distribution is also known as the type II extreme value
+    distribution.
+
+    This function provides only the shape parameter, `alpha`.  The location
+    and scale parameters are 0 and 1, respectively.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to compute the log of the PDF.
+    alpha : array_like
+        The shape parameter of the distribution.
+
+    Returns
+    -------
+    float
+        The values of the log of the PDF.
+
+    """)
+
+add_newdoc("scipy.special", "_frechet_pdf",
+    """
+    _frechet_pdf(x, alpha)
+
+    Probability density function of the Frechet distribution.
+
+    The Frechet distribution is also known as the type II extreme value
+    distribution.
+
+    This function provides only the shape parameter, `alpha`.  The location
+    and scale parameters are 0 and 1, respectively.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to compute the PDF.
+    alpha : array_like
+        The shape parameter of the distribution.
+
+    Returns
+    -------
+    float
+        The values of the PDF.
+    """)
+
+add_newdoc("scipy.special", "_frechet_cdf",
+    """
+    _frechet_cdf(x, alpha)
+
+    Cumulative distribution function of the Frechet distribution.
+
+    The Frechet distribution is also known as the type II extreme value
+    distribution.
+
+    This function provides only the shape parameter, `alpha`.  The location
+    and scale parameters are 0 and 1, respectively.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to compute the CDF.
+    alpha : array_like
+        The shape parameter of the distribution.
+
+    Returns
+    -------
+    float
+        The values of the CDF.
+    """)
+
+add_newdoc("scipy.special", "_frechet_ppf",
+    """
+    _frechet_ppf(q, alpha)
+
+    Percent point function (i.e. inverse CDF) of the Frechet distribution.
+
+    The Frechet distribution is also known as the type II extreme value
+    distribution.
+
+    This function provides only the shape parameter, `alpha`.  The location
+    and scale parameters are 0 and 1, respectively.
+
+    Parameters
+    ----------
+    q : array_like
+        Values at which to compute the PPF.
+    alpha : array_like
+        The shape parameter of the distribution.
+
+    Returns
+    -------
+    float
+        The values of the PPF.
+    """)
+
+add_newdoc("scipy.special", "_frechet_sf",
+    """
+    _frechet_sf(x, alpha)
+
+    Survival function of the Frechet distribution.
+
+    The Frechet distribution is also known as the type II extreme value
+    distribution.
+
+    This function provides only the shape parameter, `alpha`.  The location
+    and scale parameters are 0 and 1, respectively.
+
+    Parameters
+    ----------
+    x : array_like
+        Values at which to compute the survival function.
+    alpha : array_like
+        The shape parameter of the distribution.
+
+    Returns
+    -------
+    float
+        The values of the survival function.
+    """)
+
+add_newdoc("scipy.special", "_frechet_isf",
+    """
+    _frechet_isf(q, alpha)
+
+    Inverse of the survival function of the Frechet distribution.
+
+    The Frechet distribution is also known as the type II extreme value
+    distribution.
+
+    This function provides only the shape parameter, `alpha`.  The location
+    and scale parameters are 0 and 1, respectively.
+
+    Parameters
+    ----------
+    q : array_like
+        Values at which to compute the inverse of the survival function.
+    alpha : array_like
+        The shape parameter of the distribution.
+
+    Returns
+    -------
+    float
+        The values of the inverse of the survival function.
+    """)
+
 add_newdoc("scipy.special", "fresnel",
     """
     fresnel(z)

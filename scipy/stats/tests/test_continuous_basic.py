@@ -57,7 +57,7 @@ distslow = ['rdist', 'gausshyper', 'recipinvgauss', 'ksone', 'genexpon',
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
 fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
-                   'erlang', 'f', 'gamma', 'gausshyper', 'gengamma',
+                   'erlang', 'f', 'frechet', 'gamma', 'gausshyper', 'gengamma',
                    'gennorm', 'genpareto', 'halfgennorm', 'invgamma',
                    'ksone', 'kstwobign', 'levy_l', 'loggamma', 'logistic',
                    'maxwell', 'nakagami', 'ncf', 'nct', 'ncx2',
@@ -72,63 +72,67 @@ def test_cont_basic():
     # this test skips slow distributions
 
     def check(distname, arg):
-        try:
-            distfn = getattr(stats, distname)
-        except TypeError:
-            distfn = distname
-            distname = 'rv_histogram_instance'
-        np.random.seed(765456)
-        sn = 500
-        rvs = distfn.rvs(size=sn, *arg)
-        sm = rvs.mean()
-        sv = rvs.var()
-        m, v = distfn.stats(*arg)
+        with suppress_warnings() as sup:
+            # frechet_l and frechet_r are deprecated, so all their methods
+            # generate DeprecationWarnings.
+            sup.filter(category=DeprecationWarning, message=".*frechet_")
+            try:
+                distfn = getattr(stats, distname)
+            except TypeError:
+                distfn = distname
+                distname = 'rv_histogram_instance'
+            np.random.seed(765456)
+            sn = 500
+            rvs = distfn.rvs(size=sn, *arg)
+            sm = rvs.mean()
+            sv = rvs.var()
+            m, v = distfn.stats(*arg)
 
-        check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
-        check_cdf_ppf(distfn, arg, distname)
-        check_sf_isf(distfn, arg, distname)
-        check_pdf(distfn, arg, distname)
-        check_pdf_logpdf(distfn, arg, distname)
-        check_cdf_logcdf(distfn, arg, distname)
-        check_sf_logsf(distfn, arg, distname)
+            check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+            check_cdf_ppf(distfn, arg, distname)
+            check_sf_isf(distfn, arg, distname)
+            check_pdf(distfn, arg, distname)
+            check_pdf_logpdf(distfn, arg, distname)
+            check_cdf_logcdf(distfn, arg, distname)
+            check_sf_logsf(distfn, arg, distname)
 
-        alpha = 0.01
-        if distname == 'rv_histogram_instance':
-            check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
-        else:
-            check_distribution_rvs(distname, arg, alpha, rvs)
+            alpha = 0.01
+            if distname == 'rv_histogram_instance':
+                check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
+            else:
+                check_distribution_rvs(distname, arg, alpha, rvs)
 
-        locscale_defaults = (0, 1)
-        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-                 distfn.logsf]
-        # make sure arguments are within support
-        spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
-                  'pareto': 1.5, 'tukeylambda': 0.3,
-                  'rv_histogram_instance': 5.0}
-        x = spec_x.get(distname, 0.5)
-        check_named_args(distfn, x, arg, locscale_defaults, meths)
-        check_random_state_property(distfn, arg)
-        check_pickling(distfn, arg)
+            locscale_defaults = (0, 1)
+            meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+                     distfn.logsf]
+            # make sure arguments are within support
+            spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
+                      'pareto': 1.5, 'tukeylambda': 0.3,
+                      'rv_histogram_instance': 5.0}
+            x = spec_x.get(distname, 0.5)
+            check_named_args(distfn, x, arg, locscale_defaults, meths)
+            check_random_state_property(distfn, arg)
+            check_pickling(distfn, arg)
 
-        # Entropy
-        check_entropy(distfn, arg, distname)
+            # Entropy
+            check_entropy(distfn, arg, distname)
 
-        if distfn.numargs == 0:
-            check_vecentropy(distfn, arg)
+            if distfn.numargs == 0:
+                check_vecentropy(distfn, arg)
 
-        if distfn.__class__._entropy != stats.rv_continuous._entropy:
-            check_private_entropy(distfn, arg, stats.rv_continuous)
+            if distfn.__class__._entropy != stats.rv_continuous._entropy:
+                check_private_entropy(distfn, arg, stats.rv_continuous)
 
-        check_edge_support(distfn, arg)
+            check_edge_support(distfn, arg)
 
-        check_meth_dtype(distfn, arg, meths)
-        check_ppf_dtype(distfn, arg)
+            check_meth_dtype(distfn, arg, meths)
+            check_ppf_dtype(distfn, arg)
 
-        if distname not in fails_cmplx:
-            check_cmplx_deriv(distfn, arg)
+            if distname not in fails_cmplx:
+                check_cmplx_deriv(distfn, arg)
 
-        if distname != 'truncnorm':
-            check_ppf_private(distfn, arg, distname)
+            if distname != 'truncnorm':
+                check_ppf_private(distfn, arg, distname)
 
     for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
         if distname in distslow:
@@ -228,7 +232,12 @@ def test_moments():
             distname = 'rv_histogram_instance'
 
         with suppress_warnings() as sup:
-            sup.filter(IntegrationWarning, "The integral is probably divergent, or slowly convergent.")
+            sup.filter(IntegrationWarning,
+                       ("The integral is probably divergent, or slowly "
+                        "convergent."))
+            # frechet_l and frechet_r are deprecated, so all their methods
+            # generate DeprecationWarnings.
+            sup.filter(category=DeprecationWarning, message=".*frechet_")
             m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
         if normalization_ok:
@@ -444,7 +453,11 @@ def check_vecentropy(distfn, args):
 
 def check_loc_scale(distfn, arg, m, v, msg):
     loc, scale = 10.0, 10.0
-    mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
+    with suppress_warnings() as sup:
+        # frechet_l and frechet_r are deprecated, so all their methods
+        # generate DeprecationWarnings.
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
+        mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
     npt.assert_allclose(m*scale + loc, mt)
     npt.assert_allclose(v*scale*scale, vt)
 
