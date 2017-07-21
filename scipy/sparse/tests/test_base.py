@@ -1157,14 +1157,24 @@ class _TestCommon:
             assert S_casted.astype(x, copy=False) is S_casted
             S_copied = S_casted.astype(x, copy=True)
             assert S_copied is not S_casted
-            for (a, b) in ((S_copied.indices, S_casted.indices),
-                           (S_copied.indptr, S_casted.indptr),
-                           (S_copied.data, S_casted.data)):
-                # Check that arrays are equal but not the same
+
+            def check_equal_but_not_same_array_attribute(attribute):
+                a = get(S_casted, attribute)
+                b = get(S_copied, attribute)
                 assert_array_equal(a, b)
                 assert a is not b
                 a[0] = not a[0]
                 assert_(a[0] != b[0])
+
+            if S_casted.format in ('csr', 'csc', 'bsr'):
+                for attribute in ('indices', 'indptr', 'data'):
+                    check_equal_but_not_same_array_attribute(attribute)
+            elif S_casted.format == 'coo':
+                for attribute in ('row', 'col', 'data'):
+                    check_equal_but_not_same_array_attribute(attribute)
+            elif S_casted.format == 'dia':
+                for attribute in ('offsets', 'data'):
+                    check_equal_but_not_same_array_attribute(attribute)
 
     def test_asfptype(self):
         A = self.spmatrix(arange(6,dtype='int32').reshape(2,3))
