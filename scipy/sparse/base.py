@@ -145,9 +145,9 @@ class spmatrix(object):
             like float64 to float32, are allowed.
             'unsafe' means any data conversions may be done.
         copy : bool, optional
-            By default, astype always returns a newly allocated matrix.
-            If this is set to false, and `dtype` is satisfied,
-            this matrix is returned instead of a copy.
+            If `copy` is `False`, the result might share some memory with this
+            matrix. If `copy` is `True`, it is guaranteed that the result and
+            this matrix do not share any memory.
         """
 
         dtype = np.dtype(dtype)
