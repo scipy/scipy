@@ -1163,10 +1163,11 @@ class _TestCommon:
                 b = getattr(S_copied, attribute)
                 assert_array_equal(a, b)
                 assert a is not b
-                b_0 = b[0]
-                b[0] = not b[0]
-                assert_(a[0] != b[0])
-                b[0] = b_0
+                i = (0,)*b.ndim
+                b_i = b[i]
+                b[i] = not b[i]
+                assert_(a[i] != b[i])
+                b[i] = b_i
 
             if S_casted.format in ('csr', 'csc', 'bsr'):
                 for attribute in ('indices', 'indptr', 'data'):
