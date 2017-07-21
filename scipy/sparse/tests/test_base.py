@@ -1160,9 +1160,10 @@ class _TestCommon:
             for (a, b) in ((S_copied.indices, S_casted.indices),
                            (S_copied.indptr, S_casted.indptr),
                            (S_copied.data, S_casted.data)):
-                assert a is not b
+                # Check that arrays are equal but not the same
                 assert_array_equal(a, b)
-                a[0] += 1
+                assert a is not b
+                a[0] = not a[0]
                 assert_(a[0] != b[0])
 
     def test_asfptype(self):
