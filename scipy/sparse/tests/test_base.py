@@ -1159,8 +1159,8 @@ class _TestCommon:
             assert S_copied is not S_casted
 
             def check_equal_but_not_same_array_attribute(attribute):
-                a = get(S_casted, attribute)
-                b = get(S_copied, attribute)
+                a = getattr(S_casted, attribute)
+                b = getattr(S_copied, attribute)
                 assert_array_equal(a, b)
                 assert a is not b
                 a[0] = not a[0]
