@@ -78,7 +78,7 @@ def _clean_inputs(
             raise TypeError
         try:
             c = np.asarray(c, dtype=float).copy().squeeze()
-        except BaseException:
+        except BaseException: # typically a ValueError and shouldn't be, IMO
             raise TypeError
         if c.size == 1:
             c = c.reshape((-1))
@@ -95,21 +95,27 @@ def _clean_inputs(
         raise TypeError(
             "Invalid input for linprog: c must be a 1D array of numerical "
             "coefficients")
-
+    
     try:
         try:
-            A_ub = np.zeros(
-                (0, n_x), dtype=float) if A_ub is None else np.asarray(
-                A_ub, dtype=float).copy()
+            if sps.issparse(A_eq) or sps.issparse(A_ub):
+                A_ub = sps.coo_matrix(
+                    (0, n_x), dtype=float) if A_ub is None else sps.coo_matrix(
+                    A_ub, dtype=float).copy()
+            else:
+                A_ub = np.zeros(
+                    (0, n_x), dtype=float) if A_ub is None else np.asarray(
+                    A_ub, dtype=float).copy()
         except BaseException:
             raise TypeError
-        n_ub = len(A_ub)
+        n_ub = A_ub.shape[0]
         if len(A_ub.shape) != 2 or A_ub.shape[1] != len(c):
             raise ValueError(
                 "Invalid input for linprog: A_ub must have exactly two "
                 "dimensions, and the number of columns in A_ub must be "
                 "equal to the size of c ")
-        if not(np.isfinite(A_ub).all()):
+        if (sps.issparse(A_ub) and not np.isfinite(A_ub.data).all()
+            or not sps.issparse(A_ub) and not np.isfinite(A_ub).all()):
             raise ValueError(
                 "Invalid input for linprog: A_ub must not contain values "
                 "inf, nan, or None")
@@ -147,18 +153,25 @@ def _clean_inputs(
 
     try:
         try:
-            A_eq = np.zeros(
-                (0, n_x), dtype=float) if A_eq is None else np.asarray(
-                A_eq, dtype=float).copy()
+            if sps.issparse(A_eq) or sps.issparse(A_ub):
+                A_eq = sps.coo_matrix(
+                    (0, n_x), dtype=float) if A_eq is None else sps.coo_matrix(
+                    A_eq, dtype=float).copy()
+            else:
+                A_eq = np.zeros(
+                    (0, n_x), dtype=float) if A_eq is None else np.asarray(
+                    A_eq, dtype=float).copy()
         except BaseException:
             raise TypeError
-        n_eq = len(A_eq)
+        n_eq = A_eq.shape[0]
         if len(A_eq.shape) != 2 or A_eq.shape[1] != len(c):
             raise ValueError(
                 "Invalid input for linprog: A_eq must have exactly two "
                 "dimensions, and the number of columns in A_eq must be "
                 "equal to the size of c ")
-        if not(np.isfinite(A_eq).all()):
+        
+        if (sps.issparse(A_eq) and not np.isfinite(A_eq.data).all()
+            or not sps.issparse(A_eq) and not np.isfinite(A_eq).all()):
             raise ValueError(
                 "Invalid input for linprog: A_eq must not contain values "
                 "inf, nan, or None")
@@ -574,7 +587,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
     return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
             x, undo, complete, status, message)
 
-
+@profile
 def _get_Abc(
         c,
         c0=0,
@@ -653,7 +666,24 @@ def _get_Abc(
            programming." Athena Scientific 1 (1997): 997.
 
     """
-
+    
+    if sps.issparse(A_eq):
+        sparse = True
+        A_eq = sps.lil_matrix(A_eq)
+        A_ub = sps.lil_matrix(A_ub)
+        def hstack(blocks):
+            return sps.hstack(blocks, format="lil")
+        def vstack(blocks): 
+            return sps.vstack(blocks, format="lil")
+        zeros =  sps.lil_matrix
+        eye = sps.eye
+    else:
+        sparse = False
+        hstack = np.hstack
+        vstack = np.vstack
+        zeros = np.zeros
+        eye = np.eye
+        
     fixed_x = set()
     if len(undo) > 0:
         # these are indices of variables removed from the problem
@@ -662,62 +692,76 @@ def _get_Abc(
     # they are needed elsewhere, but not here
     bounds = [bounds[i] for i in range(len(bounds)) if i not in fixed_x]
     # in retrospect, the standard form of bounds should have been an n x 2
-    # array maybe change it someday
-
+    # array. maybe change it someday.
+  
     # modify problem such that all variables have only non-negativity bounds
-    if bounds is not None:
-        n_free = 0
-        n_bounds = 0
-        for i, b in enumerate(bounds):
-            lb, ub = b
-            if lb is None and ub is None:
-                n_free += 1
-            elif lb is not None and ub is not None:
-                n_bounds += 1
 
-        row_index, col_index = A_ub.shape
-        A_ub = np.hstack((A_ub, np.zeros((A_ub.shape[0], n_free))))
-        A_eq = np.hstack((A_eq, np.zeros((A_eq.shape[0], n_free))))
-        c = np.concatenate((c, np.zeros(n_free)))
-        A_ub = np.vstack((A_ub, np.zeros((n_bounds, A_ub.shape[1]))))
-        b_ub = np.concatenate((b_ub, np.zeros(n_bounds)))
+    bounds = np.array(bounds)
+    lbs = bounds[:,0]
+    ubs = bounds[:,1]
+    m_ub, n_ub = A_ub.shape
 
-        for i, b in enumerate(bounds):
-            lb, ub = b
-            if lb is None and ub is None:
-                # unbounded: substitute xi = xi+ + xi-
-                A_ub[:, col_index] = -A_ub[:, i]
-                A_eq[:, col_index] = -A_eq[:, i]
-                c[col_index] = -c[i]
-                col_index += 1
-            # if preprocessing is on, lb == ub can't happen
-            # if preprocessing is off, then it would be best to convert that
-            # to an equality constraint, but it's tricky to make the other
-            # required modifications from inside here.
-            else:
-                if lb is None:
-                    # unbounded below: substitute xi = -xi' (unbounded above)
-                    lb, ub = -ub, lb
-                    c[i] *= -1
-                    A_ub[:, i] *= -1
-                    A_eq[:, i] *= -1
-                if ub is not None:
-                    # upper bound: add inequality constraint
-                    A_ub[row_index, i] = 1
-                    b_ub[row_index] = ub
-                    row_index += 1
-                if lb is not None:  # this MUST be if, not elif
-                    # lower bound: substitute xi = xi' + lb
-                    # now there is a constant term in objective
-                    c0 += lb * c[i]
-                    b_ub -= lb * A_ub[:, i]
-                    b_eq -= lb * A_eq[:, i]
+    lb_none = np.equal(lbs,None)
+    ub_none = np.equal(ubs,None)
+    lb_some = np.logical_not(lb_none)
+    ub_some = np.logical_not(ub_none)
+        
+    # if preprocessing is on, lb == ub can't happen
+    # if preprocessing is off, then it would be best to convert that
+    # to an equality constraint, but it's tricky to make the other
+    # required modifications from inside here.
 
-    A1 = np.hstack([A_ub, np.eye(len(A_ub))])  # add slack variables
-    A2 = np.hstack([A_eq, np.zeros((len(A_eq), len(A_ub)))])
-    A = np.vstack((A1, A2))
+    # unbounded below: substitute xi = -xi' (unbounded above)
+    l_nolb_someub = np.logical_and(lb_none, ub_some)
+    i_nolb = np.where(l_nolb_someub)[0]
+    lbs[l_nolb_someub], ubs[l_nolb_someub] = -ubs[l_nolb_someub], lbs[l_nolb_someub]
+    lb_none = np.equal(lbs,None)
+    ub_none = np.equal(ubs,None)
+    lb_some = np.logical_not(lb_none)
+    ub_some = np.logical_not(ub_none)
+    if len(i_nolb) > 0:
+        c[i_nolb] *= -1
+        A_ub[:, i_nolb] *= -1
+        A_eq[:, i_nolb] *= -1
+    
+    # upper bound: add inequality constraint
+    i_newub = np.where(ub_some)[0]
+    ub_newub = ubs[ub_some]
+    n_bounds = np.count_nonzero(ub_some)
+    A_ub = vstack((A_ub, zeros((n_bounds, A_ub.shape[1]))))
+    b_ub = np.concatenate((b_ub, np.zeros(n_bounds))) 
+    A_ub[range(m_ub, A_ub.shape[0]),i_newub] = 1
+    b_ub[m_ub:] = ub_newub
+    
+    A1 = vstack((A_ub, A_eq))
     b = np.concatenate((b_ub, b_eq))
-    c = np.concatenate((c, np.zeros((len(A_ub),))))
+    c = np.concatenate((c, np.zeros((A_ub.shape[0],))))
+    
+    # unbounded: substitute xi = xi+ + xi-
+    l_free = np.logical_and(lb_none, ub_none)
+    i_free = np.where(l_free)[0]
+    n_free = len(i_free)
+    A1 = hstack((A1, zeros((A1.shape[0], n_free))))
+    c = np.concatenate((c, np.zeros(n_free)))
+    A1[:,range(n_ub, A1.shape[1])] = -A1[:,i_free]
+    c[range(n_ub, A1.shape[1])] = -c[i_free]
+    
+    # add slack variables
+    A2 = vstack([eye(A_ub.shape[0]), zeros((A_eq.shape[0], A_ub.shape[0]))])  
+    A = hstack([A1, A2])
+    
+    # lower bound: substitute xi = xi' + lb
+    # now there is a constant term in objective
+    i_shift = np.where(lb_some)[0]
+    lb_shift= lbs[lb_some].astype(float)
+    c0 += np.sum(lb_shift*c[i_shift])   
+    if sparse:
+        b = b.reshape(-1,1)
+        A = A.tocsc()
+        b -= (A[:,i_shift] * sps.diags(lb_shift)).sum(axis=1)
+        b = b.ravel()
+    else:
+        b -= (A[:,i_shift] * lb_shift).sum(axis=1)
 
     return A, b, c, c0
 
@@ -841,9 +885,9 @@ def _postprocess(
     n_x = len(c)
     x = x[:n_x]  # all the rest of the variables were artificial
     fun = x.dot(c)
-    slack = b_ub - np.dot(A_ub, x)  # report slack for ORIGINAL UB constraints
+    slack = b_ub - A_ub.dot(x)  # report slack for ORIGINAL UB constraints
     # report residuals of ORIGINAL EQ constraints
-    con = b_eq - np.dot(A_eq, x)
+    con = b_eq - A_eq.dot(x)
 
     if status == 0 and (np.isnan(x).any() or np.isnan(fun) or
                         np.isnan(slack).any() or np.isnan(con).any()):
