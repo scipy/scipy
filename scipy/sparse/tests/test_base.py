@@ -1163,7 +1163,7 @@ class _TestCommon:
                 b = getattr(S_copied, attribute)
                 assert_array_equal(a, b)
                 assert a is not b
-                i = (0,)*b.ndim
+                i = (0,) * b.ndim
                 b_i = b[i]
                 b[i] = not b[i]
                 assert_(a[i] != b[i])
