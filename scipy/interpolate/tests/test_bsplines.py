@@ -371,6 +371,17 @@ class TestBSpline(object):
         assert_allclose(b.integrate(-9, -10), i(0) - i(1))
         assert_allclose(b.integrate(0, -9), i(1) - i(2) - 4 * period_int)
 
+    def test_integrate_ppoly(self):
+        # test .integrate method to be consistent with PPoly.integrate
+        x = [0, 1, 2, 3, 4]
+        b = make_interp_spline(x, x)
+        b.extrapolate = 'periodic'
+        p = PPoly.from_spline(b)
+
+        for x0, x1 in [(-5, 0.5), (0.5, 5), (-4, 13)]:
+            assert_allclose(b.integrate(x0, x1),
+                            p.integrate(x0, x1))
+
     def test_subclassing(self):
         # classmethods should not decay to the base class
         class B(BSpline):
