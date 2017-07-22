@@ -766,7 +766,7 @@ def _get_Abc(
     A1 = hstack((A1, zeros((A1.shape[0], n_free))))
     c = np.concatenate((c, np.zeros(n_free)))
     A1[:, range(n_ub, A1.shape[1])] = -A1[:, i_free]
-    c[range(n_ub, A1.shape[1])] = -c[i_free]
+    c[np.arange(n_ub, A1.shape[1])] = -c[i_free]
 
     # add slack variables
     A2 = vstack([eye(A_ub.shape[0]), zeros((A_eq.shape[0], A_ub.shape[0]))])
