@@ -69,7 +69,6 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=numpy
-        - USE_SDIST=1
         - MB_PYTHON_VERSION=3.6
 addons:
   apt:
@@ -95,14 +94,22 @@ before_install:
       source venv/bin/activate
       free -m
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew install gcc
+      brew install gcc ccache
       touch config.sh
       git clone https://github.com/matthew-brett/multibuild.git
       source multibuild/common_utils.sh
       source multibuild/travis_steps.sh
       before_install
-      export CXX=clang++
-      export CC=clang
+      export PATH="/usr/local/opt/ccache/libexec:$PATH"
+      which ccache
+      ln -s ccache /usr/local/bin/gcc
+      ln -s ccache /usr/local/bin/g++
+      ln -s ccache /usr/local/bin/cc
+      ln -s ccache /usr/local/bin/c++
+      export USE_CCACHE=1
+      export CCACHE_COMPRESS=1
+      export CCACHE_MAXSIZE=200M
+      export CCACHE_CPP2=1
       export CFLAGS="-arch x86_64"
       export CXXFLAGS="-arch x86_64"
       printenv
@@ -143,6 +150,7 @@ before_install:
   - python -V
   - popd
   - set -o pipefail
+
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
