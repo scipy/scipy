@@ -329,7 +329,7 @@ class TestCdist(object):
         Y1 = cdist(X1, X2, u('euclidean'), out=out1)
         Y2 = cdist(X1, X2, u('euclidean'))
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
-        assert_true(Y1 is out1)
+        assert_(Y1 is out1)
         assert_raises(ValueError, cdist, X1, X2, u('euclidean'), out=out2)
         assert_raises(ValueError, cdist, X1, X2, u('euclidean'), out=out3)
         assert_raises(ValueError, cdist, X1, X2, u('euclidean'), out=out4)
@@ -1069,7 +1069,7 @@ class TestPdist(object):
         Y_right = eo['pdist-euclidean']
         Y_test1 = pdist(X, 'euclidean', out=out1)
         _assert_within_tol(Y_test1, Y_right, eps)
-        assert_true(Y_test1 is out1)
+        assert_(Y_test1 is out1)
         assert_raises(ValueError, pdist, X, u('euclidean'), out=out2)
         assert_raises(ValueError, pdist, X, u('euclidean'), out=out3)
         assert_raises(ValueError, pdist, X, u('euclidean'), out=out4)
