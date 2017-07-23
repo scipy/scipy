@@ -1156,7 +1156,8 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None, out=None):
         The inverse of the covariance matrix
         Only for Mahalanobis. Default: inv(cov(X.T)).T
     out : ndarray, optional
-        If not None, condensed distance matrix is stored in this array.
+        The output array
+        If not None, condensed distance matrix Y is stored in this array.
 
     Returns
     -------
@@ -1379,10 +1380,8 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None, out=None):
     if out is None:
         dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
     else:
-        if out.shape != (m * (m - 1) // 2, ):
+        if out.shape != (m * (m - 1) // 2,):
             raise ValueError("output array has incorrect shape.")
-        if out.shape != (mA, mB):
-            raise ValueError("Output array has wrong dimension.")
         if not out.flags.c_contiguous:
             raise ValueError("Output array must be C-contiguous.")
         if out.dtype != np.double:
@@ -1883,7 +1882,8 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None, out=None)
     VI : ndarray, optional
         The inverse of the covariance matrix
         Only for Mahalanobis. Default: inv(cov(vstack([XA, XB]).T)).T
-    out ; ndarray, optional
+    out : ndarray, optional
+        The output array
         If not None, the distance matrix Y is stored in this array.
 
     Returns
@@ -2158,13 +2158,13 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None, out=None)
         dm = np.zeros((mA, mB), dtype=np.double)
     else:
         if out.shape != (mA, mB):
-            raise ValueError("Output array has wrong dimension.")
+            raise ValueError("Output array has incorrect shape.")
         if not out.flags.c_contiguous:
             raise ValueError("Output array must be C-contiguous.")
         if out.dtype != np.double:
             raise ValueError("Output array must be double type.")
         dm = out
-    
+
     # validate input for multi-args metrics
     if(metric in ['minkowski', 'mi', 'm', 'pnorm', 'test_minkowski'] or
        metric == minkowski):

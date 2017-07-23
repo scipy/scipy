@@ -61,6 +61,12 @@ providing the cumulative distribution function of the multivariate normal
 distribution.  The underlying code is the classic one by Alan Genz (see
 `scipy/stats/mvndst.f`).
 
+`scipy.spatial.distance` improvements
+-------------------------------------
+
+Optional `out` parameter was added to pdist and cdist allowing the user to 
+specify where the resulting distance matrix is to be stored
+
 
 Deprecated features
 ===================
