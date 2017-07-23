@@ -1910,4 +1910,3 @@ def test__validate_vector():
 
     x = [[1, 2], [3, 4]]
     assert_raises(ValueError, _validate_vector, x)
-
