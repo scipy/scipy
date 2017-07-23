@@ -326,8 +326,8 @@ class TestCdist(object):
         out4 = np.empty((10, 20), dtype=np.int64)
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
-        Y1 = cdist(X1, X2, u('euclidean'))
-        Y2 = cdist(X1, X2, u('euclidean'), out=out1)
+        Y1 = cdist(X1, X2, u('euclidean'), out=out1)
+        Y2 = cdist(X1, X2, u('euclidean'))
         _assert_within_tol(Y1, Y2, eps, verbose > 2)
         assert_true(Y1 is out1)
         assert_raises(ValueError, cdist, X1, X2, u('euclidean'), out=out2)
