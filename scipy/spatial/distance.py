@@ -1377,12 +1377,17 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None, out=None):
 
     m, n = s
     if out is None:
-      dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
+        dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
     else:
-      if out.shape != (m * (m - 1)) // 2, ):
-         raise ValueError("output array has incorrect shape.")
-      dm = out
-      
+        if out.shape != (m * (m - 1)) // 2, ):
+            raise ValueError("output array has incorrect shape.")
+        if out.shape != (mA, mB):
+            raise ValueError("Output array has wrong dimension.")
+        if not out.flags.c_contiguous:
+            raise ValueError("Output array must be C-contiguous.")
+        if out.dtype != np.double:
+            raise ValueError("Output array must be double type.")
+        dm = out
 
     # validate input for multi-args metrics
     if(metric in ['minkowski', 'mi', 'm', 'pnorm', 'test_minkowski'] or
@@ -2150,12 +2155,16 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None, out=None)
     mB = sB[0]
     n = s[1]
     if out is None:
-      dm = np.zeros((mA, mB), dtype=np.double)
+        dm = np.zeros((mA, mB), dtype=np.double)
     else:
-      if out.shape != (mA, mB):
-         raise ValueError("Output array has incorrect shape.")
-      dm = out
-
+        if out.shape != (mA, mB):
+            raise ValueError("Output array has wrong dimension.")
+        if not out.flags.c_contiguous:
+            raise ValueError("Output array must be C-contiguous.")
+        if out.dtype != np.double:
+            raise ValueError("Output array must be double type.")
+        dm = out
+    
     # validate input for multi-args metrics
     if(metric in ['minkowski', 'mi', 'm', 'pnorm', 'test_minkowski'] or
        metric == minkowski):
