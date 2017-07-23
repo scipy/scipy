@@ -3,16 +3,16 @@ from __future__ import division, print_function, absolute_import
 import numpy.testing as npt
 import numpy as np
 from scipy._lib.six import xrange
+import pytest
 
 from scipy import stats
-from common_tests import (check_normalization, check_moment, check_mean_expect,
-                          check_var_expect, check_skew_expect,
-                          check_kurt_expect, check_entropy,
-                          check_private_entropy, check_edge_support,
-                          check_named_args, check_random_state_property,
-                          check_pickling, check_rvs_broadcast)
+from .common_tests import (check_normalization, check_moment, check_mean_expect,
+                           check_var_expect, check_skew_expect,
+                           check_kurt_expect, check_entropy,
+                           check_private_entropy, check_edge_support,
+                           check_named_args, check_random_state_property,
+                           check_pickling, check_rvs_broadcast)
 from scipy.stats._distr_params import distdiscrete
-knf = npt.dec.knownfailureif
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
@@ -85,7 +85,7 @@ def test_moments():
 
         cond = distname in ['zipf']
         msg = distname + ' fails kurtosis'
-        yield knf(cond, msg)(check_kurt_expect), distfn, arg, m, v, k, distname
+        yield pytest.mark.xfail(condition=cond, reason=msg)(check_kurt_expect), distfn, arg, m, v, k, distname
 
         # frozen distr moments
         yield check_moment_frozen, distfn, arg, m, 1
@@ -236,6 +236,3 @@ def check_scale_docstring(distfn):
         # Docstrings can be stripped if interpreter is run with -OO
         npt.assert_('scale' not in distfn.__doc__)
 
-
-if __name__ == "__main__":
-    npt.run_module_suite()

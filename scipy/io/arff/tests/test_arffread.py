@@ -14,7 +14,7 @@ import numpy as np
 
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_equal, assert_,
-                           assert_raises, dec, run_module_suite)
+                           assert_raises, dec)
 
 from scipy.io.arff.arffread import loadarff
 from scipy.io.arff.arffread import read_header, parse_type, ParseArffError
@@ -178,7 +178,7 @@ class TestHeader(object):
 
 
 class TestDateAttribute(object):
-    def setUp(self):
+    def setup_method(self):
         self.data, self.meta = loadarff(test7)
 
     def test_year_attribute(self):
@@ -243,6 +243,3 @@ class TestDateAttribute(object):
 
     def test_datetime_timezone(self):
         assert_raises(ValueError, loadarff, test8)
-
-if __name__ == "__main__":
-    run_module_suite()

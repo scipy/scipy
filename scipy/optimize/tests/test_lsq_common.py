@@ -1,4 +1,4 @@
-from numpy.testing import (run_module_suite, assert_, assert_allclose,
+from numpy.testing import (assert_, assert_allclose,
                            assert_raises, assert_equal)
 import numpy as np
 
@@ -113,7 +113,7 @@ class TestBounds(object):
 
 
 class TestQuadraticFunction(object):
-    def setup(self):
+    def setup_method(self):
         self.J = np.array([
             [0.1, 0.2],
             [-1.0, 1.0],
@@ -246,6 +246,3 @@ def test_reflective_transformation():
     assert_equal(x, [0, 10])
     assert_equal(g, [-1, 1])
 
-
-if __name__ == '__main__':
-    run_module_suite()

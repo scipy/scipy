@@ -11,7 +11,7 @@ import threading
 import numpy as np
 
 from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, run_module_suite, \
+        assert_array_almost_equal_nulp, \
         assert_raises, assert_equal, assert_array_equal
 
 from numpy import dot, conj, random
@@ -895,6 +895,3 @@ def test_regression_arpackng_1315():
         assert_allclose(np.sort(w), np.sort(w0[-9:]),
                         rtol=1e-4)
 
-
-if __name__ == "__main__":
-    run_module_suite()

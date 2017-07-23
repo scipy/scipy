@@ -11,7 +11,7 @@ import math
 import numpy as np
 from numpy import array, eye, exp, random
 from numpy.linalg import matrix_power
-from numpy.testing import (run_module_suite,
+from numpy.testing import (
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
         assert_array_almost_equal_nulp)
 from scipy._lib._numpy_compat import suppress_warnings
@@ -521,6 +521,3 @@ class TestOperators(object):
             assert_allclose(op.matmat(B), matrix_power(A, p).dot(B))
             assert_allclose(op.T.matmat(B), matrix_power(A, p).T.dot(B))
 
-
-if __name__ == "__main__":
-    run_module_suite()

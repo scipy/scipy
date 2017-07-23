@@ -5,8 +5,8 @@ import os
 from distutils.version import LooseVersion
 
 import numpy as np
-from numpy.testing import dec, assert_
-from numpy.testing.noseclasses import KnownFailureTest
+from numpy.testing import assert_
+import pytest
 
 import scipy.special as sc
 
@@ -25,28 +25,9 @@ class MissingModule(object):
 
 def check_version(module, min_ver):
     if type(module) == MissingModule:
-        return dec.skipif(True, "{} is not installed".format(module.name))
-    return dec.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
-                      "{} version >= {} required".format(module.__name__, min_ver))
-
-
-#------------------------------------------------------------------------------
-# Metaclass for decorating test_* methods
-#------------------------------------------------------------------------------
-
-class DecoratorMeta(type):
-    """Metaclass which decorates test_* methods given decorators."""
-    def __new__(cls, cls_name, bases, dct):
-        decorators = dct.pop('decorators', [])
-        for name, item in list(dct.items()):
-            if name.startswith('test_'):
-                for deco, decoargs in decorators:
-                    if decoargs is not None:
-                        item = deco(*decoargs)(item)
-                    else:
-                        item = deco(item)
-                dct[name] = item
-        return type.__new__(cls, cls_name, bases, dct)
+        return pytest.mark.skip(reason="{} is not installed".format(module.name))
+    return pytest.mark.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
+                              reason="{} version >= {} required".format(module.__name__, min_ver))
 
 
 #------------------------------------------------------------------------------
@@ -209,7 +190,7 @@ class FuncData(object):
         """Check the special function against the data."""
 
         if self.knownfailure:
-            raise KnownFailureTest(self.knownfailure)
+            pytest.xfail(reason=self.knownfailure)
 
         if data is None:
             data = self.data

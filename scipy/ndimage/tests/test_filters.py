@@ -5,8 +5,7 @@ import sys
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_raises, assert_allclose,
-                           assert_array_equal, assert_almost_equal,
-                           run_module_suite)
+                           assert_array_equal, assert_almost_equal)
 
 import scipy.ndimage as sndi
 from scipy.ndimage.filters import _gaussian_kernel1d
@@ -400,7 +399,3 @@ def test_footprint_all_zeros():
     kernel = np.zeros((3, 3), bool)
     with assert_raises(ValueError):
         sndi.maximum_filter(arr, footprint=kernel)
-
-
-if __name__ == "__main__":
-    run_module_suite(argv=sys.argv)

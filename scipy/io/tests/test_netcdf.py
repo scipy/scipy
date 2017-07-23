@@ -12,7 +12,7 @@ from contextlib import contextmanager
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_raises,
-    assert_equal, run_module_suite)
+    assert_equal)
 
 from scipy.io.netcdf import netcdf_file
 
@@ -462,6 +462,3 @@ def test_read_withMaskAndScaleFalse():
         vardata = f.variables['var3_fillvalAndMissingValue'][:]
         assert_mask_matches(vardata, [False, False, False])
         assert_equal(vardata, [1, 2, 3])
-
-if __name__ == "__main__":
-    run_module_suite()

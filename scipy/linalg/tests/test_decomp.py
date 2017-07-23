@@ -8,15 +8,14 @@ Build linalg:
   python setup_linalg.py build
 Run tests if scipy is installed:
   python -c 'import scipy;scipy.linalg.test()'
-Run tests if linalg is not installed:
-  python tests/test_decomp.py
 """
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
-                           assert_raises, assert_, assert_allclose,
-                           run_module_suite, dec)
+                           assert_raises, assert_, assert_allclose)
+
+import pytest
 
 from scipy._lib.six import xrange
 
@@ -259,7 +258,7 @@ class TestEig(object):
         # Compare homogeneous and nonhomogeneous versions
         assert_allclose(sort(wh), sort(w[np.isfinite(w)]))
 
-    @dec.knownfailureif(True, "See gh-2254.")
+    @pytest.mark.xfail(reason="See gh-2254.")
     def test_singular(self):
         # Example taken from
         # http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
@@ -361,7 +360,7 @@ class TestEig(object):
 
 
 class TestEigBanded(object):
-    def setup(self):
+    def setup_method(self):
         self.create_bandmat()
 
     def create_bandmat(self):
@@ -724,7 +723,7 @@ def test_eigh_integer():
 
 
 class TestLU(object):
-    def setup(self):
+    def setup_method(self):
         self.a = array([[1,2,3],[1,2,3],[2,5,6]])
         self.ca = array([[1,2,3],[1,2,3],[2,5j,6]])
         # Those matrices are more robust to detect problems in permutation
@@ -799,8 +798,8 @@ class TestLU(object):
 
 class TestLUSingle(TestLU):
     """LU testers for single precision, real and double"""
-    def setup(self):
-        TestLU.setup(self)
+    def setup_method(self):
+        TestLU.setup_method(self)
 
         self.a = self.a.astype(float32)
         self.ca = self.ca.astype(complex64)
@@ -818,7 +817,7 @@ class TestLUSingle(TestLU):
 
 
 class TestLUSolve(object):
-    def setUp(self):
+    def setup_method(self):
         seed(1234)
 
     def test_lu(self):
@@ -847,7 +846,7 @@ class TestLUSolve(object):
 
 
 class TestSVD_GESDD(object):
-    def setUp(self):
+    def setup_method(self):
         self.lapack_driver = 'gesdd'
         seed(1234)
 
@@ -984,7 +983,7 @@ class TestSVD_GESDD(object):
 
 
 class TestSVD_GESVD(TestSVD_GESDD):
-    def setUp(self):
+    def setup_method(self):
         self.lapack_driver = 'gesvd'
         seed(1234)
 
@@ -1038,7 +1037,7 @@ class TestSVDVals(object):
         assert_(len(s) == 3)
         assert_(s[0] >= s[1] >= s[2])
 
-    @dec.slow
+    @pytest.mark.slow
     def test_crash_2609(self):
         np.random.seed(1234)
         a = np.random.rand(1500, 2800)
@@ -1054,7 +1053,7 @@ class TestDiagSVD(object):
 
 class TestQR(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(1234)
 
     def test_simple(self):
@@ -1595,7 +1594,7 @@ class TestQR(object):
 
 class TestRQ(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(1234)
 
     def test_simple(self):
@@ -1870,7 +1869,7 @@ class TestHessenberg(object):
 
 
 class TestQZ(object):
-    def setUp(self):
+    def setup_method(self):
         seed(12345)
 
     def test_qz_single(self):
@@ -2054,7 +2053,7 @@ def _make_pos(X):
 
 class TestOrdQZ(object):
     @classmethod
-    def setupClass(cls):
+    def setup_class(cls):
         # http://www.nag.com/lapack-ex/node119.html
         A1 = np.array([[-21.10 - 22.50j, 53.5 - 50.5j, -34.5 + 127.5j,
                         7.5 + 0.5j],
@@ -2261,7 +2260,7 @@ class TestOrdQZ(object):
 
 class TestOrdQZWorkspaceSize(object):
 
-    def setUp(self):
+    def setup_method(self):
         seed(12345)
 
     def test_decompose(self):
@@ -2282,7 +2281,7 @@ class TestOrdQZWorkspaceSize(object):
             sort = lambda alpha, beta: alpha < beta
             [S,T,alpha,beta,U,V] = ordqz(A,B,sort=sort, output='complex')
 
-    @dec.slow
+    @pytest.mark.slow
     def test_decompose_ouc(self):
 
         N = 202
@@ -2361,6 +2360,7 @@ def test_aligned_mem_complex():
     eig(z.T, overwrite_a=True)
 
 
+@pytest.mark.xfail(run=False, reason="Ticket #1152, triggers a segfault in rare cases.")
 def check_lapack_misaligned(func, args, kwargs):
     args = list(args)
     for i in range(len(args)):
@@ -2378,7 +2378,6 @@ def check_lapack_misaligned(func, args, kwargs):
                 func(*a,**kwargs)
 
 
-@dec.knownfailureif(True, "Ticket #1152, triggers a segfault in rare cases.")
 def test_lapack_misaligned():
     M = np.eye(10,dtype=float)
     R = np.arange(100)
@@ -2477,11 +2476,11 @@ def _check_orth(n):
     assert_allclose(Y, Y.mean())
 
 
-@dec.slow
-@dec.skipif(np.dtype(np.intp).itemsize < 8, "test only on 64-bit, else too slow")
+@pytest.mark.slow
+@pytest.mark.skipif(np.dtype(np.intp).itemsize < 8, reason="test only on 64-bit, else too slow")
 def test_orth_memory_efficiency():
     # Pick n so that 16*n bytes is reasonable but 8*n*n bytes is unreasonable.
-    # Keep in mind that @dec.slow tests are likely to be running
+    # Keep in mind that @pytest.mark.slow tests are likely to be running
     # under configurations that support 4Gb+ memory for tests related to
     # 32 bit overflow.
     n = 10*1000*1000
@@ -2495,6 +2494,3 @@ def test_orth():
     for n in 1, 2, 3, 10, 100:
         _check_orth(n)
 
-
-if __name__ == "__main__":
-    run_module_suite()

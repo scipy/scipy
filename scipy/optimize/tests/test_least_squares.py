@@ -4,7 +4,7 @@ from itertools import product
 
 import numpy as np
 from numpy.linalg import norm
-from numpy.testing import (run_module_suite, assert_, assert_allclose,
+from numpy.testing import (assert_, assert_allclose,
                            assert_raises, assert_equal)
 from scipy._lib._numpy_compat import suppress_warnings
 
@@ -732,6 +732,3 @@ def test_basic():
     res = least_squares(fun_trivial, 2.0)
     assert_allclose(res.x, 0, atol=1e-10)
 
-
-if __name__ == "__main__":
-    run_module_suite()

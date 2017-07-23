@@ -1,10 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_, run_module_suite, dec,
+from numpy.testing import (assert_,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, assert_raises,
                            assert_approx_equal)
+import pytest
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal, fftpack
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
@@ -1174,8 +1175,7 @@ class TestSTFT(object):
             assert_allclose(t, tr, err_msg=msg)
             assert_allclose(x, xr, err_msg=msg)
 
-    # Needs complex rfft from fftpack, see gh-2487 + gh-6058
-    @dec.knownfailureif(True)
+    @pytest.mark.xfail(reason="Needs complex rfft from fftpack, see gh-2487 + gh-6058")
     def test_roundtrip_float32(self):
         np.random.seed(1234)
 
@@ -1354,6 +1354,3 @@ class TestSTFT(object):
 
         assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
         assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')
-
-if __name__ == "__main__":
-    run_module_suite()

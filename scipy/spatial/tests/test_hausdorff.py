@@ -10,7 +10,7 @@ from scipy._lib._util import check_random_state
 class TestHausdorff(object):
     # Test various properties of the directed Hausdorff code.
 
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
         random_angles = np.random.random(100) * np.pi * 2
         random_columns = np.column_stack(

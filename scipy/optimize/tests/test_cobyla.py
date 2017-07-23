@@ -3,14 +3,14 @@ from __future__ import division, print_function, absolute_import
 import math
 import numpy as np
 
-from numpy.testing import assert_allclose, run_module_suite, \
+from numpy.testing import assert_allclose, \
      assert_
 
 from scipy.optimize import fmin_cobyla, minimize
 
 
 class TestCobyla(object):
-    def setUp(self):
+    def setup_method(self):
         self.x0 = [4.95, 0.66]
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]
         self.opts = {'disp': False, 'rhobeg': 1, 'tol': 1e-5,
@@ -113,6 +113,3 @@ def test_vector_constraints():
     sol = minimize(fun, x0, constraints=constraints, tol=1e-5)
     assert_allclose(sol.fun, 1, atol=1e-4)
 
-
-if __name__ == "__main__":
-    run_module_suite()

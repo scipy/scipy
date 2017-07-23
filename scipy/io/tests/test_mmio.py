@@ -6,7 +6,7 @@ import shutil
 
 import numpy as np
 from numpy import array, transpose, pi
-from numpy.testing import (run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
                            assert_array_equal, assert_array_almost_equal,
                            assert_raises)
 
@@ -15,11 +15,11 @@ from scipy.io.mmio import mminfo, mmread, mmwrite
 
 
 class TestMMIOArray(object):
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check(self, a, info):
@@ -102,11 +102,11 @@ class TestMMIOArray(object):
 
 
 class TestMMIOSparseCSR(TestMMIOArray):
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check(self, a, info):
@@ -270,11 +270,11 @@ _over64bit_integer_sparse_example = '''\
 '''
 
 class TestMMIOReadLargeIntegers(object):
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check_read(self, example, a, info, dense, over32, over64):
@@ -450,11 +450,11 @@ _symmetric_pattern_example = '''\
 
 
 class TestMMIOCoordinate(object):
-    def setUp(self):
+    def setup_method(self):
         self.tmpdir = mkdtemp()
         self.fn = os.path.join(self.tmpdir, 'testfile.mtx')
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(self.tmpdir)
 
     def check_read(self, example, a, info):
@@ -641,6 +641,3 @@ class TestMMIOCoordinate(object):
                 assert_array_almost_equal(A.data,
                     [float('%%.%dg' % precision % value)])
 
-
-if __name__ == "__main__":
-    run_module_suite()

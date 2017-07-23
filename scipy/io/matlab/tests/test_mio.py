@@ -19,7 +19,7 @@ import shutil
 import gzip
 
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_equal, assert_raises, run_module_suite,
+                           assert_equal, assert_raises,
                            assert_)
 from scipy._lib._numpy_compat import suppress_warnings
 
@@ -1229,6 +1229,3 @@ def test_bad_utf8():
     assert_equal(res['bad_string'],
                  b'\x80 am broken'.decode('utf8', 'replace'))
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -3,10 +3,8 @@ from __future__ import division, print_function, absolute_import
 import os
 import numpy as np
 
-from numpy.testing import run_module_suite
 from numpy.testing import assert_raises, assert_array_almost_equal
-
-from numpy.testing.noseclasses import KnownFailureTest
+import pytest
 
 from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov
@@ -291,7 +289,7 @@ def test_solve_continuous_are():
         """Checks if 0 = XA + A'X - XB(R)^{-1} B'X + Q is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         x = solve_continuous_are(a, b, q, r)
         res = x.dot(a) + a.conj().T.dot(x) + q
@@ -511,7 +509,7 @@ def test_solve_discrete_are():
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         x = solve_discrete_are(a, b, q, r)
         res = a.conj().T.dot(x.dot(a)) - x + q
@@ -562,7 +560,7 @@ def test_solve_generalized_continuous_are():
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, e, s, knownfailure = case
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         x = solve_continuous_are(a, b, q, r, e, s)
         res = a.conj().T.dot(x.dot(e)) + e.conj().T.dot(x.dot(a)) + q
@@ -626,7 +624,7 @@ def test_solve_generalized_discrete_are():
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, e, s, knownfailure = case
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         x = solve_discrete_are(a, b, q, r, e, s)
         if e is None:
@@ -756,6 +754,3 @@ class TestSolveSylvester(object):
         x = solve_sylvester(a, b, c)
         assert_array_almost_equal(x, np.array([1.0, 1.0]).reshape(-1, 1))
 
-
-if __name__ == "__main__":
-    run_module_suite()

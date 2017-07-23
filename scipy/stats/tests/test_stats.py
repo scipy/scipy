@@ -16,8 +16,8 @@ from collections import namedtuple
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_raises, run_module_suite, assert_allclose,
-                           dec)
+                           assert_raises, assert_allclose)
+import pytest
 from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
@@ -28,7 +28,7 @@ import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
-from common_tests import check_named_results
+from .common_tests import check_named_results
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -341,7 +341,7 @@ class TestFisherExact(object):
             np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
                                            verbose=True)
 
-    @dec.slow
+    @pytest.mark.slow
     def test_large_numbers(self):
         # Test with some large numbers. Regression test for #1401
         pvals = [5.56e-11, 2.666e-11, 1.363e-11]  # from R
@@ -1277,7 +1277,7 @@ class TestHMean(object):
 
 
 class TestScoreatpercentile(object):
-    def setUp(self):
+    def setup_method(self):
         self.a1 = [3, 4, 5, 10, -3, -5, 6]
         self.a2 = [3, -6, -2, 8, 7, 4, 2, 1]
         self.a3 = [3., 4, 5, 10, -3, -5, -6, 7.0]
@@ -1478,7 +1478,7 @@ class TestMode(object):
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
-    @dec.knownfailureif(sys.version_info > (3,), 'numpy github issue 641')
+    @pytest.mark.xfail(sys.version_info > (3,), reason='numpy github issue 641')
     def test_mixed_objects(self):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
@@ -4202,6 +4202,3 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
-
-if __name__ == "__main__":
-    run_module_suite()

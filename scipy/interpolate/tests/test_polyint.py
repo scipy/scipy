@@ -6,7 +6,7 @@ import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    run_module_suite, assert_allclose, assert_equal, assert_,
+    assert_allclose, assert_equal, assert_,
     assert_raises)
 
 from scipy.interpolate import (
@@ -144,7 +144,7 @@ def test_complex():
 
 
 class TestKrogh(object):
-    def setUp(self):
+    def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)
@@ -292,7 +292,7 @@ class TestTaylor(object):
 
 
 class TestBarycentric(object):
-    def setUp(self):
+    def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
         self.xs = np.linspace(-1,1,5)
@@ -659,6 +659,3 @@ class TestCubicSpline(object):
         # periodic condition, y[-1] must be equal to y[0]:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
-
-if __name__ == '__main__':
-    run_module_suite()

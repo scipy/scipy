@@ -4,7 +4,8 @@ May 2007
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, dec, run_module_suite
+from numpy.testing import assert_
+import pytest
 
 from scipy._lib.six import xrange
 from scipy.optimize import nonlin, root
@@ -12,7 +13,7 @@ from numpy import matrix, diag, dot
 from numpy.linalg import inv
 import numpy as np
 
-from test_minpack import pressure_network
+from .test_minpack import pressure_network
 
 SOLVERS = {'anderson': nonlin.anderson, 'diagbroyden': nonlin.diagbroyden,
            'linearmixing': nonlin.linearmixing, 'excitingmixing': nonlin.excitingmixing,
@@ -110,7 +111,7 @@ class TestNonlin(object):
                    options={'ftol': f_tol, 'maxiter': 200, 'disp': 0})
         assert_(np.absolute(res.fun).max() < f_tol)
 
-    @dec.knownfailureif(True)
+    @pytest.mark.xfail
     def _check_func_fail(self, *a, **kw):
         pass
 
@@ -431,6 +432,3 @@ class TestNonlinOldTests(object):
                             'jac_options': {'alpha': 1}})
         assert_(nonlin.norm(res.x) < 1e-8)
         assert_(nonlin.norm(res.fun) < 1e-8)
-
-if __name__ == "__main__":
-    run_module_suite()

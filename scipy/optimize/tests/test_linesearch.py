@@ -89,7 +89,7 @@ class TestLineSearch(object):
 
     # --
 
-    def setup(self):
+    def setup_method(self):
         self.scalar_funcs = []
         self.line_funcs = []
         self.N = 20

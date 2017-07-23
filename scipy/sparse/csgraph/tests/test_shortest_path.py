@@ -1,8 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_array_almost_equal, assert_raises, dec,
-    run_module_suite, assert_array_equal)
+from numpy.testing import (assert_array_almost_equal, assert_raises,
+    assert_array_equal)
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
     bellman_ford, construct_dist_matrix, NegativeCycleError)
 
@@ -200,6 +200,3 @@ def test_overwrite():
     shortest_path(foo, overwrite=False)
     assert_array_equal(foo, G)
 
-
-if __name__ == '__main__':
-    run_module_suite()

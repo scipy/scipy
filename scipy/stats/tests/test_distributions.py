@@ -8,10 +8,10 @@ import re
 import sys
 import pickle
 
-from numpy.testing import (run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
     assert_array_equal, assert_almost_equal, assert_array_almost_equal,
-    assert_allclose, assert_, assert_raises, assert_warns, dec)
-from nose import SkipTest
+    assert_allclose, assert_, assert_raises, assert_warns)
+import pytest
 from scipy._lib._numpy_compat import suppress_warnings
 
 import numpy
@@ -24,7 +24,7 @@ from scipy.stats._distn_infrastructure import argsreduce
 import scipy.stats.distributions
 
 from scipy.special import xlogy
-from test_continuous_basic import distcont
+from .test_continuous_basic import distcont
 
 # python -OO strips docstrings
 DOCSTRINGS_STRIPPED = sys.flags.optimize > 1
@@ -386,9 +386,9 @@ class TestTruncnorm(object):
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
 
+    @pytest.mark.xfail(reason="truncnorm rvs is know to fail at extreme tails")
     def test_gh_2477_large_values(self):
         # Check a case that fails because of extreme tailness.
-        raise SkipTest('truncnorm rvs is know to fail at extreme tails')
         low, high = 100, 101
         x = stats.truncnorm.rvs(low, high, 0, 1, size=10)
         assert_(low < x.min() < x.max() < high)
@@ -980,7 +980,7 @@ class TestF(object):
             warnings.simplefilter('error', RuntimeWarning)
             stats.f.stats(dfn=[11]*4, dfd=[2, 4, 6, 8], moments='mvsk')
 
-    @dec.knownfailureif(True, 'f stats does not properly broadcast')
+    @pytest.mark.xfail(reason='f stats does not properly broadcast')
     def test_stats_broadcast(self):
         # stats do not fully broadcast just yet
         mv = stats.f.stats(dfn=11, dfd=[11, 12])
@@ -1403,11 +1403,11 @@ def TestArgsreduce():
 class TestFitMethod(object):
     skip = ['ncf']
 
-    @dec.slow
     def test_fit(self):
+        @pytest.mark.slow
         def check(func, dist, args, alpha):
             if dist in self.skip:
-                raise SkipTest("%s fit known to fail" % dist)
+                pytest.skip("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             with np.errstate(all='ignore'):
                 res = distfunc.rvs(*args, **{'size': 200})
@@ -1426,13 +1426,13 @@ class TestFitMethod(object):
         for func, dist, args, alpha in test_all_distributions():
             yield check, func, dist, args, alpha
 
-    @dec.slow
     def test_fix_fit(self):
+        @pytest.mark.slow
         def check(func, dist, args, alpha):
             # Not sure why 'ncf', and 'beta' are failing
             # frechet has different len(args) than distfunc.numargs
             if dist in self.skip + ['frechet']:
-                raise SkipTest("%s fit known to fail" % dist)
+                pytest.skip("%s fit known to fail" % dist)
             distfunc = getattr(stats, dist)
             with np.errstate(all='ignore'):
                 res = distfunc.rvs(*args, **{'size': 200})
@@ -2214,7 +2214,7 @@ class TestWeibull(object):
 
 
 class TestRdist(object):
-    @dec.slow
+    @pytest.mark.slow
     def test_rdist_cdf_gh1285(self):
         # check workaround in rdist._cdf for issue gh-1285.
         distfn = stats.rdist
@@ -2327,7 +2327,7 @@ def test_regression_tukey_lambda():
     assert_((p[2] == 0.0).any())
 
 
-@dec.skipif(DOCSTRINGS_STRIPPED)
+@pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
 def test_regression_ticket_1421():
     assert_('pdf(x, mu, loc=0, scale=1)' not in stats.poisson.__doc__)
     assert_('pmf(x,' in stats.poisson.__doc__)
@@ -2832,7 +2832,7 @@ class TestSubclassingNoShapes(object):
         dummy_distr = _distr2_gen(name='dummy')
         assert_almost_equal(dummy_distr.pdf(1, a=1), 1)
 
-    @dec.skipif(DOCSTRINGS_STRIPPED)
+    @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstring stripped")
     def test_signature_inspection(self):
         # check that _pdf signature inspection works correctly, and is used in
         # the class docstring
@@ -2843,7 +2843,7 @@ class TestSubclassingNoShapes(object):
                          dummy_distr.__doc__)
         assert_(len(res) == 1)
 
-    @dec.skipif(DOCSTRINGS_STRIPPED)
+    @pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstring stripped")
     def test_signature_inspection_2args(self):
         # same for 2 shape params and both _pdf and _cdf defined
         dummy_distr = _distr6_gen(name='dummy')
@@ -2884,7 +2884,7 @@ class TestSubclassingNoShapes(object):
         assert_raises(TypeError, _dist_gen, **dict(name='dummy'))
 
 
-@dec.skipif(DOCSTRINGS_STRIPPED)
+@pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstring stripped")
 def test_docstrings():
     badones = [r',\s*,', r'\(\s*,', r'^\s*:']
     for distname in stats.__all__:
@@ -3034,7 +3034,7 @@ def test_argus_function():
 
 
 class TestHistogram(object):
-    def setUp(self):
+    def setup_method(self):
         # We have 8 bins
         # [1,2), [2,3), [3,4), [4,5), [5,6), [6,7), [7,8), [8,9)
         # But actually np.histogram will put the last 9 also in the [8,9) bin!
@@ -3127,6 +3127,3 @@ class TestHistogram(object):
         assert_allclose(self.norm_template.entropy(),
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
-
-if __name__ == "__main__":
-    run_module_suite()

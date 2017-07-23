@@ -3,7 +3,8 @@
 from __future__ import division, print_function, absolute_import
 
 import sys
-from numpy.testing import assert_equal, dec
+import pytest
+from numpy.testing import assert_equal
 
 from scipy.misc import doccer
 
@@ -66,7 +67,7 @@ def test_docformat():
    with some indent""")
 
 
-@dec.skipif(DOCSTRINGS_STRIPPED)
+@pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
 def test_decorator():
     # with unindentation of parameters
     decorator = doccer.filldoc(doc_dict, True)
@@ -95,7 +96,7 @@ def test_decorator():
         """)
 
 
-@dec.skipif(DOCSTRINGS_STRIPPED)
+@pytest.mark.skipif(DOCSTRINGS_STRIPPED, reason="docstrings stripped")
 def test_inherit_docstring_from():
 
     class Foo(object):

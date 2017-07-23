@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_allclose, assert_, assert_raises,
                            assert_almost_equal)
@@ -598,6 +598,3 @@ class TestTransferFunctionZConversion(object):
         assert_equal(num, num2)
         assert_equal([5, 6, 0], den2)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,14 +1,14 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_allclose,
+from numpy.testing import (assert_allclose,
                            assert_equal, assert_almost_equal, assert_raises)
 
 from scipy.spatial import procrustes
 
 
 class TestProcrustes(object):
-    def setUp(self):
+    def setup_method(self):
         """creates inputs"""
         # an L
         self.data1 = np.array([[1, 3], [1, 2], [1, 1], [2, 1]], 'd')
@@ -116,6 +116,3 @@ class TestProcrustes(object):
                       np.array([[[11], [7]]]),
                       np.array([[[5, 13]]]))
 
-
-if __name__ == '__main__':
-    run_module_suite()

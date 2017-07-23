@@ -34,8 +34,9 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (run_module_suite, dec, assert_raises,
+from numpy.testing import (assert_raises,
                            assert_allclose, assert_equal, assert_, assert_warns)
+import pytest
 
 from scipy._lib.six import xrange, u
 
@@ -51,7 +52,7 @@ from scipy.cluster.hierarchy import (
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
 
-import hierarchy_test_data
+from . import hierarchy_test_data
 
 
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
@@ -810,11 +811,11 @@ class TestDendrogram(object):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
         assert_raises(ValueError, dendrogram, Z, orientation="foo")
 
-    @dec.skipif(not have_matplotlib)
     def test_dendrogram_plot(self):
         for orientation in ['top', 'bottom', 'left', 'right']:
             yield self.check_dendrogram_plot, orientation
 
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def check_dendrogram_plot(self, orientation):
         # Tests dendrogram plotting.
         Z = linkage(hierarchy_test_data.ytdist, 'single')
@@ -873,7 +874,7 @@ class TestDendrogram(object):
         plt.close()
         assert_equal(R2, expected)
 
-    @dec.skipif(not have_matplotlib)
+    @pytest.mark.skipif(not have_matplotlib, reason="no matplotlib")
     def test_dendrogram_truncate_mode(self):
         Z = linkage(hierarchy_test_data.ytdist, 'single')
 
@@ -1040,6 +1041,3 @@ def test_Heap():
     assert_equal(pair['key'], 1)
     assert_equal(pair['value'], 10)
 
-
-if __name__ == "__main__":
-    run_module_suite()

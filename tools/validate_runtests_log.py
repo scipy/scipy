@@ -36,35 +36,36 @@ if __name__ == "__main__":
     expected_size = {'full': 19055,
                      'fast': 17738}
 
-    # read in the log, parse for the nose printout:
-    # Ran NNN tests in MMMs
-    # <blank line>
-    # OK (SKIP=X, KNOWNFAIL=Y) or FAILED (errors=X, failures=Y)
-    r = re.compile("Ran (?P<num_tests>\d+) tests in (?P<time>\d+\S+)")
+    # read in the log, parse for the pytest printout
+    r1 = re.compile("(?P<num_failed>\d+) failed, (?P<num_passed>\d+) passed,.* in (?P<time>\d+\S+)")
+    r2 = re.compile("(?P<num_passed>\d+) passed,.* in (?P<time>\d+\S+)")
 
-    status, found_it = False, False
+    found_it = False
     while True:
         line = sys.stdin.readline()
         if not line:
             break
-        m = r.search(line)
+        m = r1.search(line)
+        if not m:
+            m = r2.search(line)
         if m:
             found_it = True
-            sys.stdin.readline()   # skip the next one
-            line = sys.stdin.readline()
-            if "OK" in line:
-                status = True
             break
 
     if found_it:
-        # did it errored or failed?
-        if not status:
+        passed = int(m.group('num_passed'))
+        try:
+            failed = int(m.group('num_failed'))
+        except IndexError:
+            failed = 0
+
+        if failed:
             print("*** Looks like some tests failed.")
             sys.exit(-1)
 
         # now check that the number of tests run is reasonable
         expected = expected_size[testmode]
-        actual = int(m.group('num_tests'))
+        actual = passed + failed
         if actual < expected:
             print("*** Too few tests: expected %s, run %s" % (expected, actual))
             sys.exit(1)

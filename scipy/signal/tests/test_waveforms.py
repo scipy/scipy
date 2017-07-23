@@ -2,7 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_, assert_raises, run_module_suite,
+                           assert_, assert_raises,
                            assert_allclose, assert_array_equal)
 
 import scipy.signal.waveforms as waveforms
@@ -351,6 +351,3 @@ class TestUnitImpulse(object):
 
         imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
         assert_(np.issubdtype(imp.dtype, np.complex))
-
-if __name__ == "__main__":
-    run_module_suite()

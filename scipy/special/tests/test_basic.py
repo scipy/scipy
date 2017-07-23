@@ -25,9 +25,10 @@ import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
         log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_)
 
+import pytest
 from numpy.testing import (assert_equal, assert_almost_equal,
         assert_array_equal, assert_array_almost_equal, assert_approx_equal,
-        assert_, dec, run_module_suite, assert_allclose,
+        assert_, assert_allclose,
         assert_raises, assert_array_almost_equal_nulp)
 
 from scipy import special
@@ -303,7 +304,7 @@ class TestCephes(object):
         assert_equal(cephes.expm1(np.nan), np.nan)
 
     # Earlier numpy version don't guarantee that npy_cexp conforms to C99.
-    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0')
+    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.9.0', reason='')
     def test_expm1_complex(self):
         expm1 = cephes.expm1
         assert_equal(expm1(0 + 0j), 0 + 0j)
@@ -323,7 +324,7 @@ class TestCephes(object):
         assert_equal(expm1(complex(np.nan, 1)), complex(np.nan, np.nan))
         assert_equal(expm1(complex(np.nan, np.nan)), complex(np.nan, np.nan))
 
-    @dec.knownfailureif(True, 'The real part of expm1(z) bad at these points')
+    @pytest.mark.xfail(reason='The real part of expm1(z) bad at these points')
     def test_expm1_complex_hard(self):
         # The real part of this function is difficult to evaluate when
         # z.real = -log(cos(z.imag)).
@@ -539,7 +540,7 @@ class TestCephes(object):
         assert_equal(log1p(np.inf), np.inf)
 
     # earlier numpy version don't guarantee that npy_clog conforms to C99
-    @dec.skipif(NumpyVersion(np.__version__) < '1.9.0')
+    @pytest.mark.skipif(NumpyVersion(np.__version__) < '1.9.0', reason='')
     def test_log1p_complex(self):
         log1p = cephes.log1p
         c = complex
@@ -2534,7 +2535,7 @@ class TestBessel(object):
         finally:
             np.seterr(**olderr)
 
-    @dec.slow
+    @pytest.mark.slow
     def test_iv_cephes_vs_amos_mass_test(self):
         N = 1000000
         np.random.seed(1)
@@ -3390,6 +3391,3 @@ def test_pseudo_huber():
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -6,7 +6,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from numpy.testing import (assert_equal, assert_array_equal,
-     assert_, assert_allclose, assert_raises, run_module_suite)
+     assert_, assert_allclose, assert_raises)
 from scipy._lib._numpy_compat import suppress_warnings
 
 from numpy import zeros, arange, array, abs, max, ones, eye, iscomplexobj
@@ -349,6 +349,3 @@ class TestGMRES(object):
         assert_allclose(r_x, x)
         assert_(r_info == info)
 
-
-if __name__ == "__main__":
-    run_module_suite()

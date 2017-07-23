@@ -5,7 +5,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_almost_equal, run_module_suite)
+                           assert_almost_equal)
 from numpy import linspace, sin, random, exp, allclose
 from scipy.interpolate.rbf import Rbf
 
@@ -153,6 +153,3 @@ def test_rbf_epsilon_none_collinear():
     z = [5, 6, 7]
     rbf = Rbf(x, y, z, epsilon=None)
     assert_(rbf.epsilon > 0)
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -12,7 +12,7 @@ Run tests if fftpack is not installed:
 """
 
 from numpy.testing import (assert_equal, assert_almost_equal,
-                           assert_array_almost_equal, run_module_suite)
+                           assert_array_almost_equal)
 from scipy.fftpack import (diff, fft, ifft, tilbert, itilbert, hilbert,
                            ihilbert, shift, fftfreq, cs_diff, sc_diff,
                            ss_diff, cc_diff)
@@ -380,6 +380,3 @@ class TestOverwrite(object):
     def test_shift(self):
         for dtype in self.dtypes:
             self._check_1d(shift, dtype, (16,), 1.0)
-
-if __name__ == "__main__":
-    run_module_suite()

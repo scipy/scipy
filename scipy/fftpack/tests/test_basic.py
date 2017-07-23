@@ -12,8 +12,9 @@ Run tests if fftpack is not installed:
 """
 
 from numpy.testing import (assert_equal, assert_array_almost_equal,
-        assert_array_almost_equal_nulp, assert_raises, run_module_suite,
-        assert_array_less, dec)
+        assert_array_almost_equal_nulp, assert_raises,
+        assert_array_less)
+import pytest
 from scipy.fftpack import ifft,fft,fftn,ifftn,rfft,irfft, fft2
 from scipy.fftpack import _fftpack as fftpack
 from scipy.fftpack.basic import _is_safe_size
@@ -128,7 +129,7 @@ def direct_irdft(x):
 
 
 class _TestFFTBase(object):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = None
         self.rdt = None
         np.random.seed(1234)
@@ -183,17 +184,17 @@ class _TestFFTBase(object):
 
 
 class TestDoubleFFT(_TestFFTBase):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = np.cdouble
         self.rdt = np.double
 
 
 class TestSingleFFT(_TestFFTBase):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = np.complex64
         self.rdt = np.float32
 
-    @dec.knownfailureif(True, "single-precision FFT implementation is partially disabled, until accuracy issues with large prime powers are resolved")
+    @pytest.mark.xfail(run=False, reason="single-precision FFT implementation is partially disabled, until accuracy issues with large prime powers are resolved")
     def test_notice(self):
         pass
 
@@ -218,7 +219,7 @@ class TestFloat16FFT(object):
 
 
 class _TestIFFTBase(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_definition(self):
@@ -300,19 +301,19 @@ class _TestIFFTBase(object):
 
 
 class TestDoubleIFFT(_TestIFFTBase):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = np.cdouble
         self.rdt = np.double
 
 
 class TestSingleIFFT(_TestIFFTBase):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = np.complex64
         self.rdt = np.float32
 
 
 class _TestRFFTBase(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_definition(self):
@@ -367,19 +368,19 @@ class _TestRFFTBase(object):
         assert_equal(xs.data, expected)
 
 class TestRFFTDouble(_TestRFFTBase):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = np.cdouble
         self.rdt = np.double
 
 
 class TestRFFTSingle(_TestRFFTBase):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = np.complex64
         self.rdt = np.float32
 
 
 class _TestIRFFTBase(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_definition(self):
@@ -449,21 +450,21 @@ class _TestIRFFTBase(object):
 # significant digits
 
 class TestIRFFTDouble(_TestIRFFTBase):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = np.cdouble
         self.rdt = np.double
         self.ndec = 14
 
 
 class TestIRFFTSingle(_TestIRFFTBase):
-    def setUp(self):
+    def setup_method(self):
         self.cdt = np.complex64
         self.rdt = np.float32
         self.ndec = 5
 
 
 class Testfft2(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_regression_244(self):
@@ -481,7 +482,7 @@ class Testfft2(object):
 
 
 class TestFftnSingle(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_definition(self):
@@ -540,7 +541,7 @@ class TestFftnSingle(object):
 
 
 class TestFftn(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_definition(self):
@@ -700,7 +701,7 @@ class _TestIfftn(object):
     dtype = None
     cdtype = None
 
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_definition(self):
@@ -737,7 +738,7 @@ class TestIfftnSingle(_TestIfftn):
 
 
 class TestLongDoubleFailure(object):
-    def setUp(self):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_complex(self):
@@ -911,6 +912,3 @@ class TestOverwrite(object):
         for dtype in self.dtypes:
             self._check_nd(ifftn, dtype, overwritable)
 
-
-if __name__ == "__main__":
-    run_module_suite()

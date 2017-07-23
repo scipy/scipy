@@ -3,8 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, assert_allclose, assert_raises,
-        run_module_suite)
+        assert_array_almost_equal, assert_allclose, assert_raises)
 from scipy._lib._numpy_compat import suppress_warnings
 from numpy import array, diff, linspace, meshgrid, ones, pi, shape
 from scipy.interpolate.fitpack import bisplrep, bisplev
@@ -327,7 +326,7 @@ class TestSmoothBivariateSpline(object):
 
 
 class TestLSQSphereBivariateSpline(object):
-    def setUp(self):
+    def setup_method(self):
         # define the input data and coordinates
         ntheta, nphi = 70, 90
         theta = linspace(0.5/(ntheta - 1), 1 - 0.5/(ntheta - 1), ntheta) * pi
@@ -356,7 +355,7 @@ class TestLSQSphereBivariateSpline(object):
 
 
 class TestSmoothSphereBivariateSpline(object):
-    def setUp(self):
+    def setup_method(self):
         theta = array([.25*pi, .25*pi, .25*pi, .5*pi, .5*pi, .5*pi, .75*pi,
                        .75*pi, .75*pi])
         phi = array([.5 * pi, pi, 1.5 * pi, .5 * pi, pi, 1.5 * pi, .5 * pi, pi,
@@ -508,6 +507,3 @@ def _numdiff_2d(func, x, y, dx=0, dy=0, eps=1e-8):
                 - func(x + eps, y - eps) + func(x - eps, y - eps)) / (2*eps)**2
     else:
         raise ValueError("invalid derivative order")
-
-if __name__ == "__main__":
-    run_module_suite()

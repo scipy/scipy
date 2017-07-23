@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy import array, kron, matrix, diag
-from numpy.testing import run_module_suite, assert_, assert_equal
+from numpy.testing import assert_, assert_equal
 
 from scipy.sparse import spfuncs
 from scipy.sparse import csr_matrix, csc_matrix, bsr_matrix
@@ -97,6 +97,3 @@ class TestSparseFunctions(object):
         Y = csc_matrix(X)
         assert_equal(spfuncs.count_blocks(X, (1, 2)), gold(X, (1, 2)))
         assert_equal(spfuncs.count_blocks(Y, (1, 2)), gold(X, (1, 2)))
-
-if __name__ == "__main__":
-    run_module_suite()

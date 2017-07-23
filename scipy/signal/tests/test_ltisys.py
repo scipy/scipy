@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_, assert_raises, run_module_suite)
+                           assert_, assert_raises)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -619,12 +619,12 @@ class _TestImpulseFuncs(object):
 
 
 class TestImpulse2(_TestImpulseFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = impulse2
 
 
 class TestImpulse(_TestImpulseFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = impulse
 
 
@@ -696,7 +696,7 @@ class _TestStepFuncs(object):
 
 
 class TestStep2(_TestStepFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = step2
 
     def test_05(self):
@@ -713,7 +713,7 @@ class TestStep2(_TestStepFuncs):
 
 
 class TestStep(_TestStepFuncs):
-    def setup(self):
+    def setup_method(self):
         self.func = step
 
     def test_complex_input(self):
@@ -829,7 +829,7 @@ class TestZerosPolesGain(object):
 
 
 class Test_abcd_normalize(object):
-    def setup(self):
+    def setup_method(self):
         self.A = np.array([[1.0, 2.0], [3.0, 4.0]])
         self.B = np.array([[-1.0], [5.0]])
         self.C = np.array([[4.0, 5.0]])
@@ -1137,6 +1137,3 @@ class Test_freqresp(object):
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
 
-
-if __name__ == "__main__":
-    run_module_suite()

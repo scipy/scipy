@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import arange, allclose, ones, isnan
 import numpy as np
-from numpy.testing import (run_module_suite, assert_, assert_allclose)
+from numpy.testing import (assert_, assert_allclose)
 from scipy._lib._numpy_compat import suppress_warnings
 
 # functionality to be tested
@@ -79,6 +79,3 @@ class Test(object):
         test_list = [name for name in dir(self) if name.find('test_') == 0]
         for test_name in test_list:
             exec("self.%s()" % test_name)
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -10,7 +10,7 @@ from scipy.sparse import extract
 
 
 class TestExtract(object):
-    def setUp(self):
+    def setup_method(self):
         self.cases = [
             csr_matrix([[1,2]]),
             csr_matrix([[1,0]]),
