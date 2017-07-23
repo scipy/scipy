@@ -1379,7 +1379,7 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None, out=None):
     if out is None:
         dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
     else:
-        if out.shape != (m * (m - 1)) // 2, ):
+        if out.shape != (m * (m - 1) // 2, ):
             raise ValueError("output array has incorrect shape.")
         if out.shape != (mA, mB):
             raise ValueError("Output array has wrong dimension.")
