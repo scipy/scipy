@@ -317,6 +317,22 @@ class TestCdist(object):
                     for new_type in test[1]:
                         y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                         _assert_within_tol(y1, y2, eps, verbose > 2)
+                        
+    def test_cdist_out(self):
+        esp = 1e-07
+        out1 = np.empty((10, 20), dtype=np.double)
+        out2 = np.empty((9, 19), dtype=np.double)
+        out3 = np.empty((100, 200), dtype=np.double)[::10, ::10]
+        out4 = np.empty((10, 20), dtype=np.int64)
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        Y1 = cdist(X1, X2, u('euclidean'))
+        Y2 = cdist(X1, X2, u('euclidean'), out=out1)
+        _assert_within_tol(Y1, Y2, eps, verbose > 2)
+        assert_true(Y1 is out1)
+        assert_raises(ValueError, cdist, X1, X2, u('euclidean'), out=out2)
+        assert_raises(ValueError, cdist, X1, X2, u('euclidean'), out=out3)
+        assert_raises(ValueError, cdist, X1, X2, u('euclidean'), out=out4)
 
 
 class TestPdist(object):
@@ -1042,6 +1058,21 @@ class TestPdist(object):
                     for new_type in test[1]:
                         y2 = pdist(new_type(X1), metric=metric)
                         _assert_within_tol(y1, y2, eps, verbose > 2)
+      
+    def test_pdist_out(self):
+        eps = 1e-07
+        out1 = np.empty(190, dtype=np.double)
+        out2 = np.empty(19, dtype=np.double)
+        out3 = np.empty(1900, dtype=np.double)[::10]
+        out4 = np.empty(190, dtype=np.int64)
+        X = eo['pdist-double-inp']
+        Y_right = eo['pdist-euclidean']
+        Y_test1 = pdist(X, 'euclidean', out=out1)
+        _assert_within_tol(Y_test1, Y_right, eps)
+        assert_true(Y_test1 is out1)
+        assert_raises(ValueError, pdist, X, u('euclidean'), out=out2)
+        assert_raises(ValueError, pdist, X, u('euclidean'), out=out3)
+        assert_raises(ValueError, pdist, X, u('euclidean'), out=out4)
 
 
 def within_tol(a, b, tol):
