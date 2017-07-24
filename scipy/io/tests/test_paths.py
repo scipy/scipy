@@ -12,7 +12,7 @@ except ImportError:
     pass
 
 import numpy as np
-from numpy.testing import assert_, assert_raises
+from numpy.testing import assert_
 import pytest
 
 import scipy.io
@@ -28,7 +28,7 @@ if sys.version_info < (3, 3):
 @pytest.mark.skipif(sys.version_info < (3, 6),
                     reason='Passing path-like objects to IO functions requires Python >= 3.6')
 class TestPaths(object):
-    data = np.arange(5)
+    data = np.arange(5).astype(np.int64)
 
     def test_savemat(self):
         with tempdir() as temp_dir:
@@ -55,8 +55,7 @@ class TestPaths(object):
             assert_(contents[0] == ('data', (1, 5), 'int64'))
 
     def test_readsav(self):
-        filename = os.path.join(os.path.dirname(__file__), 'data', 'scalar_string.sav')
-        path = Path(filename)
+        path = Path(__file__).parent / 'data' / 'scalar_string.sav'
         scipy.io.readsav(path)
 
     def test_hb_read(self):
