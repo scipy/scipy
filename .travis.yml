@@ -8,68 +8,68 @@ env:
    - PRE_WHEELS="https://7933911d6844c6c53a7d-47bd50c35cd79bd838daf386af554a83.ssl.cf2.rackcdn.com"
 matrix:
   include:
-    - python: 2.7
-      env:
-        - PYFLAKES=1
-        - PEP8=1
-        - NUMPYSPEC=numpy
-      before_install:
-        - pip install pep8==1.7.0
-        - pip install pyflakes==1.1.0
-      script:
-        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
-        - pep8 scipy benchmarks/benchmarks
-    - python: 2.7
-      env:
-        - TESTMODE=fast
-        - REFGUIDE_CHECK=1
-        - COVERAGE=
-        - NPY_RELAXED_STRIDES_CHECKING=1
-        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.4"
-      addons:
-        apt:
-          packages:
-            - libatlas-dev
-            - libatlas-base-dev
-            - liblapack-dev
-            - gfortran
-            - libgmp-dev
-            - libmpfr-dev
-            - ccache
-            - libfreetype6-dev
-            - libpng-dev
-            - zlib1g-dev
-            - texlive-fonts-recommended
-    - python: 3.5
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
-        - USE_WHEEL=1
-    - python: 3.4
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC="numpy==1.8.2"
-        - USE_SDIST=1
-        - OPTIMIZE=-OO
-    - python: 2.7
-      env:
-        - TESTMODE=full
-        - COVERAGE=--coverage
-        - NUMPYSPEC=numpy
-    - python: 3.6
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC=numpy
+#    - python: 2.7
+#      env:
+#        - PYFLAKES=1
+#        - PEP8=1
+#        - NUMPYSPEC=numpy
+#      before_install:
+#        - pip install pep8==1.7.0
+#        - pip install pyflakes==1.1.0
+#      script:
+#        - PYFLAKES_NODOCTEST=1 pyflakes scipy benchmarks/benchmarks | grep -E -v 'unable to detect undefined names|assigned to but never used|imported but unused|redefinition of unused|may be undefined, or defined from star imports' > test.out; cat test.out; test \! -s test.out
+#        - pep8 scipy benchmarks/benchmarks
+#    - python: 2.7
+#      env:
+#        - TESTMODE=fast
+#        - REFGUIDE_CHECK=1
+#        - COVERAGE=
+#        - NPY_RELAXED_STRIDES_CHECKING=1
+#        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.4"
+#      addons:
+#        apt:
+#          packages:
+#            - libatlas-dev
+#            - libatlas-base-dev
+#            - liblapack-dev
+#            - gfortran
+#            - libgmp-dev
+#            - libmpfr-dev
+#            - ccache
+#            - libfreetype6-dev
+#            - libpng-dev
+#            - zlib1g-dev
+#            - texlive-fonts-recommended
+#    - python: 3.5
+#      env:
+#        - TESTMODE=fast
+#        - COVERAGE=
+#        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
+#        - USE_WHEEL=1
+#    - python: 3.4
+#      env:
+#        - TESTMODE=fast
+#        - COVERAGE=
+#        - NUMPYSPEC="numpy==1.8.2"
+#        - USE_SDIST=1
+#        - OPTIMIZE=-OO
+#    - python: 2.7
+#      env:
+#        - TESTMODE=full
+#        - COVERAGE=--coverage
+#        - NUMPYSPEC=numpy
+#    - python: 3.6
+#      env:
+#        - TESTMODE=fast
+#        - COVERAGE=
+#        - NUMPYSPEC=numpy
     - os: osx
       language: generic
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC=numpy
         - USE_SDIST=1
+        - NUMPYSPEC=numpy
         - MB_PYTHON_VERSION=3.6
 addons:
   apt:
@@ -94,22 +94,32 @@ before_install:
       virtualenv --python=python venv
       source venv/bin/activate
       free -m
+      export PATH=/usr/lib/ccache:$PATH
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew install gcc
+      brew install gcc ccache
       touch config.sh
       git clone https://github.com/matthew-brett/multibuild.git
       source multibuild/common_utils.sh
       source multibuild/travis_steps.sh
       before_install
-      export CXX=clang++
-      export CC=clang
+      which ccache
+      ln -s ccache /usr/local/bin/gcc
+      ln -s ccache /usr/local/bin/g++
+      ln -s ccache /usr/local/bin/cc
+      ln -s ccache /usr/local/bin/c++
+      ln -s ccache /usr/local/bin/clang
+      ln -s ccache /usr/local/bin/clang++
+      export USE_CCACHE=1
+      export CCACHE_COMPRESS=1
+      export CCACHE_MAXSIZE=200M
+      export CCACHE_CPP2=1
       export CFLAGS="-arch x86_64"
       export CXXFLAGS="-arch x86_64"
+      ccache -s
       printenv
     fi
   - python --version # just to check
   - export PYTHONFAULTHANDLER=1
-  - export PATH=/usr/lib/ccache:$PATH
   - uname -a
   - df -h
   - ulimit -a
@@ -144,6 +154,7 @@ before_install:
   - python -V
   - popd
   - set -o pipefail
+
 script:
   - python -c 'import numpy as np; print("relaxed strides checking:", np.ones((10,1),order="C").flags.f_contiguous)'
   # Make sure that relaxed strides checking is actually in effect; otherwise fail loudly
