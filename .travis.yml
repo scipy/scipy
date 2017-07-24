@@ -152,15 +152,25 @@ script:
   - python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
   - |
     if [ "${USE_WHEEL}" == "1" ]; then
-        # Need verbose output or TravisCI will terminate after 10 minutes
-        pip wheel . -v
-        pip install scipy*.whl -v
+        # Run setup.py build before pip wheel, to build in current directory
+        # and make more efficient use of ccache
+        echo "setup.py build"
+        python tools/suppress_output.py python setup.py build
+        echo "pip wheel"
+        python tools/suppress_output.py pip wheel .
+        pip install scipy*.whl
         USE_WHEEL_BUILD="--no-build"
     elif [ "${USE_SDIST}" == "1" ]; then
-        python setup.py sdist
+        echo "setup.py sdist"
+        python tools/suppress_output.py python setup.py sdist
         # Move out of source directory to avoid finding local scipy
         pushd dist
-        pip install scipy* -v
+        # Use pip --build option to make ccache work better.
+        # However, this option is partially broken
+        # (see https://github.com/pypa/pip/issues/4242)
+        # and some shenanigans are needed to make it work.
+        echo "pip install"
+        python ../tools/suppress_output.py pip install --build="$HOME/builds" --upgrade "file://`echo -n $PWD/scipy*`#egg=scipy" -v
         popd
         USE_WHEEL_BUILD="--no-build"
     fi
