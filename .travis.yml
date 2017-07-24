@@ -69,7 +69,6 @@ matrix:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=numpy
-        - USE_SDIST=1
         - MB_PYTHON_VERSION=3.6
 addons:
   apt:
@@ -93,23 +92,32 @@ before_install:
       pip install --upgrade virtualenv
       virtualenv --python=python venv
       source venv/bin/activate
+      export PATH=/usr/lib/ccache:$PATH
       free -m
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew install gcc
+      brew install gcc ccache
       touch config.sh
       git clone https://github.com/matthew-brett/multibuild.git
       source multibuild/common_utils.sh
       source multibuild/travis_steps.sh
       before_install
-      export CXX=clang++
-      export CC=clang
+      which ccache
+      ln -s ccache /usr/local/bin/gcc
+      ln -s ccache /usr/local/bin/g++
+      ln -s ccache /usr/local/bin/cc
+      ln -s ccache /usr/local/bin/c++
+      ln -s ccache /usr/local/bin/clang
+      ln -s ccache /usr/local/bin/clang++
+      export USE_CCACHE=1
+      export CCACHE_COMPRESS=1
+      export CCACHE_MAXSIZE=200M
+      export CCACHE_CPP2=1
       export CFLAGS="-arch x86_64"
       export CXXFLAGS="-arch x86_64"
       printenv
     fi
   - python --version # just to check
   - export PYTHONFAULTHANDLER=1
-  - export PATH=/usr/lib/ccache:$PATH
   - uname -a
   - df -h
   - ulimit -a
@@ -142,6 +150,7 @@ before_install:
         travis_retry pip install matplotlib Sphinx==1.5.5
     fi
   - python -V
+  - ccache -s
   - popd
   - set -o pipefail
 script:
@@ -178,6 +187,7 @@ script:
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
 after_success:
+  - ccache -s
   # Upload development docs, using deploy key from travis-ci encrypted file
   # https://developer.github.com/guides/managing-deploy-keys/
   # http://docs.travis-ci.com/user/encrypting-files/
