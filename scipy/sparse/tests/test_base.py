@@ -1154,9 +1154,9 @@ class _TestCommon:
                 assert_equal(S_casted.toarray(), D_casted)    # correct values
                 assert_equal(S_casted.format, S.format)       # format preserved
             # Check correctly copied
-            assert S_casted.astype(x, copy=False) is S_casted
+            assert_(S_casted.astype(x, copy=False) is S_casted)
             S_copied = S_casted.astype(x, copy=True)
-            assert S_copied is not S_casted
+            assert_(S_copied is not S_casted)
 
             def check_equal_but_not_same_array_attribute(attribute):
                 a = getattr(S_casted, attribute)
