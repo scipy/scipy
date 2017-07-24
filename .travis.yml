@@ -94,6 +94,7 @@ before_install:
       virtualenv --python=python venv
       source venv/bin/activate
       free -m
+      export PATH=/usr/lib/ccache:$PATH
     elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       brew install gcc ccache
       touch config.sh
@@ -102,7 +103,6 @@ before_install:
       source multibuild/travis_steps.sh
       before_install
       which ccache
-      which clang
       ln -s ccache /usr/local/bin/gcc
       ln -s ccache /usr/local/bin/g++
       ln -s ccache /usr/local/bin/cc
@@ -115,13 +115,11 @@ before_install:
       export CCACHE_CPP2=1
       export CFLAGS="-arch x86_64"
       export CXXFLAGS="-arch x86_64"
-      which clang++
       ccache -s
       printenv
     fi
   - python --version # just to check
   - export PYTHONFAULTHANDLER=1
-  - export PATH=/usr/lib/ccache:$PATH
   - uname -a
   - df -h
   - ulimit -a
