@@ -68,6 +68,7 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
+        - USE_SDIST=1
         - NUMPYSPEC=numpy
         - MB_PYTHON_VERSION=3.6
 addons:
@@ -106,6 +107,8 @@ before_install:
       ln -s ccache /usr/local/bin/g++
       ln -s ccache /usr/local/bin/cc
       ln -s ccache /usr/local/bin/c++
+      ln -s ccache /usr/local/bin/clang
+      ln -s ccache /usr/local/bin/clang++
       export USE_CCACHE=1
       export CCACHE_COMPRESS=1
       export CCACHE_MAXSIZE=200M
