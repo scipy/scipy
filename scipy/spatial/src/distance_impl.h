@@ -32,6 +32,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+static NPY_INLINE void 
+_row_norms(const double *X, npy_intp m, npy_intp n, double *norms_buff){
+    // compute the row norms
+    npy_intp i,j;
+    for (i = 0; i < m; ++i) {
+        for (j = 0; j < n; ++j) {
+            const double curr_val = *(X + (i * n + j));
+            norms_buff[i] += curr_val * curr_val;
+        }
+        norms_buff[i] = sqrt(norms_buff[i]);
+    }    
+}
+
 static NPY_INLINE double
 sqeuclidean_distance_double(const double *u, const double *v, npy_intp n)
 {
@@ -171,7 +184,7 @@ hamming_distance_char(const char *u, const char *v, npy_intp n)
 }
 
 static NPY_INLINE double
-yule_bool_distance_char(const char *u, const char *v, npy_intp n)
+yule_distance_char(const char *u, const char *v, npy_intp n)
 {
     npy_intp i;
     npy_intp ntt = 0, nff = 0, nft = 0, ntf = 0;
@@ -391,17 +404,19 @@ pdist_mahalanobis(const double *X, const double *covinv, double *dimbuf,
 
 static NPY_INLINE void
 pdist_cosine(const double *X, double *dm, npy_intp m, npy_intp n,
-             const double *norms)
+             double *norms_buff)
 {
     const double *u, *v;
     double cosine;
     npy_intp i, j;
+    
+    _row_norms(X, m, n, norms_buff);
 
     for (i = 0; i < m; i++) {
         for (j = i + 1; j < m; j++, dm++) {
             u = X + (n * i);
             v = X + (n * j);
-            cosine = dot_product(u, v, n) / (norms[i] * norms[j]);
+            cosine = dot_product(u, v, n) / (norms_buff[i] * norms_buff[j]);
             if (fabs(cosine) > 1.) {
                 /* Clip to correct rounding error. */
                 cosine = npy_copysign(1, cosine);
@@ -512,6 +527,30 @@ dist_to_vector_from_squareform(const char *M, char *v, npy_intp n, npy_intp s)
 
 
 /** cdist */
+static NPY_INLINE void
+cdist_cosine(const double *XA, const double *XB, double *dm, npy_intp mA, 
+             npy_intp mB, npy_intp n, double *norms_buffA, double *norms_buffB)
+{
+    const double *u, *v;
+    double cosine;
+    npy_intp i, j;
+    
+    _row_norms(XA, mA, n, norms_buffA);
+    _row_norms(XB, mB, n, norms_buffB);
+
+    for (i = 0; i < mA; i++) {
+        for (j = 0; j < mB; j++, dm++) {
+            u = XA + (n * i);
+            v = XB + (n * j);
+            cosine = dot_product(u, v, n) / (norms_buffA[i] * norms_buffB[j]);
+            if (fabs(cosine) > 1.) {
+                /* Clip to correct rounding error. */
+                cosine = npy_copysign(1, cosine);
+            }
+            *dm = 1. - cosine;
+        }
+    }
+}
 
 static NPY_INLINE void
 cdist_mahalanobis(const double *XA, const double *XB,
@@ -616,7 +655,7 @@ DEFINE_CDIST(rogerstanimoto, char)
 DEFINE_CDIST(russellrao, char)
 DEFINE_CDIST(sokalmichener, char)
 DEFINE_CDIST(sokalsneath, char)
-DEFINE_CDIST(yule_bool, char)
+DEFINE_CDIST(yule, char)
 
 
 #define DEFINE_PDIST(name, type) \
@@ -652,4 +691,4 @@ DEFINE_PDIST(rogerstanimoto, char)
 DEFINE_PDIST(russellrao, char)
 DEFINE_PDIST(sokalmichener, char)
 DEFINE_PDIST(sokalsneath, char)
-DEFINE_PDIST(yule_bool, char)
+DEFINE_PDIST(yule, char)

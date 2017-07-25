@@ -128,6 +128,37 @@ class TestCdist(object):
                               'int': [np.float32, np.double],
                               'float32': [np.double]}
 
+    def test_cdist_extra_args(self):
+        # Tests that args and kwargs are correctly handled
+        def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
+            return arg + kwarg + kwarg2
+
+        X1 = [[1., 2., 3.], [1.2, 2.3, 3.4], [2.2, 2.3, 4.4]]
+        X2 = [[7., 5., 8.], [7.5, 5.8, 8.4], [5.5, 5.8, 4.4]]
+        kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(3)}
+        args = [3.14] * 200
+        for metric in _METRICS_NAMES:
+            assert_raises(TypeError, cdist, X1, X2, metric=metric, **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric=eval(metric), **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric, **kwargs)
+            assert_raises(TypeError, cdist, X1, X2, metric=metric, *args)
+            assert_raises(TypeError, cdist, X1, X2, metric=eval(metric), *args)
+            assert_raises(TypeError, cdist, X1, X2, metric="test_" + metric, *args)
+
+        assert_raises(TypeError, cdist, X1, X2, _my_metric)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, *args)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, **kwargs)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, kwarg=2.2, kwarg2=3.3)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1, 2, kwarg=2.2)
+
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, 2.2, 3.3)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, 2.2)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1)
+        assert_raises(TypeError, cdist, X1, X2, _my_metric, 1.1, kwarg=2.2, kwarg2=3.3)
+
+        # this should work
+        assert_allclose(cdist(X1, X2, metric=_my_metric, arg=1.1, kwarg2=3.3), 5.4)
+
     def test_cdist_euclidean_random_unicode(self):
         eps = 1e-07
         X1 = eo['cdist-X1']
@@ -329,6 +360,36 @@ class TestPdist(object):
                               'uint': [np.int_, np.float32, np.double],
                               'int': [np.float32, np.double],
                               'float32': [np.double]}
+
+    def test_pdist_extra_args(self):
+        # Tests that args and kwargs are correctly handled
+        def _my_metric(x, y, arg, kwarg=1, kwarg2=2):
+            return arg + kwarg + kwarg2
+
+        X1 = [[1., 2.], [1.2, 2.3], [2.2, 2.3]]
+        kwargs = {'N0tV4l1D_p4raM': 3.14, "w":np.arange(2)}
+        args = [3.14] * 200
+        for metric in _METRICS_NAMES:
+            assert_raises(TypeError, pdist, X1, metric=metric, **kwargs)
+            assert_raises(TypeError, pdist, X1, metric=eval(metric), **kwargs)
+            assert_raises(TypeError, pdist, X1, metric="test_" + metric, **kwargs)
+            assert_raises(TypeError, pdist, X1, metric=metric, *args)
+            assert_raises(TypeError, pdist, X1, metric=eval(metric), *args)
+            assert_raises(TypeError, pdist, X1, metric="test_" + metric, *args)
+
+        assert_raises(TypeError, pdist, X1, _my_metric)
+        assert_raises(TypeError, pdist, X1, _my_metric, *args)
+        assert_raises(TypeError, pdist, X1, _my_metric, **kwargs)
+        assert_raises(TypeError, pdist, X1, _my_metric, kwarg=2.2, kwarg2=3.3)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1, 2, kwarg=2.2)
+
+        assert_raises(TypeError, pdist, X1, _my_metric, 1.1, 2.2, 3.3)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1.1, 2.2)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1.1)
+        assert_raises(TypeError, pdist, X1, _my_metric, 1.1, kwarg=2.2, kwarg2=3.3)
+
+        # these should work
+        assert_allclose(pdist(X1, metric=_my_metric, arg=1.1, kwarg2=3.3), 5.4)
 
     def test_pdist_euclidean_random(self):
         eps = 1e-07
@@ -1539,22 +1600,36 @@ def test_modifies_input():
 
 def test_Xdist_deprecated_args():
     # testing both cdist and pdist deprecated warnings
-    X1 = np.asarray([[1., 2., 3.], [1.2, 2.3, 3.4], [2.2, 2.3, 4.4]])
-    warn_msg = "Got unexpected kwarg"
+    X1 = np.asarray([[1., 2., 3.],
+                     [1.2, 2.3, 3.4],
+                     [2.2, 2.3, 4.4],
+                     [22.2, 23.3, 44.4]])
+    weights = np.arange(3)
+    warn_msg_kwargs = "Got unexpected kwarg"
+    warn_msg_args = "metric parameters have been passed as positional"
     for metric in _METRICS_NAMES:
-        if metric in ("minkowski", "wminkowski", "seuclidean", "mahalanobis"):
-            continue
+        kwargs = {"w": weights} if metric == "wminkowski" else dict()
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            cdist(X1, X1, metric, 2., **kwargs)
+            pdist(X1, metric, 2., **kwargs)
+            assert_(len(w) >= 2)
+            assert_(all([issubclass(warn.category, DeprecationWarning) for warn in w]))
+            assert_(issubclass(w[0].category, DeprecationWarning))
+            assert_(issubclass(w[1].category, DeprecationWarning))
+            assert_(sum([warn_msg_args in str(warn.message) for warn in w]) == 2)
+
         for arg in ["p", "V", "VI", "w"]:
             kwargs = {arg:"foo"}
 
             if metric == "wminkowski":
                 if "p" in kwargs or "w" in kwargs:
                     continue
-                kwargs["w"] = 1.0 / X1.std(axis=0)
+                kwargs["w"] = weights
 
             if((arg == "V" and metric == "seuclidean") or
                (arg == "VI" and metric == "mahalanobis") or
-               (arg == "w" and metric == "wminkowski")):
+               (arg == "p" and metric == "minkowski")):
                 continue
 
             with warnings.catch_warnings(record=True) as w:
@@ -1564,7 +1639,7 @@ def test_Xdist_deprecated_args():
                 assert_(len(w) == 2)
                 assert_(issubclass(w[0].category, DeprecationWarning))
                 assert_(issubclass(w[1].category, DeprecationWarning))
-                assert_(all([warn_msg in str(warn.message) for warn in w]))
+                assert_(all([warn_msg_kwargs in str(warn.message) for warn in w]))
 
 
 def test__validate_vector():
