@@ -181,12 +181,14 @@ def process(path, fromfile, tofile, processor_function, hash_db, pxi_hashes):
 
     if not file_changed and not pxi_changed:
         print('%s has not changed' % fullfrompath)
+        sys.stdout.flush()
         return
 
     orig_cwd = os.getcwd()
     try:
         os.chdir(path)
         print('Processing %s' % fullfrompath)
+        sys.stdout.flush()
         processor_function(fromfile, tofile)
     finally:
         os.chdir(orig_cwd)
