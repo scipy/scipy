@@ -1,7 +1,6 @@
 """
 Ensure that we can use pathlib.Path objects in all relevant IO functions.
 """
-import os
 import sys
 
 try:
@@ -16,6 +15,7 @@ from numpy.testing import assert_
 import pytest
 
 import scipy.io
+import scipy.io.wavfile
 from scipy._lib._tmpdirs import tempdir
 import scipy.sparse
 
@@ -55,7 +55,7 @@ class TestPaths(object):
             assert_(contents[0] == ('data', (1, 5), 'int64'))
 
     def test_readsav(self):
-        path = Path(__file__).parent / 'data' / 'scalar_string.sav'
+        path = Path(__file__).parent / 'data/scalar_string.sav'
         scipy.io.readsav(path)
 
     def test_hb_read(self):
@@ -74,3 +74,20 @@ class TestPaths(object):
             path = Path(temp_dir) / 'data.hb'
             scipy.io.harwell_boeing.hb_write(path, data)
             assert_(path.is_file())
+
+    def test_netcdf_file(self):
+        path = Path(__file__).parent / 'data/example_1.nc'
+        scipy.io.netcdf.netcdf_file(path)
+
+    def test_wavfile_read(self):
+        path = Path(__file__).parent / 'data/test-8000Hz-le-2ch-1byteu.wav'
+        scipy.io.wavfile.read(path)
+
+    def test_wavfile_write(self):
+        # Read from str path, write to Path
+        input_path = Path(__file__).parent / 'data/test-8000Hz-le-2ch-1byteu.wav'
+        rate, data = scipy.io.wavfile.read(str(input_path))
+
+        with tempdir() as temp_dir:
+            output_path = Path(temp_dir) / input_path.name
+            scipy.io.wavfile.write(output_path, rate, data)
