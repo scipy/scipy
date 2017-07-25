@@ -19,11 +19,6 @@ import scipy.io.wavfile
 from scipy._lib._tmpdirs import tempdir
 import scipy.sparse
 
-# Bit of a hack to keep the test runner from exploding in Python 2.7.
-# FileNotFoundError was added in Python 3.3.
-if sys.version_info < (3, 3):
-    FileNotFoundError = IOError
-
 
 @pytest.mark.skipif(sys.version_info < (3, 6),
                     reason='Passing path-like objects to IO functions requires Python >= 3.6')
