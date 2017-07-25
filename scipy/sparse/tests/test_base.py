@@ -1170,9 +1170,38 @@ class _TestCommon(object):
         S = self.spmatrix(D)
 
         for x in supported_dtypes:
-            assert_equal(S.astype(x).dtype, D.astype(x).dtype)  # correct type
-            assert_equal(S.astype(x).toarray(), D.astype(x))        # correct values
-            assert_equal(S.astype(x).format, S.format)           # format preserved
+            # Check correctly casted
+            D_casted = D.astype(x)
+            for copy in (True, False):
+                S_casted = S.astype(x, copy=copy)
+                assert_equal(S_casted.dtype, D_casted.dtype)  # correct type
+                assert_equal(S_casted.toarray(), D_casted)    # correct values
+                assert_equal(S_casted.format, S.format)       # format preserved
+            # Check correctly copied
+            assert_(S_casted.astype(x, copy=False) is S_casted)
+            S_copied = S_casted.astype(x, copy=True)
+            assert_(S_copied is not S_casted)
+
+            def check_equal_but_not_same_array_attribute(attribute):
+                a = getattr(S_casted, attribute)
+                b = getattr(S_copied, attribute)
+                assert_array_equal(a, b)
+                assert_(a is not b)
+                i = (0,) * b.ndim
+                b_i = b[i]
+                b[i] = not b[i]
+                assert_(a[i] != b[i])
+                b[i] = b_i
+
+            if S_casted.format in ('csr', 'csc', 'bsr'):
+                for attribute in ('indices', 'indptr', 'data'):
+                    check_equal_but_not_same_array_attribute(attribute)
+            elif S_casted.format == 'coo':
+                for attribute in ('row', 'col', 'data'):
+                    check_equal_but_not_same_array_attribute(attribute)
+            elif S_casted.format == 'dia':
+                for attribute in ('offsets', 'data'):
+                    check_equal_but_not_same_array_attribute(attribute)
 
     def test_asfptype(self):
         A = self.spmatrix(arange(6,dtype='int32').reshape(2,3))
