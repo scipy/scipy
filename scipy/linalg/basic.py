@@ -1463,13 +1463,13 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     >>> np.abs(x).sum(axis=0) / np.abs(x).sum(axis=1)
     array([ 3.66666667,  0.4995005 ,  0.91312162])
 
-    >>> np.abs(y).sum(axis=0) / np.abs(y).sum(axis=1) # 1-norms approx. equal
-    array([ 1.10625   ,  0.90547703,  1.00011878])
+    >>> np.abs(y).sum(axis=0) / np.abs(y).sum(axis=1)
+    array([ 1.2       ,  1.27041742,  0.92658316])  # may vary
 
     >>> permscale  # only powers of 2 (0.5 == 2^(-1))
-    array([[  0.5,   0. ,   0. ],
-           [  0. ,   1. ,   0. ],
-           [  0. ,   0. ,  16. ]])
+    array([[  0.5,   0. ,  0. ],  # may vary
+           [  0. ,   1. ,  0. ],
+           [  0. ,   0. ,  1. ]])
 
     References
     ----------
