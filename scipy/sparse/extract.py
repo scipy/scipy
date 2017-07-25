@@ -92,7 +92,7 @@ def tril(A, k=0, format=None):
            [4, 0, 0, 0, 0],
            [0, 0, 0, 0, 0]])
     >>> tril(A, format='csc')
-    <3x5 sparse matrix of type '<type 'numpy.int32'>'
+    <3x5 sparse matrix of type '<class 'numpy.int32'>'
             with 4 stored elements in Compressed Sparse Column format>
 
     """
@@ -153,7 +153,7 @@ def triu(A, k=0, format=None):
            [4, 5, 0, 6, 7],
            [0, 0, 8, 9, 0]])
     >>> triu(A, format='csc')
-    <3x5 sparse matrix of type '<type 'numpy.int32'>'
+    <3x5 sparse matrix of type '<class 'numpy.int32'>'
             with 8 stored elements in Compressed Sparse Column format>
 
     """

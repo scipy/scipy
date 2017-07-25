@@ -705,9 +705,9 @@ def _cplxreal(z, tol=None):
     --------
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> zc, zr = _cplxreal(a)
-    >>> print zc
+    >>> print(zc)
     [ 1.+1.j  2.+1.j  2.+1.j  2.+2.j]
-    >>> print zr
+    >>> print(zr)
     [ 1.  3.  4.]
     """
 

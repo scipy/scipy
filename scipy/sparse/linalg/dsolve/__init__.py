@@ -18,36 +18,36 @@ Example session::
     >>> from numpy import array
     >>> from scipy.sparse.linalg import spsolve, use_solver
     >>>
-    >>> print "Inverting a sparse linear system:"
-    >>> print "The sparse matrix (constructed from diagonals):"
+    >>> print("Inverting a sparse linear system:")
+    >>> print("The sparse matrix (constructed from diagonals):")
     >>> a = spdiags([[1, 2, 3, 4, 5], [6, 5, 8, 9, 10]], [0, 1], 5, 5)
     >>> b = array([1, 2, 3, 4, 5])
-    >>> print "Solve: single precision complex:"
+    >>> print("Solve: single precision complex:")
     >>> use_solver( useUmfpack = False )
     >>> a = a.astype('F')
     >>> x = spsolve(a, b)
-    >>> print x
-    >>> print "Error: ", a*x-b
+    >>> print(x)
+    >>> print("Error: ", a*x-b)
     >>>
-    >>> print "Solve: double precision complex:"
+    >>> print("Solve: double precision complex:")
     >>> use_solver( useUmfpack = True )
     >>> a = a.astype('D')
     >>> x = spsolve(a, b)
-    >>> print x
-    >>> print "Error: ", a*x-b
+    >>> print(x)
+    >>> print("Error: ", a*x-b)
     >>>
-    >>> print "Solve: double precision:"
+    >>> print("Solve: double precision:")
     >>> a = a.astype('d')
     >>> x = spsolve(a, b)
-    >>> print x
-    >>> print "Error: ", a*x-b
+    >>> print(x)
+    >>> print("Error: ", a*x-b)
     >>>
-    >>> print "Solve: single precision:"
+    >>> print("Solve: single precision:")
     >>> use_solver( useUmfpack = False )
     >>> a = a.astype('f')
     >>> x = spsolve(a, b.astype('f'))
-    >>> print x
-    >>> print "Error: ", a*x-b
+    >>> print(x)
+    >>> print("Error: ", a*x-b)
 
 """
 

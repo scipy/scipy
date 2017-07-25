@@ -11,6 +11,7 @@ See also tools/win32build/misc/x86analysis.py in numpy for a similar script
 that checks a single file.
 
 """
+from __future__ import print_function
 import subprocess
 import sys
 import os
@@ -68,14 +69,12 @@ def path_as_windows(fpath):
 
 def write_summary(allcodes):
     """Write a summary of all found codes to stdout."""
-    print """\n
-----------------------------------------------------------------------------
-Checked all binary files for CPU extension codes. Found the following codes:"""
+    print("\n"
+          "----------------------------------------------------------------------------"
+          "Checked all binary files for CPU extension codes. Found the following codes:")
     for code in allcodes:
-        print code
-    print """
-----------------------------------------------------------------------------
-"""
+        print(code)
+    print("----------------------------------------------------------------------------")
 
 
 def process(fn):
@@ -88,7 +87,7 @@ def process(fn):
         instr = r[2].split()[0].lower()
         if instr in INSTRS:
             codes[INSTRS[instr]] = True
-            print instr
+            print(instr)
     codes = codes.keys()
     codes.sort()
     return codes
