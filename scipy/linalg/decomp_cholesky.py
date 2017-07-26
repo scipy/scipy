@@ -88,7 +88,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
 
     """
     c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=True,
-                            check_finite=check_finite)
+                         check_finite=check_finite)
     return c
 
 
@@ -139,7 +139,7 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
 
     """
     c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a, clean=False,
-                            check_finite=check_finite)
+                         check_finite=check_finite)
     return c, lower
 
 
@@ -187,7 +187,7 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     x, info = potrs(c, b1, lower=lower, overwrite_b=overwrite_b)
     if info != 0:
         raise ValueError('illegal value in %d-th argument of internal potrs'
-                                                                    % -info)
+                         % -info)
     return x
 
 
@@ -243,7 +243,7 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal pbtrf'
-                                                                    % -info)
+                         % -info)
     return c
 
 
@@ -297,5 +297,5 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
         raise LinAlgError("%d-th leading minor not positive definite" % info)
     if info < 0:
         raise ValueError('illegal value in %d-th argument of internal pbtrs'
-                                                                    % -info)
+                         % -info)
     return x
