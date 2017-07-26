@@ -48,9 +48,9 @@ def check_rbf3d_interpolation(function):
 
 def test_rbf_interpolation():
     for function in FUNCTIONS:
-        yield check_rbf1d_interpolation, function
-        yield check_rbf2d_interpolation, function
-        yield check_rbf3d_interpolation, function
+        check_rbf1d_interpolation(function)
+        check_rbf2d_interpolation(function)
+        check_rbf3d_interpolation(function)
 
 
 def check_rbf1d_regularity(function, atol):
@@ -82,7 +82,7 @@ def test_rbf_regularity():
         'linear': 0.2
     }
     for function in FUNCTIONS:
-        yield check_rbf1d_regularity, function, tolerances.get(function, 1e-2)
+        check_rbf1d_regularity(function, tolerances.get(function, 1e-2))
 
 
 def check_rbf1d_stability(function):
@@ -103,7 +103,7 @@ def check_rbf1d_stability(function):
 
 def test_rbf_stability():
     for function in FUNCTIONS:
-        yield check_rbf1d_stability, function
+        check_rbf1d_stability(function)
 
 
 def test_default_construction():

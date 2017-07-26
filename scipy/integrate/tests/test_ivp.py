@@ -55,18 +55,6 @@ def sol_rational(t):
     return np.asarray((t / (t + 10), 10 * t / (t + 10) ** 2))
 
 
-def event_rational_1(t, y):
-    return y[0] - y[1] ** 0.7
-
-
-def event_rational_2(t, y):
-    return y[1] ** 0.6 - y[0]
-
-
-def event_rational_3(t, y):
-    return t - 7.4
-
-
 def fun_medazko(t, y):
     n = y.shape[0] // 2
     k = 100
@@ -308,6 +296,15 @@ def test_integration_const_jac():
 
 
 def test_events():
+    def event_rational_1(t, y):
+        return y[0] - y[1] ** 0.7
+
+    def event_rational_2(t, y):
+        return y[1] ** 0.6 - y[0]
+
+    def event_rational_3(t, y):
+        return t - 7.4
+
     event_rational_3.terminal = True
 
     for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:

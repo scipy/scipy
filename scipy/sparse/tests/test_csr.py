@@ -26,7 +26,7 @@ def test_csr_rowslice():
 
     for i in range(N):
         for sl in slices:
-            yield _check_csr_rowslice, i, sl, X, Xcsr
+            _check_csr_rowslice(i, sl, X, Xcsr)
 
 
 def test_csr_getrow():

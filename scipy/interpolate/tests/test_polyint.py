@@ -65,11 +65,11 @@ def test_shapes():
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
                     if ip != CubicSpline:
-                        yield check_shape, ip, s1, s2, None, axis
+                        check_shape(ip, s1, s2, None, axis)
                     else:
                         for bc in ['natural', 'clamped']:
                             extra = {'bc_type': bc}
-                            yield check_shape, ip, s1, s2, None, axis, extra
+                            check_shape(ip, s1, s2, None, axis, extra)
 
 def test_derivs_shapes():
     def krogh_derivs(x, y, axis=0):
@@ -78,7 +78,7 @@ def test_derivs_shapes():
     for s1 in SHAPES:
         for s2 in SHAPES:
             for axis in range(-len(s2), len(s2)):
-                yield check_shape, krogh_derivs, s1, s2, (6,), axis
+                check_shape(krogh_derivs, s1, s2, (6,), axis)
 
 
 def test_deriv_shapes():
@@ -128,7 +128,7 @@ def test_deriv_shapes():
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
-                    yield check_shape, ip, s1, s2, (), axis
+                    check_shape(ip, s1, s2, (), axis)
 
 
 def _check_complex(ip):
@@ -140,7 +140,7 @@ def _check_complex(ip):
 
 def test_complex():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip, CubicSpline]:
-        yield _check_complex, ip
+        _check_complex(ip)
 
 
 class TestKrogh(object):

@@ -1408,7 +1408,7 @@ class TestItemfreq(object):
         dtypes = [np.int32, np.int64, np.float32, np.float64,
                   np.complex64, np.complex128]
         for dt in dtypes:
-            yield _check_itemfreq, dt
+            _check_itemfreq(dt)
 
     def test_object_arrays(self):
         a, b = self.a, self.b
@@ -2450,50 +2450,50 @@ class TestPowerDivergence(object):
 
     def test_basic(self):
         for case in power_div_1d_cases:
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    None, case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    "pearson", case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    1, case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    "log-likelihood", case.log)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    "mod-log-likelihood", case.mod_log)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    "cressie-read", case.cr)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    2/3, case.cr)
 
     def test_basic_masked(self):
         for case in power_div_1d_cases:
             mobs = np.ma.array(case.f_obs)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    None, case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    "pearson", case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    1, case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    "log-likelihood", case.log)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    "mod-log-likelihood", case.mod_log)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    "cressie-read", case.cr)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    2/3, case.cr)
 
@@ -2505,21 +2505,21 @@ class TestPowerDivergence(object):
                            case1.f_exp))
         # Check the four computational code paths in power_divergence
         # using a 2D array with axis=1.
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                f_obs, f_exp, 0, 1,
                "pearson", [case0.chi2, case1.chi2])
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                f_obs, f_exp, 0, 1,
                "log-likelihood", [case0.log, case1.log])
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                f_obs, f_exp, 0, 1,
                "mod-log-likelihood", [case0.mod_log, case1.mod_log])
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                f_obs, f_exp, 0, 1,
                "cressie-read", [case0.cr, case1.cr])
         # Reshape case0.f_obs to shape (2,2), and use axis=None.
         # The result should be the same.
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                np.array(case0.f_obs).reshape(2, 2), None, 0, None,
                "pearson", case0.chi2)
 
@@ -2554,16 +2554,16 @@ class TestPowerDivergence(object):
     def test_empty_cases(self):
         with warnings.catch_warnings():
             for case in power_div_empty_cases:
-                yield (self.check_power_divergence,
+                self.check_power_divergence(
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "pearson", case.chi2)
-                yield (self.check_power_divergence,
+                self.check_power_divergence(
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "log-likelihood", case.log)
-                yield (self.check_power_divergence,
+                self.check_power_divergence(
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "mod-log-likelihood", case.mod_log)
-                yield (self.check_power_divergence,
+                self.check_power_divergence(
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "cressie-read", case.cr)
 
@@ -3284,9 +3284,9 @@ class TestDescribe(object):
 
 
 def test_normalitytests():
-    yield (assert_raises, ValueError, stats.skewtest, 4.)
-    yield (assert_raises, ValueError, stats.kurtosistest, 4.)
-    yield (assert_raises, ValueError, stats.normaltest, 4.)
+    assert_raises(ValueError, stats.skewtest, 4.)
+    assert_raises(ValueError, stats.kurtosistest, 4.)
+    assert_raises(ValueError, stats.normaltest, 4.)
 
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)

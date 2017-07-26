@@ -379,9 +379,9 @@ def test_knots_multiplicity():
     for k in [1, 2, 3, 4, 5]:
         b = _make_random_spline(k=k)
         for j, b1 in enumerate(_make_multiples(b)):
-            yield check_splev, b1, j
+            check_splev(b1, j)
             for der in range(1, k+1):
-                yield check_splev, b1, j, der, 1e-12, 1e-12
+                check_splev(b1, j, der, 1e-12, 1e-12)
 
 
 ### stolen from @pv, verbatim

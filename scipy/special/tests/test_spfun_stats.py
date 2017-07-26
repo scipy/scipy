@@ -58,5 +58,5 @@ def test_multigammaln_array_arg():
     ]
 
     for a, d in cases:
-        yield _check_multigammaln_array_result, a, d
+        _check_multigammaln_array_result(a, d)
 

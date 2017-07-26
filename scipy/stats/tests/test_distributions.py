@@ -68,8 +68,9 @@ def check_distribution(dist, args, alpha):
                     D, pval, alpha, args))
 
 
-# nose test generator
-def test_all_distributions():
+def cases_test_all_distributions():
+    np.random.seed(1234)
+
     for dist in dists:
         distfunc = getattr(stats, dist)
         nargs = distfunc.numargs
@@ -86,13 +87,18 @@ def test_all_distributions():
             vals[1] = vals[0] + 1.0
             args = tuple(vals)
         elif dist == 'vonmises':
-            yield check_distribution, dist, (10,), alpha
-            yield check_distribution, dist, (101,), alpha
+            yield dist, (10,), alpha
+            yield dist, (101,), alpha
             args = tuple(1.0 + np.random.random(nargs))
         else:
             args = tuple(1.0 + np.random.random(nargs))
 
-        yield check_distribution, dist, args, alpha
+        yield dist, args, alpha
+
+
+@pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
+def test_all_distributions(dist, args, alpha):
+    check_distribution(dist, args, alpha)
 
 
 def check_vonmises_pdf_periodic(k, l, s, x):
@@ -108,13 +114,13 @@ def check_vonmises_cdf_periodic(k, l, s, x):
 def test_vonmises_pdf_periodic():
     for k in [0.1, 1, 101]:
         for x in [0, 1, numpy.pi, 10, 100]:
-            yield check_vonmises_pdf_periodic, k, 0, 1, x
-            yield check_vonmises_pdf_periodic, k, 1, 1, x
-            yield check_vonmises_pdf_periodic, k, 0, 10, x
+            check_vonmises_pdf_periodic(k, 0, 1, x)
+            check_vonmises_pdf_periodic(k, 1, 1, x)
+            check_vonmises_pdf_periodic(k, 0, 10, x)
 
-            yield check_vonmises_cdf_periodic, k, 0, 1, x
-            yield check_vonmises_cdf_periodic, k, 1, 1, x
-            yield check_vonmises_cdf_periodic, k, 0, 10, x
+            check_vonmises_cdf_periodic(k, 0, 1, x)
+            check_vonmises_cdf_periodic(k, 1, 1, x)
+            check_vonmises_cdf_periodic(k, 0, 10, x)
 
 
 def test_vonmises_line_support():
@@ -127,28 +133,27 @@ def test_vonmises_numerical():
     assert_almost_equal(vm.cdf(0), 0.5)
 
 
-def test_support():
-    """gh-6235"""
-    def check_open_support(rvs, args):
-        dist = getattr(stats, rvs)
-
-        assert_almost_equal(dist.pdf(dist.a, *args), 0)
-        assert_equal(dist.logpdf(dist.a, *args), -np.inf)
-        assert_almost_equal(dist.pdf(dist.b, *args), 0)
-        assert_equal(dist.logpdf(dist.b, *args), -np.inf)
-
-    dists = ['alpha', 'betaprime', 'burr', 'burr12',
+@pytest.mark.parametrize('dist', ['alpha', 'betaprime', 'burr', 'burr12',
              'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
              'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
-             'powerlognorm', 'rayleigh', 'wald']
-
+             'powerlognorm', 'rayleigh', 'wald'])
+def test_support(dist):
+    """gh-6235"""
     dct = dict(distcont)
-    for dist in dists:
-        args = dct[dist]
-        yield check_open_support, dist, args
+    args = dct[dist]
+
+    dist = getattr(stats, dist)
+
+    assert_almost_equal(dist.pdf(dist.a, *args), 0)
+    assert_equal(dist.logpdf(dist.a, *args), -np.inf)
+    assert_almost_equal(dist.pdf(dist.b, *args), 0)
+    assert_equal(dist.logpdf(dist.b, *args), -np.inf)
 
 
 class TestRandInt(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.randint.rvs(5, 30, size=100)
         assert_(numpy.all(vals < 30) & numpy.all(vals >= 5))
@@ -177,6 +182,9 @@ class TestRandInt(object):
 
 
 class TestBinom(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.binom.rvs(10, 0.75, size=(2, 50))
         assert_(numpy.all(vals >= 0) & numpy.all(vals <= 10))
@@ -220,6 +228,9 @@ class TestBinom(object):
 
 
 class TestBernoulli(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.bernoulli.rvs(0.75, size=(2, 50))
         assert_(numpy.all(vals >= 0) & numpy.all(vals <= 1))
@@ -258,6 +269,9 @@ class TestBradford(object):
 
 
 class TestNBinom(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.nbinom.rvs(10, 0.75, size=(2, 50))
         assert_(numpy.all(vals >= 0))
@@ -279,6 +293,9 @@ class TestNBinom(object):
 
 
 class TestGeom(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.geom.rvs(0.75, size=(2, 50))
         assert_(numpy.all(vals >= 0))
@@ -364,6 +381,9 @@ class TestHalfgennorm(object):
 
 
 class TestTruncnorm(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_ppf_ticket1131(self):
         vals = stats.truncnorm.ppf([-0.5, 0, 1e-4, 0.5, 1-1e-4, 1, 2], -1., 1.,
                                    loc=[3]*7, scale=2)
@@ -401,6 +421,9 @@ class TestTruncnorm(object):
 
 
 class TestHypergeom(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.hypergeom.rvs(20, 10, 3, size=(2, 50))
         assert_(numpy.all(vals >= 0) &
@@ -526,6 +549,9 @@ class TestLogistic(object):
 
 
 class TestLogser(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
         assert_(numpy.all(vals >= 1))
@@ -734,6 +760,9 @@ class TestGenpareto(object):
 
 
 class TestPearson3(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.pearson3.rvs(0.1, size=(2, 50))
         assert_(numpy.shape(vals) == (2, 50))
@@ -830,6 +859,8 @@ class TestKappa4(object):
 
 
 class TestPoisson(object):
+    def setup_method(self):
+        np.random.seed(1234)
 
     def test_pmf_basic(self):
         # Basic case
@@ -870,6 +901,9 @@ class TestPoisson(object):
 
 
 class TestZipf(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.zipf.rvs(1.5, size=(2, 50))
         assert_(numpy.all(vals >= 1))
@@ -892,6 +926,9 @@ class TestZipf(object):
 
 
 class TestDLaplace(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         vals = stats.dlaplace.rvs(1.5, size=(2, 50))
         assert_(numpy.shape(vals) == (2, 50))
@@ -992,6 +1029,9 @@ def test_rvgeneric_std():
 
 
 class TestRvDiscrete(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_rvs(self):
         states = [-1, 0, 1, 2, 3, 4]
         probability = [0.0, 0.3, 0.4, 0.0, 0.3, 0.0]
@@ -1080,6 +1120,8 @@ class TestRvDiscrete(object):
 
 
 class TestSkewNorm(object):
+    def setup_method(self):
+        np.random.seed(1234)
 
     def test_normal(self):
         # When the skewness is 0 the distribution is normal
@@ -1321,6 +1363,9 @@ class TestGumbelL(object):
 
 
 class TestArrayArgument(object):  # test for ticket:992
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_noexception(self):
         rvs = stats.norm.rvs(loc=(np.arange(5)), scale=np.ones(5),
                              size=(10, 5))
@@ -1403,60 +1448,57 @@ def TestArgsreduce():
 class TestFitMethod(object):
     skip = ['ncf']
 
-    def test_fit(self):
-        @pytest.mark.slow
-        def check(func, dist, args, alpha):
-            if dist in self.skip:
-                pytest.skip("%s fit known to fail" % dist)
-            distfunc = getattr(stats, dist)
-            with np.errstate(all='ignore'):
-                res = distfunc.rvs(*args, **{'size': 200})
-                vals = distfunc.fit(res)
-                vals2 = distfunc.fit(res, optimizer='powell')
-            # Only check the length of the return
-            # FIXME: should check the actual results to see if we are 'close'
-            #   to what was created --- but what is 'close' enough
-            if dist == 'frechet':
-                assert_(len(vals) == len(args))
-                assert_(len(vals2) == len(args))
-            else:
-                assert_(len(vals) == 2+len(args))
-                assert_(len(vals2) == 2+len(args))
+    def setup_method(self):
+        np.random.seed(1234)
 
-        for func, dist, args, alpha in test_all_distributions():
-            yield check, func, dist, args, alpha
+    @pytest.mark.slow
+    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
+    def test_fit(self, dist, args, alpha):
+        if dist in self.skip:
+            pytest.skip("%s fit known to fail" % dist)
+        distfunc = getattr(stats, dist)
+        with np.errstate(all='ignore'):
+            res = distfunc.rvs(*args, **{'size': 200})
+            vals = distfunc.fit(res)
+            vals2 = distfunc.fit(res, optimizer='powell')
+        # Only check the length of the return
+        # FIXME: should check the actual results to see if we are 'close'
+        #   to what was created --- but what is 'close' enough
+        if dist == 'frechet':
+            assert_(len(vals) == len(args))
+            assert_(len(vals2) == len(args))
+        else:
+            assert_(len(vals) == 2+len(args))
+            assert_(len(vals2) == 2+len(args))
 
-    def test_fix_fit(self):
-        @pytest.mark.slow
-        def check(func, dist, args, alpha):
-            # Not sure why 'ncf', and 'beta' are failing
-            # frechet has different len(args) than distfunc.numargs
-            if dist in self.skip + ['frechet']:
-                pytest.skip("%s fit known to fail" % dist)
-            distfunc = getattr(stats, dist)
-            with np.errstate(all='ignore'):
-                res = distfunc.rvs(*args, **{'size': 200})
-                vals = distfunc.fit(res, floc=0)
-                vals2 = distfunc.fit(res, fscale=1)
-                assert_(len(vals) == 2+len(args))
-                assert_(vals[-2] == 0)
-                assert_(vals2[-1] == 1)
-                assert_(len(vals2) == 2+len(args))
-                if len(args) > 0:
-                    vals3 = distfunc.fit(res, f0=args[0])
-                    assert_(len(vals3) == 2+len(args))
-                    assert_(vals3[0] == args[0])
-                if len(args) > 1:
-                    vals4 = distfunc.fit(res, f1=args[1])
-                    assert_(len(vals4) == 2+len(args))
-                    assert_(vals4[1] == args[1])
-                if len(args) > 2:
-                    vals5 = distfunc.fit(res, f2=args[2])
-                    assert_(len(vals5) == 2+len(args))
-                    assert_(vals5[2] == args[2])
-
-        for func, dist, args, alpha in test_all_distributions():
-            yield check, func, dist, args, alpha
+    @pytest.mark.slow
+    @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
+    def test_fix_fit(self, dist, args, alpha):
+        # Not sure why 'ncf', and 'beta' are failing
+        # frechet has different len(args) than distfunc.numargs
+        if dist in self.skip + ['frechet']:
+            pytest.skip("%s fit known to fail" % dist)
+        distfunc = getattr(stats, dist)
+        with np.errstate(all='ignore'):
+            res = distfunc.rvs(*args, **{'size': 200})
+            vals = distfunc.fit(res, floc=0)
+            vals2 = distfunc.fit(res, fscale=1)
+            assert_(len(vals) == 2+len(args))
+            assert_(vals[-2] == 0)
+            assert_(vals2[-1] == 1)
+            assert_(len(vals2) == 2+len(args))
+            if len(args) > 0:
+                vals3 = distfunc.fit(res, f0=args[0])
+                assert_(len(vals3) == 2+len(args))
+                assert_(vals3[0] == args[0])
+            if len(args) > 1:
+                vals4 = distfunc.fit(res, f1=args[1])
+                assert_(len(vals4) == 2+len(args))
+                assert_(vals4[1] == args[1])
+            if len(args) > 2:
+                vals5 = distfunc.fit(res, f2=args[2])
+                assert_(len(vals5) == 2+len(args))
+                assert_(vals5[2] == args[2])
 
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.
@@ -1621,6 +1663,9 @@ class TestFitMethod(object):
 
 
 class TestFrozen(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     # Test that a frozen distribution gives the same results as the original
     # object.
     #
@@ -2046,6 +2091,9 @@ class TestRice(object):
 
 
 class TestErlang(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_erlang_runtimewarning(self):
         # erlang should generate a RuntimeWarning if a non-integer
         # shape parameter is used.
@@ -2588,6 +2636,8 @@ def test_hypergeom_interval_1802():
 
 
 def test_distribution_too_many_args():
+    np.random.seed(1234)
+
     # Check that a TypeError is raised when too many args are given to a method
     # Regression test for ticket 1815.
     x = np.linspace(0.1, 0.7, num=5)
@@ -3035,6 +3085,8 @@ def test_argus_function():
 
 class TestHistogram(object):
     def setup_method(self):
+        np.random.seed(1234)
+
         # We have 8 bins
         # [1,2), [2,3), [3,4), [4,5), [5,6), [6,7), [7,8), [8,9)
         # But actually np.histogram will put the last 9 also in the [8,9) bin!

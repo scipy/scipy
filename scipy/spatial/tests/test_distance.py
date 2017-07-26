@@ -1124,11 +1124,11 @@ class TestSquareForm(object):
 
     def test_squareform_matrix(self):
         for dtype in self.checked_dtypes:
-            yield self.check_squareform_matrix, dtype
+            self.check_squareform_matrix(dtype)
 
     def test_squareform_vector(self):
         for dtype in self.checked_dtypes:
-            yield self.check_squareform_vector, dtype
+            self.check_squareform_vector(dtype)
 
     def check_squareform_matrix(self, dtype):
         A = np.zeros((0,0), dtype=dtype)
@@ -1162,7 +1162,7 @@ class TestSquareForm(object):
 
     def test_squareform_multi_matrix(self):
         for n in xrange(2, 5):
-            yield self.check_squareform_multi_matrix, n
+            self.check_squareform_multi_matrix(n)
 
     def check_squareform_multi_matrix(self, n):
         X = np.random.rand(n, 4)

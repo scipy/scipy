@@ -21,6 +21,7 @@ Run tests if sparse is not installed:
 
 import operator
 import contextlib
+import functools
 
 import numpy as np
 from scipy._lib.six import xrange, zip as izip
@@ -45,7 +46,6 @@ from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib._version import NumpyVersion
 from scipy._lib.decorator import decorator
-from scipy._lib._testutils import skipif_yield
 
 import pytest
 
@@ -262,10 +262,11 @@ class _TestCommon(object):
             assert_raises(ValueError, bool, datsp)
             assert_(self.spmatrix([1]))
             assert_(not self.spmatrix([0]))
+
+        if isinstance(self, TestDOK):
+            pytest.skip("Cannot create a rank <= 2 DOK matrix.")
         for dtype in self.checked_dtypes:
-            fails = isinstance(self, TestDOK)
-            msg = "Cannot create a rank <= 2 DOK matrix."
-            yield skipif_yield(fails, reason=msg)(check), dtype
+            check(dtype)
 
     def test_bool_rollover(self):
         # bool's underlying dtype is 1 byte, check that it does not
@@ -309,10 +310,10 @@ class _TestCommon(object):
             assert_array_equal(dat == 1, (datsp == 1).todense())
             assert_array_equal(dat == np.nan, (datsp == np.nan).todense())
 
-        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
+        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
-            yield skipif_yield(fails, reason=msg)(check), dtype
+            check(dtype)
 
     def test_ne(self):
         sup = suppress_warnings()
@@ -347,10 +348,10 @@ class _TestCommon(object):
             assert_array_equal(1 != dat, (1 != datsp).todense())
             assert_array_equal(dat != np.nan, (datsp != np.nan).todense())
 
-        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
+        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
-            yield skipif_yield(fails, reason=msg)(check), dtype
+            check(dtype)
 
     def test_lt(self):
         sup = suppress_warnings()
@@ -414,11 +415,10 @@ class _TestCommon(object):
             # dense rhs
             assert_array_equal(dat < datsp2, datsp < dat2)
 
-        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
+        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
-            with np.errstate(invalid='ignore'):
-                yield skipif_yield(fails, reason=msg)(check), dtype
+            check(dtype)
 
     def test_gt(self):
         sup = suppress_warnings()
@@ -481,10 +481,10 @@ class _TestCommon(object):
             # dense rhs
             assert_array_equal(dat > datsp2, datsp > dat2)
 
-        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
+        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
-            yield skipif_yield(fails, reason=msg)(check), dtype
+            check(dtype)
 
     def test_le(self):
         sup = suppress_warnings()
@@ -543,10 +543,10 @@ class _TestCommon(object):
             # dense rhs
             assert_array_equal(dat <= datsp2, datsp <= dat2)
 
-        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
+        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
-            yield skipif_yield(fails, reason=msg)(check), dtype
+            check(dtype)
 
     def test_ge(self):
         sup = suppress_warnings()
@@ -606,10 +606,10 @@ class _TestCommon(object):
             # dense rhs
             assert_array_equal(dat >= datsp2, datsp >= dat2)
 
-        msg = "Bool comparisons only implemented for BSR, CSC, and CSR."
-        fails = not isinstance(self, (TestBSR, TestCSC, TestCSR))
+        if not isinstance(self, (TestBSR, TestCSC, TestCSR)):
+            pytest.skip("Bool comparisons only implemented for BSR, CSC, and CSR.")
         for dtype in self.checked_dtypes:
-            yield skipif_yield(fails, reason=msg)(check), dtype
+            check(dtype)
 
     def test_empty(self):
         # create empty matrices
@@ -845,7 +845,7 @@ class _TestCommon(object):
 
         for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
-                yield check, dtype, j
+                check(dtype, j)
 
     def test_sum_invalid_params(self):
         out = np.asmatrix(np.zeros((1, 3)))
@@ -873,7 +873,7 @@ class _TestCommon(object):
             assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
         for dtype in self.checked_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_sum_out(self):
         dat = np.matrix([[0, 1, 2],
@@ -930,7 +930,7 @@ class _TestCommon(object):
             assert_equal(dat.mean(axis=-1).dtype, datsp.mean(axis=-1).dtype)
 
         for dtype in self.checked_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_mean_invalid_params(self):
         out = np.asmatrix(np.zeros((1, 3)))
@@ -958,7 +958,7 @@ class _TestCommon(object):
             assert_equal(dat_mean.dtype, datsp_mean.dtype)
 
         for dtype in self.checked_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_mean_out(self):
         dat = np.matrix([[0, 1, 2],
@@ -1028,7 +1028,7 @@ class _TestCommon(object):
                 sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
         for dtype in [float]:
-            yield check, dtype
+            check(dtype)
 
     @sup_complex
     def test_from_array(self):
@@ -1225,7 +1225,7 @@ class _TestCommon(object):
             assert_array_equal(dat*17.3,(datsp*17.3).todense())
 
         for dtype in self.math_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_rmul_scalar(self):
         def check(dtype):
@@ -1236,7 +1236,7 @@ class _TestCommon(object):
             assert_array_equal(17.3*dat,(17.3*datsp).todense())
 
         for dtype in self.math_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_add(self):
         def check(dtype):
@@ -1258,7 +1258,7 @@ class _TestCommon(object):
             assert_array_equal(c, b.todense() + a[0])
 
         for dtype in self.math_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_radd(self):
         def check(dtype):
@@ -1272,7 +1272,7 @@ class _TestCommon(object):
             assert_array_equal(c, a + b.todense())
 
         for dtype in self.math_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_sub(self):
         def check(dtype):
@@ -1294,7 +1294,7 @@ class _TestCommon(object):
                 # boolean array subtraction deprecated in 1.9.0
                 continue
 
-            yield check, dtype
+            check(dtype)
 
     def test_rsub(self):
         def check(dtype):
@@ -1319,7 +1319,7 @@ class _TestCommon(object):
                 # boolean array subtraction deprecated in 1.9.0
                 continue
 
-            yield check, dtype
+            check(dtype)
 
     def test_add0(self):
         def check(dtype):
@@ -1334,7 +1334,7 @@ class _TestCommon(object):
             assert_almost_equal(sumS.todense(), sumD)
 
         for dtype in self.math_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_elementwise_multiply(self):
         # real/real
@@ -1695,7 +1695,7 @@ class _TestCommon(object):
 
         for dtype in self.checked_dtypes:
             for j in range(len(matrices)):
-                yield check, dtype, j
+                check(dtype, j)
 
     def test_add_dense(self):
         def check(dtype):
@@ -1709,7 +1709,7 @@ class _TestCommon(object):
             assert_array_equal(sum2, dat + dat)
 
         for dtype in self.math_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_sub_dense(self):
         # subtracting a dense matrix to/from a sparse matrix
@@ -1737,7 +1737,7 @@ class _TestCommon(object):
                 # boolean array subtraction deprecated in 1.9.0
                 continue
 
-            yield check, dtype
+            check(dtype)
 
     def test_maximum_minimum(self):
         A_dense = np.array([[1, 0, 3], [0, 4, 5], [0, 0, 0]])
@@ -1779,7 +1779,7 @@ class _TestCommon(object):
         for dtype in self.math_dtypes:
             for dtype2 in [np.int8, np.float_, np.complex_]:
                 for btype in ['scalar', 'scalar2', 'dense', 'sparse']:
-                    yield check, np.dtype(dtype), np.dtype(dtype2), btype
+                    check(np.dtype(dtype), np.dtype(dtype2), btype)
 
     def test_copy(self):
         # Check whether the copy=True and copy=False keywords work
@@ -1932,8 +1932,9 @@ class _TestCommon(object):
                      "arcsinh", "arctanh", "rint", "sign", "expm1", "log1p",
                      "deg2rad", "rad2deg", "floor", "ceil", "trunc", "sqrt",
                      "abs"]:
-            yield check, name
+            check(name)
 
+    @pytest.mark.skipif(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
     def test_binary_ufunc_overrides(self):
         # data
         a = np.array([[1, 2, 3],
@@ -1952,7 +1953,6 @@ class _TestCommon(object):
         a_items = dict(dense=a, scalar=c, cplx_scalar=d, int_scalar=e, sparse=asp)
         b_items = dict(dense=b, scalar=c, cplx_scalar=d, int_scalar=e, sparse=bsp)
 
-        @skipif_yield(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
         def check(i, j, dtype):
             ax = a_items[i]
             bx = b_items[j]
@@ -2051,9 +2051,9 @@ class _TestCommon(object):
             for j in b_items.keys():
                 for dtype in [np.int_, np.float_, np.complex_]:
                     if i == 'sparse' or j == 'sparse':
-                        yield check, i, j, dtype
+                        check(i, j, dtype)
 
-    @skipif_yield(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
+    @pytest.mark.skipif(not HAS_NUMPY_UFUNC, reason="feature requires Numpy with __numpy_ufunc__")
     def test_ufunc_object_array(self):
         # This tests compatibility with previous Numpy object array
         # ufunc behavior. See gh-3345.
@@ -2136,7 +2136,7 @@ class _TestInplaceArithmetic(object):
                 assert_array_equal(b, a.todense())
 
         for dtype in self.math_dtypes:
-            yield check, dtype
+            check(dtype)
 
     def test_idiv_scalar(self):
         def check(dtype):
@@ -2161,7 +2161,7 @@ class _TestInplaceArithmetic(object):
             # /= should only be used with float dtypes to avoid implicit
             # casting.
             if not np.can_cast(dtype, np.int_):
-                yield check, dtype
+                check(dtype)
 
     def test_inplace_success(self):
         # Inplace ops should work even if a specialized version is not
@@ -2204,7 +2204,7 @@ class _TestGetSet(object):
                 assert_raises((IndexError, TypeError), A.__getitem__, ij)
 
         for dtype in supported_dtypes:
-            yield check, np.dtype(dtype)
+            check(np.dtype(dtype))
 
     def test_setelement(self):
         def check(dtype):
@@ -2235,7 +2235,7 @@ class _TestGetSet(object):
                     assert_raises(TypeError, A.__setitem__, (0,0), v)
 
         for dtype in supported_dtypes:
-            yield check, np.dtype(dtype)
+            check(np.dtype(dtype))
 
     def test_negative_index_assignment(self):
         # Regression test for github issue 4428.
@@ -2249,7 +2249,7 @@ class _TestGetSet(object):
             assert_equal(A[0, -4], 1)
 
         for dtype in self.math_dtypes:
-            yield check, np.dtype(dtype)
+            check(np.dtype(dtype))
 
     def test_scalar_assign_2(self):
         n, m = (5, 10)
@@ -2444,7 +2444,7 @@ class _TestSlicing(object):
                     assert_array_equal(x.todense(), y, repr(a))
 
         for j, a in enumerate(slices):
-            yield check_1, a
+            check_1(a)
 
         def check_2(a, b):
             # Indexing np.matrix with 0-d arrays seems to be broken,
@@ -2472,7 +2472,7 @@ class _TestSlicing(object):
 
         for i, a in enumerate(slices):
             for j, b in enumerate(slices):
-                yield check_2, a, b
+                check_2(a, b)
 
     def test_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))
@@ -2492,7 +2492,7 @@ class _TestSlicing(object):
         assert_equal(a[1, 1, ...], b[1, 1, ...])
         assert_equal(a[1, ..., 1], b[1, ..., 1])
 
-    @skipif_yield(NumpyVersion(np.__version__) >= '1.9.0.dev', reason="")
+    @pytest.mark.skipif(NumpyVersion(np.__version__) >= '1.9.0.dev', reason="")
     def test_multiple_ellipsis_slicing(self):
         b = asmatrix(arange(50).reshape(5,10))
         a = self.spmatrix(b)
@@ -2892,7 +2892,7 @@ class _TestFancyIndexingAssign(object):
                 assert_equal(A.sum(), dtype.type(1)*4 + dtype.type(1))
 
         for dtype in supported_dtypes:
-            yield check, np.dtype(dtype)
+            check(np.dtype(dtype))
 
     def test_sequence_assignment(self):
         A = self.spmatrix((4,3))
@@ -3397,6 +3397,7 @@ def _possibly_unimplemented(cls, require=True):
         return cls
     else:
         def wrap(fc):
+            @functools.wraps(fc)
             def wrapper(*a, **kw):
                 try:
                     return fc(*a, **kw)
@@ -3404,7 +3405,6 @@ def _possibly_unimplemented(cls, require=True):
                         IndexError, AttributeError):
                     raise pytest.skip("feature not implemented")
 
-            wrapper.__name__ = fc.__name__
             return wrapper
 
         new_dict = dict(cls.__dict__)
@@ -4466,7 +4466,7 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
 
         for dtype in supported_dtypes:
             for sorted_indices in [False, True]:
-                yield check, np.dtype(dtype), sorted_indices
+                check(np.dtype(dtype), sorted_indices)
 
     @pytest.mark.xfail(run=False, reason='inverse broken with non-canonical matrix')
     def test_inv(self):
@@ -4520,21 +4520,38 @@ class TestCOONonCanonical(_NonCanonicalMixin, TestCOO):
         assert_(np.all(np.diff(m.col) >= 0))
 
 
-class Test64Bit(object):
-
+def cases_64bit():
     TEST_CLASSES = [TestBSR, TestCOO, TestCSC, TestCSR, TestDIA,
                     # lil/dok->other conversion operations have get_index_dtype
                     TestDOK, TestLIL
                     ]
 
-    MAT_CLASSES = [bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix]
-
     # The following features are missing, so skip the tests:
     SKIP_TESTS = {
         'test_expm': 'expm for 64-bit indices not available',
+        'test_inv': 'linsolve for 64-bit indices not available',
         'test_solve': 'linsolve for 64-bit indices not available',
         'test_scalar_idx_dtype': 'test implemented in base class',
     }
+
+    for cls in TEST_CLASSES:
+        for method_name in sorted(dir(cls)):
+            method = getattr(cls, method_name)
+            if (method_name.startswith('test_') and
+                    not getattr(method, 'slow', False)):
+                marks = []
+
+                msg = SKIP_TESTS.get(method_name)
+                if bool(msg):
+                    marks += [pytest.mark.skip(reason=msg)]
+                for mname in ['skipif', 'skip', 'xfail', 'xslow']:
+                    if hasattr(method, mname):
+                        marks += [getattr(method, mname)]
+                yield pytest.param(cls, method_name, marks=marks)
+
+
+class Test64Bit(object):
+    MAT_CLASSES = [bsr_matrix, coo_matrix, csc_matrix, csr_matrix, dia_matrix]
 
     def _create_some_matrix(self, mat_cls, m, n):
         return mat_cls(np.random.rand(m, n))
@@ -4562,7 +4579,7 @@ class Test64Bit(object):
             assert_(self._compare_index_dtype(m, np.int64))
 
         for mat_cls in self.MAT_CLASSES:
-            yield check, mat_cls
+            check(mat_cls)
 
     def test_decorator_maxval_random(self):
         # Test that the with_64bit_maxval_limit decorator works (2)
@@ -4581,13 +4598,11 @@ class Test64Bit(object):
                 raise AssertionError("both 32 and 64 bit indices not seen")
 
         for mat_cls in self.MAT_CLASSES:
-            yield check, mat_cls
+            check(mat_cls)
 
-    def _check_resiliency(self, **kw):
+    def _check_resiliency(self, cls, method_name, **kw):
         # Resiliency test, to check that sparse matrices deal reasonably
         # with varying index data types.
-
-        skip = kw.pop('skip', ())
 
         @with_64bit_maxval_limit(**kw)
         def check(cls, method_name):
@@ -4600,39 +4615,30 @@ class Test64Bit(object):
                 if hasattr(instance, 'teardown_method'):
                     instance.teardown_method()
 
-        for cls in self.TEST_CLASSES:
-            for method_name in dir(cls):
-                method = getattr(cls, method_name)
-                if (method_name.startswith('test_') and
-                        not getattr(method, 'slow', False) and
-                        (cls.__name__ + '.' + method_name) not in skip):
-                    msg = self.SKIP_TESTS.get(method_name)
-                    yield skipif_yield(bool(msg), reason=msg)(check), cls, method_name
+        check(cls, method_name)
 
-    def test_resiliency_limit_10(self):
-        for t in self._check_resiliency(maxval_limit=10):
-            yield t
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_resiliency_limit_10(self, cls, method_name):
+        self._check_resiliency(cls, method_name, maxval_limit=10)
 
-    def test_resiliency_random(self):
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_resiliency_random(self, cls, method_name):
         # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
         # not making copies of index arrays --- this is not
         # necessarily true when we pick the index data type randomly
-        skip = ['TestBSR.test_eliminate_zeros']
+        self._check_resiliency(cls, method_name, random=True)
 
-        for t in self._check_resiliency(random=True, skip=skip):
-            yield t
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_resiliency_all_32(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int32)
 
-    def test_resiliency_all_32(self):
-        for t in self._check_resiliency(fixed_dtype=np.int32):
-            yield t
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_resiliency_all_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
-    def test_resiliency_all_64(self):
-        for t in self._check_resiliency(fixed_dtype=np.int64):
-            yield t
-
-    def test_no_64(self):
-        for t in self._check_resiliency(assert_32bit=True):
-            yield t
+    @pytest.mark.parametrize('cls,method_name', cases_64bit())
+    def test_no_64(self, cls, method_name):
+        self._check_resiliency(cls, method_name, assert_32bit=True)
 
     def test_downcast_intp(self):
         # Check that bincount and ufunc.reduceat intp downcasts are

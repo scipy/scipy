@@ -4,7 +4,6 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 from scipy._lib._numpy_compat import suppress_warnings
-from scipy._lib._testutils import skipif_yield
 from scipy.integrate import IntegrationWarning
 
 from scipy import stats
@@ -68,84 +67,89 @@ fails_cmplx = set(['beta', 'betaprime', 'chi', 'chi2', 'dgamma', 'dweibull',
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
-test_histogram_instance = stats.rv_histogram(_h)
+histogram_test_instance = stats.rv_histogram(_h)
 
-def test_cont_basic():
-    # this test skips slow distributions
 
-    def check(distname, arg):
-        try:
-            distfn = getattr(stats, distname)
-        except TypeError:
-            distfn = distname
-            distname = 'rv_histogram_instance'
-        np.random.seed(765456)
-        sn = 500
-        rvs = distfn.rvs(size=sn, *arg)
-        sm = rvs.mean()
-        sv = rvs.var()
-        m, v = distfn.stats(*arg)
-
-        check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
-        check_cdf_ppf(distfn, arg, distname)
-        check_sf_isf(distfn, arg, distname)
-        check_pdf(distfn, arg, distname)
-        check_pdf_logpdf(distfn, arg, distname)
-        check_cdf_logcdf(distfn, arg, distname)
-        check_sf_logsf(distfn, arg, distname)
-
-        alpha = 0.01
-        if distname == 'rv_histogram_instance':
-            check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
-        else:
-            check_distribution_rvs(distname, arg, alpha, rvs)
-
-        locscale_defaults = (0, 1)
-        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-                 distfn.logsf]
-        # make sure arguments are within support
-        spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
-                  'pareto': 1.5, 'tukeylambda': 0.3,
-                  'rv_histogram_instance': 5.0}
-        x = spec_x.get(distname, 0.5)
-        check_named_args(distfn, x, arg, locscale_defaults, meths)
-        check_random_state_property(distfn, arg)
-        check_pickling(distfn, arg)
-
-        # Entropy
-        check_entropy(distfn, arg, distname)
-
-        if distfn.numargs == 0:
-            check_vecentropy(distfn, arg)
-
-        if distfn.__class__._entropy != stats.rv_continuous._entropy:
-            check_private_entropy(distfn, arg, stats.rv_continuous)
-
-        check_edge_support(distfn, arg)
-
-        check_meth_dtype(distfn, arg, meths)
-        check_ppf_dtype(distfn, arg)
-
-        if distname not in fails_cmplx:
-            check_cmplx_deriv(distfn, arg)
-
-        if distname != 'truncnorm':
-            check_ppf_private(distfn, arg, distname)
-
-    def fail(distname, arg):
-        pytest.xfail(reason=distname)
-
-    for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
-        if distname in distslow:
-            continue
-
+def cases_test_cont_basic():
+    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
             continue
+        elif distname in distslow:
+            yield pytest.param(distname, arg, marks=pytest.mark.slow)
+        else:
+            yield distname, arg
 
-        yield check, distname, arg
 
-        if distname == 'truncnorm':
-            yield fail, distname, arg
+@pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
+def test_cont_basic(distname, arg):
+    # this test skips slow distributions
+
+    if distname == 'truncnorm':
+        pytest.xfail(reason=distname)
+
+    try:
+        distfn = getattr(stats, distname)
+    except TypeError:
+        distfn = distname
+        distname = 'rv_histogram_instance'
+    np.random.seed(765456)
+    sn = 500
+    rvs = distfn.rvs(size=sn, *arg)
+    sm = rvs.mean()
+    sv = rvs.var()
+    m, v = distfn.stats(*arg)
+
+    check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+    check_cdf_ppf(distfn, arg, distname)
+    check_sf_isf(distfn, arg, distname)
+    check_pdf(distfn, arg, distname)
+    check_pdf_logpdf(distfn, arg, distname)
+    check_cdf_logcdf(distfn, arg, distname)
+    check_sf_logsf(distfn, arg, distname)
+
+    alpha = 0.01
+    if distname == 'rv_histogram_instance':
+        check_distribution_rvs(distfn.cdf, arg, alpha, rvs)
+    else:
+        check_distribution_rvs(distname, arg, alpha, rvs)
+
+    locscale_defaults = (0, 1)
+    meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
+             distfn.logsf]
+    # make sure arguments are within support
+    spec_x = {'frechet_l': -0.5, 'weibull_max': -0.5, 'levy_l': -0.5,
+              'pareto': 1.5, 'tukeylambda': 0.3,
+              'rv_histogram_instance': 5.0}
+    x = spec_x.get(distname, 0.5)
+    if distname == 'invweibull':
+        arg = (1,)
+    elif distname == 'ksone':
+        arg = (3,)
+    check_named_args(distfn, x, arg, locscale_defaults, meths)
+    check_random_state_property(distfn, arg)
+    check_pickling(distfn, arg)
+
+    # Entropy
+    if distname not in ['ksone', 'kstwobign']:
+        check_entropy(distfn, arg, distname)
+
+    if distfn.numargs == 0:
+        check_vecentropy(distfn, arg)
+
+    if (distfn.__class__._entropy != stats.rv_continuous._entropy
+            and distname != 'vonmises'):
+        check_private_entropy(distfn, arg, stats.rv_continuous)
+
+    check_edge_support(distfn, arg)
+
+    check_meth_dtype(distfn, arg, meths)
+    check_ppf_dtype(distfn, arg)
+
+    if distname not in fails_cmplx:
+        check_cmplx_deriv(distfn, arg)
+
+    if distname != 'truncnorm':
+        check_ppf_private(distfn, arg, distname)
 
 
 def test_levy_stable_random_state_property():
@@ -155,152 +159,87 @@ def test_levy_stable_random_state_property():
     check_random_state_property(stats.levy_stable, (0.5, 0.1))
 
 
-def test_cont_basic_slow():
-    # same as above for slow distributions
-
-    @pytest.mark.slow
-    def check(distname, arg):
-        distfn = getattr(stats, distname)
-        np.random.seed(765456)
-        sn = 500
-        rvs = distfn.rvs(size=sn, *arg)
-        sm = rvs.mean()
-        sv = rvs.var()
-        m, v = distfn.stats(*arg)
-        check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
-        check_cdf_ppf(distfn, arg, distname)
-        check_sf_isf(distfn, arg, distname)
-        check_pdf(distfn, arg, distname)
-        check_pdf_logpdf(distfn, arg, distname)
-        check_cdf_logcdf(distfn, arg, distname)
-        check_sf_logsf(distfn, arg, distname)
-        # check_oth(distfn, arg # is still missing)
-
-        alpha = 0.01
-        check_distribution_rvs(distname, arg, alpha, rvs)
-
-        locscale_defaults = (0, 1)
-        meths = [distfn.pdf, distfn.logpdf, distfn.cdf, distfn.logcdf,
-                 distfn.logsf]
-        # make sure arguments are within support
-        x = 0.5
-        if distname == 'invweibull':
-            arg = (1,)
-        elif distname == 'ksone':
-            arg = (3,)
-        check_named_args(distfn, x, arg, locscale_defaults, meths)
-        check_random_state_property(distfn, arg)
-        check_pickling(distfn, arg)
-
-        # Entropy
-        if distname not in ['ksone', 'kstwobign']:
-            check_entropy(distfn, arg, distname)
-
-        if distfn.numargs == 0:
-            check_vecentropy(distfn, arg)
-        if (distfn.__class__._entropy != stats.rv_continuous._entropy
-                and distname != 'vonmises'):
-            check_private_entropy(distfn, arg, stats.rv_continuous)
-
-        check_edge_support(distfn, arg)
-
-        check_meth_dtype(distfn, arg, meths)
-        check_ppf_dtype(distfn, arg)
-
-        if distname not in fails_cmplx:
-            check_cmplx_deriv(distfn, arg)
-
-    for distname, arg in distcont[:]:
-        if distname not in distslow:
-            continue
-
-        if distname == 'levy_stable':
-            continue
-
-        yield check, distname, arg
-
-
-def test_moments():
-    @pytest.mark.slow
-    def check(distname, arg, normalization_ok, higher_ok):
-        if distname == 'levy_stable':
-            return
-
-        try:
-            distfn = getattr(stats, distname)
-        except TypeError:
-            distfn = distname
-            distname = 'rv_histogram_instance'
-
-        with suppress_warnings() as sup:
-            sup.filter(IntegrationWarning, "The integral is probably divergent, or slowly convergent.")
-            m, v, s, k = distfn.stats(*arg, moments='mvsk')
-
-        if normalization_ok:
-            check_normalization(distfn, arg, distname)
-
-        if higher_ok:
-            check_mean_expect(distfn, arg, m, distname)
-            with suppress_warnings() as sup:
-                sup.filter(IntegrationWarning,
-                           "The integral is probably divergent, or slowly convergent.")
-                check_skew_expect(distfn, arg, m, v, s, distname)
-                check_var_expect(distfn, arg, m, v, distname)
-                check_kurt_expect(distfn, arg, m, v, k, distname)
-
-        check_loc_scale(distfn, arg, m, v, distname)
-        check_moment(distfn, arg, m, v, distname)
-
-    @pytest.mark.slow
-    def fail(*a, **kw):
-        pytest.xfail()
-
+def cases_test_moments():
     fail_normalization = set(['vonmises', 'ksone'])
     fail_higher = set(['vonmises', 'ksone', 'ncf'])
 
-    for distname, arg in distcont[:] + [(test_histogram_instance, tuple())]:
+    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
+        if distname == 'levy_stable':
+            continue
+
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
-        yield check, distname, arg, cond1, cond2
+
+        yield distname, arg, cond1, cond2
 
         if not cond1 or not cond2:
-            yield fail, distname, arg, True, True
+            yield pytest.param(distname, arg, True, True, marks=pytest.mark.xfail)
 
 
-def test_rvs_broadcast():
-    for dist, shape_args in distcont:
-        # If shape_only is True, it means the _rvs method of the
-        # distribution uses more than one random number to generate a random
-        # variate.  That means the result of using rvs with broadcasting or
-        # with a nontrivial size will not necessarily be the same as using the
-        # numpy.vectorize'd version of rvs(), so we can only compare the shapes
-        # of the results, not the values.
-        # Whether or not a distribution is in the following list is an
-        # implementation detail of the distribution, not a requirement.  If
-        # the implementation the rvs() method of a distribution changes, this
-        # test might also have to be changed.
-        shape_only = dist in ['betaprime', 'dgamma', 'exponnorm',
-                              'nct', 'dweibull', 'rice', 'levy_stable',
-                              'skewnorm']
+@pytest.mark.slow
+@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok', cases_test_moments())
+def test_moments(distname, arg, normalization_ok, higher_ok):
+    try:
+        distfn = getattr(stats, distname)
+    except TypeError:
+        distfn = distname
+        distname = 'rv_histogram_instance'
 
-        distfunc = getattr(stats, dist)
-        loc = np.zeros(2)
-        scale = np.ones((3, 1))
-        nargs = distfunc.numargs
-        allargs = []
-        bshape = [3, 2]
-        # Generate shape parameter arguments...
-        for k in range(nargs):
-            shp = (k + 4,) + (1,)*(k + 2)
-            allargs.append(shape_args[k]*np.ones(shp))
-            bshape.insert(0, k + 4)
-        allargs.extend([loc, scale])
-        # bshape holds the expected shape when loc, scale, and the shape
-        # parameters are all broadcast together.
-        is_too_slow = dist in ['gausshyper', 'genexpon']
+    with suppress_warnings() as sup:
+        sup.filter(IntegrationWarning, "The integral is probably divergent, or slowly convergent.")
+        m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
-        check_rvs = skipif_yield(is_too_slow, reason="too slow")(check_rvs_broadcast)
-        yield check_rvs, distfunc, dist, allargs, bshape, shape_only, 'd'
+    if normalization_ok:
+        check_normalization(distfn, arg, distname)
+
+    if higher_ok:
+        check_mean_expect(distfn, arg, m, distname)
+        with suppress_warnings() as sup:
+            sup.filter(IntegrationWarning,
+                       "The integral is probably divergent, or slowly convergent.")
+            check_skew_expect(distfn, arg, m, v, s, distname)
+            check_var_expect(distfn, arg, m, v, distname)
+            check_kurt_expect(distfn, arg, m, v, k, distname)
+
+    check_loc_scale(distfn, arg, m, v, distname)
+    check_moment(distfn, arg, m, v, distname)
+
+
+@pytest.mark.parametrize('dist,shape_args', distcont)
+def test_rvs_broadcast(dist, shape_args):
+    if dist in ['gausshyper', 'genexpon']:
+        pytest.skip("too slow")
+
+    # If shape_only is True, it means the _rvs method of the
+    # distribution uses more than one random number to generate a random
+    # variate.  That means the result of using rvs with broadcasting or
+    # with a nontrivial size will not necessarily be the same as using the
+    # numpy.vectorize'd version of rvs(), so we can only compare the shapes
+    # of the results, not the values.
+    # Whether or not a distribution is in the following list is an
+    # implementation detail of the distribution, not a requirement.  If
+    # the implementation the rvs() method of a distribution changes, this
+    # test might also have to be changed.
+    shape_only = dist in ['betaprime', 'dgamma', 'exponnorm',
+                          'nct', 'dweibull', 'rice', 'levy_stable',
+                          'skewnorm']
+
+    distfunc = getattr(stats, dist)
+    loc = np.zeros(2)
+    scale = np.ones((3, 1))
+    nargs = distfunc.numargs
+    allargs = []
+    bshape = [3, 2]
+    # Generate shape parameter arguments...
+    for k in range(nargs):
+        shp = (k + 4,) + (1,)*(k + 2)
+        allargs.append(shape_args[k]*np.ones(shp))
+        bshape.insert(0, k + 4)
+    allargs.extend([loc, scale])
+    # bshape holds the expected shape when loc, scale, and the shape
+    # parameters are all broadcast together.
+
+    check_rvs_broadcast(distfunc, dist, allargs, bshape, shape_only, 'd')
 
 
 def test_rvs_gh2069_regression():

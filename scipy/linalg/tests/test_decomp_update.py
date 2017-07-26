@@ -1650,10 +1650,10 @@ def test_form_qTu():
     for qo, qs, uo, us, d in \
             itertools.product(q_order, q_shape, u_order, u_shape, dtype):
         if us == 1:
-            yield check_form_qTu, qo, qs, uo, us, 1, d
-            yield check_form_qTu, qo, qs, uo, us, 2, d
+            check_form_qTu(qo, qs, uo, us, 1, d)
+            check_form_qTu(qo, qs, uo, us, 2, d)
         else:
-            yield check_form_qTu, qo, qs, uo, us, 2, d
+            check_form_qTu(qo, qs, uo, us, 2, d)
     
 def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
     np.random.seed(47)

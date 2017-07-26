@@ -21,7 +21,6 @@ from numpy.testing import (assert_raises, assert_allclose, assert_equal,
 import pytest
 
 from scipy._lib._numpy_compat import suppress_warnings
-from scipy._lib._testutils import suppressed_stdout
 from scipy import optimize
 
 
@@ -93,7 +92,6 @@ class CheckOptimize(object):
 
 class CheckOptimizeParameterized(CheckOptimize):
 
-    @suppressed_stdout
     def test_cg(self):
         # conjugate gradient optimization routine
         if self.use_wrapper:
@@ -136,7 +134,6 @@ class CheckOptimizeParameterized(CheckOptimize):
             assert_(sol.success)
             assert_allclose(sol.x, [0.5], rtol=1e-5)
 
-    @suppressed_stdout
     def test_bfgs(self):
         # Broyden-Fletcher-Goldfarb-Shanno optimization routine
         if self.use_wrapper:
@@ -170,7 +167,6 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [7.323472e-15, -5.248650e-01, 4.875251e-01]],
                         atol=1e-14, rtol=1e-7)
 
-    @suppressed_stdout
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
         func = lambda x: -np.e**-x
@@ -188,7 +184,6 @@ class CheckOptimizeParameterized(CheckOptimize):
         finally:
             np.seterr(**olderr)
 
-    @suppressed_stdout
     def test_powell(self):
         # Powell (direction set) optimization routine
         if self.use_wrapper:
@@ -230,7 +225,6 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [1.72949016, -0.44156936, 0.47576729]],
                         atol=1e-14, rtol=1e-7)
 
-    @suppressed_stdout
     def test_neldermead(self):
         # Nelder-Mead simplex algorithm
         if self.use_wrapper:
@@ -262,7 +256,6 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0.19572515, -0.63648426, 0.35838135]],
                         atol=1e-14, rtol=1e-7)
 
-    @suppressed_stdout
     def test_neldermead_initial_simplex(self):
         # Nelder-Mead simplex algorithm
         simplex = np.zeros((4, 3))
@@ -301,7 +294,6 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [0.14474003, -0.5282084, 0.48743951]],
                         atol=1e-14, rtol=1e-7)
 
-    @suppressed_stdout
     def test_neldermead_initial_simplex_bad(self):
         # Check it fails with a bad simplices
         bad_simplices = []
@@ -328,7 +320,6 @@ class CheckOptimizeParameterized(CheckOptimize):
                               full_output=True, disp=False, retall=False,
                               initial_simplex=simplex)
 
-    @suppressed_stdout
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
         if self.use_wrapper:
@@ -362,7 +353,6 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
-    @suppressed_stdout
     def test_ncg_hess(self):
         # Newton conjugate gradient with Hessian
         if self.use_wrapper:
@@ -397,7 +387,6 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
-    @suppressed_stdout
     def test_ncg_hessp(self):
         # Newton conjugate gradient with Hessian times a vector p.
         if self.use_wrapper:
@@ -692,7 +681,9 @@ class TestOptimizeSimple(CheckOptimize):
             assert_(func(sol1.x) < func(sol2.x),
                     "%s: %s vs. %s" % (method, func(sol1.x), func(sol2.x)))
 
-    def test_no_increase(self):
+    @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
+                              'l-bfgs-b', 'tnc', 'cobyla', 'slsqp'])
+    def test_no_increase(self, method):
         # Check that the solver doesn't return a value worse than the
         # initial point.
 
@@ -704,24 +695,18 @@ class TestOptimizeSimple(CheckOptimize):
             # where line searches start failing
             return 2*(x - 1) * (-1) - 2
 
-        def check(method):
-            x0 = np.array([2.0])
-            f0 = func(x0)
-            jac = bad_grad
-            if method in ['nelder-mead', 'powell', 'cobyla']:
-                jac = None
-            sol = optimize.minimize(func, x0, jac=jac, method=method,
-                                    options=dict(maxiter=20))
-            assert_equal(func(sol.x), sol.fun)
+        x0 = np.array([2.0])
+        f0 = func(x0)
+        jac = bad_grad
+        if method in ['nelder-mead', 'powell', 'cobyla']:
+            jac = None
+        sol = optimize.minimize(func, x0, jac=jac, method=method,
+                                options=dict(maxiter=20))
+        assert_equal(func(sol.x), sol.fun)
 
-            if method == 'slsqp':
-                pytest.xfail("SLSQP returns slightly worse")
-            assert_(func(sol.x) <= f0)
-
-        for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
-                       'newton-cg', 'l-bfgs-b', 'tnc',
-                       'cobyla', 'slsqp']:
-            yield check, method
+        if method == 'slsqp':
+            pytest.xfail("SLSQP returns slightly worse")
+        assert_(func(sol.x) <= f0)
 
     def test_slsqp_respect_bounds(self):
         # Regression test for gh-3108
@@ -1168,7 +1153,6 @@ class TestBrute:
     def func(self, z, *params):
         return self.f1(z, *params) + self.f2(z, *params) + self.f3(z, *params)
 
-    @suppressed_stdout
     def test_brute(self):
         # test fmin
         resbrute = optimize.brute(self.func, self.rranges, args=self.params,

@@ -155,5 +155,5 @@ def test_write_roundtrip():
                     for rate in (8000, 32000):
                         for channels in (1, 2, 5):
                             dt = np.dtype('%s%s%s' % (endianness, dtypechar, size))
-                            yield _check_roundtrip, realfile, rate, dt, channels
+                            _check_roundtrip(realfile, rate, dt, channels)
 

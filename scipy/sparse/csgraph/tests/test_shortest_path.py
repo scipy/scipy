@@ -68,7 +68,7 @@ def test_dijkstra_limit():
         assert_array_almost_equal(SP, result)
 
     for limit, result in zip(limits, results):
-        yield check, limit, result
+        check(limit, result)
 
 
 def test_directed():
@@ -78,7 +78,7 @@ def test_directed():
         assert_array_almost_equal(SP, directed_SP)
 
     for method in methods:
-        yield check, method
+        check(method)
 
 
 def test_undirected():
@@ -94,7 +94,7 @@ def test_undirected():
 
     for method in methods:
         for directed_in in (True, False):
-            yield check, method, directed_in
+            check(method, directed_in)
 
 
 def test_shortest_path_indices():
@@ -108,7 +108,7 @@ def test_shortest_path_indices():
 
     for indshape in [(4,), (4, 1), (2, 2)]:
         for func in (dijkstra, bellman_ford, johnson, shortest_path):
-            yield check, func, indshape
+            check(func, indshape)
 
     assert_raises(ValueError, shortest_path, directed_G, method='FW',
                   indices=indices)
@@ -129,7 +129,7 @@ def test_predecessors():
 
     for method in methods:
         for directed in (True, False):
-            yield check, method, directed
+            check(method, directed)
 
 
 def test_construct_shortest_path():
@@ -143,7 +143,7 @@ def test_construct_shortest_path():
 
     for method in methods:
         for directed in (True, False):
-            yield check, method, directed
+            check(method, directed)
 
 
 def test_unweighted_path():
@@ -160,7 +160,7 @@ def test_unweighted_path():
 
     for method in methods:
         for directed in (True, False):
-            yield check, method, directed
+            check(method, directed)
 
 
 def test_negative_cycles():
@@ -175,7 +175,7 @@ def test_negative_cycles():
 
     for method in ['FW', 'J', 'BF']:
         for directed in (True, False):
-            yield check, method, directed
+            check(method, directed)
 
 
 def test_masked_input():
@@ -187,7 +187,7 @@ def test_masked_input():
         assert_array_almost_equal(SP, directed_SP)
 
     for method in methods:
-        yield check, method
+        check(method)
 
 
 def test_overwrite():
