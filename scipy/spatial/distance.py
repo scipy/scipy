@@ -122,6 +122,39 @@ from . import _distance_wrap
 from . import _hausdorff
 from ..linalg import norm
 
+def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
+    if func_name == "pdist":
+        old_arg_names = ["p", "w", "V", "VI"]
+    else:
+        old_arg_names = ["p", "V", "VI", "w"]
+    num_args = len(args)
+    if num_args:
+        if(callable(metric) and
+           metric not in [braycurtis, canberra, chebyshev, cityblock,
+                          correlation, cosine, dice, euclidean,
+                          hamming, jaccard, kulsinski, mahalanobis,
+                          matching, minkowski, rogerstanimoto,
+                          russellrao, seuclidean, sokalmichener,
+                          sokalsneath, sqeuclidean, yule, wminkowski]):
+            raise TypeError('When using a custom metric arguments must be passed'
+                            'as keyword (i.e., ARGNAME=ARGVALUE)')
+
+        warnings.warn('%d metric parameters have been passed as positional.'
+                      'This will raise an error in a future version.'
+                      'Please pass arguments as keywords'
+                      '(i.e., ARGNAME=ARGVALUE)' % num_args, DeprecationWarning)
+        if num_args > 4:
+            raise ValueError('Deprecated %s signature accepts only 4'
+                'positional arguments (p, w, V, VI), %d given.'
+                % (func_name, num_args))
+
+        for i, arg in enumerate(args):
+            if old_arg_names[i] in kwargs:
+                raise TypeError('%s() got multiple values for argument '
+                    '%s' % (func_name, old_arg_names[i]))
+            kwargs[old_arg_names[i]] = arg
+    return kwargs
+
 
 def _copy_array_if_base_present(a):
     """
@@ -147,11 +180,11 @@ def _convert_to_type(X, out_type):
     return np.ascontiguousarray(X, dtype=out_type)
 
 
-def _filter_deprecated_kwargs(**kwargs):
+def _filter_deprecated_kwargs(kwargs, args_blacklist):
     # Filtering out old default keywords
-    for k in ["p", "V", "w", "VI"]:
-        kw = kwargs.pop(k, None)
-        if kw is not None:
+    for k in args_blacklist:
+        if k in kwargs:
+            del kwargs[k]
             warnings.warn('Got unexpected kwarg %s. This will raise an error'
                           ' in a future version.' % k, DeprecationWarning)
 
@@ -194,7 +227,27 @@ def _nbool_correspond_ft_tf(u, v):
     return (nft, ntf)
 
 
-def _validate_mahalanobis_args(X, m, n, VI):
+def _validate_cdist_input(XA, XB, mA, mB, n, metric_name, **kwargs):
+    if metric_name is not None:
+        # get supported types
+        types = _METRICS[metric_name].types
+        # choose best type
+        typ = types[types.index(XA.dtype)] if XA.dtype in types else types[0]
+        # validate data
+        XA = _convert_to_type(XA, out_type=typ)
+        XB = _convert_to_type(XB, out_type=typ)
+
+        # validate kwargs
+        _validate_kwargs = _METRICS[metric_name].validator
+        if _validate_kwargs:
+            kwargs = _validate_kwargs(np.vstack([XA, XB]), mA + mB, n, **kwargs)
+    else:
+        typ = None
+    return XA, XB, typ, kwargs
+
+
+def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
+    VI = kwargs.pop('VI', None)
     if VI is None:
         if m <= n:
             # There are fewer observations than the dimension of
@@ -206,17 +259,36 @@ def _validate_mahalanobis_args(X, m, n, VI):
                              "are required." % (m, n, n + 1))
         CV = np.atleast_2d(np.cov(X.astype(np.double).T))
         VI = np.linalg.inv(CV).T.copy()
-    VI = _copy_array_if_base_present(_convert_to_double(VI))
-    return VI
+    kwargs["VI"] = _copy_array_if_base_present(_convert_to_double(VI))
+    return kwargs
 
 
-def _validate_minkowski_args(p):
-    if p is None:
-        p = 2.
-    return p
+def _validate_minkowski_kwargs(X, m, n, **kwargs):
+    if 'p' not in kwargs:
+        kwargs['p'] = 2.
+    return kwargs
 
 
-def _validate_seuclidean_args(X, n, V):
+def _validate_pdist_input(X, m, n, metric_name, **kwargs):
+    if metric_name is not None:
+        # get supported types
+        types = _METRICS[metric_name].types
+        # choose best type
+        typ = types[types.index(X.dtype)] if X.dtype in types else types[0]
+        # validate data
+        X = _convert_to_type(X, out_type=typ)
+
+        # validate kwargs
+        _validate_kwargs = _METRICS[metric_name].validator
+        if _validate_kwargs:
+            kwargs = _validate_kwargs(X, m, n, **kwargs)
+    else:
+        typ = None
+    return X, typ, kwargs
+
+
+def _validate_seuclidean_kwargs(X, m, n, **kwargs):
+    V = kwargs.pop('V', None)
     if V is None:
         V = np.var(X.astype(np.double), axis=0, ddof=1)
     else:
@@ -230,7 +302,8 @@ def _validate_seuclidean_args(X, n, V):
             raise ValueError('Variance vector V must be of the same '
                              'dimension as the vectors on which the distances '
                              'are computed.')
-    return _convert_to_double(V)
+    kwargs['V'] = _convert_to_double(V)
+    return kwargs
 
 
 def _validate_vector(u, dtype=None):
@@ -243,14 +316,15 @@ def _validate_vector(u, dtype=None):
     return u
 
 
-def _validate_wminkowski_args(p, w):
+def _validate_wminkowski_kwargs(X, m, n, **kwargs):
+    w = kwargs.pop('w', None)
     if w is None:
         raise ValueError('weighted minkowski requires a weight '
                          'vector `w` to be given.')
-    w = _convert_to_double(w)
-    if p is None:
-        p = 2.
-    return p, w
+    kwargs['w'] = _convert_to_double(w)
+    if 'p' not in kwargs:
+        kwargs['p'] = 2.
+    return kwargs
 
 
 def directed_hausdorff(u, v, seed=0):
@@ -1105,21 +1179,24 @@ _distance_wrap.cdist_correlation_double_wrap = _correlation_cdist_wrap
 # Registry of implemented metrics:
 # Dictionary with the following structure:
 # {
-#  metric_name : MetricInfo(aka, types=[double])
+#  metric_name : MetricInfo(aka, types=[double], validator=None)
 # }
 #
+# Where:
 # `metric_name` must be equal to python metric name
 #
 # MetricInfo is a named tuple with fields:
 #  'aka' : [list of aliases],
 #
+#  'validator': f(X, m, n, **kwargs)    # function that check kwargs and
+#                                       # computes default values.
+#
 #  'types': [list of supported types],  # X (pdist) and XA (cdist) are used to
 #                                       # choose the type. if there is no match
 #                                       # the first type is used. Default double
-#
 #}
-MetricInfo = namedtuple("MetricInfo", 'aka types')
-MetricInfo.__new__.__defaults__ = (['double'],)
+MetricInfo = namedtuple("MetricInfo", 'aka types validator ')
+MetricInfo.__new__.__defaults__ = (['double'], None)
 
 _METRICS = {
     'braycurtis': MetricInfo(aka=['braycurtis']),
@@ -1135,15 +1212,19 @@ _METRICS = {
     'jaccard': MetricInfo(aka=['jaccard', 'jacc', 'ja', 'j'],
                           types=['double', 'bool']),
     'kulsinski': MetricInfo(aka=['kulsinski'], types=['bool']),
-    'mahalanobis': MetricInfo(aka=['mahalanobis', 'mahal', 'mah']),
-    'minkowski': MetricInfo(aka=['minkowski', 'mi', 'm']),
+    'mahalanobis': MetricInfo(aka=['mahalanobis', 'mahal', 'mah'],
+                              validator=_validate_mahalanobis_kwargs),
+    'minkowski': MetricInfo(aka=['minkowski', 'mi', 'm', 'pnorm'],
+                            validator=_validate_minkowski_kwargs),
     'rogerstanimoto': MetricInfo(aka=['rogerstanimoto'], types=['bool']),
     'russellrao': MetricInfo(aka=['russellrao'], types=['bool']),
-    'seuclidean': MetricInfo(aka=['seuclidean', 'se', 's']),
+    'seuclidean': MetricInfo(aka=['seuclidean', 'se', 's'],
+                             validator=_validate_seuclidean_kwargs),
     'sokalmichener': MetricInfo(aka=['sokalmichener'], types=['bool']),
     'sokalsneath': MetricInfo(aka=['sokalsneath'], types=['bool']),
     'sqeuclidean': MetricInfo(aka=['sqeuclidean', 'sqe', 'sqeuclid']),
-    'wminkowski': MetricInfo(aka=['wminkowski', 'wmi', 'wm', 'wpnorm']),
+    'wminkowski': MetricInfo(aka=['wminkowski', 'wmi', 'wm', 'wpnorm'],
+                             validator=_validate_wminkowski_kwargs),
     'yule': MetricInfo(aka=['yule'], types=['bool']),
     }
 
@@ -1157,7 +1238,7 @@ _METRICS_NAMES = list(_METRICS.keys())
 _TEST_METRICS = {'test_' + name: globals()[name] for name in _METRICS.keys()}
 
 
-def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
+def pdist(X, metric='euclidean', *args, **kwargs):
     """
     Pairwise distances between observations in n-dimensional space.
 
@@ -1175,18 +1256,28 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
         'jaccard', 'kulsinski', 'mahalanobis', 'matching',
         'minkowski', 'rogerstanimoto', 'russellrao', 'seuclidean',
         'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'.
-    p : double, optional
-        The p-norm to apply
-        Only for Minkowski, weighted and unweighted. Default: 2.
-    w : ndarray, optional
-        The weight vector.
-        Only for weighted Minkowski. Mandatory
-    V : ndarray, optional
-        The variance vector
-        Only for standardized Euclidean. Default: var(X, axis=0, ddof=1)
-    VI : ndarray, optional
-        The inverse of the covariance matrix
-        Only for Mahalanobis. Default: inv(cov(X.T)).T
+    *args : tuple. Deprecated.
+        Additional arguments should be passed as keyword arguments
+    **kwargs : dict, optional
+        Extra arguments to `metric`: refer to each metric documentation for a
+        list of all possible arguments.
+
+        Some possible arguments:
+
+        p : scalar.
+        The p-norm to apply for Minkowski, weighted and unweighted.
+        Default: 2.
+
+        w : ndarray.
+        The weight vector for weighted Minkowski.
+
+        V : ndarray.
+        The variance vector for standardized Euclidean.
+        Default: var(X, axis=0, ddof=1)
+
+        VI : ndarray.
+        The inverse of the covariance matrix for Mahalanobis.
+        Default: inv(cov(X.T)).T
 
     Returns
     -------
@@ -1215,7 +1306,7 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
        (2-norm) as the distance metric between the points. The points
        are arranged as m n-dimensional row vectors in the matrix X.
 
-    2. ``Y = pdist(X, 'minkowski', p)``
+    2. ``Y = pdist(X, 'minkowski', p=2.)``
 
        Computes the distances using the Minkowski distance
        :math:`||u-v||_p` (p-norm) where :math:`p \\geq 1`.
@@ -1362,7 +1453,7 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
        Computes the Sokal-Sneath distance between each pair of
        boolean vectors. (see sokalsneath function documentation)
 
-    22. ``Y = pdist(X, 'wminkowski')``
+    22. ``Y = pdist(X, 'wminkowski', p=2, w=w)``
 
        Computes the weighted Minkowski distance between each pair of
        vectors. (see wminkowski function documentation)
@@ -1396,6 +1487,8 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
     # between all pairs of vectors in X using the distance metric 'abc' but
     # with a more succinct, verifiable, but less efficient implementation.
 
+    kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "pdist")
+
     X = np.asarray(X, order='c')
 
     # The C code doesn't do striding.
@@ -1408,57 +1501,36 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
     m, n = s
     dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
 
-    # validate input for multi-args metrics
-    if(metric in ['minkowski', 'mi', 'm', 'pnorm', 'test_minkowski'] or
-       metric == minkowski):
-        p = _validate_minkowski_args(p)
-        _filter_deprecated_kwargs(w=w, V=V, VI=VI)
-    elif(metric in ['wminkowski', 'wmi', 'wm', 'wpnorm', 'test_wminkowski'] or
-         metric == wminkowski):
-        p, w = _validate_wminkowski_args(p, w)
-        _filter_deprecated_kwargs(V=V, VI=VI)
-    elif(metric in ['seuclidean', 'se', 's', 'test_seuclidean'] or
-         metric == seuclidean):
-        V = _validate_seuclidean_args(X, n, V)
-        _filter_deprecated_kwargs(p=p, w=w, VI=VI)
-    elif(metric in ['mahalanobis', 'mahal', 'mah', 'test_mahalanobis'] or
-         metric == mahalanobis):
-        VI = _validate_mahalanobis_args(X, m, n, VI)
-        _filter_deprecated_kwargs(p=p, w=w, V=V)
+    # compute blacklist for deprecated kwargs
+    if(metric in _METRICS['minkowski'].aka or
+       metric == 'test_minkowski' or metric == minkowski):
+        kwargs_blacklist = ["w", "V", "VI"]
+    elif(metric in _METRICS['wminkowski'].aka or
+         metric == 'test_wminkowski' or metric == wminkowski):
+        kwargs_blacklist = ["V", "VI"]
+    elif(metric in _METRICS['seuclidean'].aka or
+         metric == 'test_seuclidean' or metric == seuclidean):
+        kwargs_blacklist = ["p", "w", "VI"]
+    elif(metric in _METRICS['mahalanobis'].aka or
+         metric == 'test_mahalanobis' or metric == mahalanobis):
+        kwargs_blacklist = ["p", "w", "V"]
     else:
-        _filter_deprecated_kwargs(p=p, w=w, V=V, VI=VI)
+        kwargs_blacklist = ["p", "w", "V", "VI"]
+
+    _filter_deprecated_kwargs(kwargs, kwargs_blacklist)
 
     if callable(metric):
-        # metrics that expects only doubles:
-        if metric in [braycurtis, canberra, chebyshev, cityblock, correlation,
-                      cosine, euclidean, mahalanobis, minkowski, sqeuclidean,
-                      seuclidean, wminkowski]:
-            X = _convert_to_double(X)
-        # metrics that expects only bools:
-        elif metric in [dice, kulsinski, rogerstanimoto, russellrao,
-                        sokalmichener, sokalsneath, yule]:
-            X = _convert_to_bool(X)
-        # metrics that may receive multiple types:
-        elif metric in [matching, hamming, jaccard]:
-            if X.dtype == bool:
-                X = _convert_to_bool(X)
-            else:
-                X = _convert_to_double(X)
+        mstr = getattr(metric, '__name__', 'UnknownCustomMetric')
+        metric_name = _METRIC_ALIAS.get(mstr, None)
 
-        # metrics that expects multiple args
-        if metric == minkowski:
-            metric = partial(minkowski, p=p)
-        elif metric == wminkowski:
-            metric = partial(wminkowski, p=p, w=w)
-        elif metric == seuclidean:
-            metric = partial(seuclidean, V=V)
-        elif metric == mahalanobis:
-            metric = partial(mahalanobis, VI=VI)
+        if metric_name is not None:
+            X, typ, kwargs = _validate_pdist_input(X, m, n,
+                                                   metric_name, **kwargs)
 
         k = 0
         for i in xrange(0, m - 1):
             for j in xrange(i + 1, m):
-                dm[k] = metric(X[i], X[j])
+                dm[k] = metric(X[i], X[j], **kwargs)
                 k = k + 1
 
     elif isinstance(metric, string_types):
@@ -1466,26 +1538,13 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
         metric_name = _METRIC_ALIAS.get(mstr, None)
 
         if metric_name is not None:
-            # get supported types
-            types = _METRICS[metric_name].types
-            # choose best type
-            typ = types[types.index(X.dtype)] if X.dtype in types else types[0]
-            # validate data
-            X = _convert_to_type(X, out_type=typ)
+            X, typ, kwargs = _validate_pdist_input(X, m, n,
+                                                   metric_name, **kwargs)
+
             # get pdist wrapper
             pdist_fn = getattr(_distance_wrap,
                                "pdist_%s_%s_wrap" % (metric_name, typ))
-
-            if metric_name == 'minkowski':
-                pdist_fn = partial(pdist_fn, p=p)
-            elif metric_name == 'wminkowski':
-                pdist_fn = partial(pdist_fn, p=p, w=w)
-            elif metric_name == 'seuclidean':
-                pdist_fn = partial(pdist_fn, V=V)
-            elif metric_name == 'mahalanobis':
-                pdist_fn = partial(pdist_fn, VI=VI)
-
-            pdist_fn(X, dm)
+            pdist_fn(X, dm, **kwargs)
             return dm
 
         elif mstr in ['old_cosine', 'old_cos']:
@@ -1505,7 +1564,6 @@ def pdist(X, metric='euclidean', p=None, w=None, V=None, VI=None):
             dm = squareform(dm)
         elif mstr.startswith("test_"):
             if mstr in _TEST_METRICS:
-                kwargs = {"p":p, "w":w, "V":V, "VI":VI}
                 dm = pdist(X, _TEST_METRICS[mstr], **kwargs)
             else:
                 raise ValueError('Unknown "Test" Distance Metric: %s' % mstr[5:])
@@ -1832,7 +1890,7 @@ def num_obs_y(Y):
     return d
 
 
-def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None):
+def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     """
     Computes distance between each pair of the two collections of inputs.
 
@@ -1855,18 +1913,28 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None):
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto', 'russellrao',
         'seuclidean', 'sokalmichener', 'sokalsneath', 'sqeuclidean',
         'wminkowski', 'yule'.
-    p : double, optional
-        The p-norm to apply
-        Only for Minkowski, weighted and unweighted. Default: 2.
-    w : ndarray, optional
-        The weight vector.
-        Only for weighted Minkowski. Mandatory
-    V : ndarray, optional
-        The variance vector
-        Only for standardized Euclidean. Default: var(vstack([XA, XB]), axis=0, ddof=1)
-    VI : ndarray, optional
-        The inverse of the covariance matrix
-        Only for Mahalanobis. Default: inv(cov(vstack([XA, XB]).T)).T
+    *args : tuple. Deprecated.
+        Additional arguments should be passed as keyword arguments
+    **kwargs : dict, optional
+        Extra arguments to `metric`: refer to each metric documentation for a
+        list of all possible arguments.
+
+        Some possible arguments:
+
+        p : scalar.
+        The p-norm to apply for Minkowski, weighted and unweighted.
+        Default: 2.
+
+        w : ndarray.
+        The weight vector for weighted Minkowski.
+
+        V : ndarray.
+        The variance vector for standardized Euclidean.
+        Default: var(vstack([XA, XB]), axis=0, ddof=1)
+
+        VI : ndarray.
+        The inverse of the covariance matrix for Mahalanobis.
+        Default: inv(cov(vstack([XA, XB].T))).T
 
     Returns
     -------
@@ -1893,7 +1961,7 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None):
        points. The points are arranged as :math:`m`
        :math:`n`-dimensional row vectors in the matrix X.
 
-    2. ``Y = cdist(XA, XB, 'minkowski', p)``
+    2. ``Y = cdist(XA, XB, 'minkowski', p=2.)``
 
        Computes the distances using the Minkowski distance
        :math:`||u-v||_p` (:math:`p`-norm) where :math:`p \\geq 1`.
@@ -2040,7 +2108,7 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None):
        `sokalsneath` function documentation)
 
 
-    22. ``Y = cdist(XA, XB, 'wminkowski')``
+    22. ``Y = cdist(XA, XB, 'wminkowski', p=2., w=w)``
 
        Computes the weighted Minkowski distance between the
        vectors. (see `wminkowski` function documentation)
@@ -2112,8 +2180,7 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None):
     # between all pairs of vectors in XA and XB using the distance metric 'abc'
     # but with a more succinct, verifiable, but less efficient implementation.
 
-    # Store input arguments to check whether we can modify later.
-    input_XA, input_XB = XA, XB
+    kwargs = _args_to_kwargs_xdist(args, kwargs, metric, "cdist")
 
     XA = np.asarray(XA, order='c')
     XB = np.asarray(XB, order='c')
@@ -2138,91 +2205,50 @@ def cdist(XA, XB, metric='euclidean', p=None, V=None, VI=None, w=None):
     n = s[1]
     dm = np.zeros((mA, mB), dtype=np.double)
 
-    # validate input for multi-args metrics
-    if(metric in ['minkowski', 'mi', 'm', 'pnorm', 'test_minkowski'] or
-       metric == minkowski):
-        p = _validate_minkowski_args(p)
-        _filter_deprecated_kwargs(w=w, V=V, VI=VI)
-    elif(metric in ['wminkowski', 'wmi', 'wm', 'wpnorm', 'test_wminkowski'] or
-         metric == wminkowski):
-        p, w = _validate_wminkowski_args(p, w)
-        _filter_deprecated_kwargs(V=V, VI=VI)
-    elif(metric in ['seuclidean', 'se', 's', 'test_seuclidean'] or
-         metric == seuclidean):
-        V = _validate_seuclidean_args(np.vstack([XA, XB]), n, V)
-        _filter_deprecated_kwargs(p=p, w=w, VI=VI)
-    elif(metric in ['mahalanobis', 'mahal', 'mah', 'test_mahalanobis'] or
-         metric == mahalanobis):
-        VI = _validate_mahalanobis_args(np.vstack([XA, XB]), mA + mB, n, VI)
-        _filter_deprecated_kwargs(p=p, w=w, V=V)
+    # compute blacklist for deprecated kwargs
+    if(metric in _METRICS['minkowski'].aka or
+       metric == 'test_minkowski' or metric == minkowski):
+        kwargs_blacklist = ["w", "V", "VI"]
+    elif(metric in _METRICS['wminkowski'].aka or
+         metric == 'test_wminkowski' or metric == wminkowski):
+        kwargs_blacklist = ["V", "VI"]
+    elif(metric in _METRICS['seuclidean'].aka or
+         metric == 'test_seuclidean' or metric == seuclidean):
+        kwargs_blacklist = ["p", "w", "VI"]
+    elif(metric in _METRICS['mahalanobis'].aka or
+         metric == 'test_mahalanobis' or metric == mahalanobis):
+        kwargs_blacklist = ["p", "w", "V"]
     else:
-        _filter_deprecated_kwargs(p=p, w=w, V=V, VI=VI)
+        kwargs_blacklist = ["p", "w", "V", "VI"]
+    _filter_deprecated_kwargs(kwargs, kwargs_blacklist)
 
     if callable(metric):
-        # metrics that expects only doubles:
-        if metric in [braycurtis, canberra, chebyshev, cityblock, correlation,
-                      cosine, euclidean, mahalanobis, minkowski, sqeuclidean,
-                      seuclidean, wminkowski]:
-            XA = _convert_to_double(XA)
-            XB = _convert_to_double(XB)
-        # metrics that expects only bools:
-        elif metric in [dice, kulsinski, rogerstanimoto, russellrao,
-                        sokalmichener, sokalsneath, yule]:
-            XA = _convert_to_bool(XA)
-            XB = _convert_to_bool(XB)
-        # metrics that may receive multiple types:
-        elif metric in [matching, hamming, jaccard]:
-            if XA.dtype == bool:
-                XA = _convert_to_bool(XA)
-                XB = _convert_to_bool(XB)
-            else:
-                XA = _convert_to_double(XA)
-                XB = _convert_to_double(XB)
 
-        # metrics that expects multiple args
-        if metric == minkowski:
-            metric = partial(minkowski, p=p)
-        elif metric == wminkowski:
-            metric = partial(wminkowski, p=p, w=w)
-        elif metric == seuclidean:
-            metric = partial(seuclidean, V=V)
-        elif metric == mahalanobis:
-            metric = partial(mahalanobis, VI=VI)
+        mstr = getattr(metric, '__name__', 'Unknown')
+        metric_name = _METRIC_ALIAS.get(mstr, None)
+
+        XA, XB, typ, kwargs = _validate_cdist_input(XA, XB, mA, mB, n,
+                                                    metric_name, **kwargs)
 
         for i in xrange(0, mA):
             for j in xrange(0, mB):
-                dm[i, j] = metric(XA[i, :], XB[j, :])
+                dm[i, j] = metric(XA[i], XB[j], **kwargs)
 
     elif isinstance(metric, string_types):
         mstr = metric.lower()
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
         if metric_name is not None:
-            types = _METRICS[metric_name].types
-            # choose best type
-            typ = types[types.index(XA.dtype)] if XA.dtype in types else types[0]
-            # validate data
-            XA = _convert_to_type(XA, out_type=typ)
-            XB = _convert_to_type(XB, out_type=typ)
-
+            XA, XB, typ, kwargs = _validate_cdist_input(XA, XB, mA, mB, n,
+                                                        metric_name, **kwargs)
             # get cdist wrapper
             cdist_fn = getattr(_distance_wrap,
                                "cdist_%s_%s_wrap" % (metric_name, typ))
-
-            if metric_name == 'minkowski':
-                cdist_fn = partial(cdist_fn, p=p)
-            elif metric_name == 'wminkowski':
-                cdist_fn = partial(cdist_fn, p=p, w=w)
-            elif metric_name == 'seuclidean':
-                cdist_fn = partial(cdist_fn, V=V)
-            elif metric_name == 'mahalanobis':
-                cdist_fn = partial(cdist_fn, VI=VI)
-
-            cdist_fn(XA, XB, dm)
+            cdist_fn(XA, XB, dm, **kwargs)
             return dm
+
         elif mstr.startswith("test_"):
             if mstr in _TEST_METRICS:
-                kwargs = {"p":p, "w":w, "V":V, "VI":VI}
                 dm = cdist(XA, XB, _TEST_METRICS[mstr], **kwargs)
             else:
                 raise ValueError('Unknown "Test" Distance Metric: %s' % mstr[5:])
