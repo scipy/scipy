@@ -390,15 +390,6 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     if alpha1 < 0:
         alpha1 = 1.0
 
-    if alpha1 == 0:
-        # This shouldn't happen. Perhaps the increment has slipped below
-        # machine precision?  For now, set the return variables skip the
-        # useless while loop, and raise warnflag=2 due to possible imprecision.
-        alpha_star = None
-        phi_star = phi0
-        phi0 = old_phi0
-        derphi_star = None
-
     phi_a1 = phi(alpha1)
     #derphi_a1 = derphi(alpha1)  evaluated below
 
@@ -408,11 +399,25 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     if extra_condition is None:
         extra_condition = lambda alpha, phi: True
 
-    i = 1
     maxiter = 10
     for i in xrange(maxiter):
-        if alpha1 == 0:
+        if alpha1 == 0 or alpha0 == amax:
+            # alpha1 == 0: This shouldn't happen. Perhaps the increment has
+            # slipped below machine precision?
+            alpha_star = None
+            phi_star = phi0
+            phi0 = old_phi0
+            derphi_star = None
+
+            if alpha1 == 0:
+                msg = 'Rounding errors prevent the line search from converging'
+            else:
+                msg = "The line search algorithm could not find a solution " + \
+                      "less than or equal to amax: %s" % amax
+
+            warn(msg, LineSearchWarning)
             break
+
         if (phi_a1 > phi0 + c1 * alpha1 * derphi0) or \
            ((phi_a1 >= phi_a0) and (i > 1)):
             alpha_star, phi_star, derphi_star = \
@@ -436,8 +441,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
                               phi0, derphi0, c1, c2, extra_condition)
             break
 
-        alpha2 = 2 * alpha1   # increase by factor of two on each iteration
-        i = i + 1
+        alpha2 = min(amax, 2 * alpha1)   # increase by factor of two on each iteration
         alpha0 = alpha1
         alpha1 = alpha2
         phi_a0 = phi_a1
