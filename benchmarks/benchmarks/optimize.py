@@ -487,7 +487,7 @@ class BenchGlobal(Benchmark):
 
     def setup_cache(self):
         if not self.enabled:
-            return {}
+            return
 
         # create the logfile to start with
         with open(self.dump_fn, 'w') as f:
