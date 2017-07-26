@@ -113,6 +113,7 @@ before_install:
     fi
   - python --version # just to check
   - export PYTHONFAULTHANDLER=1
+  - export NPY_NUM_BUILD_JOBS=2
   - uname -a
   - df -h
   - ulimit -a
