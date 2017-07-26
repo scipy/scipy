@@ -37,6 +37,7 @@ import re
 import sys
 import hashlib
 import subprocess
+from multiprocessing.dummy import Pool, Lock
 
 HASH_FILE = 'cythonize.dat'
 DEFAULT_ROOT = 'scipy'
@@ -50,7 +51,7 @@ except NameError:
 #
 # Rules
 #
-def process_pyx(fromfile, tofile):
+def process_pyx(fromfile, tofile, cwd):
     try:
         from Cython.Compiler.Version import version as cython_version
         from distutils.version import LooseVersion
@@ -66,7 +67,7 @@ def process_pyx(fromfile, tofile):
 
     try:
         try:
-            r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile])
+            r = subprocess.call(['cython'] + flags + ["-o", tofile, fromfile], cwd=cwd)
             if r != 0:
                 raise Exception('Cython failed')
         except OSError:
@@ -75,13 +76,14 @@ def process_pyx(fromfile, tofile):
             r = subprocess.call([sys.executable, '-c',
                                  'import sys; from Cython.Compiler.Main import '
                                  'setuptools_main as main; sys.exit(main())'] + flags +
-                                 ["-o", tofile, fromfile])
+                                 ["-o", tofile, fromfile],
+                                cwd=cwd)
             if r != 0:
                 raise Exception("Cython either isn't installed or it failed.")
     except OSError:
         raise OSError('Cython needs to be installed')
 
-def process_tempita_pyx(fromfile, tofile):
+def process_tempita_pyx(fromfile, tofile, cwd):
     try:
         try:
             from Cython import Tempita as tempita
@@ -91,19 +93,21 @@ def process_tempita_pyx(fromfile, tofile):
         raise Exception('Building SciPy requires Tempita: '
                         'pip install --user Tempita')
     from_filename = tempita.Template.from_filename
-    template = from_filename(fromfile, encoding=sys.getdefaultencoding())
+    template = from_filename(os.path.join(cwd, fromfile),
+                             encoding=sys.getdefaultencoding())
     pyxcontent = template.substitute()
     assert fromfile.endswith('.pyx.in')
     pyxfile = fromfile[:-len('.pyx.in')] + '.pyx'
-    with open(pyxfile, "w") as f:
+    with open(os.path.join(cwd, pyxfile), "w") as f:
         f.write(pyxcontent)
-    process_pyx(pyxfile, tofile)
+    process_pyx(pyxfile, tofile, cwd)
 
 rules = {
     # fromext : function
     '.pyx': process_pyx,
     '.pyx.in': process_tempita_pyx
     }
+
 #
 # Hash db
 #
@@ -160,50 +164,54 @@ def get_pxi_dependencies(fullfrompath):
                 dependencies.append(os.path.join(fullfromdir, line[1]))
     return dependencies
 
-def process(path, fromfile, tofile, processor_function, hash_db, pxi_hashes):
-    fullfrompath = os.path.join(path, fromfile)
-    fulltopath = os.path.join(path, tofile)
-    current_hash = get_hash(fullfrompath, fulltopath)
-    if current_hash == hash_db.get(normpath(fullfrompath), None):
-        file_changed = False
-    else:
-        file_changed = True
-
-    pxi_changed = False
-    pxi_dependencies = get_pxi_dependencies(fullfrompath)
-    for pxi in pxi_dependencies:
-        pxi_hash = get_hash(pxi, None)
-        if pxi_hash == hash_db.get(normpath(pxi), None):
-            continue
+def process(path, fromfile, tofile, processor_function, hash_db, pxi_hashes, lock):
+    with lock:
+        fullfrompath = os.path.join(path, fromfile)
+        fulltopath = os.path.join(path, tofile)
+        current_hash = get_hash(fullfrompath, fulltopath)
+        if current_hash == hash_db.get(normpath(fullfrompath), None):
+            file_changed = False
         else:
-            pxi_hashes[normpath(pxi)] = pxi_hash
-            pxi_changed = True
+            file_changed = True
 
-    if not file_changed and not pxi_changed:
-        print('%s has not changed' % fullfrompath)
-        sys.stdout.flush()
-        return
+        pxi_changed = False
+        pxi_dependencies = get_pxi_dependencies(fullfrompath)
+        for pxi in pxi_dependencies:
+            pxi_hash = get_hash(pxi, None)
+            if pxi_hash == hash_db.get(normpath(pxi), None):
+                continue
+            else:
+                pxi_hashes[normpath(pxi)] = pxi_hash
+                pxi_changed = True
 
-    orig_cwd = os.getcwd()
-    try:
-        os.chdir(path)
+        if not file_changed and not pxi_changed:
+            print('%s has not changed' % fullfrompath)
+            sys.stdout.flush()
+            return
+
         print('Processing %s' % fullfrompath)
         sys.stdout.flush()
-        processor_function(fromfile, tofile)
-    finally:
-        os.chdir(orig_cwd)
-    # changed target file, recompute hash
-    current_hash = get_hash(fullfrompath, fulltopath)
-    # store hash in db
-    hash_db[normpath(fullfrompath)] = current_hash
 
+    processor_function(fromfile, tofile, cwd=path)
+
+    with lock:
+        # changed target file, recompute hash
+        current_hash = get_hash(fullfrompath, fulltopath)
+        # store hash in db
+        hash_db[normpath(fullfrompath)] = current_hash
 
 def find_process_files(root_dir):
+    lock = Lock()
+    pool = Pool()
+
     hash_db = load_hashes(HASH_FILE)
     # Keep changed .pxi hashes in a separate dict until the end
     # because if we update hash_db and multiple files include the same
     # .pxi file the changes won't be detected.
     pxi_hashes = {}
+
+    jobs = []
+
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
             in_file = os.path.join(cur_dir, filename + ".in")
@@ -219,7 +227,11 @@ def find_process_files(root_dir):
                             toext = ".cxx"
                     fromfile = filename
                     tofile = filename[:-len(fromext)] + toext
-                    process(cur_dir, fromfile, tofile, function, hash_db, pxi_hashes)
+                    jobs.append((cur_dir, fromfile, tofile, function, hash_db, pxi_hashes, lock))
+
+    for result in pool.imap(lambda args: process(*args), jobs):
+        pass
+
     hash_db.update(pxi_hashes)
     save_hashes(hash_db, HASH_FILE)
 
