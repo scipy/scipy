@@ -57,6 +57,7 @@ sys.path.pop(0)
 import shutil
 import subprocess
 import time
+import datetime
 import imp
 from argparse import ArgumentParser, REMAINDER
 
@@ -342,6 +343,7 @@ def build_project(args):
     env['PYTHONPATH'] = site_dir
 
     log_filename = os.path.join(ROOT_DIR, 'build.log')
+    start_time = datetime.datetime.now()
 
     if args.show_build_log:
         ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
@@ -359,14 +361,13 @@ def build_project(args):
             # process accurately if it produces no output)
             last_blip = time.time()
             last_log_size = os.stat(log_filename).st_size
-            counter = [0]
             while p.poll() is None:
                 time.sleep(0.5)
                 if time.time() - last_blip > 60:
                     log_size = os.stat(log_filename).st_size
                     if log_size > last_log_size:
-                        print("    ... build in progress ({})".format(counter[0]))
-                        counter[0] += 1
+                        elapsed = datetime.datetime.now() - start_time
+                        print("    ... build in progress ({0} elapsed)".format(elapsed))
                         last_blip = time.time()
                         last_log_size = log_size
 
@@ -375,13 +376,15 @@ def build_project(args):
             p.terminate()
             raise
 
+    elapsed = datetime.datetime.now() - start_time
+
     if ret == 0:
-        print("Build OK")
+        print("Build OK ({0} elapsed)".format(elapsed))
     else:
         if not args.show_build_log:
             with open(log_filename, 'r') as f:
                 print(f.read())
-            print("Build failed!")
+            print("Build failed! ({0} elapsed)".format(elapsed))
         sys.exit(1)
 
     return site_dir
