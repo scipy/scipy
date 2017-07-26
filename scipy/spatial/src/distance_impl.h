@@ -388,13 +388,13 @@ pdist_mahalanobis(const double *X, double *dm, const npy_intp num_rows,
                   const npy_intp num_cols, const double *covinv)
 {
     npy_intp i, j;
-
     double *dimbuf1 = calloc(2 * num_cols, sizeof(double));
+    double *dimbuf2;
     if (!dimbuf1) {
         return -1;
     }
 
-    double *dimbuf2 = dimbuf1 + num_cols;
+    dimbuf2 = dimbuf1 + num_cols;
 
     for (i = 0; i < num_rows; ++i) {
         const double *u = X + (num_cols * i);
@@ -546,10 +546,11 @@ cdist_cosine(const double *XA, const double *XB, double *dm, const npy_intp num_
     npy_intp i, j;
 
     double * norms_buffA = calloc(num_rowsA + num_rowsB, sizeof(double));
+    double * norms_buffB;
     if (!norms_buffA)
         return -1;
 
-    double * norms_buffB = norms_buffA + num_rowsA;
+    norms_buffB = norms_buffA + num_rowsA;
 
     _row_norms(XA, num_rowsA, num_cols, norms_buffA);
     _row_norms(XB, num_rowsB, num_cols, norms_buffB);
@@ -578,10 +579,11 @@ cdist_mahalanobis(const double *XA, const double *XB, double *dm,
     npy_intp i, j;
 
     double *dimbuf1 = calloc(2 * num_cols, sizeof(double));
+    double *dimbuf2;
     if (!dimbuf1) {
         return -1;
     }
-    double *dimbuf2 = dimbuf1 + num_cols;
+    dimbuf2 = dimbuf1 + num_cols;
 
     for (i = 0; i < num_rowsA; ++i) {
         const double *u = XA + (num_cols * i);

@@ -100,7 +100,7 @@ DEFINE_WRAP_CDIST(yule, char)
 static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args, 
                                                PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *dm_;
-  int mA, mB, n;
+  int mA, mB, n, status;
   double *dm;
   const double *XA, *XB;
   static char *kwlist[] = {"XA", "XB", "dm", NULL};
@@ -121,7 +121,7 @@ static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args,
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    const int status = cdist_cosine(XA, XB, dm, mA, mB, n);
+    status = cdist_cosine(XA, XB, dm, mA, mB, n);
     NPY_END_THREADS;
     if(status < 0)
         return PyErr_NoMemory();
@@ -132,7 +132,7 @@ static PyObject *cdist_cosine_double_wrap(PyObject *self, PyObject *args,
 static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args, 
                                                PyObject *kwargs) {
   PyArrayObject *XA_, *XB_, *covinv_, *dm_;
-  int mA, mB, n;
+  int mA, mB, n, status;
   double *dm, *dimbuf;
   const double *XA, *XB;
   const double *covinv;
@@ -155,7 +155,7 @@ static PyObject *cdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
     mB = XB_->dimensions[0];
     n = XA_->dimensions[1];
 
-    const int status = cdist_mahalanobis(XA, XB, dm, mA, mB, n, covinv);
+    status = cdist_mahalanobis(XA, XB, dm, mA, mB, n, covinv);
     NPY_END_THREADS;
     if(status < 0)
         return PyErr_NoMemory();
@@ -304,7 +304,7 @@ static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
                                           PyObject *kwargs) 
 {
   PyArrayObject *X_, *dm_;
-  int m, n;
+  int m, n, status;
   double *dm;
   const double *X;
   static char *kwlist[] = {"X", "dm", NULL};
@@ -322,7 +322,7 @@ static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
     m = X_->dimensions[0];
     n = X_->dimensions[1];
     
-    const int status = pdist_cosine(X, dm, m, n);
+    status = pdist_cosine(X, dm, m, n);
     NPY_END_THREADS;
     if(status < 0)
         return PyErr_NoMemory();
@@ -333,7 +333,7 @@ static PyObject *pdist_cosine_double_wrap(PyObject *self, PyObject *args,
 static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args, 
                                                PyObject *kwargs) {
   PyArrayObject *X_, *covinv_, *dm_;
-  int m, n;
+  int m, n, status;
   double *dimbuf, *dm;
   const double *X;
   const double *covinv;
@@ -354,7 +354,7 @@ static PyObject *pdist_mahalanobis_double_wrap(PyObject *self, PyObject *args,
     m = X_->dimensions[0];
     n = X_->dimensions[1];
 
-    const int status = pdist_mahalanobis(X, dm, m, n, covinv);
+    status = pdist_mahalanobis(X, dm, m, n, covinv);
     NPY_END_THREADS;
     if(status < 0)
         return PyErr_NoMemory();
@@ -575,6 +575,6 @@ PyObject *PyInit__distance_wrap(void)
 PyMODINIT_FUNC init_distance_wrap(void)
 {
   (void) Py_InitModule("_distance_wrap", _distanceWrapMethods);
-  import_array();  // Must be present for NumPy.  Called first after above line.
+  import_array();  /* Must be present for NumPy.  Called first after above line.*/
 }
 #endif
