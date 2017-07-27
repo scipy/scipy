@@ -1254,6 +1254,20 @@ class TestLstsq(object):
                                           atol=25 * _eps_cast(a.dtype),
                                           err_msg="driver: %s" % lapack_driver)
 
+    def test_zero_size(self):
+        for a_shape, b_shape in (((0, 2), (0,)),
+                                 ((0, 4), (0, 2)),
+                                 ((4, 0), (4,)),
+                                 ((4, 0), (4, 2))):
+            b = np.ones(b_shape)
+            x, residues, rank, s = lstsq(np.zeros(a_shape), b)
+            assert_equal(x, np.zeros((a_shape[1],) + b_shape[1:]))
+            residues_should_be = (np.empty((0,)) if a_shape[1]
+                                  else np.linalg.norm(b, axis=0)**2)
+            assert_equal(residues, residues_should_be)
+            assert_(rank == 0, 'expected rank 0')
+            assert_equal(s, np.empty((0,)))
+
 
 class TestPinv(object):
 
