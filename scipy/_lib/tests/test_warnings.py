@@ -7,16 +7,16 @@ from numpy.
 
 from __future__ import division, absolute_import, print_function
 
-
 import sys
+import scipy
+
+import pytest
+
+
 if sys.version_info >= (3, 4):
     from pathlib import Path
     import ast
     import tokenize
-    import scipy
-    from numpy.testing import run_module_suite
-    from numpy.testing.decorators import slow
-
 
     class ParseCall(ast.NodeVisitor):
         def __init__(self):
@@ -29,11 +29,12 @@ if sys.version_info >= (3, 4):
         def visit_Name(self, node):
             self.ls.append(node.id)
 
-
     class FindFuncs(ast.NodeVisitor):
         def __init__(self, filename):
             super().__init__()
             self.__filename = filename
+            self.bad_filters = []
+            self.bad_stacklevels = []
 
         def visit_Call(self, node):
             p = ParseCall()
@@ -42,44 +43,78 @@ if sys.version_info >= (3, 4):
 
             if p.ls[-1] == 'simplefilter' or p.ls[-1] == 'filterwarnings':
                 if node.args[0].s == "ignore":
-                    raise AssertionError(
-                        "ignore filter should not be used; found in "
-                        "{} on line {}".format(self.__filename, node.lineno))
+                    self.bad_filters.append(
+                        "{}:{}".format(self.__filename, node.lineno))
 
             if p.ls[-1] == 'warn' and (
                     len(p.ls) == 1 or p.ls[-2] == 'warnings'):
 
-                if "_lib/tests/test_warnings.py" is self.__filename:
+                if self.__filename == "_lib/tests/test_warnings.py":
                     # This file
                     return
 
                 # See if stacklevel exists:
-                # if len(node.args) == 3:
-                #     return
-                # args = {kw.arg for kw in node.keywords}
-                # if "stacklevel" in args:
-                #     return
-                # raise AssertionError(
-                #     "warnings should have an appropriate stacklevel; found in "
-                #     "{} on line {}".format(self.__filename, node.lineno))
+                if len(node.args) == 3:
+                    return
+                args = {kw.arg for kw in node.keywords}
+                if "stacklevel" not in args:
+                    self.bad_stacklevels.append(
+                        "{}:{}".format(self.__filename, node.lineno))
 
 
-    @slow
-    def test_warning_calls():
-        # combined "ignore" and stacklevel error
-        base = Path(scipy.__file__).parent
+@pytest.fixture(scope="session")
+def warning_calls():
+    # combined "ignore" and stacklevel error
+    base = Path(scipy.__file__).parent
 
-        for path in base.rglob("*.py"):
-            # There is still one missing occurance in optimize.py,
-            # this is one that should be fixed and this removed then.
-            if path == base / "optimize" / "optimize.py":
-                continue
-            # use tokenize to auto-detect encoding on systems where no
-            # default encoding is defined (e.g. LANG='C')
-            with tokenize.open(str(path)) as file:
-                tree = ast.parse(file.read())
-                FindFuncs(path).visit(tree)
+    bad_filters = []
+    bad_stacklevels = []
+    
+    for path in base.rglob("*.py"):
+        # use tokenize to auto-detect encoding on systems where no
+        # default encoding is defined (e.g. LANG='C')
+        with tokenize.open(str(path)) as file:
+            tree = ast.parse(file.read())
+            finder = FindFuncs(path.relative_to(base))
+            finder.visit(tree)
+            bad_filters.extend(finder.bad_filters)
+            bad_stacklevels.extend(finder.bad_stacklevels)
+
+    return bad_filters, bad_stacklevels
 
 
-    if __name__ == "__main__":
-        run_module_suite()
+@pytest.mark.slow
+@pytest.mark.skipif(sys.version_info < (3, 4), reason="needs Python >= 3.4")
+def test_warning_calls_filters(warning_calls):
+    bad_filters, bad_stacklevels = warning_calls
+
+    # There is still one missing occurance in optimize.py,
+    # this is one that should be fixed and this removed then.
+    bad_filters = [item for item in bad_filters
+                   if 'optimize.py' not in item]
+
+    if bad_filters:
+        raise AssertionError(
+            "ignore filter should not be used; found in:\n    {}".format(
+                "\n    ".join(bad_filters)))
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(sys.version_info < (3, 4), reason="needs Python >= 3.4")
+@pytest.mark.xfail(reason="stacklevels currently missing")
+def test_warning_calls_stacklevels(warning_calls):
+    bad_filters, bad_stacklevels = warning_calls
+
+    msg = ""
+
+    if bad_filters:
+        msg += "ignore filter should not be used:\n    {}".format(
+            "\n    ".join(bad_filters))
+        msg += "\n\n"
+
+    if bad_stacklevels:
+        msg += "warnings should have an appropriate stacklevel:\n    {}".format(
+                "\n    ".join(bad_stacklevels))
+
+    if msg:
+        raise AssertionError(msg)
