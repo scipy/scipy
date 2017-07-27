@@ -382,6 +382,9 @@ All functions
    ssbevx
    dsbevx
 
+   sstev
+   dstev
+
    ssyev
    dsyev
 
