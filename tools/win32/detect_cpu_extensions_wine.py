@@ -69,9 +69,9 @@ def path_as_windows(fpath):
 
 def write_summary(allcodes):
     """Write a summary of all found codes to stdout."""
-    print("\n"
-          "----------------------------------------------------------------------------"
-          "Checked all binary files for CPU extension codes. Found the following codes:")
+    print("", "-" * 80,
+          "Checked all binary files for CPU extension codes. "
+          "Found the following codes:", sep="\n")
     for code in allcodes:
         print(code)
     print("----------------------------------------------------------------------------")
