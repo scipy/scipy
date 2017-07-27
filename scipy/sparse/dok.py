@@ -427,8 +427,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype, copy=copy)
 
-        for key, value in iteritems(self):
-            new[key[1], key[0]] = value
+        for (lhs, rhs), value in iteritems(self):
+            new[rhs, lhs] = value
 
         return new
 
