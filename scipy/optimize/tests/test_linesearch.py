@@ -209,7 +209,7 @@ class TestLineSearch(object):
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert_(c > 3)  # check that the iterator really works...
 
-    def test_line_search_wolfe2_amax(self):
+    def test_line_search_wolfe2_bounds(self):
         # See gh-7475
 
         # For this f and p, starting at a point on axis 0, the strong Wolfe
@@ -230,6 +230,10 @@ class TestLineSearch(object):
                                         ls.line_search_wolfe2, f, fp, x, p,
                                         amax=29, c2=c2)
         assert_(s is None)
+
+        # s=30 will only be tried on the 6th iteration, so this won't converge
+        assert_warns(LineSearchWarning, ls.line_search_wolfe2, f, fp, x, p,
+                     c2=c2, maxiter=5)
 
     def test_line_search_armijo(self):
         c = 0
