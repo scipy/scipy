@@ -8,6 +8,7 @@ __all__ = ['dok_matrix', 'isspmatrix_dok']
 
 import functools
 import operator
+import itertools
 
 import numpy as np
 
@@ -290,21 +291,19 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                     del self[key]
 
     def __add__(self, other):
-        # First check if argument is a scalar
-        if isscalarlike(other):
+        if isscalarlike(other):  # check if argument is a scalar
             res_dtype = upcast_scalar(self.dtype, other)
             new = dok_matrix(self.shape, dtype=res_dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i in xrange(M):
-                for j in xrange(N):
-                    aij = self.get((i, j), 0) + other
-                    if aij != 0:
-                        new[i, j] = aij
+            for i, j in itertools.product(xrange(M), xrange(N)):
+                aij = dict.get(self, (i, j), 0) + other
+                if aij:
+                    new[i, j] = aij
             # new.dtype.char = self.dtype.char
         elif isinstance(other, dok_matrix):
             if other.shape != self.shape:
-                raise ValueError("matrix dimensions are not equal")
+                raise ValueError("Matrix dimensions are not equal.")
             # We could alternatively set the dimensions to the largest of
             # the two matrices to be summed.  Would this be a good idea?
             res_dtype = upcast(self.dtype, other.dtype)
@@ -323,19 +322,16 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return new
 
     def __radd__(self, other):
-        # First check if argument is a scalar
-        if isscalarlike(other):
+        if isscalarlike(other):  # Check if argument is a scalar
             new = dok_matrix(self.shape, dtype=self.dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i in xrange(M):
-                for j in xrange(N):
-                    aij = self.get((i, j), 0) + other
-                    if aij != 0:
-                        new[i, j] = aij
-        elif isinstance(other, dok_matrix):
+            for i, j in itertools.product(xrange(M), xrange(N)):
+                aij = dict.get(self, (i, j), 0) + other
+                if aij:
+                    new[i, j] = aij
             if other.shape != self.shape:
-                raise ValueError("matrix dimensions are not equal")
+                raise ValueError("matrix dimensions are not equal.")
             new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
             for key in other:
