@@ -40,6 +40,11 @@ matrix:
             - libpng-dev
             - zlib1g-dev
             - texlive-fonts-recommended
+    - python: 3.6
+      env:
+        - TESTMODE=full
+        - COVERAGE=--coverage
+        - NUMPYSPEC=numpy
     - python: 3.5
       env:
         - TESTMODE=fast
@@ -53,16 +58,6 @@ matrix:
         - NUMPYSPEC="numpy==1.8.2"
         - USE_SDIST=1
         - OPTIMIZE=-OO
-    - python: 2.7
-      env:
-        - TESTMODE=full
-        - COVERAGE=--coverage
-        - NUMPYSPEC=numpy
-    - python: 3.6
-      env:
-        - TESTMODE=fast
-        - COVERAGE=
-        - NUMPYSPEC=numpy
     - os: osx
       language: generic
       env:
@@ -118,6 +113,7 @@ before_install:
     fi
   - python --version # just to check
   - export PYTHONFAULTHANDLER=1
+  - export NPY_NUM_BUILD_JOBS=2
   - uname -a
   - df -h
   - ulimit -a
@@ -187,32 +183,6 @@ script:
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
 after_success:
   - ccache -s
-  # Upload development docs, using deploy key from travis-ci encrypted file
-  # https://developer.github.com/guides/managing-deploy-keys/
-  # http://docs.travis-ci.com/user/encrypting-files/
-  - |
-    if [ "${REFGUIDE_CHECK}" == "1" -a "${TRAVIS_PULL_REQUEST}" == "false" -a "${TRAVIS_BRANCH}" == "master" ]; then
-        set -e
-        openssl aes-256-cbc -K $encrypted_35a522e29e4d_key -iv $encrypted_35a522e29e4d_iv -in tools/ci/devdocs-deploy.key.enc -out tools/ci/devdocs-deploy.key -d
-        chmod 600 tools/ci/devdocs-deploy.key
-        eval `ssh-agent -s`
-        ssh-add tools/ci/devdocs-deploy.key
-        git clone git@github.com:scipy/devdocs.git devdocs
-        python -u $OPTIMIZE runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg'
-        pushd devdocs
-        (git checkout --orphan tmp && git branch -D gh-pages || true)
-        git checkout --orphan gh-pages
-        git reset --hard
-        cp -R ../doc/build/html-scipyorg/. .
-        touch .nojekyll
-        git config --global user.email "scipy-travis-bot@nomail"
-        git config --global user.name "scipy-travis-bot"
-        git config --global push.default simple
-        git add . > /dev/null
-        git commit -m "Docs build of $TRAVIS_COMMIT"
-        git push --set-upstream origin gh-pages --force
-        popd
-    fi
   # Upload coverage information
   - if [ "${COVERAGE}" == "--coverage" ]; then
         pushd build/testenv/lib/python*/site-packages/;
