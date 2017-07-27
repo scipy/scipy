@@ -667,7 +667,7 @@ def hilbert(n):
     """
     Create a Hilbert matrix of order `n`.
 
-    Returns the `n` by `n` array with entries `h[i,j] = 1 / (i + j + 1)`.
+    Returns the `n` by `n` array with entries `h[i,j] = 1 / (i + j - 1)`.
 
     Parameters
     ----------
