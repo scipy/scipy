@@ -563,7 +563,7 @@ class Output(object):
         Array ``y = fcn(x + delta)``.
     res_var : float, optional
         Residual variance.
-    sum_sqare : float, optional
+    sum_square : float, optional
         Sum of squares error.
     sum_square_delta : float, optional
         Sum of squares of delta error.
