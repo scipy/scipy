@@ -8,6 +8,17 @@ community process works in practice.  Readers who are familiar with the SciPy
 community and are experienced Python coders may want to jump straight to the
 `git workflow`_ documentation.
 
+There are a lot of ways you can contribute:
+
+- Contributing new code
+- Fixing bugs and other maintenance work
+- Improving the documentation
+- Reviewing open pull requests
+- Triaging issues
+- Working on the `scipy.org`_ website
+- Answering questions and participating on the scipy-dev and scipy-user
+  `mailing lists`_.
+
 Contributing new code
 =====================
 
@@ -128,13 +139,52 @@ deprecation message for the changed behavior.  This should be part of the
 review process.
 
 
+Reviewing pull requests
+=======================
+
+Reviewing open pull requests (PRs) is very welcome, and a valuable way to help
+increase the speed at which the project moves forward.  If you have specific
+knowledge/experience in a particular area (say "optimization algorithms" or
+"special functions") then reviewing PRs in that area is especially valuable -
+sometimes PRs with technical code have to wait for a long time to get merged
+due to a shortage of appropriate reviewers.
+
+We encourage everyone to get involved in the review process; it's also a
+great way to get familiar with the code base.  Reviewers should ask
+themselves some or all of the following questions:
+
+- Was this change adequately discussed (relevant for new features and changes
+  in existing behavior)?
+- Is the feature scientifically sound? Algorithms may be known to work based on
+  literature; otherwise, closer look at correctness is valuable.
+- Is the intended behavior clear under all conditions (e.g. unexpected inputs
+  like empty arrays or nan/inf values)?
+- Does the code meet the quality, test and documentation expectation outline
+  under `Contributing new code`_?
+
+If we do not know you yet, consider introducing yourself.
+
+
 Other ways to contribute
 ========================
 
-There are many ways to contribute other than contributing code.  Participating
-in discussions on the scipy-user and scipy-dev *mailing lists* is a contribution
-in itself.  The `scipy.org`_ *website* contains a lot of information on the
-SciPy community and can always use a new pair of hands.
+There are many ways to contribute other than contributing code.
+
+Triaging issues (investigating bug reports for validity and possible actions to
+take) is also a useful activity.  SciPy has many hundreds of open issues;
+closing invalid ones and correctly labeling valid ones (ideally with some first
+thoughts in a comment) allows prioritizing maintenance work and finding related
+issues easily when working on an existing function or submodule.
+
+Participating in discussions on the scipy-user and scipy-dev `mailing lists`_ is
+a contribution in itself.  Everyone who writes to those lists with a problem or
+an idea would like to get responses, and writing such responses makes the
+project and community function better and appear more welcoming.
+
+The `scipy.org`_ website contains a lot of information on both SciPy the
+project and SciPy the community, and it can always use a new pair of hands.
+The sources for the website live in their own separate repo:
+https://github.com/scipy/scipy.org
 
 
 Recommended development setup
@@ -439,3 +489,6 @@ suite.
 .. _bsd pitch: http://nipy.sourceforge.net/nipy/stable/faq/johns_bsd_pitch.html
 
 .. _Pytest: https://pytest.org/
+
+.. _mailing lists: https://www.scipy.org/scipylib/mailing-lists.html
+
