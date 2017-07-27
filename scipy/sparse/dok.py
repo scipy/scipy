@@ -301,7 +301,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 if aij:
                     new[i, j] = aij
             # new.dtype.char = self.dtype.char
-        elif isinstance(other, dok_matrix):
+        elif isspmatrix_dok(other):
             if other.shape != self.shape:
                 raise ValueError("Matrix dimensions are not equal.")
             # We could alternatively set the dimensions to the largest of
@@ -330,6 +330,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 aij = dict.get(self, (i, j), 0) + other
                 if aij:
                     new[i, j] = aij
+        elif isspmatrix_dok(other):
             if other.shape != self.shape:
                 raise ValueError("matrix dimensions are not equal.")
             new = dok_matrix(self.shape, dtype=self.dtype)
