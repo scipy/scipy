@@ -195,18 +195,8 @@ def _filter_deprecated_kwargs(kwargs, args_blacklist):
                           ' in a future version.' % k, DeprecationWarning)
 
 
-def _nbool_correspond_all(u, v):
-    if u.dtype != v.dtype:
-        raise TypeError("Arrays being compared must be of the same data type.")
-
-    if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double:
-        not_u = 1.0 - u
-        not_v = 1.0 - v
-        nff = (not_u * not_v).sum()
-        nft = (not_u * v).sum()
-        ntf = (u * not_v).sum()
-        ntt = (u * v).sum()
-    elif u.dtype == bool:
+def _nbool_correspond_all(u, v, w=None):
+    if u.dtype == v.dtype == bool and w is None:
         not_u = ~u
         not_v = ~v
         nff = (not_u & not_v).sum()
@@ -214,22 +204,38 @@ def _nbool_correspond_all(u, v):
         ntf = (u & not_v).sum()
         ntt = (u & v).sum()
     else:
-        raise TypeError("Arrays being compared have unknown type.")
-
+        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        u = u.astype(dtype)
+        v = v.astype(dtype)
+        not_u = 1.0 - u
+        not_v = 1.0 - v
+        if w is not None:
+            not_u = w * not_u
+            u = w * u
+        nff = (not_u * not_v).sum()
+        nft = (not_u * v).sum()
+        ntf = (u * not_v).sum()
+        ntt = (u * v).sum()
     return (nff, nft, ntf, ntt)
 
 
-def _nbool_correspond_ft_tf(u, v):
-    if u.dtype == int or u.dtype == np.float_ or u.dtype == np.double:
-        not_u = 1.0 - u
-        not_v = 1.0 - v
-        nft = (not_u * v).sum()
-        ntf = (u * not_v).sum()
-    else:
+def _nbool_correspond_ft_tf(u, v, w=None):
+    if u.dtype == v.dtype == bool and w is None:
         not_u = ~u
         not_v = ~v
         nft = (not_u & v).sum()
         ntf = (u & not_v).sum()
+    else:
+        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        u = u.astype(dtype)
+        v = v.astype(dtype)
+        not_u = 1.0 - u
+        not_v = 1.0 - v
+        if w is not None:
+            not_u = w * not_u
+            u = w * u
+        nft = (not_u * v).sum()
+        ntf = (u * not_v).sum()
     return (nft, ntf)
 
 
@@ -270,6 +276,8 @@ def _validate_mahalanobis_kwargs(X, m, n, **kwargs):
 
 
 def _validate_minkowski_kwargs(X, m, n, **kwargs):
+    if 'w' in kwargs:
+        kwargs['w'] = _convert_to_double(kwargs['w'])
     if 'p' not in kwargs:
         kwargs['p'] = 2.
     return kwargs
@@ -424,7 +432,7 @@ def directed_hausdorff(u, v, seed=0):
     return result
 
 
-def minkowski(u, v, p):
+def minkowski(u, v, p=2, w=None):
     """
     Computes the Minkowski distance between two 1-D arrays.
 
@@ -435,36 +443,6 @@ def minkowski(u, v, p):
 
        {||u-v||}_p = (\\sum{|u_i - v_i|^p})^{1/p}.
 
-    Parameters
-    ----------
-    u : (N,) array_like
-        Input array.
-    v : (N,) array_like
-        Input array.
-    p : int
-        The order of the norm of the difference :math:`{||u-v||}_p`.
-
-    Returns
-    -------
-    d : double
-        The Minkowski distance between vectors `u` and `v`.
-
-    """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    if p < 1:
-        raise ValueError("p must be at least 1")
-    dist = norm(u - v, ord=p)
-    return dist
-
-
-def wminkowski(u, v, p, w):
-    """
-    Computes the weighted Minkowski distance between two 1-D arrays.
-
-    The weighted Minkowski distance between `u` and `v`, defined as
-
-    .. math::
 
        \\left(\\sum{(|w_i (u_i - v_i)|^p)}\\right)^{1/p}.
 
@@ -476,25 +454,41 @@ def wminkowski(u, v, p, w):
         Input array.
     p : int
         The order of the norm of the difference :math:`{||u-v||}_p`.
-    w : (N,) array_like
-        The weight vector.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
-    wminkowski : double
-        The weighted Minkowski distance between vectors `u` and `v`.
+    minkowski : double
+        The Minkowski distance between vectors `u` and `v`.
 
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    w = _validate_vector(w)
     if p < 1:
         raise ValueError("p must be at least 1")
-    dist = norm(w * (u - v), ord=p)
+    u_v = u - v
+    if w is not None:
+        w = _validate_vector(w)
+        if p == 1:
+            root_w = w
+        if p == 2:
+            # better precision and speed
+            root_w = np.sqrt(w)
+        else:
+            root_w = np.power(w, 1/p)
+        u_v = root_w * u_v
+    dist = norm(u_v, ord=p)
     return dist
 
 
-def euclidean(u, v):
+wminkowski = np.deprecate(minkowski, "wminkowski",
+                          message="spatial.distance.wminkowski is "
+                          "deprecated; use spatial.distance.minkowski instead.")
+
+
+def euclidean(u, v, w=None):
     """
     Computes the Euclidean distance between two 1-D arrays.
 
@@ -504,12 +498,17 @@ def euclidean(u, v):
 
        {||u-v||}_2
 
+       \\left(\\sum{(|w_i (u_i - v_i)|^2)}\\right)^{1/2}
+
     Parameters
     ----------
     u : (N,) array_like
         Input array.
     v : (N,) array_like
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -517,13 +516,10 @@ def euclidean(u, v):
         The Euclidean distance between vectors `u` and `v`.
 
     """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    dist = norm(u - v)
-    return dist
+    return minkowski(u, v, p=2, w=w)
 
 
-def sqeuclidean(u, v):
+def sqeuclidean(u, v, w=None):
     """
     Computes the squared Euclidean distance between two 1-D arrays.
 
@@ -531,8 +527,9 @@ def sqeuclidean(u, v):
 
     .. math::
 
-       {||u-v||}_2^2.
+       {||u-v||}_2^2
 
+       \\left(\\sum{(w_i |(u_i - v_i)|^2)}\\right)
 
     Parameters
     ----------
@@ -540,6 +537,9 @@ def sqeuclidean(u, v):
         Input array.
     v : (N,) array_like
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -558,55 +558,21 @@ def sqeuclidean(u, v):
     u = _validate_vector(u, dtype=utype)
     v = _validate_vector(v, dtype=vtype)
     u_v = u - v
-
-    return np.dot(u_v, u_v)
-
-
-def cosine(u, v):
-    """
-    Computes the Cosine distance between 1-D arrays.
-
-    The Cosine distance between `u` and `v`, is defined as
-
-    .. math::
-
-       1 - \\frac{u \\cdot v}
-                {||u||_2 ||v||_2}.
-
-    where :math:`u \\cdot v` is the dot product of :math:`u` and
-    :math:`v`.
-
-    Parameters
-    ----------
-    u : (N,) array_like
-        Input array.
-    v : (N,) array_like
-        Input array.
-
-    Returns
-    -------
-    cosine : double
-        The Cosine distance between vectors `u` and `v`.
-
-    """
-    u = _validate_vector(u)
-    v = _validate_vector(v)
-    dist = 1.0 - np.dot(u, v) / (norm(u) * norm(v))
-    return dist
+    u_v_w = u_v  # only want weights applied once
+    if w is not None:
+        w = _validate_vector(w)
+        u_v_w = w * u_v
+    return np.dot(u_v, u_v_w)
 
 
-def correlation(u, v):
+def correlation(u, v, w=None, centered=True):
     """
     Computes the correlation distance between two 1-D arrays.
-
     The correlation distance between `u` and `v`, is
     defined as
-
     .. math::
-
-       1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
-               {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
-
+        1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
+                {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
     where :math:`\\bar{u}` is the mean of the elements of `u`
     and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
 
@@ -616,24 +582,62 @@ def correlation(u, v):
         Input array.
     v : (N,) array_like
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
     correlation : double
         The correlation distance between 1-D array `u` and `v`.
-
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    umu = u.mean()
-    vmu = v.mean()
-    um = u - umu
-    vm = v - vmu
-    dist = 1.0 - np.dot(um, vm) / (norm(um) * norm(vm))
+    if w is not None:
+        w = _validate_vector(w)
+    if centered:
+        umu = np.average(u, weights=w)
+        vmu = np.average(v, weights=w)
+        u = u - umu
+        v = v - vmu
+    uv = np.average(u * v, weights=w)
+    uu = np.average(np.square(u), weights=w)
+    vv = np.average(np.square(v), weights=w)
+    dist = 1.0 - uv / np.sqrt(uu * vv)
     return dist
 
 
-def hamming(u, v):
+def cosine(u, v, w=None):
+    """
+    Computes the Cosine distance between 1-D arrays.
+    The Cosine distance between `u` and `v`, is defined as
+    .. math::
+        1 - \\frac{u \\cdot v}
+                {||u||_2 ||v||_2}.
+    where :math:`u \\cdot v` is the dot product of :math:`u` and
+    :math:`v`.
+
+    Parameters
+    ----------
+    u : (N,) array_like
+        Input array.
+    v : (N,) array_like
+        Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
+
+    Returns
+    -------
+    cosine : double
+        The Cosine distance between vectors `u` and `v`.
+    """
+    # cosine distance is also referred to as 'uncentered correlation',
+    #   or 'reflective correlation'
+    return correlation(u, v, w=w, centered=False)
+
+
+def hamming(u, v, w=None):
     """
     Computes the Hamming distance between two 1-D arrays.
 
@@ -655,6 +659,9 @@ def hamming(u, v):
         Input array.
     v : (N,) array_like
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -666,10 +673,13 @@ def hamming(u, v):
     v = _validate_vector(v)
     if u.shape != v.shape:
         raise ValueError('The 1d arrays must have equal lengths.')
-    return (u != v).mean()
+    u_ne_v = u != v
+    if w is not None:
+        w = _validate_vector(w)
+    return np.average(u_ne_v, weights=w)
 
 
-def jaccard(u, v):
+def jaccard(u, v, w=None):
     """
     Computes the Jaccard-Needham dissimilarity between two boolean 1-D arrays.
 
@@ -691,6 +701,9 @@ def jaccard(u, v):
         Input array.
     v : (N,) array_like, bool
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -700,13 +713,17 @@ def jaccard(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    dist = (np.double(np.bitwise_and((u != v),
-                                     np.bitwise_or(u != 0, v != 0)).sum()) /
-            np.double(np.bitwise_or(u != 0, v != 0).sum()))
+    nonzero = np.bitwise_or(u != 0, v != 0)
+    unequal_nonzero = np.bitwise_and((u != v), nonzero)
+    if w is not None:
+        w = _validate_vector(w)
+        nonzero = w * nonzero
+        unequal_nonzero = w * unequal_nonzero
+    dist = np.double(unequal_nonzero.sum()) / np.double(nonzero.sum())
     return dist
 
 
-def kulsinski(u, v):
+def kulsinski(u, v, w=None):
     """
     Computes the Kulsinski dissimilarity between two boolean 1-D arrays.
 
@@ -728,6 +745,9 @@ def kulsinski(u, v):
         Input array.
     v : (N,) array_like, bool
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -737,8 +757,12 @@ def kulsinski(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    n = float(len(u))
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
+    if w is None:
+        n = float(len(u))
+    else:
+        w = _validate_vector(w)
+        n = w.sum()
+    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
 
     return (ntf + nft - ntt + n) / (ntf + nft + n)
 
@@ -771,10 +795,10 @@ def seuclidean(u, v, V):
     if V.shape[0] != u.shape[0] or u.shape[0] != v.shape[0]:
         raise TypeError('V must be a 1-D array of the same dimension '
                         'as u and v.')
-    return np.sqrt(((u - v) ** 2 / V).sum())
+    return euclidean(u, v, w=1/V)
 
 
-def cityblock(u, v):
+def cityblock(u, v, w=None):
     """
     Computes the City Block (Manhattan) distance.
 
@@ -791,6 +815,9 @@ def cityblock(u, v):
         Input array.
     v : (N,) array_like
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -800,7 +827,11 @@ def cityblock(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    return abs(u - v).sum()
+    l1_diff = abs(u - v)
+    if w is not None:
+        w = _validate_vector(w)
+        l1_diff = w * l1_diff
+    return l1_diff.sum()
 
 
 def mahalanobis(u, v, VI):
@@ -868,7 +899,7 @@ def chebyshev(u, v):
     return max(abs(u - v))
 
 
-def braycurtis(u, v):
+def braycurtis(u, v, w=None):
     """
     Computes the Bray-Curtis distance between two 1-D arrays.
 
@@ -887,6 +918,9 @@ def braycurtis(u, v):
         Input array.
     v : (N,) array_like
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -896,10 +930,16 @@ def braycurtis(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v, dtype=np.float64)
-    return abs(u - v).sum() / abs(u + v).sum()
+    l1_diff = abs(u - v)
+    l1_sum = abs(u + v)
+    if w is not None:
+        w = _validate_vector(w)
+        l1_diff = w * l1_diff
+        l1_sum = w * l1_sum
+    return l1_diff.sum() / l1_sum.sum()
 
 
-def canberra(u, v):
+def canberra(u, v, w=None):
     """
     Computes the Canberra distance between two 1-D arrays.
 
@@ -916,6 +956,9 @@ def canberra(u, v):
         Input array.
     v : (N,) array_like
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -930,15 +973,23 @@ def canberra(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v, dtype=np.float64)
+    if w is not None:
+        w = _validate_vector(w)
     olderr = np.seterr(invalid='ignore')
     try:
-        d = np.nansum(abs(u - v) / (abs(u) + abs(v)))
+        abs_uv = abs(u - v)
+        abs_u = abs(u)
+        abs_v = abs(v)
+        d = abs_uv / (abs_u + abs_v)
+        if w is not None:
+            d = w * d
+        d = np.nansum(d)
     finally:
         np.seterr(**olderr)
     return d
 
 
-def yule(u, v):
+def yule(u, v, w=None):
     """
     Computes the Yule dissimilarity between two boolean 1-D arrays.
 
@@ -958,6 +1009,9 @@ def yule(u, v):
         Input array.
     v : (N,) array_like, bool
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -967,20 +1021,23 @@ def yule(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
-    return float(2.0 * ntf * nft) / float(ntt * nff + ntf * nft)
+    if w is not None:
+        w = _validate_vector(w)
+    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
+    return float(2.0 * ntf * nft / np.array(ntt * nff + ntf * nft))
 
-
-def matching(u, v):
+@np.deprecate(message="spatial.distance.matching is deprecated in scipy 0.18.0; "
+                      "use spatial.distance.hamming instead.")
+def matching(u, v, w=None):
     """
     Computes the Hamming distance between two boolean 1-D arrays.
 
     This is a deprecated synonym for :func:`hamming`.
     """
-    return hamming(u, v)
+    return hamming(u, v, w=w)
 
 
-def dice(u, v):
+def dice(u, v, w=None):
     """
     Computes the Dice dissimilarity between two boolean 1-D arrays.
 
@@ -1001,6 +1058,9 @@ def dice(u, v):
         Input 1-D array.
     v : (N,) ndarray, bool
         Input 1-D array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -1010,15 +1070,23 @@ def dice(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == bool:
+    if w is not None:
+        w = _validate_vector(w)
+    if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
     else:
-        ntt = (u * v).sum()
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    return float(ntf + nft) / float(2.0 * ntt + ntf + nft)
+        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        u = u.astype(dtype)
+        v = v.astype(dtype)
+        if w is None:
+            ntt = (u * v).sum()
+        else:
+            ntt = (u * v * w).sum()
+    (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
+    return float((ntf + nft) / np.array(2.0 * ntt + ntf + nft))
 
 
-def rogerstanimoto(u, v):
+def rogerstanimoto(u, v, w=None):
     """
     Computes the Rogers-Tanimoto dissimilarity between two boolean 1-D arrays.
 
@@ -1039,6 +1107,9 @@ def rogerstanimoto(u, v):
         Input array.
     v : (N,) array_like, bool
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -1049,11 +1120,13 @@ def rogerstanimoto(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v)
+    if w is not None:
+        w = _validate_vector(w)
+    (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     return float(2.0 * (ntf + nft)) / float(ntt + nff + (2.0 * (ntf + nft)))
 
 
-def russellrao(u, v):
+def russellrao(u, v, w=None):
     """
     Computes the Russell-Rao dissimilarity between two boolean 1-D arrays.
 
@@ -1075,6 +1148,9 @@ def russellrao(u, v):
         Input array.
     v : (N,) array_like, bool
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -1084,14 +1160,20 @@ def russellrao(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == bool:
+    if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
-    else:
+        n = float(len(u))
+    elif w is None:
         ntt = (u * v).sum()
-    return float(len(u) - ntt) / float(len(u))
+        n = float(len(u))
+    else:
+        w = _validate_vector(w)
+        ntt = (u * v * w).sum()
+        n = w.sum()
+    return float(n - ntt) / n
 
 
-def sokalmichener(u, v):
+def sokalmichener(u, v, w=None):
     """
     Computes the Sokal-Michener dissimilarity between two boolean 1-D arrays.
 
@@ -1114,6 +1196,9 @@ def sokalmichener(u, v):
         Input array.
     v : (N,) array_like, bool
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -1123,17 +1208,21 @@ def sokalmichener(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == bool:
+    if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
         nff = (~u & ~v).sum()
-    else:
+    elif w is None:
         ntt = (u * v).sum()
         nff = ((1.0 - u) * (1.0 - v)).sum()
+    else:
+        w = _validate_vector(w)
+        ntt = (u * v * w).sum()
+        nff = ((1.0 - u) * (1.0 - v) * w).sum()
     (nft, ntf) = _nbool_correspond_ft_tf(u, v)
     return float(2.0 * (ntf + nft)) / float(ntt + nff + 2.0 * (ntf + nft))
 
 
-def sokalsneath(u, v):
+def sokalsneath(u, v, w=None):
     """
     Computes the Sokal-Sneath dissimilarity between two boolean 1-D arrays.
 
@@ -1154,6 +1243,9 @@ def sokalsneath(u, v):
         Input array.
     v : (N,) array_like, bool
         Input array.
+    w : (N,) array_like, optional
+        The weights for each value in `u` and `v`. Default is None,
+        which gives each value a weight of 1.0
 
     Returns
     -------
@@ -1163,13 +1255,16 @@ def sokalsneath(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    if u.dtype == bool:
+    if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
-    else:
+    elif w is None:
         ntt = (u * v).sum()
-    (nft, ntf) = _nbool_correspond_ft_tf(u, v)
-    denom = ntt + 2.0 * (ntf + nft)
-    if denom == 0:
+    else:
+        w = _validate_vector(w)
+        ntt = (u * v * w).sum()
+    (nft, ntf) = _nbool_correspond_ft_tf(u, v, w=w)
+    denom = np.array(ntt + 2.0 * (ntf + nft))
+    if not denom.any():
         raise ValueError('Sokal-Sneath dissimilarity is not defined for '
                          'vectors that are entirely false.')
     return float(2.0 * (ntf + nft)) / denom
@@ -1275,7 +1370,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         Default: 2.
 
         w : ndarray.
-        The weight vector for weighted Minkowski.
+        The weight vector for metrics that support weights (e.g., Minkowski).
 
         V : ndarray.
         The variance vector for standardized Euclidean.
@@ -1509,10 +1604,9 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
     # compute blacklist for deprecated kwargs
     if(metric in _METRICS['minkowski'].aka or
-       metric == 'test_minkowski' or metric == minkowski):
-        kwargs_blacklist = ["w", "V", "VI"]
-    elif(metric in _METRICS['wminkowski'].aka or
-         metric == 'test_wminkowski' or metric == wminkowski):
+       metric in _METRICS['wminkowski'].aka or
+       metric in ['test_minkowski', 'test_wminkowski'] or
+       metric == minkowski):
         kwargs_blacklist = ["V", "VI"]
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
@@ -1521,7 +1615,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
          metric == 'test_mahalanobis' or metric == mahalanobis):
         kwargs_blacklist = ["p", "w", "V"]
     else:
-        kwargs_blacklist = ["p", "w", "V", "VI"]
+        kwargs_blacklist = ["p", "V", "VI"]
 
     _filter_deprecated_kwargs(kwargs, kwargs_blacklist)
 
@@ -1541,6 +1635,14 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
     elif isinstance(metric, string_types):
         mstr = metric.lower()
+
+        # NOTE: C-version still does not support weights
+        if "w" in kwargs and not mstr.startswith("test_"):
+            if mstr in ['seuclidean', 'se', 's', 'mahalanobis']:
+                raise ValueError("metric %s incompatible with weights" % mstr)
+            # need to use python version for weighting
+            mstr = "test_%s" % mstr
+
         metric_name = _METRIC_ALIAS.get(mstr, None)
 
         if metric_name is not None:
@@ -1932,7 +2034,7 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         Default: 2.
 
         w : ndarray.
-        The weight vector for weighted Minkowski.
+        The weight vector for metrics that support weights (e.g., Minkowski).
 
         V : ndarray.
         The variance vector for standardized Euclidean.
@@ -2213,10 +2315,9 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
     # compute blacklist for deprecated kwargs
     if(metric in _METRICS['minkowski'].aka or
-       metric == 'test_minkowski' or metric == minkowski):
-        kwargs_blacklist = ["w", "V", "VI"]
-    elif(metric in _METRICS['wminkowski'].aka or
-         metric == 'test_wminkowski' or metric == wminkowski):
+       metric in _METRICS['wminkowski'].aka or
+       metric in ['test_minkowski', 'test_wminkowski'] or
+       metric == minkowski):
         kwargs_blacklist = ["V", "VI"]
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
@@ -2225,7 +2326,8 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
          metric == 'test_mahalanobis' or metric == mahalanobis):
         kwargs_blacklist = ["p", "w", "V"]
     else:
-        kwargs_blacklist = ["p", "w", "V", "VI"]
+        kwargs_blacklist = ["p", "V", "VI"]
+
     _filter_deprecated_kwargs(kwargs, kwargs_blacklist)
 
     if callable(metric):
@@ -2242,6 +2344,13 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
     elif isinstance(metric, string_types):
         mstr = metric.lower()
+
+        # NOTE: C-version still does not support weights
+        if "w" in kwargs and not mstr.startswith("test_"):
+            if mstr in ['seuclidean', 'se', 's', 'mahalanobis']:
+                raise ValueError("metric %s incompatible with weights" % mstr)
+            # need to use python version for weighting
+            mstr = "test_%s" % mstr
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
         if metric_name is not None:
