@@ -3,13 +3,15 @@ from __future__ import division, print_function, absolute_import
 import itertools
 
 import numpy as np
-from numpy.testing import (TestCase, dec, assert_, run_module_suite)
+from numpy.testing import assert_
 from scipy.special._testutils import FuncData
+import pytest
+
 from scipy.special import smirnov, smirnovi, kolmogorov, kolmogi
 
 _rtol = 1e-10
 
-class TestSmirnov(TestCase):
+class TestSmirnov(object):
     def test_nan(self):
         assert_(np.isnan(smirnov(1, np.nan)))
 
@@ -87,11 +89,11 @@ class TestSmirnov(TestCase):
         FuncData(smirnov, dataset, (0, 1), 2, rtol=.05).check()
 
 
-class TestSmirnovi(TestCase):
+class TestSmirnovi(object):
     def test_nan(self):
         assert_(np.isnan(smirnovi(1, np.nan)))
 
-    @dec.knownfailureif(True, "test fails; smirnovi() is not always accurate")
+    @pytest.mark.xfail(reason="test fails; smirnovi() is not always accurate")
     def test_basic(self):
         dataset = [(1, 0.4, 0.6),
                    (1, 0.6, 0.4),
@@ -104,7 +106,7 @@ class TestSmirnovi(TestCase):
         dataset = np.asarray(dataset)
         FuncData(smirnovi, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    @dec.knownfailureif(True, "test fails; smirnovi(_,0) is not accurate")
+    @pytest.mark.xfail(reason="test fails; smirnovi(_,0) is not accurate")
     def test_x_equals_0(self):
         dataset = [(n, 0, 1) for n in itertools.chain(range(2, 20), range(1010, 1020))]
         dataset = np.asarray(dataset)
@@ -115,14 +117,14 @@ class TestSmirnovi(TestCase):
         dataset = np.asarray(dataset)
         FuncData(smirnovi, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    @dec.knownfailureif(True, "test fails; smirnovi(1,) is not accurate")
+    @pytest.mark.xfail(reason="test fails; smirnovi(1,) is not accurate")
     def test_n_equals_1(self):
         pp = np.linspace(0, 1, 101, endpoint=True)
         dataset = [(1, p, 1-p) for p in pp]
         dataset = np.asarray(dataset)
         FuncData(smirnovi, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    @dec.knownfailureif(True, "test fails; smirnovi(2,_) is not accurate")
+    @pytest.mark.xfail(reason="test fails; smirnovi(2,_) is not accurate")
     def test_n_equals_2(self):
         x = np.linspace(0.5, 1, 101, endpoint=True)
         p = np.power(1-x, 2)
@@ -131,7 +133,7 @@ class TestSmirnovi(TestCase):
         # dataset = np.asarray(dataset)
         FuncData(smirnovi, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    @dec.knownfailureif(True, "test fails; smirnovi(3,_) is not accurate")
+    @pytest.mark.xfail(reason="test fails; smirnovi(3,_) is not accurate")
     def test_n_equals_3(self):
         x = np.linspace(0.7, 1, 31, endpoint=True)
         p = np.power(1-x, 3)
@@ -140,7 +142,7 @@ class TestSmirnovi(TestCase):
         # dataset = np.asarray(dataset)
         FuncData(smirnovi, dataset, (0, 1), 2, rtol=_rtol).check()
 
-    @dec.knownfailureif(True, "test fails; smirnovi(_,_) is not accurate")
+    @pytest.mark.xfail(reason="test fails; smirnovi(_,_) is not accurate")
     def test_round_trip(self):
         def _sm_smi(n, p):
             return smirnov(n, smirnovi(n, p))
@@ -173,7 +175,7 @@ class TestSmirnovi(TestCase):
         FuncData(smirnovi, dataset, (0, 1), 2, rtol=_rtol).check()
 
 
-class TestKolmogorov(TestCase):
+class TestKolmogorov(object):
     def test_nan(self):
         assert_(np.isnan(kolmogorov(np.nan)))
 
@@ -196,7 +198,7 @@ class TestKolmogorov(TestCase):
         dataset = np.column_stack([x, 1-epsilon])
         FuncData(kolmogorov, dataset, (0,), 1, rtol=_rtol).check()
 
-    @dec.knownfailureif(True, "test fails; kolmogi() is not accurate for small p")
+    @pytest.mark.xfail(reason="test fails; kolmogi() is not accurate for small p")
     def test_round_trip(self):
         def _ki_k(_x):
             return kolmogi(kolmogorov(_x))
@@ -206,11 +208,11 @@ class TestKolmogorov(TestCase):
         FuncData(_ki_k, dataset, (0,), 1, rtol=_rtol).check()
 
 
-class TestKolmogi(TestCase):
+class TestKolmogi(object):
     def test_nan(self):
         assert_(np.isnan(kolmogi(np.nan)))
 
-    @dec.knownfailureif(True, "test fails; kolmogi() is not accurate for small p")
+    @pytest.mark.xfail(reason="test fails; kolmogi() is not accurate for small p")
     def test_basic(self):
         dataset = [(1.0, 0),
                    (0.96394524366487511, 0.5),
@@ -220,7 +222,7 @@ class TestKolmogi(TestCase):
         dataset = np.asarray(dataset)
         FuncData(kolmogi, dataset, (0,), 1, rtol=_rtol).check()
 
-    @dec.knownfailureif(True, "test fails; kolmogi() is not accurate for small p")
+    @pytest.mark.xfail(reason="test fails; kolmogi() is not accurate for small p")
     def test_smallp(self):
         epsilon = 0.1 ** np.arange(1, 14)
         x = np.array([0.571173265106, 0.441027698518, 0.374219690278, 0.331392659217,
@@ -238,7 +240,3 @@ class TestKolmogi(TestCase):
         p = np.linspace(0.1, 1.0, 10, endpoint=True)
         dataset = np.column_stack([p, p])
         FuncData(_k_ki, dataset, (0,), 1, rtol=_rtol).check()
-
-
-if __name__ == "__main__":
-    run_module_suite()
