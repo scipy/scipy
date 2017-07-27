@@ -1,9 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import dec, run_module_suite
+import pytest
 
-from scipy._lib._testutils import xslow
 from scipy.special._testutils import MissingModule, check_version
 from scipy.special._mptestutils import (
     Arg, IntArg, mp_assert_allclose, assert_mpmath_equal)
@@ -35,10 +34,10 @@ def test_g():
         mp_assert_allclose(compute_g(7), g)
 
 
-@dec.slow
+@pytest.mark.slow
 @check_version(mp, '0.19')
 @check_version(sympy, '0.7')
-@dec.knownfailureif(_is_32bit_platform, "rtol only 2e-11, see gh-6938")
+@pytest.mark.xfail(condition=_is_32bit_platform, reason="rtol only 2e-11, see gh-6938")
 def test_alpha():
     # Test data for the alpha_k. See DLMF 8.12.14.
     with mp.workdps(30):
@@ -48,7 +47,7 @@ def test_alpha():
         mp_assert_allclose(compute_alpha(9), alpha)
 
 
-@xslow
+@pytest.mark.xslow
 @check_version(mp, '0.19')
 @check_version(sympy, '0.7')
 def test_d():
@@ -116,6 +115,3 @@ def test_gammaincc():
                         [IntArg(1, 100), Arg(0, 100)],
                         nan_ok=False, rtol=1e-17, n=50, dps=50)
 
-
-if __name__ == "__main__":
-    run_module_suite()

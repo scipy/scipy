@@ -7,9 +7,9 @@ import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns,
-                           dec)
+                           assert_allclose, assert_warns)
 from numpy import array, spacing, sin, pi, sort
+import pytest
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
@@ -29,10 +29,8 @@ except ImportError:
 
 
 def mpmath_check(min_ver):
-    if mpmath is None:
-        return dec.skipif(True, "mpmath is not installed")
-    return dec.skipif(LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
-                      "mpmath version >= %s required" % min_ver)
+    return pytest.mark.skipif(mpmath is None or LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+                              reason="mpmath version >= %s required" % min_ver)
 
 
 class TestCplxPair(object):
@@ -608,7 +606,7 @@ class TestSOSFreqz(object):
         assert_array_less(dB[w >= 0.6], -99.9)
         assert_allclose(dB[(w >= 0.2) & (w <= 0.5)], 0, atol=3.01)
 
-    @dec.knownfailureif(True)
+    @pytest.mark.xfail
     def test_sosfreqz_design_ellip(self):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
         sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
@@ -632,7 +630,7 @@ class TestSOSFreqz(object):
         # Compare the result of sosfreqz applied to a high order Butterworth
         # filter against the result computed using mpmath.  (signal.freqz fails
         # miserably with such high order filters.)
-        import mpsig
+        from . import mpsig
         N = 500
         order = 25
         Wn = 0.15
@@ -2899,6 +2897,3 @@ class TestGroupDelay(object):
         w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
         assert_allclose(gd, 0)
 
-
-if __name__ == "__main__":
-    run_module_suite()

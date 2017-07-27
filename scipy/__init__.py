@@ -60,7 +60,8 @@ __all__ = ['test']
 
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
-    raise ImportError("Cannot import scipy when running from numpy source directory.")
+    raise ImportError(
+        "Cannot import scipy when running from numpy source directory.")
 from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space
@@ -70,6 +71,9 @@ from numpy import *
 from numpy.random import rand, randn
 from numpy.fft import fft, ifft
 from numpy.lib.scimath import *
+
+# Allow distributors to run custom init code
+from . import _distributor_init
 
 __all__ += _num.__all__
 __all__ += ['randn', 'rand', 'fft', 'ifft']
@@ -113,25 +117,6 @@ else:
 
     from scipy._lib._ccallback import LowLevelCallable
 
-    from numpy.testing import Tester
-
-    def test(*a, **kw):
-        # Nose never recurses into directories with underscores prefix, so we
-        # need to list those explicitly. Note that numpy.testing.Tester inserts
-        # the top-level package path determined from __file__ to argv unconditionally,
-        # so we only need to add the part that is not otherwise recursed into.
-        import os
-        underscore_modules = ['_lib', '_build_utils']
-        base_dir = os.path.abspath(os.path.dirname(__file__))
-        underscore_paths = [os.path.join(base_dir, name) for name in underscore_modules]
-        kw['extra_argv'] = list(kw.get('extra_argv', [])) + underscore_paths
-        return test._tester.test(*a, **kw)
-
-    if ".dev0" in __version__:
-        mode = "develop"
-    else:
-        mode = "release"
-    test._tester = Tester(raise_warnings=mode)
-    test.__doc__ = test._tester.test.__doc__
-    test.__test__ = False  # Prevent nose from treating test() as a test
-
+    from scipy._lib._testutils import PytestTester
+    test = PytestTester(__name__)
+    del PytestTester

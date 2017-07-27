@@ -10,7 +10,7 @@ from scipy.io.harwell_boeing._fortran_format_parser import \
 
 
 class TestFortranFormatParser(object):
-    def setUp(self):
+    def setup_method(self):
         self.parser = FortranFormatParser()
 
     def _test_equal(self, format, ref):

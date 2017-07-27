@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_raises, run_module_suite,
+from numpy.testing import (assert_raises,
                            assert_allclose, assert_array_equal)
 from numpy.fft import fft, ifft
 
@@ -64,6 +64,3 @@ class TestMLS(object):
                         new_m = np.concatenate((m1, m2, m3))
                         assert_array_equal(orig_m, new_m)
 
-
-if __name__ == "__main__":
-    run_module_suite()

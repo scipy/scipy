@@ -14,7 +14,7 @@ from scipy.linalg import _fblas as fblas
 
 from scipy._lib.six import xrange
 
-from numpy.testing import run_module_suite, assert_array_equal, \
+from numpy.testing import assert_array_equal, \
     assert_allclose, assert_array_almost_equal, assert_
 
 
@@ -642,6 +642,3 @@ class TestZgerc(BaseGerComplex):
     def transform(self,x):
         return conjugate(x)
 """
-
-if __name__ == "__main__":
-    run_module_suite()

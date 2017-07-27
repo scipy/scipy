@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 from itertools import product
-from numpy.testing import (assert_, assert_allclose, run_module_suite,
+from numpy.testing import (assert_, assert_allclose,
                            assert_equal, assert_raises, assert_no_warnings)
 from scipy._lib._numpy_compat import suppress_warnings
 import numpy as np
@@ -53,18 +53,6 @@ def jac_rational_sparse(t, y):
 
 def sol_rational(t):
     return np.asarray((t / (t + 10), 10 * t / (t + 10) ** 2))
-
-
-def event_rational_1(t, y):
-    return y[0] - y[1] ** 0.7
-
-
-def event_rational_2(t, y):
-    return y[1] ** 0.6 - y[0]
-
-
-def event_rational_3(t, y):
-    return t - 7.4
 
 
 def fun_medazko(t, y):
@@ -308,6 +296,15 @@ def test_integration_const_jac():
 
 
 def test_events():
+    def event_rational_1(t, y):
+        return y[0] - y[1] ** 0.7
+
+    def event_rational_2(t, y):
+        return y[1] ** 0.6 - y[0]
+
+    def event_rational_3(t, y):
+        return t - 7.4
+
     event_rational_3.terminal = True
 
     for method in ['RK23', 'RK45', 'Radau', 'BDF', 'LSODA']:
@@ -727,6 +724,3 @@ def test_num_jac_sparse():
                     rtol=1e-12, atol=1e-14)
     assert_allclose(factor_dense, factor_sparse, rtol=1e-12, atol=1e-14)
 
-
-if __name__ == '__main__':
-    run_module_suite()

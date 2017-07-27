@@ -40,6 +40,11 @@ matrix:
             - libpng-dev
             - zlib1g-dev
             - texlive-fonts-recommended
+    - python: 3.6
+      env:
+        - TESTMODE=full
+        - COVERAGE=--coverage
+        - NUMPYSPEC=numpy
     - python: 3.5
       env:
         - TESTMODE=fast
@@ -53,16 +58,13 @@ matrix:
         - NUMPYSPEC="numpy==1.8.2"
         - USE_SDIST=1
         - OPTIMIZE=-OO
-    - python: 2.7
-      env:
-        - TESTMODE=full
-        - COVERAGE=--coverage
-        - NUMPYSPEC=numpy
-    - python: 3.6
+    - os: osx
+      language: generic
       env:
         - TESTMODE=fast
         - COVERAGE=
         - NUMPYSPEC=numpy
+        - MB_PYTHON_VERSION=3.6
 addons:
   apt:
     packages:
@@ -78,15 +80,41 @@ cache:
     - $HOME/.ccache
 before_install:
   # Work in our own virtualenv to isolate from travis-ci packages.
-  - python -m pip install --upgrade pip
-  - pip install --upgrade virtualenv
-  - virtualenv --python=python venv
-  - source venv/bin/activate
+  - echo $TRAVIS_OS_NAME
+  - |
+    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+      python -m pip install --upgrade pip
+      pip install --upgrade virtualenv
+      virtualenv --python=python venv
+      source venv/bin/activate
+      export PATH=/usr/lib/ccache:$PATH
+      free -m
+    elif [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew install gcc ccache
+      touch config.sh
+      git clone https://github.com/matthew-brett/multibuild.git
+      source multibuild/common_utils.sh
+      source multibuild/travis_steps.sh
+      before_install
+      which ccache
+      ln -s ccache /usr/local/bin/gcc
+      ln -s ccache /usr/local/bin/g++
+      ln -s ccache /usr/local/bin/cc
+      ln -s ccache /usr/local/bin/c++
+      ln -s ccache /usr/local/bin/clang
+      ln -s ccache /usr/local/bin/clang++
+      export USE_CCACHE=1
+      export CCACHE_COMPRESS=1
+      export CCACHE_MAXSIZE=200M
+      export CCACHE_CPP2=1
+      export CFLAGS="-arch x86_64"
+      export CXXFLAGS="-arch x86_64"
+      printenv
+    fi
   - python --version # just to check
   - export PYTHONFAULTHANDLER=1
-  - export PATH=/usr/lib/ccache:$PATH
+  - export NPY_NUM_BUILD_JOBS=2
   - uname -a
-  - free -m
   - df -h
   - ulimit -a
   - mkdir builds
@@ -107,16 +135,17 @@ before_install:
   # Need to install Cython 0.23.4 from source to avoid errors for Python 3.6
   - travis_retry pip install --install-option="--no-cython-compile" Cython==0.23.4
   - travis_retry pip install $NUMPYSPEC
-  - travis_retry pip install nose mpmath argparse Pillow codecov
+  - travis_retry pip install pytest pytest-xdist nose mpmath argparse Pillow codecov
   - travis_retry pip install --upgrade pip setuptools
   - travis_retry pip install gmpy2  # speeds up mpmath (scipy.special tests)
-  - if [ "${TESTMODE}" == "full" ]; then pip install coverage; fi
+  - if [ "${TESTMODE}" == "full" ]; then pip install pytest-cov coverage; fi
   - if [ "${USE_WHEEL}" == "1" ]; then pip install wheel; fi
   - |
     if [ "${REFGUIDE_CHECK}" == "1" ]; then
         travis_retry pip install matplotlib Sphinx==1.5.5
     fi
   - python -V
+  - ccache -s
   - popd
   - set -o pipefail
 script:
@@ -127,52 +156,36 @@ script:
   - python -c 'import mpmath.libmp; assert mpmath.libmp.BACKEND == "gmpy"'
   - |
     if [ "${USE_WHEEL}" == "1" ]; then
-        # Need verbose output or TravisCI will terminate after 10 minutes
-        pip wheel . -v
-        pip install scipy*.whl -v
+        # Run setup.py build before pip wheel, to build in current directory
+        # and make more efficient use of ccache
+        echo "setup.py build"
+        python tools/suppress_output.py python setup.py build
+        echo "pip wheel"
+        python tools/suppress_output.py pip wheel .
+        pip install scipy*.whl
         USE_WHEEL_BUILD="--no-build"
     elif [ "${USE_SDIST}" == "1" ]; then
-        python setup.py sdist
+        echo "setup.py sdist"
+        python tools/suppress_output.py python setup.py sdist
         # Move out of source directory to avoid finding local scipy
         pushd dist
-        pip install scipy* -v
+        # Use pip --build option to make ccache work better.
+        # However, this option is partially broken
+        # (see https://github.com/pypa/pip/issues/4242)
+        # and some shenanigans are needed to make it work.
+        echo "pip install"
+        python ../tools/suppress_output.py pip install --build="$HOME/builds" --upgrade "file://`echo -n $PWD/scipy*`#egg=scipy" -v
         popd
         USE_WHEEL_BUILD="--no-build"
     fi
-  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD |& tee runtests.log
+  - python -u $OPTIMIZE runtests.py -g -m $TESTMODE $COVERAGE $USE_WHEEL_BUILD -- -rfEX -n 2 2>&1 | tee runtests.log
   - tools/validate_runtests_log.py $TESTMODE < runtests.log
   - if [ "${REFGUIDE_CHECK}" == "1" ]; then python runtests.py -g --refguide-check; fi
 after_success:
-  # Upload development docs, using deploy key from travis-ci encrypted file
-  # https://developer.github.com/guides/managing-deploy-keys/
-  # http://docs.travis-ci.com/user/encrypting-files/
-  - |
-    if [ "${REFGUIDE_CHECK}" == "1" -a "${TRAVIS_PULL_REQUEST}" == "false" -a "${TRAVIS_BRANCH}" == "master" ]; then
-        set -e
-        openssl aes-256-cbc -K $encrypted_35a522e29e4d_key -iv $encrypted_35a522e29e4d_iv -in tools/ci/devdocs-deploy.key.enc -out tools/ci/devdocs-deploy.key -d
-        chmod 600 tools/ci/devdocs-deploy.key
-        eval `ssh-agent -s`
-        ssh-add tools/ci/devdocs-deploy.key
-        git clone git@github.com:scipy/devdocs.git devdocs
-        python -u $OPTIMIZE runtests.py -g --shell -- -c 'make -C doc PYTHON=python html-scipyorg'
-        pushd devdocs
-        (git checkout --orphan tmp && git branch -D gh-pages || true)
-        git checkout --orphan gh-pages
-        git reset --hard
-        cp -R ../doc/build/html-scipyorg/. .
-        touch .nojekyll
-        git config --global user.email "scipy-travis-bot@nomail"
-        git config --global user.name "scipy-travis-bot"
-        git config --global push.default simple
-        git add . > /dev/null
-        git commit -m "Docs build of $TRAVIS_COMMIT"
-        git push --set-upstream origin gh-pages --force
-        popd
-    fi
+  - ccache -s
   # Upload coverage information
   - if [ "${COVERAGE}" == "--coverage" ]; then
         pushd build/testenv/lib/python*/site-packages/;
-        cp ../../../../test/.coverage .;
         codecov;
         popd;
     fi

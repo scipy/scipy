@@ -3,12 +3,12 @@ Unit test for SLSQP optimization.
 """
 from __future__ import division, print_function, absolute_import
 
+import pytest
 from numpy.testing import (assert_, assert_array_almost_equal,
-                           assert_allclose, assert_equal, run_module_suite,
+                           assert_allclose, assert_equal,
                            assert_raises)
 import numpy as np
 
-from scipy._lib._testutils import knownfailure_overridable
 from scipy.optimize import fmin_slsqp, minimize
 
 
@@ -33,7 +33,7 @@ class TestSLSQP(object):
     This example maximizes the function f(x) = 2*x*y + 2*x - x**2 - 2*y**2,
     which has a maximum at x=2, y=1.
     """
-    def setUp(self):
+    def setup_method(self):
         self.opts = {'disp': False}
 
     def fun(self, d, sign=1.0):
@@ -353,7 +353,7 @@ class TestSLSQP(object):
         assert_(f2(x) >= -1e-8)
         assert_(sol.success, sol)
 
-    @knownfailure_overridable("This bug is not fixed")
+    @pytest.mark.xfail(reason="This bug is not fixed")
     def test_regression_5743(self):
         # SLSQP must not indicate success for this problem,
         # which is infeasible.
@@ -454,6 +454,3 @@ class TestSLSQP(object):
         assert_(sol.success)
         assert_allclose(sol.x, 0, atol=1e-10)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -8,9 +8,10 @@ import sys
 import subprocess
 import time
 
-from numpy.testing import run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_array_almost_equal, assert_, assert_raises, assert_allclose, \
     assert_almost_equal, assert_array_equal
+import pytest
 
 import numpy as np
 
@@ -18,7 +19,6 @@ from scipy.linalg import _flapack as flapack
 from scipy.linalg import inv
 from scipy.linalg import svd
 from scipy.linalg.lapack import _compute_lwork
-from scipy._lib._testutils import xslow
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -525,7 +525,7 @@ def test_larfg_larf():
         assert_allclose(a[0,:], expected, atol=1e-5)
 
 
-@xslow
+@pytest.mark.xslow
 def test_sgesdd_lwork_bug_workaround():
     # Test that SGESDD lwork is sufficiently large for LAPACK.
     #
@@ -559,6 +559,3 @@ def test_sgesdd_lwork_bug_workaround():
     assert_equal(returncode, 0,
                  "Code apparently failed: " + p.stdout.read())
 
-
-if __name__ == "__main__":
-    run_module_suite()

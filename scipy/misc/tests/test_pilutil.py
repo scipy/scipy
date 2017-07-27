@@ -6,8 +6,9 @@ import shutil
 import numpy as np
 import glob
 
-from numpy.testing import (assert_equal, dec, decorate_methods,
-                           run_module_suite, assert_allclose,
+import pytest
+from numpy.testing import (assert_equal,
+                           assert_allclose,
                            assert_array_equal, assert_raises,
                            assert_)
 from scipy._lib._numpy_compat import suppress_warnings
@@ -23,11 +24,11 @@ else:
 
 
 # Function / method decorator for skipping PIL tests on import failure
-_pilskip = dec.skipif(not _have_PIL, 'Need to import PIL for this test')
+_pilskip = pytest.mark.skipif(not _have_PIL, reason='Need to import PIL for this test')
 
 datapath = os.path.dirname(__file__)
 
-
+@_pilskip
 class TestPILUtil(object):
     def test_imresize(self):
         im = np.random.random((10, 20))
@@ -142,10 +143,8 @@ class TestPILUtil(object):
             finally:
                 shutil.rmtree(tmpdir)
 
-decorate_methods(TestPILUtil, _pilskip)
 
-
-def tst_fromimage(filename, irange, shape):
+def check_fromimage(filename, irange, shape):
     fp = open(filename, "rb")
     img = misc.fromimage(PIL.Image.open(fp))
     fp.close()
@@ -163,7 +162,7 @@ def test_fromimage():
              ('icon_mono.png', (0, 255), (48, 48, 4)),
              ('icon_mono_flat.png', (0, 255), (48, 48, 3))]
     for fn, irange, shape in files:
-        yield tst_fromimage, os.path.join(datapath, 'data', fn), irange, shape
+        check_fromimage(os.path.join(datapath, 'data', fn), irange, shape)
 
 
 @_pilskip
@@ -240,6 +239,3 @@ def test_imread_4bit():
     expected = 17*(np.maximum(j, i) % 16).astype(np.uint8)
     assert_equal(im, expected)
 
-
-if __name__ == "__main__":
-    run_module_suite()

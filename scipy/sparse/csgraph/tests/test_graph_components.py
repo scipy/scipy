@@ -1,9 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_, assert_equal, run_module_suite
+from numpy.testing import assert_, assert_equal
 from scipy._lib._numpy_compat import suppress_warnings
-
 from scipy.sparse import csr_matrix, csgraph
 
 
@@ -33,6 +32,3 @@ def test_cs_graph_components():
     assert_(n_comp == 2)
     assert_equal(flag, [0, 0, -2, 1])
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -17,7 +17,7 @@ from scipy.linalg import (svd, get_lapack_funcs, det,
                           eigvalsh, eig, norm)
 from numpy.testing import (assert_, assert_array_equal,
                            assert_equal, assert_array_almost_equal,
-                           assert_array_less, run_module_suite)
+                           assert_array_less)
 
 
 def random_entry(n, min_eig, max_eig, case):
@@ -355,6 +355,3 @@ class TestIterativeSubproblem(object):
                         # Check if it respect k_opt
                         assert_equal(J <= k_opt*J_ac, True)
 
-
-if __name__ == '__main__':
-    run_module_suite()

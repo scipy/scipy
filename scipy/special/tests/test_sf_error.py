@@ -4,6 +4,7 @@ import warnings
 
 from numpy.testing import assert_, assert_equal, assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
+import pytest
 
 import scipy.special as sc
 from scipy.special._ufuncs import _sf_error_test_function
@@ -30,9 +31,8 @@ _sf_error_actions = [
 
 def _check_action(fun, args, action):
     if action == 'warn':
-        with warnings.catch_warnings(record=True) as w:
+        with pytest.warns(sc.SpecialFunctionWarning):
             fun(*args)
-            assert_(w[-1].category is sc.SpecialFunctionWarning)
     elif action == 'raise':
         with assert_raises(sc.SpecialFunctionError):
             fun(*args)
@@ -118,11 +118,11 @@ def test_errprint():
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning, "`errprint` is deprecated!")
         flag = sc.errprint(True)
+
     try:
         assert_(isinstance(flag, bool))
-        with warnings.catch_warnings(record=True) as w:
+        with pytest.warns(sc.SpecialFunctionWarning):
             sc.loggamma(0)
-            assert_(w[-1].category is sc.SpecialFunctionWarning)
     finally:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, "`errprint` is deprecated!")

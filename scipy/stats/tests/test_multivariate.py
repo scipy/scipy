@@ -8,10 +8,9 @@ import pickle
 
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
-                           assert_array_less, assert_raises, assert_,
-                           run_module_suite)
+                           assert_array_less, assert_raises, assert_)
 
-from test_continuous_basic import check_distribution_rvs
+from .test_continuous_basic import check_distribution_rvs
 
 import numpy
 import numpy as np
@@ -31,7 +30,7 @@ from scipy.stats import binom
 
 from scipy.integrate import romb
 
-from common_tests import check_random_state_property
+from .common_tests import check_random_state_property
 
 
 class TestMultivariateNormal(object):
@@ -1562,6 +1561,3 @@ def test_random_state_property():
     for distfn, args in dists:
         check_random_state_property(distfn, args)
         check_pickling(distfn, args)
-
-if __name__ == "__main__":
-    run_module_suite()

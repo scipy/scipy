@@ -371,6 +371,21 @@ def fmin(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None, maxfun=None,
     converge to the minimum, or how fast it will if it does. Both the ftol and
     xtol criteria must be met for convergence.
 
+    Examples
+    --------
+    >>> def f(x):
+    ...     return x**2
+
+    >>> from scipy import optimize
+
+    >>> minimum = optimize.fmin(f, 1)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 17
+             Function evaluations: 34
+    >>> minimum[0]
+    -8.8817841970012523e-16
+
     References
     ----------
     .. [1] Nelder, J.A. and Mead, R. (1965), "A simplex method for function
@@ -1684,6 +1699,22 @@ def fminbound(func, x1, x2, args=(), xtol=1e-5, maxfun=500,
     interval x1 < xopt < x2 using Brent's method.  (See `brent`
     for auto-bracketing).
 
+    Examples
+    --------
+    `fminbound` finds the minimum of the function in the given range.
+    The following examples illustrate the same
+
+    >>> def f(x):
+    ...     return x**2
+
+    >>> from scipy import optimize
+
+    >>> minimum = optimize.fminbound(f, -1, 2)
+    >>> minimum
+    0.0
+    >>> minimum = optimize.fminbound(f, 1, 2)
+    >>> minimum
+    1.0000059608609866
     """
     options = {'xatol': xtol,
                'maxiter': maxfun,
@@ -2110,7 +2141,8 @@ def _minimize_scalar_brent(func, brack=None, args=(),
 def golden(func, args=(), brack=None, tol=_epsilon,
            full_output=0, maxiter=5000):
     """
-    Return the minimum of a function of one variable.
+    Return the minimum of a function of one variable using golden section
+    method.
 
     Given a function of one variable and a possible bracketing interval,
     return the minimum of the function isolated to a fractional precision of
@@ -2144,6 +2176,25 @@ def golden(func, args=(), brack=None, tol=_epsilon,
     -----
     Uses analog of bisection method to decrease the bracketed
     interval.
+
+    Examples
+    --------
+    We illustrate the behaviour of the function when `brack` is of
+    size 2 and 3 respectively. In the case where `brack` is of the
+    form (xa,xb), we can see for the given values, the output need
+    not necessarily lie in the range ``(xa, xb)``.
+
+    >>> def f(x):
+    ...     return x**2
+    
+    >>> from scipy import optimize
+
+    >>> minimum = optimize.golden(f, brack=(1, 2))
+    >>> minimum
+    1.5717277788484873e-162
+    >>> minimum = optimize.golden(f, brack=(-1, 0.5, 2))
+    >>> minimum
+    -1.5717277788484873e-162
 
     """
     options = {'xtol': tol, 'maxiter': maxiter}
@@ -2426,6 +2477,21 @@ def fmin_powell(func, x0, args=(), xtol=1e-4, ftol=1e-4, maxiter=None,
     2. The direction of greatest increase accounted for a large sufficient
        fraction of the decrease in the function value from that iteration of
        the inner loop.
+
+    Examples
+    --------
+    >>> def f(x):
+    ...     return x**2
+
+    >>> from scipy import optimize
+
+    >>> minimum = optimize.fmin_powell(f, -1)
+    Optimization terminated successfully.
+             Current function value: 0.000000
+             Iterations: 2
+             Function evaluations: 18
+    >>> minimum
+    array(0.0)
 
     References
     ----------

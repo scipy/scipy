@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_, run_module_suite, assert_allclose
+from numpy.testing import assert_, assert_allclose
 import scipy.linalg
 from scipy.optimize import minimize
 
@@ -42,7 +42,4 @@ def test_2():
     assert_allclose(H1, H2)
     assert_allclose(H1, result2.hess_inv, rtol=1e-2, atol=0.03)
 
-
-if __name__ == "__main__":
-    run_module_suite()
 

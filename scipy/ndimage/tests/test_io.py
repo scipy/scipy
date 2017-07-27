@@ -1,6 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_array_equal, dec, run_module_suite
+import pytest
+from numpy.testing import assert_array_equal
 from scipy._lib._numpy_compat import suppress_warnings
 import scipy.ndimage as ndi
 
@@ -13,7 +14,7 @@ except ImportError:
     pil_missing = True
 
 
-@dec.skipif(pil_missing, msg="The Python Image Library could not be found.")
+@pytest.mark.skipif(pil_missing, reason="The Python Image Library could not be found.")
 def test_imread():
     lp = os.path.join(os.path.dirname(__file__), 'dots.png')
     with suppress_warnings() as sup:
@@ -32,6 +33,3 @@ def test_imread():
         img = ndi.imread(fobj, mode="RGB")
         assert_array_equal(img.shape, (300, 420, 3))
 
-
-if __name__ == "__main__":
-    run_module_suite()

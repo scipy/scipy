@@ -563,7 +563,7 @@ class Output(object):
         Array ``y = fcn(x + delta)``.
     res_var : float, optional
         Residual variance.
-    sum_sqare : float, optional
+    sum_square : float, optional
         Sum of squares error.
     sum_square_delta : float, optional
         Sum of squares of delta error.
@@ -1056,7 +1056,7 @@ class ODR(object):
         self.iprint = ip[0]*1000 + ip[1]*100 + ip[2]*10 + ip[3]
 
     def run(self):
-        """ Run the fitting routine with all of the information given.
+        """ Run the fitting routine with all of the information given and with ``full_output=1``.
 
         Returns
         -------

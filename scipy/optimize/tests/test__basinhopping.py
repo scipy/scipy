@@ -4,7 +4,7 @@ Unit tests for the basin hopping global minimization algorithm.
 from __future__ import division, print_function, absolute_import
 import copy
 
-from numpy.testing import (run_module_suite, assert_raises,
+from numpy.testing import (assert_raises,
                            assert_almost_equal, assert_equal, assert_)
 import numpy as np
 from numpy import cos, sin
@@ -108,7 +108,7 @@ class MyCallBack(object):
 
 class TestBasinHopping(object):
 
-    def setUp(self):
+    def setup_method(self):
         """ Tests setup.
 
         Run tests based on the 1-D and 2-D functions described above.
@@ -306,7 +306,7 @@ class TestBasinHopping(object):
 
 
 class Test_Storage(object):
-    def setUp(self):
+    def setup_method(self):
         self.x0 = np.array(1)
         self.f0 = 0
 
@@ -340,7 +340,7 @@ class Test_Storage(object):
 
 
 class Test_RandomDisplacement(object):
-    def setUp(self):
+    def setup_method(self):
         self.stepsize = 1.0
         self.displace = RandomDisplacement(stepsize=self.stepsize)
         self.N = 300000
@@ -357,7 +357,7 @@ class Test_RandomDisplacement(object):
 
 
 class Test_Metropolis(object):
-    def setUp(self):
+    def setup_method(self):
         self.T = 2.
         self.met = Metropolis(self.T)
 
@@ -399,7 +399,7 @@ class Test_Metropolis(object):
 
 
 class Test_AdaptiveStepsize(object):
-    def setUp(self):
+    def setup_method(self):
         self.stepsize = 1.
         self.ts = RandomDisplacement(stepsize=self.stepsize)
         self.target_accept_rate = 0.5
@@ -442,6 +442,3 @@ class Test_AdaptiveStepsize(object):
             self.takestep.report(False)
         assert_(self.ts.stepsize < self.stepsize)
 
-
-if __name__ == "__main__":
-    run_module_suite()

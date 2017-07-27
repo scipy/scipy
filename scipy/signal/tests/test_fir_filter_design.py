@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite, assert_raises, \
+from numpy.testing import assert_raises, \
         assert_almost_equal, assert_array_almost_equal, assert_equal, \
         assert_, assert_allclose, assert_warns
 from scipy.special import sinc
@@ -546,6 +546,3 @@ class TestMinimumPhase(object):
              -0.014977068692269, -0.158416139047557]
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         assert_allclose(m, k, rtol=1e-3)
-
-if __name__ == "__main__":
-    run_module_suite()

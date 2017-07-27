@@ -4,7 +4,7 @@ import itertools
 
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
         assert_array_almost_equal, assert_raises, assert_array_equal,
-        dec, run_module_suite, assert_allclose)
+        dec, assert_allclose)
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
@@ -110,7 +110,7 @@ class TestInterp2D(object):
 
 class TestInterp1D(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.x5 = np.arange(5.)
         self.x10 = np.arange(10.)
         self.y10 = np.arange(10.)
@@ -2727,6 +2727,3 @@ class TestInterpN(object):
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
             assert_allclose(v1, np.asmatrix(v2))
 
-
-if __name__ == "__main__":
-    run_module_suite()

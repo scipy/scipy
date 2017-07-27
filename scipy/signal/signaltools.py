@@ -1019,12 +1019,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', np.ComplexWarning)
-        # FIXME: some cast generates a warning here
-        out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
-
+    out = sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
     return out
 
 
@@ -1117,11 +1112,7 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
 
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', np.ComplexWarning)
-        # FIXME: some cast generates a warning here
-        out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
+    out = sigtools._convolve2d(in1, in2, 0, val, bval, fillvalue)
 
     if swapped_inputs:
         out = out[::-1, ::-1]
@@ -1359,7 +1350,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
 
 def lfiltic(b, a, y, x=None):
     """
-    Construct initial conditions for lfilter.
+    Construct initial conditions for lfilter given input and output vectors.
 
     Given a linear filter (b, a) and initial conditions on the output `y`
     and the input `x`, return the initial conditions on the state vector zi
@@ -2532,7 +2523,9 @@ def detrend(data, axis=-1, type='linear', bp=0):
 
 def lfilter_zi(b, a):
     """
-    Compute an initial state `zi` for the lfilter function that corresponds
+    Construct initial conditions for lfilter for step response steady-state.
+
+    Compute an initial state `zi` for the `lfilter` function that corresponds
     to the steady state of the step response.
 
     A typical use of this function is to set the initial state so that the
@@ -2666,7 +2659,9 @@ def lfilter_zi(b, a):
 
 def sosfilt_zi(sos):
     """
-    Compute an initial state `zi` for the sosfilt function that corresponds
+    Construct initial conditions for sosfilt for step response steady-state.
+
+    Compute an initial state `zi` for the `sosfilt` function that corresponds
     to the steady state of the step response.
 
     A typical use of this function is to set the initial state so that the
@@ -2916,25 +2911,13 @@ def _filtfilt_gust(b, a, x, axis=-1, irlen=None):
 def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
              irlen=None):
     """
-    A forward-backward filter.
+    Apply a digital filter forward and backward to a signal.
 
-    This function applies a linear filter twice, once forward and once
-    backwards.  The combined filter has linear phase.
+    This function applies a linear digital filter twice, once forward and
+    once backwards.  The combined filter has zero phase and a filter order
+    twice that of the original.
 
     The function provides options for handling the edges of the signal.
-
-    When `method` is "pad", the function pads the data along the given axis
-    in one of three ways: odd, even or constant.  The odd and even extensions
-    have the corresponding symmetry about the end point of the data.  The
-    constant extension extends the data with the values at the end points. On
-    both the forward and backward passes, the initial condition of the
-    filter is found by using `lfilter_zi` and scaling it by the end point of
-    the extended data.
-
-    When `method` is "gust", Gustafsson's method [1]_ is used.  Initial
-    conditions are chosen for the forward and backward passes so that the
-    forward-backward filter gives the same result as the backward-forward
-    filter.
 
     Parameters
     ----------
@@ -2981,6 +2964,19 @@ def filtfilt(b, a, x, axis=-1, padtype='odd', padlen=None, method='pad',
 
     Notes
     -----
+    When `method` is "pad", the function pads the data along the given axis
+    in one of three ways: odd, even or constant.  The odd and even extensions
+    have the corresponding symmetry about the end point of the data.  The
+    constant extension extends the data with the values at the end points. On
+    both the forward and backward passes, the initial condition of the
+    filter is found by using `lfilter_zi` and scaling it by the end point of
+    the extended data.
+
+    When `method` is "gust", Gustafsson's method [1]_ is used.  Initial
+    conditions are chosen for the forward and backward passes so that the
+    forward-backward filter gives the same result as the backward-forward
+    filter.
+
     The option to use Gustaffson's method was added in scipy version 0.16.0.
 
     References
@@ -3146,7 +3142,7 @@ def _validate_pad(padtype, padlen, x, axis, ntaps):
 
 def sosfilt(sos, x, axis=-1, zi=None):
     """
-    Filter data along one dimension using cascaded second-order sections
+    Filter data along one dimension using cascaded second-order sections.
 
     Filter a data sequence, `x`, using a digital IIR filter defined by
     `sos`. This is implemented by performing `lfilter` for each
@@ -3242,7 +3238,7 @@ def sosfilt(sos, x, axis=-1, zi=None):
 
 def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     """
-    A forward-backward filter using cascaded second-order sections.
+    A forward-backward digital filter using cascaded second-order sections.
 
     See `filtfilt` for more complete information about this method.
 
@@ -3290,6 +3286,43 @@ def sosfiltfilt(sos, x, axis=-1, padtype='odd', padlen=None):
     Notes
     -----
     .. versionadded:: 0.18.0
+
+    Examples
+    --------
+    >>> from scipy.signal import sosfiltfilt, butter
+    >>> import matplotlib.pyplot as plt
+
+    Create an interesting signal to filter.
+
+    >>> n = 201
+    >>> t = np.linspace(0, 1, n)
+    >>> np.random.seed(123)
+    >>> x = 1 + (t < 0.5) - 0.25*t**2 + 0.05*np.random.randn(n)
+
+    Create a lowpass Butterworth filter, and use it to filter `x`.
+
+    >>> sos = butter(4, 0.125, output='sos')
+    >>> y = sosfiltfilt(sos, x)
+
+    For comparison, apply an 8th order filter using `sosfilt`.  The filter
+    is initialized using the mean of the first four values of `x`.
+
+    >>> from scipy.signal import sosfilt, sosfilt_zi
+    >>> sos8 = butter(8, 0.125, output='sos')
+    >>> zi = x[:4].mean() * sosfilt_zi(sos8)
+    >>> y2, zo = sosfilt(sos8, x, zi=zi)
+
+    Plot the results.  Note that the phase of `y` matches the input, while
+    `y2` has a significant phase delay.
+
+    >>> plt.plot(t, x, alpha=0.5, label='x(t)')
+    >>> plt.plot(t, y, label='y(t)')
+    >>> plt.plot(t, y2, label='y2(t)')
+    >>> plt.legend(framealpha=1, shadow=True)
+    >>> plt.grid(alpha=0.25)
+    >>> plt.xlabel('t')
+    >>> plt.show()
+
     """
     sos, n_sections = _validate_sos(sos)
 

@@ -4,7 +4,7 @@ Unit tests for optimization routines from minpack.py.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, run_module_suite, assert_raises,
+        assert_array_almost_equal, assert_raises,
         assert_allclose)
 import numpy as np
 from numpy import array, float64, matrix
@@ -193,7 +193,7 @@ class TestRootLM(object):
 
 
 class TestLeastSq(object):
-    def setUp(self):
+    def setup_method(self):
         x = np.linspace(0, 10, 40)
         a,b,c = 3.1, 42, -304.2
         self.x = x
@@ -274,7 +274,7 @@ class TestLeastSq(object):
 
 
 class TestCurveFit(object):
-    def setUp(self):
+    def setup_method(self):
         self.y = array([1.0, 3.2, 9.5, 13.7])
         self.x = array([1.0, 2.0, 3.0, 4.0])
 
@@ -668,6 +668,3 @@ class TestFixedPoint(object):
         n = fixed_point(func, n0, method='iteration')
         assert_allclose(n, m)
 
-
-if __name__ == "__main__":
-    run_module_suite()

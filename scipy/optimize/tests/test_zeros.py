@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 from math import sqrt, exp, sin, cos
 
 from numpy.testing import (assert_warns, assert_, 
-                           run_module_suite, assert_allclose,
+                           assert_allclose,
                            assert_equal)
 from numpy import finfo
 
@@ -112,6 +112,3 @@ class TestRootResults:
                          "           root: 1.0")
         assert_equal(repr(r), expected_repr)
 
-
-if __name__ == '__main__':
-    run_module_suite()

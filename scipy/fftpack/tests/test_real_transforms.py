@@ -81,7 +81,7 @@ class TestComplex(object):
 
 
 class _TestDCTBase(object):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = None
         self.dec = 14
         self.type = None
@@ -140,70 +140,70 @@ class _TestDCTIIIBase(_TestDCTBase):
 
 
 class TestDCTIDouble(_TestDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 1
 
 
 class TestDCTIFloat(_TestDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 1
 
 
 class TestDCTIInt(_TestDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 1
 
 
 class TestDCTIIDouble(_TestDCTIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 2
 
 
 class TestDCTIIFloat(_TestDCTIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 2
 
 
 class TestDCTIIInt(_TestDCTIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 2
 
 
 class TestDCTIIIDouble(_TestDCTIIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
 
 class TestDCTIIIFloat(_TestDCTIIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 3
 
 
 class TestDCTIIIInt(_TestDCTIIIBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 3
 
 
 class _TestIDCTBase(object):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = None
         self.dec = 14
         self.type = None
@@ -226,70 +226,70 @@ class _TestIDCTBase(object):
 
 
 class TestIDCTIDouble(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 1
 
 
 class TestIDCTIFloat(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 4
         self.type = 1
 
 
 class TestIDCTIInt(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 4
         self.type = 1
 
 
 class TestIDCTIIDouble(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 10
         self.type = 2
 
 
 class TestIDCTIIFloat(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 2
 
 
 class TestIDCTIIInt(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 2
 
 
 class TestIDCTIIIDouble(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
 
 class TestIDCTIIIFloat(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 3
 
 
 class TestIDCTIIIInt(_TestIDCTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 3
 
 
 class _TestDSTBase(object):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = None  # dtype
         self.dec = None  # number of decimals to match
         self.type = None  # dst type
@@ -308,70 +308,70 @@ class _TestDSTBase(object):
 
 
 class TestDSTIDouble(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 1
 
 
 class TestDSTIFloat(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 5
         self.type = 1
 
 
 class TestDSTIInt(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 5
         self.type = 1
 
 
 class TestDSTIIDouble(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 2
 
 
 class TestDSTIIFloat(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 6
         self.type = 2
 
 
 class TestDSTIIInt(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 6
         self.type = 2
 
 
 class TestDSTIIIDouble(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
 
 class TestDSTIIIFloat(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 7
         self.type = 3
 
 
 class TestDSTIIIInt(_TestDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 7
         self.type = 3
 
 
 class _TestIDSTBase(object):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = None
         self.dec = None
         self.type = None
@@ -394,63 +394,63 @@ class _TestIDSTBase(object):
 
 
 class TestIDSTIDouble(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 12
         self.type = 1
 
 
 class TestIDSTIFloat(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 4
         self.type = 1
 
 
 class TestIDSTIInt(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 4
         self.type = 1
 
 
 class TestIDSTIIDouble(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 2
 
 
 class TestIDSTIIFloat(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 6
         self.type = 2
 
 
 class TestIDSTIIInt(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 6
         self.type = 2
 
 
 class TestIDSTIIIDouble(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.double
         self.dec = 14
         self.type = 3
 
 
 class TestIDSTIIIFloat(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = np.float32
         self.dec = 6
         self.type = 3
 
 
 class TestIDSTIIIInt(_TestIDSTBase):
-    def setUp(self):
+    def setup_method(self):
         self.rdt = int
         self.dec = 6
         self.type = 3
@@ -521,6 +521,3 @@ class TestOverwrite(object):
             self._check_1d(idst, dtype, (16, 2), 0, overwritable)
             self._check_1d(idst, dtype, (2, 16), 1, overwritable)
 
-
-if __name__ == "__main__":
-    np.testing.run_module_suite()

@@ -69,6 +69,10 @@ Deprecated features
 are deprecated.  This was a never finished set of wrapper functions which is
 not relevant anymore.
 
+The ``fillvalue`` of ``scipy.signal.convolve2d`` will be cast directly to the
+dtypes of the input arrays in the future and checked that it is a scalar or
+an array with a single element.
+
 
 Backwards incompatible changes
 ==============================

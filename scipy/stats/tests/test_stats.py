@@ -16,8 +16,8 @@ from collections import namedtuple
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_raises, run_module_suite, assert_allclose,
-                           dec)
+                           assert_raises, assert_allclose)
+import pytest
 from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
@@ -28,7 +28,7 @@ import scipy.stats.mstats as mstats
 import scipy.stats.mstats_basic as mstats_basic
 from scipy._lib._version import NumpyVersion
 from scipy._lib.six import xrange
-from common_tests import check_named_results
+from .common_tests import check_named_results
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -341,7 +341,7 @@ class TestFisherExact(object):
             np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
                                            verbose=True)
 
-    @dec.slow
+    @pytest.mark.slow
     def test_large_numbers(self):
         # Test with some large numbers. Regression test for #1401
         pvals = [5.56e-11, 2.666e-11, 1.363e-11]  # from R
@@ -1277,7 +1277,7 @@ class TestHMean(object):
 
 
 class TestScoreatpercentile(object):
-    def setUp(self):
+    def setup_method(self):
         self.a1 = [3, 4, 5, 10, -3, -5, 6]
         self.a2 = [3, -6, -2, 8, 7, 4, 2, 1]
         self.a3 = [3., 4, 5, 10, -3, -5, -6, 7.0]
@@ -1408,7 +1408,7 @@ class TestItemfreq(object):
         dtypes = [np.int32, np.int64, np.float32, np.float64,
                   np.complex64, np.complex128]
         for dt in dtypes:
-            yield _check_itemfreq, dt
+            _check_itemfreq(dt)
 
     def test_object_arrays(self):
         a, b = self.a, self.b
@@ -1478,7 +1478,7 @@ class TestMode(object):
         assert_equal(vals[0][0], 'showers')
         assert_equal(vals[1][0], 2)
 
-    @dec.knownfailureif(sys.version_info > (3,), 'numpy github issue 641')
+    @pytest.mark.xfail(sys.version_info > (3,), reason='numpy github issue 641')
     def test_mixed_objects(self):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
@@ -2450,50 +2450,50 @@ class TestPowerDivergence(object):
 
     def test_basic(self):
         for case in power_div_1d_cases:
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    None, case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    "pearson", case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    1, case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    "log-likelihood", case.log)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    "mod-log-likelihood", case.mod_log)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    "cressie-read", case.cr)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    case.f_obs, case.f_exp, case.ddof, case.axis,
                    2/3, case.cr)
 
     def test_basic_masked(self):
         for case in power_div_1d_cases:
             mobs = np.ma.array(case.f_obs)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    None, case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    "pearson", case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    1, case.chi2)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    "log-likelihood", case.log)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    "mod-log-likelihood", case.mod_log)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    "cressie-read", case.cr)
-            yield (self.check_power_divergence,
+            self.check_power_divergence(
                    mobs, case.f_exp, case.ddof, case.axis,
                    2/3, case.cr)
 
@@ -2505,21 +2505,21 @@ class TestPowerDivergence(object):
                            case1.f_exp))
         # Check the four computational code paths in power_divergence
         # using a 2D array with axis=1.
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                f_obs, f_exp, 0, 1,
                "pearson", [case0.chi2, case1.chi2])
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                f_obs, f_exp, 0, 1,
                "log-likelihood", [case0.log, case1.log])
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                f_obs, f_exp, 0, 1,
                "mod-log-likelihood", [case0.mod_log, case1.mod_log])
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                f_obs, f_exp, 0, 1,
                "cressie-read", [case0.cr, case1.cr])
         # Reshape case0.f_obs to shape (2,2), and use axis=None.
         # The result should be the same.
-        yield (self.check_power_divergence,
+        self.check_power_divergence(
                np.array(case0.f_obs).reshape(2, 2), None, 0, None,
                "pearson", case0.chi2)
 
@@ -2554,16 +2554,16 @@ class TestPowerDivergence(object):
     def test_empty_cases(self):
         with warnings.catch_warnings():
             for case in power_div_empty_cases:
-                yield (self.check_power_divergence,
+                self.check_power_divergence(
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "pearson", case.chi2)
-                yield (self.check_power_divergence,
+                self.check_power_divergence(
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "log-likelihood", case.log)
-                yield (self.check_power_divergence,
+                self.check_power_divergence(
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "mod-log-likelihood", case.mod_log)
-                yield (self.check_power_divergence,
+                self.check_power_divergence(
                        case.f_obs, case.f_exp, case.ddof, case.axis,
                        "cressie-read", case.cr)
 
@@ -3284,9 +3284,9 @@ class TestDescribe(object):
 
 
 def test_normalitytests():
-    yield (assert_raises, ValueError, stats.skewtest, 4.)
-    yield (assert_raises, ValueError, stats.kurtosistest, 4.)
-    yield (assert_raises, ValueError, stats.normaltest, 4.)
+    assert_raises(ValueError, stats.skewtest, 4.)
+    assert_raises(ValueError, stats.kurtosistest, 4.)
+    assert_raises(ValueError, stats.normaltest, 4.)
 
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
@@ -4202,6 +4202,3 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
-
-if __name__ == "__main__":
-    run_module_suite()

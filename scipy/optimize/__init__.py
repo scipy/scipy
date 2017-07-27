@@ -248,5 +248,7 @@ from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

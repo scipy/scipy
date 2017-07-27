@@ -7,7 +7,7 @@ from io import BytesIO
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_raises,
-    assert_array_equal, run_module_suite)
+    assert_array_equal)
 from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.io import wavfile
@@ -155,8 +155,5 @@ def test_write_roundtrip():
                     for rate in (8000, 32000):
                         for channels in (1, 2, 5):
                             dt = np.dtype('%s%s%s' % (endianness, dtypechar, size))
-                            yield _check_roundtrip, realfile, rate, dt, channels
+                            _check_roundtrip(realfile, rate, dt, channels)
 
-
-if __name__ == "__main__":
-    run_module_suite()

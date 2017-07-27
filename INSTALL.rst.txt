@@ -154,11 +154,11 @@ To run the full test suite use
 
    >>> scipy.test('full')
 
-Please note that you must have version 1.0 or later of the 'nose' test
-framework installed in order to run the tests.  More information about nose is
+Please note that you must have version 1.0 or later of the Pytest test
+framework installed in order to run the tests.  More information about Pytest is
 available on the website__.
 
-__ https://nose.readthedocs.org/en/latest/
+__ https://pytest.org/
 
 COMPILER NOTES
 ==============

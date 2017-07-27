@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_equal, run_module_suite, \
+from numpy.testing import assert_array_equal, \
     assert_array_almost_equal_nulp, assert_raises, assert_almost_equal
 
 from scipy.special import gammaln, multigammaln
@@ -58,8 +58,5 @@ def test_multigammaln_array_arg():
     ]
 
     for a, d in cases:
-        yield _check_multigammaln_array_result, a, d
+        _check_multigammaln_array_result(a, d)
 
-
-if __name__ == '__main__':
-    run_module_suite()

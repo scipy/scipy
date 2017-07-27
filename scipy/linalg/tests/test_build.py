@@ -4,7 +4,8 @@ from subprocess import call, PIPE, Popen
 import sys
 import re
 
-from numpy.testing import dec, assert_
+import pytest
+from numpy.testing import assert_
 from numpy.compat import asbytes
 
 from scipy.linalg import _flapack as flapack
@@ -44,8 +45,8 @@ class FindDependenciesLdd:
 
 
 class TestF77Mismatch(object):
-    @dec.skipif(not(sys.platform[:5] == 'linux'),
-                "Skipping fortran compiler mismatch on non Linux platform")
+    @pytest.mark.skipif(not(sys.platform[:5] == 'linux'),
+                        reason="Skipping fortran compiler mismatch on non Linux platform")
     def test_lapack(self):
         f = FindDependenciesLdd()
         deps = f.grep_dependencies(flapack.__file__,

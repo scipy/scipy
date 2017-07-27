@@ -3,8 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import array, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_equal,
-                           assert_almost_equal, assert_allclose, assert_raises,
-                           run_module_suite)
+                           assert_almost_equal, assert_allclose, assert_raises)
 
 from scipy._lib.six import xrange
 from scipy import integrate
@@ -749,6 +748,3 @@ def test_gh_6721():
     # Regresssion test for gh_6721. This should not raise.
     sc.chebyt(65)(0.2)
 
-
-if __name__ == "__main__":
-    run_module_suite()

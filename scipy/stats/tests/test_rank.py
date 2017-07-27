@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_array_equal, dec
 
 from scipy.stats import rankdata, tiecorrect
@@ -214,14 +214,6 @@ _cases = (
 
 
 def test_cases():
-
-    def check_case(values, method, expected):
+    for values, method, expected in _cases:
         r = rankdata(values, method=method)
         assert_array_equal(r, expected)
-
-    for values, method, expected in _cases:
-        yield check_case, values, method, expected
-
-
-if __name__ == "__main__":
-    run_module_suite()

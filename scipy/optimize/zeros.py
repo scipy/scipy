@@ -123,6 +123,37 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
     sign. The brentq algorithm is recommended for general use in one
     dimensional problems when such an interval has been found.
 
+    Examples
+    --------
+
+    >>> def f(x):
+    ...     return (x**3 - 1)  # only one real root at x = 1
+    
+    >>> from scipy import optimize
+
+    ``fprime`` and ``fprime2`` not provided, use secant method
+    
+    >>> root = optimize.newton(f, 1.5)
+    >>> root
+    1.0000000000000016
+
+    Only ``fprime`` provided, use Newton Raphson method
+    
+    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2)
+    >>> root
+    1.0
+    
+    ``fprime2`` provided, ``fprime`` provided/not provided use parabolic
+    Halley's method
+
+    >>> root = optimize.newton(f, 1.5, fprime2=lambda x: 6 * x)
+    >>> root
+    1.0000000000000016
+    >>> root = optimize.newton(f, 1.5, fprime=lambda x: 3 * x**2,
+    ...                        fprime2=lambda x: 6 * x)
+    >>> root
+    1.0
+
     """
     if tol <= 0:
         raise ValueError("tol too small (%g <= 0)" % tol)
@@ -233,6 +264,22 @@ def bisect(f, a, b, args=(),
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
 
+    Examples
+    --------
+
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.bisect(f, 0, 2)
+    >>> root
+    1.0
+
+    >>> root = optimize.bisect(f, -2, 0)
+    >>> root
+    -1.0
+
     See Also
     --------
     brentq, brenth, bisect, newton
@@ -310,6 +357,22 @@ def ridder(f, a, b, args=(),
 
     The routine used here diverges slightly from standard presentations in
     order to be a bit more careful of tolerance.
+
+    Examples
+    --------
+
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.ridder(f, 0, 2)
+    >>> root
+    1.0
+
+    >>> root = optimize.ridder(f, -2, 0)
+    >>> root
+    -1.0
 
     References
     ----------
@@ -418,6 +481,20 @@ def brentq(f, a, b, args=(),
     -----
     `f` must be continuous.  f(a) and f(b) must have opposite signs.
 
+    Examples
+    --------
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.brentq(f, -2, 0)
+    >>> root
+    -1.0
+
+    >>> root = optimize.brentq(f, 0, 2)
+    >>> root
+    1.0
 
     References
     ----------
@@ -498,6 +575,21 @@ def brenth(f, a, b, args=(),
     r : RootResults (present if ``full_output = True``)
         Object containing information about the convergence.  In particular,
         ``r.converged`` is True if the routine converged.
+
+    Examples
+    --------
+    >>> def f(x):
+    ...     return (x**2 - 1)
+
+    >>> from scipy import optimize
+
+    >>> root = optimize.brenth(f, -2, 0)
+    >>> root
+    -1.0
+
+    >>> root = optimize.brenth(f, 0, 2)
+    >>> root
+    1.0
 
     See Also
     --------

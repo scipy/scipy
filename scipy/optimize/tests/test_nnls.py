@@ -4,7 +4,7 @@ Sep 2008
 """
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import assert_, run_module_suite
+from numpy.testing import assert_
 
 from scipy.optimize import nnls
 from numpy import arange, dot
@@ -20,6 +20,3 @@ class TestNNLS(object):
         x, res = nnls(a,y)
         assert_(res < 1e-7)
         assert_(norm(dot(a,x)-y) < 1e-7)
-
-if __name__ == "__main__":
-    run_module_suite()

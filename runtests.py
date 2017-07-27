@@ -32,7 +32,7 @@ Generate C code coverage listing under build/lcov/:
 
 PROJECT_MODULE = "scipy"
 PROJECT_ROOT_FILES = ['scipy', 'LICENSE.txt', 'setup.py']
-SAMPLE_TEST = "scipy/special/tests/test_basic.py:test_xlogy"
+SAMPLE_TEST = "scipy.fftpack.tests.test_real_transforms::TestIDSTIIIInt"
 SAMPLE_SUBMODULE = "optimize"
 
 EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
@@ -57,6 +57,7 @@ sys.path.pop(0)
 import shutil
 import subprocess
 import time
+import datetime
 import imp
 from argparse import ArgumentParser, REMAINDER
 
@@ -178,8 +179,7 @@ def main(argv):
         fn = os.path.join(dst_dir, 'coverage_html.js')
         if os.path.isdir(dst_dir) and os.path.isfile(fn):
             shutil.rmtree(dst_dir)
-        extra_argv += ['--cover-html',
-                       '--cover-html-dir='+dst_dir]
+        extra_argv += ['--cov-report=html:' + dst_dir]
 
     if args.refguide_check:
         cmd = [os.path.join(ROOT_DIR, 'tools', 'refguide_check.py'),
@@ -239,53 +239,27 @@ def main(argv):
             os.execv(sys.executable, [sys.executable] + cmd)
             sys.exit(1)
 
-    test_dir = os.path.join(ROOT_DIR, 'build', 'test')
-
     if args.build_only:
         sys.exit(0)
-    elif args.submodule:
-        modname = PROJECT_MODULE + '.' + args.submodule
-        try:
-            __import__(modname)
-            test = sys.modules[modname].test
-        except (ImportError, KeyError, AttributeError) as e:
-            print("Cannot run tests for %s (%s)" % (modname, e))
-            sys.exit(2)
-    elif args.tests:
-        def fix_test_path(x):
-            # fix up test path
-            p = x.split(':')
-            p[0] = os.path.relpath(os.path.abspath(p[0]),
-                                   test_dir)
-            return ':'.join(p)
-
-        tests = [fix_test_path(x) for x in args.tests]
-
-        def test(*a, **kw):
-            extra_argv = kw.pop('extra_argv', ())
-            extra_argv = extra_argv + tests[1:]
-            kw['extra_argv'] = extra_argv
-            from numpy.testing import Tester
-            from scipy.version import version as __version__
-
-            if ".dev0" in __version__:
-                mode = "develop"
-            else:
-                mode = "release"
-            return Tester(tests[0], raise_warnings=mode).test(*a, **kw)
     else:
         __import__(PROJECT_MODULE)
         test = sys.modules[PROJECT_MODULE].test
 
-    # Run the tests under build/test
-    try:
-        shutil.rmtree(test_dir)
-    except OSError:
-        pass
-    try:
-        os.makedirs(test_dir)
-    except OSError:
-        pass
+    if args.submodule:
+        tests = [PROJECT_MODULE + "." + args.submodule]
+    elif args.tests:
+        tests = args.tests
+    else:
+        tests = None
+
+    # Run the tests
+
+    if not args.no_build:
+        test_dir = site_dir
+    else:
+        test_dir = os.path.join(ROOT_DIR, 'build', 'test')
+        if not os.path.isdir(test_dir):
+            os.makedirs(test_dir)
 
     shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
                     os.path.join(test_dir, '.coveragerc'))
@@ -297,7 +271,8 @@ def main(argv):
                       verbose=args.verbose,
                       extra_argv=extra_argv,
                       doctests=args.doctests,
-                      coverage=args.coverage)
+                      coverage=args.coverage,
+                      tests=tests)
     finally:
         os.chdir(cwd)
 
@@ -368,6 +343,7 @@ def build_project(args):
     env['PYTHONPATH'] = site_dir
 
     log_filename = os.path.join(ROOT_DIR, 'build.log')
+    start_time = datetime.datetime.now()
 
     if args.show_build_log:
         ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
@@ -390,7 +366,8 @@ def build_project(args):
                 if time.time() - last_blip > 60:
                     log_size = os.stat(log_filename).st_size
                     if log_size > last_log_size:
-                        print("    ... build in progress")
+                        elapsed = datetime.datetime.now() - start_time
+                        print("    ... build in progress ({0} elapsed)".format(elapsed))
                         last_blip = time.time()
                         last_log_size = log_size
 
@@ -399,13 +376,15 @@ def build_project(args):
             p.terminate()
             raise
 
+    elapsed = datetime.datetime.now() - start_time
+
     if ret == 0:
-        print("Build OK")
+        print("Build OK ({0} elapsed)".format(elapsed))
     else:
         if not args.show_build_log:
             with open(log_filename, 'r') as f:
                 print(f.read())
-            print("Build failed!")
+            print("Build failed! ({0} elapsed)".format(elapsed))
         sys.exit(1)
 
     return site_dir

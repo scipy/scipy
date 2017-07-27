@@ -4,7 +4,7 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 
-from numpy.testing import assert_raises, assert_, run_module_suite
+from numpy.testing import assert_raises, assert_
 
 import scipy.io.matlab.byteordercodes as sibc
 
@@ -28,6 +28,3 @@ def test_to_numpy():
     for code in ('big', '>', 'b', 'B', 'be'):
         assert_(sibc.to_numpy_code(code) == '>')
     assert_raises(ValueError, sibc.to_numpy_code, 'silly string')
-
-if __name__ == "__main__":
-    run_module_suite()
