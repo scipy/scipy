@@ -414,6 +414,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         else:
             return NotImplemented
 
+    def __reduce__(self):
+        return dict.__reduce__(self)
+
     # What should len(sparse) return? For consistency with dense matrices,
     # perhaps it should be the number of rows?  For now it returns the number
     # of non-zeros.

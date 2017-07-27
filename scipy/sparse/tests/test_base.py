@@ -3942,6 +3942,17 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         b[:,0] = 0
         assert_(len(b.keys()) == 0, "Unexpected entries in keys")
 
+
+
+    def test_pickle(self):
+        import pickle
+        m = self.spmatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        m_load = pickle.loads(pickle.dumps(m))
+        assert_(m.shape == m_load.shape)
+        assert_(m.items() == m_load.items())
+        assert_(m.__dict__ == m_load.__dict__)
+        assert_(m.maxprint == m_load.maxprint)
+
 TestDOK.init_class()
 
 
