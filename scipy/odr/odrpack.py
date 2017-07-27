@@ -1056,7 +1056,7 @@ class ODR(object):
         self.iprint = ip[0]*1000 + ip[1]*100 + ip[2]*10 + ip[3]
 
     def run(self):
-        """ Run the fitting routine with all of the information given.
+        """ Run the fitting routine with all of the information given and with ``full_output=1``.
 
         Returns
         -------
