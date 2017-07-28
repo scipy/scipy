@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """Install the built package and run the tests."""
-
+from __future__ import print_function
 import os
 
 # FIXME: Should handle relative import better!
@@ -13,7 +13,7 @@ clrnull = '\033[0m'
 def color_print(msg):
     """Add color to this print output."""
     clrmsg = clrgreen + msg + clrnull
-    print clrmsg
+    print(clrmsg)
 
 distdir = os.path.join(SRC_DIR, DIST_DIR)
 
@@ -31,9 +31,9 @@ pkgpath = os.path.abspath(os.path.join(SRC_DIR, DIST_DIR, pkg))
 color_print('Installing package: %s' % pkgpath)
 
 # Run the installer
-print
+print("")
 color_print('Installer requires admin rights, you will be prompted for sudo')
-print
+print("")
 cmd = 'sudo installer -verbose -package %s -target /' % pkgpath
 #color_print(cmd)
 shellcmd(cmd)
@@ -41,9 +41,9 @@ shellcmd(cmd)
 # Null out the PYTHONPATH so we're sure to test the Installed version of scipy
 os.environ['PYTHONPATH'] = '0'
 
-print
+print("")
 color_print('Install successful!')
 color_print('Running scipy test suite!')
-print
+print("")
 import scipy
 scipy.test()

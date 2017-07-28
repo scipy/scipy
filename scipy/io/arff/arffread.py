@@ -410,7 +410,7 @@ class MetaData(object):
         data, meta = loadarff('iris.arff')
         # This will print the attributes names of the iris.arff dataset
         for i in meta:
-            print i
+            print(i)
         # This works too
         meta.names()
         # Getting attribute type
@@ -511,7 +511,7 @@ def loadarff(f):
     Examples
     --------
     >>> from scipy.io import arff
-    >>> from cStringIO import StringIO
+    >>> from io import StringIO
     >>> content = \"\"\"
     ... @relation foo
     ... @attribute width  numeric

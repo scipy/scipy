@@ -1641,7 +1641,7 @@ class RectSphereBivariateSpline(SphereBivariateSpline):
 
     >>> fig2 = plt.figure()
     >>> s = [3e9, 2e9, 1e9, 1e8]
-    >>> for ii in xrange(len(s)):
+    >>> for ii in range(len(s)):
     ...     lut = RectSphereBivariateSpline(lats, lons, data, s=s[ii])
     ...     data_interp = lut.ev(new_lats.ravel(),
     ...                          new_lons.ravel()).reshape((360, 180)).T

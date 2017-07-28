@@ -25,8 +25,8 @@ from scipy.special import beta
 #
 # t = mp.taylor(mpvar, 0, 8)
 # p, q = mp.pade(t, 4, 4)
-# print "p =", [mp.fp.mpf(c) for c in p]
-# print "q =", [mp.fp.mpf(c) for c in q]
+# print("p =", [mp.fp.mpf(c) for c in p])
+# print("q =", [mp.fp.mpf(c) for c in q])
 #---------------------------------------------------------------------------
 
 # Pade coefficients for the Tukey Lambda variance function.
@@ -130,8 +130,8 @@ def tukeylambda_variance(lam):
 # t = mp.taylor(mpkurt, 0, 9, method='quad', radius=0.01)
 # t = [mp.chop(c, tol=1e-15) for c in t]
 # p, q = mp.pade(t, 4, 4)
-# print "p =", [mp.fp.mpf(c) for c in p]
-# print "q =", [mp.fp.mpf(c) for c in q]
+# print("p =", [mp.fp.mpf(c) for c in p])
+# print("q =", [mp.fp.mpf(c) for c in q])
 #---------------------------------------------------------------------------
 
 # Pade coefficients for the Tukey Lambda kurtosis function.

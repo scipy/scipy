@@ -72,8 +72,8 @@ def solve(preconditioning=True):
     sol = root(residual, guess, method='krylov',
                options={'disp': True,
                         'jac_options': {'inner_M': M}})
-    print 'Residual', abs(residual(sol.x)).max()
-    print 'Evaluations', count[0]
+    print('Residual', abs(residual(sol.x)).max())
+    print('Evaluations', count[0])
 
     return sol.x
 

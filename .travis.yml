@@ -22,7 +22,6 @@ matrix:
     - python: 2.7
       env:
         - TESTMODE=fast
-        - REFGUIDE_CHECK=1
         - COVERAGE=
         - NPY_RELAXED_STRIDES_CHECKING=1
         - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.4"
@@ -45,6 +44,7 @@ matrix:
         - TESTMODE=full
         - COVERAGE=--coverage
         - NUMPYSPEC=numpy
+        - REFGUIDE_CHECK=1
     - python: 3.5
       env:
         - TESTMODE=fast

@@ -2100,7 +2100,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=array(3), minmax=(masked_array(data = 0,
+    DescribeResult(nobs=3, minmax=(masked_array(data = 0,
                  mask = False,
            fill_value = 999999)
     , masked_array(data = 2,

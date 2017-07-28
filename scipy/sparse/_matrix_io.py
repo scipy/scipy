@@ -44,7 +44,7 @@ def save_npz(file, matrix, compressed=True):
     >>> import scipy.sparse
     >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
     >>> sparse_matrix
-    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_matrix.todense()
     matrix([[0, 0, 3],
@@ -54,7 +54,7 @@ def save_npz(file, matrix, compressed=True):
     >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
 
     >>> sparse_matrix
-    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_matrix.todense()
     matrix([[0, 0, 3],
@@ -110,7 +110,7 @@ def load_npz(file):
     >>> import scipy.sparse
     >>> sparse_matrix = scipy.sparse.csc_matrix(np.array([[0, 0, 3], [4, 0, 0]]))
     >>> sparse_matrix
-    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_matrix.todense()
     matrix([[0, 0, 3],
@@ -120,7 +120,7 @@ def load_npz(file):
     >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
 
     >>> sparse_matrix
-    <2x3 sparse matrix of type '<type 'numpy.int64'>'
+    <2x3 sparse matrix of type '<class 'numpy.int64'>'
         with 2 stored elements in Compressed Sparse Column format>
     >>> sparse_matrix.todense()
     matrix([[0, 0, 3],
