@@ -23,34 +23,18 @@ matrix:
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NPY_RELAXED_STRIDES_CHECKING=1
-        - NUMPYSPEC="--upgrade git+git://github.com/numpy/numpy.git@v1.10.4"
-      addons:
-        apt:
-          packages:
-            - libatlas-dev
-            - libatlas-base-dev
-            - liblapack-dev
-            - gfortran
-            - libgmp-dev
-            - libmpfr-dev
-            - ccache
-            - libfreetype6-dev
-            - libpng-dev
-            - zlib1g-dev
-            - texlive-fonts-recommended
+        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
     - python: 3.6
       env:
         - TESTMODE=full
         - COVERAGE=--coverage
         - NUMPYSPEC=numpy
-        - REFGUIDE_CHECK=1
     - python: 3.5
       env:
         - TESTMODE=fast
         - COVERAGE=
-        - NUMPYSPEC="--pre --upgrade --timeout=60 -f $PRE_WHEELS numpy"
         - USE_WHEEL=1
+        - REFGUIDE_CHECK=1
     - python: 3.4
       env:
         - TESTMODE=fast
