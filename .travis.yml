@@ -104,13 +104,13 @@ before_install:
       ln -s ccache /usr/local/bin/clang
       ln -s ccache /usr/local/bin/clang++
       export USE_CCACHE=1
-      export CCACHE_COMPRESS=1
       export CCACHE_MAXSIZE=200M
       export CCACHE_CPP2=1
       export CFLAGS="-arch x86_64"
       export CXXFLAGS="-arch x86_64"
       printenv
     fi
+  - export CCACHE_COMPRESS=1
   - python --version # just to check
   - export NPY_NUM_BUILD_JOBS=2
   - uname -a
