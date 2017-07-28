@@ -71,7 +71,7 @@ to find all pairs where exactly one character is different.  We'll start by
 converting each word to a three-dimensional vector:
 
     >>> word_bytes = np.ndarray((word_list.size, word_list.itemsize),
-    ...                         dtype='int8',
+    ...                         dtype='uint8',
     ...                         buffer=word_list.data)
     >>> # each unicode character is four bytes long. We only need first byte
     >>> # we know that there are three characters in each word
