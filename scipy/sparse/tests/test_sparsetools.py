@@ -76,7 +76,14 @@ class TestInt32Overflow(object):
     def setup_method(self):
         assert self.n**2 > np.iinfo(np.int32).max
 
-        check_free_memory(9000)
+        # check there's enough memory even if everything is run at the
+        # same time
+        try:
+            parallel_count = int(os.environ.get('PYTEST_XDIST_WORKER_COUNT', '1'))
+        except ValueError:
+            parallel_count = np.inf
+
+        check_free_memory(3000 * parallel_count)
 
     def teardown_method(self):
         gc.collect()
