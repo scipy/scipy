@@ -39,6 +39,7 @@ Basics
    triu - Construct an upper-triangular matrix from a given matrix
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation
+   subspace_angles - Compute the subspace angles between two matrices
    LinAlgError
 
 Eigenvalue Problems

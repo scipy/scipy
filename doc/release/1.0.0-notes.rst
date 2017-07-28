@@ -45,6 +45,9 @@ which diagonal to return.
 `scipy.sparse.linalg.lsmr` now accepts an initial guess, yielding potentially
 faster convergence.
 
+The function `scipy.linalg.subspace_angles` has been added to compute the
+subspace angles between two matrices.
+
 `scipy.optimize` improvements
 -----------------------------
 
