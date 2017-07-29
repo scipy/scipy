@@ -378,7 +378,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
         self.sum_duplicates()
         dok = dok_matrix((self.shape), dtype=self.dtype)
-        dok.update(izip(izip(self.row,self.col),self.data))
+        dok._update(izip(izip(self.row,self.col),self.data))
 
         return dok
 

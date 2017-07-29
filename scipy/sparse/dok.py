@@ -94,7 +94,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             if dtype is not None:
                 arg1 = arg1.astype(dtype)
 
-            self.update(arg1)
+            dict.update(self, arg1)
             self.shape = arg1.shape
             self.dtype = arg1.dtype
         else:  # Dense ctor
@@ -108,9 +108,22 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
             from .coo import coo_matrix
             d = coo_matrix(arg1, dtype=dtype).todok()
-            self.update(d)
+            dict.update(self, d)
             self.shape = arg1.shape
             self.dtype = d.dtype
+
+    def update(self, val):
+        # Prevent direct usage of update
+        raise NotImplementedError("Direct modification of dok_matrix elements "
+                                  "is not allowed")
+
+    def _update(self, data):
+        """ An update method for dict data defined for direct access to
+        `dok_matrix` data. Main purpose is to be used for effient conversion
+        from other spmatrix classes. Has no checking if `data` is valid.
+        """
+        return dict.update(self, data)
+
 
     def getnnz(self, axis=None):
         if axis is not None:
@@ -307,7 +320,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             # the two matrices to be summed.  Would this be a good idea?
             res_dtype = upcast(self.dtype, other.dtype)
             new = dok_matrix(self.shape, dtype=res_dtype)
-            new.update(self)
+            dict.update(new, self)
             with np.errstate(over='ignore'):
                 for key in other.keys():
                     new[key] += other[key]
@@ -324,15 +337,15 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
             M, N = self.shape
-            for i, j in itertools.product(xrange(M), xrange(N)):
-                aij = dict.get(self, (i, j), 0) + other
+            for key in itertools.product(xrange(M), xrange(N)):
+                aij = dict.get(self, (key), 0) + other
                 if aij:
-                    new[i, j] = aij
+                    new[key] = aij
         elif isspmatrix_dok(other):
             if other.shape != self.shape:
                 raise ValueError("Matrix dimensions are not equal.")
             new = dok_matrix(self.shape, dtype=self.dtype)
-            new.update(self)
+            dict.update(new, self)
             for key in other:
                 new[key] += other[key]
         elif isspmatrix(other):
