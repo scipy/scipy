@@ -78,6 +78,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
+        # TODO: constructor from iterable?
         dict.__init__(self)
         spmatrix.__init__(self)
 
@@ -321,8 +322,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             new = dok_matrix(self.shape, dtype=res_dtype)
             dict.update(new, self)
             with np.errstate(over='ignore'):
-                for key in other.keys():
-                    new[key] += other[key]
+                dict.update(new,
+                           ((k, new[k] + other[k]) for k in iterkeys(other)))
         elif isspmatrix(other):
             csc = self.tocsc()
             new = csc + other
@@ -345,8 +346,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 raise ValueError("Matrix dimensions are not equal.")
             new = dok_matrix(self.shape, dtype=self.dtype)
             dict.update(new, self)
-            for key in other:
-                new[key] += other[key]
+            dict.update(new,
+                       ((k, self[k] + other[k]) for k in iterkeys(other)))
         elif isspmatrix(other):
             csc = self.tocsc()
             new = csc + other
@@ -361,17 +362,14 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             raise NotImplementedError('Negating a sparse boolean matrix is not'
                                       ' supported.')
         new = dok_matrix(self.shape, dtype=self.dtype)
-        for key in self.keys():
-            new[key] = -self[key]
-
+        dict.update(new, ((k, -self[k]) for k in iterkeys(self)))
         return new
 
     def _mul_scalar(self, other):
         res_dtype = upcast_scalar(self.dtype, other)
         # Multiply this scalar by every element.
         new = dok_matrix(self.shape, dtype=res_dtype)
-        for (key, val) in iteritems(self):
-            new[key] = val * other
+        dict.update(new, ((k, v * other) for k, v in iteritems(self)))
         return new
 
     def _mul_vector(self, other):
@@ -392,32 +390,23 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def __imul__(self, other):
         if isscalarlike(other):
-            for (key, val) in iteritems(self):
-                self[key] = val * other
-            # new.dtype.char = self.dtype.char
+            dict.update(self, ((k, v * other) for k, v in iteritems(self)))
             return self
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __truediv__(self, other):
         if isscalarlike(other):
             res_dtype = upcast_scalar(self.dtype, other)
             new = dok_matrix(self.shape, dtype=res_dtype)
-            for (key, val) in iteritems(self):
-                new[key] = val / other
-            # new.dtype.char = self.dtype.char
+            dict.update(new, ((k, v / other) for k, v in iteritems(self)))
             return new
-        else:
-            return self.tocsr() / other
+        return self.tocsr() / other
 
     def __itruediv__(self, other):
         if isscalarlike(other):
-            # Multiply this scalar by every element.
-            for (key, val) in iteritems(self):
-                self[key] = val / other
+            dict.update(self, ((k, v / other) for k, v in iteritems(self)))
             return self
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __reduce__(self):
         return dict.__reduce__(self)
@@ -434,10 +423,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype, copy=copy)
-
-        for (left, right), value in iteritems(self):
-            new[right, left] = value
-
+        dict.update(new, (((right, left), val)
+                          for (left, right), val in iteritems(self)))
         return new
 
     transpose.__doc__ = spmatrix.transpose.__doc__
@@ -446,32 +433,30 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         """ Return the conjugate transpose. """
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype)
-
-        for (left, right), value in iteritems(self):
-            new[right, left] = np.conj(value)
+        dict.update(new, (((right, left), np.conj(val))
+                          for (left, right), val in iteritems(self)))
         return new
 
     def copy(self):
         new = dok_matrix(self.shape, dtype=self.dtype)
-        new._update(self)
+        dict.update(new, self)
         return new
 
     copy.__doc__ = spmatrix.copy.__doc__
 
     def getrow(self, i):
-        """ Returns a copy of row i of the matrix as a (1 x n) DOK matrix. """
-        out = self.__class__((1, self.shape[1]), dtype=self.dtype)
-        for j in range(self.shape[1]):
-            out[0, j] = self[i, j]
-        return out
+        """ Returns a copy of row with index `i` of the matrix as a (1 x n) DOK
+        matrix. """
+        new = dok_matrix((1, self.shape[1]), dtype=self.dtype)
+        dict.update(new, (((0, j), self[i, j]) for j in xrange(self.shape[1])))
+        return new
 
     def getcol(self, j):
-        """ Returns a copy of column j of the matrix as a (m x 1) DOK matrix.
-        """
-        out = self.__class__((self.shape[0], 1), dtype=self.dtype)
-        for i in range(self.shape[0]):
-            out[i, 0] = self[i, j]
-        return out
+        """ Returns a copy of column with index j of the matrix as a (m x 1)
+        DOK matrix. """
+        new = dok_matrix((self.shape[0], 1), dtype=self.dtype)
+        dict.update(new, (((i, 0), self[i, j]) for i in xrange(self.shape[0])))
+        return new
 
     def tocoo(self, copy=False):
         from .coo import coo_matrix
@@ -480,8 +465,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         idx_dtype = get_index_dtype(maxval=max(self.shape))
         data = np.fromiter(itervalues(self), dtype=self.dtype, count=self.nnz)
-        I = np.fromiter((i for i,_ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
-        J = np.fromiter((j for _,j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        I = np.fromiter((i for i, _ in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
+        J = np.fromiter((j for _, j in iterkeys(self)), dtype=idx_dtype, count=self.nnz)
         A = coo_matrix((data, (I, J)), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
