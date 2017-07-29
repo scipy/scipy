@@ -110,9 +110,12 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     -----
     See `splev` for evaluation of the spline and its derivatives.
     The number of dimensions N must be smaller than 11.
-    The c array retruned consists of k+1 zeros at the end
-    while BSpline does not require zero-padding. 
-    Splrep also does not return padded-zeros in contrast to splprep.
+
+    The number of coefficients in the `c` array is ``k+1`` less then the number
+    of knots, ``len(t)``. This is in contrast with `splrep`, which zero-pads
+    the array of coefficients to have the same length as the array of knots.
+    These additional coefficients are ignored by evaluation routines, `splev`
+    and `BSpline`.
 
     References
     ----------
@@ -248,6 +251,11 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     If provided, knots `t` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
     ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
+
+    This routine zero-pads the coefficients array ``c`` to have the same length
+    as the array of knots ``t`` (the trailing ``k + 1`` coefficients are ignored
+    by the evaluation routines, `splev` and `BSpline`.) This is in contrast with
+    `splprep`, which does not zero-pad the coefficients.
 
     References
     ----------
