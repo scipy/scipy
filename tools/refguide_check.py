@@ -461,6 +461,7 @@ CHECK_NAMESPACE = {
       'uint64': np.uint64,
       'int8': np.int8,
       'int32': np.int32,
+      'float32': np.float32,
       'float64': np.float64,
       'dtype': np.dtype,
       'nan': np.nan,
