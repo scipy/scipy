@@ -85,6 +85,10 @@ setup.cfg
 *.sql
 *.sqlite
 
+# pytest cache #
+################
+.cache/*
+
 # Patches #
 ###########
 *.patch
