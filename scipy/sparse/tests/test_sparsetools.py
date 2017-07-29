@@ -11,6 +11,7 @@ from numpy.testing import (assert_raises, assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
 from scipy.sparse.sputils import supported_dtypes
+from scipy._lib._testutils import check_free_memory
 
 import pytest
 
@@ -305,42 +306,3 @@ def test_endianness():
 
     assert_allclose(a.dot(v), [1, 3, 6, 5])
     assert_allclose(b.dot(v), [1, 3, 6, 5])
-
-
-def check_free_memory(free_mb):
-    if not sys.platform.startswith('linux'):
-        pytest.skip("Test runs only on linux.")
-
-    meminfo = get_mem_info_linux()
-
-    if meminfo['memfree'] + meminfo['cached'] < free_mb * 1e6:
-        pytest.skip("test requires %d MB of free memory" % (int(free_mb),))
-
-
-def get_mem_info_linux():
-    """
-    Get information about available memory.
-
-    Returns a dict of items in /proc/meminfo
-    """
-    info = {}
-    with open('/proc/meminfo', 'r') as f:
-        for line in f:
-            p = line.split()
-            info[p[0].strip(':').lower()] = float(p[1]) * 1e3
-    return info
-
-
-def get_own_memusage_linux():
-    """
-    Return the memory usage of the current process (in bytes)
-    """
-    with open('/proc/%d/status' % os.getpid(), 'r') as f:
-        procdata = f.read()
-
-    m = re.search(r'VmRSS:\s*(\d+)\s*kB', procdata, re.S | re.I)
-    if m is not None:
-        memusage = float(m.group(1)) * 1e3
-        return memusage
-
-    return np.nan
