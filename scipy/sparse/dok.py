@@ -152,7 +152,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         j_intlike = isintlike(j)
 
         if i_intlike and j_intlike:
-            # Scalar index case
             i = int(i)
             j = int(j)
             if i < 0:
@@ -260,14 +259,14 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         x, _ = np.broadcast_arrays(x, i)
 
         if x.shape != i.shape:
-            raise ValueError("shape mismatch in assignment")
+            raise ValueError("Shape mismatch in assignment.")
 
         if np.size(x) == 0:
             return
 
         min_i = i.min()
         if min_i < -self.shape[0] or i.max() >= self.shape[0]:
-            raise IndexError('index (%d) out of range -%d to %d)' %
+            raise IndexError('Index (%d) out of range -%d to %d.' %
                              (i.min(), self.shape[0], self.shape[0]-1))
         if min_i < 0:
             i = i.copy()
@@ -275,7 +274,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         min_j = j.min()
         if min_j < -self.shape[1] or j.max() >= self.shape[1]:
-            raise IndexError('index (%d) out of range -%d to %d)' %
+            raise IndexError('Index (%d) out of range -%d to %d.' %
                              (j.min(), self.shape[1], self.shape[1]-1))
         if min_j < 0:
             j = j.copy()
@@ -291,7 +290,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                     del self[key]
 
     def __add__(self, other):
-        if isscalarlike(other):  # check if argument is a scalar
+        if isscalarlike(other):
             res_dtype = upcast_scalar(self.dtype, other)
             new = dok_matrix(self.shape, dtype=res_dtype)
             # Add this scalar to every element.
@@ -322,9 +321,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return new
 
     def __radd__(self, other):
-        if isscalarlike(other):  # Check if argument is a scalar
+        if isscalarlike(other):
             new = dok_matrix(self.shape, dtype=self.dtype)
-            # Add this scalar to every element.
             M, N = self.shape
             for i, j in itertools.product(xrange(M), xrange(N)):
                 aij = dict.get(self, (i, j), 0) + other
@@ -332,7 +330,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                     new[i, j] = aij
         elif isspmatrix_dok(other):
             if other.shape != self.shape:
-                raise ValueError("matrix dimensions are not equal.")
+                raise ValueError("Matrix dimensions are not equal.")
             new = dok_matrix(self.shape, dtype=self.dtype)
             new.update(self)
             for key in other:
@@ -348,8 +346,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def __neg__(self):
         if self.dtype.kind == 'b':
-            raise NotImplementedError('negating a sparse boolean '
-                                      'matrix is not supported')
+            raise NotImplementedError('Negating a sparse boolean matrix is not'
+                                      ' supported.')
         new = dok_matrix(self.shape, dtype=self.dtype)
         for key in self.keys():
             new[key] = -self[key]
@@ -366,23 +364,22 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def _mul_vector(self, other):
         # matrix * vector
-        result = np.zeros(self.shape[0], dtype=upcast(self.dtype,other.dtype))
-        for (i,j),v in iteritems(self):
+        result = np.zeros(self.shape[0], dtype=upcast(self.dtype, other.dtype))
+        for (i, j), v in iteritems(self):
             result[i] += v * other[j]
         return result
 
     def _mul_multivector(self, other):
         # matrix * multivector
-        M,N = self.shape
-        n_vecs = other.shape[1]  # number of column vectors
-        result = np.zeros((M,n_vecs), dtype=upcast(self.dtype,other.dtype))
-        for (i,j),v in iteritems(self):
+        M, N = self.shape
+        n_vecs = other.shape[1]
+        result = np.zeros((M, n_vecs), dtype=upcast(self.dtype, other.dtype))
+        for (i, j), v in iteritems(self):
             result[i,:] += v * other[j,:]
         return result
 
     def __imul__(self, other):
         if isscalarlike(other):
-            # Multiply this scalar by every element.
             for (key, val) in iteritems(self):
                 self[key] = val * other
             # new.dtype.char = self.dtype.char
@@ -394,7 +391,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         if isscalarlike(other):
             res_dtype = upcast_scalar(self.dtype, other)
             new = dok_matrix(self.shape, dtype=res_dtype)
-            # Multiply this scalar by every element.
             for (key, val) in iteritems(self):
                 new[key] = val / other
             # new.dtype.char = self.dtype.char
@@ -420,48 +416,45 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def transpose(self, axes=None, copy=False):
         if axes is not None:
-            raise ValueError(("Sparse matrices do not support "
-                              "an 'axes' parameter because swapping "
-                              "dimensions is the only logical permutation."))
+            raise ValueError("Sparse matrices do not support "
+                             "an 'axes' parameter because swapping "
+                             "dimensions is the only logical permutation.")
 
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype, copy=copy)
 
-        for (lhs, rhs), value in iteritems(self):
-            new[rhs, lhs] = value
+        for (left, right), value in iteritems(self):
+            new[right, left] = value
 
         return new
 
     transpose.__doc__ = spmatrix.transpose.__doc__
 
     def conjtransp(self):
-        """ Return the conjugate transpose
-        """
+        """ Return the conjugate transpose. """
         M, N = self.shape
         new = dok_matrix((N, M), dtype=self.dtype)
-        for key, value in iteritems(self):
-            new[key[1], key[0]] = np.conj(value)
+
+        for (left, right), value in iteritems(self):
+            new[right, left] = np.conj(value)
         return new
 
     def copy(self):
         new = dok_matrix(self.shape, dtype=self.dtype)
-        new.update(self)
+        new._update(self)
         return new
 
     copy.__doc__ = spmatrix.copy.__doc__
 
     def getrow(self, i):
-        """Returns a copy of row i of the matrix as a (1 x n)
-        DOK matrix.
-        """
+        """ Returns a copy of row i of the matrix as a (1 x n) DOK matrix. """
         out = self.__class__((1, self.shape[1]), dtype=self.dtype)
         for j in range(self.shape[1]):
             out[0, j] = self[i, j]
         return out
 
     def getcol(self, j):
-        """Returns a copy of column j of the matrix as a (m x 1)
-        DOK matrix.
+        """ Returns a copy of column j of the matrix as a (m x 1) DOK matrix.
         """
         out = self.__class__((self.shape[0], 1), dtype=self.dtype)
         for i in range(self.shape[0]):
@@ -486,8 +479,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     def todok(self, copy=False):
         if copy:
             return self.copy()
-        else:
-            return self
+        return self
 
     todok.__doc__ = spmatrix.todok.__doc__
 
@@ -502,23 +494,15 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         Any non-zero elements that lie outside the new shape are removed.
         """
         if not isshape(shape):
-            raise TypeError("dimensions must be a 2-tuple of positive"
-                             " integers")
+            raise TypeError("Dimensions must be a 2-tuple of positive integers")
         newM, newN = shape
         M, N = self.shape
         if newM < M or newN < N:
             # Remove all elements outside new dimensions
-            for (i, j) in _list(self.keys()):
+            for (i, j) in list(self.keys()):
                 if i >= newM or j >= newN:
                     del self[i, j]
         self._shape = shape
-
-
-def _list(x):
-    """Force x to a list."""
-    if not isinstance(x, list):
-        x = list(x)
-    return x
 
 
 def isspmatrix_dok(x):
