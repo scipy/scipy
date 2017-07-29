@@ -101,10 +101,10 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             try:
                 arg1 = np.asarray(arg1)
             except:
-                raise TypeError('invalid input format')
+                raise TypeError('Invalid input format.')
 
             if len(arg1.shape) != 2:
-                raise TypeError('expected rank <=2 dense array or matrix')
+                raise TypeError('Expected rank <=2 dense array or matrix.')
 
             from .coo import coo_matrix
             d = coo_matrix(arg1, dtype=dtype).todok()
@@ -114,8 +114,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def update(self, val):
         # Prevent direct usage of update
-        raise NotImplementedError("Direct modification of dok_matrix elements "
-                                  "is not allowed")
+        raise NotImplementedError("Direct modification to dok_matrix element "
+                                  "is not allowed.")
 
     def _update(self, data):
         """ An update method for dict data defined for direct access to
@@ -127,8 +127,8 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def getnnz(self, axis=None):
         if axis is not None:
-            raise NotImplementedError("getnnz over an axis is not implemented "
-                                      "for DOK format")
+            raise NotImplementedError("Getnnz over an axis is not implemented "
+                                      "for DOK format.")
         return dict.__len__(self)
 
     def count_nonzero(self):
@@ -154,7 +154,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return dict.get(self, key, default)
 
     def __getitem__(self, index):
-        """If key=(i,j) is a pair of integers, return the corresponding
+        """ If key=(i,j) is a pair of integers, return the corresponding
         element.  If either i or j is a slice or sequence, return a new sparse
         matrix with just these elements.
         """
@@ -204,7 +204,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         min_i = i.min()
         if min_i < -self.shape[0] or i.max() >= self.shape[0]:
-            raise IndexError('index (%d) out of range -%d to %d)' %
+            raise IndexError('Index (%d) out of range -%d to %d.' %
                              (i.min(), self.shape[0], self.shape[0]-1))
         if min_i < 0:
             i = i.copy()
@@ -212,7 +212,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         min_j = j.min()
         if min_j < -self.shape[1] or j.max() >= self.shape[1]:
-            raise IndexError('index (%d) out of range -%d to %d)' %
+            raise IndexError('Index (%d) out of range -%d to %d.' %
                              (j.min(), self.shape[1], self.shape[1]-1))
         if min_j < 0:
             j = j.copy()
@@ -220,11 +220,10 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         newdok = dok_matrix(i.shape, dtype=self.dtype)
 
-        for a in xrange(i.shape[0]):
-            for b in xrange(i.shape[1]):
-                v = dict.get(self, (i[a,b], j[a,b]), zero)
-                if v != 0:
-                    dict.__setitem__(newdok, (a, b), v)
+        for key in itertools.product(xrange(i.shape[0]), xrange(i.shape[1])):
+            v = dict.get(self, (i[key], j[key]), zero)
+            if v:
+                dict.__setitem__(newdok, key, v)
 
         return newdok
 
@@ -308,10 +307,10 @@ class dok_matrix(spmatrix, IndexMixin, dict):
             new = dok_matrix(self.shape, dtype=res_dtype)
             # Add this scalar to every element.
             M, N = self.shape
-            for i, j in itertools.product(xrange(M), xrange(N)):
-                aij = dict.get(self, (i, j), 0) + other
+            for key in itertools.product(xrange(M), xrange(N)):
+                aij = dict.get(self, (key), 0) + other
                 if aij:
-                    new[i, j] = aij
+                    new[key] = aij
             # new.dtype.char = self.dtype.char
         elif isspmatrix_dok(other):
             if other.shape != self.shape:
@@ -502,7 +501,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     tocsc.__doc__ = spmatrix.tocsc.__doc__
 
     def resize(self, shape):
-        """ Resize the matrix in-place to dimensions given by 'shape'.
+        """ Resize the matrix in-place to dimensions given by `shape`.
 
         Any non-zero elements that lie outside the new shape are removed.
         """
