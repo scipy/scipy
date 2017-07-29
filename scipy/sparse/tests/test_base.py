@@ -1898,6 +1898,26 @@ class _TestCommon(object):
             assert_array_equal(spm.todok().A, m)
             assert_array_equal(spm.tobsr().A, m)
 
+    def test_pickle(self):
+        import pickle
+        sup = suppress_warnings()
+        sup.filter(SparseEfficiencyWarning)
+
+        @sup
+        def check():
+            datsp = self.datsp.copy()
+            for protocol in range(pickle.HIGHEST_PROTOCOL):
+                sploaded = pickle.loads(pickle.dumps(datsp, protocol=protocol))
+                assert_equal(datsp.shape, sploaded.shape)
+                assert_array_equal(datsp.todense(), sploaded.todense())
+                assert_equal(datsp.format, sploaded.format)
+                for key, val in datsp.__dict__.items():
+                    if isinstance(val, np.ndarray):
+                        assert_array_equal(val, sploaded.__dict__[key])
+                        continue
+                    assert_(val == sploaded.__dict__[key])
+        check()
+
     def test_unary_ufunc_overrides(self):
         def check(name):
             if not HAS_NUMPY_UFUNC:
@@ -3941,17 +3961,6 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         b = dok_matrix((3,3))
         b[:,0] = 0
         assert_(len(b.keys()) == 0, "Unexpected entries in keys")
-
-
-
-    def test_pickle(self):
-        import pickle
-        m = self.spmatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        m_load = pickle.loads(pickle.dumps(m))
-        assert_(m.shape == m_load.shape)
-        assert_(m.items() == m_load.items())
-        assert_(m.__dict__ == m_load.__dict__)
-        assert_(m.maxprint == m_load.maxprint)
 
 TestDOK.init_class()
 
