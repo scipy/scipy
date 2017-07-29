@@ -5734,18 +5734,23 @@ add_newdoc("scipy.special", "pdtrik",
     """)
 
 add_newdoc("scipy.special", "poch",
-    """
+    r"""
     poch(z, m)
 
     Rising factorial (z)_m
 
     The Pochhammer symbol (rising factorial), is defined as::
 
-        (z)_m = gamma(z + m) / gamma(z)
+    .. math::
+
+        (z)_m = \Gamma(z + m) / \Gamma(z)
 
     For positive integer `m` it reads::
 
+    .. math::
+
         (z)_m = z * (z + 1) * ... * (z + m - 1)
+
     """)
 
 add_newdoc("scipy.special", "pro_ang1",
