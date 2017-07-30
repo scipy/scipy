@@ -13,6 +13,8 @@ from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
 from scipy.signal.filter_design import BadCoefficients
 import scipy.linalg as linalg
 
+import six
+
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
     """
@@ -782,6 +784,10 @@ class TestStateSpace(object):
 
     def test_operators(self):
         # Test +/-/* operators on systems
+
+        class BadType(object):
+            pass
+
         s1 = StateSpace(np.array([[-0.5, 0.7], [0.3, -0.8]]),
                         np.array([[1], [0]]),
                         np.array([[1, 0]]),
@@ -803,8 +809,10 @@ class TestStateSpace(object):
         u[0] = 1
 
         # Test multiplication
-        assert_allclose(lsim(2 * s1, U=u, T=t)[1],
-                        2 * lsim(s1, U=u, T=t)[1])
+        for typ in six.integer_types + (float, complex, np.float32,
+                                        np.complex128, np.array):
+            assert_allclose(lsim(typ(2) * s1, U=u, T=t)[1],
+                            typ(2) * lsim(s1, U=u, T=t)[1])
 
         assert_allclose(lsim(s1 * 2, U=u, T=t)[1],
                         lsim(s1, U=2 * u, T=t)[1])
@@ -820,6 +828,12 @@ class TestStateSpace(object):
             # Check different discretization constants
             s_discrete * s2_discrete
 
+        with assert_raises(TypeError):
+            s1 * BadType()
+
+        with assert_raises(TypeError):
+            BadType() * s1
+
         # Test addition
         assert_allclose(lsim(s1 + 2, U=u, T=t)[1],
                         2 * u + lsim(s1, U=u, T=t)[1])
@@ -828,12 +842,21 @@ class TestStateSpace(object):
         with assert_raises(ValueError):
             s1 + np.array([1, 2])
 
+        with assert_raises(ValueError):
+            np.array([1, 2]) + s1
+
         with assert_raises(TypeError):
             s1 + s_discrete
 
         with assert_raises(TypeError):
             # Check different discretization constants
             s_discrete + s2_discrete
+
+        with assert_raises(TypeError):
+            s1 + BadType()
+
+        with assert_raises(TypeError):
+            BadType() + s1
 
         assert_allclose(lsim(s1 + s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] + lsim(s2, U=u, T=t)[1])
@@ -844,6 +867,12 @@ class TestStateSpace(object):
 
         assert_allclose(lsim(s1 - s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] - lsim(s2, U=u, T=t)[1])
+
+        with assert_raises(TypeError):
+            s1 - BadType()
+
+        with assert_raises(TypeError):
+            BadType() - s1
 
 
 class TestTransferFunction(object):

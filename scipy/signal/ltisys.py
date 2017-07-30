@@ -26,6 +26,7 @@ import warnings
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
 # use scipy's qr until this is solved
 
+import six
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
@@ -1292,6 +1293,10 @@ class StateSpace(LinearTimeInvariant):
     )
 
     """
+
+    __array_priority__ = 100.0
+    __array_ufunc__ = None
+
     def __new__(cls, *system, **kwargs):
         """Create new StateSpace object and settle inheritance."""
         # Handle object conversion if input is an instance of `lti`
@@ -1337,6 +1342,10 @@ class StateSpace(LinearTimeInvariant):
             repr(self.dt),
             )
 
+    def _check_binop_other(self, other):
+        return isinstance(other, (StateSpace, np.ndarray, float, complex,
+                                  np.number) + six.integer_types)
+
     def __mul__(self, other):
         """
         Post-multiply another system or a scalar
@@ -1352,11 +1361,13 @@ class StateSpace(LinearTimeInvariant):
         However, for MIMO systems, where the two systems are matrices, the
         order above ensures standard Matrix multiplication rules apply.
         """
+        if not self._check_binop_other(other):
+            return NotImplemented
+
         if isinstance(other, StateSpace):
             # Disallow mix of discrete and continuous systems.
             if type(other) is not type(self):
-                raise TypeError('Cannot add {} and {}'.format(type(self),
-                                                              type(other)))
+                return NotImplemented
 
             if self.dt != other.dt:
                 raise TypeError('Cannot multiply systems with different `dt`.')
@@ -1390,7 +1401,10 @@ class StateSpace(LinearTimeInvariant):
                           np.dot(self.D, other))
 
     def __rmul__(self, other):
-        """Pre-multiply a scalar or matrix"""
+        """Pre-multiply a scalar or matrix (but not StateSpace)"""
+        if not self._check_binop_other(other) or isinstance(other, StateSpace):
+            return NotImplemented
+
         # For pre-multiplication only the output gets scaled
         return StateSpace(self.A,
                           self.B,
@@ -1411,6 +1425,9 @@ class StateSpace(LinearTimeInvariant):
         is equivalent to applying E1(s) and E2(s) separately and adding up the
         result.
         """
+        if not self._check_binop_other(other):
+            return NotImplemented
+
         if isinstance(other, StateSpace):
             # Disallow mix of discrete and continuous systems.
             if type(other) is not type(self):
@@ -1445,7 +1462,22 @@ class StateSpace(LinearTimeInvariant):
             raise ValueError('Other needs to have compatible dimensions.')
 
     def __sub__(self, other):
-        return self + (-other)
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return self.__add__(-other)
+
+    def __radd__(self, other):
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return self.__add__(other)
+
+    def __rsub__(self, other):
+        if not self._check_binop_other(other):
+            return NotImplemented
+
+        return (-self).__add__(other)
 
     @property
     def A(self):
