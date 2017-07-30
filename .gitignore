@@ -122,6 +122,7 @@ scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
+scipy/cluster/_optimal_leaf_ordering.c
 scipy/fftpack/_fftpackmodule.c
 scipy/fftpack/convolvemodule.c
 scipy/fftpack/src/dct.c

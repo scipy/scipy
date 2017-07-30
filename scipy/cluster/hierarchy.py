@@ -60,6 +60,7 @@ tree objects.
    leaves_list
    to_tree
    cut_tree
+   optimal_leaf_ordering
 
 These are predicates for checking the validity of linkage and
 inconsistency matrices as well as for checking isomorphism of two
@@ -190,8 +191,9 @@ __all__ = ['ClusterNode', 'average', 'centroid', 'complete', 'cophenet',
            'from_mlab_linkage', 'inconsistent', 'is_isomorphic',
            'is_monotonic', 'is_valid_im', 'is_valid_linkage', 'leaders',
            'leaves_list', 'linkage', 'maxRstat', 'maxdists', 'maxinconsts',
-           'median', 'num_obs_linkage', 'set_link_color_palette', 'single',
-           'to_mlab_linkage', 'to_tree', 'ward', 'weighted', 'distance']
+           'median', 'num_obs_linkage', 'optimal_leaf_ordering',
+           'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
+           'ward', 'weighted', 'distance']
 
 
 class ClusterWarning(UserWarning):
@@ -481,7 +483,7 @@ def ward(y):
     return linkage(y, method='ward', metric='euclidean')
 
 
-def linkage(y, method='single', metric='euclidean'):
+def linkage(y, method='single', metric='euclidean', optimal_ordering=False):
     """
     Perform hierarchical/agglomerative clustering.
 
@@ -629,6 +631,14 @@ def linkage(y, method='single', metric='euclidean'):
         observation vectors; ignored otherwise. See the ``pdist``
         function for a list of valid distance metrics. A custom distance
         function can also be used.
+    optimal_ordering : bool, optional
+        If True, the linkage matrix will be reordered so that the distance
+        between successive leaves is minimal. This results in a more intuitive
+        tree structure when the data are visualized. defaults to False, because
+        this algorithm can be slow, particularly on large datasets [2]_. See 
+        also the `optimal_leaf_ordering` function.
+        
+        .. versionadded:: 1.0.0
 
     Returns
     -------
@@ -660,6 +670,9 @@ def linkage(y, method='single', metric='euclidean'):
     ----------
     .. [1] Daniel Mullner, "Modern hierarchical, agglomerative clustering
            algorithms", :arXiv:`1109.2378v1`.
+    .. [2] Ziv Bar-Joseph, David K. Gifford, Tommi S. Jaakkola, "Fast optimal
+           leaf ordering for hierarchical clustering", 2001. Bioinformatics
+           https://doi.org/10.1093/bioinformatics/17.suppl_1.S22
 
     Examples
     --------
@@ -703,12 +716,18 @@ def linkage(y, method='single', metric='euclidean'):
 
     n = int(distance.num_obs_y(y))
     method_code = _LINKAGE_METHODS[method]
+
     if method == 'single':
-        return _hierarchy.mst_single_linkage(y, n)
+        result = _hierarchy.mst_single_linkage(y, n)
     elif method in ['complete', 'average', 'weighted', 'ward']:
-        return _hierarchy.nn_chain(y, n, method_code)
+        result = _hierarchy.nn_chain(y, n, method_code)
     else:
-        return _hierarchy.fast_linkage(y, n, method_code)
+        result = _hierarchy.fast_linkage(y, n, method_code)
+
+    if optimal_ordering:
+        return optimal_leaf_ordering(result, y)
+    else:
+        return result
 
 
 class ClusterNode:
@@ -1120,6 +1139,71 @@ def to_tree(Z, rd=False):
         return (nd, d)
     else:
         return nd
+
+
+def optimal_leaf_ordering(Z, y, metric='euclidean'):
+    """
+    Given a linkage matrix Z and distance, reorder the cut tree.
+
+    Parameters
+    ----------
+    Z : ndarray
+        The hierarchical clustering encoded as a linkage matrix. See
+        `linkage` for more information on the return structure and
+        algorithm.
+    y : ndarray
+        The condensed distance matrix from which Z was generated.
+        Alternatively, a collection of m observation vectors in n
+        dimensions may be passed as a m by n array.
+    metric : str or function, optional
+        The distance metric to use in the case that y is a collection of
+        observation vectors; ignored otherwise. See the ``pdist``
+        function for a list of valid distance metrics. A custom distance
+        function can also be used.
+    
+    Returns
+    -------
+    Z_ordered : ndarray
+        A copy of the linkage matrix Z, reordered to minimize the distance
+        between adjacent leaves.
+
+    Examples
+    --------
+    >>> from scipy.cluster import hierarchy
+    >>> np.random.seed(23)
+    >>> X = np.random.randn(10,10)
+    >>> Z = hierarchy.ward(X)
+    >>> hierarchy.leaves_list(Z)
+    array([0, 5, 3, 9, 6, 8, 1, 4, 2, 7], dtype=int32)
+    >>> hierarchy.leaves_list(hierarchy.optimal_leaf_ordering(Z, X))
+    array([3, 9, 0, 5, 8, 2, 7, 4, 1, 6], dtype=int32)
+    
+    """
+    from . import _optimal_leaf_ordering
+
+    Z = np.asarray(Z, order='c')
+    is_valid_linkage(Z, throw=True, name='Z')
+
+    y = _convert_to_double(np.asarray(y, order='c'))
+
+    if y.ndim == 1:
+        distance.is_valid_y(y, throw=True, name='y')
+        [y] = _copy_arrays_if_base_present([y])
+    elif y.ndim == 2:
+        if y.shape[0] == y.shape[1] and np.allclose(np.diag(y), 0):
+            if np.all(y >= 0) and np.allclose(y, y.T):
+                _warning('The symmetric non-negative hollow observation '
+                         'matrix looks suspiciously like an uncondensed '
+                         'distance matrix')
+        y = distance.pdist(y, metric)
+    else:
+        raise ValueError("`y` must be 1 or 2 dimensional.")
+
+    if not np.all(np.isfinite(y)):
+        raise ValueError("The condensed distance matrix must contain only "
+                         "finite values.")
+
+    return _optimal_leaf_ordering.optimal_leaf_ordering(Z, y)
 
 
 def _convert_to_bool(X):

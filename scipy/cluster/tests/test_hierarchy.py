@@ -47,8 +47,8 @@ from scipy.cluster.hierarchy import (
     is_isomorphic, single, leaders, complete, weighted, centroid,
     correspond, is_monotonic, maxdists, maxinconsts, maxRstat,
     is_valid_linkage, is_valid_im, to_tree, leaves_list, dendrogram,
-    set_link_color_palette, cut_tree, _order_cluster_tree,
-    _hierarchy, _LINKAGE_METHODS)
+    set_link_color_palette, cut_tree, optimal_leaf_ordering,
+    _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
 
@@ -116,6 +116,11 @@ class TestLinkage(object):
             Z_trivial = _hierarchy.linkage(d, n, code)
             Z = linkage(d, method)
             assert_allclose(Z_trivial, Z, rtol=1e-14, atol=1e-15)
+
+    def test_optimal_leaf_ordering(self):
+        Z = linkage(hierarchy_test_data.ytdist, optimal_ordering=True)
+        expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_single_olo')
+        assert_allclose(Z, expectedZ, atol=1e-10)
 
 
 class TestLinkageTies(object):
@@ -1008,6 +1013,20 @@ def test_cut_tree():
                  cut_tree(Z, height=[5, 10]))
     assert_equal(cutree[:, np.searchsorted(heights, [10, 5])],
                  cut_tree(Z, height=[10, 5]))
+
+
+def test_optimal_leaf_ordering():
+    # test with the distance vector y
+    Z = optimal_leaf_ordering(linkage(hierarchy_test_data.ytdist),
+                              hierarchy_test_data.ytdist)
+    expectedZ = hierarchy_test_data.linkage_ytdist_single_olo
+    assert_allclose(Z, expectedZ, atol=1e-10)
+
+    # test with the observation matrix X
+    Z = optimal_leaf_ordering(linkage(hierarchy_test_data.X, 'ward'),
+                              hierarchy_test_data.X)
+    expectedZ = hierarchy_test_data.linkage_X_ward_olo
+    assert_allclose(Z, expectedZ, atol=1e-06)
 
 
 def test_Heap():
