@@ -11908,7 +11908,7 @@ cdef char *ufunc_poch_doc = (
     "\n"
     "    (z)_m = \\frac{\\Gamma(z + m)}{\\Gamma(z)}\n"
     "\n"
-    "For positive integer `m` it reads::\n"
+    "For positive integer `m` it reads\n"
     "\n"
     ".. math::\n"
     "\n"

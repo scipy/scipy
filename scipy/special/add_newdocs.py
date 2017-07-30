@@ -5749,7 +5749,7 @@ add_newdoc("scipy.special", "poch",
 
         (z)_m = \frac{\Gamma(z + m)}{\Gamma(z)}
 
-    For positive integer `m` it reads::
+    For positive integer `m` it reads
 
     .. math::
 
