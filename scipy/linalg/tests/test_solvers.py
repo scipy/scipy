@@ -12,6 +12,17 @@ from scipy.linalg import solve_continuous_are, solve_discrete_are
 from scipy.linalg import block_diag, solve
 
 
+def _load_data(name):
+    """
+    Load npz data file under data/
+    Returns a copy of the data, rather than keeping the npz file open.
+    """
+    filename = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                            'data', name)
+    with np.load(filename) as f:
+        return dict(f.items())
+
+
 class TestSolveLyapunov(object):
 
     cases = [
@@ -100,16 +111,11 @@ class TestSolveLyapunov(object):
 
 
 def test_solve_continuous_are():
-    mat6 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                'data', 'carex_6_data.npz'))
-    mat15 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                 'data', 'carex_15_data.npz'))
-    mat18 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                 'data', 'carex_18_data.npz'))
-    mat19 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                 'data', 'carex_19_data.npz'))
-    mat20 = np.load(os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                 'data', 'carex_20_data.npz'))
+    mat6 = _load_data('carex_6_data.npz')
+    mat15 = _load_data('carex_15_data.npz')
+    mat18 = _load_data('carex_18_data.npz')
+    mat19 = _load_data('carex_19_data.npz')
+    mat20 = _load_data('carex_20_data.npz')
     cases = [
         # Carex examples taken from (with default parameters):
         # [1] P.BENNER, A.J. LAUB, V. MEHRMANN: 'A Collection of Benchmark
@@ -573,10 +579,7 @@ def test_solve_generalized_continuous_are():
 
 
 def test_solve_generalized_discrete_are():
-    mat20170120 = np.load(os.path.join(
-                             os.path.abspath(os.path.dirname(__file__)),
-                             'data',
-                             'gendare_20170120_data.npz'))
+    mat20170120 = _load_data('gendare_20170120_data.npz')
 
     cases = [
         # Two random examples differ by s term
