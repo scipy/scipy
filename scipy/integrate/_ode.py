@@ -911,9 +911,9 @@ class vode(IntegratorBase):
                 (f_params, jac_params))
         y1, t, istate = self.runner(*args)
         if istate < 0:
-            warnings.warn(self.__class__.__name__ + ': ' +
-                          self.messages.get(istate,
-                                            'Unexpected istate=%s' % istate))
+            unexpected_istate_msg = 'Unexpected istate={:s}'.format(istate)
+            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
+                          self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
@@ -1077,8 +1077,9 @@ class dopri5(IntegratorBase):
         x, y, iwork, idid = self.runner(*((f, t0, y0, t1) +
                                           tuple(self.call_args) + (f_params,)))
         if idid < 0:
-            warnings.warn(self.name + ': ' +
-                          self.messages.get(idid, 'Unexpected idid=%s' % idid))
+            unexpected_idid_msg = 'Unexpected idid={:s}'.format(idid)
+            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
+                          self.messages.get(idid, unexpected_idid_msg)))
             self.success = 0
         return y, x
 
@@ -1246,9 +1247,9 @@ class lsoda(IntegratorBase):
                [jac, self.call_args[-1], f_params, 0, jac_params]
         y1, t, istate = self.runner(*args)
         if istate < 0:
-            warnings.warn('lsoda: ' +
-                          self.messages.get(istate,
-                                            'Unexpected istate=%s' % istate))
+            unexpected_istate_msg = 'Unexpected istate={:s}'.format(istate)
+            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
+                          self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
