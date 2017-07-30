@@ -1,5 +1,6 @@
-#!/usr/bin/env python
 """
+python generate_sparsetools.py
+
 Generate manual wrappers for C++ sparsetools code.
 
 Type codes used:

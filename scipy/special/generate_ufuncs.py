@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 """
-generate_ufuncs.py
+python generate_ufuncs.py
 
 Generate Ufunc definition source files for scipy.special.  Produces
 files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
