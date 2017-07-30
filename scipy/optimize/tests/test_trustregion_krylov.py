@@ -7,6 +7,11 @@ To run it in its simplest form::
 """
 from __future__ import division, print_function, absolute_import
 
+import sys
+if sys.version_info[0] >= 3:
+    from io import StringIO
+else:
+    from io import BytesIO as StringIO
 import numpy as np
 from scipy.optimize._trlib import (get_trlib_quadratic_subproblem)
 from numpy.testing import (TestCase, assert_, assert_array_equal,
@@ -15,6 +20,7 @@ from numpy.testing import (TestCase, assert_, assert_array_equal,
                            assert_array_less, run_module_suite)
 
 KrylovQP = get_trlib_quadratic_subproblem(tol_rel_i=1e-8, tol_rel_b=1e-6)
+KrylovQP_disp = get_trlib_quadratic_subproblem(tol_rel_i=1e-8, tol_rel_b=1e-6, disp=True)
 
 class TestKrylovQuadraticSubproblem(TestCase):
 
@@ -155,6 +161,26 @@ class TestKrylovQuadraticSubproblem(TestCase):
                                       -0.65311947, -0.23815972,
                                       -0.84954934])
         assert_array_almost_equal(hits_boundary, True)
+
+    def test_disp(self):
+        old_stdout = sys.stdout
+        try:
+            sys.stdout = StringIO()
+
+            H = -np.eye(5)
+            g = np.array([0, 0, 0, 0, 1e-6])
+            trust_radius = 1.1
+
+            subprob = KrylovQP_disp(x=0,
+                                    fun=lambda x: 0,
+                                    jac=lambda x: g,
+                                    hess=lambda x: None,
+                                    hessp=lambda x, y: H.dot(y))
+            p, hits_boundary = subprob.solve(trust_radius)
+            output = sys.stdout.getvalue()
+            assert_(output.startswith(' TR Solving trust region problem'), repr(output))
+        finally:
+            sys.stdout = old_stdout
 
 
 if __name__ == '__main__':

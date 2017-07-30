@@ -51,13 +51,15 @@ def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
         return _minimize_trust_region(fun, x0, args=args, jac=jac,
                                       hess=hess, hessp=hessp,
                                       subproblem=get_trlib_quadratic_subproblem(
-                                          tol_rel_i=-2.0, tol_rel_b=-3.0
+                                          tol_rel_i=-2.0, tol_rel_b=-3.0,
+                                          disp=trust_region_options.get('disp', False)
                                           ),
                                       **trust_region_options)
     else:
         return _minimize_trust_region(fun, x0, args=args, jac=jac,
                                       hess=hess, hessp=hessp,
                                       subproblem=get_trlib_quadratic_subproblem(
-                                          tol_rel_i=1e-8, tol_rel_b=1e-6
+                                          tol_rel_i=1e-8, tol_rel_b=1e-6,
+                                          disp=trust_region_options.get('disp', False)
                                           ),
                                       **trust_region_options)
