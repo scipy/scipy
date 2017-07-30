@@ -634,7 +634,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             ci, cj = self._swap((i.ravel(), j.ravel()))
             self._zero_many(ci, cj)
 
-            x = x.tocoo()
+            x = x.tocoo(copy=True)
+            x.sum_duplicates()
             r, c = x.row, x.col
             x = np.asarray(x.data, dtype=self.dtype)
             if broadcast_row:
@@ -714,7 +715,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _set_many(self, i, j, x):
         """Sets value at each (i, j) to x
 
-        Here (i,j) index major and minor respectively.
+        Here (i,j) index major and minor respectively, and must not contain
+        duplicate entries.
         """
         i, j, M, N = self._prepare_indices(i, j)
 
