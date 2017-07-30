@@ -2614,10 +2614,14 @@ add_newdoc("scipy.special", "fresnel",
     """)
 
 add_newdoc("scipy.special", "gamma",
-    """
+    r"""
     gamma(z)
 
     Gamma function.
+
+    .. math::
+
+          \Gamma(z) = \int_0^\infty x^{z-1} e^{-x} dx = (z - 1)!
 
     The gamma function is often referred to as the generalized
     factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =
@@ -5749,7 +5753,7 @@ add_newdoc("scipy.special", "poch",
 
     .. math::
 
-        (z)_m = z * (z + 1) * ... * (z + m - 1)
+        (z)_m = z (z + 1) ... (z + m - 1)
 
     Parameters
     ----------

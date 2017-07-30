@@ -6538,11 +6538,11 @@ cdef char ufunc_gamma_types[8]
 cdef char *ufunc_gamma_doc = (
     "gamma(z)\n"
     "\n"
-    "Gamma function\n"
+    "Gamma function.\n"
     "\n"
     ".. math::\n"
     "\n"
-    "    \Gamma(z) = \int_0^\infty x^{z-1} e^{-x} dx = (z - 1)!\n"
+    "      \\Gamma(z) = \\int_0^\\infty x^{z-1} e^{-x} dx = (z - 1)!\n"
     "\n"
     "The gamma function is often referred to as the generalized\n"
     "factorial since ``z*gamma(z) = gamma(z+1)`` and ``gamma(n+1) =\n"
@@ -11900,19 +11900,19 @@ cdef char ufunc_poch_types[6]
 cdef char *ufunc_poch_doc = (
     "poch(z, m)\n"
     "\n"
-    "Rising factorial (z)_m.\n"
+    "Rising factorial (z)_m\n"
     "\n"
     "The Pochhammer symbol (rising factorial), is defined as\n"
     "\n"
     ".. math::\n"
     "\n"
-    "    (z)_m = \\frac{\Gamma(z + m)}{\Gamma(z)}\n"
+    "    (z)_m = \\frac{\\Gamma(z + m)}{\\Gamma(z)}\n"
     "\n"
-    "For positive integer `m` it reads\n"
+    "For positive integer `m` it reads::\n"
     "\n"
     ".. math::\n"
     "\n"
-    "    (z)_m = z * (z + 1) * ... * (z + m - 1)\n"
+    "    (z)_m = z (z + 1) ... (z + m - 1)\n"
     "\n"
     "Parameters\n"
     "----------\n"
@@ -11924,8 +11924,7 @@ cdef char *ufunc_poch_doc = (
     "Returns\n"
     "-------\n"
     "poch : ndarray\n"
-    "    The value of the function.\n"
-    "\n")
+    "    The value of the function.")
 ufunc_poch_loops[0] = <np.PyUFuncGenericFunction>loop_d_dd__As_ff_f
 ufunc_poch_loops[1] = <np.PyUFuncGenericFunction>loop_d_dd__As_dd_d
 ufunc_poch_types[0] = <char>NPY_FLOAT
