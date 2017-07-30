@@ -3,7 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
+import operator
 import threading
 import sys
 import timeit
@@ -3399,26 +3399,18 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     """
 
     x = asarray(x)
+    q = operator.index(q)
 
-    if q != int(q):
-        raise ValueError("q must be an integer")
-
-    if n is not None and n != int(n):
-        raise ValueError("n must be an integer")
-
-    q = int(q)
+    if n is not None:
+        n = operator.index(n)
 
     if ftype == 'fir':
         if n is None:
             n = 30
-        else:
-            n = int(n)
         system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
     elif ftype == 'iir':
         if n is None:
             n = 8
-        else:
-            n = int(n)
         system = dlti(*cheby1(n, 0.05, 0.8 / q))
     elif isinstance(ftype, dlti):
         system = ftype._as_tf()  # Avoids copying if already in TF form

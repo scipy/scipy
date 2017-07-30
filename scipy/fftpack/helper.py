@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
+import operator
 from numpy import arange
 from numpy.fft.helper import fftshift, ifftshift, fftfreq
 from bisect import bisect_left
@@ -41,7 +42,8 @@ def rfftfreq(n, d=1.0):
     array([ 0.  ,  1.25,  1.25,  2.5 ,  2.5 ,  3.75,  3.75,  5.  ])
 
     """
-    if n != int(n) or n < 0:
+    n = operator.index(n)
+    if n < 0:
         raise ValueError("n = %s is not valid. "
                          "n must be a nonnegative integer." % n)
 

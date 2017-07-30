@@ -1673,8 +1673,8 @@ def test_filtfilt_gust():
 class TestDecimate(object):
     def test_bad_args(self):
         x = np.arange(12)
-        assert_raises(ValueError, signal.decimate, x, q=0.5, n=1)
-        assert_raises(ValueError, signal.decimate, x, q=2, n=0.5)
+        assert_raises(TypeError, signal.decimate, x, q=0.5, n=1)
+        assert_raises(TypeError, signal.decimate, x, q=2, n=0.5)
 
     def test_basic_IIR(self):
         x = np.arange(12)

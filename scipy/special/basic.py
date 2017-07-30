@@ -4,8 +4,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
+import operator
 import numpy as np
 import math
 from scipy._lib.six import xrange
@@ -39,12 +38,20 @@ __all__ = ['ai_zeros', 'assoc_laguerre', 'bei_zeros', 'beip_zeros',
            'yn_zeros', 'ynp_zeros', 'yv', 'yvp', 'zeta']
 
 
-def _nonneg_int_or_fail(n, var_name):
-    int_n = int(n)
-    if n != int_n or n < 0:
-        raise ValueError(var_name + " must be a non-negative integer.")
-    else:
-        return int_n
+def _nonneg_int_or_fail(n, var_name, strict=True):
+    try:
+        if strict:
+            # Raises an exception if float
+            n = operator.index(n)
+        elif n == floor(n):
+            n = int(n)
+        else:
+            raise ValueError()
+        if n < 0:
+            raise ValueError()
+    except (ValueError, TypeError) as err:
+        raise err.__class__("{} must be a non-negative integer".format(var_name))
+    return n
 
 
 def diric(x, n):
@@ -633,8 +640,7 @@ def h2vp(v, z, n=1):
            http://dlmf.nist.gov/10.6.E7
 
     """
-    if not isinstance(n, int) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+    n = _nonneg_int_or_fail(n, 'n')
     if n == 0:
         return hankel2(v, z)
     else:
@@ -684,7 +690,7 @@ def riccati_jn(n, x):
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n == 0):
         n1 = 1
     else:
@@ -736,7 +742,7 @@ def riccati_yn(n, x):
     """
     if not (isscalar(n) and isscalar(x)):
         raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n == 0):
         n1 = 1
     else:
@@ -1249,7 +1255,7 @@ def lpn(n, z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
         n1 = 1
     else:
@@ -1276,7 +1282,7 @@ def lqn(n, z):
     """
     if not (isscalar(n) and isscalar(z)):
         raise ValueError("arguments must be scalars.")
-    n = _nonneg_int_or_fail(n, 'n')
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
         n1 = 1
     else:
