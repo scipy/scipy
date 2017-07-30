@@ -26,7 +26,7 @@ import warnings
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
 # use scipy's qr until this is solved
 
-import six
+import scipy._lib.six as six
 from scipy.linalg import qr as s_qr
 from scipy import integrate, interpolate, linalg
 from scipy.interpolate import interp1d
