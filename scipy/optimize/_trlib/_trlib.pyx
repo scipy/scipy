@@ -62,7 +62,7 @@ class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
         cdef double flt1 = 0.0
         cdef double flt2 = 0.0
         cdef double flt3 = 0.0
-        prefix = "".encode('UTF-8')
+        prefix = b""
         cdef long   [:] iwork_view  = self.iwork
         cdef double [:] fwork_view  = self.fwork
         cdef long   [:] timing_view = self.timing
