@@ -176,7 +176,7 @@ import bisect
 from collections import deque
 
 import numpy as np
-from . import _hierarchy
+from . import _hierarchy, _optimal_leaf_ordering
 import scipy.spatial.distance as distance
 
 from scipy._lib.six import string_types
@@ -1179,8 +1179,6 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     array([3, 9, 0, 5, 8, 2, 7, 4, 1, 6], dtype=int32)
     
     """
-    from . import _optimal_leaf_ordering
-
     Z = np.asarray(Z, order='c')
     is_valid_linkage(Z, throw=True, name='Z')
 
