@@ -1,5 +1,5 @@
 from ._trustregion import (_minimize_trust_region)
-from ._trlib import (TRLIBQuadraticSubproblem)
+from ._trlib import (get_trlib_quadratic_subproblem)
 
 __all__ = ['_minimize_trust_krylov']
 
@@ -50,14 +50,14 @@ def _minimize_trust_krylov(fun, x0, args=(), jac=None, hess=None, hessp=None,
     if inexact:
         return _minimize_trust_region(fun, x0, args=args, jac=jac,
                                       hess=hess, hessp=hessp,
-                                      subproblem=TRLIBQuadraticSubproblem(
+                                      subproblem=get_trlib_quadratic_subproblem(
                                           tol_rel_i=-2.0, tol_rel_b=-3.0
                                           ),
                                       **trust_region_options)
     else:
         return _minimize_trust_region(fun, x0, args=args, jac=jac,
                                       hess=hess, hessp=hessp,
-                                      subproblem=TRLIBQuadraticSubproblem(
+                                      subproblem=get_trlib_quadratic_subproblem(
                                           tol_rel_i=1e-8, tol_rel_b=1e-6
                                           ),
                                       **trust_region_options)

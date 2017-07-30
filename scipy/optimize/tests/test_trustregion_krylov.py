@@ -8,13 +8,13 @@ To run it in its simplest form::
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from scipy.optimize._trlib import (TRLIBQuadraticSubproblem)
+from scipy.optimize._trlib import (get_trlib_quadratic_subproblem)
 from numpy.testing import (TestCase, assert_, assert_array_equal,
                            assert_almost_equal,
                            assert_equal, assert_array_almost_equal,
                            assert_array_less, run_module_suite)
 
-KrylovQP = TRLIBQuadraticSubproblem(tol_rel_i=1e-8, tol_rel_b=1e-6)
+KrylovQP = get_trlib_quadratic_subproblem(tol_rel_i=1e-8, tol_rel_b=1e-6)
 
 class TestKrylovQuadraticSubproblem(TestCase):
 
