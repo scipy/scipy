@@ -5221,6 +5221,92 @@ class halfgennorm_gen(rv_continuous):
 halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
 
 
+class crystalball_gen(rv_continuous):
+    """
+    Crystalball distribution
+    
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `crystalball` is::
+
+                                            --
+                                            | exp(-x**2 / 2),  for x > -beta
+        crystalball.pdf(x, beta, m) =  N * |
+                                            | A * (B - x)**(-m), for x <= -beta
+                                            --
+        where:
+                                   A = (m / |beta|)**n * exp(-beta**2 / 2)
+                                   B = m / |beta| - |beta|
+                                   and N is a normalisation constant.
+
+    `crystalball` takes ``beta`` and ``m`` as shape parameters.
+    ``beta`` defines the point where the pdf changes from a power-law to a gaussian distribution
+    ``m`` is power of the power-law tail.
+
+    References
+    ----------
+    .. [1] "Crystal Ball Function",
+           https://en.wikipedia.org/wiki/Crystal_Ball_function
+
+    %(after_notes)s
+    
+    .. versionadded: 0.19.0
+
+    %(example)s
+    """
+    def _pdf(self, x, beta, m):
+        """
+        Return PDF of the crystalball function.
+        """
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        rhs = lambda x, beta, m: np.exp(-x**2 / 2)
+        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m)
+        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+
+    def _cdf(self, x, beta, m):
+        """
+        Return CDF of the crystalball function
+        """
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        rhs = lambda x, beta, m: (m/beta) * np.exp(-beta**2 / 2.0) / (m-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta))
+        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m+1) / (m-1)
+        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+
+    def _munp(self, n, beta, m):
+        """
+        Returns the n-th non-central moment of the crystalball function.
+        """
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+
+        def n_th_moment(n, beta, m):
+            """
+            Returns n-th moment. Defined only if n+1 < m
+            Function cannot broadcast due to the loop over n
+            """
+            A = (m/beta)**m * np.exp(-beta**2 / 2.0)
+            B = m/beta - beta
+            rhs = 2**((n-1)/2.0) * sc.gamma((n+1)/2) * (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2))
+            lhs = np.zeros(rhs.shape)
+            for k in range(n + 1):
+                lhs += sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) * (m/beta)**(-m + k + 1)
+            return A * lhs + rhs
+
+        return N * _lazywhere(np.atleast_1d(n + 1 < m), (n, beta, m), np.vectorize(n_th_moment, otypes=[np.float]), np.inf)
+
+    def _argcheck(self, beta, m):
+        """
+        In HEP crystal-ball is also defined for m = 1 (see plot on wikipedia)
+        But the function doesn't have a finite integral in this corner case,
+        and isn't a PDF anymore (but can still be used on a finite range).
+        Here we restrict the function to m > 1.
+        In addition we restrict beta to be positive
+        """
+        return (m > 1) & (beta > 0)
+crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Function")
+
+
 def _argus_phi(chi):
     """
     Utility function for the argus distribution
