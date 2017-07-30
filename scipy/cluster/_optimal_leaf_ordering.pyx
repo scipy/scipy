@@ -30,7 +30,6 @@ cimport numpy as np
 cimport cython
 from libc.stdlib cimport malloc, free
 
-from scipy.cluster.hierarchy import leaves_list, is_valid_linkage
 from scipy.spatial.distance import squareform, is_valid_y, is_valid_dm
 
 
@@ -404,6 +403,9 @@ def optimal_leaf_ordering(Z, D):
     algorithm.
 
     """
+    # Import here to avoid import cycles
+    from scipy.cluster.hierarchy import leaves_list, is_valid_linkage
+
     is_valid_linkage(Z, throw=True, name='Z')
 
     if is_valid_y(D):
