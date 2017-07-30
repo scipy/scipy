@@ -12,11 +12,14 @@ import numpy as np
 from numpy.testing import (
     assert_,
     assert_allclose,
-    assert_equal,
-    run_module_suite)
+    assert_equal)
 
-from test_linprog import magic_square
+from .test_linprog import magic_square
 from scipy.optimize._remove_redundancy import _remove_redundancy
+
+
+def setup_module():
+    np.random.seed(2017)
 
 
 def _assert_success(
@@ -233,8 +236,3 @@ def test_magic_square2():
     assert_equal(status, 0)
     assert_equal(A1.shape[0], 39)
     assert_equal(np.linalg.matrix_rank(A1), 39)
-
-
-if __name__ == '__main__':
-    np.random.seed(2017)
-    run_module_suite()
