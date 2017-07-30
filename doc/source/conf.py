@@ -267,6 +267,7 @@ np.random.seed(123)
 plot_include_source = True
 plot_formats = [('png', 96), 'pdf']
 plot_html_show_formats = False
+plot_html_show_source_link = False
 
 import math
 phi = (math.sqrt(5) + 1)/2
