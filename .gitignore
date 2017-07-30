@@ -120,6 +120,8 @@ benchmarks/html
 benchmarks/scipy-benchmarks
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
+scipy/_lib/messagestream.c
+scipy/_lib/src/messagestream_config.h
 scipy/cluster/_vq.c
 scipy/cluster/_hierarchy.c
 scipy/cluster/_optimal_leaf_ordering.c
@@ -212,7 +214,6 @@ scipy/spatial/_hausdorff.c
 scipy/spatial/qhull.c
 scipy/spatial/_voronoi.c
 scipy/special/_comb.c
-scipy/spatial/qhull_misc_config.h
 scipy/special/_ellip_harm_2.c
 scipy/special/_ellip_harm_2.h
 scipy/special/_logit.c

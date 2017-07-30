@@ -25,6 +25,24 @@ def configuration(parent_package='',top_path=None):
     config.add_extension("_fpumode",
                          sources=["_fpumode.c"])
 
+    def get_messagestream_config(ext, build_dir):
+        # Generate a header file containing defines
+        config_cmd = config.get_config_cmd()
+        defines = []
+        if config_cmd.check_func('open_memstream', decl=True, call=True):
+            defines.append(('HAVE_OPEN_MEMSTREAM', '1'))
+        target = os.path.join(os.path.dirname(__file__), 'src',
+                              'messagestream_config.h')
+        with open(target, 'w') as f:
+            for name, value in defines:
+                f.write('#define {0} {1}\n'.format(name, value))
+
+    depends = [os.path.join(include_dir, 'messagestream.h')]
+    config.add_extension("messagestream",
+                         sources=["messagestream.c"] + [get_messagestream_config],
+                         depends=depends,
+                         include_dirs=[include_dir])
+
     return config
 
 

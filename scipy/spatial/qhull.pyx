@@ -18,8 +18,8 @@ cimport numpy as np
 cimport cython
 from . cimport qhull
 from . cimport setlist
-from libc cimport stdio, stdlib
-from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
+from libc cimport stdlib
+from scipy._lib.messagestream cimport MessageStream
 
 from numpy.compat import asbytes
 import os
@@ -205,7 +205,6 @@ from libc.stdlib cimport qsort
 #------------------------------------------------------------------------------
 
 cdef extern from "qhull_misc.h":
-    stdio.FILE *qhull_open_memstream(char **, size_t *)
     void qhull_misc_lib_check()
     void qh_dgetrf(int *m, int *n, double *a, int *lda, int *ipiv,
                    int *info) nogil
@@ -228,87 +227,6 @@ class QhullError(RuntimeError):
 
 
 @cython.final
-cdef class _QhullMessageStream:
-    """
-    Qhull emits error messages to FILE* streams, which we should capture.
-    Do this by directing them to a temporary file.
-    """
-    cdef stdio.FILE *handle
-    cdef bytes _filename
-    cdef bint _removed
-    cdef size_t _memstream_size
-    cdef char *_memstream_ptr
-
-    def __init__(self):
-        # Try first in-memory files, if available
-        self._memstream_ptr = NULL
-        self.handle = qhull_open_memstream(&self._memstream_ptr,
-                                           &self._memstream_size)
-        if self.handle != NULL:
-            self._removed = 1
-            return
-
-        # Fall back to temporary files
-        fd, filename = tempfile.mkstemp(prefix='qhull-err-')
-        os.close(fd)
-        self._filename = filename.encode(sys.getfilesystemencoding())
-        self.handle = stdio.fopen(self._filename, "w+")
-        if self.handle == NULL:
-            stdio.remove(self._filename)
-            raise IOError("Failed to open file {0}".format(self._filename))
-        self._removed = 0
-
-        # Use a posix-style deleted file, if possible
-        if stdio.remove(self._filename) == 0:
-            self._removed = 1
-
-    def __del__(self):
-        self.close()
-
-    def get(self):
-        cdef long pos
-        cdef size_t nread
-        cdef np.uint8_t[::1] buf
-        cdef bytes obj
-
-        pos = stdio.ftell(self.handle)
-        if pos <= 0:
-            return ""
-
-        if self._memstream_ptr != NULL:
-            stdio.fflush(self.handle)
-            obj = PyBytes_FromStringAndSize(self._memstream_ptr, pos)
-        else:
-            arr = np.zeros(pos, dtype=np.uint8)
-            buf = arr
-
-            stdio.rewind(self.handle)
-            nread = stdio.fread(<void*>&buf[0], 1, pos, self.handle)
-            obj = arr[:nread].tostring()
-
-        if PY_VERSION_HEX >= 0x03000000:
-            return obj.decode('latin1')
-        else:
-            return obj
-
-    def clear(self):
-        stdio.rewind(self.handle)
-
-    def close(self):
-        if self._memstream_ptr != NULL:
-            stdlib.free(self._memstream_ptr)
-            self._memstream_ptr = NULL
-
-        if self.handle != NULL:
-            stdio.fclose(self.handle)
-            self.handle = NULL
-
-        if not self._removed:
-            stdio.remove(self._filename)
-            self._removed = 1
-
-
-@cython.final
 cdef class _Qhull:
     # Note that the qhT struct is allocated separately --- otherwise
     # it may end up allocated in a way not compatible with the CRT
@@ -317,7 +235,7 @@ cdef class _Qhull:
 
     cdef list _point_arrays
     cdef list _dual_point_arrays
-    cdef _QhullMessageStream _messages
+    cdef MessageStream _messages
 
     cdef public bytes options
     cdef public bytes mode_option
@@ -345,7 +263,7 @@ cdef class _Qhull:
         cdef int exitcode
 
         self._qh = NULL
-        self._messages = _QhullMessageStream()
+        self._messages = MessageStream()
 
         points = np.ascontiguousarray(points, dtype=np.double)
 
