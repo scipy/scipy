@@ -253,6 +253,7 @@ from ._linprog import linprog, linprog_verbose_callback
 from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
+from ._equality_constrained_sqp import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
