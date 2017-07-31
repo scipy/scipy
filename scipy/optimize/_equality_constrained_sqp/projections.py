@@ -6,8 +6,10 @@ from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 try:
     from sksparse.cholmod import cholesky_AAt
-except ImportError as e:
-    pass
+    sksparse_available = True
+except ImportError:
+    import warnings
+    sksparse_available = False
 import numpy as np
 
 __all__ = [
@@ -130,6 +132,12 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3):
         if method not in ("NormalEquation", "AugmentedSystem"):
             raise ValueError("Method not allowed for the given matrix.")
 
+        if method == "NormalEquation" and not sksparse_available:
+            warnings.warn(("Only accepts 'NormalEquation' option when scikit-sparse " +
+                           "is available. Using 'AugmentedSystem' option instead."),
+                          ImportWarning)
+            method = 'AugmentedSystem'
+
     else:
         if method is None:
             method = "QRFactorization"
@@ -140,7 +148,6 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3):
     if method == 'NormalEquation':
         # Cholesky factorization
         factor = cholesky_AAt(A)
-
         # z = x - A.T inv(A A.T) A x
         def null_space(x):
             v = factor(A.dot(x))
