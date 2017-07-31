@@ -28,7 +28,7 @@ def sphere_check(points, radius, center):
     actual_squared_radii = (((points[...,0] - center[0]) ** 2) +
                             ((points[...,1] - center[1]) ** 2) +
                             ((points[...,2] - center[2]) ** 2))
-    max_discrepancy = (actual_squared_radii - (radius ** 2)).max()
+    max_discrepancy = (np.sqrt(actual_squared_radii) - radius).max()
     return abs(max_discrepancy)
 
 def calc_circumcenters(tetrahedrons):
@@ -228,8 +228,6 @@ class SphericalVoronoi:
         """
 
         self.points = points
-        if pdist(self.points).min() <= threshold:
-            raise ValueError("Duplicate generators present.")
         if np.any(center):
             self.center = center
         else:
@@ -238,10 +236,14 @@ class SphericalVoronoi:
             self.radius = radius
         else:
             self.radius = 1
+
+        if pdist(self.points).min() <= threshold * self.radius:
+            raise ValueError("Duplicate generators present.")
+
         max_discrepancy = sphere_check(self.points,
                                        self.radius,
                                        self.center)
-        if max_discrepancy >= threshold:
+        if max_discrepancy >= threshold * self.radius:
             raise ValueError("Radius inconsistent with generators.")
         self.vertices = None
         self.regions = None
