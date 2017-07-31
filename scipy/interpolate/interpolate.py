@@ -2315,6 +2315,10 @@ class RegularGridInterpolator(object):
     avoids expensive triangulation of the input data by taking advantage of the
     regular grid structure.
 
+    If any of `points` have a dimension of size 1, linear interpolation will 
+    return an array of `nan` values. Nearest-neighbor interpolation will work 
+    as usual in this case.
+
     .. versionadded:: 0.14
 
     Examples
