@@ -336,7 +336,7 @@ def median_cihs(data, alpha=0.05, axis=None):
     data = ma.array(data, copy=False)
     # Computes quantiles along axis (or globally)
     if (axis is None):
-        result = _cihs_1D(data.compressed(), alpha)
+        result = _cihs_1D(data, alpha)
     else:
         if data.ndim > 2:
             raise ValueError("Array 'data' must be at most two dimensional, "
