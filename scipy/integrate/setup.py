@@ -40,7 +40,7 @@ def configuration(parent_package='',top_path=None):
     config.add_extension('_quadpack',
                          sources=['_quadpackmodule.c'],
                          libraries=(['quadpack', 'mach'] + lapack_libs),
-                         depends=(['quadpack.h','__quadpack.h']
+                         depends=(['__quadpack.h']
                                   + quadpack_src + mach_src),
                          include_dirs=include_dirs,
                          **lapack_opt)
