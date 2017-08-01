@@ -192,7 +192,7 @@ line_search = line_search_wolfe1
 #------------------------------------------------------------------------------
 
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
-                       old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=50,
+                       old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
                        extra_condition=None, maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
@@ -322,7 +322,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
 def scalar_search_wolfe2(phi, derphi=None, phi0=None,
                          old_phi0=None, derphi0=None,
-                         c1=1e-4, c2=0.9, amax=50,
+                         c1=1e-4, c2=0.9, amax=None,
                          extra_condition=None, maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
@@ -404,7 +404,7 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
         extra_condition = lambda alpha, phi: True
 
     for i in xrange(maxiter):
-        if alpha1 == 0 or alpha0 == amax:
+        if alpha1 == 0 or (amax is not None and alpha0 == amax):
             # alpha1 == 0: This shouldn't happen. Perhaps the increment has
             # slipped below machine precision?
             alpha_star = None
@@ -444,7 +444,9 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
                               phi0, derphi0, c1, c2, extra_condition)
             break
 
-        alpha2 = min(amax, 2 * alpha1)   # increase by factor of two on each iteration
+        alpha2 = 2 * alpha1  # increase by factor of two on each iteration
+        if amax is not None:
+            alpha2 = min(alpha2, amax)
         alpha0 = alpha1
         alpha1 = alpha2
         phi_a0 = phi_a1
