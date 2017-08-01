@@ -12,6 +12,7 @@ from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 
 from ._discrete_distns import binom
+from ._continuous_distns import norm
 from . import mvn
 
 __all__ = ['multivariate_normal',
@@ -538,11 +539,25 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        lower = np.full(mean.shape, -np.inf)
-        # mvnun expects 1-d arguments, so process points sequentially
-        func1d = lambda x_slice: mvn.mvnun(lower, x_slice, mean, cov,
-                                           maxpts, abseps, releps)[0]
-        out = np.apply_along_axis(func1d, -1, x)
+        dim = mean.shape[0]
+        if dim == 1:
+            # Cover univariate case separately, because mvndst would fail
+            out = norm.cdf(x, mean, np.sqrt(cov))
+        else:
+            # Standard deviation and integration bounds
+            stdev = np.sqrt(np.diag(cov))
+            lower = np.full(dim, -np.inf)
+            upper = (x - mean) / stdev
+            # Calculate correlation coefficients from covariance matrix
+            cor = cov / np.outer(stdev, stdev)
+            cor_vec = cor[np.tril_indices(dim, -1)]
+            # Integration limit flags
+            infin = np.zeros(dim, dtype=int)
+            # mvndst expects 1-d arguments, so process points sequentially
+            func1d = lambda upper1d: mvn.mvndst(lower, upper1d, infin,
+                                                cor_vec, maxpts, abseps,
+                                                releps)[1]
+            out = np.apply_along_axis(func1d, -1, upper)
         return _squeeze_output(out)
 
     def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
