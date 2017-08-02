@@ -689,16 +689,25 @@ class TestCephes(object):
         assert_equal(cephes.ncfdtr(1,1,1,0),0.0)
 
     def test_ncfdtri(self):
-        assert_equal(cephes.ncfdtri(1,1,1,0),0.0)
+        assert_equal(cephes.ncfdtri(1, 1, 1, 0), 0.0)
+        f = [0.5, 1, 1.5]
+        p = cephes.ncfdtr(2, 3, 1.5, f)
+        assert_allclose(cephes.ncfdtri(2, 3, 1.5, p), f)
 
     def test_ncfdtridfd(self):
-        cephes.ncfdtridfd(1,0.5,0,1)
+        dfd = [1, 2, 3]
+        p = cephes.ncfdtr(2, dfd, 0.25, 15)
+        assert_allclose(cephes.ncfdtridfd(2, p, 0.25, 15), dfd)
 
-    def __check_ncfdtridfn(self):
-        cephes.ncfdtridfn(1,0.5,0,1)
+    def test_ncfdtridfn(self):
+        dfn = [1, 2, 3]
+        p = cephes.ncfdtr(dfn, 2, 0.25, 15)
+        assert_allclose(cephes.ncfdtridfn(p, 2, 0.25, 15), dfn)
 
-    def __check_ncfdtrinc(self):
-        cephes.ncfdtrinc(1,0.5,0,1)
+    def test_ncfdtrinc(self):
+        nc = [0.5, 1.5, 2.0]
+        p = cephes.ncfdtr(2, 3, nc, 15)
+        assert_allclose(cephes.ncfdtrinc(2, 3, p, 15), nc)
 
     def test_nctdtr(self):
         assert_equal(cephes.nctdtr(1,0,0),0.5)
