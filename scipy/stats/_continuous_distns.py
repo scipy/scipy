@@ -4609,6 +4609,41 @@ class semicircular_gen(rv_continuous):
 semicircular = semicircular_gen(a=-1.0, b=1.0, name="semicircular")
 
 
+class skew_cauchy_gen(rv_continuous):
+    """A skewed Cauchy random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The pdf is::
+
+        skewcauchy.pdf(x, a) = 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
+
+    `skewcauchy` takes ``a`` as a skewness parameter
+    When a=0 the distribution is identical to the usual Cauchy distribution.
+
+    %(after_notes)s
+
+    %(example)s
+    """  
+
+    def _argcheck(self, a):
+        return np.isfinite(a)
+
+    def _pdf(self, x, a):
+        return 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
+
+    def _stats(self, a, moments='mvsk'):
+        output = [np.nan, np.nan, np.nan, np.nan]
+        const = np.sqrt(2/np.pi) * a/np.sqrt(1 + a**2)
+
+        return output
+
+
+skewcauchy = skew_cauchy_gen(name='skewcauchy')
+
+
 class skew_norm_gen(rv_continuous):
     """A skew-normal random variable.
 
