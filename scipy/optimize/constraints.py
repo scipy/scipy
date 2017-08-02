@@ -7,7 +7,8 @@ __all__ = ['CanonicalConstraint',
            'NonlinearConstraint',
            'LinearConstraint',
            'BoxConstraint',
-           'parse_constraint']
+           'parse_constraint',
+           'concatenate_canonical_constraints']
 
 
 class CanonicalConstraint:
@@ -319,3 +320,86 @@ def parse_constraint(kind):
         raise ValueError("kind '%s' not available." % kind[0])
 
     return eq, ineq, val_eq, val_ineq, sign, fun_len
+
+
+def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
+    """Concatenate sequence of CanonicalConstraint's."""
+    # Compute number of constraints
+    n_eq = 0
+    n_ineq = 0
+    for constr in constraints:
+        n_eq += constr.n_eq
+        n_ineq += constr.n_ineq
+
+    # Concatenate equality constraints
+    def constr_eq(x):
+        constr_eq_list = []
+        for constr in constraints:
+            constr_eq_list += [constr.constr_eq(x)]
+        return np.hstack(constr_eq_list)
+
+    # Concatenate inequality constraints
+    def constr_ineq(x):
+        constr_ineq_list = []
+        for constr in constraints:
+            constr_ineq_list += [constr.constr_ineq(x)]
+        return np.hstack(constr_ineq_list)
+
+    # Concatanate equality constraints Jacobian matrices
+    def jac_eq(x):
+        jac_eq_list = []
+        for constr in constraints:
+            J = constr.jac_eq(x)
+            if not sparse and spc.issparse(J):
+                jac_eq_list += [J.toarray()]
+            else:
+                jac_eq_list += [J]
+
+        if sparse:
+            return spc.vstack(jac_eq_list)
+        else:
+            return np.vstack(jac_eq_list)
+
+    # Concatanate inequality constraints Jacobian matrices
+    def jac_ineq(x):
+        jac_ineq_list = []
+        for constr in constraints:
+            J = constr.jac_ineq(x)
+            if not sparse and spc.issparse(J):
+                jac_ineq_list += [J.toarray()]
+            else:
+                jac_ineq_list += [J]
+
+        if sparse:
+            return spc.vstack(jac_ineq_list)
+        else:
+            return np.vstack(jac_ineq_list)
+
+    # Concatenate Hessians
+    def lagr_hess(x, v_eq, v_ineq):
+        n = len(x)
+        if hess is not None:
+            hess_list = [hess(x)]
+        else:
+            hess_list = []
+
+        index_eq = 0
+        index_ineq = 0
+        for constr in constraints:
+            if constr.hess is not None:
+                hess_list += [constr.hess(x, v_eq[index_eq:index_eq+constr.n_eq],
+                                          v_ineq[index_ineq:index_ineq+constr.n_ineq])]
+            index_eq += constr.n_eq
+            index_ineq += constr.n_ineq
+
+        def matvec(p):
+            result = np.zeros_like(p)
+            for h in hess_list:
+                result += h.dot(p)
+            return result
+
+        return spc.linalg.LinearOperator((n, n), matvec)
+
+
+    return CanonicalConstraint(n_ineq, constr_ineq, jac_ineq,
+                               n_eq, constr_eq, jac_eq, lagr_hess)
