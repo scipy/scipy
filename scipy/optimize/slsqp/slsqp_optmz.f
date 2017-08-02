@@ -268,7 +268,8 @@ C        -  L1 - LINE SEARCH,  POSITIVE DEFINITE  BFGS UPDATE  -
 C                      BODY SUBROUTINE FOR SLSQP
 
       INTEGER          iw(*), i, iexact, incons, ireset, iter, itermx,
-     *                 k, j, la, line, m, meq, mode, n, n1, n2, n3
+     *                 k, j, la, line, m, meq, mode, n, n1, n2, n3,
+     *                 badlin
 
       DOUBLE PRECISION a(la,n+1), c(la), g(n+1), l((n+1)*(n+2)/2),
      *                 mu(la), r(m+n+n+2), s(n+1), u(n+1), v(n+1), w(*),
@@ -287,6 +288,10 @@ c                      with MINEQ = M - MEQ + 2*N1  &  N1 = N+1
 
       DATA             ZERO /0.0d0/, one /1.0d0/, alfmin /1.0d-1/,
      *                 hun /1.0d+2/, ten /1.0d+1/, two /2.0d0/
+
+C     The badlin flag keeps track whether the SQP problem on the current
+C     iteration was inconsistent or not.
+      badlin = 0
 
       IF (mode) 260, 100, 220
 
@@ -336,13 +341,19 @@ C   SEARCH DIRECTION AS SOLUTION OF QP - SUBPROBLEM
       CALL lsq (m, meq, n , n3, la, l, g, a, c, u, v, s, r, w, iw, mode)
 
 C   AUGMENTED PROBLEM FOR INCONSISTENT LINEARIZATION
+C
+C   If it turns out that the original SQP problem is inconsistent,
+C   disallow termination with convergence on this iteration,
+C   even if the augmented problem was solved.
 
+      badlin = 0
       IF (mode.EQ.6) THEN
           IF (n.EQ.meq) THEN
               mode = 4
           ENDIF
       ENDIF
       IF (mode.EQ.4) THEN
+          badlin = 1
           DO 140 j=1,m
              IF (j.LE.meq) THEN
                  a(j,n1) = -c(j)
@@ -399,7 +410,7 @@ C   UPDATE MULTIPLIERS FOR L1-TEST
 C   CHECK CONVERGENCE
 
       mode = 0
-      IF (h1.LT.acc .AND. h2.LT.acc) GO TO 330
+      IF (h1.LT.acc .AND. h2.LT.acc .AND. badlin .EQ. 0) GO TO 330
       h1 = ZERO
       DO 180 j=1,m
          IF (j.LE.meq) THEN
@@ -470,7 +481,8 @@ C   CHECK CONVERGENCE
          ENDIF
          h3 = h3 + MAX(-c(j),h1)
   250 CONTINUE
-      IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc)
+      IF ((ABS(f-f0).LT.acc .OR. dnrm2_(n,s,1).LT.acc) .AND. h3.LT.acc
+     *     .AND. badlin .EQ. 0)
      *   THEN
             mode = 0
          ELSE
@@ -481,7 +493,8 @@ C   CHECK CONVERGENCE
 C   CHECK relaxed CONVERGENCE in case of positive directional derivative
 
   255 CONTINUE
-      IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol)
+      IF ((ABS(f-f0).LT.tol .OR. dnrm2_(n,s,1).LT.tol) .AND. h3.LT.tol
+     *     .AND. badlin .EQ. 0)
      *   THEN
             mode = 0
          ELSE
