@@ -1909,13 +1909,13 @@ class _TestCommon(object):
             for protocol in range(pickle.HIGHEST_PROTOCOL):
                 sploaded = pickle.loads(pickle.dumps(datsp, protocol=protocol))
                 assert_equal(datsp.shape, sploaded.shape)
-                assert_array_equal(datsp.todense(), sploaded.todense())
+                assert_array_equal(datsp.toarray(), sploaded.toarray())
                 assert_equal(datsp.format, sploaded.format)
                 for key, val in datsp.__dict__.items():
                     if isinstance(val, np.ndarray):
                         assert_array_equal(val, sploaded.__dict__[key])
-                        continue
-                    assert_(val == sploaded.__dict__[key])
+                    else:
+                        assert_(val == sploaded.__dict__[key])
         check()
 
     def test_unary_ufunc_overrides(self):
