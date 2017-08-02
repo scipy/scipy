@@ -78,7 +78,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
     format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        # TODO: constructor from iterable?
         dict.__init__(self)
         spmatrix.__init__(self)
 
@@ -123,7 +122,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         `dok_matrix` data. Main purpose is to be used for effcient conversion
         from other spmatrix classes. Has no checking if `data` is valid."""
         return dict.update(self, data)
-
 
     def getnnz(self, axis=None):
         if axis is not None:
@@ -246,7 +244,6 @@ class dok_matrix(spmatrix, IndexMixin, dict):
                 continue
             dict.__setitem__(newdok, (a, b),
                              dict.__getitem__(self, (ii, jj)))
-
         return newdok
 
     def __setitem__(self, index, x):
@@ -380,9 +377,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
     def _mul_multivector(self, other):
         # matrix * multivector
-        M, N = self.shape
-        n_vecs = other.shape[1]
-        result = np.zeros((M, n_vecs), dtype=upcast(self.dtype, other.dtype))
+        result_shape = (self.shape[0], other.shape[1])
+        result_dtype = upcast(self.dtype, other.dtype)
+        result = np.zeros(result_shape, dtype=result_dtype)
         for (i, j), v in iteritems(self):
             result[i,:] += v * other[j,:]
         return result
