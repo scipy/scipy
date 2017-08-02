@@ -192,8 +192,8 @@ line_search = line_search_wolfe1
 #------------------------------------------------------------------------------
 
 def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
-                       old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=50,
-                       extra_condition=None):
+                       old_old_fval=None, args=(), c1=1e-4, c2=0.9, amax=None,
+                       extra_condition=None, maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     Parameters
@@ -230,6 +230,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
         for the step length, the algorithm will continue with 
         new iterates. The callable is only called for iterates 
         satisfying the strong Wolfe conditions.
+    maxiter : int, optional
+        Maximum number of iterations to perform
 
     Returns
     -------
@@ -304,7 +306,7 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
     alpha_star, phi_star, old_fval, derphi_star = scalar_search_wolfe2(
             phi, derphi, old_fval, old_old_fval, derphi0, c1, c2, amax,
-            extra_condition2)
+            extra_condition2, maxiter=maxiter)
 
     if derphi_star is None:
         warn('The line search algorithm did not converge', LineSearchWarning)
@@ -320,8 +322,8 @@ def line_search_wolfe2(f, myfprime, xk, pk, gfk=None, old_fval=None,
 
 def scalar_search_wolfe2(phi, derphi=None, phi0=None,
                          old_phi0=None, derphi0=None,
-                         c1=1e-4, c2=0.9, amax=50,
-                         extra_condition=None):
+                         c1=1e-4, c2=0.9, amax=None,
+                         extra_condition=None, maxiter=10):
     """Find alpha that satisfies strong Wolfe conditions.
 
     alpha > 0 is assumed to be a descent direction.
@@ -352,6 +354,8 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
         the algorithm will continue with new iterates.
         The callable is only called for iterates satisfying
         the strong Wolfe conditions.
+    maxiter : int, optional
+        Maximum number of iterations to perform
 
     Returns
     -------
@@ -390,15 +394,6 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     if alpha1 < 0:
         alpha1 = 1.0
 
-    if alpha1 == 0:
-        # This shouldn't happen. Perhaps the increment has slipped below
-        # machine precision?  For now, set the return variables skip the
-        # useless while loop, and raise warnflag=2 due to possible imprecision.
-        alpha_star = None
-        phi_star = phi0
-        phi0 = old_phi0
-        derphi_star = None
-
     phi_a1 = phi(alpha1)
     #derphi_a1 = derphi(alpha1)  evaluated below
 
@@ -408,11 +403,24 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
     if extra_condition is None:
         extra_condition = lambda alpha, phi: True
 
-    i = 1
-    maxiter = 10
     for i in xrange(maxiter):
-        if alpha1 == 0:
+        if alpha1 == 0 or (amax is not None and alpha0 == amax):
+            # alpha1 == 0: This shouldn't happen. Perhaps the increment has
+            # slipped below machine precision?
+            alpha_star = None
+            phi_star = phi0
+            phi0 = old_phi0
+            derphi_star = None
+
+            if alpha1 == 0:
+                msg = 'Rounding errors prevent the line search from converging'
+            else:
+                msg = "The line search algorithm could not find a solution " + \
+                      "less than or equal to amax: %s" % amax
+
+            warn(msg, LineSearchWarning)
             break
+
         if (phi_a1 > phi0 + c1 * alpha1 * derphi0) or \
            ((phi_a1 >= phi_a0) and (i > 1)):
             alpha_star, phi_star, derphi_star = \
@@ -436,8 +444,9 @@ def scalar_search_wolfe2(phi, derphi=None, phi0=None,
                               phi0, derphi0, c1, c2, extra_condition)
             break
 
-        alpha2 = 2 * alpha1   # increase by factor of two on each iteration
-        i = i + 1
+        alpha2 = 2 * alpha1  # increase by factor of two on each iteration
+        if amax is not None:
+            alpha2 = min(alpha2, amax)
         alpha0 = alpha1
         alpha1 = alpha2
         phi_a0 = phi_a1
