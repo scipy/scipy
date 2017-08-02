@@ -22,7 +22,8 @@ class TestBSpline(object):
         # knots should be an ordered 1D array of finite real numbers
         assert_raises((TypeError, ValueError), BSpline,
                 **dict(t=[1, 1.j], c=[1.], k=0))
-        assert_raises(ValueError, BSpline, **dict(t=[1, np.nan], c=[1.], k=0))
+        with np.errstate(invalid='ignore'):
+            assert_raises(ValueError, BSpline, **dict(t=[1, np.nan], c=[1.], k=0))
         assert_raises(ValueError, BSpline, **dict(t=[1, np.inf], c=[1.], k=0))
         assert_raises(ValueError, BSpline, **dict(t=[1, -1], c=[1.], k=0))
         assert_raises(ValueError, BSpline, **dict(t=[[1], [1]], c=[1.], k=0))

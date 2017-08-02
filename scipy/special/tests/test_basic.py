@@ -3286,10 +3286,11 @@ def test_error_raising():
 
 def test_xlogy():
     def xfunc(x, y):
-        if x == 0 and not np.isnan(y):
-            return x
-        else:
-            return x*np.log(y)
+        with np.errstate(invalid='ignore'):
+            if x == 0 and not np.isnan(y):
+                return x
+            else:
+                return x*np.log(y)
 
     z1 = np.asarray([(0,0), (0, np.nan), (0, np.inf), (1.0, 2.0)], dtype=float)
     z2 = np.r_[z1, [(0, 1j), (1, 1j)]]
@@ -3302,10 +3303,11 @@ def test_xlogy():
 
 def test_xlog1py():
     def xfunc(x, y):
-        if x == 0 and not np.isnan(y):
-            return x
-        else:
-            return x * np.log1p(y)
+        with np.errstate(invalid='ignore'):
+            if x == 0 and not np.isnan(y):
+                return x
+            else:
+                return x * np.log1p(y)
 
     z1 = np.asarray([(0,0), (0, np.nan), (0, np.inf), (1.0, 2.0),
                      (1, 1e-30)], dtype=float)

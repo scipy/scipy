@@ -2144,7 +2144,8 @@ class TestMoments(object):
 
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.skew(x), np.nan)
+        with np.errstate(invalid='ignore'):
+            assert_equal(stats.skew(x), np.nan)
         assert_equal(stats.skew(x, nan_policy='omit'), 0.)
         assert_raises(ValueError, stats.skew, x, nan_policy='raise')
         assert_raises(ValueError, stats.skew, x, nan_policy='foobar')
@@ -2158,7 +2159,8 @@ class TestMoments(object):
         # with and without nans, cf gh-5817
         a = np.arange(8).reshape(2, -1).astype(float)
         a[1, 0] = np.nan
-        s = stats.skew(a, axis=1, nan_policy="propagate")
+        with np.errstate(invalid='ignore'):
+            s = stats.skew(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
 
     def test_kurtosis(self):
