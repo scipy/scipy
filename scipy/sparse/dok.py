@@ -409,6 +409,9 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         return NotImplemented
 
     def __reduce__(self):
+        # this approach is necessary because __setstate__ is called after
+        # __setitem__ upon unpickleing and since __init__ is not called there
+        # is no shape attribute hence it is not possible to unpickle it.
         return dict.__reduce__(self)
 
     # What should len(sparse) return? For consistency with dense matrices,
