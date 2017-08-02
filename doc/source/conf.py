@@ -267,6 +267,7 @@ np.random.seed(123)
 plot_include_source = True
 plot_formats = [('png', 96), 'pdf']
 plot_html_show_formats = False
+plot_html_show_source_link = False
 
 import math
 phi = (math.sqrt(5) + 1)/2
@@ -297,6 +298,7 @@ if not use_matplotlib_plot_directive:
 # Source code links
 # -----------------------------------------------------------------------------
 
+import re
 import inspect
 from os.path import relpath, dirname
 
@@ -353,11 +355,19 @@ def linkcode_resolve(domain, info):
     else:
         linespec = ""
 
-    fn = relpath(fn, start=dirname(scipy.__file__))
+    startdir = os.path.abspath(os.path.join(dirname(scipy.__file__), '..'))
+    fn = relpath(fn, start=startdir).replace(os.path.sep, '/')
 
-    if 'dev' in scipy.__version__:
-        return "http://github.com/scipy/scipy/blob/master/scipy/%s%s" % (
-           fn, linespec)
+    if fn.startswith('scipy/'):
+        m = re.match(r'^.*dev0\+([a-f0-9]+)$', scipy.__version__)
+        if m:
+            return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
+                m.group(1), fn, linespec)
+        elif 'dev' in scipy.__version__:
+            return "https://github.com/scipy/scipy/blob/master/%s%s" % (
+                fn, linespec)
+        else:
+            return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (
+                scipy.__version__, fn, linespec)
     else:
-        return "http://github.com/scipy/scipy/blob/v%s/scipy/%s%s" % (
-           scipy.__version__, fn, linespec)
+        return None
