@@ -234,7 +234,7 @@ if NumpyVersion(np.__version__) > '1.12.0.dev':
     polyvalfromroots = np.polynomial.polynomial.polyvalfromroots
 else:
     def polyvalfromroots(x, r, tensor=True):
-        """
+        r"""
         Evaluate a polynomial specified by its roots at points x.
 
         This function is copypasted from numpy 1.12.0.dev.

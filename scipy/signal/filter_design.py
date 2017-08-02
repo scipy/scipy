@@ -351,7 +351,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
 
 
 def freqz_zpk(z, p, k, worN=None, whole=False):
-    """
+    r"""
     Compute the frequency response of a digital filter in ZPK form.
 
     Given the Zeros, Poles and Gain of a digital filter, compute its frequency
