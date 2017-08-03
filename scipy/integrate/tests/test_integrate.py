@@ -8,6 +8,7 @@ import numpy as np
 from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
                    allclose)
 
+from scipy._lib._numpy_compat import _assert_warns
 from scipy._lib.six import xrange
 
 from numpy.testing import (
@@ -608,6 +609,14 @@ class ODECheckParameterUse(object):
         if self.solver_uses_jac:
             solver.set_jac_params(omega)
         self._check_solver(solver)
+
+    def test_warns_on_failure(self):
+        # Set nsteps small to ensure failure
+        solver = self._get_solver(f, jac)
+        solver.set_integrator(self.solver_name, nsteps=1)
+        ic = [1.0, 0.0]
+        solver.set_initial_value(ic, 0.0)
+        _assert_warns(UserWarning, solver.integrate, pi)
 
 
 class TestDOPRI5CheckParameterUse(ODECheckParameterUse):

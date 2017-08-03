@@ -922,7 +922,7 @@ class vode(IntegratorBase):
         y1, t, istate = self.runner(*args)
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:s}'.format(istate)
+            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
@@ -1090,7 +1090,7 @@ class dopri5(IntegratorBase):
                                           tuple(self.call_args) + (f_params,)))
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:s}'.format(istate)
+            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
@@ -1261,7 +1261,7 @@ class lsoda(IntegratorBase):
         y1, t, istate = self.runner(*args)
         self.istate = istate
         if istate < 0:
-            unexpected_istate_msg = 'Unexpected istate={:s}'.format(istate)
+            unexpected_istate_msg = 'Unexpected istate={:d}'.format(istate)
             warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
                           self.messages.get(istate, unexpected_istate_msg)))
             self.success = 0
