@@ -94,6 +94,7 @@ distcont = [
     ['reciprocal', (0.01, 1)],
     ['rice', (0.7749725210111873,)],
     ['semicircular', ()],
+    ['skewcauchy', (4.025168762123,)],
     ['skewnorm', (4.0,)],
     ['t', (2.7433514990818093,)],
     ['trapezoid', (0.2, 0.8)],
