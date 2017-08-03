@@ -255,6 +255,7 @@ from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 from ._equality_constrained_sqp import *
+from .minimize_constrained import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

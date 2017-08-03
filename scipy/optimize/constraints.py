@@ -324,6 +324,10 @@ def parse_constraint(kind):
 
 def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
     """Concatenate sequence of CanonicalConstraint's."""
+    # Return the constraint if it is the only one
+    if len(constraints) == 1:
+        return constraints[0]
+
     # Compute number of constraints
     n_eq = 0
     n_ineq = 0

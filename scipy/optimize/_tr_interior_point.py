@@ -3,7 +3,7 @@
 from __future__ import division, print_function, absolute_import
 import scipy.sparse as spc
 import numpy as np
-from .equality_constrained_sqp import equality_constrained_sqp
+from ._equality_constrained_sqp import equality_constrained_sqp
 from .optimize import OptimizeResult
 from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator

@@ -9,9 +9,9 @@ from ._tr_interior_point import tr_interior_point
 from ._equality_constrained_sqp import equality_constrained_sqp
 
 
-def minimize_constrained(fun, x0, grad, hess=None, method=None, 
-                         constraints=(), xtol=1e-8, gtol=1e-8,
-                         max_iter=1000, callback=None):
+def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
+                         method=None, xtol=1e-8, gtol=1e-8,
+                         max_iter=1000, options={}, callback=None):
     """Minimize scalar function subject to constraints.
 
     Parameters
@@ -45,7 +45,7 @@ def minimize_constrained(fun, x0, grad, hess=None, method=None,
 
         When ``None`` the more appropriate method is choosen.
     constraints : Constraint or List of Constraint's
-        A list of constraints. Available constraints are:
+        A simple constraint or a list of constraints. Available constraints are:
 
             - BoxConstraint
             - LinearConstraint
@@ -77,23 +77,24 @@ def minimize_constrained(fun, x0, grad, hess=None, method=None,
         `OptimizeResult` for a description of other attributes.
     """
     # Put ``constraints`` in list format
-    if constraints in (NonlinearConstraint,
-                       LinearConstraint,
-                       BoxConstraint):
+    if isinstance(constraints, (NonlinearConstraint,
+                                LinearConstraint,
+                                BoxConstraint)):
         constraints = [constraints]
     # Converts all constraints to canonical format
     constraints_list = []
     for constr in constraints:
-        if constr not in (NonlinearConstraint,
-                          LinearConstraint,
-                          BoxConstraint):
+        if not isinstance(constr, (NonlinearConstraint,
+                                        LinearConstraint,
+                                        BoxConstraint)):
             raise ValueError("Unknow Constraint type")
-        constraints_list += [constr.to_canonical]
+        constraints_list += [constr.to_canonical()]
     # Concatenate constraints
     constr = concatenate_canonical_constraints(constraints_list, hess=hess)
+    print(constr)
 
     # Choose appropriate method
-    if method is not None:
+    if method is None:
         if constr.n_ineq == 0:
             method = 'equality_constrained_sqp'
         else:
@@ -121,6 +122,7 @@ def minimize_constrained(fun, x0, grad, hess=None, method=None,
                callback_result
 
     # Call inferior function to do the optimization
+    print(method)
     if method == 'equality_constrained_sqp':
         return equality_constrained_sqp(
             fun, grad, constr.hess,

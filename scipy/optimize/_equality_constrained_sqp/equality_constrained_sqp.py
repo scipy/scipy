@@ -8,9 +8,7 @@ import numpy as np
 from numpy.linalg import norm
 from ..optimize import OptimizeResult
 
-__all__ = [
-    'equality_constrained_sqp',
-]
+__all__ = ['equality_constrained_sqp']
 
 
 def default_scaling(x):
