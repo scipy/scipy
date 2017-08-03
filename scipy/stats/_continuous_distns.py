@@ -4626,7 +4626,7 @@ class skew_cauchy_gen(rv_continuous):
     %(after_notes)s
 
     %(example)s
-    """  
+    """
 
     def _argcheck(self, a):
         return np.isfinite(a)
@@ -4634,10 +4634,20 @@ class skew_cauchy_gen(rv_continuous):
     def _pdf(self, x, a):
         return 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
 
+    def _cdf(self, x, a):
+        if x <= 0:
+            return (a - 1) / np.pi * (np.arctan(x / (a - 1)) + np.pi / 2)
+        else if x > 0:
+            return (a - 1) / 2 + (a + 1) / np.pi * np.arctan(x / (a + 1))
+
+    def _ppf(self, x, a):
+        if x <= 0:
+            return (1 - a) / np.tan(np.pi * x / (a - 1))
+        else if x > 0:
+            return np.tan(np.pi / (a + 1) * (x - (a - 1) / 2)) / (a + 1)
+
     def _stats(self, a, moments='mvsk'):
         output = [np.nan, np.nan, np.nan, np.nan]
-        const = np.sqrt(2/np.pi) * a/np.sqrt(1 + a**2)
-
         return output
 
 
