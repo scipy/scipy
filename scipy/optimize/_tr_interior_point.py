@@ -1,14 +1,14 @@
-"""Trust-region interior points methods"""
+"""Trust-region interior points method"""
 
 from __future__ import division, print_function, absolute_import
 import scipy.sparse as spc
 import numpy as np
 from .equality_constrained_sqp import equality_constrained_sqp
+from .optimize import OptimizeResult
 from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 
-__all__ = ['BarrierSubproblem',
-           'ipsolver']
+__all__ = ['tr_interior_point']
 
 
 class BarrierSubproblem:
@@ -200,37 +200,30 @@ class BarrierSubproblem:
                                self.n_vars+self.n_ineq),
                               matvec)
 
-    def stop_criteria(self, info):
+    def stop_criteria(self, state):
         """Stop criteria to the barrier problem.
         The criteria here proposed is similar to formula (2.3)
         from [1]_, p.879.
         """
-        if (info["opt"] < self.tolerance
-            and info["constr_violation"] < self.tolerance) \
-           or info["niter"] > 1000 \
-           or info["trust_radius"] < 1e-16:
+        if (state["opt"] < self.tolerance
+            and state["constr_violation"] < self.tolerance) \
+           or state["niter"] > 1000 \
+           or state["trust_radius"] < 1e-16:
             return True
         else:
             return False
 
 
-def default_stop_criteria(info):
-    if (info["opt"] < 1e-7 and info["constr_violation"] < 1e-7) \
-       or info["niter"] > 1000:
-        return True
-    else:
-        return False
-
-
-def ipsolver(fun, grad, lagr_hess, n_ineq, constr_ineq,
+def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
              jac_ineq, n_eq, constr_eq, jac_eq, x0,
+             stop_criteria,
              feasible_constr_list=None,
-             stop_criteria=default_stop_criteria,
              initial_barrier_parameter=0.1,
              initial_tolerance=0.1,
              initial_penalty=1.0,
              initial_trust_radius=1.0):
     """Trust-region interior points method.
+
     Solve problem:
         minimize fun(x)
         subject to: constr_ineq(x) <= 0
@@ -280,7 +273,7 @@ def ipsolver(fun, grad, lagr_hess, n_ineq, constr_ineq,
         the specified constraint, otherwise the algorithm will just fail.
     stop_criteria: callable
         Functions that returns True when stop criteria is fulfilled:
-            stop_criteria(info)
+            stop_criteria(state)
     initial_tolerance: float
         Initial subproblem tolerance. By defaut uses 0.1.
     initial_barrier_parameter: float
@@ -295,7 +288,7 @@ def ipsolver(fun, grad, lagr_hess, n_ineq, constr_ineq,
     -------
     x : array_like, shape (n,)
         Solution to the optimization problem.
-    info :
+    state :
         Dictionary containing the following:
             - niter : Number of iterations.
             - trust_radius : Trust radius at last iteration.
@@ -336,7 +329,6 @@ def ipsolver(fun, grad, lagr_hess, n_ineq, constr_ineq,
     barrier_parameter = initial_barrier_parameter
     tolerance = initial_tolerance
     trust_radius = initial_trust_radius
-    v = None
     iteration = 0
     # Define barrier subproblem
     subprob = BarrierSubproblem(
@@ -356,13 +348,13 @@ def ipsolver(fun, grad, lagr_hess, n_ineq, constr_ineq,
         # Update Barrier Problem
         subprob.update(barrier_parameter, tolerance)
         # Solve SQP subproblem
-        z, info = equality_constrained_sqp(
+        state = equality_constrained_sqp(
             subprob.function,
             subprob.gradient,
             subprob.lagrangian_hessian,
             subprob.constraints,
             subprob.jacobian,
-            z, v,
+            z,
             trust_radius,
             trust_lb,
             trust_ub,
@@ -371,20 +363,20 @@ def ipsolver(fun, grad, lagr_hess, n_ineq, constr_ineq,
             subprob.scaling)
 
         # Update parameters
-        iteration += info["niter"]
+        iteration += state["niter"]
         trust_radius = max(initial_trust_radius,
-                           TRUST_ENLARGEMENT*info["trust_radius"])
-        v = info["v"]
+                           TRUST_ENLARGEMENT*state["trust_radius"])
+        v = state["v"]
         # TODO: Use more advanced strategies from [2]_
         # to update this parameters.
         barrier_parameter *= BARRIER_DECAY_RATIO
         tolerance *= BARRIER_DECAY_RATIO
-        # Update info
-        info['niter'] = iteration
+        # Update state
+        state['niter'] = iteration
 
-        if stop_criteria(info):
+        if stop_criteria(state):
             # Get x
-            x = subprob.get_variables(z)
+            state["x"] = subprob.get_variables(z)
             break
 
-    return x, info
+    return state

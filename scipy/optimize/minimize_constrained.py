@@ -5,10 +5,13 @@ from .constraints import (NonlinearConstraint,
                           LinearConstraint,
                           BoxConstraint,
                           concatenate_canonical_constraints)
+from ._tr_interior_point import tr_interior_point
+from ._equality_constrained_sqp import equality_constrained_sqp
 
 
 def minimize_constrained(fun, x0, grad, hess=None, method=None, 
-                         constraints=()):
+                         constraints=(), xtol=1e-8, gtol=1e-8,
+                         max_iter=1000, callback=None):
     """Minimize scalar function subject to constraints.
 
     Parameters
@@ -41,7 +44,7 @@ def minimize_constrained(fun, x0, grad, hess=None, method=None,
             - 'tr-interior-point'
 
         When ``None`` the more appropriate method is choosen.
-    constraints : List of constraints
+    constraints : Constraint or List of Constraint's
         A list of constraints. Available constraints are:
 
             - BoxConstraint
@@ -50,14 +53,19 @@ def minimize_constrained(fun, x0, grad, hess=None, method=None,
 
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
+        Only for 'equality-constrained-sqp'.
     gtol : float, optional
         Tolerance for termination by the norm of the lagrangian gradient.
+    max_iter : int, optional
+        Maximum number of algorithm iterations.
+    options : dict, optional
+        A dictionary of solver options.
     callback : callable, optional
         Called after each iteration:
 
             callback(OptimizeResult state) -> bool
 
-        and if callback returns true the algorithm execution is interupted.
+        and if callback returns true the algorithm execution is terminated.
 
     Returns
     -------
@@ -68,4 +76,60 @@ def minimize_constrained(fun, x0, grad, hess=None, method=None,
         ``message`` which describes the cause of the termination. See
         `OptimizeResult` for a description of other attributes.
     """
-    pass
+    # Put ``constraints`` in list format
+    if constraints in (NonlinearConstraint,
+                       LinearConstraint,
+                       BoxConstraint):
+        constraints = [constraints]
+    # Converts all constraints to canonical format
+    constraints_list = []
+    for constr in constraints:
+        if constr not in (NonlinearConstraint,
+                          LinearConstraint,
+                          BoxConstraint):
+            raise ValueError("Unknow Constraint type")
+        constraints_list += [constr.to_canonical]
+    # Concatenate constraints
+    constr = concatenate_canonical_constraints(constraints_list, hess=hess)
+
+    # Choose appropriate method
+    if method is not None:
+        if constr.n_ineq == 0:
+            method = 'equality_constrained_sqp'
+        else:
+            method = 'tr_interior_point'
+
+    # Define stop criteria
+    if method == 'equality_constrained_sqp':
+       def stop_criteria(info):
+           if callback is None:
+               callback_result = False
+           else:
+               callback_result = calback(info)
+           return (info["opt"] < gtol and info["constr_violation"] < gtol) or \
+               info["trust_radius"] < xtol or \
+               info["niter"] > max_iter or \
+               callback_result
+    elif method == 'tr_interior_point':
+       def stop_criteria(info):
+           if callback is None:
+               callback_result = False
+           else:
+               callback_result = calback(info)
+           return (info["opt"] < gtol and info["constr_violation"] < gtol) or \
+               info["niter"] > max_iter or \
+               callback_result
+
+    # Call inferior function to do the optimization
+    if method == 'equality_constrained_sqp':
+        return equality_constrained_sqp(
+            fun, grad, constr.hess,
+            constr.constr_eq,  constr.jac_eq,
+            x0, stop_criteria, **options)
+    elif method == 'tr_interior_point':
+        return tr_interior_point(
+            fun, grad, constr.hess,
+            constr.n_ineq, constr.constr_ineq,
+            constr.jac_ineq, constr.n_eq,
+            constr.constr_eq, constr.jac_eq,
+            x0, stop_criteria, **options)

@@ -6,6 +6,7 @@ from .projections import projections
 from .qp_subproblem import modified_dogleg, projected_cg, box_intersections
 import numpy as np
 from numpy.linalg import norm
+from ..optimize import OptimizeResult
 
 __all__ = [
     'equality_constrained_sqp',
@@ -17,21 +18,12 @@ def default_scaling(x):
     return spc.eye(n)
 
 
-def default_stop_criteria(info):
-    if (info["opt"] < 1e-8 and info["constr_violation"] < 1e-8) \
-       or info["niter"] > 1000 or info["trust_radius"] < 1e-12:
-        return True
-    else:
-        return False
-
-
 def equality_constrained_sqp(fun, grad, hess, constr, jac,
-                             x0, v0=None,
-                             initial_trust_radius=1.0,
+                             x0, stop_criteria, 
                              trust_lb=None,
                              trust_ub=None,
-                             stop_criteria=default_stop_criteria,
                              initial_penalty=1.0,
+                             initial_trust_radius=1.0,
                              scaling=default_scaling,
                              return_all=False):
     """Solve nonlinear equality-constrained problem using trust-region SQP.
@@ -73,7 +65,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         Trust region upper bound.
     stop_criteria: callable
         Functions that returns True when stop criteria is fulfilled:
-            stop_criteria(info)
+            stop_criteria(state)
     initial_penalty : float
         Initial penalty for merit function.
     scaling : callable
@@ -86,7 +78,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     -------
     x : array_like, shape (n,)
         Solution to the equality constrained problem.
-    info :
+    state :
         Dictionary containing the following:
 
             - niter : Number of iterations.
@@ -165,27 +157,23 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     S = scaling(x)
     # Get projections
     Z, LS, Y = projections(A)
-    # Set initial lagrange multipliers
-    if v0 is None:
-        # Compute least-square lagrange multipliers
-        v = -LS.dot(c)
-    else:
-        v = np.copy(v0)
-    # Construct info dictionary
+    # Compute least-square lagrange multipliers
+    v = -LS.dot(c)
+    # Construct state dictionary
     opt = norm(c + A.T.dot(v))
     constr_violation = norm(b)
-    info = {'niter': iteration, 'trust_radius': trust_radius,
-            'v': v, 'fun': f,
-            'grad': c, 'constr': b,
-            'jac': A, 'opt': opt,
-            'constr_violation': constr_violation}
+    state = OptimizeResult(
+        niter=iteration, trust_radius=trust_radius,
+        x=x0, v=v, fun=f, grad=c, constr=b,
+        jac=A, opt=opt,
+        constr_violation=constr_violation)
     # Store values
     if return_all:
         allvecs = [np.copy(x)]
         allmult = [np.copy(v)]
 
     compute_hess = True
-    while not stop_criteria(info):
+    while not stop_criteria(state):
         # Compute Lagrangian Hessian
         if compute_hess:
             H = hess(x, v)
@@ -309,26 +297,27 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             # Otimality values
             opt = norm(c + A.T.dot(v))
             constr_violation = norm(b)
-            # Store info
-            info["v"] = v
-            info["fun"] = f
-            info["grad"] = c
-            info["constr"] = b
-            info["jac"] = A
-            info["opt"] = opt
-            info["constr_violation"] = constr_violation
+            # Store state
+            state["x"] = x
+            state["v"] = v
+            state["fun"] = f
+            state["grad"] = c
+            state["constr"] = b
+            state["jac"] = A
+            state["opt"] = opt
+            state["constr_violation"] = constr_violation
         else:
             penalty = previous_penalty
             compute_hess = False
         # Store values
-        info["niter"] = iteration
-        info["trust_radius"] = trust_radius
+        state["niter"] = iteration
+        state["trust_radius"] = trust_radius
         if return_all:
             allvecs.append(np.copy(x))
             allmult.append(np.copy(v))
 
     if return_all:
-        info['allvecs'] = allvecs
-        info['allmult'] = allmult
+        state['allvecs'] = allvecs
+        state['allmult'] = allmult
 
-    return x, info
+    return state
