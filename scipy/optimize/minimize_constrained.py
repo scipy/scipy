@@ -9,6 +9,12 @@ from .constraints import (NonlinearConstraint,
 from ._tr_interior_point import tr_interior_point
 from ._equality_constrained_sqp import equality_constrained_sqp
 
+TERMINATION_MESSAGES = {
+    0: "The maximum number of function evaluations is exceeded.",
+    1: "`gtol` termination condition is satisfied.",
+    2: "`xtol` termination condition is satisfied.",
+    3: "`callback` function requested termination"
+}
 
 def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                          method=None, xtol=1e-8, gtol=1e-8,
@@ -109,36 +115,42 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
     # Define stop criteria
     if method == 'equality_constrained_sqp':
-        def stop_criteria(info):
-            if callback is None:
-                callback_result = False
-            else:
-                callback_result = callback(info)
-            return (info["opt"] < gtol and info["constr_violation"] < gtol) or \
-                info["trust_radius"] < xtol or \
-                info["niter"] > max_iter or \
-                callback_result
+        def stop_criteria(state):
+            state.status = None
+            if (callback is not None) and callback(state):
+                state.status = 3
+            elif state.opt < gtol and state.constr_violation < gtol:
+                state.status = 1
+            elif state.trust_radius < xtol:
+                state.status = 2
+            elif state.niter > max_iter:
+                state.status = 0
+            return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
-        def stop_criteria(info):
+        def stop_criteria(state):
             if callback is None:
                 callback_result = False
             else:
-                callback_result = callback(info)
-            return (info["opt"] < gtol and info["constr_violation"] < gtol) or \
-                info["niter"] > max_iter or \
+                callback_result = callback(state)
+            return (state["opt"] < gtol and state["constr_violation"] < gtol) or \
+                state["niter"] > max_iter or \
                 callback_result
 
     # Call inferior function to do the optimization
-    print(method)
     if method == 'equality_constrained_sqp':
-        return equality_constrained_sqp(
+        result = equality_constrained_sqp(
             fun, grad, constr.hess,
             constr.constr_eq,  constr.jac_eq,
             x0, stop_criteria, **options)
     elif method == 'tr_interior_point':
-        return tr_interior_point(
+        result = tr_interior_point(
             fun, grad, constr.hess,
             constr.n_ineq, constr.constr_ineq,
             constr.jac_ineq, constr.n_eq,
             constr.constr_eq, constr.jac_eq,
             x0, stop_criteria, **options)
+
+    result.message = TERMINATION_MESSAGES[result.status]
+    result.success = result.status > 0
+
+    return result
