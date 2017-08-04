@@ -232,7 +232,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
 
         newdok = dok_matrix(shape, dtype=self.dtype)
 
-        for (ii, jj) in self.keys():
+        for (ii, jj) in iterkeys(self):
             # ditto for numpy scalars
             ii = int(ii)
             jj = int(jj)
@@ -493,7 +493,7 @@ class dok_matrix(spmatrix, IndexMixin, dict):
         M, N = self.shape
         if newM < M or newN < N:
             # Remove all elements outside new dimensions
-            for (i, j) in list(self.keys()):
+            for (i, j) in list(iterkeys(self)):
                 if i >= newM or j >= newN:
                     del self[i, j]
         self._shape = shape
