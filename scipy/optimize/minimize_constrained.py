@@ -4,6 +4,7 @@ import scipy.sparse as spc
 from .constraints import (NonlinearConstraint,
                           LinearConstraint,
                           BoxConstraint,
+                          CanonicalConstraint,
                           concatenate_canonical_constraints)
 from ._tr_interior_point import tr_interior_point
 from ._equality_constrained_sqp import equality_constrained_sqp
@@ -45,7 +46,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
         When ``None`` the more appropriate method is choosen.
     constraints : Constraint or List of Constraint's
-        A simple constraint or a list of constraints. Available constraints are:
+        A single constraint or a list of constraints.
+        Available constraints are:
 
             - BoxConstraint
             - LinearConstraint
@@ -79,16 +81,21 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     # Put ``constraints`` in list format
     if isinstance(constraints, (NonlinearConstraint,
                                 LinearConstraint,
-                                BoxConstraint)):
+                                BoxConstraint,
+                                CanonicalConstraint)):
         constraints = [constraints]
     # Converts all constraints to canonical format
     constraints_list = []
     for constr in constraints:
         if not isinstance(constr, (NonlinearConstraint,
-                                        LinearConstraint,
-                                        BoxConstraint)):
+                                   LinearConstraint,
+                                   BoxConstraint,
+                                   CanonicalConstraint)):
             raise ValueError("Unknow Constraint type")
-        constraints_list += [constr.to_canonical()]
+        elif isinstance(constr, CanonicalConstraint):
+            constraints_list += [constr]
+        else:
+            constraints_list += [constr.to_canonical()]
     # Concatenate constraints
     constr = concatenate_canonical_constraints(constraints_list, hess=hess)
     print(constr)
@@ -102,24 +109,24 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
     # Define stop criteria
     if method == 'equality_constrained_sqp':
-       def stop_criteria(info):
-           if callback is None:
-               callback_result = False
-           else:
-               callback_result = calback(info)
-           return (info["opt"] < gtol and info["constr_violation"] < gtol) or \
-               info["trust_radius"] < xtol or \
-               info["niter"] > max_iter or \
-               callback_result
+        def stop_criteria(info):
+            if callback is None:
+                callback_result = False
+            else:
+                callback_result = callback(info)
+            return (info["opt"] < gtol and info["constr_violation"] < gtol) or \
+                info["trust_radius"] < xtol or \
+                info["niter"] > max_iter or \
+                callback_result
     elif method == 'tr_interior_point':
-       def stop_criteria(info):
-           if callback is None:
-               callback_result = False
-           else:
-               callback_result = calback(info)
-           return (info["opt"] < gtol and info["constr_violation"] < gtol) or \
-               info["niter"] > max_iter or \
-               callback_result
+        def stop_criteria(info):
+            if callback is None:
+                callback_result = False
+            else:
+                callback_result = callback(info)
+            return (info["opt"] < gtol and info["constr_violation"] < gtol) or \
+                info["niter"] > max_iter or \
+                callback_result
 
     # Call inferior function to do the optimization
     print(method)
