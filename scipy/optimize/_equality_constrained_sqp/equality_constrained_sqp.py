@@ -17,7 +17,7 @@ def default_scaling(x):
 
 
 def equality_constrained_sqp(fun, grad, hess, constr, jac,
-                             x0, stop_criteria, 
+                             x0, stop_criteria,
                              trust_lb=None,
                              trust_ub=None,
                              initial_penalty=1.0,
@@ -142,8 +142,12 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     if trust_ub is None:
         trust_ub = np.full(n, np.inf)
 
+    # Construct State structure
+    state = OptimizeResult(
+        niter=0, nfev=0, ngev=0, ncev=0, njev=0, nhev=0,
+        trust_radius=initial_trust_radius, x=x0)
+
     # Initial values
-    iteration = 0
     x = np.copy(x0)
     trust_radius = initial_trust_radius
     penalty = initial_penalty
@@ -157,14 +161,19 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     Z, LS, Y = projections(A)
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
-    # Construct state dictionary
-    opt = norm(c + A.T.dot(v))
-    constr_violation = norm(b)
-    state = OptimizeResult(
-        niter=iteration, trust_radius=trust_radius,
-        x=x0, v=v, fun=f, grad=c, constr=b,
-        jac=A, opt=opt,
-        constr_violation=constr_violation)
+    # Update state parameters
+    state.opt = norm(c + A.T.dot(v))
+    state.constr_violation = norm(b)
+    state.nfev += 1
+    state.ngev += 1
+    state.ncev += 1
+    state.njev += 1
+    state.x = x
+    state.v = v
+    state.fun = f
+    state.grad = c
+    state.constr = b
+    state.jac = A
     # Store values
     if return_all:
         allvecs = [np.copy(x)]
@@ -175,6 +184,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         # Compute Lagrangian Hessian
         if compute_hess:
             H = hess(x, v)
+            state.nhev += 1
 
         # Normal Step - `dn`
         # minimize 1/2*||A dn + b||^2
@@ -196,7 +206,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         c_t = H.dot(dn) + c
         b_t = np.zeros_like(b)
         trust_radius_t = np.sqrt(trust_radius**2 - np.linalg.norm(dn)**2)
-        lb_t = trust_lb- dn
+        lb_t = trust_lb - dn
         ub_t = trust_ub - dn
         dt, info_cg = projected_cg(H, c_t, Z, Y, b_t,
                                    trust_radius_t,
@@ -229,6 +239,9 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         x_next = x + S.dot(d)
         f_next = fun(x_next)
         b_next = constr(x_next)
+        # Increment funcion evaluation counter
+        state.nfev += 1
+        state.ncev += 1
         # Compute merit function at trial point
         merit_function_next = f_next + penalty*norm(b_next)
         # Compute actual reduction according to formula (3.54),
@@ -248,6 +261,9 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             x_soc = x + S.dot(d + t*y)
             f_soc = fun(x_soc)
             b_soc = constr(x_soc)
+            # Increment funcion evaluation counter
+            state.nfev += 1
+            state.ncev += 1
             # Recompute actual reduction
             merit_function_soc = f_soc + penalty*norm(b_soc)
             actual_reduction_soc = merit_function - merit_function_soc
@@ -278,7 +294,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
                     trust_radius *= MIN_TRUST_REDUCTION
 
         # Update iteration
-        iteration += 1
+        state.niter += 1
         if reduction_ratio >= SUFFICIENT_REDUCTION_RATIO:
             x = x_next
             f = f_next
@@ -286,36 +302,36 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             b = b_next
             A = jac(x)
             S = scaling(x)
+            # Increment funcion evaluation counter
+            state.ngev += 1
+            state.njev += 1
             # Get projections
             Z, LS, Y = projections(A)
             # Compute least-square lagrange multipliers
             v = -LS.dot(c)
             # Set Flag
             compute_hess = True
-            # Otimality values
-            opt = norm(c + A.T.dot(v))
-            constr_violation = norm(b)
             # Store state
-            state["x"] = x
-            state["v"] = v
-            state["fun"] = f
-            state["grad"] = c
-            state["constr"] = b
-            state["jac"] = A
-            state["opt"] = opt
-            state["constr_violation"] = constr_violation
+            state.x = x
+            state.v = v
+            state.fun = f
+            state.grad = c
+            state.constr = b
+            state.jac = A
+            # Otimality values
+            state.opt = norm(c + A.T.dot(v))
+            state.constr_violation = norm(b)
         else:
             penalty = previous_penalty
             compute_hess = False
         # Store values
-        state["niter"] = iteration
-        state["trust_radius"] = trust_radius
+        state.trust_radius = trust_radius
         if return_all:
             allvecs.append(np.copy(x))
             allmult.append(np.copy(v))
 
     if return_all:
-        state['allvecs'] = allvecs
-        state['allmult'] = allmult
+        state.allvecs = allvecs
+        state.allmult = allmult
 
     return state
