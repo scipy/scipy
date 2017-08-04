@@ -104,7 +104,6 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             constraints_list += [constr.to_canonical()]
     # Concatenate constraints
     constr = concatenate_canonical_constraints(constraints_list, hess=hess)
-    print(constr)
 
     # Choose appropriate method
     if method is None:
@@ -119,7 +118,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             state.status = None
             if (callback is not None) and callback(state):
                 state.status = 3
-            elif state.opt < gtol and state.constr_violation < gtol:
+            elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
             elif state.trust_radius < xtol:
                 state.status = 2

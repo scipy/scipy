@@ -161,7 +161,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
     # Update state parameters
-    state.opt = norm(c + A.T.dot(v))
+    state.optimality = norm(c + A.T.dot(v))
     state.constr_violation = norm(b)
     state.nfev += 1
     state.ngev += 1
@@ -320,7 +320,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             state.constr = b
             state.jac = A
             # Otimality values
-            state.opt = norm(c + A.T.dot(v))
+            state.optimality = norm(c + A.T.dot(v))
             state.constr_violation = norm(b)
         else:
             penalty = previous_penalty
