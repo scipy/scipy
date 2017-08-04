@@ -143,9 +143,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         trust_ub = np.full(n, np.inf)
 
     # Construct State structure
-    state = OptimizeResult(
-        niter=0, nfev=0, ngev=0, ncev=0, njev=0, nhev=0,
-        trust_radius=initial_trust_radius, x=x0)
+    state = OptimizeResult(niter=0, nfev=0, ngev=0,
+                           ncev=0, njev=0, nhev=0)
 
     # Initial values
     x = np.copy(x0)
@@ -174,6 +173,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     state.grad = c
     state.constr = b
     state.jac = A
+    state.trust_radius = trust_radius
+    state.penalty = penalty
     # Store values
     if return_all:
         allvecs = [np.copy(x)]
@@ -326,6 +327,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             compute_hess = False
         # Store values
         state.trust_radius = trust_radius
+        state.penalty = penalty
         if return_all:
             allvecs.append(np.copy(x))
             allmult.append(np.copy(v))
