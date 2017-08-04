@@ -7,7 +7,7 @@ programming equality constraints.
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import svd
-
+import scipy
 
 def _row_count(A):
     """
@@ -27,7 +27,7 @@ def _row_count(A):
 
     """
     tol = 1e-13
-    return np.sum(np.abs(A) > tol, axis=1)
+    return np.array((abs(A) > tol).sum(axis = 1)).flatten()
 
 
 def _get_densest(A, eligibleRows):
@@ -89,6 +89,117 @@ def _remove_zero_rows(A, b):
                   "entry in b_eq. The problem is infeasible."
     b = b[np.logical_not(i_zero)]
     return A, b, status, message
+
+
+def _remove_redundancy_sparse(A, rhs):
+    """
+    Eliminates redundant equations from system of equations defined by Ax = b
+    and identifies infeasibilities.
+
+    Parameters
+    ----------
+    A : 2-D sparse matrix
+        An matrix representing the left-hand side of a system of equations
+    rhs : 1-D array
+        An array representing the right-hand side of a system of equations
+
+    Returns
+    -------
+    A : 2-D sparse matrix
+        A matrix representing the left-hand side of a system of equations
+    rhs : 1-D array
+        An array representing the right-hand side of a system of equations
+    status: int
+        An integer indicating the status of the system
+        0: No infeasibility identified
+        2: Trivially infeasible
+    message : str
+        A string descriptor of the exit status of the optimization.
+
+    """
+
+    tolapiv = 1e-8
+    tolprimal = 1e-8
+    status = 0
+    message = ""
+    inconsistent = ("There is a linear combination of rows of A_eq that "
+                    "results in zero, suggesting a redundant constraint. "
+                    "However the same linear combination of b_eq is "
+                    "nonzero, suggesting that the constraints conflict "
+                    "and the problem is infeasible.")
+#    A, rhs, status, message = _remove_zero_rows(A, rhs)
+
+    if status != 0:
+        return A, rhs, status, message
+
+    m,n = A.shape
+
+    v = list(range(m))      # Artificial column indices.
+    b = list(v)             # Basis column indices. This is better as a list
+                            # than a set because column order of basis matrix 
+                            # needs to be consistent.
+    k = set(range(m,m+n))   # Structural column indices. 
+    d = []                  # Indices of dependent rows
+
+    A_orig = A
+    A = scipy.sparse.hstack((scipy.sparse.eye(m),A)).tocsc()
+    e = np.zeros(m)
+
+    # Implements basic algorithm from [1]
+    # Uses only one of the suggested improvements (removing zero rows).
+    # Removing column singletons would be easy, but it is not as important
+    # because the procedure is performed only on the equality constraint
+    # matrix from the original problem - not on the canonical form matrix,
+    # which would have many more column singletons due to slack variables
+    # from the inequality constraints.
+    # The thoughts on "crashing" the initial basis sound useful, but the
+    # description of the procedure seems to assume a lot of familiarity with
+    # the subject; it is not very explicit. I already went through enough 
+    # trouble getting the basic algorithm working, so I was not interested in
+    # trying to decipher this, too. (Overall, the paper is fraught with 
+    # mistakes and ambiguities - which is strange, because the rest of 
+    # Andersen's papers are quite good.)
+    # I tried and tried and tried to improve performance using the 
+    # Bartels-Golub update. It works, but it's only practical if the LU 
+    # factorization can be specialized as described, and that is not possible
+    # until the Scipy SuperLU interface permits control over column 
+    # permutation - see issue #7700.
+
+    for i in v:
+        B = A[:,b]
+        
+        e[i] = 1
+        if i > 0: 
+            e[i-1] = 0
+            
+        pi = scipy.sparse.linalg.spsolve(B.transpose(),e).reshape(-1,1)                
+    
+        js = list(k-set(b)) # not efficient, but this is not the time sink...
+        
+        # Due to overhead, it tends to be faster (for problems tested) to
+        # compute the full matrix-vector product rather than individual 
+        # vector-vector products (with the chance of terminating as soon 
+        # as any are nonzero). For very large matrices, it might be worth
+        # it to compute, say, 100 or 1000 at a time and stop when a nonzero
+        # is found.
+        c = (np.abs(A[:,js].transpose().dot(pi)) > tolapiv).nonzero()[0]
+        
+        if len(c) > 0: # independent
+            j = js[c[0]]
+            b[i] = j        # replace artificial column 
+        else:
+            bibar = pi.T.dot(rhs.reshape(-1,1))
+            bnorm = np.linalg.norm(rhs)
+            if abs(bibar)/(1+bnorm) > tolprimal:
+                status = 2
+                message = inconsistent
+                return A_orig, rhs, status, message
+            else: # dependent
+                d.append(i)
+                
+    keep = set(range(m))
+    keep = list(keep - set(d))
+    return A_orig[keep,:], rhs[keep], status, message
 
 
 def _remove_redundancy(A, b):

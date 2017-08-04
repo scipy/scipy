@@ -11,6 +11,7 @@ from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from scipy.optimize._remove_redundancy import _remove_redundancy
+from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
 
 
 def _clean_inputs(
@@ -588,6 +589,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
                 bounds[i][j] = None
 
     if (sps.issparse(A_eq)):
+        A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
+        if status != 0:
+            complete = True
         return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
                 x, undo, complete, status, message)
 
