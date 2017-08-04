@@ -49,7 +49,8 @@ class CanonicalConstraint:
             - ``H``: LinearOperator (or sparse matrix or ndarray), shape (n, n)
                 Lagrangian Hessian.
     """
-    def __init__(self, n_ineq, constr_ineq, jac_ineq, n_eq, constr_eq, jac_eq, hess):
+    def __init__(self, n_ineq, constr_ineq, jac_ineq,
+                 n_eq, constr_eq, jac_eq, hess):
         self.n_ineq = n_ineq
         self.constr_ineq = constr_ineq
         self.jac_ineq = jac_ineq
@@ -152,18 +153,19 @@ class NonlinearConstraint:
         if self.hess is None:
             hess = None
         else:
-            def hess(x, v_eq=None, v_ineq=None):
+            def hess(x, v_eq=np.empty(0), v_ineq=np.empty(0)):
                 hess = self.hess
                 v = np.zeros(fun_len)
-                if v_eq is not None:
+                if len(v_eq) > 0:
                     v[eq] += v_eq
-                if v_ineq is not None:
+                if len(v_ineq) > 0:
                     v[ineq[sign == 1]] += v_ineq[sign == 1]
                     v[ineq[sign == -1]] -= v_ineq[sign == -1]
                 return hess(x, v)
 
         return CanonicalConstraint(n_ineq, constr_ineq, jac_ineq,
                                    n_eq, constr_eq, jac_eq, hess)
+
 
 class LinearConstraint:
     """Object representing linear constraint.
@@ -201,8 +203,6 @@ class LinearConstraint:
 
     def to_canonical(self):
         return self.to_nonlinear().to_canonical()
-
-    
 
 
 class BoxConstraint:
@@ -324,10 +324,6 @@ def parse_constraint(kind):
 
 def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
     """Concatenate sequence of CanonicalConstraint's."""
-    # Return the constraint if it is the only one
-    if len(constraints) == 1:
-        return constraints[0]
-
     # Compute number of constraints
     n_eq = 0
     n_ineq = 0
@@ -380,7 +376,7 @@ def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
             return np.vstack(jac_ineq_list)
 
     # Concatenate Hessians
-    def lagr_hess(x, v_eq, v_ineq):
+    def lagr_hess(x, v_eq=np.empty(0), v_ineq=np.empty(0)):
         n = len(x)
         if hess is not None:
             hess_list = [hess(x)]
@@ -403,7 +399,6 @@ def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
             return result
 
         return spc.linalg.LinearOperator((n, n), matvec)
-
 
     return CanonicalConstraint(n_ineq, constr_ineq, jac_ineq,
                                n_eq, constr_eq, jac_eq, lagr_hess)
