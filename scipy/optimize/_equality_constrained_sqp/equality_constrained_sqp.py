@@ -142,7 +142,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     if trust_ub is None:
         trust_ub = np.full(n, np.inf)
 
-    # Construct State structure
+    # Construct OptimizeResult
     state = OptimizeResult(niter=0, nfev=0, ngev=0,
                            ncev=0, njev=0, nhev=0,
                            cg_niter=0, cg_info={})

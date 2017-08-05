@@ -127,13 +127,14 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
         def stop_criteria(state):
-            if callback is None:
-                callback_result = False
-            else:
-                callback_result = callback(state)
-            return (state["opt"] < gtol and state["constr_violation"] < gtol) or \
-                state["niter"] > max_iter or \
-                callback_result
+            state.status = None
+            if (callback is not None) and callback(state):
+                state.status = 3
+            elif state.optimality < gtol and state.constr_violation < gtol:
+                state.status = 1
+            elif state.niter > max_iter:
+                state.status = 0
+            return state.status in (0, 1, 2, 3)
 
     # Call inferior function to do the optimization
     if method == 'equality_constrained_sqp':
