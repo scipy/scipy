@@ -350,10 +350,21 @@ def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
         jac_eq_list = []
         for constr in constraints:
             J = constr.jac_eq(x)
-            if not sparse and spc.issparse(J):
-                jac_eq_list += [J.toarray()]
+            if sparse:
+                # Convert all values to coo_matrix
+                # this is done internally anyway
+                # and it helps avoiding some odd
+                # behaviours
+                jac_eq_list += [spc.coo_matrix(J)]
             else:
-                jac_eq_list += [J]
+                # Convert all values to dense array
+                # this is done internally anyway
+                # and it helps avoiding some odd
+                # behaviours
+                if spc.issparse(J):
+                    jac_eq_list += [J.toarray()]
+                else:
+                    jac_eq_list += [J]
 
         if sparse:
             return spc.vstack(jac_eq_list)
@@ -365,10 +376,21 @@ def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
         jac_ineq_list = []
         for constr in constraints:
             J = constr.jac_ineq(x)
-            if not sparse and spc.issparse(J):
-                jac_ineq_list += [J.toarray()]
+            if sparse:
+                # Convert all values to coo_matrix
+                # this is done internally anyway
+                # and it helps avoiding some odd
+                # behaviours
+                jac_ineq_list += [spc.coo_matrix(J)]
             else:
-                jac_ineq_list += [J]
+                # Convert all values to dense array
+                # this is done internally anyway
+                # and it helps avoiding some odd
+                # behaviours
+                if spc.issparse(J):
+                    jac_ineq_list += [J.toarray()]
+                else:
+                    jac_ineq_list += [J]
 
         if sparse:
             return spc.vstack(jac_ineq_list)
