@@ -4618,7 +4618,7 @@ class skew_cauchy_gen(rv_continuous):
     -----
     The pdf is::
 
-        skewcauchy.pdf(x, a) = 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
+        skewcauchy.pdf(x, a) = 1 / (pi * (x**2 / (a * sign(x) + 1)**2 + 1))
 
     `skewcauchy` takes ``a`` as a skewness parameter
     When a=0 the distribution is identical to the usual Cauchy distribution.
@@ -4629,27 +4629,23 @@ class skew_cauchy_gen(rv_continuous):
     """
 
     def _argcheck(self, a):
-        return np.isfinite(a)
+        return np.isfinite(a) and np.abs(a) != 1
 
     def _pdf(self, x, a):
         return 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
 
     def _cdf(self, x, a):
-        if x <= 0:
-            return (a - 1) / np.pi * (np.arctan(x / (a - 1)) + np.pi / 2)
-        else if x > 0:
-            return (a - 1) / 2 + (a + 1) / np.pi * np.arctan(x / (a + 1))
+        return np.where(x <= 0,
+                        (a - 1) / np.pi * (np.arctan(x / (a - 1)) + np.pi / 2),
+                        (a - 1) / 2 + (a + 1) / np.pi * np.arctan(x / (a + 1)))
 
     def _ppf(self, x, a):
-        if x <= 0:
-            return (1 - a) / np.tan(np.pi * x / (a - 1))
-        else if x > 0:
-            return np.tan(np.pi / (a + 1) * (x - (a - 1) / 2)) / (a + 1)
+        return np.where(x <= 0,
+                        (1 - a) / np.tan(np.pi * x / (a - 1)),
+                        np.tan(np.pi / (a + 1) * (x - (a - 1) / 2)) / (a + 1))
 
     def _stats(self, a, moments='mvsk'):
-        output = [np.nan, np.nan, np.nan, np.nan]
-        return output
-
+        return np.nan, np.nan, np.nan, np.nan
 
 skewcauchy = skew_cauchy_gen(name='skewcauchy')
 
