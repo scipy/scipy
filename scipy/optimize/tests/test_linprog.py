@@ -10,7 +10,7 @@ from numpy.testing import (assert_, assert_allclose, assert_raises,
 from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
-import scipy
+
 
 def magic_square(n):
     np.random.seed(0)

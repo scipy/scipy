@@ -91,16 +91,17 @@ def _remove_zero_rows(A, b):
     return A, b, status, message
 
 
-def bg_update_dense(plu,perm_r,v,j):
-    LU,p = plu
-    
-    u = scipy.linalg.solve_triangular(LU,v[perm_r],lower=True,unit_diagonal=True)    
-    LU[:j+1,j] = u[:j+1]
+def bg_update_dense(plu, perm_r, v, j):
+    LU, p = plu
+
+    u = scipy.linalg.solve_triangular(LU, v[perm_r], lower=True,
+                                      unit_diagonal=True)
+    LU[:j+1, j] = u[:j+1]
     l = u[j+1:]
-    piv = LU[j,j]
-    LU[j+1:,j] += (l/piv)
-    return LU,p
-    
+    piv = LU[j, j]
+    LU[j+1:, j] += (l/piv)
+    return LU, p
+
 
 def _remove_redundancy_dense(A, rhs):
     """
@@ -143,21 +144,21 @@ def _remove_redundancy_dense(A, rhs):
     if status != 0:
         return A, rhs, status, message
 
-    m,n = A.shape
+    m, n = A.shape
 
     v = list(range(m))      # Artificial column indices.
     b = list(v)             # Basis column indices. This is better as a list
-                            # than a set because column order of basis matrix 
+                            # than a set because column order of basis matrix
                             # needs to be consistent.
-    k = set(range(m,m+n))   # Structural column indices. 
+    k = set(range(m, m+n))  # Structural column indices.
     d = []                  # Indices of dependent rows
 
     A_orig = A
-    A = np.hstack((np.eye(m),A))
+    A = np.hstack((np.eye(m), A))
     e = np.zeros(m)
 
     # Implements basic algorithm from [1]
-    # Uses some of the suggested improvements (removing zero rows and 
+    # Uses some of the suggested improvements (removing zero rows and
     # Bartels-Golub update idea).
     # Removing column singletons would be easy, but it is not as important
     # because the procedure is performed only on the equality constraint
@@ -166,61 +167,60 @@ def _remove_redundancy_dense(A, rhs):
     # from the inequality constraints.
     # The thoughts on "crashing" the initial basis sound useful, but the
     # description of the procedure seems to assume a lot of familiarity with
-    # the subject; it is not very explicit. I already went through enough 
+    # the subject; it is not very explicit. I already went through enough
     # trouble getting the basic algorithm working, so I was not interested in
-    # trying to decipher this, too. (Overall, the paper is fraught with 
-    # mistakes and ambiguities - which is strange, because the rest of 
+    # trying to decipher this, too. (Overall, the paper is fraught with
+    # mistakes and ambiguities - which is strange, because the rest of
     # Andersen's papers are quite good.)
 
-    B = A[:,b]
+    B = A[:, b]
     for i in v:
-        
+
         e[i] = 1
-        if i > 0: 
+        if i > 0:
             e[i-1] = 0
-            
-        try: # fails for i==0 and any time it gets ill-conditioned
+
+        try:  # fails for i==0 and any time it gets ill-conditioned
             j = b[i-1]
-            lu = bg_update_dense(lu,perm_r,A[:,j],i-1)
+            lu = bg_update_dense(lu, perm_r, A[:, j], i-1)
         except:
-            lu = scipy.linalg.lu_factor(B)  
-            LU,p = lu
+            lu = scipy.linalg.lu_factor(B)
+            LU, p = lu
             perm_r = list(range(m))
-            for i1,i2 in enumerate(p):
-                perm_r[i1],perm_r[i2] = perm_r[i2],perm_r[i1]
-        
+            for i1, i2 in enumerate(p):
+                perm_r[i1], perm_r[i2] = perm_r[i2], perm_r[i1]
+
         pi = scipy.linalg.lu_solve(lu, e, trans=1)
-        js = np.array(list(k-set(b))) # not efficient, but this is not the time sink...
-        
-        num_cols = 50
+
+        # not efficient, but this is not the time sink...
+        js = np.array(list(k-set(b)))
+        batch = 50
         dependent = True
-#        for j in js:
-#            if abs(A[:,j].transpose().dot(pi)) > tolapiv:
-        for j_index in range(0,len(js),num_cols): # tiny bit faster; cuts down on loops
-            j_indices = js[np.arange(j_index,min(j_index+num_cols,len(js)))]
-            c = abs(A[:,j_indices].transpose().dot(pi)) > tolapiv
+
+        # This is a tiny bit faster than looping over columns indivually,
+        # like for j in js: if abs(A[:,j].transpose().dot(pi)) > tolapiv:
+        for j_index in range(0, len(js), batch):
+            j_indices = js[np.arange(j_index, min(j_index+batch, len(js)))]
+            c = abs(A[:, j_indices].transpose().dot(pi)) > tolapiv
             if c.any():
                 j = js[j_index + np.nonzero(c)[0][0]]
-                B[:,i] = A[:,j]                
+                B[:, i] = A[:, j]
                 b[i] = j
-#                print(str(i) + " is not dependent")
                 dependent = False
                 break
         if dependent:
-            bibar = pi.T.dot(rhs.reshape(-1,1))
+            bibar = pi.T.dot(rhs.reshape(-1, 1))
             bnorm = np.linalg.norm(rhs)
-            if abs(bibar)/(1+bnorm) > tolprimal: # inconsistent
+            if abs(bibar)/(1+bnorm) > tolprimal:  # inconsistent
                 status = 2
                 message = inconsistent
                 return A_orig, rhs, status, message
-            else: # dependent
-#                print(str(i) + " is dependent")
+            else:  # dependent
                 d.append(i)
-                
-#    print("Nullspace Rank: " + str(len(d)))
+
     keep = set(range(m))
     keep = list(keep - set(d))
-    return A_orig[keep,:], rhs[keep], status, message
+    return A_orig[keep, :], rhs[keep], status, message
 
 
 def _remove_redundancy_sparse(A, rhs):
@@ -264,17 +264,17 @@ def _remove_redundancy_sparse(A, rhs):
     if status != 0:
         return A, rhs, status, message
 
-    m,n = A.shape
+    m, n = A.shape
 
     v = list(range(m))      # Artificial column indices.
     b = list(v)             # Basis column indices. This is better as a list
-                            # than a set because column order of basis matrix 
+                            # than a set because column order of basis matrix
                             # needs to be consistent.
-    k = set(range(m,m+n))   # Structural column indices. 
+    k = set(range(m, m+n))  # Structural column indices.
     d = []                  # Indices of dependent rows
 
     A_orig = A
-    A = scipy.sparse.hstack((scipy.sparse.eye(m),A)).tocsc()
+    A = scipy.sparse.hstack((scipy.sparse.eye(m), A)).tocsc()
     e = np.zeros(m)
 
     # Implements basic algorithm from [1]
@@ -286,52 +286,52 @@ def _remove_redundancy_sparse(A, rhs):
     # from the inequality constraints.
     # The thoughts on "crashing" the initial basis sound useful, but the
     # description of the procedure seems to assume a lot of familiarity with
-    # the subject; it is not very explicit. I already went through enough 
+    # the subject; it is not very explicit. I already went through enough
     # trouble getting the basic algorithm working, so I was not interested in
-    # trying to decipher this, too. (Overall, the paper is fraught with 
-    # mistakes and ambiguities - which is strange, because the rest of 
+    # trying to decipher this, too. (Overall, the paper is fraught with
+    # mistakes and ambiguities - which is strange, because the rest of
     # Andersen's papers are quite good.)
-    # I tried and tried and tried to improve performance using the 
-    # Bartels-Golub update. It works, but it's only practical if the LU 
+    # I tried and tried and tried to improve performance using the
+    # Bartels-Golub update. It works, but it's only practical if the LU
     # factorization can be specialized as described, and that is not possible
-    # until the Scipy SuperLU interface permits control over column 
+    # until the Scipy SuperLU interface permits control over column
     # permutation - see issue #7700.
 
     for i in v:
-        B = A[:,b]
-        
+        B = A[:, b]
+
         e[i] = 1
-        if i > 0: 
+        if i > 0:
             e[i-1] = 0
-            
-        pi = scipy.sparse.linalg.spsolve(B.transpose(),e).reshape(-1,1)                
-    
-        js = list(k-set(b)) # not efficient, but this is not the time sink...
-        
+
+        pi = scipy.sparse.linalg.spsolve(B.transpose(), e).reshape(-1, 1)
+
+        js = list(k-set(b))  # not efficient, but this is not the time sink...
+
         # Due to overhead, it tends to be faster (for problems tested) to
-        # compute the full matrix-vector product rather than individual 
-        # vector-vector products (with the chance of terminating as soon 
+        # compute the full matrix-vector product rather than individual
+        # vector-vector products (with the chance of terminating as soon
         # as any are nonzero). For very large matrices, it might be worth
         # it to compute, say, 100 or 1000 at a time and stop when a nonzero
         # is found.
-        c = (np.abs(A[:,js].transpose().dot(pi)) > tolapiv).nonzero()[0]
-        
-        if len(c) > 0: # independent
+        c = (np.abs(A[:, js].transpose().dot(pi)) > tolapiv).nonzero()[0]
+
+        if len(c) > 0:  # independent
             j = js[c[0]]
-            b[i] = j        # replace artificial column 
+            b[i] = j  # replace artificial column
         else:
-            bibar = pi.T.dot(rhs.reshape(-1,1))
+            bibar = pi.T.dot(rhs.reshape(-1, 1))
             bnorm = np.linalg.norm(rhs)
-            if abs(bibar)/(1+bnorm) > tolprimal:
+            if abs(bibar)/(1 + bnorm) > tolprimal:
                 status = 2
                 message = inconsistent
                 return A_orig, rhs, status, message
-            else: # dependent
+            else:  # dependent
                 d.append(i)
-                
+
     keep = set(range(m))
     keep = list(keep - set(d))
-    return A_orig[keep,:], rhs[keep], status, message
+    return A_orig[keep, :], rhs[keep], status, message
 
 
 def _remove_redundancy(A, b):
