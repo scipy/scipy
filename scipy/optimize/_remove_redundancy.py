@@ -28,7 +28,7 @@ def _row_count(A):
 
     """
     tol = 1e-13
-    return np.array((abs(A) > tol).sum(axis = 1)).flatten()
+    return np.array((abs(A) > tol).sum(axis=1)).flatten()
 
 
 def _get_densest(A, eligibleRows):
@@ -148,11 +148,13 @@ def _remove_redundancy_dense(A, rhs):
     m, n = A.shape
 
     v = list(range(m))      # Artificial column indices.
-    b = list(v)             # Basis column indices. This is better as a list
-                            # than a set because column order of basis matrix
-                            # needs to be consistent.
+    b = list(v)             # Basis column indices.
+    # This is better as a list than a set because column order of basis matrix
+    # needs to be consistent.
     k = set(range(m, m+n))  # Structural column indices.
     d = []                  # Indices of dependent rows
+    lu = None
+    perm_r = None
 
     A_orig = A
     A = np.hstack((np.eye(m), A))
@@ -268,9 +270,9 @@ def _remove_redundancy_sparse(A, rhs):
     m, n = A.shape
 
     v = list(range(m))      # Artificial column indices.
-    b = list(v)             # Basis column indices. This is better as a list
-                            # than a set because column order of basis matrix
-                            # needs to be consistent.
+    b = list(v)             # Basis column indices.
+    # This is better as a list than a set because column order of basis matrix
+    # needs to be consistent.
     k = set(range(m, m+n))  # Structural column indices.
     d = []                  # Indices of dependent rows
 

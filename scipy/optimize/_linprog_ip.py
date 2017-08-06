@@ -1489,7 +1489,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         The maximal step size for Mehrota's predictor-corrector search
         direction; see :math:`\beta_3`of [1] Table 8.1
     beta : float
-        The desired reduction of the path parameter :math:`\mu` (see  [3])
+        The desired reduction of the path parameter `mu` (see  [3])
     maxiter : int
         The maximum number of iterations of the algorithm.
     disp : bool
@@ -1753,7 +1753,7 @@ def _linprog_ip(
         The maximal step size for Mehrota's predictor-corrector search
         direction; see :math:`\\beta_{3}` of [1]_ Table 8.1.
     beta : float (default = 0.1)
-        The desired reduction of the path parameter :math:`\mu` (see [3]_) when
+        The desired reduction of the path parameter `mu` (see [3]_) when
         Mehrota's predictor-corrector is not in use (uncommon).
     sparse : bool (default = False)
         Set to ``True`` if the problem is to be treated as sparse. Try setting
