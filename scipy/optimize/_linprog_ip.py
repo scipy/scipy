@@ -365,6 +365,9 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
 
     References
     ----------
+    .. [2] Andersen, Erling D. "Finding all linearly dependent rows in
+           large-scale linear programming." Optimization Methods and Software
+           6.3 (1995): 219-227.
     .. [5] Andersen, Erling D., and Knud D. Andersen. "Presolving in linear
        programming." Mathematical Programming 71.2 (1995): 221-245.
 
@@ -376,6 +379,10 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
     #  * artificial variables have not been added, so matrices are smaller
     #  * bounds have not been converted to constraints yet. (It is better to
     #    do that after presolve because presolve may adjust the simple bounds.)
+    # There are many improvements that can be made, namely:
+    #  * implement remaining checks from [5]
+    #  * loop presolve until no additional changes are made
+    #  * implement additional efficiency improvements in redundancy removal [2]
 
     tol = 1e-9    # tolerance for equality. should this be exposed to user?
 
@@ -589,12 +596,13 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
                                     # np.nan doesn't work. should use np.isnan
                 bounds[i][j] = None
 
+    # remove redundant (linearly dependent) rows from equality constraints
     n_rows_A = A_eq.shape[0]
     redundancy_warning = ("A_eq does not appear to be of full row rank. To "
                           "improve performance, check the problem formulation "
                           "for redundant equality constraints.")
     if (sps.issparse(A_eq)):
-        if rr:
+        if rr and A_eq.size > 0:  # TODO: Fast sparse rank check?
             A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
             if A_eq.shape[0] < n_rows_A:
                 warn(redundancy_warning, OptimizeWarning)
@@ -603,19 +611,20 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
                 x, undo, complete, status, message)
 
-    # remove redundant (linearly dependent) rows from equality constraints
+    # This is a wild guess for which redundancy removal algorithm will be
+    # faster. More testing would be good.
+    small_nullspace = 5
     if rr and A_eq.size > 0:
         rank = np.linalg.matrix_rank(A_eq)
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning)
         dim_row_nullspace = A_eq.shape[0]-rank
-        if dim_row_nullspace > 5:
+        if dim_row_nullspace > small_nullspace:
             A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
         else:
             A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
         if status != 0:
             complete = True
-
     return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
             x, undo, complete, status, message)
 
@@ -1461,7 +1470,7 @@ def _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj, header=False):
 
 def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
             sparse, lstsq, sym_pos, cholesky, pc, ip, permc_spec):
-    """
+    r"""
     Solve a linear programming problem in standard form:
 
     minimize:     c'^T * x'
@@ -1489,7 +1498,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol,
         The maximal step size for Mehrota's predictor-corrector search
         direction; see :math:`\beta_3`of [1] Table 8.1
     beta : float
-        The desired reduction of the path parameter `mu` (see  [3])
+        The desired reduction of the path parameter :math:`\mu` (see  [3]_)
     maxiter : int
         The maximum number of iterations of the algorithm.
     disp : bool
@@ -1702,7 +1711,7 @@ def _linprog_ip(
         permc_spec='MMD_AT_PLUS_A',
         rr=True,
         **unknown_options):
-    """
+    r"""
     Minimize a linear objective function subject to linear
     equality constraints, linear inequality constraints, and simple bounds
     using the interior point method of [1]_.
@@ -1751,15 +1760,18 @@ def _linprog_ip(
         see [1]_ Section 4.5.
     alpha0 : float (default = 0.99995)
         The maximal step size for Mehrota's predictor-corrector search
-        direction; see :math:`\\beta_{3}` of [1]_ Table 8.1.
+        direction; see :math:`\beta_{3}` of [1]_ Table 8.1.
     beta : float (default = 0.1)
-        The desired reduction of the path parameter `mu` (see [3]_) when
-        Mehrota's predictor-corrector is not in use (uncommon).
+        The desired reduction of the path parameter :math:`\mu` (see [3]_)
+        when Mehrota's predictor-corrector is not in use (uncommon).
     sparse : bool (default = False)
-        Set to ``True`` if the problem is to be treated as sparse. Try setting
-        this to ``True`` if your constraint matrices contain mostly zeros and
-        the problem is relatively large.  However, the constraint matrices must
-        nonetheless be provided as (dense) arrays.
+        Set to ``True`` if the problem is to be treated as sparse after
+        presolve. If either ``A_eq`` or ``A_ub`` is a sparse matrix,
+        this option will automatically be set ``True``, and the problem
+        will be treated as sparse even during presolve. If your constraint
+        matrices contain mostly zeros and the problem is not very small (less
+        than about 100 constraints or variables), consider setting ``True``
+        or providing ``A_eq`` and ``A_ub`` as sparse matrices.
     lstsq : bool (default = False)
         Set to ``True`` if the problem is expected to be very poorly
         conditioned. This should always be left ``False`` unless severe
@@ -1790,6 +1802,10 @@ def _linprog_ip(
         when it detects that the problem is trivially unbounded; it is possible
         that that the problem is truly infeasibile but this has not been
         detected.
+    rr : bool (default = True)
+        Default ``True`` attempts to eliminate any redundant rows in ``A_eq``.
+        Set ``False`` if ``A_eq`` is known to be of full row rank, or if you
+        are looking for a potential speedup (at the expense of reliability).
     permc_spec : str (default = 'MMD_AT_PLUS_A')
         (Has effect only with ``sparse = True``, ``lstsq = False``, ``sym_pos =
         True``.) A matrix is factorized in each iteration of the algorithm.
@@ -1862,21 +1878,25 @@ def _linprog_ip(
     may be reported as unbounded when in reality the problem is infeasible
     (but infeasibility has not been detected yet). Therefore, if the output
     message states that unboundedness is detected in presolve and it is
-    necessary to know whether the problem is actually infeasible, the option
-    ``presolve=False`` should be set.
+    necessary to know whether the problem is actually infeasible, set option
+    ``presolve=False``.
 
     If neither infeasibility nor unboundedness are detected in a single pass
     of the presolve check, bounds are tightened where possible and fixed
-    variables are removed from the problem. Then, singular value decomposition
-    is used to identify linearly dependent rows of the ``A_eq`` matrix, which
-    are removed (unless they represent an infeasibility) to avoid numerical
-    difficulties in the primary solve routine.
+    variables are removed from the problem. Then, linearly dependent rows
+    of the ``A_eq`` matrix are removed, (unless they represent an
+    infeasibility) to avoid numerical difficulties in the primary solve
+    routine. Note that rows that are nearly linearly dependent (within a
+    prescibed tolerance) may also be removed, which can change the optimal
+    solution in rare cases. If this is a concern, eliminate redundancy from
+    your problem formulation and run with option ``rr=False`` or
+    ``presolve=False``.
 
     Several potential improvements can be made here: additional presolve
     checks outlined in [5]_ should be implemented, the presolve routine should
-    be run multiple times (until no further simplifications can be made), a
-    more efficient method for detecting redundancy (e.g. that of [2]_) should
-    be used, and presolve should be implemented for sparse matrices.
+    be run multiple times (until no further simplifications can be made), and
+    more of the efficiency improvements from [2]_ should be implemented in the
+    redundancy removal routines.
 
     After presolve, the problem is transformed to standard form by converting
     the (tightened) simple bounds to upper bound constraints, introducing
@@ -1893,8 +1913,9 @@ def _linprog_ip(
 
     The default initial point for the primal and dual variables is that
     defined in [1]_ Section 4.4 Equation 8.22. Optionally (by setting initial
-    point option ``ip=True``), a (potentially) improved starting point can be
-    calculated according to the additional recommendations of [1]_ Section 4.4.
+    point option ``ip=True``), an alternate (potentially improved) starting
+    point can be calculated according to the additional recommendations of
+    [1]_ Section 4.4.
 
     A search direction is calculated using the predictor-corrector method
     (single correction) proposed by Mehrota and detailed in [1]_ Section 4.1.
@@ -1942,7 +1963,7 @@ def _linprog_ip(
     After calculating the search direction, the maximum possible step size
     that does not activate the non-negativity constraints is calculated, and
     the smaller of this step size and unity is applied (as in [1]_ Section
-    4.1. [1]_ Section 4.3 suggests improvements for choosing the step size.
+    4.1.) [1]_ Section 4.3 suggests improvements for choosing the step size.
 
     The new point is tested according to the termination conditions of [1]_
     Section 4.5. The same tolerance, which can be set using the ``tol`` option,
@@ -1989,7 +2010,12 @@ def _linprog_ip(
         raise NotImplementedError("method 'interior-point' does not support "
                                   "callback functions.")
 
-    # These should be warnings, not Errors
+    # These should be warnings, not errors
+    if not sparse and (sp.sparse.issparse(A_eq) or sp.sparse.issparse(A_ub)):
+        sparse = True
+        warn("Sparse constraint matrix detected; setting 'sparse':True.",
+             OptimizeWarning)
+        
     if sparse and lstsq:
         warn("Invalid option combination 'sparse':True "
              "and 'lstsq':True; Sparse least squares is not recommended.",

@@ -117,7 +117,7 @@ def _remove_redundancy_dense(A, rhs):
         An array representing the right-hand side of a system of equations
 
     Returns
-    -------
+    ----------
     A : 2-D sparse matrix
         A matrix representing the left-hand side of a system of equations
     rhs : 1-D array
@@ -129,8 +129,13 @@ def _remove_redundancy_dense(A, rhs):
     message : str
         A string descriptor of the exit status of the optimization.
 
-    """
+    References
+    ----------
+    .. [2] Andersen, Erling D. "Finding all linearly dependent rows in
+           large-scale linear programming." Optimization Methods and Software
+           6.3 (1995): 219-227.
 
+    """
     tolapiv = 1e-8
     tolprimal = 1e-8
     status = 0
@@ -160,7 +165,7 @@ def _remove_redundancy_dense(A, rhs):
     A = np.hstack((np.eye(m), A))
     e = np.zeros(m)
 
-    # Implements basic algorithm from [1]
+    # Implements basic algorithm from [2]
     # Uses some of the suggested improvements (removing zero rows and
     # Bartels-Golub update idea).
     # Removing column singletons would be easy, but it is not as important
@@ -251,6 +256,12 @@ def _remove_redundancy_sparse(A, rhs):
     message : str
         A string descriptor of the exit status of the optimization.
 
+    References
+    ----------
+    .. [2] Andersen, Erling D. "Finding all linearly dependent rows in
+           large-scale linear programming." Optimization Methods and Software
+           6.3 (1995): 219-227.
+
     """
 
     tolapiv = 1e-8
@@ -280,7 +291,7 @@ def _remove_redundancy_sparse(A, rhs):
     A = scipy.sparse.hstack((scipy.sparse.eye(m), A)).tocsc()
     e = np.zeros(m)
 
-    # Implements basic algorithm from [1]
+    # Implements basic algorithm from [2]
     # Uses only one of the suggested improvements (removing zero rows).
     # Removing column singletons would be easy, but it is not as important
     # because the procedure is performed only on the equality constraint
@@ -362,6 +373,12 @@ def _remove_redundancy(A, b):
     message : str
         A string descriptor of the exit status of the optimization.
 
+    References
+    ----------
+    .. [2] Andersen, Erling D. "Finding all linearly dependent rows in
+           large-scale linear programming." Optimization Methods and Software
+           6.3 (1995): 219-227.
+
     """
 
     A, b, status, message = _remove_zero_rows(A, b)
@@ -376,21 +393,23 @@ def _remove_redundancy(A, b):
     m, n = A.shape
     s_min = s[-1] if m <= n else 0
 
-    # this algorithm is inefficient
+    # this algorithm is faster than that of [2] when the nullspace is small
+    # but it could probably be improvement by randomized algorithms and with
+    # a sparse implementation.
     # it relies on repeated singular value decomposition to find linearly
     # dependent rows (as identified by columns of U that correspond with zero
     # singular values). Unfortunately, only one row can be removed per
     # decomposition (I tried otherwise; doing so can cause problems.)
-    # There are better algorithms out there such as:
-    # Andersen, Erling D. "Finding all linearly dependent rows in
-    # large-scale linear programming." Optimization Methods and Software
-    # 6.3 (1995): 219-227.
-    # but I was unable to get this to work.
     # It would be nice if we could do truncated SVD like sp.sparse.linalg.svds
-    # but that function doesn't work well for the smallest singular value.
+    # but that function is unreliable at finding singular values near zero.
+    # Finding max eigenvalue L of A A^T, then largest eigenvalue (and
+    # associated eigenvector) of -A A^T + L I (I is identity) via power
+    # iteration would also work in theory, but is only efficient if the
+    # smallest nonzero eigenvalue of A A^T is close to the largest nonzero
+    # eigenvalue.
 
     while abs(s_min) < tol:
-        v = U[:, -1]
+        v = U[:, -1]  # TODO: return these so user can eliminate from problem?
         # rows need to be represented in significant amount
         eligibleRows = np.abs(v) > tol * 10e6
         if not np.any(eligibleRows) or np.any(np.abs(v.dot(A)) > tol):
