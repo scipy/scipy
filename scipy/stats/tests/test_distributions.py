@@ -1119,6 +1119,20 @@ class TestRvDiscrete(object):
         assert_raises(ValueError, stats.rv_discrete, **dict(values=(xk, pk)))
 
 
+class TestSkewCauchy(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_cauchy(self):
+        x = np.linspace(-5, 5, 100)
+        assert_array_almost_equal(stats.skewcauchy.pdf(x, a=0),
+                                  stats.cauchy.pdf(x))
+        assert_array_almost_equal(stats.skewcauchy.cdf(x, a=0),
+                                  stats.cauchy.cdf(x))
+        assert_array_almost_equal(stats.skewcauchy.ppf(x, a=0),
+                                  stats.cauchy.ppf(x))
+
+
 class TestSkewNorm(object):
     def setup_method(self):
         np.random.seed(1234)
