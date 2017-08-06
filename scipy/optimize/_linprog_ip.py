@@ -12,6 +12,7 @@ from scipy.linalg import LinAlgError
 from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from scipy.optimize._remove_redundancy import _remove_redundancy
 from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
+from scipy.optimize._remove_redundancy import _remove_redundancy_dense
 
 
 def _clean_inputs(
@@ -601,7 +602,7 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
         warn("A_eq does not appear to be of full row rank. To improve "
              "performance, check the problem formulation for redundant "
              "equality constraints.", OptimizeWarning)
-        A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
+        A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
         if status != 0:
             complete = True
 
