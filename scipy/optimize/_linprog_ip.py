@@ -11,6 +11,8 @@ from warnings import warn
 from scipy.linalg import LinAlgError
 from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from scipy.optimize._remove_redundancy import _remove_redundancy
+from scipy.optimize._remove_redundancy import _remove_redundancy_sparse
+from scipy.optimize._remove_redundancy import _remove_redundancy_dense
 
 
 def _clean_inputs(
@@ -287,7 +289,7 @@ def _clean_inputs(
     return c, A_ub, b_ub, A_eq, b_eq, bounds
 
 
-def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
+def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
     """
     Given inputs for a linear programming problem in preferred format, presolve
     the problem: identify trivially infeasibilities, redundancies, and
@@ -587,16 +589,30 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds):
                                     # np.nan doesn't work. should use np.isnan
                 bounds[i][j] = None
 
+    n_rows_A = A_eq.shape[0]
+    redundancy_warning = ("A_eq does not appear to be of full row rank. To "
+                          "improve performance, check the problem formulation "
+                          "for redundant equality constraints.")
     if (sps.issparse(A_eq)):
+        if rr:
+            A_eq, b_eq, status, message = _remove_redundancy_sparse(A_eq, b_eq)
+            if A_eq.shape[0] < n_rows_A:
+                warn(redundancy_warning, OptimizeWarning)
+            if status != 0:
+                complete = True
         return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
                 x, undo, complete, status, message)
 
     # remove redundant (linearly dependent) rows from equality constraints
-    if A_eq.size > 0 and np.linalg.matrix_rank(A_eq) < A_eq.shape[0]:
-        warn("A_eq does not appear to be of full row rank. To improve "
-             "performance, check the problem formulation for redundant "
-             "equality constraints.", OptimizeWarning)
-        A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
+    if rr and A_eq.size > 0:
+        rank = np.linalg.matrix_rank(A_eq)
+    if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
+        warn(redundancy_warning, OptimizeWarning)
+        dim_row_nullspace = A_eq.shape[0]-rank
+        if dim_row_nullspace > 5:
+            A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
+        else:
+            A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
         if status != 0:
             complete = True
 
@@ -1684,6 +1700,7 @@ def _linprog_ip(
         ip=False,
         presolve=True,
         permc_spec='MMD_AT_PLUS_A',
+        rr=True,
         **unknown_options):
     """
     Minimize a linear objective function subject to linear
@@ -2031,7 +2048,7 @@ def _linprog_ip(
     c0 = 0  # we might get a constant term in the objective
     if presolve is True:
         (c, c0, A_ub, b_ub, A_eq, b_eq, bounds, x, undo, complete, status,
-            message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds)
+            message) = _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr)
 
     # If not solved in presolve, solve it
     if not complete:

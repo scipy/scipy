@@ -4,7 +4,12 @@ Unit test for Linear Programming via Simplex Algorithm.
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+<<<<<<< HEAD
 from numpy.testing import (assert_, assert_raises, assert_allclose)
+=======
+from numpy.testing import (assert_, assert_raises, 
+                           assert_allclose, run_module_suite, )
+>>>>>>> master
 
 
 from scipy.optimize._linprog_ip import _clean_inputs
@@ -365,3 +370,10 @@ def test_good_bounds():
 
     outputs = _clean_inputs(c=c, bounds=[(-np.inf, np.inf), (-np.inf, np.inf)])
     assert_(outputs[5] == [(None, None)] * 2, "")
+<<<<<<< HEAD
+=======
+
+
+if __name__ == '__main__':
+    run_module_suite()
+>>>>>>> master

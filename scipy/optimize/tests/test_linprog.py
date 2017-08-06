@@ -4,8 +4,8 @@ Unit test for Linear Programming
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_raises, assert_equal)
-
+from numpy.testing import (assert_, assert_allclose, assert_raises, 
+                           assert_equal)
 from scipy.optimize import linprog, OptimizeWarning
 from scipy._lib._numpy_compat import _assert_warns, suppress_warnings
 from scipy.sparse.linalg import MatrixRankWarning
