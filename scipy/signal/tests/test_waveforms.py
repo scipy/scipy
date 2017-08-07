@@ -344,10 +344,10 @@ class TestUnitImpulse(object):
 
     def test_dtype(self):
         imp = waveforms.unit_impulse(7)
-        assert_(np.issubdtype(imp.dtype, np.float))
+        assert_(np.issubdtype(imp.dtype, np.floating))
 
         imp = waveforms.unit_impulse(5, 3, dtype=int)
         assert_(np.issubdtype(imp.dtype, np.integer))
 
         imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
-        assert_(np.issubdtype(imp.dtype, np.complex))
+        assert_(np.issubdtype(imp.dtype, np.complexfloating))

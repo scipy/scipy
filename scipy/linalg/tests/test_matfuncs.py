@@ -193,7 +193,7 @@ class TestLogM(object):
             w = scipy.linalg.eigvals(X)
             assert_(1e-2 < np.absolute(w.imag).sum())
             Y, info = logm(X, disp=False)
-            assert_(np.issubdtype(Y.dtype, dt))
+            assert_(np.issubdtype(Y.dtype, np.inexact))
             assert_allclose(expm(Y), X)
 
     def test_real_mixed_sign_spectrum(self):
@@ -205,7 +205,7 @@ class TestLogM(object):
             for dt in float, complex:
                 A = np.array(M, dtype=dt)
                 A_logm, info = logm(A, disp=False)
-                assert_(np.issubdtype(A_logm.dtype, complex))
+                assert_(np.issubdtype(A_logm.dtype, np.complexfloating))
 
     def test_exactly_singular(self):
         A = np.array([[0, 0], [1j, 1j]])
