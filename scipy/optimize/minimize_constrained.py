@@ -5,7 +5,9 @@ from .constraints import (NonlinearConstraint,
                           LinearConstraint,
                           BoxConstraint,
                           CanonicalConstraint,
-                          concatenate_canonical_constraints)
+                          concatenate_canonical_constraints,
+                          empty_canonical_constraint,
+                          generate_lagrangian_hessian)
 from ._tr_interior_point import tr_interior_point
 from ._equality_constrained_sqp import equality_constrained_sqp
 
@@ -94,20 +96,31 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                                 BoxConstraint,
                                 CanonicalConstraint)):
         constraints = [constraints]
-    # Converts all constraints to canonical format
-    constraints_list = []
-    for constr in constraints:
-        if not isinstance(constr, (NonlinearConstraint,
-                                   LinearConstraint,
-                                   BoxConstraint,
-                                   CanonicalConstraint)):
-            raise ValueError("Unknow Constraint type")
-        elif isinstance(constr, CanonicalConstraint):
-            constraints_list += [constr]
+    if isinstance(constraints, (list, tuple, np.array)):
+        # Converts all constraints to canonical format
+        constraints_list = []
+        for constr in constraints:
+            if not isinstance(constr, (NonlinearConstraint,
+                                       LinearConstraint,
+                                       BoxConstraint,
+                                       CanonicalConstraint)):
+                raise ValueError("Unknown Constraint type")
+            elif isinstance(constr, CanonicalConstraint):
+                constraints_list += [constr]
+            else:
+                constraints_list += [constr.to_canonical()]
+        # Concatenate constraints
+        if len(constraints_list) == 0:
+            constr = empty_canonical_constraint()
+        elif len(constraints_list) == 1:
+            constr = constraints_list[0]
         else:
-            constraints_list += [constr.to_canonical()]
-    # Concatenate constraints
-    constr = concatenate_canonical_constraints(constraints_list, hess=hess)
+            constr = concatenate_canonical_constraints(constraints_list)
+    else:
+        raise ValueError("Unknown Constraint type")
+
+    # Generate lagrangian hess function
+    lagr_hess = generate_lagrangian_hessian(constr, hess)
 
     # Choose appropriate method
     if method is None:
@@ -143,12 +156,12 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     # Call inferior function to do the optimization
     if method == 'equality_constrained_sqp':
         result = equality_constrained_sqp(
-            fun, grad, constr.hess,
+            fun, grad, lagr_hess,
             constr.constr_eq,  constr.jac_eq,
             x0, stop_criteria, **options)
     elif method == 'tr_interior_point':
         result = tr_interior_point(
-            fun, grad, constr.hess,
+            fun, grad, lagr_hess,
             constr.n_ineq, constr.constr_ineq,
             constr.jac_ineq, constr.n_eq,
             constr.constr_eq, constr.jac_eq,

@@ -8,6 +8,8 @@ __all__ = ['CanonicalConstraint',
            'LinearConstraint',
            'BoxConstraint',
            'parse_constraint',
+           'empty_canonical_constraint',
+           'generate_lagrangian_hessian',
            'concatenate_canonical_constraints']
 
 
@@ -322,7 +324,51 @@ def parse_constraint(kind):
     return eq, ineq, val_eq, val_ineq, sign, fun_len
 
 
-def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
+def empty_canonical_constraint():
+    """Return empty CanonicalConstraint."""
+    n_eq = 0
+    n_ineq = 0
+
+    def constr_eq(x):
+        return np.empty(0)
+
+    def constr_ineq(x):
+        return np.empty(0)
+
+    def jac_eq(x):
+        return spc.csc_matrix(np.empty((0, len(x))))
+
+    def jac_ineq(x):
+        return spc.csc_matrix(np.empty((0, len(x))))
+
+    return CanonicalConstraint(n_ineq, constr_ineq, jac_ineq,
+                               n_eq, constr_eq, jac_eq, None)
+
+
+def generate_lagrangian_hessian(constraint, hess):
+    """Lagrangian hessian"""
+
+    # Concatenate Hessians
+    def lagr_hess(x, v_eq=np.empty(0), v_ineq=np.empty(0)):
+        n = len(x)
+        hess_list = []
+        if hess is not None:
+            hess_list += [hess(x)]
+        if constraint.hess is not None:
+            hess_list += [constraint.hess(x, v_eq, v_ineq)]
+
+        def matvec(p):
+            result = np.zeros_like(p)
+            for h in hess_list:
+                result += h.dot(p)
+            return result
+
+        return spc.linalg.LinearOperator((n, n), matvec)
+
+    return lagr_hess
+
+
+def concatenate_canonical_constraints(constraints, sparse=True):
     """Concatenate sequence of CanonicalConstraint's."""
     # Compute number of constraints
     n_eq = 0
@@ -400,10 +446,7 @@ def concatenate_canonical_constraints(constraints, sparse=True, hess=None):
     # Concatenate Hessians
     def lagr_hess(x, v_eq=np.empty(0), v_ineq=np.empty(0)):
         n = len(x)
-        if hess is not None:
-            hess_list = [hess(x)]
-        else:
-            hess_list = []
+        hess_list = []
 
         index_eq = 0
         index_ineq = 0
