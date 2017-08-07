@@ -1,0 +1,236 @@
+# As config was originally based on an example by Olivier Grisel. Thanks!
+# https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
+
+clone_depth: 50
+
+# No reason for us to restrict the number concurrent jobs
+max_jobs: 100
+
+environment:
+  global:
+      MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin
+      MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin
+      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.2.19_win32.zip
+      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.2.19_win64.zip
+      NUMPY_HEAD: https://github.com/xoviat/numpy.git
+      NUMPY_BRANCH: distutils
+      APPVEYOR_SAVE_CACHE_ON_ERROR: true
+      PYPI_USERNAME:
+          secure: rl2zkdPpMWKuqh3paOKNhA==
+      PYPI_PASSWORD:
+          secure: rToy5D17/4zLIaIBq9S4UQ==
+      TEST_TIMEOUT: 600
+
+  matrix:
+# Assume the older versions are more likely to fail
+    - PYTHON: C:\Python27-x64
+      PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 64
+
+    - PYTHON: C:\Python27
+      PYTHON_VERSION: 2.7
+      PYTHON_ARCH: 32
+      SKIP_NOTAG: true
+
+    - PYTHON: C:\Python34-x64
+      PYTHON_VERSION: 3.4
+      PYTHON_ARCH: 64
+
+    - PYTHON: C:\Python34
+      PYTHON_VERSION: 3.4
+      PYTHON_ARCH: 32
+      SKIP_NOTAG: true
+
+    - PYTHON: C:\Python35-x64
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 64
+      SKIP_NOTAG: true
+
+    - PYTHON: C:\Python35
+      PYTHON_VERSION: 3.5
+      PYTHON_ARCH: 32
+      SKIP_NOTAG: true
+
+    - PYTHON: C:\Python36-x64
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 64
+    
+    - PYTHON: C:\Python36
+      PYTHON_VERSION: 3.6
+      PYTHON_ARCH: 32
+
+
+matrix:
+  allow_failures:
+    # TMP allow failures until tests are fixed (remove PYTHON_ARCH to reverse)  
+    - PYTHON_ARCH: 32
+    - PYTHON_ARCH: 64
+    - SKIP_NOTAG: true
+
+init:
+  - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
+  - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
+  # If there is a newer build queued for the same PR, cancel this one.
+  # The AppVeyor 'rollout builds' option is supposed to serve the same
+  # purpose but it is problematic because it tends to cancel builds pushed
+  # directly to master instead of just PR builds (or the converse).
+  # credits: JuliaLang developers.
+  - ps: if ($env:APPVEYOR_PULL_REQUEST_NUMBER -and $env:APPVEYOR_BUILD_NUMBER -ne ((Invoke-RestMethod `
+        https://ci.appveyor.com/api/projects/$env:APPVEYOR_ACCOUNT_NAME/$env:APPVEYOR_PROJECT_SLUG/history?recordsNumber=50).builds | `
+        Where-Object pullRequestId -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)[0].buildNumber) { `
+          throw "There are newer queued builds for this pull request, failing early." }
+  - ps: |
+      If (($env:SKIP_NOTAG -eq "true") -and ($env:APPVEYOR_REPO_TAG -ne "true")) {
+          throw "Skipping Python version, not a tag."
+      }
+
+cache:
+  # Cache downloaded pip packages and built wheels.
+  - '%LOCALAPPDATA%\pip\Cache\http'
+  - '%LOCALAPPDATA%\pip\Cache\wheels'
+  - C:\ProgramData\chocolatey\bin
+  - C:\ProgramData\chocolatey\lib
+  # - '%USERPROFILE%\.nuget\packages' nuget appears to be quite large
+
+install:
+  - C:\cygwin\bin\du -hs "%LOCALAPPDATA%\pip\Cache"
+  # Prepend newly installed Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
+  - SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
+
+  # Check that we have the expected version and architecture for Python
+  - python --version
+  - >-
+     %CMD_IN_ENV%
+     python -c "import sys,platform,struct;
+     print(sys.platform, platform.machine(), struct.calcsize('P') * 8, )"
+
+  # Install the BLAS library 
+  #  - install "openblas.lib" to PYTHON\lib
+  #  - install OpenBLAS.dll to MINGW\bin
+  - ps: |
+      $CurrentDir = $(get-location).Path;
+      $PYTHON_ARCH = $env:PYTHON_ARCH
+      If ($PYTHON_ARCH -eq 32) {
+          $OPENBLAS = $env:OPENBLAS_32
+          $env:MINGW = $env:MINGW_32
+          $specifier = "/MACHINE:x86"
+      } Else {
+          $OPENBLAS = $env:OPENBLAS_64
+          $env:MINGW = $env:MINGW_64
+          $specifier = "/MACHINE:x64"
+      }
+      $clnt = new-object System.Net.WebClient
+      $file = "$CurrentDir\OpenBLAS.zip"
+
+      echo $file
+      echo $OPENBLAS
+
+      $clnt.DownloadFile($OPENBLAS,$file)
+
+      $shell_app=new-object -com shell.application 
+      $zip_file = $shell_app.namespace($file) 
+      $destination = $shell_app.namespace((Get-Location).Path) 
+      $destination.Copyhere($zip_file.items())
+
+      rm .\$PYTHON_ARCH\lib\*.dll.a
+
+      $lib = ls .\$PYTHON_ARCH\lib\*.a | ForEach { ls $_ } | Select-Object -first 1
+      echo $lib
+
+      cp $lib "${env:PYTHON}\lib\openblas.a"
+      ls "${env:PYTHON}\lib\openblas.a"
+      
+      cd "$CurrentDir"
+
+  - ps: |
+      cd scipy\integrate\odepack
+      rm xsetf.f
+      rm xsetun.f
+      cd ..\..\..
+
+
+  # Upgrade to the latest pip.
+  - '%CMD_IN_ENV% python -m pip install -U pip setuptools wheel'
+
+  # Install the PyInstaller test dependencies.
+  - '%CMD_IN_ENV% pip install -U --timeout 5 --retries 2 -r tools/ci/appveyor/requirements.txt'
+
+  - ps: |
+      $CurrentDir = $(get-location).Path;
+      $NumpyDir = (python -c 'import os; import numpy; print(os.path.dirname(numpy.__file__))') | Out-String
+      $NumpyDir = $NumpyDir.Trim()
+      cd "$NumpyDir"
+      mkdir TMP
+      cd TMP
+      echo $env:NUMPY_HEAD
+      git clone -q --depth=1 -b $env:NUMPY_BRANCH $env:NUMPY_HEAD .
+      cd ..
+      rm -r -Force distutils
+      cp -r TMP\numpy\distutils .
+      rm -r -Force TMP
+      cd "$CurrentDir"
+
+build_script:
+  - ps: |
+      If ($env:PYTHON_ARCH -eq 32) {
+          $env:MINGW = $env:MINGW_32 
+      } Else {
+          $env:MINGW = $env:MINGW_64
+      }
+      $env:Path += ";$env:MINGW"
+      mkdir dist
+      pip wheel -v -v -v --wheel-dir=dist .
+
+      ls dist -r | Foreach-Object {
+          appveyor PushArtifact $_.FullName
+          pip install $_.FullName
+      }
+
+test_script:
+  - ps: |
+      $CurrentDir = $(get-location).Path;
+      $ScipyDir = (python -c 'import os; import sys; sys.path.remove(""""); import scipy; print(os.path.dirname(scipy.__file__))') | Out-String
+      $ScipyDir = $ScipyDir.Trim()
+      rm -r -Force scipy
+      cmd /c mklink /J scipy $ScipyDir
+
+  - py.test scipy -n6 --timeout=%TEST_TIMEOUT% --junitxml=junit-results.xml
+
+on_success:
+  - ps: |
+      If ($env:APPVEYOR_REPO_TAG -eq "true") {
+          pip install twine
+          Invoke-Expression "twine upload -u $env:PYPI_USERNAME -p $env:PYPI_PASSWORD --repository-url https://upload.pypi.org/legacy/ --skip-existing dist/*" 2>&1 | Out-Null
+      }
+
+
+after_build:
+  # Remove old or huge cache files to hopefully not exceed the 1GB cache limit.
+  #
+  # If the cache limit is reached, the cache will not be updated (of not even
+  # created in the first run). So this is a trade of between keeping the cache
+  # current and having a cache at all.
+  # NB: This is done only `on_success` since the cache in uploaded only on
+  # success anyway.
+  - C:\cygwin\bin\find "%LOCALAPPDATA%\pip" -type f -mtime +360 -delete
+  - C:\cygwin\bin\find "%LOCALAPPDATA%\pip" -type f -size +10M -delete
+  - C:\cygwin\bin\find "%LOCALAPPDATA%\pip" -empty -delete
+  # Show size of cache
+  - C:\cygwin\bin\du -hs "%LOCALAPPDATA%\pip\Cache"
+
+  - C:\cygwin\bin\find "C:\ProgramData\chocolatey" -type f -mtime +360 -delete
+  - C:\cygwin\bin\find "C:\ProgramData\chocolatey" -type f -size +10M -delete
+  - C:\cygwin\bin\find "C:\ProgramData\chocolatey" -empty -delete
+  # Show size of cache
+  - C:\cygwin\bin\du -hs "C:\ProgramData\chocolatey"
+
+
+on_finish:
+  - ps: |
+      (new-object net.webclient).UploadFile(
+        "https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)",
+        (Resolve-Path .\junit-results.xml)
+      )
+      $LastExitCode = 0

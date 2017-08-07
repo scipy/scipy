@@ -1,0 +1,6 @@
+numpy==1.13.1
+cython
+nose
+pytest-timeout
+pytest-xdist
+pytest-env
