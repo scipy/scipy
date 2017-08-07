@@ -23,7 +23,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
                              initial_penalty=1.0,
                              initial_trust_radius=1.0,
                              scaling=default_scaling,
-                             return_all=False):
+                             return_all=False,
+                             state=None):
     """Solve nonlinear equality-constrained problem using trust-region SQP.
 
     Solve problem:
@@ -142,11 +143,6 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     if trust_ub is None:
         trust_ub = np.full(n, np.inf)
 
-    # Construct OptimizeResult
-    state = OptimizeResult(niter=0, nfev=0, ngev=0,
-                           ncev=0, njev=0, nhev=0,
-                           cg_niter=0, cg_info={})
-
     # Initial values
     x = np.copy(x0)
     trust_radius = initial_trust_radius
@@ -161,6 +157,17 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     Z, LS, Y = projections(A)
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
+
+    if state is None:
+        # Construct OptimizeResult
+        state = OptimizeResult(niter=0, nfev=0, ngev=0,
+                               ncev=0, njev=0, nhev=0,
+                               cg_niter=0, cg_info={})
+        # Store values
+        if return_all:
+            allvecs = [np.copy(x)]
+            allmult = [np.copy(v)]
+
     # Update state parameters
     state.optimality = norm(c + A.T.dot(v))
     state.constr_violation = norm(b)
@@ -176,10 +183,6 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     state.jac = A
     state.trust_radius = trust_radius
     state.penalty = penalty
-    # Store values
-    if return_all:
-        allvecs = [np.copy(x)]
-        allmult = [np.copy(v)]
 
     compute_hess = True
     while not stop_criteria(state):

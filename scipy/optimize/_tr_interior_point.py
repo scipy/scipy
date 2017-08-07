@@ -48,7 +48,7 @@ class BarrierSubproblem:
         self.n_eq = n_eq
         self.n_ineq = n_ineq
         self.feasible_constr_list = feasible_constr_list
-        # Auxiliar parameter
+        # Auxiliar parameters
         self._x_ineq = None
         self._x_eq = None
         self._c_ineq = None
@@ -322,18 +322,21 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     # after each iteration
     TRUST_ENLARGEMENT = 5
 
+    # Construct OptimizeResult
+    state = OptimizeResult(niter=0, nfev=0, ngev=0,
+                           ncev=0, njev=0, nhev=0,
+                           cg_niter=0, cg_info={})
     # Default feasible_constr_list
     if feasible_constr_list is None:
         feasible_constr_list = np.zeros(n_ineq, bool)
     # Initial Values
-    barrier_parameter = initial_barrier_parameter
-    tolerance = initial_tolerance
-    trust_radius = initial_trust_radius
-    iteration = 0
+    state.barrier_parameter = initial_barrier_parameter
+    state.tolerance = initial_tolerance
+    state.trust_radius = initial_trust_radius
     # Define barrier subproblem
     subprob = BarrierSubproblem(
         x0, fun, grad, lagr_hess, n_ineq, constr_ineq, jac_ineq,
-        n_eq, constr_eq, jac_eq, barrier_parameter, tolerance,
+        n_eq, constr_eq, jac_eq, state.barrier_parameter, state.tolerance,
         feasible_constr_list)
     # Define initial parameter for the first iteration.
     z = subprob.z0()
@@ -344,9 +347,19 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
 
     # If there are inequality constraints solve a
     # sequence of barrier problems
+    first_barrier_prob = True
     while True:
+        if not first_barrier_prob:
+            # Update parameters
+            state.trust_radius = max(initial_trust_radius,
+                                     TRUST_ENLARGEMENT*state.trust_radius)
+            # TODO: Use more advanced strategies from [2]_
+            # to update this parameters.
+            state.barrier_parameter *= BARRIER_DECAY_RATIO
+            state.tolerance *= BARRIER_DECAY_RATIO
+        first_barrier_prob = False
         # Update Barrier Problem
-        subprob.update(barrier_parameter, tolerance)
+        subprob.update(state.barrier_parameter, state.tolerance)
         # Solve SQP subproblem
         state = equality_constrained_sqp(
             subprob.function,
@@ -359,24 +372,15 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
             trust_lb,
             trust_ub,
             initial_penalty,
-            trust_radius,
-            subprob.scaling)
+            state.trust_radius,
+            subprob.scaling,
+            state=state)
 
-        # Update parameters
-        iteration += state.niter
-        trust_radius = max(initial_trust_radius,
-                           TRUST_ENLARGEMENT*state.trust_radius)
         z = state.x
-        # TODO: Use more advanced strategies from [2]_
-        # to update this parameters.
-        barrier_parameter *= BARRIER_DECAY_RATIO
-        tolerance *= BARRIER_DECAY_RATIO
-        # Update state
-        state.niter = iteration
-
         if stop_criteria(state):
             # Get x
             state.x = subprob.get_variables(z)
+            state.s = subprob.get_slack(z)
             break
 
     return state
