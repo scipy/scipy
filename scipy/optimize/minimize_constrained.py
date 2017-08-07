@@ -71,6 +71,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         A dictionary of solver options.
 
             - `return_all`
+
     callback : callable, optional
         Called after each iteration:
 

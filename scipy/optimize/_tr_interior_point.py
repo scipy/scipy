@@ -31,7 +31,8 @@ class BarrierSubproblem:
 
     def __init__(self, x0, fun, grad, lagr_hess, n_ineq, constr_ineq,
                  jac_ineq, n_eq, constr_eq, jac_eq, barrier_parameter,
-                 tolerance, feasible_constr_list):
+                 tolerance, feasible_constr_list, global_stop_criteria,
+                 xtol):
         # Compute number of variables
         self.n_vars, = np.shape(x0)
         # Store parameters
@@ -48,6 +49,8 @@ class BarrierSubproblem:
         self.n_eq = n_eq
         self.n_ineq = n_ineq
         self.feasible_constr_list = feasible_constr_list
+        self.global_stop_criteria = global_stop_criteria
+        self.xtol = xtol
         # Auxiliar parameters
         self._x_ineq = None
         self._x_eq = None
@@ -205,13 +208,10 @@ class BarrierSubproblem:
         The criteria here proposed is similar to formula (2.3)
         from [1]_, p.879.
         """
-        if (state.optimality < self.tolerance
-            and state.constr_violation < self.tolerance) \
-           or state.niter > 1000 \
-           or state.trust_radius < 1e-16:
-            return True
-        else:
-            return False
+        return (state.optimality < self.tolerance
+                and state.constr_violation < self.tolerance) \
+            or self.global_stop_criteria(state) \
+            or state.trust_radius < self.xtol
 
 
 def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
@@ -222,7 +222,8 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
                       initial_tolerance=0.1,
                       initial_penalty=1.0,
                       initial_trust_radius=1.0,
-                      return_all=False):
+                      return_all=False,
+                      xtol_subproblem=1e-16):
     """Trust-region interior points method.
 
     Solve problem:
@@ -284,10 +285,11 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
         Initial trust-region radius. By defaut uses 1.
     initial_penalty : float
         Initial penalty for merit function.
-    max_substep_iter : int
-        Maximum iterations per substep.
     return_all : bool, optional
         When ``true`` return the list of all vectors through the iterations.
+    xtol : float, optional
+        Tolerance for termination by the change of the independent variable
+        for the barrier subproblem.
     Returns
     -------
     x : array_like, shape (n,)
@@ -346,7 +348,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     subprob = BarrierSubproblem(
         x0, fun, grad, lagr_hess, n_ineq, constr_ineq, jac_ineq,
         n_eq, constr_eq, jac_eq, state.barrier_parameter, state.tolerance,
-        feasible_constr_list)
+        feasible_constr_list, stop_criteria, xtol_subproblem)
     # Define initial parameter for the first iteration.
     z = subprob.z0()
     # Define trust region bounds
