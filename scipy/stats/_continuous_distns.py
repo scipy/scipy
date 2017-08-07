@@ -4635,14 +4635,14 @@ class skew_cauchy_gen(rv_continuous):
         return 1 / (np.pi * (x**2 / (a * np.sign(x) + 1)**2 + 1))
 
     def _cdf(self, x, a):
-        return ((a + 1) * (np.sign(x) + 1) * np.arctan(x / (a + 1)) - (a - 1)
-                * (np.sign(x) - 1) * np.arctan(x / (a - 1))) / 2 / np.pi \
-            + (a - 1) / 2.0
+        return np.where(x <= 0,
+                        (1 - a) / 2.0 + (1 - a) / np.pi * np.arctan(x / (1 - a)),
+                        (1 - a) / 2.0 + (1 + a) / np.pi * np.arctan(x / (1 + a)))
 
     def _ppf(self, x, a):
         return np.where(x <= 0,
-                        np.tan(np.pi / (a - 1) * (x - (a - 1) / 2)) * (a - 1),
-                        np.tan(np.pi / (a + 1) * (x - (a - 1) / 2)) * (a + 1))
+                        np.tan(np.pi / (1 - a) * (x - (1 - a) / 2)) * (1 - a),
+                        np.tan(np.pi / (1 + a) * (x - (1 - a) / 2)) * (1 + a))
 
     def _stats(self, a, moments='mvsk'):
         return np.nan, np.nan, np.nan, np.nan
