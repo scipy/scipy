@@ -19,7 +19,7 @@ environment:
           secure: rl2zkdPpMWKuqh3paOKNhA==
       PYPI_PASSWORD:
           secure: rToy5D17/4zLIaIBq9S4UQ==
-      TEST_TIMEOUT: 600
+      TEST_TIMEOUT: 400
 
   matrix:
 # Assume the older versions are more likely to fail
