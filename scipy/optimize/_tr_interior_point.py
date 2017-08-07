@@ -205,23 +205,23 @@ class BarrierSubproblem:
         The criteria here proposed is similar to formula (2.3)
         from [1]_, p.879.
         """
-        if (state["opt"] < self.tolerance
-            and state["constr_violation"] < self.tolerance) \
-           or state["niter"] > 1000 \
-           or state["trust_radius"] < 1e-16:
+        if (state.optimality < self.tolerance
+            and state.constr_violation < self.tolerance) \
+           or state.niter > 1000 \
+           or state.trust_radius < 1e-16:
             return True
         else:
             return False
 
 
 def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
-             jac_ineq, n_eq, constr_eq, jac_eq, x0,
-             stop_criteria,
-             feasible_constr_list=None,
-             initial_barrier_parameter=0.1,
-             initial_tolerance=0.1,
-             initial_penalty=1.0,
-             initial_trust_radius=1.0):
+                      jac_ineq, n_eq, constr_eq, jac_eq, x0,
+                      stop_criteria,
+                      feasible_constr_list=None,
+                      initial_barrier_parameter=0.1,
+                      initial_tolerance=0.1,
+                      initial_penalty=1.0,
+                      initial_trust_radius=1.0):
     """Trust-region interior points method.
 
     Solve problem:
@@ -355,28 +355,28 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
             subprob.constraints,
             subprob.jacobian,
             z,
-            trust_radius,
+            subprob.stop_criteria,
             trust_lb,
             trust_ub,
-            subprob.stop_criteria,
             initial_penalty,
+            trust_radius,
             subprob.scaling)
 
         # Update parameters
-        iteration += state["niter"]
+        iteration += state.niter
         trust_radius = max(initial_trust_radius,
-                           TRUST_ENLARGEMENT*state["trust_radius"])
-        v = state["v"]
+                           TRUST_ENLARGEMENT*state.trust_radius)
+        z = state.x
         # TODO: Use more advanced strategies from [2]_
         # to update this parameters.
         barrier_parameter *= BARRIER_DECAY_RATIO
         tolerance *= BARRIER_DECAY_RATIO
         # Update state
-        state['niter'] = iteration
+        state.niter = iteration
 
         if stop_criteria(state):
             # Get x
-            state["x"] = subprob.get_variables(z)
+            state.x = subprob.get_variables(z)
             break
 
     return state
