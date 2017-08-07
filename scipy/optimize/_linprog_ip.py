@@ -1710,6 +1710,7 @@ def _linprog_ip(
         presolve=True,
         permc_spec='MMD_AT_PLUS_A',
         rr=True,
+        _sparse_presolve=False,
         **unknown_options):
     r"""
     Minimize a linear objective function subject to linear
@@ -2010,12 +2011,17 @@ def _linprog_ip(
         raise NotImplementedError("method 'interior-point' does not support "
                                   "callback functions.")
 
+    if _sparse_presolve and A_eq is not None:
+        A_eq = sp.sparse.coo_matrix(A_eq)
+    if _sparse_presolve and A_ub is not None:
+        A_ub = sp.sparse.coo_matrix(A_ub)
+
     # These should be warnings, not errors
     if not sparse and (sp.sparse.issparse(A_eq) or sp.sparse.issparse(A_ub)):
         sparse = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
              OptimizeWarning)
-        
+
     if sparse and lstsq:
         warn("Invalid option combination 'sparse':True "
              "and 'lstsq':True; Sparse least squares is not recommended.",
