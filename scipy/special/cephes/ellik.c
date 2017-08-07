@@ -58,6 +58,13 @@
 #include "mconf.h"
 extern double MACHEP;
 
+#if defined(_MSC_VER) && _MSC_VER <= 1600
+double asinh(double x)
+{
+    return log(x + sqrt(x * x + 1));
+}
+#endif
+
 static double ellik_neg_m(double phi, double m);
 
 double ellik(double phi,  double m)
