@@ -58,12 +58,7 @@
 #include "mconf.h"
 extern double MACHEP;
 
-#if defined(_MSC_VER) && _MSC_VER <= 1600
-double asinh(double x)
-{
-    return log(x + sqrt(x * x + 1));
-}
-#endif
+#include <numpy/npy_math.h>
 
 static double ellik_neg_m(double phi, double m);
 
@@ -94,7 +89,7 @@ double ellik(double phi,  double m)
 	    return (NPY_INFINITY);
 	}
         /* DLMF 19.6.8, and 4.23.42 */
-       return asinh(tan(phi));
+       return npy_asinh(tan(phi));
     }
     npio2 = floor(phi / NPY_PI_2);
     if (fmod(fabs(npio2), 2.0) == 1.0)
