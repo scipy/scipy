@@ -23,8 +23,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
                              initial_penalty=1.0,
                              initial_trust_radius=1.0,
                              scaling=default_scaling,
-                             return_all=False,
-                             state=None):
+                             state=None,
+                             return_all=False):
     """Solve nonlinear equality-constrained problem using trust-region SQP.
 
     Solve problem:
@@ -165,8 +165,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
                                cg_niter=0, cg_info={})
         # Store values
         if return_all:
-            allvecs = [np.copy(x)]
-            allmult = [np.copy(v)]
+            state.allvecs = []
+            state.allmult = []
 
     # Update state parameters
     state.optimality = norm(c + A.T.dot(v))
@@ -175,6 +175,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     state.ngev += 1
     state.ncev += 1
     state.njev += 1
+    state.niter += 1
     state.x = x
     state.v = v
     state.fun = f
@@ -183,6 +184,9 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     state.jac = A
     state.trust_radius = trust_radius
     state.penalty = penalty
+    if return_all:
+        state.allvecs += [np.copy(x)]
+        state.allmult += [np.copy(v)]
 
     compute_hess = True
     while not stop_criteria(state):
@@ -335,11 +339,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         state.cg_niter += info_cg["niter"]
         state.cg_info = info_cg
         if return_all:
-            allvecs.append(np.copy(x))
-            allmult.append(np.copy(v))
-
-    if return_all:
-        state.allvecs = allvecs
-        state.allmult = allmult
+            state.allvecs.append(np.copy(x))
+            state.allmult.append(np.copy(v))
 
     return state

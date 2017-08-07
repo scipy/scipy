@@ -221,7 +221,8 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
                       initial_barrier_parameter=0.1,
                       initial_tolerance=0.1,
                       initial_penalty=1.0,
-                      initial_trust_radius=1.0):
+                      initial_trust_radius=1.0,
+                      return_all=False):
     """Trust-region interior points method.
 
     Solve problem:
@@ -268,9 +269,10 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
         Starting point.
     feasible_constr_list : array_like (boolean), shape (n_ineq,)
         List specifying inequality constraints. All the iterates generated
-        by the optimization algorithm the algorithm will be feasible with respect
-        to those constraints. It is important that the initial point ``x0`` respect
-        the specified constraint, otherwise the algorithm will just fail.
+        by the optimization algorithm the algorithm will be feasible with
+        respect to those constraints. It is important that the initial point
+        ``x0`` respect the specified constraint, otherwise the algorithm will
+        just fail.
     stop_criteria: callable
         Functions that returns True when stop criteria is fulfilled:
             stop_criteria(state)
@@ -284,6 +286,8 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
         Initial penalty for merit function.
     max_substep_iter : int
         Maximum iterations per substep.
+    return_all : bool, optional
+        When ``true`` return the list of all vectors through the iterations.
     Returns
     -------
     x : array_like, shape (n,)
@@ -333,6 +337,11 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     state.barrier_parameter = initial_barrier_parameter
     state.tolerance = initial_tolerance
     state.trust_radius = initial_trust_radius
+    state.optimality = np.inf
+    state.constr_violation = np.inf
+    if return_all:
+        state.allvecs = []
+        state.allmult = []
     # Define barrier subproblem
     subprob = BarrierSubproblem(
         x0, fun, grad, lagr_hess, n_ineq, constr_ineq, jac_ineq,
@@ -348,7 +357,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     # If there are inequality constraints solve a
     # sequence of barrier problems
     first_barrier_prob = True
-    while True:
+    while not stop_criteria(state):
         if not first_barrier_prob:
             # Update parameters
             state.trust_radius = max(initial_trust_radius,
@@ -374,13 +383,21 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
             initial_penalty,
             state.trust_radius,
             subprob.scaling,
-            state=state)
-
+            state,
+            return_all)
         z = state.x
-        if stop_criteria(state):
-            # Get x
-            state.x = subprob.get_variables(z)
-            state.s = subprob.get_slack(z)
-            break
+
+    # Get x and s
+    state.x = subprob.get_variables(z)
+    state.s = subprob.get_slack(z)
+    # Return all
+    if return_all:
+        allvecs = []
+        allslack = []
+        for z in state.allvecs:
+            allvecs += [subprob.get_variables(z)]
+            allslack += [subprob.get_slack(z)]
+        state.allvecs = allvecs
+        state.allslack = allslack
 
     return state

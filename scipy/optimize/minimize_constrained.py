@@ -16,6 +16,7 @@ TERMINATION_MESSAGES = {
     3: "`callback` function requested termination"
 }
 
+
 def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                          method=None, xtol=1e-8, gtol=1e-8,
                          max_iter=1000, options={}, callback=None):
@@ -68,6 +69,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         Maximum number of algorithm iterations.
     options : dict, optional
         A dictionary of solver options.
+
+            - `return_all`
     callback : callable, optional
         Called after each iteration:
 
