@@ -64,7 +64,7 @@ matrix:
   allow_failures:
     # TMP allow failures until tests are fixed (remove PYTHON_ARCH to reverse)  
     - PYTHON_ARCH: 32
-    - PYTHON_ARCH: 64
+    # - PYTHON_ARCH: 64
     - SKIP_NOTAG: true
 
 init:
