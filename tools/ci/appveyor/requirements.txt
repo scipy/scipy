@@ -1,4 +1,4 @@
-numpy==1.13.1
+numpy
 cython
 nose
 pytest-timeout
