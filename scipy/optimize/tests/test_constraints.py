@@ -112,9 +112,11 @@ class TestConversions(TestCase):
         x = [1, 2, 3, 4]
         assert_array_equal(nonlinear.fun(x), A.dot(x))
         assert_array_equal(nonlinear.jac(x), A)
+        assert_array
 
     def test_box_to_canonical_conversion(self):
-        box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
+        box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]),
+                                  [True, False, True])
         canonical = box.to_canonical(sparse_jacobian=True)
 
         x = [1, 2, 3]
@@ -133,10 +135,12 @@ class TestConversions(TestCase):
                                                              [1, 0, 0],
                                                              [0, 0, 1]])
         assert_array_equal(canonical.hess, None)
+        assert_array_equal(canonical.feasible_constr, [True, False, True, True, True])
 
     def test_linear_to_canonical_conversion(self):
         A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
-        linear = LinearConstraint(A, ("interval", [10, 20, 30], [10, np.inf, 70]))
+        linear = LinearConstraint(A, ("interval", [10, 20, 30], [10, np.inf, 70]),
+                                  [True, False, True])
         canonical = linear.to_canonical()
 
         x = [1, 2, 3, 4]
@@ -151,6 +155,7 @@ class TestConversions(TestCase):
                                                    [-7, 0, -8, 0],
                                                    [7, 0, 8, 0]])
         assert_array_equal(canonical.hess, None)
+        assert_array_equal(canonical.feasible_constr, [False, True, True])
 
     def test_nonlinear_to_canonical_conversion(self):
         f1 = 10
@@ -178,9 +183,11 @@ class TestConversions(TestCase):
         def hess(x, v):
             return v[0]*H1 + v[1]*H2 + v[2]*H3
 
-        nonlinear = NonlinearConstraint(fun, jac, hess, ("interval",
-                                                         [10, 20, 30],
-                                                         [10, np.inf, 70]))
+        nonlinear = NonlinearConstraint(fun, jac, hess,
+                                        ("interval",
+                                         [10, 20, 30],
+                                         [10, np.inf, 70]),
+                                        [True, False, True])
         canonical = nonlinear.to_canonical()
         x = [1, 2, 3, 4]
         assert_array_equal(canonical.n_eq, 1)
@@ -203,10 +210,13 @@ class TestConversions(TestCase):
         v_ineq = np.array([4, -2, 30])
         assert_array_equal(canonical.hess(x, v_eq, v_ineq),
                            50*H1 + (-4)*H2 + (2+30)*H3)
+        assert_array_equal(canonical.feasible_constr, [False, True, True])
 
-        nonlinear = NonlinearConstraint(fun, jac, hess, ("interval",
-                                                         [10, 20, 30],
-                                                         [20, 20, 70]))
+        nonlinear = NonlinearConstraint(fun, jac, hess,
+                                        ("interval",
+                                         [10, 20, 30],
+                                         [20, 20, 70]),
+                                        [True, False, True])
         canonical = nonlinear.to_canonical()
         x = [1, 2, 3, 4]
         assert_array_equal(canonical.n_eq, 1)
@@ -231,6 +241,7 @@ class TestConversions(TestCase):
         v_ineq = np.array([4, -2, 30, 2])
         assert_array_equal(canonical.hess(x, v_eq, v_ineq),
                            (-4+30)*H1 + 50*H2 + (2+2)*H3)
+        assert_array_equal(canonical.feasible_constr, [True, True, True, True])
 
 
 class TestConcatenateConstraints(TestCase):
@@ -242,7 +253,8 @@ class TestConcatenateConstraints(TestCase):
                       [7, 0, 8, 0]])
         linear = LinearConstraint(A, ("interval",
                                       [10, 20, 30],
-                                      [10, np.inf, 70]))
+                                      [10, np.inf, 70]),
+                                  [True, False, True])
 
         # Define second constraint
         f1 = 10
@@ -270,14 +282,16 @@ class TestConcatenateConstraints(TestCase):
         def hess(x, v):
             return v[0]*H1 + v[1]*H2 + v[2]*H3
 
-        nonlinear = NonlinearConstraint(fun, jac, hess, ("interval",
-                                                         [10, 20, 30],
-                                                         [10, np.inf, 70]))
+        nonlinear = NonlinearConstraint(fun, jac, hess,
+                                        ("interval",
+                                         [10, 20, 30],
+                                         [10, np.inf, 70]),
+                                        [True, False, True])
 
         # Define third constraint
         box = BoxConstraint(("interval",
                              [10, 20, 30, -np.inf],
-                             [50, np.inf, 70, np.inf]))
+                             [50, np.inf, 70, np.inf]), True)
 
         list_configurations = [(None, None, None, None, None),
                                (True, True, True, True, True),
@@ -363,3 +377,10 @@ class TestConcatenateConstraints(TestCase):
             for i in range(10):
                 p = np.random.uniform(size=4)
                 assert_array_almost_equal(H.dot(p), H_expected.dot(p))
+
+            # Test feasible constraint list evaluation
+            assert_array_equal(canonical.feasible_constr,
+                               [False, True, True,
+                                False, True, True,
+                                True, True, True, True, True,
+                                False, True, True])

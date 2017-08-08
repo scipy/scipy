@@ -172,7 +172,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             constr.n_ineq, constr.constr_ineq,
             constr.jac_ineq, constr.n_eq,
             constr.constr_eq, constr.jac_eq,
-            x0, stop_criteria, None, sparse_jacobian,
+            x0, stop_criteria, constr.feasible_constr, sparse_jacobian,
             **options)
 
     result.message = TERMINATION_MESSAGES[result.status]
