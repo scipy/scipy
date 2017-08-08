@@ -21,7 +21,8 @@ TERMINATION_MESSAGES = {
 
 def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                          method=None, xtol=1e-8, gtol=1e-8,
-                         max_iter=1000, options={}, callback=None):
+                         options={}, callback=None, max_iter=1000,
+                         sparse_jacobian=None):
     """Minimize scalar function subject to constraints.
 
     Parameters
@@ -67,8 +68,6 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         Only for 'equality-constrained-sqp'.
     gtol : float, optional
         Tolerance for termination by the norm of the lagrangian gradient.
-    max_iter : int, optional
-        Maximum number of algorithm iterations.
     options : dict, optional
         A dictionary of solver options.
 
@@ -80,6 +79,13 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             callback(OptimizeResult state) -> bool
 
         and if callback returns true the algorithm execution is terminated.
+    max_iter : int, optional
+        Maximum number of algorithm iterations.
+    sparse_jacobian : {boolean, None}
+        The algorithm uses a sparse representation of the Jacobian if True
+        and a dense representation if False. When ``None`` the algorithm
+        uses the more convenient option (which is not always the more effective
+        one).
 
     Returns
     -------
@@ -108,14 +114,15 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             elif isinstance(constr, CanonicalConstraint):
                 constraints_list += [constr]
             else:
-                constraints_list += [constr.to_canonical()]
+                constraints_list += [constr.to_canonical(sparse_jacobian)]
         # Concatenate constraints
         if len(constraints_list) == 0:
             constr = empty_canonical_constraint()
         elif len(constraints_list) == 1:
             constr = constraints_list[0]
         else:
-            constr = concatenate_canonical_constraints(constraints_list)
+            constr = concatenate_canonical_constraints(constraints_list,
+                                                       sparse_jacobian)
     else:
         raise ValueError("Unknown Constraint type")
 
@@ -165,7 +172,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             constr.n_ineq, constr.constr_ineq,
             constr.jac_ineq, constr.n_eq,
             constr.constr_eq, constr.jac_eq,
-            x0, stop_criteria, **options)
+            x0, stop_criteria, None, sparse_jacobian,
+            **options)
 
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0

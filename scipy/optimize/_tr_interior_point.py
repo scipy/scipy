@@ -5,6 +5,7 @@ import scipy.sparse as spc
 import numpy as np
 from ._equality_constrained_sqp import equality_constrained_sqp
 from .optimize import OptimizeResult
+from .constraints import check_sparsity
 from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 
@@ -32,7 +33,7 @@ class BarrierSubproblem:
     def __init__(self, x0, fun, grad, lagr_hess, n_ineq, constr_ineq,
                  jac_ineq, n_eq, constr_eq, jac_eq, barrier_parameter,
                  tolerance, feasible_constr_list, global_stop_criteria,
-                 xtol):
+                 xtol, sparse_jacobian):
         # Compute number of variables
         self.n_vars, = np.shape(x0)
         # Store parameters
@@ -51,6 +52,7 @@ class BarrierSubproblem:
         self.feasible_constr_list = feasible_constr_list
         self.global_stop_criteria = global_stop_criteria
         self.xtol = xtol
+        self.sparse_jacobian = sparse_jacobian
         # Auxiliar parameters
         self._x_ineq = None
         self._x_eq = None
@@ -152,9 +154,27 @@ class BarrierSubproblem:
         """
         x = self.get_variables(z)
         s = self.get_slack(z)
-        S = spc.diags((s,), (0,)) if self.n_ineq > 0 else np.empty((0, 0))
-        return spc.bmat([[self.jac_eq(x), None],
-                         [self.jac_ineq(x), S]], "csc")
+        jac_eq = self.jac_eq(x)
+        jac_ineq = self.jac_ineq(x)
+        if self.n_ineq == 0:
+            return check_sparsity(jac_eq, self.sparse_jacobian)
+        else:
+            if self.sparse_jacobian is not None:
+                sparse_jacobian = self.sparse_jacobian
+            elif spc.issparse(jac_eq) or spc.issparse(jac_eq):
+                sparse_jacobian = True
+            else:
+                sparse_jacobian = False
+
+            if sparse_jacobian:
+                S = spc.diags((s,), (0,))
+                return spc.bmat([[jac_eq, None],
+                                 [jac_ineq, S]], "csc")
+            else:
+                S = np.diag(s)
+                zeros = np.zeros((self.n_eq, self.n_ineq))
+                return np.asarray(np.bmat([[jac_eq, zeros],
+                                           [jac_ineq, S]]))
 
     def lagrangian_hessian_x(self, z, v):
         """Returns Lagrangian Hessian (in relation to `x`) -> Hx"""
@@ -218,6 +238,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
                       jac_ineq, n_eq, constr_eq, jac_eq, x0,
                       stop_criteria,
                       feasible_constr_list=None,
+                      sparse_jacobian=None,
                       initial_barrier_parameter=0.1,
                       initial_tolerance=0.1,
                       initial_penalty=1.0,
@@ -348,7 +369,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     subprob = BarrierSubproblem(
         x0, fun, grad, lagr_hess, n_ineq, constr_ineq, jac_ineq,
         n_eq, constr_eq, jac_eq, state.barrier_parameter, state.tolerance,
-        feasible_constr_list, stop_criteria, xtol_subproblem)
+        feasible_constr_list, stop_criteria, xtol_subproblem, sparse_jacobian)
     # Define initial parameter for the first iteration.
     z = subprob.z0()
     # Define trust region bounds

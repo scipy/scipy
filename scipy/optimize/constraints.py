@@ -7,6 +7,7 @@ __all__ = ['CanonicalConstraint',
            'NonlinearConstraint',
            'LinearConstraint',
            'BoxConstraint',
+           'check_sparsity',
            'parse_constraint',
            'empty_canonical_constraint',
            'generate_lagrangian_hessian',
@@ -98,7 +99,7 @@ class NonlinearConstraint:
         self.hess = hess
         self.kind = kind
 
-    def to_canonical(self):
+    def to_canonical(self, sparse_jacobian=None):
         # Parse constraints
         eq, ineq, val_eq, val_ineq, sign, fun_len = parse_constraint(self.kind)
         # Get dimensions
@@ -133,7 +134,8 @@ class NonlinearConstraint:
                 if not np.array_equal(x, self.y):
                     self.jac_y = self.jac(x)
                     self.y = x
-                return self.jac_y[eq, :]
+                J = self.jac_y[eq, :]
+                return check_sparsity(J, sparse_jacobian)
             else:
                 return np.empty((0, len(x)))
 
@@ -145,10 +147,11 @@ class NonlinearConstraint:
                 if spc.issparse(self.jac_y):
                     D = spc.lil_matrix((n_ineq, n_ineq))
                     D.setdiag(sign)
-                    return D*self.jac_y[ineq, :]
+                    J = D*self.jac_y[ineq, :]
                 else:
-                    return np.multiply(self.jac_y[ineq, :],
-                                       sign[:, np.newaxis])
+                    J = np.multiply(self.jac_y[ineq, :],
+                                    sign[:, np.newaxis])
+                return check_sparsity(J, sparse_jacobian)
             else:
                 return np.empty((0, len(x)))
 
@@ -194,17 +197,17 @@ class LinearConstraint:
         self.A = A
         self.kind = kind
 
-    def to_nonlinear(self):
+    def to_nonlinear(self, sparse_jacobian=None):
         def fun(x):
             return self.A.dot(x)
 
         def jac(x):
-            return self.A
+            return check_sparsity(self.A, sparse_jacobian)
 
         return NonlinearConstraint(fun, jac, None, self.kind)
 
-    def to_canonical(self):
-        return self.to_nonlinear().to_canonical()
+    def to_canonical(self, sparse_jacobian=None):
+        return self.to_nonlinear(sparse_jacobian).to_canonical()
 
 
 class BoxConstraint:
@@ -227,19 +230,37 @@ class BoxConstraint:
     def __init__(self, kind):
         self.kind = kind
 
-    def to_linear(self, sparse=True):
+    def to_linear(self, sparse_jacobian=None):
+        # Set default value
+        if sparse_jacobian is None:
+            sparse_jacobian = True
+        # Define matrix A
         _, _, _, _, _, fun_len = parse_constraint(self.kind)
-        if sparse:
+        if sparse_jacobian:
             A = spc.eye(fun_len).tocsc()
         else:
             A = np.eye(fun_len)
+        # Return Constraint
         return LinearConstraint(A, self.kind)
 
-    def to_nonlinear(self, sparse=True):
-        return self.to_linear(sparse).to_nonlinear()
+    def to_nonlinear(self, sparse_jacobian=None):
+        return self.to_linear(sparse_jacobian).to_nonlinear()
 
-    def to_canonical(self, sparse=True):
-        return self.to_linear(sparse).to_canonical()
+    def to_canonical(self, sparse_jacobian=None):
+        return self.to_linear(sparse_jacobian).to_canonical()
+
+
+def check_sparsity(A, sparse):
+    """Return a spmatrix if `sparse` is true and a dense numpy array otherwise.
+    """
+    if (sparse is None) or \
+       (sparse and spc.issparse(A)) or \
+       (not sparse and not spc.issparse(A)):
+        return A
+    elif sparse:
+        return spc.csc_matrix(A)
+    else:
+        return A.toarray()
 
 
 def parse_constraint(kind):
@@ -368,7 +389,7 @@ def generate_lagrangian_hessian(constraint, hess):
     return lagr_hess
 
 
-def concatenate_canonical_constraints(constraints, sparse=True):
+def concatenate_canonical_constraints(constraints, sparse_jacobian=None):
     """Concatenate sequence of CanonicalConstraint's."""
     # Compute number of constraints
     n_eq = 0
@@ -393,53 +414,59 @@ def concatenate_canonical_constraints(constraints, sparse=True):
 
     # Concatanate equality constraints Jacobian matrices
     def jac_eq(x):
+        # Read sequentially all jacobians
         jac_eq_list = []
+        sparse_jac_list = []
         for constr in constraints:
             J = constr.jac_eq(x)
-            if sparse:
-                # Convert all values to coo_matrix
-                # this is done internally anyway
-                # and it helps avoiding some odd
-                # behaviours
-                jac_eq_list += [spc.coo_matrix(J)]
-            else:
-                # Convert all values to dense array
-                # this is done internally anyway
-                # and it helps avoiding some odd
-                # behaviours
-                if spc.issparse(J):
-                    jac_eq_list += [J.toarray()]
-                else:
-                    jac_eq_list += [J]
-
-        if sparse:
-            return spc.vstack(jac_eq_list)
+            jac_eq_list += [J]
+            sparse_jac_list += [spc.issparse(J)]
+        # Use sparse matrix if any of the constraints
+        # are sparse
+        if sparse_jacobian is None:
+            use_sparse = np.any(sparse_jac_list)
+        else:
+            use_sparse = sparse_jacobian
+        # Convert all values to same format
+        # this is done internally anyway and
+        # it helps avoiding some odd behaviours
+        for i in range(len(jac_eq_list)):
+            if use_sparse:
+                jac_eq_list[i] = spc.coo_matrix(jac_eq_list[i])
+            elif sparse_jac_list[i]:
+                jac_eq_list[i] = jac_eq_list[i].toarray()
+        # Concatenate all
+        if use_sparse:
+            return spc.vstack(jac_eq_list, format="csc")
         else:
             return np.vstack(jac_eq_list)
 
     # Concatanate inequality constraints Jacobian matrices
     def jac_ineq(x):
+        # Read sequentially all jacobians
         jac_ineq_list = []
+        sparse_jac_list = []
         for constr in constraints:
             J = constr.jac_ineq(x)
-            if sparse:
-                # Convert all values to coo_matrix
-                # this is done internally anyway
-                # and it helps avoiding some odd
-                # behaviours
-                jac_ineq_list += [spc.coo_matrix(J)]
-            else:
-                # Convert all values to dense array
-                # this is done internally anyway
-                # and it helps avoiding some odd
-                # behaviours
-                if spc.issparse(J):
-                    jac_ineq_list += [J.toarray()]
-                else:
-                    jac_ineq_list += [J]
-
-        if sparse:
-            return spc.vstack(jac_ineq_list)
+            jac_ineq_list += [J]
+            sparse_jac_list += [spc.issparse(J)]
+        # Use sparse matrix if any of the constraints
+        # are sparse in the case sparse_jacobian=None
+        if sparse_jacobian is None:
+            use_sparse = np.any(sparse_jac_list)
+        else:
+            use_sparse = sparse_jacobian
+        # Convert all values to same format
+        # this is done internally anyway and
+        # it helps avoiding some odd behaviours
+        for i in range(len(jac_ineq_list)):
+            if use_sparse:
+                jac_ineq_list[i] = spc.coo_matrix(jac_ineq_list[i])
+            elif sparse_jac_list[i]:
+                jac_ineq_list[i] = jac_ineq_list[i].toarray()
+        # Concatenate all
+        if use_sparse:
+            return spc.vstack(jac_ineq_list, format="csc")
         else:
             return np.vstack(jac_ineq_list)
 
