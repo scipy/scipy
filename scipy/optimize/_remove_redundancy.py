@@ -210,9 +210,9 @@ def _remove_redundancy_dense(A, rhs):
         for j_index in range(0, len(js), batch):
             j_indices = js[np.arange(j_index, min(j_index+batch, len(js)))]
 
-            c = abs(A[:, j_indices].transpose().dot(pi)) > tolapiv
-            if c.any():
-                j = js[j_index + np.nonzero(c)[0][0]]
+            c = abs(A[:, j_indices].transpose().dot(pi))
+            if (c > tolapiv).any():
+                j = js[j_index + np.argmax(c)]  # very independent column
                 B[:, i] = A[:, j]
                 b[i] = j
                 dependent = False
@@ -329,10 +329,9 @@ def _remove_redundancy_sparse(A, rhs):
         # as any are nonzero). For very large matrices, it might be worth
         # it to compute, say, 100 or 1000 at a time and stop when a nonzero
         # is found.
-        c = (np.abs(A[:, js].transpose().dot(pi)) > tolapiv).nonzero()[0]
-
-        if len(c) > 0:  # independent
-            j = js[c[0]]
+        c = abs(A[:, js].transpose().dot(pi))
+        if (c > tolapiv).any():  # independent
+            j = js[np.argmax(c)]  # select very independent column
             b[i] = j  # replace artificial column
         else:
             bibar = pi.T.dot(rhs.reshape(-1, 1))
@@ -416,7 +415,11 @@ def _remove_redundancy(A, b):
         if not np.any(eligibleRows) or np.any(np.abs(v.dot(A)) > tol):
             status = 4
             message = ("Due to numerical issues, redundant equality "
-                       "constraints could not be removed automatically.")
+                       "constraints could not be removed automatically. "
+                       "Try providing your constraint matrices as sparse "
+                       "matrices to activate sparse presolve, try turning "
+                       "off redundancy removal, or try turning off presolve "
+                       "altogether.")
             break
         if np.any(np.abs(v.dot(b)) > tol):
             status = 2

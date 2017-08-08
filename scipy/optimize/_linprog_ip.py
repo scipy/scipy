@@ -615,14 +615,17 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
     # faster. More testing would be good.
     small_nullspace = 5
     if rr and A_eq.size > 0:
-        rank = np.linalg.matrix_rank(A_eq)
+        try:  # TODO: instead use results of first SVD in _remove_redundancy
+            rank = np.linalg.matrix_rank(A_eq)
+        except:  # oh well, we'll have to go with _remove_redundancy_dense
+            rank = 0
     if rr and A_eq.size > 0 and rank < A_eq.shape[0]:
         warn(redundancy_warning, OptimizeWarning)
         dim_row_nullspace = A_eq.shape[0]-rank
-        if dim_row_nullspace > small_nullspace:
-            A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
-        else:
+        if dim_row_nullspace <= small_nullspace:
             A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
+        if dim_row_nullspace > small_nullspace or status == 4:
+            A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
         if A_eq.shape[0] < rank:
             message = ("Due to numerical issues, redundant equality "
                        "constraints could not be removed automatically. "
