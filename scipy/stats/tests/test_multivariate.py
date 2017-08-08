@@ -208,15 +208,15 @@ class TestMultivariateNormal(object):
         X = np.random.randn(2, 3, n)
 
         # Check that multiple data points can be evaluated at once.
+        desired_pdf = multivariate_normal.pdf(X, mean, cov)
+        desired_cdf = multivariate_normal.cdf(X, mean, cov)
         for i in range(2):
             for j in range(3):
                 actual = multivariate_normal.pdf(X[i, j], mean, cov)
-                desired = multivariate_normal.pdf(X, mean, cov)[i, j]
-                assert_allclose(actual, desired)
+                assert_allclose(actual, desired_pdf[i,j])
                 # Repeat for cdf
                 actual = multivariate_normal.cdf(X[i, j], mean, cov)
-                desired = multivariate_normal.cdf(X, mean, cov)[i, j]
-                assert_allclose(actual, desired, atol=1e-5)
+                assert_allclose(actual, desired_cdf[i,j], rtol=1e-3)
 
     def test_normal_1D(self):
         # The probability density function for a 1D normal variable should
