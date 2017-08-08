@@ -175,6 +175,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             x0, stop_criteria, constr.feasible_constr, sparse_jacobian,
             **options)
 
+    result.method = method
     result.message = TERMINATION_MESSAGES[result.status]
     result.success = result.status > 0
 
