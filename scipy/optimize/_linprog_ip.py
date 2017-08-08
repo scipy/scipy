@@ -623,6 +623,14 @@ def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
             A_eq, b_eq, status, message = _remove_redundancy_dense(A_eq, b_eq)
         else:
             A_eq, b_eq, status, message = _remove_redundancy(A_eq, b_eq)
+        if A_eq.shape[0] < rank:
+            message = ("Due to numerical issues, redundant equality "
+                       "constraints could not be removed automatically. "
+                       "Try providing your constraint matrices as sparse "
+                       "matrices to activate sparse presolve, try turning "
+                       "off redundancy removal, or try turning off presolve "
+                       "altogether.")
+            status = 4
         if status != 0:
             complete = True
     return (c, c0, A_ub, b_ub, A_eq, b_eq, bounds,
@@ -2011,6 +2019,7 @@ def _linprog_ip(
         raise NotImplementedError("method 'interior-point' does not support "
                                   "callback functions.")
 
+    # This is an undocumented option for unit testing sparse presolve
     if _sparse_presolve and A_eq is not None:
         A_eq = sp.sparse.coo_matrix(A_eq)
     if _sparse_presolve and A_ub is not None:

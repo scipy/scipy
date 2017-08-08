@@ -209,6 +209,7 @@ def _remove_redundancy_dense(A, rhs):
         # like for j in js: if abs(A[:,j].transpose().dot(pi)) > tolapiv:
         for j_index in range(0, len(js), batch):
             j_indices = js[np.arange(j_index, min(j_index+batch, len(js)))]
+
             c = abs(A[:, j_indices].transpose().dot(pi)) > tolapiv
             if c.any():
                 j = js[j_index + np.nonzero(c)[0][0]]
@@ -414,16 +415,16 @@ def _remove_redundancy(A, b):
         eligibleRows = np.abs(v) > tol * 10e6
         if not np.any(eligibleRows) or np.any(np.abs(v.dot(A)) > tol):
             status = 4
-            message = "Due to numerical issues, redundant equality " \
-                      "constraints could not be removed automatically."
+            message = ("Due to numerical issues, redundant equality "
+                       "constraints could not be removed automatically.")
             break
         if np.any(np.abs(v.dot(b)) > tol):
             status = 2
-            message = "There is a linear combination of rows of A_eq that " \
-                      "results in zero, suggesting a redundant constraint. " \
-                      "However the same linear combination of b_eq is " \
-                      "nonzero, suggesting that the constraints conflict " \
-                      "and the problem is infeasible."
+            message = ("There is a linear combination of rows of A_eq that "
+                       "results in zero, suggesting a redundant constraint. "
+                       "However the same linear combination of b_eq is "
+                       "nonzero, suggesting that the constraints conflict "
+                       "and the problem is infeasible.")
             break
 
         i_remove = _get_densest(A, eligibleRows)
