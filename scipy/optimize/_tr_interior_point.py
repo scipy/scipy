@@ -173,6 +173,10 @@ class BarrierSubproblem:
             else:
                 S = np.diag(s)
                 zeros = np.zeros((self.n_eq, self.n_ineq))
+                # Convert to dense array
+                jac_ineq = jac_ineq.todense() if spc.issparse(jac_ineq) else jac_ineq
+                jac_eq = jac_eq.todense() if spc.issparse(jac_eq) else jac_eq
+                # Concatenate matrices
                 return np.asarray(np.bmat([[jac_eq, zeros],
                                            [jac_ineq, S]]))
 

@@ -124,6 +124,11 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3):
     """
     m, n = np.shape(A)
 
+    # The factorization of an empty matrix
+    # only works for the sparse representation.
+    if m*n == 0:
+        A = csc_matrix(A)
+
     # Check Argument
     if issparse(A):
         if method is None:
