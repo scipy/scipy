@@ -3543,7 +3543,7 @@ class TestCSR(sparse_test_class()):
         data = [1, 2, 3, 4]
         csr = csr_matrix((data, indices, indptr))
         assert_array_equal(csr.shape, (3,6))
-        assert_(np.issubdtype(csr.dtype, int))
+        assert_(np.issubdtype(csr.dtype, np.signedinteger))
 
     def test_sort_indices(self):
         data = arange(5)
@@ -3745,7 +3745,7 @@ class TestCSC(sparse_test_class()):
         data = [1, 2, 3, 4]
         csc = csc_matrix((data, indices, indptr))
         assert_array_equal(csc.shape,(6,3))
-        assert_(np.issubdtype(csc.dtype, int))
+        assert_(np.issubdtype(csc.dtype, np.signedinteger))
 
     def test_eliminate_zeros(self):
         data = array([1, 0, 0, 0, 2, 0, 3, 0])

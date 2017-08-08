@@ -184,7 +184,7 @@ class test_vectorization:
     def test_single_query(self):
         d, i = self.kdtree.query(np.array([0,0,0]))
         assert_(isinstance(d,float))
-        assert_(np.issubdtype(i, int))
+        assert_(np.issubdtype(i, np.signedinteger))
 
     def test_vectorized_query(self):
         d, i = self.kdtree.query(np.zeros((2,4,3)))
