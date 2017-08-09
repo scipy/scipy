@@ -6,7 +6,8 @@ from scipy.optimize import (parse_constraint,
                             LinearConstraint,
                             NonlinearConstraint,
                             CanonicalConstraint,
-                            concatenate_canonical_constraints)
+                            concatenate_canonical_constraints,
+                            reinforce_box_constraints)
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
@@ -112,7 +113,6 @@ class TestConversions(TestCase):
         x = [1, 2, 3, 4]
         assert_array_equal(nonlinear.fun(x), A.dot(x))
         assert_array_equal(nonlinear.jac(x), A)
-        assert_array
 
     def test_box_to_canonical_conversion(self):
         box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]),
@@ -384,3 +384,17 @@ class TestConcatenateConstraints(TestCase):
                                 False, True, True,
                                 True, True, True, True, True,
                                 False, True, True])
+
+class TestReinforceBoxConstraints(TestCase):
+
+    def test_reinforce_box_constraints(self):
+        lb = np.array([0, 20, 30])
+        ub = np.array([0.5, np.inf, 70])
+        feasible_constr = [True, False, True]
+        box = BoxConstraint(("interval", lb, ub),
+                            feasible_constr)
+        x0 = [1, 2, 3]
+
+        x0 = reinforce_box_constraints(box, x0)
+        assert_array_less(lb[feasible_constr], x0[feasible_constr])
+        assert_array_less(x0[feasible_constr], ub[feasible_constr])

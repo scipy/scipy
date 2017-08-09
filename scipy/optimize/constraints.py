@@ -9,6 +9,7 @@ __all__ = ['CanonicalConstraint',
            'BoxConstraint',
            'check_sparsity',
            'parse_constraint',
+           'reinforce_box_constraints',
            'empty_canonical_constraint',
            'generate_lagrangian_hessian',
            'concatenate_canonical_constraints']
@@ -407,6 +408,32 @@ def parse_constraint(kind):
 
     return eq, ineq, val_eq, val_ineq, sign, fun_len
 
+
+def reinforce_box_constraints(constr, x,
+                              relative_tolerance=0.01,
+                              absolute_tolerance=0.01):
+    """Reinforce box constraints"""
+    x = np.asarray(x, dtype=float)
+    kind = constr.kind
+    feasible_constr = constr.feasible_constr
+    if kind[0] == "greater":
+        lb = np.asarray(kind[1], dtype=float)
+        ub = np.full_like(lb, np.inf, dtype=float)
+    elif kind[0] == "less":
+        ub = np.asarray(kind[1], dtype=float)
+        lb = np.full_like(ub, -np.inf, dtype=float)
+    elif kind[0] == "interval":
+        lb = np.asarray(kind[1], dtype=float)
+        ub = np.asarray(kind[2], dtype=float)
+    lower_bound = np.minimum(lb[feasible_constr] + absolute_tolerance,
+                         lb[feasible_constr] +
+                         relative_tolerance * (ub[feasible_constr]-lb[feasible_constr]))
+    upper_bound = np.maximum(ub[feasible_constr] - absolute_tolerance,
+                         ub[feasible_constr] -
+                         relative_tolerance * (ub[feasible_constr]-lb[feasible_constr]))
+    x[feasible_constr] = np.maximum(x[feasible_constr], lower_bound)
+    x[feasible_constr] = np.minimum(x[feasible_constr], upper_bound)
+    return x
 
 def empty_canonical_constraint():
     """Return empty CanonicalConstraint."""
