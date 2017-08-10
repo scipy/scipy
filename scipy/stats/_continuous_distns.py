@@ -4353,6 +4353,14 @@ class rdist_gen(rv_continuous):
 
     `rdist` takes ``c`` as a shape parameter.
 
+    This distribution includes the following distribution kernels as
+    special cases::
+
+        c = 2:  uniform
+        c = 4:  Epanechnikov (parabolic)
+        c = 6:  quartic (biweight)
+        c = 8:  triweight
+
     %(after_notes)s
 
     %(example)s
