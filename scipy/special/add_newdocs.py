@@ -6480,10 +6480,15 @@ add_newdoc("scipy.special", "wofz",
     --------
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
+
     >>> x = np.linspace(-3, 3)
-    >>> plt.plot(x, special.wofz(x))
+    >>> z = special.wofz(x)
+
+    >>> plt.plot(x, z.real, label='wofz(x).real')
+    >>> plt.plot(x, z.imag, label='wofz(x).imag')
     >>> plt.xlabel('$x$')
-    >>> plt.ylabel('$wofz(x)$')
+    >>> plt.legend(framealpha=1, shadow=True)
+    >>> plt.grid(alpha=0.25)
     >>> plt.show()
 
     """)
