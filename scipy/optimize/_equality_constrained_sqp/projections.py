@@ -97,7 +97,7 @@ def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
     #       to solve the system twice as fast (because
     #       of the symmetry).
     try:
-        factor = scipy.sparse.linalg.splu(K)
+        solve = scipy.sparse.linalg.factorized(K)
     except RuntimeError:
         warn('Singular Jacobian matrix. Using dense SVD decomposition to ' +
              'perform the factorizations.')
@@ -115,7 +115,7 @@ def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
         v = np.hstack([x, np.zeros(m)])
         # lu_sol = [ z ]
         #          [aux]
-        lu_sol = factor.solve(v)
+        lu_sol = solve(v)
         z = lu_sol[:n]
 
         # Iterative refinement to improve roundoff
@@ -129,7 +129,7 @@ def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
             new_v = v - K.dot(lu_sol)
             # [I A.T] * [delta  z ] = new_v
             # [A  O ]   [delta aux]
-            lu_update = factor.solve(new_v)
+            lu_update = solve(new_v)
             #  [ z ] += [delta  z ]
             #  [aux]    [delta aux]
             lu_sol += lu_update
@@ -149,7 +149,7 @@ def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
         v = np.hstack([x, np.zeros(m)])
         # lu_sol = [aux]
         #          [ z ]
-        lu_sol = factor.solve(v)
+        lu_sol = solve(v)
         # return z = inv(A A.T) A x
         return lu_sol[n:m+n]
 
@@ -163,7 +163,7 @@ def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
         v = np.hstack([np.zeros(n), x])
         # lu_sol = [ z ]
         #          [aux]
-        lu_sol = factor.solve(v)
+        lu_sol = solve(v)
         # return z = A.T inv(A A.T) x
         return lu_sol[:n]
 
