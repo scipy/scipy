@@ -141,6 +141,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                 if not np.array_equal(x0_new, x0):
                     warn('The initial point was changed in order '
                          +'to stay inside box constraints.')
+                    x0 = x0_new
 
     # Choose appropriate method
     if method is None:

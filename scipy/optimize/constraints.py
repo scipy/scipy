@@ -413,7 +413,7 @@ def reinforce_box_constraints(constr, x,
                               relative_tolerance=0.01,
                               absolute_tolerance=0.01):
     """Reinforce box constraints"""
-    x = np.asarray(x, dtype=float)
+    x = np.copy(np.asarray(x, dtype=float))
     kind = constr.kind
     feasible_constr = constr.feasible_constr
     if kind[0] == "greater":
