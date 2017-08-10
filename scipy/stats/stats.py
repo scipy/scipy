@@ -4956,6 +4956,14 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
     value of U.
 
     This test corrects for ties and by default uses a continuity correction.
+    
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Mann-Whitney_U_test
+    
+    Mann and Whitney (1947) On a Test of Whether one of Two Random Variables
+    is Stochastically Larger than the Other, Ann. Math. Statist. 18, no. 1,
+    50--60. http://projecteuclid.org/euclid.aoms/1177730491
 
     """
     if alternative is None:
