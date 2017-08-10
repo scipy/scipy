@@ -243,12 +243,12 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
                       stop_criteria,
                       feasible_constr_list,
                       sparse_jacobian,
+                      xtol,
                       initial_barrier_parameter=0.1,
                       initial_tolerance=0.1,
                       initial_penalty=1.0,
                       initial_trust_radius=1.0,
                       return_all=False,
-                      xtol_subproblem=1e-16,
                       factorization_method=None):
     """Trust-region interior points method.
 
@@ -397,7 +397,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     subprob = BarrierSubproblem(
         x0, fun, grad, lagr_hess, n_ineq, constr_ineq, jac_ineq,
         n_eq, constr_eq, jac_eq, state.barrier_parameter, state.tolerance,
-        feasible_constr_list, stop_criteria, xtol_subproblem, sparse_jacobian)
+        feasible_constr_list, stop_criteria, xtol, sparse_jacobian)
     # Define initial parameter for the first iteration.
     z = subprob.z0()
     # Define trust region bounds

@@ -231,6 +231,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
         def stop_criteria(state):
+            barrier_tol = options.get("barrier_tol", 1e-8)
             if verbose >= 2:
                 ip_printer.print_problem_iter(state.niter,
                                               state.nfev,
@@ -245,6 +246,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
+            elif state.trust_radius < xtol and state.barrier_parameter < barrier_tol:
+                state.status = 2
             elif state.niter > max_iter:
                 state.status = 0
             return state.status in (0, 1, 2, 3)
@@ -269,7 +272,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             constr.jac_ineq, constr.n_eq,
             constr.constr_eq, constr.jac_eq,
             x0, stop_criteria, constr.feasible_constr,
-            sparse_jacobian, **options)
+            sparse_jacobian, xtol, **options)
 
     result.execution_time = time.time() - start_time
     result.method = method
