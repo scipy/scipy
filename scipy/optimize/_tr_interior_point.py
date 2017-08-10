@@ -248,7 +248,8 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
                       initial_penalty=1.0,
                       initial_trust_radius=1.0,
                       return_all=False,
-                      xtol_subproblem=1e-16):
+                      xtol_subproblem=1e-16,
+                      factorization_method=None):
     """Trust-region interior points method.
 
     Solve problem:
@@ -315,6 +316,28 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     xtol : float, optional
         Tolerance for termination by the change of the independent variable
         for the barrier subproblem.
+    factorization_method : string, optional
+        Method used for compute the given linear
+        operators. Should be one of:
+
+            - 'NormalEquation': The operators
+               will be computed using the
+               so-called normal equation approach
+               explained in [1]_. In order to do
+               so the Cholesky factorization of
+               ``(A A.T)`` is computed. Exclusive
+               for sparse matrices.
+            - 'AugmentedSystem': The operators
+               will be computed using the
+               so-called augmented system approach
+               explained in [1]_. Exclusive
+               for sparse matrices.
+            - 'QRFactorization': Compute projections
+               using QR factorization. Exclusive for
+               dense matrices.
+            - 'SVDFactorization': Compute projections
+               using SVD factorization. Exclusive for
+               dense matrices.
     Returns
     -------
     x : array_like, shape (n,)
@@ -411,7 +434,8 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
             state.trust_radius,
             subprob.scaling,
             state,
-            return_all)
+            return_all,
+            factorization_method)
         z = state.x
 
     # Get x and s

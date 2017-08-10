@@ -24,7 +24,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
                              initial_trust_radius=1.0,
                              scaling=default_scaling,
                              state=None,
-                             return_all=False):
+                             return_all=False,
+                             factorization_method=None):
     """Solve nonlinear equality-constrained problem using trust-region SQP.
 
     Solve problem:
@@ -72,6 +73,28 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             scaling(x) -> LinearOperator (or sparse matrix or ndarray), shape (n, n)
     return_all : bool, optional
         When ``true`` return the list of all vectors through the iterations.
+    factorization_method : string, optional
+        Method used for compute the given linear
+        operators. Should be one of:
+
+            - 'NormalEquation': The operators
+               will be computed using the
+               so-called normal equation approach
+               explained in [1]_. In order to do
+               so the Cholesky factorization of
+               ``(A A.T)`` is computed. Exclusive
+               for sparse matrices.
+            - 'AugmentedSystem': The operators
+               will be computed using the
+               so-called augmented system approach
+               explained in [1]_. Exclusive
+               for sparse matrices.
+            - 'QRFactorization': Compute projections
+               using QR factorization. Exclusive for
+               dense matrices.
+            - 'SVDFactorization': Compute projections
+               using SVD factorization. Exclusive for
+               dense matrices.
 
     Returns
     -------
@@ -154,7 +177,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     A = jac(x)
     S = scaling(x)
     # Get projections
-    Z, LS, Y = projections(A)
+    Z, LS, Y = projections(A, factorization_method)
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
 

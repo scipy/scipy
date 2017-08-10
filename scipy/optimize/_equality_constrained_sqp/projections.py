@@ -368,22 +368,18 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
     if issparse(A):
         if method is None:
             method = "AugmentedSystem"
-
         if method not in ("NormalEquation", "AugmentedSystem"):
-            raise ValueError("Method not allowed for the given matrix.")
-
+            raise ValueError("Method not allowed for sparse matrix.")
         if method == "NormalEquation" and not sksparse_available:
             warnings.warn(("Only accepts 'NormalEquation' option when scikit-sparse " +
                            "is available. Using 'AugmentedSystem' option instead."),
                           ImportWarning)
             method = 'AugmentedSystem'
-
     else:
         if method is None:
             method = "QRFactorization"
-
         if method not in ("QRFactorization", "SVDFactorization"):
-            raise ValueError("Method not allowed for the given matrix.")
+            raise ValueError("Method not allowed for dense array.")
 
     if method == 'NormalEquation':
         null_space, least_squares, row_space \
