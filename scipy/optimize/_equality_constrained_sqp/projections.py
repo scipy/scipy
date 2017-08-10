@@ -1,9 +1,10 @@
 """Basic linear factorizations needed by the solver."""
 
 from __future__ import division, print_function, absolute_import
-from scipy.sparse import (linalg, bmat, csc_matrix, eye, issparse)
+from scipy.sparse import (bmat, csc_matrix, eye, issparse)
 from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
+import scipy.sparse.linalg
 try:
     from sksparse.cholmod import cholesky_AAt
     sksparse_available = True
@@ -11,6 +12,7 @@ except ImportError:
     import warnings
     sksparse_available = False
 import numpy as np
+from warnings import warn
 
 __all__ = [
     'orthogonality',
@@ -39,7 +41,7 @@ def orthogonality(A, g):
     norm_g = np.linalg.norm(g)
     # Compute Frobenius norm of the matrix A
     if issparse(A):
-        norm_A = linalg.norm(A, ord='fro')
+        norm_A = scipy.sparse.linalg.norm(A, ord='fro')
     else:
         norm_A = np.linalg.norm(A, ord='fro')
 
@@ -53,7 +55,235 @@ def orthogonality(A, g):
     return orth
 
 
-def projections(A, method=None, orth_tol=1e-12, max_refin=3):
+def normal_equation_projections(A, m, n,  orth_tol, max_refin):
+    """Return linear operators for matrix A using ``NormalEquation`` approach."""
+    # Cholesky factorization
+    factor = cholesky_AAt(A)
+    # z = x - A.T inv(A A.T) A x
+    def null_space(x):
+        v = factor(A.dot(x))
+        z = x - A.T.dot(v)
+
+        # Iterative refinement to improve roundoff
+        # errors described in [2]_, algorithm 5.1.
+        k = 0
+        while orthogonality(A, z) > orth_tol:
+            if k >= max_refin:
+                break
+            # z_next = z - A.T inv(A A.T) A z
+            v = factor(A.dot(z))
+            z = z - A.T.dot(v)
+            k += 1
+
+        return z
+
+    # z = inv(A A.T) A x
+    def least_squares(x):
+        return factor(A.dot(x))
+
+    # z = A.T inv(A A.T) x
+    def row_space(x):
+        return A.T.dot(factor(x))
+
+    return null_space, least_squares, row_space
+
+
+def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
+    """Return linear operators for matrix A using ``AugmentedSystem`` approach."""
+    # Form augmented system
+    K = csc_matrix(bmat([[eye(n), A.T], [A, None]]))
+    # LU factorization
+    # TODO: Use a symmetric indefinite factorization
+    #       to solve the system twice as fast (because
+    #       of the symmetry).
+    try:
+        factor = scipy.sparse.linalg.splu(K)
+    except RuntimeError:
+        warn('Singular Jacobian matrix. Using dense SVD decomposition to ' +
+             'perform the factorizations.')
+        return svd_factorization_projections(A.toarray(),
+                                             m, n, orth_tol,
+                                             max_refin, tol)
+
+    # z = x - A.T inv(A A.T) A x
+    # is computed solving the extended system:
+    # [I A.T] * [ z ] = [x]
+    # [A  O ]   [aux]   [0]
+    def null_space(x):
+        # v = [x]
+        #     [0]
+        v = np.hstack([x, np.zeros(m)])
+        # lu_sol = [ z ]
+        #          [aux]
+        lu_sol = factor.solve(v)
+        z = lu_sol[:n]
+
+        # Iterative refinement to improve roundoff
+        # errors described in [2]_, algorithm 5.2.
+        k = 0
+        while orthogonality(A, z) > orth_tol:
+            if k >= max_refin:
+                break
+            # new_v = [x] - [I A.T] * [ z ]
+            #         [0]   [A  O ]   [aux]
+            new_v = v - K.dot(lu_sol)
+            # [I A.T] * [delta  z ] = new_v
+            # [A  O ]   [delta aux]
+            lu_update = factor.solve(new_v)
+            #  [ z ] += [delta  z ]
+            #  [aux]    [delta aux]
+            lu_sol += lu_update
+            z = lu_sol[:n]
+            k += 1
+
+        # return z = x - A.T inv(A A.T) A x
+        return z
+
+    # z = inv(A A.T) A x
+    # is computed solving the extended system:
+    # [I A.T] * [aux] = [x]
+    # [A  O ]   [ z ]   [0]
+    def least_squares(x):
+        # v = [x]
+        #     [0]
+        v = np.hstack([x, np.zeros(m)])
+        # lu_sol = [aux]
+        #          [ z ]
+        lu_sol = factor.solve(v)
+        # return z = inv(A A.T) A x
+        return lu_sol[n:m+n]
+
+    # z = A.T inv(A A.T) x
+    # is computed solving the extended system:
+    # [I A.T] * [ z ] = [0]
+    # [A  O ]   [aux]   [x]
+    def row_space(x):
+        # v = [0]
+        #     [x]
+        v = np.hstack([np.zeros(n), x])
+        # lu_sol = [ z ]
+        #          [aux]
+        lu_sol = factor.solve(v)
+        # return z = A.T inv(A A.T) x
+        return lu_sol[:n]
+
+    return null_space, least_squares, row_space
+
+    
+def qr_factorization_projections(A, m, n, orth_tol, max_refin, tol):
+    """Return linear operators for matrix A using ``QRFactorization`` approach."""
+    # QRFactorization
+    Q, R, P = scipy.linalg.qr(A.T, pivoting=True,  mode='economic')
+
+    if np.linalg.norm(R[-1, :],np.inf) < tol:
+        warn('Singular Jacobian matrix. Using SVD decomposition to ' +
+             'perform the factorizations.')
+        return svd_factorization_projections(A, m, n,
+                                             orth_tol,
+                                             max_refin,
+                                             tol)
+
+    # z = x - A.T inv(A A.T) A x
+    def null_space(x):
+        # v = P inv(R) Q.T x
+        aux1 = Q.T.dot(x)
+        aux2 = scipy.linalg.solve_triangular(R, aux1, lower=False)
+        v = np.zeros(m)
+        v[P] = aux2
+        z = x - A.T.dot(v)
+
+        # Iterative refinement to improve roundoff
+        # errors described in [2]_, algorithm 5.1.
+        k = 0
+        while orthogonality(A, z) > orth_tol:
+            if k >= max_refin:
+                break
+            # v = P inv(R) Q.T x
+            aux1 = Q.T.dot(z)
+            aux2 = scipy.linalg.solve_triangular(R, aux1, lower=False)
+            v[P] = aux2
+            # z_next = z - A.T v
+            z = z - A.T.dot(v)
+            k += 1
+
+        return z
+
+    # z = inv(A A.T) A x
+    def least_squares(x):
+        # z = P inv(R) Q.T x
+        aux1 = Q.T.dot(x)
+        aux2 = scipy.linalg.solve_triangular(R, aux1, lower=False)
+        z = np.zeros(m)
+        z[P] = aux2
+        return z
+
+    # z = A.T inv(A A.T) x
+    def row_space(x):
+        # z = Q inv(R.T) P.T x
+        aux1 = x[P]
+        aux2 = scipy.linalg.solve_triangular(R, aux1,
+                                             lower=False,
+                                             trans='T')
+        z = Q.dot(aux2)
+        return z
+
+    return null_space, least_squares, row_space
+
+def svd_factorization_projections(A, m, n, orth_tol, max_refin, tol):
+    """Return linear operators for matrix A using ``SVDFactorization`` approach."""
+    # SVD Factorization
+    U, s, Vt = scipy.linalg.svd(A, full_matrices=False)
+
+    # Remove dimensions related with very small singular values
+    U = U[:, s > tol]
+    Vt = Vt[s > tol, :]
+    s = s[s > tol]
+
+    # z = x - A.T inv(A A.T) A x
+    def null_space(x):
+        # v = U 1/s V.T x = inv(A A.T) A x
+        aux1 = Vt.dot(x)
+        aux2 = 1/s*aux1
+        v = U.dot(aux2)
+        z = x - A.T.dot(v)
+
+        # Iterative refinement to improve roundoff
+        # errors described in [2]_, algorithm 5.1.
+        k = 0
+        while orthogonality(A, z) > orth_tol:
+            if k >= max_refin:
+                break
+            # v = U 1/s V.T x = inv(A A.T) A x
+            aux1 = Vt.dot(z)
+            aux2 = 1/s*aux1
+            v = U.dot(aux2)
+            # z_next = z - A.T v
+            z = z - A.T.dot(v)
+            k += 1
+
+        return z
+
+    # z = inv(A A.T) A x
+    def least_squares(x):
+        # z = U 1/s V.T x = inv(A A.T) A x
+        aux1 = Vt.dot(x)
+        aux2 = 1/s*aux1
+        z = U.dot(aux2)
+        return z
+
+    # z = A.T inv(A A.T) x
+    def row_space(x):
+        # z = V 1/s U.T x
+        aux1 = U.T.dot(x)
+        aux2 = 1/s*aux1
+        z = Vt.T.dot(aux2)
+        return z
+
+    return null_space, least_squares, row_space
+
+
+
+def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
     """Return three linear operators related with a given matrix A.
 
     Parameters
@@ -79,11 +309,16 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3):
             - 'QRFactorization': Compute projections
                using QR factorization. Exclusive for
                dense matrices.
+            - 'SVDFactorization': Compute projections
+               using SVD factorization. Exclusive for
+               dense matrices.
 
     orth_tol : float, optional
         Tolerance for iterative refinements.
     max_refin : int, optional
         Maximum number of iterative refinements
+    tol : float, optional
+        Tolerance for singular values
 
     Returns
     -------
@@ -147,156 +382,21 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3):
         if method is None:
             method = "QRFactorization"
 
-        if method != "QRFactorization":
+        if method not in ("QRFactorization", "SVDFactorization"):
             raise ValueError("Method not allowed for the given matrix.")
 
     if method == 'NormalEquation':
-        # Cholesky factorization
-        factor = cholesky_AAt(A)
-        # z = x - A.T inv(A A.T) A x
-        def null_space(x):
-            v = factor(A.dot(x))
-            z = x - A.T.dot(v)
-
-            # Iterative refinement to improve roundoff
-            # errors described in [2]_, algorithm 5.1.
-            k = 0
-            while orthogonality(A, z) > orth_tol:
-                if k >= max_refin:
-                    break
-                # z_next = z - A.T inv(A A.T) A z
-                v = factor(A.dot(z))
-                z = z - A.T.dot(v)
-                k += 1
-
-            return z
-
-        # z = inv(A A.T) A x
-        def least_squares(x):
-            return factor(A.dot(x))
-
-        # z = A.T inv(A A.T) x
-        def row_space(x):
-            return A.T.dot(factor(x))
-
+        null_space, least_squares, row_space \
+            = normal_equation_projections(A, m, n, orth_tol, max_refin, tol)
     elif method == 'AugmentedSystem':
-        # Form augmented system
-        K = csc_matrix(bmat([[eye(n), A.T], [A, None]]))
-        # LU factorization
-        # TODO: Use a symmetric indefinite factorization
-        #       to solve the system twice as fast (because
-        #       of the symmetry).
-        factor = linalg.splu(K)
-
-        # z = x - A.T inv(A A.T) A x
-        # is computed solving the extended system:
-        # [I A.T] * [ z ] = [x]
-        # [A  O ]   [aux]   [0]
-        def null_space(x):
-            # v = [x]
-            #     [0]
-            v = np.hstack([x, np.zeros(m)])
-            # lu_sol = [ z ]
-            #          [aux]
-            lu_sol = factor.solve(v)
-            z = lu_sol[:n]
-
-            # Iterative refinement to improve roundoff
-            # errors described in [2]_, algorithm 5.2.
-            k = 0
-            while orthogonality(A, z) > orth_tol:
-                if k >= max_refin:
-                    break
-                # new_v = [x] - [I A.T] * [ z ]
-                #         [0]   [A  O ]   [aux]
-                new_v = v - K.dot(lu_sol)
-                # [I A.T] * [delta  z ] = new_v
-                # [A  O ]   [delta aux]
-                lu_update = factor.solve(new_v)
-                #  [ z ] += [delta  z ]
-                #  [aux]    [delta aux]
-                lu_sol += lu_update
-                z = lu_sol[:n]
-                k += 1
-
-            # return z = x - A.T inv(A A.T) A x
-            return z
-
-        # z = inv(A A.T) A x
-        # is computed solving the extended system:
-        # [I A.T] * [aux] = [x]
-        # [A  O ]   [ z ]   [0]
-        def least_squares(x):
-            # v = [x]
-            #     [0]
-            v = np.hstack([x, np.zeros(m)])
-            # lu_sol = [aux]
-            #          [ z ]
-            lu_sol = factor.solve(v)
-            # return z = inv(A A.T) A x
-            return lu_sol[n:m+n]
-
-        # z = A.T inv(A A.T) x
-        # is computed solving the extended system:
-        # [I A.T] * [ z ] = [0]
-        # [A  O ]   [aux]   [x]
-        def row_space(x):
-            # v = [0]
-            #     [x]
-            v = np.hstack([np.zeros(n), x])
-            # lu_sol = [ z ]
-            #          [aux]
-            lu_sol = factor.solve(v)
-            # return z = A.T inv(A A.T) x
-            return lu_sol[:n]
-
+        null_space, least_squares, row_space \
+            = augmented_system_projections(A, m, n, orth_tol, max_refin, tol)
     elif method == "QRFactorization":
-        # QRFactorization
-        Q, R, P = scipy.linalg.qr(A.T, pivoting=True,  mode='economic')
-
-        # z = x - A.T inv(A A.T) A x
-        def null_space(x):
-            # v = P inv(R) Q.T x
-            aux1 = Q.T.dot(x)
-            aux2 = scipy.linalg.solve_triangular(R, aux1, lower=False)
-            v = np.zeros(m)
-            v[P] = aux2
-            z = x - A.T.dot(v)
-
-            # Iterative refinement to improve roundoff
-            # errors described in [2]_, algorithm 5.1.
-            k = 0
-            while orthogonality(A, z) > orth_tol:
-                if k >= max_refin:
-                    break
-                # v = P inv(R) Q.T x
-                aux1 = Q.T.dot(z)
-                aux2 = scipy.linalg.solve_triangular(R, aux1, lower=False)
-                v[P] = aux2
-                # z_next = z - A.T v
-                z = z - A.T.dot(v)
-                k += 1
-
-            return z
-
-        # z = inv(A A.T) A x
-        def least_squares(x):
-            # z = P inv(R) Q.T x
-            aux1 = Q.T.dot(x)
-            aux2 = scipy.linalg.solve_triangular(R, aux1, lower=False)
-            z = np.zeros(m)
-            z[P] = aux2
-            return z
-
-        # z = A.T inv(A A.T) x
-        def row_space(x):
-            # z = Q inv(R.T) P.T x
-            aux1 = x[P]
-            aux2 = scipy.linalg.solve_triangular(R, aux1,
-                                                 lower=False,
-                                                 trans='T')
-            z = Q.dot(aux2)
-            return z
+        null_space, least_squares, row_space \
+            = qr_factorization_projections(A, m, n, orth_tol, max_refin, tol)
+    elif method == "SVDFactorization":
+        null_space, least_squares, row_space \
+            = svd_factorization_projections(A, m, n, orth_tol, max_refin, tol)
 
     Z = LinearOperator((n, n), null_space)
     LS = LinearOperator((m, n), least_squares)

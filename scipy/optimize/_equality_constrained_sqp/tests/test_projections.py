@@ -85,7 +85,7 @@ class TestProjections(TestCase):
                        [1, 10, 3, 0, 1, 6, 7, 8],
                        [1.12, 10, 0, 0, 100000, 6, 0.7, 8])
 
-        for method in ("QRFactorization",):
+        for method in ("QRFactorization", 'SVDFactorization'):
             Z, LS, _ = projections(A, method)
             for z in test_points:
                 # Test if x is in the null_space
@@ -138,7 +138,7 @@ class TestProjections(TestCase):
                        [1, 10, 3, 0, 1, 6, 7, 8],
                        [1, 0, 0, 0, 0, 1, 2, 3+1e-10])
 
-        for method in ("QRFactorization",):
+        for method in ("QRFactorization", 'SVDFactorization'):
             Z, LS, _ = projections(A, method, orth_tol=1e-18, max_refin=10)
             for z in test_points:
                 # Test if x is in the null_space
@@ -155,7 +155,7 @@ class TestProjections(TestCase):
                        [1, 10, 3],
                        [1.12, 10, 0])
 
-        for method in ('QRFactorization',):
+        for method in ('QRFactorization', 'SVDFactorization'):
             _, _, Y = projections(A, method)
             for z in test_points:
                 # Test if x is solution of A x = z
