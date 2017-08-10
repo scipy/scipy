@@ -12,6 +12,7 @@ from .constraints import (NonlinearConstraint,
 from ._tr_interior_point import tr_interior_point
 from ._equality_constrained_sqp import equality_constrained_sqp
 from warnings import warn
+import time
 
 
 TERMINATION_MESSAGES = {
@@ -21,11 +22,62 @@ TERMINATION_MESSAGES = {
     3: "`callback` function requested termination"
 }
 
+class sqp_printer:
+    @staticmethod
+    def print_header():
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^10}|{4:^10}|{5:^10}|{6:^10}|"
+              .format("niter", "f evals", "CG iter", "tr radius", "penalty",
+                      "opt", "c viol"))
+        s = "-"*6 + ":"
+        s2 = ":" + "-"*8 + ":"
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^10}|{4:^10}|{5:^10}|{6:^10}|"
+              .format(s, s, s, s2, s2, s2, s2))
+
+    @staticmethod
+    def print_problem_iter(niter, nfev, cg_niter, tr_radius,
+                           penalty, opt, c_viol):
+        print("|{0:>7}|{1:>7}|{2:>7}| {3:^1.2e} | {4:^1.2e} | {5:^1.2e} | {6:^1.2e} |"
+              .format(niter, nfev, cg_niter, tr_radius, penalty,
+                      opt, c_viol))
+
+    @staticmethod
+    def print_footer():
+        print("")
+        print((7*3 + 10*4 + 8)*"-")
+        print("")
+
+class ip_printer:
+    @staticmethod
+    def print_header():
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|"
+              .format("niter", "f evals", "CG iter", "barrier param",
+                      "tr radius", "penalty", "opt", "c viol"))
+        s = "-"*6 + ":"
+        s2 = ":" + "-"*11 + ":"
+        s3 = ":" + "-"*8 + ":"
+        print("|{0:^7}|{1:^7}|{2:^7}|{3:^13}|{4:^10}|{5:^10}|{6:^10}|{7:^10}|"
+              .format(s, s, s, s2, s3, s3, s3, s3))
+
+    @staticmethod
+    def print_problem_iter(niter, nfev, cg_niter, barrier_parameter, tr_radius,
+                           penalty, opt, c_viol):
+        if niter > 0:
+            print("|{0:>7}|{1:>7}|{2:>7}|   {3:^1.2e}  | "
+                  "{4:^1.2e} | {5:^1.2e} | {6:^1.2e} | {7:^1.2e} |"
+                  .format(niter, nfev, cg_niter, barrier_parameter,
+                          tr_radius, penalty, opt, c_viol))
+
+    @staticmethod
+    def print_footer():
+        print("")
+        print((7*3 + 13 + 10*4 + 9)*"-")
+        print("")
+
 
 def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                          method=None, xtol=1e-8, gtol=1e-8,
                          options={}, callback=None, max_iter=1000,
-                         sparse_jacobian=None):
+                         sparse_jacobian=None, verbose=0):
     """Minimize scalar function subject to constraints.
 
     Parameters
@@ -89,6 +141,12 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         and a dense representation if False. When ``None`` the algorithm
         uses the more convenient option (which is not always the more effective
         one).
+    verbose : {0, 1, 2}, optional
+        Level of algorithm's verbosity:
+
+            * 0 (default) : work silently.
+            * 1 : display a termination report.
+            * 2 : display progress during iterations.
 
     Returns
     -------
@@ -153,6 +211,14 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     # Define stop criteria
     if method == 'equality_constrained_sqp':
         def stop_criteria(state):
+            if verbose >= 2:
+                sqp_printer.print_problem_iter(state.niter,
+                                               state.nfev,
+                                               state.cg_niter,
+                                               state.trust_radius,
+                                               state.penalty,
+                                               state.optimality,
+                                               state.constr_violation)
             state.status = None
             if (callback is not None) and callback(state):
                 state.status = 3
@@ -165,6 +231,15 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             return state.status in (0, 1, 2, 3)
     elif method == 'tr_interior_point':
         def stop_criteria(state):
+            if verbose >= 2:
+                ip_printer.print_problem_iter(state.niter,
+                                              state.nfev,
+                                              state.cg_niter,
+                                              state.barrier_parameter,
+                                              state.trust_radius,
+                                              state.penalty,
+                                              state.optimality,
+                                              state.constr_violation)
             state.status = None
             if (callback is not None) and callback(state):
                 state.status = 3
@@ -174,6 +249,13 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                 state.status = 0
             return state.status in (0, 1, 2, 3)
 
+    if verbose >= 2:
+        if method == 'equality_constrained_sqp':
+            sqp_printer.print_header()
+        if method == 'tr_interior_point':
+            ip_printer.print_header()
+
+    start_time = time.time()
     # Call inferior function to do the optimization
     if method == 'equality_constrained_sqp':
         result = equality_constrained_sqp(
@@ -186,11 +268,24 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             constr.n_ineq, constr.constr_ineq,
             constr.jac_ineq, constr.n_eq,
             constr.constr_eq, constr.jac_eq,
-            x0, stop_criteria, constr.feasible_constr, sparse_jacobian,
-            **options)
+            x0, stop_criteria, constr.feasible_constr,
+            sparse_jacobian, **options)
 
+    result.execution_time = time.time() - start_time
     result.method = method
     result.message = TERMINATION_MESSAGES[result.status]
-    result.success = result.status > 0
 
+    if verbose >= 2:
+        if method == 'equality_constrained_sqp':
+            sqp_printer.print_footer()
+        if method == 'tr_interior_point':
+            ip_printer.print_footer()
+    if verbose >= 1:
+        print(result.message)
+        print("Number of iteractions: {0}, function evaluations: {1}, "
+              "CG iterations: {2}, optimality: {3:.2e}, "
+              "constraint violation: {4:.2e}, execution time: {5:4.2} s."
+              .format(result.niter, result.nfev, result.cg_niter,
+                      result.optimality, result.constr_violation,
+                      result.execution_time))
     return result

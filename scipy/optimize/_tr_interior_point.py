@@ -387,6 +387,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     state.barrier_parameter = initial_barrier_parameter
     state.tolerance = initial_tolerance
     state.trust_radius = initial_trust_radius
+    state.penalty = initial_penalty
     state.optimality = np.inf
     state.constr_violation = np.inf
     if return_all:
