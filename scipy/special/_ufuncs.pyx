@@ -13281,10 +13281,15 @@ cdef char *ufunc_wofz_doc = (
     "--------\n"
     ">>> from scipy import special\n"
     ">>> import matplotlib.pyplot as plt\n"
+    "\n"
     ">>> x = np.linspace(-3, 3)\n"
-    ">>> plt.plot(x, special.wofz(x))\n"
+    ">>> z = special.wofz(x)\n"
+    "\n"
+    ">>> plt.plot(x, z.real, label='wofz(x).real')\n"
+    ">>> plt.plot(x, z.imag, label='wofz(x).imag')\n"
     ">>> plt.xlabel('$x$')\n"
-    ">>> plt.ylabel('$wofz(x)$')\n"
+    ">>> plt.legend(framealpha=1, shadow=True)\n"
+    ">>> plt.grid(alpha=0.25)\n"
     ">>> plt.show()")
 ufunc_wofz_loops[0] = <np.PyUFuncGenericFunction>loop_D_D__As_F_F
 ufunc_wofz_loops[1] = <np.PyUFuncGenericFunction>loop_D_D__As_D_D
