@@ -4957,6 +4957,14 @@ def mannwhitneyu(x, y, use_continuity=True, alternative=None):
 
     This test corrects for ties and by default uses a continuity correction.
 
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Mann-Whitney_U_test
+
+    .. [2] H.B. Mann and D.R. Whitney, "On a Test of Whether one of Two Random
+           Variables is Stochastically Larger than the Other," The Annals of
+           Mathematical Statistics, vol. 18, no. 1, pp. 50-60, 1947.
+
     """
     if alternative is None:
         warnings.warn("Calling `mannwhitneyu` without specifying "
