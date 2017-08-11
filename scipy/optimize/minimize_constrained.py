@@ -13,6 +13,7 @@ from ._tr_interior_point import tr_interior_point
 from ._equality_constrained_sqp import equality_constrained_sqp
 from warnings import warn
 import time
+from .optimize import OptimizeResult
 
 
 TERMINATION_MESSAGES = {
@@ -61,11 +62,10 @@ class ip_printer:
     @staticmethod
     def print_problem_iter(niter, nfev, cg_niter, barrier_parameter, tr_radius,
                            penalty, opt, c_viol):
-        if niter > 0:
-            print("|{0:>7}|{1:>7}|{2:>7}|   {3:^1.2e}  | "
-                  "{4:^1.2e} | {5:^1.2e} | {6:^1.2e} | {7:^1.2e} |"
-                  .format(niter, nfev, cg_niter, barrier_parameter,
-                          tr_radius, penalty, opt, c_viol))
+        print("|{0:>7}|{1:>7}|{2:>7}|   {3:^1.2e}  | "
+              "{4:^1.2e} | {5:^1.2e} | {6:^1.2e} | {7:^1.2e} |"
+              .format(niter, nfev, cg_niter, barrier_parameter,
+                      tr_radius, penalty, opt, c_viol))
 
     @staticmethod
     def print_footer():
@@ -120,7 +120,6 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
-        Only for 'equality-constrained-sqp'.
     gtol : float, optional
         Tolerance for termination by the norm of the lagrangian gradient.
     options : dict, optional
@@ -189,6 +188,24 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
     # Generate lagrangian hess function
     lagr_hess = generate_lagrangian_hessian(constr, hess)
+
+    # Compute initial values
+    fun0 = fun(x0)
+    grad0 = grad(x0)
+    constr_eq0 = constr.constr_eq(x0)
+    constr_ineq0 = constr.constr_ineq(x0)
+    jac_eq0 = constr.jac_eq(x0)
+    jac_ineq0 = constr.jac_ineq(x0)
+
+    # Construct OptimizeResult
+    state = OptimizeResult(niter=0, nfev=1, ngev=1,
+                           ncev=1, njev=1, nhev=0,
+                           cg_niter=0, cg_info={})
+    # Store values
+    return_all = options.get("return_all", False)
+    if return_all:
+        state.allvecs = []
+        state.allmult = []
 
     # Check initial point
     x0 = np.asarray(x0)
@@ -264,15 +281,18 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         result = equality_constrained_sqp(
             fun, grad, lagr_hess,
             constr.constr_eq,  constr.jac_eq,
-            x0, stop_criteria, **options)
+            x0, fun0, grad0, constr_eq0, jac_eq0,
+            stop_criteria, state, **options)
     elif method == 'tr_interior_point':
         result = tr_interior_point(
             fun, grad, lagr_hess,
             constr.n_ineq, constr.constr_ineq,
             constr.jac_ineq, constr.n_eq,
             constr.constr_eq, constr.jac_eq,
-            x0, stop_criteria, constr.feasible_constr,
-            sparse_jacobian, xtol, **options)
+            x0, fun0, grad0, constr_ineq0, jac_ineq0,
+            constr_eq0, jac_eq0, stop_criteria,
+            constr.feasible_constr, sparse_jacobian,
+            xtol, state, **options)
 
     result.execution_time = time.time() - start_time
     result.method = method

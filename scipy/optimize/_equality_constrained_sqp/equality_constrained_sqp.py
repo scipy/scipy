@@ -6,7 +6,6 @@ from .projections import projections
 from .qp_subproblem import modified_dogleg, projected_cg, box_intersections
 import numpy as np
 from numpy.linalg import norm
-from ..optimize import OptimizeResult
 
 __all__ = ['equality_constrained_sqp']
 
@@ -17,13 +16,13 @@ def default_scaling(x):
 
 
 def equality_constrained_sqp(fun, grad, hess, constr, jac,
-                             x0, stop_criteria,
+                             x0, fun0, grad0, constr0,
+                             jac0, stop_criteria, state,
                              trust_lb=None,
                              trust_ub=None,
                              initial_penalty=1.0,
                              initial_trust_radius=1.0,
                              scaling=default_scaling,
-                             state=None,
                              return_all=False,
                              factorization_method=None):
     """Solve nonlinear equality-constrained problem using trust-region SQP.
@@ -171,33 +170,19 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     trust_radius = initial_trust_radius
     penalty = initial_penalty
     # Compute Values
-    f = fun(x)
-    c = grad(x)
-    b = constr(x)
-    A = jac(x)
+    f = fun0
+    c = grad0
+    b = constr0
+    A = jac0
     S = scaling(x)
     # Get projections
     Z, LS, Y = projections(A, factorization_method)
     # Compute least-square lagrange multipliers
     v = -LS.dot(c)
 
-    if state is None:
-        # Construct OptimizeResult
-        state = OptimizeResult(niter=0, nfev=0, ngev=0,
-                               ncev=0, njev=0, nhev=0,
-                               cg_niter=0, cg_info={})
-        # Store values
-        if return_all:
-            state.allvecs = []
-            state.allmult = []
-
     # Update state parameters
-    state.optimality = norm(c + A.T.dot(v))
-    state.constr_violation = norm(b)
-    state.nfev += 1
-    state.ngev += 1
-    state.ncev += 1
-    state.njev += 1
+    state.optimality = norm(c + A.T.dot(v), np.inf)
+    state.constr_violation = norm(b, np.inf)
     state.niter += 1
     state.x = x
     state.v = v
@@ -351,8 +336,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             state.constr = b
             state.jac = A
             # Otimality values
-            state.optimality = norm(c + A.T.dot(v))
-            state.constr_violation = norm(b)
+            state.optimality = norm(c + A.T.dot(v), np.inf)
+            state.constr_violation = norm(b, np.inf)
         else:
             penalty = previous_penalty
             compute_hess = False

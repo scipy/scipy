@@ -33,18 +33,19 @@ class BarrierSubproblem:
     def __init__(self, x0, fun, grad, lagr_hess, n_ineq, constr_ineq,
                  jac_ineq, n_eq, constr_eq, jac_eq, barrier_parameter,
                  tolerance, feasible_constr_list, global_stop_criteria,
-                 xtol, sparse_jacobian):
+                 xtol, sparse_jacobian, fun0, grad0, constr_ineq0,
+                 jac_ineq0, constr_eq0, jac_eq0):
         # Compute number of variables
         self.n_vars, = np.shape(x0)
         # Store parameters
         self.x0 = x0
-        self.fun = fun
-        self.grad = grad
+        self._fun = fun
+        self._grad = grad
         self.lagr_hess = lagr_hess
         self._constr_ineq = constr_ineq
-        self.jac_ineq = jac_ineq
+        self._jac_ineq = jac_ineq
         self._constr_eq = constr_eq
-        self.jac_eq = jac_eq
+        self._jac_eq = jac_eq
         self.barrier_parameter = barrier_parameter
         self.tolerance = tolerance
         self.n_eq = n_eq
@@ -54,26 +55,48 @@ class BarrierSubproblem:
         self.xtol = xtol
         self.sparse_jacobian = sparse_jacobian
         # Auxiliar parameters
-        self._x_ineq = None
-        self._x_eq = None
-        self._c_ineq = None
-        self._c_eq = None
+        self._x_f = x0
+        self._f = fun0
+        self._x_g = x0
+        self._g = grad0
+        self._x_ineq = x0
+        self._c_ineq = constr_ineq0
+        self._x_eq = x0
+        self._c_eq = constr_eq0
+        self._x_J_ineq = x0
+        self._J_ineq = jac_ineq0
+        self._x_J_eq = x0
+        self._J_eq = jac_eq0
+
+    def fun(self, x):
+        if not np.array_equal(self._x_f, x):
+            self._f = self._fun(x)
+        return self._f
+
+    def grad(self, x):
+        if not np.array_equal(self._x_g, x):
+            self._g = self._grad(x)
+        return self._g
 
     def constr_ineq(self, x):
-        """Value of inequality constraint at current iteration.
-        Avoid that multiple calls to constr_ineq cause
-        the constraint to be evaluated multiple times."""
         if not np.array_equal(self._x_ineq, x):
             self._c_ineq = self._constr_ineq(x)
         return self._c_ineq
 
+    def jac_ineq(self, x):
+        if not np.array_equal(self._x_J_ineq, x):
+            self._J_ineq = self._jac_ineq(x)
+        return self._J_ineq
+
     def constr_eq(self, x):
-        """Value of equality constraint at current iteration.
-        Avoid that multiple calls to constr_ineq cause
-        the constraint to be evaluated multiple times."""
         if not np.array_equal(self._x_eq, x):
             self._c_eq = self._constr_eq(x)
         return self._c_eq
+
+    def jac_eq(self, x):
+        if not np.array_equal(self._x_J_eq, x):
+            self._J_eq = self._jac_eq(x)
+        return self._J_eq
 
     def update(self, barrier_parameter, tolerance):
         self.barrier_parameter = barrier_parameter
@@ -84,12 +107,6 @@ class BarrierSubproblem:
 
     def get_variables(self, z):
         return z[:self.n_vars]
-
-    def s0(self):
-        return np.ones(self.n_ineq)
-
-    def z0(self):
-        return np.hstack((self.x0, self.s0()))
 
     def function(self, z):
         """Returns barrier function at given point.
@@ -240,10 +257,10 @@ class BarrierSubproblem:
 
 def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
                       jac_ineq, n_eq, constr_eq, jac_eq, x0,
-                      stop_criteria,
-                      feasible_constr_list,
-                      sparse_jacobian,
-                      xtol,
+                      fun0, grad0, constr_ineq0, jac_ineq0,
+                      constr_eq0, jac_eq0, stop_criteria,
+                      feasible_constr_list, sparse_jacobian,
+                      xtol, state,
                       initial_barrier_parameter=0.1,
                       initial_tolerance=0.1,
                       initial_penalty=1.0,
@@ -376,10 +393,6 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     # after each iteration
     TRUST_ENLARGEMENT = 5
 
-    # Construct OptimizeResult
-    state = OptimizeResult(niter=0, nfev=0, ngev=0,
-                           ncev=0, njev=0, nhev=0,
-                           cg_niter=0, cg_info={})
     # Default feasible_constr_list
     if feasible_constr_list is None:
         feasible_constr_list = np.zeros(n_ineq, bool)
@@ -390,16 +403,15 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     state.penalty = initial_penalty
     state.optimality = np.inf
     state.constr_violation = np.inf
-    if return_all:
-        state.allvecs = []
-        state.allmult = []
     # Define barrier subproblem
     subprob = BarrierSubproblem(
         x0, fun, grad, lagr_hess, n_ineq, constr_ineq, jac_ineq,
         n_eq, constr_eq, jac_eq, state.barrier_parameter, state.tolerance,
-        feasible_constr_list, stop_criteria, xtol, sparse_jacobian)
+        feasible_constr_list, stop_criteria, xtol, sparse_jacobian,
+        fun0, grad0, constr_ineq0, jac_ineq0, constr_eq0, jac_eq0)
     # Define initial parameter for the first iteration.
-    z = subprob.z0()
+    s0 = np.ones(n_ineq)
+    z = np.hstack((x0, s0))
     # Define trust region bounds
     trust_lb = np.hstack((np.full(subprob.n_vars, -np.inf),
                           np.full(subprob.n_ineq, -BOUNDARY_PARAMETER)))
@@ -408,7 +420,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     # If there are inequality constraints solve a
     # sequence of barrier problems
     first_barrier_prob = True
-    while not stop_criteria(state):
+    while True:
         if not first_barrier_prob:
             # Update parameters
             state.trust_radius = max(initial_trust_radius,
@@ -420,24 +432,23 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
         first_barrier_prob = False
         # Update Barrier Problem
         subprob.update(state.barrier_parameter, state.tolerance)
+        # Compute initial values
+        fun0_subprob = subprob.function(z)
+        grad0_subprob = subprob.gradient(z)
+        constr0_subprob = subprob.constraints(z)
+        jac0_subprob = subprob.jacobian(z)
         # Solve SQP subproblem
         state = equality_constrained_sqp(
-            subprob.function,
-            subprob.gradient,
-            subprob.lagrangian_hessian,
-            subprob.constraints,
-            subprob.jacobian,
-            z,
-            subprob.stop_criteria,
-            trust_lb,
-            trust_ub,
-            initial_penalty,
-            state.trust_radius,
-            subprob.scaling,
-            state,
-            return_all,
+            subprob.function, subprob.gradient,
+            subprob.lagrangian_hessian, subprob.constraints,
+            subprob.jacobian, z, fun0_subprob, grad0_subprob,
+            constr0_subprob, jac0_subprob, subprob.stop_criteria, 
+            state, trust_lb, trust_ub, initial_penalty,
+             state.trust_radius, subprob.scaling, return_all,
             factorization_method)
         z = state.x
+        if stop_criteria(state):
+            break
 
     # Get x and s
     state.x = subprob.get_variables(z)
