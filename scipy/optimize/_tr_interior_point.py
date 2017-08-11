@@ -409,8 +409,10 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
         n_eq, constr_eq, jac_eq, state.barrier_parameter, state.tolerance,
         feasible_constr_list, stop_criteria, xtol, sparse_jacobian,
         fun0, grad0, constr_ineq0, jac_ineq0, constr_eq0, jac_eq0)
+
+    # Define initial value for the slack variables
+    s0 = np.maximum(-1.5*constr_ineq0, np.ones(n_ineq))
     # Define initial parameter for the first iteration.
-    s0 = np.ones(n_ineq)
     z = np.hstack((x0, s0))
     # Define trust region bounds
     trust_lb = np.hstack((np.full(subprob.n_vars, -np.inf),
