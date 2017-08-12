@@ -12,8 +12,8 @@ environment:
   global:
       MINGW_32: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin
       MINGW_64: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin
-      OPENBLAS_32: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-5f998ef_win32.zip
-      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-v0.2.20_win64.zip
+      OPENBLAS_32: https://ci.appveyor.com/api/buildjobs/2debujo9ug9e4laq/artifacts/openblas-5f998ef_win32.zip
+      OPENBLAS_64: https://3f23b170c54c2533c070-1c8a9b3114517dc5fe17b7c3f8c63a43.ssl.cf2.rackcdn.com/openblas-5f998ef_gcc7_1_0_win64.zip
       NUMPY_HEAD: https://github.com/xoviat/numpy.git
       NUMPY_BRANCH: distutils
       APPVEYOR_SAVE_CACHE_ON_ERROR: true
@@ -64,6 +64,10 @@ environment:
       PYTHON_ARCH: 32
       SKIP_NOTAG: true
       TEST_MODE: full
+
+matrix:
+  allow_failures:
+    - PYTHON_ARCH: 32
 
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
@@ -120,7 +124,7 @@ install:
       echo $OPENBLAS
 
       $clnt.DownloadFile($OPENBLAS,$file)
-      ls $file
+      Get-FileHash $file | Format-List
 
       Expand-Archive $file $tmpdir      
 
