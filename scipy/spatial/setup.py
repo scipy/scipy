@@ -38,7 +38,8 @@ def configuration(parent_package='', top_path=None):
                 f.write('#define {0} {1}\n'.format(name, value))
 
     config.add_extension('qhull',
-                         sources=['qhull.c'] + qhull_src + [get_qhull_misc_config],
+                         sources=['qhull.c'] + qhull_src +
+                         [get_qhull_misc_config],
                          **cfg)
 
     # cKDTree
@@ -50,7 +51,8 @@ def configuration(parent_package='', top_path=None):
                    'count_neighbors.cxx',
                    'query_ball_point.cxx',
                    'query_ball_tree.cxx',
-                   'sparse_distances.cxx']
+                   'sparse_distances.cxx',
+                   'fmax.cxx']
 
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
 
@@ -61,7 +63,8 @@ def configuration(parent_package='', top_path=None):
                        'rectangle.h',
                        'distance.h',
                        'distance_box.h',
-                       'ordered_pair.h']
+                       'ordered_pair.h',
+                       'fmax.h']
 
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
 
@@ -69,13 +72,13 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('ckdtree',
                          sources=['ckdtree.cxx'] + ckdtree_src,
                          depends=ckdtree_dep,
-                         include_dirs=inc_dirs + [join('ckdtree','src')])
+                         include_dirs=inc_dirs + [join('ckdtree', 'src')])
     # _distance_wrap
     config.add_extension('_distance_wrap',
-        sources=[join('src', 'distance_wrap.c')],
-        depends=[join('src', 'distance_impl.h')],
-        include_dirs=[get_numpy_include_dirs()],
-        extra_info=get_misc_info("npymath"))
+                         sources=[join('src', 'distance_wrap.c')],
+                         depends=[join('src', 'distance_impl.h')],
+                         include_dirs=[get_numpy_include_dirs()],
+                         extra_info=get_misc_info("npymath"))
 
     config.add_extension('_voronoi',
                          sources=['_voronoi.c'])
