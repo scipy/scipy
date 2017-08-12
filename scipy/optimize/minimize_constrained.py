@@ -76,8 +76,9 @@ class ip_printer:
 
 def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                          method=None, xtol=1e-8, gtol=1e-8,
-                         options={}, callback=None, max_iter=1000,
-                         sparse_jacobian=None, verbose=0):
+                         sparse_jacobian=None, options={},
+                         callback=None, max_iter=1000,
+                         verbose=0):
     """Minimize scalar function subject to constraints.
 
     Parameters
@@ -97,10 +98,10 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     hess : {callable, None}, optional
         Hessian of the objective function:
 
-            hess(x) -> LinearOperator (or sparse matrix or ndarray), shape (n, n)
+            hess(x) -> {LinearOperator, sparse matrix,  ndarray}, shape (n, n)
 
         where x is an array with shape (n,).
-    x0 : ndarray
+    x0 : ndarray, shape (n,)
         Initial guess. ``len(x0)`` is the dimensionality of the minimization
         problem.
     method : {str, None}, optional
@@ -110,8 +111,12 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             - 'tr-interior-point'
 
         When ``None`` the more appropriate method is choosen.
-    constraints : Constraint or List of Constraint's
-        A single constraint or a list of constraints.
+        'equality-constrained-sqp' is chosen for problems that
+        only have equality constraints and 'tr-interior-point'
+        for general optimization problems.
+    constraints : Constraint or List of Constraint's, optional
+        A single object or a list of objects specifying
+        constraints to the optimization problem.
         Available constraints are:
 
             - BoxConstraint
@@ -120,26 +125,68 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
+        The algorithm will terminate when ``delta < xtol``, where ``delta``
+        is the algorithm trust-radius. Default is 1e-8. 
     gtol : float, optional
         Tolerance for termination by the norm of the lagrangian gradient.
+        The algorithm will terminate when both the infinite norm of the
+        lagrangian gradient and the constraint violation are smaller than
+        ``gtol``. Default is 1e-8.
+    sparse_jacobian : {boolean, None}
+        The algorithm uses a sparse representation of the Jacobian if True
+        and a dense representation if False. When ``None`` the algorithm
+        uses the more convenient option (which is not always the more effective
+        one).
     options : dict, optional
-        A dictionary of solver options.
+        A dictionary of solver options. Available options include:
 
-            - `return_all`
+            initial_trust_radius: float
+                Initial trust-region radius. Default is 1.
+            initial_penalty : float
+                Initial penalty for merit function. Default is 1.
+            initial_barrier_parameter: float
+                Initial barrier parameter. Exclusive for ``tr_interior_point``
+                method. By defaut uses 0.1.
+            initial_tolerance: float
+                Initial subproblem tolerance. Exclusive for ``tr_interior_point``
+                method. By defaut uses 0.1.
+            return_all : bool, optional
+                When ``true`` return the list of all vectors through the iterations.
+            factorization_method : string, optional
+                Method used for factorizing the jacobian matrix. Should be one of:
+
+                - 'NormalEquation': The operators
+                   will be computed using the
+                   so-called normal equation approach
+                   explained in [1]_. In order to do
+                   so the Cholesky factorization of
+                   ``(A A.T)`` is computed. Exclusive
+                   for sparse matrices.
+                - 'AugmentedSystem': The operators
+                   will be computed using the
+                   so-called augmented system approach
+                   explained in [1]_. Exclusive
+                   for sparse matrices.
+                - 'QRFactorization': Compute projections
+                   using QR factorization. Exclusive for
+                   dense matrices.
+                - 'SVDFactorization': Compute projections
+                   using SVD factorization. Exclusive for
+                   dense matrices.
+
+                The factorization methods 'NormalEquation' and 'AugmentedSystem'
+                should be used when ``sparse_jacobian=True`` and, on the other
+                hand, the methods 'QRFactorization' and 'SVDFactorization'
+                when ``sparse_jacobian=False``.
 
     callback : callable, optional
         Called after each iteration:
 
             callback(OptimizeResult state) -> bool
 
-        and if callback returns true the algorithm execution is terminated.
+        If callback returns true the algorithm execution is terminated.
     max_iter : int, optional
         Maximum number of algorithm iterations.
-    sparse_jacobian : {boolean, None}
-        The algorithm uses a sparse representation of the Jacobian if True
-        and a dense representation if False. When ``None`` the algorithm
-        uses the more convenient option (which is not always the more effective
-        one).
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
@@ -149,12 +196,154 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
     Returns
     -------
-    result : OptimizeResult
-        The optimization result represented as a ``OptimizeResult`` object.
-        Important attributes are: ``x`` the solution array, ``success`` a
-        Boolean flag indicating if the optimizer exited successfully and
-        ``message`` which describes the cause of the termination. See
-        `OptimizeResult` for a description of other attributes.
+    `OptimizeResult` with the following fields defined:
+    x : ndarray, shape (n,)
+        Solution found.
+    s : ndarray, shape (n_ineq,)
+        Slack variables at the solution. ``n_ineq`` is the total number
+        of inequality constraints.
+    v : ndarray, shape (n_ineq + n_eq,)
+        Slack variables at the solution. ``n_ineq`` and ``n_eq`` are the
+        total number of equality and inequality constraints.
+    niter : int
+        Total number of iterations.
+    nfev : int
+        Total number of objective function evaluations.
+    ngev : int
+        Total number of objective function gradient evaluations.
+    nhev : int
+        Total number of lagragian Hessian evaluations.
+    ncev : int
+        Total number of constraint evaluations.
+    njev : int
+        Total number of constraint Jacobian matrix evaluations.
+    niter : int
+        Total number of CG iterations.
+    cg_info : Dict
+        Dictionary containing information about the latest CG iteration:
+
+            - niter : Number of iterations.
+            - stop_cond : Reason for CG subproblem termination:
+                1. Iteration limit was reached;
+                2. Reached the trust-region boundary;
+                3. Negative curvature detected;
+                4. Tolerance was satisfied.
+            - hits_boundary : True if the proposed step is on the boundary
+              of the trust region.
+
+    execution_time : float
+        Total execution time.
+    trust_radius : float
+        Trust radius at the last iteration.
+    penalty : float
+        Penalty function at last iteration.
+    tolerance : float
+        Tolerance for barrier subproblem at the last iteration.
+        Exclusive for ``tr_interior_point``.
+    barrier_parameter : float
+        Barrier parameter at the last iteration. Exclusive for
+        ``tr_interior_point``.
+    status : {0, 1, 2, 3}
+        Termination status:
+
+            * 0 : The maximum number of function evaluations is exceeded.
+            * 1 : `gtol` termination condition is satisfied.
+            * 2 : `xtol` termination condition is satisfied.
+            * 3 : `callback` function requested termination.
+
+    message : str
+        Termination message.
+    method {"eq_constrained_sqp", "tr_interior_point"}
+        Optimization method used.
+    constr_violation : float
+        Constraint violation at last iteration.
+    optimality : float
+        Norm of the lagrangian gradient at last iteration.
+    fun : float
+        For the `eq_constraineq_sqp` method this is the objective function
+        evaluated at the solution and for the `tr_interior_point` method
+        this is the barrier  function evaluated at the solution.
+    grad : ndarray, (n,)
+        For the `eq_constraineq_sqp` method this is the gradient of the
+        objective function evaluated at the solution and for the
+        `tr_interior_point` method  this is the gradient of the barrier
+        function evaluated at the solution.
+    constr : ndarray, shape (n_ineq + n_eq,)
+        For the `eq_constraineq_sqp` method this is the equality constraint
+        evaluated at the solution and for the `tr_interior_point` method
+        this is he barrier function constraint.
+    jac : {ndarray, sparse matrix}, shape (n_ineq + n_eq, n)
+        For the `eq_constraineq_sqp` method this is the Jacobian matrix of
+        the equality constraint evaluated at the solution and for the
+        `tr_interior_point` method his is Jacobian matrix of the barrier
+        function constraint.
+
+    Notes
+    -----
+    **Equality constrained SQP**
+
+    Method `equality_constrained_sqp` is an implementation of 
+    Byrd-Omojokun Trust-Region SQP method described [3]_ and
+    in [2]_, p. 549.
+
+    It solves equality constrained equality constrained 
+    optimization problems of the type:
+
+        minimize fun(x)
+        subject to: constr(x) = 0
+
+    by solving at each substep the trust-region QP subproblem:
+
+        minimize f + g.T d + 1/2 d.T H d
+        subject to : A d + b = 0
+                    ||d|| <= trust_radius
+
+    and updating the solution ``x += d``. For which, ``g`` is the object
+    function gradient, ``H`` is the lagrangian hessian, ``A`` is the
+    constraint Jacobian matrix, and ``b`` is the constraint evaluated
+    at the current iterate. 
+
+    It uses the projected CG method in order to solve the above
+    trust-region QP problem and is an appropriate method 
+    for large scale problems.
+
+    **Trust-region Interior Point**
+
+    Method `tr_interior_point` is an implementation of the trust-region
+    interior point method described in [1]_. It solves general nonlinear
+    programming problem:
+
+        minimize f(x)
+        subject to: constr_ineq(x) <= 0
+                    constr_eq(x)    = 0
+
+    by introducing slack variables ``s`` and rewriting the above problem as
+    a sequence of equality-constrained barrier problems:
+
+        minimize f(x) - barrier_parameter * sum(log(s))
+        subject to: constr_ineq(x) + s = 0
+                    constr_eq(x)       = 0
+
+    for progressively smaller values of the barrier parameter. 
+    The previously described equality constrained SQP method is used
+    to solve this problem with increasing levels of accuracy as the problem
+    gets closer to a solution.
+
+    It uses the projected CG method in order to solve the underliying
+    trust-region QP problem and is also an appropriate method 
+    for large scale problems.
+
+    References
+    ----------
+    .. [1] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal.
+           "An interior point algorithm for large-scale nonlinear
+           programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
+    .. [2] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
+           Second Edition (2006).
+    .. [3] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. "On the
+           implementation of an algorithm for large-scale equality
+           constrained optimization." SIAM Journal on
+           Optimization 8.3 (1998): 682-706.
     """
     # Put ``constraints`` in list format
     if isinstance(constraints, (NonlinearConstraint,

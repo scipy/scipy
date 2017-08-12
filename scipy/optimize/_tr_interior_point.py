@@ -1,4 +1,16 @@
-"""Trust-region interior points method"""
+"""Trust-region interior points method.
+
+References
+----------
+.. [1] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal.
+       "An interior point algorithm for large-scale nonlinear
+       programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
+.. [2] Byrd, Richard H., Guanghui Liu, and Jorge Nocedal.
+       "On the local behavior of an interior point method for
+       nonlinear programming." Numerical analysis 1997 (1997): 37-56.
+.. [3] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
+       Second Edition (2006).
+"""
 
 from __future__ import division, print_function, absolute_import
 import scipy.sparse as spc
@@ -18,16 +30,6 @@ class BarrierSubproblem:
         minimize fun(x) - barrier_parameter*sum(log(s))
         subject to: constr_eq(x)     = 0
                   constr_ineq(x) + s = 0
-    References
-    ----------
-    .. [1] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal.
-           "An interior point algorithm for large-scale nonlinear
-           programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
-    .. [2] Byrd, Richard H., Guanghui Liu, and Jorge Nocedal.
-           "On the local behavior of an interior point method for
-           nonlinear programming." Numerical analysis 1997 (1997): 37-56.
-    .. [3] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
-           Second Edition (2006).
     """
 
     def __init__(self, x0, fun, grad, lagr_hess, n_ineq, constr_ineq,
@@ -274,114 +276,6 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
         subject to: constr_ineq(x) <= 0
                     constr_eq(x) = 0
     using trust-region interior point method described in [1]_.
-    Parameters
-    ----------
-    fun : callable
-        Objective function:
-            fun(x) -> float
-    grad : callable
-        Gradient vector:
-            grad(x) -> array_like, shape (n,)
-    lagr_hess : callable
-        Lagrangian hessian:
-            hess(x, v_eq, v_ineq) -> H
-            - ``x``: array_like, shape (n,)
-                Evaluation point.
-            - ``v_eq``: array_like, shape (n_eq,)
-                Lagrange multipliers for equality constraints.
-            - ``v_ineq``: array_like, shape (n_ineq,)
-                Lagrange multipliers for inequality constraints.
-            - ``H``: LinearOperator (or sparse matrix or ndarray), shape (n, n)
-                Lagrangian Hessian.
-    n_ineq : int
-        Number of inequality constraints.
-    constr_ineq : callable
-        Inequality constraint:
-            constr_ineq(x) -> array_like, shape (n_ineq,)
-    jac_ineq : callable
-        Inequality constraints Jacobian:
-            jac_ineq(x) -> sparse matrix (or ndarray), shape (n_ineq, n)
-    n_eq : int
-        Number of equality constraints.
-    constr_eq : callable
-        Equality constraint:
-            constr_eq(x) -> array_like, shape (n_eq,)
-    jac_eq : callable
-        Equality constraints Jacobian:
-            jac_ineq(x) -> sparse matrix (or ndarray), shape (n_eq, n)
-    x0 : array_like, shape (n,)
-        Starting point.
-    feasible_constr_list : array_like (boolean), shape (n_ineq,)
-        List specifying inequality constraints. All the iterates generated
-        by the optimization algorithm the algorithm will be feasible with
-        respect to those constraints. It is important that the initial point
-        ``x0`` respect the specified constraint, otherwise the algorithm will
-        just fail.
-    stop_criteria: callable
-        Functions that returns True when stop criteria is fulfilled:
-            stop_criteria(state)
-    initial_tolerance: float
-        Initial subproblem tolerance. By defaut uses 0.1.
-    initial_barrier_parameter: float
-        Initial barrier parameter. By defaut uses 0.1.
-    initial_trust_radius: float
-        Initial trust-region radius. By defaut uses 1.
-    initial_penalty : float
-        Initial penalty for merit function.
-    return_all : bool, optional
-        When ``true`` return the list of all vectors through the iterations.
-    xtol : float, optional
-        Tolerance for termination by the change of the independent variable
-        for the barrier subproblem.
-    factorization_method : string, optional
-        Method used for compute the given linear
-        operators. Should be one of:
-
-            - 'NormalEquation': The operators
-               will be computed using the
-               so-called normal equation approach
-               explained in [1]_. In order to do
-               so the Cholesky factorization of
-               ``(A A.T)`` is computed. Exclusive
-               for sparse matrices.
-            - 'AugmentedSystem': The operators
-               will be computed using the
-               so-called augmented system approach
-               explained in [1]_. Exclusive
-               for sparse matrices.
-            - 'QRFactorization': Compute projections
-               using QR factorization. Exclusive for
-               dense matrices.
-            - 'SVDFactorization': Compute projections
-               using SVD factorization. Exclusive for
-               dense matrices.
-    Returns
-    -------
-    x : array_like, shape (n,)
-        Solution to the optimization problem.
-    state :
-        Dictionary containing the following:
-            - niter : Number of iterations.
-            - trust_radius : Trust radius at last iteration.
-            - v : Lagrange multipliers at the solution , shape (m,).
-            - fun : Function evaluation at the solution.
-            - grad : Gradient evaluation at the solution.
-            - hess : Lagrangian Hessian at the solution.
-            - constr : Constraints at the solution.
-            - jac : Constraints jacobian at the solution.
-            - opt : Optimality is the norm of gradient of the Lagrangian
-              ``||grad L(x, v)||``, where ``grad L(x, v) = g(x) + A(x).T v``.
-            - c_violation : Norm of the constraint violation ``||c(x)||``.
-    References
-    ----------
-    .. [1] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal.
-           "An interior point algorithm for large-scale nonlinear
-           programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
-    .. [2] Byrd, Richard H., Guanghui Liu, and Jorge Nocedal.
-           "On the local behavior of an interior point method for
-           nonlinear programming." Numerical analysis 1997 (1997): 37-56.
-    .. [3] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
-           Second Edition (2006).
     """
     # BOUNDARY_PARAMETER controls the decrease on the slack
     # variables. Represents ``tau`` from [1]_ p.885, formula (3.18).

@@ -27,134 +27,36 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
                              factorization_method=None):
     """Solve nonlinear equality-constrained problem using trust-region SQP.
 
-    Solve problem:
+    Solve optimization problem:
 
         minimize fun(x)
         subject to: constr(x) = 0
 
-    using Byrd-Omojokun Trust-Region SQP method.
-
-    Parameters
-    ----------
-    fun : callable
-        Objective function:
-            fun(x) -> float
-    grad : callable
-        Gradient vector:
-            grad(x) -> array_like, shape (n,)
-    hess : callable
-        Lagrangian hessian:
-            hess(x, v) -> LinearOperator (or sparse matrix or ndarray), shape (n, n)
-    constr : callable
-        Equality constraint:
-            constr(x) -> array_like, shape (m,)
-    jac : callable
-        Constraints Jacobian:
-            jac(x) -> sparse matrix (or ndarray), shape (m, n)
-    x0 : array_like, shape (n,)
-        Starting point.
-    v0 : array_like, shape (n,)
-        Initial lagrange multipliers. By default uses least-squares lagrange
-        multipliers.
-    initial_trust_radius: float
-        Initial trust-region radius. By defaut uses 1.
-    trust_lb : array_like, shape (n,), optional
-        Trust region lower bound.
-    trust_ub : array_like, shape (n,), optional
-        Trust region upper bound.
-    stop_criteria: callable
-        Functions that returns True when stop criteria is fulfilled:
-            stop_criteria(state)
-    initial_penalty : float
-        Initial penalty for merit function.
-    scaling : callable
-        Function that return scaling used by the trust region:
-            scaling(x) -> LinearOperator (or sparse matrix or ndarray), shape (n, n)
-    return_all : bool, optional
-        When ``true`` return the list of all vectors through the iterations.
-    factorization_method : string, optional
-        Method used for compute the given linear
-        operators. Should be one of:
-
-            - 'NormalEquation': The operators
-               will be computed using the
-               so-called normal equation approach
-               explained in [1]_. In order to do
-               so the Cholesky factorization of
-               ``(A A.T)`` is computed. Exclusive
-               for sparse matrices.
-            - 'AugmentedSystem': The operators
-               will be computed using the
-               so-called augmented system approach
-               explained in [1]_. Exclusive
-               for sparse matrices.
-            - 'QRFactorization': Compute projections
-               using QR factorization. Exclusive for
-               dense matrices.
-            - 'SVDFactorization': Compute projections
-               using SVD factorization. Exclusive for
-               dense matrices.
-
-    Returns
-    -------
-    x : array_like, shape (n,)
-        Solution to the equality constrained problem.
-    state :
-        Dictionary containing the following:
-
-            - niter : Number of iterations.
-            - trust_radius : Trust radius at last iteration.
-            - v : Lagrange multipliers at the solution , shape (m,).
-            - fun : Function evaluation at the solution.
-            - grad : Gradient evaluation at the solution.
-            - hess : Lagrangian Hessian at the solution.
-            - constr : Constraints at the solution.
-            - jac : Constraints jacobian at the solution.
-            - opt : Optimality is the norm of gradient of the Lagrangian
-              ``||grad L(x, v)||``, where ``grad L(x, v) = g(x) + A(x).T v``.
-            - c_violation : Norm of the constraint violation ``||c(x)||``.
-            - allvecs : List containing all intermediary vectors (optional).
-            - allmult : List containing all intermediary lagrange
-                        multipliers (optional).
-
-    Notes
-    -----
-    This algorithm is a variation of Byrd-Omojokun Trust-Region
-    SQP method (described in [2]_ p.549 and in [3]_).Some details of
-    this specific implementation are also inspired by [1]_.
-
-    At each substep solve, using the projected CG method, the trust-region
-    QP subproblem:
-
-        minimize c.T d + 1/2 d.T H d
-        subject to : A d + b = 0
-                    ||d|| <= trust_radius
-                    trust_lb <= d <= trust_ub
-
-    and update the solution ``x += d``.
+    using Byrd-Omojokun Trust-Region SQP method described in [1]_. Several
+    implementation details are based on [2]_ and [3]_, p. 549.
 
     References
     ----------
-    .. [1] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal.
-           "An interior point algorithm for large-scale nonlinear
-           programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
-    .. [2] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
-           Second Edition (2006).
-    .. [3] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. "On the
+    .. [1] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. "On the
            implementation of an algorithm for large-scale equality
            constrained optimization." SIAM Journal on
            Optimization 8.3 (1998): 682-706.
+    .. [2] Byrd, Richard H., Mary E. Hribar, and Jorge Nocedal.
+           "An interior point algorithm for large-scale nonlinear
+           programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
+    .. [3] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
+           Second Edition (2006).
     """
-    PENALTY_FACTOR = 0.3  # Rho from formula (3.51), reference [1]_, p.891.
+    PENALTY_FACTOR = 0.3  # Rho from formula (3.51), reference [2]_, p.891.
     LARGE_REDUCTION_RATIO = 0.9
     INTERMEDIARY_REDUCTION_RATIO = 0.3
-    SUFFICIENT_REDUCTION_RATIO = 1e-8  # Eta from reference [1]_, p.892.
+    SUFFICIENT_REDUCTION_RATIO = 1e-8  # Eta from reference [2]_, p.892.
     TRUST_ENLARGEMENT_FACTOR_L = 7.0
     TRUST_ENLARGEMENT_FACTOR_S = 2.0
     MAX_TRUST_REDUCTION = 0.5
     MIN_TRUST_REDUCTION = 0.1
     SOC_THRESHOLD = 0.1
-    TR_FACTOR = 0.8  # Zeta from formula (3.21), reference [1]_, p.885.
+    TR_FACTOR = 0.8  # Zeta from formula (3.21), reference [2]_, p.885.
     BOX_FACTOR = 0.5
 
     n, = np.shape(x0)  # Number of parameters
@@ -237,7 +139,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         # Compute linearized constraint: l = A d + b.
         linearized_constr = A.dot(d)+b
         # Compute new penalty parameter according to formula (3.52),
-        # reference [1]_, p.891.
+        # reference [2]_, p.891.
         vpred = norm(b) - norm(linearized_constr)
         # Guarantee `vpred` always positive,
         # regardless of roundoff errors.
@@ -247,7 +149,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             new_penalty = quadratic_model / ((1-PENALTY_FACTOR)*vpred)
             penalty = max(penalty, new_penalty)
         # Compute predicted reduction according to formula (3.52),
-        # reference [1]_, p.891.
+        # reference [2]_, p.891.
         predicted_reduction = -quadratic_model + penalty*vpred
 
         # Compute merit function at current point
@@ -262,12 +164,12 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         # Compute merit function at trial point
         merit_function_next = f_next + penalty*norm(b_next)
         # Compute actual reduction according to formula (3.54),
-        # reference [1]_, p.892.
+        # reference [2]_, p.892.
         actual_reduction = merit_function - merit_function_next
         # Compute reduction ratio
         reduction_ratio = actual_reduction / predicted_reduction
 
-        # Second order correction (SOC), reference [1]_, p.892.
+        # Second order correction (SOC), reference [2]_, p.892.
         if reduction_ratio < SUFFICIENT_REDUCTION_RATIO and \
            norm(dn) <= SOC_THRESHOLD * norm(dt):
             # Compute second order correction
@@ -292,7 +194,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
                 b_next = b_soc
                 reduction_ratio = reduction_ratio_soc
 
-        # Readjust trust region step, formula (3.55), reference [1]_, p.892.
+        # Readjust trust region step, formula (3.55), reference [2]_, p.892.
         if reduction_ratio >= LARGE_REDUCTION_RATIO:
             trust_radius = max(TRUST_ENLARGEMENT_FACTOR_L * norm(d),
                                trust_radius)

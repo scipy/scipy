@@ -16,7 +16,7 @@ __all__ = ['CanonicalConstraint',
 
 
 class CanonicalConstraint:
-    """Object representing canonical constraint
+    """Canonical constraint
 
     Constraint of the form:
         constr_ineq(x) <= 0
@@ -28,20 +28,29 @@ class CanonicalConstraint:
         Number of inequality constraints.
     constr_ineq : callable
         Inequality constraint:
+
             constr_ineq(x) -> array_like, shape (n_ineq,)
+
     jac_ineq : callable
         Inequality constraints Jacobian:
+
             jac_ineq(x) -> sparse matrix (or ndarray), shape (n_ineq, n)
+
     n_eq : int
         Number of equality constraints.
     constr_eq : callable
         Equality constraint:
+
             constr_eq(x) -> array_like, shape (n_eq,)
+
     jac_eq : callable
         Equality constraints Jacobian:
+
             jac_ineq(x) -> sparse matrix (or ndarray), shape (n_eq, n)
+
     hess : callable
         Hessian matrix:
+
             hess(x, v_eq, v_ineq) -> H
 
             - ``x``: array_like, shape (n,)
@@ -50,8 +59,9 @@ class CanonicalConstraint:
                 Lagrange multipliers for equality constraints.
             - ``v_ineq``: array_like, shape (n_ineq,), optional
                 Lagrange multipliers for inequality constraints.
-            - ``H``: LinearOperator (or sparse matrix or ndarray), shape (n, n)
-                Lagrangian Hessian.
+            - ``H``: {LinearOperator, sparse matrix, ndarray}, shape (n, n)
+                Hessian matrix.
+
     feasible_constr : list of boolean, shape (n_ineq,)
         List of booleans containing ``True`` if the correspondent inequality
         constraint must be feasible along the iteractions and ``False``
@@ -70,24 +80,33 @@ class CanonicalConstraint:
 
 
 class NonlinearConstraint:
-    """Object representing nonlinear constraint
+    """Nonlinear constraint
 
     Init Parameters
     ---------------
     fun : callable
         The function defining the constraint.
+
             fun(x) -> array_like, shape (m,)
+
+        where x is a (n,) ndarray and ``m``
+        is the number of constraints.
     jac : callable
         Jacobian Matrix:
-            jac(x) -> ndarray (or sparse matrix), shape (m, n)
+
+            jac(x) -> {ndarray, sparse matrix}, shape (m, n)
+
         where x is a (n,) ndarray.
     hess : {callable, None}
         Hessian matrix of `dot(fun, v)`:
-            hess(x, v) -> ndarray (or sparse matrix or LinearOperator), shape (n, n)
+
+            hess(x, v) -> {LinearOperator, sparse matrix, ndarray}, shape (n, n)
+
         where x is a (n,) ndarray and v is a (m,) ndarray.
     kind : tuple
         Specifies the type of contraint. Options for this
         parameters are:
+
             - ("interval", lb, ub): for a constraint of the type:
                 lb <= fun(x) <= ub
             - ("greater", lb): for a constraint of the type:
@@ -96,6 +115,7 @@ class NonlinearConstraint:
                 fun(x) <= ub
             - ("equals", c): for a constraint of the type:
                 fun(x) == c
+
         where ``lb``,  ``ub`` and ``c`` are (m,) ndarrays and
         ``x`` is a (n,) ndarray.
     feasible_constr : {list of boolean, boolean}, optional
@@ -202,15 +222,16 @@ class NonlinearConstraint:
 
 
 class LinearConstraint:
-    """Object representing linear constraint.
+    """Linear constraint.
 
     Init Parameters
     ---------------
-    A : ndarray (or sparse matrix), shape (m, n)
+    A : {ndarray, sparse matrix}, shape (m, n)
         Matrix for the linear constraint.
     kind : tuple
         Specifies the type of contraint. Options for this
         parameters are:
+
             - ("interval", lb, ub): for a constraint of the type:
                 lb <= A x <= ub
             - ("greater", lb): for a constraint of the type:
@@ -219,6 +240,7 @@ class LinearConstraint:
                 A x <= ub
             - ("equals", c): for a constraint of the type:
                 A x == c
+
         where ``lb``,  ``ub`` and ``c`` are (m,) ndarrays and
         ``x`` is a (n,) ndarray.
     feasible_constr : {list of boolean, boolean}, optional
@@ -258,19 +280,21 @@ class LinearConstraint:
 
 
 class BoxConstraint:
-    """Object representing box constraint.
+    """Box constraint.
 
     Init Parameters
     ---------------
     kind : tuple
         Specifies the type of contraint. Options for this
         parameters are:
+
             - ("interval", lb, ub): for a constraint of the type:
                 lb <= x <= ub
             - ("greater", lb): for a constraint of the type:
                 x >= lb
             - ("less", ub): for a constraint of the type:
                 x <= ub
+
         where ``lb``,  ``ub`` and ``c`` are (m,) ndarrays and
         ``x`` is a (n,) ndarray.
     feasible_constr : {list of boolean, boolean}, optional
@@ -335,6 +359,7 @@ def parse_constraint(kind):
     kind : tuple
         Specifies the type of contraint. Options for this
         parameters are:
+
             - ("interval", lb, ub): for a constraint of the type:
                 lb[i] <= f[i] <= ub[i]
             - ("greater", lb): for a constraint of the type:
@@ -343,6 +368,7 @@ def parse_constraint(kind):
                 f[i] <= ub[i]
             - ("equals", c): for a constraint of the type:
                 f[i] == c[i] 
+
         where ``lb``,  ``ub`` and ``c`` are (m,) ndarrays.
     Returns
     -------
