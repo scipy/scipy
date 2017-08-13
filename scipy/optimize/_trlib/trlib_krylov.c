@@ -68,7 +68,7 @@ trlib_int_t trlib_krylov_min_internal(
     #endif
     // sane names for workspace variables
     trlib_int_t *status = iwork;
-    trlib_int_t *ii = iwork+1; *iter = *ii;
+    trlib_int_t *ii = iwork+1;
     trlib_int_t *pos_def = iwork+2;
     trlib_int_t *interior = iwork+3;
     trlib_int_t *warm_leftmost = iwork+4;
@@ -127,6 +127,8 @@ trlib_int_t trlib_krylov_min_internal(
     trlib_flt_t eta_i = 0.0; // forcing parameter
     trlib_flt_t eta_b = 0.0; // forcing parameter
     trlib_int_t cit = 0;     // loop counter for convergence history
+
+    *iter = *ii;
 
     if (init == TRLIB_CLS_INIT)       { *status = TRLIB_CLS_INIT; }
     if (init == TRLIB_CLS_HOTSTART)   { *status = TRLIB_CLS_HOTSTART; }

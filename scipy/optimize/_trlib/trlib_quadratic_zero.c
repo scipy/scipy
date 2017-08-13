@@ -29,11 +29,11 @@ trlib_int_t trlib_quadratic_zero(trlib_flt_t c_abs, trlib_flt_t c_lin, trlib_flt
         trlib_int_t verbose, trlib_int_t unicode, char *prefix, FILE *fout,
         trlib_flt_t *t1, trlib_flt_t *t2) {
     trlib_int_t n  = 0;   // number of roots
-    *t1 = 0.0;    // first root
-    *t2 = 0.0;    // second root
     trlib_flt_t q = 0.0;
     trlib_flt_t dq = 0.0;
     trlib_flt_t lin_sq = c_lin*c_lin;
+    *t1 = 0.0;    // first root
+    *t2 = 0.0;    // second root
 
     if (fabs(c_abs) > tol*lin_sq) {
         // well behaved non-degenerate quadratic
@@ -71,4 +71,4 @@ trlib_int_t trlib_quadratic_zero(trlib_flt_t c_abs, trlib_flt_t c_lin, trlib_flt
     q = (*t2+c_lin)*(*t2)+c_abs; dq = 2.0*(*t2)+c_lin;
     if (dq != 0.0) { *t2 = *t2 - q/dq; }
     return n;
-};
+}

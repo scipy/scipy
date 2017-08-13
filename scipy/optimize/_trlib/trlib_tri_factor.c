@@ -60,7 +60,6 @@ trlib_int_t trlib_tri_factor_min(
     trlib_int_t ret = 0;                                     // return code
     trlib_flt_t lam_pert = 0.0;                           // perturbation of leftmost eigenvalue as starting value for lam
     trlib_flt_t norm_sol0 = 0.0;                          // norm of h_0(lam)
-    *iter_newton = 0;                                // newton iteration counter
     trlib_int_t jj = 0;                                      // local iteration counter
     trlib_flt_t dlam     = 0.0;                           // increment in newton iteration
     trlib_int_t inc = 1;                                     // increment in vector storage
@@ -72,6 +71,7 @@ trlib_int_t trlib_tri_factor_min(
     trlib_flt_t pert_low, pert_up;                        // lower and upper bound on perturbation of lambda
     trlib_flt_t dot = 0.0, dot2 = 0.0;                    // save dot products
     trlib_flt_t invD_norm_w_sq = 0.0;                     // || w ||_{D^-1}^2
+    *iter_newton = 0;                                // newton iteration counter
 
     // FIXME: ensure diverse warmstarts work as expected
     
@@ -600,12 +600,12 @@ trlib_int_t trlib_tri_factor_regularize_posdef(
        we have to ensure diag_fac > 0 */
 
     trlib_flt_t diag_fac = 0.0;
+    trlib_int_t pivot = 0;
     
     regdiag[0] = 0.0;
     if (diag[0] <= tol_away) { regdiag[0] = security_step*tol_away; }
     diag_fac = diag[0] + regdiag[0];
 
-    trlib_int_t pivot = 0;
     for(pivot = 0; pivot < n-1; ++pivot) {
         regdiag[pivot+1] = 0.0;
         if ( diag[pivot+1] - offdiag[pivot]*offdiag[pivot]/diag_fac <= tol_away * diag_fac ) {

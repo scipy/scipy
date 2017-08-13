@@ -32,8 +32,9 @@ trlib_int_t trlib_leftmost(
         trlib_int_t *timing, trlib_int_t *ileftmost, trlib_flt_t *leftmost) {
     trlib_int_t ret = 0, curit = 0;
     if(! warm) {
-        ret = 0; trlib_int_t curret = 0;
+        trlib_int_t curret = 0;
         trlib_int_t ii = 0;
+        ret = 0;
         for(ii = 0; ii < nirblk; ++ii) {
             curret = trlib_leftmost_irreducible(irblk[ii+1]-irblk[ii], diag+irblk[ii], offdiag+irblk[ii], 0, 0.0, itmax,
                 tol_abs, verbose, unicode, prefix, fout, timing, leftmost+ii, &curit);
@@ -62,11 +63,9 @@ trlib_int_t trlib_leftmost_irreducible(
         struct timespec verystart, start, end;
         TRLIB_TIC(verystart)
     #endif
-    *iter_pr = 0;                           // iteration counter
     trlib_int_t jj = 0;                     // local counter variable
     trlib_flt_t low = 0.0;                  // lower bracket variable: low <= leftmost       for desired value
     trlib_flt_t up = 0.0;                   // upper bracket variable:        leftmost <= up for desired value
-    *leftmost = 0.0;                        // estimation of desired leftmost eigenvalue
     trlib_flt_t leftmost_attempt = 0.0;     // trial step for leftmost eigenvalue
     trlib_flt_t dleftmost = 0.0;            // increment
     trlib_flt_t prlp = 0.0;                 // value of Parlett-Reid-Last-Pivot function
@@ -83,6 +82,8 @@ trlib_int_t trlib_leftmost_irreducible(
     trlib_int_t continue_outer_loop = 0;    // local spaghetti code control variable
     trlib_int_t model_type = 0;
     trlib_int_t ii = 0;
+    *leftmost = 0.0;                        // estimation of desired leftmost eigenvalue
+    *iter_pr = 0;                           // iteration counter
 
     // trivial case: one-dimensional. return diagonal value
     if (n == 1) { *leftmost = diag[0]; TRLIB_RETURN(TRLIB_LMR_CONV) }

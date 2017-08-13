@@ -36,15 +36,20 @@ trlib_int_t trlib_eigen_inverse(
         struct timespec verystart, start, end;
         TRLIB_TIC(verystart)
     #endif
-    *iter_inv = 0;                               // iteration counter
-    *pert = 0.0;                                 // perturbation factor to update lam until factorization is possible
     trlib_int_t info_fac = 0;                            // status variable for factorization
     trlib_flt_t invnorm = 0.0;                        // 1/norm of eig before normalization
     trlib_flt_t minuslam = - lam_init;                // negative of current estimation of eigenvalue
     trlib_int_t inc = 1; trlib_int_t nm = n-1;
 
     trlib_int_t seeds[TRLIB_EIR_N_STARTVEC];
-    trlib_flt_t residuals[TRLIB_EIR_N_STARTVEC];   
+    trlib_flt_t residuals[TRLIB_EIR_N_STARTVEC];
+
+    trlib_int_t jj = 0;
+    trlib_int_t kk = 0;
+    trlib_int_t seedpivot = 0;
+
+    *iter_inv = 0;                               // iteration counter
+    *pert = 0.0;                                 // perturbation factor to update lam until factorization is possible
 
     *iter_inv = 0;
     *pert = 0.0;
@@ -76,8 +81,6 @@ trlib_int_t trlib_eigen_inverse(
     
     // try with TRLIB_EIR_N_STARTVEC different start vectors and hope that it converges for one
     seeds[0] = time(NULL);
-    trlib_int_t jj = 0;
-    trlib_int_t kk = 0;
     for(jj = 1; jj < TRLIB_EIR_N_STARTVEC; ++jj ) { seeds[jj] = rand(); }
     for(jj = 0; jj < TRLIB_EIR_N_STARTVEC; ++jj ) {
         *iter_inv = 0;
@@ -109,7 +112,6 @@ trlib_int_t trlib_eigen_inverse(
 
     // no convergence with any of the starting values.
     // take the seed with least residual and redo computation
-    trlib_int_t seedpivot = 0;
     for(jj = 0; jj < TRLIB_EIR_N_STARTVEC; ++jj) { if (residuals[jj] < residuals[seedpivot]) { seedpivot = jj; } }
 
     *iter_inv = 0;
@@ -139,7 +141,7 @@ trlib_int_t trlib_eigen_inverse(
     }
     
     TRLIB_RETURN(TRLIB_EIR_ITMAX)
-};
+}
 
 trlib_int_t trlib_eigen_timing_size() {
 #if TRLIB_MEASURE_TIME
