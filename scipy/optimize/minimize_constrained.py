@@ -467,12 +467,19 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     start_time = time.time()
     # Call inferior function to do the optimization
     if method == 'equality_constrained_sqp':
+        if constr.n_ineq > 0:
+            raise ValueError("`equality_constrained_sqp` does not "
+                             "support inequality constraints.")
         result = equality_constrained_sqp(
             fun, grad, lagr_hess,
             constr.constr_eq,  constr.jac_eq,
             x0, fun0, grad0, constr_eq0, jac_eq0,
             stop_criteria, state, **options)
     elif method == 'tr_interior_point':
+        if constr.n_ineq == 0:
+            warn("The problem only has equality constraints. "
+                 "The solver `equality_constrained_sqp` is a "
+                 "better choice for those situations.")
         result = tr_interior_point(
             fun, grad, lagr_hess,
             constr.n_ineq, constr.constr_ineq,
