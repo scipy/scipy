@@ -212,7 +212,7 @@ C
       n = 20
 C
   120 sum = t
-  130 IF (abs(t).LE.acc) GO TO 140
+  130 IF (.NOT.(abs(t).GT.acc)) GO TO 140
       amn = amn - 1.0D0
       t = t* (amn/x)
       sum = sum + t

@@ -59,7 +59,7 @@ C
 C
       r0 = r
       r = anp1/bnp1
-      IF (abs(r-r0).LE.eps*r) GO TO 20
+      IF (.NOT.(abs(r-r0).GT.eps*r)) GO TO 20
 C
 C        RESCALE AN, BN, ANP1, AND BNP1
 C

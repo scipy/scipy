@@ -1,4 +1,4 @@
-      SUBROUTINE cumfnc(f,dfn,dfd,pnonc,cum,ccum)
+      SUBROUTINE cumfnc(f,dfn,dfd,pnonc,cum,ccum,status)
 C**********************************************************************
 C
 C               F -NON- -C-ENTRAL F DISTRIBUTION
@@ -66,7 +66,7 @@ C     .. Local Scalars ..
       DOUBLE PRECISION dsum,dummy,prod,xx,yy
       DOUBLE PRECISION adn,aup,b,betdn,betup,centwt,dnterm,eps,sum,
      +                 upterm,xmult,xnonc,x,abstol
-      INTEGER i,icent,ierr
+      INTEGER i,icent,ierr,status
 C     ..
 C     .. External Functions ..
       DOUBLE PRECISION alngam
@@ -92,10 +92,11 @@ C     .. Data statements ..
       DATA abstol/1.0D-300/
 C     ..
 C     .. Statement Function definitions ..
-      qsmall(x) = sum .LT. abstol .OR. x .LT. eps*sum
+      qsmall(x) = .NOT. (sum .GE. abstol .AND. x .GE. eps*sum)
 C     ..
 C     .. Executable Statements ..
 C
+      status = 0
       IF (.NOT. (f.LE.0.0D0)) GO TO 10
       cum = 0.0D0
       ccum = 1.0D0
@@ -114,6 +115,10 @@ C     (essentially) zero.
 C     Calculate the central term of the poisson weighting factor.
 
       icent = xnonc
+      IF (.NOT.(DABS(xnonc-icent).LT.1)) THEN
+         status = 1
+         RETURN
+      ENDIF
       IF (icent.EQ.0) icent = 1
 
 C     Compute central weight term

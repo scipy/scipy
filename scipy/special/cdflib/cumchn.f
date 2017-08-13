@@ -80,7 +80,7 @@ C     .. Data statements ..
       DATA abstol/1.0D-300/
 C     ..
 C     .. Statement Function definitions ..
-      qsmall(xx) = sum .LT. abstol .OR. xx .LT. eps*sum
+      qsmall(xx) = .NOT. (sum .GE. abstol .AND. xx .GE. eps*sum)
       dg(i) = df + 2.0D0*dble(i)
 C     ..
 C
