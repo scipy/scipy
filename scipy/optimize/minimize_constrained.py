@@ -482,6 +482,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             constr_eq0, jac_eq0, stop_criteria,
             constr.feasible_constr, sparse_jacobian,
             xtol, state, **options)
+    else:
+        raise ValueError("Unknown optimization ``method``.")
 
     result.execution_time = time.time() - start_time
     result.method = method
