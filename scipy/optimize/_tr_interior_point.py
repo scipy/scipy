@@ -16,9 +16,7 @@ from __future__ import division, print_function, absolute_import
 import scipy.sparse as spc
 import numpy as np
 from ._equality_constrained_sqp import equality_constrained_sqp
-from .optimize import OptimizeResult
 from .constraints import check_sparsity
-from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['tr_interior_point']
@@ -338,9 +336,9 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
             subprob.function, subprob.gradient,
             subprob.lagrangian_hessian, subprob.constraints,
             subprob.jacobian, z, fun0_subprob, grad0_subprob,
-            constr0_subprob, jac0_subprob, subprob.stop_criteria, 
+            constr0_subprob, jac0_subprob, subprob.stop_criteria,
             state, trust_lb, trust_ub, initial_penalty,
-             state.trust_radius, subprob.scaling, return_all,
+            state.trust_radius, subprob.scaling, return_all,
             factorization_method)
         z = state.x
         if stop_criteria(state):

@@ -95,8 +95,12 @@ class TestParseConstraint(TestCase):
 
     def test_exceptions(self):
         assert_raises(ValueError, parse_constraint, ("blbalbda",))
-        assert_raises(ValueError, parse_constraint, ("interval", [1, 2, 3], [1, 2]))
-        assert_raises(ValueError, parse_constraint, ("interval", [1, 2, 3], [1, 2, 1]))
+        assert_raises(ValueError, parse_constraint, ("interval",
+                                                     [1, 2, 3],
+                                                     [1, 2]))
+        assert_raises(ValueError, parse_constraint, ("interval",
+                                                     [1, 2, 3],
+                                                     [1, 2, 1]))
 
 
 class TestConversions(TestCase):
@@ -135,11 +139,14 @@ class TestConversions(TestCase):
                                                              [1, 0, 0],
                                                              [0, 0, 1]])
         assert_array_equal(canonical.hess, None)
-        assert_array_equal(canonical.feasible_constr, [True, False, True, True, True])
+        assert_array_equal(canonical.feasible_constr,
+                           [True, False, True, True, True])
 
     def test_linear_to_canonical_conversion(self):
         A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
-        linear = LinearConstraint(A, ("interval", [10, 20, 30], [10, np.inf, 70]),
+        linear = LinearConstraint(A, ("interval",
+                                      [10, 20, 30],
+                                      [10, np.inf, 70]),
                                   [True, False, True])
         canonical = linear.to_canonical()
 
@@ -221,7 +228,7 @@ class TestConversions(TestCase):
         x = [1, 2, 3, 4]
         assert_array_equal(canonical.n_eq, 1)
         assert_array_equal(canonical.constr_eq(x),
-                           [f2+ g2.dot(x) + 1/2*H2.dot(x).dot(x) - 20])
+                           [f2 + g2.dot(x) + 1/2*H2.dot(x).dot(x) - 20])
         assert_array_equal(canonical.jac_eq(x), np.atleast_2d(g2 + H2.dot(x)))
         assert_array_equal(canonical.n_ineq, 4)
         assert_array_equal(canonical.constr_ineq(x),
@@ -372,7 +379,8 @@ class TestConcatenateConstraints(TestCase):
             v_eq = np.array([1, 2, 3])
             v_ineq = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
             H = canonical.hess(x, v_eq, v_ineq)
-            H_expected = 2*H1 + 3*H1 - 4*H2 - 5*H3 + 6*H3 - 12*H2 - 13*H3 + 14*H3
+            H_expected = 2*H1 + 3*H1 - 4*H2 - 5*H3 + \
+                         6*H3 - 12*H2 - 13*H3 + 14*H3
             np.random.seed(1)
             for i in range(10):
                 p = np.random.uniform(size=4)
@@ -385,12 +393,14 @@ class TestConcatenateConstraints(TestCase):
                                 True, True, True, True, True,
                                 False, True, True])
 
+
 class TestReinforceBoxConstraints(TestCase):
 
     def test_reinforce_box_constraints(self):
         lb = np.array([0, 20, 30])
         ub = np.array([0.5, np.inf, 70])
-        feasible_constr = [True, False, True]
+        feasible_constr = np.array([True, False, True],
+                                   dtype=bool)
         box = BoxConstraint(("interval", lb, ub),
                             feasible_constr)
         x0 = [1, 2, 3]

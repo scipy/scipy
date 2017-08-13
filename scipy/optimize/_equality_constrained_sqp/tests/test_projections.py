@@ -7,7 +7,6 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_raises, assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
-from scipy.linalg import block_diag
 
 
 class TestProjections(TestCase):
