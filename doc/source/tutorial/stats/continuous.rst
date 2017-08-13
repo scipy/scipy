@@ -218,6 +218,7 @@ Continuous Distributions in `scipy.stats`
    continuous_genextreme
    continuous_gengamma
    continuous_genhalflogistic
+   continuous_gennorm
    continuous_gilbrat
    continuous_gompertz
    continuous_gumbel_r

@@ -4,13 +4,14 @@ import warnings
 
 from distutils.version import LooseVersion
 import numpy as np
-from numpy.testing import (TestCase, assert_array_almost_equal,
+from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
-                           run_module_suite, assert_allclose, assert_warns,
-                           dec)
+                           assert_allclose, assert_warns)
 from numpy import array, spacing, sin, pi, sort
+import pytest
 
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,
@@ -28,13 +29,11 @@ except ImportError:
 
 
 def mpmath_check(min_ver):
-    if mpmath is None:
-        return dec.skipif(True, "mpmath is not installed")
-    return dec.skipif(LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
-                      "mpmath version >= %s required" % min_ver)
+    return pytest.mark.skipif(mpmath is None or LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+                              reason="mpmath version >= %s required" % min_ver)
 
 
-class TestCplxPair(TestCase):
+class TestCplxPair(object):
 
     def test_trivial_input(self):
         assert_equal(_cplxpair([]).size, 0)
@@ -104,7 +103,7 @@ class TestCplxPair(TestCase):
         assert_raises(ValueError, _cplxpair, [1-3j])
 
 
-class TestCplxReal(TestCase):
+class TestCplxReal(object):
 
     def test_trivial_input(self):
         assert_equal(_cplxreal([]), ([], []))
@@ -156,7 +155,7 @@ class TestCplxReal(TestCase):
         assert_array_equal(zr, [0, 1, 2, 4])
 
 
-class TestTf2zpk(TestCase):
+class TestTf2zpk(object):
 
     def test_simple(self):
         z_r = np.array([0.5, -0.5])
@@ -175,16 +174,14 @@ class TestTf2zpk(TestCase):
         assert_array_almost_equal(p, p_r)
 
     def test_bad_filter(self):
-        """Regression test for #651: better handling of badly conditioned
-        filter coefficients."""
-        warnings.simplefilter("error", BadCoefficients)
-        try:
+        # Regression test for #651: better handling of badly conditioned
+        # filter coefficients.
+        with suppress_warnings():
+            warnings.simplefilter("error", BadCoefficients)
             assert_raises(BadCoefficients, tf2zpk, [1e-15], [1.0, 1.0])
-        finally:
-            warnings.simplefilter("always", BadCoefficients)
 
 
-class TestZpk2Tf(TestCase):
+class TestZpk2Tf(object):
 
     def test_identity(self):
         """Test the identity transfer function."""
@@ -203,7 +200,7 @@ class TestZpk2Tf(TestCase):
         assert_(isinstance(a, np.ndarray))
 
 
-class TestSos2Zpk(TestCase):
+class TestSos2Zpk(object):
 
     def test_basic(self):
         sos = [[1, 0, 1, 1, 0, -0.81],
@@ -241,7 +238,7 @@ class TestSos2Zpk(TestCase):
         assert_allclose(k2, k)
 
 
-class TestSos2Tf(TestCase):
+class TestSos2Tf(object):
 
     def test_basic(self):
         sos = [[1, 1, 1, 1, 0, -1],
@@ -251,7 +248,7 @@ class TestSos2Tf(TestCase):
         assert_array_almost_equal(a, [1, 10, 0, -10, -1])
 
 
-class TestTf2Sos(TestCase):
+class TestTf2Sos(object):
 
     def test_basic(self):
         num = [2, 16, 44, 56, 32]
@@ -269,7 +266,7 @@ class TestTf2Sos(TestCase):
         # assert_array_almost_equal(sos, sos2, decimal=4)
 
 
-class TestZpk2Sos(TestCase):
+class TestZpk2Sos(object):
 
     def test_basic(self):
         for pairing in ('nearest', 'keep_odd'):
@@ -406,7 +403,7 @@ class TestZpk2Sos(TestCase):
             assert_array_almost_equal(sos, sos2, decimal=4)
 
 
-class TestFreqs(TestCase):
+class TestFreqs(object):
 
     def test_basic(self):
         _, h = freqs([1.0], [1.0], worN=8)
@@ -444,7 +441,7 @@ class TestFreqs(TestCase):
         freqs([1.0], [1.0], worN=8, plot=plot)
 
 
-class TestFreqs_zpk(TestCase):
+class TestFreqs_zpk(object):
 
     def test_basic(self):
         _, h = freqs_zpk([1.0], [1.0], [1.0], worN=8)
@@ -484,7 +481,7 @@ class TestFreqs_zpk(TestCase):
         assert_allclose(h1, h2, rtol=1e-6)
 
 
-class TestFreqz(TestCase):
+class TestFreqz(object):
 
     def test_ticket1441(self):
         """Regression test for ticket 1441."""
@@ -516,7 +513,7 @@ class TestFreqz(TestCase):
         freqz([1.0], worN=8, plot=plot)
 
 
-class TestSOSFreqz(TestCase):
+class TestSOSFreqz(object):
 
     def test_sosfreqz_basic(self):
         # Compare the results of freqz and sosfreqz for a low order
@@ -609,7 +606,7 @@ class TestSOSFreqz(TestCase):
         assert_array_less(dB[w >= 0.6], -99.9)
         assert_allclose(dB[(w >= 0.2) & (w <= 0.5)], 0, atol=3.01)
 
-    @dec.knownfailureif(True)
+    @pytest.mark.xfail
     def test_sosfreqz_design_ellip(self):
         N, Wn = ellipord(0.3, 0.1, 3, 60)
         sos = ellip(N, 0.3, 60, Wn, 'high', output='sos')
@@ -633,7 +630,7 @@ class TestSOSFreqz(TestCase):
         # Compare the result of sosfreqz applied to a high order Butterworth
         # filter against the result computed using mpmath.  (signal.freqz fails
         # miserably with such high order filters.)
-        import mpsig
+        from . import mpsig
         N = 500
         order = 25
         Wn = 0.15
@@ -649,7 +646,7 @@ class TestSOSFreqz(TestCase):
         assert_allclose(h, h_mp, rtol=1e-12, atol=1e-14)
 
 
-class TestFreqz_zpk(TestCase):
+class TestFreqz_zpk(object):
 
     def test_ticket1441(self):
         """Regression test for ticket 1441."""
@@ -680,7 +677,7 @@ class TestFreqz_zpk(TestCase):
         assert_allclose(h1, h2, rtol=1e-6)
 
 
-class TestNormalize(TestCase):
+class TestNormalize(object):
 
     def test_allclose(self):
         """Test for false positive on allclose in normalize() in
@@ -739,7 +736,7 @@ class TestNormalize(TestCase):
         assert_raises(ValueError, normalize, [[[1, 2]]], 1)
 
 
-class TestLp2lp(TestCase):
+class TestLp2lp(object):
 
     def test_basic(self):
         b = [1]
@@ -749,7 +746,7 @@ class TestLp2lp(TestCase):
         assert_array_almost_equal(a_lp, [1, 0.5455, 0.1488], decimal=4)
 
 
-class TestLp2hp(TestCase):
+class TestLp2hp(object):
 
     def test_basic(self):
         b = [0.25059432325190018]
@@ -759,7 +756,7 @@ class TestLp2hp(TestCase):
         assert_allclose(a_hp, [1, 1.1638e5, 2.3522e9, 1.2373e14], rtol=1e-4)
 
 
-class TestLp2bp(TestCase):
+class TestLp2bp(object):
 
     def test_basic(self):
         b = [1]
@@ -770,7 +767,7 @@ class TestLp2bp(TestCase):
                                1.3965e18, 1.0028e22, 2.5202e26], rtol=1e-4)
 
 
-class TestLp2bs(TestCase):
+class TestLp2bs(object):
 
     def test_basic(self):
         b = [1]
@@ -780,7 +777,7 @@ class TestLp2bs(TestCase):
         assert_array_almost_equal(a_bs, [1, 0.18461, 0.17407], decimal=5)
 
 
-class TestBilinear(TestCase):
+class TestBilinear(object):
 
     def test_basic(self):
         b = [0.14879732743343033]
@@ -799,7 +796,7 @@ class TestBilinear(TestCase):
                                   decimal=4)
 
 
-class TestPrototypeType(TestCase):
+class TestPrototypeType(object):
 
     def test_output_type(self):
         # Prototypes should consistently output arrays, not lists
@@ -820,7 +817,7 @@ def dB(x):
     return 20 * np.log10(abs(x))
 
 
-class TestButtord(TestCase):
+class TestButtord(object):
 
     def test_lowpass(self):
         wp = 0.2
@@ -909,7 +906,7 @@ class TestButtord(TestCase):
         assert_equal(buttord(1, 1.2, 1, 80, analog=True)[0], 55)
 
 
-class TestCheb1ord(TestCase):
+class TestCheb1ord(object):
 
     def test_lowpass(self):
         wp = 0.2
@@ -992,7 +989,7 @@ class TestCheb1ord(TestCase):
         assert_equal(cheb1ord(1, 1.2, 1, 80, analog=True)[0], 17)
 
 
-class TestCheb2ord(TestCase):
+class TestCheb2ord(object):
 
     def test_lowpass(self):
         wp = 0.2
@@ -1078,7 +1075,7 @@ class TestCheb2ord(TestCase):
                         rtol=1e-15)
 
 
-class TestEllipord(TestCase):
+class TestEllipord(object):
 
     def test_lowpass(self):
         wp = 0.2
@@ -1163,7 +1160,7 @@ class TestEllipord(TestCase):
         assert_equal(ellipord(1, 1.2, 1, 80, analog=True)[0], 9)
 
 
-class TestBessel(TestCase):
+class TestBessel(object):
 
     def test_degenerate(self):
         for norm in ('delay', 'phase', 'mag'):
@@ -1626,7 +1623,7 @@ class TestBessel(TestCase):
         assert_raises(ValueError, _bessel_poly, 3.3)
 
 
-class TestButter(TestCase):
+class TestButter(object):
 
     def test_degenerate(self):
         # 0-order filter is just a passthrough
@@ -1863,7 +1860,7 @@ class TestButter(TestCase):
         assert_allclose(a, a2, rtol=1e-14)
 
 
-class TestCheby1(TestCase):
+class TestCheby1(object):
 
     def test_degenerate(self):
         # 0-order filter is just a passthrough
@@ -2114,7 +2111,7 @@ class TestCheby1(TestCase):
         assert_allclose(a, a2, rtol=1e-14)
 
 
-class TestCheby2(TestCase):
+class TestCheby2(object):
 
     def test_degenerate(self):
         # 0-order filter is just a passthrough
@@ -2381,7 +2378,7 @@ class TestCheby2(TestCase):
         assert_allclose(a, a2, rtol=1e-14)
 
 
-class TestEllip(TestCase):
+class TestEllip(object):
 
     def test_degenerate(self):
         # 0-order filter is just a passthrough
@@ -2691,7 +2688,7 @@ def test_sos_consistency():
         assert_allclose(sos, zpk2sos(*zpk), err_msg="%s(4,...)" % name)
 
 
-class TestIIRNotch(TestCase):
+class TestIIRNotch(object):
 
     def test_ba_output(self):
         # Compare coeficients with Matlab ones
@@ -2752,7 +2749,7 @@ class TestIIRNotch(TestCase):
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
 
-class TestIIRPeak(TestCase):
+class TestIIRPeak(object):
 
     def test_ba_output(self):
         # Compare coeficients with Matlab ones
@@ -2812,7 +2809,7 @@ class TestIIRPeak(TestCase):
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
 
-class TestIIRFilter(TestCase):
+class TestIIRFilter(object):
 
     def test_symmetry(self):
         # All built-in IIR filters are real, so should have perfectly
@@ -2855,7 +2852,7 @@ class TestIIRFilter(TestCase):
         assert_raises(ValueError, iirfilter, 1, [10, 20], btype='stop')
 
 
-class TestGroupDelay(TestCase):
+class TestGroupDelay(object):
     def test_identity_filter(self):
         w, gd = group_delay((1, 1))
         assert_array_almost_equal(w, pi * np.arange(512) / 512)
@@ -2896,12 +2893,7 @@ class TestGroupDelay(TestCase):
         b = np.convolve([1, -z1], [1, -z2])
         a = np.convolve([1, -p1], [1, -p2])
         w = np.array([0.1 * pi, 0.25 * pi, -0.5 * pi, -0.8 * pi])
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            assert_warns(UserWarning, group_delay, (b, a), w=w)
-            w, gd = group_delay((b, a), w=w)
-            assert_allclose(gd, 0)
 
+        w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
+        assert_allclose(gd, 0)
 
-if __name__ == "__main__":
-    run_module_suite()

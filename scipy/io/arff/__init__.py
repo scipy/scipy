@@ -21,5 +21,6 @@ from . import arffread
 
 __all__ = arffread.__all__
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

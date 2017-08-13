@@ -1,6 +1,6 @@
 .. _optimize.linprog-simplex:
 
-linprog(method='Simplex')
+linprog(method='simplex')
 ----------------------------------------
 
 .. scipy-optimize:function:: scipy.optimize.linprog

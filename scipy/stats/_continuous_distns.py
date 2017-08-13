@@ -24,6 +24,14 @@ from ._distn_infrastructure import (get_distribution_names, _kurtosis,
 from ._constants import _XMIN, _EULER, _ZETA3, _XMAX, _LOGXMAX
 
 
+# In numpy 1.12 and above, np.power refuses to raise integers to negative
+# powers, and `np.float_power` is a new replacement. 
+try:
+    float_power = np.float_power
+except AttributeError:
+    float_power = np.power
+
+
 ## Kolmogorov-Smirnov one-sided and two-sided test statistics
 class ksone_gen(rv_continuous):
     """General Kolmogorov-Smirnov one-sided test.
@@ -272,15 +280,13 @@ class arcsine_gen(rv_continuous):
 
         arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
 
-    for ``0 < x < 1``.
+    for ``0 <= x <= 1``.
 
     %(after_notes)s
 
     %(example)s
 
     """
-    _support_mask = rv_continuous._open_support_mask
-
     def _pdf(self, x):
         return 1.0/np.pi/np.sqrt(x*(1-x))
 
@@ -1890,13 +1896,19 @@ class genextreme_gen(rv_continuous):
         v = np.where(c < -0.5, np.nan, g1**2.0*gam2k)
 
         # skewness
-        sk1 = np.where(c < -1./3, np.nan,
-                       np.sign(c)*(-g3+(g2+2*g2mg12)*g1)/((g2mg12)**(3./2.)))
+        sk1 = _lazywhere(c >= -1./3,
+                         (c, g1, g2, g3, g2mg12),
+                         lambda c, g1, g2, g3, g2gm12:
+                             np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
+                         fillvalue=np.nan)
         sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
 
         # kurtosis
-        ku1 = np.where(c < -1./4, np.nan,
-                       (g4+(-4*g3+3*(g2+g2mg12)*g1)*g1)/((g2mg12)**2))
+        ku1 = _lazywhere(c >= -1./4,
+                         (g1, g2, g3, g4, g2mg12),
+                         lambda g1, g2, g3, g4, g2mg12:
+                             (g4 + (-4*g3 + 3*(g2 + g2mg12)*g1)*g1)/g2mg12**2,
+                         fillvalue=np.nan)
         ku = np.where(abs(c) <= (eps)**0.23, 12.0/5.0, ku1-3.0)
         return m, v, sk, ku
 
@@ -3458,7 +3470,7 @@ class kappa4_gen(rv_continuous):
                     np.logical_and(h <= 0, k < 0)]
 
         def f0(h, k):
-            return (1.0 - h**(-k))/k
+            return (1.0 - float_power(h, -k))/k
 
         def f1(h, k):
             return np.log(h)
@@ -3985,6 +3997,9 @@ class pareto_gen(rv_continuous):
     def _ppf(self, q, b):
         return pow(1-q, -1.0/b)
 
+    def _sf(self, x, b):
+        return x**(-b)
+
     def _stats(self, b, moments='mv'):
         mu, mu2, g1, g2 = None, None, None, None
         if 'm' in moments:
@@ -4337,6 +4352,14 @@ class rdist_gen(rv_continuous):
     for ``-1 <= x <= 1``, ``c > 0``.
 
     `rdist` takes ``c`` as a shape parameter.
+
+    This distribution includes the following distribution kernels as
+    special cases::
+
+        c = 2:  uniform
+        c = 4:  Epanechnikov (parabolic)
+        c = 6:  quartic (biweight)
+        c = 8:  triweight
 
     %(after_notes)s
 
@@ -5204,6 +5227,92 @@ class halfgennorm_gen(rv_continuous):
     def _entropy(self, beta):
         return 1.0/beta - np.log(beta) + sc.gammaln(1.0/beta)
 halfgennorm = halfgennorm_gen(a=0, name='halfgennorm')
+
+
+class crystalball_gen(rv_continuous):
+    """
+    Crystalball distribution
+    
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function for `crystalball` is::
+
+                                            --
+                                            | exp(-x**2 / 2),  for x > -beta
+        crystalball.pdf(x, beta, m) =  N * |
+                                            | A * (B - x)**(-m), for x <= -beta
+                                            --
+        where:
+                                   A = (m / |beta|)**n * exp(-beta**2 / 2)
+                                   B = m / |beta| - |beta|
+                                   and N is a normalisation constant.
+
+    `crystalball` takes ``beta`` and ``m`` as shape parameters.
+    ``beta`` defines the point where the pdf changes from a power-law to a gaussian distribution
+    ``m`` is power of the power-law tail.
+
+    References
+    ----------
+    .. [1] "Crystal Ball Function",
+           https://en.wikipedia.org/wiki/Crystal_Ball_function
+
+    %(after_notes)s
+    
+    .. versionadded: 0.19.0
+
+    %(example)s
+    """
+    def _pdf(self, x, beta, m):
+        """
+        Return PDF of the crystalball function.
+        """
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        rhs = lambda x, beta, m: np.exp(-x**2 / 2)
+        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m)
+        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+
+    def _cdf(self, x, beta, m):
+        """
+        Return CDF of the crystalball function
+        """
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+        rhs = lambda x, beta, m: (m/beta) * np.exp(-beta**2 / 2.0) / (m-1) + _norm_pdf_C * (_norm_cdf(x) - _norm_cdf(-beta))
+        lhs = lambda x, beta, m: (m/beta)**m * np.exp(-beta**2 / 2.0) * (m/beta - beta - x)**(-m+1) / (m-1)
+        return N * _lazywhere(np.atleast_1d(x > -beta), (x, beta, m), f=rhs, f2=lhs)
+
+    def _munp(self, n, beta, m):
+        """
+        Returns the n-th non-central moment of the crystalball function.
+        """
+        N = 1.0 / (m/beta / (m-1) * np.exp(-beta**2 / 2.0) + _norm_pdf_C * _norm_cdf(beta))
+
+        def n_th_moment(n, beta, m):
+            """
+            Returns n-th moment. Defined only if n+1 < m
+            Function cannot broadcast due to the loop over n
+            """
+            A = (m/beta)**m * np.exp(-beta**2 / 2.0)
+            B = m/beta - beta
+            rhs = 2**((n-1)/2.0) * sc.gamma((n+1)/2) * (1.0 + (-1)**n * sc.gammainc((n+1)/2, beta**2 / 2))
+            lhs = np.zeros(rhs.shape)
+            for k in range(n + 1):
+                lhs += sc.binom(n, k) * B**(n-k) * (-1)**k / (m - k - 1) * (m/beta)**(-m + k + 1)
+            return A * lhs + rhs
+
+        return N * _lazywhere(np.atleast_1d(n + 1 < m), (n, beta, m), np.vectorize(n_th_moment, otypes=[np.float]), np.inf)
+
+    def _argcheck(self, beta, m):
+        """
+        In HEP crystal-ball is also defined for m = 1 (see plot on wikipedia)
+        But the function doesn't have a finite integral in this corner case,
+        and isn't a PDF anymore (but can still be used on a finite range).
+        Here we restrict the function to m > 1.
+        In addition we restrict beta to be positive
+        """
+        return (m > 1) & (beta > 0)
+crystalball = crystalball_gen(name='crystalball', longname="A Crystalball Function")
 
 
 def _argus_phi(chi):

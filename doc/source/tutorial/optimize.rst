@@ -43,7 +43,6 @@ in `scipy.optimize`. To demonstrate the minimization function consider the
 problem of minimizing the Rosenbrock function of :math:`N` variables:
 
 .. math::
-   :nowrap:
 
     f\left(\mathbf{x}\right)=\sum_{i=1}^{N-1}100\left(x_{i}-x_{i-1}^{2}\right)^{2}+\left(1-x_{i-1}\right)^{2}.
 
@@ -153,7 +152,6 @@ the local Hessian [NW]_.  Newton's method is based on fitting the function
 locally to a quadratic form:
 
 .. math::
-   :nowrap:
 
     f\left(\mathbf{x}\right)\approx f\left(\mathbf{x}_{0}\right)+\nabla f\left(\mathbf{x}_{0}\right)\cdot\left(\mathbf{x}-\mathbf{x}_{0}\right)+\frac{1}{2}\left(\mathbf{x}-\mathbf{x}_{0}\right)^{T}\mathbf{H}\left(\mathbf{x}_{0}\right)\left(\mathbf{x}-\mathbf{x}_{0}\right).
 
@@ -162,7 +160,6 @@ positive definite then the local minimum of this function can be found
 by setting the gradient of the quadratic form to zero, resulting in
 
 .. math::
-   :nowrap:
 
     \mathbf{x}_{\textrm{opt}}=\mathbf{x}_{0}-\mathbf{H}^{-1}\nabla f.
 
@@ -198,7 +195,6 @@ if :math:`i,j\in\left[1,N-2\right]` with :math:`i,j\in\left[0,N-1\right]` defini
 For example, the Hessian when :math:`N=5` is
 
 .. math::
-   :nowrap:
 
     \mathbf{H}=\left[\begin{array}{ccccc} 1200x_{0}^{2}-400x_{1}+2 & -400x_{0} & 0 & 0 & 0\\ -400x_{0} & 202+1200x_{1}^{2}-400x_{2} & -400x_{1} & 0 & 0\\ 0 & -400x_{1} & 202+1200x_{2}^{2}-400x_{3} & -400x_{2} & 0\\ 0 &  & -400x_{2} & 202+1200x_{3}^{2}-400x_{4} & -400x_{3}\\ 0 & 0 & 0 & -400x_{3} & 200\end{array}\right].
 
@@ -247,7 +243,6 @@ vector, then :math:`\mathbf{H}\left(\mathbf{x}\right)\mathbf{p}` has
 elements:
 
 .. math::
-   :nowrap:
 
     \mathbf{H}\left(\mathbf{x}\right)\mathbf{p}=\left[\begin{array}{c} \left(1200x_{0}^{2}-400x_{1}+2\right)p_{0}-400x_{0}p_{1}\\ \vdots\\ -400x_{i-1}p_{i-1}+\left(202+1200x_{i}^{2}-400x_{i+1}\right)p_{i}-400x_{i}p_{i+1}\\ \vdots\\ -400x_{N-2}p_{N-2}+200p_{N-1}\end{array}\right].
 
@@ -338,7 +333,7 @@ Hessian product example:
     array([1., 1., 1., 1., 1.])
 
 
-Trust-Region Nearly Exact Algorithm (``method='trust-region-exact'``)
+Trust-Region Nearly Exact Algorithm (``method='trust-exact'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Both methods ``Newton-CG`` and ``trust-ncg`` are suitable for dealing with
@@ -359,7 +354,7 @@ trust-region methods. The Hessian product option is not supported by this algori
 example using the Rosenbrock function follows:
 
 
-    >>> res = minimize(rosen, x0, method='trust-region-exact',
+    >>> res = minimize(rosen, x0, method='trust-exact',
     ...                jac=rosen_der, hess=rosen_hess,
     ...                options={'gtol': 1e-8, 'disp': True})
     Optimization terminated successfully.
@@ -400,7 +395,6 @@ form:
 As an example, let us consider the problem of maximizing the function:
 
 .. math::
-    :nowrap:
 
     f(x, y) = 2 x y + 2 x - x^2 - 2 y^2
 
@@ -475,10 +469,12 @@ SciPy is capable of solving robustified bound constrained nonlinear
 least-squares problems:
 
 .. math::
-  \begin{align}
-  &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
-  &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
-  \end{align}
+   :nowrap:
+   
+   \begin{align}
+   &\min_\mathbf{x} \frac{1}{2} \sum_{i = 1}^m \rho\left(f_i(\mathbf{x})^2\right) \\
+   &\text{subject to }\mathbf{lb} \leq \mathbf{x} \leq \mathbf{ub}
+   \end{align}
 
 Here :math:`f_i(\mathbf{x})` are smooth functions from
 :math:`\mathbb{R}^n` to :math:`\mathbb{R}`, we refer to them as residuals.
@@ -516,6 +512,8 @@ the independent variable. The unknown vector of parameters is
 recommended to compute Jacobian matrix in a closed form:
 
 .. math::
+   :nowrap:
+
     \begin{align}
     &J_{i0} = \frac{\partial f_i}{\partial x_0} = \frac{u_i^2 + u_i x_1}{u_i^2 + u_i x_2 + x_3} \\
     &J_{i1} = \frac{\partial f_i}{\partial x_1} = \frac{u_i x_0}{u_i^2 + u_i x_2 + x_3} \\
@@ -778,7 +776,6 @@ The following example considers the single-variable transcendental
 equation
 
 .. math::
-   :nowrap:
 
     x+2\cos\left(x\right)=0,
 

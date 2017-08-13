@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Created by Pearu Peterson, August 2002
 from __future__ import division, print_function, absolute_import
 

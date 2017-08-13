@@ -25,8 +25,8 @@ import textwrap
 import warnings
 
 
-if sys.version_info[:2] < (2, 6) or (3, 0) <= sys.version_info[0:2] < (3, 2):
-    raise RuntimeError("Python version 2.6, 2.7 or >= 3.2 required.")
+if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 4):
+    raise RuntimeError("Python version 2.7 or >= 3.4 required.")
 
 if sys.version_info[0] < 3:
     import __builtin__ as builtins
@@ -379,10 +379,12 @@ def setup_package():
         test_suite='nose.collector',
         setup_requires=build_requires,
         install_requires=build_requires,
+        python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*',
     )
 
     if "--force" in sys.argv:
         run_build = True
+        sys.argv.remove('--force')
     else:
         # Raise errors for unsupported commands, improve help output, etc.
         run_build = parse_setuppy_commands()

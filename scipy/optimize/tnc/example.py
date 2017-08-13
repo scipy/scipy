@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Python TNC example
 # @(#) $Jeannot: example.py,v 1.4 2004/04/02 18:51:04 js Exp $
 

@@ -130,7 +130,8 @@ class orthopoly1d(np.poly1d):
         if monic:
             evf = eval_func
             if evf:
-                eval_func = lambda x: evf(x) / kn
+                knn = kn
+                eval_func = lambda x: evf(x) / knn
             mu = mu / abs(kn)
             kn = 1.0
             

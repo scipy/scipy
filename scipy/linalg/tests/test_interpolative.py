@@ -43,7 +43,7 @@ def _debug_print(s):
 class TestInterpolativeDecomposition(object):
     def test_id(self):
         for dtype in [np.float64, np.complex128]:
-            yield self.check_id, dtype
+            self.check_id(dtype)
 
     def check_id(self, dtype):
         # Test ID routines on a Hilbert matrix.

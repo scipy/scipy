@@ -513,14 +513,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return self.__class__((data,indices,indptr),shape=(M,N))
 
-    def diagonal(self):
-        """Returns the main diagonal of the matrix
-        """
-        # TODO support k-th diagonal
+    def diagonal(self, k=0):
+        rows, cols = self.shape
+        if k <= -rows or k >= cols:
+            raise ValueError("k exceeds matrix dimensions")
         fn = getattr(_sparsetools, self.format + "_diagonal")
-        y = np.empty(min(self.shape), dtype=upcast(self.dtype))
-        fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
+        y = np.empty(min(rows + min(k, 0), cols - max(k, 0)),
+                     dtype=upcast(self.dtype))
+        fn(k, self.shape[0], self.shape[1], self.indptr, self.indices,
+           self.data, y)
         return y
+
+    diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     #####################
     # Other binary ops  #
@@ -630,7 +634,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             ci, cj = self._swap((i.ravel(), j.ravel()))
             self._zero_many(ci, cj)
 
-            x = x.tocoo()
+            x = x.tocoo(copy=True)
+            x.sum_duplicates()
             r, c = x.row, x.col
             x = np.asarray(x.data, dtype=self.dtype)
             if broadcast_row:
@@ -710,7 +715,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _set_many(self, i, j, x):
         """Sets value at each (i, j) to x
 
-        Here (i,j) index major and minor respectively.
+        Here (i,j) index major and minor respectively, and must not contain
+        duplicate entries.
         """
         i, j, M, N = self._prepare_indices(i, j)
 
@@ -835,24 +841,34 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         self.check_format(full_check=False)
 
-    def _get_single_element(self,row,col):
+    def _get_single_element(self, row, col):
         M, N = self.shape
         if (row < 0):
             row += M
         if (col < 0):
             col += N
         if not (0 <= row < M) or not (0 <= col < N):
-            raise IndexError("index out of bounds")
+            raise IndexError("index out of bounds: 0<=%d<%d, 0<=%d<%d" %
+                             (row, M, col, N))
 
-        major_index, minor_index = self._swap((row,col))
-
-        # TODO make use of sorted indices (if present)
+        major_index, minor_index = self._swap((row, col))
 
         start = self.indptr[major_index]
-        end = self.indptr[major_index+1]
-        # can use np.add(..., where) from numpy 1.7
-        return np.compress(minor_index == self.indices[start:end],
-                           self.data[start:end]).sum(dtype=self.dtype)
+        end = self.indptr[major_index + 1]
+
+        if self.has_sorted_indices:
+            # Copies may be made, if dtypes of indices are not identical
+            minor_index = self.indices.dtype.type(minor_index)
+            minor_indices = self.indices[start:end]
+            insert_pos_left = np.searchsorted(
+                minor_indices, minor_index, side='left')
+            insert_pos_right = insert_pos_left + np.searchsorted(
+                minor_indices[insert_pos_left:], minor_index, side='right')
+            return self.data[start + insert_pos_left:
+                             start + insert_pos_right].sum(dtype=self.dtype)
+        else:
+            return np.compress(minor_index == self.indices[start:end],
+                               self.data[start:end]).sum(dtype=self.dtype)
 
     def _get_submatrix(self, slice0, slice1):
         """Return a submatrix of this matrix (new matrix is created)."""

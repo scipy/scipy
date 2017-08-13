@@ -4,13 +4,14 @@ import os.path
 import tempfile
 import shutil
 import numpy as np
-import warnings
 import glob
 
-from numpy.testing import (assert_equal, dec, decorate_methods,
-                           TestCase, run_module_suite, assert_allclose,
-                           assert_array_equal, assert_raises)
-
+import pytest
+from numpy.testing import (assert_equal,
+                           assert_allclose,
+                           assert_array_equal, assert_raises,
+                           assert_)
+from scipy._lib._numpy_compat import suppress_warnings
 from scipy import misc
 from numpy.ma.testutils import assert_mask_equal
 
@@ -23,12 +24,12 @@ else:
 
 
 # Function / method decorator for skipping PIL tests on import failure
-_pilskip = dec.skipif(not _have_PIL, 'Need to import PIL for this test')
+_pilskip = pytest.mark.skipif(not _have_PIL, reason='Need to import PIL for this test')
 
 datapath = os.path.dirname(__file__)
 
-
-class TestPILUtil(TestCase):
+@_pilskip
+class TestPILUtil(object):
     def test_imresize(self):
         im = np.random.random((10, 20))
         for T in np.sctypes['float'] + [float]:
@@ -87,7 +88,7 @@ class TestPILUtil(TestCase):
         expected = [0, 255, 3]
         assert_equal(expected, actual)
         assert_mask_equal(a.mask, actual.mask)
-        self.assertTrue(isinstance(actual, np.ma.MaskedArray))
+        assert_(isinstance(actual, np.ma.MaskedArray))
 
     def test_bytescale_rounding(self):
         a = np.array([-0.5, 0.5, 1.5, 2.5, 3.5])
@@ -116,19 +117,23 @@ class TestPILUtil(TestCase):
     def test_imsave(self):
         picdir = os.path.join(datapath, "data")
         for png in glob.iglob(picdir + "/*.png"):
-            with warnings.catch_warnings(record=True):  # PIL ResourceWarning
+            with suppress_warnings() as sup:
+                # PIL causes a Py3k ResourceWarning
+                sup.filter(message="unclosed file")
                 img = misc.imread(png)
             tmpdir = tempfile.mkdtemp()
             try:
                 fn1 = os.path.join(tmpdir, 'test.png')
                 fn2 = os.path.join(tmpdir, 'testimg')
-                # PIL ResourceWarning
-                with warnings.catch_warnings(record=True):
+                with suppress_warnings() as sup:
+                    # PIL causes a Py3k ResourceWarning
+                    sup.filter(message="unclosed file")
                     misc.imsave(fn1, img)
                     misc.imsave(fn2, img, 'PNG')
 
-                # PIL ResourceWarning
-                with warnings.catch_warnings(record=True):
+                with suppress_warnings() as sup:
+                    # PIL causes a Py3k ResourceWarning
+                    sup.filter(message="unclosed file")
                     data1 = misc.imread(fn1)
                     data2 = misc.imread(fn2)
                 assert_allclose(data1, img)
@@ -138,10 +143,8 @@ class TestPILUtil(TestCase):
             finally:
                 shutil.rmtree(tmpdir)
 
-decorate_methods(TestPILUtil, _pilskip)
 
-
-def tst_fromimage(filename, irange, shape):
+def check_fromimage(filename, irange, shape):
     fp = open(filename, "rb")
     img = misc.fromimage(PIL.Image.open(fp))
     fp.close()
@@ -159,7 +162,7 @@ def test_fromimage():
              ('icon_mono.png', (0, 255), (48, 48, 4)),
              ('icon_mono_flat.png', (0, 255), (48, 48, 3))]
     for fn, irange, shape in files:
-        yield tst_fromimage, os.path.join(datapath, 'data', fn), irange, shape
+        check_fromimage(os.path.join(datapath, 'data', fn), irange, shape)
 
 
 @_pilskip
@@ -236,6 +239,3 @@ def test_imread_4bit():
     expected = 17*(np.maximum(j, i) % 16).astype(np.uint8)
     assert_equal(im, expected)
 
-
-if __name__ == "__main__":
-    run_module_suite()

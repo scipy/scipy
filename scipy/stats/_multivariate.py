@@ -12,6 +12,7 @@ from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 
 from ._discrete_distns import binom
+from . import mvn
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
@@ -268,6 +269,10 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     ``logpdf(x, mean=None, cov=1, allow_singular=False)``
         Log of the probability density function.
+    ``cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)``
+        Cumulative distribution function.
+    ``logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)``
+        Log of the cumulative distribution function.
     ``rvs(mean=None, cov=1, size=1, random_state=None)``
         Draw random samples from a multivariate normal distribution.
     ``entropy()``
@@ -468,7 +473,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         Returns
         -------
-        pdf : ndarray
+        pdf : ndarray or scalar
             Log of the probability density function evaluated at `x`
 
         Notes
@@ -494,7 +499,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
         Returns
         -------
-        pdf : ndarray
+        pdf : ndarray or scalar
             Probability density function evaluated at `x`
 
         Notes
@@ -507,6 +512,116 @@ class multivariate_normal_gen(multi_rv_generic):
         psd = _PSD(cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
         return _squeeze_output(out)
+
+    def _cdf(self, x, mean, cov, maxpts, abseps, releps):
+        """
+        Parameters
+        ----------
+        x : ndarray
+            Points at which to evaluate the cumulative distribution function.
+        mean : ndarray
+            Mean of the distribution
+        cov : array_like
+            Covariance matrix of the distribution
+        maxpts: integer
+            The maximum number of points to use for integration
+        abseps: float
+            Absolute error tolerance
+        releps: float
+            Relative error tolerance
+
+        Notes
+        -----
+        As this function does no argument checking, it should not be
+        called directly; use 'cdf' instead.
+
+        .. versionadded:: 1.0.0
+
+        """
+        lower = np.full(mean.shape, -np.inf)
+        # mvnun expects 1-d arguments, so process points sequentially
+        func1d = lambda x_slice: mvn.mvnun(lower, x_slice, mean, cov,
+                                           maxpts, abseps, releps)[0]
+        out = np.apply_along_axis(func1d, -1, x)
+        return _squeeze_output(out)
+
+    def logcdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
+               abseps=1e-5, releps=1e-5):
+        """
+        Log of the multivariate normal cumulative distribution function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_mvn_doc_default_callparams)s
+        maxpts: integer, optional
+            The maximum number of points to use for integration
+            (default `1000000*dim`)
+        abseps: float, optional
+            Absolute error tolerance (default 1e-5)
+        releps: float, optional
+            Relative error tolerance (default 1e-5)
+
+        Returns
+        -------
+        cdf : ndarray or scalar
+            Log of the cumulative distribution function evaluated at `x`
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+
+        .. versionadded:: 1.0.0
+
+        """
+        dim, mean, cov = self._process_parameters(None, mean, cov)
+        x = self._process_quantiles(x, dim)
+        # Use _PSD to check covariance matrix
+        _PSD(cov, allow_singular=allow_singular)
+        if not maxpts:
+            maxpts = 1000000 * dim
+        out = np.log(self._cdf(x, mean, cov, maxpts, abseps, releps))
+        return out
+
+    def cdf(self, x, mean=None, cov=1, allow_singular=False, maxpts=None,
+            abseps=1e-5, releps=1e-5):
+        """
+        Multivariate normal cumulative distribution function.
+
+        Parameters
+        ----------
+        x : array_like
+            Quantiles, with the last axis of `x` denoting the components.
+        %(_mvn_doc_default_callparams)s
+        maxpts: integer, optional
+            The maximum number of points to use for integration
+            (default `1000000*dim`)
+        abseps: float, optional
+            Absolute error tolerance (default 1e-5)
+        releps: float, optional
+            Relative error tolerance (default 1e-5)
+
+        Returns
+        -------
+        cdf : ndarray or scalar
+            Cumulative distribution function evaluated at `x`
+
+        Notes
+        -----
+        %(_mvn_doc_callparams_note)s
+
+        .. versionadded:: 1.0.0
+
+        """
+        dim, mean, cov = self._process_parameters(None, mean, cov)
+        x = self._process_quantiles(x, dim)
+        # Use _PSD to check covariance matrix
+        _PSD(cov, allow_singular=allow_singular)
+        if not maxpts:
+            maxpts = 1000000 * dim
+        out = self._cdf(x, mean, cov, maxpts, abseps, releps)
+        return out
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
         """
@@ -563,7 +678,8 @@ multivariate_normal = multivariate_normal_gen()
 
 
 class multivariate_normal_frozen(multi_rv_frozen):
-    def __init__(self, mean=None, cov=1, allow_singular=False, seed=None):
+    def __init__(self, mean=None, cov=1, allow_singular=False, seed=None,
+                 maxpts=None, abseps=1e-5, releps=1e-5):
         """
         Create a frozen multivariate normal distribution.
 
@@ -582,6 +698,15 @@ class multivariate_normal_frozen(multi_rv_frozen):
             If None (or np.random), the global np.random state is used.
             If integer, it is used to seed the local RandomState instance
             Default is None.
+        maxpts: integer, optional
+            The maximum number of points to use for integration of the
+            cumulative distribution function (default `1000000*dim`)
+        abseps: float, optional
+            Absolute error tolerance for the cumulative distribution function
+            (default 1e-5)
+        releps: float, optional
+            Relative error tolerance for the cumulative distribution function
+            (default 1e-5)
 
         Examples
         --------
@@ -600,6 +725,11 @@ class multivariate_normal_frozen(multi_rv_frozen):
         self.dim, self.mean, self.cov = self._dist._process_parameters(
                                                             None, mean, cov)
         self.cov_info = _PSD(self.cov, allow_singular=allow_singular)
+        if not maxpts:
+            maxpts = 1000000 * self.dim
+        self.maxpts = maxpts
+        self.abseps = abseps
+        self.releps = releps
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
@@ -609,6 +739,15 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
+
+    def logcdf(self, x):
+        return np.log(self.cdf(x))
+
+    def cdf(self, x):
+        x = self._dist._process_quantiles(x, self.dim)
+        out = self._dist._cdf(x, self.mean, self.cov, self.maxpts, self.abseps,
+                              self.releps)
+        return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.mean, self.cov, size, random_state)
@@ -629,7 +768,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
 # Set frozen generator docstrings from corresponding docstrings in
 # multivariate_normal_gen and fill in default strings in class docstrings
-for name in ['logpdf', 'pdf', 'rvs']:
+for name in ['logpdf', 'pdf', 'logcdf', 'cdf', 'rvs']:
     method = multivariate_normal_gen.__dict__[name]
     method_frozen = multivariate_normal_frozen.__dict__[name]
     method_frozen.__doc__ = doccer.docformat(method.__doc__, mvn_docdict_noparams)
@@ -1240,7 +1379,7 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        pdf : ndarray
+        pdf : ndarray or scalar
             Log of the probability density function evaluated at `x`.
 
         """
@@ -1262,7 +1401,7 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        pdf : ndarray
+        pdf : ndarray or scalar
             The probability density function evaluated at `x`.
 
         """
@@ -1282,8 +1421,8 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        mu : scalar
-            Mean of the Dirichlet distribution
+        mu : ndarray or scalar
+            Mean of the Dirichlet distribution.
 
         """
         alpha = _dirichlet_check_parameters(alpha)
@@ -1301,8 +1440,8 @@ class dirichlet_gen(multi_rv_generic):
 
         Returns
         -------
-        v : scalar
-            Variance of the Dirichlet distribution
+        v : ndarray or scalar
+            Variance of the Dirichlet distribution.
 
         """
 
@@ -1310,7 +1449,7 @@ class dirichlet_gen(multi_rv_generic):
 
         alpha0 = np.sum(alpha)
         out = (alpha * (alpha0 - alpha)) / ((alpha0 * alpha0) * (alpha0 + 1))
-        return out
+        return _squeeze_output(out)
 
     def entropy(self, alpha):
         """

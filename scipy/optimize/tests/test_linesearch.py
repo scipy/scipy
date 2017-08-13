@@ -3,10 +3,9 @@ Tests for line search routines
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
-
 from numpy.testing import assert_, assert_equal, \
-     assert_array_almost_equal, assert_array_almost_equal_nulp
+     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_warns
+from scipy._lib._numpy_compat import suppress_warnings
 import scipy.optimize.linesearch as ls
 from scipy.optimize.linesearch import LineSearchWarning
 import numpy as np
@@ -90,7 +89,7 @@ class TestLineSearch(object):
 
     # --
 
-    def __init__(self):
+    def setup_method(self):
         self.scalar_funcs = []
         self.line_funcs = []
         self.N = 20
@@ -110,7 +109,6 @@ class TestLineSearch(object):
                 self.line_funcs.append(
                     (name, bind_index(value, 0), bind_index(value, 1)))
 
-    def setUp(self):
         np.random.seed(1234)
         self.A = np.random.randn(self.N, self.N)
 
@@ -188,13 +186,16 @@ class TestLineSearch(object):
 
     def test_line_search_wolfe2(self):
         c = 0
-        smax = 100
+        smax = 512
         for name, f, fprime, x, p, old_f in self.line_iter():
             f0 = f(x)
             g0 = fprime(x)
             self.fcount = 0
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', LineSearchWarning)
+            with suppress_warnings() as sup:
+                sup.filter(LineSearchWarning,
+                           "The line search algorithm could not find a solution")
+                sup.filter(LineSearchWarning,
+                           "The line search algorithm did not converge")
                 s, fc, gc, fv, ofv, gv = ls.line_search_wolfe2(f, fprime, x, p,
                                                                g0, f0, old_f,
                                                                amax=smax)
@@ -207,6 +208,32 @@ class TestLineSearch(object):
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
         assert_(c > 3)  # check that the iterator really works...
+
+    def test_line_search_wolfe2_bounds(self):
+        # See gh-7475
+
+        # For this f and p, starting at a point on axis 0, the strong Wolfe
+        # condition 2 is met if and only if the step length s satisfies
+        # |x + s| <= c2 * |x|
+        f = lambda x: np.dot(x, x)
+        fp = lambda x: 2 * x
+        p = np.array([1, 0])
+
+        # Smallest s satisfying strong Wolfe conditions for these arguments is 30
+        x = -60 * p
+        c2 = 0.5
+
+        s, _, _, _, _, _ = ls.line_search_wolfe2(f, fp, x, p, amax=30, c2=c2)
+        assert_line_wolfe(x, p, s, f, fp)
+
+        s, _, _, _, _, _ = assert_warns(LineSearchWarning,
+                                        ls.line_search_wolfe2, f, fp, x, p,
+                                        amax=29, c2=c2)
+        assert_(s is None)
+
+        # s=30 will only be tried on the 6th iteration, so this won't converge
+        assert_warns(LineSearchWarning, ls.line_search_wolfe2, f, fp, x, p,
+                     c2=c2, maxiter=5)
 
     def test_line_search_armijo(self):
         c = 0

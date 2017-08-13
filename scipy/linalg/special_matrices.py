@@ -164,10 +164,11 @@ def toeplitz(c, r=None):
     A : (len(c), len(r)) ndarray
         The Toeplitz matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     circulant : circulant matrix
     hankel : Hankel matrix
+    solve_toeplitz : Solve a Toeplitz system.
 
     Notes
     -----
@@ -217,10 +218,11 @@ def circulant(c):
     A : (N, N) ndarray
         A circulant matrix whose first column is `c`.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     hankel : Hankel matrix
+    solve_circulant : Solve a circulant system.
 
     Notes
     -----
@@ -267,7 +269,7 @@ def hankel(c, r=None):
     A : (len(c), len(r)) ndarray
         The Hankel matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     circulant : circulant matrix
@@ -852,9 +854,9 @@ def pascal(n, kind='symmetric', exact=True):
     else:
         L_n = comb(*np.ogrid[:n, :n])
 
-    if kind is 'lower':
+    if kind == 'lower':
         p = L_n
-    elif kind is 'upper':
+    elif kind == 'upper':
         p = L_n.T
     else:
         p = np.dot(L_n, L_n.T)

@@ -190,19 +190,26 @@ Simple iterations:
 Linear Programming
 ==================
 
-Simplex Algorithm:
+General linear programming solver:
 
 .. autosummary::
    :toctree: generated/
 
-   linprog -- Linear programming using the simplex algorithm
-   linprog_verbose_callback -- Sample callback function for linprog
+   linprog -- Unified interface for minimizers of linear programming problems
 
 The `linprog` function supports the following methods:
 
 .. toctree::
 
    optimize.linprog-simplex
+   optimize.linprog-interior-point
+
+The simplex method supports callback functions, such as:
+    
+.. autosummary::
+   :toctree: generated/
+   
+   linprog_verbose_callback -- Sample callback function for linprog (simplex)
 
 Assignment problems:
 
@@ -210,7 +217,6 @@ Assignment problems:
    :toctree: generated/
 
    linear_sum_assignment -- Solves the linear-sum assignment problem
-
 
 Utilities
 =========
@@ -248,5 +254,7 @@ from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

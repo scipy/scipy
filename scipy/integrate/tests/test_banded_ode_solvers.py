@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 
 import itertools
 import numpy as np
-from numpy.testing import run_module_suite, assert_allclose
+from numpy.testing import assert_allclose
 from scipy.integrate import ode
 
 
@@ -182,7 +182,7 @@ def test_banded_ode_solvers():
              [False, True],      # with_jacobian
              [False, True]]      # banded
         for solver, meth, use_jac, with_jac, banded in itertools.product(*p):
-            yield check_real, idx, solver, meth, use_jac, with_jac, banded
+            check_real(idx, solver, meth, use_jac, with_jac, banded)
 
     # --- Complex arrays for testing the "zvode" solver ---
 
@@ -220,8 +220,5 @@ def test_banded_ode_solvers():
              [False, True],      # with_jacobian
              [False, True]]      # banded
         for meth, use_jac, with_jac, banded in itertools.product(*p):
-            yield check_complex, idx, "zvode", meth, use_jac, with_jac, banded
+            check_complex(idx, "zvode", meth, use_jac, with_jac, banded)
 
-
-if __name__ == "__main__":
-    run_module_suite()

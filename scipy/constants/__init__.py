@@ -125,8 +125,8 @@ Binary prefixes
 ``yobi``      :math:`2^{80}`
 ============  =================================================================
 
-Weight
-------
+Mass
+----
 
 =================  ============================================================
 ``gram``           :math:`10^{-3}` kg
@@ -134,6 +134,9 @@ Weight
 ``grain``          one grain in kg
 ``lb``             one pound (avoirdupous) in kg
 ``pound``          one pound (avoirdupous) in kg
+``blob``           one inch version of a slug in kg (added in 1.0.0)
+``slinch``         one inch version of a slug in kg (added in 1.0.0)
+``slug``           one slug in kg (added in 1.0.0)
 ``oz``             one ounce in kg
 ``ounce``          one ounce in kg
 ``stone``          one stone in kg
@@ -337,5 +340,7 @@ if __doc__ is not None:
 del _constant_names
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

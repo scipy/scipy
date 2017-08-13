@@ -1,5 +1,6 @@
-#!/usr/bin/env python
 """
+python generate_sparsetools.py
+
 Generate manual wrappers for C++ sparsetools code.
 
 Type codes used:
@@ -28,7 +29,7 @@ from distutils.dep_util import newer
 
 # bsr.h
 BSR_ROUTINES = """
-bsr_diagonal        v iiiiIIT*T
+bsr_diagonal        v iiiiiIIT*T
 bsr_scale_rows      v iiiiII*TT
 bsr_scale_columns   v iiiiII*TT
 bsr_sort_indices    v iiii*I*I*T
@@ -51,7 +52,7 @@ bsr_ge_bsr          v iiiiIITIIT*I*I*B
 
 # csc.h
 CSC_ROUTINES = """
-csc_diagonal        v iiIIT*T
+csc_diagonal        v iiiIIT*T
 csc_tocsr           v iiIIT*I*I*T
 csc_matmat_pass1    v iiIIII*I
 csc_matmat_pass2    v iiIITIIT*I*I*T
@@ -74,7 +75,7 @@ csc_ge_csc          v iiIITIIT*I*I*B
 CSR_ROUTINES = """
 csr_matmat_pass1    v iiIIII*I
 csr_matmat_pass2    v iiIITIIT*I*I*T
-csr_diagonal        v iiIIT*T
+csr_diagonal        v iiiIIT*T
 csr_tocsc           v iiIIT*I*I*T
 csr_tobsr           v iiiiIIT*I*I*T
 csr_todense         v iiIIT*T
@@ -192,7 +193,7 @@ def get_thunk_type_set():
 
     Returns
     -------
-    i_types : list [(j, I_typenum, None, I_type, None), ...] 
+    i_types : list [(j, I_typenum, None, I_type, None), ...]
          Pairing of index type numbers and the corresponding C++ types,
          and an unique index `j`. This is for routines that are parameterized
          only by I but not by T.

@@ -388,6 +388,7 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     --------
     >>> from numpy import array
     >>> from scipy.cluster.vq import vq, kmeans, whiten
+    >>> import matplotlib.pyplot as plt
     >>> features  = array([[ 1.9,2.3],
     ...                    [ 1.5,2.5],
     ...                    [ 0.8,0.6],
@@ -411,6 +412,21 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
            [ 1.32544402,  0.65607529],
            [ 0.40782893,  2.02786907]]), 0.5196582527686241)
 
+    >>> # Create 50 datapoints in two clusters a and b
+    >>> pts = 50
+    >>> a = np.random.multivariate_normal([0, 0], [[4, 1], [1, 4]], size=pts)
+    >>> b = np.random.multivariate_normal([30, 10],
+    ...                                   [[10, 2], [2, 1]],
+    ...                                   size=pts)
+    >>> features = np.concatenate((a, b))
+    >>> # Whiten data
+    >>> whitened = whiten(features)
+    >>> # Find 2 clusters in the data
+    >>> codebook, distortion = kmeans(whitened, 2)
+    >>> # Plot whitened data and cluster centers in red
+    >>> plt.scatter(whitened[:, 0], whitened[:, 1])
+    >>> plt.scatter(codebook[:, 0], codebook[:, 1], c='r')
+    >>> plt.show()
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
     if iter < 1:
@@ -536,7 +552,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         'matrix', or if a ndarray is given instead, it is
         interpreted as initial cluster to use instead.
     iter : int, optional
-        Number of iterations of the k-means algrithm to run. Note
+        Number of iterations of the k-means algorithm to run. Note
         that this differs in meaning from the iters parameter to
         the kmeans function.
     thresh : float, optional

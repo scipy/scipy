@@ -2100,7 +2100,7 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=array(3), minmax=(masked_array(data = 0,
+    DescribeResult(nobs=3, minmax=(masked_array(data = 0,
                  mask = False,
            fill_value = 999999)
     , masked_array(data = 2,
@@ -2487,8 +2487,8 @@ def plotting_positions(data, alpha=0.4, beta=0.4):
     n = data.count()
     plpos = np.empty(data.size, dtype=float)
     plpos[n:] = 0
-    plpos[data.argsort()[:n]] = ((np.arange(1, n+1) - alpha) /
-                                 (n + 1.0 - alpha - beta))
+    plpos[data.argsort(axis=None)[:n]] = ((np.arange(1, n+1) - alpha) /
+                                          (n + 1.0 - alpha - beta))
     return ma.array(plpos, mask=data._mask)
 
 meppf = plotting_positions

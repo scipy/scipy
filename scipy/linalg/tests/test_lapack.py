@@ -8,16 +8,17 @@ import sys
 import subprocess
 import time
 
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_array_almost_equal, assert_, assert_raises, assert_allclose, \
-    assert_almost_equal
+    assert_almost_equal, assert_array_equal
+import pytest
 
 import numpy as np
 
 from scipy.linalg import _flapack as flapack
 from scipy.linalg import inv
 from scipy.linalg import svd
-from scipy._lib._testutils import xslow
+from scipy.linalg.lapack import _compute_lwork
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -31,7 +32,7 @@ COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
-class TestFlapackSimple(TestCase):
+class TestFlapackSimple(object):
 
     def test_gebal(self):
         a = [[1,2,3],[4,5,6],[7,8,9]]
@@ -51,8 +52,8 @@ class TestFlapackSimple(TestCase):
 
             ba,lo,hi,pivscale,info = f(a1,permute=1,scale=1)
             assert_(not info,repr(info))
-            # print a1
-            # print ba,lo,hi,pivscale
+            # print(a1)
+            # print(ba, lo, hi, pivscale)
 
     def test_gehrd(self):
         a = [[-149, -50,-154],
@@ -124,7 +125,7 @@ class TestFlapackSimple(TestCase):
                     assert_equal(value, ref)
 
 
-class TestLapack(TestCase):
+class TestLapack(object):
 
     def test_flapack(self):
         if hasattr(flapack,'empty_module'):
@@ -136,7 +137,57 @@ class TestLapack(TestCase):
             # clapack module is empty
             pass
 
-class TestLeastSquaresSolvers(TestCase):
+class TestLeastSquaresSolvers(object):
+
+    def test_gels(self):
+        for dtype in REAL_DTYPES:
+            a1 = np.array([[1.0,2.0],
+                          [4.0,5.0],
+                          [7.0,8.0]], dtype=dtype)
+            b1 = np.array([16.0, 17.0, 20.0], dtype=dtype)
+            gels, gels_lwork, geqrf = get_lapack_funcs(
+                    ('gels','gels_lwork', 'geqrf'), (a1, b1))
+
+            m, n = a1.shape
+            if len(b1.shape) == 2:
+                nrhs = b1.shape[1]
+            else:
+                nrhs = 1
+
+            # Request of sizes
+            lwork = _compute_lwork(gels_lwork, m, n, nrhs)
+
+            lqr, x, info = gels(a1, b1, lwork=lwork)
+            assert_allclose(x[:-1], np.array([-14.333333333333323,
+                                              14.999999999999991], dtype=dtype),
+                            rtol=25*np.finfo(dtype).eps)
+            lqr_truth, _, _, _ = geqrf(a1)
+            assert_array_equal(lqr, lqr_truth)
+
+        for dtype in COMPLEX_DTYPES:
+            a1 = np.array([[1.0+4.0j,2.0],
+                          [4.0+0.5j,5.0-3.0j],
+                          [7.0-2.0j,8.0+0.7j]], dtype=dtype)
+            b1 = np.array([16.0, 17.0+2.0j, 20.0-4.0j], dtype=dtype)
+            gels, gels_lwork, geqrf = get_lapack_funcs(
+                    ('gels','gels_lwork', 'geqrf'), (a1, b1))
+
+            m, n = a1.shape
+            if len(b1.shape) == 2:
+                nrhs = b1.shape[1]
+            else:
+                nrhs = 1
+
+            # Request of sizes
+            lwork = _compute_lwork(gels_lwork, m, n, nrhs)
+
+            lqr, x, info = gels(a1, b1, lwork=lwork)
+            assert_allclose(x[:-1],
+                            np.array([1.161753632288328-1.901075709391912j,
+                                      1.735882340522193+1.521240901196909j],
+                            dtype=dtype), rtol=25*np.finfo(dtype).eps)
+            lqr_truth, _, _, _ = geqrf(a1)
+            assert_array_equal(lqr, lqr_truth)
 
     def test_gelsd(self):
         for dtype in REAL_DTYPES:
@@ -304,7 +355,7 @@ class TestLeastSquaresSolvers(TestCase):
                             dtype=dtype), rtol=25*np.finfo(dtype).eps)
 
 
-class TestRegression(TestCase):
+class TestRegression(object):
 
     def test_ticket_1645(self):
         # Check that RQ routines have correct lwork
@@ -325,7 +376,7 @@ class TestRegression(TestCase):
                 ungrq(rq[-2:], tau, lwork=2)
 
 
-class TestDpotr(TestCase):
+class TestDpotr(object):
     def test_gh_2691(self):
         # 'lower' argument of dportf/dpotri
         for lower in [True, False]:
@@ -343,8 +394,8 @@ class TestDpotr(TestCase):
                     assert_allclose(np.tril(dpt), np.tril(inv(a)))
                 else:
                     assert_allclose(np.triu(dpt), np.triu(inv(a)))
-                    
-class TestDlasd4(TestCase):
+
+class TestDlasd4(object):
     def test_sing_val_update(self):
 
         sigmas = np.array([4., 3., 2., 0])
@@ -425,7 +476,7 @@ def test_rot():
         assert_allclose(rot(u, v, c, s, offx=2, incy=2, n=2), [[3,3,5,5],[0,f,0,f]], atol=atol)
         assert_allclose(rot(u, v, c, s, offx=2, incx=2, offy=2, incy=2, n=1), [[3,3,5,3],[f,f,0,f]], atol=atol)
         assert_allclose(rot(u, v, c, s, incx=-2, incy=-2, n=2), [[5,3,5,3],[0,f,0,f]], atol=atol)
-    
+
         a, b = rot(u, v, c, s, overwrite_x=1, overwrite_y=1)
         assert_(a is u)
         assert_(b is v)
@@ -458,7 +509,7 @@ def test_larfg_larf():
         expected = np.zeros_like(a[:,0])
         expected[0] = a[0,0]
         expected[1] = alpha
-        
+
         # assemble householder vector
         v = np.zeros_like(a[1:,0])
         v[0] = 1.0
@@ -469,12 +520,12 @@ def test_larfg_larf():
 
         # apply transform from the right
         a[:,1:] = larf(v, tau, a[:,1:], np.zeros(a.shape[0]), side='R')
-        
+
         assert_allclose(a[:,0], expected, atol=1e-5)
         assert_allclose(a[0,:], expected, atol=1e-5)
 
 
-@xslow
+@pytest.mark.xslow
 def test_sgesdd_lwork_bug_workaround():
     # Test that SGESDD lwork is sufficiently large for LAPACK.
     #
@@ -508,6 +559,3 @@ def test_sgesdd_lwork_bug_workaround():
     assert_equal(returncode, 0,
                  "Code apparently failed: " + p.stdout.read())
 
-
-if __name__ == "__main__":
-    run_module_suite()

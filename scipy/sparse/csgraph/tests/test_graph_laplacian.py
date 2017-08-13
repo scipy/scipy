@@ -4,7 +4,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_allclose,
+from numpy.testing import (assert_allclose,
         assert_array_almost_equal, assert_raises)
 from scipy import sparse
 
@@ -68,7 +68,7 @@ def test_symmetric_graph_laplacian():
             'np.vander(np.arange(4)) + np.vander(np.arange(4)).T')
     for mat_str in symmetric_mats:
         for normed in True, False:
-            yield _check_symmetric_graph_laplacian, mat_str, normed
+            _check_symmetric_graph_laplacian(mat_str, normed)
 
 
 def _assert_allclose_sparse(a, b, **kwargs):
@@ -132,8 +132,5 @@ def test_sparse_formats():
     for fmt in ('csr', 'csc', 'coo', 'lil', 'dok', 'dia', 'bsr'):
         mat = sparse.diags([1, 1], [-1, 1], shape=(4,4), format=fmt)
         for normed in True, False:
-            yield _check_symmetric_graph_laplacian, mat, normed
+            _check_symmetric_graph_laplacian(mat, normed)
 
-
-if __name__ == '__main__':
-    run_module_suite()

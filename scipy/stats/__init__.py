@@ -37,6 +37,7 @@ Continuous distributions
    chi               -- Chi
    chi2              -- Chi-squared
    cosine            -- Cosine
+   crystalball       -- Crystalball
    dgamma            -- Double Gamma
    dweibull          -- Double Weibull
    erlang            -- Erlang
@@ -357,5 +358,6 @@ from ._multivariate import *
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

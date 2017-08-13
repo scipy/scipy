@@ -56,9 +56,13 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Parameters
     ----------
     fun : callable
-        Objective function.
+        The objective function to be minimized. Must be in the form
+        ``f(x, *args)``. The optimizing argument, ``x``, is a 1-D array
+        of points, and ``args`` is a tuple of any additional fixed parameters
+        needed to completely specify the function.
     x0 : ndarray
-        Initial guess.
+        Initial guess. ``len(x0)`` is the dimensionality of the minimization
+        problem.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (Jacobian, Hessian).
@@ -76,7 +80,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
             - 'SLSQP'       :ref:`(see here) <optimize.minimize-slsqp>`
             - 'dogleg'      :ref:`(see here) <optimize.minimize-dogleg>`
             - 'trust-ncg'   :ref:`(see here) <optimize.minimize-trustncg>`
-            - 'trust-region-exact'   :ref:`(see here) <optimize.minimize-trustexact>`
+            - 'trust-exact' :ref:`(see here) <optimize.minimize-trustexact>`
             - custom - a callable object (added in version 0.14.0),
               see below for description.
 
@@ -205,7 +209,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     and either the Hessian or a function that computes the product of
     the Hessian with a given vector. Suitable for large-scale problems.
 
-    Method :ref:`trust-region-exact <optimize.minimize-trustexact>`
+    Method :ref:`trust-exact <optimize.minimize-trustexact>`
     is a trust-region method for unconstrained minimization in which
     quadratic subproblems are solved almost exactly [13]_. This
     algorithm requires the gradient and the Hessian (which is
@@ -394,7 +398,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              RuntimeWarning)
     # - hess
     if meth not in ('newton-cg', 'dogleg', 'trust-ncg',
-                    'trust-region-exact', '_custom') and hess is not None:
+                    'trust-exact', '_custom') and hess is not None:
         warn('Method %s does not use Hessian information (hess).' % method,
              RuntimeWarning)
     # - hessp
@@ -440,7 +444,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if meth in ['powell', 'l-bfgs-b', 'tnc', 'slsqp']:
             options.setdefault('ftol', tol)
         if meth in ['bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg',
-                    'trust-ncg', 'trust-region-exact']:
+                    'trust-ncg', 'trust-exact']:
             options.setdefault('gtol', tol)
         if meth in ['cobyla', '_custom']:
             options.setdefault('tol', tol)
@@ -477,7 +481,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     elif meth == 'trust-ncg':
         return _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
                                    callback=callback, **options)
-    elif meth == 'trust-region-exact':
+    elif meth == 'trust-exact':
         return _minimize_trustregion_exact(fun, x0, args, jac, hess,
                                            callback=callback, **options)
     else:

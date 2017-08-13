@@ -162,7 +162,7 @@ Bill Sacks for fixes to netcdf i/o.
 Kolja Glogowski for a bug fix in scipy.special.
 Surhud More for enhancing scipy.optimize.curve_fit to accept covariant errors
 on data.
-Antonio Ribeiro for implementing irrnotch, iirpeak and trust-region-exact methods
+Antonio H. Ribeiro for implementing irrnotch, iirpeak and trust-exact methods
     and for improvements on BFGS implemetation.
 Ilhan Polat for bug fixes on Riccati solvers.
 Sebastiano Vigna for code in the stats package related to Kendall's tau.
@@ -172,6 +172,12 @@ Alessandro Pietro Bardelli for improvements to pdist/cdist and to related tests.
 Jonathan T. Siebert for bug fixes.
 Thomas Keck for adding new scipy.stats distributions used in HEP
 David Nicholson for bug fixes in spectral functions.
+Roman Feldbauer for improvements in scipy.sparse
+Dominic Antonacci for statistics documentation.
+David Hagen for the object-oriented ODE solver interface.
+Arno Onken for contributions to scipy.stats.
+Cathy Douglass for bug fixes in ndimage.
+Adam Cox for contributions to scipy.constants.
 
 Institutions
 ------------

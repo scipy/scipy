@@ -22,13 +22,12 @@ The following functions still need tests:
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import dec
+import pytest
 
 import scipy.special as sp
 from scipy._lib.six import with_metaclass
-from scipy._lib._testutils import knownfailure_overridable
 from scipy.special._testutils import (
-    MissingModule, check_version, DecoratorMeta, FuncData)
+    MissingModule, check_version, FuncData)
 from scipy.special._mptestutils import (
     Arg, IntArg, get_args, mpf2float, assert_mpmath_equal)
 
@@ -203,12 +202,12 @@ def _tukey_lmbda_quantile(p, lmbda):
     # For lmbda != 0
     return (p**lmbda - (1 - p)**lmbda)/lmbda
 
-    
-class TestCDFlib(with_metaclass(DecoratorMeta, object)):
-    decorators = [(dec.slow, None),
-                  (check_version, (mpmath, '0.19'))]
 
-    @knownfailure_overridable()
+@pytest.mark.slow
+@check_version(mpmath, '0.19')
+class TestCDFlib(object):
+
+    @pytest.mark.xfail(run=False)
     def test_bdtrik(self):
         _assert_inverts(
             sp.bdtrik,
@@ -240,7 +239,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
              Arg(0, 1, inclusive_a=False, inclusive_b=False)],
             rtol=1e-7, endpt_atol=[None, 1e-20, 1e-20])
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_fdtridfd(self):
         _assert_inverts(
             sp.fdtridfd,
@@ -279,7 +278,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             _student_t_cdf,
             [IntArg(1, 100), Arg(1e-10, np.inf)], rtol=1e-7)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_stdtridf(self):
         _assert_inverts(
             sp.stdtridf,
@@ -299,7 +298,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             lambda v, x: mpmath.gammainc(v/2, b=x/2, regularized=True),
             0, [ProbArg(), IntArg(1, 100)], rtol=1e-4)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_chndtridf(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
@@ -309,7 +308,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
                 Arg(0, 100, inclusive_a=False)],
             n=1000, rtol=1e-4, atol=1e-15)
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_chndtrinc(self):
         # Use a larger atol since mpmath is doing numerical integration
         _assert_inverts(
@@ -343,7 +342,7 @@ class TestCDFlib(with_metaclass(DecoratorMeta, object)):
             spfunc_first=False, rtol=1e-5,
             endpt_atol=[1e-9, None])
 
-    @knownfailure_overridable()
+    @pytest.mark.xfail(run=False)
     def test_tklmbda_pos_shape(self):
         _assert_inverts(
             sp.tklmbda,

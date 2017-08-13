@@ -35,6 +35,9 @@ Iterating over and slicing of CSC and CSR matrices is now faster by up to ~35%.
 
 The ``tocsr`` method of COO matrices is now several times faster.
 
+The ``diagonal`` method of sparse matrices now takes a parameter, indicating
+which diagonal to return.
+
 
 `scipy.sparse.linalg` improvements
 ----------------------------------
@@ -42,13 +45,25 @@ The ``tocsr`` method of COO matrices is now several times faster.
 `scipy.sparse.linalg.lsmr` now accepts an initial guess, yielding potentially
 faster convergence.
 
+The function `scipy.linalg.subspace_angles` has been added to compute the
+subspace angles between two matrices.
+
 `scipy.optimize` improvements
 -----------------------------
 
-The method `trust-region-exact` was added to the function `scipy.optimize.minimize`.
+The method `trust-exact` was added to the function `scipy.optimize.minimize`.
 This new trust-region method solves the subproblem with higher accuracy at the cost
 of more Hessian factorizations (compared to dogleg) and is able to deal with indefinite
 Hessians. It seems very competitive against the other Newton methods implemented in scipy.
+
+`scipy.stats` improvements
+--------------------------
+
+The methods `logcdf` and `cdf` were added to `scipy.stats.multivariate_normal`,
+providing the cumulative distribution function of the multivariate normal
+distribution.  The underlying code is the classic one by Alan Genz (see
+`scipy/stats/mvndst.f`).
+
 
 Deprecated features
 ===================
@@ -56,6 +71,10 @@ Deprecated features
 ``scipy.interpolate.interpolate_wrapper`` and all functions in that submodule
 are deprecated.  This was a never finished set of wrapper functions which is
 not relevant anymore.
+
+The ``fillvalue`` of ``scipy.signal.convolve2d`` will be cast directly to the
+dtypes of the input arrays in the future and checked that it is a scalar or
+an array with a single element.
 
 
 Backwards incompatible changes
@@ -69,6 +88,25 @@ used for random initialization, so using a fixed random seed will
 not necessarily produce the same results as in previous versions.
 
 `scipy.special.gammaln` does not accept complex arguments anymore.
+
+The deprecated functions `sph_jn`, `sph_yn`, `sph_jnyn`, `sph_in`,
+`sph_kn`, and `sph_inkn` have been removed. Users should instead use
+the functions `spherical_jn`, `spherical_yn`, `spherical_in`, and
+`spherical_kn`. Be aware that the new functions have different
+signatures.
+
+The cross-class properties of `scipy.signal.lti` systems have been removed.
+The following properties/setters have been removed:
+
+Name - (accessing/setting has been removed) - (setting has been removed)
+
+* StateSpace - (``num``, ``den``, ``gain``) - (``zeros``, ``poles``)
+* TransferFunction (``A``, ``B``, ``C``, ``D``, ``gain``) - (``zeros``, ``poles``)
+* ZerosPolesGain (``A``, ``B``, ``C``, ``D``, ``num``, ``den``) - ()
+
+
+The method ``var`` for the Dirichlet distribution of `scipy.stats.multivariate`
+now returns a scalar rather than an ndarray when the length of alpha is 1.
 
 
 Other changes
@@ -88,4 +126,3 @@ Issues closed
 
 Pull requests
 -------------
-

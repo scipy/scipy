@@ -586,6 +586,10 @@ def solve_toeplitz(c_or_cr, b, check_finite=True):
         The solution to the system ``T x = b``.  Shape of return matches shape
         of `b`.
 
+    See Also
+    --------
+    toeplitz : Toeplitz matrix
+
     Notes
     -----
     The solution is computed using Levinson-Durbin recursion, which is faster
@@ -729,7 +733,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     See Also
     --------
-    circulant
+    circulant : circulant matrix
 
     Notes
     -----
@@ -1045,11 +1049,11 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     -------
     x : (N,) or (N, K) ndarray
         Least-squares solution.  Return shape matches shape of `b`.
-    residues : () or (1,) or (K,) ndarray
+    residues : (0,) or () or (K,) ndarray
         Sums of residues, squared 2-norm for each column in ``b - a x``.
         If rank of matrix a is ``< N`` or ``N > M``, or ``'gelsy'`` is used,
-        this is an empty array. If b was 1-D, this is an (1,) shape array,
-        otherwise the shape is (K,).
+        this is a lenght zero array. If b was 1-D, this is a () shape array
+        (numpy scalar), otherwise the shape is (K,).
     rank : int
         Effective rank of matrix `a`.
     s : (min(M,N),) ndarray or None
@@ -1080,6 +1084,13 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         nrhs = 1
     if m != b1.shape[0]:
         raise ValueError('incompatible dimensions')
+    if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
+        x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
+        if n == 0:
+            residues = np.linalg.norm(b1, axis=0)**2
+        else:
+            residues = np.empty((0,))
+        return x, residues, 0, np.empty((0,))
 
     driver = lapack_driver
     if driver is None:
@@ -1383,7 +1394,7 @@ def pinvh(a, cond=None, rcond=None, lower=True, return_rank=False,
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     """
-    A wrapper around LAPACK's xGEBAL routine family for matrix balancing.
+    Compute a diagonal similarity transformation for row/column balancing.
 
     The balancing tries to equalize the row and column 1-norms by applying
     a similarity transformation such that the magnitude variation of the
@@ -1429,8 +1440,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
         integer powers of 2 to avoid numerical truncation errors.
     scale, perm : (n,) ndarray
         If ``separate`` keyword is set to True then instead of the array
-        ``T`` above, the scaling and the permutation vector is given
-        separately without allocating the full array ``T``.
+        ``T`` above, the scaling and the permutation vectors are given
+        separately as a tuple without allocating the full array ``T``.
 
     .. versionadded:: 0.19.0
 
@@ -1447,6 +1458,9 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     there are corner cases where balancing can actually worsen the
     conditioning. See [3]_ for such examples.
 
+    The code is a wrapper around LAPACK's xGEBAL routine family for matrix
+    balancing.
+
     Examples
     --------
     >>> from scipy import linalg
@@ -1456,13 +1470,13 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     >>> np.abs(x).sum(axis=0) / np.abs(x).sum(axis=1)
     array([ 3.66666667,  0.4995005 ,  0.91312162])
 
-    >>> np.abs(y).sum(axis=0) / np.abs(y).sum(axis=1) # 1-norms approx. equal
-    array([ 1.10625   ,  0.90547703,  1.00011878])
+    >>> np.abs(y).sum(axis=0) / np.abs(y).sum(axis=1)
+    array([ 1.2       ,  1.27041742,  0.92658316])  # may vary
 
     >>> permscale  # only powers of 2 (0.5 == 2^(-1))
-    array([[  0.5,   0. ,   0. ],
-           [  0. ,   1. ,   0. ],
-           [  0. ,   0. ,  16. ]])
+    array([[  0.5,   0. ,  0. ],  # may vary
+           [  0. ,   1. ,  0. ],
+           [  0. ,   0. ,  1. ]])
 
     References
     ----------
@@ -1519,4 +1533,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
     if separate:
         return B, (scaling, perm)
 
-    return B, np.diag(scaling)[perm, :]
+    # get the inverse permutation
+    iperm = np.empty_like(perm)
+    iperm[perm] = np.arange(n)
+
+    return B, np.diag(scaling)[iperm, :]

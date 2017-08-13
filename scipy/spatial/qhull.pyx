@@ -10,12 +10,14 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 # Distributed under the same BSD license as Scipy.
 #
 
+from __future__ import absolute_import
+
 import threading
 import numpy as np
 cimport numpy as np
 cimport cython
-cimport qhull
-cimport setlist
+from . cimport qhull
+from . cimport setlist
 from libc cimport stdio, stdlib
 from cpython cimport PyBytes_FromStringAndSize, PY_VERSION_HEX
 
@@ -1847,6 +1849,17 @@ class Delaunay(_QhullUser):
     >>> tri.find_simplex(p)
     array([ 1, -1, 1], dtype=int32)
 
+    The returned integers in the array are the indices of the simplex the 
+    corresponding point is in. If -1 is returned, the point is in no simplex.
+    Be aware that the shortcut in the following example only works corretcly 
+    for valid points as invalid points result in -1 which is itself a valid
+    index for the last simplex in the list.
+    
+    >>> p_valids = np.array([(0.1, 0.2), (0.5, 1.05)])
+    >>> tri.simplices[tri.find_simplex(p_valids)]
+    array([[3, 1, 0],                 # may vary
+           [3, 1, 0]], dtype=int32)
+    
     We can also compute barycentric coordinates in triangle 1 for
     these points:
 
