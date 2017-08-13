@@ -84,7 +84,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
 
     # Update state parameters
     state.optimality = norm(c + A.T.dot(v), np.inf)
-    state.constr_violation = norm(b, np.inf)
+    state.constr_violation = norm(b, np.inf) if len(b) > 0 else 0
     state.niter += 1
     state.x = x
     state.v = v
@@ -239,7 +239,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             state.jac = A
             # Otimality values
             state.optimality = norm(c + A.T.dot(v), np.inf)
-            state.constr_violation = norm(b, np.inf)
+            state.constr_violation = norm(b, np.inf) if len(b) > 0 else 0
         else:
             penalty = previous_penalty
             compute_hess = False
