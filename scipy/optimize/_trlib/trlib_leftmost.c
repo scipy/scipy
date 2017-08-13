@@ -25,6 +25,8 @@
 #include "trlib.h"
 #include "trlib_private.h"
 
+#include "fmax.h"
+
 trlib_int_t trlib_leftmost(
         trlib_int_t nirblk, trlib_int_t *irblk, trlib_flt_t *diag, trlib_flt_t *offdiag,
         trlib_int_t warm, trlib_flt_t leftmost_minor, trlib_int_t itmax, trlib_flt_t tol_abs,
