@@ -57,14 +57,16 @@ def configuration(parent_package='', top_path=None):
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
 
     ckdtree_headers = ['ckdtree_decl.h',
-                       'cpp_exc.h',
                        'ckdtree_methods.h',
+                       'coo_entries.h',
+                       'cpp_exc.h',
                        'cpp_utils.h',
-                       'rectangle.h',
+                       'distance_base.h',
                        'distance.h',
-                       'distance_box.h',
+                       'fmax.h',
                        'ordered_pair.h',
-                       'fmax.h']
+                       'partial_sort.h',
+                       'rectangle.h']
 
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
 
