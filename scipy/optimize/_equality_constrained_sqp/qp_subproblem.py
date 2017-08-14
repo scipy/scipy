@@ -604,7 +604,8 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
                 last_feasible_x = x + theta*alpha*p
                 # Reinforce variables are inside box constraints.
                 # This is only necessary because of roundoff errors.
-                last_feasible_x = reinforce_box_boundaries(last_feasible_x, lb, ub)
+                last_feasible_x = reinforce_box_boundaries(last_feasible_x,
+                                                           lb, ub)
                 counter = 0
         # Stop after too many infeasible (regarding box constraints) iteration.
         if counter > max_infeasible_iter:
@@ -618,7 +619,7 @@ def projected_cg(H, c, Z, Y, b, trust_radius=np.inf,
         # Project residual g+ = Z r+
         g_next = Z.dot(r_next)
         # Compute conjugate direction step d
-        rt_g_next = norm(g_next)**2  # g.T g = r.T Z g = r.T g (ref [1]_ p.1389)
+        rt_g_next = norm(g_next)**2  # g.T g = r.T g (ref [1]_ p.1389)
         beta = rt_g_next / rt_g
         p = - g_next + beta*p
         # Prepare for next iteration

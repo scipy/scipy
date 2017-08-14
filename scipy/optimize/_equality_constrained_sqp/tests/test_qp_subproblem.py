@@ -6,8 +6,7 @@ from scipy.optimize._equality_constrained_sqp import (eqp_kktfact,
                                                       box_intersections,
                                                       sphere_intersections,
                                                       box_sphere_intersections,
-                                                      modified_dogleg,
-                                                      inside_box_boundaries)
+                                                      modified_dogleg)
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
@@ -152,7 +151,7 @@ class TestBoxBoundariesIntersections(TestCase):
 
         # Inicial point on the boundary
         ta, tb, intersect = box_intersections([2, 2], [0, 1],
-                                                         [-2, -2], [2, 2])
+                                              [-2, -2], [2, 2])
         assert_array_almost_equal([ta, tb], [0, 0])
         assert_equal(intersect, True)
 

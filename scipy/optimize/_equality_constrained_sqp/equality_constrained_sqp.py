@@ -203,7 +203,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
                                trust_radius)
         # Reduce trust region step, according to reference [3]_, p.696.
         elif reduction_ratio < SUFFICIENT_REDUCTION_RATIO:
-                trust_reduction = (1-SUFFICIENT_REDUCTION_RATIO) / (1-reduction_ratio)
+                trust_reduction \
+                    = (1-SUFFICIENT_REDUCTION_RATIO)/(1-reduction_ratio)
                 new_trust_radius = trust_reduction * norm(d)
                 if new_trust_radius >= MAX_TRUST_REDUCTION * trust_radius:
                     trust_radius *= MAX_TRUST_REDUCTION

@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import scipy.sparse as spc
 from .constraints import (NonlinearConstraint,
                           LinearConstraint,
                           BoxConstraint,
@@ -23,6 +22,7 @@ TERMINATION_MESSAGES = {
     3: "`callback` function requested termination"
 }
 
+
 class sqp_printer:
     @staticmethod
     def print_header():
@@ -37,7 +37,8 @@ class sqp_printer:
     @staticmethod
     def print_problem_iter(niter, nfev, cg_niter, tr_radius,
                            penalty, opt, c_viol):
-        print("|{0:>7}|{1:>7}|{2:>7}| {3:^1.2e} | {4:^1.2e} | {5:^1.2e} | {6:^1.2e} |"
+        print("|{0:>7}|{1:>7}|{2:>7}| {3:^1.2e} | {4:^1.2e} |"
+              " {5:^1.2e} | {6:^1.2e} |"
               .format(niter, nfev, cg_niter, tr_radius, penalty,
                       opt, c_viol))
 
@@ -46,6 +47,7 @@ class sqp_printer:
         print("")
         print((7*3 + 10*4 + 8)*"-")
         print("")
+
 
 class ip_printer:
     @staticmethod
@@ -126,7 +128,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
         The algorithm will terminate when ``delta < xtol``, where ``delta``
-        is the algorithm trust-radius. Default is 1e-8. 
+        is the algorithm trust-radius. Default is 1e-8.
     gtol : float, optional
         Tolerance for termination by the norm of the lagrangian gradient.
         The algorithm will terminate when both the infinite norm of the
@@ -148,12 +150,14 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                 Initial barrier parameter. Exclusive for ``tr_interior_point``
                 method. By defaut uses 0.1.
             initial_tolerance: float
-                Initial subproblem tolerance. Exclusive for ``tr_interior_point``
-                method. By defaut uses 0.1.
+                Initial subproblem tolerance. Exclusive for
+                ``tr_interior_point`` method. By defaut uses 0.1.
             return_all : bool, optional
-                When ``true`` return the list of all vectors through the iterations.
+                When ``true`` return the list of all vectors
+                through the iterations.
             factorization_method : string, optional
-                Method used for factorizing the jacobian matrix. Should be one of:
+                Method used for factorizing the jacobian matrix.
+                Should be one of:
 
                 - 'NormalEquation': The operators
                    will be computed using the
@@ -174,10 +178,11 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                    using SVD factorization. Exclusive for
                    dense matrices.
 
-                The factorization methods 'NormalEquation' and 'AugmentedSystem'
-                should be used when ``sparse_jacobian=True`` and, on the other
-                hand, the methods 'QRFactorization' and 'SVDFactorization'
-                when ``sparse_jacobian=False``.
+                The factorization methods 'NormalEquation' and
+                'AugmentedSystem' should be used when
+                ``sparse_jacobian=True`` and, on the other
+                hand, the methods 'QRFactorization' and
+                'SVDFactorization' when ``sparse_jacobian=False``.
 
     callback : callable, optional
         Called after each iteration:
@@ -282,11 +287,11 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     -----
     **Equality constrained SQP**
 
-    Method `equality_constrained_sqp` is an implementation of 
+    Method `equality_constrained_sqp` is an implementation of
     Byrd-Omojokun Trust-Region SQP method described [3]_ and
     in [2]_, p. 549.
 
-    It solves equality constrained equality constrained 
+    It solves equality constrained equality constrained
     optimization problems of the type:
 
         minimize fun(x)
@@ -301,10 +306,10 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     and updating the solution ``x += d``. For which, ``g`` is the object
     function gradient, ``H`` is the lagrangian hessian, ``A`` is the
     constraint Jacobian matrix, and ``b`` is the constraint evaluated
-    at the current iterate. 
+    at the current iterate.
 
     It uses the projected CG method in order to solve the above
-    trust-region QP problem and is an appropriate method 
+    trust-region QP problem and is an appropriate method
     for large scale problems.
 
     **Trust-region Interior Point**
@@ -324,13 +329,13 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         subject to: constr_ineq(x) + s = 0
                     constr_eq(x)       = 0
 
-    for progressively smaller values of the barrier parameter. 
+    for progressively smaller values of the barrier parameter.
     The previously described equality constrained SQP method is used
     to solve this problem with increasing levels of accuracy as the problem
     gets closer to a solution.
 
     It uses the projected CG method in order to solve the underliying
-    trust-region QP problem and is also an appropriate method 
+    trust-region QP problem and is also an appropriate method
     for large scale problems.
 
     References
@@ -401,10 +406,10 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     for c in constraints:
         if np.any(c.feasible_constr):
             if isinstance(c, BoxConstraint):
-                x0_new =  reinforce_box_constraints(c, x0)
+                x0_new = reinforce_box_constraints(c, x0)
                 if not np.array_equal(x0_new, x0):
-                    warn('The initial point was changed in order '
-                         +'to stay inside box constraints.')
+                    warn("The initial point was changed in order "
+                         "to stay inside box constraints.")
                     x0 = x0_new
 
     # Choose appropriate method
@@ -452,7 +457,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                 state.status = 3
             elif state.optimality < gtol and state.constr_violation < gtol:
                 state.status = 1
-            elif state.trust_radius < xtol and state.barrier_parameter < barrier_tol:
+            elif (state.trust_radius < xtol
+                  and state.barrier_parameter < barrier_tol):
                 state.status = 2
             elif state.niter > max_iter:
                 state.status = 0

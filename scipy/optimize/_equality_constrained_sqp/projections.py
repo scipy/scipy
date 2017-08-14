@@ -56,9 +56,11 @@ def orthogonality(A, g):
 
 
 def normal_equation_projections(A, m, n,  orth_tol, max_refin):
-    """Return linear operators for matrix A using ``NormalEquation`` approach."""
+    """Return linear operators for matrix A using ``NormalEquation`` approach.
+    """
     # Cholesky factorization
     factor = cholesky_AAt(A)
+
     # z = x - A.T inv(A A.T) A x
     def null_space(x):
         v = factor(A.dot(x))
@@ -89,7 +91,7 @@ def normal_equation_projections(A, m, n,  orth_tol, max_refin):
 
 
 def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
-    """Return linear operators for matrix A using ``AugmentedSystem`` approach."""
+    """Return linear operators for matrix A - ``AugmentedSystem``."""
     # Form augmented system
     K = csc_matrix(bmat([[eye(n), A.T], [A, None]]))
     # LU factorization
@@ -99,8 +101,8 @@ def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
     try:
         solve = scipy.sparse.linalg.factorized(K)
     except RuntimeError:
-        warn('Singular Jacobian matrix. Using dense SVD decomposition to ' +
-             'perform the factorizations.')
+        warn("Singular Jacobian matrix. Using dense SVD decomposition to "
+             "perform the factorizations.")
         return svd_factorization_projections(A.toarray(),
                                              m, n, orth_tol,
                                              max_refin, tol)
@@ -169,13 +171,14 @@ def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
 
     return null_space, least_squares, row_space
 
-    
+
 def qr_factorization_projections(A, m, n, orth_tol, max_refin, tol):
-    """Return linear operators for matrix A using ``QRFactorization`` approach."""
+    """Return linear operators for matrix A using ``QRFactorization`` approach.
+    """
     # QRFactorization
     Q, R, P = scipy.linalg.qr(A.T, pivoting=True,  mode='economic')
 
-    if np.linalg.norm(R[-1, :],np.inf) < tol:
+    if np.linalg.norm(R[-1, :], np.inf) < tol:
         warn('Singular Jacobian matrix. Using SVD decomposition to ' +
              'perform the factorizations.')
         return svd_factorization_projections(A, m, n,
@@ -229,8 +232,10 @@ def qr_factorization_projections(A, m, n, orth_tol, max_refin, tol):
 
     return null_space, least_squares, row_space
 
+
 def svd_factorization_projections(A, m, n, orth_tol, max_refin, tol):
-    """Return linear operators for matrix A using ``SVDFactorization`` approach."""
+    """Return linear operators for matrix A using ``SVDFactorization`` approach.
+    """
     # SVD Factorization
     U, s, Vt = scipy.linalg.svd(A, full_matrices=False)
 
@@ -280,7 +285,6 @@ def svd_factorization_projections(A, m, n, orth_tol, max_refin, tol):
         return z
 
     return null_space, least_squares, row_space
-
 
 
 def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
@@ -371,8 +375,9 @@ def projections(A, method=None, orth_tol=1e-12, max_refin=3, tol=1e-15):
         if method not in ("NormalEquation", "AugmentedSystem"):
             raise ValueError("Method not allowed for sparse matrix.")
         if method == "NormalEquation" and not sksparse_available:
-            warnings.warn(("Only accepts 'NormalEquation' option when scikit-sparse " +
-                           "is available. Using 'AugmentedSystem' option instead."),
+            warnings.warn(("Only accepts 'NormalEquation' option when"
+                           " scikit-sparse is available. Using "
+                           "'AugmentedSystem' option instead."),
                           ImportWarning)
             method = 'AugmentedSystem'
     else:
