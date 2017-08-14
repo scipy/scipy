@@ -22,8 +22,8 @@ class CanonicalConstraint:
         constr_ineq(x) <= 0
         constr_eq(x) = 0
 
-    Init Parameters
-    ---------------
+    Parameters
+    ----------
     n_ineq : int
         Number of inequality constraints.
     constr_ineq : callable
@@ -82,8 +82,8 @@ class CanonicalConstraint:
 class NonlinearConstraint:
     """Nonlinear constraint
 
-    Init Parameters
-    ---------------
+    Parameters
+    ----------
     fun : callable
         The function defining the constraint.
 
@@ -224,8 +224,8 @@ class NonlinearConstraint:
 class LinearConstraint:
     """Linear constraint.
 
-    Init Parameters
-    ---------------
+    Parameters
+    ----------
     A : {ndarray, sparse matrix}, shape (m, n)
         Matrix for the linear constraint.
     kind : tuple
@@ -282,8 +282,8 @@ class LinearConstraint:
 class BoxConstraint:
     """Box constraint.
 
-    Init Parameters
-    ---------------
+    Parameters
+    ----------
     kind : tuple
         Specifies the type of contraint. Options for this
         parameters are:
