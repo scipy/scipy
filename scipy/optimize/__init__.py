@@ -237,7 +237,6 @@ Utilities
 
 from __future__ import division, print_function, absolute_import
 
-from .constraints import *
 from .optimize import *
 from ._minimize import *
 from ._root import *
@@ -254,8 +253,11 @@ from ._linprog import linprog, linprog_verbose_callback
 from ._hungarian import linear_sum_assignment
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
-from ._equality_constrained_sqp import *
-from .minimize_constrained import *
+from ._constraints import (NonlinearConstraint,
+                           LinearConstraint,
+                           BoxConstraint,
+                           CanonicalConstraint)
+from ._minimize_constrained import minimize_constrained
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

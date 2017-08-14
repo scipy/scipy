@@ -1,13 +1,13 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-from .constraints import (NonlinearConstraint,
-                          LinearConstraint,
-                          BoxConstraint,
-                          CanonicalConstraint,
-                          concatenate_canonical_constraints,
-                          empty_canonical_constraint,
-                          generate_lagrangian_hessian,
-                          reinforce_box_constraints)
+from ._constraints import (NonlinearConstraint,
+                           LinearConstraint,
+                           BoxConstraint,
+                           CanonicalConstraint,
+                           concatenate_canonical_constraints,
+                           empty_canonical_constraint,
+                           generate_lagrangian_hessian,
+                           reinforce_box_constraints)
 from ._tr_interior_point import tr_interior_point
 from ._equality_constrained_sqp import equality_constrained_sqp
 from warnings import warn
