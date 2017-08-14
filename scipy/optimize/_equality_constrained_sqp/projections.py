@@ -55,7 +55,7 @@ def orthogonality(A, g):
     return orth
 
 
-def normal_equation_projections(A, m, n,  orth_tol, max_refin):
+def normal_equation_projections(A, m, n, orth_tol, max_refin):
     """Return linear operators for matrix A using ``NormalEquation`` approach.
     """
     # Cholesky factorization
@@ -90,7 +90,7 @@ def normal_equation_projections(A, m, n,  orth_tol, max_refin):
     return null_space, least_squares, row_space
 
 
-def augmented_system_projections(A, m, n,  orth_tol, max_refin, tol):
+def augmented_system_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A - ``AugmentedSystem``."""
     # Form augmented system
     K = csc_matrix(bmat([[eye(n), A.T], [A, None]]))
@@ -176,7 +176,7 @@ def qr_factorization_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A using ``QRFactorization`` approach.
     """
     # QRFactorization
-    Q, R, P = scipy.linalg.qr(A.T, pivoting=True,  mode='economic')
+    Q, R, P = scipy.linalg.qr(A.T, pivoting=True, mode='economic')
 
     if np.linalg.norm(R[-1, :], np.inf) < tol:
         warn('Singular Jacobian matrix. Using SVD decomposition to ' +

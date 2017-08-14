@@ -38,7 +38,6 @@ class TestProjections(TestCase):
         A_dense = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
                             [0, 8, 7, 0, 1, 5, 9, 0],
                             [1, 0, 0, 0, 0, 1, 2, 3]])
-        At_dense = A_dense.T
         A = csc_matrix(A_dense)
         test_points = ([1, 2, 3, 4, 5, 6, 7, 8],
                        [1, 10, 3, 0, 1, 6, 7, 8],
@@ -58,7 +57,6 @@ class TestProjections(TestCase):
         A_dense = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
                             [0, 8, 7, 0, 1, 5, 9, 0],
                             [1, 0, 0, 0, 0, 1, 2, 3]])
-        At_dense = A_dense.T
         A = csc_matrix(A_dense)
         test_points = ([1, 2, 3],
                        [1, 10, 3],
@@ -179,7 +177,7 @@ class TestOrthogonality(TestCase):
                         [697.92794044, -4091.65114008,
                          -3327.42316335, 836.86906951,
                          99434.98929065, -1285.37653682,
-                         -4109.21503806,   2935.29289083])
+                         -4109.21503806, 2935.29289083])
         test_expected_orth = (0, 0)
 
         for i in range(len(test_vectors)):
@@ -199,7 +197,7 @@ class TestOrthogonality(TestCase):
                         [697.92794044, -4091.65114008,
                          -3327.42316335, 836.86906951,
                          99434.98929065, -1285.37653682,
-                         -4109.21503806,   2935.29289083])
+                         -4109.21503806, 2935.29289083])
         test_expected_orth = (0, 0)
 
         for i in range(len(test_vectors)):

@@ -478,7 +478,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                              "support inequality constraints.")
         result = equality_constrained_sqp(
             fun, grad, lagr_hess,
-            constr.constr_eq,  constr.jac_eq,
+            constr.constr_eq, constr.jac_eq,
             x0, fun0, grad0, constr_eq0, jac_eq0,
             stop_criteria, state, **options)
     elif method == 'tr_interior_point':
