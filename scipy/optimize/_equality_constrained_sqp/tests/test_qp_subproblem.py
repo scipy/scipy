@@ -1,12 +1,14 @@
 import numpy as np
 from scipy.sparse import csc_matrix
-from scipy.optimize._equality_constrained_sqp import (eqp_kktfact,
-                                                      projections,
-                                                      projected_cg,
-                                                      box_intersections,
-                                                      sphere_intersections,
-                                                      box_sphere_intersections,
-                                                      modified_dogleg)
+from scipy.optimize._equality_constrained_sqp.qp_subproblem \
+    import (eqp_kktfact,
+            projected_cg,
+            box_intersections,
+            sphere_intersections,
+            box_sphere_intersections,
+            modified_dogleg)
+from scipy.optimize._equality_constrained_sqp.projections \
+    import projections
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,

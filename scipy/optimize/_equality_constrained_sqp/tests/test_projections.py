@@ -1,12 +1,22 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.sparse import csc_matrix
-from scipy.optimize._equality_constrained_sqp import projections, orthogonality
+from scipy.optimize._equality_constrained_sqp.projections \
+    import projections, orthogonality
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
+try:
+    from sksparse.cholmod import cholesky_AAt
+    sksparse_available = True
+    available_sparse_methods = ("NormalEquation", "AugmentedSystem")
+except ImportError:
+    import warnings
+    sksparse_available = False
+    available_sparse_methods = ("AugmentedSystem",)
+available_dense_methods = ('QRFactorization', 'SVDFactorization')
 
 
 class TestProjections(TestCase):
@@ -21,7 +31,7 @@ class TestProjections(TestCase):
                        [1, 10, 3, 0, 1, 6, 7, 8],
                        [1.12, 10, 0, 0, 100000, 6, 0.7, 8])
 
-        for method in ("NormalEquation", "AugmentedSystem"):
+        for method in available_sparse_methods:
             Z, LS, _ = projections(A, method)
             for z in test_points:
                 # Test if x is in the null_space
@@ -44,7 +54,7 @@ class TestProjections(TestCase):
                        [1.12, 10, 0, 0, 100000, 6, 0.7, 8],
                        [1, 0, 0, 0, 0, 1, 2, 3+1e-10])
 
-        for method in ("NormalEquation", "AugmentedSystem"):
+        for method in available_sparse_methods:
             Z, LS, _ = projections(A, method, orth_tol=1e-18, max_refin=100)
             for z in test_points:
                 # Test if x is in the null_space
@@ -62,7 +72,7 @@ class TestProjections(TestCase):
                        [1, 10, 3],
                        [1.12, 10, 0])
 
-        for method in ('NormalEquation', 'AugmentedSystem'):
+        for method in available_sparse_methods:
             _, _, Y = projections(A, method)
             for z in test_points:
                 # Test if x is solution of A x = z
@@ -82,7 +92,7 @@ class TestProjections(TestCase):
                        [1, 10, 3, 0, 1, 6, 7, 8],
                        [1.12, 10, 0, 0, 100000, 6, 0.7, 8])
 
-        for method in ("QRFactorization", 'SVDFactorization'):
+        for method in available_dense_methods:
             Z, LS, _ = projections(A, method)
             for z in test_points:
                 # Test if x is in the null_space
@@ -135,7 +145,7 @@ class TestProjections(TestCase):
                        [1, 10, 3, 0, 1, 6, 7, 8],
                        [1, 0, 0, 0, 0, 1, 2, 3+1e-10])
 
-        for method in ("QRFactorization", 'SVDFactorization'):
+        for method in available_dense_methods:
             Z, LS, _ = projections(A, method, orth_tol=1e-18, max_refin=10)
             for z in test_points:
                 # Test if x is in the null_space
@@ -152,7 +162,7 @@ class TestProjections(TestCase):
                        [1, 10, 3],
                        [1.12, 10, 0])
 
-        for method in ('QRFactorization', 'SVDFactorization'):
+        for method in available_dense_methods:
             _, _, Y = projections(A, method)
             for z in test_points:
                 # Test if x is solution of A x = z

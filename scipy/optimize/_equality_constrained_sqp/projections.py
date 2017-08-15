@@ -55,7 +55,7 @@ def orthogonality(A, g):
     return orth
 
 
-def normal_equation_projections(A, m, n, orth_tol, max_refin):
+def normal_equation_projections(A, m, n, orth_tol, max_refin, tol):
     """Return linear operators for matrix A using ``NormalEquation`` approach.
     """
     # Cholesky factorization

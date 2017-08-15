@@ -1,13 +1,13 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.sparse as spc
-from scipy.optimize import (parse_constraint,
-                            BoxConstraint,
-                            LinearConstraint,
-                            NonlinearConstraint,
-                            CanonicalConstraint,
-                            concatenate_canonical_constraints,
-                            reinforce_box_constraints)
+from scipy.optimize._constraints import (parse_constraint,
+                                         BoxConstraint,
+                                         LinearConstraint,
+                                         NonlinearConstraint,
+                                         CanonicalConstraint,
+                                         concatenate_canonical_constraints,
+                                         reinforce_box_constraints)
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
