@@ -367,7 +367,7 @@ def parse_constraint(kind):
             - ("less", ub): for a constraint of the type:
                 f[i] <= ub[i]
             - ("equals", c): for a constraint of the type:
-                f[i] == c[i] 
+                f[i] == c[i]
 
         where ``lb``,  ``ub`` and ``c`` are (m,) ndarrays.
     Returns
@@ -452,14 +452,15 @@ def reinforce_box_constraints(constr, x,
         lb = np.asarray(kind[1], dtype=float)
         ub = np.asarray(kind[2], dtype=float)
     lower_bound = np.minimum(lb[feasible_constr] + absolute_tolerance,
-                         lb[feasible_constr] +
-                         relative_tolerance * (ub[feasible_constr]-lb[feasible_constr]))
+                             lb[feasible_constr] +
+                             relative_tolerance * (ub[feasible_constr]-lb[feasible_constr]))
     upper_bound = np.maximum(ub[feasible_constr] - absolute_tolerance,
-                         ub[feasible_constr] -
-                         relative_tolerance * (ub[feasible_constr]-lb[feasible_constr]))
+                             ub[feasible_constr] -
+                             relative_tolerance * (ub[feasible_constr]-lb[feasible_constr]))
     x[feasible_constr] = np.maximum(x[feasible_constr], lower_bound)
     x[feasible_constr] = np.minimum(x[feasible_constr], upper_bound)
     return x
+
 
 def empty_canonical_constraint():
     """Return empty CanonicalConstraint."""
@@ -478,8 +479,10 @@ def empty_canonical_constraint():
     def jac_ineq(x):
         return spc.csc_matrix(np.empty((0, len(x))))
 
+    feasible_constr = np.empty(0, dtype=bool)
     return CanonicalConstraint(n_ineq, constr_ineq, jac_ineq,
-                               n_eq, constr_eq, jac_eq, None)
+                               n_eq, constr_eq, jac_eq, None,
+                               feasible_constr)
 
 
 def generate_lagrangian_hessian(constraint, hess):
