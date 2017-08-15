@@ -296,7 +296,7 @@ class Metropolis(object):
         self.random_state = check_random_state(random_state)
 
     def accept_reject(self, energy_new, energy_old):
-        w = min(1.0, np.exp(-(energy_new - energy_old) * self.beta))
+        w = np.exp(min(0, -(energy_new - energy_old) * self.beta))
         rand = self.random_state.rand()
         return w >= rand
 

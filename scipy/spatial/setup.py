@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from __future__ import division, print_function, absolute_import
 
 from os.path import join, dirname
@@ -40,7 +38,8 @@ def configuration(parent_package='', top_path=None):
                 f.write('#define {0} {1}\n'.format(name, value))
 
     config.add_extension('qhull',
-                         sources=['qhull.c'] + qhull_src + [get_qhull_misc_config],
+                         sources=['qhull.c'] + qhull_src +
+                         [get_qhull_misc_config],
                          **cfg)
 
     # cKDTree
@@ -52,18 +51,22 @@ def configuration(parent_package='', top_path=None):
                    'count_neighbors.cxx',
                    'query_ball_point.cxx',
                    'query_ball_tree.cxx',
-                   'sparse_distances.cxx']
+                   'sparse_distances.cxx',
+                   'fmax.cxx']
 
     ckdtree_src = [join('ckdtree', 'src', x) for x in ckdtree_src]
 
     ckdtree_headers = ['ckdtree_decl.h',
-                       'cpp_exc.h',
                        'ckdtree_methods.h',
+                       'coo_entries.h',
+                       'cpp_exc.h',
                        'cpp_utils.h',
-                       'rectangle.h',
+                       'distance_base.h',
                        'distance.h',
-                       'distance_box.h',
-                       'ordered_pair.h']
+                       'fmax.h',
+                       'ordered_pair.h',
+                       'partial_sort.h',
+                       'rectangle.h']
 
     ckdtree_headers = [join('ckdtree', 'src', x) for x in ckdtree_headers]
 
@@ -71,13 +74,13 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('ckdtree',
                          sources=['ckdtree.cxx'] + ckdtree_src,
                          depends=ckdtree_dep,
-                         include_dirs=inc_dirs + [join('ckdtree','src')])
+                         include_dirs=inc_dirs + [join('ckdtree', 'src')])
     # _distance_wrap
     config.add_extension('_distance_wrap',
-        sources=[join('src', 'distance_wrap.c')],
-        depends=[join('src', 'distance_impl.h')],
-        include_dirs=[get_numpy_include_dirs()],
-        extra_info=get_misc_info("npymath"))
+                         sources=[join('src', 'distance_wrap.c')],
+                         depends=[join('src', 'distance_impl.h')],
+                         include_dirs=[get_numpy_include_dirs()],
+                         extra_info=get_misc_info("npymath"))
 
     config.add_extension('_voronoi',
                          sources=['_voronoi.c'])

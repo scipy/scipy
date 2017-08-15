@@ -128,17 +128,36 @@ class spmatrix(object):
         raise NotImplementedError("Reshaping not implemented for %s." %
                                   self.__class__.__name__)
 
-    def astype(self, t):
+    def astype(self, dtype, casting='unsafe', copy=True):
         """Cast the matrix elements to a specified type.
-
-        The data will be copied.
 
         Parameters
         ----------
-        t : string or numpy dtype
+        dtype : string or numpy dtype
             Typecode or data-type to which to cast the data.
+        casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+            Controls what kind of data casting may occur.
+            Defaults to 'unsafe' for backwards compatibility.
+            'no' means the data types should not be cast at all.
+            'equiv' means only byte-order changes are allowed.
+            'safe' means only casts which can preserve values are allowed.
+            'same_kind' means only safe casts or casts within a kind,
+            like float64 to float32, are allowed.
+            'unsafe' means any data conversions may be done.
+        copy : bool, optional
+            If `copy` is `False`, the result might share some memory with this
+            matrix. If `copy` is `True`, it is guaranteed that the result and
+            this matrix do not share any memory.
         """
-        return self.tocsr().astype(t).asformat(self.format)
+
+        dtype = np.dtype(dtype)
+        if self.dtype != dtype:
+            return self.tocsr().astype(
+                dtype, casting=casting, copy=copy).asformat(self.format)
+        elif copy:
+            return self.copy()
+        else:
+            return self
 
     def asfptype(self):
         """Upcast matrix to a floating point format (if necessary)"""
@@ -1019,11 +1038,31 @@ class spmatrix(object):
             return (inter_self * (1.0 / self.shape[1])).sum(
                 axis=1, dtype=res_dtype, out=out)
 
-    def diagonal(self):
-        """Returns the main diagonal of the matrix
+    def diagonal(self, k=0):
+        """Returns the k-th diagonal of the matrix.
+
+        Parameters
+        ----------
+        k : int, optional
+            Which diagonal to set, corresponding to elements a[i, i+k].
+            Default: 0 (the main diagonal).
+
+            .. versionadded: 1.0
+
+        See also
+        --------
+        numpy.diagonal : Equivalent numpy function.
+
+        Examples
+        --------
+        >>> from scipy.sparse import csr_matrix
+        >>> A = csr_matrix([[1, 2, 0], [0, 0, 3], [4, 0, 5]])
+        >>> A.diagonal()
+        array([1, 0, 5])
+        >>> A.diagonal(k=1)
+        array([2, 3])
         """
-        # TODO support k != 0
-        return self.tocsr().diagonal()
+        return self.tocsr().diagonal(k=k)
 
     def setdiag(self, values, k=0):
         """

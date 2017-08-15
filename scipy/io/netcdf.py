@@ -186,10 +186,10 @@ class netcdf_file(object):
     >>> from scipy.io import netcdf
     >>> f = netcdf.netcdf_file('simple.nc', 'r')
     >>> print(f.history)
-    Created for a test
+    b'Created for a test'
     >>> time = f.variables['time']
     >>> print(time.units)
-    days since 2008-01-01
+    b'days since 2008-01-01'
     >>> print(time.shape)
     (10,)
     >>> print(time[-1])
@@ -215,7 +215,7 @@ class netcdf_file(object):
     >>> from scipy.io import netcdf
     >>> with netcdf.netcdf_file('simple.nc', 'r') as f:
     ...     print(f.history)
-    Created for a test
+    b'Created for a test'
 
     """
     def __init__(self, filename, mode='r', mmap=None, version=1,

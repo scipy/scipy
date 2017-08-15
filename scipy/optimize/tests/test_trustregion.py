@@ -10,8 +10,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
                             rosen_hess_prod)
-from numpy.testing import (TestCase, assert_, assert_equal, assert_allclose,
-                           run_module_suite)
+from numpy.testing import assert_, assert_equal, assert_allclose
 
 
 class Accumulator:
@@ -28,9 +27,9 @@ class Accumulator:
             self.accum += x
 
 
-class TestTrustRegionSolvers(TestCase):
+class TestTrustRegionSolvers(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.x_opt = [1.0, 1.0]
         self.easy_guess = [2.0, 2.0]
         self.hard_guess = [-1.2, 1.0]
@@ -87,6 +86,3 @@ class TestTrustRegionSolvers(TestCase):
                          tol=1e-8, method='trust-ncg')
             assert_allclose(self.x_opt, r['x'])
 
-
-if __name__ == '__main__':
-    run_module_suite()

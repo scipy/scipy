@@ -26,11 +26,11 @@ cimport cython
 from libc.math cimport sqrt, exp, floor, fabs, log, sin, M_PI as pi
 
 from numpy cimport npy_cdouble
-from _complexstuff cimport (
+from ._complexstuff cimport (
     nan, inf, number_t, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
 
-cimport sf_error
+from . cimport sf_error
 
 cdef extern from "cephes.h":
     double Gamma(double x) nogil

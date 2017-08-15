@@ -1023,11 +1023,10 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 
     PyObject *in1=NULL, *in2=NULL, *fill_value=NULL;
     int mode=2, boundary=0, typenum, flag, flip=1, ret;
-    intp *aout_dimens=NULL, *dims=NULL;
-    char zeros[32];  /* Zeros */
+    intp *aout_dimens=NULL;
     int i;
     PyArrayObject *ain1=NULL, *ain2=NULL, *aout=NULL;
-    PyArrayObject *afill=NULL, *newfill=NULL;
+    PyArrayObject *afill=NULL;
 
     if (!PyArg_ParseTuple(args, "OO|iiiO", &in1, &in2, &flip, &mode, &boundary,
                           &fill_value)) {
@@ -1043,21 +1042,45 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 
     if ((boundary != PAD) && (boundary != REFLECT) && (boundary != CIRCULAR))
       PYERR("Incorrect boundary value.");
-    if (boundary == PAD) {
-	if (fill_value == NULL) {
-	    newfill = (PyArrayObject *)PyArray_SimpleNewFromData(0, dims, typenum,
-                                                                 zeros);
-	}
-	else {
-	    afill = (PyArrayObject *)PyArray_FromObject(fill_value, NPY_CDOUBLE, 0, 0);
-	    if (afill == NULL) goto fail;
-	    newfill = (PyArrayObject *)PyArray_Cast(afill, typenum);
-	}
-	if (newfill == NULL) goto fail;
+
+    if ((boundary == PAD) & (fill_value != NULL)) {
+        afill = (PyArrayObject *)PyArray_FromObject(fill_value, typenum, 0, 0);
+        if (afill == NULL) {
+            /* For backwards compatibility try go via complex */
+            PyArrayObject *tmp;
+            PyErr_Clear();
+            tmp = (PyArrayObject *)PyArray_FromObject(fill_value,
+                                                      NPY_CDOUBLE, 0, 0);
+            if (tmp == NULL) goto fail;
+            afill = (PyArrayObject *)PyArray_Cast(tmp, typenum);
+            Py_DECREF(tmp);
+            if (afill == NULL) goto fail;
+            /* Deprecated 2017-07, scipy version 1.0.0 */
+            if (DEPRECATE("could not cast `fillvalue` directly to the output "
+                          "type (it was first converted to complex). "
+                          "This is deprecated and will raise an error in the "
+                          "future.") < 0) {
+                goto fail;
+            }
+        }
+        if (PyArray_SIZE(afill) != 1) {
+            if (PyArray_SIZE(afill) == 0) {
+                PyErr_SetString(PyExc_ValueError,
+                                "`fillvalue` cannot be an empty array.");
+                goto fail;
+            }
+            /* Deprecated 2017-07, scipy version 1.0.0 */
+            if (DEPRECATE("`fillvalue` must be scalar or an array with "
+                          "one element. "
+                          "This will raise an error in the future.") < 0) {
+                goto fail;
+            }
+        }
     }
     else {
-	newfill = (PyArrayObject *)PyArray_SimpleNewFromData(0, dims, typenum, zeros);
-	if (newfill == NULL) goto fail;
+        /* Create a zero filled array */
+        afill = (PyArrayObject *)PyArray_ZEROS(0, NULL, typenum, 0);
+        if (afill == NULL) goto fail;
     }
 
     aout_dimens = malloc(PyArray_NDIM(ain1)*sizeof(intp));
@@ -1105,7 +1128,7 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
 		             PyArray_DIMS(ain2),      /* Size of kernel Nwin[2] */
 			     PyArray_DIMS(ain1),      /* Size of image Ns[0] x Ns[1] */
 		             flag,                    /* convolution parameters */
-		             PyArray_DATA(newfill));  /* fill value */
+		             PyArray_DATA(afill));    /* fill value */
 
 
     switch (ret) {
@@ -1114,7 +1137,6 @@ static PyObject *sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *args
       Py_DECREF(ain1);
       Py_DECREF(ain2);
       Py_XDECREF(afill);
-      Py_XDECREF(newfill);
       return (PyObject *)aout;
       break;
     case -5:
@@ -1141,7 +1163,6 @@ fail:
     Py_XDECREF(ain2);
     Py_XDECREF(aout);
     Py_XDECREF(afill);
-    Py_XDECREF(newfill);
     return NULL;
 }
 

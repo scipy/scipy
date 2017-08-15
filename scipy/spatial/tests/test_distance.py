@@ -40,7 +40,7 @@ from scipy._lib.six import xrange, u
 
 import numpy as np
 from numpy.linalg import norm
-from numpy.testing import (verbose, TestCase, run_module_suite, assert_,
+from numpy.testing import (verbose, assert_,
                            assert_raises, assert_array_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
 
@@ -117,9 +117,9 @@ def load_testing_files():
 load_testing_files()
 
 
-class TestCdist(TestCase):
+class TestCdist(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
@@ -319,9 +319,9 @@ class TestCdist(TestCase):
                         _assert_within_tol(y1, y2, eps, verbose > 2)
 
 
-class TestPdist(TestCase):
+class TestPdist(object):
 
-    def setUp(self):
+    def setup_method(self):
         self.rnd_eo_names = ['random-float32-data', 'random-int-data',
                              'random-uint-data', 'random-double-data',
                              'random-bool-data']
@@ -1054,9 +1054,9 @@ def _assert_within_tol(a, b, atol, verbose_=False):
     assert_allclose(a, b, rtol=0, atol=atol)
 
 
-class TestSomeDistanceFunctions(TestCase):
+class TestSomeDistanceFunctions(object):
 
-    def setUp(self):
+    def setup_method(self):
         # 1D arrays
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([1.0, 1.0, 5.0])
@@ -1124,11 +1124,11 @@ class TestSquareForm(object):
 
     def test_squareform_matrix(self):
         for dtype in self.checked_dtypes:
-            yield self.check_squareform_matrix, dtype
+            self.check_squareform_matrix(dtype)
 
     def test_squareform_vector(self):
         for dtype in self.checked_dtypes:
-            yield self.check_squareform_vector, dtype
+            self.check_squareform_vector(dtype)
 
     def check_squareform_matrix(self, dtype):
         A = np.zeros((0,0), dtype=dtype)
@@ -1162,7 +1162,7 @@ class TestSquareForm(object):
 
     def test_squareform_multi_matrix(self):
         for n in xrange(2, 5):
-            yield self.check_squareform_multi_matrix, n
+            self.check_squareform_multi_matrix(n)
 
     def check_squareform_multi_matrix(self, n):
         X = np.random.rand(n, 4)
@@ -1186,7 +1186,7 @@ class TestSquareForm(object):
                     assert_equal(A[i, j], 0)
 
 
-class TestNumObsY(TestCase):
+class TestNumObsY(object):
 
     def test_num_obs_y_multi_matrix(self):
         for n in xrange(2, 10):
@@ -1238,7 +1238,7 @@ class TestNumObsY(TestCase):
         return np.random.rand((n * (n - 1)) // 2)
 
 
-class TestNumObsDM(TestCase):
+class TestNumObsDM(object):
 
     def test_num_obs_dm_multi_matrix(self):
         for n in xrange(1, 10):
@@ -1277,7 +1277,7 @@ def is_valid_dm_throw(D):
     return is_valid_dm(D, throw=True)
 
 
-class TestIsValidDM(TestCase):
+class TestIsValidDM(object):
 
     def test_is_valid_dm_improper_shape_1D_E(self):
         D = np.zeros((5,), dtype=np.double)
@@ -1350,7 +1350,7 @@ def is_valid_y_throw(y):
     return is_valid_y(y, throw=True)
 
 
-class TestIsValidY(TestCase):
+class TestIsValidY(object):
     # If test case name ends on "_E" then an exception is expected for the
     # given input, if it ends in "_F" then False is expected for the is_valid_y
     # check.  Otherwise the input is expected to be valid.
@@ -1594,6 +1594,3 @@ def test__validate_vector():
     x = [[1, 2], [3, 4]]
     assert_raises(ValueError, _validate_vector, x)
 
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -473,7 +473,7 @@ def imresize(arr, size, interp='bilinear', mode=None):
     size : int, float or tuple
         * int   - Percentage of current size.
         * float - Fraction of current size.
-        * tuple - Size of the output image.
+        * tuple - Size of the output image (height, width).
 
     interp : str, optional
         Interpolation to use for re-sizing ('nearest', 'lanczos', 'bilinear', 'bicubic'
@@ -495,10 +495,10 @@ def imresize(arr, size, interp='bilinear', mode=None):
     """
     im = toimage(arr, mode=mode)
     ts = type(size)
-    if issubdtype(ts, int):
+    if issubdtype(ts, numpy.signedinteger):
         percent = size / 100.0
         size = tuple((array(im.size)*percent).astype(int))
-    elif issubdtype(type(size), float):
+    elif issubdtype(type(size), numpy.floating):
         size = tuple((array(im.size)*size).astype(int))
     else:
         size = (size[1], size[0])

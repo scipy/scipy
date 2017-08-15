@@ -15,14 +15,14 @@
 #     https://github.com/JuliaLang/julia/blob/master/base/special/gamma.jl
 #
 cimport cython
-cimport sf_error
+from . cimport sf_error
 from libc.math cimport M_PI, floor, fabs
 
-from _complexstuff cimport (
+from ._complexstuff cimport (
     nan, zisnan, zabs, zlog, zlog1, zexp, zdiv, zpack 
 )
-from _trig cimport sinpi
-from _evalpoly cimport cevalpoly
+from ._trig cimport sinpi
+from ._evalpoly cimport cevalpoly
 
 cdef extern from "numpy/npy_math.h":
     double npy_copysign(double x, double y) nogil

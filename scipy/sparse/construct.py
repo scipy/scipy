@@ -210,7 +210,7 @@ def identity(n, dtype='d', format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> identity(3, dtype='int8', format='dia')
-    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -244,7 +244,7 @@ def eye(m, n=None, k=0, dtype=float, format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> sparse.eye(3, dtype=np.int8)
-    <3x3 sparse matrix of type '<type 'numpy.int8'>'
+    <3x3 sparse matrix of type '<class 'numpy.int8'>'
         with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
@@ -809,7 +809,7 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     >>> from scipy.sparse import rand
     >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
     >>> matrix
-    <3x4 sparse matrix of type '<type 'numpy.float64'>'
+    <3x4 sparse matrix of type '<class 'numpy.float64'>'
        with 3 stored elements in Compressed Sparse Row format>
     >>> matrix.todense()
     matrix([[ 0.        ,  0.59685016,  0.779691  ,  0.        ],

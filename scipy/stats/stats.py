@@ -1010,10 +1010,11 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     """
     Compute the skewness of a data set.
 
-    For normally distributed data, the skewness should be about 0. A skewness
-    value > 0 means that there is more weight in the left tail of the
-    distribution. The function `skewtest` can be used to determine if the
-    skewness value is close enough to 0, statistically speaking.
+    For normally distributed data, the skewness should be about 0. For
+    unimodal continuous distributions, a skewness value > 0 means that
+    there is more weight in the right tail of the distribution. The
+    function `skewtest` can be used to determine if the skewness value
+    is close enough to 0, statistically speaking.
 
     Parameters
     ----------

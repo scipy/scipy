@@ -37,9 +37,9 @@ def spherical_jn(n, z, derivative=False):
     The derivative is computed using the relations [3]_,
 
     .. math::
-        j_n' = j_{n-1} - \frac{n + 1}{2} j_n.
+        j_n'(z) = j_{n-1}(z) - \frac{n + 1}{z} j_n(z).
 
-        j_0' = -j_1
+        j_0'(z) = -j_1(z)
 
 
     .. versionadded:: 0.18.0

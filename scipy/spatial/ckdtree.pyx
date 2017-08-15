@@ -6,6 +6,8 @@
 
 # distutils: language = c++
 
+from __future__ import absolute_import
+
 import numpy as np
 import scipy.sparse
 
@@ -697,29 +699,49 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
         Examples
         --------
-        
-        >>> tree = cKDTree(data)
+
+        >>> import numpy as np
+        >>> from scipy.spatial import cKDTree
+        >>> x, y = np.mgrid[0:5, 2:8]
+        >>> tree = cKDTree(np.c_[x.ravel(), y.ravel()])
 
         To query the nearest neighbours and return squeezed result, use
 
-        >>> dd, ii = tree.query(x, k=1)
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=1)
+        >>> print(dd, ii)
+        [ 2.          0.14142136] [ 0 13]
 
         To query the nearest neighbours and return unsqueezed result, use
 
-        >>> dd, ii = tree.query(x, k=[1])
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1])
+        >>> print(dd, ii)
+        [[ 2.        ]
+         [ 0.14142136]] [[ 0]
+         [13]]
 
         To query the second nearest neighbours and return unsqueezed result, use
 
-        >>> dd, ii = tree.query(x, k=[2])
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[2])
+        >>> print(dd, ii)
+        [[ 2.23606798]
+         [ 0.90553851]] [[ 6]
+         [12]]
 
         To query the first and second nearest neighbours, use
 
-        >>> dd, ii = tree.query(x, k=2)
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=2)
+        >>> print(dd, ii)
+        [[ 2.          2.23606798]
+         [ 0.14142136  0.90553851]] [[ 0  6]
+         [13 12]]
 
         or, be more specific
 
-        >>> dd, ii = tree.query(x, k=[1, 2])
-
+        >>> dd, ii = tree.query([[0, 0], [2.1, 2.9]], k=[1, 2])
+        >>> print(dd, ii)
+        [[ 2.          2.23606798]
+         [ 0.14142136  0.90553851]] [[ 0  6]
+         [13 12]]
 
         """
         
@@ -874,7 +896,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         --------
         >>> from scipy import spatial
         >>> x, y = np.mgrid[0:4, 0:4]
-        >>> points = zip(x.ravel(), y.ravel())
+        >>> points = np.c_[x.ravel(), y.ravel()]
         >>> tree = spatial.cKDTree(points)
         >>> tree.query_ball_point([2, 0], 1)
         [4, 8, 9, 12]

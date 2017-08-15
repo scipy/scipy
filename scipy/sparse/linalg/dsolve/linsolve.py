@@ -35,6 +35,10 @@ def use_solver(**kwargs):
     useUmfpack : bool, optional
         Use UMFPACK over SuperLU. Has effect only if scikits.umfpack is
         installed. Default: True
+    assumeSortedIndices : bool, optional
+        Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
+        Has effect only if useUmfpack is True and scikits.umfpack is installed.
+        Default: False
 
     Notes
     -----
@@ -50,8 +54,8 @@ def use_solver(**kwargs):
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
-
-    #TODO: pass other options to scikit
+    if useUmfpack and 'assumeSortedIndices' in kwargs:
+        umfpack.configure(assumeSortedIndices=kwargs['assumeSortedIndices'])
 
 def _get_umf_family(A):
     """Get umfpack family string given the sparse matrix dtype."""
@@ -402,7 +406,6 @@ def factorized(A):
             A = csc_matrix(A)
             warn('splu requires CSC matrix format', SparseEfficiencyWarning)
 
-        A.sort_indices()
         A = A.asfptype()  # upcast to a floating point format
 
         if A.dtype.char not in 'dD':
@@ -442,6 +445,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     overwrite_b : bool, optional
         Allow overwriting data in `b`.
         Enabling gives a performance gain. Default is False.
+        If `overwrite_b` is True, it should be ensured that
+        `b` has an appropriate dtype to be able to store the result.
 
     Returns
     -------
@@ -479,7 +484,8 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
         A = A.copy()
 
     if A.shape[0] != A.shape[1]:
-        raise ValueError('A must be a square matrix but its shape is {}.'.format(A.shape))
+        raise ValueError(
+            'A must be a square matrix but its shape is {}.'.format(A.shape))
 
     A.eliminate_zeros()
     A.sort_indices()
@@ -487,44 +493,53 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False):
     b = np.asanyarray(b)
 
     if b.ndim not in [1, 2]:
-        raise ValueError('b must have 1 or 2 dims but its shape is {}.'.format(b.shape))
+        raise ValueError(
+            'b must have 1 or 2 dims but its shape is {}.'.format(b.shape))
     if A.shape[0] != b.shape[0]:
-        raise ValueError('The size of the dimensions of A must be equal to '
+        raise ValueError(
+            'The size of the dimensions of A must be equal to '
             'the size of the first dimension of b but the shape of A is '
             '{} and the shape of b is {}.'.format(A.shape, b.shape))
 
-    # Init x as copy of b.
+    # Init x as (a copy of) b.
+    x_dtype = np.result_type(A.data, b, np.float)
     if overwrite_b:
-        x = b
+        if np.can_cast(b.dtype, x_dtype, casting='same_kind'):
+            x = b
+        else:
+            raise ValueError(
+                'Cannot overwrite b (dtype {}) with result '
+                'of type {}.'.format(b.dtype, x_dtype))
     else:
-        x = b.copy()
+        x = b.astype(x_dtype, copy=True)
 
     # Choose forward or backward order.
     if lower:
         row_indices = range(len(b))
     else:
-        row_indices = range(len(b)-1, -1, -1)
+        row_indices = range(len(b) - 1, -1, -1)
 
     # Fill x iteratively.
     for i in row_indices:
 
         # Get indices for i-th row.
         indptr_start = A.indptr[i]
-        indptr_stop = A.indptr[i+1]
+        indptr_stop = A.indptr[i + 1]
         if lower:
-            A_diagonal_index_row_i = indptr_stop-1
-            A_off_diagonal_indices_row_i = slice(indptr_start,indptr_stop-1)
+            A_diagonal_index_row_i = indptr_stop - 1
+            A_off_diagonal_indices_row_i = slice(indptr_start, indptr_stop - 1)
         else:
             A_diagonal_index_row_i = indptr_start
-            A_off_diagonal_indices_row_i = slice(indptr_start+1,indptr_stop)
+            A_off_diagonal_indices_row_i = slice(indptr_start + 1, indptr_stop)
 
         # Check regularity and triangularity of A.
         if indptr_stop <= indptr_start or A.indices[A_diagonal_index_row_i] < i:
-            raise LinAlgError('A is singular: '
-                '{}th diagonal is zero!'.format(i))
+            raise LinAlgError(
+                'A is singular: diagonal {} is zero.'.format(i))
         if A.indices[A_diagonal_index_row_i] > i:
-            raise LinAlgError('A is no triangular matrix: entry '
-                '[{},{}] is not zero!'.format(i, A.indices[A_diagonal_index_row_i]))
+            raise LinAlgError(
+                'A is not triangular: A[{}, {}] is nonzero.'
+                ''.format(i, A.indices[A_diagonal_index_row_i]))
 
         # Incorporate off-diagonal entries.
         A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]

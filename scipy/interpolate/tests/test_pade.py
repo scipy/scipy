@@ -1,7 +1,6 @@
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           run_module_suite)
+from numpy.testing import (assert_array_equal, assert_array_almost_equal)
 from scipy.interpolate import pade
 
 def test_pade_trivial():
@@ -30,8 +29,4 @@ def test_pade_4term_exp():
     nump, denomp = pade(an, 3)
     assert_array_almost_equal(nump.c, [1.0])
     assert_array_almost_equal(denomp.c, [-1.0/6, 0.5, -1.0, 1.0])
-
-
-if __name__ == '__main__':
-    run_module_suite()
 

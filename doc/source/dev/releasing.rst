@@ -1,3 +1,5 @@
+.. _making-a-release:
+
 Making a SciPy release
 ======================
 

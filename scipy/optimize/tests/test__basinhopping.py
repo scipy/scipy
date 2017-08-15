@@ -4,7 +4,7 @@ Unit tests for the basin hopping global minimization algorithm.
 from __future__ import division, print_function, absolute_import
 import copy
 
-from numpy.testing import (TestCase, run_module_suite, assert_raises,
+from numpy.testing import (assert_raises,
                            assert_almost_equal, assert_equal, assert_)
 import numpy as np
 from numpy import cos, sin
@@ -106,9 +106,9 @@ class MyCallBack(object):
             return True
 
 
-class TestBasinHopping(TestCase):
+class TestBasinHopping(object):
 
-    def setUp(self):
+    def setup_method(self):
         """ Tests setup.
 
         Run tests based on the 1-D and 2-D functions described above.
@@ -305,8 +305,8 @@ class TestBasinHopping(TestCase):
         assert_equal(np.array(f_1), np.array(f_2))
 
 
-class Test_Storage(TestCase):
-    def setUp(self):
+class Test_Storage(object):
+    def setup_method(self):
         self.x0 = np.array(1)
         self.f0 = 0
 
@@ -339,8 +339,8 @@ class Test_Storage(TestCase):
         assert_(ret)
 
 
-class Test_RandomDisplacement(TestCase):
-    def setUp(self):
+class Test_RandomDisplacement(object):
+    def setup_method(self):
         self.stepsize = 1.0
         self.displace = RandomDisplacement(stepsize=self.stepsize)
         self.N = 300000
@@ -356,8 +356,8 @@ class Test_RandomDisplacement(TestCase):
         assert_almost_equal(np.var(x), v, 1)
 
 
-class Test_Metropolis(TestCase):
-    def setUp(self):
+class Test_Metropolis(object):
+    def setup_method(self):
         self.T = 2.
         self.met = Metropolis(self.T)
 
@@ -390,9 +390,16 @@ class Test_Metropolis(TestCase):
         assert_(one_accept)
         assert_(one_reject)
 
+    def test_GH7495(self):
+        # an overflow in exp was producing a RuntimeWarning
+        # create own object here in case someone changes self.T
+        met = Metropolis(2)
+        with np.errstate(over='raise'):
+            met.accept_reject(0, 2000)
 
-class Test_AdaptiveStepsize(TestCase):
-    def setUp(self):
+
+class Test_AdaptiveStepsize(object):
+    def setup_method(self):
         self.stepsize = 1.
         self.ts = RandomDisplacement(stepsize=self.stepsize)
         self.target_accept_rate = 0.5
@@ -435,6 +442,3 @@ class Test_AdaptiveStepsize(TestCase):
             self.takestep.report(False)
         assert_(self.ts.stepsize < self.stepsize)
 
-
-if __name__ == "__main__":
-    run_module_suite()

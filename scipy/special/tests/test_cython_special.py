@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 from itertools import product
 
 from numpy.testing import assert_allclose
-from numpy.testing.noseclasses import KnownFailureTest
+import pytest
 
 from scipy import special
 from scipy.special import cython_special
@@ -46,6 +46,7 @@ def _generate_test_points(typecodes):
 
 def test_cython_api():
     params = [
+        (special.agm, cython_special.agm, ('dd',), None),
         (special.airy, cython_special._airy_pywrap, ('d', 'D'), None),
         (special.airye, cython_special._airye_pywrap, ('d', 'D'), None),
         (special.bdtr, cython_special.bdtr, ('lld', 'ddd'), None),
@@ -290,7 +291,7 @@ def test_cython_api():
     def check(param):
         pyfunc, cyfunc, specializations, knownfailure = param
         if knownfailure:
-            raise KnownFailureTest(knownfailure)
+            pytest.xfail(reason=knownfailure)
 
         # Check which parameters are expected to be fused types
         values = [set() for code in specializations[0]]
@@ -328,4 +329,4 @@ def test_cython_api():
                 assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))
 
     for param in params:
-        yield check, param
+        check(param)

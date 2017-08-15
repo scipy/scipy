@@ -41,7 +41,7 @@ def prod(x):
 
 
 def lagrange(x, w):
-    """
+    r"""
     Return a Lagrange interpolating polynomial.
 
     Given two 1-D arrays `x` and `w,` returns the Lagrange interpolating
@@ -59,10 +59,34 @@ def lagrange(x, w):
 
     Returns
     -------
-    lagrange : numpy.poly1d instance
+    lagrange : `numpy.poly1d` instance
         The Lagrange interpolating polynomial.
+    
+    Examples
+    --------
+    Interpolate :math:`f(x) = x^3` by 3 points.
+
+    >>> from scipy.interpolate import lagrange
+    >>> x = np.array([0, 1, 2])
+    >>> y = x**3
+    >>> poly = lagrange(x, y)
+    
+    Since there are only 3 points, Lagrange polynomial has degree 2. Explicitly,
+    it is given by
+
+    .. math::
+
+        \begin{aligned}
+            L(x) &= 1\times \frac{x (x - 2)}{-1} + 8\times \frac{x (x-1)}{2} \\
+                 &= x (-2 + 3x)
+        \end{aligned}
+
+    >>> from numpy.polynomial.polynomial import Polynomial
+    >>> Polynomial(poly).coef
+    array([ 3., -2.,  0.])
 
     """
+
     M = len(x)
     p = poly1d(0.0)
     for j in xrange(M):
@@ -410,7 +434,7 @@ class interp1d(_Interpolator1D):
         self.copy = copy
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
-            order = {'nearest': 0, 'zero': 0, 'slinear': 1,
+            order = {'zero': 0, 'slinear': 1,
                      'quadratic': 2, 'cubic': 3}[kind]
             kind = 'spline'
         elif isinstance(kind, int):
@@ -2290,6 +2314,10 @@ class RegularGridInterpolator(object):
     Contrary to LinearNDInterpolator and NearestNDInterpolator, this class
     avoids expensive triangulation of the input data by taking advantage of the
     regular grid structure.
+
+    If any of `points` have a dimension of size 1, linear interpolation will 
+    return an array of `nan` values. Nearest-neighbor interpolation will work 
+    as usual in this case.
 
     .. versionadded:: 0.14
 

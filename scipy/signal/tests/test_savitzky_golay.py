@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (run_module_suite, assert_allclose, assert_equal,
+from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal)
 
@@ -30,7 +30,7 @@ def test_polyder():
         ([[3, 2, 1], [5, 6, 7]], 3, [[0], [0]]),
     ]
     for p, m, expected in cases:
-        yield check_polyder, np.array(p).T, m, np.array(expected).T
+        check_polyder(np.array(p).T, m, np.array(expected).T)
 
 
 #--------------------------------------------------------------------
@@ -89,7 +89,7 @@ def test_sg_coeffs_compare():
     # Compare savgol_coeffs() to alt_sg_coeffs().
     for window_length in range(1, 8, 2):
         for order in range(window_length):
-            yield compare_coeffs_to_alt, window_length, order
+            compare_coeffs_to_alt(window_length, order)
 
 
 def test_sg_coeffs_exact():
@@ -289,6 +289,3 @@ def test_sg_filter_interp_edges_3d():
     dy = savgol_filter(z, 7, 3, axis=0, mode='interp', deriv=1, delta=delta)
     assert_allclose(dy, dz, atol=1e-10)
 
-
-if __name__ == "__main__":
-    run_module_suite()

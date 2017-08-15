@@ -3,7 +3,7 @@ from __future__ import division, print_function, absolute_import
 import copy
 
 import numpy as np
-from numpy.testing import (TestCase, run_module_suite, assert_equal,
+from numpy.testing import (assert_equal,
     assert_array_equal, assert_)
 from scipy.signal._peak_finding import (argrelmax, argrelmin,
     find_peaks_cwt, _identify_ridge_lines)
@@ -70,7 +70,7 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
     return [locs[:, 0], locs[:, 1]]
 
 
-class TestRidgeLines(TestCase):
+class TestRidgeLines(object):
 
     def test_empty(self):
         test_matr = np.zeros([20, 100])
@@ -162,7 +162,7 @@ class TestRidgeLines(TestCase):
             np.testing.assert_array_less(np.abs(agaps), max(gaps) + 0.1)
 
 
-class TestArgrel(TestCase):
+class TestArgrel(object):
 
     def test_empty(self):
         # Regression test for gh-2832.
@@ -245,7 +245,7 @@ class TestArgrel(TestCase):
             assert_((act_locs == (rel_max_cols[inds] - rot_factor*rw)).all())
 
 
-class TestFindPeaks(TestCase):
+class TestFindPeaks(object):
 
     def test_find_peaks_exact(self):
         """
@@ -295,6 +295,3 @@ class TestFindPeaks(TestCase):
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
 
-
-if __name__ == "__main__":
-    run_module_suite()

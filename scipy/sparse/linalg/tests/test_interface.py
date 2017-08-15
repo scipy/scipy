@@ -6,9 +6,9 @@ from __future__ import division, print_function, absolute_import
 from functools import partial
 from itertools import product
 import operator
-import nose
+import pytest
 
-from numpy.testing import TestCase, assert_, assert_equal, \
+from numpy.testing import assert_, assert_equal, \
         assert_raises
 
 import numpy as np
@@ -21,8 +21,8 @@ from scipy.sparse.linalg import interface
 TEST_MATMUL = hasattr(operator, 'matmul')
 
 
-class TestLinearOperator(TestCase):
-    def setUp(self):
+class TestLinearOperator(object):
+    def setup_method(self):
         self.A = np.array([[1,2,3],
                            [4,5,6]])
         self.B = np.array([[1,2],
@@ -144,7 +144,7 @@ class TestLinearOperator(TestCase):
 
     def test_matmul(self):
         if not TEST_MATMUL:
-            raise nose.SkipTest("matmul is only tested in Python 3.5+")
+            pytest.skip("matmul is only tested in Python 3.5+")
 
         D = {'shape': self.A.shape,
              'matvec': lambda x: np.dot(self.A, x).reshape(self.A.shape[0]),
@@ -163,8 +163,8 @@ class TestLinearOperator(TestCase):
         assert_raises(ValueError, operator.matmul, 2, A)
 
 
-class TestAsLinearOperator(TestCase):
-    def setUp(self):
+class TestAsLinearOperator(object):
+    def setup_method(self):
         self.cases = []
 
         def make_cases(dtype):

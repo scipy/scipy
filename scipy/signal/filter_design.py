@@ -351,7 +351,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
 
 
 def freqz_zpk(z, p, k, worN=None, whole=False):
-    """
+    r"""
     Compute the frequency response of a digital filter in ZPK form.
 
     Given the Zeros, Poles and Gain of a digital filter, compute its frequency
@@ -705,9 +705,9 @@ def _cplxreal(z, tol=None):
     --------
     >>> a = [4, 3, 1, 2-2j, 2+2j, 2-1j, 2+1j, 2-1j, 2+1j, 1+1j, 1-1j]
     >>> zc, zr = _cplxreal(a)
-    >>> print zc
+    >>> print(zc)
     [ 1.+1.j  2.+1.j  2.+1.j  2.+2.j]
-    >>> print zr
+    >>> print(zr)
     [ 1.  3.  4.]
     """
 
@@ -1951,7 +1951,7 @@ def _zpkbilinear(z, p, k, fs):
 
     degree = _relative_degree(z, p)
 
-    fs2 = 2*fs
+    fs2 = 2.0*fs
 
     # Bilinear transform the poles and zeros
     z_z = (fs2 + z) / (fs2 - z)
@@ -3494,7 +3494,7 @@ def ellipap(N, rp, rs):
                       disp=0)
     if m < 0 or m > 1:
         m = optimize.fminbound(_kratio, 0, 1, args=(krat,), maxfun=250,
-                               maxiter=250, disp=0)
+                               disp=0)
 
     capk = special.ellipk(m)
 

@@ -205,13 +205,10 @@ def generate_binary_structure(rank, connectivity):
     if connectivity < 1:
         connectivity = 1
     if rank < 1:
-        if connectivity < 1:
-            return numpy.array(0, dtype=bool)
-        else:
-            return numpy.array(1, dtype=bool)
+        return numpy.array(True, dtype=bool)
     output = numpy.fabs(numpy.indices([3] * rank) - 1)
     output = numpy.add.reduce(output, 0)
-    return numpy.asarray(output <= connectivity, dtype=bool)
+    return output <= connectivity
 
 
 def _binary_erosion(input, structure, iterations, mask, output,
@@ -222,8 +219,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
     if structure is None:
         structure = generate_binary_structure(input.ndim, 1)
     else:
-        structure = numpy.asarray(structure)
-        structure = structure.astype(bool)
+        structure = numpy.asarray(structure, dtype=bool)
     if structure.ndim != input.ndim:
         raise RuntimeError('structure and input must have same dimensionality')
     if not structure.flags.contiguous:
@@ -257,11 +253,7 @@ def _binary_erosion(input, structure, iterations, mask, output,
             if not structure.shape[ii] & 1:
                 origin[ii] -= 1
         if mask is not None:
-            msk = numpy.asarray(mask)
-            msk = mask.astype(numpy.int8)
-            if msk is mask:
-                msk = mask.copy()
-            mask = msk
+            mask = numpy.asarray(mask, dtype=numpy.int8)
         if not structure.flags.contiguous:
             structure = structure.copy()
         _nd_image.binary_erosion2(output, structure, mask, iterations - 1,
@@ -1758,8 +1750,8 @@ def distance_transform_bf(input, metric="euclidean", sampling=None,
     Distance transform function by a brute force algorithm.
 
     This function calculates the distance transform of the `input`, by
-    replacing each background element (zero values), with its
-    shortest distance to the foreground (any element non-zero).
+    replacing each foreground (non-zero) element, with its
+    shortest distance to the background (any zero-valued element).
 
     In addition to the distance transform, the feature transform can
     be calculated. In this case the index of the closest background

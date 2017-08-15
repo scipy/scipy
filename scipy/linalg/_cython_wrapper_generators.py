@@ -136,6 +136,8 @@ Raw function pointers (Fortran-style pointer arguments):
 # these wrappers should not be used.
 # The original libraries should be linked directly.
 
+from __future__ import absolute_import
+
 cdef extern from "fortran_defs.h":
     pass
 
@@ -181,6 +183,8 @@ Raw function pointers (Fortran-style pointer arguments):
 # Within scipy, if LAPACK functions are needed in C/C++/Fortran,
 # these wrappers should not be used.
 # The original libraries should be linked directly.
+
+from __future__ import absolute_import
 
 cdef extern from "fortran_defs.h":
     pass

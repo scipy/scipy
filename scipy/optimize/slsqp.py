@@ -338,7 +338,9 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             raise IndexError('SLSQP Error: the length of bounds is not '
                              'compatible with that of x0.')
 
-        bnderr = bnds[:, 0] > bnds[:, 1]
+        with np.errstate(invalid='ignore'):
+            bnderr = bnds[:, 0] > bnds[:, 1]
+
         if bnderr.any():
             raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
                              ', '.join(str(b) for b in bnderr))

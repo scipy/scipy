@@ -1050,8 +1050,9 @@ class rv_generic(object):
                     if mu2 is None:
                         mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu * mu
-                    mu3 = mu3p - 3 * mu * mu2 - mu**3
-                    g1 = mu3 / np.power(mu2, 1.5)
+                    with np.errstate(invalid='ignore'):
+                        mu3 = mu3p - 3 * mu * mu2 - mu**3
+                        g1 = mu3 / np.power(mu2, 1.5)
                 out0 = default.copy()
                 place(out0, cond, g1)
                 output.append(out0)
@@ -1066,9 +1067,11 @@ class rv_generic(object):
                         mu2 = mu2p - mu * mu
                     if mu3 is None:
                         mu3p = self._munp(3, *goodargs)
-                        mu3 = mu3p - 3 * mu * mu2 - mu**3
-                    mu4 = mu4p - 4 * mu * mu3 - 6 * mu * mu * mu2 - mu**4
-                    g2 = mu4 / mu2**2.0 - 3.0
+                        with np.errstate(invalid='ignore'):
+                            mu3 = mu3p - 3 * mu * mu2 - mu**3
+                    with np.errstate(invalid='ignore'):
+                        mu4 = mu4p - 4 * mu * mu3 - 6 * mu * mu * mu2 - mu**4
+                        g2 = mu4 / mu2**2.0 - 3.0
                 out0 = default.copy()
                 place(out0, cond, g2)
                 output.append(out0)

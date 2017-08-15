@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, run_module_suite
+from numpy.testing import assert_array_almost_equal
 
 import scipy.ndimage as ndimage
 
@@ -45,6 +45,3 @@ def test_gh_issue_3025():
     d[35,258] = 1
     d[35,259] = 1
     assert ndimage.label(d, np.ones((3,3)))[1] == 1
-
-if __name__ == "__main__":
-    run_module_suite()

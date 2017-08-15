@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_array_almost_equal, run_module_suite, assert_
+from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix
 
 
@@ -26,7 +26,7 @@ def test_csr_rowslice():
 
     for i in range(N):
         for sl in slices:
-            yield _check_csr_rowslice, i, sl, X, Xcsr
+            _check_csr_rowslice(i, sl, X, Xcsr)
 
 
 def test_csr_getrow():
@@ -58,6 +58,3 @@ def test_csr_getcol():
         assert_array_almost_equal(arr_col, csr_col.toarray())
         assert_(type(csr_col) is csr_matrix)
 
-
-if __name__ == "__main__":
-    run_module_suite()

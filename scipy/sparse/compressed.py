@@ -513,14 +513,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return self.__class__((data,indices,indptr),shape=(M,N))
 
-    def diagonal(self):
-        """Returns the main diagonal of the matrix
-        """
-        # TODO support k-th diagonal
+    def diagonal(self, k=0):
+        rows, cols = self.shape
+        if k <= -rows or k >= cols:
+            raise ValueError("k exceeds matrix dimensions")
         fn = getattr(_sparsetools, self.format + "_diagonal")
-        y = np.empty(min(self.shape), dtype=upcast(self.dtype))
-        fn(self.shape[0], self.shape[1], self.indptr, self.indices, self.data, y)
+        y = np.empty(min(rows + min(k, 0), cols - max(k, 0)),
+                     dtype=upcast(self.dtype))
+        fn(k, self.shape[0], self.shape[1], self.indptr, self.indices,
+           self.data, y)
         return y
+
+    diagonal.__doc__ = spmatrix.diagonal.__doc__
 
     #####################
     # Other binary ops  #
@@ -630,7 +634,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             ci, cj = self._swap((i.ravel(), j.ravel()))
             self._zero_many(ci, cj)
 
-            x = x.tocoo()
+            x = x.tocoo(copy=True)
+            x.sum_duplicates()
             r, c = x.row, x.col
             x = np.asarray(x.data, dtype=self.dtype)
             if broadcast_row:
@@ -710,7 +715,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _set_many(self, i, j, x):
         """Sets value at each (i, j) to x
 
-        Here (i,j) index major and minor respectively.
+        Here (i,j) index major and minor respectively, and must not contain
+        duplicate entries.
         """
         i, j, M, N = self._prepare_indices(i, j)
 

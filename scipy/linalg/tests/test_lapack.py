@@ -8,9 +8,10 @@ import sys
 import subprocess
 import time
 
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
+from numpy.testing import assert_equal, \
     assert_array_almost_equal, assert_, assert_raises, assert_allclose, \
     assert_almost_equal, assert_array_equal
+import pytest
 
 import numpy as np
 
@@ -18,7 +19,6 @@ from scipy.linalg import _flapack as flapack
 from scipy.linalg import inv
 from scipy.linalg import svd
 from scipy.linalg.lapack import _compute_lwork
-from scipy._lib._testutils import xslow
 
 try:
     from scipy.linalg import _clapack as clapack
@@ -32,7 +32,7 @@ COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
 
 
-class TestFlapackSimple(TestCase):
+class TestFlapackSimple(object):
 
     def test_gebal(self):
         a = [[1,2,3],[4,5,6],[7,8,9]]
@@ -52,8 +52,8 @@ class TestFlapackSimple(TestCase):
 
             ba,lo,hi,pivscale,info = f(a1,permute=1,scale=1)
             assert_(not info,repr(info))
-            # print a1
-            # print ba,lo,hi,pivscale
+            # print(a1)
+            # print(ba, lo, hi, pivscale)
 
     def test_gehrd(self):
         a = [[-149, -50,-154],
@@ -125,7 +125,7 @@ class TestFlapackSimple(TestCase):
                     assert_equal(value, ref)
 
 
-class TestLapack(TestCase):
+class TestLapack(object):
 
     def test_flapack(self):
         if hasattr(flapack,'empty_module'):
@@ -137,7 +137,7 @@ class TestLapack(TestCase):
             # clapack module is empty
             pass
 
-class TestLeastSquaresSolvers(TestCase):
+class TestLeastSquaresSolvers(object):
 
     def test_gels(self):
         for dtype in REAL_DTYPES:
@@ -355,7 +355,7 @@ class TestLeastSquaresSolvers(TestCase):
                             dtype=dtype), rtol=25*np.finfo(dtype).eps)
 
 
-class TestRegression(TestCase):
+class TestRegression(object):
 
     def test_ticket_1645(self):
         # Check that RQ routines have correct lwork
@@ -376,7 +376,7 @@ class TestRegression(TestCase):
                 ungrq(rq[-2:], tau, lwork=2)
 
 
-class TestDpotr(TestCase):
+class TestDpotr(object):
     def test_gh_2691(self):
         # 'lower' argument of dportf/dpotri
         for lower in [True, False]:
@@ -395,7 +395,7 @@ class TestDpotr(TestCase):
                 else:
                     assert_allclose(np.triu(dpt), np.triu(inv(a)))
 
-class TestDlasd4(TestCase):
+class TestDlasd4(object):
     def test_sing_val_update(self):
 
         sigmas = np.array([4., 3., 2., 0])
@@ -525,7 +525,7 @@ def test_larfg_larf():
         assert_allclose(a[0,:], expected, atol=1e-5)
 
 
-@xslow
+@pytest.mark.xslow
 def test_sgesdd_lwork_bug_workaround():
     # Test that SGESDD lwork is sufficiently large for LAPACK.
     #
@@ -559,6 +559,3 @@ def test_sgesdd_lwork_bug_workaround():
     assert_equal(returncode, 0,
                  "Code apparently failed: " + p.stdout.read())
 
-
-if __name__ == "__main__":
-    run_module_suite()

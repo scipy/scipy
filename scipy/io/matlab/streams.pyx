@@ -1,12 +1,14 @@
 # -*- python -*- or near enough
 
+from __future__ import absolute_import
+
 import sys
 import zlib
 
 from cpython cimport PyBytes_FromStringAndSize, \
     PyBytes_AS_STRING, PyBytes_Size
 
-from pyalloc cimport pyalloc_v
+from .pyalloc cimport pyalloc_v
 
 from libc.stdio cimport fread, fseek, ftell
 from libc.string cimport memcpy

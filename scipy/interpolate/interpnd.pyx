@@ -17,6 +17,8 @@ Simple N-D interpolation
 #       Run ``generate_qhull.py`` to regenerate the ``qhull.c`` file
 #
 
+from __future__ import absolute_import
+
 cimport cython
 
 from libc.float cimport DBL_EPSILON

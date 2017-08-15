@@ -12,15 +12,15 @@ from numpy.ma import masked, nomask
 
 import scipy.stats.mstats as mstats
 from scipy import stats
-from common_tests import check_named_results
-from numpy.testing import TestCase, run_module_suite
-from numpy.testing.decorators import skipif
+from .common_tests import check_named_results
+import pytest
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_raises, assert_array_equal)
+from scipy._lib._numpy_compat import suppress_warnings
 
 
-class TestMquantiles(TestCase):
+class TestMquantiles(object):
     def test_mquantiles_limit_keyword(self):
         # Regression test for Trac ticket #867
         data = np.array([[6., 7., 1.],
@@ -41,7 +41,7 @@ class TestMquantiles(TestCase):
         assert_almost_equal(quants, desired)
 
 
-class TestGMean(TestCase):
+class TestGMean(object):
     def test_1D(self):
         a = (1,2,3,4)
         actual = mstats.gmean(a)
@@ -60,7 +60,7 @@ class TestGMean(TestCase):
         desired1 = mstats.gmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
-    @skipif(not hasattr(np, 'float96'), 'cannot find float96 so skipping')
+    @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
     def test_1D_float96(self):
         a = ma.array((1,2,3,4), mask=(0,0,0,1))
         actual_dt = mstats.gmean(a, dtype=np.float96)
@@ -85,7 +85,7 @@ class TestGMean(TestCase):
         assert_array_almost_equal(actual, desired, decimal=14)
 
 
-class TestHMean(TestCase):
+class TestHMean(object):
     def test_1D(self):
         a = (1,2,3,4)
         actual = mstats.hmean(a)
@@ -101,7 +101,7 @@ class TestHMean(TestCase):
         desired1 = mstats.hmean(a,axis=-1)
         assert_almost_equal(actual, desired1, decimal=14)
 
-    @skipif(not hasattr(np, 'float96'), 'cannot find float96 so skipping')
+    @pytest.mark.skipif(not hasattr(np, 'float96'), reason='cannot find float96 so skipping')
     def test_1D_float96(self):
         a = ma.array((1,2,3,4), mask=(0,0,0,1))
         actual_dt = mstats.hmean(a, dtype=np.float96)
@@ -125,10 +125,7 @@ class TestHMean(TestCase):
         assert_array_almost_equal(actual1, desired, decimal=14)
 
 
-class TestRanking(TestCase):
-    def __init__(self, *args, **kwargs):
-        TestCase.__init__(self, *args, **kwargs)
-
+class TestRanking(object):
     def test_ranking(self):
         x = ma.array([0,1,1,1,2,3,4,5,5,6,])
         assert_almost_equal(mstats.rankdata(x),
@@ -150,7 +147,7 @@ class TestRanking(TestCase):
                            [[1,1,1,1,1], [2,2,2,2,2,]])
 
 
-class TestCorr(TestCase):
+class TestCorr(object):
     def test_pearsonr(self):
         # Tests some computations of Pearson's r
         x = ma.arange(10)
@@ -275,7 +272,7 @@ class TestCorr(TestCase):
         check_named_results(res, attributes, ma=True)
 
 
-class TestTrimming(TestCase):
+class TestTrimming(object):
 
     def test_trim(self):
         a = ma.arange(10)
@@ -350,7 +347,7 @@ class TestTrimming(TestCase):
         assert_equal(winsorized.mask, data.mask)
 
 
-class TestMoments(TestCase):
+class TestMoments(object):
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
     # testmathworks comes from documentation for the
@@ -474,8 +471,8 @@ class TestMoments(TestCase):
         assert_equal(im, cp)
 
 
-class TestPercentile(TestCase):
-    def setUp(self):
+class TestPercentile(object):
+    def setup_method(self):
         self.a1 = [3,4,5,10,-3,-5,6]
         self.a2 = [3,-6,-2,8,7,4,2,1]
         self.a3 = [3.,4,5,10,-3,-5,-6,7.0]
@@ -495,7 +492,7 @@ class TestPercentile(TestCase):
         assert_equal(mstats.scoreatpercentile(x,50), [1,1,1])
 
 
-class TestVariability(TestCase):
+class TestVariability(object):
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
     """
@@ -504,8 +501,8 @@ class TestVariability(TestCase):
     def test_signaltonoise(self):
         # This is not in R, so used:
         #     mean(testcase, axis=0) / (sqrt(var(testcase)*3/4))
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated!")
             y = mstats.signaltonoise(self.testcase)
         assert_almost_equal(y, 2.236067977)
 
@@ -535,7 +532,7 @@ class TestVariability(TestCase):
         assert_almost_equal(desired, y, decimal=12)
 
 
-class TestMisc(TestCase):
+class TestMisc(object):
 
     def test_obrientransform(self):
         args = [[5]*5+[6]*11+[7]*9+[8]*3+[9]*2+[10]*2,
@@ -768,12 +765,12 @@ class TestTtest_rel():
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2),
                                   mask=[[1, 1, 1], [0, 0, 0]])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_array_equal(mstats.ttest_rel(outcome[:, 0], outcome[:, 1]),
-                               (np.nan, np.nan))
-            assert_array_equal(mstats.ttest_rel([np.nan, np.nan], [1.0, 2.0]),
-                               (np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+                t, p = mstats.ttest_rel(*pair)
+                assert_array_equal(t, (np.nan, np.nan))
+                assert_array_equal(p, (np.nan, np.nan))
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -798,11 +795,13 @@ class TestTtest_rel():
 
     def test_zero_division(self):
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_equal((np.abs(t), p), (np.inf, 0))
-            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0]),
-                               (np.nan, np.nan))
+        assert_equal((np.abs(t), p), (np.inf, 0))
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
+            assert_array_equal(t, np.array([np.nan, np.nan]))
+            assert_array_equal(p, np.array([np.nan, np.nan]))
 
 class TestTtest_ind():
     def test_vs_nonmasked(self):
@@ -837,12 +836,12 @@ class TestTtest_ind():
     def test_fully_masked(self):
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_array_equal(mstats.ttest_ind(outcome[:, 0], outcome[:, 1]),
-                               (np.nan, np.nan))
-            assert_array_equal(mstats.ttest_ind([np.nan, np.nan], [1.0, 2.0]),
-                               (np.nan, np.nan))
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+                t, p = mstats.ttest_ind(*pair)
+                assert_array_equal(t, (np.nan, np.nan))
+                assert_array_equal(p, (np.nan, np.nan))
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -858,19 +857,18 @@ class TestTtest_ind():
 
     def test_zero_division(self):
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_equal((np.abs(t), p), (np.inf, 0))
-            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0]),
-                               (np.nan, np.nan))
+        assert_equal((np.abs(t), p), (np.inf, 0))
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_ind([0, 0, 0], [0, 0, 0])
+            assert_array_equal(t, (np.nan, np.nan))
+            assert_array_equal(p, (np.nan, np.nan))
 
         t, p = mstats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_equal((np.abs(t), p), (np.inf, 0))
-            assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0],
-                                                equal_var=False),
-                               (np.nan, np.nan))
+        assert_equal((np.abs(t), p), (np.inf, 0))
+        assert_array_equal(mstats.ttest_ind([0, 0, 0], [0, 0, 0],
+                                            equal_var=False), (np.nan, np.nan))
 
 
 class TestTtest_1samp():
@@ -898,12 +896,13 @@ class TestTtest_1samp():
     def test_fully_masked(self):
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3), mask=[1, 1, 1])
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_array_equal(mstats.ttest_1samp(outcome, 0.0),
-                               (np.nan, np.nan))
-            assert_array_equal(mstats.ttest_1samp((np.nan, np.nan), 0.0),
-                               (np.nan, np.nan))
+        expected = (np.nan, np.nan)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            for pair in [((np.nan, np.nan), 0.0), (outcome, 0.0)]:
+                t, p = mstats.ttest_1samp(*pair)
+                assert_array_equal(p, expected)
+                assert_array_equal(t, expected)
 
     def test_result_attributes(self):
         np.random.seed(1234567)
@@ -919,14 +918,16 @@ class TestTtest_1samp():
 
     def test_zero_division(self):
         t, p = mstats.ttest_1samp([0, 0, 0], 1)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore')
-            assert_equal((np.abs(t), p), (np.inf, 0))
-            assert_array_equal(mstats.ttest_1samp([0, 0, 0], 0),
-                               (np.nan, np.nan))
+        assert_equal((np.abs(t), p), (np.inf, 0))
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+            t, p = mstats.ttest_1samp([0, 0, 0], 0)
+            assert_(np.isnan(t))
+            assert_array_equal(p, (np.nan, np.nan))
 
 
-class TestCompareWithStats(TestCase):
+class TestCompareWithStats(object):
     """
     Class to compare mstats results with stats results.
 
@@ -1055,8 +1056,8 @@ class TestCompareWithStats(TestCase):
             assert_almost_equal(r, rm, 10)
 
     def test_signaltonoise(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`signaltonoise` is deprecated!")
             for n in self.get_n():
                 x, y, xm, ym = self.generate_xy_sample(n)
 
@@ -1070,12 +1071,12 @@ class TestCompareWithStats(TestCase):
 
     def test_betai(self):
         np.random.seed(12345)
-        for i in range(10):
-            a = np.random.rand() * 5.
-            b = np.random.rand() * 200.
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "`betai` is deprecated!")
+            for i in range(10):
+                a = np.random.rand() * 5.
+                b = np.random.rand() * 200.
 
-            with warnings.catch_warnings():
-                warnings.filterwarnings('ignore', category=DeprecationWarning)
                 assert_equal(stats.betai(a, b, 0.), 0.)
                 assert_equal(stats.betai(a, b, 1.), 1.)
                 assert_equal(stats.mstats.betai(a, b, 0.), 0.)
@@ -1265,10 +1266,10 @@ class TestCompareWithStats(TestCase):
 
     def test_normaltest(self):
         np.seterr(over='raise')
-        for n in self.get_n():
-            if n > 8:
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', category=UserWarning)
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "kurtosistest only valid for n>=20")
+            for n in self.get_n():
+                if n > 8:
                     x, y, xm, ym = self.generate_xy_sample(n)
                     r = stats.normaltest(x)
                     rm = stats.mstats.normaltest(xm)
@@ -1308,6 +1309,3 @@ class TestCompareWithStats(TestCase):
             rm = stats.mstats.obrientransform(xm)
             assert_almost_equal(r.T, rm[0:len(x)])
 
-
-if __name__ == "__main__":
-    run_module_suite()

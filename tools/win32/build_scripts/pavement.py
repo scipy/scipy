@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 from os.path import join as pjoin, normpath, exists as pexists, dirname
 import subprocess
@@ -241,7 +242,7 @@ def raw_build_sdist(cwd):
         finally:
             f.close()
     except (subprocess.CalledProcessError, RuntimeError), e:
-        print e
+        print(e)
         msg = """
 There was an error while executing the following command:
 
@@ -260,8 +261,8 @@ def raw_build_arch(pyver, arch, src_root):
     scipy_verstr = get_scipy_version(src_root)
     bdir = bootstrap_dir(pyver)
 
-    print "Building scipy (version %s) binary for python %s, arch is %s" % \
-          (scipy_verstr, get_python_exec(pyver), arch)
+    print("Building scipy (version %s) binary for python %s, arch is %s" % \
+          (scipy_verstr, get_python_exec(pyver), arch))
 
     if BUILD_MSI:
         cmd = [get_python_exec(pyver), "setup.py", "build", "-c", "mingw32",
@@ -282,7 +283,7 @@ def raw_build_arch(pyver, arch, src_root):
         finally:
             f.close()
     except (subprocess.CalledProcessError, RuntimeError), e:
-        print e
+        print(e)
         msg = """
 There was an error while executing the following command:
 

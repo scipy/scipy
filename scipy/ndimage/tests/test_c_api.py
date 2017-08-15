@@ -55,7 +55,7 @@ def test_generic_filter():
         assert_allclose(res, std, err_msg="#{} failed".format(j))
 
     for j, func in enumerate(FILTER2D_FUNCTIONS):
-        yield check, j
+        check(j)
 
 
 def test_generic_filter1d():
@@ -79,7 +79,7 @@ def test_generic_filter1d():
         assert_allclose(res, std, err_msg="#{} failed".format(j))
 
     for j, func in enumerate(FILTER1D_FUNCTIONS):
-        yield check, j
+        check(j)
 
 
 def test_geometric_transform():
@@ -97,4 +97,4 @@ def test_geometric_transform():
         assert_allclose(res, std, err_msg="#{} failed".format(j))
 
     for j, func in enumerate(TRANSFORM_FUNCTIONS):
-        yield check, j
+        check(j)
