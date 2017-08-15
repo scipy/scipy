@@ -121,9 +121,9 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         constraints to the optimization problem.
         Available constraints are:
 
-            - BoxConstraint
-            - LinearConstraint
-            - NonlinearConstraint
+            - `BoxConstraint`
+            - `LinearConstraint`
+            - `NonlinearConstraint`
 
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
@@ -229,10 +229,12 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
             - niter : Number of iterations.
             - stop_cond : Reason for CG subproblem termination:
+
                 1. Iteration limit was reached;
                 2. Reached the trust-region boundary;
                 3. Negative curvature detected;
                 4. Tolerance was satisfied.
+
             - hits_boundary : True if the proposed step is on the boundary
               of the trust region.
 
@@ -285,58 +287,23 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
     Notes
     -----
-    **Equality constrained SQP**
-
     Method `equality_constrained_sqp` is an implementation of
     Byrd-Omojokun Trust-Region SQP method described [3]_ and
-    in [2]_, p. 549.
+    in [2]_, p. 549. It solves equality constrained equality
+    constrained optimization problems by solving, at each substep,
+    a trust-region QP subproblem. The inexact solution of these
+    QP problems using projected CG method makes this method
+    appropriate for large-scale problems.
 
-    It solves equality constrained equality constrained
-    optimization problems of the type:
-
-        minimize fun(x)
-        subject to: constr(x) = 0
-
-    by solving at each substep the trust-region QP subproblem:
-
-        minimize f + g.T d + 1/2 d.T H d
-        subject to : A d + b = 0
-                    ||d|| <= trust_radius
-
-    and updating the solution ``x += d``. For which, ``g`` is the object
-    function gradient, ``H`` is the lagrangian hessian, ``A`` is the
-    constraint Jacobian matrix, and ``b`` is the constraint evaluated
-    at the current iterate.
-
-    It uses the projected CG method in order to solve the above
-    trust-region QP problem and is an appropriate method
-    for large scale problems.
-
-    **Trust-region Interior Point**
-
-    Method `tr_interior_point` is an implementation of the trust-region
-    interior point method described in [1]_. It solves general nonlinear
-    programming problem:
-
-        minimize f(x)
-        subject to: constr_ineq(x) <= 0
-                    constr_eq(x)    = 0
-
-    by introducing slack variables ``s`` and rewriting the above problem as
-    a sequence of equality-constrained barrier problems:
-
-        minimize f(x) - barrier_parameter * sum(log(s))
-        subject to: constr_ineq(x) + s = 0
-                    constr_eq(x)       = 0
-
+    Method `tr_interior_point` is an implementation of the
+    trust-region interior point method described in [1]_.
+    It solves general nonlinear by introducing slack variables
+    and solving a sequence of equality-constrained barrier problems
     for progressively smaller values of the barrier parameter.
     The previously described equality constrained SQP method is used
-    to solve this problem with increasing levels of accuracy as the problem
-    gets closer to a solution.
-
-    It uses the projected CG method in order to solve the underliying
-    trust-region QP problem and is also an appropriate method
-    for large scale problems.
+    to solve the subproblems with increasing levels of accuracy as
+    the iterate gets closer to a solution. It is also an
+    appropriate method for large-scale problems.
 
     References
     ----------
