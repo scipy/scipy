@@ -417,11 +417,11 @@ class TestVertexNeighborVertices(object):
                     if a != b:
                         expected[a].add(b)
 
-        indices, indptr = tri.vertex_neighbor_vertices
+        indptr, indices = tri.vertex_neighbor_vertices
 
         got = []
         for j in range(tri.points.shape[0]):
-            got.append(set(map(int, indptr[indices[j]:indices[j+1]])))
+            got.append(set(map(int, indices[indptr[j]:indptr[j+1]])))
 
         assert_equal(got, expected, err_msg="%r != %r" % (got, expected))
 
