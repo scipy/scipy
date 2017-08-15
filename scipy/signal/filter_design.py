@@ -2,8 +2,9 @@
 """
 from __future__ import division, print_function, absolute_import
 
-import warnings
 import math
+import operator
+import warnings
 
 import numpy
 import numpy as np
@@ -14,9 +15,10 @@ from numpy import (atleast_1d, poly, polyval, roots, real, asarray,
                    mintypecode)
 from numpy.polynomial.polynomial import polyval as npp_polyval
 
-from scipy import special, optimize
+from scipy import special, optimize, fftpack
 from scipy.special import comb, factorial
 from scipy._lib._numpy_compat import polyvalfromroots
+from ._arraytools import axis_reverse
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -252,7 +254,7 @@ def freqs_zpk(z, p, k, worN=None):
     return w, h
 
 
-def freqz(b, a=1, worN=None, whole=False, plot=None):
+def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
     """
     Compute the frequency response of a digital filter.
 
@@ -272,37 +274,58 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     a : array_like
         denominator of a linear filter
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
-        If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+        If single integer (default 512, same as None), then compute at `worN`
+        frequencies equally spaced around the unit circle. Using a number that
+        is fast for FFT computations can result in faster computations
+        (see Notes). If an array_like, compute the response at the frequencies
+        given (in radians/sample).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
-        pi radians/sample (upper-half of unit-circle).  If `whole` is True,
+        pi radians/sample (upper-half of unit-circle).  If True,
         compute frequencies from 0 to 2*pi radians/sample.
     plot : callable
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
         response inside `freqz`.
+    axis : int
+        The axis to treat as coefficients in `a` and `b` (default 0)
+        when broadcasting the arrays together.
 
     Returns
     -------
     w : ndarray
-        The normalized frequencies at which `h` was computed, in
+        1D array of normalized frequencies at which `h` was computed, in
         radians/sample.
     h : ndarray
-        The frequency response, as complex numbers.
+        The frequency response, as complex numbers, with shape corresponding
+        to standard broadcasting rules for `a` and `b`.
 
     See Also
     --------
+    freqz_zpk
     sosfreqz
 
     Notes
     -----
-    Using Matplotlib's "plot" function as the callable for `plot` produces
-    unexpected results,  this plots the real part of the complex transfer
-    function, not the magnitude.  Try ``lambda w, h: plot(w, abs(h))``.
+    Using Matplotlib's :func:`matplotlib.pyplot.plot` function as the callable
+    for `plot` produces unexpected results, as this plots the real part of the
+    complex transfer function, not the magnitude.
+    Try ``lambda w, h: plot(w, np.abs(h))``.
+
+    A direct computation via (R)FFT is used to compute the frequency response
+    when the following conditions are met:
+
+    1. An integer value is given for `worN`.
+    2. `worN` is fast to compute via FFT (i.e.,
+       `next_fast_len(worN) <scipy.fftpack.next_fast_len>` equals `worN`).
+    3. `worN` is at least as long as the filter coefficients
+       (``worN >= max(a.shape[axis], b.shape[axis])``).
+
+    In some cases, such as filters with poles very close to the unit circle,
+    the FFT approach can be less numercially stable than the polynomial
+    calculation. In such cases, consider directly passing `w` as an array,
+    e.g., `w = np.linspace(0, np.pi, worN, endpoint=False)`, to use the
+    polynomial calculation.
 
     Examples
     --------
@@ -328,22 +351,77 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     >>> plt.show()
 
     """
-    b, a = map(atleast_1d, (b, a))
-    if whole:
-        lastpoint = 2 * pi
-    else:
-        lastpoint = pi
+    b = atleast_1d(b)
+    a = atleast_1d(a)
+    ndim = max(b.ndim, a.ndim)
+    if not -ndim <= axis < ndim:
+        raise ValueError('axis=%s invalid for ndim=%s' % (axis, ndim))
+    if axis >= 0:
+        axis = axis - ndim  # the way it will broadcast
+    try:
+        a_len = a.shape[axis]
+    except IndexError:
+        a_len = 1
+    try:
+        b_len = b.shape[axis]
+    except IndexError:
+        b_len = 1
+
     if worN is None:
-        N = 512
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
-    elif isinstance(worN, int):
-        N = worN
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
+        worN = 512
+
+    h = None
+    try:
+        worN = operator.index(worN)
+    except TypeError:  # not int-like
+        w = atleast_1d(worN)
     else:
-        w = worN
-    w = atleast_1d(w)
-    zm1 = exp(-1j * w)
-    h = polyval(b[::-1], zm1) / polyval(a[::-1], zm1)
+        if worN <= 0:
+            raise ValueError('worN must be positive, got %s' % (worN,))
+        lastpoint = 2 * pi if whole else pi
+        w = np.linspace(0, lastpoint, worN, endpoint=False)
+        min_size = max(a_len, b_len)
+        if worN >= min_size and fftpack.next_fast_len(worN) == worN:
+            # if worN is fast, 2 * worN will be fast, too,
+            # so no need to check that one
+            n_fft = worN if whole else worN * 2
+            a_trim = [slice(None)] * a.ndim
+            if a_len > 1:
+                a_trim[axis] = slice(worN)
+            b_trim = [slice(None)] * b.ndim
+            if b_len > 1:
+                b_trim[axis] = slice(worN)
+            # We could get a little more efficient by doing truncations of
+            # a and b before dividing their FFTs, but it's much more
+            # complicated for (probably) little gain.
+            if np.isrealobj(b) and np.isrealobj(a):
+                fft_func = np.fft.rfft
+            else:
+                fft_func = fftpack.fft
+            b_fft = fft_func(b, n=n_fft, axis=axis)[b_trim] if b_len > 1 else b
+            a_fft = fft_func(a, n=n_fft, axis=axis)[a_trim] if a_len > 1 else a
+            h = (b_fft / a_fft)
+            if fft_func is np.fft.rfft and whole:
+                if a_len == 1 and b_len == 1:
+                    h = np.repeat(h, worN // 2 + 1, axis=axis)
+                # exclude DC and maybe Nyquist (no need to use axis_reverse
+                # here because we can build reversal with the truncation)
+                stop = -1 if n_fft % 2 == 1 else -2
+                h_flip = [slice(None)] * ndim
+                h_flip[axis] = slice(stop, 0, -1)
+                h = np.concatenate((h, h[h_flip].conj()), axis=axis)
+            elif a_len == 1 and b_len == 1:
+                h = np.repeat(h, worN, axis=axis)
+    del worN
+
+    if h is None:  # still need to compute using freqs w
+        if w.size == 0:
+            raise ValueError('w must have at least one element, got 0')
+        zm1 = exp(-1j * w)
+        h = (npp_polyval(zm1, b.swapaxes(axis, 0)) /
+             npp_polyval(zm1, a.swapaxes(axis, 0)))
+        if h.size == 0:
+            h = np.expand_dims(h, axis)
     if plot is not None:
         plot(w, h)
 
@@ -371,11 +449,9 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
     k : scalar
         Gain of a linear filter
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
-        If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+        If single integer (default 512, same as None), then compute at `worN`
+        frequencies equally spaced around the unit circle. If an array_like,
+        compute the response at the frequencies given (in radians/sample).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
@@ -429,8 +505,7 @@ def freqz_zpk(z, p, k, worN=None, whole=False):
     else:
         lastpoint = pi
     if worN is None:
-        N = 512
-        w = numpy.linspace(0, lastpoint, N, endpoint=False)
+        w = numpy.linspace(0, lastpoint, 512, endpoint=False)
     elif isinstance(worN, int):
         N = worN
         w = numpy.linspace(0, lastpoint, N, endpoint=False)
@@ -577,11 +652,11 @@ def sosfreqz(sos, worN=None, whole=False):
         coefficients and the last three providing the denominator
         coefficients.
     worN : {None, int, array_like}, optional
-        If None (default), then compute at 512 frequencies equally spaced
-        around the unit circle.
-        If a single integer, then compute at that many frequencies.
-        If an array_like, compute the response at the frequencies given (in
-        radians/sample).
+        If single integer (default 512, same as None), then compute at `worN`
+        frequencies equally spaced around the unit circle. Using a number that
+        is fast for FFT computations can result in faster computations
+        (see Notes). If an array_like, compute the response at the frequencies
+        given (in radians/sample).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
