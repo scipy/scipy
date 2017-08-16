@@ -312,7 +312,6 @@ class TestConstructUtils(object):
 
         A = coo_matrix([[1,2],[3,4]])
         B = coo_matrix([[5,6]])
-        C = 
 
         expected = matrix([[1, 2],
                            [3, 4],
