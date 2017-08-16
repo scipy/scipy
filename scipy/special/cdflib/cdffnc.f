@@ -118,6 +118,7 @@ C     .. Scalar Arguments ..
 C     ..
 C     .. Local Scalars ..
       DOUBLE PRECISION ccum,cum,fx
+      INTEGER errflag
       LOGICAL qhi,qleft
 C     ..
 C     .. External Subroutines ..
@@ -172,7 +173,11 @@ C     ..
 
   140 CONTINUE
   150 IF ((1).EQ. (which)) THEN
-          CALL cumfnc(f,dfn,dfd,phonc,p,q)
+          CALL cumfnc(f,dfn,dfd,phonc,p,q,errflag)
+          IF (errflag.NE.0) THEN
+             status = 10
+             RETURN
+          ENDIF
           status = 0
 
       ELSE IF ((2).EQ. (which)) THEN
@@ -181,7 +186,11 @@ C     ..
           status = 0
           CALL dinvr(status,f,fx,qleft,qhi)
   160     IF (.NOT. (status.EQ.1)) GO TO 170
-          CALL cumfnc(f,dfn,dfd,phonc,cum,ccum)
+          CALL cumfnc(f,dfn,dfd,phonc,cum,ccum,errflag)
+          IF (errflag.NE.0) THEN
+             status = 10
+             RETURN
+          ENDIF
           fx = cum - p
           CALL dinvr(status,f,fx,qleft,qhi)
           GO TO 160
@@ -203,7 +212,11 @@ C     ..
           status = 0
           CALL dinvr(status,dfn,fx,qleft,qhi)
   210     IF (.NOT. (status.EQ.1)) GO TO 220
-          CALL cumfnc(f,dfn,dfd,phonc,cum,ccum)
+          CALL cumfnc(f,dfn,dfd,phonc,cum,ccum,errflag)
+          IF (errflag.NE.0) THEN
+             status = 10
+             RETURN
+          ENDIF
           fx = cum - p
           CALL dinvr(status,dfn,fx,qleft,qhi)
           GO TO 210
@@ -225,7 +238,11 @@ C     ..
           status = 0
           CALL dinvr(status,dfd,fx,qleft,qhi)
   260     IF (.NOT. (status.EQ.1)) GO TO 270
-          CALL cumfnc(f,dfn,dfd,phonc,cum,ccum)
+          CALL cumfnc(f,dfn,dfd,phonc,cum,ccum,errflag)
+          IF (errflag.NE.0) THEN
+             status = 10
+             RETURN
+          ENDIF
           fx = cum - p
           CALL dinvr(status,dfd,fx,qleft,qhi)
           GO TO 260
@@ -247,7 +264,11 @@ C     ..
           status = 0
           CALL dinvr(status,phonc,fx,qleft,qhi)
   310     IF (.NOT. (status.EQ.1)) GO TO 320
-          CALL cumfnc(f,dfn,dfd,phonc,cum,ccum)
+          CALL cumfnc(f,dfn,dfd,phonc,cum,ccum,errflag)
+          IF (errflag.NE.0) THEN
+             status = 10
+             RETURN
+          ENDIF
           fx = cum - p
           CALL dinvr(status,phonc,fx,qleft,qhi)
           GO TO 310

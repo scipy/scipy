@@ -56,6 +56,7 @@ C                    QHI is LOGICAL
 
 C
 C**********************************************************************
+      IMPLICIT NONE
 C     .. Scalar Arguments ..
       DOUBLE PRECISION fx,x,zabsst,zabsto,zbig,zrelst,zrelto,zsmall,
      +                 zstpmu
@@ -328,6 +329,38 @@ C     to find the zero of the function F(X)-Y. This is routine
 C     QRZERO.
 C
 C**********************************************************************
+
+C     Reset all saved variables to known values
+      absstp = 0d0
+      abstol = 0d0
+      big = 0d0
+      fbig = 0d0
+      fsmall = 0d0
+      relstp = 0d0
+      reltol = 0d0
+      small = 0d0
+      step = 0d0
+      stpmul = 0d0
+      xhi = 0d0
+      xlb = 0d0
+      xlo = 0d0
+      xsave = 0d0
+      xub = 0d0
+      yy = 0d0
+      zx = 0d0
+      zy = 0d0
+      zz = 0d0
+      i99999 = 0
+      qbdd = .FALSE.
+      qcond = .FALSE.
+      qdum1 = .FALSE.
+      qdum2 = .FALSE.
+      qincr = .FALSE.
+      qlim = .FALSE.
+      qok = .FALSE.
+      qup = .FALSE.
+
+C     Set initial values
       small = zsmall
       big = zbig
       absstp = zabsst
