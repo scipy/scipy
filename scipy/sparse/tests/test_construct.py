@@ -312,6 +312,7 @@ class TestConstructUtils(object):
 
         A = coo_matrix([[1,2],[3,4]])
         B = coo_matrix([[5,6]])
+        C = 
 
         expected = matrix([[1, 2],
                            [3, 4],
@@ -322,6 +323,10 @@ class TestConstructUtils(object):
                      expected)
         assert_equal(construct.vstack([A.tocsr(),B.tocsr()], dtype=np.float32).dtype,
                      np.float32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
+                                      dtype=np.float32).indices.dtype, np.int32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
+                                      dtype=np.float32).indptr.dtype, np.int32)
 
     def test_hstack(self):
 
