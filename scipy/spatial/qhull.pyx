@@ -1778,9 +1778,9 @@ class Delaunay(_QhullUser):
         .. versionadded:: 0.12.0
     vertices
         Same as `simplices`, but deprecated.
-    vertex_neighbor_vertices : tuple of two ndarrays of int; (indices, indptr)
+    vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
-        vertices of vertex `k` are ``indptr[indices[k]:indices[k+1]]``.
+        vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
 
     Raises
     ------
@@ -1990,9 +1990,9 @@ class Delaunay(_QhullUser):
         """
         Neighboring vertices of vertices.
 
-        Tuple of two ndarrays of int: (indices, indptr). The indices of
+        Tuple of two ndarrays of int: (indptr, indices). The indices of
         neighboring vertices of vertex `k` are
-        ``indptr[indices[k]:indices[k+1]]``.
+        ``indices[indptr[k]:indptr[k+1]]``.
 
         """
         cdef int i, j, k, m, is_neighbor, is_missing, ndata, idata
@@ -2275,7 +2275,7 @@ cdef int _get_delaunay_info(DelaunayInfo_t *info,
     else:
         info.vertex_to_simplex = NULL
     if compute_vertex_neighbor_vertices:
-        vn_indices, vn_indptr = obj.vertex_neighbor_vertices
+        vn_indptr, vn_indices = obj.vertex_neighbor_vertices
         info.vertex_neighbors_indices = <int*>vn_indices.data
         info.vertex_neighbors_indptr = <int*>vn_indptr.data
     else:
