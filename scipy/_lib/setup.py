@@ -22,6 +22,9 @@ def configuration(parent_package='',top_path=None):
                          depends=depends,
                          include_dirs=[include_dir])
 
+    config.add_extension("_fpumode",
+                         sources=["_fpumode.c"])
+
     return config
 
 
