@@ -11,7 +11,7 @@ from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
-    group_columns)
+    group_columns, FiniteDifference)
 
 
 def test_group_columns():
@@ -489,9 +489,6 @@ class TestApproxDerivativeLinearOperator(object):
     def fun_vector_scalar(self, x):
         return np.sin(x[0] * x[1]) * np.log(x[0])
 
-    def wrong_dimensions_fun(self, x):
-        return np.array([x**2, np.tan(x), np.exp(x)])
-
     def jac_vector_scalar(self, x):
         return np.array([
             x[1] * np.cos(x[0] * x[1]) * np.log(x[0]) +
@@ -513,56 +510,13 @@ class TestApproxDerivativeLinearOperator(object):
             [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]
         ])
 
-    def fun_parametrized(self, x, c0, c1=1.0):
-        return np.array([np.exp(c0 * x[0]), np.exp(c1 * x[1])])
-
-    def jac_parametrized(self, x, c0, c1=0.1):
-        return np.array([
-            [c0 * np.exp(c0 * x[0]), 0],
-            [0, c1 * np.exp(c1 * x[1])]
-        ])
-
-    def fun_with_nan(self, x):
-        return x if np.abs(x) <= 1e-8 else np.nan
-
-    def jac_with_nan(self, x):
-        return 1.0 if np.abs(x) <= 1e-8 else np.nan
-
-    def fun_zero_jacobian(self, x):
-        return np.array([x[0] * x[1], np.cos(x[0] * x[1])])
-
-    def jac_zero_jacobian(self, x):
-        return np.array([
-            [x[1], x[0]],
-            [-x[1] * np.sin(x[0] * x[1]), -x[0] * np.sin(x[0] * x[1])]
-        ])
-
-    def fun_non_numpy(self, x):
-        return math.exp(x)
-
-    def jac_non_numpy(self, x):
-        return math.exp(x)
-
     def test_scalar_scalar(self):
         x0 = 1.0
-        jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
-                                       method='2-point',
-                                       as_linear_operator=True)
-        jac_diff_3 = approx_derivative(self.fun_scalar_scalar, x0,
-                                       as_linear_operator=True)
-        jac_diff_4 = approx_derivative(self.fun_scalar_scalar, x0,
-                                       method='cs',
-                                       as_linear_operator=True)
+        jac_diff = approx_derivative(self.fun_scalar_scalar,
+                                     method='2-point')
         jac_true = self.jac_scalar_scalar(x0)
-        np.random.seed(1)
-        for i in range(10):
-            p = np.random.uniform(-10, 10, size=(1,))
-            assert_allclose(jac_diff_2.dot(p), jac_true*p,
-                            rtol=1e-5)
-            assert_allclose(jac_diff_3.dot(p), jac_true*p,
-                            rtol=5e-6)
-            assert_allclose(jac_diff_4.dot(p), jac_true*p,
-                            rtol=5e-6)
+        assert_allclose(jac_diff(x0), jac_true,
+                        rtol=1e-5)
 
     def test_scalar_vector(self):
         x0 = 0.5
@@ -629,3 +583,144 @@ class TestApproxDerivativeLinearOperator(object):
         assert_raises(ValueError, approx_derivative,
                       self.fun_vector_vector, x0,
                       method='2-point', bounds=(1, np.inf))
+
+
+class TestFiniteDifference(object):
+
+    def setUp(self):
+        self.fun_counter = 0
+
+    def fun_scalar_scalar(self, x):
+        return np.sinh(x)
+
+    def jac_scalar_scalar(self, x):
+        return np.cosh(x)
+
+    def fun_scalar_vector(self, x):
+        return np.array([x[0]**2, np.tan(x[0]), np.exp(x[0])])
+
+    def jac_scalar_vector(self, x):
+        return np.array(
+            [2 * x[0], np.cos(x[0]) ** -2, np.exp(x[0])]).reshape(-1, 1)
+
+    def fun_vector_scalar(self, x):
+        return np.sin(x[0] * x[1]) * np.log(x[0])
+
+    def jac_vector_scalar(self, x):
+        return np.array([
+            x[1] * np.cos(x[0] * x[1]) * np.log(x[0]) +
+            np.sin(x[0] * x[1]) / x[0],
+            x[0] * np.cos(x[0] * x[1]) * np.log(x[0])
+        ])
+
+    def fun_vector_vector(self, x):
+        return np.array([
+            x[0] * np.sin(x[1]),
+            x[1] * np.cos(x[0]),
+            x[0] ** 3 * x[1] ** -0.5
+        ])
+
+    def jac_vector_vector(self, x):
+        return np.array([
+            [np.sin(x[1]), x[0] * np.cos(x[1])],
+            [-x[1] * np.sin(x[0]), np.cos(x[0])],
+            [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]
+        ])
+
+    def fun_parametrized(self, x, c0, c1=1.0):
+        return np.array([np.exp(c0 * x[0]), np.exp(c1 * x[1])])
+
+    def jac_parametrized(self, x, c0, c1=0.1):
+        return np.array([
+            [c0 * np.exp(c0 * x[0]), 0],
+            [0, c1 * np.exp(c1 * x[1])]
+        ])
+
+    def fun_counting(self, x, c0, c1=1.0):
+        self.fun_counter += 1
+        return np.array([np.exp(c0 * x[0]), np.exp(c1 * x[1])])
+
+    def jac_counting(self, x, c0, c1=1.0):
+        return np.array([
+            [c0 * np.exp(c0 * x[0]), 0],
+            [0, c1 * np.exp(c1 * x[1])]
+        ])
+
+    def test_scalar_scalar(self):
+        jac_diff = FiniteDifference(self.fun_scalar_scalar,
+                                      method='2-point')
+        jac_true = self.jac_scalar_scalar
+        np.random.seed(1)
+        for i in range(10):
+            x = np.random.uniform(-10, 10, size=(1,))
+            assert_allclose(jac_diff(x), jac_true(x),
+                            rtol=1e-5)
+
+    def test_scalar_vector(self):
+        jac_diff = FiniteDifference(self.fun_scalar_vector,
+                                      method='2-point')
+        jac_true = self.jac_scalar_vector
+        np.random.seed(1)
+        for i in range(10):
+            x = np.random.uniform(-10, 10, size=(1,))
+            assert_allclose(jac_diff(x), jac_true(x),
+                            rtol=1e-5)
+
+    def test_vector_scalar(self):
+        jac_diff = FiniteDifference(self.fun_vector_scalar,
+                                      method='2-point')
+        jac_true = self.jac_vector_scalar
+        np.random.seed(1)
+        for i in range(10):
+            x = np.random.uniform(0, 10, size=(2,))
+            assert_allclose(jac_diff(x), jac_true(x),
+                            rtol=1e-5)
+
+    def test_vector_vector(self):
+        jac_diff = FiniteDifference(self.fun_vector_vector,
+                                      method='2-point')
+        jac_true = self.jac_vector_vector
+        np.random.seed(1)
+        for i in range(10):
+            x = np.random.uniform(0, 10, size=(2,))
+            assert_allclose(jac_diff(x), jac_true(x),
+                            rtol=1e-4)
+
+    def test_fun_parametrized(self):
+        jac_diff = FiniteDifference(self.fun_parametrized,
+                                      method='2-point')
+        jac_true = self.jac_parametrized
+        np.random.seed(1)
+        for i in range(10):
+            x = np.random.uniform(0, 10, size=(2,))
+            c0 = np.random.uniform(0, 10)
+            c1 = np.random.uniform(0, 10)
+            assert_allclose(jac_diff(x, c0, c1), jac_true(x, c0, c1),
+                            rtol=1e-4)
+            assert_allclose(jac_diff(x, c0=1, c1=0.1), jac_true(x, c0=1, c1=0.1),
+                            rtol=1e-4)
+
+    def test_avoid_duplicated_calls(self):
+        jac_diff = FiniteDifference(self.fun_counting,
+                                    method='2-point')
+        assert_equal(self.fun_counter, 0)
+        J = jac_diff([1, 2], 0.2)
+        assert_equal(self.fun_counter, 3)
+        f = jac_diff.fun_wrapped([1, 2], 1.2)
+        J = jac_diff([1, 2], 1.2)
+        assert_equal(self.fun_counter, 6)
+        f = jac_diff.fun_wrapped([1, 2], 1.2)
+        J = jac_diff([1, 2], 1.2)
+        assert_equal(self.fun_counter, 8)
+        f = jac_diff.fun_wrapped([1, 2], 1.3)
+        J = jac_diff([1, 2], 1.2)
+        assert_equal(self.fun_counter, 12)
+        f = jac_diff.fun_wrapped([1, 3], 1.0)
+        J = jac_diff([1, 4], 1.0)
+        assert_equal(self.fun_counter, 16)
+        f = jac_diff.fun_wrapped([1, 4], c0=1.0)
+        J = jac_diff([1, 4], c0=1.0)
+        assert_equal(self.fun_counter, 19)
+        f = jac_diff.fun_wrapped([1, 4], c0=1.2)
+        J = jac_diff([1, 4], c0=1.0)
+        assert_equal(self.fun_counter, 23)

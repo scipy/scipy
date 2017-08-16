@@ -638,3 +638,48 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
                                    args=args, kwargs=kwargs)
         abs_err = np.abs(J_to_test - J_diff)
         return np.max(abs_err / np.maximum(1, np.abs(J_diff)))
+
+
+class FiniteDifference:
+    """Represents finite difference approximation.
+
+    Provide an easy way of calling `approx_derivative` repeatedly
+    with the same set of parameters. Avoid duplicated calls to ``fun``
+    if ``avoid_duplicated_calls=True``.
+    """
+
+    def __init__(self, fun, method='3-point', rel_step=None,
+                 bounds=(-np.inf, np.inf), sparsity=None,
+                 as_linear_operator=False, x0=None,
+                 avoid_duplicated_calls=True):
+        self._fun = fun
+        self.method = method
+        self.rel_step = rel_step
+        self.bounds = bounds
+        self.sparsity = sparsity
+        self.as_linear_operator = as_linear_operator
+        self.avoid_duplicated_calls = avoid_duplicated_calls
+        self._x = None
+        self._args = ()
+        self._kwargs = {}
+        self._f = None
+
+    def fun_wrapped(self, x, *args, **kwargs):
+        if not np.array_equal(self._x, x) or \
+           not args == self._args or \
+           not kwargs == self._kwargs:
+            self._f = self._fun(x, *args, **kwargs)
+            self._x = x
+            self._args = args
+            self._kwargs = kwargs
+        return self._f
+
+    def __call__(self, x, *args, **kwargs):
+        if self.avoid_duplicated_calls:
+            _f = self.fun_wrapped(x, *args, **kwargs)
+        else:
+            _f = None
+        return approx_derivative(
+            self._fun, self._x, self.method, self.rel_step,
+            _f, self.bounds, self.sparsity, self.as_linear_operator,
+            self._args, self._kwargs)
