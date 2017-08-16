@@ -381,7 +381,7 @@ class TestConstructUtils(object):
         check_free_memory(30000)
         
         n = 33000
-        A = csr_matrix(np.ones((n, n)), dtype=bool))
+        A = csr_matrix(np.ones((n, n), dtype=bool))
         B = A.copy()
         C = construct._compressed_sparse_stack((A,B), 0)
         
