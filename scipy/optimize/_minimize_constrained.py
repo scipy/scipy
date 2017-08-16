@@ -91,6 +91,9 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             fun(x) -> float
 
         where x is an array with shape (n,).
+    x0 : ndarray, shape (n,)
+        Initial guess. ``len(x0)`` is the dimensionality of the minimization
+        problem.
     grad : callable
         Gradient of the objective function:
 
@@ -102,20 +105,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
             hess(x) -> {LinearOperator, sparse matrix,  ndarray}, shape (n, n)
 
-        where x is an array with shape (n,).
-    x0 : ndarray, shape (n,)
-        Initial guess. ``len(x0)`` is the dimensionality of the minimization
-        problem.
-    method : {str, None}, optional
-        Type of solver. Should be on of:
-
-            - 'equality-constrained-sqp'
-            - 'tr-interior-point'
-
-        When ``None`` the more appropriate method is choosen.
-        'equality-constrained-sqp' is chosen for problems that
-        only have equality constraints and 'tr-interior-point'
-        for general optimization problems.
+        where x is an array with shape (n,). When ``hess`` is None it considers
+        the hessian is an matrix filled with zeros.
     constraints : Constraint or List of Constraint's, optional
         A single object or a list of objects specifying
         constraints to the optimization problem.
@@ -125,33 +116,48 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             - `LinearConstraint`
             - `NonlinearConstraint`
 
+    method : {str, None}, optional
+        Type of solver. Should be one of:
+
+            - 'equality-constrained-sqp'
+            - 'tr-interior-point'
+
+        When ``None`` the more appropriate method is choosen.
+        'equality-constrained-sqp' is chosen for problems that
+        only have equality constraints and 'tr-interior-point'
+        for general optimization problems.
     xtol : float, optional
         Tolerance for termination by the change of the independent variable.
         The algorithm will terminate when ``delta < xtol``, where ``delta``
         is the algorithm trust-radius. Default is 1e-8.
     gtol : float, optional
         Tolerance for termination by the norm of the lagrangian gradient.
-        The algorithm will terminate when both the infinite norm of the
-        lagrangian gradient and the constraint violation are smaller than
-        ``gtol``. Default is 1e-8.
-    sparse_jacobian : {boolean, None}
+        The algorithm will terminate when both the infinity norm (i.e. max
+        abs value) of the lagrangian gradient and the constraint violation
+        are smaller than ``gtol``. Default is 1e-8.
+    sparse_jacobian : {bool, None}
         The algorithm uses a sparse representation of the Jacobian if True
-        and a dense representation if False. When ``None`` the algorithm
-        uses the more convenient option (which is not always the more effective
-        one).
+        and a dense representation if False. When sparse_jacobian is None
+        the algorithm uses the more convenient option, using a sparse
+        representation if at least one of the constraint Jacobians are sparse
+        and a dense representation when they are all dense arrays.
     options : dict, optional
         A dictionary of solver options. Available options include:
 
             initial_trust_radius: float
-                Initial trust-region radius. Default is 1.
+                Initial trust-region radius. By defaut uses 1.0, as
+                suggested in [1]_, p.19, immediatly after algorithm III.
             initial_penalty : float
-                Initial penalty for merit function. Default is 1.
+                Initial penalty for merit function. By defaut uses 1.0, as
+                suggested in [1]_, p.19, immediatly after algorithm III.
             initial_barrier_parameter: float
                 Initial barrier parameter. Exclusive for ``tr_interior_point``
-                method. By defaut uses 0.1.
+                method. By default uses 0.1, as suggested in [1]_ immediatly
+                after algorithm III, p. 19.
             initial_tolerance: float
                 Initial subproblem tolerance. Exclusive for
-                ``tr_interior_point`` method. By defaut uses 0.1.
+                ``tr_interior_point`` method. By defaut uses 0.1,
+                as suggested in [1]_ immediatly after algorithm III, p. 19.
             return_all : bool, optional
                 When ``true`` return the list of all vectors
                 through the iterations.
@@ -165,12 +171,14 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                    explained in [1]_. In order to do
                    so the Cholesky factorization of
                    ``(A A.T)`` is computed. Exclusive
-                   for sparse matrices.
+                   for sparse matrices. Requires
+                   scikit-sparse installed.
                 - 'AugmentedSystem': The operators
                    will be computed using the
                    so-called augmented system approach
-                   explained in [1]_. Exclusive
-                   for sparse matrices.
+                   explained in [1]_. It perform the
+                   LU factorization of an augmented
+                   system. Exclusive for sparse matrices.
                 - 'QRFactorization': Compute projections
                    using QR factorization. Exclusive for
                    dense matrices.
@@ -179,19 +187,28 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                    dense matrices.
 
                 The factorization methods 'NormalEquation' and
-                'AugmentedSystem' should be used when
-                ``sparse_jacobian=True`` and, on the other
-                hand, the methods 'QRFactorization' and
-                'SVDFactorization' when ``sparse_jacobian=False``.
+                'AugmentedSystem' should be used only when
+                ``sparse_jacobian=True``. They usually provide
+                similar results. The methods 'QRFactorization'
+                and 'SVDFactorization' should be used when
+                ``sparse_jacobian=False``. By default uses
+                'QRFactorization' for  dense matrices.
+                The 'SVDFactorization' method can cope
+                with Jacobian matrices with deficient row
+                rank and will be used whenever other
+                factorization methods fails (which may
+                imply the conversion to a dense format).
 
     callback : callable, optional
         Called after each iteration:
 
             callback(OptimizeResult state) -> bool
 
-        If callback returns true the algorithm execution is terminated.
+        If callback returns True the algorithm execution is terminated.
+        ``state`` is an `OptimizeResult` object, with the same fields
+        as the ones from the return.
     max_iter : int, optional
-        Maximum number of algorithm iterations.
+        Maximum number of algorithm iterations. By default ``max_iter=1000``
     verbose : {0, 1, 2}, optional
         Level of algorithm's verbosity:
 
@@ -208,8 +225,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         Slack variables at the solution. ``n_ineq`` is the total number
         of inequality constraints.
     v : ndarray, shape (n_ineq + n_eq,)
-        Slack variables at the solution. ``n_ineq`` and ``n_eq`` are the
-        total number of equality and inequality constraints.
+        Estimated Lagrange multipliers at the solution. ``n_ineq + n_eq``
+        is the total number of equality and inequality constraints.
     niter : int
         Total number of iterations.
     nfev : int
@@ -217,12 +234,20 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     ngev : int
         Total number of objective function gradient evaluations.
     nhev : int
-        Total number of lagragian Hessian evaluations.
+        Total number of Lagragian Hessian evaluations. Each time the
+        Lagrangian Hessian is evaluated the objective function
+        Hessian and the constraints Hessians are evaluated
+        one time each.
     ncev : int
-        Total number of constraint evaluations.
+        Total number of constraint evaluations. The same couter
+        is used for equality and inequality constraints, because
+        they always are evaluated the same number of times.
     njev : int
         Total number of constraint Jacobian matrix evaluations.
-    niter : int
+        The same couter is used for equality and inequality
+        constraint Jacobian matrices, because they always are
+        evaluated the same number of times.
+    cg_niter : int
         Total number of CG iterations.
     cg_info : Dict
         Dictionary containing information about the latest CG iteration:
@@ -267,23 +292,25 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     optimality : float
         Norm of the lagrangian gradient at last iteration.
     fun : float
-        For the `eq_constraineq_sqp` method this is the objective function
+        For the `eq_constrained_sqp` method this is the objective function
         evaluated at the solution and for the `tr_interior_point` method
-        this is the barrier  function evaluated at the solution.
-    grad : ndarray, (n,)
-        For the `eq_constraineq_sqp` method this is the gradient of the
+        this is the barrier function evaluated at the solution.
+    grad : ndarray, shape (n,)
+        For the `eq_constrained_sqp` method this is the gradient of the
         objective function evaluated at the solution and for the
         `tr_interior_point` method  this is the gradient of the barrier
         function evaluated at the solution.
     constr : ndarray, shape (n_ineq + n_eq,)
-        For the `eq_constraineq_sqp` method this is the equality constraint
+        For the `eq_constrained_sqp` method this is the equality constraint
         evaluated at the solution and for the `tr_interior_point` method
-        this is he barrier function constraint.
+        this are the equality and inequality constraints evaluated at a given
+        point (with the inequality constraints incremented by the value of
+        the slack variables).
     jac : {ndarray, sparse matrix}, shape (n_ineq + n_eq, n)
-        For the `eq_constraineq_sqp` method this is the Jacobian matrix of
+        For the `eq_constrained_sqp` method this is the Jacobian matrix of
         the equality constraint evaluated at the solution and for the
-        `tr_interior_point` method his is Jacobian matrix of the barrier
-        function constraint.
+        `tr_interior_point` method his is scaled augmented Jacobian matrix,
+         defined as ``\hat(A)`` in equation (19.36), reference [2]_, p. 581.
 
     Notes
     -----
