@@ -404,9 +404,10 @@ def _compressed_sparse_stack(blocks, axis):
     """
     other_axis = 1 if axis == 0 else 0
     data = np.concatenate([b.data for b in blocks])
-    indices = np.concatenate([b.indices for b in blocks])
     idx_dtype = get_index_dtype(arrays=[b.indptr for b in blocks],
                                 maxval=data.size)
+    indices = np.concatenate([np.asarray(b.indices, dtype=idx_dtype)
+                              for b in blocks])
     indptr = []
     last_indptr = idx_dtype(0)
     constant_dim = blocks[0].shape[other_axis]
@@ -415,7 +416,8 @@ def _compressed_sparse_stack(blocks, axis):
         if b.shape[other_axis] != constant_dim:
             raise ValueError('incompatible dimensions for axis %d' % other_axis)
         sum_dim += b.shape[axis]
-        indptr.append(b.indptr[:-1].astype(idx_dtype) + last_indptr)
+        indptr.append(np.asarray(b.indptr[:-1], dtype=idx_dtype)
+                      + last_indptr)
         last_indptr += b.indptr[-1]
     indptr.append([last_indptr])
     indptr = np.concatenate(indptr)
