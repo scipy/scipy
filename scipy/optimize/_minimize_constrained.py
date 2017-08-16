@@ -310,7 +310,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         For the `eq_constrained_sqp` method this is the Jacobian matrix of
         the equality constraint evaluated at the solution and for the
         `tr_interior_point` method his is scaled augmented Jacobian matrix,
-         defined as ``\hat(A)`` in equation (19.36), reference [2]_, p. 581.
+        defined as ``\hat(A)`` in equation (19.36), reference [2]_, p. 581.
 
     Notes
     -----
