@@ -409,7 +409,7 @@ def _compressed_sparse_stack(blocks, axis):
                                 maxval=data.size)
     indptr = np.empty(np.sum([b.shape[axis] for b in blocks])+1,
                       dtype=idx_dtype)
-    last_indptr = idx_dtype(0)
+    last_indptr = 0
     constant_dim = blocks[0].shape[other_axis]
     sum_dim = 0
     for b in blocks:
