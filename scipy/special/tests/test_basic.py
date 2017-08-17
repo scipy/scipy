@@ -19,6 +19,8 @@
 
 from __future__ import division, print_function, absolute_import
 
+import sys
+import platform
 import itertools
 
 import numpy as np
@@ -699,6 +701,11 @@ class TestCephes(object):
         p = cephes.ncfdtr(2, dfd, 0.25, 15)
         assert_allclose(cephes.ncfdtridfd(2, p, 0.25, 15), dfd)
 
+    @pytest.mark.xfail((sys.platform == "win32" and
+                        platform.architecture()[0] == "32bit" and
+                        NumpyVersion(np.__version__) < "1.14.0"),
+                       reason=("Can fail on win32 if FPU is in wrong mode, "
+                               "see gh-7726"))
     def test_ncfdtridfn(self):
         dfn = [1, 2, 3]
         p = cephes.ncfdtr(dfn, 2, 0.25, 15)

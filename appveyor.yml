@@ -65,10 +65,6 @@ environment:
       SKIP_NOTAG: true
       TEST_MODE: full
 
-matrix:
-  allow_failures:
-    - PYTHON_ARCH: 32
-
 init:
   - "ECHO %PYTHON% %PYTHON_VERSION% %PYTHON_ARCH%"
   - "ECHO \"%APPVEYOR_SCHEDULED_BUILD%\""
