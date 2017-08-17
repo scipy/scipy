@@ -1036,9 +1036,10 @@ class TestSystematic(object):
         assert_(sc.exprel(-np.inf) == 0)
 
     def test_expm1_complex(self):
+        # Oscillates as a function of Im[z], so limit range to avoid loss of precision
         assert_mpmath_equal(sc.expm1,
                             mpmath.expm1,
-                            [ComplexArg()])
+                            [ComplexArg(complex(-np.inf, -1e7), complex(np.inf, 1e7))])
 
     def test_log1p_complex(self):
         assert_mpmath_equal(sc.log1p,
