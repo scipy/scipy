@@ -415,7 +415,9 @@ def _compressed_sparse_stack(blocks, axis):
     for b in blocks:
         if b.shape[other_axis] != constant_dim:
             raise ValueError('incompatible dimensions for axis %d' % other_axis)
-        indptr[sum_dim:sum_dim+b.shape[axis]] = b.indptr[:-1] + last_indptr
+        idxs = slice(sum_dim, sum_dim + b.shape[axis])
+        indptr[idxs] = b.indptr[:-1]
+        indptr[idxs] += last_indptr
         sum_dim += b.shape[axis]
         last_indptr += b.indptr[-1]
     indptr[-1] = last_indptr
