@@ -92,8 +92,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
         where x is an array with shape (n,).
     x0 : ndarray, shape (n,)
-        Initial guess. ``len(x0)`` is the dimensionality of the minimization
-        problem.
+        Initial guess. Array of real elements of size (n,),
+        where ``n`` is the number of independent variables.
     grad : callable
         Gradient of the objective function:
 
@@ -122,7 +122,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             - 'equality-constrained-sqp'
             - 'tr-interior-point'
 
-        When ``None`` the more appropriate method is choosen.
+        When None the more appropriate method is choosen.
         'equality-constrained-sqp' is chosen for problems that
         only have equality constraints and 'tr-interior-point'
         for general optimization problems.
@@ -131,9 +131,9 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         The algorithm will terminate when ``delta < xtol``, where ``delta``
         is the algorithm trust-radius. Default is 1e-8.
     gtol : float, optional
-        Tolerance for termination by the norm of the lagrangian gradient.
+        Tolerance for termination by the norm of the Lagrangian gradient.
         The algorithm will terminate when both the infinity norm (i.e. max
-        abs value) of the lagrangian gradient and the constraint violation
+        abs value) of the Lagrangian gradient and the constraint violation
         are smaller than ``gtol``. Default is 1e-8.
     sparse_jacobian : {bool, None}
         The algorithm uses a sparse representation of the Jacobian if True
@@ -151,15 +151,15 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
                 Initial penalty for merit function. By defaut uses 1.0, as
                 suggested in [1]_, p.19, immediatly after algorithm III.
             initial_barrier_parameter: float
-                Initial barrier parameter. Exclusive for ``tr_interior_point``
+                Initial barrier parameter. Exclusive for 'tr_interior_point'
                 method. By default uses 0.1, as suggested in [1]_ immediatly
                 after algorithm III, p. 19.
             initial_tolerance: float
                 Initial subproblem tolerance. Exclusive for
-                ``tr_interior_point`` method. By defaut uses 0.1,
+                'tr_interior_point' method. By defaut uses 0.1,
                 as suggested in [1]_ immediatly after algorithm III, p. 19.
             return_all : bool, optional
-                When ``true`` return the list of all vectors
+                When True return the list of all vectors
                 through the iterations.
             factorization_method : string, optional
                 Method used for factorizing the jacobian matrix.
@@ -252,15 +252,15 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     cg_info : Dict
         Dictionary containing information about the latest CG iteration:
 
-            - niter : Number of iterations.
-            - stop_cond : Reason for CG subproblem termination:
+            - 'niter' : Number of iterations.
+            - 'stop_cond' : Reason for CG subproblem termination:
 
                 1. Iteration limit was reached;
                 2. Reached the trust-region boundary;
                 3. Negative curvature detected;
                 4. Tolerance was satisfied.
 
-            - hits_boundary : True if the proposed step is on the boundary
+            - 'hits_boundary' : True if the proposed step is on the boundary
               of the trust region.
 
     execution_time : float
@@ -271,10 +271,10 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         Penalty function at last iteration.
     tolerance : float
         Tolerance for barrier subproblem at the last iteration.
-        Exclusive for ``tr_interior_point``.
+        Exclusive for 'tr_interior_point'.
     barrier_parameter : float
         Barrier parameter at the last iteration. Exclusive for
-        ``tr_interior_point``.
+        'tr_interior_point'.
     status : {0, 1, 2, 3}
         Termination status:
 
@@ -285,36 +285,37 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
 
     message : str
         Termination message.
-    method {"eq_constrained_sqp", "tr_interior_point"}
+    method : {'equality_constrained_sqp', 'tr_interior_point'}
         Optimization method used.
     constr_violation : float
         Constraint violation at last iteration.
     optimality : float
-        Norm of the lagrangian gradient at last iteration.
+        Norm of the Lagrangian gradient at last iteration.
     fun : float
-        For the `eq_constrained_sqp` method this is the objective function
-        evaluated at the solution and for the `tr_interior_point` method
-        this is the barrier function evaluated at the solution.
+        For the 'equality_constrained_sqp' method this is the objective
+        function evaluated at the solution and for the 'tr_interior_point'
+        method this is the barrier function evaluated at the solution.
     grad : ndarray, shape (n,)
-        For the `eq_constrained_sqp` method this is the gradient of the
+        For the 'equality_constrained_sqp' method this is the gradient of the
         objective function evaluated at the solution and for the
-        `tr_interior_point` method  this is the gradient of the barrier
+        'tr_interior_point' method  this is the gradient of the barrier
         function evaluated at the solution.
     constr : ndarray, shape (n_ineq + n_eq,)
-        For the `eq_constrained_sqp` method this is the equality constraint
-        evaluated at the solution and for the `tr_interior_point` method
-        this are the equality and inequality constraints evaluated at a given
-        point (with the inequality constraints incremented by the value of
-        the slack variables).
+        For the 'equality_constrained_sqp' method this is the equality
+        constraint evaluated at the solution and for the 'tr_interior_point'
+        method this are the equality and inequality constraints evaluated at
+        a given point (with the inequality constraints incremented by the
+        value of the slack variables).
     jac : {ndarray, sparse matrix}, shape (n_ineq + n_eq, n)
-        For the `eq_constrained_sqp` method this is the Jacobian matrix of
-        the equality constraint evaluated at the solution and for the
-        `tr_interior_point` method his is scaled augmented Jacobian matrix,
-        defined as ``\hat(A)`` in equation (19.36), reference [2]_, p. 581.
+        For the 'equality_constrained_sqp' method this is the Jacobian
+        matrix of the equality constraint evaluated at the solution and
+        for the tr_interior_point' method his is scaled augmented Jacobian
+        matrix, defined as ``\hat(A)`` in equation (19.36), reference [2]_,
+        p. 581.
 
     Notes
     -----
-    Method `equality_constrained_sqp` is an implementation of
+    Method 'equality_constrained_sqp' is an implementation of
     Byrd-Omojokun Trust-Region SQP method described [3]_ and
     in [2]_, p. 549. It solves equality constrained equality
     constrained optimization problems by solving, at each substep,
@@ -322,7 +323,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     QP problems using projected CG method makes this method
     appropriate for large-scale problems.
 
-    Method `tr_interior_point` is an implementation of the
+    Method 'tr_interior_point' is an implementation of the
     trust-region interior point method described in [1]_.
     It solves general nonlinear by introducing slack variables
     and solving a sequence of equality-constrained barrier problems
@@ -374,7 +375,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     else:
         raise ValueError("Unknown Constraint type")
 
-    # Generate lagrangian hess function
+    # Generate Lagrangian hess function
     lagr_hess = generate_lagrangian_hessian(constr, hess)
 
     # Compute initial values
@@ -468,7 +469,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     # Call inferior function to do the optimization
     if method == 'equality_constrained_sqp':
         if constr.n_ineq > 0:
-            raise ValueError("`equality_constrained_sqp` does not "
+            raise ValueError("'equality_constrained_sqp' does not "
                              "support inequality constraints.")
         result = equality_constrained_sqp(
             fun, grad, lagr_hess,
@@ -478,7 +479,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     elif method == 'tr_interior_point':
         if constr.n_ineq == 0:
             warn("The problem only has equality constraints. "
-                 "The solver `equality_constrained_sqp` is a "
+                 "The solver 'equality_constrained_sqp' is a "
                  "better choice for those situations.")
         result = tr_interior_point(
             fun, grad, lagr_hess,

@@ -105,7 +105,7 @@ class NonlinearConstraint:
         where x is a (n,) ndarray and v is a (m,) ndarray.
     kind : tuple
         Specifies the type of contraint. Options for this
-        parameters are:
+        parameter are:
 
             - ("interval", lb, ub): for a constraint of the type:
                 lb <= fun(x) <= ub
@@ -230,7 +230,7 @@ class LinearConstraint:
         Matrix for the linear constraint.
     kind : tuple
         Specifies the type of contraint. Options for this
-        parameters are:
+        parameter are:
 
             - ("interval", lb, ub): for a constraint of the type:
                 lb <= A x <= ub
@@ -286,7 +286,7 @@ class BoxConstraint:
     ----------
     kind : tuple
         Specifies the type of contraint. Options for this
-        parameters are:
+        parameter are:
 
             - ("interval", lb, ub): for a constraint of the type:
                 lb <= x <= ub

@@ -14,9 +14,9 @@ Local Optimization
 .. autosummary::
    :toctree: generated/
 
-   minimize - Unified interface for minimizers of multivariate functions
-   minimize_scalar - Unified interface for minimizers of univariate functions
-   minimize_constrained - Interface for minimizers of constrained functions
+   minimize - Interface for minimizers of multivariate functions
+   minimize_scalar - Interface for minimizers of univariate functions
+   minimize_constrained - Interface for minimizers of multivariate functions subject to constraints.
    OptimizeResult - The optimization result returned by some optimizers
    OptimizeWarning - The optimization encountered problems
 
