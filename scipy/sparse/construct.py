@@ -404,13 +404,13 @@ def _compressed_sparse_stack(blocks, axis):
     """
     other_axis = 1 if axis == 0 else 0
     data = np.concatenate([b.data for b in blocks])
+    constant_dim = blocks[0].shape[other_axis]
     idx_dtype = get_index_dtype(arrays=[b.indptr for b in blocks],
-                                maxval=data.size)
+                                maxval=max(data.size, constant_dim)
     indices = np.empty(data.size, dtype=idx_dtype)
     indptr = np.empty(np.sum([b.shape[axis] for b in blocks])+1,
                       dtype=idx_dtype)
     last_indptr = 0
-    constant_dim = blocks[0].shape[other_axis]
     sum_dim = 0
     sum_indices = 0
     for b in blocks:
