@@ -390,7 +390,7 @@ class TestAndersonKSamp(object):
 
     def test_overflow(self):
         # when significance_level approximation overflows, should still return
-         with suppress_warnings() as sup:
+        with suppress_warnings() as sup:
             sup.filter(UserWarning, message='approximate p-value')
             res = stats.anderson_ksamp([[-20, -10] * 100, [-10, 40, 12] * 100])
             assert_almost_equal(res[0], 272.796, 3)
