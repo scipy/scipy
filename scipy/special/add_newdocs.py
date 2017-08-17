@@ -4003,9 +4003,9 @@ add_newdoc("scipy.special", "jv",
     Bessel function :math:`I_v`,
 
     .. math::
-        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+        J_v(z) = \exp(v\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
 
-        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+        J_v(z) = \exp(-v\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
 
     For negative `v` values the formula,
 
@@ -4059,9 +4059,9 @@ add_newdoc("scipy.special", "jve",
     Bessel function :math:`I_v`,
 
     .. math::
-        J_v(z) = \exp(n\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
+        J_v(z) = \exp(v\pi\imath/2) I_v(-\imath z)\qquad (\Im z > 0)
 
-        J_v(z) = \exp(-n\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
+        J_v(z) = \exp(-v\pi\imath/2) I_v(\imath z)\qquad (\Im z < 0)
 
     For negative `v` values the formula,
 
