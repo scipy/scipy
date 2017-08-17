@@ -35,7 +35,7 @@ get_fpu_mode(PyObject *self, PyObject *args)
         return PyLong_FromLongLong(cw);
     }
 #else
-    return Py_RETURN_NONE;
+    Py_RETURN_NONE;
 #endif
 }
 
