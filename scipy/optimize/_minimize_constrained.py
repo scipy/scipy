@@ -398,7 +398,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     # Check initial point
     x0 = np.asarray(x0)
     for c in constraints:
-        if np.any(c.feasible_constr):
+        if np.any(c.enforce_feasibility):
             if isinstance(c, BoxConstraint):
                 x0_new = reinforce_box_constraints(c, x0)
                 if not np.array_equal(x0_new, x0):
@@ -487,7 +487,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             constr.constr_eq, constr.jac_eq,
             x0, fun0, grad0, constr_ineq0, jac_ineq0,
             constr_eq0, jac_eq0, stop_criteria,
-            constr.feasible_constr, sparse_jacobian,
+            constr.enforce_feasibility, sparse_jacobian,
             xtol, state, **options)
     else:
         raise ValueError("Unknown optimization ``method``.")

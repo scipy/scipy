@@ -139,7 +139,7 @@ class TestConversions(TestCase):
                                                              [1, 0, 0],
                                                              [0, 0, 1]])
         assert_array_equal(canonical.hess, None)
-        assert_array_equal(canonical.feasible_constr,
+        assert_array_equal(canonical.enforce_feasibility,
                            [True, False, True, True, True])
 
     def test_linear_to_canonical_conversion(self):
@@ -162,7 +162,7 @@ class TestConversions(TestCase):
                                                    [-7, 0, -8, 0],
                                                    [7, 0, 8, 0]])
         assert_array_equal(canonical.hess, None)
-        assert_array_equal(canonical.feasible_constr, [False, True, True])
+        assert_array_equal(canonical.enforce_feasibility, [False, True, True])
 
     def test_nonlinear_to_canonical_conversion(self):
         f1 = 10
@@ -217,7 +217,7 @@ class TestConversions(TestCase):
         v_ineq = np.array([4, -2, 30])
         assert_array_equal(canonical.hess(x, v_eq, v_ineq),
                            50*H1 + (-4)*H2 + (2+30)*H3)
-        assert_array_equal(canonical.feasible_constr, [False, True, True])
+        assert_array_equal(canonical.enforce_feasibility, [False, True, True])
 
         nonlinear = NonlinearConstraint(fun, jac, hess,
                                         ("interval",
@@ -248,7 +248,7 @@ class TestConversions(TestCase):
         v_ineq = np.array([4, -2, 30, 2])
         assert_array_equal(canonical.hess(x, v_eq, v_ineq),
                            (-4+30)*H1 + 50*H2 + (2+2)*H3)
-        assert_array_equal(canonical.feasible_constr, [True, True, True, True])
+        assert_array_equal(canonical.enforce_feasibility, [True, True, True, True])
 
 
 class TestConcatenateConstraints(TestCase):
@@ -387,7 +387,7 @@ class TestConcatenateConstraints(TestCase):
                 assert_array_almost_equal(H.dot(p), H_expected.dot(p))
 
             # Test feasible constraint list evaluation
-            assert_array_equal(canonical.feasible_constr,
+            assert_array_equal(canonical.enforce_feasibility,
                                [False, True, True,
                                 False, True, True,
                                 True, True, True, True, True,
@@ -399,12 +399,12 @@ class TestReinforceBoxConstraints(TestCase):
     def test_reinforce_box_constraints(self):
         lb = np.array([0, 20, 30])
         ub = np.array([0.5, np.inf, 70])
-        feasible_constr = np.array([True, False, True],
+        enforce_feasibility = np.array([True, False, True],
                                    dtype=bool)
         box = BoxConstraint(("interval", lb, ub),
-                            feasible_constr)
+                            enforce_feasibility)
         x0 = [1, 2, 3]
 
         x0 = reinforce_box_constraints(box, x0)
-        assert_array_less(lb[feasible_constr], x0[feasible_constr])
-        assert_array_less(x0[feasible_constr], ub[feasible_constr])
+        assert_array_less(lb[enforce_feasibility], x0[enforce_feasibility])
+        assert_array_less(x0[enforce_feasibility], ub[enforce_feasibility])

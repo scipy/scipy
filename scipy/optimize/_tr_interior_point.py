@@ -32,7 +32,7 @@ class BarrierSubproblem:
 
     def __init__(self, x0, fun, grad, lagr_hess, n_ineq, constr_ineq,
                  jac_ineq, n_eq, constr_eq, jac_eq, barrier_parameter,
-                 tolerance, feasible_constr_list, global_stop_criteria,
+                 tolerance, enforce_feasibility, global_stop_criteria,
                  xtol, sparse_jacobian, fun0, grad0, constr_ineq0,
                  jac_ineq0, constr_eq0, jac_eq0):
         # Compute number of variables
@@ -50,7 +50,7 @@ class BarrierSubproblem:
         self.tolerance = tolerance
         self.n_eq = n_eq
         self.n_ineq = n_ineq
-        self.feasible_constr_list = feasible_constr_list
+        self.enforce_feasibility = enforce_feasibility
         self.global_stop_criteria = global_stop_criteria
         self.xtol = xtol
         self.sparse_jacobian = sparse_jacobian
@@ -117,10 +117,10 @@ class BarrierSubproblem:
         s = self.get_slack(z)
 
         # Use technique from Nocedal and Wright book, ref [3]_, p.576,
-        # to guarantee constraints from `feasible_constr_list`
+        # to guarantee constraints from `enforce_feasibility`
         # stay feasible along iterations.
         c_ineq = self.constr_ineq(x)
-        s[self.feasible_constr_list] = -c_ineq[self.feasible_constr_list]
+        s[self.enforce_feasibility] = -c_ineq[self.enforce_feasibility]
         log_s = [np.log(s_i) if s_i > 0 else -np.inf for s_i in s]
 
         return self.fun(x) - self.barrier_parameter*np.sum(log_s)
@@ -261,7 +261,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
                       jac_ineq, n_eq, constr_eq, jac_eq, x0,
                       fun0, grad0, constr_ineq0, jac_ineq0,
                       constr_eq0, jac_eq0, stop_criteria,
-                      feasible_constr_list, sparse_jacobian,
+                      enforce_feasibility, sparse_jacobian,
                       xtol, state,
                       initial_barrier_parameter=0.1,
                       initial_tolerance=0.1,
@@ -287,9 +287,9 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     # after each iteration
     TRUST_ENLARGEMENT = 5
 
-    # Default feasible_constr_list
-    if feasible_constr_list is None:
-        feasible_constr_list = np.zeros(n_ineq, bool)
+    # Default enforce_feasibility
+    if enforce_feasibility is None:
+        enforce_feasibility = np.zeros(n_ineq, bool)
     # Initial Values
     state.barrier_parameter = initial_barrier_parameter
     state.tolerance = initial_tolerance
@@ -301,7 +301,7 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     subprob = BarrierSubproblem(
         x0, fun, grad, lagr_hess, n_ineq, constr_ineq, jac_ineq,
         n_eq, constr_eq, jac_eq, state.barrier_parameter, state.tolerance,
-        feasible_constr_list, stop_criteria, xtol, sparse_jacobian,
+        enforce_feasibility, stop_criteria, xtol, sparse_jacobian,
         fun0, grad0, constr_ineq0, jac_ineq0, constr_eq0, jac_eq0)
 
     # Define initial value for the slack variables
