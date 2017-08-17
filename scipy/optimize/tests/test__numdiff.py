@@ -512,11 +512,24 @@ class TestApproxDerivativeLinearOperator(object):
 
     def test_scalar_scalar(self):
         x0 = 1.0
-        jac_diff = approx_derivative(self.fun_scalar_scalar,
-                                     method='2-point')
+        jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='2-point',
+                                       as_linear_operator=True)
+        jac_diff_3 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       as_linear_operator=True)
+        jac_diff_4 = approx_derivative(self.fun_scalar_scalar, x0,
+                                       method='cs',
+                                       as_linear_operator=True)
         jac_true = self.jac_scalar_scalar(x0)
-        assert_allclose(jac_diff(x0), jac_true,
-                        rtol=1e-5)
+        np.random.seed(1)
+        for i in range(10):
+            p = np.random.uniform(-10, 10, size=(1,))
+            assert_allclose(jac_diff_2.dot(p), jac_true*p,
+                            rtol=1e-5)
+            assert_allclose(jac_diff_3.dot(p), jac_true*p,
+                            rtol=5e-6)
+            assert_allclose(jac_diff_4.dot(p), jac_true*p,
+                            rtol=5e-6)
 
     def test_scalar_vector(self):
         x0 = 0.5
@@ -636,16 +649,6 @@ class TestFiniteDifference(object):
             [0, c1 * np.exp(c1 * x[1])]
         ])
 
-    def fun_counting(self, x, c0, c1=1.0):
-        self.fun_counter += 1
-        return np.array([np.exp(c0 * x[0]), np.exp(c1 * x[1])])
-
-    def jac_counting(self, x, c0, c1=1.0):
-        return np.array([
-            [c0 * np.exp(c0 * x[0]), 0],
-            [0, c1 * np.exp(c1 * x[1])]
-        ])
-
     def test_scalar_scalar(self):
         jac_diff = FiniteDifference(self.fun_scalar_scalar,
                                       method='2-point')
@@ -701,7 +704,15 @@ class TestFiniteDifference(object):
                             rtol=1e-4)
 
     def test_avoid_duplicated_calls(self):
-        jac_diff = FiniteDifference(self.fun_counting,
+
+        self.fun_counter = 0
+
+        def fun_counting(x, c0):
+            self.fun_counter += 1
+            return np.array([np.exp(c0 * x[0]),
+                             np.exp(x[1])])
+    
+        jac_diff = FiniteDifference(fun_counting,
                                     method='2-point')
         assert_equal(self.fun_counter, 0)
         J = jac_diff([1, 2], 0.2)
