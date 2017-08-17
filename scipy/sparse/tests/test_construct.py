@@ -380,7 +380,7 @@ class TestConstructUtils(object):
                             construct.bmat, [[A,C]])
 
     @pytest.mark.slow
-    def test_concatenate_int32_overflow():
+    def test_concatenate_int32_overflow(self):
         """ test for indptr overflow when concatenating matrices """
         check_free_memory(30000)
         
