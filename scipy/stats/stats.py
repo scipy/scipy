@@ -1334,7 +1334,7 @@ KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
 
 def kurtosistest(a, axis=0, nan_policy='propagate'):
     """
-    Test whether a dataset has normal kurtosis
+    Test whether a dataset has normal kurtosis.
 
     This function tests the null hypothesis that the kurtosis
     of the population from which the sample was drawn is that
@@ -3055,7 +3055,7 @@ def f_oneway(*args):
 
 
 def pearsonr(x, y):
-    """
+    r"""
     Calculate a Pearson correlation coefficient and the p-value for testing
     non-correlation.
 
@@ -3086,10 +3086,34 @@ def pearsonr(x, y):
     p-value : float
         2-tailed p-value
 
+    Notes
+    -----
+
+    The correlation coefficient is calculated as follows:
+
+    .. math::
+
+        r_{pb} = \frac{\sum (x - m_x) (y - m_y)
+                       }{\sqrt{\sum (x - m_x)^2 (y - m_y)^2}}
+
+    where :math:`m_x` is the mean of the vector :math:`x` and :math:`m_y` is
+    the mean of the vector :math:`y`.
+
+
     References
     ----------
     http://www.statsoft.com/textbook/glosp.html#Pearson%20Correlation
 
+    Examples
+    --------
+    >>> from scipy import stats
+    >>> a = np.array([0, 0, 0, 1, 1, 1, 1])
+    >>> b = np.arange(7)
+    >>> stats.pearsonr(a, b)
+    (0.8660254037844386, 0.011724811003954654)
+
+    >>> stats.pearsonr([1,2,3,4,5], [5,6,7,8,7])
+    (0.83205029433784372, 0.080509573298498519)
     """
     # x and y should have same length.
     x = np.asarray(x)
@@ -3102,8 +3126,8 @@ def pearsonr(x, y):
     r_den = np.sqrt(_sum_of_squares(xm) * _sum_of_squares(ym))
     r = r_num / r_den
 
-    # Presumably, if abs(r) > 1, then it is only some small artifact of floating
-    # point arithmetic.
+    # Presumably, if abs(r) > 1, then it is only some small artifact of
+    # floating point arithmetic.
     r = max(min(r, 1.0), -1.0)
     df = n - 2
     if abs(r) == 1.0:
