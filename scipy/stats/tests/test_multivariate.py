@@ -642,14 +642,16 @@ class TestDirichlet(object):
     def test_alpha_with_zeros(self):
         np.random.seed(2846)
         alpha = [1.0, 0.0, 3.0]
-        x = np.random.dirichlet(alpha, size=7).T
+        # don't pass invalid alpha to np.random.dirichlet
+        x = np.random.dirichlet(np.maximum(1e-9, alpha), size=7).T
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
     def test_alpha_with_negative_entries(self):
         np.random.seed(2846)
         alpha = [1.0, -2.0, 3.0]
-        x = np.random.dirichlet(alpha, size=7).T
+        # don't pass invalid alpha to np.random.dirichlet
+        x = np.random.dirichlet(np.maximum(1e-9, alpha), size=7).T
         assert_raises(ValueError, dirichlet.pdf, x, alpha)
         assert_raises(ValueError, dirichlet.logpdf, x, alpha)
 
