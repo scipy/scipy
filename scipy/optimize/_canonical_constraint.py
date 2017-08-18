@@ -223,10 +223,6 @@ def parse_constraint(kind):
         elif kind[0] == "interval":
             lb = np.asarray(kind[1], dtype=float)
             ub = np.asarray(kind[2], dtype=float)
-            if len(lb) != len(ub):
-                raise ValueError("Mismatching 'ub' and 'lb' dimensions.")
-            if (lb > ub).any():
-                raise ValueError("lb[i] > ub[i]")
         # Set auxiliar values
         arange = np.arange(len(lb), dtype=int)
         ones = np.ones(len(lb))
@@ -244,7 +240,7 @@ def parse_constraint(kind):
                           ones[~eq_list & ~ub_isinf]))
         fun_len = len(lb)
     else:
-        raise ValueError("kind '%s' not available." % kind[0])
+        raise RuntimeError("Never be here.")
 
     return eq, ineq, val_eq, val_ineq, sign, fun_len
 

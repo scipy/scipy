@@ -95,15 +95,6 @@ class TestParseConstraint(TestCase):
         assert_array_equal(val_ineq, [30, 50])
         assert_array_equal(sign, [-1, 1])
 
-    def test_exceptions(self):
-        assert_raises(ValueError, parse_constraint, ("blbalbda",))
-        assert_raises(ValueError, parse_constraint, ("interval",
-                                                     [1, 2, 3],
-                                                     [1, 2]))
-        assert_raises(ValueError, parse_constraint, ("interval",
-                                                     [1, 2, 3],
-                                                     [1, 2, 1]))
-
 
 class TestConversions(TestCase):
 
@@ -179,10 +170,11 @@ class TestConversions(TestCase):
         def hess(x, v):
             return v[0]*H1 + v[1]*H2 + v[2]*H3
 
-        nonlinear = NonlinearConstraint(fun, jac, hess,
+        nonlinear = NonlinearConstraint(fun,
                                         ("interval",
                                          [10, 20, 30],
                                          [10, np.inf, 70]),
+                                        jac, hess,
                                         [True, False, True])
         canonical = nonlinear_to_canonical(nonlinear)
         x = [1, 2, 3, 4]
@@ -208,10 +200,11 @@ class TestConversions(TestCase):
                            50*H1 + (-4)*H2 + (2+30)*H3)
         assert_array_equal(canonical.enforce_feasibility, [False, True, True])
 
-        nonlinear = NonlinearConstraint(fun, jac, hess,
+        nonlinear = NonlinearConstraint(fun,
                                         ("interval",
                                          [10, 20, 30],
                                          [20, 20, 70]),
+                                        jac, hess,
                                         [True, False, True])
         canonical = nonlinear_to_canonical(nonlinear)
         x = [1, 2, 3, 4]
@@ -278,10 +271,11 @@ class TestConcatenateConstraints(TestCase):
         def hess(x, v):
             return v[0]*H1 + v[1]*H2 + v[2]*H3
 
-        nonlinear = NonlinearConstraint(fun, jac, hess,
+        nonlinear = NonlinearConstraint(fun,
                                         ("interval",
                                          [10, 20, 30],
                                          [10, np.inf, 70]),
+                                        jac, hess,
                                         [True, False, True])
 
         # Define third constraint

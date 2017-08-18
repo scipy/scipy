@@ -3,13 +3,42 @@ import numpy as np
 import scipy.sparse as spc
 from scipy.optimize._constraints import (BoxConstraint,
                                          LinearConstraint,
-                                         NonlinearConstraint)
+                                         NonlinearConstraint,
+                                         check_kind,
+                                         check_enforce_feasibility)
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
 
+
+class TestCheckKind(TestCase):
+
+    def test_kind_wrong_type(self):
+        assert_raises(ValueError, check_kind, "bla")
+
+    def test_kind_empty(self):
+        assert_raises(ValueError, check_kind, [])
+
+    def test_kind_invalid_format(self):
+        assert_raises(ValueError, check_kind, ["interval", [1, 2, 3]])
+
+    def test_kind_mismatching_ub_lb(self):
+        assert_raises(ValueError, check_kind, ["interval", [1, 2, 3], [1, 2]])
+
+    def test_kind_ub_smaller_than_lb(self):
+        assert_raises(ValueError, check_kind, ["interval", [1, 2, 3], [1, 2, 1]])
+
+
+class TestCheckEnforceFeasibility(TestCase):
+
+    def test_wrong_size(self):
+        assert_raises(ValueError, check_enforce_feasibility, 3, [True, True])
+
+    def test_single_value(self):
+        f = check_enforce_feasibility(3, True)
+        assert_array_equal(f, [True, True, True])
 
 class TestConversions(TestCase):
 
@@ -25,7 +54,6 @@ class TestConversions(TestCase):
         x = [1, 2, 3, 4]
         assert_array_equal(nonlinear.fun(x), A.dot(x))
         assert_array_equal(nonlinear.jac(x), A)
-
 
 
 class TestReinforceBoxConstraints(TestCase):
