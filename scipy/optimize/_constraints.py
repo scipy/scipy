@@ -228,7 +228,7 @@ def check_kind(kind):
         return (keyword, lb, ub), size
     else:
         c = np.array(kind[1])
-        size = np.size(lb)
+        size = np.size(c)
         return (keyword, c), size
 
 
