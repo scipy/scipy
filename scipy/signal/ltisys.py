@@ -1392,14 +1392,19 @@ class StateSpace(LinearTimeInvariant):
             b = np.vstack((np.dot(self.B, other.D), other.B))
             c = np.hstack((self.C, np.dot(self.D, other.C)))
             d = np.dot(self.D, other.D)
-            return StateSpace(a, b, c, d)
+        else:
+            # Assume that other is a scalar / matrix
+            # For post multiplication the input gets scaled
+            a = self.A
+            b = np.dot(self.B, other)
+            c = self.C
+            d = np.dot(self.D, other)
 
-        # Assume that other is a scalar / matrix
-        # For post multiplication the input gets scaled
-        return StateSpace(self.A,
-                          np.dot(self.B, other),
-                          self.C,
-                          np.dot(self.D, other))
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype))
 
     def __rmul__(self, other):
         """Pre-multiply a scalar or matrix (but not StateSpace)"""
@@ -1407,10 +1412,16 @@ class StateSpace(LinearTimeInvariant):
             return NotImplemented
 
         # For pre-multiplication only the output gets scaled
-        return StateSpace(self.A,
-                          self.B,
-                          np.dot(other, self.C),
-                          np.dot(other, self.D))
+        a = self.A
+        b = self.B
+        c = np.dot(other, self.C)
+        d = np.dot(other, self.D)
+
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype))
 
     def __neg__(self):
         """Negate the system (equivalent to pre-multiplying by -1)."""
@@ -1447,14 +1458,22 @@ class StateSpace(LinearTimeInvariant):
             b = np.vstack((self.B, other.B))
             c = np.hstack((self.C, other.C))
             d = self.D + other.D
-            return StateSpace(a, b, c, d)
-
-        other = np.atleast_2d(other)
-        if self.D.shape == other.shape:
-            # A scalar/matrix is really just a static system (A=0, B=0, C=0)
-            return StateSpace(self.A, self.B, self.C, self.D + other)
         else:
-            raise ValueError("Cannot add systems with incompatible dimensions")
+            other = np.atleast_2d(other)
+            if self.D.shape == other.shape:
+                # A scalar/matrix is really just a static system (A=0, B=0, C=0)
+                a = self.A
+                b = self.B
+                c = self.C
+                d = self.D + other
+            else:
+                raise ValueError("Cannot add systems with incompatible dimensions")
+
+        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        return StateSpace(np.asarray(a, dtype=common_dtype),
+                          np.asarray(b, dtype=common_dtype),
+                          np.asarray(c, dtype=common_dtype),
+                          np.asarray(d, dtype=common_dtype))
 
     def __sub__(self, other):
         if not self._check_binop_other(other):
