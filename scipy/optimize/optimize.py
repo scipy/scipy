@@ -2999,6 +2999,7 @@ def show_options(solver=None, method=None, disp=True):
         ),
         'linprog': (
             ('simplex', 'scipy.optimize._linprog._linprog_simplex'),
+            ('interior-point', 'scipy.optimize._linprog._linprog_ip'),
         ),
         'minimize_scalar': (
             ('brent', 'scipy.optimize.optimize._minimize_scalar_brent'),
