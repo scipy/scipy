@@ -6,7 +6,9 @@ import numpy as np
 from numpy import array, matrix
 from numpy.testing import (assert_equal, assert_,
         assert_array_equal, assert_raises, assert_array_almost_equal_nulp)
+import pytest
 from scipy._lib._numpy_compat import assert_raises_regex
+from scipy._lib._testutils import check_free_memory
 
 from scipy.sparse import csr_matrix, coo_matrix
 
@@ -320,6 +322,10 @@ class TestConstructUtils(object):
                      expected)
         assert_equal(construct.vstack([A.tocsr(),B.tocsr()], dtype=np.float32).dtype,
                      np.float32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
+                                      dtype=np.float32).indices.dtype, np.int32)
+        assert_equal(construct.vstack([A.tocsr(),B.tocsr()],
+                                      dtype=np.float32).indptr.dtype, np.int32)
 
     def test_hstack(self):
 
@@ -372,6 +378,20 @@ class TestConstructUtils(object):
         assert_raises_regex(ValueError,
                             r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2',
                             construct.bmat, [[A,C]])
+
+    @pytest.mark.slow
+    def test_concatenate_int32_overflow(self):
+        """ test for indptr overflow when concatenating matrices """
+        check_free_memory(30000)
+        
+        n = 33000
+        A = csr_matrix(np.ones((n, n), dtype=bool))
+        B = A.copy()
+        C = construct._compressed_sparse_stack((A,B), 0)
+        
+        assert_(np.all(np.equal(np.diff(C.indptr), n)))
+        assert_equal(C.indices.dtype, np.int64)
+        assert_equal(C.indptr.dtype, np.int64)
 
     def test_block_diag_basic(self):
         """ basic test for block_diag """
