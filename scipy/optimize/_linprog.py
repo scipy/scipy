@@ -869,7 +869,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will be applied to all variables in the problem.
     method : str, optional
         Type of solver.  :ref:`'simplex' <optimize.linprog-simplex>`
-        and :ref:`'interior point' <optimize.linprog-interior-point>`
+        and :ref:`'interior-point' <optimize.linprog-interior-point>`
         are supported.
     callback : callable, optional (simplex only)
         If a callback function is provide, it will be called within each
