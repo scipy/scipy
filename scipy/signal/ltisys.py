@@ -1294,6 +1294,7 @@ class StateSpace(LinearTimeInvariant):
 
     """
 
+    # Override Numpy binary operations and ufuncs
     __array_priority__ = 100.0
     __array_ufunc__ = None
 
@@ -1417,13 +1418,7 @@ class StateSpace(LinearTimeInvariant):
 
     def __add__(self, other):
         """
-        Add two systems
-
-        Adds two systems in the sense of frequency domain addition. That
-        means, given two systems E1(s) and E2(s), their addition,
-        H(s) = E1(s) + E2(s), means that applying H(s) to U(s)
-        is equivalent to applying E1(s) and E2(s) separately and adding up the
-        result.
+        Adds two systems in the sense of frequency domain addition.
         """
         if not self._check_binop_other(other):
             return NotImplemented
@@ -1459,7 +1454,7 @@ class StateSpace(LinearTimeInvariant):
             # A scalar/matrix is really just a static system (A=0, B=0, C=0)
             return StateSpace(self.A, self.B, self.C, self.D + other)
         else:
-            raise ValueError('Other needs to have compatible dimensions.')
+            raise ValueError("Cannot add systems with incompatible dimensions")
 
     def __sub__(self, other):
         if not self._check_binop_other(other):
@@ -1478,6 +1473,20 @@ class StateSpace(LinearTimeInvariant):
             return NotImplemented
 
         return (-self).__add__(other)
+
+    def __truediv__(self, other):
+        """
+        Divide by a scalar
+        """
+        # Division by non-StateSpace scalars
+        if not self._check_binop_other(other) or isinstance(other, StateSpace):
+            return NotImplemented
+
+        if isinstance(other, np.ndarray) and other.ndim > 0:
+            # It's ambiguous what this means, so disallow it
+            raise ValueError("Cannot divide StateSpace by non-scalar numpy arrays")
+
+        return self.__mul__(1/other)
 
     @property
     def A(self):

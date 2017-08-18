@@ -814,12 +814,24 @@ class TestStateSpace(object):
             assert_allclose(lsim(typ(2) * s1, U=u, T=t)[1],
                             typ(2) * lsim(s1, U=u, T=t)[1])
 
+            assert_allclose(lsim(s1 * typ(2), U=u, T=t)[1],
+                            lsim(s1, U=u, T=t)[1] * typ(2))
+
+            assert_allclose(lsim(s1 / typ(2), U=u, T=t)[1],
+                            lsim(s1, U=u, T=t)[1] / typ(2))
+
+            with assert_raises(TypeError):
+                typ(2) / s1
+
         assert_allclose(lsim(s1 * 2, U=u, T=t)[1],
                         lsim(s1, U=2 * u, T=t)[1])
 
         assert_allclose(lsim(s1 * s2, U=u, T=t)[1],
                         lsim(s1, U=lsim(s2, U=u, T=t)[1], T=t)[1],
                         atol=1e-5)
+
+        with assert_raises(TypeError):
+            s1 / s1
 
         with assert_raises(TypeError):
             s1 * s_discrete
@@ -834,6 +846,12 @@ class TestStateSpace(object):
         with assert_raises(TypeError):
             BadType() * s1
 
+        with assert_raises(TypeError):
+            s1 / BadType()
+
+        with assert_raises(TypeError):
+            BadType() / s1
+
         # Test addition
         assert_allclose(lsim(s1 + 2, U=u, T=t)[1],
                         2 * u + lsim(s1, U=u, T=t)[1])
@@ -847,6 +865,9 @@ class TestStateSpace(object):
 
         with assert_raises(TypeError):
             s1 + s_discrete
+
+        with assert_raises(ValueError):
+            s1 / np.array([[1, 2], [3, 4]])
 
         with assert_raises(TypeError):
             # Check different discretization constants
@@ -864,6 +885,9 @@ class TestStateSpace(object):
         # Test substraction
         assert_allclose(lsim(s1 - 2, U=u, T=t)[1],
                         -2 * u + lsim(s1, U=u, T=t)[1])
+
+        assert_allclose(lsim(2 - s1, U=u, T=t)[1],
+                        2 * u + lsim(-s1, U=u, T=t)[1])
 
         assert_allclose(lsim(s1 - s2, U=u, T=t)[1],
                         lsim(s1, U=u, T=t)[1] - lsim(s2, U=u, T=t)[1])
