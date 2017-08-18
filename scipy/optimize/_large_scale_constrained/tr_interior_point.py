@@ -1,4 +1,4 @@
-"""Trust-region interior points method.
+"""Trust-region interior point method.
 
 References
 ----------
@@ -15,8 +15,8 @@ References
 from __future__ import division, print_function, absolute_import
 import scipy.sparse as spc
 import numpy as np
-from ._equality_constrained_sqp import equality_constrained_sqp
-from ._constraints import check_sparsity
+from .equality_constrained_sqp import equality_constrained_sqp
+from .._canonical_constraint import check_sparsity
 from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['tr_interior_point']

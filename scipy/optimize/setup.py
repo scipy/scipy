@@ -74,7 +74,7 @@ def configuration(parent_package='',top_path=None):
     
     config.add_subpackage('_trlib')
 
-    config.add_subpackage('_equality_constrained_sqp')
+    config.add_subpackage('_large_scale_constrained')
 
     config.add_data_dir('tests')
 

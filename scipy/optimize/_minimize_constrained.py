@@ -2,14 +2,16 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
-                           BoxConstraint,
-                           CanonicalConstraint,
-                           concatenate_canonical_constraints,
-                           empty_canonical_constraint,
-                           generate_lagrangian_hessian,
-                           reinforce_box_constraints)
-from ._tr_interior_point import tr_interior_point
-from ._equality_constrained_sqp import equality_constrained_sqp
+                           BoxConstraint)
+from ._canonical_constraint import (CanonicalConstraint,
+                                    nonlinear_to_canonical,
+                                    linear_to_canonical,
+                                    box_to_canonical,
+                                    empty_canonical_constraint,
+                                    generate_lagrangian_hessian,
+                                    concatenate_canonical_constraints)
+from ._large_scale_constrained import (tr_interior_point,
+                                       equality_constrained_sqp)
 from warnings import warn
 import time
 from .optimize import OptimizeResult
@@ -355,15 +357,16 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         # Converts all constraints to canonical format
         constraints_list = []
         for c in constraints:
-            if not isinstance(c, (NonlinearConstraint,
-                                  LinearConstraint,
-                                  BoxConstraint,
-                                  CanonicalConstraint)):
-                raise ValueError("Unknown Constraint type")
-            elif isinstance(c, CanonicalConstraint):
+            if isinstance(c, CanonicalConstraint):
                 constraints_list += [c]
+            elif isinstance(c, (NonlinearConstraint)):
+                constraints_list += [nonlinear_to_canonical(c, sparse_jacobian)]
+            elif isinstance(c, (LinearConstraint)):
+                constraints_list += [linear_to_canonical(c, sparse_jacobian)]
+            elif isinstance(c, (BoxConstraint)):
+                constraints_list += [box_to_canonical(c, sparse_jacobian)]
             else:
-                constraints_list += [c.to_canonical(sparse_jacobian)]
+                raise ValueError("Unknown Constraint type")
         # Concatenate constraints
         if len(constraints_list) == 0:
             constr = empty_canonical_constraint()
@@ -401,7 +404,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     for c in constraints:
         if np.any(c.enforce_feasibility):
             if isinstance(c, BoxConstraint):
-                x0_new = reinforce_box_constraints(c, x0)
+                x0_new = c.reinforce_constraint(x0)
                 if not np.array_equal(x0_new, x0):
                     warn("The initial point was changed in order "
                          "to stay inside box constraints.")
