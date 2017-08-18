@@ -57,7 +57,7 @@ class FortranFile(object):
     >>> from scipy.io import FortranFile
     >>> f = FortranFile('test.unf', 'w')
     >>> f.write_record(np.array([1,2,3,4,5], dtype=np.int32))
-    >>> f.write_record(np.linspace(0,1,20).reshape((5,-1)))
+    >>> f.write_record(np.linspace(0,1,20).reshape((5,-1)).T)
     >>> f.close()
 
     To read this file:
@@ -66,7 +66,7 @@ class FortranFile(object):
     >>> f = FortranFile('test.unf', 'r')
     >>> print(f.read_ints(np.int32))
     [1 2 3 4 5]
-    >>> print(f.read_reals(float).reshape((5,-1)))
+    >>> print(f.read_reals(float).reshape((5,-1)).T)
     [[ 0.          0.05263158  0.10526316  0.15789474]
      [ 0.21052632  0.26315789  0.31578947  0.36842105]
      [ 0.42105263  0.47368421  0.52631579  0.57894737]
@@ -105,8 +105,20 @@ class FortranFile(object):
         *items : array_like
             The data arrays to write.
 
+        Notes
+        -----
+        Writes data items to a file::
+
+            write_record(a.T, b.T, c.T)
+
+            write(1) a, b, c
+
+        Note that data in multidimensional arrays is written in
+        row-major order --- to make them read correctly by Fortran
+        programs, you need to transpose the arrays yourself.
+
         """
-        items = tuple(np.asarray(item, order='F') for item in items)
+        items = tuple(np.asarray(item) for item in items)
         total_size = sum(item.nbytes for item in items)
 
         nb = np.array([total_size], dtype=self._header_dtype)
@@ -142,11 +154,11 @@ class FortranFile(object):
             read_record('(4,5)i4')
 
         Note that the fact that the array is laid out in Fortran column major
-        order in the file is **not** handled automatically, so you will need
-        to transpose the result and the indices.
+        order in the file is **not** handled automatically, and you need to take
+        care about it yourself.
 
-        Alternatively, you can read the data as 1D array, in which case you need
-        to deal with the Fortran-ordering yourself. For example::
+        Alternatively, you can read the data as 1D array, also in which case you
+        need to deal with the Fortran-ordering yourself. For example::
 
             read_record('i4').reshape(5, 4, order='F')
 
@@ -165,10 +177,10 @@ class FortranFile(object):
         the third item in the relevant dtype::
 
             double precision :: a
-            integer :: b(3,3)
+            integer :: b(3,4)
             write(1) a, b
 
-            record = f.read_record('<f4', np.dtype(('<i4', (3, 3))))
+            record = f.read_record('<f4', np.dtype(('<i4', (4, 3))))
             a = record[0]
             b = record[1].T
 

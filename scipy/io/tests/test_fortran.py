@@ -23,16 +23,14 @@ def test_fortranfiles_read():
 
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
+        dtype = m.group(1).replace('s', '<')
+
         f = FortranFile(filename, 'r', '<u4')
-        data = f.read_record(dtype=m.group(1).replace('s', '<')).reshape(dims)
+        data = f.read_record(dtype=dtype).reshape(dims, order='F')
         f.close()
 
-        counter = 0
-        for k in range(dims[2]):
-            for j in range(dims[1]):
-                for i in range(dims[0]):
-                    assert_equal(counter, data[i,j,k])
-                    counter += 1
+        expected = np.arange(np.prod(dims)).reshape(dims).astype(dtype)
+        assert_equal(data, expected)
 
 
 def test_fortranfiles_mixed_record():
@@ -53,18 +51,14 @@ def test_fortranfiles_write():
             raise RuntimeError("Couldn't match %s filename to regex" % filename)
         dims = (int(m.group(2)), int(m.group(3)), int(m.group(4)))
 
-        counter = 0
-        data = np.zeros(dims, dtype=m.group(1).replace('s', '<'))
-        for k in range(dims[2]):
-            for j in range(dims[1]):
-                for i in range(dims[0]):
-                    data[i,j,k] = counter
-                    counter += 1
+        dtype = m.group(1).replace('s', '<')
+        data = np.arange(np.prod(dims)).reshape(dims).astype(dtype)
+
         tmpdir = tempfile.mkdtemp()
         try:
             testFile = path.join(tmpdir,path.basename(filename))
             f = FortranFile(testFile, 'w','<u4')
-            f.write_record(data)
+            f.write_record(data.T)
             f.close()
             originalfile = open(filename, 'rb')
             newfile = open(testFile, 'rb')
@@ -92,11 +86,11 @@ def test_fortranfile_read_mixed_record():
     with FortranFile(filename, 'r', '<u4') as f:
         record = f.read_record('(3,3)f8', '2i4')
 
-    ax = np.arange(3*3).reshape(3, 3).astype(np.double).T
+    ax = np.arange(3*3).reshape(3, 3).astype(np.double)
     bx = np.array([-1, -2], dtype=np.int32)
 
-    assert_equal(record[0], ax)
-    assert_equal(record[1], bx)
+    assert_equal(record[0], ax.T)
+    assert_equal(record[1], bx.T)
 
 
 def test_fortranfile_write_mixed_record(tmpdir):
@@ -119,4 +113,4 @@ def test_fortranfile_write_mixed_record(tmpdir):
         assert_equal(len(a), len(b))
 
         for aa, bb in zip(a, b):
-            assert_equal(b, a)
+            assert_equal(bb, aa)
