@@ -342,6 +342,9 @@ class TestTrimming(object):
                          296,299,306,376,428,515,666,1310,2611])
         assert_almost_equal(mstats.winsorize(data,(0.2,0.2)).var(ddof=1),
                             21551.4, 1)
+        assert_almost_equal(
+            mstats.winsorize(data, (0.2,0.2),(False,False)).var(ddof=1),
+            11887.3, 1)
         data[5] = masked
         winsorized = mstats.winsorize(data)
         assert_equal(winsorized.mask, data.mask)
