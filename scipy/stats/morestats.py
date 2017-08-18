@@ -1692,8 +1692,10 @@ def anderson_ksamp(samples, midrank=True):
     pf = np.polyfit(critical, log(np.array([0.25, 0.1, 0.05, 0.025, 0.01])), 2)
     if A2 < critical.min() or A2 > critical.max():
         warnings.warn("approximate p-value will be computed by extrapolation")
-
-    p = math.exp(np.polyval(pf, A2))
+    try:
+        p = math.exp(np.polyval(pf, A2))
+    except (OverflowError,):
+        p = float("inf")
     return Anderson_ksampResult(A2, critical, p)
 
 
