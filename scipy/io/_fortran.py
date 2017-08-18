@@ -64,9 +64,9 @@ class FortranFile(object):
 
     >>> from scipy.io import FortranFile
     >>> f = FortranFile('test.unf', 'r')
-    >>> print(f.read_ints(dtype=np.int32))
+    >>> print(f.read_ints(np.int32))
     [1 2 3 4 5]
-    >>> print(f.read_reals(dtype=float).reshape((5,-1)))
+    >>> print(f.read_reals(float).reshape((5,-1)))
     [[ 0.          0.05263158  0.10526316  0.15789474]
      [ 0.21052632  0.26315789  0.31578947  0.36842105]
      [ 0.42105263  0.47368421  0.52631579  0.57894737]
@@ -96,49 +96,34 @@ class FortranFile(object):
     def _read_size(self):
         return int(np.fromfile(self._fp, dtype=self._header_dtype, count=1))
 
-    def write_record(self, s):
+    def write_record(self, *items):
         """
         Write a record (including sizes) to the file.
 
         Parameters
         ----------
-        s : array_like
-           The data to write.
+        *items : array_like
+            The data arrays to write.
 
         """
-        try:
-            # test if iterable or list, and encapsulate each item in np.array
-            if isinstance(s, np.ndarray):
-                # np.array and the like (with all elements identical) should be
-                # handled as single elements.
-                raise TypeError
-            else:
-                # 'for-in' raises a TypeError if neither iterable or list
-                s = [np.array(e, order = 'F') for e in s]
-                nb = np.array([np.sum((e.nbytes for e in s))], dtype = self._header_dtype)
-                nb.tofile(self._fp)
-                for e in s:
-                    e.tofile(self._fp)
+        items = tuple(np.asarray(item, order='F') for item in items)
+        total_size = sum(item.nbytes for item in items)
 
-                nb.tofile(self._fp)
+        nb = np.array([total_size], dtype=self._header_dtype)
 
-        except TypeError:
-            # single element, encapsulate in np.array
-            s = np.array(s, order = 'F')
-            nb = np.array([s.nbytes], dtype = self._header_dtype)
+        nb.tofile(self._fp)
+        for item in items:
+            item.tofile(self._fp)
+        nb.tofile(self._fp)
 
-            nb.tofile(self._fp)
-            s.tofile(self._fp)
-            nb.tofile(self._fp)
-
-    def read_record(self, dtype=None):
+    def read_record(self, *dtypes, **kwargs):
         """
         Reads a record of a given type from the file.
 
         Parameters
         ----------
-        dtype : dtype, optional
-            Data type specifying the size and endiness of the data.
+        *dtypes : dtypes, optional
+            Data type(s) specifying the size and endiness of the data.
 
         Returns
         -------
@@ -147,33 +132,49 @@ class FortranFile(object):
 
         Notes
         -----
-        If the record contains a multi-dimensional array, calling reshape or
-        resize will restructure the array to the correct size.
-        Since Fortran multidimensional arrays are stored in column-major format,
-        this may have some non-intuitive consequences. If the variable was
-        declared as 'INTEGER var(5,4)', for example, var could be read with
-        'read_record(dtype=np.integer).reshape( (4,5) )' since Python uses
-        row-major ordering of indices.
+        If the record contains a multi-dimensional array, you can specify
+        the size in the dtype. For example::
 
-        One can transpose to obtain the indices in the same order as in Fortran.
+            INTEGER var(5,4)
+
+        can be read with::
+
+            read_record('(4,5)i4')
+
+        Note that the fact that the array is laid out in Fortran column major
+        order in the file is **not** handled automatically, so you will need
+        to transpose the result and the indices.
+
+        Alternatively, you can read the data as 1D array, in which case you need
+        to deal with the Fortran-ordering yourself. For example::
+
+            read_record('i4').reshape(5, 4, order='F')
 
         For records that contain several variables or mixed types (as opposed
-        to single scalar or array types), it is possible to specify a dtype
-        with mixed types::
+        to single scalar or array types), give them as separate arguments::
 
-            record = f.read_record([('a', '<f4'), ('b', '<i4')])
-            record['a']  # access the variable 'a'
+            double precision :: a
+            integer :: b
+            write(1) a, b
+
+            record = f.read_record('<f4', '<i4')
+            a = record[0]  # first number
+            b = record[1]  # second number
 
         and if any of the variables are arrays, the shape can be specified as
-        the third item in the relevant tuple::
+        the third item in the relevant dtype::
 
-            record = f.read_record([('a', '<f4'), ('b', '<i4', (3,3))])
+            double precision :: a
+            integer :: b(3,3)
+            write(1) a, b
+
+            record = f.read_record('<f4', np.dtype(('<i4', (3, 3))))
+            a = record[0]
+            b = record[1].T
 
         Numpy also supports a short syntax for this kind of type::
 
-            record = f.read_record('<f4,(3,3)<i4')
-            record['f0']  # variables are called f0, f1, ...
-
+            record = f.read_record('<f4', '(3,3)<i4')
 
         See Also
         --------
@@ -181,21 +182,53 @@ class FortranFile(object):
         read_ints
 
         """
-        if dtype is None:
-            raise ValueError('Must specify dtype')
-        dtype = np.dtype(dtype)
+        dtype = kwargs.pop('dtype', None)
+        if kwargs:
+            raise ValueError("Unknown keyword arguments {}".format(tuple(kwargs.keys())))
 
-        firstSize = self._read_size()
-        if firstSize % dtype.itemsize != 0:
+        if dtype is not None:
+            dtypes = dtypes + (dtype,)
+        elif not dtypes:
+            raise ValueError('Must specify at least one dtype')
+
+        first_size = self._read_size()
+
+        dtypes = tuple(np.dtype(dtype) for dtype in dtypes)
+        block_size = sum(dtype.itemsize for dtype in dtypes)
+
+        num_blocks, remainder = divmod(first_size, block_size)
+        if remainder != 0:
             raise ValueError('Size obtained ({0}) is not a multiple of the '
-                             'dtype given ({1}).'.format(firstSize, dtype.itemsize))
+                             'dtypes given ({1}).'.format(first_size, block_size))
 
-        data = np.fromfile(self._fp, dtype=dtype, count=firstSize//dtype.itemsize)
-        secondSize = self._read_size()
-        if firstSize != secondSize:
+        if len(dtypes) != 1 and first_size != block_size:
+            # Fortran does not write mixed type array items in interleaved order,
+            # and it's not possible to guess the sizes of the arrays that were written.
+            # The user must specify the exact sizes of each of the arrays.
+            raise ValueError('Size obtained ({0}) does not match with the expected '
+                             'size ({1}) of multi-item record'.format(first_size, block_size))
+
+        data = []
+        for dtype in dtypes:
+            r = np.fromfile(self._fp, dtype=dtype, count=num_blocks)
+            if dtype.shape != ():
+                # Squeeze outmost block dimension for array items
+                if num_blocks == 1:
+                    assert r.shape == (1,) + dtype.shape
+                    r = r[0]
+
+            data.append(r)
+
+        second_size = self._read_size()
+        if first_size != second_size:
             raise IOError('Sizes do not agree in the header and footer for '
                           'this record - check header dtype')
-        return data
+
+        # Unpack result
+        if len(dtypes) == 1:
+            return data[0]
+        else:
+            return tuple(data)
 
     def read_ints(self, dtype='i4'):
         """
@@ -218,7 +251,7 @@ class FortranFile(object):
         read_record
 
         """
-        return self.read_record(dtype=dtype)
+        return self.read_record(dtype)
 
     def read_reals(self, dtype='f8'):
         """
@@ -241,7 +274,7 @@ class FortranFile(object):
         read_record
 
         """
-        return self.read_record(dtype=dtype)
+        return self.read_record(dtype)
 
     def close(self):
         """
