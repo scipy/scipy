@@ -73,6 +73,19 @@ class FortranFile(object):
      [ 0.84210526  0.89473684  0.94736842  1.        ]]
     >>> f.close()
 
+    Or, in Fortran::
+
+        integer :: a(5), i
+        double precision :: b(5,4)
+        open(1, file='test.unf', form='unformatted')
+        read(1) a
+        read(1) b
+        close(1)
+        write(*,*) a
+        do i = 1, 5
+            write(*,*) b(i,:)
+        end do
+
     """
     def __init__(self, filename, mode='r', header_dtype=np.uint32):
         if header_dtype is None:
