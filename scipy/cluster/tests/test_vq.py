@@ -11,7 +11,7 @@ from numpy.testing import (assert_array_equal, assert_array_almost_equal,
 from scipy._lib._numpy_compat import suppress_warnings
 import pytest
 
-from scipy.cluster.vq import (kmeans, kmeans2, py_vq, py_vq2, vq, whiten,
+from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
     ClusterError, _krandinit)
 from scipy.cluster import _vq
 
@@ -119,27 +119,12 @@ class TestVq(object):
             label1 = py_vq(tp(X), tp(initc))[0]
             assert_array_equal(label1, LABEL1)
 
-    def test_py_vq2(self):
-        initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
-        for tp in np.array, np.matrix:
-            label1 = py_vq2(tp(X), tp(initc))[0]
-            assert_array_equal(label1, LABEL1)
-
     def test_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         for tp in np.array, np.matrix:
             label1, dist = _vq.vq(tp(X), tp(initc))
             assert_array_equal(label1, LABEL1)
             tlabel1, tdist = vq(tp(X), tp(initc))
-
-    # def test_py_vq_1d(self):
-    #     """Test special rank 1 vq algo, python implementation."""
-    #     data = X[:, 0]
-    #     initc = data[:3]
-    #     a, b = _py_vq_1d(data, initc)
-    #     ta, tb = py_vq(data[:, np.newaxis], initc[:, np.newaxis])
-    #     assert_array_equal(a, ta)
-    #     assert_array_equal(b, tb)
 
     def test_vq_1d(self):
         # Test special rank 1 vq algo, python implementation.
@@ -218,10 +203,11 @@ class TestKMean(object):
                          [2.04621601, 0.07401111],
                          [-2.31149087,-0.05160469]])
 
+        kmeans(data, initk)
         with suppress_warnings() as sup:
             sup.filter(UserWarning,
-                       "One of the clusters is empty. Re-run kmean with a different initialization")
-            kmeans(data, initk)
+                       "One of the clusters is empty. Re-run kmeans with a "
+                       "different initialization")
             kmeans2(data, initk, missing='warn')
 
         assert_raises(ClusterError, kmeans2, data, initk, missing='raise')
@@ -295,16 +281,4 @@ class TestKMean(object):
         res = kmeans(x, 1, thresh=1e16)
         assert_allclose(res[0], np.array([4.]))
         assert_allclose(res[1], 2.3999999999999999)
-
-    def test_kmeans_no_duplicates(self):
-        # Regression test for gh-4044
-        np.random.seed(23495)
-        features = np.linspace(1, 2, num=20).reshape(10, 2)
-        # randint(0, 10, 3) will give a duplicate with this seed ([7, 7, 5])
-        codebook, distortion = kmeans(features, k_or_guess=3)
-        expected = np.array([[1.15789474, 1.21052632],
-                             [1.52631579, 1.57894737],
-                             [1.84210526, 1.89473684]])
-        assert_allclose(codebook, expected)
-        assert_allclose(distortion, 0.11909166841036592)
 

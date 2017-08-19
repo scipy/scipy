@@ -68,24 +68,18 @@ code book.
 """
 from __future__ import division, print_function, absolute_import
 
+import warnings
+import numpy as np
+from collections import deque
+from scipy._lib._util import _asarray_validated
+from scipy._lib.six import xrange
+from scipy.spatial.distance import cdist
+
+from . import _vq
+
 __docformat__ = 'restructuredtext'
 
 __all__ = ['whiten', 'vq', 'kmeans', 'kmeans2']
-
-# TODO:
-#   - implements high level method for running several times k-means with
-#   different initialization
-#   - warning: what happens if different number of clusters ? For now, emit a
-#   warning, but it is not great, because I am not sure it really make sense to
-#   succeed in this case (maybe an exception is better ?)
-
-import warnings
-
-import numpy as np
-from scipy._lib._util import _asarray_validated
-from scipy._lib import _numpy_compat
-
-from . import _vq
 
 
 class ClusterError(Exception):
@@ -138,7 +132,7 @@ def whiten(obs, check_finite=True):
 
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
-    std_dev = np.std(obs, axis=0)
+    std_dev = obs.std(axis=0)
     zero_std_mask = std_dev == 0
     if zero_std_mask.any():
         std_dev[zero_std_mask] = 1.0
@@ -211,17 +205,11 @@ def vq(obs, code_book, check_finite=True):
     ct = np.common_type(obs, code_book)
 
     c_obs = obs.astype(ct, copy=False)
+    c_code_book = code_book.astype(ct, copy=False)
 
-    if code_book.dtype != ct:
-        c_code_book = code_book.astype(ct)
-    else:
-        c_code_book = code_book
-
-    if ct in (np.float32, np.float64):
-        results = _vq.vq(c_obs, c_code_book)
-    else:
-        results = py_vq(obs, code_book)
-    return results
+    if np.issubdtype(ct, np.float64) or np.issubdtype(ct, np.float32):
+        return _vq.vq(c_obs, c_code_book)
+    return py_vq(obs, code_book, check_finite=False)
 
 
 def py_vq(obs, code_book, check_finite=True):
@@ -264,123 +252,20 @@ def py_vq(obs, code_book, check_finite=True):
     obs = _asarray_validated(obs, check_finite=check_finite)
     code_book = _asarray_validated(code_book, check_finite=check_finite)
 
-    # n = number of observations
-    # d = number of features
-    if np.ndim(obs) == 1:
-        if not np.ndim(obs) == np.ndim(code_book):
-            raise ValueError(
-                    "Observation and code_book should have the same rank")
-        else:
-            return _py_vq_1d(obs, code_book)
-    else:
-        (n, d) = np.shape(obs)
-
-    # code books and observations should have same number of features and same
-    # shape
-    if not np.ndim(obs) == np.ndim(code_book):
+    if obs.ndim != code_book.ndim:
         raise ValueError("Observation and code_book should have the same rank")
-    elif not d == code_book.shape[1]:
-        raise ValueError("Code book(%d) and obs(%d) should have the same "
-                         "number of features (eg columns)""" %
-                         (code_book.shape[1], d))
 
-    code = np.zeros(n, dtype=int)
-    min_dist = np.zeros(n)
-    for i in range(n):
-        dist = np.sum((obs[i] - code_book) ** 2, 1)
-        code[i] = np.argmin(dist)
-        min_dist[i] = dist[code[i]]
+    if obs.ndim == 1:
+        obs = obs[:, np.newaxis]
+        code_book = code_book[:, np.newaxis]
 
-    return code, np.sqrt(min_dist)
-
-
-def _py_vq_1d(obs, code_book):
-    """ Python version of vq algorithm for rank 1 only.
-
-    Parameters
-    ----------
-    obs : ndarray
-        Expects a rank 1 array. Each item is one observation.
-    code_book : ndarray
-        Code book to use. Same format than obs. Should rank 1 too.
-
-    Returns
-    -------
-    code : ndarray
-        code[i] gives the label of the ith obversation, that its code is
-        code_book[code[i]].
-    mind_dist : ndarray
-        min_dist[i] gives the distance between the ith observation and its
-        corresponding code.
-
-    """
-    raise RuntimeError("_py_vq_1d buggy, do not use rank 1 arrays for now")
-    n = obs.size
-    nc = code_book.size
-    dist = np.zeros((n, nc))
-    for i in range(nc):
-        dist[:, i] = np.sum(obs - code_book[i])
-    print(dist)
-    code = np.argmin(dist)
-    min_dist = dist[code]
-
-    return code, np.sqrt(min_dist)
-
-
-def py_vq2(obs, code_book, check_finite=True):
-    """2nd Python version of vq algorithm.
-
-    The algorithm simply computes the euclidian distance between each
-    observation and every frame in the code_book/
-
-    Parameters
-    ----------
-    obs : ndarray
-        Expect a rank 2 array. Each row is one observation.
-    code_book : ndarray
-        Code book to use. Same format than obs. Should have same number of
-        features (eg columns) than obs.
-    check_finite : bool, optional
-        Whether to check that the input matrices contain only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-        Default: True
-
-    Returns
-    -------
-    code : ndarray
-        code[i] gives the label of the ith obversation, that its code is
-        code_book[code[i]].
-    mind_dist : ndarray
-        min_dist[i] gives the distance between the ith observation and its
-        corresponding code.
-
-    Notes
-    -----
-    This could be faster when number of codebooks is small, but it
-    becomes a real memory hog when codebook is large. It requires
-    N by M by O storage where N=number of obs, M = number of
-    features, and O = number of codes.
-
-    """
-    obs = _asarray_validated(obs, check_finite=check_finite)
-    code_book = _asarray_validated(code_book, check_finite=check_finite)
-    d = np.shape(obs)[1]
-
-    # code books and observations should have same number of features
-    if not d == code_book.shape[1]:
-        raise ValueError("""
-            code book(%d) and obs(%d) should have the same
-            number of features (eg columns)""" % (code_book.shape[1], d))
-
-    diff = obs[np.newaxis, :, :] - code_book[:,np.newaxis,:]
-    dist = np.sqrt(np.sum(diff * diff, -1))
-    code = np.argmin(dist, 0)
-    min_dist = np.minimum.reduce(dist, 0)
-    # The next line I think is equivalent and should be faster than the one
-    # above, but in practice didn't seem to make much difference:
-    # min_dist = choose(code,dist)
+    dist = cdist(obs, code_book)
+    code = dist.argmin(axis=1)
+    min_dist = dist[np.arange(len(code)), code]
     return code, min_dist
+
+# py_vq2 was equivalent to py_vq
+py_vq2 = np.deprecate(py_vq, old_name='py_vq2', new_name='py_vq')
 
 
 def _kmeans(obs, guess, thresh=1e-5):
@@ -416,21 +301,20 @@ def _kmeans(obs, guess, thresh=1e-5):
 
     """
 
-    code_book = np.array(guess, copy=True)
-    avg_dist = []
+    code_book = np.asarray(guess)
     diff = np.inf
+    prev_avg_dists = deque([diff], maxlen=2)
     while diff > thresh:
-        nc = code_book.shape[0]
         # compute membership and distances between obs and code_book
-        obs_code, distort = vq(obs, code_book)
-        avg_dist.append(np.mean(distort, axis=-1))
+        obs_code, distort = vq(obs, code_book, check_finite=False)
+        prev_avg_dists.append(distort.mean(axis=-1))
         # recalc code_book as centroids of associated obs
-        code_book, has_members = _vq.update_cluster_means(obs, obs_code, nc)
-        code_book = code_book.compress(has_members, axis=0)
-        if len(avg_dist) > 1:
-            diff = avg_dist[-2] - avg_dist[-1]
+        code_book, has_members = _vq.update_cluster_means(obs, obs_code,
+                                                          code_book.shape[0])
+        code_book = code_book[has_members]
+        diff = prev_avg_dists[0] - prev_avg_dists[1]
 
-    return code_book, avg_dist[-1]
+    return code_book, prev_avg_dists[1]
 
 
 def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
@@ -545,55 +429,38 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True):
     >>> plt.show()
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
-    if int(iter) < 1:
-        raise ValueError('iter must be at least 1.')
+    if iter < 1:
+        raise ValueError("iter must be at least 1, got %s" % iter)
 
     # Determine whether a count (scalar) or an initial guess (array) was passed.
-    k = None
-    guess = None
-    try:
-        k = int(k_or_guess)
-    except TypeError:
+    if not np.isscalar(k_or_guess):
         guess = _asarray_validated(k_or_guess, check_finite=check_finite)
-
-    if guess is not None:
         if guess.size < 1:
-            raise ValueError("Asked for 0 cluster ? initial book was %s" %
+            raise ValueError("Asked for 0 clusters. Initial book was %s" %
                              guess)
-        result = _kmeans(obs, guess, thresh=thresh)
-    else:
-        if k != k_or_guess:
-            raise ValueError('if k_or_guess is a scalar, it must be an integer')
-        # initialize best distance value to a large value
-        best_dist = np.inf
-        No = obs.shape[0]
-        k = k_or_guess
-        if k < 1:
-            raise ValueError("Asked for 0 cluster ? ")
-        for i in range(iter):
-            # the initial code book is randomly selected from observations
-            k_random_indices = np.random.randint(0, No, k)
-            if np.any(_numpy_compat.unique(k_random_indices,
-                                           return_counts=True)[1] > 1):
-                # randint can give duplicates, which is incorrect.  Only fix
-                # the issue if it occurs, to not change results for users who
-                #  use a random seed and get no duplicates.
-                k_random_indices = np.random.permutation(No)[:k]
+        return _kmeans(obs, guess, thresh=thresh)
 
-            guess = np.take(obs, k_random_indices, 0)
-            book, dist = _kmeans(obs, guess, thresh=thresh)
-            if dist < best_dist:
-                best_book = book
-                best_dist = dist
-        result = best_book, best_dist
-    return result
+    # k_or_guess is a scalar, now verify that it's an integer
+    k = int(k_or_guess)
+    if k != k_or_guess:
+        raise ValueError("If k_or_guess is a scalar, it must be an integer.")
+    if k < 1:
+        raise ValueError("Asked for %d clusters." % k)
+
+    # initialize best distance value to a large value
+    best_dist = np.inf
+    for i in xrange(iter):
+        # the initial code book is randomly selected from observations
+        guess = _kpoints(obs, k)
+        book, dist = _kmeans(obs, guess, thresh=thresh)
+        if dist < best_dist:
+            best_book = book
+            best_dist = dist
+    return best_book, best_dist
 
 
 def _kpoints(data, k):
     """Pick k points at random in data (one row = one observation).
-
-    This is done by taking the k first values of a random permutation of 1..N
-    where N is the number of observation.
 
     Parameters
     ----------
@@ -605,15 +472,8 @@ def _kpoints(data, k):
         Number of samples to generate.
 
     """
-    if data.ndim > 1:
-        n = data.shape[0]
-    else:
-        n = data.size
-
-    p = np.random.permutation(n)
-    x = data[p[:k], :].copy()
-
-    return x
+    idx = np.random.choice(data.shape[0], size=k, replace=False)
+    return data[idx]
 
 
 def _krandinit(data, k):
@@ -632,40 +492,28 @@ def _krandinit(data, k):
         Number of samples to generate.
 
     """
-    def init_rank1(data):
-        mu = np.mean(data)
+    mu = data.mean(axis=0)
+
+    if data.ndim == 1:
         cov = np.cov(data)
         x = np.random.randn(k)
         x *= np.sqrt(cov)
-        x += mu
-        return x
-
-    def init_rankn(data):
-        mu = np.mean(data, 0)
-        cov = np.atleast_2d(np.cov(data, rowvar=0))
+    elif data.shape[1] > data.shape[0]:
+        # initialize when the covariance matrix is rank deficient
+        _, s, vh = np.linalg.svd(data - mu, full_matrices=False)
+        x = np.random.randn(k, s.size)
+        sVh = s[:, None] * vh / np.sqrt(data.shape[0] - 1)
+        x = x.dot(sVh)
+    else:
+        cov = np.atleast_2d(np.cov(data, rowvar=False))
 
         # k rows, d cols (one row = one obs)
         # Generate k sample of a random variable ~ Gaussian(mu, cov)
         x = np.random.randn(k, mu.size)
-        x = np.dot(x, np.linalg.cholesky(cov).T) + mu
-        return x
+        x = x.dot(np.linalg.cholesky(cov).T)
 
-    def init_rank_def(data):
-        # initialize when the covariance matrix is rank deficient
-        mu = np.mean(data, axis=0)
-        _, s, vh = np.linalg.svd(data - mu, full_matrices=False)
-        x = np.random.randn(k, s.size)
-        sVh = s[:, None] * vh / np.sqrt(data.shape[0] - 1)
-        x = np.dot(x, sVh) + mu
-        return x
-
-    nd = np.ndim(data)
-    if nd == 1:
-        return init_rank1(data)
-    elif data.shape[1] > data.shape[0]:
-        return init_rank_def(data)
-    else:
-        return init_rankn(data)
+    x += mu
+    return x
 
 _valid_init_meth = {'random': _krandinit, 'points': _kpoints}
 
@@ -673,19 +521,19 @@ _valid_init_meth = {'random': _krandinit, 'points': _kpoints}
 def _missing_warn():
     """Print a warning when called."""
     warnings.warn("One of the clusters is empty. "
-                 "Re-run kmean with a different initialization.")
+                  "Re-run kmeans with a different initialization.")
 
 
 def _missing_raise():
     """raise a ClusterError when called."""
     raise ClusterError("One of the clusters is empty. "
-                        "Re-run kmean with a different initialization.")
+                       "Re-run kmeans with a different initialization.")
 
 _valid_miss_meth = {'warn': _missing_warn, 'raise': _missing_raise}
 
 
 def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
-        missing='warn', check_finite=True):
+            missing='warn', check_finite=True):
     """
     Classify a set of observations into k clusters using the k-means algorithm.
 
@@ -744,74 +592,58 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         i'th observation is closest to.
 
     """
+    if int(iter) < 1:
+        raise ValueError("Invalid iter (%s), "
+                         "must be a positive integer." % iter)
+    try:
+        miss_meth = _valid_miss_meth[missing]
+    except KeyError:
+        raise ValueError("Unknown missing method %r" % (missing,))
+
     data = _asarray_validated(data, check_finite=check_finite)
-    if missing not in _valid_miss_meth:
-        raise ValueError("Unkown missing method: %s" % str(missing))
-    # If data is rank 1, then we have 1 dimension problem.
-    nd = np.ndim(data)
-    if nd == 1:
+    if data.ndim == 1:
         d = 1
-        # raise ValueError("Input of rank 1 not supported yet")
-    elif nd == 2:
+    elif data.ndim == 2:
         d = data.shape[1]
     else:
-        raise ValueError("Input of rank > 2 not supported")
+        raise ValueError("Input of rank > 2 is not supported.")
 
-    if np.size(data) < 1:
-        raise ValueError("Input has 0 items.")
+    if data.size < 1:
+        raise ValueError("Empty input is not supported.")
 
-    # If k is not a single value, then it should be compatible with data's
-    # shape
-    if np.size(k) > 1 or minit == 'matrix':
-        if not nd == np.ndim(k):
-            raise ValueError("k is not an int and has not same rank than data")
-        if d == 1:
-            nc = len(k)
-        else:
-            (nc, dc) = k.shape
-            if not dc == d:
-                raise ValueError("k is not an int and has not same rank than\
-                        data")
-        clusters = k.copy()
+    # If k is not a single value it should be compatible with data's shape
+    if minit == 'matrix' or not np.isscalar(k):
+        code_book = np.array(k, copy=True)
+        if data.ndim != code_book.ndim:
+            raise ValueError("k array doesn't match data rank")
+        nc = len(code_book)
+        if data.ndim > 1 and code_book.shape[1] != d:
+            raise ValueError("k array doesn't match data dimension")
     else:
-        try:
-            nc = int(k)
-        except TypeError:
-            raise ValueError("k (%s) could not be converted to an integer " % str(k))
+        nc = int(k)
 
         if nc < 1:
-            raise ValueError("kmeans2 for 0 clusters ? (k was %s)" % str(k))
-
-        if not nc == k:
+            raise ValueError("Cannot ask kmeans2 for %d clusters"
+                             " (k was %s)" % (nc, k))
+        elif nc != k:
             warnings.warn("k was not an integer, was converted.")
+
         try:
-            init = _valid_init_meth[minit]
+            init_meth = _valid_init_meth[minit]
         except KeyError:
-            raise ValueError("unknown init method %s" % str(minit))
-        clusters = init(data, k)
+            raise ValueError("Unknown init method %r" % (minit,))
+        else:
+            code_book = init_meth(data, k)
 
-    if int(iter) < 1:
-        raise ValueError("iter = %s is not valid.  iter must be a positive integer." % iter)
-
-    return _kmeans2(data, clusters, iter, nc, _valid_miss_meth[missing])
-
-
-def _kmeans2(data, code, niter, nc, missing):
-    """ "raw" version of kmeans2. Do not use directly.
-
-    Run k-means with a given initial codebook.
-
-    """
-    for i in range(niter):
-        # Compute the nearest neighbour for each obs
-        # using the current code book
-        label = vq(data, code)[0]
-        # Update the code by computing centroids using the new code book
-        new_code, has_members = _vq.update_cluster_means(data, label, nc)
+    for i in xrange(iter):
+        # Compute the nearest neighbor for each obs using the current code book
+        label = vq(data, code_book)[0]
+        # Update the code book by computing centroids
+        new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():
-            missing()
+            miss_meth()
             # Set the empty clusters to their previous positions
-            new_code[~has_members] = code[~has_members]
-        code = new_code
+            new_code_book[~has_members] = code_book[~has_members]
+        code_book = new_code_book
 
-    return code, label
+    return code_book, label

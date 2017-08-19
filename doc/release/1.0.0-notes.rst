@@ -83,6 +83,10 @@ Backwards incompatible changes
 The default value for the ``zero_phase`` keyword of `scipy.signal.decimate`
 has been changed to True.
 
+The `kmeans` and `kmeans` functions in `scipy.cluster.vq` changed the method
+used for random initialization, so using a fixed random seed will
+not necessarily produce the same results as in previous versions.
+
 `scipy.special.gammaln` does not accept complex arguments anymore.
 
 The deprecated functions `sph_jn`, `sph_yn`, `sph_jnyn`, `sph_in`,
