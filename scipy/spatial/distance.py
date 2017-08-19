@@ -620,9 +620,13 @@ def jaccard(u, v):
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
-    dist = (np.double(np.bitwise_and((u != v),
-                                     np.bitwise_or(u != 0, v != 0)).sum()) /
-            np.double(np.bitwise_or(u != 0, v != 0).sum()))
+    denominator = np.double(np.bitwise_or(u != 0, v != 0).sum())
+    if denominator == 0:
+        dist = 0
+    else:
+        dist = (np.double(np.bitwise_and((u != v),
+                                        np.bitwise_or(u != 0, v != 0)).sum()) /
+                denominator)
     return dist
 
 
