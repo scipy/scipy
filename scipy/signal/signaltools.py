@@ -3,7 +3,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-import warnings
+import operator
 import threading
 import sys
 import timeit
@@ -2313,6 +2313,10 @@ def resample_poly(x, up, down, axis=0, window=('kaiser', 5.0)):
     >>> plt.show()
     """
     x = asarray(x)
+    if up != int(up):
+        raise ValueError("up must be an integer")
+    if down != int(down):
+        raise ValueError("down must be an integer")
     up = int(up)
     down = int(down)
     if up < 1 or down < 1:
@@ -3356,7 +3360,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     Parameters
     ----------
-    x : ndarray
+    x : array_like
         The signal to be downsampled, as an N-dimensional array.
     q : int
         The downsampling factor. For downsampling factors higher than 13, it is
@@ -3394,11 +3398,11 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     0.18.0.
     """
 
-    if not isinstance(q, int):
-        raise TypeError("q must be an integer")
+    x = asarray(x)
+    q = operator.index(q)
 
-    if n is not None and not isinstance(n, int):
-        raise TypeError("n must be an integer")
+    if n is not None:
+        n = operator.index(n)
 
     if ftype == 'fir':
         if n is None:
