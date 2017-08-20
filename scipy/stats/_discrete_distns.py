@@ -529,6 +529,13 @@ class planck_gen(rv_discrete):
         k = floor(x)
         return 1-exp(-lambda_*(k+1))
 
+    def _sf(self, x, lambda_):
+        return np.exp(self._logsf(x, lambda_))
+
+    def _logsf(self, x, lambda_):
+        k = floor(x)
+        return -lambda_*(k+1)
+
     def _ppf(self, q, lambda_):
         vals = ceil(-1.0/lambda_ * log1p(-q)-1)
         vals1 = (vals-1).clip(self.a, np.inf)
