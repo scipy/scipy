@@ -280,7 +280,7 @@ def _solve_simplex(T, n, basis, maxiter=1000, phase=2, callback=None,
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
-        enough to positive to to serve as an optimal solution.
+        enough to positive to serve as an optimal solution.
     nit0 : int
         The initial iteration number used to keep an accurate iteration total
         in a two-phase problem.
@@ -452,7 +452,7 @@ def _linprog_simplex(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     tol : float
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
-        enough to positive to to serve as an optimal solution.
+        enough to positive to serve as an optimal solution.
     bland : bool
         If True, use Bland's anti-cycling rule [3] to choose pivots to
         prevent cycling.  If False, choose pivots which should lead to a
