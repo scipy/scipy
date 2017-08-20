@@ -2935,7 +2935,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                 diag_poles[idx+1, idx] = np.imag(p)
                 idx += 1  # skip next one
             idx += 1
-        gain_matrix = np.linalg.lstsq(B, diag_poles-A)[0]
+        gain_matrix = np.linalg.lstsq(B, diag_poles-A, rcond=-1)[0]
         transfer_matrix = np.eye(A.shape[0])
         cur_rtol = np.nan
         nb_iter = np.nan

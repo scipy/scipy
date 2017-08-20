@@ -1093,7 +1093,7 @@ class TestLSQ(object):
 
         # also check against numpy.lstsq
         aa, yy = AY
-        c1, _, _, _ = np.linalg.lstsq(aa, y)
+        c1, _, _, _ = np.linalg.lstsq(aa, y, rcond=-1)
         assert_allclose(b.c, c1)
 
     def test_weights(self):
