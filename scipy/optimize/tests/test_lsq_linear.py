@@ -22,7 +22,7 @@ class BaseMixin(object):
     def test_dense_no_bounds(self):
         for lsq_solver in self.lsq_solvers:
             res = lsq_linear(A, b, method=self.method, lsq_solver=lsq_solver)
-            assert_allclose(res.x, lstsq(A, b)[0])
+            assert_allclose(res.x, lstsq(A, b, rcond=-1)[0])
 
     def test_dense_bounds(self):
         # Solutions for comparison are taken from MATLAB.
@@ -31,7 +31,7 @@ class BaseMixin(object):
         for lsq_solver in self.lsq_solvers:
             res = lsq_linear(A, b, (lb, ub), method=self.method,
                              lsq_solver=lsq_solver)
-            assert_allclose(res.x, lstsq(A, b)[0])
+            assert_allclose(res.x, lstsq(A, b, rcond=-1)[0])
 
         lb = np.array([0.0, -np.inf])
         for lsq_solver in self.lsq_solvers:

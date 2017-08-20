@@ -163,7 +163,7 @@ class TestLGMRES(object):
             resp = np.linalg.norm(A.dot(xp) - b)
 
             K = np.c_[b, A.dot(b), A.dot(A.dot(b)), A.dot(A.dot(A.dot(b)))]
-            y, _, _, _ = np.linalg.lstsq(A.dot(K), b)
+            y, _, _, _ = np.linalg.lstsq(A.dot(K), b, rcond=-1)
             x = K.dot(y)
             res = np.linalg.norm(A.dot(x) - b)
 
