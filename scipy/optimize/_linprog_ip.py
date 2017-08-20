@@ -291,8 +291,8 @@ def _clean_inputs(
 
 def _presolve(c, A_ub, b_ub, A_eq, b_eq, bounds, rr):
     """
-    Given inputs for a linear programming problem in preferred format, presolve
-    the problem: identify trivially infeasibilities, redundancies, and
+    Given inputs for a linear programming problem in preferred format,
+    presolve the problem: identify trivial infeasibilities, redundancies,
     and unboundedness, tighten bounds where possible, and eliminate fixed
     variables.
 
@@ -1867,7 +1867,7 @@ def _linprog_ip(
             A string descriptor of the exit status of the optimization.
 
     Notes
-    -------
+    -----
 
     This method implements the algorithm outlined in [1]_ with ideas from [5]_
     and a structure inspired by the simpler methods of [3]_ and [4]_.
