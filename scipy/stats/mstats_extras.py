@@ -333,10 +333,10 @@ def median_cihs(data, alpha=0.05, axis=None):
         lims = (lambd*data[k] + (1-lambd)*data[k-1],
                 lambd*data[n-k-1] + (1-lambd)*data[n-k])
         return lims
-    data = ma.rray(data, copy=False)
+    data = ma.array(data, copy=False)
     # Computes quantiles along axis (or globally)
     if (axis is None):
-        result = _cihs_1D(data.compressed(), alpha)
+        result = _cihs_1D(data, alpha)
     else:
         if data.ndim > 2:
             raise ValueError("Array 'data' must be at most two dimensional, "
