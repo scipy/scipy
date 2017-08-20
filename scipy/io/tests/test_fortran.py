@@ -9,7 +9,7 @@ import re
 from numpy.testing import assert_equal, assert_allclose
 import numpy as np
 
-from scipy.io import FortranFile
+from scipy.io import FortranFile, _test_fortran
 
 
 DATA_PATH = path.join(path.dirname(__file__), 'data')
@@ -114,3 +114,46 @@ def test_fortranfile_write_mixed_record(tmpdir):
 
         for aa, bb in zip(a, b):
             assert_equal(bb, aa)
+
+
+def test_fortran_roundtrip(tmpdir):
+    filename = path.join(str(tmpdir), 'test.dat')
+
+    np.random.seed(1)
+
+    # double precision
+    m, n, k = 5, 3, 2
+    a = np.random.randn(m, n, k)
+    with FortranFile(filename, 'w') as f:
+        f.write_record(a.T)
+    a2 = _test_fortran.read_unformatted_double(m, n, k, filename)
+    with FortranFile(filename, 'r') as f:
+        a3 = f.read_record('(2,3,5)f8').T
+    assert_equal(a2, a)
+    assert_equal(a3, a)
+
+    # integer
+    m, n, k = 5, 3, 2
+    a = np.random.randn(m, n, k).astype(np.int32)
+    with FortranFile(filename, 'w') as f:
+        f.write_record(a.T)
+    a2 = _test_fortran.read_unformatted_int(m, n, k, filename)
+    with FortranFile(filename, 'r') as f:
+        a3 = f.read_record('(2,3,5)i4').T
+    assert_equal(a2, a)
+    assert_equal(a3, a)
+
+    # mixed
+    m, n, k = 5, 3, 2
+    a = np.random.randn(m, n)
+    b = np.random.randn(k).astype(np.intc)
+    with FortranFile(filename, 'w') as f:
+        f.write_record(a.T, b.T)
+    a2, b2 = _test_fortran.read_unformatted_mixed(m, n, k, filename)
+    with FortranFile(filename, 'r') as f:
+        a3, b3 = f.read_record('(3,5)f8', '2i4')
+        a3 = a3.T
+    assert_equal(a2, a)
+    assert_equal(a3, a)
+    assert_equal(b2, b)
+    assert_equal(b3, b)
