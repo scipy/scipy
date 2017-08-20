@@ -695,7 +695,7 @@ interface
 
    ! Solve A * X = B for symmetric A matrix
    ! The expert driver of ?SYSV with condition number, backward,forward error estimates and iterative refinement
-   ! The <c,z> versions assume only symmetric complex matrices. For Hermitian matrices, routine <c,z>HESVX is used
+   ! The (c,z) versions assume only symmetric complex matrices. For Hermitian matrices, routine (c,z)HESVX is used
      threadsafe
      callstatement (*f2py_func)((factored?"F":"N"),(lower?"L":"U"),&n,&nrhs,a,&lda,af,&ldaf,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,&lwork,irwork,&info)
      callprotoargument char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*,<ctypereal>*,<ctype>*,int*,<int,int,float,double>*,int*
