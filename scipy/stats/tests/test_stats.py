@@ -4182,8 +4182,8 @@ class TestKruskal(object):
     def test_large_no_samples(self):
         # Test to see if large samples are handled correctly.
         n = 50000
-        x=np.random.randn(n)
-        y=np.random.randn(n) + 50
+        x = np.random.randn(n)
+        y = np.random.randn(n) + 50
         h, p = stats.kruskal(x, y)
         expected = 0
         assert_approx_equal(p, expected)
