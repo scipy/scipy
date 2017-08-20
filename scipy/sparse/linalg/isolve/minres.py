@@ -31,10 +31,10 @@ References
 Solution of sparse indefinite systems of linear equations,
     C. C. Paige and M. A. Saunders (1975),
     SIAM J. Numer. Anal. 12(4), pp. 617-629.
-    http://www.stanford.edu/group/SOL/software/minres.html
+    https://web.stanford.edu/group/SOL/software/minres/
 
 This file is a translation of the following MATLAB implementation:
-    http://www.stanford.edu/group/SOL/software/minres/matlab/
+    https://web.stanford.edu/group/SOL/software/minres/minres-matlab.zip
 """
 
 
