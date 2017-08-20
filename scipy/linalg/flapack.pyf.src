@@ -978,7 +978,7 @@ interface
    end subroutine <prefix2>gesdd
 
    subroutine <prefix2>gesdd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
-   ! LWORK computation for <S/D>GESDD
+   ! LWORK computation for (S/D)GESDD
 
    fortranname <prefix2>gesdd
    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&iwork,&info)
@@ -1041,7 +1041,7 @@ interface
    end subroutine <prefix2c>gesdd
 
    subroutine <prefix2c>gesdd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
-   ! <C/Z>GESDD call with LWORK=-1 -- copypaste of above gesdd with dummy arrays
+   ! (C/Z)GESDD call with LWORK=-1 -- copypaste of above gesdd with dummy arrays
 
    fortranname <prefix2c>gesdd
    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&iwork,&info)
@@ -1102,7 +1102,7 @@ interface
    end subroutine <prefix2>gesvd
 
    subroutine <prefix2>gesvd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,info)
-   ! LWORK computation for <S/D>GESVD
+   ! LWORK computation for (S/D)GESVD
 
    fortranname <prefix2>gesvd
    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&info)
@@ -1162,7 +1162,7 @@ interface
    end subroutine <prefix2c>gesvd
 
    subroutine <prefix2c>gesvd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,info)
-   ! <C/Z>GESVD call with LWORK=-1 -- copypaste of above gesvd with dummy arrays
+   ! (C/Z)GESVD call with LWORK=-1 -- copypaste of above gesvd with dummy arrays
 
    fortranname <prefix2c>gesvd
    callstatement (*f2py_func)((compute_uv?(full_matrices?"A":"S"):"N"),(compute_uv?(full_matrices?"A":"S"):"N"),&m,&n,&a,&m,&s,&u,&u0,&vt,&vt0,&work,&lwork,&rwork,&info)
@@ -1927,7 +1927,7 @@ interface
    end subroutine <prefix2>geev
 
    subroutine <prefix2>geev_lwork(compute_vl,compute_vr,n,a,wr,wi,vl,ldvl,vr,ldvr,work,lwork,info)
-     ! LWORK=-1 call for <S/D>GEEV --- keep in sync with above <S/D>GEEV definition
+     ! LWORK=-1 call for (S/D)GEEV --- keep in sync with above (S/D)GEEV definition
 
      fortranname <prefix2>geev
      callstatement {(*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&wr,&wi,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&info);}
@@ -1989,7 +1989,7 @@ interface
    end subroutine <prefix2c>geev
 
    subroutine <prefix2c>geev_lwork(compute_vl,compute_vr,n,a,w,vl,ldvl,vr,ldvr,work,lwork,rwork,info)
-     ! LWORK=-1 call for <C/Z>GEEV --- keep in sync with above <C/Z>GEEV definition
+     ! LWORK=-1 call for (C/Z)GEEV --- keep in sync with above (C/Z)GEEV definition
 
      fortranname <prefix2c>geev
      callstatement (*f2py_func)((compute_vl?"V":"N"),(compute_vr?"V":"N"),&n,&a,&n,&w,&vl,&ldvl,&vr,&ldvr,&work,&lwork,&rwork,&info)
