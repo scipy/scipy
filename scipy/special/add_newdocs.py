@@ -3367,74 +3367,47 @@ add_newdoc("scipy.special", "hyp2f0",
 add_newdoc("scipy.special", "hyp2f1",
     r"""
     hyp2f1(a, b, c, z)
-    Gauss hypergeometric function 2F1(a, b; c; z), defined as:
 
-    ..math::
-
-    \mathrm{hyp2f1}(a, b, c, z) = 1 + \sum_{k=0}^\infty \frac{{a+k}\choose{a}}
-     {b+k}\choose{b}}{{c+k}\choose{c}} z^(k+1).
-
-    OR  
-
-    \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty 
-    \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!}
-
-    where a,b and c are real while z can be real or complex
-    and :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
-    :math:`n` is an integer the result is a polynomial of degree
-    :math:`n`
-
-    Gaussian hypergeometric function is defined on the disk \lvert z \rvert <1,
-    and by analytic continuation elsewhere.
-    The branch obtained by introsucing a cut from 1 to infinity on the real z-axis, 
-    that is, the branch in the sector \lvert ph(1-z) \revert <= \pi, 
-    is the principal branch (or principal value) of F(a,b;c;z).
+    Gauss hypergeometric function 2F1(a, b; c; z)
 
     Parameters
     ----------
-    a : array_like
-        argument
-    b : array_like
-        argument
-    c : array_like
-        argument
+    a, b, c : array_like
+        Arguments, should be real-valued.
     z : array_like
-        argument
+        Argument, real or complex.
 
     Returns
     -------
-    hyp2f1 : scalar or ndarray , 
+    hyp2f1 : scalar or ndarray
         The values of the gaussian hypergeometric function.
-
-    Notes
-    -----
-    hyp2f1 can be used to find the values of the gaussain hypergeometric function.
-
-    For complex arguments z with \lvert z \rvert >= 1,
-    can be analytically continued along any path in the complex plane ,
-    that avoids the branch points 0 and 1.
-
-    As c tends to -m, where m is a positive integer, 2F1(a,b;c;z) tends to infinity.
-
-    z < -1 valid for b,a,c,(b-a) != integer and (c-a),(c-b) != negative integer
-
-    z >= 1 is rejected (unless special cases are present)
-
-    a,b,c or z can take up complex values too.
-      
-    http://dlmf.nist.gov/15.4
 
     See also
     --------
     hyp0f1 : confluent hypergeometric limit function.
-
     hyp1f1 : Kummer's (confluent hypergeometric) function.
+
+    Notes
+    -----
+    This function is defined for :math:`|z| < 1` as
+
+    .. math::
+
+       \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
+       \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
+
+    and defined on the rest of the complex z-plane by analytic continuation.
+    Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree :math:`n`.
+
+    The implementation for complex values of ``z`` is described in [1]_.
 
     References
     ----------
-    .. [1] Cephes Mathematical Functions Library,
+    .. [1] J.M. Jin and Z. S. Jjie, "Computation of special functions", Wiley, 1996.
+    .. [2] Cephes Mathematical Functions Library,
            http://www.netlib.org/cephes/index.html
-    .. [2] NIST Digital Library of Mathematical Functions
+    .. [3] NIST Digital Library of Mathematical Functions
            http://dlmf.nist.gov/
 
     """)
