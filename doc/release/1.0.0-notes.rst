@@ -15,17 +15,42 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 1.0.x branch, and on adding
 new features on the master branch.
 
-This release requires Python 2.7 or 3.4+ and NumPy 1.8.1 or greater.
+This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
 
 
 New features
 ============
+
+`scipy.cluster` improvements
+----------------------------
+
+`scipy.cluster.optimal_leaf_ordering`, a function to reorder a linkage matrix
+to minimize distances between adjacent leaves, was added.
+
+
+`scipy.integrate` improvements
+------------------------------
+
+A set of new ODE solvers have been added to `scipy.integrate`.  The convenience
+function `scipy.integrate.solve_ivp` allows uniform access to all solvers.
+The individual solvers (``RK23``, ``RK45``, ``Radau``, ``BDF`` and ``LSODA``)
+can also be used directly.
+
+
+`scipy.linalg` improvements
+----------------------------
+
+Wrappers for the LAPACK functions ``*gels``, ``sstev`` and ``dstev`` have been
+added.
+
 
 `scipy.ndimage` improvements
 ----------------------------
 
 Support for homogeneous coordinate transforms has been added to
 `scipy.ndimage.affine_transform`.
+
+The ``ndimage`` C code underwent a significant refactoring
 
 
 `scipy.sparse` improvements
@@ -48,6 +73,9 @@ faster convergence.
 The function `scipy.linalg.subspace_angles` has been added to compute the
 subspace angles between two matrices.
 
+SuperLU was updated to version 5.2.1.
+
+
 `scipy.optimize` improvements
 -----------------------------
 
@@ -55,6 +83,10 @@ The method `trust-exact` was added to the function `scipy.optimize.minimize`.
 This new trust-region method solves the subproblem with higher accuracy at the cost
 of more Hessian factorizations (compared to dogleg) and is able to deal with indefinite
 Hessians. It seems very competitive against the other Newton methods implemented in scipy.
+
+`scipy.optimize.linprog` gained an interior point method.  Its performance is
+superior (both in accuracy and speed) to the older simplex method.
+
 
 `scipy.stats` improvements
 --------------------------
@@ -111,6 +143,26 @@ now returns a scalar rather than an ndarray when the length of alpha is 1.
 
 Other changes
 =============
+
+SciPy now has a formal governance structure.  It consists of a BDFL (Pauli
+Virtanen) and a Steering Committee.  See `the governance document
+<https://github.com/scipy/scipy/blob/master/doc/source/dev/governance/governance.rst>`_
+for details.
+
+It is now possible to build SciPy on Windows with MSVC + gfortran!  Continuous
+integration has been set up for this build configuration on Appveyor, building
+against OpenBLAS.
+
+The SciPy test suite has been migrated from ``nose`` to ``pytest``.
+
+Continuous integration for OS X has been set up on TravisCI.
+
+``scipy/_distributor_init.py`` was added to allow redistributors of SciPy to
+add custom code that needs to run when importing SciPy (e.g. checks for
+hardware, DLL search paths, etc.).
+
+Support for PEP 518 (specifying build system requirements) was added - see
+``pyproject.toml`` in the root of the SciPy repository.
 
 In order to have consistent function names, the function
 `scipy.linalg.solve_lyapunov` is renamed to `scipy.linalg.solve_continuous_lyapunov`.
