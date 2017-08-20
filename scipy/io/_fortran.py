@@ -121,13 +121,14 @@ class FortranFile(object):
         -----
         Writes data items to a file::
 
-            write_record(a.T, b.T, c.T)
+            write_record(a.T, b.T, c.T, ...)
 
-            write(1) a, b, c
+            write(1) a, b, c, ...
 
         Note that data in multidimensional arrays is written in
         row-major order --- to make them read correctly by Fortran
-        programs, you need to transpose the arrays yourself.
+        programs, you need to transpose the arrays yourself when
+        writing them.
 
         """
         items = tuple(np.asarray(item) for item in items)
@@ -163,11 +164,12 @@ class FortranFile(object):
 
         can be read with::
 
-            read_record('(4,5)i4')
+            read_record('(4,5)i4').T
 
         Note that the fact that the array is laid out in Fortran column major
         order in the file is **not** handled automatically, and you need to take
-        care about it yourself.
+        care about it yourself by (i) swapping the order of the dimensions when
+        reading, and (ii) transposing the resulting arrays.
 
         Alternatively, you can read the data as 1D array, also in which case you
         need to deal with the Fortran-ordering yourself. For example::
