@@ -333,7 +333,7 @@ def sdist():
         os.unlink(os.path.join('dist', tarball_name("xztar")))
     sh('xz %s' % os.path.join('dist', tarball_name("tar")), ignore_error=True)
 
-    # Copy the superpack into installers dir
+    # Copy the sdists into installers dir
     if not os.path.exists(options.installers.installersdir):
         os.makedirs(options.installers.installersdir)
 
@@ -352,15 +352,11 @@ def sdist():
 
 @task
 def release(options):
-    """Automate everything to be done for a release with numpy-vendor"""
+    """sdists, release notes and changelog.  Docs and wheels are built in
+    separate steps (see doc/source/dev/releasing.rst).
+    """
     # Source tarballs
     sdist()
-
-    # Windows .exe installers
-    options.python_version = '2.7'
-    bdist_superpack(options)
-    options.python_version = '3.4'
-    bdist_superpack(options)
 
     # README (gpg signed) and Changelog
     write_release_and_log()
