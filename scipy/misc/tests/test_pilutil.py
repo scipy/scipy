@@ -7,10 +7,9 @@ import numpy as np
 import glob
 
 import pytest
-from numpy.testing import (assert_equal,
-                           assert_allclose,
-                           assert_array_equal, assert_raises,
-                           assert_)
+from pytest import raises as assert_raises
+from numpy.testing import (assert_equal, assert_allclose,
+                           assert_array_equal, assert_)
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import misc
 from numpy.ma.testutils import assert_mask_equal
