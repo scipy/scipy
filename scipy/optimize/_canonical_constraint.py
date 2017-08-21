@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 import scipy.sparse as spc
-from ._constraints import (check_sparsity)
+from ._constraints import (_check_sparsity)
 
 __all__ = ['CanonicalConstraint',
            'nonlinear_to_canonical',
@@ -19,51 +19,6 @@ class CanonicalConstraint:
     Constraint of the form:
         constr_ineq(x) <= 0
         constr_eq(x) = 0
-
-    Parameters
-    ----------
-    n_ineq : int
-        Number of inequality constraints.
-    constr_ineq : callable
-        Inequality constraint:
-
-            constr_ineq(x) -> array_like, shape (n_ineq,)
-
-    jac_ineq : callable
-        Inequality constraints Jacobian:
-
-            jac_ineq(x) -> sparse matrix (or ndarray), shape (n_ineq, n)
-
-    n_eq : int
-        Number of equality constraints.
-    constr_eq : callable
-        Equality constraint:
-
-            constr_eq(x) -> array_like, shape (n_eq,)
-
-    jac_eq : callable
-        Equality constraints Jacobian:
-
-            jac_ineq(x) -> sparse matrix (or ndarray), shape (n_eq, n)
-
-    hess : callable
-        Hessian matrix:
-
-            hess(x, v_eq, v_ineq) -> H
-
-            - ``x``: array_like, shape (n,)
-                Evaluation point.
-            - ``v_eq``: array_like, shape (n_eq,), optional
-                Lagrange multipliers for equality constraints.
-            - ``v_ineq``: array_like, shape (n_ineq,), optional
-                Lagrange multipliers for inequality constraints.
-            - ``H``: {LinearOperator, sparse matrix, ndarray}, shape (n, n)
-                Hessian matrix.
-
-    enforce_feasibility : list of boolean, shape (n_ineq,)
-        List of booleans containing ``True`` if the correspondent inequality
-        constraint must be feasible along the iteractions and ``False``
-        otherwise.
     """
     def __init__(self, n_ineq, constr_ineq, jac_ineq,
                  n_eq, constr_eq, jac_eq, hess, enforce_feasibility):

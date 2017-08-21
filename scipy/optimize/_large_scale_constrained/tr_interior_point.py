@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import
 import scipy.sparse as spc
 import numpy as np
 from .equality_constrained_sqp import equality_constrained_sqp
-from .._canonical_constraint import check_sparsity
+from .._constraints import _check_sparsity
 from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['tr_interior_point']
