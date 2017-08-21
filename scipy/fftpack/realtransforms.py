@@ -22,7 +22,7 @@ atexit.register(_fftpack.destroy_dst1_cache)
 atexit.register(_fftpack.destroy_dst2_cache)
 
 
-def dctn(x, type=2, n=None, axes=None, norm=None, overwrite_x=False):
+def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional Discrete Cosine Transform of x along the specified
     axes.
@@ -33,10 +33,13 @@ def dctn(x, type=2, n=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3}, optional
         Type of the DCT (see Notes). Default type is 2.
-    n : int, optional
-        Length of the transform.  If ``n < x.shape[axis]``, `x` is
-        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
-        default results in ``n = x.shape[axis]``.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
     axes : tuple or None, optional
         Axes along which the DCT is computed; the default is over all axes.
     norm : {None, 'ortho'}, optional
@@ -67,18 +70,34 @@ def dctn(x, type=2, n=None, axes=None, norm=None, overwrite_x=False):
 
     """
     x = np.asanyarray(x)
+
+    if shape is None:
+        if axes is None:
+            shape = x.shape
+        else:
+            shape = np.take(x.shape, axes)
+    shape = tuple(shape)
+    for dim in shape:
+        if dim < 1:
+            raise ValueError("Invalid number of DCT data points "
+                             "(%s) specified." % (shape,))
+
     if axes is None:
-        axes = np.arange(x.ndim)
-    if np.isscalar(axes):
+        axes = list(range(-x.ndim, 0))
+    elif np.isscalar(axes):
         axes = [axes, ]
+    if len(axes) != len(shape):
+        raise ValueError("when given, axes and shape arguments "
+                         "have to be of the same length")
     if len(np.unique(axes)) != len(axes):
         raise ValueError("All axes must be unique.")
-    for ax in axes:
+
+    for n, ax in zip(shape, axes):
         x = dct(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
     return x
 
 
-def idctn(x, type=2, n=None, axes=None, norm=None, overwrite_x=False):
+def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
     Return multidimensional Discrete Cosine Transform of x along the specified
     axes.
@@ -89,10 +108,13 @@ def idctn(x, type=2, n=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3}, optional
         Type of the DCT (see Notes). Default type is 2.
-    n : int, optional
-        Length of the transform.  If ``n < x.shape[axis]``, `x` is
-        truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
-        default results in ``n = x.shape[axis]``.
+    shape : tuple of ints, optional
+        The shape of the result.  If both `shape` and `axes` (see below) are
+        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
+        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
+        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
+        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
+        length ``shape[i]``.
     axes : tuple or None, optional
         Axes along which the IDCT is computed; the default is over all axes.
     norm : {None, 'ortho'}, optional
@@ -122,13 +144,29 @@ def idctn(x, type=2, n=None, axes=None, norm=None, overwrite_x=False):
     True
     """
     x = np.asanyarray(x)
+
+    if shape is None:
+        if axes is None:
+            shape = x.shape
+        else:
+            shape = np.take(x.shape, axes)
+    shape = tuple(shape)
+    for dim in shape:
+        if dim < 1:
+            raise ValueError("Invalid number of DCT data points "
+                             "(%s) specified." % (shape,))
+
     if axes is None:
-        axes = np.arange(x.ndim)
-    if np.isscalar(axes):
+        axes = list(range(-x.ndim, 0))
+    elif np.isscalar(axes):
         axes = [axes, ]
+    if len(axes) != len(shape):
+        raise ValueError("when given, axes and shape arguments "
+                         "have to be of the same length")
     if len(np.unique(axes)) != len(axes):
         raise ValueError("All axes must be unique.")
-    for ax in axes:
+
+    for n, ax in zip(shape, axes):
         x = idct(x, type=type, n=n, axis=ax, norm=norm,
                  overwrite_x=overwrite_x)
     return x
