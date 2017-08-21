@@ -16,7 +16,6 @@ from __future__ import division, print_function, absolute_import
 import scipy.sparse as spc
 import numpy as np
 from .equality_constrained_sqp import equality_constrained_sqp
-from .._constraints import _check_sparsity
 from scipy.sparse.linalg import LinearOperator
 
 __all__ = ['tr_interior_point']
@@ -30,22 +29,19 @@ class BarrierSubproblem:
                   constr_ineq(x) + s = 0
     """
 
-    def __init__(self, x0, fun, grad, lagr_hess, n_ineq, constr_ineq,
-                 jac_ineq, n_eq, constr_eq, jac_eq, barrier_parameter,
-                 tolerance, enforce_feasibility, global_stop_criteria,
-                 xtol, sparse_jacobian, fun0, grad0, constr_ineq0,
-                 jac_ineq0, constr_eq0, jac_eq0):
-        # Compute number of variables
-        self.n_vars, = np.shape(x0)
+    def __init__(self, x0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
+                 constr, jac, barrier_parameter, tolerance,
+                 enforce_feasibility, global_stop_criteria,
+                 xtol, fun0, grad0, constr_ineq0, jac_ineq0, constr_eq0,
+                 jac_eq0):
         # Store parameters
+        self.n_vars = n_vars
         self.x0 = x0
         self._fun = fun
         self._grad = grad
         self.lagr_hess = lagr_hess
-        self._constr_ineq = constr_ineq
-        self._jac_ineq = jac_ineq
-        self._constr_eq = constr_eq
-        self._jac_eq = jac_eq
+        self._constr = constr
+        self._jac = jac
         self.barrier_parameter = barrier_parameter
         self.tolerance = tolerance
         self.n_eq = n_eq
@@ -53,19 +49,16 @@ class BarrierSubproblem:
         self.enforce_feasibility = enforce_feasibility
         self.global_stop_criteria = global_stop_criteria
         self.xtol = xtol
-        self.sparse_jacobian = sparse_jacobian
         # Auxiliar parameters
         self._x_f = x0
         self._f = fun0
         self._x_g = x0
         self._g = grad0
-        self._x_ineq = x0
+        self._x_c = x0
         self._c_ineq = constr_ineq0
-        self._x_eq = x0
         self._c_eq = constr_eq0
-        self._x_J_ineq = x0
+        self._x_j = x0
         self._J_ineq = jac_ineq0
-        self._x_J_eq = x0
         self._J_eq = jac_eq0
 
     def fun(self, x):
@@ -78,25 +71,15 @@ class BarrierSubproblem:
             self._g = self._grad(x)
         return self._g
 
-    def constr_ineq(self, x):
-        if not np.array_equal(self._x_ineq, x):
-            self._c_ineq = self._constr_ineq(x)
-        return self._c_ineq
+    def constr(self, x):
+        if not np.array_equal(self._x_c, x):
+            self._c_ineq, self._c_eq = self._constr(x)
+        return self._c_ineq, self._c_eq
 
-    def jac_ineq(self, x):
-        if not np.array_equal(self._x_J_ineq, x):
-            self._J_ineq = self._jac_ineq(x)
-        return self._J_ineq
-
-    def constr_eq(self, x):
-        if not np.array_equal(self._x_eq, x):
-            self._c_eq = self._constr_eq(x)
-        return self._c_eq
-
-    def jac_eq(self, x):
-        if not np.array_equal(self._x_J_eq, x):
-            self._J_eq = self._jac_eq(x)
-        return self._J_eq
+    def jac(self, x):
+        if not np.array_equal(self._x_j, x):
+            self._J_ineq, self._J_eq = self._jac(x)
+        return self._J_ineq, self._J_eq
 
     def update(self, barrier_parameter, tolerance):
         self.barrier_parameter = barrier_parameter
@@ -119,7 +102,7 @@ class BarrierSubproblem:
         # Use technique from Nocedal and Wright book, ref [3]_, p.576,
         # to guarantee constraints from `enforce_feasibility`
         # stay feasible along iterations.
-        c_ineq = self.constr_ineq(x)
+        c_ineq, _ = self.constr(x)
         s[self.enforce_feasibility] = -c_ineq[self.enforce_feasibility]
         log_s = [np.log(s_i) if s_i > 0 else -np.inf for s_i in s]
 
@@ -133,8 +116,9 @@ class BarrierSubproblem:
         """
         x = self.get_variables(z)
         s = self.get_slack(z)
-        return np.hstack((self.constr_eq(x),
-                          self.constr_ineq(x) + s))
+        c_ineq, c_eq = self.constr(x)
+        return np.hstack((c_eq,
+                          c_ineq + s))
 
     def scaling(self, z):
         """Returns scaling vector.
@@ -171,33 +155,26 @@ class BarrierSubproblem:
         """
         x = self.get_variables(z)
         s = self.get_slack(z)
-        jac_eq = self.jac_eq(x)
-        jac_ineq = self.jac_ineq(x)
+        J_ineq, J_eq = self.jac(x)
         if self.n_ineq == 0:
-            return check_sparsity(jac_eq, self.sparse_jacobian)
+            return J_eq
         else:
-            if self.sparse_jacobian is not None:
-                sparse_jacobian = self.sparse_jacobian
-            elif spc.issparse(jac_eq) or spc.issparse(jac_eq):
-                sparse_jacobian = True
-            else:
-                sparse_jacobian = False
-
-            if sparse_jacobian:
+            if spc.issparse(J_eq) or spc.issparse(J_eq):
+                # TODO: improve efficiency of this operation
                 S = spc.diags((s,), (0,))
-                return spc.bmat([[jac_eq, None],
-                                 [jac_ineq, S]], "csc")
+                return spc.bmat([[J_eq, None],
+                                 [J_ineq, S]], "csr")
             else:
                 S = np.diag(s)
                 zeros = np.zeros((self.n_eq, self.n_ineq))
-                # Convert to dense array
-                if spc.issparse(jac_ineq):
-                    jac_ineq = jac_ineq.todense()
-                if spc.issparse(jac_eq):
-                    jac_eq = jac_eq.todense()
+                # Convert to dense matrix
+                if spc.issparse(J_ineq):
+                    J_ineq = J_ineq.todense()
+                if spc.issparse(J_eq):
+                    J_eq = J_eq.todense()
                 # Concatenate matrices
-                return np.asarray(np.bmat([[jac_eq, zeros],
-                                           [jac_ineq, S]]))
+                return np.asarray(np.bmat([[J_eq, zeros],
+                                           [J_ineq, S]]))
 
     def lagrangian_hessian_x(self, z, v):
         """Returns Lagrangian Hessian (in relation to `x`) -> Hx"""
@@ -257,12 +234,11 @@ class BarrierSubproblem:
             or state.trust_radius < self.xtol
 
 
-def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
-                      jac_ineq, n_eq, constr_eq, jac_eq, x0,
-                      fun0, grad0, constr_ineq0, jac_ineq0,
-                      constr_eq0, jac_eq0, stop_criteria,
-                      enforce_feasibility, sparse_jacobian,
-                      xtol, state,
+def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
+                      constr, jac, x0, fun0, grad0,
+                      constr_ineq0, jac_ineq0, constr_eq0,
+                      jac_eq0, stop_criteria,
+                      enforce_feasibility, xtol, state,
                       initial_barrier_parameter=0.1,
                       initial_tolerance=0.1,
                       initial_penalty=1.0,
@@ -299,10 +275,10 @@ def tr_interior_point(fun, grad, lagr_hess, n_ineq, constr_ineq,
     state.constr_violation = np.inf
     # Define barrier subproblem
     subprob = BarrierSubproblem(
-        x0, fun, grad, lagr_hess, n_ineq, constr_ineq, jac_ineq,
-        n_eq, constr_eq, jac_eq, state.barrier_parameter, state.tolerance,
-        enforce_feasibility, stop_criteria, xtol, sparse_jacobian,
-        fun0, grad0, constr_ineq0, jac_ineq0, constr_eq0, jac_eq0)
+        x0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq, constr, jac,
+        state.barrier_parameter, state.tolerance, enforce_feasibility,
+        stop_criteria, xtol, fun0, grad0, constr_ineq0, jac_ineq0,
+        constr_eq0, jac_eq0)
 
     # Define initial value for the slack variables
     s0 = np.maximum(-1.5*constr_ineq0, np.ones(n_ineq))

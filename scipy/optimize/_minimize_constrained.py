@@ -3,16 +3,12 @@ import numpy as np
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
-from ._canonical_constraint import (CanonicalConstraint,
-                                    nonlinear_to_canonical,
-                                    linear_to_canonical,
-                                    box_to_canonical,
-                                    empty_canonical_constraint,
-                                    generate_lagrangian_hessian,
-                                    concatenate_canonical_constraints)
+from ._canonical_constraint import (lagrangian_hessian,
+                                    to_canonical)
 from ._large_scale_constrained import (tr_interior_point,
                                        equality_constrained_sqp)
 from warnings import warn
+from copy import deepcopy
 import time
 from .optimize import OptimizeResult
 
@@ -347,47 +343,30 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
            constrained optimization." SIAM Journal on
            Optimization 8.3 (1998): 682-706.
     """
-    # Put ``constraints`` in list format
-    if isinstance(constraints, (NonlinearConstraint,
-                                LinearConstraint,
-                                BoxConstraint,
-                                CanonicalConstraint)):
-        constraints = [constraints]
-    if isinstance(constraints, (list, tuple, np.array)):
-        # Converts all constraints to canonical format
-        constraints_list = []
-        for c in constraints:
-            if isinstance(c, CanonicalConstraint):
-                constraints_list += [c]
-            elif isinstance(c, (NonlinearConstraint)):
-                constraints_list += [nonlinear_to_canonical(c, sparse_jacobian)]
-            elif isinstance(c, (LinearConstraint)):
-                constraints_list += [linear_to_canonical(c, sparse_jacobian)]
-            elif isinstance(c, (BoxConstraint)):
-                constraints_list += [box_to_canonical(c, sparse_jacobian)]
-            else:
-                raise ValueError("Unknown Constraint type")
-        # Concatenate constraints
-        if len(constraints_list) == 0:
-            constr = empty_canonical_constraint()
-        elif len(constraints_list) == 1:
-            constr = constraints_list[0]
-        else:
-            constr = concatenate_canonical_constraints(constraints_list,
-                                                       sparse_jacobian)
-    else:
-        raise ValueError("Unknown Constraint type")
+    # Initial value
+    x0 = np.atleast_1d(x0).astype(float)
+    n_vars = np.size(x0)
+    # Evaluate initial point
+    f0 = fun(x0)
+    g0 = np.atleast_1d(grad(x0))
+
+    def grad_wrapped(x):
+        return np.atleast_1d(grad(x))
+
+    # Copy, evaluate and initialize constraints
+    copied_constraints = [deepcopy(constr) for constr in constraints]
+    for constr in copied_constraints:
+        x0, ci0, Ji0 = constr.evaluate_and_initialize(x0, sparse_jacobian)
+    # Concatenate constraints
+    constr = to_canonical(copied_constraints)
+    # Compute initial values
+    # TODO: use ci0 and Ji0 instead of using a new function
+    # evaluation.
+    c_ineq0, c_eq0 = constr.constr(x0)
+    J_ineq0, J_eq0 = constr.jac(x0)
 
     # Generate Lagrangian hess function
-    lagr_hess = generate_lagrangian_hessian(constr, hess)
-
-    # Compute initial values
-    fun0 = fun(x0)
-    grad0 = grad(x0)
-    constr_eq0 = constr.constr_eq(x0)
-    constr_ineq0 = constr.constr_ineq(x0)
-    jac_eq0 = constr.jac_eq(x0)
-    jac_ineq0 = constr.jac_ineq(x0)
+    lagr_hess = lagrangian_hessian(constr, hess)
 
     # Construct OptimizeResult
     state = OptimizeResult(niter=0, nfev=1, ngev=1,
@@ -474,24 +453,33 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         if constr.n_ineq > 0:
             raise ValueError("'equality_constrained_sqp' does not "
                              "support inequality constraints.")
+
+        def constr_eq(x):
+            _, c_eq = constr.constr(x)
+            return c_eq
+
+        def jac_eq(x):
+            _, J_eq = constr.jac(x)
+            return J_eq
+
         result = equality_constrained_sqp(
-            fun, grad, lagr_hess,
-            constr.constr_eq, constr.jac_eq,
-            x0, fun0, grad0, constr_eq0, jac_eq0,
+            fun, grad_wrapped, lagr_hess,
+            constr_eq, jac_eq,
+            x0, f0, g0, c_eq0, J_eq0,
             stop_criteria, state, **options)
+
     elif method == 'tr_interior_point':
         if constr.n_ineq == 0:
             warn("The problem only has equality constraints. "
                  "The solver 'equality_constrained_sqp' is a "
                  "better choice for those situations.")
         result = tr_interior_point(
-            fun, grad, lagr_hess,
-            constr.n_ineq, constr.constr_ineq,
-            constr.jac_ineq, constr.n_eq,
-            constr.constr_eq, constr.jac_eq,
-            x0, fun0, grad0, constr_ineq0, jac_ineq0,
-            constr_eq0, jac_eq0, stop_criteria,
-            constr.enforce_feasibility, sparse_jacobian,
+            fun, grad_wrapped, lagr_hess,
+            n_vars, constr.n_ineq, constr.n_eq,
+            constr.constr, constr.jac,
+            x0, f0, g0, c_ineq0, J_ineq0,
+            c_eq0, J_eq0, stop_criteria,
+            constr.enforce_feasibility,
             xtol, state, **options)
     else:
         raise ValueError("Unknown optimization ``method``.")

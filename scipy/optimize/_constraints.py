@@ -66,29 +66,45 @@ class NonlinearConstraint:
         is False.
     """
     def __init__(self, fun, kind, jac, hess, enforce_feasibility=False):
-        self.fun = fun
+        self._fun = fun
         self.kind = kind
-        self.jac = jac
+        self._jac = jac
         self.hess = hess
         self.enforce_feasibility = enforce_feasibility
+        self.isinitialized = False
 
-
-    def _evaluate_and_initialize(self, x0):
+    def evaluate_and_initialize(self, x0, sparse_jacobian=None):
         x0 = np.atleast_1d(x0).astype(float)
-        f0 = np.atleast_1d(self.fun(x0))
-        n = x0.size
-        m = f0.size
+        f0 = np.atleast_1d(self._fun(x0))
+        J0 = self._jac(x0)
 
-        self.kind = _check_kind(self.kind, m)
+        def fun_wrapped(x):
+            return np.atleast_1d(self._fun(x))
+
+        if sparse_jacobian or (sparse_jacobian is None and spc.issparse(J0)):
+            def jac_wrapped(x):
+                return spc.csr_matrix(self._jac(x))
+            self.sparse_jacobian = True
+
+        else:
+            def jac_wrapped(x):
+                return np.atleast_2d(self._jac(x))
+            self.sparse_jacobian = False
+
+        self.fun = fun_wrapped
+        self.jac = jac_wrapped
+        self.n = x0.size
+        self.m = f0.size
+        self.kind = _check_kind(self.kind, self.m)
         self.enforce_feasibility \
-            = _check_enforce_feasibility(self.enforce_feasibility, m)
-
+            = _check_enforce_feasibility(self.enforce_feasibility, self.m)
         if not _is_feasible(self.kind, self.enforce_feasibility, f0):
             raise ValueError("Unfeasible initial point. "
                              "Either set ``enforce_feasibility=False`` or "
                              "choose a new feasible initial point ``x0``.")
 
-        return x0, f0
+        self.isinitialized = True
+        return x0, f0, J0
 
 
 class LinearConstraint:
@@ -134,37 +150,54 @@ class LinearConstraint:
         self.A = A
         self.kind = kind
         self.enforce_feasibility = enforce_feasibility
+        self.isinitialized = False
 
-    def _evaluate_and_initialize(self, x0):
-        if spc.issparse(self.A):
-            self.A = spc.csc_matrix(self.A)
+    def evaluate_and_initialize(self, x0, sparse_jacobian=None):
+        if sparse_jacobian or (sparse_jacobian is None
+                               and spc.issparse(self.A)):
+            self.A = spc.csr_matrix(self.A)
+            self.sparse_jacobian = True
         else:
             self.A = np.atleast_2d(np.asarray(self.A))
+            self.sparse_jacobian = False
+
         x0 = np.atleast_1d(x0).astype(float)
         f0 = self.A.dot(x0)
-        n = x0.size
-        m = f0.size
+        J0 = self.A
+        self.n = x0.size
+        self.m = f0.size
 
-        self.kind = _check_kind(self.kind, m)
+        self.kind = _check_kind(self.kind, self.m)
         self.enforce_feasibility \
-            = _check_enforce_feasibility(self.enforce_feasibility, m)
-
+            = _check_enforce_feasibility(self.enforce_feasibility, self.m)
         if not _is_feasible(self.kind, self.enforce_feasibility, f0):
             raise ValueError("Unfeasible initial point. "
                              "Either set ``enforce_feasibility=False`` or "
                              "choose a new feasible initial point ``x0``.")
 
-        return x0, f0
+        self.isinitialized = True
+        return x0, f0, J0
 
-    def to_nonlinear(self, sparse_jacobian=None):
+    def to_nonlinear(self):
+        if not self.isinitialized:
+            raise RuntimeError("Trying to convert uninitialized constraint.")
+
         def fun(x):
             return self.A.dot(x)
 
         def jac(x):
-            return _check_sparsity(self.A, sparse_jacobian)
+            return self.A
 
-        return NonlinearConstraint(fun, self.kind,  jac, None,
-                                   self.enforce_feasibility)
+        # Build Constraints
+        nonlinear = NonlinearConstraint(fun, self.kind, jac, None,
+                                        self.enforce_feasibility)
+        nonlinear.isinitialized = True
+        nonlinear.m = self.m
+        nonlinear.n = self.n
+        nonlinear.sparse_jacobian = self.sparse_jacobian
+        nonlinear.fun = fun
+        nonlinear.jac = jac
+        return nonlinear
 
 
 class BoxConstraint:
@@ -207,17 +240,26 @@ class BoxConstraint:
     def __init__(self, kind, enforce_feasibility=False):
         self.kind = kind
         self.enforce_feasibility = enforce_feasibility
+        self.isinitialized = False
 
-    def _evaluate_and_initialize(self, x0):
+    def evaluate_and_initialize(self, x0, sparse_jacobian=None):
         x0 = np.atleast_1d(x0).astype(float)
         f0 = x0
-        n = x0.size
-        m = f0.size
+        self.n = x0.size
+        self.m = f0.size
+        if sparse_jacobian or sparse_jacobian is None:
+            J0 = spc.eye(self.n).tocsr()
+            self.sparse_jacobian = True
+        else:
+            J0 = np.eye(self.n)
+            self.sparse_jacobian = False
+        self.J = J0
 
-        self.kind = _check_kind(self.kind, m)
+        self.kind = _check_kind(self.kind, self.m)
         self.enforce_feasibility \
-            = _check_enforce_feasibility(self.enforce_feasibility, m)
+            = _check_enforce_feasibility(self.enforce_feasibility, self.m)
 
+        self.isinitialized = True
         if not _is_feasible(self.kind, self.enforce_feasibility, f0):
             warn("The initial point was changed in order "
                  "to stay inside box constraints.")
@@ -225,43 +267,31 @@ class BoxConstraint:
                                                self.enforce_feasibility,
                                                x0)
             f0_new = x0_new
-            return x0_new, f0_new
+            return x0_new, f0_new, J0
         else:
-            return x0, f0
+            return x0, f0, J0
 
-    def to_linear(self, sparse_jacobian=None):
-        # Set default value
-        if sparse_jacobian is None:
-            sparse_jacobian = True
-        # Define matrix A
-        fun_len = len(self.kind[1])
-        if sparse_jacobian:
-            A = spc.eye(fun_len).tocsc()
-        else:
-            A = np.eye(fun_len)
-        # Return Constraint
-        return LinearConstraint(A, self.kind, self.enforce_feasibility)
+    def to_linear(self):
+        if not self.isinitialized:
+            raise RuntimeError("Trying to convert uninitialized constraint.")
+        # Build Constraints
+        linear = LinearConstraint(self.J, self.kind,
+                                  self.enforce_feasibility)
+        linear.isinitialized = True
+        linear.m = self.m
+        linear.n = self.n
+        linear.sparse_jacobian = self.sparse_jacobian
+        return linear
 
-    def to_nonlinear(self, sparse_jacobian=None):
-        return self.to_linear(sparse_jacobian).to_nonlinear()
+    def to_nonlinear(self):
+        if not self.isinitialized:
+            raise RuntimeError("Trying to convert uninitialized constraint.")
+        return self.to_linear().to_nonlinear()
 
 
 # ************************************************************ #
 # **********           Auxiliar Functions           ********** #
 # ************************************************************ #
-def _check_sparsity(A, sparse):
-    """Return a spmatrix if `sparse` is True and a dense numpy array otherwise.
-    """
-    if (sparse is None) or \
-       (sparse and spc.issparse(A)) or \
-       (not sparse and not spc.issparse(A)):
-        return A
-    elif sparse:
-        return spc.csc_matrix(A)
-    else:
-        return A.toarray()
-
-
 def _check_kind(kind, m):
     if not isinstance(kind, (tuple, list, str)):
         raise ValueError("The parameter `kind` should be a tuple, "
@@ -283,26 +313,26 @@ def _check_kind(kind, m):
 
     if keyword in ("greater", "less", "equals"):
         c = np.asarray(kind[1], dtype=float)
-        if np.size(c) not in (1, m) :
+        if np.size(c) not in (1, m):
             if keyword == "greater":
-                raise ValueError("`lb` has the wrong dimension")
+                raise ValueError("`lb` has the wrong dimension.")
             if keyword == "less":
-                raise ValueError("`ub` has the wrong dimension")
+                raise ValueError("`ub` has the wrong dimension.")
             if keyword == "equals":
-                raise ValueError("`c` has the wrong dimension")
+                raise ValueError("`c` has the wrong dimension.")
         c = np.resize(c, m)
         return (keyword, c)
     elif keyword == "interval":
         lb = np.asarray(kind[1], dtype=float)
-        if np.size(lb) not in (1, m) :
-            raise ValueError("`lb` has  the wrong dimension")
+        if np.size(lb) not in (1, m):
+            raise ValueError("`lb` has the wrong dimension.")
         lb = np.resize(lb, m)
         ub = np.asarray(kind[2], dtype=float)
-        if np.size(ub) not in (1, m) :
-            raise ValueError("`ub` has  the wrong dimension")
+        if np.size(ub) not in (1, m):
+            raise ValueError("`ub` has the wrong dimension.")
         ub = np.resize(ub, m)
         if (lb > ub).any():
-            raise ValueError("lb[i] > ub[i]")
+            raise ValueError("lb[i] > ub[i].")
         return (keyword, lb, ub)
 
 
@@ -323,7 +353,10 @@ def _check_enforce_feasibility(enforce_feasibility, m):
 
 def _is_feasible(kind, enforce_feasibility, f0):
     keyword = kind[0]
-    if keyword == "greater":
+    if keyword == "equals":
+        lb = np.asarray(kind[1], dtype=float)
+        ub = np.asarray(kind[1], dtype=float)
+    elif keyword == "greater":
         lb = np.asarray(kind[1], dtype=float)
         ub = np.full_like(lb, np.inf, dtype=float)
     elif keyword == "less":
@@ -332,12 +365,16 @@ def _is_feasible(kind, enforce_feasibility, f0):
     elif keyword == "interval":
         lb = np.asarray(kind[1], dtype=float)
         ub = np.asarray(kind[2], dtype=float)
-    return ((lb <= f0).all() and (f0 <= ub).all())
+    else:
+        raise RuntimeError("Never be here.")
+
+    return ((lb[enforce_feasibility] <= f0[enforce_feasibility]).all()
+            and (f0[enforce_feasibility] <= ub[enforce_feasibility]).all())
 
 
 def _reinforce_box_constraint(kind, enforce_feasibility, x0,
-                             relative_tolerance=0.01,
-                             absolute_tolerance=0.01):
+                              relative_tolerance=0.01,
+                              absolute_tolerance=0.01):
         """Reinforce box constraint"""
         x0 = np.copy(np.asarray(x0, dtype=float))
         keyword = kind[0]

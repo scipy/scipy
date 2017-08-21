@@ -1,6 +1,5 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import scipy.sparse as spc
 from scipy.optimize._constraints import (BoxConstraint,
                                          LinearConstraint,
                                          NonlinearConstraint,
@@ -27,10 +26,12 @@ class TestCheckKind(TestCase):
         assert_raises(ValueError, _check_kind, 3, ["interval", [1, 2, 3]])
 
     def test_kind_mismatching_ub_lb(self):
-        assert_raises(ValueError, _check_kind, 3,  ["interval", [1, 2, 3], [1, 2]])
+        assert_raises(ValueError, _check_kind, 3,
+                      ["interval", [1, 2, 3], [1, 2]])
 
     def test_kind_ub_smaller_than_lb(self):
-        assert_raises(ValueError, _check_kind, 3, ["interval", [1, 2, 3], [1, 2, 1]])
+        assert_raises(ValueError, _check_kind, 3,
+                      ["interval", [1, 2, 3], [1, 2, 1]])
 
     def test_string(self):
         keyword, lb = _check_kind("greater", 3)
@@ -51,17 +52,6 @@ class TestCheckEnforceFeasibility(TestCase):
     def test_single_value(self):
         f = _check_enforce_feasibility(True, 3)
         assert_array_equal(f, [True, True, True])
-
-
-class TestConversions(TestCase):
-
-    def test_linear_to_nonlinear_conversion(self):
-        A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
-        linear = LinearConstraint(A, ("interval", [10, 20, 30], [50, np.inf, 70]))
-        nonlinear = linear.to_nonlinear()
-        x = [1, 2, 3, 4]
-        assert_array_equal(nonlinear.fun(x), A.dot(x))
-        assert_array_equal(nonlinear.jac(x), A)
 
 
 class TestReinforceBoxConstraints(TestCase):
@@ -90,56 +80,54 @@ class TestBoxConstraint(TestCase):
         box = BoxConstraint(kind, enforce_feasibility)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            x0_new, f0_new = box._evaluate_and_initialize(x0)
-        assert_array_less(lb[enforce_feasibility], x0_new[enforce_feasibility])
-        assert_array_less(x0_new[enforce_feasibility], ub[enforce_feasibility])
+            x0_new, f0_new, J0_new = box.evaluate_and_initialize(x0)
+        print(x0_new)
+        assert_((lb[enforce_feasibility] <= x0_new[enforce_feasibility]).all())
+        assert_((x0_new[enforce_feasibility] <= ub[enforce_feasibility]).all())
 
     def test_box_to_linear_conversion(self):
         box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
-        linear = box.to_linear(sparse_jacobian=True)
+        x0 = np.array([1, 2, 3])
+        x0, f0, J0 = box.evaluate_and_initialize(x0)
+        linear = box.to_linear()
         assert_array_equal(linear.A.todense(), np.eye(3))
 
     def test_box_to_nonlinear_conversion(self):
         box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
-        nonlinear = box.to_nonlinear(sparse_jacobian=True)
-        x = [1, 2, 3]
-        assert_array_equal(nonlinear.fun(x), x)
-        assert_array_equal(nonlinear.jac(x).todense(), np.eye(3))
+        x0 = np.array([1, 2, 3])
+        x0, f0, J0 = box.evaluate_and_initialize(x0)
+        nonlinear = box.to_nonlinear()
+        assert_array_equal(nonlinear.fun(x0), x0)
+        assert_array_equal(nonlinear.jac(x0).todense(), np.eye(3))
 
 
 class TestLinearConstraint(TestCase):
 
     def test_unfeasible_initial_point(self):
-        lb = np.array([0, 20, 30])
-        ub = np.array([0.5, np.inf, 70])
         x0 = np.array([1, 2, 3, 4])
         A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
         enforce_feasibility = np.array([True, True, True],
                                        dtype=bool)
         kind = ("less",)
         box = LinearConstraint(A, kind, enforce_feasibility)
-        assert_raises(ValueError, box._evaluate_and_initialize, x0)
+        assert_raises(ValueError, box.evaluate_and_initialize, x0)
 
-
-    def test_box_to_nonlinear_conversion(self):
-        lb = np.array([0, 20, 30])
-        ub = np.array([0.5, np.inf, 70])
+    def test_linear_to_nonlinear_conversion(self):
         x0 = np.array([1, 2, 3, 4])
         A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
-        enforce_feasibility = np.array([True, True, True],
+        enforce_feasibility = np.array([False, False, False],
                                        dtype=bool)
         kind = ("less",)
         linear = LinearConstraint(A, kind, enforce_feasibility)
-        nonlinear = linear.to_nonlinear(sparse_jacobian=True)
+        x0, f0, J0 = linear.evaluate_and_initialize(x0)
+        nonlinear = linear.to_nonlinear()
         assert_array_equal(nonlinear.fun(x0), A.dot(x0))
-        assert_array_equal(nonlinear.jac(x0).todense(), A)
+        assert_array_equal(nonlinear.jac(x0), A)
 
 
 class TestNonlinearConstraint(TestCase):
 
     def test_unfeasible_initial_point(self):
-        lb = np.array([0, 20, 30])
-        ub = np.array([0.5, np.inf, 70])
         x0 = np.array([1, 2, 3, 4])
         A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
 
@@ -153,5 +141,5 @@ class TestNonlinearConstraint(TestCase):
                                        dtype=bool)
         kind = ("less",)
         box = NonlinearConstraint(fun, kind, jac, None, enforce_feasibility)
-        assert_raises(ValueError, box._evaluate_and_initialize, x0)
+        assert_raises(ValueError, box.evaluate_and_initialize, x0)
 
