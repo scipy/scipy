@@ -183,6 +183,9 @@ All functions
    ssytrd
    dsytrd
 
+   ssytrd_lwork
+   dsytrd_lwork
+
    chesv
    zhesv
 
