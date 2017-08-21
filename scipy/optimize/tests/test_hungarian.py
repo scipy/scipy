@@ -1,7 +1,8 @@
 # Author: Brian M. Clapper, G. Varoquaux, Lars Buitinck
 # License: BSD
 
-from numpy.testing import assert_array_equal, assert_raises
+from numpy.testing import assert_array_equal
+from pytest import raises as assert_raises
 
 import numpy as np
 

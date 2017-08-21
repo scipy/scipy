@@ -1,5 +1,7 @@
-from numpy.testing import (assert_, assert_allclose,
-                           assert_raises, assert_equal)
+from __future__ import division, absolute_import, print_function
+
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
 import numpy as np
 
 from scipy.optimize._lsq.common import (

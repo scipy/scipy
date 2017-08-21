@@ -8,8 +8,8 @@ import numpy as np
 from scipy.optimize import rosen
 from numpy.testing import (assert_equal, assert_allclose,
                            assert_almost_equal,
-                           assert_string_equal, assert_raises, assert_)
-
+                           assert_string_equal, assert_)
+from pytest import raises as assert_raises
 
 class TestDifferentialEvolutionSolver(object):
 
