@@ -5436,31 +5436,10 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the first Wasserstein distance between two 1D distributions.
 
-    The first Wasserstein distance between the distributions :math:`u` and
-    :math:`v` is:
-
-    .. math::
-
-        l_1 (u, v) = \inf_{\pi \in \Gamma (u, v)} \int_{\mathbb{R} \times
-        \mathbb{R}} |x-y| \mathrm{d} \pi (x, y)
-
-    where :math:`\Gamma (u, v)` is the set of (probability) distributions on
-    :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
-    :math:`v` on the first and second factors respectively.
-
     This distance is also known as the earth mover's distance, since it can be
     seen as the minimum amount of "work" required to transform :math:`u` into
     :math:`v`, where "work" is measured as the amount of distribution weight
     that must be moved, multiplied by the distance it has to be moved.
-
-    If :math:`U` and :math:`V` are the respective CDFs of :math:`u` and
-    :math:`v`, this distance also equals to:
-
-    .. math::
-
-        l_1(u, v) = \int_{-\infty}^{+\infty} |U-V|
-
-    See [2]_ for a proof of the equivalence of both definitions.
 
     .. versionadded:: 1.0.0
 
@@ -5483,6 +5462,27 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
+    The first Wasserstein distance between the distributions :math:`u` and
+    :math:`v` is:
+
+    .. math::
+
+        l_1 (u, v) = \inf_{\pi \in \Gamma (u, v)} \int_{\mathbb{R} \times
+        \mathbb{R}} |x-y| \mathrm{d} \pi (x, y)
+
+    where :math:`\Gamma (u, v)` is the set of (probability) distributions on
+    :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
+    :math:`v` on the first and second factors respectively.
+
+    If :math:`U` and :math:`V` are the respective CDFs of :math:`u` and
+    :math:`v`, this distance also equals to:
+
+    .. math::
+
+        l_1(u, v) = \int_{-\infty}^{+\infty} |U-V|
+
+    See [2]_ for a proof of the equivalence of both definitions.
+
     The input distributions can be empirical, therefore coming from samples
     whose values are effectively inputs of the function, or they can be seen as
     generalized functions, in which case they are weighted sums of Dirac delta
@@ -5512,6 +5512,27 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the energy distance between two 1D distributions.
 
+    .. versionadded:: 1.0.0
+
+    Parameters
+    ----------
+    u_values, v_values : array_like
+        Values observed in the (empirical) distribution.
+    u_weights, v_weights : array_like, optional
+        Weight for each value. If unspecified, each value is assigned the same
+        weight.
+        `u_weights` (resp. `v_weights`) must have the same length as
+        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
+        must still be positive and finite so that the weights can be normalized
+        to sum to 1.
+
+    Returns
+    -------
+    distance : float
+        The computed distance between the distributions.
+
+    Notes
+    -----
     The energy distance between two distributions :math:`u` and :math:`v`, whose
     respective CDFs are :math:`U` and :math:`V`, equals to:
 
@@ -5537,27 +5558,6 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     version of the distance. See [2]_ (section 2), for more details about both
     versions of the distance.
 
-    .. versionadded:: 1.0.0
-
-    Parameters
-    ----------
-    u_values, v_values : array_like
-        Values observed in the (empirical) distribution.
-    u_weights, v_weights : array_like, optional
-        Weight for each value. If unspecified, each value is assigned the same
-        weight.
-        `u_weights` (resp. `v_weights`) must have the same length as
-        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
-        must still be positive and finite so that the weights can be normalized
-        to sum to 1.
-
-    Returns
-    -------
-    distance : float
-        The computed distance between the distributions.
-
-    Notes
-    -----
     The input distributions can be empirical, therefore coming from samples
     whose values are effectively inputs of the function, or they can be seen as
     generalized functions, in which case they are weighted sums of Dirac delta
