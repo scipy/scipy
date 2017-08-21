@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 from itertools import product
 from numpy.testing import (assert_, assert_allclose,
-                           assert_equal, assert_raises, assert_no_warnings)
+                           assert_equal, assert_no_warnings)
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 import numpy as np
 from scipy.optimize._numdiff import group_columns
