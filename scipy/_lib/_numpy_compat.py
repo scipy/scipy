@@ -13,28 +13,6 @@ import numpy as np
 from scipy._lib._version import NumpyVersion
 
 
-def import_nose():
-    """ Import nose only when needed.
-    """
-    nose_is_good = True
-    minimum_nose_version = (1, 0, 0)
-    try:
-        import nose
-    except ImportError:
-        nose_is_good = False
-    else:
-        if nose.__versioninfo__ < minimum_nose_version:
-            nose_is_good = False
-
-    if not nose_is_good:
-        msg = ('Need nose >= %d.%d.%d for tests - see '
-               'http://nose.readthedocs.io' %
-               minimum_nose_version)
-        raise ImportError(msg)
-
-    return nose
-
-
 if NumpyVersion(np.__version__) > '1.7.0.dev':
     _assert_warns = np.testing.assert_warns
 else:
@@ -71,31 +49,6 @@ else:
                 raise AssertionError("First warning for %s is not a "
                         "%s( is %s)" % (func.__name__, warning_class, l[0]))
         return result
-
-
-def assert_raises_regex(exception_class, expected_regexp,
-                        callable_obj=None, *args, **kwargs):
-    """
-    Fail unless an exception of class exception_class and with message that
-    matches expected_regexp is thrown by callable when invoked with arguments
-    args and keyword arguments kwargs.
-    Name of this function adheres to Python 3.2+ reference, but should work in
-    all versions down to 2.6.
-    Notes
-    -----
-    .. versionadded:: 1.8.0
-    """
-    __tracebackhide__ = True  # Hide traceback for py.test
-    nose = import_nose()
-
-    if sys.version_info.major >= 3:
-        funcname = nose.tools.assert_raises_regex
-    else:
-        # Only present in Python 2.7, missing from unittest in 2.6
-            funcname = nose.tools.assert_raises_regexp
-
-    return funcname(exception_class, expected_regexp, callable_obj,
-                    *args, **kwargs)
 
 
 if NumpyVersion(np.__version__) >= '1.10.0':
