@@ -7,9 +7,8 @@ from functools import partial
 from itertools import product
 import operator
 import pytest
-
-from numpy.testing import assert_, assert_equal, \
-        assert_raises
+from pytest import raises as assert_raises
+from numpy.testing import assert_, assert_equal
 
 import numpy as np
 import scipy.sparse as sparse
