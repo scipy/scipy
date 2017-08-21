@@ -4,7 +4,9 @@ import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
-                           assert_, assert_raises)
+                           assert_)
+from pytest import raises as assert_raises
+
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,

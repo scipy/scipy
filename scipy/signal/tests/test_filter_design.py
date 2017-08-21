@@ -6,12 +6,13 @@ from distutils.version import LooseVersion
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
-                           assert_raises, assert_equal, assert_,
+                           assert_equal, assert_,
                            assert_allclose, assert_warns)
-from numpy import array, spacing, sin, pi, sort
 import pytest
-
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
+
+from numpy import array, spacing, sin, pi, sort
 from scipy.signal import (BadCoefficients, bessel, besselap, bilinear, buttap,
                           butter, buttord, cheb1ap, cheb1ord, cheb2ap,
                           cheb2ord, cheby1, cheby2, ellip, ellipap, ellipord,

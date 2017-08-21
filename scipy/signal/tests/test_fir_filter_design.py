@@ -1,9 +1,11 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_raises, \
-        assert_almost_equal, assert_array_almost_equal, assert_equal, \
-        assert_, assert_allclose, assert_warns
+from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
+                           assert_equal, assert_,
+                           assert_allclose, assert_warns)
+from pytest import raises as assert_raises
+
 from scipy.special import sinc
 
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \

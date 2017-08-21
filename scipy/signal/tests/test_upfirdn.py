@@ -34,8 +34,9 @@
 
 import numpy as np
 from itertools import product
-from numpy.testing import (assert_equal,
-                           assert_raises, assert_allclose)
+
+from numpy.testing import assert_equal, assert_allclose
+from pytest import raises as assert_raises
 
 from scipy.signal import upfirdn, firwin, lfilter
 from scipy.signal._upfirdn import _output_len
