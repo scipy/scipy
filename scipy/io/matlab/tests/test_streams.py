@@ -20,11 +20,12 @@ from contextlib import contextmanager
 
 import numpy as np
 
-from numpy.testing import (assert_, assert_equal, assert_raises)
+from numpy.testing import assert_, assert_equal
+from pytest import raises as assert_raises
 
-from scipy.io.matlab.streams import make_stream, \
-    GenericStream, cStringStream, FileStream, ZlibInputStream, \
-    _read_into, _read_string
+from scipy.io.matlab.streams import (make_stream,
+    GenericStream, cStringStream, FileStream, ZlibInputStream,
+    _read_into, _read_string)
 
 
 @contextmanager

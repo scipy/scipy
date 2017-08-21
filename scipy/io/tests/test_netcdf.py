@@ -11,8 +11,8 @@ from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_raises,
-    assert_equal)
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
 
 from scipy.io.netcdf import netcdf_file
 
