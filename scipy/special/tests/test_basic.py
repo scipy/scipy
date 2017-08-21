@@ -28,10 +28,11 @@ from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
         log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, float_)
 
 import pytest
+from pytest import raises as assert_raises
 from numpy.testing import (assert_equal, assert_almost_equal,
         assert_array_equal, assert_array_almost_equal, assert_approx_equal,
         assert_, assert_allclose,
-        assert_raises, assert_array_almost_equal_nulp)
+        assert_array_almost_equal_nulp)
 
 from scipy import special
 import scipy.special._ufuncs as cephes
