@@ -6,8 +6,8 @@ import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose, assert_equal, assert_,
-    assert_raises)
+    assert_allclose, assert_equal, assert_)
+from pytest import raises as assert_raises
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
