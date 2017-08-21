@@ -166,13 +166,12 @@ class FortranFile(object):
 
             read_record('(4,5)i4').T
 
-        Note that the fact that the array is laid out in Fortran column major
-        order in the file is **not** handled automatically, and you need to take
-        care about it yourself by (i) swapping the order of the dimensions when
-        reading, and (ii) transposing the resulting arrays.
+        Note that this function does **not** assume the file data is in Fortran
+        column major order, so you need to (i) swap the order of dimensions
+        when reading and (ii) transpose the resulting array.
 
-        Alternatively, you can read the data as 1D array, also in which case you
-        need to deal with the Fortran-ordering yourself. For example::
+        Alternatively, you can read the data as a 1D array and handle the
+        ordering yourself. For example::
 
             read_record('i4').reshape(5, 4, order='F')
 
