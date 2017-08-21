@@ -4,7 +4,7 @@ Real spectrum tranforms (DCT, DST, MDCT)
 from __future__ import division, print_function, absolute_import
 
 
-__all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn']
+__all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 import numpy as np
 from scipy.fftpack import _fftpack
@@ -50,8 +50,7 @@ def _init_nd_shape_and_axes(x, shape, axes):
 
 def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
-    Return multidimensional Discrete Cosine Transform of x along the specified
-    axes.
+    Return multidimensional Discrete Cosine Transform along the specified axes.
 
     Parameters
     ----------
@@ -104,8 +103,7 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
-    Return multidimensional Discrete Cosine Transform of x along the specified
-    axes.
+    Return multidimensional Discrete Cosine Transform along the specified axes.
 
     Parameters
     ----------
@@ -158,8 +156,7 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
-    Return multidimensional Discrete Sine Transform of x along the specified
-    axes.
+    Return multidimensional Discrete Sine Transform along the specified axes.
 
     Parameters
     ----------
@@ -212,8 +209,7 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     """
-    Return multidimensional Discrete Sine Transform of x along the specified
-    axes.
+    Return multidimensional Discrete Sine Transform along the specified axes.
 
     Parameters
     ----------
@@ -253,7 +249,7 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     --------
     >>> from scipy.fftpack import dstn, idstn
     >>> y = np.random.randn(16, 16)
-    >>> np.allclose(y, idstn(dctn(y, norm='ortho'), norm='ortho'))
+    >>> np.allclose(y, idstn(dstn(y, norm='ortho'), norm='ortho'))
     True
     """
     x = np.asanyarray(x)
