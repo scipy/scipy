@@ -3365,10 +3365,51 @@ add_newdoc("scipy.special", "hyp2f0",
     """)
 
 add_newdoc("scipy.special", "hyp2f1",
-    """
+    r"""
     hyp2f1(a, b, c, z)
 
-    Gauss hypergeometric function 2F1(a, b; c; z).
+    Gauss hypergeometric function 2F1(a, b; c; z)
+
+    Parameters
+    ----------
+    a, b, c : array_like
+        Arguments, should be real-valued.
+    z : array_like
+        Argument, real or complex.
+
+    Returns
+    -------
+    hyp2f1 : scalar or ndarray
+        The values of the gaussian hypergeometric function.
+
+    See also
+    --------
+    hyp0f1 : confluent hypergeometric limit function.
+    hyp1f1 : Kummer's (confluent hypergeometric) function.
+
+    Notes
+    -----
+    This function is defined for :math:`|z| < 1` as
+
+    .. math::
+
+       \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
+       \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
+
+    and defined on the rest of the complex z-plane by analytic continuation.
+    Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree :math:`n`.
+
+    The implementation for complex values of ``z`` is described in [1]_.
+
+    References
+    ----------
+    .. [1] J.M. Jin and Z. S. Jjie, "Computation of special functions", Wiley, 1996.
+    .. [2] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/index.html
+    .. [3] NIST Digital Library of Mathematical Functions
+           http://dlmf.nist.gov/
+
     """)
 
 add_newdoc("scipy.special", "hyp3f0",
