@@ -5671,8 +5671,7 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     if p == 1:
         return np.sum(np.multiply(np.abs(u_cdf - v_cdf), deltas))
     if p == 2:
-        return np.sqrt(np.sum(np.multiply(np.square(np.abs(u_cdf - v_cdf)),
-                                          deltas)))
+        return np.sqrt(np.sum(np.multiply(np.square(u_cdf - v_cdf), deltas)))
     return np.power(np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p),
                                        deltas)), 1/p)
 
