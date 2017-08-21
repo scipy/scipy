@@ -5586,7 +5586,8 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     ...                 [2.1, 4.2, 7.4, 8. ], [7.6, 8.8])
     0.88003340976158217
     """
-    return 2**.5 * _cdf_distance(2, u_values, v_values, u_weights, v_weights)
+    return np.sqrt(2) * _cdf_distance(2, u_values, v_values,
+                                      u_weights, v_weights)
 
 
 def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):

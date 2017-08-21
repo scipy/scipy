@@ -4346,16 +4346,16 @@ class TestEnergyDistance(object):
         # straightforward.
         assert_almost_equal(
             stats.energy_distance([0, 1], [0], [1, 1], [1]),
-            2**.5 * .5)
+            np.sqrt(2) * .5)
         assert_almost_equal(stats.energy_distance(
             [0, 1], [0], [3, 1], [1]),
-            2**.5 * .25)
+            np.sqrt(2) * .25)
         assert_almost_equal(stats.energy_distance(
             [0, 2], [0], [1, 1], [1]),
             2 * .5)
         assert_almost_equal(
             stats.energy_distance([0, 1, 2], [1, 2, 3]),
-            2**.5 * (3*(1./3**2))**.5)
+            np.sqrt(2) * (3*(1./3**2))**.5)
 
     def test_same_distribution(self):
         # Any distribution moved to itself should have a energy distance of
@@ -4368,8 +4368,10 @@ class TestEnergyDistance(object):
     def test_shift(self):
         # If a single-point distribution is shifted by x, then the energy
         # distance should be sqrt(2) * sqrt(x).
-        assert_almost_equal(stats.energy_distance([0], [1]), 2**.5 * 1)
-        assert_almost_equal(stats.energy_distance([-5], [5]), 2**.5 * 10**.5)
+        assert_almost_equal(stats.energy_distance([0], [1]), np.sqrt(2))
+        assert_almost_equal(
+            stats.energy_distance([-5], [5]),
+            np.sqrt(2) * 10**.5)
 
     def test_combine_weights(self):
         # Assigning a weight w to a value is equivalent to including that value
