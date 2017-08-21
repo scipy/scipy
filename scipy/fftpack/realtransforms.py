@@ -71,6 +71,8 @@ def dctn(x, type=2, n=None, axes=None, norm=None, overwrite_x=False):
         axes = np.arange(x.ndim)
     if np.isscalar(axes):
         axes = [axes, ]
+    if len(np.unique(axes)) != len(axes):
+        raise ValueError("All axes must be unique.")
     for ax in axes:
         x = dct(x, type=type, n=n, axis=ax, norm=norm, overwrite_x=overwrite_x)
     return x
@@ -124,6 +126,8 @@ def idctn(x, type=2, n=None, axes=None, norm=None, overwrite_x=False):
         axes = np.arange(x.ndim)
     if np.isscalar(axes):
         axes = [axes, ]
+    if len(np.unique(axes)) != len(axes):
+        raise ValueError("All axes must be unique.")
     for ax in axes:
         x = idct(x, type=type, n=n, axis=ax, norm=norm,
                  overwrite_x=overwrite_x)
