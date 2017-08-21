@@ -3,8 +3,8 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-from scipy.stats._tukeylambda_stats import tukeylambda_variance, \
-                                            tukeylambda_kurtosis
+from scipy.stats._tukeylambda_stats import (tukeylambda_variance,
+                                            tukeylambda_kurtosis)
 
 
 def test_tukeylambda_stats_known_exact():

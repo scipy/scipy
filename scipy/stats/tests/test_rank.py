@@ -1,8 +1,7 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_equal, \
-    assert_array_equal, dec
+from numpy.testing import assert_equal, assert_array_equal
 
 from scipy.stats import rankdata, tiecorrect
 

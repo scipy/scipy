@@ -5,6 +5,8 @@ import pickle
 import numpy as np
 import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
+from pytest import raises as assert_raises
+
 import numpy.ma.testutils as ma_npt
 
 from scipy._lib._util import getargspec_no_self as _getargspec
@@ -156,7 +158,7 @@ def check_named_args(distfn, x, shape_args, defaults, meths):
 
     # unknown arguments should not go through:
     k.update({'kaboom': 42})
-    npt.assert_raises(TypeError, distfn.cdf, x, **k)
+    assert_raises(TypeError, distfn.cdf, x, **k)
 
 
 def check_random_state_property(distfn, args):
