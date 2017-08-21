@@ -559,3 +559,35 @@ def test_sgesdd_lwork_bug_workaround():
     assert_equal(returncode, 0,
                  "Code apparently failed: " + p.stdout.read())
 
+
+class TestSytrd(object):
+    def test_sytrd(self):
+        np.random.seed(42)
+        a = np.random.normal(size=(3, 3))
+        a += a.T
+
+        sytrd = get_lapack_funcs(('sytrd',))
+
+        # query lwork
+        _, _, _, _, work, info = sytrd(a, lwork=-1)
+        assert info == 0
+        lwork = work[0]
+
+        aa, d, e, tau, work, info = sytrd(a, lwork)
+        assert info == 0
+
+        # build tridiagonal matrix
+        atri = np.zeros_like(a)
+        k = np.arange(a.shape[0])
+        atri[k, k] = d
+        k2 = np.arange(a.shape[0]-1)
+        atri[k2+1, k2] = e
+        atri[k2, k2+1] = e
+
+        aval, avec = np.linalg.eig(a)
+        atval, atvec = np.linalg.eig(atri)
+
+        # eigenvalues and last components of the eigenvectors must be equal
+        assert_allclose(aval, atval)
+        assert_allclose(avec[-1, :], atval[-1, :])
+        return
