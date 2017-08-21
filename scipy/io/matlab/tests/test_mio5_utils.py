@@ -10,9 +10,8 @@ cStringIO = BytesIO
 
 import numpy as np
 
-from nose.tools import (assert_true, assert_equal, assert_raises)
-
-from numpy.testing import (assert_array_equal)
+from numpy.testing import (assert_array_equal, assert_equal, assert_raises,
+                           assert_)
 
 from scipy._lib.six import u
 
@@ -152,7 +151,7 @@ def test_read_numeric_writeable():
     a_str = a.tostring()
     _write_stream(str_io, a_str)
     el = c_reader.read_numeric()
-    assert_true(el.flags.writeable)
+    assert_(el.flags.writeable is True)
 
 
 def test_zero_byte_string():
