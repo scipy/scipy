@@ -14,9 +14,9 @@ Run tests if scipy is installed:
 import math
 
 import numpy as np
-from numpy.testing import (assert_equal,
-    assert_almost_equal, assert_array_almost_equal, assert_raises, assert_,
-    assert_allclose)
+from numpy.testing import (assert_equal, assert_almost_equal, assert_,
+                           assert_array_almost_equal, assert_allclose)
+from pytest import raises as assert_raises
 
 from scipy.linalg import _fblas as fblas, get_blas_funcs
 

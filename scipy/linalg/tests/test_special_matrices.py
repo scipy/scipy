@@ -4,9 +4,9 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
-from numpy.testing import (assert_raises,
-    assert_equal, assert_array_equal, assert_array_almost_equal,
-    assert_allclose)
+from numpy.testing import (assert_equal, assert_array_equal,
+                           assert_array_almost_equal, assert_allclose)
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange
 

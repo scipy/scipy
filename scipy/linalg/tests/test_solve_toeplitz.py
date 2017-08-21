@@ -1,12 +1,14 @@
 """Test functions for linalg._solve_toeplitz module
 """
 from __future__ import division, print_function, absolute_import
+
 import numpy as np
 from scipy.linalg._solve_toeplitz import levinson
 from scipy.linalg import solve, toeplitz, solve_toeplitz
-from numpy.testing import (assert_equal, assert_allclose,
-                           assert_raises)
+from numpy.testing import assert_equal, assert_allclose
+
 import pytest
+from pytest import raises as assert_raises
 
 
 def test_solve_equivalence():
