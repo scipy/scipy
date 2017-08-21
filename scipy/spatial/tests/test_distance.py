@@ -41,8 +41,9 @@ from scipy._lib.six import xrange, u
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
-                           assert_raises, assert_array_equal, assert_equal,
+                           assert_array_equal, assert_equal,
                            assert_almost_equal, assert_allclose)
+from pytest import raises as assert_raises
 
 from scipy.spatial.distance import (squareform, pdist, cdist, num_obs_y,
                                     num_obs_dm, is_valid_dm, is_valid_y,

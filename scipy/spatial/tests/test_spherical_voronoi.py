@@ -4,8 +4,8 @@ import itertools
 from numpy.testing import (assert_equal,
                            assert_almost_equal,
                            assert_array_equal,
-                           assert_array_almost_equal,
-                           assert_raises)
+                           assert_array_almost_equal)
+from pytest import raises as assert_raises
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.spatial import _spherical_voronoi as spherical_voronoi
 

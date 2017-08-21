@@ -5,10 +5,10 @@ import copy
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
-                           assert_, assert_allclose, assert_array_equal,
-                           assert_raises)
-from scipy._lib.six import xrange
+                           assert_, assert_allclose, assert_array_equal)
 import pytest
+from pytest import raises as assert_raises
+from scipy._lib.six import xrange
 
 import scipy.spatial.qhull as qhull
 from scipy.spatial import cKDTree as KDTree
