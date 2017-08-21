@@ -4330,8 +4330,11 @@ class TestWassersteinDistance(object):
         assert_equal(
             stats.wasserstein_distance([1, -np.inf, np.inf], [1, 1]),
             np.inf)
-        assert_raises(RuntimeWarning, stats.wasserstein_distance,
-                      [1, 2, np.inf], [np.inf, 1])
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "invalid value*")
+            assert_equal(
+                stats.wasserstein_distance([1, 2, np.inf], [np.inf, 1]),
+                np.nan)
 
 
 class TestEnergyDistance(object):
@@ -4392,6 +4395,8 @@ class TestEnergyDistance(object):
         assert_equal(
             stats.energy_distance([1, -np.inf, np.inf], [1, 1]),
             np.inf)
-        assert_raises(RuntimeWarning, stats.energy_distance,
-                      [1, 2, np.inf], [np.inf, 1])
-
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "invalid value*")
+            assert_equal(
+                stats.energy_distance([1, 2, np.inf], [np.inf, 1]),
+                np.nan)
