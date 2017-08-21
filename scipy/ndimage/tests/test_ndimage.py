@@ -38,6 +38,7 @@ from numpy import fft
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal)
 import pytest
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 import scipy.ndimage as ndimage
 
@@ -2031,8 +2032,7 @@ class TestNdimage:
                             [3, 5, 3, 6]])
         tform_h1 = numpy.hstack((numpy.eye(2), -numpy.ones((2, 1))))
         tform_h2 = numpy.vstack((tform_h1, [[5, 2, 1]]))
-        numpy.testing.assert_raises(ValueError,
-                                    ndimage.affine_transform, data, tform_h2)
+        assert_raises(ValueError, ndimage.affine_transform, data, tform_h2)
 
     def test_affine_transform_1d_endianness_with_output_parameter(self):
         # 1d affine transform given output ndarray or dtype with either endianness
