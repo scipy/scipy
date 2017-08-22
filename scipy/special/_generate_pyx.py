@@ -1,5 +1,5 @@
 """
-python generate_ufuncs.py
+python _generate_pyx.py
 
 Generate Ufunc definition source files for scipy.special.  Produces
 files '_ufuncs.c' and '_ufuncs_cxx.c' by first producing Cython.
@@ -402,6 +402,9 @@ import re
 import textwrap
 import itertools
 import numpy
+
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 add_newdocs = __import__('add_newdocs')
 
@@ -1519,10 +1522,9 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
 
 
 def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
-    pwd = os.path.dirname(__file__)
-    pxdfile = os.path.join(pwd, modname + ".pxd")
-    pyxfile = os.path.join(pwd, modname + ".pyx")
-    proto_h_filename = os.path.join(pwd, ufunc_fn_prefix + '_defs.h')
+    pxdfile = modname + ".pxd"
+    pyxfile = modname + ".pyx"
+    proto_h_filename = ufunc_fn_prefix + '_defs.h'
 
     sources = []
     declarations = []
@@ -1603,12 +1605,31 @@ def unique(lst):
         new_lst.append(item)
     return new_lst
 
+def all_newer(src_files, dst_files):
+    from distutils.dep_util import newer
+    return all(os.path.exists(dst) and newer(dst, src)
+               for dst in dst_files for src in src_files)
 
 def main():
     p = optparse.OptionParser(usage=__doc__.strip())
     options, args = p.parse_args()
     if len(args) != 0:
         p.error('invalid number of arguments')
+
+    src_files = (os.path.abspath(__file__),)
+    dst_files = ('_ufuncs.pyx',
+                 '_ufuncs_defs.h',
+                 '_ufuncs_cxx.pyx',
+                 '_ufuncs_cxx.pxd',
+                 '_ufuncs_cxx_defs.h',
+                 'cython_special.pyx',
+                 'cython_special.pxd')
+
+    os.chdir(BASE_DIR)
+
+    if all_newer(src_files, dst_files):
+        print("scipy/special/_generate_pyx.py: all files up-to-date")
+        return
 
     ufuncs = Ufunc.parse_all(FUNCS)
     generate_ufuncs("_ufuncs", "_ufuncs_cxx", ufuncs)
