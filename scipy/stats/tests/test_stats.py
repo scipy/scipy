@@ -4204,3 +4204,201 @@ class TestCombinePvalues(object):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='stouffer',
                                      weights=np.array((1, 4, 9)))
         assert_approx_equal(p, 0.1464, significant=4)
+
+
+class TestCdfDistanceValidation(object):
+    """
+    Test that _cdf_distance() (via wasserstein_distance()) raises ValueErrors
+    for bad inputs.
+    """
+
+    def test_distinct_value_and_weight_lengths(self):
+        # When the number of weights does not match the number of values,
+        # a ValueError should be raised.
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [1], [2], [4], [3, 1])
+        assert_raises(ValueError, stats.wasserstein_distance, [1], [2], [1, 0])
+
+    def test_zero_weight(self):
+        # When a distribution is given zero weight, a ValueError should be
+        # raised.
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [0, 1], [2], [0, 0])
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [0, 1], [2], [3, 1], [0])
+
+    def test_negative_weights(self):
+        # A ValueError should be raised if there are any negative weights.
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [0, 1], [2, 2], [1, 1], [3, -1])
+
+    def test_empty_distribution(self):
+        # A ValueError should be raised when trying to measure the distance
+        # between something and nothing.
+        assert_raises(ValueError, stats.wasserstein_distance, [], [2, 2])
+        assert_raises(ValueError, stats.wasserstein_distance, [1], [])
+
+    def test_inf_weight(self):
+        # An inf weight is not valid.
+        assert_raises(ValueError, stats.wasserstein_distance,
+                      [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
+
+
+class TestWassersteinDistance(object):
+    """ Tests for wasserstein_distance() output values.
+    """
+
+    def test_simple(self):
+        # For basic distributions, the value of the Wasserstein distance is
+        # straightforward.
+        assert_almost_equal(
+            stats.wasserstein_distance([0, 1], [0], [1, 1], [1]),
+            .5)
+        assert_almost_equal(stats.wasserstein_distance(
+            [0, 1], [0], [3, 1], [1]),
+            .25)
+        assert_almost_equal(stats.wasserstein_distance(
+            [0, 2], [0], [1, 1], [1]),
+            1)
+        assert_almost_equal(stats.wasserstein_distance(
+            [0, 1, 2], [1, 2, 3]),
+            1)
+
+    def test_same_distribution(self):
+        # Any distribution moved to itself should have a Wasserstein distance of
+        # zero.
+        assert_equal(stats.wasserstein_distance([1, 2, 3], [2, 1, 3]), 0)
+        assert_equal(
+            stats.wasserstein_distance([1, 1, 1, 4], [4, 1],
+                                       [1, 1, 1, 1], [1, 3]),
+            0)
+
+    def test_shift(self):
+        # If the whole distribution is shifted by x, then the Wasserstein
+        # distance should be x.
+        assert_almost_equal(stats.wasserstein_distance([0], [1]), 1)
+        assert_almost_equal(stats.wasserstein_distance([-5], [5]), 10)
+        assert_almost_equal(
+            stats.wasserstein_distance([1, 2, 3, 4, 5], [11, 12, 13, 14, 15]),
+            10)
+        assert_almost_equal(
+            stats.wasserstein_distance([4.5, 6.7, 2.1], [4.6, 7, 9.2],
+                                       [3, 1, 1], [1, 3, 1]),
+            2.5)
+
+    def test_combine_weights(self):
+        # Assigning a weight w to a value is equivalent to including that value
+        # w times in the value array with weight of 1.
+        assert_almost_equal(
+            stats.wasserstein_distance(
+                [0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
+                [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
+            stats.wasserstein_distance([5, 0, 1], [0, 4, 3],
+                                       [1, 2, 4], [1, 2, 4]))
+
+    def test_collapse(self):
+        # Collapsing a distribution to a point distribution at zero is
+        # equivalent to taking the average of the absolute values of the values.
+        u = np.arange(-10, 30, 0.3)
+        v = np.zeros_like(u)
+        assert_almost_equal(
+            stats.wasserstein_distance(u, v),
+            np.mean(np.abs(u)))
+
+        u_weights = np.arange(len(u))
+        v_weights = u_weights[::-1]
+        assert_almost_equal(
+            stats.wasserstein_distance(u, v, u_weights, v_weights),
+            np.average(np.abs(u), weights=u_weights))
+
+    def test_zero_weight(self):
+        # Values with zero weight have no impact on the Wasserstein distance.
+        assert_almost_equal(
+            stats.wasserstein_distance([1, 2, 100000], [1, 1],
+                                       [1, 1, 0], [1, 1]),
+            stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
+
+    def test_inf_values(self):
+        # Inf values can lead to an inf distance or trigger a RuntimeWarning
+        # (and return NaN) if the distance is undefined.
+        assert_equal(
+            stats.wasserstein_distance([1, 2, np.inf], [1, 1]),
+            np.inf)
+        assert_equal(
+            stats.wasserstein_distance([1, 2, np.inf], [-np.inf, 1]),
+            np.inf)
+        assert_equal(
+            stats.wasserstein_distance([1, -np.inf, np.inf], [1, 1]),
+            np.inf)
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "invalid value*")
+            assert_equal(
+                stats.wasserstein_distance([1, 2, np.inf], [np.inf, 1]),
+                np.nan)
+
+
+class TestEnergyDistance(object):
+    """ Tests for energy_distance() output values.
+    """
+
+    def test_simple(self):
+        # For basic distributions, the value of the energy distance is
+        # straightforward.
+        assert_almost_equal(
+            stats.energy_distance([0, 1], [0], [1, 1], [1]),
+            np.sqrt(2) * .5)
+        assert_almost_equal(stats.energy_distance(
+            [0, 1], [0], [3, 1], [1]),
+            np.sqrt(2) * .25)
+        assert_almost_equal(stats.energy_distance(
+            [0, 2], [0], [1, 1], [1]),
+            2 * .5)
+        assert_almost_equal(
+            stats.energy_distance([0, 1, 2], [1, 2, 3]),
+            np.sqrt(2) * (3*(1./3**2))**.5)
+
+    def test_same_distribution(self):
+        # Any distribution moved to itself should have a energy distance of
+        # zero.
+        assert_equal(stats.energy_distance([1, 2, 3], [2, 1, 3]), 0)
+        assert_equal(
+            stats.energy_distance([1, 1, 1, 4], [4, 1], [1, 1, 1, 1], [1, 3]),
+            0)
+
+    def test_shift(self):
+        # If a single-point distribution is shifted by x, then the energy
+        # distance should be sqrt(2) * sqrt(x).
+        assert_almost_equal(stats.energy_distance([0], [1]), np.sqrt(2))
+        assert_almost_equal(
+            stats.energy_distance([-5], [5]),
+            np.sqrt(2) * 10**.5)
+
+    def test_combine_weights(self):
+        # Assigning a weight w to a value is equivalent to including that value
+        # w times in the value array with weight of 1.
+        assert_almost_equal(
+            stats.energy_distance([0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
+                                  [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
+            stats.energy_distance([5, 0, 1], [0, 4, 3], [1, 2, 4], [1, 2, 4]))
+
+    def test_zero_weight(self):
+        # Values with zero weight have no impact on the energy distance.
+        assert_almost_equal(
+            stats.energy_distance([1, 2, 100000], [1, 1], [1, 1, 0], [1, 1]),
+            stats.energy_distance([1, 2], [1, 1], [1, 1], [1, 1]))
+
+    def test_inf_values(self):
+        # Inf values can lead to an inf distance or trigger a RuntimeWarning
+        # (and return NaN) if the distance is undefined.
+        assert_equal(stats.energy_distance([1, 2, np.inf], [1, 1]), np.inf)
+        assert_equal(
+            stats.energy_distance([1, 2, np.inf], [-np.inf, 1]),
+            np.inf)
+        assert_equal(
+            stats.energy_distance([1, -np.inf, np.inf], [1, 1]),
+            np.inf)
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning, "invalid value*")
+            assert_equal(
+                stats.energy_distance([1, 2, np.inf], [np.inf, 1]),
+                np.nan)

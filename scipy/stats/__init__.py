@@ -292,6 +292,12 @@ which work for masked arrays.
    chisqprob
    betai
 
+.. autosummary::
+   :toctree: generated/
+
+   wasserstein_distance
+   energy_distance
+
 Circular statistical functions
 ==============================
 
