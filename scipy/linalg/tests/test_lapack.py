@@ -563,31 +563,39 @@ def test_sgesdd_lwork_bug_workaround():
 class TestSytrd(object):
     def test_sytrd(self):
         np.random.seed(42)
-        a = np.random.normal(size=(3, 3))
-        a += a.T
+        n = 3
+        A = np.random.normal(size=(n, n))
+        A += A.T
 
-        sytrd = get_lapack_funcs(('sytrd',))
+        sytrd, sytrd_lwork = get_lapack_funcs(('sytrd', 'sytrd_lwork'))
 
         # query lwork
-        _, _, _, _, work, info = sytrd(a, lwork=-1)
+        lwork, info = sytrd_lwork(n)
         assert info == 0
-        lwork = work[0]
 
-        aa, d, e, tau, work, info = sytrd(a, lwork)
+        data, d, e, tau, info = sytrd(A, lwork)
         assert info == 0
+
+        # assert Q^T*A*Q = tridiag(e, d, e)
 
         # build tridiagonal matrix
-        atri = np.zeros_like(a)
-        k = np.arange(a.shape[0])
-        atri[k, k] = d
-        k2 = np.arange(a.shape[0]-1)
-        atri[k2+1, k2] = e
-        atri[k2, k2+1] = e
+        T = np.zeros_like(A)
+        k = np.arange(A.shape[0])
+        T[k, k] = d
+        k2 = np.arange(A.shape[0]-1)
+        T[k2+1, k2] = e
+        T[k2, k2+1] = e
 
-        aval, avec = np.linalg.eig(a)
-        atval, atvec = np.linalg.eig(atri)
+        # build Q
+        Q = np.eye(n, n)
+        for i in range(n):
+            v = np.zeros(n)
+            v[:i] = data[:i, i+1]
+            v[i] = 1.0
+            H = np.eye(n, n) - tau[i] * np.outer(v, v)
+            Q = np.dot(H, Q)
 
-        # eigenvalues and last components of the eigenvectors must be equal
-        assert_allclose(aval, atval)
-        assert_allclose(avec[-1, :], atval[-1, :])
+        QTAQ = np.dot(Q.T, np.dot(A, Q))
+
+        assert_allclose(QTAQ, T)
         return

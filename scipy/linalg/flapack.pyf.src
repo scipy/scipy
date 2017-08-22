@@ -912,14 +912,14 @@ interface
    subroutine <prefix2>sytrd_lwork(lower,n,a,lda,d,e,tau,work,lwork,info)
      ! lwork computation for sytrd
      fortranname <prefix2>sytrd
-     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,&d,&e,&tau,&work,&lwork,&info);
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&d,&e,&tau,&work,&lwork,&info);
      callprotoargument char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
 
-     integer intent(hide),depend(a) :: lda=shape(a,0)
-     integer intent(hide),depend(a) :: n=shape(a,1)
+     integer intent(in) :: n
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
-     <ftype2> dimension(lda,n),intent(in,copy) :: a
+     integer intent(hide),depend(n) :: lda=n
+     <ftype2> intent(hide) :: a
      <ftype2> intent(hide) :: d
      <ftype2> intent(hide) :: e
      <ftype2> intent(hide) :: tau
