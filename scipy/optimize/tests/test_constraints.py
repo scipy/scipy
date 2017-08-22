@@ -80,22 +80,21 @@ class TestBoxConstraint(TestCase):
         box = BoxConstraint(kind, enforce_feasibility)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            x0_new, f0_new, J0_new = box.evaluate_and_initialize(x0)
-        print(x0_new)
+            x0_new = box.evaluate_and_initialize(x0)
         assert_((lb[enforce_feasibility] <= x0_new[enforce_feasibility]).all())
         assert_((x0_new[enforce_feasibility] <= ub[enforce_feasibility]).all())
 
     def test_box_to_linear_conversion(self):
         box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
         x0 = np.array([1, 2, 3])
-        x0, f0, J0 = box.evaluate_and_initialize(x0)
+        x0 = box.evaluate_and_initialize(x0)
         linear = box.to_linear()
         assert_array_equal(linear.A.todense(), np.eye(3))
 
     def test_box_to_nonlinear_conversion(self):
         box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
         x0 = np.array([1, 2, 3])
-        x0, f0, J0 = box.evaluate_and_initialize(x0)
+        x0 = box.evaluate_and_initialize(x0)
         nonlinear = box.to_nonlinear()
         assert_array_equal(nonlinear.fun(x0), x0)
         assert_array_equal(nonlinear.jac(x0).todense(), np.eye(3))
@@ -119,7 +118,7 @@ class TestLinearConstraint(TestCase):
                                        dtype=bool)
         kind = ("less",)
         linear = LinearConstraint(A, kind, enforce_feasibility)
-        x0, f0, J0 = linear.evaluate_and_initialize(x0)
+        x0 = linear.evaluate_and_initialize(x0)
         nonlinear = linear.to_nonlinear()
         assert_array_equal(nonlinear.fun(x0), A.dot(x0))
         assert_array_equal(nonlinear.jac(x0), A)

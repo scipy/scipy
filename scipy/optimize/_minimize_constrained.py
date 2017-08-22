@@ -4,7 +4,8 @@ from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
 from ._canonical_constraint import (lagrangian_hessian,
-                                    to_canonical)
+                                    to_canonical,
+                                    empty_canonical_constraint)
 from ._large_scale_constrained import (tr_interior_point,
                                        equality_constrained_sqp)
 from warnings import warn
@@ -353,17 +354,20 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     def grad_wrapped(x):
         return np.atleast_1d(grad(x))
 
+    # Put constraints in list format when needed
+    if isinstance(constraints, (NonlinearConstraint,
+                                LinearConstraint,
+                                BoxConstraint)):
+        constraints = [constraints]
     # Copy, evaluate and initialize constraints
     copied_constraints = [deepcopy(constr) for constr in constraints]
     for constr in copied_constraints:
-        x0, ci0, Ji0 = constr.evaluate_and_initialize(x0, sparse_jacobian)
+        x0 = constr.evaluate_and_initialize(x0, sparse_jacobian)
     # Concatenate constraints
-    constr = to_canonical(copied_constraints)
-    # Compute initial values
-    # TODO: use ci0 and Ji0 instead of using a new function
-    # evaluation.
-    c_ineq0, c_eq0 = constr.constr(x0)
-    J_ineq0, J_eq0 = constr.jac(x0)
+    if len(copied_constraints) == 0:
+        constr = empty_canonical_constraint(x0, n_vars, sparse_jacobian)
+    else:
+        constr = to_canonical(copied_constraints)
 
     # Generate Lagrangian hess function
     lagr_hess = lagrangian_hessian(constr, hess)
@@ -377,17 +381,6 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
     if return_all:
         state.allvecs = []
         state.allmult = []
-
-    # Check initial point
-    x0 = np.asarray(x0)
-    for c in constraints:
-        if np.any(c.enforce_feasibility):
-            if isinstance(c, BoxConstraint):
-                x0_new = c.reinforce_constraint(x0)
-                if not np.array_equal(x0_new, x0):
-                    warn("The initial point was changed in order "
-                         "to stay inside box constraints.")
-                    x0 = x0_new
 
     # Choose appropriate method
     if method is None:
@@ -465,7 +458,7 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
         result = equality_constrained_sqp(
             fun, grad_wrapped, lagr_hess,
             constr_eq, jac_eq,
-            x0, f0, g0, c_eq0, J_eq0,
+            x0, f0, g0, constr.c_eq0, constr.J_eq0,
             stop_criteria, state, **options)
 
     elif method == 'tr_interior_point':
@@ -477,8 +470,8 @@ def minimize_constrained(fun, x0, grad, hess=None, constraints=(),
             fun, grad_wrapped, lagr_hess,
             n_vars, constr.n_ineq, constr.n_eq,
             constr.constr, constr.jac,
-            x0, f0, g0, c_ineq0, J_ineq0,
-            c_eq0, J_eq0, stop_criteria,
+            x0, f0, g0, constr.c_ineq0, constr.J_ineq0,
+            constr.c_eq0, constr.J_eq0, stop_criteria,
             constr.enforce_feasibility,
             xtol, state, **options)
     else:

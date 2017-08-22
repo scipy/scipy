@@ -5,7 +5,8 @@ from scipy.optimize._constraints import (NonlinearConstraint,
                                          LinearConstraint,
                                          BoxConstraint)
 from scipy.optimize._canonical_constraint import (_parse_constraint,
-                                                  to_canonical)
+                                                  to_canonical,
+                                                  empty_canonical_constraint)
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_raises, assert_equal, assert_,
@@ -95,8 +96,8 @@ class TestParseConstraint(TestCase):
 class TestToCanonical(TestCase):
 
     def test_empty_constraint(self):
-        canonical = to_canonical([])
         x = [1, 2, 3]
+        canonical = empty_canonical_constraint(x, 3)
         assert_array_equal(canonical.n_eq, 0)
         assert_array_equal(canonical.n_ineq, 0)
         c_ineq, c_eq = canonical.constr(x)
@@ -113,7 +114,7 @@ class TestToCanonical(TestCase):
                             [False, False, False])
 
         x = [1, 2, 3]
-        x, f, J = box.evaluate_and_initialize(x)
+        x = box.evaluate_and_initialize(x)
         canonical = to_canonical(box)
         assert_array_equal(canonical.n_eq, 0)
         assert_array_equal(canonical.n_ineq, 5)
@@ -124,13 +125,17 @@ class TestToCanonical(TestCase):
                                     1-50,
                                     3-70])
         assert_array_equal(c_eq, [])
+        assert_array_equal(c_ineq, canonical.c_ineq0)
+        assert_array_equal(c_eq, canonical.c_eq0)
         J_ineq, J_eq = canonical.jac(x)
-        assert_array_equal(J_ineq.todense(), [[-1, 0, 0],
+        assert_array_equal(J_ineq.toarray(), [[-1, 0, 0],
                                               [0, -1, 0],
                                               [0, 0, -1],
                                               [1, 0, 0],
                                               [0, 0, 1]])
         assert_array_equal(J_eq, np.empty((0, 3)))
+        assert_array_equal(J_ineq.toarray(), canonical.J_ineq0.toarray())
+        assert_array_equal(J_eq.toarray(), canonical.J_eq0.toarray())
         assert_array_equal(canonical.hess, None)
         assert_array_equal(canonical.enforce_feasibility,
                            [False, False, False, False, False])
@@ -143,7 +148,7 @@ class TestToCanonical(TestCase):
                                   [False, False, False])
 
         x = [1, 2, 3, 4]
-        x, f, J = linear.evaluate_and_initialize(x)
+        x = linear.evaluate_and_initialize(x)
         canonical = to_canonical(linear)
         assert_array_equal(canonical.n_eq, 1)
         assert_array_equal(canonical.n_ineq, 3)
@@ -152,11 +157,15 @@ class TestToCanonical(TestCase):
         assert_array_equal(c_ineq, [20-5*1-6*4,
                                     30-7*1-8*3,
                                     7*1+8*3-70])
+        assert_array_equal(c_ineq, canonical.c_ineq0)
+        assert_array_equal(c_eq, canonical.c_eq0)
         J_ineq, J_eq = canonical.jac(x)
         assert_array_equal(J_eq, [[1, 2, 3, 4]])
         assert_array_equal(J_ineq, [[-5, 0, 0, -6],
                                     [-7, 0, -8, 0],
                                     [7, 0, 8, 0]])
+        assert_array_equal(J_ineq, canonical.J_ineq0)
+        assert_array_equal(J_eq, canonical.J_eq0)
         assert_array_equal(canonical.hess, None)
         assert_array_equal(canonical.enforce_feasibility,
                            [False, False, False])
@@ -194,7 +203,7 @@ class TestToCanonical(TestCase):
                                         jac, hess,
                                         False)
         x = [1, 2, 3, 4]
-        x, f, J = nonlinear.evaluate_and_initialize(x)
+        x = nonlinear.evaluate_and_initialize(x)
         canonical = to_canonical(nonlinear)
         assert_array_equal(canonical.n_eq, 1)
         assert_array_equal(canonical.n_ineq, 3)
@@ -205,6 +214,8 @@ class TestToCanonical(TestCase):
                             f3 + g3.dot(x) + 1/2*H3.dot(x).dot(x) - 70])
         assert_array_equal(c_eq,
                            [f1 + g1.dot(x) + 1/2*H1.dot(x).dot(x) - 10])
+        assert_array_equal(c_ineq, canonical.c_ineq0)
+        assert_array_equal(c_eq, canonical.c_eq0)
         J_ineq, J_eq = canonical.jac(x)
         assert_array_equal(J_eq, np.atleast_2d(g1 + H1.dot(x)))
         assert_array_equal(J_ineq, np.vstack([-(g2 + H2.dot(x)),
@@ -228,7 +239,7 @@ class TestToCanonical(TestCase):
                                         jac, hess,
                                         False)
         x = [1, 2, 3, 4]
-        x, f, J = nonlinear.evaluate_and_initialize(x)
+        x = nonlinear.evaluate_and_initialize(x)
         canonical = to_canonical(nonlinear)
         assert_array_equal(canonical.n_eq, 1)
         assert_array_equal(canonical.n_ineq, 4)
@@ -240,12 +251,16 @@ class TestToCanonical(TestCase):
                             30-(f3 + g3.dot(x) + 1/2*H3.dot(x).dot(x)),
                             f1 + g1.dot(x) + 1/2*H1.dot(x).dot(x) - 20,
                             f3 + g3.dot(x) + 1/2*H3.dot(x).dot(x) - 70])
+        assert_array_equal(c_ineq, canonical.c_ineq0)
+        assert_array_equal(c_eq, canonical.c_eq0)
         J_ineq, J_eq = canonical.jac(x)
         assert_array_equal(J_eq, np.atleast_2d(g2 + H2.dot(x)))
         assert_array_equal(J_ineq, np.vstack([-(g1 + H1.dot(x)),
-                                                             -(g3 + H3.dot(x)),
-                                                             g1 + H1.dot(x),
-                                                             g3 + H3.dot(x)]))
+                                              -(g3 + H3.dot(x)),
+                                              g1 + H1.dot(x),
+                                              g3 + H3.dot(x)]))
+        assert_array_equal(J_ineq, canonical.J_ineq0)
+        assert_array_equal(J_eq, canonical.J_eq0)
         v_eq = np.array([10])
         v_ineq = np.array([5, 6, 3, 12])
         assert_array_equal(canonical.hess(x, v_eq, v_ineq),
@@ -320,7 +335,7 @@ class TestToCanonical(TestCase):
                            deepcopy(nonlinear)]
 
             for i in range(len(list_constr)):
-                x, f, J = list_constr[i].evaluate_and_initialize(x, conf[i])
+                x = list_constr[i].evaluate_and_initialize(x, conf[i])
 
             # Concatenate constraint
             canonical = to_canonical(list_constr)
@@ -347,17 +362,18 @@ class TestToCanonical(TestCase):
                                        20-(f2 + g2.dot(x) + 1/2*H2.dot(x).dot(x)),
                                        30-(f3 + g3.dot(x) + 1/2*H3.dot(x).dot(x)),
                                        f3 + g3.dot(x) + 1/2*H3.dot(x).dot(x) - 70])
+            assert_array_equal(c_ineq, canonical.c_ineq0)
+            assert_array_equal(c_eq, canonical.c_eq0)
 
             # Test Jacobian Evaluation
             J_ineq, J_eq = canonical.jac(x)
             if canonical.sparse_jacobian:
-                J_eq = J_eq.todense()
+                J_eq = J_eq.toarray()
+                J_ineq = J_ineq.toarray()
             assert_array_almost_equal(J_eq,
                                       np.vstack([np.array([1, 2, 3, 4]),
                                                  g1 + H1.dot(x),
                                                  g1 + H1.dot(x)]))
-            if canonical.sparse_jacobian:
-                J_ineq = J_ineq.todense()
             assert_array_almost_equal(J_ineq,
                                       np.vstack([np.array([[-5, 0, 0, -6],
                                                            [-7, 0, -8, 0],
@@ -373,6 +389,12 @@ class TestToCanonical(TestCase):
                                                  -(g2 + H2.dot(x)),
                                                  -(g3 + H3.dot(x)),
                                                  g3 + H3.dot(x)]))
+            if canonical.sparse_jacobian:
+                assert_array_equal(J_ineq, canonical.J_ineq0.toarray())
+                assert_array_equal(J_eq, canonical.J_eq0.toarray())
+            else:
+                assert_array_equal(J_ineq, canonical.J_ineq0)
+                assert_array_equal(J_eq, canonical.J_eq0)
 
             # Test Hessian Evaluation
             v_eq = np.array([1, 2, 3])

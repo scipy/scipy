@@ -88,11 +88,18 @@ class NonlinearConstraint:
 
         else:
             def jac_wrapped(x):
-                return np.atleast_2d(self._jac(x))
+                J = self._jac(x)
+                if spc.issparse(J):
+                    return J.toarray()
+                else:
+                    return np.atleast_2d(J)
             self.sparse_jacobian = False
 
         self.fun = fun_wrapped
         self.jac = jac_wrapped
+        self.x0 = x0
+        self.f0 = f0
+        self.J0 = J0
         self.n = x0.size
         self.m = f0.size
         self.kind = _check_kind(self.kind, self.m)
@@ -104,7 +111,7 @@ class NonlinearConstraint:
                              "choose a new feasible initial point ``x0``.")
 
         self.isinitialized = True
-        return x0, f0, J0
+        return x0
 
 
 class LinearConstraint:
@@ -158,15 +165,21 @@ class LinearConstraint:
             self.A = spc.csr_matrix(self.A)
             self.sparse_jacobian = True
         else:
-            self.A = np.atleast_2d(np.asarray(self.A))
+            if spc.issparse(self.A):
+                self.A = self.A.toarray()
+            else:
+                self.A = np.atleast_2d(self.A)
             self.sparse_jacobian = False
 
         x0 = np.atleast_1d(x0).astype(float)
         f0 = self.A.dot(x0)
         J0 = self.A
+
+        self.x0 = x0
+        self.f0 = f0
+        self.J0 = J0
         self.n = x0.size
         self.m = f0.size
-
         self.kind = _check_kind(self.kind, self.m)
         self.enforce_feasibility \
             = _check_enforce_feasibility(self.enforce_feasibility, self.m)
@@ -176,7 +189,7 @@ class LinearConstraint:
                              "choose a new feasible initial point ``x0``.")
 
         self.isinitialized = True
-        return x0, f0, J0
+        return x0
 
     def to_nonlinear(self):
         if not self.isinitialized:
@@ -197,6 +210,9 @@ class LinearConstraint:
         nonlinear.sparse_jacobian = self.sparse_jacobian
         nonlinear.fun = fun
         nonlinear.jac = jac
+        nonlinear.x0 = self.x0
+        nonlinear.f0 = self.f0
+        nonlinear.J0 = self.J0
         return nonlinear
 
 
@@ -253,12 +269,11 @@ class BoxConstraint:
         else:
             J0 = np.eye(self.n)
             self.sparse_jacobian = False
-        self.J = J0
 
+        self.J0 = J0
         self.kind = _check_kind(self.kind, self.m)
         self.enforce_feasibility \
             = _check_enforce_feasibility(self.enforce_feasibility, self.m)
-
         self.isinitialized = True
         if not _is_feasible(self.kind, self.enforce_feasibility, f0):
             warn("The initial point was changed in order "
@@ -266,21 +281,27 @@ class BoxConstraint:
             x0_new = _reinforce_box_constraint(self.kind,
                                                self.enforce_feasibility,
                                                x0)
-            f0_new = x0_new
-            return x0_new, f0_new, J0
+            self.x0 = x0_new
+            self.f0 = x0_new
+            return x0_new
         else:
-            return x0, f0, J0
+            self.x0 = x0
+            self.f0 = f0
+            return x0
 
     def to_linear(self):
         if not self.isinitialized:
             raise RuntimeError("Trying to convert uninitialized constraint.")
         # Build Constraints
-        linear = LinearConstraint(self.J, self.kind,
+        linear = LinearConstraint(self.J0, self.kind,
                                   self.enforce_feasibility)
         linear.isinitialized = True
         linear.m = self.m
         linear.n = self.n
         linear.sparse_jacobian = self.sparse_jacobian
+        linear.x0 = self.x0
+        linear.f0 = self.f0
+        linear.J0 = self.J0
         return linear
 
     def to_nonlinear(self):
