@@ -16,9 +16,10 @@ from collections import namedtuple
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
-                           assert_raises, assert_allclose)
+                           assert_allclose)
 import pytest
-from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
+from pytest import raises as assert_raises
+from scipy._lib._numpy_compat import suppress_warnings
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
@@ -101,11 +102,9 @@ class TestTrimmedStats(object):
             assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
-            assert_raises_regex(ValueError,
-                            "'propagate', 'raise', 'omit'",
-                            stats.tmin,
-                            x,
-                            nan_policy='foo')
+            msg = "'propagate', 'raise', 'omit'"
+            with assert_raises(ValueError, message=msg):
+                stats.tmin(x, nan_policy='foo')
 
     def test_tmax(self):
         assert_equal(stats.tmax(4), 4)
@@ -2743,7 +2742,7 @@ def test_friedmanchisquare():
                               (18.9428571428571, 0.000280938375189499))
     assert_array_almost_equal(stats.friedmanchisquare(x3[0],x3[1],x3[2],x3[3]),
                               (10.68, 0.0135882729582176))
-    np.testing.assert_raises(ValueError, stats.friedmanchisquare,x3[0],x3[1])
+    assert_raises(ValueError, stats.friedmanchisquare,x3[0],x3[1])
 
     # test for namedtuple attribute results
     attributes = ('statistic', 'pvalue')
@@ -2760,7 +2759,7 @@ def test_friedmanchisquare():
     assert_array_almost_equal(mstats.friedmanchisquare(x3[0], x3[1],
                                                        x3[2], x3[3]),
                               (10.68, 0.0135882729582176))
-    np.testing.assert_raises(ValueError, mstats.friedmanchisquare,x3[0],x3[1])
+    assert_raises(ValueError, mstats.friedmanchisquare,x3[0],x3[1])
 
 
 def test_kstest():

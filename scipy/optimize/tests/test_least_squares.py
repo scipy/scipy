@@ -5,7 +5,8 @@ from itertools import product
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
-                           assert_raises, assert_equal)
+                           assert_equal)
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.sparse import issparse, lil_matrix

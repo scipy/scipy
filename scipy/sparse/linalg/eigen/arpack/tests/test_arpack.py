@@ -10,9 +10,9 @@ import threading
 
 import numpy as np
 
-from numpy.testing import assert_allclose, \
-        assert_array_almost_equal_nulp, \
-        assert_raises, assert_equal, assert_array_equal
+from numpy.testing import (assert_allclose, assert_array_almost_equal_nulp,
+                           assert_equal, assert_array_equal)
+from pytest import raises as assert_raises
 
 from numpy import dot, conj, random
 from scipy.linalg import eig, eigh

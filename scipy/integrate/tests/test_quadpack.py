@@ -5,8 +5,9 @@ import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_,
-        assert_allclose, assert_array_less, assert_almost_equal, assert_raises)
+        assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
+from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy._lib.six import xrange

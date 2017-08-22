@@ -4,7 +4,8 @@ from __future__ import division, print_function, absolute_import
 
 import sys
 
-from numpy.testing import assert_raises, assert_
+from numpy.testing import assert_
+from pytest import raises as assert_raises
 
 import scipy.io.matlab.byteordercodes as sibc
 

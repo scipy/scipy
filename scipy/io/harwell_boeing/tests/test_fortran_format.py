@@ -2,11 +2,12 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from numpy.testing import assert_equal, assert_raises
+from numpy.testing import assert_equal
+from pytest import raises as assert_raises
 
-from scipy.io.harwell_boeing._fortran_format_parser import \
-        FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat, \
-        number_digits
+from scipy.io.harwell_boeing._fortran_format_parser import (
+        FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat,
+        number_digits)
 
 
 class TestFortranFormatParser(object):

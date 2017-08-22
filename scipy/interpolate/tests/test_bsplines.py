@@ -1,9 +1,9 @@
 from __future__ import division, absolute_import, print_function
 
 import numpy as np
-from numpy.testing import (assert_equal,
-        assert_allclose, assert_raises, assert_)
-from scipy._lib._numpy_compat import assert_raises_regex, suppress_warnings
+from numpy.testing import assert_equal, assert_allclose, assert_
+from scipy._lib._numpy_compat import suppress_warnings
+from pytest import raises as assert_raises
 import pytest
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
@@ -624,12 +624,16 @@ class TestInterop(object):
         x, y = self.xx, self.yy
         y2 = np.c_[y, y]
         msg = "failed in converting 3rd argument `y' of dfitpack.curfit to C/Fortran array"
-        assert_raises_regex(Exception, msg, splrep, x, y2)
-        assert_raises_regex(Exception, msg, _impl.splrep, x, y2)
+        with assert_raises(Exception, message=msg):
+            splrep(x, y2)
+        with assert_raises(Exception, message=msg):
+            _impl.splrep(x, y2)
 
         # input below minimum size
-        assert_raises_regex(TypeError, "m > k must hold", splrep, x[:3], y[:3])
-        assert_raises_regex(TypeError, "m > k must hold", _impl.splrep, x[:3], y[:3])
+        with assert_raises(TypeError, message="m > k must hold"):
+            splrep(x[:3], y[:3])
+        with assert_raises(TypeError, message="m > k must hold"):
+            _impl.splrep(x[:3], y[:3])
 
     def test_splprep(self):
         x = np.arange(15).reshape((3, 5))
@@ -649,25 +653,31 @@ class TestInterop(object):
     def test_splprep_errors(self):
         # test that both "old" and "new" code paths raise for x.ndim > 2
         x = np.arange(3*4*5).reshape((3, 4, 5))
-        assert_raises_regex(ValueError, "too many values to unpack", splprep, x)
-        assert_raises_regex(ValueError, "too many values to unpack", _impl.splprep, x)
+        with assert_raises(ValueError, message="too many values to unpack"):
+            splprep(x)
+        with assert_raises(ValueError, message="too many values to unpack"):
+            _impl.splprep(x)
 
         # input below minimum size
         x = np.linspace(0, 40, num=3)
-        assert_raises_regex(TypeError, "m > k must hold", splprep, [x])
-        assert_raises_regex(TypeError, "m > k must hold", _impl.splprep, [x])
+        with assert_raises(TypeError, message="m > k must hold"):
+            splprep([x])
+        with assert_raises(TypeError, message="m > k must hold"):
+            _impl.splprep([x])
 
         # automatically calculated parameters are non-increasing
         # see gh-7589
         x = [-50.49072266, -50.49072266, -54.49072266, -54.49072266]
-        assert_raises_regex(ValueError, "Invalid inputs", splprep, [x])
-        assert_raises_regex(ValueError, "Invalid inputs", _impl.splprep, [x])
+        with assert_raises(ValueError, message="Invalid inputs"):
+            splprep([x])
+        with assert_raises(ValueError, message="Invalid inputs"):
+            _impl.splprep([x])
 
         # given non-increasing parameter values u
         x = [1, 3, 2, 4]
         u = [0, 0.3, 0.2, 1]
-        assert_raises_regex(ValueError, "Invalid inputs", splprep,
-                            *[[x], None, u])
+        with assert_raises(ValueError, message="Invalid inputs"):
+            splprep(*[[x], None, u])
 
     def test_sproot(self):
         b, b2 = self.b, self.b2

@@ -14,11 +14,11 @@ from numpy import (arange, array, dot, zeros, identity, conjugate, transpose,
 import numpy.linalg as linalg
 from numpy.random import random
 
-from numpy.testing import (assert_raises,
-                           assert_equal, assert_almost_equal, assert_,
+from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose,
                            assert_array_equal)
 import pytest
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 
 from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,

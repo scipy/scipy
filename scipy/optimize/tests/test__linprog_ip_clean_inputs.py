@@ -4,7 +4,8 @@ Unit test for Linear Programming via Simplex Algorithm.
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_, assert_raises, assert_allclose)
+from numpy.testing import assert_, assert_allclose
+from pytest import raises as assert_raises
 from scipy.optimize._linprog_ip import _clean_inputs
 from copy import deepcopy
 

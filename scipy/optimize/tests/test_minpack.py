@@ -4,8 +4,8 @@ Unit tests for optimization routines from minpack.py.
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
-        assert_array_almost_equal, assert_raises,
-        assert_allclose)
+        assert_array_almost_equal, assert_allclose)
+from pytest import raises as assert_raises
 import numpy as np
 from numpy import array, float64, matrix
 

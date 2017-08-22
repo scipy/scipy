@@ -5,9 +5,9 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import array, matrix
 from numpy.testing import (assert_equal, assert_,
-        assert_array_equal, assert_raises, assert_array_almost_equal_nulp)
+        assert_array_equal, assert_array_almost_equal_nulp)
 import pytest
-from scipy._lib._numpy_compat import assert_raises_regex
+from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
 
 from scipy.sparse import csr_matrix, coo_matrix
@@ -372,12 +372,13 @@ class TestConstructUtils(object):
         assert_equal(construct.bmat([[None,D],[C,None]]).todense(), expected)
 
         # test failure cases
-        assert_raises_regex(ValueError,
-                            r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2',
-                            construct.bmat, [[A],[B]])
-        assert_raises_regex(ValueError,
-                            r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2',
-                            construct.bmat, [[A,C]])
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A], [B]])
+        excinfo.match(r'Got blocks\[1,0\]\.shape\[1\] == 1, expected 2')
+
+        with assert_raises(ValueError) as excinfo:
+            construct.bmat([[A, C]])
+        excinfo.match(r'Got blocks\[0,1\]\.shape\[0\] == 1, expected 2')
 
     @pytest.mark.slow
     def test_concatenate_int32_overflow(self):

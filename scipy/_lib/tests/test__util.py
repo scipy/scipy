@@ -1,7 +1,8 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import assert_equal, assert_, assert_raises
+from numpy.testing import assert_equal, assert_
+from pytest import raises as assert_raises
 
 from scipy._lib._util import _aligned_zeros, check_random_state
 

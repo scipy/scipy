@@ -3,8 +3,9 @@ from __future__ import division, print_function, absolute_import
 import os
 import numpy as np
 
-from numpy.testing import assert_raises, assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal
 import pytest
+from pytest import raises as assert_raises
 
 from scipy.linalg import solve_sylvester
 from scipy.linalg import solve_continuous_lyapunov, solve_discrete_lyapunov

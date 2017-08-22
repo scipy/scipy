@@ -6,8 +6,8 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import (assert_equal,
                            assert_array_almost_equal, assert_array_equal,
-                           assert_allclose, assert_, assert_raises,
-                           assert_almost_equal)
+                           assert_allclose, assert_, assert_almost_equal)
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
                           StateSpace, TransferFunction, ZerosPolesGain,

@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import numpy.testing as npt
 import pytest
+from pytest import raises as assert_raises
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy.integrate import IntegrationWarning
 
@@ -263,10 +264,10 @@ def test_rvs_gh2069_regression():
     d = np.diff(vals.ravel())
     npt.assert_(np.all(d != 0), "All the values are equal, but they shouldn't be!")
 
-    npt.assert_raises(ValueError, stats.norm.rvs, [[0, 0], [0, 0]],
+    assert_raises(ValueError, stats.norm.rvs, [[0, 0], [0, 0]],
                   [[1, 1], [1, 1]], 1)
-    npt.assert_raises(ValueError, stats.gamma.rvs, [2, 3, 4, 5], 0, 1, (2, 2))
-    npt.assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
+    assert_raises(ValueError, stats.gamma.rvs, [2, 3, 4, 5], 0, 1, (2, 2))
+    assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
                      [[1], [2]], (4,))
 
 

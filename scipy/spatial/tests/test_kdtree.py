@@ -4,8 +4,8 @@
 from __future__ import division, print_function, absolute_import
 
 from numpy.testing import (assert_equal, assert_array_equal,
-    assert_almost_equal, assert_array_almost_equal, assert_,
-    assert_raises)
+    assert_almost_equal, assert_array_almost_equal, assert_)
+from pytest import raises as assert_raises
 
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree

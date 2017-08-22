@@ -34,9 +34,9 @@
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
-from numpy.testing import (assert_raises,
-                           assert_allclose, assert_equal, assert_, assert_warns)
+from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
 import pytest
+from pytest import raises as assert_raises
 
 from scipy._lib.six import xrange, u
 

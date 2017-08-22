@@ -4,12 +4,12 @@ Unit tests for the basin hopping global minimization algorithm.
 from __future__ import division, print_function, absolute_import
 import copy
 
-from numpy.testing import (assert_raises,
-                           assert_almost_equal, assert_equal, assert_)
+from numpy.testing import assert_almost_equal, assert_equal, assert_
+from pytest import raises as assert_raises
 import numpy as np
 from numpy import cos, sin
 
-from scipy.optimize import (basinhopping, OptimizeResult)
+from scipy.optimize import basinhopping, OptimizeResult
 from scipy.optimize._basinhopping import (
     Storage, RandomDisplacement, Metropolis, AdaptiveStepsize)
 

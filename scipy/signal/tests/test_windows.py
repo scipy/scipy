@@ -3,8 +3,10 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
-                           assert_raises, assert_allclose,
+                           assert_allclose,
                            assert_equal, assert_, assert_array_less)
+from pytest import raises as assert_raises
+
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import signal, fftpack
 

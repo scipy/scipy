@@ -14,11 +14,12 @@ from __future__ import division, print_function, absolute_import
 import itertools
 
 import numpy as np
-from numpy.testing import (assert_raises, assert_allclose, assert_equal,
+from numpy.testing import (assert_allclose, assert_equal,
                            assert_,
                            assert_almost_equal, assert_warns,
                            assert_array_less)
 import pytest
+from pytest import raises as assert_raises
 
 from scipy._lib._numpy_compat import suppress_warnings
 from scipy import optimize

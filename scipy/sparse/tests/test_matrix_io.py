@@ -6,10 +6,12 @@ import numpy as np
 import tempfile
 
 import pytest
-from numpy.testing import assert_equal, assert_, assert_raises
+from pytest import raises as assert_raises
+from numpy.testing import assert_equal, assert_
 from scipy._lib._version import NumpyVersion
 
-from scipy.sparse import csc_matrix, csr_matrix, bsr_matrix, dia_matrix, coo_matrix, save_npz, load_npz
+from scipy.sparse import (csc_matrix, csr_matrix, bsr_matrix, dia_matrix,
+                          coo_matrix, save_npz, load_npz)
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')

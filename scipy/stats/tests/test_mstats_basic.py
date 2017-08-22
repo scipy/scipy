@@ -14,9 +14,10 @@ import scipy.stats.mstats as mstats
 from scipy import stats
 from .common_tests import check_named_results
 import pytest
+from pytest import raises as assert_raises
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
-    assert_allclose, assert_raises, assert_array_equal)
+    assert_allclose, assert_array_equal)
 from scipy._lib._numpy_compat import suppress_warnings
 
 
