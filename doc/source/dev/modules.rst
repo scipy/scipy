@@ -26,12 +26,3 @@ adding a line to the ``FUNC`` string in ``generate_ufuncs.py``. The
 docstring for that file explains the format. Also add documentation
 for the new function by adding an entry to ``add_newdocs.py``; look in
 the file for examples.
-
-Now generate the necessary loops for vectorizing your new function by
-running ``python generate_ufuncs.py``. When committing the changes,
-try to keep the changes made by hand separate from the changes that
-were automatically generated; this makes reviewing the code
-easier. Running ``generate_ufuncs.py`` can only change the files
-``_ufuncs*`` and ``cython_special*``, so best practice is to commit
-the other changes you made and to then commit changes to those files
-with the message "GEN: special: run generate_ufuncs.py".
