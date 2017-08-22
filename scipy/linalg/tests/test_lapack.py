@@ -563,13 +563,13 @@ def test_sgesdd_lwork_bug_workaround():
 class TestSytrd(object):
     def test_sytrd(self):
         for dtype in REAL_DTYPES:
-            n = 3
             # "random" symmetric matrix
             A = np.array([
                 [1.0, 2.0, 3.0],
                 [2.0, 4.0, 5.0],
                 [3.0, 5.0, 6.0],
                 ], dtype=dtype)
+            n = A.shape[0]
 
             sytrd, sytrd_lwork = \
                 get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
@@ -593,7 +593,7 @@ class TestSytrd(object):
 
             # build Q
             Q = np.eye(n, n, dtype=dtype)
-            for i in range(n):
+            for i in range(n-1):
                 v = np.zeros(n, dtype=dtype)
                 v[:i] = data[:i, i+1]
                 v[i] = 1.0
