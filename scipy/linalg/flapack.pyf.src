@@ -896,7 +896,7 @@ interface
      callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,d,e,tau,work,&lwork,&info);
      callprotoargument char*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
 
-     integer intent(hide),depend(a) :: lda=shape(a,0)
+     integer intent(hide),depend(a) :: lda=MAX(shape(a,0),1)
      integer intent(hide),depend(a) :: n=shape(a,1)
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
@@ -918,7 +918,7 @@ interface
      integer intent(in) :: n
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
-     integer intent(hide),depend(n) :: lda=n
+     integer intent(hide),depend(n) :: lda=MAX(n,1)
      <ftype2> intent(hide) :: a
      <ftype2> intent(hide) :: d
      <ftype2> intent(hide) :: e
@@ -926,7 +926,7 @@ interface
      <ftype2> intent(out) :: work
      integer intent(hide) :: lwork = -1
      integer intent(out) :: info
-   end subroutine <prefix>sytrd_lwork
+   end subroutine <prefix2>sytrd_lwork
 
 
    subroutine <prefix>getrs(n,nrhs,lu,piv,b,info,trans)

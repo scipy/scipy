@@ -562,40 +562,45 @@ def test_sgesdd_lwork_bug_workaround():
 
 class TestSytrd(object):
     def test_sytrd(self):
-        np.random.seed(42)
-        n = 3
-        A = np.random.normal(size=(n, n))
-        A += A.T
+        for dtype in REAL_DTYPES:
+            n = 3
+            # "random" symmetric matrix
+            A = np.array([
+                [1.0, 2.0, 3.0],
+                [2.0, 4.0, 5.0],
+                [3.0, 5.0, 6.0],
+                ], dtype=dtype)
 
-        sytrd, sytrd_lwork = get_lapack_funcs(('sytrd', 'sytrd_lwork'))
+            sytrd, sytrd_lwork = \
+                get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
 
-        # query lwork
-        lwork, info = sytrd_lwork(n)
-        assert info == 0
+            # query lwork
+            lwork, info = sytrd_lwork(n)
+            assert_equal(info, 0)
 
-        data, d, e, tau, info = sytrd(A, lwork)
-        assert info == 0
+            data, d, e, tau, info = sytrd(A, lwork)
+            assert_equal(info, 0)
 
-        # assert Q^T*A*Q = tridiag(e, d, e)
+            # assert Q^T*A*Q = tridiag(e, d, e)
 
-        # build tridiagonal matrix
-        T = np.zeros_like(A)
-        k = np.arange(A.shape[0])
-        T[k, k] = d
-        k2 = np.arange(A.shape[0]-1)
-        T[k2+1, k2] = e
-        T[k2, k2+1] = e
+            # build tridiagonal matrix
+            T = np.zeros_like(A, dtype=dtype)
+            k = np.arange(A.shape[0])
+            T[k, k] = d
+            k2 = np.arange(A.shape[0]-1)
+            T[k2+1, k2] = e
+            T[k2, k2+1] = e
 
-        # build Q
-        Q = np.eye(n, n)
-        for i in range(n):
-            v = np.zeros(n)
-            v[:i] = data[:i, i+1]
-            v[i] = 1.0
-            H = np.eye(n, n) - tau[i] * np.outer(v, v)
-            Q = np.dot(H, Q)
+            # build Q
+            Q = np.eye(n, n, dtype=dtype)
+            for i in range(n):
+                v = np.zeros(n, dtype=dtype)
+                v[:i] = data[:i, i+1]
+                v[i] = 1.0
+                H = np.eye(n, n, dtype=dtype) - tau[i] * np.outer(v, v)
+                Q = np.dot(H, Q)
 
-        QTAQ = np.dot(Q.T, np.dot(A, Q))
+            QTAQ = np.dot(Q.T, np.dot(A, Q))
 
-        assert_allclose(QTAQ, T)
+            assert_allclose(QTAQ, T, rtol=25*np.finfo(dtype).eps)
         return
