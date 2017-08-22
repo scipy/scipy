@@ -578,7 +578,7 @@ class TestSytrd(object):
             lwork, info = sytrd_lwork(n)
             assert_equal(info, 0)
 
-            data, d, e, tau, info = sytrd(A, lwork)
+            data, d, e, tau, info = sytrd(A, lwork=lwork)
             assert_equal(info, 0)
 
             # assert Q^T*A*Q = tridiag(e, d, e)
