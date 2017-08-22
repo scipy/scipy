@@ -395,7 +395,7 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
 
     See Also
     --------
-    fft, irfft, scipy.fftpack.basic
+    fft, irfft, numpy.fft.rfft
 
     Notes
     -----
@@ -405,6 +405,9 @@ def rfft(x, n=None, axis=-1, overwrite_x=False):
     inputs will be converted to single precision.  Non floating-point inputs
     will be converted to double precision.  Long-double precision inputs are
     not supported.
+
+    To get an output with a complex datatype, consider using the related
+    function `numpy.fft.rfft`.
 
     Examples
     --------
@@ -460,7 +463,7 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
     See Also
     --------
-    rfft, ifft
+    rfft, ifft, numpy.fft.irfft
 
     Notes
     -----
@@ -484,6 +487,8 @@ def irfft(x, n=None, axis=-1, overwrite_x=False):
 
     For details on input parameters, see `rfft`.
 
+    To process (conjugate-symmetric) frequency-domain data with a complex
+    datatype, consider using the related function `numpy.fft.irfft`.
     """
     tmp = _asfarray(x)
     if not numpy.isrealobj(tmp):
