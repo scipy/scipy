@@ -322,7 +322,7 @@ def _parse_constraint(kind):
         c = np.asarray(kind[1], dtype=float)
         # Set returns
         eq = np.arange(len(c), dtype=int)
-        ineq = np.empty(0)
+        ineq = np.empty(0, dtype=int)
         val_eq = np.asarray(c)
         val_ineq = np.empty(0)
         sign = np.empty(0)

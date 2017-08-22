@@ -86,6 +86,8 @@ class NonlinearConstraint:
                 return spc.csr_matrix(self._jac(x))
             self.sparse_jacobian = True
 
+            self.J0 = spc.csr_matrix(J0)
+
         else:
             def jac_wrapped(x):
                 J = self._jac(x)
@@ -95,11 +97,15 @@ class NonlinearConstraint:
                     return np.atleast_2d(J)
             self.sparse_jacobian = False
 
+            if spc.issparse(J0):
+                self.J0 = J0.toarray()
+            else:
+                self.J0 = np.atleast_2d(J0)
+
         self.fun = fun_wrapped
         self.jac = jac_wrapped
         self.x0 = x0
         self.f0 = f0
-        self.J0 = J0
         self.n = x0.size
         self.m = f0.size
         self.kind = _check_kind(self.kind, self.m)
