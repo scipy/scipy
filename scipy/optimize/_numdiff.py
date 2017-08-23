@@ -3,11 +3,11 @@
 from __future__ import division
 
 import numpy as np
+from numpy.linalg import norm
 
-from ..sparse.linalg import LinearOperator
+from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
-from numpy.linalg import norm
 
 EPS = np.finfo(np.float64).eps
 
@@ -91,18 +91,14 @@ def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):
     return h_adjusted, use_one_sided
 
 
-def _compute_relative_step(method):
-    if method == '2-point' or method == 'cs':
-        return EPS**0.5
-    elif method == '3-point':
-        return EPS**(1 / 3)
-    else:
-        raise ValueError("`method` must be '2-point', '3-point' or 'cs'.")
+relative_step = {"2-point": EPS**0.5,
+                 "3-point": EPS**(1/3),
+                 "cs": EPS**0.5}
 
 
 def _compute_absolute_step(rel_step, x0, method):
     if rel_step is None:
-        rel_step = _compute_relative_step(method)
+        rel_step = relative_step[method]
     sign_x0 = (x0 >= 0).astype(float) * 2 - 1
     return rel_step * sign_x0 * np.maximum(1.0, np.abs(x0))
 
@@ -222,8 +218,8 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         Lower and upper bounds on independent variables. Defaults to no bounds.
         Each bound must match the size of `x0` or be a scalar, in the latter
         case the bound will be the same for all variables. Use it to limit the
-        range of function evaluation. Bounds checking not implemented for the
-        case `as_linear_operator` is True.
+        range of function evaluation. Bounds checking is not implemented
+        when `as_linear_operator` is True.
     sparsity : {None, array_like, sparse matrix, 2-tuple}, optional
         Defines a sparsity structure of the Jacobian matrix. If the Jacobian
         matrix is known to have only few non-zero elements in each row, then
@@ -245,12 +241,12 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         Note, that sparse differencing makes sense only for large Jacobian
         matrices where each row contains few non-zero elements.
     as_linear_operator : bool, optional
-        When `as_linear_operator` is True the function returns an
-        `LinearOperator`. Otherwise it returns an dense array or sparse
-        matrix depending on how `sparsity` is defined. The linear operator
-        provides an efficient way of computing ``J.dot(p)`` for any vector
-        ``p`` of shape (n,), but does not allow direct access to individual
-        elements of the matrix. By default `as_linear_operator` is False.
+        When True the function returns an `scipy.sparse.linalg.LinearOperator`.
+        Otherwise it returns a dense array or a sparse matrix depending on
+        `sparsity`. The linear operator provides an efficient way of computing
+        ``J.dot(p)`` for any vector ``p`` of shape (n,), but does not allow
+        direct access to individual elements of the matrix. By default
+        `as_linear_operator` is False.
     args, kwargs : tuple and dict, optional
         Additional arguments passed to `fun`. Both empty by default.
         The calling signature is ``fun(x, *args, **kwargs)``.
@@ -264,7 +260,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
         matrix depending on how `sparsity` is defined. If `sparsity`
         is None then a ndarray with shape (m, n) is returned. If
         `sparsity` is not None returns a csr_matrix with shape (m, n).
-        For sparse matrix and linear operators it is always returned as
+        For sparse matrices and linear operators it is always returned as
         a 2-dimensional structure, for ndarrays, if m=1 it is returned
         as a 1-dimensional gradient array with shape (n,).
 
@@ -345,14 +341,14 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
 
     if as_linear_operator and not (np.all(np.isinf(lb))
                                    and np.all(np.isinf(ub))):
-        raise ValueError(("Bounds not supported when "
-                          "`as_linear_operator` is True."))
+        raise ValueError("Bounds not supported when "
+                         "`as_linear_operator` is True.")
 
     def fun_wrapped(x):
         f = np.atleast_1d(fun(x, *args, **kwargs))
         if f.ndim > 1:
-            raise RuntimeError(("`fun` return value has "
-                                "more than 1 dimension."))
+            raise RuntimeError("`fun` return value has "
+                               "more than 1 dimension.")
         return f
 
     if f0 is None:
@@ -367,7 +363,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, f0=None,
 
     if as_linear_operator:
         if rel_step is None:
-            rel_step = _compute_relative_step(method)
+            rel_step = relative_step[method]
 
         return _linear_operator_difference(fun_wrapped, x0,
                                            f0, rel_step, method)
@@ -412,29 +408,32 @@ def _linear_operator_difference(fun, x0, f0, h, method):
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
-            x = x0 + h*p
+            dx = h / norm(p)
+            x = x0 + dx*p
             df = fun(x) - f0
-            return df / h
+            return df / dx
 
     elif method == '3-point':
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
-            x1 = x0 - h*p
-            x2 = x0 + h*p
+            dx = 2*h / norm(p)
+            x1 = x0 - (dx/2)*p
+            x2 = x0 + (dx/2)*p
             f1 = fun(x1)
             f2 = fun(x2)
             df = f2 - f1
-            return df / (2*h)
+            return df / dx
 
     elif method == 'cs':
         def matvec(p):
             if np.array_equal(p, np.zeros_like(p)):
                 return np.zeros(m)
-            x = x0 + h*p*1.j
+            dx = h / norm(p)
+            x = x0 + dx*p*1.j
             f1 = fun(x)
             df = f1.imag
-            return df / h
+            return df / dx
 
     else:
         raise RuntimeError("Never be here.")
@@ -641,13 +640,15 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
 
 
 class FiniteDifference:
-    """Represents finite difference approximation.
+    """Represents finite difference approximation of first-order derivatives.
 
-    Provide an easy way of calling `approx_derivative` repeatedly
+    Provides an easy way of calling `approx_derivative` repeatedly
     with the same set of parameters. Avoid duplicated calls to ``fun``
     if ``avoid_duplicated_calls=True``.
-    """
 
+    Refer to `approx_derivative` for parameter explanation and general info.
+    """
+    # TODO: improve docstring and include usage examples.
     def __init__(self, fun, method='3-point', rel_step=None,
                  bounds=(-np.inf, np.inf), sparsity=None,
                  as_linear_operator=False, x0=None,
@@ -661,25 +662,23 @@ class FiniteDifference:
         self.avoid_duplicated_calls = avoid_duplicated_calls
         self._x = None
         self._args = ()
-        self._kwargs = {}
         self._f = None
 
-    def fun_wrapped(self, x, *args, **kwargs):
+    def fun_wrapped(self, x, *args):
+        print(args)
         if not np.array_equal(self._x, x) or \
-           not args == self._args or \
-           not kwargs == self._kwargs:
-            self._f = self._fun(x, *args, **kwargs)
+           not np.array_equal(args, self._args):
+            self._f = self._fun(x, *args)
             self._x = x
             self._args = args
-            self._kwargs = kwargs
         return self._f
 
-    def __call__(self, x, *args, **kwargs):
+    def __call__(self, x, *args):
         if self.avoid_duplicated_calls:
-            _f = self.fun_wrapped(x, *args, **kwargs)
+            _f = self.fun_wrapped(x, *args)
         else:
             _f = None
         return approx_derivative(
             self._fun, self._x, self.method, self.rel_step,
             _f, self.bounds, self.sparsity, self.as_linear_operator,
-            self._args, self._kwargs)
+            self._args)

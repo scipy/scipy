@@ -600,9 +600,6 @@ class TestApproxDerivativeLinearOperator(object):
 
 class TestFiniteDifference(object):
 
-    def setUp(self):
-        self.fun_counter = 0
-
     def fun_scalar_scalar(self, x):
         return np.sinh(x)
 
@@ -640,10 +637,10 @@ class TestFiniteDifference(object):
             [3 * x[0] ** 2 * x[1] ** -0.5, -0.5 * x[0] ** 3 * x[1] ** -1.5]
         ])
 
-    def fun_parametrized(self, x, c0, c1=1.0):
+    def fun_parametrized(self, x, c0, c1):
         return np.array([np.exp(c0 * x[0]), np.exp(c1 * x[1])])
 
-    def jac_parametrized(self, x, c0, c1=0.1):
+    def jac_parametrized(self, x, c0, c1):
         return np.array([
             [c0 * np.exp(c0 * x[0]), 0],
             [0, c1 * np.exp(c1 * x[1])]
@@ -651,7 +648,7 @@ class TestFiniteDifference(object):
 
     def test_scalar_scalar(self):
         jac_diff = FiniteDifference(self.fun_scalar_scalar,
-                                      method='2-point')
+                                    method='2-point')
         jac_true = self.jac_scalar_scalar
         np.random.seed(1)
         for i in range(10):
@@ -661,7 +658,7 @@ class TestFiniteDifference(object):
 
     def test_scalar_vector(self):
         jac_diff = FiniteDifference(self.fun_scalar_vector,
-                                      method='2-point')
+                                    method='2-point')
         jac_true = self.jac_scalar_vector
         np.random.seed(1)
         for i in range(10):
@@ -671,7 +668,7 @@ class TestFiniteDifference(object):
 
     def test_vector_scalar(self):
         jac_diff = FiniteDifference(self.fun_vector_scalar,
-                                      method='2-point')
+                                    method='2-point')
         jac_true = self.jac_vector_scalar
         np.random.seed(1)
         for i in range(10):
@@ -681,7 +678,7 @@ class TestFiniteDifference(object):
 
     def test_vector_vector(self):
         jac_diff = FiniteDifference(self.fun_vector_vector,
-                                      method='2-point')
+                                    method='2-point')
         jac_true = self.jac_vector_vector
         np.random.seed(1)
         for i in range(10):
@@ -691,7 +688,7 @@ class TestFiniteDifference(object):
 
     def test_fun_parametrized(self):
         jac_diff = FiniteDifference(self.fun_parametrized,
-                                      method='2-point')
+                                    method='2-point')
         jac_true = self.jac_parametrized
         np.random.seed(1)
         for i in range(10):
@@ -700,10 +697,8 @@ class TestFiniteDifference(object):
             c1 = np.random.uniform(0, 10)
             assert_allclose(jac_diff(x, c0, c1), jac_true(x, c0, c1),
                             rtol=1e-4)
-            assert_allclose(jac_diff(x, c0=1, c1=0.1), jac_true(x, c0=1, c1=0.1),
-                            rtol=1e-4)
 
-    def test_avoid_duplicated_calls(self):
+    def test_avoid_duplicated_calls_scalar(self):
 
         self.fun_counter = 0
 
@@ -711,27 +706,74 @@ class TestFiniteDifference(object):
             self.fun_counter += 1
             return np.array([np.exp(c0 * x[0]),
                              np.exp(x[1])])
-    
+
         jac_diff = FiniteDifference(fun_counting,
                                     method='2-point')
+        x1 = np.array([1, 2])
+        x2 = np.array([1, 3])
+        x3 = np.array([1, 4])
+        c1 = 0.2
+        c2 = 1.2
+        c3 = 1.3
+        c4 = 1.0
         assert_equal(self.fun_counter, 0)
-        J = jac_diff([1, 2], 0.2)
+        J = jac_diff(x1, c1)
         assert_equal(self.fun_counter, 3)
-        f = jac_diff.fun_wrapped([1, 2], 1.2)
-        J = jac_diff([1, 2], 1.2)
+        f = jac_diff.fun_wrapped(x1, c2)
+        J = jac_diff(x1, c2)
         assert_equal(self.fun_counter, 6)
-        f = jac_diff.fun_wrapped([1, 2], 1.2)
-        J = jac_diff([1, 2], 1.2)
+        f = jac_diff.fun_wrapped(x1, c2)
+        J = jac_diff(x1, c2)
         assert_equal(self.fun_counter, 8)
-        f = jac_diff.fun_wrapped([1, 2], 1.3)
-        J = jac_diff([1, 2], 1.2)
+        f = jac_diff.fun_wrapped(x1, c3)
+        J = jac_diff(x1, c2)
         assert_equal(self.fun_counter, 12)
-        f = jac_diff.fun_wrapped([1, 3], 1.0)
-        J = jac_diff([1, 4], 1.0)
+        f = jac_diff.fun_wrapped(x2, c4)
+        J = jac_diff(x3, c4)
         assert_equal(self.fun_counter, 16)
-        f = jac_diff.fun_wrapped([1, 4], c0=1.0)
-        J = jac_diff([1, 4], c0=1.0)
-        assert_equal(self.fun_counter, 19)
-        f = jac_diff.fun_wrapped([1, 4], c0=1.2)
-        J = jac_diff([1, 4], c0=1.0)
-        assert_equal(self.fun_counter, 23)
+        f = jac_diff.fun_wrapped(x3, c4)
+        J = jac_diff(x3, c4)
+        assert_equal(self.fun_counter, 18)
+        f = jac_diff.fun_wrapped(x3, c2)
+        J = jac_diff(x3, c4)
+        assert_equal(self.fun_counter, 22)
+
+    def test_avoid_duplicated_calls_vector(self):
+
+        self.fun_counter = 0
+
+        def fun_counting(x, c):
+            self.fun_counter += 1
+            return np.array([np.exp(c[0] * x[0]),
+                             np.exp(x[1]*c[1])])
+
+        jac_diff = FiniteDifference(fun_counting,
+                                    method='2-point')
+        x1 = np.array([1, 2])
+        x2 = np.array([1, 3])
+        x3 = np.array([1, 4])
+        c1 = np.array([2, 1])
+        c2 = np.array([2, 2])
+        c3 = np.array([2, 3])
+        c4 = np.array([2, 4])
+        assert_equal(self.fun_counter, 0)
+        J = jac_diff(x1, c1)
+        assert_equal(self.fun_counter, 3)
+        f = jac_diff.fun_wrapped(x1, c2)
+        J = jac_diff(x1, c2)
+        assert_equal(self.fun_counter, 6)
+        f = jac_diff.fun_wrapped(x1, c2)
+        J = jac_diff(x1, c2)
+        assert_equal(self.fun_counter, 8)
+        f = jac_diff.fun_wrapped(x1, c3)
+        J = jac_diff(x1, c2)
+        assert_equal(self.fun_counter, 12)
+        f = jac_diff.fun_wrapped(x2, c4)
+        J = jac_diff(x3, c4)
+        assert_equal(self.fun_counter, 16)
+        f = jac_diff.fun_wrapped(x3, c4)
+        J = jac_diff(x3, c4)
+        assert_equal(self.fun_counter, 18)
+        f = jac_diff.fun_wrapped(x3, c2)
+        J = jac_diff(x3, c4)
+        assert_equal(self.fun_counter, 22)
