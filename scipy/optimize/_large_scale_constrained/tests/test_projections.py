@@ -1,7 +1,7 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.sparse import csc_matrix
-from scipy.optimize._equality_constrained_sqp.projections \
+from scipy.optimize._large_scale_constrained.projections \
     import projections, orthogonality
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
