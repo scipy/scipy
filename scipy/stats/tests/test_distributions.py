@@ -342,6 +342,21 @@ class TestGeom(object):
         assert_array_almost_equal(vals, expected)
 
 
+class TestPlanck(object):
+    def setup_method(self):
+        np.random.seed(1234)
+
+    def test_sf(self):
+        vals = stats.planck.sf([1, 2, 3], 5.)
+        expected = array([4.5399929762484854e-05, 3.0590232050182579e-07, 2.0611536224385579e-09])
+        assert_array_almost_equal(vals, expected)
+
+    def test_logsf(self):
+        vals = stats.planck.logsf([1000., 2000., 3000.], 1000.)
+        expected = array([-1001000., -2001000., -3001000.])
+        assert_array_almost_equal(vals, expected)
+
+
 class TestGennorm(object):
     def test_laplace(self):
         # test against Laplace (special case for beta=1)
