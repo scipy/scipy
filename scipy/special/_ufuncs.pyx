@@ -1691,9 +1691,15 @@ from ._legacy cimport kn_unsafe as _func_kn_unsafe
 ctypedef double _proto_kn_unsafe_t(double, double) nogil
 cdef _proto_kn_unsafe_t *_proto_kn_unsafe_t_var = &_func_kn_unsafe
 cdef extern from "_ufuncs_defs.h":
+    cdef double _func_kolmogc "kolmogc"(double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_kolmogci "kolmogci"(double) nogil
+cdef extern from "_ufuncs_defs.h":
     cdef double _func_kolmogi "kolmogi"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_kolmogorov "kolmogorov"(double) nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef double _func_kolmogp "kolmogp"(double) nogil
 cdef extern from "_ufuncs_defs.h":
     cdef double _func_cbesk_wrap_real "cbesk_wrap_real"(double, double) nogil
 cdef extern from "_ufuncs_defs.h":
@@ -9437,6 +9443,58 @@ ufunc_kn_data[1] = &ufunc_kn_ptr[2*1]
 ufunc_kn_data[2] = &ufunc_kn_ptr[2*2]
 kn = np.PyUFunc_FromFuncAndData(ufunc_kn_loops, ufunc_kn_data, ufunc_kn_types, 3, 2, 1, 0, "kn", ufunc_kn_doc, 0)
 
+cdef np.PyUFuncGenericFunction ufunc_kolmogc_loops[2]
+cdef void *ufunc_kolmogc_ptr[4]
+cdef void *ufunc_kolmogc_data[2]
+cdef char ufunc_kolmogc_types[4]
+cdef char *ufunc_kolmogc_doc = (
+    "kolmogc(y)\n"
+    "\n"
+    "Cumulative distribution function of Kolmogorov distribution\n"
+    "\n"
+    "Returns the cumulative distribution function of\n"
+    "Kolmogorov's limiting distribution (Kn* for large n) of a\n"
+    "two-sided test for equality between an empirical and a theoretical\n"
+    "distribution. It is equal to the (limit as n->infinity of the)\n"
+    "probability that sqrt(n) * max absolute deviation <= y.")
+ufunc_kolmogc_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_kolmogc_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_kolmogc_types[0] = <char>NPY_FLOAT
+ufunc_kolmogc_types[1] = <char>NPY_FLOAT
+ufunc_kolmogc_types[2] = <char>NPY_DOUBLE
+ufunc_kolmogc_types[3] = <char>NPY_DOUBLE
+ufunc_kolmogc_ptr[2*0] = <void*>_func_kolmogc
+ufunc_kolmogc_ptr[2*0+1] = <void*>(<char*>"kolmogc")
+ufunc_kolmogc_ptr[2*1] = <void*>_func_kolmogc
+ufunc_kolmogc_ptr[2*1+1] = <void*>(<char*>"kolmogc")
+ufunc_kolmogc_data[0] = &ufunc_kolmogc_ptr[2*0]
+ufunc_kolmogc_data[1] = &ufunc_kolmogc_ptr[2*1]
+kolmogc = np.PyUFunc_FromFuncAndData(ufunc_kolmogc_loops, ufunc_kolmogc_data, ufunc_kolmogc_types, 2, 1, 1, 0, "kolmogc", ufunc_kolmogc_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_kolmogci_loops[2]
+cdef void *ufunc_kolmogci_ptr[4]
+cdef void *ufunc_kolmogci_data[2]
+cdef char ufunc_kolmogci_types[4]
+cdef char *ufunc_kolmogci_doc = (
+    "kolmogci(p)\n"
+    "\n"
+    "Inverse function to kolmogc\n"
+    "\n"
+    "Returns y such that ``kolmogc(y) == p``.")
+ufunc_kolmogci_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_kolmogci_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_kolmogci_types[0] = <char>NPY_FLOAT
+ufunc_kolmogci_types[1] = <char>NPY_FLOAT
+ufunc_kolmogci_types[2] = <char>NPY_DOUBLE
+ufunc_kolmogci_types[3] = <char>NPY_DOUBLE
+ufunc_kolmogci_ptr[2*0] = <void*>_func_kolmogci
+ufunc_kolmogci_ptr[2*0+1] = <void*>(<char*>"kolmogci")
+ufunc_kolmogci_ptr[2*1] = <void*>_func_kolmogci
+ufunc_kolmogci_ptr[2*1+1] = <void*>(<char*>"kolmogci")
+ufunc_kolmogci_data[0] = &ufunc_kolmogci_ptr[2*0]
+ufunc_kolmogci_data[1] = &ufunc_kolmogci_ptr[2*1]
+kolmogci = np.PyUFunc_FromFuncAndData(ufunc_kolmogci_loops, ufunc_kolmogci_data, ufunc_kolmogci_types, 2, 1, 1, 0, "kolmogci", ufunc_kolmogci_doc, 0)
+
 cdef np.PyUFuncGenericFunction ufunc_kolmogi_loops[2]
 cdef void *ufunc_kolmogi_ptr[4]
 cdef void *ufunc_kolmogi_data[2]
@@ -9488,6 +9546,28 @@ ufunc_kolmogorov_ptr[2*1+1] = <void*>(<char*>"kolmogorov")
 ufunc_kolmogorov_data[0] = &ufunc_kolmogorov_ptr[2*0]
 ufunc_kolmogorov_data[1] = &ufunc_kolmogorov_ptr[2*1]
 kolmogorov = np.PyUFunc_FromFuncAndData(ufunc_kolmogorov_loops, ufunc_kolmogorov_data, ufunc_kolmogorov_types, 2, 1, 1, 0, "kolmogorov", ufunc_kolmogorov_doc, 0)
+
+cdef np.PyUFuncGenericFunction ufunc_kolmogp_loops[2]
+cdef void *ufunc_kolmogp_ptr[4]
+cdef void *ufunc_kolmogp_data[2]
+cdef char ufunc_kolmogp_types[4]
+cdef char *ufunc_kolmogp_doc = (
+    "kolmogp(y)\n"
+    "\n"
+    "Derivative of kolmogorov.")
+ufunc_kolmogp_loops[0] = <np.PyUFuncGenericFunction>loop_d_d__As_f_f
+ufunc_kolmogp_loops[1] = <np.PyUFuncGenericFunction>loop_d_d__As_d_d
+ufunc_kolmogp_types[0] = <char>NPY_FLOAT
+ufunc_kolmogp_types[1] = <char>NPY_FLOAT
+ufunc_kolmogp_types[2] = <char>NPY_DOUBLE
+ufunc_kolmogp_types[3] = <char>NPY_DOUBLE
+ufunc_kolmogp_ptr[2*0] = <void*>_func_kolmogp
+ufunc_kolmogp_ptr[2*0+1] = <void*>(<char*>"kolmogp")
+ufunc_kolmogp_ptr[2*1] = <void*>_func_kolmogp
+ufunc_kolmogp_ptr[2*1+1] = <void*>(<char*>"kolmogp")
+ufunc_kolmogp_data[0] = &ufunc_kolmogp_ptr[2*0]
+ufunc_kolmogp_data[1] = &ufunc_kolmogp_ptr[2*1]
+kolmogp = np.PyUFunc_FromFuncAndData(ufunc_kolmogp_loops, ufunc_kolmogp_data, ufunc_kolmogp_types, 2, 1, 1, 0, "kolmogp", ufunc_kolmogp_doc, 0)
 
 cdef np.PyUFuncGenericFunction ufunc_kv_loops[4]
 cdef void *ufunc_kv_ptr[8]

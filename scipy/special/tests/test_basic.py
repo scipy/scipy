@@ -529,6 +529,16 @@ class TestCephes(object):
     def test_kolmogorov(self):
         assert_equal(cephes.kolmogorov(0),1.0)
 
+    def test_kolmogp(self):
+        assert_equal(cephes.kolmogp(0),0.0)
+
+    def test_kolmogc(self):
+        assert_equal(cephes.kolmogc(0),0.0)
+
+    def test_kolmogci(self):
+        assert_equal(cephes.kolmogci(0),0.0)
+        assert_(np.isnan(cephes.kolmogi(np.nan)))
+
     def _check_kv(self):
         cephes.kv(1,1)
 

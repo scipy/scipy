@@ -604,6 +604,14 @@ Available Functions
         double kn(long, double)
         double kn(double, double)
 
+- :py:func:`~scipy.special.kolmogc`::
+
+        double kolmogc(double)
+
+- :py:func:`~scipy.special.kolmogci`::
+
+        double kolmogci(double)
+
 - :py:func:`~scipy.special.kolmogi`::
 
         double kolmogi(double)
@@ -611,6 +619,10 @@ Available Functions
 - :py:func:`~scipy.special.kolmogorov`::
 
         double kolmogorov(double)
+
+- :py:func:`~scipy.special.kolmogp`::
+
+        double kolmogp(double)
 
 - :py:func:`~scipy.special.kv`::
 
@@ -1403,9 +1415,15 @@ from ._legacy cimport kn_unsafe as _func_kn_unsafe
 ctypedef double _proto_kn_unsafe_t(double, double) nogil
 cdef _proto_kn_unsafe_t *_proto_kn_unsafe_t_var = &_func_kn_unsafe
 cdef extern from "_ufuncs_defs.h":
+    cdef npy_double _func_kolmogc "kolmogc"(npy_double)nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef npy_double _func_kolmogci "kolmogci"(npy_double)nogil
+cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_kolmogi "kolmogi"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_kolmogorov "kolmogorov"(npy_double)nogil
+cdef extern from "_ufuncs_defs.h":
+    cdef npy_double _func_kolmogp "kolmogp"(npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
     cdef npy_double _func_cbesk_wrap_real "cbesk_wrap_real"(npy_double, npy_double)nogil
 cdef extern from "_ufuncs_defs.h":
@@ -2625,6 +2643,14 @@ cpdef double kn(dl_number_t x0, double x1) nogil:
     else:
         return NPY_NAN
 
+cpdef double kolmogc(double x0) nogil:
+    """See the documentation for scipy.special.kolmogc"""
+    return _func_kolmogc(x0)
+
+cpdef double kolmogci(double x0) nogil:
+    """See the documentation for scipy.special.kolmogci"""
+    return _func_kolmogci(x0)
+
 cpdef double kolmogi(double x0) nogil:
     """See the documentation for scipy.special.kolmogi"""
     return _func_kolmogi(x0)
@@ -2632,6 +2658,10 @@ cpdef double kolmogi(double x0) nogil:
 cpdef double kolmogorov(double x0) nogil:
     """See the documentation for scipy.special.kolmogorov"""
     return _func_kolmogorov(x0)
+
+cpdef double kolmogp(double x0) nogil:
+    """See the documentation for scipy.special.kolmogp"""
+    return _func_kolmogp(x0)
 
 cpdef Dd_number_t kv(double x0, Dd_number_t x1) nogil:
     """See the documentation for scipy.special.kv"""
