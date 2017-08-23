@@ -64,10 +64,8 @@ c The LAPACK in the Accelerate framework is a CLAPACK
 c (www.netlib.org/clapack) and has hence a different interface than the
 c modern Fortran LAPACK libraries. These wrappers here help to link
 c Fortran code to Accelerate.
-c This wrapper files covers all Lapack functions that are in all versions
-c before Lapack 3.2 (Lapack 3.2 adds CLANHF and SLANSF that would be
-c problematic, but those do not exist in OSX <= 10.6, and are actually not
-c used in scipy)
+c These wrappers cover all Lapack functions that are common between
+c LAPACK versions 3.3.1 through 3.6.0
 
       REAL FUNCTION WCLANGB( NORM, N, KL, KU, AB, LDAB, WORK )
       CHARACTER          NORM
@@ -116,6 +114,16 @@ c used in scipy)
       EXTERNAL           CLANHE
       DOUBLE PRECISION   CLANHE
       WCLANHE = REAL(CLANHE( NORM, UPLO, N, A, LDA, WORK ))
+      END FUNCTION
+
+      REAL FUNCTION WCLANHF( NORM, TRANSR, UPLO, N, A, WORK )
+      CHARACTER          NORM, TRANSR, UPLO
+      INTEGER            N
+      REAL               WORK( 0: * )
+      COMPLEX            A( 0: * )
+      EXTERNAL           CLANHF
+      DOUBLE PRECISION   CLANHF
+      WCLANHF = REAL(CLANHF( NORM, TRANSR, UPLO, N, A, WORK ))
       END FUNCTION
 
       REAL FUNCTION WCLANHP( NORM, UPLO, N, AP, WORK )
@@ -259,6 +267,15 @@ c used in scipy)
       EXTERNAL           SLANSB
       DOUBLE PRECISION   SLANSB
       WSLANSB = REAL(SLANSB( NORM, UPLO, N, K, AB, LDAB, WORK ))
+      END FUNCTION
+
+      REAL FUNCTION WSLANSF( NORM, TRANSR, UPLO, N, A, WORK )
+      CHARACTER          NORM, TRANSR, UPLO
+      INTEGER            N
+      REAL               A( 0: * ), WORK( 0: * )
+      EXTERNAL           SLANSF
+      DOUBLE PRECISION   SLANSF
+      WSLANSF = REAL(SLANSF( NORM, TRANSR, UPLO, N, A, WORK))
       END FUNCTION
 
       REAL FUNCTION WSLANSP( NORM, UPLO, N, AP, WORK )

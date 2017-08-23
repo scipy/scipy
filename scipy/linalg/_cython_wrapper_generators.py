@@ -159,8 +159,9 @@ Usable from Cython via::
     cimport scipy.linalg.cython_lapack
 
 This module provides Cython-level wrappers for all primary routines included
-in LAPACK 3.1.0 except for ``zcgesv`` since its interface is not consistent
-from LAPACK 3.1.0 to 3.6.0. It also provides some of the
+in LAPACK 3.3.1 except for ``zcgesv`` since its interface is not consistent
+from LAPACK 3.3.1 to 3.6.0. It also provides some of the
+from LAPACK 3.3.1 to 3.6.0. It also provides some of the
 fixed-api auxiliary routines.
 
 These wrappers do not check for alignment of arrays.
@@ -526,20 +527,52 @@ fortran_template = """      subroutine {name}wrp(ret, {argnames})
 dims = {'work': '(*)', 'ab': '(ldab,*)', 'a': '(lda,*)', 'dl': '(*)',
         'd': '(*)', 'du': '(*)', 'ap': '(*)', 'e': '(*)', 'lld': '(*)'}
 
+xy_specialized_dims = {'x': '', 'y': ''}
+a_specialized_dims = {'a': '(*)'}
+special_cases = {'ladiv': xy_specialized_dims,
+                 'lanhf': a_specialized_dims,
+                 'lansf': a_specialized_dims,
+                 'lapy2': xy_specialized_dims,
+                 'lapy3': xy_specialized_dims}
 
 def process_fortran_name(name, funcname):
     if 'inc' in name:
         return name
-    xy_exclusions = ['ladiv', 'lapy2', 'lapy3']
-    if ('x' in name or 'y' in name) and funcname[1:] not in xy_exclusions:
-        return name + '(n)'
-    if name in dims:
-        return name + dims[name]
+    if ('x' in name or 'y' in name):
+        return name + special_cases.get(funcname[1:], dict()).get(name, '(n)')
+    name += special_cases.get(funcname[1:], dims).get(name, dims.get(name, ''))
     return name
 
+def fix_line_length(subroutine):
+    # Wrap lines for subroutine wrappers that have too many arguments
+    # to be written on a single line.
+    lines = subroutine.split('\n')
+    for i, line in enumerate(lines):
+        # If the line is longer than the Fortran 77 line length limit.
+        if len(line) > 72:
+            # In this restricted context, it's safe to assume
+            # that the length of the line is caused by a long
+            # list of function arguments.
+            split_idx = line.rfind(',', 0, 72) + 1
+            done = line[:split_idx]
+            remaining = line[split_idx + 1:]
+            split_lines = [done]
+            start_len = len(line.split('(')[0]) + 1
+            allowed_length = 72 - start_len
+            newline_template = ' ' * 5 + '*' + (start_len - 6) * ' ' + '{}'
+            while len(remaining) > allowed_length:
+                split_idx = remaining[:allowed_length].rfind(',') + 1
+                split_lines.append(newline_template.format(
+                    remaining[:split_idx]))
+                remaining = remaining[split_idx+1:]
+            split_lines.append(newline_template.format(remaining))
+            lines[i] = '\n'.join(split_lines)
+    return '\n'.join(lines)
 
 def fort_subroutine_wrapper(name, ret_type, args):
-    if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
+    needs_abi_wrapper = ((name[0] in 'cs' and ret_type in 'cs') or
+                         name in ['zladiv', 'zdotu', 'zdotc'])
+    if needs_abi_wrapper:
         wrapper = 'w' + name
     else:
         wrapper = name
@@ -549,9 +582,10 @@ def fort_subroutine_wrapper(name, ret_type, args):
     names = [process_fortran_name(n, name) for n in names]
     argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
                                  for n, t in zip(names, types))
-    return fortran_template.format(name=name, wrapper=wrapper,
-                                   argnames=argnames, argdecls=argdecls,
-                                   ret_type=fortran_types[ret_type])
+    subroutine = fortran_template.format(name=name, wrapper=wrapper,
+                                         argnames=argnames, argdecls=argdecls,
+                                         ret_type=fortran_types[ret_type])
+    return fix_line_length(subroutine)
 
 
 def generate_fortran(func_sigs):
@@ -628,7 +662,7 @@ def split_signature(sig):
 
 
 def filter_lines(ls):
-    ls = [l.strip() for l in ls if l != '\n' and l[0] != '#']
+    ls = [l.strip() for l in ls if l not in {'\n', '\r\n'} and l[0] != '#']
     func_sigs = [split_signature(l) for l in ls if l.split(' ')[0] != 'void']
     sub_sigs = [split_signature(l) for l in ls if l.split(' ')[0] == 'void']
     all_sigs = list(sorted(func_sigs + sub_sigs, key=itemgetter(0)))

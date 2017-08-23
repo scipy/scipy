@@ -10,8 +10,9 @@ Usable from Cython via::
     cimport scipy.linalg.cython_lapack
 
 This module provides Cython-level wrappers for all primary routines included
-in LAPACK 3.1.0 except for ``zcgesv`` since its interface is not consistent
-from LAPACK 3.1.0 to 3.6.0. It also provides some of the
+in LAPACK 3.3.1 except for ``zcgesv`` since its interface is not consistent
+from LAPACK 3.3.1 to 3.6.0. It also provides some of the
+from LAPACK 3.3.1 to 3.6.0. It also provides some of the
 fixed-api auxiliary routines.
 
 These wrappers do not check for alignment of arrays.
@@ -19,10 +20,12 @@ Alignment should be checked before these wrappers are used.
 
 Raw function pointers (Fortran-style pointer arguments):
 
+- cbbcsd
 - cbdsqr
 - cgbbrd
 - cgbcon
 - cgbequ
+- cgbequb
 - cgbrfs
 - cgbsv
 - cgbsvx
@@ -35,6 +38,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - cgebrd
 - cgecon
 - cgeequ
+- cgeequb
 - cgees
 - cgeesx
 - cgeev
@@ -51,7 +55,9 @@ Raw function pointers (Fortran-style pointer arguments):
 - cgeqlf
 - cgeqp3
 - cgeqr2
+- cgeqr2p
 - cgeqrf
+- cgeqrfp
 - cgerfs
 - cgerq2
 - cgerqf
@@ -92,6 +98,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - chbgvx
 - chbtrd
 - checon
+- cheequb
 - cheev
 - cheevd
 - cheevr
@@ -104,13 +111,19 @@ Raw function pointers (Fortran-style pointer arguments):
 - cherfs
 - chesv
 - chesvx
+- cheswapr
 - chetd2
 - chetf2
 - chetrd
 - chetrf
 - chetri
+- chetri2
+- chetri2x
 - chetrs
+- chetrs2
+- chfrk
 - chgeqz
+- chla_transtype
 - chpcon
 - chpev
 - chpevd
@@ -158,6 +171,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - clangt
 - clanhb
 - clanhe
+- clanhf
 - clanhp
 - clanhs
 - clanht
@@ -168,6 +182,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - clantp
 - clantr
 - clapll
+- clapmr
 - clapmt
 - claqgb
 - claqge
@@ -191,6 +206,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - clarf
 - clarfb
 - clarfg
+- clarfgp
 - clarft
 - clarfx
 - clargv
@@ -224,8 +240,12 @@ Raw function pointers (Fortran-style pointer arguments):
 - cpbtf2
 - cpbtrf
 - cpbtrs
+- cpftrf
+- cpftri
+- cpftrs
 - cpocon
 - cpoequ
+- cpoequb
 - cporfs
 - cposv
 - cposvx
@@ -241,6 +261,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - cpptrf
 - cpptri
 - cpptrs
+- cpstf2
+- cpstrf
 - cptcon
 - cpteqr
 - cptrfs
@@ -266,18 +288,28 @@ Raw function pointers (Fortran-style pointer arguments):
 - cstemr
 - csteqr
 - csycon
+- csyconv
+- csyequb
 - csymv
 - csyr
 - csyrfs
 - csysv
 - csysvx
+- csyswapr
 - csytf2
 - csytrf
 - csytri
+- csytri2
+- csytri2x
 - csytrs
+- csytrs2
 - ctbcon
 - ctbrfs
 - ctbtrs
+- ctfsm
+- ctftri
+- ctfttp
+- ctfttr
 - ctgevc
 - ctgex2
 - ctgexc
@@ -290,6 +322,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - ctprfs
 - ctptri
 - ctptrs
+- ctpttf
+- ctpttr
 - ctrcon
 - ctrevc
 - ctrexc
@@ -300,7 +334,11 @@ Raw function pointers (Fortran-style pointer arguments):
 - ctrti2
 - ctrtri
 - ctrtrs
+- ctrttf
+- ctrttp
 - ctzrzf
+- cunbdb
+- cuncsd
 - cung2l
 - cung2r
 - cungbr
@@ -327,12 +365,14 @@ Raw function pointers (Fortran-style pointer arguments):
 - cunmtr
 - cupgtr
 - cupmtr
+- dbbcsd
 - dbdsdc
 - dbdsqr
 - ddisna
 - dgbbrd
 - dgbcon
 - dgbequ
+- dgbequb
 - dgbrfs
 - dgbsv
 - dgbsvx
@@ -345,12 +385,14 @@ Raw function pointers (Fortran-style pointer arguments):
 - dgebrd
 - dgecon
 - dgeequ
+- dgeequb
 - dgees
 - dgeesx
 - dgeev
 - dgeevx
 - dgehd2
 - dgehrd
+- dgejsv
 - dgelq2
 - dgelqf
 - dgels
@@ -361,7 +403,9 @@ Raw function pointers (Fortran-style pointer arguments):
 - dgeqlf
 - dgeqp3
 - dgeqr2
+- dgeqr2p
 - dgeqrf
+- dgeqrfp
 - dgerfs
 - dgerq2
 - dgerqf
@@ -369,6 +413,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - dgesdd
 - dgesv
 - dgesvd
+- dgesvj
 - dgesvx
 - dgetc2
 - dgetf2
@@ -386,6 +431,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - dgglse
 - dggqrf
 - dggrqf
+- dgsvj0
+- dgsvj1
 - dgtcon
 - dgtrfs
 - dgtsv
@@ -441,6 +488,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - dlangt
 - dlanhs
 - dlansb
+- dlansf
 - dlansp
 - dlanst
 - dlansy
@@ -449,6 +497,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - dlantr
 - dlanv2
 - dlapll
+- dlapmr
 - dlapmt
 - dlapy2
 - dlapy3
@@ -471,6 +520,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - dlarf
 - dlarfb
 - dlarfg
+- dlarfgp
 - dlarft
 - dlarfx
 - dlargv
@@ -486,6 +536,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - dlarrr
 - dlarrv
 - dlartg
+- dlartgp
+- dlartgs
 - dlartv
 - dlaruv
 - dlarz
@@ -508,6 +560,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - dlaset
 - dlasq1
 - dlasq2
+- dlasq3
+- dlasq4
 - dlasq6
 - dlasr
 - dlasrt
@@ -516,6 +570,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - dlaswp
 - dlasy2
 - dlasyf
+- dlat2s
 - dlatbs
 - dlatdf
 - dlatps
@@ -526,6 +581,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - dlauum
 - dopgtr
 - dopmtr
+- dorbdb
+- dorcsd
 - dorg2l
 - dorg2r
 - dorgbr
@@ -559,8 +616,12 @@ Raw function pointers (Fortran-style pointer arguments):
 - dpbtf2
 - dpbtrf
 - dpbtrs
+- dpftrf
+- dpftri
+- dpftrs
 - dpocon
 - dpoequ
+- dpoequb
 - dporfs
 - dposv
 - dposvx
@@ -576,6 +637,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - dpptrf
 - dpptri
 - dpptrs
+- dpstf2
+- dpstrf
 - dptcon
 - dpteqr
 - dptrfs
@@ -593,6 +656,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - dsbgvd
 - dsbgvx
 - dsbtrd
+- dsfrk
 - dsgesv
 - dspcon
 - dspev
@@ -602,6 +666,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - dspgv
 - dspgvd
 - dspgvx
+- dsposv
 - dsprfs
 - dspsv
 - dspsvx
@@ -621,6 +686,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - dstevr
 - dstevx
 - dsycon
+- dsyconv
+- dsyequb
 - dsyev
 - dsyevd
 - dsyevr
@@ -633,15 +700,23 @@ Raw function pointers (Fortran-style pointer arguments):
 - dsyrfs
 - dsysv
 - dsysvx
+- dsyswapr
 - dsytd2
 - dsytf2
 - dsytrd
 - dsytrf
 - dsytri
+- dsytri2
+- dsytri2x
 - dsytrs
+- dsytrs2
 - dtbcon
 - dtbrfs
 - dtbtrs
+- dtfsm
+- dtftri
+- dtfttp
+- dtfttr
 - dtgevc
 - dtgex2
 - dtgexc
@@ -654,6 +729,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - dtprfs
 - dtptri
 - dtptrs
+- dtpttf
+- dtpttr
 - dtrcon
 - dtrevc
 - dtrexc
@@ -664,12 +741,27 @@ Raw function pointers (Fortran-style pointer arguments):
 - dtrti2
 - dtrtri
 - dtrtrs
+- dtrttf
+- dtrttp
 - dtzrzf
 - dzsum1
 - icmax1
 - ieeeck
+- ilaclc
+- ilaclr
+- iladiag
+- iladlc
+- iladlr
+- ilaprec
+- ilaslc
+- ilaslr
+- ilatrans
+- ilauplo
 - ilaver
+- ilazlc
+- ilazlr
 - izmax1
+- sbbcsd
 - sbdsdc
 - sbdsqr
 - scsum1
@@ -677,6 +769,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - sgbbrd
 - sgbcon
 - sgbequ
+- sgbequb
 - sgbrfs
 - sgbsv
 - sgbsvx
@@ -689,12 +782,14 @@ Raw function pointers (Fortran-style pointer arguments):
 - sgebrd
 - sgecon
 - sgeequ
+- sgeequb
 - sgees
 - sgeesx
 - sgeev
 - sgeevx
 - sgehd2
 - sgehrd
+- sgejsv
 - sgelq2
 - sgelqf
 - sgels
@@ -705,7 +800,9 @@ Raw function pointers (Fortran-style pointer arguments):
 - sgeqlf
 - sgeqp3
 - sgeqr2
+- sgeqr2p
 - sgeqrf
+- sgeqrfp
 - sgerfs
 - sgerq2
 - sgerqf
@@ -713,6 +810,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - sgesdd
 - sgesv
 - sgesvd
+- sgesvj
 - sgesvx
 - sgetc2
 - sgetf2
@@ -730,6 +828,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - sgglse
 - sggqrf
 - sggrqf
+- sgsvj0
+- sgsvj1
 - sgtcon
 - sgtrfs
 - sgtsv
@@ -783,6 +883,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - slangt
 - slanhs
 - slansb
+- slansf
 - slansp
 - slanst
 - slansy
@@ -791,6 +892,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - slantr
 - slanv2
 - slapll
+- slapmr
 - slapmt
 - slapy2
 - slapy3
@@ -813,6 +915,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - slarf
 - slarfb
 - slarfg
+- slarfgp
 - slarft
 - slarfx
 - slargv
@@ -828,6 +931,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - slarrr
 - slarrv
 - slartg
+- slartgp
+- slartgs
 - slartv
 - slaruv
 - slarz
@@ -850,6 +955,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - slaset
 - slasq1
 - slasq2
+- slasq3
+- slasq4
 - slasq6
 - slasr
 - slasrt
@@ -868,6 +975,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - slauum
 - sopgtr
 - sopmtr
+- sorbdb
+- sorcsd
 - sorg2l
 - sorg2r
 - sorgbr
@@ -901,8 +1010,12 @@ Raw function pointers (Fortran-style pointer arguments):
 - spbtf2
 - spbtrf
 - spbtrs
+- spftrf
+- spftri
+- spftrs
 - spocon
 - spoequ
+- spoequb
 - sporfs
 - sposv
 - sposvx
@@ -918,6 +1031,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - spptrf
 - spptri
 - spptrs
+- spstf2
+- spstrf
 - sptcon
 - spteqr
 - sptrfs
@@ -935,6 +1050,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - ssbgvd
 - ssbgvx
 - ssbtrd
+- ssfrk
 - sspcon
 - sspev
 - sspevd
@@ -962,6 +1078,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - sstevr
 - sstevx
 - ssycon
+- ssyconv
+- ssyequb
 - ssyev
 - ssyevd
 - ssyevr
@@ -974,15 +1092,23 @@ Raw function pointers (Fortran-style pointer arguments):
 - ssyrfs
 - ssysv
 - ssysvx
+- ssyswapr
 - ssytd2
 - ssytf2
 - ssytrd
 - ssytrf
 - ssytri
+- ssytri2
+- ssytri2x
 - ssytrs
+- ssytrs2
 - stbcon
 - stbrfs
 - stbtrs
+- stfsm
+- stftri
+- stfttp
+- stfttr
 - stgevc
 - stgex2
 - stgexc
@@ -995,6 +1121,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - stprfs
 - stptri
 - stptrs
+- stpttf
+- stpttr
 - strcon
 - strevc
 - strexc
@@ -1005,12 +1133,19 @@ Raw function pointers (Fortran-style pointer arguments):
 - strti2
 - strtri
 - strtrs
+- strttf
+- strttp
 - stzrzf
+- xerbla_array
+- zbbcsd
 - zbdsqr
+- zcgesv
+- zcposv
 - zdrscl
 - zgbbrd
 - zgbcon
 - zgbequ
+- zgbequb
 - zgbrfs
 - zgbsv
 - zgbsvx
@@ -1023,6 +1158,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - zgebrd
 - zgecon
 - zgeequ
+- zgeequb
 - zgees
 - zgeesx
 - zgeev
@@ -1039,7 +1175,9 @@ Raw function pointers (Fortran-style pointer arguments):
 - zgeqlf
 - zgeqp3
 - zgeqr2
+- zgeqr2p
 - zgeqrf
+- zgeqrfp
 - zgerfs
 - zgerq2
 - zgerqf
@@ -1080,6 +1218,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - zhbgvx
 - zhbtrd
 - zhecon
+- zheequb
 - zheev
 - zheevd
 - zheevr
@@ -1092,12 +1231,17 @@ Raw function pointers (Fortran-style pointer arguments):
 - zherfs
 - zhesv
 - zhesvx
+- zheswapr
 - zhetd2
 - zhetf2
 - zhetrd
 - zhetrf
 - zhetri
+- zhetri2
+- zhetri2x
 - zhetrs
+- zhetrs2
+- zhfrk
 - zhgeqz
 - zhpcon
 - zhpev
@@ -1146,6 +1290,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - zlangt
 - zlanhb
 - zlanhe
+- zlanhf
 - zlanhp
 - zlanhs
 - zlanht
@@ -1156,6 +1301,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - zlantp
 - zlantr
 - zlapll
+- zlapmr
 - zlapmt
 - zlaqgb
 - zlaqge
@@ -1179,6 +1325,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - zlarf
 - zlarfb
 - zlarfg
+- zlarfgp
 - zlarft
 - zlarfx
 - zlargv
@@ -1195,6 +1342,7 @@ Raw function pointers (Fortran-style pointer arguments):
 - zlassq
 - zlaswp
 - zlasyf
+- zlat2c
 - zlatbs
 - zlatdf
 - zlatps
@@ -1212,8 +1360,12 @@ Raw function pointers (Fortran-style pointer arguments):
 - zpbtf2
 - zpbtrf
 - zpbtrs
+- zpftrf
+- zpftri
+- zpftrs
 - zpocon
 - zpoequ
+- zpoequb
 - zporfs
 - zposv
 - zposvx
@@ -1229,6 +1381,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - zpptrf
 - zpptri
 - zpptrs
+- zpstf2
+- zpstrf
 - zptcon
 - zpteqr
 - zptrfs
@@ -1253,18 +1407,28 @@ Raw function pointers (Fortran-style pointer arguments):
 - zstemr
 - zsteqr
 - zsycon
+- zsyconv
+- zsyequb
 - zsymv
 - zsyr
 - zsyrfs
 - zsysv
 - zsysvx
+- zsyswapr
 - zsytf2
 - zsytrf
 - zsytri
+- zsytri2
+- zsytri2x
 - zsytrs
+- zsytrs2
 - ztbcon
 - ztbrfs
 - ztbtrs
+- ztfsm
+- ztftri
+- ztfttp
+- ztfttr
 - ztgevc
 - ztgex2
 - ztgexc
@@ -1277,6 +1441,8 @@ Raw function pointers (Fortran-style pointer arguments):
 - ztprfs
 - ztptri
 - ztptrs
+- ztpttf
+- ztpttr
 - ztrcon
 - ztrevc
 - ztrexc
@@ -1287,7 +1453,11 @@ Raw function pointers (Fortran-style pointer arguments):
 - ztrti2
 - ztrtri
 - ztrtrs
+- ztrttf
+- ztrttp
 - ztzrzf
+- zunbdb
+- zuncsd
 - zung2l
 - zung2r
 - zungbr
@@ -1350,6 +1520,14 @@ cdef extern from "_lapack_subroutines.h":
 
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_chla_transtype "F_FUNC(chla_transtypewrp, CHLA_TRANSTYPEWRP)"(char *out, int *trans) nogil
+cdef char chla_transtype(int *trans) nogil:
+    cdef char out
+    _fortran_chla_transtype(&out, trans)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_cladiv "F_FUNC(cladivwrp, CLADIVWRP)"(c *out, npy_complex64 *x, npy_complex64 *y) nogil
 cdef c cladiv(c *x, c *y) nogil:
     cdef c out
@@ -1394,6 +1572,14 @@ cdef extern from "_lapack_subroutines.h":
 cdef s clanhe(char *norm, char *uplo, int *n, c *a, int *lda, s *work) nogil:
     cdef s out
     _fortran_clanhe(&out, norm, uplo, n, <npy_complex64*>a, lda, work)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_clanhf "F_FUNC(clanhfwrp, CLANHFWRP)"(s *out, char *norm, char *transr, char *uplo, int *n, npy_complex64 *a, s *work) nogil
+cdef s clanhf(char *norm, char *transr, char *uplo, int *n, c *a, s *work) nogil:
+    cdef s out
+    _fortran_clanhf(&out, norm, transr, uplo, n, <npy_complex64*>a, work)
     return out
 
 
@@ -1534,6 +1720,14 @@ cdef d dlansb(char *norm, char *uplo, int *n, int *k, d *ab, int *ldab, d *work)
 
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dlansf "F_FUNC(dlansfwrp, DLANSFWRP)"(d *out, char *norm, char *transr, char *uplo, int *n, d *a, d *work) nogil
+cdef d dlansf(char *norm, char *transr, char *uplo, int *n, d *a, d *work) nogil:
+    cdef d out
+    _fortran_dlansf(&out, norm, transr, uplo, n, a, work)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dlansp "F_FUNC(dlanspwrp, DLANSPWRP)"(d *out, char *norm, char *uplo, int *n, d *ap, d *work) nogil
 cdef d dlansp(char *norm, char *uplo, int *n, d *ap, d *work) nogil:
     cdef d out
@@ -1622,6 +1816,102 @@ cdef int ieeeck(int *ispec, s *zero, s *one) nogil:
 
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilaclc "F_FUNC(ilaclcwrp, ILACLCWRP)"(int *out, int *m, int *n, npy_complex64 *a, int *lda) nogil
+cdef int ilaclc(int *m, int *n, c *a, int *lda) nogil:
+    cdef int out
+    _fortran_ilaclc(&out, m, n, <npy_complex64*>a, lda)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilaclr "F_FUNC(ilaclrwrp, ILACLRWRP)"(int *out, int *m, int *n, npy_complex64 *a, int *lda) nogil
+cdef int ilaclr(int *m, int *n, c *a, int *lda) nogil:
+    cdef int out
+    _fortran_ilaclr(&out, m, n, <npy_complex64*>a, lda)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_iladiag "F_FUNC(iladiagwrp, ILADIAGWRP)"(int *out, char *diag) nogil
+cdef int iladiag(char *diag) nogil:
+    cdef int out
+    _fortran_iladiag(&out, diag)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_iladlc "F_FUNC(iladlcwrp, ILADLCWRP)"(int *out, int *m, int *n, d *a, int *lda) nogil
+cdef int iladlc(int *m, int *n, d *a, int *lda) nogil:
+    cdef int out
+    _fortran_iladlc(&out, m, n, a, lda)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_iladlr "F_FUNC(iladlrwrp, ILADLRWRP)"(int *out, int *m, int *n, d *a, int *lda) nogil
+cdef int iladlr(int *m, int *n, d *a, int *lda) nogil:
+    cdef int out
+    _fortran_iladlr(&out, m, n, a, lda)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilaprec "F_FUNC(ilaprecwrp, ILAPRECWRP)"(int *out, char *prec) nogil
+cdef int ilaprec(char *prec) nogil:
+    cdef int out
+    _fortran_ilaprec(&out, prec)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilaslc "F_FUNC(ilaslcwrp, ILASLCWRP)"(int *out, int *m, int *n, s *a, int *lda) nogil
+cdef int ilaslc(int *m, int *n, s *a, int *lda) nogil:
+    cdef int out
+    _fortran_ilaslc(&out, m, n, a, lda)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilaslr "F_FUNC(ilaslrwrp, ILASLRWRP)"(int *out, int *m, int *n, s *a, int *lda) nogil
+cdef int ilaslr(int *m, int *n, s *a, int *lda) nogil:
+    cdef int out
+    _fortran_ilaslr(&out, m, n, a, lda)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilatrans "F_FUNC(ilatranswrp, ILATRANSWRP)"(int *out, char *trans) nogil
+cdef int ilatrans(char *trans) nogil:
+    cdef int out
+    _fortran_ilatrans(&out, trans)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilauplo "F_FUNC(ilauplowrp, ILAUPLOWRP)"(int *out, char *uplo) nogil
+cdef int ilauplo(char *uplo) nogil:
+    cdef int out
+    _fortran_ilauplo(&out, uplo)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilazlc "F_FUNC(ilazlcwrp, ILAZLCWRP)"(int *out, int *m, int *n, npy_complex128 *a, int *lda) nogil
+cdef int ilazlc(int *m, int *n, z *a, int *lda) nogil:
+    cdef int out
+    _fortran_ilazlc(&out, m, n, <npy_complex128*>a, lda)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ilazlr "F_FUNC(ilazlrwrp, ILAZLRWRP)"(int *out, int *m, int *n, npy_complex128 *a, int *lda) nogil
+cdef int ilazlr(int *m, int *n, z *a, int *lda) nogil:
+    cdef int out
+    _fortran_ilazlr(&out, m, n, <npy_complex128*>a, lda)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_izmax1 "F_FUNC(izmax1wrp, IZMAX1WRP)"(int *out, int *n, npy_complex128 *cx, int *incx) nogil
 cdef int izmax1(int *n, z *cx, int *incx) nogil:
     cdef int out
@@ -1682,6 +1972,14 @@ cdef extern from "_lapack_subroutines.h":
 cdef s slansb(char *norm, char *uplo, int *n, int *k, s *ab, int *ldab, s *work) nogil:
     cdef s out
     _fortran_slansb(&out, norm, uplo, n, k, ab, ldab, work)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_slansf "F_FUNC(slansfwrp, SLANSFWRP)"(s *out, char *norm, char *transr, char *uplo, int *n, s *a, s *work) nogil
+cdef s slansf(char *norm, char *transr, char *uplo, int *n, s *a, s *work) nogil:
+    cdef s out
+    _fortran_slansf(&out, norm, transr, uplo, n, a, work)
     return out
 
 
@@ -1798,6 +2096,14 @@ cdef d zlanhe(char *norm, char *uplo, int *n, z *a, int *lda, d *work) nogil:
 
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zlanhf "F_FUNC(zlanhfwrp, ZLANHFWRP)"(d *out, char *norm, char *transr, char *uplo, int *n, npy_complex128 *a, d *work) nogil
+cdef d zlanhf(char *norm, char *transr, char *uplo, int *n, z *a, d *work) nogil:
+    cdef d out
+    _fortran_zlanhf(&out, norm, transr, uplo, n, <npy_complex128*>a, work)
+    return out
+
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zlanhp "F_FUNC(zlanhpwrp, ZLANHPWRP)"(d *out, char *norm, char *uplo, int *n, npy_complex128 *ap, d *work) nogil
 cdef d zlanhp(char *norm, char *uplo, int *n, z *ap, d *work) nogil:
     cdef d out
@@ -1869,6 +2175,11 @@ cdef d zlantr(char *norm, char *uplo, char *diag, int *m, int *n, z *a, int *lda
     return out
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_cbbcsd "F_FUNC(cbbcsd,CBBCSD)"(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, int *m, int *p, int *q, s *theta, s *phi, npy_complex64 *u1, int *ldu1, npy_complex64 *u2, int *ldu2, npy_complex64 *v1t, int *ldv1t, npy_complex64 *v2t, int *ldv2t, s *b11d, s *b11e, s *b12d, s *b12e, s *b21d, s *b21e, s *b22d, s *b22e, s *rwork, int *lrwork, int *info) nogil
+cdef void cbbcsd(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, int *m, int *p, int *q, s *theta, s *phi, c *u1, int *ldu1, c *u2, int *ldu2, c *v1t, int *ldv1t, c *v2t, int *ldv2t, s *b11d, s *b11e, s *b12d, s *b12e, s *b21d, s *b21e, s *b22d, s *b22e, s *rwork, int *lrwork, int *info) nogil:
+    _fortran_cbbcsd(jobu1, jobu2, jobv1t, jobv2t, trans, m, p, q, theta, phi, <npy_complex64*>u1, ldu1, <npy_complex64*>u2, ldu2, <npy_complex64*>v1t, ldv1t, <npy_complex64*>v2t, ldv2t, b11d, b11e, b12d, b12e, b21d, b21e, b22d, b22e, rwork, lrwork, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_cbdsqr "F_FUNC(cbdsqr,CBDSQR)"(char *uplo, int *n, int *ncvt, int *nru, int *ncc, s *d, s *e, npy_complex64 *vt, int *ldvt, npy_complex64 *u, int *ldu, npy_complex64 *c, int *ldc, s *rwork, int *info) nogil
 cdef void cbdsqr(char *uplo, int *n, int *ncvt, int *nru, int *ncc, s *d, s *e, c *vt, int *ldvt, c *u, int *ldu, c *c, int *ldc, s *rwork, int *info) nogil:
     _fortran_cbdsqr(uplo, n, ncvt, nru, ncc, d, e, <npy_complex64*>vt, ldvt, <npy_complex64*>u, ldu, <npy_complex64*>c, ldc, rwork, info)
@@ -1887,6 +2198,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_cgbequ "F_FUNC(cgbequ,CGBEQU)"(int *m, int *n, int *kl, int *ku, npy_complex64 *ab, int *ldab, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil
 cdef void cgbequ(int *m, int *n, int *kl, int *ku, c *ab, int *ldab, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil:
     _fortran_cgbequ(m, n, kl, ku, <npy_complex64*>ab, ldab, r, c, rowcnd, colcnd, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cgbequb "F_FUNC(cgbequb,CGBEQUB)"(int *m, int *n, int *kl, int *ku, npy_complex64 *ab, int *ldab, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil
+cdef void cgbequb(int *m, int *n, int *kl, int *ku, c *ab, int *ldab, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil:
+    _fortran_cgbequb(m, n, kl, ku, <npy_complex64*>ab, ldab, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_cgbrfs "F_FUNC(cgbrfs,CGBRFS)"(char *trans, int *n, int *kl, int *ku, int *nrhs, npy_complex64 *ab, int *ldab, npy_complex64 *afb, int *ldafb, int *ipiv, npy_complex64 *b, int *ldb, npy_complex64 *x, int *ldx, s *ferr, s *berr, npy_complex64 *work, s *rwork, int *info) nogil
@@ -1947,6 +2263,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_cgeequ "F_FUNC(cgeequ,CGEEQU)"(int *m, int *n, npy_complex64 *a, int *lda, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil
 cdef void cgeequ(int *m, int *n, c *a, int *lda, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil:
     _fortran_cgeequ(m, n, <npy_complex64*>a, lda, r, c, rowcnd, colcnd, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cgeequb "F_FUNC(cgeequb,CGEEQUB)"(int *m, int *n, npy_complex64 *a, int *lda, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil
+cdef void cgeequb(int *m, int *n, c *a, int *lda, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil:
+    _fortran_cgeequb(m, n, <npy_complex64*>a, lda, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_cgees "F_FUNC(cgees,CGEES)"(char *jobvs, char *sort, _cselect1 *select, int *n, npy_complex64 *a, int *lda, int *sdim, npy_complex64 *w, npy_complex64 *vs, int *ldvs, npy_complex64 *work, int *lwork, s *rwork, bint *bwork, int *info) nogil
@@ -2029,9 +2350,19 @@ cdef void cgeqr2(int *m, int *n, c *a, int *lda, c *tau, c *work, int *info) nog
     _fortran_cgeqr2(m, n, <npy_complex64*>a, lda, <npy_complex64*>tau, <npy_complex64*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_cgeqr2p "F_FUNC(cgeqr2p,CGEQR2P)"(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *info) nogil
+cdef void cgeqr2p(int *m, int *n, c *a, int *lda, c *tau, c *work, int *info) nogil:
+    _fortran_cgeqr2p(m, n, <npy_complex64*>a, lda, <npy_complex64*>tau, <npy_complex64*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_cgeqrf "F_FUNC(cgeqrf,CGEQRF)"(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *lwork, int *info) nogil
 cdef void cgeqrf(int *m, int *n, c *a, int *lda, c *tau, c *work, int *lwork, int *info) nogil:
     _fortran_cgeqrf(m, n, <npy_complex64*>a, lda, <npy_complex64*>tau, <npy_complex64*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cgeqrfp "F_FUNC(cgeqrfp,CGEQRFP)"(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *lwork, int *info) nogil
+cdef void cgeqrfp(int *m, int *n, c *a, int *lda, c *tau, c *work, int *lwork, int *info) nogil:
+    _fortran_cgeqrfp(m, n, <npy_complex64*>a, lda, <npy_complex64*>tau, <npy_complex64*>work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_cgerfs "F_FUNC(cgerfs,CGERFS)"(char *trans, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *af, int *ldaf, int *ipiv, npy_complex64 *b, int *ldb, npy_complex64 *x, int *ldx, s *ferr, s *berr, npy_complex64 *work, s *rwork, int *info) nogil
@@ -2234,6 +2565,11 @@ cdef void checon(char *uplo, int *n, c *a, int *lda, int *ipiv, s *anorm, s *rco
     _fortran_checon(uplo, n, <npy_complex64*>a, lda, ipiv, anorm, rcond, <npy_complex64*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_cheequb "F_FUNC(cheequb,CHEEQUB)"(char *uplo, int *n, npy_complex64 *a, int *lda, s *s, s *scond, s *amax, npy_complex64 *work, int *info) nogil
+cdef void cheequb(char *uplo, int *n, c *a, int *lda, s *s, s *scond, s *amax, c *work, int *info) nogil:
+    _fortran_cheequb(uplo, n, <npy_complex64*>a, lda, s, scond, amax, <npy_complex64*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_cheev "F_FUNC(cheev,CHEEV)"(char *jobz, char *uplo, int *n, npy_complex64 *a, int *lda, s *w, npy_complex64 *work, int *lwork, s *rwork, int *info) nogil
 cdef void cheev(char *jobz, char *uplo, int *n, c *a, int *lda, s *w, c *work, int *lwork, s *rwork, int *info) nogil:
     _fortran_cheev(jobz, uplo, n, <npy_complex64*>a, lda, w, <npy_complex64*>work, lwork, rwork, info)
@@ -2294,6 +2630,11 @@ cdef void chesvx(char *fact, char *uplo, int *n, int *nrhs, c *a, int *lda, c *a
     _fortran_chesvx(fact, uplo, n, nrhs, <npy_complex64*>a, lda, <npy_complex64*>af, ldaf, ipiv, <npy_complex64*>b, ldb, <npy_complex64*>x, ldx, rcond, ferr, berr, <npy_complex64*>work, lwork, rwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_cheswapr "F_FUNC(cheswapr,CHESWAPR)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *i1, int *i2) nogil
+cdef void cheswapr(char *uplo, int *n, c *a, int *lda, int *i1, int *i2) nogil:
+    _fortran_cheswapr(uplo, n, <npy_complex64*>a, lda, i1, i2)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_chetd2 "F_FUNC(chetd2,CHETD2)"(char *uplo, int *n, npy_complex64 *a, int *lda, s *d, s *e, npy_complex64 *tau, int *info) nogil
 cdef void chetd2(char *uplo, int *n, c *a, int *lda, s *d, s *e, c *tau, int *info) nogil:
     _fortran_chetd2(uplo, n, <npy_complex64*>a, lda, d, e, <npy_complex64*>tau, info)
@@ -2319,9 +2660,29 @@ cdef void chetri(char *uplo, int *n, c *a, int *lda, int *ipiv, c *work, int *in
     _fortran_chetri(uplo, n, <npy_complex64*>a, lda, ipiv, <npy_complex64*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_chetri2 "F_FUNC(chetri2,CHETRI2)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *work, int *lwork, int *info) nogil
+cdef void chetri2(char *uplo, int *n, c *a, int *lda, int *ipiv, c *work, int *lwork, int *info) nogil:
+    _fortran_chetri2(uplo, n, <npy_complex64*>a, lda, ipiv, <npy_complex64*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_chetri2x "F_FUNC(chetri2x,CHETRI2X)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *work, int *nb, int *info) nogil
+cdef void chetri2x(char *uplo, int *n, c *a, int *lda, int *ipiv, c *work, int *nb, int *info) nogil:
+    _fortran_chetri2x(uplo, n, <npy_complex64*>a, lda, ipiv, <npy_complex64*>work, nb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_chetrs "F_FUNC(chetrs,CHETRS)"(char *uplo, int *n, int *nrhs, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *b, int *ldb, int *info) nogil
 cdef void chetrs(char *uplo, int *n, int *nrhs, c *a, int *lda, int *ipiv, c *b, int *ldb, int *info) nogil:
     _fortran_chetrs(uplo, n, nrhs, <npy_complex64*>a, lda, ipiv, <npy_complex64*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_chetrs2 "F_FUNC(chetrs2,CHETRS2)"(char *uplo, int *n, int *nrhs, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *b, int *ldb, npy_complex64 *work, int *info) nogil
+cdef void chetrs2(char *uplo, int *n, int *nrhs, c *a, int *lda, int *ipiv, c *b, int *ldb, c *work, int *info) nogil:
+    _fortran_chetrs2(uplo, n, nrhs, <npy_complex64*>a, lda, ipiv, <npy_complex64*>b, ldb, <npy_complex64*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_chfrk "F_FUNC(chfrk,CHFRK)"(char *transr, char *uplo, char *trans, int *n, int *k, s *alpha, npy_complex64 *a, int *lda, s *beta, npy_complex64 *c) nogil
+cdef void chfrk(char *transr, char *uplo, char *trans, int *n, int *k, s *alpha, c *a, int *lda, s *beta, c *c) nogil:
+    _fortran_chfrk(transr, uplo, trans, n, k, alpha, <npy_complex64*>a, lda, beta, <npy_complex64*>c)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_chgeqz "F_FUNC(chgeqz,CHGEQZ)"(char *job, char *compq, char *compz, int *n, int *ilo, int *ihi, npy_complex64 *h, int *ldh, npy_complex64 *t, int *ldt, npy_complex64 *alpha, npy_complex64 *beta, npy_complex64 *q, int *ldq, npy_complex64 *z, int *ldz, npy_complex64 *work, int *lwork, s *rwork, int *info) nogil
@@ -2539,6 +2900,11 @@ cdef void clapll(int *n, c *x, int *incx, c *y, int *incy, s *ssmin) nogil:
     _fortran_clapll(n, <npy_complex64*>x, incx, <npy_complex64*>y, incy, ssmin)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_clapmr "F_FUNC(clapmr,CLAPMR)"(bint *forwrd, int *m, int *n, npy_complex64 *x, int *ldx, int *k) nogil
+cdef void clapmr(bint *forwrd, int *m, int *n, c *x, int *ldx, int *k) nogil:
+    _fortran_clapmr(forwrd, m, n, <npy_complex64*>x, ldx, k)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_clapmt "F_FUNC(clapmt,CLAPMT)"(bint *forwrd, int *m, int *n, npy_complex64 *x, int *ldx, int *k) nogil
 cdef void clapmt(bint *forwrd, int *m, int *n, c *x, int *ldx, int *k) nogil:
     _fortran_clapmt(forwrd, m, n, <npy_complex64*>x, ldx, k)
@@ -2652,6 +3018,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_clarfg "F_FUNC(clarfg,CLARFG)"(int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *tau) nogil
 cdef void clarfg(int *n, c *alpha, c *x, int *incx, c *tau) nogil:
     _fortran_clarfg(n, <npy_complex64*>alpha, <npy_complex64*>x, incx, <npy_complex64*>tau)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_clarfgp "F_FUNC(clarfgp,CLARFGP)"(int *n, npy_complex64 *alpha, npy_complex64 *x, int *incx, npy_complex64 *tau) nogil
+cdef void clarfgp(int *n, c *alpha, c *x, int *incx, c *tau) nogil:
+    _fortran_clarfgp(n, <npy_complex64*>alpha, <npy_complex64*>x, incx, <npy_complex64*>tau)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_clarft "F_FUNC(clarft,CLARFT)"(char *direct, char *storev, int *n, int *k, npy_complex64 *v, int *ldv, npy_complex64 *tau, npy_complex64 *t, int *ldt) nogil
@@ -2819,6 +3190,21 @@ cdef void cpbtrs(char *uplo, int *n, int *kd, int *nrhs, c *ab, int *ldab, c *b,
     _fortran_cpbtrs(uplo, n, kd, nrhs, <npy_complex64*>ab, ldab, <npy_complex64*>b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_cpftrf "F_FUNC(cpftrf,CPFTRF)"(char *transr, char *uplo, int *n, npy_complex64 *a, int *info) nogil
+cdef void cpftrf(char *transr, char *uplo, int *n, c *a, int *info) nogil:
+    _fortran_cpftrf(transr, uplo, n, <npy_complex64*>a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cpftri "F_FUNC(cpftri,CPFTRI)"(char *transr, char *uplo, int *n, npy_complex64 *a, int *info) nogil
+cdef void cpftri(char *transr, char *uplo, int *n, c *a, int *info) nogil:
+    _fortran_cpftri(transr, uplo, n, <npy_complex64*>a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cpftrs "F_FUNC(cpftrs,CPFTRS)"(char *transr, char *uplo, int *n, int *nrhs, npy_complex64 *a, npy_complex64 *b, int *ldb, int *info) nogil
+cdef void cpftrs(char *transr, char *uplo, int *n, int *nrhs, c *a, c *b, int *ldb, int *info) nogil:
+    _fortran_cpftrs(transr, uplo, n, nrhs, <npy_complex64*>a, <npy_complex64*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_cpocon "F_FUNC(cpocon,CPOCON)"(char *uplo, int *n, npy_complex64 *a, int *lda, s *anorm, s *rcond, npy_complex64 *work, s *rwork, int *info) nogil
 cdef void cpocon(char *uplo, int *n, c *a, int *lda, s *anorm, s *rcond, c *work, s *rwork, int *info) nogil:
     _fortran_cpocon(uplo, n, <npy_complex64*>a, lda, anorm, rcond, <npy_complex64*>work, rwork, info)
@@ -2827,6 +3213,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_cpoequ "F_FUNC(cpoequ,CPOEQU)"(int *n, npy_complex64 *a, int *lda, s *s, s *scond, s *amax, int *info) nogil
 cdef void cpoequ(int *n, c *a, int *lda, s *s, s *scond, s *amax, int *info) nogil:
     _fortran_cpoequ(n, <npy_complex64*>a, lda, s, scond, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cpoequb "F_FUNC(cpoequb,CPOEQUB)"(int *n, npy_complex64 *a, int *lda, s *s, s *scond, s *amax, int *info) nogil
+cdef void cpoequb(int *n, c *a, int *lda, s *s, s *scond, s *amax, int *info) nogil:
+    _fortran_cpoequb(n, <npy_complex64*>a, lda, s, scond, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_cporfs "F_FUNC(cporfs,CPORFS)"(char *uplo, int *n, int *nrhs, npy_complex64 *a, int *lda, npy_complex64 *af, int *ldaf, npy_complex64 *b, int *ldb, npy_complex64 *x, int *ldx, s *ferr, s *berr, npy_complex64 *work, s *rwork, int *info) nogil
@@ -2902,6 +3293,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_cpptrs "F_FUNC(cpptrs,CPPTRS)"(char *uplo, int *n, int *nrhs, npy_complex64 *ap, npy_complex64 *b, int *ldb, int *info) nogil
 cdef void cpptrs(char *uplo, int *n, int *nrhs, c *ap, c *b, int *ldb, int *info) nogil:
     _fortran_cpptrs(uplo, n, nrhs, <npy_complex64*>ap, <npy_complex64*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cpstf2 "F_FUNC(cpstf2,CPSTF2)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *piv, int *rank, s *tol, s *work, int *info) nogil
+cdef void cpstf2(char *uplo, int *n, c *a, int *lda, int *piv, int *rank, s *tol, s *work, int *info) nogil:
+    _fortran_cpstf2(uplo, n, <npy_complex64*>a, lda, piv, rank, tol, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cpstrf "F_FUNC(cpstrf,CPSTRF)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *piv, int *rank, s *tol, s *work, int *info) nogil
+cdef void cpstrf(char *uplo, int *n, c *a, int *lda, int *piv, int *rank, s *tol, s *work, int *info) nogil:
+    _fortran_cpstrf(uplo, n, <npy_complex64*>a, lda, piv, rank, tol, work, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_cptcon "F_FUNC(cptcon,CPTCON)"(int *n, s *d, npy_complex64 *e, s *anorm, s *rcond, s *rwork, int *info) nogil
@@ -3029,6 +3430,16 @@ cdef void csycon(char *uplo, int *n, c *a, int *lda, int *ipiv, s *anorm, s *rco
     _fortran_csycon(uplo, n, <npy_complex64*>a, lda, ipiv, anorm, rcond, <npy_complex64*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_csyconv "F_FUNC(csyconv,CSYCONV)"(char *uplo, char *way, int *n, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *work, int *info) nogil
+cdef void csyconv(char *uplo, char *way, int *n, c *a, int *lda, int *ipiv, c *work, int *info) nogil:
+    _fortran_csyconv(uplo, way, n, <npy_complex64*>a, lda, ipiv, <npy_complex64*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_csyequb "F_FUNC(csyequb,CSYEQUB)"(char *uplo, int *n, npy_complex64 *a, int *lda, s *s, s *scond, s *amax, npy_complex64 *work, int *info) nogil
+cdef void csyequb(char *uplo, int *n, c *a, int *lda, s *s, s *scond, s *amax, c *work, int *info) nogil:
+    _fortran_csyequb(uplo, n, <npy_complex64*>a, lda, s, scond, amax, <npy_complex64*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_csymv "F_FUNC(csymv,CSYMV)"(char *uplo, int *n, npy_complex64 *alpha, npy_complex64 *a, int *lda, npy_complex64 *x, int *incx, npy_complex64 *beta, npy_complex64 *y, int *incy) nogil
 cdef void csymv(char *uplo, int *n, c *alpha, c *a, int *lda, c *x, int *incx, c *beta, c *y, int *incy) nogil:
     _fortran_csymv(uplo, n, <npy_complex64*>alpha, <npy_complex64*>a, lda, <npy_complex64*>x, incx, <npy_complex64*>beta, <npy_complex64*>y, incy)
@@ -3054,6 +3465,11 @@ cdef void csysvx(char *fact, char *uplo, int *n, int *nrhs, c *a, int *lda, c *a
     _fortran_csysvx(fact, uplo, n, nrhs, <npy_complex64*>a, lda, <npy_complex64*>af, ldaf, ipiv, <npy_complex64*>b, ldb, <npy_complex64*>x, ldx, rcond, ferr, berr, <npy_complex64*>work, lwork, rwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_csyswapr "F_FUNC(csyswapr,CSYSWAPR)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *i1, int *i2) nogil
+cdef void csyswapr(char *uplo, int *n, c *a, int *lda, int *i1, int *i2) nogil:
+    _fortran_csyswapr(uplo, n, <npy_complex64*>a, lda, i1, i2)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_csytf2 "F_FUNC(csytf2,CSYTF2)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *ipiv, int *info) nogil
 cdef void csytf2(char *uplo, int *n, c *a, int *lda, int *ipiv, int *info) nogil:
     _fortran_csytf2(uplo, n, <npy_complex64*>a, lda, ipiv, info)
@@ -3069,9 +3485,24 @@ cdef void csytri(char *uplo, int *n, c *a, int *lda, int *ipiv, c *work, int *in
     _fortran_csytri(uplo, n, <npy_complex64*>a, lda, ipiv, <npy_complex64*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_csytri2 "F_FUNC(csytri2,CSYTRI2)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *work, int *lwork, int *info) nogil
+cdef void csytri2(char *uplo, int *n, c *a, int *lda, int *ipiv, c *work, int *lwork, int *info) nogil:
+    _fortran_csytri2(uplo, n, <npy_complex64*>a, lda, ipiv, <npy_complex64*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_csytri2x "F_FUNC(csytri2x,CSYTRI2X)"(char *uplo, int *n, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *work, int *nb, int *info) nogil
+cdef void csytri2x(char *uplo, int *n, c *a, int *lda, int *ipiv, c *work, int *nb, int *info) nogil:
+    _fortran_csytri2x(uplo, n, <npy_complex64*>a, lda, ipiv, <npy_complex64*>work, nb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_csytrs "F_FUNC(csytrs,CSYTRS)"(char *uplo, int *n, int *nrhs, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *b, int *ldb, int *info) nogil
 cdef void csytrs(char *uplo, int *n, int *nrhs, c *a, int *lda, int *ipiv, c *b, int *ldb, int *info) nogil:
     _fortran_csytrs(uplo, n, nrhs, <npy_complex64*>a, lda, ipiv, <npy_complex64*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_csytrs2 "F_FUNC(csytrs2,CSYTRS2)"(char *uplo, int *n, int *nrhs, npy_complex64 *a, int *lda, int *ipiv, npy_complex64 *b, int *ldb, npy_complex64 *work, int *info) nogil
+cdef void csytrs2(char *uplo, int *n, int *nrhs, c *a, int *lda, int *ipiv, c *b, int *ldb, c *work, int *info) nogil:
+    _fortran_csytrs2(uplo, n, nrhs, <npy_complex64*>a, lda, ipiv, <npy_complex64*>b, ldb, <npy_complex64*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_ctbcon "F_FUNC(ctbcon,CTBCON)"(char *norm, char *uplo, char *diag, int *n, int *kd, npy_complex64 *ab, int *ldab, s *rcond, npy_complex64 *work, s *rwork, int *info) nogil
@@ -3087,6 +3518,26 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_ctbtrs "F_FUNC(ctbtrs,CTBTRS)"(char *uplo, char *trans, char *diag, int *n, int *kd, int *nrhs, npy_complex64 *ab, int *ldab, npy_complex64 *b, int *ldb, int *info) nogil
 cdef void ctbtrs(char *uplo, char *trans, char *diag, int *n, int *kd, int *nrhs, c *ab, int *ldab, c *b, int *ldb, int *info) nogil:
     _fortran_ctbtrs(uplo, trans, diag, n, kd, nrhs, <npy_complex64*>ab, ldab, <npy_complex64*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ctfsm "F_FUNC(ctfsm,CTFSM)"(char *transr, char *side, char *uplo, char *trans, char *diag, int *m, int *n, npy_complex64 *alpha, npy_complex64 *a, npy_complex64 *b, int *ldb) nogil
+cdef void ctfsm(char *transr, char *side, char *uplo, char *trans, char *diag, int *m, int *n, c *alpha, c *a, c *b, int *ldb) nogil:
+    _fortran_ctfsm(transr, side, uplo, trans, diag, m, n, <npy_complex64*>alpha, <npy_complex64*>a, <npy_complex64*>b, ldb)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ctftri "F_FUNC(ctftri,CTFTRI)"(char *transr, char *uplo, char *diag, int *n, npy_complex64 *a, int *info) nogil
+cdef void ctftri(char *transr, char *uplo, char *diag, int *n, c *a, int *info) nogil:
+    _fortran_ctftri(transr, uplo, diag, n, <npy_complex64*>a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ctfttp "F_FUNC(ctfttp,CTFTTP)"(char *transr, char *uplo, int *n, npy_complex64 *arf, npy_complex64 *ap, int *info) nogil
+cdef void ctfttp(char *transr, char *uplo, int *n, c *arf, c *ap, int *info) nogil:
+    _fortran_ctfttp(transr, uplo, n, <npy_complex64*>arf, <npy_complex64*>ap, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ctfttr "F_FUNC(ctfttr,CTFTTR)"(char *transr, char *uplo, int *n, npy_complex64 *arf, npy_complex64 *a, int *lda, int *info) nogil
+cdef void ctfttr(char *transr, char *uplo, int *n, c *arf, c *a, int *lda, int *info) nogil:
+    _fortran_ctfttr(transr, uplo, n, <npy_complex64*>arf, <npy_complex64*>a, lda, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_ctgevc "F_FUNC(ctgevc,CTGEVC)"(char *side, char *howmny, bint *select, int *n, npy_complex64 *s, int *lds, npy_complex64 *p, int *ldp, npy_complex64 *vl, int *ldvl, npy_complex64 *vr, int *ldvr, int *mm, int *m, npy_complex64 *work, s *rwork, int *info) nogil
@@ -3149,6 +3600,16 @@ cdef void ctptrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, c *ap, 
     _fortran_ctptrs(uplo, trans, diag, n, nrhs, <npy_complex64*>ap, <npy_complex64*>b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_ctpttf "F_FUNC(ctpttf,CTPTTF)"(char *transr, char *uplo, int *n, npy_complex64 *ap, npy_complex64 *arf, int *info) nogil
+cdef void ctpttf(char *transr, char *uplo, int *n, c *ap, c *arf, int *info) nogil:
+    _fortran_ctpttf(transr, uplo, n, <npy_complex64*>ap, <npy_complex64*>arf, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ctpttr "F_FUNC(ctpttr,CTPTTR)"(char *uplo, int *n, npy_complex64 *ap, npy_complex64 *a, int *lda, int *info) nogil
+cdef void ctpttr(char *uplo, int *n, c *ap, c *a, int *lda, int *info) nogil:
+    _fortran_ctpttr(uplo, n, <npy_complex64*>ap, <npy_complex64*>a, lda, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_ctrcon "F_FUNC(ctrcon,CTRCON)"(char *norm, char *uplo, char *diag, int *n, npy_complex64 *a, int *lda, s *rcond, npy_complex64 *work, s *rwork, int *info) nogil
 cdef void ctrcon(char *norm, char *uplo, char *diag, int *n, c *a, int *lda, s *rcond, c *work, s *rwork, int *info) nogil:
     _fortran_ctrcon(norm, uplo, diag, n, <npy_complex64*>a, lda, rcond, <npy_complex64*>work, rwork, info)
@@ -3199,9 +3660,29 @@ cdef void ctrtrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, c *a, i
     _fortran_ctrtrs(uplo, trans, diag, n, nrhs, <npy_complex64*>a, lda, <npy_complex64*>b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_ctrttf "F_FUNC(ctrttf,CTRTTF)"(char *transr, char *uplo, int *n, npy_complex64 *a, int *lda, npy_complex64 *arf, int *info) nogil
+cdef void ctrttf(char *transr, char *uplo, int *n, c *a, int *lda, c *arf, int *info) nogil:
+    _fortran_ctrttf(transr, uplo, n, <npy_complex64*>a, lda, <npy_complex64*>arf, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ctrttp "F_FUNC(ctrttp,CTRTTP)"(char *uplo, int *n, npy_complex64 *a, int *lda, npy_complex64 *ap, int *info) nogil
+cdef void ctrttp(char *uplo, int *n, c *a, int *lda, c *ap, int *info) nogil:
+    _fortran_ctrttp(uplo, n, <npy_complex64*>a, lda, <npy_complex64*>ap, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_ctzrzf "F_FUNC(ctzrzf,CTZRZF)"(int *m, int *n, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *lwork, int *info) nogil
 cdef void ctzrzf(int *m, int *n, c *a, int *lda, c *tau, c *work, int *lwork, int *info) nogil:
     _fortran_ctzrzf(m, n, <npy_complex64*>a, lda, <npy_complex64*>tau, <npy_complex64*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cunbdb "F_FUNC(cunbdb,CUNBDB)"(char *trans, char *signs, int *m, int *p, int *q, npy_complex64 *x11, int *ldx11, npy_complex64 *x12, int *ldx12, npy_complex64 *x21, int *ldx21, npy_complex64 *x22, int *ldx22, s *theta, s *phi, npy_complex64 *taup1, npy_complex64 *taup2, npy_complex64 *tauq1, npy_complex64 *tauq2, npy_complex64 *work, int *lwork, int *info) nogil
+cdef void cunbdb(char *trans, char *signs, int *m, int *p, int *q, c *x11, int *ldx11, c *x12, int *ldx12, c *x21, int *ldx21, c *x22, int *ldx22, s *theta, s *phi, c *taup1, c *taup2, c *tauq1, c *tauq2, c *work, int *lwork, int *info) nogil:
+    _fortran_cunbdb(trans, signs, m, p, q, <npy_complex64*>x11, ldx11, <npy_complex64*>x12, ldx12, <npy_complex64*>x21, ldx21, <npy_complex64*>x22, ldx22, theta, phi, <npy_complex64*>taup1, <npy_complex64*>taup2, <npy_complex64*>tauq1, <npy_complex64*>tauq2, <npy_complex64*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_cuncsd "F_FUNC(cuncsd,CUNCSD)"(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, npy_complex64 *x11, int *ldx11, npy_complex64 *x12, int *ldx12, npy_complex64 *x21, int *ldx21, npy_complex64 *x22, int *ldx22, s *theta, npy_complex64 *u1, int *ldu1, npy_complex64 *u2, int *ldu2, npy_complex64 *v1t, int *ldv1t, npy_complex64 *v2t, int *ldv2t, npy_complex64 *work, int *lwork, s *rwork, int *lrwork, int *iwork, int *info) nogil
+cdef void cuncsd(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, c *x11, int *ldx11, c *x12, int *ldx12, c *x21, int *ldx21, c *x22, int *ldx22, s *theta, c *u1, int *ldu1, c *u2, int *ldu2, c *v1t, int *ldv1t, c *v2t, int *ldv2t, c *work, int *lwork, s *rwork, int *lrwork, int *iwork, int *info) nogil:
+    _fortran_cuncsd(jobu1, jobu2, jobv1t, jobv2t, trans, signs, m, p, q, <npy_complex64*>x11, ldx11, <npy_complex64*>x12, ldx12, <npy_complex64*>x21, ldx21, <npy_complex64*>x22, ldx22, theta, <npy_complex64*>u1, ldu1, <npy_complex64*>u2, ldu2, <npy_complex64*>v1t, ldv1t, <npy_complex64*>v2t, ldv2t, <npy_complex64*>work, lwork, rwork, lrwork, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_cung2l "F_FUNC(cung2l,CUNG2L)"(int *m, int *n, int *k, npy_complex64 *a, int *lda, npy_complex64 *tau, npy_complex64 *work, int *info) nogil
@@ -3334,6 +3815,11 @@ cdef void cupmtr(char *side, char *uplo, char *trans, int *m, int *n, c *ap, c *
     _fortran_cupmtr(side, uplo, trans, m, n, <npy_complex64*>ap, <npy_complex64*>tau, <npy_complex64*>c, ldc, <npy_complex64*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dbbcsd "F_FUNC(dbbcsd,DBBCSD)"(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, int *m, int *p, int *q, d *theta, d *phi, d *u1, int *ldu1, d *u2, int *ldu2, d *v1t, int *ldv1t, d *v2t, int *ldv2t, d *b11d, d *b11e, d *b12d, d *b12e, d *b21d, d *b21e, d *b22d, d *b22e, d *work, int *lwork, int *info) nogil
+cdef void dbbcsd(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, int *m, int *p, int *q, d *theta, d *phi, d *u1, int *ldu1, d *u2, int *ldu2, d *v1t, int *ldv1t, d *v2t, int *ldv2t, d *b11d, d *b11e, d *b12d, d *b12e, d *b21d, d *b21e, d *b22d, d *b22e, d *work, int *lwork, int *info) nogil:
+    _fortran_dbbcsd(jobu1, jobu2, jobv1t, jobv2t, trans, m, p, q, theta, phi, u1, ldu1, u2, ldu2, v1t, ldv1t, v2t, ldv2t, b11d, b11e, b12d, b12e, b21d, b21e, b22d, b22e, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dbdsdc "F_FUNC(dbdsdc,DBDSDC)"(char *uplo, char *compq, int *n, d *d, d *e, d *u, int *ldu, d *vt, int *ldvt, d *q, int *iq, d *work, int *iwork, int *info) nogil
 cdef void dbdsdc(char *uplo, char *compq, int *n, d *d, d *e, d *u, int *ldu, d *vt, int *ldvt, d *q, int *iq, d *work, int *iwork, int *info) nogil:
     _fortran_dbdsdc(uplo, compq, n, d, e, u, ldu, vt, ldvt, q, iq, work, iwork, info)
@@ -3362,6 +3848,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dgbequ "F_FUNC(dgbequ,DGBEQU)"(int *m, int *n, int *kl, int *ku, d *ab, int *ldab, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil
 cdef void dgbequ(int *m, int *n, int *kl, int *ku, d *ab, int *ldab, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil:
     _fortran_dgbequ(m, n, kl, ku, ab, ldab, r, c, rowcnd, colcnd, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dgbequb "F_FUNC(dgbequb,DGBEQUB)"(int *m, int *n, int *kl, int *ku, d *ab, int *ldab, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil
+cdef void dgbequb(int *m, int *n, int *kl, int *ku, d *ab, int *ldab, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil:
+    _fortran_dgbequb(m, n, kl, ku, ab, ldab, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dgbrfs "F_FUNC(dgbrfs,DGBRFS)"(char *trans, int *n, int *kl, int *ku, int *nrhs, d *ab, int *ldab, d *afb, int *ldafb, int *ipiv, d *b, int *ldb, d *x, int *ldx, d *ferr, d *berr, d *work, int *iwork, int *info) nogil
@@ -3424,6 +3915,11 @@ cdef void dgeequ(int *m, int *n, d *a, int *lda, d *r, d *c, d *rowcnd, d *colcn
     _fortran_dgeequ(m, n, a, lda, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dgeequb "F_FUNC(dgeequb,DGEEQUB)"(int *m, int *n, d *a, int *lda, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil
+cdef void dgeequb(int *m, int *n, d *a, int *lda, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil:
+    _fortran_dgeequb(m, n, a, lda, r, c, rowcnd, colcnd, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dgees "F_FUNC(dgees,DGEES)"(char *jobvs, char *sort, _dselect2 *select, int *n, d *a, int *lda, int *sdim, d *wr, d *wi, d *vs, int *ldvs, d *work, int *lwork, bint *bwork, int *info) nogil
 cdef void dgees(char *jobvs, char *sort, dselect2 *select, int *n, d *a, int *lda, int *sdim, d *wr, d *wi, d *vs, int *ldvs, d *work, int *lwork, bint *bwork, int *info) nogil:
     _fortran_dgees(jobvs, sort, <_dselect2*>select, n, a, lda, sdim, wr, wi, vs, ldvs, work, lwork, bwork, info)
@@ -3452,6 +3948,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dgehrd "F_FUNC(dgehrd,DGEHRD)"(int *n, int *ilo, int *ihi, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil
 cdef void dgehrd(int *n, int *ilo, int *ihi, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil:
     _fortran_dgehrd(n, ilo, ihi, a, lda, tau, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dgejsv "F_FUNC(dgejsv,DGEJSV)"(char *joba, char *jobu, char *jobv, char *jobr, char *jobt, char *jobp, int *m, int *n, d *a, int *lda, d *sva, d *u, int *ldu, d *v, int *ldv, d *work, int *lwork, int *iwork, int *info) nogil
+cdef void dgejsv(char *joba, char *jobu, char *jobv, char *jobr, char *jobt, char *jobp, int *m, int *n, d *a, int *lda, d *sva, d *u, int *ldu, d *v, int *ldv, d *work, int *lwork, int *iwork, int *info) nogil:
+    _fortran_dgejsv(joba, jobu, jobv, jobr, jobt, jobp, m, n, a, lda, sva, u, ldu, v, ldv, work, lwork, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dgelq2 "F_FUNC(dgelq2,DGELQ2)"(int *m, int *n, d *a, int *lda, d *tau, d *work, int *info) nogil
@@ -3504,9 +4005,19 @@ cdef void dgeqr2(int *m, int *n, d *a, int *lda, d *tau, d *work, int *info) nog
     _fortran_dgeqr2(m, n, a, lda, tau, work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dgeqr2p "F_FUNC(dgeqr2p,DGEQR2P)"(int *m, int *n, d *a, int *lda, d *tau, d *work, int *info) nogil
+cdef void dgeqr2p(int *m, int *n, d *a, int *lda, d *tau, d *work, int *info) nogil:
+    _fortran_dgeqr2p(m, n, a, lda, tau, work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dgeqrf "F_FUNC(dgeqrf,DGEQRF)"(int *m, int *n, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil
 cdef void dgeqrf(int *m, int *n, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil:
     _fortran_dgeqrf(m, n, a, lda, tau, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dgeqrfp "F_FUNC(dgeqrfp,DGEQRFP)"(int *m, int *n, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil
+cdef void dgeqrfp(int *m, int *n, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil:
+    _fortran_dgeqrfp(m, n, a, lda, tau, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dgerfs "F_FUNC(dgerfs,DGERFS)"(char *trans, int *n, int *nrhs, d *a, int *lda, d *af, int *ldaf, int *ipiv, d *b, int *ldb, d *x, int *ldx, d *ferr, d *berr, d *work, int *iwork, int *info) nogil
@@ -3542,6 +4053,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dgesvd "F_FUNC(dgesvd,DGESVD)"(char *jobu, char *jobvt, int *m, int *n, d *a, int *lda, d *s, d *u, int *ldu, d *vt, int *ldvt, d *work, int *lwork, int *info) nogil
 cdef void dgesvd(char *jobu, char *jobvt, int *m, int *n, d *a, int *lda, d *s, d *u, int *ldu, d *vt, int *ldvt, d *work, int *lwork, int *info) nogil:
     _fortran_dgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dgesvj "F_FUNC(dgesvj,DGESVJ)"(char *joba, char *jobu, char *jobv, int *m, int *n, d *a, int *lda, d *sva, int *mv, d *v, int *ldv, d *work, int *lwork, int *info) nogil
+cdef void dgesvj(char *joba, char *jobu, char *jobv, int *m, int *n, d *a, int *lda, d *sva, int *mv, d *v, int *ldv, d *work, int *lwork, int *info) nogil:
+    _fortran_dgesvj(joba, jobu, jobv, m, n, a, lda, sva, mv, v, ldv, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dgesvx "F_FUNC(dgesvx,DGESVX)"(char *fact, char *trans, int *n, int *nrhs, d *a, int *lda, d *af, int *ldaf, int *ipiv, char *equed, d *r, d *c, d *b, int *ldb, d *x, int *ldx, d *rcond, d *ferr, d *berr, d *work, int *iwork, int *info) nogil
@@ -3627,6 +4143,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dggrqf "F_FUNC(dggrqf,DGGRQF)"(int *m, int *p, int *n, d *a, int *lda, d *taua, d *b, int *ldb, d *taub, d *work, int *lwork, int *info) nogil
 cdef void dggrqf(int *m, int *p, int *n, d *a, int *lda, d *taua, d *b, int *ldb, d *taub, d *work, int *lwork, int *info) nogil:
     _fortran_dggrqf(m, p, n, a, lda, taua, b, ldb, taub, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dgsvj0 "F_FUNC(dgsvj0,DGSVJ0)"(char *jobv, int *m, int *n, d *a, int *lda, d *d, d *sva, int *mv, d *v, int *ldv, d *eps, d *sfmin, d *tol, int *nsweep, d *work, int *lwork, int *info) nogil
+cdef void dgsvj0(char *jobv, int *m, int *n, d *a, int *lda, d *d, d *sva, int *mv, d *v, int *ldv, d *eps, d *sfmin, d *tol, int *nsweep, d *work, int *lwork, int *info) nogil:
+    _fortran_dgsvj0(jobv, m, n, a, lda, d, sva, mv, v, ldv, eps, sfmin, tol, nsweep, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dgsvj1 "F_FUNC(dgsvj1,DGSVJ1)"(char *jobv, int *m, int *n, int *n1, d *a, int *lda, d *d, d *sva, int *mv, d *v, int *ldv, d *eps, d *sfmin, d *tol, int *nsweep, d *work, int *lwork, int *info) nogil
+cdef void dgsvj1(char *jobv, int *m, int *n, int *n1, d *a, int *lda, d *d, d *sva, int *mv, d *v, int *ldv, d *eps, d *sfmin, d *tol, int *nsweep, d *work, int *lwork, int *info) nogil:
+    _fortran_dgsvj1(jobv, m, n, n1, a, lda, d, sva, mv, v, ldv, eps, sfmin, tol, nsweep, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dgtcon "F_FUNC(dgtcon,DGTCON)"(char *norm, int *n, d *dl, d *d, d *du, d *du2, int *ipiv, d *anorm, d *rcond, d *work, int *iwork, int *info) nogil
@@ -3874,6 +4400,11 @@ cdef void dlapll(int *n, d *x, int *incx, d *y, int *incy, d *ssmin) nogil:
     _fortran_dlapll(n, x, incx, y, incy, ssmin)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dlapmr "F_FUNC(dlapmr,DLAPMR)"(bint *forwrd, int *m, int *n, d *x, int *ldx, int *k) nogil
+cdef void dlapmr(bint *forwrd, int *m, int *n, d *x, int *ldx, int *k) nogil:
+    _fortran_dlapmr(forwrd, m, n, x, ldx, k)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dlapmt "F_FUNC(dlapmt,DLAPMT)"(bint *forwrd, int *m, int *n, d *x, int *ldx, int *k) nogil
 cdef void dlapmt(bint *forwrd, int *m, int *n, d *x, int *ldx, int *k) nogil:
     _fortran_dlapmt(forwrd, m, n, x, ldx, k)
@@ -3974,6 +4505,11 @@ cdef void dlarfg(int *n, d *alpha, d *x, int *incx, d *tau) nogil:
     _fortran_dlarfg(n, alpha, x, incx, tau)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dlarfgp "F_FUNC(dlarfgp,DLARFGP)"(int *n, d *alpha, d *x, int *incx, d *tau) nogil
+cdef void dlarfgp(int *n, d *alpha, d *x, int *incx, d *tau) nogil:
+    _fortran_dlarfgp(n, alpha, x, incx, tau)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dlarft "F_FUNC(dlarft,DLARFT)"(char *direct, char *storev, int *n, int *k, d *v, int *ldv, d *tau, d *t, int *ldt) nogil
 cdef void dlarft(char *direct, char *storev, int *n, int *k, d *v, int *ldv, d *tau, d *t, int *ldt) nogil:
     _fortran_dlarft(direct, storev, n, k, v, ldv, tau, t, ldt)
@@ -4047,6 +4583,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dlartg "F_FUNC(dlartg,DLARTG)"(d *f, d *g, d *cs, d *sn, d *r) nogil
 cdef void dlartg(d *f, d *g, d *cs, d *sn, d *r) nogil:
     _fortran_dlartg(f, g, cs, sn, r)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dlartgp "F_FUNC(dlartgp,DLARTGP)"(d *f, d *g, d *cs, d *sn, d *r) nogil
+cdef void dlartgp(d *f, d *g, d *cs, d *sn, d *r) nogil:
+    _fortran_dlartgp(f, g, cs, sn, r)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dlartgs "F_FUNC(dlartgs,DLARTGS)"(d *x, d *y, d *sigma, d *cs, d *sn) nogil
+cdef void dlartgs(d *x, d *y, d *sigma, d *cs, d *sn) nogil:
+    _fortran_dlartgs(x, y, sigma, cs, sn)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dlartv "F_FUNC(dlartv,DLARTV)"(int *n, d *x, int *incx, d *y, int *incy, d *c, d *s, int *incc) nogil
@@ -4159,6 +4705,16 @@ cdef void dlasq2(int *n, d *z, int *info) nogil:
     _fortran_dlasq2(n, z, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dlasq3 "F_FUNC(dlasq3,DLASQ3)"(int *i0, int *n0, d *z, int *pp, d *dmin, d *sigma, d *desig, d *qmax, int *nfail, int *iter, int *ndiv, bint *ieee, int *ttype, d *dmin1, d *dmin2, d *dn, d *dn1, d *dn2, d *g, d *tau) nogil
+cdef void dlasq3(int *i0, int *n0, d *z, int *pp, d *dmin, d *sigma, d *desig, d *qmax, int *nfail, int *iter, int *ndiv, bint *ieee, int *ttype, d *dmin1, d *dmin2, d *dn, d *dn1, d *dn2, d *g, d *tau) nogil:
+    _fortran_dlasq3(i0, n0, z, pp, dmin, sigma, desig, qmax, nfail, iter, ndiv, ieee, ttype, dmin1, dmin2, dn, dn1, dn2, g, tau)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dlasq4 "F_FUNC(dlasq4,DLASQ4)"(int *i0, int *n0, d *z, int *pp, int *n0in, d *dmin, d *dmin1, d *dmin2, d *dn, d *dn1, d *dn2, d *tau, int *ttype, d *g) nogil
+cdef void dlasq4(int *i0, int *n0, d *z, int *pp, int *n0in, d *dmin, d *dmin1, d *dmin2, d *dn, d *dn1, d *dn2, d *tau, int *ttype, d *g) nogil:
+    _fortran_dlasq4(i0, n0, z, pp, n0in, dmin, dmin1, dmin2, dn, dn1, dn2, tau, ttype, g)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dlasq6 "F_FUNC(dlasq6,DLASQ6)"(int *i0, int *n0, d *z, int *pp, d *dmin, d *dmin1, d *dmin2, d *dn, d *dnm1, d *dnm2) nogil
 cdef void dlasq6(int *i0, int *n0, d *z, int *pp, d *dmin, d *dmin1, d *dmin2, d *dn, d *dnm1, d *dnm2) nogil:
     _fortran_dlasq6(i0, n0, z, pp, dmin, dmin1, dmin2, dn, dnm1, dnm2)
@@ -4197,6 +4753,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dlasyf "F_FUNC(dlasyf,DLASYF)"(char *uplo, int *n, int *nb, int *kb, d *a, int *lda, int *ipiv, d *w, int *ldw, int *info) nogil
 cdef void dlasyf(char *uplo, int *n, int *nb, int *kb, d *a, int *lda, int *ipiv, d *w, int *ldw, int *info) nogil:
     _fortran_dlasyf(uplo, n, nb, kb, a, lda, ipiv, w, ldw, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dlat2s "F_FUNC(dlat2s,DLAT2S)"(char *uplo, int *n, d *a, int *lda, s *sa, int *ldsa, int *info) nogil
+cdef void dlat2s(char *uplo, int *n, d *a, int *lda, s *sa, int *ldsa, int *info) nogil:
+    _fortran_dlat2s(uplo, n, a, lda, sa, ldsa, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dlatbs "F_FUNC(dlatbs,DLATBS)"(char *uplo, char *trans, char *diag, char *normin, int *n, int *kd, d *ab, int *ldab, d *x, d *scale, d *cnorm, int *info) nogil
@@ -4247,6 +4808,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dopmtr "F_FUNC(dopmtr,DOPMTR)"(char *side, char *uplo, char *trans, int *m, int *n, d *ap, d *tau, d *c, int *ldc, d *work, int *info) nogil
 cdef void dopmtr(char *side, char *uplo, char *trans, int *m, int *n, d *ap, d *tau, d *c, int *ldc, d *work, int *info) nogil:
     _fortran_dopmtr(side, uplo, trans, m, n, ap, tau, c, ldc, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dorbdb "F_FUNC(dorbdb,DORBDB)"(char *trans, char *signs, int *m, int *p, int *q, d *x11, int *ldx11, d *x12, int *ldx12, d *x21, int *ldx21, d *x22, int *ldx22, d *theta, d *phi, d *taup1, d *taup2, d *tauq1, d *tauq2, d *work, int *lwork, int *info) nogil
+cdef void dorbdb(char *trans, char *signs, int *m, int *p, int *q, d *x11, int *ldx11, d *x12, int *ldx12, d *x21, int *ldx21, d *x22, int *ldx22, d *theta, d *phi, d *taup1, d *taup2, d *tauq1, d *tauq2, d *work, int *lwork, int *info) nogil:
+    _fortran_dorbdb(trans, signs, m, p, q, x11, ldx11, x12, ldx12, x21, ldx21, x22, ldx22, theta, phi, taup1, taup2, tauq1, tauq2, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dorcsd "F_FUNC(dorcsd,DORCSD)"(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, d *x11, int *ldx11, d *x12, int *ldx12, d *x21, int *ldx21, d *x22, int *ldx22, d *theta, d *u1, int *ldu1, d *u2, int *ldu2, d *v1t, int *ldv1t, d *v2t, int *ldv2t, d *work, int *lwork, int *iwork, int *info) nogil
+cdef void dorcsd(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, d *x11, int *ldx11, d *x12, int *ldx12, d *x21, int *ldx21, d *x22, int *ldx22, d *theta, d *u1, int *ldu1, d *u2, int *ldu2, d *v1t, int *ldv1t, d *v2t, int *ldv2t, d *work, int *lwork, int *iwork, int *info) nogil:
+    _fortran_dorcsd(jobu1, jobu2, jobv1t, jobv2t, trans, signs, m, p, q, x11, ldx11, x12, ldx12, x21, ldx21, x22, ldx22, theta, u1, ldu1, u2, ldu2, v1t, ldv1t, v2t, ldv2t, work, lwork, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dorg2l "F_FUNC(dorg2l,DORG2L)"(int *m, int *n, int *k, d *a, int *lda, d *tau, d *work, int *info) nogil
@@ -4414,6 +4985,21 @@ cdef void dpbtrs(char *uplo, int *n, int *kd, int *nrhs, d *ab, int *ldab, d *b,
     _fortran_dpbtrs(uplo, n, kd, nrhs, ab, ldab, b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dpftrf "F_FUNC(dpftrf,DPFTRF)"(char *transr, char *uplo, int *n, d *a, int *info) nogil
+cdef void dpftrf(char *transr, char *uplo, int *n, d *a, int *info) nogil:
+    _fortran_dpftrf(transr, uplo, n, a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dpftri "F_FUNC(dpftri,DPFTRI)"(char *transr, char *uplo, int *n, d *a, int *info) nogil
+cdef void dpftri(char *transr, char *uplo, int *n, d *a, int *info) nogil:
+    _fortran_dpftri(transr, uplo, n, a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dpftrs "F_FUNC(dpftrs,DPFTRS)"(char *transr, char *uplo, int *n, int *nrhs, d *a, d *b, int *ldb, int *info) nogil
+cdef void dpftrs(char *transr, char *uplo, int *n, int *nrhs, d *a, d *b, int *ldb, int *info) nogil:
+    _fortran_dpftrs(transr, uplo, n, nrhs, a, b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dpocon "F_FUNC(dpocon,DPOCON)"(char *uplo, int *n, d *a, int *lda, d *anorm, d *rcond, d *work, int *iwork, int *info) nogil
 cdef void dpocon(char *uplo, int *n, d *a, int *lda, d *anorm, d *rcond, d *work, int *iwork, int *info) nogil:
     _fortran_dpocon(uplo, n, a, lda, anorm, rcond, work, iwork, info)
@@ -4422,6 +5008,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dpoequ "F_FUNC(dpoequ,DPOEQU)"(int *n, d *a, int *lda, d *s, d *scond, d *amax, int *info) nogil
 cdef void dpoequ(int *n, d *a, int *lda, d *s, d *scond, d *amax, int *info) nogil:
     _fortran_dpoequ(n, a, lda, s, scond, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dpoequb "F_FUNC(dpoequb,DPOEQUB)"(int *n, d *a, int *lda, d *s, d *scond, d *amax, int *info) nogil
+cdef void dpoequb(int *n, d *a, int *lda, d *s, d *scond, d *amax, int *info) nogil:
+    _fortran_dpoequb(n, a, lda, s, scond, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dporfs "F_FUNC(dporfs,DPORFS)"(char *uplo, int *n, int *nrhs, d *a, int *lda, d *af, int *ldaf, d *b, int *ldb, d *x, int *ldx, d *ferr, d *berr, d *work, int *iwork, int *info) nogil
@@ -4497,6 +5088,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dpptrs "F_FUNC(dpptrs,DPPTRS)"(char *uplo, int *n, int *nrhs, d *ap, d *b, int *ldb, int *info) nogil
 cdef void dpptrs(char *uplo, int *n, int *nrhs, d *ap, d *b, int *ldb, int *info) nogil:
     _fortran_dpptrs(uplo, n, nrhs, ap, b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dpstf2 "F_FUNC(dpstf2,DPSTF2)"(char *uplo, int *n, d *a, int *lda, int *piv, int *rank, d *tol, d *work, int *info) nogil
+cdef void dpstf2(char *uplo, int *n, d *a, int *lda, int *piv, int *rank, d *tol, d *work, int *info) nogil:
+    _fortran_dpstf2(uplo, n, a, lda, piv, rank, tol, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dpstrf "F_FUNC(dpstrf,DPSTRF)"(char *uplo, int *n, d *a, int *lda, int *piv, int *rank, d *tol, d *work, int *info) nogil
+cdef void dpstrf(char *uplo, int *n, d *a, int *lda, int *piv, int *rank, d *tol, d *work, int *info) nogil:
+    _fortran_dpstrf(uplo, n, a, lda, piv, rank, tol, work, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dptcon "F_FUNC(dptcon,DPTCON)"(int *n, d *d, d *e, d *anorm, d *rcond, d *work, int *info) nogil
@@ -4584,6 +5185,11 @@ cdef void dsbtrd(char *vect, char *uplo, int *n, int *kd, d *ab, int *ldab, d *d
     _fortran_dsbtrd(vect, uplo, n, kd, ab, ldab, d, e, q, ldq, work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dsfrk "F_FUNC(dsfrk,DSFRK)"(char *transr, char *uplo, char *trans, int *n, int *k, d *alpha, d *a, int *lda, d *beta, d *c) nogil
+cdef void dsfrk(char *transr, char *uplo, char *trans, int *n, int *k, d *alpha, d *a, int *lda, d *beta, d *c) nogil:
+    _fortran_dsfrk(transr, uplo, trans, n, k, alpha, a, lda, beta, c)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dsgesv "F_FUNC(dsgesv,DSGESV)"(int *n, int *nrhs, d *a, int *lda, int *ipiv, d *b, int *ldb, d *x, int *ldx, d *work, s *swork, int *iter, int *info) nogil
 cdef void dsgesv(int *n, int *nrhs, d *a, int *lda, int *ipiv, d *b, int *ldb, d *x, int *ldx, d *work, s *swork, int *iter, int *info) nogil:
     _fortran_dsgesv(n, nrhs, a, lda, ipiv, b, ldb, x, ldx, work, swork, iter, info)
@@ -4627,6 +5233,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dspgvx "F_FUNC(dspgvx,DSPGVX)"(int *itype, char *jobz, char *range, char *uplo, int *n, d *ap, d *bp, d *vl, d *vu, int *il, int *iu, d *abstol, int *m, d *w, d *z, int *ldz, d *work, int *iwork, int *ifail, int *info) nogil
 cdef void dspgvx(int *itype, char *jobz, char *range, char *uplo, int *n, d *ap, d *bp, d *vl, d *vu, int *il, int *iu, d *abstol, int *m, d *w, d *z, int *ldz, d *work, int *iwork, int *ifail, int *info) nogil:
     _fortran_dspgvx(itype, jobz, range, uplo, n, ap, bp, vl, vu, il, iu, abstol, m, w, z, ldz, work, iwork, ifail, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dsposv "F_FUNC(dsposv,DSPOSV)"(char *uplo, int *n, int *nrhs, d *a, int *lda, d *b, int *ldb, d *x, int *ldx, d *work, s *swork, int *iter, int *info) nogil
+cdef void dsposv(char *uplo, int *n, int *nrhs, d *a, int *lda, d *b, int *ldb, d *x, int *ldx, d *work, s *swork, int *iter, int *info) nogil:
+    _fortran_dsposv(uplo, n, nrhs, a, lda, b, ldb, x, ldx, work, swork, iter, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dsprfs "F_FUNC(dsprfs,DSPRFS)"(char *uplo, int *n, int *nrhs, d *ap, d *afp, int *ipiv, d *b, int *ldb, d *x, int *ldx, d *ferr, d *berr, d *work, int *iwork, int *info) nogil
@@ -4724,6 +5335,16 @@ cdef void dsycon(char *uplo, int *n, d *a, int *lda, int *ipiv, d *anorm, d *rco
     _fortran_dsycon(uplo, n, a, lda, ipiv, anorm, rcond, work, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dsyconv "F_FUNC(dsyconv,DSYCONV)"(char *uplo, char *way, int *n, d *a, int *lda, int *ipiv, d *work, int *info) nogil
+cdef void dsyconv(char *uplo, char *way, int *n, d *a, int *lda, int *ipiv, d *work, int *info) nogil:
+    _fortran_dsyconv(uplo, way, n, a, lda, ipiv, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dsyequb "F_FUNC(dsyequb,DSYEQUB)"(char *uplo, int *n, d *a, int *lda, d *s, d *scond, d *amax, d *work, int *info) nogil
+cdef void dsyequb(char *uplo, int *n, d *a, int *lda, d *s, d *scond, d *amax, d *work, int *info) nogil:
+    _fortran_dsyequb(uplo, n, a, lda, s, scond, amax, work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dsyev "F_FUNC(dsyev,DSYEV)"(char *jobz, char *uplo, int *n, d *a, int *lda, d *w, d *work, int *lwork, int *info) nogil
 cdef void dsyev(char *jobz, char *uplo, int *n, d *a, int *lda, d *w, d *work, int *lwork, int *info) nogil:
     _fortran_dsyev(jobz, uplo, n, a, lda, w, work, lwork, info)
@@ -4784,6 +5405,11 @@ cdef void dsysvx(char *fact, char *uplo, int *n, int *nrhs, d *a, int *lda, d *a
     _fortran_dsysvx(fact, uplo, n, nrhs, a, lda, af, ldaf, ipiv, b, ldb, x, ldx, rcond, ferr, berr, work, lwork, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dsyswapr "F_FUNC(dsyswapr,DSYSWAPR)"(char *uplo, int *n, d *a, int *lda, int *i1, int *i2) nogil
+cdef void dsyswapr(char *uplo, int *n, d *a, int *lda, int *i1, int *i2) nogil:
+    _fortran_dsyswapr(uplo, n, a, lda, i1, i2)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dsytd2 "F_FUNC(dsytd2,DSYTD2)"(char *uplo, int *n, d *a, int *lda, d *d, d *e, d *tau, int *info) nogil
 cdef void dsytd2(char *uplo, int *n, d *a, int *lda, d *d, d *e, d *tau, int *info) nogil:
     _fortran_dsytd2(uplo, n, a, lda, d, e, tau, info)
@@ -4809,9 +5435,24 @@ cdef void dsytri(char *uplo, int *n, d *a, int *lda, int *ipiv, d *work, int *in
     _fortran_dsytri(uplo, n, a, lda, ipiv, work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dsytri2 "F_FUNC(dsytri2,DSYTRI2)"(char *uplo, int *n, d *a, int *lda, int *ipiv, d *work, int *lwork, int *info) nogil
+cdef void dsytri2(char *uplo, int *n, d *a, int *lda, int *ipiv, d *work, int *lwork, int *info) nogil:
+    _fortran_dsytri2(uplo, n, a, lda, ipiv, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dsytri2x "F_FUNC(dsytri2x,DSYTRI2X)"(char *uplo, int *n, d *a, int *lda, int *ipiv, d *work, int *nb, int *info) nogil
+cdef void dsytri2x(char *uplo, int *n, d *a, int *lda, int *ipiv, d *work, int *nb, int *info) nogil:
+    _fortran_dsytri2x(uplo, n, a, lda, ipiv, work, nb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dsytrs "F_FUNC(dsytrs,DSYTRS)"(char *uplo, int *n, int *nrhs, d *a, int *lda, int *ipiv, d *b, int *ldb, int *info) nogil
 cdef void dsytrs(char *uplo, int *n, int *nrhs, d *a, int *lda, int *ipiv, d *b, int *ldb, int *info) nogil:
     _fortran_dsytrs(uplo, n, nrhs, a, lda, ipiv, b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dsytrs2 "F_FUNC(dsytrs2,DSYTRS2)"(char *uplo, int *n, int *nrhs, d *a, int *lda, int *ipiv, d *b, int *ldb, d *work, int *info) nogil
+cdef void dsytrs2(char *uplo, int *n, int *nrhs, d *a, int *lda, int *ipiv, d *b, int *ldb, d *work, int *info) nogil:
+    _fortran_dsytrs2(uplo, n, nrhs, a, lda, ipiv, b, ldb, work, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dtbcon "F_FUNC(dtbcon,DTBCON)"(char *norm, char *uplo, char *diag, int *n, int *kd, d *ab, int *ldab, d *rcond, d *work, int *iwork, int *info) nogil
@@ -4827,6 +5468,26 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_dtbtrs "F_FUNC(dtbtrs,DTBTRS)"(char *uplo, char *trans, char *diag, int *n, int *kd, int *nrhs, d *ab, int *ldab, d *b, int *ldb, int *info) nogil
 cdef void dtbtrs(char *uplo, char *trans, char *diag, int *n, int *kd, int *nrhs, d *ab, int *ldab, d *b, int *ldb, int *info) nogil:
     _fortran_dtbtrs(uplo, trans, diag, n, kd, nrhs, ab, ldab, b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dtfsm "F_FUNC(dtfsm,DTFSM)"(char *transr, char *side, char *uplo, char *trans, char *diag, int *m, int *n, d *alpha, d *a, d *b, int *ldb) nogil
+cdef void dtfsm(char *transr, char *side, char *uplo, char *trans, char *diag, int *m, int *n, d *alpha, d *a, d *b, int *ldb) nogil:
+    _fortran_dtfsm(transr, side, uplo, trans, diag, m, n, alpha, a, b, ldb)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dtftri "F_FUNC(dtftri,DTFTRI)"(char *transr, char *uplo, char *diag, int *n, d *a, int *info) nogil
+cdef void dtftri(char *transr, char *uplo, char *diag, int *n, d *a, int *info) nogil:
+    _fortran_dtftri(transr, uplo, diag, n, a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dtfttp "F_FUNC(dtfttp,DTFTTP)"(char *transr, char *uplo, int *n, d *arf, d *ap, int *info) nogil
+cdef void dtfttp(char *transr, char *uplo, int *n, d *arf, d *ap, int *info) nogil:
+    _fortran_dtfttp(transr, uplo, n, arf, ap, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dtfttr "F_FUNC(dtfttr,DTFTTR)"(char *transr, char *uplo, int *n, d *arf, d *a, int *lda, int *info) nogil
+cdef void dtfttr(char *transr, char *uplo, int *n, d *arf, d *a, int *lda, int *info) nogil:
+    _fortran_dtfttr(transr, uplo, n, arf, a, lda, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_dtgevc "F_FUNC(dtgevc,DTGEVC)"(char *side, char *howmny, bint *select, int *n, d *s, int *lds, d *p, int *ldp, d *vl, int *ldvl, d *vr, int *ldvr, int *mm, int *m, d *work, int *info) nogil
@@ -4889,6 +5550,16 @@ cdef void dtptrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, d *ap, 
     _fortran_dtptrs(uplo, trans, diag, n, nrhs, ap, b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dtpttf "F_FUNC(dtpttf,DTPTTF)"(char *transr, char *uplo, int *n, d *ap, d *arf, int *info) nogil
+cdef void dtpttf(char *transr, char *uplo, int *n, d *ap, d *arf, int *info) nogil:
+    _fortran_dtpttf(transr, uplo, n, ap, arf, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dtpttr "F_FUNC(dtpttr,DTPTTR)"(char *uplo, int *n, d *ap, d *a, int *lda, int *info) nogil
+cdef void dtpttr(char *uplo, int *n, d *ap, d *a, int *lda, int *info) nogil:
+    _fortran_dtpttr(uplo, n, ap, a, lda, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dtrcon "F_FUNC(dtrcon,DTRCON)"(char *norm, char *uplo, char *diag, int *n, d *a, int *lda, d *rcond, d *work, int *iwork, int *info) nogil
 cdef void dtrcon(char *norm, char *uplo, char *diag, int *n, d *a, int *lda, d *rcond, d *work, int *iwork, int *info) nogil:
     _fortran_dtrcon(norm, uplo, diag, n, a, lda, rcond, work, iwork, info)
@@ -4939,6 +5610,16 @@ cdef void dtrtrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, d *a, i
     _fortran_dtrtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_dtrttf "F_FUNC(dtrttf,DTRTTF)"(char *transr, char *uplo, int *n, d *a, int *lda, d *arf, int *info) nogil
+cdef void dtrttf(char *transr, char *uplo, int *n, d *a, int *lda, d *arf, int *info) nogil:
+    _fortran_dtrttf(transr, uplo, n, a, lda, arf, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_dtrttp "F_FUNC(dtrttp,DTRTTP)"(char *uplo, int *n, d *a, int *lda, d *ap, int *info) nogil
+cdef void dtrttp(char *uplo, int *n, d *a, int *lda, d *ap, int *info) nogil:
+    _fortran_dtrttp(uplo, n, a, lda, ap, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_dtzrzf "F_FUNC(dtzrzf,DTZRZF)"(int *m, int *n, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil
 cdef void dtzrzf(int *m, int *n, d *a, int *lda, d *tau, d *work, int *lwork, int *info) nogil:
     _fortran_dtzrzf(m, n, a, lda, tau, work, lwork, info)
@@ -4947,6 +5628,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_ilaver "F_FUNC(ilaver,ILAVER)"(int *vers_major, int *vers_minor, int *vers_patch) nogil
 cdef void ilaver(int *vers_major, int *vers_minor, int *vers_patch) nogil:
     _fortran_ilaver(vers_major, vers_minor, vers_patch)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sbbcsd "F_FUNC(sbbcsd,SBBCSD)"(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, int *m, int *p, int *q, s *theta, s *phi, s *u1, int *ldu1, s *u2, int *ldu2, s *v1t, int *ldv1t, s *v2t, int *ldv2t, s *b11d, s *b11e, s *b12d, s *b12e, s *b21d, s *b21e, s *b22d, s *b22e, s *work, int *lwork, int *info) nogil
+cdef void sbbcsd(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, int *m, int *p, int *q, s *theta, s *phi, s *u1, int *ldu1, s *u2, int *ldu2, s *v1t, int *ldv1t, s *v2t, int *ldv2t, s *b11d, s *b11e, s *b12d, s *b12e, s *b21d, s *b21e, s *b22d, s *b22e, s *work, int *lwork, int *info) nogil:
+    _fortran_sbbcsd(jobu1, jobu2, jobv1t, jobv2t, trans, m, p, q, theta, phi, u1, ldu1, u2, ldu2, v1t, ldv1t, v2t, ldv2t, b11d, b11e, b12d, b12e, b21d, b21e, b22d, b22e, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sbdsdc "F_FUNC(sbdsdc,SBDSDC)"(char *uplo, char *compq, int *n, s *d, s *e, s *u, int *ldu, s *vt, int *ldvt, s *q, int *iq, s *work, int *iwork, int *info) nogil
@@ -4977,6 +5663,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_sgbequ "F_FUNC(sgbequ,SGBEQU)"(int *m, int *n, int *kl, int *ku, s *ab, int *ldab, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil
 cdef void sgbequ(int *m, int *n, int *kl, int *ku, s *ab, int *ldab, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil:
     _fortran_sgbequ(m, n, kl, ku, ab, ldab, r, c, rowcnd, colcnd, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sgbequb "F_FUNC(sgbequb,SGBEQUB)"(int *m, int *n, int *kl, int *ku, s *ab, int *ldab, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil
+cdef void sgbequb(int *m, int *n, int *kl, int *ku, s *ab, int *ldab, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil:
+    _fortran_sgbequb(m, n, kl, ku, ab, ldab, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sgbrfs "F_FUNC(sgbrfs,SGBRFS)"(char *trans, int *n, int *kl, int *ku, int *nrhs, s *ab, int *ldab, s *afb, int *ldafb, int *ipiv, s *b, int *ldb, s *x, int *ldx, s *ferr, s *berr, s *work, int *iwork, int *info) nogil
@@ -5039,6 +5730,11 @@ cdef void sgeequ(int *m, int *n, s *a, int *lda, s *r, s *c, s *rowcnd, s *colcn
     _fortran_sgeequ(m, n, a, lda, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_sgeequb "F_FUNC(sgeequb,SGEEQUB)"(int *m, int *n, s *a, int *lda, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil
+cdef void sgeequb(int *m, int *n, s *a, int *lda, s *r, s *c, s *rowcnd, s *colcnd, s *amax, int *info) nogil:
+    _fortran_sgeequb(m, n, a, lda, r, c, rowcnd, colcnd, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_sgees "F_FUNC(sgees,SGEES)"(char *jobvs, char *sort, _sselect2 *select, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *work, int *lwork, bint *bwork, int *info) nogil
 cdef void sgees(char *jobvs, char *sort, sselect2 *select, int *n, s *a, int *lda, int *sdim, s *wr, s *wi, s *vs, int *ldvs, s *work, int *lwork, bint *bwork, int *info) nogil:
     _fortran_sgees(jobvs, sort, <_sselect2*>select, n, a, lda, sdim, wr, wi, vs, ldvs, work, lwork, bwork, info)
@@ -5067,6 +5763,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_sgehrd "F_FUNC(sgehrd,SGEHRD)"(int *n, int *ilo, int *ihi, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil
 cdef void sgehrd(int *n, int *ilo, int *ihi, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil:
     _fortran_sgehrd(n, ilo, ihi, a, lda, tau, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sgejsv "F_FUNC(sgejsv,SGEJSV)"(char *joba, char *jobu, char *jobv, char *jobr, char *jobt, char *jobp, int *m, int *n, s *a, int *lda, s *sva, s *u, int *ldu, s *v, int *ldv, s *work, int *lwork, int *iwork, int *info) nogil
+cdef void sgejsv(char *joba, char *jobu, char *jobv, char *jobr, char *jobt, char *jobp, int *m, int *n, s *a, int *lda, s *sva, s *u, int *ldu, s *v, int *ldv, s *work, int *lwork, int *iwork, int *info) nogil:
+    _fortran_sgejsv(joba, jobu, jobv, jobr, jobt, jobp, m, n, a, lda, sva, u, ldu, v, ldv, work, lwork, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sgelq2 "F_FUNC(sgelq2,SGELQ2)"(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info) nogil
@@ -5119,9 +5820,19 @@ cdef void sgeqr2(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info) nog
     _fortran_sgeqr2(m, n, a, lda, tau, work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_sgeqr2p "F_FUNC(sgeqr2p,SGEQR2P)"(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info) nogil
+cdef void sgeqr2p(int *m, int *n, s *a, int *lda, s *tau, s *work, int *info) nogil:
+    _fortran_sgeqr2p(m, n, a, lda, tau, work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_sgeqrf "F_FUNC(sgeqrf,SGEQRF)"(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil
 cdef void sgeqrf(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil:
     _fortran_sgeqrf(m, n, a, lda, tau, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sgeqrfp "F_FUNC(sgeqrfp,SGEQRFP)"(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil
+cdef void sgeqrfp(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil:
+    _fortran_sgeqrfp(m, n, a, lda, tau, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sgerfs "F_FUNC(sgerfs,SGERFS)"(char *trans, int *n, int *nrhs, s *a, int *lda, s *af, int *ldaf, int *ipiv, s *b, int *ldb, s *x, int *ldx, s *ferr, s *berr, s *work, int *iwork, int *info) nogil
@@ -5157,6 +5868,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_sgesvd "F_FUNC(sgesvd,SGESVD)"(char *jobu, char *jobvt, int *m, int *n, s *a, int *lda, s *s, s *u, int *ldu, s *vt, int *ldvt, s *work, int *lwork, int *info) nogil
 cdef void sgesvd(char *jobu, char *jobvt, int *m, int *n, s *a, int *lda, s *s, s *u, int *ldu, s *vt, int *ldvt, s *work, int *lwork, int *info) nogil:
     _fortran_sgesvd(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sgesvj "F_FUNC(sgesvj,SGESVJ)"(char *joba, char *jobu, char *jobv, int *m, int *n, s *a, int *lda, s *sva, int *mv, s *v, int *ldv, s *work, int *lwork, int *info) nogil
+cdef void sgesvj(char *joba, char *jobu, char *jobv, int *m, int *n, s *a, int *lda, s *sva, int *mv, s *v, int *ldv, s *work, int *lwork, int *info) nogil:
+    _fortran_sgesvj(joba, jobu, jobv, m, n, a, lda, sva, mv, v, ldv, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sgesvx "F_FUNC(sgesvx,SGESVX)"(char *fact, char *trans, int *n, int *nrhs, s *a, int *lda, s *af, int *ldaf, int *ipiv, char *equed, s *r, s *c, s *b, int *ldb, s *x, int *ldx, s *rcond, s *ferr, s *berr, s *work, int *iwork, int *info) nogil
@@ -5242,6 +5958,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_sggrqf "F_FUNC(sggrqf,SGGRQF)"(int *m, int *p, int *n, s *a, int *lda, s *taua, s *b, int *ldb, s *taub, s *work, int *lwork, int *info) nogil
 cdef void sggrqf(int *m, int *p, int *n, s *a, int *lda, s *taua, s *b, int *ldb, s *taub, s *work, int *lwork, int *info) nogil:
     _fortran_sggrqf(m, p, n, a, lda, taua, b, ldb, taub, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sgsvj0 "F_FUNC(sgsvj0,SGSVJ0)"(char *jobv, int *m, int *n, s *a, int *lda, s *d, s *sva, int *mv, s *v, int *ldv, s *eps, s *sfmin, s *tol, int *nsweep, s *work, int *lwork, int *info) nogil
+cdef void sgsvj0(char *jobv, int *m, int *n, s *a, int *lda, s *d, s *sva, int *mv, s *v, int *ldv, s *eps, s *sfmin, s *tol, int *nsweep, s *work, int *lwork, int *info) nogil:
+    _fortran_sgsvj0(jobv, m, n, a, lda, d, sva, mv, v, ldv, eps, sfmin, tol, nsweep, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sgsvj1 "F_FUNC(sgsvj1,SGSVJ1)"(char *jobv, int *m, int *n, int *n1, s *a, int *lda, s *d, s *sva, int *mv, s *v, int *ldv, s *eps, s *sfmin, s *tol, int *nsweep, s *work, int *lwork, int *info) nogil
+cdef void sgsvj1(char *jobv, int *m, int *n, int *n1, s *a, int *lda, s *d, s *sva, int *mv, s *v, int *ldv, s *eps, s *sfmin, s *tol, int *nsweep, s *work, int *lwork, int *info) nogil:
+    _fortran_sgsvj1(jobv, m, n, n1, a, lda, d, sva, mv, v, ldv, eps, sfmin, tol, nsweep, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sgtcon "F_FUNC(sgtcon,SGTCON)"(char *norm, int *n, s *dl, s *d, s *du, s *du2, int *ipiv, s *anorm, s *rcond, s *work, int *iwork, int *info) nogil
@@ -5489,6 +6215,11 @@ cdef void slapll(int *n, s *x, int *incx, s *y, int *incy, s *ssmin) nogil:
     _fortran_slapll(n, x, incx, y, incy, ssmin)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_slapmr "F_FUNC(slapmr,SLAPMR)"(bint *forwrd, int *m, int *n, s *x, int *ldx, int *k) nogil
+cdef void slapmr(bint *forwrd, int *m, int *n, s *x, int *ldx, int *k) nogil:
+    _fortran_slapmr(forwrd, m, n, x, ldx, k)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_slapmt "F_FUNC(slapmt,SLAPMT)"(bint *forwrd, int *m, int *n, s *x, int *ldx, int *k) nogil
 cdef void slapmt(bint *forwrd, int *m, int *n, s *x, int *ldx, int *k) nogil:
     _fortran_slapmt(forwrd, m, n, x, ldx, k)
@@ -5589,6 +6320,11 @@ cdef void slarfg(int *n, s *alpha, s *x, int *incx, s *tau) nogil:
     _fortran_slarfg(n, alpha, x, incx, tau)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_slarfgp "F_FUNC(slarfgp,SLARFGP)"(int *n, s *alpha, s *x, int *incx, s *tau) nogil
+cdef void slarfgp(int *n, s *alpha, s *x, int *incx, s *tau) nogil:
+    _fortran_slarfgp(n, alpha, x, incx, tau)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_slarft "F_FUNC(slarft,SLARFT)"(char *direct, char *storev, int *n, int *k, s *v, int *ldv, s *tau, s *t, int *ldt) nogil
 cdef void slarft(char *direct, char *storev, int *n, int *k, s *v, int *ldv, s *tau, s *t, int *ldt) nogil:
     _fortran_slarft(direct, storev, n, k, v, ldv, tau, t, ldt)
@@ -5662,6 +6398,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_slartg "F_FUNC(slartg,SLARTG)"(s *f, s *g, s *cs, s *sn, s *r) nogil
 cdef void slartg(s *f, s *g, s *cs, s *sn, s *r) nogil:
     _fortran_slartg(f, g, cs, sn, r)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_slartgp "F_FUNC(slartgp,SLARTGP)"(s *f, s *g, s *cs, s *sn, s *r) nogil
+cdef void slartgp(s *f, s *g, s *cs, s *sn, s *r) nogil:
+    _fortran_slartgp(f, g, cs, sn, r)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_slartgs "F_FUNC(slartgs,SLARTGS)"(s *x, s *y, s *sigma, s *cs, s *sn) nogil
+cdef void slartgs(s *x, s *y, s *sigma, s *cs, s *sn) nogil:
+    _fortran_slartgs(x, y, sigma, cs, sn)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_slartv "F_FUNC(slartv,SLARTV)"(int *n, s *x, int *incx, s *y, int *incy, s *c, s *s, int *incc) nogil
@@ -5774,6 +6520,16 @@ cdef void slasq2(int *n, s *z, int *info) nogil:
     _fortran_slasq2(n, z, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_slasq3 "F_FUNC(slasq3,SLASQ3)"(int *i0, int *n0, s *z, int *pp, s *dmin, s *sigma, s *desig, s *qmax, int *nfail, int *iter, int *ndiv, bint *ieee, int *ttype, s *dmin1, s *dmin2, s *dn, s *dn1, s *dn2, s *g, s *tau) nogil
+cdef void slasq3(int *i0, int *n0, s *z, int *pp, s *dmin, s *sigma, s *desig, s *qmax, int *nfail, int *iter, int *ndiv, bint *ieee, int *ttype, s *dmin1, s *dmin2, s *dn, s *dn1, s *dn2, s *g, s *tau) nogil:
+    _fortran_slasq3(i0, n0, z, pp, dmin, sigma, desig, qmax, nfail, iter, ndiv, ieee, ttype, dmin1, dmin2, dn, dn1, dn2, g, tau)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_slasq4 "F_FUNC(slasq4,SLASQ4)"(int *i0, int *n0, s *z, int *pp, int *n0in, s *dmin, s *dmin1, s *dmin2, s *dn, s *dn1, s *dn2, s *tau, int *ttype, s *g) nogil
+cdef void slasq4(int *i0, int *n0, s *z, int *pp, int *n0in, s *dmin, s *dmin1, s *dmin2, s *dn, s *dn1, s *dn2, s *tau, int *ttype, s *g) nogil:
+    _fortran_slasq4(i0, n0, z, pp, n0in, dmin, dmin1, dmin2, dn, dn1, dn2, tau, ttype, g)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_slasq6 "F_FUNC(slasq6,SLASQ6)"(int *i0, int *n0, s *z, int *pp, s *dmin, s *dmin1, s *dmin2, s *dn, s *dnm1, s *dnm2) nogil
 cdef void slasq6(int *i0, int *n0, s *z, int *pp, s *dmin, s *dmin1, s *dmin2, s *dn, s *dnm1, s *dnm2) nogil:
     _fortran_slasq6(i0, n0, z, pp, dmin, dmin1, dmin2, dn, dnm1, dnm2)
@@ -5862,6 +6618,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_sopmtr "F_FUNC(sopmtr,SOPMTR)"(char *side, char *uplo, char *trans, int *m, int *n, s *ap, s *tau, s *c, int *ldc, s *work, int *info) nogil
 cdef void sopmtr(char *side, char *uplo, char *trans, int *m, int *n, s *ap, s *tau, s *c, int *ldc, s *work, int *info) nogil:
     _fortran_sopmtr(side, uplo, trans, m, n, ap, tau, c, ldc, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sorbdb "F_FUNC(sorbdb,SORBDB)"(char *trans, char *signs, int *m, int *p, int *q, s *x11, int *ldx11, s *x12, int *ldx12, s *x21, int *ldx21, s *x22, int *ldx22, s *theta, s *phi, s *taup1, s *taup2, s *tauq1, s *tauq2, s *work, int *lwork, int *info) nogil
+cdef void sorbdb(char *trans, char *signs, int *m, int *p, int *q, s *x11, int *ldx11, s *x12, int *ldx12, s *x21, int *ldx21, s *x22, int *ldx22, s *theta, s *phi, s *taup1, s *taup2, s *tauq1, s *tauq2, s *work, int *lwork, int *info) nogil:
+    _fortran_sorbdb(trans, signs, m, p, q, x11, ldx11, x12, ldx12, x21, ldx21, x22, ldx22, theta, phi, taup1, taup2, tauq1, tauq2, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_sorcsd "F_FUNC(sorcsd,SORCSD)"(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, s *x11, int *ldx11, s *x12, int *ldx12, s *x21, int *ldx21, s *x22, int *ldx22, s *theta, s *u1, int *ldu1, s *u2, int *ldu2, s *v1t, int *ldv1t, s *v2t, int *ldv2t, s *work, int *lwork, int *iwork, int *info) nogil
+cdef void sorcsd(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, s *x11, int *ldx11, s *x12, int *ldx12, s *x21, int *ldx21, s *x22, int *ldx22, s *theta, s *u1, int *ldu1, s *u2, int *ldu2, s *v1t, int *ldv1t, s *v2t, int *ldv2t, s *work, int *lwork, int *iwork, int *info) nogil:
+    _fortran_sorcsd(jobu1, jobu2, jobv1t, jobv2t, trans, signs, m, p, q, x11, ldx11, x12, ldx12, x21, ldx21, x22, ldx22, theta, u1, ldu1, u2, ldu2, v1t, ldv1t, v2t, ldv2t, work, lwork, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sorg2l "F_FUNC(sorg2l,SORG2L)"(int *m, int *n, int *k, s *a, int *lda, s *tau, s *work, int *info) nogil
@@ -6029,6 +6795,21 @@ cdef void spbtrs(char *uplo, int *n, int *kd, int *nrhs, s *ab, int *ldab, s *b,
     _fortran_spbtrs(uplo, n, kd, nrhs, ab, ldab, b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_spftrf "F_FUNC(spftrf,SPFTRF)"(char *transr, char *uplo, int *n, s *a, int *info) nogil
+cdef void spftrf(char *transr, char *uplo, int *n, s *a, int *info) nogil:
+    _fortran_spftrf(transr, uplo, n, a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_spftri "F_FUNC(spftri,SPFTRI)"(char *transr, char *uplo, int *n, s *a, int *info) nogil
+cdef void spftri(char *transr, char *uplo, int *n, s *a, int *info) nogil:
+    _fortran_spftri(transr, uplo, n, a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_spftrs "F_FUNC(spftrs,SPFTRS)"(char *transr, char *uplo, int *n, int *nrhs, s *a, s *b, int *ldb, int *info) nogil
+cdef void spftrs(char *transr, char *uplo, int *n, int *nrhs, s *a, s *b, int *ldb, int *info) nogil:
+    _fortran_spftrs(transr, uplo, n, nrhs, a, b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_spocon "F_FUNC(spocon,SPOCON)"(char *uplo, int *n, s *a, int *lda, s *anorm, s *rcond, s *work, int *iwork, int *info) nogil
 cdef void spocon(char *uplo, int *n, s *a, int *lda, s *anorm, s *rcond, s *work, int *iwork, int *info) nogil:
     _fortran_spocon(uplo, n, a, lda, anorm, rcond, work, iwork, info)
@@ -6037,6 +6818,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_spoequ "F_FUNC(spoequ,SPOEQU)"(int *n, s *a, int *lda, s *s, s *scond, s *amax, int *info) nogil
 cdef void spoequ(int *n, s *a, int *lda, s *s, s *scond, s *amax, int *info) nogil:
     _fortran_spoequ(n, a, lda, s, scond, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_spoequb "F_FUNC(spoequb,SPOEQUB)"(int *n, s *a, int *lda, s *s, s *scond, s *amax, int *info) nogil
+cdef void spoequb(int *n, s *a, int *lda, s *s, s *scond, s *amax, int *info) nogil:
+    _fortran_spoequb(n, a, lda, s, scond, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sporfs "F_FUNC(sporfs,SPORFS)"(char *uplo, int *n, int *nrhs, s *a, int *lda, s *af, int *ldaf, s *b, int *ldb, s *x, int *ldx, s *ferr, s *berr, s *work, int *iwork, int *info) nogil
@@ -6112,6 +6898,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_spptrs "F_FUNC(spptrs,SPPTRS)"(char *uplo, int *n, int *nrhs, s *ap, s *b, int *ldb, int *info) nogil
 cdef void spptrs(char *uplo, int *n, int *nrhs, s *ap, s *b, int *ldb, int *info) nogil:
     _fortran_spptrs(uplo, n, nrhs, ap, b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_spstf2 "F_FUNC(spstf2,SPSTF2)"(char *uplo, int *n, s *a, int *lda, int *piv, int *rank, s *tol, s *work, int *info) nogil
+cdef void spstf2(char *uplo, int *n, s *a, int *lda, int *piv, int *rank, s *tol, s *work, int *info) nogil:
+    _fortran_spstf2(uplo, n, a, lda, piv, rank, tol, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_spstrf "F_FUNC(spstrf,SPSTRF)"(char *uplo, int *n, s *a, int *lda, int *piv, int *rank, s *tol, s *work, int *info) nogil
+cdef void spstrf(char *uplo, int *n, s *a, int *lda, int *piv, int *rank, s *tol, s *work, int *info) nogil:
+    _fortran_spstrf(uplo, n, a, lda, piv, rank, tol, work, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sptcon "F_FUNC(sptcon,SPTCON)"(int *n, s *d, s *e, s *anorm, s *rcond, s *work, int *info) nogil
@@ -6197,6 +6993,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_ssbtrd "F_FUNC(ssbtrd,SSBTRD)"(char *vect, char *uplo, int *n, int *kd, s *ab, int *ldab, s *d, s *e, s *q, int *ldq, s *work, int *info) nogil
 cdef void ssbtrd(char *vect, char *uplo, int *n, int *kd, s *ab, int *ldab, s *d, s *e, s *q, int *ldq, s *work, int *info) nogil:
     _fortran_ssbtrd(vect, uplo, n, kd, ab, ldab, d, e, q, ldq, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ssfrk "F_FUNC(ssfrk,SSFRK)"(char *transr, char *uplo, char *trans, int *n, int *k, s *alpha, s *a, int *lda, s *beta, s *c) nogil
+cdef void ssfrk(char *transr, char *uplo, char *trans, int *n, int *k, s *alpha, s *a, int *lda, s *beta, s *c) nogil:
+    _fortran_ssfrk(transr, uplo, trans, n, k, alpha, a, lda, beta, c)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_sspcon "F_FUNC(sspcon,SSPCON)"(char *uplo, int *n, s *ap, int *ipiv, s *anorm, s *rcond, s *work, int *iwork, int *info) nogil
@@ -6334,6 +7135,16 @@ cdef void ssycon(char *uplo, int *n, s *a, int *lda, int *ipiv, s *anorm, s *rco
     _fortran_ssycon(uplo, n, a, lda, ipiv, anorm, rcond, work, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_ssyconv "F_FUNC(ssyconv,SSYCONV)"(char *uplo, char *way, int *n, s *a, int *lda, int *ipiv, s *work, int *info) nogil
+cdef void ssyconv(char *uplo, char *way, int *n, s *a, int *lda, int *ipiv, s *work, int *info) nogil:
+    _fortran_ssyconv(uplo, way, n, a, lda, ipiv, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ssyequb "F_FUNC(ssyequb,SSYEQUB)"(char *uplo, int *n, s *a, int *lda, s *s, s *scond, s *amax, s *work, int *info) nogil
+cdef void ssyequb(char *uplo, int *n, s *a, int *lda, s *s, s *scond, s *amax, s *work, int *info) nogil:
+    _fortran_ssyequb(uplo, n, a, lda, s, scond, amax, work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_ssyev "F_FUNC(ssyev,SSYEV)"(char *jobz, char *uplo, int *n, s *a, int *lda, s *w, s *work, int *lwork, int *info) nogil
 cdef void ssyev(char *jobz, char *uplo, int *n, s *a, int *lda, s *w, s *work, int *lwork, int *info) nogil:
     _fortran_ssyev(jobz, uplo, n, a, lda, w, work, lwork, info)
@@ -6394,6 +7205,11 @@ cdef void ssysvx(char *fact, char *uplo, int *n, int *nrhs, s *a, int *lda, s *a
     _fortran_ssysvx(fact, uplo, n, nrhs, a, lda, af, ldaf, ipiv, b, ldb, x, ldx, rcond, ferr, berr, work, lwork, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_ssyswapr "F_FUNC(ssyswapr,SSYSWAPR)"(char *uplo, int *n, s *a, int *lda, int *i1, int *i2) nogil
+cdef void ssyswapr(char *uplo, int *n, s *a, int *lda, int *i1, int *i2) nogil:
+    _fortran_ssyswapr(uplo, n, a, lda, i1, i2)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_ssytd2 "F_FUNC(ssytd2,SSYTD2)"(char *uplo, int *n, s *a, int *lda, s *d, s *e, s *tau, int *info) nogil
 cdef void ssytd2(char *uplo, int *n, s *a, int *lda, s *d, s *e, s *tau, int *info) nogil:
     _fortran_ssytd2(uplo, n, a, lda, d, e, tau, info)
@@ -6419,9 +7235,24 @@ cdef void ssytri(char *uplo, int *n, s *a, int *lda, int *ipiv, s *work, int *in
     _fortran_ssytri(uplo, n, a, lda, ipiv, work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_ssytri2 "F_FUNC(ssytri2,SSYTRI2)"(char *uplo, int *n, s *a, int *lda, int *ipiv, s *work, int *lwork, int *info) nogil
+cdef void ssytri2(char *uplo, int *n, s *a, int *lda, int *ipiv, s *work, int *lwork, int *info) nogil:
+    _fortran_ssytri2(uplo, n, a, lda, ipiv, work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ssytri2x "F_FUNC(ssytri2x,SSYTRI2X)"(char *uplo, int *n, s *a, int *lda, int *ipiv, s *work, int *nb, int *info) nogil
+cdef void ssytri2x(char *uplo, int *n, s *a, int *lda, int *ipiv, s *work, int *nb, int *info) nogil:
+    _fortran_ssytri2x(uplo, n, a, lda, ipiv, work, nb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_ssytrs "F_FUNC(ssytrs,SSYTRS)"(char *uplo, int *n, int *nrhs, s *a, int *lda, int *ipiv, s *b, int *ldb, int *info) nogil
 cdef void ssytrs(char *uplo, int *n, int *nrhs, s *a, int *lda, int *ipiv, s *b, int *ldb, int *info) nogil:
     _fortran_ssytrs(uplo, n, nrhs, a, lda, ipiv, b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ssytrs2 "F_FUNC(ssytrs2,SSYTRS2)"(char *uplo, int *n, int *nrhs, s *a, int *lda, int *ipiv, s *b, int *ldb, s *work, int *info) nogil
+cdef void ssytrs2(char *uplo, int *n, int *nrhs, s *a, int *lda, int *ipiv, s *b, int *ldb, s *work, int *info) nogil:
+    _fortran_ssytrs2(uplo, n, nrhs, a, lda, ipiv, b, ldb, work, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_stbcon "F_FUNC(stbcon,STBCON)"(char *norm, char *uplo, char *diag, int *n, int *kd, s *ab, int *ldab, s *rcond, s *work, int *iwork, int *info) nogil
@@ -6437,6 +7268,26 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_stbtrs "F_FUNC(stbtrs,STBTRS)"(char *uplo, char *trans, char *diag, int *n, int *kd, int *nrhs, s *ab, int *ldab, s *b, int *ldb, int *info) nogil
 cdef void stbtrs(char *uplo, char *trans, char *diag, int *n, int *kd, int *nrhs, s *ab, int *ldab, s *b, int *ldb, int *info) nogil:
     _fortran_stbtrs(uplo, trans, diag, n, kd, nrhs, ab, ldab, b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_stfsm "F_FUNC(stfsm,STFSM)"(char *transr, char *side, char *uplo, char *trans, char *diag, int *m, int *n, s *alpha, s *a, s *b, int *ldb) nogil
+cdef void stfsm(char *transr, char *side, char *uplo, char *trans, char *diag, int *m, int *n, s *alpha, s *a, s *b, int *ldb) nogil:
+    _fortran_stfsm(transr, side, uplo, trans, diag, m, n, alpha, a, b, ldb)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_stftri "F_FUNC(stftri,STFTRI)"(char *transr, char *uplo, char *diag, int *n, s *a, int *info) nogil
+cdef void stftri(char *transr, char *uplo, char *diag, int *n, s *a, int *info) nogil:
+    _fortran_stftri(transr, uplo, diag, n, a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_stfttp "F_FUNC(stfttp,STFTTP)"(char *transr, char *uplo, int *n, s *arf, s *ap, int *info) nogil
+cdef void stfttp(char *transr, char *uplo, int *n, s *arf, s *ap, int *info) nogil:
+    _fortran_stfttp(transr, uplo, n, arf, ap, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_stfttr "F_FUNC(stfttr,STFTTR)"(char *transr, char *uplo, int *n, s *arf, s *a, int *lda, int *info) nogil
+cdef void stfttr(char *transr, char *uplo, int *n, s *arf, s *a, int *lda, int *info) nogil:
+    _fortran_stfttr(transr, uplo, n, arf, a, lda, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_stgevc "F_FUNC(stgevc,STGEVC)"(char *side, char *howmny, bint *select, int *n, s *s, int *lds, s *p, int *ldp, s *vl, int *ldvl, s *vr, int *ldvr, int *mm, int *m, s *work, int *info) nogil
@@ -6499,6 +7350,16 @@ cdef void stptrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, s *ap, 
     _fortran_stptrs(uplo, trans, diag, n, nrhs, ap, b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_stpttf "F_FUNC(stpttf,STPTTF)"(char *transr, char *uplo, int *n, s *ap, s *arf, int *info) nogil
+cdef void stpttf(char *transr, char *uplo, int *n, s *ap, s *arf, int *info) nogil:
+    _fortran_stpttf(transr, uplo, n, ap, arf, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_stpttr "F_FUNC(stpttr,STPTTR)"(char *uplo, int *n, s *ap, s *a, int *lda, int *info) nogil
+cdef void stpttr(char *uplo, int *n, s *ap, s *a, int *lda, int *info) nogil:
+    _fortran_stpttr(uplo, n, ap, a, lda, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_strcon "F_FUNC(strcon,STRCON)"(char *norm, char *uplo, char *diag, int *n, s *a, int *lda, s *rcond, s *work, int *iwork, int *info) nogil
 cdef void strcon(char *norm, char *uplo, char *diag, int *n, s *a, int *lda, s *rcond, s *work, int *iwork, int *info) nogil:
     _fortran_strcon(norm, uplo, diag, n, a, lda, rcond, work, iwork, info)
@@ -6549,14 +7410,44 @@ cdef void strtrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, s *a, i
     _fortran_strtrs(uplo, trans, diag, n, nrhs, a, lda, b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_strttf "F_FUNC(strttf,STRTTF)"(char *transr, char *uplo, int *n, s *a, int *lda, s *arf, int *info) nogil
+cdef void strttf(char *transr, char *uplo, int *n, s *a, int *lda, s *arf, int *info) nogil:
+    _fortran_strttf(transr, uplo, n, a, lda, arf, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_strttp "F_FUNC(strttp,STRTTP)"(char *uplo, int *n, s *a, int *lda, s *ap, int *info) nogil
+cdef void strttp(char *uplo, int *n, s *a, int *lda, s *ap, int *info) nogil:
+    _fortran_strttp(uplo, n, a, lda, ap, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_stzrzf "F_FUNC(stzrzf,STZRZF)"(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil
 cdef void stzrzf(int *m, int *n, s *a, int *lda, s *tau, s *work, int *lwork, int *info) nogil:
     _fortran_stzrzf(m, n, a, lda, tau, work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_xerbla_array "F_FUNC(xerbla_array,XERBLA_ARRAY)"(char *srname_array, int *srname_len, int *info) nogil
+cdef void xerbla_array(char *srname_array, int *srname_len, int *info) nogil:
+    _fortran_xerbla_array(srname_array, srname_len, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zbbcsd "F_FUNC(zbbcsd,ZBBCSD)"(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, int *m, int *p, int *q, d *theta, d *phi, npy_complex128 *u1, int *ldu1, npy_complex128 *u2, int *ldu2, npy_complex128 *v1t, int *ldv1t, npy_complex128 *v2t, int *ldv2t, d *b11d, d *b11e, d *b12d, d *b12e, d *b21d, d *b21e, d *b22d, d *b22e, d *rwork, int *lrwork, int *info) nogil
+cdef void zbbcsd(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, int *m, int *p, int *q, d *theta, d *phi, z *u1, int *ldu1, z *u2, int *ldu2, z *v1t, int *ldv1t, z *v2t, int *ldv2t, d *b11d, d *b11e, d *b12d, d *b12e, d *b21d, d *b21e, d *b22d, d *b22e, d *rwork, int *lrwork, int *info) nogil:
+    _fortran_zbbcsd(jobu1, jobu2, jobv1t, jobv2t, trans, m, p, q, theta, phi, <npy_complex128*>u1, ldu1, <npy_complex128*>u2, ldu2, <npy_complex128*>v1t, ldv1t, <npy_complex128*>v2t, ldv2t, b11d, b11e, b12d, b12e, b21d, b21e, b22d, b22e, rwork, lrwork, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zbdsqr "F_FUNC(zbdsqr,ZBDSQR)"(char *uplo, int *n, int *ncvt, int *nru, int *ncc, d *d, d *e, npy_complex128 *vt, int *ldvt, npy_complex128 *u, int *ldu, npy_complex128 *c, int *ldc, d *rwork, int *info) nogil
 cdef void zbdsqr(char *uplo, int *n, int *ncvt, int *nru, int *ncc, d *d, d *e, z *vt, int *ldvt, z *u, int *ldu, z *c, int *ldc, d *rwork, int *info) nogil:
     _fortran_zbdsqr(uplo, n, ncvt, nru, ncc, d, e, <npy_complex128*>vt, ldvt, <npy_complex128*>u, ldu, <npy_complex128*>c, ldc, rwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zcgesv "F_FUNC(zcgesv,ZCGESV)"(int *n, int *nrhs, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, npy_complex128 *work, npy_complex64 *swork, d *rwork, int *iter, int *info) nogil
+cdef void zcgesv(int *n, int *nrhs, z *a, int *lda, int *ipiv, z *b, int *ldb, z *x, int *ldx, z *work, c *swork, d *rwork, int *iter, int *info) nogil:
+    _fortran_zcgesv(n, nrhs, <npy_complex128*>a, lda, ipiv, <npy_complex128*>b, ldb, <npy_complex128*>x, ldx, <npy_complex128*>work, <npy_complex64*>swork, rwork, iter, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zcposv "F_FUNC(zcposv,ZCPOSV)"(char *uplo, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, npy_complex128 *work, npy_complex64 *swork, d *rwork, int *iter, int *info) nogil
+cdef void zcposv(char *uplo, int *n, int *nrhs, z *a, int *lda, z *b, int *ldb, z *x, int *ldx, z *work, c *swork, d *rwork, int *iter, int *info) nogil:
+    _fortran_zcposv(uplo, n, nrhs, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, <npy_complex128*>x, ldx, <npy_complex128*>work, <npy_complex64*>swork, rwork, iter, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zdrscl "F_FUNC(zdrscl,ZDRSCL)"(int *n, d *sa, npy_complex128 *sx, int *incx) nogil
@@ -6577,6 +7468,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_zgbequ "F_FUNC(zgbequ,ZGBEQU)"(int *m, int *n, int *kl, int *ku, npy_complex128 *ab, int *ldab, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil
 cdef void zgbequ(int *m, int *n, int *kl, int *ku, z *ab, int *ldab, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil:
     _fortran_zgbequ(m, n, kl, ku, <npy_complex128*>ab, ldab, r, c, rowcnd, colcnd, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zgbequb "F_FUNC(zgbequb,ZGBEQUB)"(int *m, int *n, int *kl, int *ku, npy_complex128 *ab, int *ldab, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil
+cdef void zgbequb(int *m, int *n, int *kl, int *ku, z *ab, int *ldab, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil:
+    _fortran_zgbequb(m, n, kl, ku, <npy_complex128*>ab, ldab, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zgbrfs "F_FUNC(zgbrfs,ZGBRFS)"(char *trans, int *n, int *kl, int *ku, int *nrhs, npy_complex128 *ab, int *ldab, npy_complex128 *afb, int *ldafb, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, d *ferr, d *berr, npy_complex128 *work, d *rwork, int *info) nogil
@@ -6637,6 +7533,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_zgeequ "F_FUNC(zgeequ,ZGEEQU)"(int *m, int *n, npy_complex128 *a, int *lda, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil
 cdef void zgeequ(int *m, int *n, z *a, int *lda, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil:
     _fortran_zgeequ(m, n, <npy_complex128*>a, lda, r, c, rowcnd, colcnd, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zgeequb "F_FUNC(zgeequb,ZGEEQUB)"(int *m, int *n, npy_complex128 *a, int *lda, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil
+cdef void zgeequb(int *m, int *n, z *a, int *lda, d *r, d *c, d *rowcnd, d *colcnd, d *amax, int *info) nogil:
+    _fortran_zgeequb(m, n, <npy_complex128*>a, lda, r, c, rowcnd, colcnd, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zgees "F_FUNC(zgees,ZGEES)"(char *jobvs, char *sort, _zselect1 *select, int *n, npy_complex128 *a, int *lda, int *sdim, npy_complex128 *w, npy_complex128 *vs, int *ldvs, npy_complex128 *work, int *lwork, d *rwork, bint *bwork, int *info) nogil
@@ -6719,9 +7620,19 @@ cdef void zgeqr2(int *m, int *n, z *a, int *lda, z *tau, z *work, int *info) nog
     _fortran_zgeqr2(m, n, <npy_complex128*>a, lda, <npy_complex128*>tau, <npy_complex128*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zgeqr2p "F_FUNC(zgeqr2p,ZGEQR2P)"(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *info) nogil
+cdef void zgeqr2p(int *m, int *n, z *a, int *lda, z *tau, z *work, int *info) nogil:
+    _fortran_zgeqr2p(m, n, <npy_complex128*>a, lda, <npy_complex128*>tau, <npy_complex128*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zgeqrf "F_FUNC(zgeqrf,ZGEQRF)"(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *lwork, int *info) nogil
 cdef void zgeqrf(int *m, int *n, z *a, int *lda, z *tau, z *work, int *lwork, int *info) nogil:
     _fortran_zgeqrf(m, n, <npy_complex128*>a, lda, <npy_complex128*>tau, <npy_complex128*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zgeqrfp "F_FUNC(zgeqrfp,ZGEQRFP)"(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *lwork, int *info) nogil
+cdef void zgeqrfp(int *m, int *n, z *a, int *lda, z *tau, z *work, int *lwork, int *info) nogil:
+    _fortran_zgeqrfp(m, n, <npy_complex128*>a, lda, <npy_complex128*>tau, <npy_complex128*>work, lwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zgerfs "F_FUNC(zgerfs,ZGERFS)"(char *trans, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *af, int *ldaf, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, d *ferr, d *berr, npy_complex128 *work, d *rwork, int *info) nogil
@@ -6924,6 +7835,11 @@ cdef void zhecon(char *uplo, int *n, z *a, int *lda, int *ipiv, d *anorm, d *rco
     _fortran_zhecon(uplo, n, <npy_complex128*>a, lda, ipiv, anorm, rcond, <npy_complex128*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zheequb "F_FUNC(zheequb,ZHEEQUB)"(char *uplo, int *n, npy_complex128 *a, int *lda, d *s, d *scond, d *amax, npy_complex128 *work, int *info) nogil
+cdef void zheequb(char *uplo, int *n, z *a, int *lda, d *s, d *scond, d *amax, z *work, int *info) nogil:
+    _fortran_zheequb(uplo, n, <npy_complex128*>a, lda, s, scond, amax, <npy_complex128*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zheev "F_FUNC(zheev,ZHEEV)"(char *jobz, char *uplo, int *n, npy_complex128 *a, int *lda, d *w, npy_complex128 *work, int *lwork, d *rwork, int *info) nogil
 cdef void zheev(char *jobz, char *uplo, int *n, z *a, int *lda, d *w, z *work, int *lwork, d *rwork, int *info) nogil:
     _fortran_zheev(jobz, uplo, n, <npy_complex128*>a, lda, w, <npy_complex128*>work, lwork, rwork, info)
@@ -6984,6 +7900,11 @@ cdef void zhesvx(char *fact, char *uplo, int *n, int *nrhs, z *a, int *lda, z *a
     _fortran_zhesvx(fact, uplo, n, nrhs, <npy_complex128*>a, lda, <npy_complex128*>af, ldaf, ipiv, <npy_complex128*>b, ldb, <npy_complex128*>x, ldx, rcond, ferr, berr, <npy_complex128*>work, lwork, rwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zheswapr "F_FUNC(zheswapr,ZHESWAPR)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *i1, int *i2) nogil
+cdef void zheswapr(char *uplo, int *n, z *a, int *lda, int *i1, int *i2) nogil:
+    _fortran_zheswapr(uplo, n, <npy_complex128*>a, lda, i1, i2)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zhetd2 "F_FUNC(zhetd2,ZHETD2)"(char *uplo, int *n, npy_complex128 *a, int *lda, d *d, d *e, npy_complex128 *tau, int *info) nogil
 cdef void zhetd2(char *uplo, int *n, z *a, int *lda, d *d, d *e, z *tau, int *info) nogil:
     _fortran_zhetd2(uplo, n, <npy_complex128*>a, lda, d, e, <npy_complex128*>tau, info)
@@ -7009,9 +7930,29 @@ cdef void zhetri(char *uplo, int *n, z *a, int *lda, int *ipiv, z *work, int *in
     _fortran_zhetri(uplo, n, <npy_complex128*>a, lda, ipiv, <npy_complex128*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zhetri2 "F_FUNC(zhetri2,ZHETRI2)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *work, int *lwork, int *info) nogil
+cdef void zhetri2(char *uplo, int *n, z *a, int *lda, int *ipiv, z *work, int *lwork, int *info) nogil:
+    _fortran_zhetri2(uplo, n, <npy_complex128*>a, lda, ipiv, <npy_complex128*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zhetri2x "F_FUNC(zhetri2x,ZHETRI2X)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *work, int *nb, int *info) nogil
+cdef void zhetri2x(char *uplo, int *n, z *a, int *lda, int *ipiv, z *work, int *nb, int *info) nogil:
+    _fortran_zhetri2x(uplo, n, <npy_complex128*>a, lda, ipiv, <npy_complex128*>work, nb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zhetrs "F_FUNC(zhetrs,ZHETRS)"(char *uplo, int *n, int *nrhs, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *b, int *ldb, int *info) nogil
 cdef void zhetrs(char *uplo, int *n, int *nrhs, z *a, int *lda, int *ipiv, z *b, int *ldb, int *info) nogil:
     _fortran_zhetrs(uplo, n, nrhs, <npy_complex128*>a, lda, ipiv, <npy_complex128*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zhetrs2 "F_FUNC(zhetrs2,ZHETRS2)"(char *uplo, int *n, int *nrhs, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *work, int *info) nogil
+cdef void zhetrs2(char *uplo, int *n, int *nrhs, z *a, int *lda, int *ipiv, z *b, int *ldb, z *work, int *info) nogil:
+    _fortran_zhetrs2(uplo, n, nrhs, <npy_complex128*>a, lda, ipiv, <npy_complex128*>b, ldb, <npy_complex128*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zhfrk "F_FUNC(zhfrk,ZHFRK)"(char *transr, char *uplo, char *trans, int *n, int *k, d *alpha, npy_complex128 *a, int *lda, d *beta, npy_complex128 *c) nogil
+cdef void zhfrk(char *transr, char *uplo, char *trans, int *n, int *k, d *alpha, z *a, int *lda, d *beta, z *c) nogil:
+    _fortran_zhfrk(transr, uplo, trans, n, k, alpha, <npy_complex128*>a, lda, beta, <npy_complex128*>c)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zhgeqz "F_FUNC(zhgeqz,ZHGEQZ)"(char *job, char *compq, char *compz, int *n, int *ilo, int *ihi, npy_complex128 *h, int *ldh, npy_complex128 *t, int *ldt, npy_complex128 *alpha, npy_complex128 *beta, npy_complex128 *q, int *ldq, npy_complex128 *z, int *ldz, npy_complex128 *work, int *lwork, d *rwork, int *info) nogil
@@ -7229,6 +8170,11 @@ cdef void zlapll(int *n, z *x, int *incx, z *y, int *incy, d *ssmin) nogil:
     _fortran_zlapll(n, <npy_complex128*>x, incx, <npy_complex128*>y, incy, ssmin)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zlapmr "F_FUNC(zlapmr,ZLAPMR)"(bint *forwrd, int *m, int *n, npy_complex128 *x, int *ldx, int *k) nogil
+cdef void zlapmr(bint *forwrd, int *m, int *n, z *x, int *ldx, int *k) nogil:
+    _fortran_zlapmr(forwrd, m, n, <npy_complex128*>x, ldx, k)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zlapmt "F_FUNC(zlapmt,ZLAPMT)"(bint *forwrd, int *m, int *n, npy_complex128 *x, int *ldx, int *k) nogil
 cdef void zlapmt(bint *forwrd, int *m, int *n, z *x, int *ldx, int *k) nogil:
     _fortran_zlapmt(forwrd, m, n, <npy_complex128*>x, ldx, k)
@@ -7344,6 +8290,11 @@ cdef void zlarfg(int *n, z *alpha, z *x, int *incx, z *tau) nogil:
     _fortran_zlarfg(n, <npy_complex128*>alpha, <npy_complex128*>x, incx, <npy_complex128*>tau)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zlarfgp "F_FUNC(zlarfgp,ZLARFGP)"(int *n, npy_complex128 *alpha, npy_complex128 *x, int *incx, npy_complex128 *tau) nogil
+cdef void zlarfgp(int *n, z *alpha, z *x, int *incx, z *tau) nogil:
+    _fortran_zlarfgp(n, <npy_complex128*>alpha, <npy_complex128*>x, incx, <npy_complex128*>tau)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zlarft "F_FUNC(zlarft,ZLARFT)"(char *direct, char *storev, int *n, int *k, npy_complex128 *v, int *ldv, npy_complex128 *tau, npy_complex128 *t, int *ldt) nogil
 cdef void zlarft(char *direct, char *storev, int *n, int *k, z *v, int *ldv, z *tau, z *t, int *ldt) nogil:
     _fortran_zlarft(direct, storev, n, k, <npy_complex128*>v, ldv, <npy_complex128*>tau, <npy_complex128*>t, ldt)
@@ -7422,6 +8373,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_zlasyf "F_FUNC(zlasyf,ZLASYF)"(char *uplo, int *n, int *nb, int *kb, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *w, int *ldw, int *info) nogil
 cdef void zlasyf(char *uplo, int *n, int *nb, int *kb, z *a, int *lda, int *ipiv, z *w, int *ldw, int *info) nogil:
     _fortran_zlasyf(uplo, n, nb, kb, <npy_complex128*>a, lda, ipiv, <npy_complex128*>w, ldw, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zlat2c "F_FUNC(zlat2c,ZLAT2C)"(char *uplo, int *n, npy_complex128 *a, int *lda, npy_complex64 *sa, int *ldsa, int *info) nogil
+cdef void zlat2c(char *uplo, int *n, z *a, int *lda, c *sa, int *ldsa, int *info) nogil:
+    _fortran_zlat2c(uplo, n, <npy_complex128*>a, lda, <npy_complex64*>sa, ldsa, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zlatbs "F_FUNC(zlatbs,ZLATBS)"(char *uplo, char *trans, char *diag, char *normin, int *n, int *kd, npy_complex128 *ab, int *ldab, npy_complex128 *x, d *scale, d *cnorm, int *info) nogil
@@ -7509,6 +8465,21 @@ cdef void zpbtrs(char *uplo, int *n, int *kd, int *nrhs, z *ab, int *ldab, z *b,
     _fortran_zpbtrs(uplo, n, kd, nrhs, <npy_complex128*>ab, ldab, <npy_complex128*>b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zpftrf "F_FUNC(zpftrf,ZPFTRF)"(char *transr, char *uplo, int *n, npy_complex128 *a, int *info) nogil
+cdef void zpftrf(char *transr, char *uplo, int *n, z *a, int *info) nogil:
+    _fortran_zpftrf(transr, uplo, n, <npy_complex128*>a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zpftri "F_FUNC(zpftri,ZPFTRI)"(char *transr, char *uplo, int *n, npy_complex128 *a, int *info) nogil
+cdef void zpftri(char *transr, char *uplo, int *n, z *a, int *info) nogil:
+    _fortran_zpftri(transr, uplo, n, <npy_complex128*>a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zpftrs "F_FUNC(zpftrs,ZPFTRS)"(char *transr, char *uplo, int *n, int *nrhs, npy_complex128 *a, npy_complex128 *b, int *ldb, int *info) nogil
+cdef void zpftrs(char *transr, char *uplo, int *n, int *nrhs, z *a, z *b, int *ldb, int *info) nogil:
+    _fortran_zpftrs(transr, uplo, n, nrhs, <npy_complex128*>a, <npy_complex128*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zpocon "F_FUNC(zpocon,ZPOCON)"(char *uplo, int *n, npy_complex128 *a, int *lda, d *anorm, d *rcond, npy_complex128 *work, d *rwork, int *info) nogil
 cdef void zpocon(char *uplo, int *n, z *a, int *lda, d *anorm, d *rcond, z *work, d *rwork, int *info) nogil:
     _fortran_zpocon(uplo, n, <npy_complex128*>a, lda, anorm, rcond, <npy_complex128*>work, rwork, info)
@@ -7517,6 +8488,11 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_zpoequ "F_FUNC(zpoequ,ZPOEQU)"(int *n, npy_complex128 *a, int *lda, d *s, d *scond, d *amax, int *info) nogil
 cdef void zpoequ(int *n, z *a, int *lda, d *s, d *scond, d *amax, int *info) nogil:
     _fortran_zpoequ(n, <npy_complex128*>a, lda, s, scond, amax, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zpoequb "F_FUNC(zpoequb,ZPOEQUB)"(int *n, npy_complex128 *a, int *lda, d *s, d *scond, d *amax, int *info) nogil
+cdef void zpoequb(int *n, z *a, int *lda, d *s, d *scond, d *amax, int *info) nogil:
+    _fortran_zpoequb(n, <npy_complex128*>a, lda, s, scond, amax, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zporfs "F_FUNC(zporfs,ZPORFS)"(char *uplo, int *n, int *nrhs, npy_complex128 *a, int *lda, npy_complex128 *af, int *ldaf, npy_complex128 *b, int *ldb, npy_complex128 *x, int *ldx, d *ferr, d *berr, npy_complex128 *work, d *rwork, int *info) nogil
@@ -7592,6 +8568,16 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_zpptrs "F_FUNC(zpptrs,ZPPTRS)"(char *uplo, int *n, int *nrhs, npy_complex128 *ap, npy_complex128 *b, int *ldb, int *info) nogil
 cdef void zpptrs(char *uplo, int *n, int *nrhs, z *ap, z *b, int *ldb, int *info) nogil:
     _fortran_zpptrs(uplo, n, nrhs, <npy_complex128*>ap, <npy_complex128*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zpstf2 "F_FUNC(zpstf2,ZPSTF2)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *piv, int *rank, d *tol, d *work, int *info) nogil
+cdef void zpstf2(char *uplo, int *n, z *a, int *lda, int *piv, int *rank, d *tol, d *work, int *info) nogil:
+    _fortran_zpstf2(uplo, n, <npy_complex128*>a, lda, piv, rank, tol, work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zpstrf "F_FUNC(zpstrf,ZPSTRF)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *piv, int *rank, d *tol, d *work, int *info) nogil
+cdef void zpstrf(char *uplo, int *n, z *a, int *lda, int *piv, int *rank, d *tol, d *work, int *info) nogil:
+    _fortran_zpstrf(uplo, n, <npy_complex128*>a, lda, piv, rank, tol, work, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zptcon "F_FUNC(zptcon,ZPTCON)"(int *n, d *d, npy_complex128 *e, d *anorm, d *rcond, d *rwork, int *info) nogil
@@ -7714,6 +8700,16 @@ cdef void zsycon(char *uplo, int *n, z *a, int *lda, int *ipiv, d *anorm, d *rco
     _fortran_zsycon(uplo, n, <npy_complex128*>a, lda, ipiv, anorm, rcond, <npy_complex128*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zsyconv "F_FUNC(zsyconv,ZSYCONV)"(char *uplo, char *way, int *n, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *work, int *info) nogil
+cdef void zsyconv(char *uplo, char *way, int *n, z *a, int *lda, int *ipiv, z *work, int *info) nogil:
+    _fortran_zsyconv(uplo, way, n, <npy_complex128*>a, lda, ipiv, <npy_complex128*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zsyequb "F_FUNC(zsyequb,ZSYEQUB)"(char *uplo, int *n, npy_complex128 *a, int *lda, d *s, d *scond, d *amax, npy_complex128 *work, int *info) nogil
+cdef void zsyequb(char *uplo, int *n, z *a, int *lda, d *s, d *scond, d *amax, z *work, int *info) nogil:
+    _fortran_zsyequb(uplo, n, <npy_complex128*>a, lda, s, scond, amax, <npy_complex128*>work, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zsymv "F_FUNC(zsymv,ZSYMV)"(char *uplo, int *n, npy_complex128 *alpha, npy_complex128 *a, int *lda, npy_complex128 *x, int *incx, npy_complex128 *beta, npy_complex128 *y, int *incy) nogil
 cdef void zsymv(char *uplo, int *n, z *alpha, z *a, int *lda, z *x, int *incx, z *beta, z *y, int *incy) nogil:
     _fortran_zsymv(uplo, n, <npy_complex128*>alpha, <npy_complex128*>a, lda, <npy_complex128*>x, incx, <npy_complex128*>beta, <npy_complex128*>y, incy)
@@ -7739,6 +8735,11 @@ cdef void zsysvx(char *fact, char *uplo, int *n, int *nrhs, z *a, int *lda, z *a
     _fortran_zsysvx(fact, uplo, n, nrhs, <npy_complex128*>a, lda, <npy_complex128*>af, ldaf, ipiv, <npy_complex128*>b, ldb, <npy_complex128*>x, ldx, rcond, ferr, berr, <npy_complex128*>work, lwork, rwork, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zsyswapr "F_FUNC(zsyswapr,ZSYSWAPR)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *i1, int *i2) nogil
+cdef void zsyswapr(char *uplo, int *n, z *a, int *lda, int *i1, int *i2) nogil:
+    _fortran_zsyswapr(uplo, n, <npy_complex128*>a, lda, i1, i2)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zsytf2 "F_FUNC(zsytf2,ZSYTF2)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *ipiv, int *info) nogil
 cdef void zsytf2(char *uplo, int *n, z *a, int *lda, int *ipiv, int *info) nogil:
     _fortran_zsytf2(uplo, n, <npy_complex128*>a, lda, ipiv, info)
@@ -7754,9 +8755,24 @@ cdef void zsytri(char *uplo, int *n, z *a, int *lda, int *ipiv, z *work, int *in
     _fortran_zsytri(uplo, n, <npy_complex128*>a, lda, ipiv, <npy_complex128*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_zsytri2 "F_FUNC(zsytri2,ZSYTRI2)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *work, int *lwork, int *info) nogil
+cdef void zsytri2(char *uplo, int *n, z *a, int *lda, int *ipiv, z *work, int *lwork, int *info) nogil:
+    _fortran_zsytri2(uplo, n, <npy_complex128*>a, lda, ipiv, <npy_complex128*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zsytri2x "F_FUNC(zsytri2x,ZSYTRI2X)"(char *uplo, int *n, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *work, int *nb, int *info) nogil
+cdef void zsytri2x(char *uplo, int *n, z *a, int *lda, int *ipiv, z *work, int *nb, int *info) nogil:
+    _fortran_zsytri2x(uplo, n, <npy_complex128*>a, lda, ipiv, <npy_complex128*>work, nb, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_zsytrs "F_FUNC(zsytrs,ZSYTRS)"(char *uplo, int *n, int *nrhs, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *b, int *ldb, int *info) nogil
 cdef void zsytrs(char *uplo, int *n, int *nrhs, z *a, int *lda, int *ipiv, z *b, int *ldb, int *info) nogil:
     _fortran_zsytrs(uplo, n, nrhs, <npy_complex128*>a, lda, ipiv, <npy_complex128*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zsytrs2 "F_FUNC(zsytrs2,ZSYTRS2)"(char *uplo, int *n, int *nrhs, npy_complex128 *a, int *lda, int *ipiv, npy_complex128 *b, int *ldb, npy_complex128 *work, int *info) nogil
+cdef void zsytrs2(char *uplo, int *n, int *nrhs, z *a, int *lda, int *ipiv, z *b, int *ldb, z *work, int *info) nogil:
+    _fortran_zsytrs2(uplo, n, nrhs, <npy_complex128*>a, lda, ipiv, <npy_complex128*>b, ldb, <npy_complex128*>work, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_ztbcon "F_FUNC(ztbcon,ZTBCON)"(char *norm, char *uplo, char *diag, int *n, int *kd, npy_complex128 *ab, int *ldab, d *rcond, npy_complex128 *work, d *rwork, int *info) nogil
@@ -7772,6 +8788,26 @@ cdef extern from "_lapack_subroutines.h":
     void _fortran_ztbtrs "F_FUNC(ztbtrs,ZTBTRS)"(char *uplo, char *trans, char *diag, int *n, int *kd, int *nrhs, npy_complex128 *ab, int *ldab, npy_complex128 *b, int *ldb, int *info) nogil
 cdef void ztbtrs(char *uplo, char *trans, char *diag, int *n, int *kd, int *nrhs, z *ab, int *ldab, z *b, int *ldb, int *info) nogil:
     _fortran_ztbtrs(uplo, trans, diag, n, kd, nrhs, <npy_complex128*>ab, ldab, <npy_complex128*>b, ldb, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ztfsm "F_FUNC(ztfsm,ZTFSM)"(char *transr, char *side, char *uplo, char *trans, char *diag, int *m, int *n, npy_complex128 *alpha, npy_complex128 *a, npy_complex128 *b, int *ldb) nogil
+cdef void ztfsm(char *transr, char *side, char *uplo, char *trans, char *diag, int *m, int *n, z *alpha, z *a, z *b, int *ldb) nogil:
+    _fortran_ztfsm(transr, side, uplo, trans, diag, m, n, <npy_complex128*>alpha, <npy_complex128*>a, <npy_complex128*>b, ldb)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ztftri "F_FUNC(ztftri,ZTFTRI)"(char *transr, char *uplo, char *diag, int *n, npy_complex128 *a, int *info) nogil
+cdef void ztftri(char *transr, char *uplo, char *diag, int *n, z *a, int *info) nogil:
+    _fortran_ztftri(transr, uplo, diag, n, <npy_complex128*>a, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ztfttp "F_FUNC(ztfttp,ZTFTTP)"(char *transr, char *uplo, int *n, npy_complex128 *arf, npy_complex128 *ap, int *info) nogil
+cdef void ztfttp(char *transr, char *uplo, int *n, z *arf, z *ap, int *info) nogil:
+    _fortran_ztfttp(transr, uplo, n, <npy_complex128*>arf, <npy_complex128*>ap, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ztfttr "F_FUNC(ztfttr,ZTFTTR)"(char *transr, char *uplo, int *n, npy_complex128 *arf, npy_complex128 *a, int *lda, int *info) nogil
+cdef void ztfttr(char *transr, char *uplo, int *n, z *arf, z *a, int *lda, int *info) nogil:
+    _fortran_ztfttr(transr, uplo, n, <npy_complex128*>arf, <npy_complex128*>a, lda, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_ztgevc "F_FUNC(ztgevc,ZTGEVC)"(char *side, char *howmny, bint *select, int *n, npy_complex128 *s, int *lds, npy_complex128 *p, int *ldp, npy_complex128 *vl, int *ldvl, npy_complex128 *vr, int *ldvr, int *mm, int *m, npy_complex128 *work, d *rwork, int *info) nogil
@@ -7834,6 +8870,16 @@ cdef void ztptrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, z *ap, 
     _fortran_ztptrs(uplo, trans, diag, n, nrhs, <npy_complex128*>ap, <npy_complex128*>b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_ztpttf "F_FUNC(ztpttf,ZTPTTF)"(char *transr, char *uplo, int *n, npy_complex128 *ap, npy_complex128 *arf, int *info) nogil
+cdef void ztpttf(char *transr, char *uplo, int *n, z *ap, z *arf, int *info) nogil:
+    _fortran_ztpttf(transr, uplo, n, <npy_complex128*>ap, <npy_complex128*>arf, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ztpttr "F_FUNC(ztpttr,ZTPTTR)"(char *uplo, int *n, npy_complex128 *ap, npy_complex128 *a, int *lda, int *info) nogil
+cdef void ztpttr(char *uplo, int *n, z *ap, z *a, int *lda, int *info) nogil:
+    _fortran_ztpttr(uplo, n, <npy_complex128*>ap, <npy_complex128*>a, lda, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_ztrcon "F_FUNC(ztrcon,ZTRCON)"(char *norm, char *uplo, char *diag, int *n, npy_complex128 *a, int *lda, d *rcond, npy_complex128 *work, d *rwork, int *info) nogil
 cdef void ztrcon(char *norm, char *uplo, char *diag, int *n, z *a, int *lda, d *rcond, z *work, d *rwork, int *info) nogil:
     _fortran_ztrcon(norm, uplo, diag, n, <npy_complex128*>a, lda, rcond, <npy_complex128*>work, rwork, info)
@@ -7884,9 +8930,29 @@ cdef void ztrtrs(char *uplo, char *trans, char *diag, int *n, int *nrhs, z *a, i
     _fortran_ztrtrs(uplo, trans, diag, n, nrhs, <npy_complex128*>a, lda, <npy_complex128*>b, ldb, info)
 
 cdef extern from "_lapack_subroutines.h":
+    void _fortran_ztrttf "F_FUNC(ztrttf,ZTRTTF)"(char *transr, char *uplo, int *n, npy_complex128 *a, int *lda, npy_complex128 *arf, int *info) nogil
+cdef void ztrttf(char *transr, char *uplo, int *n, z *a, int *lda, z *arf, int *info) nogil:
+    _fortran_ztrttf(transr, uplo, n, <npy_complex128*>a, lda, <npy_complex128*>arf, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_ztrttp "F_FUNC(ztrttp,ZTRTTP)"(char *uplo, int *n, npy_complex128 *a, int *lda, npy_complex128 *ap, int *info) nogil
+cdef void ztrttp(char *uplo, int *n, z *a, int *lda, z *ap, int *info) nogil:
+    _fortran_ztrttp(uplo, n, <npy_complex128*>a, lda, <npy_complex128*>ap, info)
+
+cdef extern from "_lapack_subroutines.h":
     void _fortran_ztzrzf "F_FUNC(ztzrzf,ZTZRZF)"(int *m, int *n, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *lwork, int *info) nogil
 cdef void ztzrzf(int *m, int *n, z *a, int *lda, z *tau, z *work, int *lwork, int *info) nogil:
     _fortran_ztzrzf(m, n, <npy_complex128*>a, lda, <npy_complex128*>tau, <npy_complex128*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zunbdb "F_FUNC(zunbdb,ZUNBDB)"(char *trans, char *signs, int *m, int *p, int *q, npy_complex128 *x11, int *ldx11, npy_complex128 *x12, int *ldx12, npy_complex128 *x21, int *ldx21, npy_complex128 *x22, int *ldx22, d *theta, d *phi, npy_complex128 *taup1, npy_complex128 *taup2, npy_complex128 *tauq1, npy_complex128 *tauq2, npy_complex128 *work, int *lwork, int *info) nogil
+cdef void zunbdb(char *trans, char *signs, int *m, int *p, int *q, z *x11, int *ldx11, z *x12, int *ldx12, z *x21, int *ldx21, z *x22, int *ldx22, d *theta, d *phi, z *taup1, z *taup2, z *tauq1, z *tauq2, z *work, int *lwork, int *info) nogil:
+    _fortran_zunbdb(trans, signs, m, p, q, <npy_complex128*>x11, ldx11, <npy_complex128*>x12, ldx12, <npy_complex128*>x21, ldx21, <npy_complex128*>x22, ldx22, theta, phi, <npy_complex128*>taup1, <npy_complex128*>taup2, <npy_complex128*>tauq1, <npy_complex128*>tauq2, <npy_complex128*>work, lwork, info)
+
+cdef extern from "_lapack_subroutines.h":
+    void _fortran_zuncsd "F_FUNC(zuncsd,ZUNCSD)"(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, npy_complex128 *x11, int *ldx11, npy_complex128 *x12, int *ldx12, npy_complex128 *x21, int *ldx21, npy_complex128 *x22, int *ldx22, d *theta, npy_complex128 *u1, int *ldu1, npy_complex128 *u2, int *ldu2, npy_complex128 *v1t, int *ldv1t, npy_complex128 *v2t, int *ldv2t, npy_complex128 *work, int *lwork, d *rwork, int *lrwork, int *iwork, int *info) nogil
+cdef void zuncsd(char *jobu1, char *jobu2, char *jobv1t, char *jobv2t, char *trans, char *signs, int *m, int *p, int *q, z *x11, int *ldx11, z *x12, int *ldx12, z *x21, int *ldx21, z *x22, int *ldx22, d *theta, z *u1, int *ldu1, z *u2, int *ldu2, z *v1t, int *ldv1t, z *v2t, int *ldv2t, z *work, int *lwork, d *rwork, int *lrwork, int *iwork, int *info) nogil:
+    _fortran_zuncsd(jobu1, jobu2, jobv1t, jobv2t, trans, signs, m, p, q, <npy_complex128*>x11, ldx11, <npy_complex128*>x12, ldx12, <npy_complex128*>x21, ldx21, <npy_complex128*>x22, ldx22, theta, <npy_complex128*>u1, ldu1, <npy_complex128*>u2, ldu2, <npy_complex128*>v1t, ldv1t, <npy_complex128*>v2t, ldv2t, <npy_complex128*>work, lwork, rwork, lrwork, iwork, info)
 
 cdef extern from "_lapack_subroutines.h":
     void _fortran_zung2l "F_FUNC(zung2l,ZUNG2L)"(int *m, int *n, int *k, npy_complex128 *a, int *lda, npy_complex128 *tau, npy_complex128 *work, int *info) nogil
