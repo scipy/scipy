@@ -60,7 +60,7 @@ class HyperbolicIneq:
     """
     def __init__(self):
         self.x0 = [0, 0]
-        self.x_opt = [1.952823,  0.088659]
+        self.x_opt = [1.952823, 0.088659]
 
     def fun(self, x):
         return 1/2*(x[0] - 2)**2 + 1/2*(x[1] - 1/2)**2
@@ -86,6 +86,7 @@ class HyperbolicIneq:
         nonlinear = NonlinearConstraint(fun, ("greater", 1/4), jac, hess)
         box = BoxConstraint(("greater",))
         return (nonlinear, box)
+
 
 class Rosenbrock:
     """Rosenbrock function.
@@ -166,8 +167,7 @@ class EqIneqRosenbrock(Rosenbrock):
     def __init__(self, random_state=0):
         Rosenbrock.__init__(self, 2, random_state)
         self.x0 = [-1, -0.5]
-        self.x_opt = [0.41494,  0.17011]
-
+        self.x_opt = [0.41494, 0.17011]
 
     @property
     def constr(self):
@@ -177,7 +177,6 @@ class EqIneqRosenbrock(Rosenbrock):
         b_eq = 1
         return (LinearConstraint(A_ineq, ("less", b_ineq)),
                 LinearConstraint(A_eq, ("equals", b_eq)))
-
 
 
 class Elec:
@@ -330,4 +329,4 @@ class TestMinimizeConstrained(TestCase):
 
             # max iter
             if result.status in (0, 3):
-               raise RuntimeError("Invalid termination condition.")
+                raise RuntimeError("Invalid termination condition.")
