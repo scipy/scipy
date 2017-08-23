@@ -602,5 +602,5 @@ class TestSytrd(object):
 
             QTAQ = np.dot(Q.T, np.dot(A, Q))
 
-            assert_allclose(QTAQ, T, rtol=100*np.finfo(dtype).eps)
+            assert_allclose(QTAQ, T, rtol=1000*np.finfo(dtype).eps)
         return
