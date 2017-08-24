@@ -2306,6 +2306,43 @@ class gompertz_gen(rv_continuous):
 gompertz = gompertz_gen(a=0.0, name='gompertz')
 
 
+class gamma_gompertz_gen(rv_continuous):
+    """ A Gamma/Gompertz continuousrandom variable
+    
+    %(before_notes)scipy
+    
+    Notes
+    -----
+    The probability density function for `gamma_gompertz` is::
+    
+        gamma_gompertz.pdf(x, c, beta) = c * exp(x) * (beta ** c) / ((beta - 1 + exp(x)) ** (c + 1))
+    
+    for ``x >= 0``, ``c > 0``, ``beta > 0``.
+    
+    `gamma_gompertz` takes ``c`` and ``beta`` as shape parameters
+    
+    %(after_notes)s
+    
+    %(example)s
+    """
+        
+    def _logsf(self, x, c, beta):
+        return c * (np.log(beta) - np.log(beta + sc.expm1(x)))
+    
+    def _sf(self, x, c, beta):
+        return np.exp(self._logsf(x, c, beta))
+    
+    def _cdf(self, x, c, beta):
+        return 1. - self._sf(x, c, beta)
+    
+    def _pdf(self, x, c, beta):
+        return np.exp(self._logpdf(x, c, beta))
+    
+    def _logpdf(self, x, c, beta):
+        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.log(beta + sc.expm1(x))
+gamma_gompertz = gamma_gompertz_gen(a=0.0, name='gamma_gompertz')
+
+
 class gumbel_r_gen(rv_continuous):
     """A right-skewed Gumbel continuous random variable.
 
