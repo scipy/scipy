@@ -1377,7 +1377,30 @@ class TestGumbelL(object):
         xx = stats.gumbel_l.isf(y)
         assert_allclose(x, xx)
 
+        
+class TestGammaGompertz(object):
+    def test_pdf(self):
+        vals = gamma_gompertz.pdf(np.arange(0., 5., 1.), 1., 1.)
+        expected = [1., 0.367879441, 0.135335283, 0.0497870684, 0.0183156389]
+        assert_almost_equal(vals, expected)
+        
+    def test_cdf(self):
+        vals = gamma_gompertz.cdf(np.arange(0., 5., 1.), 1., 1.)
+        expected = [0., 0.63212056, 0.86466472, 0.95021293, 0.98168436]
+        assert_almost_equal(vals, expected)
+        
+    def test_ppf(self):
+        vals = gamma_gompertz.ppf(np.arange(0., 1., 0.2), 1., 1.)
+        expected = [0., 0.22314355, 0.51082562, 0.91629073, 1.60943791]
+        
+    def test_expon(self):
+        # test against expon (sepcial case for beta=1)
+        points = [1, 2, 3]
+        pdf1 = gamma_gompertz.pdf(points, 1., 1.)
+        pdf2 = stats.expon.pdf(points)
+        assert_almost_equal(pdf1, pdf2)
 
+        
 class TestArrayArgument(object):  # test for ticket:992
     def setup_method(self):
         np.random.seed(1234)
@@ -2976,6 +2999,11 @@ def test_gompertz_accuracy():
     p = stats.gompertz.ppf(stats.gompertz.cdf(1e-100, 1), 1)
     assert_allclose(p, 1e-100)
 
+    
+def test_gamma_gompertz_accuracy():
+    p = gamma_gompertz.ppf(gamma_gompertz.cdf(1e-8, 1., 1.), 1., 1.)
+    assert_allclose(p, 1e-8)
+    
 
 def test_truncexpon_accuracy():
     # regression test for gh-4035
