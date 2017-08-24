@@ -514,17 +514,18 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
             raise ValueError("'equality_constrained_sqp' does not "
                              "support inequality constraints.")
 
-        def constr_eq(x):
+        def fun_and_constr(x):
+            f = fun(x)
             _, c_eq = constr.constr(x)
-            return c_eq
+            return f, c_eq
 
-        def jac_eq(x):
+        def grad_and_jac(x):
+            g = grad_wrapped(x)
             _, J_eq = constr.jac(x)
-            return J_eq
+            return g, J_eq
 
         result = equality_constrained_sqp(
-            fun, grad_wrapped, lagr_hess,
-            constr_eq, jac_eq,
+            fun_and_constr, grad_and_jac, lagr_hess,
             x0, f0, g0, constr.c_eq0, constr.J_eq0,
             stop_criteria, state, **options)
 
