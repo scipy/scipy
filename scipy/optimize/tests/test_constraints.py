@@ -11,6 +11,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
+from numpy.linalg import norm
 import warnings
 import pytest
 
@@ -113,9 +114,9 @@ class TestLinearConstraint(TestCase):
         enforce_feasibility = np.array([True, True, True],
                                        dtype=bool)
         kind = ("less",)
-        box = LinearConstraint(A, kind, enforce_feasibility)
+        linear = LinearConstraint(A, kind, enforce_feasibility)
         with pytest.raises(ValueError):
-            box.evaluate_and_initialize(x0)
+            linear.evaluate_and_initialize(x0)
 
     def test_linear_to_nonlinear_conversion(self):
         x0 = np.array([1, 2, 3, 4])
@@ -145,6 +146,42 @@ class TestNonlinearConstraint(TestCase):
         enforce_feasibility = np.array([True, True, True],
                                        dtype=bool)
         kind = ("less",)
-        box = NonlinearConstraint(fun, kind, jac, None, enforce_feasibility)
+        nonlinear = NonlinearConstraint(fun, kind, jac, None, enforce_feasibility)
         with pytest.raises(ValueError):
-            box.evaluate_and_initialize(x0)
+            nonlinear.evaluate_and_initialize(x0)
+
+    def test_approximated_hessian(self):
+
+        def fun(x):
+            return [x[0]**2 + x[1]**3,
+                    2/x[0] + x[0]*x[1]**2]
+
+        def jac(x):
+            return [[2*x[0], 3*x[1]**2],
+                    [-2/x[0]**2 + x[1]**2, 2*x[0]*x[1]]]
+
+        def hess(x, v):
+            return (v[0]*np.array([[2, 0],
+                                  [0, 6*x[1]]]) +
+                    v[1]*np.array([[4/x[0]**3, 2*x[1]],
+                                   [2*x[1], 2*x[0]]]))
+
+        x0 = [1, 2]
+
+        nonlinear_exact = NonlinearConstraint(fun, ("equals"), jac, hess)
+        nonlinear_exact.evaluate_and_initialize(x0)
+        nonlinear_approx = NonlinearConstraint(fun, ("equals"), jac, "2-point")
+        nonlinear_approx.evaluate_and_initialize(x0)
+
+        np.random.seed(1)
+        for i in range(10):
+            v = np.random.uniform(-5, 5, 2)
+            for j in range(5):
+                x = np.random.uniform(-5, 5, 2)
+                H_exact = nonlinear_exact.hess(x, v)
+                H_approx = nonlinear_approx.hess(x, v)
+                for l in range(5):
+                    p = np.random.uniform(-5, 5, 2)
+                    print(H_approx, H_exact)
+                    assert_array_almost_equal(H_approx.dot(p)/H_exact.dot(p),
+                                              np.ones(2), 5)
