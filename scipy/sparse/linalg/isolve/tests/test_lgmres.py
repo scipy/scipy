@@ -60,7 +60,7 @@ class TestLGMRES(object):
         assert_(len(outer_v) > 0)
         assert_(len(outer_v) <= 6)
 
-        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v)
+        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v, prepend_outer_v=True)
         assert_(count_1 == 2, count_1)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))
@@ -73,7 +73,7 @@ class TestLGMRES(object):
         assert_(len(outer_v) > 0)
         assert_(len(outer_v) <= 6)
 
-        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v)
+        x1, count_1 = do_solve(outer_k=6, outer_v=outer_v, prepend_outer_v=True)
         assert_(count_1 == 3, count_1)
         assert_(count_1 < count_0/2)
         assert_(allclose(x1, x0, rtol=1e-14))

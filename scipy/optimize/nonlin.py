@@ -1422,6 +1422,7 @@ class KrylovJacobian(Jacobian):
             self.method_kw['maxiter'] = 1
             # Carry LGMRES's `outer_v` vectors across nonlinear iterations
             self.method_kw.setdefault('outer_v', [])
+            self.method_kw.setdefault('prepend_outer_v', True)
             # But don't carry the corresponding Jacobian*v products, in case
             # the Jacobian changes a lot in the nonlinear step
             #
