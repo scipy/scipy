@@ -173,6 +173,10 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                                          outer_v=outer_v,
                                          prepend_outer_v=prepend_outer_v)
             y *= inner_res_0
+            if not np.isfinite(y).all():
+                # Overflow etc. in computation. There's no way to
+                # recover from this, so we have to bail out.
+                raise LinAlgError()
         except LinAlgError:
             # Floating point over/underflow, non-finite result from
             # matmul etc. -- report failure.
