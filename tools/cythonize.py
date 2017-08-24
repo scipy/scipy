@@ -200,6 +200,14 @@ def process(path, fromfile, tofile, processor_function, hash_db, pxi_hashes, loc
         # store hash in db
         hash_db[normpath(fullfrompath)] = current_hash
 
+def process_generate_pyx(path, lock):
+    with lock:
+        print('Running {}'.format(path))
+    ret = subprocess.call([sys.executable, path])
+    with lock:
+        if ret != 0:
+            raise RuntimeError("Running {} failed".format(path))
+
 def find_process_files(root_dir):
     lock = Lock()
     pool = Pool()
@@ -210,8 +218,18 @@ def find_process_files(root_dir):
     # .pxi file the changes won't be detected.
     pxi_hashes = {}
 
+    # Run any _generate_pyx.py scripts
     jobs = []
+    for cur_dir, dirs, files in os.walk(root_dir):
+        generate_pyx = os.path.join(cur_dir, '_generate_pyx.py')
+        if os.path.exists(generate_pyx):
+            jobs.append(generate_pyx)
 
+    for result in pool.imap(lambda fn: process_generate_pyx(fn, lock), jobs):
+        pass
+
+    # Process pyx files
+    jobs = []
     for cur_dir, dirs, files in os.walk(root_dir):
         for filename in files:
             in_file = os.path.join(cur_dir, filename + ".in")
