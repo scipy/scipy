@@ -1,5 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
+import scipy.linalg
 from scipy.sparse import csc_matrix
 from scipy.optimize._large_scale_constrained.projections \
     import projections, orthogonality
@@ -41,7 +42,7 @@ class TestProjections(TestCase):
                 assert_array_almost_equal(orthogonality(A, x), 0)
                 # Test if x is the least square solution
                 x = LS.matvec(z)
-                x2 = np.linalg.lstsq(At_dense, z)[0]
+                x2 = scipy.linalg.lstsq(At_dense, z)[0]
                 assert_array_almost_equal(x, x2)
 
     def test_iterative_refinements_sparse(self):
@@ -102,7 +103,7 @@ class TestProjections(TestCase):
                 assert_array_almost_equal(orthogonality(A, x), 0)
                 # Test if x is the least square solution
                 x = LS.matvec(z)
-                x2 = np.linalg.lstsq(At, z)[0]
+                x2 = scipy.linalg.lstsq(At, z)[0]
                 assert_array_almost_equal(x, x2)
 
     def test_compare_dense_and_sparse(self):
