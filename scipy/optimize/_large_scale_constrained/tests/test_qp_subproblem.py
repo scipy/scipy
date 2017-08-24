@@ -11,9 +11,10 @@ from scipy.optimize._large_scale_constrained.projections \
     import projections
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
-                           assert_raises, assert_equal, assert_,
+                           assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
+import pytest
 
 
 class TestEQPDirectFactorization(TestCase):
@@ -467,8 +468,8 @@ class TestProjectCG(TestCase):
         b = -np.array([3, 0])
         trust_radius = 1
         Z, _, Y = projections(A)
-        assert_raises(ValueError, projected_cg, H, c,
-                      Z, Y, b, trust_radius=trust_radius)
+        with pytest.raises(ValueError):
+            projected_cg(H, c, Z, Y, b, trust_radius=trust_radius)
 
     def test_trust_region_barely_feasible(self):
         H = csc_matrix([[6, 2, 1, 3],
@@ -517,7 +518,8 @@ class TestProjectCG(TestCase):
         c = np.array([-2, -3, -3, 1])
         b = -np.array([3, 0])
         Z, _, Y = projections(A)
-        assert_raises(ValueError, projected_cg, H, c, Z, Y, b, tol=0)
+        with pytest.raises(ValueError):
+            projected_cg(H, c, Z, Y, b, tol=0)
 
     def test_negative_curvature(self):
         H = csc_matrix([[1, 2, 1, 3],

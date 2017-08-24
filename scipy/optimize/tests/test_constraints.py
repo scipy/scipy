@@ -8,30 +8,34 @@ from scipy.optimize._constraints import (BoxConstraint,
                                          _reinforce_box_constraint)
 from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
-                           assert_raises, assert_equal, assert_,
+                           assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
 import warnings
+import pytest
 
 
 class TestCheckKind(TestCase):
 
     def test_kind_wrong_type(self):
-        assert_raises(ValueError, _check_kind, 1, "bla")
+        with pytest.raises(ValueError):
+            _check_kind(1, "bla")
 
     def test_kind_empty(self):
-        assert_raises(ValueError, _check_kind, 1, [])
+        with pytest.raises(ValueError):
+            _check_kind(1, [])
 
     def test_kind_invalid_format(self):
-        assert_raises(ValueError, _check_kind, 3, ["interval", [1, 2, 3]])
+        with pytest.raises(ValueError):
+            _check_kind(3, ["interval", [1, 2, 3]])
 
     def test_kind_mismatching_ub_lb(self):
-        assert_raises(ValueError, _check_kind, 3,
-                      ["interval", [1, 2, 3], [1, 2]])
+        with pytest.raises(ValueError):
+            _check_kind(3, ["interval", [1, 2, 3], [1, 2]])
 
     def test_kind_ub_smaller_than_lb(self):
-        assert_raises(ValueError, _check_kind, 3,
-                      ["interval", [1, 2, 3], [1, 2, 1]])
+        with pytest.raises(ValueError):
+            _check_kind(3, ["interval", [1, 2, 3], [1, 2, 1]])
 
     def test_string(self):
         keyword, lb = _check_kind("greater", 3)
@@ -47,7 +51,8 @@ class TestCheckKind(TestCase):
 class TestCheckEnforceFeasibility(TestCase):
 
     def test_wrong_size(self):
-        assert_raises(ValueError, _check_enforce_feasibility, [True, True], 3)
+        with pytest.raises(ValueError):
+            _check_enforce_feasibility([True, True], 3)
 
     def test_single_value(self):
         f = _check_enforce_feasibility(True, 3)
@@ -109,7 +114,8 @@ class TestLinearConstraint(TestCase):
                                        dtype=bool)
         kind = ("less",)
         box = LinearConstraint(A, kind, enforce_feasibility)
-        assert_raises(ValueError, box.evaluate_and_initialize, x0)
+        with pytest.raises(ValueError):
+            box.evaluate_and_initialize(x0)
 
     def test_linear_to_nonlinear_conversion(self):
         x0 = np.array([1, 2, 3, 4])
@@ -140,5 +146,5 @@ class TestNonlinearConstraint(TestCase):
                                        dtype=bool)
         kind = ("less",)
         box = NonlinearConstraint(fun, kind, jac, None, enforce_feasibility)
-        assert_raises(ValueError, box.evaluate_and_initialize, x0)
-
+        with pytest.raises(ValueError):
+            box.evaluate_and_initialize(x0)
