@@ -4,7 +4,7 @@
 
 from __future__ import division, print_function, absolute_import
 
-from numpy.testing import TestCase, assert_, assert_allclose, assert_equal, run_module_suite
+from numpy.testing import assert_, assert_allclose, assert_equal
 
 import numpy as np
 from numpy import zeros, array, allclose
@@ -150,6 +150,3 @@ class TestGCROTMK(object):
 
         if info == 0:
             assert_allclose(A.dot(xp), b)
-
-if __name__ == "__main__":
-    run_module_suite()

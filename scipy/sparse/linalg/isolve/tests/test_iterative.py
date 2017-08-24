@@ -291,7 +291,7 @@ def test_precond_inverse():
             continue
         if solver is qmr:
             continue
-        yield check_precond_inverse, solver, case
+        check_precond_inverse(solver, case)
 
 
 def test_gmres_basic():
