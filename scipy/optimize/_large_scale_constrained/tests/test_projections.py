@@ -9,6 +9,10 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_raises, assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
+import pytest
+import sys
+import platform
+
 try:
     from sksparse.cholmod import cholesky_AAt
     sksparse_available = True
@@ -45,6 +49,9 @@ class TestProjections(TestCase):
                 x2 = scipy.linalg.lstsq(At_dense, z)[0]
                 assert_array_almost_equal(x, x2)
 
+    @pytest.mark.xfail((sys.platform == "win32" and
+                        platform.architecture()[0] == "32bit"),
+                        reason="Required precision not achieved for win32.")
     def test_iterative_refinements_sparse(self):
         A_dense = np.array([[1, 2, 3, 4, 0, 5, 0, 7],
                             [0, 8, 7, 0, 1, 5, 9, 0],

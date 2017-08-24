@@ -1,7 +1,7 @@
 """Byrd-Omojokun Trust-Region SQP method."""
 
 from __future__ import division, print_function, absolute_import
-import scipy.sparse as spc
+from scipy.sparse import eye as speye
 from .projections import projections
 from .qp_subproblem import modified_dogleg, projected_cg, box_intersections
 import numpy as np
@@ -12,10 +12,10 @@ __all__ = ['equality_constrained_sqp']
 
 def default_scaling(x):
     n, = np.shape(x)
-    return spc.eye(n)
+    return speye(n)
 
 
-def equality_constrained_sqp(fun, grad, hess, constr, jac,
+def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
                              x0, fun0, grad0, constr0,
                              jac0, stop_criteria, state,
                              trust_lb=None,
@@ -102,7 +102,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
     while not stop_criteria(state):
         # Compute Lagrangian Hessian
         if compute_hess:
-            H = hess(x, v)
+            H = lagr_hess(x, v)
             state.nhev += 1
 
         # Normal Step - `dn`
@@ -156,8 +156,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         merit_function = f + penalty*norm(b)
         # Evaluate function and constraints at trial point
         x_next = x + S.dot(d)
-        f_next = fun(x_next)
-        b_next = constr(x_next)
+        f_next, b_next = fun_and_constr(x_next)
         # Increment funcion evaluation counter
         state.nfev += 1
         state.ncev += 1
@@ -178,8 +177,7 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
             _, t, intersect = box_intersections(d, y, trust_lb, trust_ub)
             # Compute tentative point
             x_soc = x + S.dot(d + t*y)
-            f_soc = fun(x_soc)
-            b_soc = constr(x_soc)
+            f_soc, b_soc = fun_and_constr(x_soc)
             # Increment funcion evaluation counter
             state.nfev += 1
             state.ncev += 1
@@ -217,10 +215,8 @@ def equality_constrained_sqp(fun, grad, hess, constr, jac,
         state.niter += 1
         if reduction_ratio >= SUFFICIENT_REDUCTION_RATIO:
             x = x_next
-            f = f_next
-            c = grad(x)
-            b = b_next
-            A = jac(x)
+            f, b = f_next, b_next
+            c, A = grad_and_jac(x)
             S = scaling(x)
             # Increment funcion evaluation counter
             state.ngev += 1

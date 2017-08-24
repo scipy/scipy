@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import scipy.sparse as spc
+import scipy.sparse as sps
 from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            BoxConstraint)
@@ -59,13 +59,13 @@ def to_canonical(constraints):
         constraints_list = []
         for c in constraints:
             if isinstance(c, CanonicalConstraint):
-                constraints_list += [c]
+                constraints_list.append(c)
             elif isinstance(c, (NonlinearConstraint)):
-                constraints_list += [_nonlinear_to_canonical(c)]
+                constraints_list.append(_nonlinear_to_canonical(c))
             elif isinstance(c, (LinearConstraint)):
-                constraints_list += [_linear_to_canonical(c)]
+                constraints_list.append(_linear_to_canonical(c))
             elif isinstance(c, (BoxConstraint)):
-                constraints_list += [_box_to_canonical(c)]
+                constraints_list.append(_box_to_canonical(c))
             else:
                 raise ValueError("Unknown Constraint type.")
         # Concatenate constraints
@@ -93,18 +93,18 @@ def evaluated_to_canonical(constraints, list_c, list_J,
         eq, ineq, val_eq, val_ineq, sign, fun_len \
             = _parse_constraint(constr.kind)
 
-        new_list_c += [_convert_constr(c, n_vars, n_eq, n_ineq,
-                                       eq, ineq, val_eq, val_ineq,
-                                       sign)]
+        new_list_c.append(_convert_constr(c, n_vars, n_eq, n_ineq,
+                                          eq, ineq, val_eq, val_ineq,
+                                          sign))
 
         if constr.sparse_jacobian:
-            new_list_J += [_convert_sparse_jac(J, n_vars, n_eq, n_ineq,
-                                               eq, ineq, val_eq, val_ineq,
-                                               sign)]
+            new_list_J.append(_convert_sparse_jac(J, n_vars, n_eq, n_ineq,
+                                                  eq, ineq, val_eq, val_ineq,
+                                                  sign))
         else:
-            new_list_J += [_convert_dense_jac(J, n_vars, n_eq, n_ineq,
-                                              eq, ineq, val_eq, val_ineq,
-                                              sign)]
+            new_list_J.append(_convert_dense_jac(J, n_vars, n_eq, n_ineq,
+                                                 eq, ineq, val_eq, val_ineq,
+                                                 sign))
 
     if sparse_jacobian:
         c_ineq, c_eq = _concatenate_constr(new_list_c)
@@ -124,9 +124,9 @@ def lagrangian_hessian(constraint, hess):
         n = len(x)
         hess_list = []
         if hess is not None:
-            hess_list += [hess(x)]
+            hess_list.append(hess(x))
         if constraint.hess is not None:
-            hess_list += [constraint.hess(x, v_eq, v_ineq)]
+            hess_list.append(constraint.hess(x, v_eq, v_ineq))
 
         def matvec(p):
             result = np.zeros_like(p)
@@ -134,7 +134,7 @@ def lagrangian_hessian(constraint, hess):
                 result += h.dot(p)
             return result
 
-        return spc.linalg.LinearOperator((n, n), matvec)
+        return sps.linalg.LinearOperator((n, n), matvec)
 
     return lagr_hess
 
@@ -145,7 +145,7 @@ def empty_canonical_constraint(x0, n_vars, sparse_jacobian=None):
     n_ineq = 0
     empty_c = np.empty(0)
     if sparse_jacobian or (sparse_jacobian is None):
-        empty_J = spc.csr_matrix(np.empty((0, n_vars)))
+        empty_J = sps.csr_matrix(np.empty((0, n_vars)))
     else:
         empty_J = np.empty((0, n_vars))
 
@@ -230,11 +230,11 @@ def _nonlinear_to_canonical(nonlinear):
 
 
 def _linear_to_canonical(linear):
-    return _nonlinear_to_canonical(linear.to_nonlinear())
+    return _nonlinear_to_canonical(linear._to_nonlinear())
 
 
 def _box_to_canonical(box):
-    return _linear_to_canonical(box.to_linear())
+    return _linear_to_canonical(box._to_linear())
 
 
 def _convert_constr(c, n_vars, n_eq, n_ineq,
@@ -252,11 +252,11 @@ def _convert_sparse_jac(J, n_vars, n_eq, n_ineq,
                         eq, ineq, val_eq, val_ineq,
                         sign):
     # Empty jacobian
-    empty = spc.csr_matrix(np.empty((0, n_vars)))
+    empty = sps.csr_matrix(np.empty((0, n_vars)))
     # Compute equality and inequality Jacobian matrices
     J_eq = J[eq, :] if n_eq > 0 else empty
     if n_ineq > 0:
-        D = spc.lil_matrix((n_ineq, n_ineq))
+        D = sps.lil_matrix((n_ineq, n_ineq))
         D.setdiag(sign)
         J_ineq = D*J[ineq, :]
     else:
@@ -414,8 +414,9 @@ def _concatenate_canonical_constraints(constraints,
         index_ineq = 0
         for constr in constraints:
             if constr.hess is not None:
-                hess_list += [constr.hess(x, v_eq[index_eq:index_eq+constr.n_eq],
-                                          v_ineq[index_ineq:index_ineq+constr.n_ineq])]
+                hess_list.append(constr.hess(
+                    x, v_eq[index_eq:index_eq+constr.n_eq],
+                    v_ineq[index_ineq:index_ineq+constr.n_ineq]))
             index_eq += constr.n_eq
             index_ineq += constr.n_ineq
 
@@ -425,7 +426,7 @@ def _concatenate_canonical_constraints(constraints,
                 result += h.dot(p)
             return result
 
-        return spc.linalg.LinearOperator((n_vars, n_vars), matvec)
+        return sps.linalg.LinearOperator((n_vars, n_vars), matvec)
 
     # Concatenate feasible constraint list
     enforce_feasibility_list = [constr.enforce_feasibility
@@ -449,11 +450,11 @@ def _concatenate_sparse_jac(jac_list):
     jac_eq_list = []
     for jac_tuple in jac_list:
         J_ineq, J_eq = jac_tuple
-        jac_ineq_list += [spc.csr_matrix(J_ineq)]
-        jac_eq_list += [spc.csr_matrix(J_eq)]
+        jac_ineq_list.append(sps.csr_matrix(J_ineq))
+        jac_eq_list.append(sps.csr_matrix(J_eq))
     # Concatenate all
-    J_ineq = spc.vstack(jac_ineq_list, format="csr")
-    J_eq = spc.vstack(jac_eq_list, format="csr")
+    J_ineq = sps.vstack(jac_ineq_list, format="csr")
+    J_eq = sps.vstack(jac_eq_list, format="csr")
     # Return
     return J_ineq, J_eq
 
@@ -465,14 +466,14 @@ def _concatenate_dense_jac(jac_list):
     jac_eq_list = []
     for jac_tuple in jac_list:
         J_ineq, J_eq = jac_tuple
-        if spc.issparse(J_ineq):
-            jac_ineq_list += [J_ineq.toarray()]
+        if sps.issparse(J_ineq):
+            jac_ineq_list.append(J_ineq.toarray())
         else:
-            jac_ineq_list += [np.atleast_2d(J_ineq)]
-        if spc.issparse(J_eq):
-            jac_eq_list += [J_eq.toarray()]
+            jac_ineq_list.append(np.atleast_2d(J_ineq))
+        if sps.issparse(J_eq):
+            jac_eq_list.append(J_eq.toarray())
         else:
-            jac_eq_list += [np.atleast_2d(J_eq)]
+            jac_eq_list.append(np.atleast_2d(J_eq))
     # Concatenate all
     J_ineq = np.vstack(jac_ineq_list)
     J_eq = np.vstack(jac_eq_list)

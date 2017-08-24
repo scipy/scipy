@@ -11,8 +11,6 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
-from numpy.linalg import norm
-import warnings
 import pytest
 
 
@@ -84,24 +82,23 @@ class TestBoxConstraint(TestCase):
                                        dtype=bool)
         kind = ("interval", lb, ub)
         box = BoxConstraint(kind, enforce_feasibility)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            x0_new = box.evaluate_and_initialize(x0)
+        with pytest.warns(UserWarning):
+            x0_new = box._evaluate_and_initialize(x0)
         assert_((lb[enforce_feasibility] <= x0_new[enforce_feasibility]).all())
         assert_((x0_new[enforce_feasibility] <= ub[enforce_feasibility]).all())
 
     def test_box_to_linear_conversion(self):
         box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
         x0 = np.array([1, 2, 3])
-        x0 = box.evaluate_and_initialize(x0)
-        linear = box.to_linear()
+        x0 = box._evaluate_and_initialize(x0)
+        linear = box._to_linear()
         assert_array_equal(linear.A.todense(), np.eye(3))
 
     def test_box_to_nonlinear_conversion(self):
         box = BoxConstraint(("interval", [10, 20, 30], [50, np.inf, 70]))
         x0 = np.array([1, 2, 3])
-        x0 = box.evaluate_and_initialize(x0)
-        nonlinear = box.to_nonlinear()
+        x0 = box._evaluate_and_initialize(x0)
+        nonlinear = box._to_nonlinear()
         assert_array_equal(nonlinear.fun(x0), x0)
         assert_array_equal(nonlinear.jac(x0).todense(), np.eye(3))
 
@@ -116,7 +113,7 @@ class TestLinearConstraint(TestCase):
         kind = ("less",)
         linear = LinearConstraint(A, kind, enforce_feasibility)
         with pytest.raises(ValueError):
-            linear.evaluate_and_initialize(x0)
+            linear._evaluate_and_initialize(x0)
 
     def test_linear_to_nonlinear_conversion(self):
         x0 = np.array([1, 2, 3, 4])
@@ -125,8 +122,8 @@ class TestLinearConstraint(TestCase):
                                        dtype=bool)
         kind = ("less",)
         linear = LinearConstraint(A, kind, enforce_feasibility)
-        x0 = linear.evaluate_and_initialize(x0)
-        nonlinear = linear.to_nonlinear()
+        x0 = linear._evaluate_and_initialize(x0)
+        nonlinear = linear._to_nonlinear()
         assert_array_equal(nonlinear.fun(x0), A.dot(x0))
         assert_array_equal(nonlinear.jac(x0), A)
 
@@ -148,7 +145,7 @@ class TestNonlinearConstraint(TestCase):
         kind = ("less",)
         nonlinear = NonlinearConstraint(fun, kind, jac, None, enforce_feasibility)
         with pytest.raises(ValueError):
-            nonlinear.evaluate_and_initialize(x0)
+            nonlinear._evaluate_and_initialize(x0)
 
     def test_approximated_hessian(self):
 
@@ -167,12 +164,10 @@ class TestNonlinearConstraint(TestCase):
                                    [2*x[1], 2*x[0]]]))
 
         x0 = [1, 2]
-
         nonlinear_exact = NonlinearConstraint(fun, ("equals"), jac, hess)
-        nonlinear_exact.evaluate_and_initialize(x0)
+        nonlinear_exact._evaluate_and_initialize(x0)
         nonlinear_approx = NonlinearConstraint(fun, ("equals"), jac, "2-point")
-        nonlinear_approx.evaluate_and_initialize(x0)
-
+        nonlinear_approx._evaluate_and_initialize(x0)
         np.random.seed(1)
         for i in range(10):
             v = np.random.uniform(-5, 5, 2)

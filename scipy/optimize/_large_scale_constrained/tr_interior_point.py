@@ -13,7 +13,7 @@ References
 """
 
 from __future__ import division, print_function, absolute_import
-import scipy.sparse as spc
+import scipy.sparse as sps
 import numpy as np
 from .equality_constrained_sqp import equality_constrained_sqp
 from scipy.sparse.linalg import LinearOperator
@@ -29,7 +29,7 @@ class BarrierSubproblem:
                   constr_ineq(x) + s = 0
     """
 
-    def __init__(self, x0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
+    def __init__(self, x0, s0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
                  constr, jac, barrier_parameter, tolerance,
                  enforce_feasibility, global_stop_criteria,
                  xtol, fun0, grad0, constr_ineq0, jac_ineq0, constr_eq0,
@@ -37,11 +37,12 @@ class BarrierSubproblem:
         # Store parameters
         self.n_vars = n_vars
         self.x0 = x0
-        self._fun = fun
-        self._grad = grad
+        self.s0 = s0
+        self.fun = fun
+        self.grad = grad
         self.lagr_hess = lagr_hess
-        self._constr = constr
-        self._jac = jac
+        self.constr = constr
+        self.jac = jac
         self.barrier_parameter = barrier_parameter
         self.tolerance = tolerance
         self.n_eq = n_eq
@@ -49,37 +50,10 @@ class BarrierSubproblem:
         self.enforce_feasibility = enforce_feasibility
         self.global_stop_criteria = global_stop_criteria
         self.xtol = xtol
-        # Auxiliar parameters
-        self._x_f = x0
-        self._f = fun0
-        self._x_g = x0
-        self._g = grad0
-        self._x_c = x0
-        self._c_ineq = constr_ineq0
-        self._c_eq = constr_eq0
-        self._x_j = x0
-        self._J_ineq = jac_ineq0
-        self._J_eq = jac_eq0
-
-    def fun(self, x):
-        if not np.array_equal(self._x_f, x):
-            self._f = self._fun(x)
-        return self._f
-
-    def grad(self, x):
-        if not np.array_equal(self._x_g, x):
-            self._g = self._grad(x)
-        return self._g
-
-    def constr(self, x):
-        if not np.array_equal(self._x_c, x):
-            self._c_ineq, self._c_eq = self._constr(x)
-        return self._c_ineq, self._c_eq
-
-    def jac(self, x):
-        if not np.array_equal(self._x_j, x):
-            self._J_ineq, self._J_eq = self._jac(x)
-        return self._J_ineq, self._J_eq
+        self.fun0 = self._compute_function(fun0, constr_ineq0, s0)
+        self.grad0 = self._compute_gradient(grad0)
+        self.constr0 = self._compute_constr(constr_ineq0, constr_eq0, s0)
+        self.jac0 = self._compute_jacobian(jac_eq0, jac_ineq0, s0)
 
     def update(self, barrier_parameter, tolerance):
         self.barrier_parameter = barrier_parameter
@@ -91,32 +65,37 @@ class BarrierSubproblem:
     def get_variables(self, z):
         return z[:self.n_vars]
 
-    def function(self, z):
-        """Returns barrier function at given point.
+    def function_and_constraints(self, z):
+        """Returns barrier function and constraints at given point.
+
         For z = [x, s], returns barrier function:
             function(z) = fun(x) - barrier_parameter*sum(log(s))
+        and barrier constraints:
+            constraints(z) = [   constr_eq(x)     ]
+                             [ constr_ineq(x) + s ]
+
         """
+        # Get variables and slack variables
         x = self.get_variables(z)
         s = self.get_slack(z)
+        # Compute function and constraints
+        f = self.fun(x)
+        c_ineq, c_eq = self.constr(x)
+        # Return objective function and constraints
+        return (self._compute_function(f, c_ineq, s),
+                self._compute_constr(c_ineq, c_eq, s))
 
+    def _compute_function(self, f, c_ineq, s):
         # Use technique from Nocedal and Wright book, ref [3]_, p.576,
         # to guarantee constraints from `enforce_feasibility`
         # stay feasible along iterations.
-        c_ineq, _ = self.constr(x)
         s[self.enforce_feasibility] = -c_ineq[self.enforce_feasibility]
         log_s = [np.log(s_i) if s_i > 0 else -np.inf for s_i in s]
+        # Compute barrier objective function
+        return f - self.barrier_parameter*np.sum(log_s)
 
-        return self.fun(x) - self.barrier_parameter*np.sum(log_s)
-
-    def constraints(self, z):
-        """Returns barrier problem constraints at given points.
-        For z = [x, s], returns the constraints:
-            constraints(z) = [   constr_eq(x)     ]
-                             [ constr_ineq(x) + s ]
-        """
-        x = self.get_variables(z)
-        s = self.get_slack(z)
-        c_ineq, c_eq = self.constr(x)
+    def _compute_constr(self, c_ineq, c_eq, s):
+        # Compute barrier constraint
         return np.hstack((c_eq,
                           c_ineq + s))
 
@@ -135,45 +114,49 @@ class BarrierSubproblem:
                                self.n_vars+self.n_ineq),
                               matvec)
 
-    def gradient(self, z):
+    def gradient_and_jacobian(self, z):
         """Returns scaled gradient.
-        Barrier scalled gradient  of the barrier problem
-        by the previously defined scaling factor:
+
+        Return scalled gradient:
             gradient = [             grad(x)             ]
                        [ -barrier_parameter*ones(n_ineq) ]
-        """
-        x = self.get_variables(z)
-        return np.hstack((self.grad(x),
-                          -self.barrier_parameter*np.ones(self.n_ineq)))
-
-    def jacobian(self, z):
-        """Returns scaled Jacobian.
-        Barrier scalled jacobian
-        by the previously defined scaling factor:
+        and scaled Jacobian Matrix:
             jacobian = [  jac_eq(x)  0  ]
                        [ jac_ineq(x) S  ]
+        Both of them scaled by the previously defined scaling factor.
         """
+        # Get variables and slack variables
         x = self.get_variables(z)
         s = self.get_slack(z)
+        # Compute first derivatives
+        g = self.grad(x)
         J_ineq, J_eq = self.jac(x)
+        # Return gradient and jacobian
+        return (self._compute_gradient(g),
+                self._compute_jacobian(J_eq, J_ineq, s))
+
+    def _compute_gradient(self, g):
+        return np.hstack((g, -self.barrier_parameter*np.ones(self.n_ineq)))
+
+    def _compute_jacobian(self, J_eq, J_ineq, s):
         if self.n_ineq == 0:
             return J_eq
         else:
-            if spc.issparse(J_eq) or spc.issparse(J_ineq):
+            if sps.issparse(J_eq) or sps.issparse(J_ineq):
                 # It is expected that J_eq and J_ineq
                 # are already `csr_matrix` because of
                 # the way ``BoxConstraint``, ``NonlinearConstraint``
                 # and ``LinearConstraint`` are defined.
-                J_eq = spc.csr_matrix(J_eq)
-                J_ineq = spc.csr_matrix(J_ineq)
+                J_eq = sps.csr_matrix(J_eq)
+                J_ineq = sps.csr_matrix(J_ineq)
                 return self._assemble_sparse_jacobian(J_eq, J_ineq, s)
             else:
                 S = np.diag(s)
                 zeros = np.zeros((self.n_eq, self.n_ineq))
                 # Convert to matrix
-                if spc.issparse(J_ineq):
+                if sps.issparse(J_ineq):
                     J_ineq = J_ineq.toarray()
-                if spc.issparse(J_eq):
+                if sps.issparse(J_eq):
                     J_eq = J_eq.toarray()
                 # Concatenate matrices
                 return np.asarray(np.bmat([[J_eq, zeros],
@@ -187,13 +170,13 @@ class BarrierSubproblem:
                        [ J_ineq, diag(s) ]
 
         It is equivalent to:
-            spc.bmat([[ J_eq,   None    ],
+            sps.bmat([[ J_eq,   None    ],
                       [ J_ineq, diag(s) ]], "csr")
         but significantly more efficient for this
         given structure.
         """
         n_vars, n_ineq, n_eq = self.n_vars, self.n_ineq, self.n_eq
-        J_aux = spc.vstack([J_eq, J_ineq], "csr")
+        J_aux = sps.vstack([J_eq, J_ineq], "csr")
         indptr, indices, data = J_aux.indptr, J_aux.indices, J_aux.data
         new_indptr = indptr + np.hstack((np.zeros(n_eq, dtype=int),
                                          np.arange(n_ineq+1, dtype=int)))
@@ -206,7 +189,7 @@ class BarrierSubproblem:
         new_indices[~mask] = indices
         new_data[mask] = s
         new_data[~mask] = data
-        J = spc.csr_matrix((new_data, new_indices, new_indptr),
+        J = sps.csr_matrix((new_data, new_indices, new_indptr),
                            (n_eq + n_ineq, n_vars + n_ineq))
         return J
 
@@ -307,17 +290,18 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
     state.penalty = initial_penalty
     state.optimality = np.inf
     state.constr_violation = np.inf
+    # Define initial value for the slack variables
+    s0 = np.maximum(-1.5*constr_ineq0, np.ones(n_ineq))
     # Define barrier subproblem
     subprob = BarrierSubproblem(
-        x0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq, constr, jac,
+        x0, s0, fun, grad, lagr_hess, n_vars, n_ineq, n_eq, constr, jac,
         state.barrier_parameter, state.tolerance, enforce_feasibility,
         stop_criteria, xtol, fun0, grad0, constr_ineq0, jac_ineq0,
         constr_eq0, jac_eq0)
-
-    # Define initial value for the slack variables
-    s0 = np.maximum(-1.5*constr_ineq0, np.ones(n_ineq))
     # Define initial parameter for the first iteration.
     z = np.hstack((x0, s0))
+    fun0_subprob, constr0_subprob = subprob.fun0, subprob.constr0
+    grad0_subprob, jac0_subprob = subprob.grad0, subprob.jac0
     # Define trust region bounds
     trust_lb = np.hstack((np.full(subprob.n_vars, -np.inf),
                           np.full(subprob.n_ineq, -BOUNDARY_PARAMETER)))
@@ -338,16 +322,12 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
         first_barrier_prob = False
         # Update Barrier Problem
         subprob.update(state.barrier_parameter, state.tolerance)
-        # Compute initial values
-        fun0_subprob = subprob.function(z)
-        grad0_subprob = subprob.gradient(z)
-        constr0_subprob = subprob.constraints(z)
-        jac0_subprob = subprob.jacobian(z)
         # Solve SQP subproblem
         state = equality_constrained_sqp(
-            subprob.function, subprob.gradient,
-            subprob.lagrangian_hessian, subprob.constraints,
-            subprob.jacobian, z, fun0_subprob, grad0_subprob,
+            subprob.function_and_constraints,
+            subprob.gradient_and_jacobian,
+            subprob.lagrangian_hessian,
+            z, fun0_subprob, grad0_subprob,
             constr0_subprob, jac0_subprob, subprob.stop_criteria,
             state, trust_lb, trust_ub, initial_penalty,
             state.trust_radius, subprob.scaling, return_all,
@@ -355,6 +335,9 @@ def tr_interior_point(fun, grad, lagr_hess, n_vars, n_ineq, n_eq,
         z = state.x
         if stop_criteria(state):
             break
+        # Compute initial values for next iteration
+        fun0_subprob, constr0_subprob = subprob.function_and_constraints(z)
+        grad0_subprob, jac0_subprob = subprob.gradient_and_jacobian(z)
 
     # Get x and s
     state.x = subprob.get_variables(z)

@@ -11,7 +11,7 @@ from ._large_scale_constrained import (tr_interior_point,
 from warnings import warn
 from copy import deepcopy
 from scipy.sparse.linalg import LinearOperator
-import scipy.sparse as spc
+import scipy.sparse as sps
 import time
 from .optimize import OptimizeResult
 from ._numdiff import approx_derivative
@@ -105,7 +105,7 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
     fun : callable
         The objective function to be minimized.
 
-            fun(x) -> float
+            ``fun(x) -> float``
 
         where x is an array with shape (n,).
     x0 : ndarray, shape (n,)
@@ -114,7 +114,7 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
     grad : callable
         Gradient of the objective function:
 
-            grad(x) -> array_like, shape (n,)
+            ``grad(x) -> array_like, shape (n,)``
 
         where x is an array with shape (n,).
     hess : {callable, '2-point', '3-point', 'cs', None}, optional
@@ -128,10 +128,10 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
         plane. If it is a callable, it should return the 
         Hessian matrix of `dot(fun, v)`:
 
-            hess(x, v) -> {LinearOperator, sparse matrix, ndarray}, shape (n, n)
+            ``hess(x, v) -> {LinearOperator, sparse matrix, ndarray}, shape (n, n)``
 
         where x is a (n,) ndarray and v is a (m,) ndarray. When ``hess``
-        is None it considers the hessian is an matrix filled with zeros.
+        is None it considers the hessian is a matrix filled with zeros.
     constraints : Constraint or List of Constraint's, optional
         A single object or a list of objects specifying
         constraints to the optimization problem.
@@ -190,44 +190,41 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
                 Method used for factorizing the jacobian matrix.
                 Should be one of:
 
-                - 'NormalEquation': The operators
-                   will be computed using the
-                   so-called normal equation approach
-                   explained in [1]_. In order to do
-                   so the Cholesky factorization of
-                   ``(A A.T)`` is computed. Exclusive
-                   for sparse matrices. Requires
-                   scikit-sparse installed.
-                - 'AugmentedSystem': The operators
-                   will be computed using the
-                   so-called augmented system approach
-                   explained in [1]_. It perform the
-                   LU factorization of an augmented
-                   system. Exclusive for sparse matrices.
-                - 'QRFactorization': Compute projections
-                   using QR factorization. Exclusive for
-                   dense matrices.
-                - 'SVDFactorization': Compute projections
-                   using SVD factorization. Exclusive for
-                   dense matrices.
+                - 'NormalEquation'.
+                - 'AugmentedSystem'.
+                - 'QRFactorization'.
+                - 'SVDFactorization'.
 
                 The factorization methods 'NormalEquation' and
                 'AugmentedSystem' should be used only when
-                ``sparse_jacobian=True``. They usually provide
-                similar results. The methods 'QRFactorization'
+                ``sparse_jacobian=True``. The  projections
+                required by the algorithm will be computed using,
+                respectively, the the normal equation 
+                and the augmented system approach explained in [1]_.
+                'NormalEquation' computes the Cholesky
+                factorization of ``(A A.T)`` and 'AugmentedSystem' 
+                performes the LU factorization of an augmented system.
+                They usually provide similar results.
+                'NormalEquation' requires scikit-sparse
+                installed. 'AugmentedSystem' is used by
+                default for sparse matrices. 
+
+                The methods 'QRFactorization'
                 and 'SVDFactorization' should be used when
-                ``sparse_jacobian=False``. By default uses
-                'QRFactorization' for  dense matrices.
+                ``sparse_jacobian=False``. They compute
+                the required projections using, respectivelly,
+                QR and SVD factorizations.
                 The 'SVDFactorization' method can cope
                 with Jacobian matrices with deficient row
                 rank and will be used whenever other
                 factorization methods fails (which may
-                imply the conversion to a dense format).
-
+                imply the conversion of sparse matrices
+                to a dense format when required). By default uses
+                'QRFactorization' for  dense matrices.
     callback : callable, optional
         Called after each iteration:
 
-            callback(OptimizeResult state) -> bool
+            ``callback(OptimizeResult state) -> bool``
 
         If callback returns True the algorithm execution is terminated.
         ``state`` is an `OptimizeResult` object, with the same fields
@@ -335,7 +332,7 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
         For the 'equality_constrained_sqp' method this is the Jacobian
         matrix of the equality constraint evaluated at the solution and
         for the tr_interior_point' method his is scaled augmented Jacobian
-        matrix, defined as ``\hat(A)`` in equation (19.36), reference [2]_,
+        matrix, defined as ``hat(A)`` in equation (19.36), reference [2]_,
         p. 581.
 
     Notes
@@ -365,7 +362,7 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
            programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
     .. [2] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
            Second Edition (2006).
-    .. [3] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. "On the
+    .. [3] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. "On the
            implementation of an algorithm for large-scale equality
            constrained optimization." SIAM Journal on
            Optimization 8.3 (1998): 682-706.
@@ -395,11 +392,11 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
     if callable(hess):
         H0 = hess(x0)
 
-        if spc.issparse(H0):
-            H0 = spc.csr_matrix(H0)
+        if sps.issparse(H0):
+            H0 = sps.csr_matrix(H0)
 
             def hess_wrapped(x):
-                return spc.csr_matrix(hess(x))
+                return sps.csr_matrix(hess(x))
 
         elif isinstance(H0, LinearOperator):
             def hess_wrapped(x):
@@ -429,7 +426,7 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
     # Copy, evaluate and initialize constraints
     copied_constraints = [deepcopy(constr) for constr in constraints]
     for constr in copied_constraints:
-        x0 = constr.evaluate_and_initialize(x0, sparse_jacobian)
+        x0 = constr._evaluate_and_initialize(x0, sparse_jacobian)
     # Concatenate constraints
     if len(copied_constraints) == 0:
         constr = empty_canonical_constraint(x0, n_vars, sparse_jacobian)
@@ -514,17 +511,18 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
             raise ValueError("'equality_constrained_sqp' does not "
                              "support inequality constraints.")
 
-        def constr_eq(x):
+        def fun_and_constr(x):
+            f = fun(x)
             _, c_eq = constr.constr(x)
-            return c_eq
+            return f, c_eq
 
-        def jac_eq(x):
+        def grad_and_jac(x):
+            g = grad_wrapped(x)
             _, J_eq = constr.jac(x)
-            return J_eq
+            return g, J_eq
 
         result = equality_constrained_sqp(
-            fun, grad_wrapped, lagr_hess,
-            constr_eq, jac_eq,
+            fun_and_constr, grad_and_jac, lagr_hess,
             x0, f0, g0, constr.c_eq0, constr.J_eq0,
             stop_criteria, state, **options)
 
