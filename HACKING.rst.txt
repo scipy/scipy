@@ -209,7 +209,7 @@ do one of::
 
     $ python runtests.py -v
     $ python runtests.py -v -s optimize
-    $ python runtests.py -v -t scipy/special/tests/test_basic.py:test_xlogy
+    $ python runtests.py -v -t scipy.special.tests.test_basic::test_xlogy
     $ python runtests.py --ipython
     $ python runtests.py --python somescript.py
     $ python runtests.py --bench
