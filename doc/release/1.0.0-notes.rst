@@ -67,6 +67,10 @@ which diagonal to return.
 `scipy.sparse.linalg` improvements
 ----------------------------------
 
+Added a new iterative solver GCROT(m,k), based on [Hicken and Zingg,
+SIAM J. Sci. Comput. 32, 172 (2010)] and [Parks et
+al. SIAM J. Sci. Comput. 28, 1651 (2006)].
+
 `scipy.sparse.linalg.lsmr` now accepts an initial guess, yielding potentially
 faster convergence.
 
