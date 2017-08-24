@@ -137,6 +137,19 @@ class TestGCROTMK(object):
             assert_(count_1 < count_0/2)
             assert_allclose(x1, x0, atol=1e-14)
 
+    def test_denormals(self):
+        # Check that no warnings are emitted if the matrix contains
+        # numbers for which 1/x has no float representation, and that
+        # the solver behaves properly.
+        A = np.array([[1, 2], [3, 4]], dtype=float)
+        A *= 100 * np.nextafter(0, 1)
+
+        b = np.array([1, 1])
+
+        xp, info = gcrotmk(A, b)
+
+        if info == 0:
+            assert_allclose(A.dot(xp), b)
 
 if __name__ == "__main__":
     run_module_suite()
