@@ -59,6 +59,9 @@ Before branching, ensure that the release notes are updated as far as possible.
 Include the output of ``tools/gh_lists.py`` and ``tools/authors.py`` in the
 release notes.
 
+The script ``tools/gh_lists.py`` also collects and formats release
+note fragments from Github pull requests assigned to the milestone.
+
 Maintenance branches are named ``maintenance/<major>.<minor>.x`` (e.g. 0.19.x).
 To create one, simply push a branch with the correct name to the scipy repo.
 Immediately after, push a commit where you increment the version number on the

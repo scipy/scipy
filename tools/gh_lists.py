@@ -1,9 +1,32 @@
 #!/usr/bin/env python3
 # -*- encoding:utf-8 -*-
-"""
-gh_lists.py MILESTONE
+"""gh_lists.py [options] MILESTONE
 
-Functions for Github API requests.
+Extract pull request and issue lists for a given milestone from Github.
+
+Also insert text fragments to include in the release notes.
+
+
+Release note fragments
+----------------------
+
+Release note fragments can be included in Github pull requests in
+format:
+
+[release-notes type="feature" section="scipy.cluster"]
+Text to insert, in Github markdown format. For major new features,
+include a 3rd level section header (`### some title`) on top.
+[/release-notes]
+
+The "type" can be one of "feature" (new improvement), "change"
+(backward incompatible change), "deprecation" (deprecated message),
+and "other" (any other change).
+
+There may be multiple such sections in each pull request.
+
+Github markdown will be converted to restructuredtext using pandoc,
+which needs to be installed.
+
 """
 from __future__ import print_function, division, absolute_import
 
@@ -13,20 +36,29 @@ import sys
 import json
 import time
 import tempfile
+import datetime
+import textwrap
 import collections
+import subprocess
 import argparse
 
 from urllib.request import urlopen, Request, HTTPError
+from tempita import Template
 
+TEMPLATE_FILE = os.path.join(os.path.dirname(__file__), 'gh_lists.rst')
 
 Issue = collections.namedtuple('Issue', ('id', 'title', 'url'))
+ReleaseNoteFragment = collections.namedtuple('ReleaseNoteFragment',
+                                             ('issue_id', 'type', 'section', 'text',
+                                              'has_title'))
 
 
 def main():
     p = argparse.ArgumentParser(usage=__doc__.lstrip())
-    p.add_argument('--project', default='scipy/scipy')
+    p.add_argument('--project', default='scipy/scipy',
+                   help="Github project to fetch milestone information from")
     p.add_argument('--auth', action='store_true',
-                   help="Authenticate to Github (increases rate limits)")
+                   help="authenticate to Github (increases rate limits)")
     p.add_argument('milestone')
     args = p.parse_args()
 
@@ -38,20 +70,33 @@ def main():
             msg = "Milestone {0} not available. Available milestones: {1}"
             msg = msg.format(args.milestone, u", ".join(sorted(milestones)))
             p.error(msg)
-        issues = get_issues(getter, args.project, args.milestone)
+        issues, fragments = get_issues(getter, args.project, args.milestone)
         issues.sort()
+        fragments.sort(key=lambda f: (not f.has_title, f))
     finally:
         getter.save()
 
     prs = [x for x in issues if u'/pull/' in x.url]
     issues = [x for x in issues if x not in prs]
 
-    def print_list(title, items):
-        print()
-        print(title)
-        print("-"*len(title))
-        print()
+    output = format_template(args.milestone, prs, issues, fragments)
 
+    print(output)
+    return 0
+
+
+def format_template(milestone, prs, issues, fragments):
+    template = Template.from_filename(TEMPLATE_FILE, encoding='utf-8')
+
+    def warn(message):
+        print("WARNING:", message, file=sys.stderr, flush=True)
+
+    def format_title(title, underline="-"):
+        title = title.strip()
+        return title.strip() + "\n" + underline*len(title) + "\n"
+
+    def format_list(items):
+        parts = []
         for issue in items:
             msg = u"- `#{0} <{1}>`__: {2}"
             title = re.sub(u"\s+", u" ", issue.title.strip())
@@ -61,17 +106,31 @@ def main():
                     remainder = title[:80] + u"..."
                 else:
                     title = title[:60] + remainder
-            msg = msg.format(issue.id, issue.url, title)
-            print(msg)
-        print()
+            parts.append(msg.format(issue.id, issue.url, title))
+        return "\n".join(parts)
 
-    msg = u"Issues closed for {0}".format(args.milestone)
-    print_list(msg, issues)
-    
-    msg = u"Pull requests for {0}".format(args.milestone)
-    print_list(msg, prs)
+    types = sorted(set(fragment.type for fragment in fragments))
 
-    return 0
+    sections = {}
+    for typ in types:
+        secs = sorted(set(fragment.section for fragment in fragments
+                          if fragment.type == typ))
+        sections[typ] = {}
+        for sec in secs:
+            sections[typ][sec] = sorted(fragment for fragment in fragments
+                                        if fragment.type == typ and fragment.section == sec)
+
+    context = dict(milestone=milestone,
+                   issues=issues,
+                   prs=prs,
+                   all_fragments=fragments,
+                   sections=sections,
+                   types=types,
+                   warn=warn,
+                   format_title=format_title,
+                   format_list=format_list)
+
+    return template.substitute(context).strip()
 
 
 def get_milestones(getter, project):
@@ -94,12 +153,63 @@ def get_issues(getter, project, milestone):
     data = getter.get_multipage(url)
 
     issues = []
+    fragments = []
+
     for issue_data in data:
         issues.append(Issue(issue_data[u'number'],
                             issue_data[u'title'],
                             issue_data[u'html_url']))
+        fragments.extend(parse_fragments(issue_data[u'number'],
+                                         issue_data[u'body']))
 
-    return issues
+    return issues, fragments
+
+
+def parse_fragments(number, text):
+    if not text:
+        return []
+
+    items = re.findall(r'\[release-notes([^\]]*)\](.*?)\[/release-notes\]',
+                       text, flags=re.I | re.S)
+
+    fragments = []
+    for flags, text_md in items:
+        m = re.search('section\\s*=\\s*["\'](.*?)["\']', flags)
+        if m:
+            section = m.group(1).strip().lower()
+        else:
+            section = None
+
+        m = re.search('type\\s*=\\s*["\'](.*?)["\']', flags)
+        if m:
+            typ = m.group(1).strip().lower()
+        else:
+            typ = None
+
+        text_md = text_md.strip()
+
+        if text_md.startswith('#'):
+            # Ensure correct title level
+            text_md = re.sub('^#+', '###', text_md, flags=re.S)
+            has_title = True
+        else:
+            has_title = False
+
+        p = subprocess.Popen(['pandoc', '-f', 'markdown', '-t', 'rst'], stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+        out, err = p.communicate(text_md.encode('utf-8'))
+        if p.returncode != 0:
+            print("WARNING: gh-{}: pandoc failed to convert markdown to rst: {}\n{}".format(number, err, out),
+                  file=sys.stderr, flush=True)
+            print("Source:\n{}".format(text_md), file=sys.stderr, flush=True)
+            text_rst = text_md
+        else:
+            text_rst = out.decode('utf-8')
+
+        fragments.append(ReleaseNoteFragment(number, typ, section, text_rst,
+                                             has_title))
+
+    return fragments
 
 
 class GithubGet(object):
@@ -228,6 +338,37 @@ class GithubGet(object):
                 f.close()
             os.unlink(f.name)
             raise
+
+
+def test_parse_fragments():
+    body = textwrap.dedent("""
+    Some text
+    Some more text
+
+    [release-notes type="feature" section="scipy.sparse"]
+    # Some big feature
+
+    We like major features, and want more of them.
+    See links at [scipy.org](https://www.scipy.org).
+    [/release-notes]
+    """)
+    expected = textwrap.dedent("""\
+    Some big feature
+    ~~~~~~~~~~~~~~~~
+
+    We like major features, and want more of them. See links at
+    `scipy.org <https://www.scipy.org>`__.
+    """)
+
+    fragments = parse_fragments(123, body)
+    assert fragments == [ReleaseNoteFragment(section="scipy.sparse",
+                                             type="feature",
+                                             text=expected,
+                                             issue_id=123,
+                                             has_title=True)]
+
+    result = format_template("1.0.0", [], [], fragments)
+    assert 'Some big feature' in result
 
 
 if __name__ == "__main__":
