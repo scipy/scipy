@@ -59,6 +59,7 @@ Continuous distributions
    genextreme        -- Generalized Extreme Value
    gausshyper        -- Gauss Hypergeometric
    gamma             -- Gamma
+   gamma_gompertz    -- Gamma/Gompertz distribution
    gengamma          -- Generalized gamma
    genhalflogistic   -- Generalized Half Logistic
    gilbrat           -- Gilbrat
