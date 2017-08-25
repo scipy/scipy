@@ -74,7 +74,7 @@ def warning_calls():
         # use tokenize to auto-detect encoding on systems where no
         # default encoding is defined (e.g. LANG='C')
         with tokenize.open(str(path)) as file:
-            tree = ast.parse(file.read())
+            tree = ast.parse(file.read(), filename=str(path))
             finder = FindFuncs(path.relative_to(base))
             finder.visit(tree)
             bad_filters.extend(finder.bad_filters)
