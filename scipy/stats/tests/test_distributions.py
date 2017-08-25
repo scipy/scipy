@@ -1402,7 +1402,7 @@ class TestGammaGompertz(object):
         assert_almost_equal(pdf1, pdf2)
 
     def test_cdf_ppf_accuracy():
-        p = stats.gamma_gompertz.ppf(gamma_gompertz.cdf(1e-8, 1., 1.), 1., 1.)
+        p = stats.gamma_gompertz.ppf(stats.gamma_gompertz.cdf(1e-8, 1., 1.), 1., 1.)
         assert_allclose(p, 1e-8)
         
 
