@@ -335,7 +335,7 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
         For the 'equality_constrained_sqp' method this is the Jacobian
         matrix of the equality constraint evaluated at the solution and
         for the tr_interior_point' method his is scaled augmented Jacobian
-        matrix, defined as ``\hat(A)`` in equation (19.36), reference [2]_,
+        matrix, defined as ``hat(A)`` in equation (19.36), reference [2]_,
         p. 581.
 
     Notes
@@ -365,7 +365,7 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
            programming." SIAM Journal on Optimization 9.4 (1999): 877-900.
     .. [2] Nocedal, Jorge, and Stephen J. Wright. "Numerical optimization"
            Second Edition (2006).
-    .. [3] Lalee, Marucha, Jorge Nocedal, and Todd Plantenga. "On the
+    .. [3] Lalee, Marucha, Jorge Nocedal, and Todd Plantega. "On the
            implementation of an algorithm for large-scale equality
            constrained optimization." SIAM Journal on
            Optimization 8.3 (1998): 682-706.
