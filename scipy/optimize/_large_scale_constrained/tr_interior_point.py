@@ -65,10 +65,6 @@ class BarrierSubproblem:
     def get_variables(self, z):
         return z[:self.n_vars]
 
-    @property
-    def fun0(self):
-        return self._compute_function(self.fun0)
-
     def function_and_constraints(self, z):
         """Returns barrier function and constraints at given point.
 
