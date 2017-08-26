@@ -617,3 +617,70 @@ class TestSytrd(object):
             # disable rtol here since some values in QTAQ and T are very close
             # to 0.
             assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
+
+
+class TestHetrd(object):
+    def test_hetrd(self):
+        for real_dtype, complex_dtype in zip(REAL_DTYPES, COMPLEX_DTYPES):
+            # some upper triangular array
+            n = 3
+            A = np.zeros((n, n), dtype=complex_dtype)
+            A[np.triu_indices_from(A)] = (
+                np.arange(1, 2*n+1, dtype=real_dtype)
+                + 1j * np.arange(1, 2*n+1, dtype=real_dtype)
+                )
+            np.fill_diagonal(A, np.real(np.diag(A)))
+
+            hetrd, hetrd_lwork = \
+                get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
+
+            # query lwork
+            lwork, info = hetrd_lwork(n)
+            assert_equal(info, 0)
+
+            # check lower=1 behavior (shouldn't do much since the matrix is
+            # upper triangular)
+            data, d, e, tau, info = hetrd(A, lower=1, lwork=lwork)
+            assert_equal(info, 0)
+
+            assert_allclose(data, A, atol=5*np.finfo(real_dtype).eps, rtol=1.0)
+
+            assert_allclose(d, np.real(np.diag(A)))
+            assert_allclose(e, 0.0)
+            assert_allclose(tau, 0.0)
+
+            # and now for the proper test (lower=0 is the default)
+            data, d, e, tau, info = hetrd(A, lwork=lwork)
+            assert_equal(info, 0)
+
+            # assert Q^T*A*Q = tridiag(e, d, e)
+
+            # build tridiagonal matrix
+            T = np.zeros_like(A, dtype=real_dtype)
+            k = np.arange(A.shape[0], dtype=int)
+            T[k, k] = d
+            k2 = np.arange(A.shape[0]-1, dtype=int)
+            T[k2+1, k2] = e
+            T[k2, k2+1] = e
+
+            # build Q
+            Q = np.eye(n, n, dtype=complex_dtype)
+            for i in range(n-1):
+                v = np.zeros(n, dtype=complex_dtype)
+                v[:i] = data[:i, i+1]
+                v[i] = 1.0
+                H = np.eye(n, n, dtype=complex_dtype) \
+                    - tau[i] * np.outer(v, np.conj(v))
+                Q = np.dot(H, Q)
+
+            # Make matrix fully Hermetian
+            i_lower = np.tril_indices(n, -1)
+            A[i_lower] = np.conj(A.T[i_lower])
+
+            QHAQ = np.dot(np.conj(Q.T), np.dot(A, Q))
+
+            # disable rtol here since some values in QTAQ and T are very close
+            # to 0.
+            assert_allclose(
+                QHAQ, T, atol=10*np.finfo(real_dtype).eps, rtol=1.0
+                )
