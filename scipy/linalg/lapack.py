@@ -186,6 +186,12 @@ All functions
    ssytrd_lwork
    dsytrd_lwork
 
+   chetrd
+   zhetrd
+
+   chetrd_lwork
+   zhetrd_lwork
+
    chesv
    zhesv
 

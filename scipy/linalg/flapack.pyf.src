@@ -928,6 +928,46 @@ interface
      integer intent(out) :: info
    end subroutine <prefix2>sytrd_lwork
 
+   subroutine <prefix2c>hetrd(lower,n,a,lda,d,e,tau,work,lwork,info)
+     ! Reduce a complex hermitian matrix A to real symmetric
+     ! tridiagonal form T by an orthogonal similarity transformation:
+     ! Q**H * A * Q = T.
+
+     callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,d,e,tau,work,&lwork,&info);
+     callprotoargument char*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2c>*,int*,int*
+
+     integer intent(hide),depend(a) :: lda=MAX(shape(a,0),1)
+     integer intent(hide),depend(a) :: n=shape(a,1)
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+     <ftype2c> dimension(lda,n),check(shape(a,0)==shape(a,1)),intent(in,out,copy,out=c) :: a
+     <ftype2> dimension(n),intent(out),depend(n) :: d
+     <ftype2> dimension(n-1),intent(out),depend(n) :: e
+     <ftype2c> dimension(n-1),intent(out),depend(n) :: tau
+     integer intent(in),optional,depend(n),check(lwork>=1||lwork==-1) :: lwork = MAX(n,1)
+     <ftype2c> dimension(lwork),intent(cache,hide) :: work
+     integer intent(out) :: info
+   end subroutine <prefix2c>hetrd
+
+   subroutine <prefix2c>hetrd_lwork(lower,n,a,lda,d,e,tau,work,lwork,info)
+     ! lwork computation for hetrd
+     fortranname <prefix2c>hetrd
+     callstatement (*f2py_func)((lower?"L":"U"),&n,&a,&lda,&d,&e,&tau,&work,&lwork,&info);
+     callprotoargument char*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2c>*,int*,int*
+
+     integer intent(in) :: n
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+     integer intent(hide),depend(n) :: lda=MAX(n,1)
+     <ftype2c> intent(hide) :: a
+     <ftype2> intent(hide) :: d
+     <ftype2> intent(hide) :: e
+     <ftype2c> intent(hide) :: tau
+     <ftype2c> intent(out) :: work
+     integer intent(hide) :: lwork = -1
+     integer intent(out) :: info
+   end subroutine <prefix2c>hetrd_lwork
+
 
    subroutine <prefix>getrs(n,nrhs,lu,piv,b,info,trans)
 
