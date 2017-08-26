@@ -84,8 +84,7 @@ class TestBoxConstraint(TestCase):
                                        dtype=bool)
         kind = ("interval", lb, ub)
         box = BoxConstraint(kind, enforce_feasibility)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+        with pytest.warns(UserWarning):
             x0_new = box.evaluate_and_initialize(x0)
         assert_((lb[enforce_feasibility] <= x0_new[enforce_feasibility]).all())
         assert_((x0_new[enforce_feasibility] <= ub[enforce_feasibility]).all())
