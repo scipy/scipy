@@ -1858,9 +1858,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     # Pre-warp frequencies for digital filter design
     if not analog:
-        if numpy.any(Wn < 0) or numpy.any(Wn > 1):
+        if numpy.any(Wn <= 0) or numpy.any(Wn >= 1):
             raise ValueError("Digital filter critical frequencies "
-                             "must be 0 <= Wn <= 1")
+                             "must be 0 < Wn < 1")
         fs = 2.0
         warped = 2 * fs * tan(pi * Wn / fs)
     else:
