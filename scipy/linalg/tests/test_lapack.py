@@ -563,13 +563,10 @@ def test_sgesdd_lwork_bug_workaround():
 class TestSytrd(object):
     def test_sytrd(self):
         for dtype in REAL_DTYPES:
-            # "random" symmetric matrix
-            A = np.array([
-                [1.0, 2.0, 3.0],
-                [2.0, 4.0, 5.0],
-                [3.0, 5.0, 6.0],
-                ], dtype=dtype)
-            n = A.shape[0]
+            # some upper triangular array
+            n = 3
+            A = np.zeros((n, n), dtype=dtype)
+            A[np.triu_indices_from(A)] = np.arange(1, 2*n+1, dtype=dtype)
 
             sytrd, sytrd_lwork = \
                 get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
@@ -578,6 +575,17 @@ class TestSytrd(object):
             lwork, info = sytrd_lwork(n)
             assert_equal(info, 0)
 
+            # check lower=1 behavior (shouldn't do much since the matrix is
+            # upper triangular)
+            data, d, e, tau, info = sytrd(A, lower=1, lwork=lwork)
+            assert_equal(info, 0)
+
+            assert_allclose(data, A, atol=5*np.finfo(dtype).eps, rtol=1.0)
+            assert_allclose(d, np.diag(A))
+            assert_allclose(e, 0.0)
+            assert_allclose(tau, 0.0)
+
+            # and now for the proper test (lower=0 is the default)
             data, d, e, tau, info = sytrd(A, lwork=lwork)
             assert_equal(info, 0)
 
@@ -600,9 +608,12 @@ class TestSytrd(object):
                 H = np.eye(n, n, dtype=dtype) - tau[i] * np.outer(v, v)
                 Q = np.dot(H, Q)
 
+            # Make matrix fully symmetric
+            i_lower = np.tril_indices(n, -1)
+            A[i_lower] = A.T[i_lower]
+
             QTAQ = np.dot(Q.T, np.dot(A, Q))
 
             # disable rtol here since some values in QTAQ and T are very close
             # to 0.
             assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
-        return
