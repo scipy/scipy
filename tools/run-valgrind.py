@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 
     This is a tool to maintain and run scipy with valgrind against a set of suppression files.
@@ -171,9 +172,11 @@ def rules(ns, diff=True):
             ff.write(log)
 
         leaked, summary = filter_log(log)
-        print(summary)
+
+        print('\n'.join(summary))
 
         if leaked:
+            print('\n'.join(leaked))
             print("Check the log file for possible leaks due to scipy;", my_test_suppr + '.log')
         else:
             print("No scipy error is found, merging the rules to the current rule set")
@@ -195,14 +198,24 @@ def rules(ns, diff=True):
                 ff.write(rules)
 
 def filter_log(log):
-    any = False
     summary = []
+    pot_leak = []
     for i, line in enumerate(log.split('\n')):
         if i < 5: continue # by pass header
         if 'scipy/' in line:
-            print('potential leak found at line :', i, line)
-            any = True
+            pot_leak.append(line)
         if 'LEAK SUMMARY' in line or len(summary) > 0:
             summary.append(line)
-    return any, '\n'.join(summary)
+    return list(set(pot_leak)), summary
+
+def parse_log(log):
+    # FIXME:
+    # port grindmerge to python
+    # identify leak summary,
+    # and entries (trace + suppresion)
+    # the entries will then be tagged by a tagger for potential scipy leaks
+    # and a suppression file can be created from a set of entries.
+    pass
+
+
 main()
