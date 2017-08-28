@@ -569,6 +569,15 @@ class TestSytrd(object):
                 get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
             assert_raises(ValueError, sytrd, A)
 
+            # Tests for n = 1 currently fail with
+            # ```
+            # ValueError: failed to create intent(cache|hide)|optional array--
+            # must have defined dimensions but got (0,)
+            # ```
+            # This is a NumPy issue
+            # <https://github.com/numpy/numpy/issues/9617>.
+            # TODO once the issue has been resolved, test for n=1
+
             # some upper triangular array
             n = 3
             A = np.zeros((n, n), dtype=dtype)
@@ -631,6 +640,15 @@ class TestHetrd(object):
             hetrd, hetrd_lwork = \
                 get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
             assert_raises(ValueError, hetrd, A)
+
+            # Tests for n = 1 currently fail with
+            # ```
+            # ValueError: failed to create intent(cache|hide)|optional array--
+            # must have defined dimensions but got (0,)
+            # ```
+            # This is a NumPy issue
+            # <https://github.com/numpy/numpy/issues/9617>.
+            # TODO once the issue has been resolved, test for n=1
 
             # some upper triangular array
             n = 3
