@@ -563,14 +563,17 @@ def test_sgesdd_lwork_bug_workaround():
 class TestSytrd(object):
     def test_sytrd(self):
         for dtype in REAL_DTYPES:
+            # Assert that a 0x0 matrix raises an error
+            A = np.zeros((0, 0), dtype=dtype)
+            sytrd, sytrd_lwork = \
+                get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
+            assert_raises(ValueError, sytrd, A)
+
             # some upper triangular array
             n = 3
             A = np.zeros((n, n), dtype=dtype)
             A[np.triu_indices_from(A)] = \
                 np.arange(1, n*(n+1)//2+1, dtype=dtype)
-
-            sytrd, sytrd_lwork = \
-                get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
 
             # query lwork
             lwork, info = sytrd_lwork(n)
@@ -623,6 +626,12 @@ class TestSytrd(object):
 class TestHetrd(object):
     def test_hetrd(self):
         for real_dtype, complex_dtype in zip(REAL_DTYPES, COMPLEX_DTYPES):
+            # Assert that a 0x0 matrix raises an error
+            A = np.zeros((0, 0), dtype=complex_dtype)
+            hetrd, hetrd_lwork = \
+                get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
+            assert_raises(ValueError, hetrd, A)
+
             # some upper triangular array
             n = 3
             A = np.zeros((n, n), dtype=complex_dtype)
@@ -631,9 +640,6 @@ class TestHetrd(object):
                 + 1j * np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
                 )
             np.fill_diagonal(A, np.real(np.diag(A)))
-
-            hetrd, hetrd_lwork = \
-                get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
 
             # query lwork
             lwork, info = hetrd_lwork(n)
