@@ -18,22 +18,22 @@
 
     # generate a suppression database for _lib
 
-    python run-valgrind.py generate --python=python3-debug/bin/python3-debug scipy/_lib/tests
+    python tools/run-valgrind.py generate --python=python3-debug/bin/python3-debug scipy/_lib/tests
 
     # rerun with diff to find no errors are reported; check the file name printed at the end.
 
-    python run-valgrind.py diff --python=python3-debug/bin/python3-debug scipy/_lib/tests
+    python tools/run-valgrind.py diff --python=python3-debug/bin/python3-debug scipy/_lib/tests
 
     # later rerun to find new errors are reported, check for memory issues and fix them
 
-    python run-valgrind.py diff --python=python3-debug/bin/python3-debug scipy/_lib/tests
+    python tools/run-valgrind.py diff --python=python3-debug/bin/python3-debug scipy/_lib/tests
     ...
-    python run-valgrind.py diff --python=python3-debug/bin/python3-debug scipy/_lib/tests
+    python tools/run-valgrind.py diff --python=python3-debug/bin/python3-debug scipy/_lib/tests
     ...
-    python run-valgrind.py diff --python=python3-debug/bin/python3-debug scipy/_lib/tests
+    python tools/run-valgrind.py diff --python=python3-debug/bin/python3-debug scipy/_lib/tests
 
     # update the suppresion database
-    python run-valgrind.py generate --python=python3-debug/bin/python3-debug scipy/_lib/tests
+    python tools/run-valgrind.py generate --python=python3-debug/bin/python3-debug scipy/_lib/tests
 
 """
 
@@ -97,7 +97,7 @@ def run_grindmerge(vallog, oldrulefilename=None):
     with open(logfilename, 'r') as stdin:
         with open(rulefilename, 'w') as stdout:
 
-            cmdline = ['valgrind/grindmerge']
+            cmdline = ['tools/grindmerge']
             if oldrulefilename:
                 cmdline = cmdline + ['-f', oldrulefilename]
             call(cmdline, stdin=stdin, stdout=stdout)
