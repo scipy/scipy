@@ -162,9 +162,7 @@ def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
 
 
 def _copy_array_if_base_present(a):
-    """
-    Copies the array if its base points to a parent array.
-    """
+    """Copy the array if its base points to a parent array."""
     if a.base is not None:
         return a.copy()
     return a
@@ -342,7 +340,7 @@ def _validate_wminkowski_kwargs(X, m, n, **kwargs):
 
 def directed_hausdorff(u, v, seed=0):
     """
-    Computes the directed Hausdorff distance between two N-D arrays.
+    Compute the directed Hausdorff distance between two N-D arrays.
 
     Distances between pairs are calculated using a Euclidean metric.
 
@@ -433,7 +431,7 @@ def directed_hausdorff(u, v, seed=0):
 
 def minkowski(u, v, p=2, w=None):
     """
-    Computes the Minkowski distance between two 1-D arrays.
+    Compute the Minkowski distance between two 1-D arrays.
 
     The Minkowski distance between 1-D arrays `u` and `v`,
     is defined as
@@ -462,6 +460,22 @@ def minkowski(u, v, p=2, w=None):
     minkowski : double
         The Minkowski distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.minkowski([1, 0, 0], [0, 1, 0], 1)
+    2.0
+    >>> distance.minkowski([1, 0, 0], [0, 1, 0], 2)
+    1.4142135623730951
+    >>> distance.minkowski([1, 0, 0], [0, 1, 0], 3)
+    1.2599210498948732
+    >>> distance.minkowski([1, 1, 0], [0, 1, 0], 1)
+    1.0
+    >>> distance.minkowski([1, 1, 0], [0, 1, 0], 2)
+    1.0
+    >>> distance.minkowski([1, 1, 0], [0, 1, 0], 3)
+    1.0
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -488,7 +502,8 @@ def minkowski(u, v, p=2, w=None):
 # versions.
 def wminkowski(u, v, p, w):
     """
-    Computes the weighted Minkowski distance between two 1-D arrays.
+    Compute the weighted Minkowski distance between two 1-D arrays.
+
     The weighted Minkowski distance between `u` and `v`, defined as
 
     .. math::
@@ -516,6 +531,22 @@ def wminkowski(u, v, p, w):
     `wminkowski` is DEPRECATED. It implements a definition where weights
     are powered. It is recommended to use the weighted version of `minkowski`
     instead. This function will be removed in a future version of scipy.
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.wminkowski([1, 0, 0], [0, 1, 0], 1, np.ones(3))
+    2.0
+    >>> distance.wminkowski([1, 0, 0], [0, 1, 0], 2, np.ones(3))
+    1.4142135623730951
+    >>> distance.wminkowski([1, 0, 0], [0, 1, 0], 3, np.ones(3))
+    1.2599210498948732
+    >>> distance.wminkowski([1, 1, 0], [0, 1, 0], 1, np.ones(3))
+    1.0
+    >>> distance.wminkowski([1, 1, 0], [0, 1, 0], 2, np.ones(3))
+    1.0
+    >>> distance.wminkowski([1, 1, 0], [0, 1, 0], 3, np.ones(3))
+    1.0
 
     """
     w = _validate_vector(w)
@@ -549,13 +580,21 @@ def euclidean(u, v, w=None):
     euclidean : double
         The Euclidean distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.euclidean([1, 0, 0], [0, 1, 0])
+    1.4142135623730951
+    >>> distance.euclidean([1, 1, 0], [0, 1, 0])
+    1.0
+
     """
     return minkowski(u, v, p=2, w=w)
 
 
 def sqeuclidean(u, v, w=None):
     """
-    Computes the squared Euclidean distance between two 1-D arrays.
+    Compute the squared Euclidean distance between two 1-D arrays.
 
     The squared Euclidean distance between `u` and `v` is defined as
 
@@ -580,6 +619,14 @@ def sqeuclidean(u, v, w=None):
     sqeuclidean : double
         The squared Euclidean distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.sqeuclidean([1, 0, 0], [0, 1, 0])
+    2.0
+    >>> distance.sqeuclidean([1, 1, 0], [0, 1, 0])
+    1.0
+
     """
     # Preserve float dtypes, but convert everything else to np.float64
     # for stability.
@@ -601,7 +648,8 @@ def sqeuclidean(u, v, w=None):
 
 def correlation(u, v, w=None, centered=True):
     """
-    Computes the correlation distance between two 1-D arrays.
+    Compute the correlation distance between two 1-D arrays.
+
     The correlation distance between `u` and `v`, is
     defined as
 
@@ -647,7 +695,8 @@ def correlation(u, v, w=None, centered=True):
 
 def cosine(u, v, w=None):
     """
-    Computes the Cosine distance between 1-D arrays.
+    Compute the Cosine distance between 1-D arrays.
+
     The Cosine distance between `u` and `v`, is defined as
 
     .. math::
@@ -672,6 +721,17 @@ def cosine(u, v, w=None):
     -------
     cosine : double
         The Cosine distance between vectors `u` and `v`.
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.cosine([1, 0, 0], [0, 1, 0])
+    1.0
+    >>> distance.cosine([100, 0, 0], [0, 1, 0])
+    1.0
+    >>> distance.cosine([1, 1, 0], [0, 1, 0])
+    0.29289321881345254
+
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
@@ -680,7 +740,7 @@ def cosine(u, v, w=None):
 
 def hamming(u, v, w=None):
     """
-    Computes the Hamming distance between two 1-D arrays.
+    Compute the Hamming distance between two 1-D arrays.
 
     The Hamming distance between 1-D arrays `u` and `v`, is simply the
     proportion of disagreeing components in `u` and `v`. If `u` and `v` are
@@ -709,6 +769,18 @@ def hamming(u, v, w=None):
     hamming : double
         The Hamming distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.hamming([1, 0, 0], [0, 1, 0])
+    0.66666666666666663
+    >>> distance.hamming([1, 0, 0], [1, 1, 0])
+    0.33333333333333331
+    >>> distance.hamming([1, 0, 0], [2, 0, 0])
+    0.33333333333333331
+    >>> distance.hamming([1, 0, 0], [3, 0, 0])
+    0.33333333333333331
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -722,7 +794,7 @@ def hamming(u, v, w=None):
 
 def jaccard(u, v, w=None):
     """
-    Computes the Jaccard-Needham dissimilarity between two boolean 1-D arrays.
+    Compute the Jaccard-Needham dissimilarity between two boolean 1-D arrays.
 
     The Jaccard-Needham dissimilarity between 1-D boolean arrays `u` and `v`,
     is defined as
@@ -751,6 +823,18 @@ def jaccard(u, v, w=None):
     jaccard : double
         The Jaccard distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.jaccard([1, 0, 0], [0, 1, 0])
+    1.0
+    >>> distance.jaccard([1, 0, 0], [1, 1, 0])
+    0.5
+    >>> distance.jaccard([1, 0, 0], [1, 2, 0])
+    0.5
+    >>> distance.jaccard([1, 0, 0], [1, 1, 1])
+    0.66666666666666663
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -766,7 +850,7 @@ def jaccard(u, v, w=None):
 
 def kulsinski(u, v, w=None):
     """
-    Computes the Kulsinski dissimilarity between two boolean 1-D arrays.
+    Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
 
     The Kulsinski dissimilarity between two boolean 1-D arrays `u` and `v`,
     is defined as
@@ -795,6 +879,18 @@ def kulsinski(u, v, w=None):
     kulsinski : double
         The Kulsinski distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.kulsinski([1, 0, 0], [0, 1, 0])
+    1.0
+    >>> distance.kulsinski([1, 0, 0], [1, 1, 0])
+    0.75
+    >>> distance.kulsinski([1, 0, 0], [2, 1, 0])
+    0.33333333333333331
+    >>> distance.kulsinski([1, 0, 0], [3, 1, 0])
+    -0.5
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -810,7 +906,7 @@ def kulsinski(u, v, w=None):
 
 def seuclidean(u, v, V):
     """
-    Returns the standardized Euclidean distance between two 1-D arrays.
+    Return the standardized Euclidean distance between two 1-D arrays.
 
     The standardized Euclidean distance between `u` and `v`.
 
@@ -829,6 +925,16 @@ def seuclidean(u, v, V):
     seuclidean : double
         The standardized Euclidean distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.seuclidean([1, 0, 0], [0, 1, 0], [0.1, 0.1, 0.1])
+    4.4721359549995796
+    >>> distance.seuclidean([1, 0, 0], [0, 1, 0], [1, 0.1, 0.1])
+    3.3166247903553998
+    >>> distance.seuclidean([1, 0, 0], [0, 1, 0], [10, 0.1, 0.1])
+    3.1780497164141406
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -841,7 +947,7 @@ def seuclidean(u, v, V):
 
 def cityblock(u, v, w=None):
     """
-    Computes the City Block (Manhattan) distance.
+    Compute the City Block (Manhattan) distance.
 
     Computes the Manhattan distance between two 1-D arrays `u` and `v`,
     which is defined as
@@ -865,6 +971,16 @@ def cityblock(u, v, w=None):
     cityblock : double
         The City Block (Manhattan) distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.cityblock([1, 0, 0], [0, 1, 0])
+    2
+    >>> distance.cityblock([1, 0, 0], [0, 2, 0])
+    3
+    >>> distance.cityblock([1, 0, 0], [1, 1, 0])
+    1
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -877,7 +993,7 @@ def cityblock(u, v, w=None):
 
 def mahalanobis(u, v, VI):
     """
-    Computes the Mahalanobis distance between two 1-D arrays.
+    Compute the Mahalanobis distance between two 1-D arrays.
 
     The Mahalanobis distance between 1-D arrays `u` and `v`, is defined as
 
@@ -902,6 +1018,17 @@ def mahalanobis(u, v, VI):
     mahalanobis : double
         The Mahalanobis distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> iv = [[1, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 0.5, 1]]
+    >>> distance.mahalanobis([1, 0, 0], [0, 1, 0], iv)
+    1.0
+    >>> distance.mahalanobis([0, 2, 0], [0, 1, 0], iv)
+    1.0
+    >>> distance.mahalanobis([2, 0, 0], [0, 1, 0], iv)
+    1.7320508075688772
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -913,7 +1040,7 @@ def mahalanobis(u, v, VI):
 
 def chebyshev(u, v):
     """
-    Computes the Chebyshev distance.
+    Compute the Chebyshev distance.
 
     Computes the Chebyshev distance between two 1-D arrays `u` and `v`,
     which is defined as
@@ -934,6 +1061,14 @@ def chebyshev(u, v):
     chebyshev : double
         The Chebyshev distance between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.chebyshev([1, 0, 0], [0, 1, 0])
+    1
+    >>> distance.chebyshev([1, 1, 0], [0, 1, 0])
+    1
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -942,7 +1077,7 @@ def chebyshev(u, v):
 
 def braycurtis(u, v, w=None):
     """
-    Computes the Bray-Curtis distance between two 1-D arrays.
+    Compute the Bray-Curtis distance between two 1-D arrays.
 
     Bray-Curtis distance is defined as
 
@@ -968,6 +1103,14 @@ def braycurtis(u, v, w=None):
     braycurtis : double
         The Bray-Curtis distance between 1-D arrays `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.braycurtis([1, 0, 0], [0, 1, 0])
+    1.0
+    >>> distance.braycurtis([1, 1, 0], [0, 1, 0])
+    0.33333333333333331
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v, dtype=np.float64)
@@ -982,7 +1125,7 @@ def braycurtis(u, v, w=None):
 
 def canberra(u, v, w=None):
     """
-    Computes the Canberra distance between two 1-D arrays.
+    Compute the Canberra distance between two 1-D arrays.
 
     The Canberra distance is defined as
 
@@ -1011,6 +1154,14 @@ def canberra(u, v, w=None):
     When `u[i]` and `v[i]` are 0 for given i, then the fraction 0/0 = 0 is
     used in the calculation.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.canberra([1, 0, 0], [0, 1, 0])
+    2.0
+    >>> distance.canberra([1, 1, 0], [0, 1, 0])
+    1.0
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v, dtype=np.float64)
@@ -1032,7 +1183,7 @@ def canberra(u, v, w=None):
 
 def yule(u, v, w=None):
     """
-    Computes the Yule dissimilarity between two boolean 1-D arrays.
+    Compute the Yule dissimilarity between two boolean 1-D arrays.
 
     The Yule dissimilarity is defined as
 
@@ -1059,6 +1210,14 @@ def yule(u, v, w=None):
     yule : double
         The Yule dissimilarity between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.yule([1, 0, 0], [0, 1, 0])
+    2.0
+    >>> distance.yule([1, 1, 0], [0, 1, 0])
+    0.0
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -1071,7 +1230,7 @@ def yule(u, v, w=None):
                       "use spatial.distance.hamming instead.")
 def matching(u, v, w=None):
     """
-    Computes the Hamming distance between two boolean 1-D arrays.
+    Compute the Hamming distance between two boolean 1-D arrays.
 
     This is a deprecated synonym for :func:`hamming`.
     """
@@ -1080,7 +1239,7 @@ def matching(u, v, w=None):
 
 def dice(u, v, w=None):
     """
-    Computes the Dice dissimilarity between two boolean 1-D arrays.
+    Compute the Dice dissimilarity between two boolean 1-D arrays.
 
     The Dice dissimilarity between `u` and `v`, is
 
@@ -1108,6 +1267,16 @@ def dice(u, v, w=None):
     dice : double
         The Dice dissimilarity between 1-D arrays `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.dice([1, 0, 0], [0, 1, 0])
+    1.0
+    >>> distance.dice([1, 0, 0], [1, 1, 0])
+    0.3333333333333333
+    >>> distance.dice([1, 0, 0], [2, 0, 0])
+    -0.3333333333333333
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -1129,7 +1298,7 @@ def dice(u, v, w=None):
 
 def rogerstanimoto(u, v, w=None):
     """
-    Computes the Rogers-Tanimoto dissimilarity between two boolean 1-D arrays.
+    Compute the Rogers-Tanimoto dissimilarity between two boolean 1-D arrays.
 
     The Rogers-Tanimoto dissimilarity between two boolean 1-D arrays
     `u` and `v`, is defined as
@@ -1158,6 +1327,16 @@ def rogerstanimoto(u, v, w=None):
         The Rogers-Tanimoto dissimilarity between vectors
         `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.rogerstanimoto([1, 0, 0], [0, 1, 0])
+    0.8
+    >>> distance.rogerstanimoto([1, 0, 0], [1, 1, 0])
+    0.5
+    >>> distance.rogerstanimoto([1, 0, 0], [2, 0, 0])
+    -1.0
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -1169,7 +1348,7 @@ def rogerstanimoto(u, v, w=None):
 
 def russellrao(u, v, w=None):
     """
-    Computes the Russell-Rao dissimilarity between two boolean 1-D arrays.
+    Compute the Russell-Rao dissimilarity between two boolean 1-D arrays.
 
     The Russell-Rao dissimilarity between two boolean 1-D arrays, `u` and
     `v`, is defined as
@@ -1198,6 +1377,16 @@ def russellrao(u, v, w=None):
     russellrao : double
         The Russell-Rao dissimilarity between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.russellrao([1, 0, 0], [0, 1, 0])
+    1.0
+    >>> distance.russellrao([1, 0, 0], [1, 1, 0])
+    0.6666666666666666
+    >>> distance.russellrao([1, 0, 0], [2, 0, 0])
+    0.3333333333333333
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -1216,7 +1405,7 @@ def russellrao(u, v, w=None):
 
 def sokalmichener(u, v, w=None):
     """
-    Computes the Sokal-Michener dissimilarity between two boolean 1-D arrays.
+    Compute the Sokal-Michener dissimilarity between two boolean 1-D arrays.
 
     The Sokal-Michener dissimilarity between boolean 1-D arrays `u` and `v`,
     is defined as
@@ -1246,6 +1435,16 @@ def sokalmichener(u, v, w=None):
     sokalmichener : double
         The Sokal-Michener dissimilarity between vectors `u` and `v`.
 
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.sokalmichener([1, 0, 0], [0, 1, 0])
+    0.8
+    >>> distance.sokalmichener([1, 0, 0], [1, 1, 0])
+    0.5
+    >>> distance.sokalmichener([1, 0, 0], [2, 0, 0])
+    -1.0
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -1265,7 +1464,7 @@ def sokalmichener(u, v, w=None):
 
 def sokalsneath(u, v, w=None):
     """
-    Computes the Sokal-Sneath dissimilarity between two boolean 1-D arrays.
+    Compute the Sokal-Sneath dissimilarity between two boolean 1-D arrays.
 
     The Sokal-Sneath dissimilarity between `u` and `v`,
 
@@ -1292,6 +1491,18 @@ def sokalsneath(u, v, w=None):
     -------
     sokalsneath : double
         The Sokal-Sneath dissimilarity between vectors `u` and `v`.
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.sokalsneath([1, 0, 0], [0, 1, 0])
+    1.0
+    >>> distance.sokalsneath([1, 0, 0], [1, 1, 0])
+    0.66666666666666663
+    >>> distance.sokalsneath([1, 0, 0], [2, 1, 0])
+    0.0
+    >>> distance.sokalsneath([1, 0, 0], [3, 1, 0])
+    -2.0
 
     """
     u = _validate_vector(u)
@@ -1744,7 +1955,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
 def squareform(X, force="no", checks=True):
     """
-    Converts a vector-form distance vector to a square-form distance
+    Convert a vector-form distance vector to a square-form distance
     matrix, and vice-versa.
 
     Parameters
@@ -1864,7 +2075,7 @@ def squareform(X, force="no", checks=True):
 
 def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
     """
-    Returns True if input array is a valid distance matrix.
+    Return True if input array is a valid distance matrix.
 
     Distance matrices must be 2-dimensional numpy arrays.
     They must have a zero-diagonal, and they must be symmetric.
@@ -1952,7 +2163,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
 
 def is_valid_y(y, warning=False, throw=False, name=None):
     """
-    Returns True if the input array is a valid condensed distance matrix.
+    Return True if the input array is a valid condensed distance matrix.
 
     Condensed distance matrices must be 1-dimensional numpy arrays.
     Their length must be a binomial coefficient :math:`{n \\choose 2}`
@@ -2009,7 +2220,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
 
 def num_obs_dm(d):
     """
-    Returns the number of original observations that correspond to a
+    Return the number of original observations that correspond to a
     square, redundant distance matrix.
 
     Parameters
@@ -2030,7 +2241,7 @@ def num_obs_dm(d):
 
 def num_obs_y(Y):
     """
-    Returns the number of original observations that correspond to a
+    Return the number of original observations that correspond to a
     condensed distance matrix.
 
     Parameters
@@ -2059,7 +2270,7 @@ def num_obs_y(Y):
 
 def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     """
-    Computes distance between each pair of the two collections of inputs.
+    Compute distance between each pair of the two collections of inputs.
 
     See Notes for common calling conventions.
 
