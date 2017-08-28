@@ -25,21 +25,8 @@ def configuration(parent_package='', top_path=None):
 
     cfg = dict(get_sys_info('lapack_opt'))
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
-
-    def get_qhull_misc_config(ext, build_dir):
-        # Generate a header file containing defines
-        config_cmd = config.get_config_cmd()
-        defines = []
-        if config_cmd.check_func('open_memstream', decl=True, call=True):
-            defines.append(('HAVE_OPEN_MEMSTREAM', '1'))
-        target = join(dirname(__file__), 'qhull_misc_config.h')
-        with open(target, 'w') as f:
-            for name, value in defines:
-                f.write('#define {0} {1}\n'.format(name, value))
-
     config.add_extension('qhull',
-                         sources=['qhull.c'] + qhull_src +
-                         [get_qhull_misc_config],
+                         sources=['qhull.c'] + qhull_src,
                          **cfg)
 
     # cKDTree

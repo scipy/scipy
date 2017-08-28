@@ -83,10 +83,13 @@ SuperLU was updated to version 5.2.1.
 `scipy.optimize` improvements
 -----------------------------
 
-The method `trust-exact` was added to the function `scipy.optimize.minimize`.
-This new trust-region method solves the subproblem with higher accuracy at the cost
-of more Hessian factorizations (compared to dogleg) and is able to deal with indefinite
-Hessians. It seems very competitive against the other Newton methods implemented in scipy.
+The methods `trust-region-exact` and `trust-krylov` have been added to the
+function `scipy.optimize.minimize`. These new trust-region methods solve the
+subproblem with higher accuracy at the cost of more Hessian factorizations
+(compared to dogleg) or more matrix vector products (compared to ncg) but
+usually require less nonlinear iterations and are able to deal with indefinite
+Hessians. They seem very competitive against the other Newton methods
+implemented in scipy.
 
 `scipy.optimize.linprog` gained an interior point method.  Its performance is
 superior (both in accuracy and speed) to the older simplex method.
