@@ -905,7 +905,7 @@ interface
      <ftype2> dimension(n-1),intent(out),depend(n) :: e
      <ftype2> dimension(n-1),intent(out),depend(n) :: tau
      integer intent(in),optional,depend(n),check(lwork>=1||lwork==-1) :: lwork = MAX(n,1)
-     <ftype2> dimension(lwork),intent(cache,hide) :: work
+     <ftype2> dimension(lwork),intent(cache,hide),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2>sytrd
 
@@ -945,7 +945,7 @@ interface
      <ftype2> dimension(n-1),intent(out),depend(n) :: e
      <ftype2c> dimension(n-1),intent(out),depend(n) :: tau
      integer intent(in),optional,depend(n),check(lwork>=1||lwork==-1) :: lwork = MAX(n,1)
-     <ftype2c> dimension(lwork),intent(cache,hide) :: work
+     <ftype2c> dimension(lwork),intent(cache,hide),depend(lwork) :: work
      integer intent(out) :: info
    end subroutine <prefix2c>hetrd
 
