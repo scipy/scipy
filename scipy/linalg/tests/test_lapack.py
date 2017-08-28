@@ -566,7 +566,8 @@ class TestSytrd(object):
             # some upper triangular array
             n = 3
             A = np.zeros((n, n), dtype=dtype)
-            A[np.triu_indices_from(A)] = np.arange(1, 2*n+1, dtype=dtype)
+            A[np.triu_indices_from(A)] = \
+                np.arange(1, n*(n+1)//2+1, dtype=dtype)
 
             sytrd, sytrd_lwork = \
                 get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
@@ -626,8 +627,8 @@ class TestHetrd(object):
             n = 3
             A = np.zeros((n, n), dtype=complex_dtype)
             A[np.triu_indices_from(A)] = (
-                np.arange(1, 2*n+1, dtype=real_dtype)
-                + 1j * np.arange(1, 2*n+1, dtype=real_dtype)
+                np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
+                + 1j * np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
                 )
             np.fill_diagonal(A, np.real(np.diag(A)))
 
