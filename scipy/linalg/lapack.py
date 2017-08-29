@@ -382,6 +382,18 @@ All functions
    ssbevx
    dsbevx
 
+   sstebz
+   dstebz
+
+   sstemr
+   dstemr
+
+   ssterf
+   dsterf
+
+   sstein
+   dstein
+
    sstev
    dstev
 

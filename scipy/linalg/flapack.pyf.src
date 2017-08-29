@@ -2788,6 +2788,100 @@ subroutine <prefix2>sbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,a
 end subroutine <prefix2>sbevx
 
 
+subroutine <prefix2>stebz(d,e,range,vl,vu,il,iu,tol,order,n,work,iwork,m,nsplit,w,iblock,isplit,info)
+  ! computes all or selected eigenvalues of a real, symmetric tridiagonal
+  ! matrix.
+
+  callstatement (*f2py_func)((range>0?(range==1?"V":"I"):"A"),order,&n,&vl,&vu,&il,&iu,&tol,d,e,&m,&nsplit,w,iblock,isplit,work,iwork,&info)
+  callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,int*,int*,int*,int*
+
+  <ftype2> dimension(n),intent(in) :: d
+  <ftype2> dimension(n-1),intent(in) :: e
+  <ftype2> intent(in) :: vl
+  <ftype2> intent(in) :: vu
+  character intent(in) :: order
+  integer intent(in) :: il
+  integer intent(in) :: iu
+  <ftype2> intent(in) :: tol
+  integer intent(in) :: range
+  integer depend(d),intent(hide) :: n = shape(d,0)
+  <ftype2> dimension(MAX(1,4*n)),depend(n),intent(hide) :: work  ! The dimension of work must be at least max(1, 4n).
+  integer dimension(MAX(1,3*n)),depend(n),intent(hide) :: iwork  ! Array, size at least max(1, 3n).
+  integer intent(out) :: m
+  integer intent(hide) :: nsplit
+  <ftype2> dimension(MAX(1,n)),depend(n),intent(out) :: w  ! Array, size at least max(1, n).
+  integer dimension(MAX(1,n)),depend(n),intent(out) :: iblock  ! Arrays, size at least max(1, n).
+  integer dimension(MAX(1,n)),depend(n),intent(out) :: isplit
+  integer intent(out) :: info
+end subroutine <prefix2>stebz
+
+
+subroutine <prefix2>sterf(d,e,n,info)
+  ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
+
+  callstatement (*f2py_func)(&n,d,e,&info)
+  callprotoargument int*,<ctype2>*,<ctype2>*,int*
+
+  <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
+  <ftype2> dimension(n-1),intent(in,copy) :: e
+  integer depend(d),intent(hide) :: n = shape(d,0)
+  integer intent(out) :: info
+end subroutine <prefix2>sterf
+
+
+subroutine <prefix2>stein(d,e,w,iblock,isplit,m,n,z,ldz,work,iwork,ifail,info)
+  ! computes eigenvectors corresponding to eigenvalues of a real, symmetric
+  ! tridiagonal matrix.
+
+  callstatement (*f2py_func)(&n,d,e,&m,w,iblock,isplit,z,&ldz,work,iwork,ifail,&info)
+  callprotoargument int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
+
+  <ftype2> dimension(n),intent(in) :: d
+  <ftype2> dimension(n-1),intent(in) :: e
+  <ftype2> dimension(m),intent(in) :: w
+  integer depend(w),intent(hide) :: m = shape(w,0)
+  integer depend(d),intent(hide) :: n = shape(d,0)
+  integer dimension(n),intent(in) :: iblock
+  integer dimension(n),intent(in) :: isplit
+  <ftype2> dimension(ldz,m),intent(out) :: z
+  integer depend(n),intent(hide) :: ldz = MAX(1,n)
+  <ftype2> dimension(5*n),intent(hide) :: work
+  integer dimension(n),intent(hide) :: iwork
+  integer dimension(n),intent(hide) :: ifail  ! really dimension(m), but not known ahead of time
+  integer intent(out) :: info
+end subroutine <prefix2>stein
+
+
+subroutine <prefix2>stemr(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
+  ! computes all eigenvalues of a real, symmetric tridiagonal matrix.
+
+  callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,work,&lwork,iwork,&liwork,&info)
+  callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,int*,<ctype2>*,<ctype2>*,int*,int*,int*,int*,<ctype2>*,int*,int*,int*,int*
+
+  <ftype2> dimension(n),intent(in,copy) :: d
+  <ftype2> dimension(n),intent(in) :: e
+  integer intent(in) :: range
+  <ftype2> intent(in) :: vl
+  <ftype2> intent(in) :: vu
+  integer intent(in) :: il
+  integer intent(in) :: iu
+  integer optional,intent(in) :: compute_v = 1
+  integer intent(hide),depend(d) :: n = shape(d,0)
+  integer intent(out) :: m
+  <ftype2> dimension(MAX(1,n)),depend(n),intent(out) :: w
+  <ftype2> dimension(MAX(1,n),MAX(1,n)),depend(n),intent(out) :: z
+  integer depend(n),intent(hide) :: ldz = (compute_v?MAX(1,n):1)  ! could be made more efficient for index queries
+  integer depend(n),intent(hide) :: nzc = MAX(1,n)
+  integer dimension((compute_v?2*MAX(1,n):1)),depend(n),intent(hide) :: isuppz
+  integer intent(hide) :: tryrac = 1
+  integer depend(n),intent(hide) :: lwork = MAX(1,(compute_v?18*n:12*n))
+  <ftype2> dimension(lwork),depend(lwork),intent(hide) :: work
+  integer intent(hide) :: liwork = MAX(1,(compute_v?10*n:8*n))
+  integer dimension(liwork),depend(liwork),intent(hide) :: iwork
+  integer intent(out) :: info
+end subroutine <prefix2>stemr
+
+
 subroutine <prefix2>stev(d,e,compute_v,n,z,ldz,work,info)
   ! computes all eigenvalues, and, optionally eigvectors of a real,
   ! symmetric tridiagonal matrix.
