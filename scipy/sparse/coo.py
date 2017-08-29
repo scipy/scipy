@@ -87,12 +87,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     Examples
     --------
+    
+    >>> # Constructing an empty matrix
     >>> from scipy.sparse import coo_matrix
     >>> coo_matrix((3, 4), dtype=np.int8).toarray()
     array([[0, 0, 0, 0],
            [0, 0, 0, 0],
            [0, 0, 0, 0]], dtype=int8)
 
+    >>> # Constructing a matrix using ijv format
     >>> row  = np.array([0, 3, 1, 0])
     >>> col  = np.array([0, 3, 1, 2])
     >>> data = np.array([4, 5, 7, 9])
@@ -102,11 +105,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
            [0, 0, 0, 0],
            [0, 0, 0, 5]])
 
-    >>> # example with duplicates
+    >>> # Constructing a matrix with duplicate indices
     >>> row  = np.array([0, 0, 1, 3, 1, 0, 0])
     >>> col  = np.array([0, 2, 1, 3, 1, 0, 0])
     >>> data = np.array([1, 1, 1, 1, 1, 1, 1])
-    >>> coo_matrix((data, (row, col)), shape=(4, 4)).toarray()
+    >>> coo = coo_matrix((data, (row, col)), shape=(4, 4))
+    >>> # Duplicate indices are maintained until implicitly or explicitly summed
+    >>> np.max(coo.data)
+    1
+    >>> coo.toarray()
     array([[3, 0, 1, 0],
            [0, 2, 0, 0],
            [0, 0, 0, 0],
