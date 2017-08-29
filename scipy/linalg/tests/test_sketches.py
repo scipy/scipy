@@ -14,7 +14,6 @@ Run tests if scipy is installed:
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_raises, assert_, assert_allclose)
-from nose.tools import (assert_true)
 
 import pytest
 
@@ -52,7 +51,7 @@ class TestClarksonWoodruffTransform(object):
             self.dense_big_matrix,
             self.n_sketch_rows)
 
-        assert_true(
+        assert(
             sketch.shape == (
                 self.n_sketch_rows,
                 self.dense_big_matrix.shape[1]))
@@ -71,4 +70,4 @@ class TestClarksonWoodruffTransform(object):
             err = np.linalg.norm(self.dense_big_matrix) - np.linalg.norm(sketch)
             if err > self.threshold:
                 n_errors += 1
-        assert_true(n_errors <= self.n_max_errors)
+        assert(n_errors <= self.n_max_errors)
