@@ -126,6 +126,14 @@ Matrix Equation Solvers
    solve_discrete_lyapunov - Solve the discrete-time Lyapunov equation
 
 
+Sketches and Random Projections
+==============
+
+.. autosummary::
+   :toctree: generated/
+
+   clarkson_woodruff_transform - Applies the Clarkson Woodruff Sketch (a.k.a CountMin Sketch)
+
 Special Matrices
 ================
 
@@ -190,6 +198,7 @@ from .special_matrices import *
 from ._solvers import *
 from ._procrustes import *
 from ._decomp_update import *
+from ._sketches import *
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
