@@ -7,6 +7,8 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
+__all__ = ['clarkson_woodruff_transform']
+
 
 def cwt_matrix(n_rows, n_columns):
     """
@@ -14,12 +16,14 @@ def cwt_matrix(n_rows, n_columns):
     Given the size of a desired matrix, the method returns a matrix S of size (n_rows, n_columns)
     where each column has all the entries set to 0 less one position with has been randomly set to
     +1 o -1 with equal probability.
+
     Parameters
     ----------
     n_rows: int
         number of rows of S
     n_columns: int
         number of columns of S
+
     Returns
     -------
     S : (n_rows, n_columns) array_like
@@ -41,7 +45,7 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
     """
     Given an input_matrix  of size (n, d), compute a matrix A' of size  (sketch_size, d)
     which holds:
-        $||Ax|| = (1 \pm \epsilon) ||A'x||$
+    $||Ax|| = (1 \pm \epsilon) ||A'x||$
     with high probability.
 
     The error is related to the number of rows of the sketch. sketch_size = $poly(r*\epsilon^{-1})$
@@ -52,10 +56,12 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
         Input matrix
     sketch_size: int
         number of rows for the sketch
+
     Returns
     -------
     A' : (sketch_size, d) array_like
         Sketch of A
+
     Notes
     -----
     This is an implementation of the Clarckson-Woodruff Transform (also known as CountSketch) introduced for

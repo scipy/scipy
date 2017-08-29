@@ -127,7 +127,7 @@ Matrix Equation Solvers
 
 
 Sketches and Random Projections
-==============
+===============================
 
 .. autosummary::
    :toctree: generated/
