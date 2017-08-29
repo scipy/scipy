@@ -47,36 +47,28 @@ class TestClarksonWoodruffTransform(object):
     dense_big_matrix = make_random_dense_gaussian_matrix(n_matrix_rows,
         n_matrix_columns)
     
-
     def test_sketch_dimensions(self):
         sketch = clarkson_woodruff_transform(
             self.dense_big_matrix,
-            self.n_sketch_rows
-        )
+            self.n_sketch_rows)
 
         assert_true(
             sketch.shape == (
                 self.n_sketch_rows,
-                self.dense_big_matrix.shape[1]
-            )
-        )
-
+                self.dense_big_matrix.shape[1]))
 
     def test_sketch_rows_norm(self):
         # Given the probabilistic nature of the sketches
         # we run the 'test' multiple times and check that
         # we pass all/almost all the tries
-        
         n_errors = 0
         for _ in range(self.repetitions_per_test):
             sketch = clarkson_woodruff_transform(
                 self.dense_big_matrix,
-                self.n_sketch_rows
-            )
+                self.n_sketch_rows)
 
             #we could use other norms (like L2)
             err = np.linalg.norm(self.dense_big_matrix) - np.linalg.norm(sketch)
             if err > self.threshold:
-                n_errors+=1
-        
+                n_errors += 1
         assert_true(n_errors <= self.n_max_errors)
