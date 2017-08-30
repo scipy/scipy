@@ -2,6 +2,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 from scipy._lib.six import callable, xrange
+from scipy._lib._numpy_compat import suppress_warnings
 from collections import namedtuple
 
 __all__ = ['binned_statistic',
@@ -587,12 +588,12 @@ def binned_statistic_dd(sample, values, statistic='mean',
             for vv in xrange(Vdim):
                 result[vv, i] = np.max(values[vv, binnumbers == i])
     elif callable(statistic):
-        old = np.seterr(invalid='ignore')
-        try:
-            null = statistic([])
-        except:
-            null = np.nan
-        np.seterr(**old)
+        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            try:
+                null = statistic([])
+            except:
+                null = np.nan
         result.fill(null)
         for i in np.unique(binnumbers):
             for vv in xrange(Vdim):
