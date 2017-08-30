@@ -45,10 +45,10 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
     """
     Given an input_matrix  of size (n, d), compute a matrix A' of size  (sketch_size, d)
     which holds:
-    $||Ax|| = (1 \pm \epsilon) ||A'x||$
+    
     with high probability.
 
-    The error is related to the number of rows of the sketch. sketch_size = $poly(r*\epsilon^{-1})$
+    The error is related to the number of rows of the sketch. sketch_size =
     
     Parameters
     ----------
@@ -67,7 +67,6 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
     This is an implementation of the Clarckson-Woodruff Transform (also known as CountSketch) introduced for
     first time in Kenneth L. Clarkson and David P. Woodruff. Low rank approximation and regression in input sparsity time. In STOC, 2013.
     A' can be computed in O(nnz(A)) but we don't take advantage of sparse matrix in this implementation
-
     """
 
     S = cwt_matrix(sketch_size, input_matrix.shape[0])
