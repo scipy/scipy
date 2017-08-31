@@ -12,9 +12,9 @@ __all__ = ['clarkson_woodruff_transform']
 
 def cwt_matrix(n_rows, n_columns):
     """
-    Generate a matrix S to be used in the Clarkson-Woodruff sketch.
-    Given the size of a desired matrix, the method returns a matrix S of size (n_rows, n_columns)
-    where each column has all the entries set to 0 less one position with has been randomly set to
+    Generate a matrix S for the Clarkson-Woodruff sketch.
+    Given the desired size of matrix, the method returns a matrix S of size (n_rows, n_columns)
+    where each column has all the entries set to 0 less one position which has been randomly set to
     +1 o -1 with equal probability.
 
     Parameters
@@ -46,9 +46,13 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
     Given an input_matrix  of size (n, d), compute a matrix A' of size  (sketch_size, d)
     which holds:
     
+    .. math:: ||Ax|| = (1 \pm \epsilon) ||A'x||
+
     with high probability.
 
-    The error is related to the number of rows of the sketch. sketch_size =
+    The error is related to the number of rows of the sketch. 
+    
+    .. math:: sketch_size = poly(r(\epsilon^{-1}))
     
     Parameters
     ----------
