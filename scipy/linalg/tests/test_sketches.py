@@ -51,10 +51,9 @@ class TestClarksonWoodruffTransform(object):
             self.dense_big_matrix,
             self.n_sketch_rows)
 
-        assert(
-            sketch.shape == (
-                self.n_sketch_rows,
-                self.dense_big_matrix.shape[1]))
+        assert(sketch.shape == (
+            self.n_sketch_rows,
+            self.dense_big_matrix.shape[1]))
 
     def test_sketch_rows_norm(self):
         # Given the probabilistic nature of the sketches
