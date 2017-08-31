@@ -88,12 +88,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
                                                         overwrite_b)
         alpha = alphar + _I * alphai
         w = _make_eigvals(alpha, beta, homogeneous_eigvals)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal ggev' %
-                         -info)
-    if info > 0:
-        raise LinAlgError("generalized eig algorithm did not converge "
-                          "(info=%d)" % info)
+    _check_info(info, 'generalized eig algorithm (ggev)')
 
     only_real = numpy.all(w.imag == 0.0)
     if not (ggev.typecode in 'cz' or only_real):
@@ -222,12 +217,9 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
         w = wr + _I * wi
         w = _make_eigvals(w, None, homogeneous_eigvals)
 
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal geev' %
-                         -info)
-    if info > 0:
-        raise LinAlgError("eig algorithm did not converge (only eigenvalues "
-                          "with order >= %d have converged)" % info)
+    _check_info(info, 'eig algorithm (geev)',
+                positive='did not converge (only eigenvalues '
+                         'with order >= %d have converged)')
 
     only_real = numpy.all(w.imag == 0.0)
     if not (geev.typecode in 'cz' or only_real):
@@ -388,7 +380,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     # FIXME: implement calculation of optimal lwork
     #        for all lapack routines
     if b1 is None:
-        (evr,) = get_lapack_funcs((pfx+'evr',), (a1,))
+        driver = pfx+'evr'
+        (evr,) = get_lapack_funcs((driver,), (a1,))
         if eigvals is None:
             w, v, info = evr(a1, uplo=uplo, jobz=_job, range="A", il=1,
                              iu=a1.shape[0], overwrite_a=overwrite_a)
@@ -402,7 +395,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     else:
         # Use '*gvx' routines if range is specified
         if eigvals is not None:
-            (gvx,) = get_lapack_funcs((pfx+'gvx',), (a1, b1))
+            driver = pfx+'gvx'
+            (gvx,) = get_lapack_funcs((driver,), (a1, b1))
             (lo, hi) = eigvals
             w_tot, v, ifail, info = gvx(a1, b1, uplo=uplo, iu=hi,
                                         itype=type, jobz=_job, il=lo,
@@ -411,13 +405,15 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             w = w_tot[0:hi-lo+1]
         # Use '*gvd' routine if turbo is on and no eigvals are specified
         elif turbo:
-            (gvd,) = get_lapack_funcs((pfx+'gvd',), (a1, b1))
+            driver = pfx+'gvd'
+            (gvd,) = get_lapack_funcs((driver,), (a1, b1))
             v, w, info = gvd(a1, b1, uplo=uplo, itype=type, jobz=_job,
                              overwrite_a=overwrite_a,
                              overwrite_b=overwrite_b)
         # Use '*gv' routine if turbo is off and no eigvals are specified
         else:
-            (gv,) = get_lapack_funcs((pfx+'gv',), (a1, b1))
+            driver = pfx+'gv'
+            (gv,) = get_lapack_funcs((driver,), (a1, b1))
             v, w, info = gv(a1, b1, uplo=uplo, itype=type, jobz=_job,
                             overwrite_a=overwrite_a,
                             overwrite_b=overwrite_b)
@@ -428,11 +424,8 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
             return w
         else:
             return w, v
-
-    elif info < 0:
-        raise LinAlgError("illegal value in %i-th argument of internal"
-                          " fortran routine." % (-info))
-    elif info > 0 and b1 is None:
+    _check_info(info, driver, positive=False)  # triage more specifically
+    if info > 0 and b1 is None:
         raise LinAlgError("unrecoverable internal error.")
 
     # The algorithm failed to converge.
@@ -630,11 +623,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
         w = w[:m]
         if not eigvals_only:
             v = v[:, :m]
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal %s' %
-                         (-info, internal_name))
-    if info > 0:
-        raise LinAlgError("eig algorithm did not converge")
+    _check_info(info, internal_name)
 
     if eigvals_only:
         return w
@@ -1055,12 +1044,7 @@ def eig_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         e_[:-1] = e
         m, w, v, info = func(d, e_, select, vl, vu, il, iu,
                              compute_v=compute_v)
-    if info < 0:
-        raise ValueError('illegal value in argument %d of internal %s'
-                         % (-info, lapack_driver))
-    if info > 0:
-        raise LinAlgError("eigvals_tridiagonal algorithm %s did not converge "
-                          "(%d)" % (lapack_driver, info,))
+    _check_info(info, lapack_driver + ' (eig_tridiagonal)')
     w = w[:m]
     if eigvals_only:
         return w
@@ -1069,12 +1053,23 @@ def eig_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         if lapack_driver == 'stebz':
             func, = get_lapack_funcs(('stein',), (d, e))
             v, info = func(d, e, w, iblock, isplit)
+            _check_info(info, 'stein (eig_tridiagonal)',
+                        positive='%d eigenvectors failed to converge')
             # Convert block-order to matrix-order
             order = argsort(w)
             w, v = w[order], v[:, order]
         else:
             v = v[:, :m]
         return w, v
+
+
+def _check_info(info, driver, positive='did not converge (LAPACK info=%d)'):
+    """Check info return value."""
+    if info < 0:
+        raise ValueError('illegal value in argument %d of internal %s'
+                         % (-info, driver))
+    if info > 0 and positive:
+        raise LinAlgError(("%s " + positive) % (driver, info,))
 
 
 def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
@@ -1125,17 +1120,13 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     gehrd, gebal, gehrd_lwork = get_lapack_funcs(('gehrd', 'gebal',
                                                   'gehrd_lwork'), (a1,))
     ba, lo, hi, pivscale, info = gebal(a1, permute=0, overwrite_a=overwrite_a)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gebal '
-                         '(hessenberg)' % -info)
+    _check_info(info, 'gebal (hessenberg)', positive=False)
     n = len(a1)
 
     lwork = _compute_lwork(gehrd_lwork, ba.shape[0], lo=lo, hi=hi)
 
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal gehrd '
-                         '(hessenberg)' % -info)
+    _check_info(info, 'gehrd (hessenberg)', positive=False)
     h = numpy.triu(hq, -1)
     if not calc_q:
         return h
@@ -1145,7 +1136,5 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     lwork = _compute_lwork(orghr_lwork, n, lo=lo, hi=hi)
 
     q, info = orghr(a=hq, tau=tau, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
-    if info < 0:
-        raise ValueError('illegal value in %d-th argument of internal orghr '
-                         '(hessenberg)' % -info)
+    _check_info(info, 'orghr (hessenberg)', positive=False)
     return h, q
