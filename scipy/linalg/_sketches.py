@@ -50,9 +50,9 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
 
     with high probability.
 
-    The error is related to the number of rows of the sketch. 
+    The error is related to the number of rows of the sketch. It is bounded 
     
-    .. math:: sketch_size = poly(r(\epsilon^{-1}))
+    .. math:: poly(r(\epsilon^{-1}))
     
     Parameters
     ----------
