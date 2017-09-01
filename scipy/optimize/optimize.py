@@ -436,7 +436,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         convergence.
     adaptive : bool, optional
         Adapt algorithm parameters to dimensionality of problem. Useful for
-        high-dimensional minimization.
+        high-dimensional minimization. See Ref. [14].
 
     """
     if 'ftol' in unknown_options:
