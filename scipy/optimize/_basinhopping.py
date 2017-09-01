@@ -4,6 +4,7 @@ basinhopping: The basinhopping global optimization algorithm
 from __future__ import division, print_function, absolute_import
 
 import numpy as np
+import math
 from numpy import cos, sin
 import scipy.optimize
 import collections
@@ -303,7 +304,7 @@ class Metropolis(object):
         If new is higher than old, there is a chance it will be accepted,
         less likely for larger differences.
         """
-        w = np.exp(min(0, -(energy_new - energy_old) * self.beta))
+        w = math.exp(min(0, -(energy_new - energy_old) * self.beta))
         rand = self.random_state.rand()
         return w >= rand
 
