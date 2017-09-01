@@ -307,7 +307,11 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
        Center -- Institute for Flight Mechanics, Koln, Germany.
     .. [13] Conn, A. R., Gould, N. I., and Toint, P. L.
        Trust region methods. 2000. Siam. pp. 169-200.
-
+    .. [14] Gao, F. and Han, L.
+       Implementing the Nelder-Mead simplex algorithm with adaptive
+       parameters. 2012. Computational Optimization and Applications. 
+       51:1, pp. 259-277
+       
     Examples
     --------
     Let us consider the problem of minimizing the Rosenbrock function. This
