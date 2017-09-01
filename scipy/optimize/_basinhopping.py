@@ -295,7 +295,10 @@ class Metropolis(object):
         Random number generator used for acceptance test
     """
     def __init__(self, T, random_state=None):
-        self.beta = 1.0 / T
+        # Avoid ZeroDivisionError since "MBH can be regarded as a special case
+        # of the BH framework with the Metropolis criterion, where temperature
+        # T = 0."  (Reject all steps that increase energy.)
+        self.beta = 1.0 / T if T != 0 else float('inf')
         self.random_state = check_random_state(random_state)
 
     def accept_reject(self, energy_new, energy_old):
@@ -467,6 +470,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     So, for best results, ``T`` should to be comparable to the typical
     difference in function values between local minima.
+
+    If ``T`` is 0, the algorithm becomes Monotonic Basin-Hopping, in which all
+    steps that increase energy are rejected.
 
     .. versionadded:: 0.12.0
 
