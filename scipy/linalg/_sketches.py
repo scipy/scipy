@@ -80,7 +80,8 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
     >>> from scipy import linalg
     >>> n_rows, n_colums, sketch_n_rows = (2000, 100, 100)
     >>> threshold = 0.1
-    >>> A = make_random_dense_matrix(n_rows, n_columns)
+    >>> tmp = np.random.normal(mu, sigma, n_rows*n_columns)
+    >>> A = np.reshape(tmp, (n_rows, n_columns))
     >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows)
     >>> sketch.shape
     (100, 100)
