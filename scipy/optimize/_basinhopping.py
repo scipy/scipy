@@ -50,9 +50,9 @@ class BasinHoppingRunner(object):
         `x_old`.  These tests will be used to judge whether or not to accept
         the step.  The acceptable return values are True, False, or ``"force
         accept"``.  If any of the tests return False then the step is rejected.
-        If the latter, then this will override any other tests in order to
-        accept the step. This can be used, for example, to forcefully escape
-        from a local minimum that ``basinhopping`` is trapped in.
+        If ``"force accept"``, then this will override any other tests in
+        order to accept the step. This can be used, for example, to forcefully
+        escape from a local minimum that ``basinhopping`` is trapped in.
     disp : bool, optional
         Display status messages.
 
@@ -92,7 +92,7 @@ class BasinHoppingRunner(object):
             self.res.nhev = minres.nhev
 
     def _monte_carlo_step(self):
-        """Do one monte carlo iteration
+        """Do one Monte Carlo iteration
 
         Randomly displace the coordinates, minimize, and decide whether
         or not to accept the new coordinates.
@@ -119,8 +119,8 @@ class BasinHoppingRunner(object):
             self.res.nhev += minres.nhev
 
         # accept the move based on self.accept_tests. If any test is False,
-        # than reject the step.  If any test returns the special value, the
-        # string 'force accept', accept the step regardless.  This can be used
+        # then reject the step.  If any test returns the special string
+        # 'force accept', then accept the step regardless.  This can be used
         # to forcefully escape from a local minimum if normal basin hopping
         # steps are not sufficient.
         accept = True
@@ -246,14 +246,14 @@ class AdaptiveStepsize(object):
 
 class RandomDisplacement(object):
     """
-    Add a random displacement of maximum size, stepsize, to the coordinates
+    Add a random displacement of maximum size `stepsize` to each coordinate
 
-    update x inplace
+    Calling this updates `x` in-place.
 
     Parameters
     ----------
     stepsize : float, optional
-        stepsize
+        Maximum stepsize in any dimension
     random_state : None or `np.random.RandomState` instance, optional
         The random number generator that generates the displacements
     """
@@ -288,6 +288,8 @@ class Metropolis(object):
 
     Parameters
     ----------
+    T : float
+        The "temperature" parameter for the accept or reject criterion.
     random_state : None or `np.random.RandomState` object
         Random number generator used for acceptance test
     """
@@ -296,6 +298,11 @@ class Metropolis(object):
         self.random_state = check_random_state(random_state)
 
     def accept_reject(self, energy_new, energy_old):
+        """
+        If new energy is lower than old, it will always be accepted.
+        If new is higher than old, there is a chance it will be accepted,
+        less likely for larger differences.
+        """
         w = np.exp(min(0, -(energy_new - energy_old) * self.beta))
         rand = self.random_state.rand()
         return w >= rand
@@ -320,20 +327,19 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     func : callable ``f(x, *args)``
         Function to be optimized.  ``args`` can be passed as an optional item
         in the dict ``minimizer_kwargs``
-    x0 : ndarray
+    x0 : array_like
         Initial guess.
     niter : integer, optional
-        The number of basin hopping iterations
+        The number of basin-hopping iterations
     T : float, optional
         The "temperature" parameter for the accept or reject criterion.  Higher
         "temperatures" mean that larger jumps in function value will be
         accepted.  For best results ``T`` should be comparable to the
-        separation
-        (in function value) between local minima.
+        separation (in function value) between local minima.
     stepsize : float, optional
-        initial step size for use in the random displacement.
+        Maximum step size for use in the random displacement.
     minimizer_kwargs : dict, optional
-        Extra keyword arguments to be passed to the minimizer
+        Extra keyword arguments to be passed to the local minimizer
         ``scipy.optimize.minimize()`` Some important options could be:
 
             method : str
@@ -343,9 +349,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                 its derivatives (Jacobian, Hessian).
 
     take_step : callable ``take_step(x)``, optional
-        Replace the default step taking routine with this routine.  The default
-        step taking routine is a random displacement of the coordinates, but
-        other step taking algorithms may be better for some systems.
+        Replace the default step-taking routine with this routine.  The default
+        step-taking routine is a random displacement of the coordinates, but
+        other step-taking algorithms may be better for some systems.
         ``take_step`` can optionally have the attribute ``take_step.stepsize``.
         If this attribute exists, then ``basinhopping`` will adjust
         ``take_step.stepsize`` in order to try to optimize the global minimum
@@ -392,7 +398,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         The optimization result represented as a ``OptimizeResult`` object.  Important
         attributes are: ``x`` the solution array, ``fun`` the value of the
         function at the solution, and ``message`` which describes the cause of
-        the termination. The ``OptimzeResult`` object returned by the selected
+        the termination. The ``OptimizeResult`` object returned by the selected
         minimizer at the lowest minimum is also contained within this object
         and can be accessed through the ``lowest_optimization_result`` attribute.
         See `OptimizeResult` for a description of other attributes.
@@ -453,7 +459,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     results if you set a sensible value for ``stepsize``.
 
     Choosing ``T``: The parameter ``T`` is the temperature used in the
-    metropolis criterion.  Basinhopping steps are accepted with probability
+    Metropolis criterion.  Basinhopping steps are accepted with probability
     ``1`` if ``func(xnew) < func(xold)``, or otherwise with probability::
 
         exp( -(func(xnew) - func(xold)) / T )
@@ -520,8 +526,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
 
 
-    Here is an example using a custom step taking routine.  Imagine you want
-    the first coordinate to take larger steps then the rest of the coordinates.
+    Here is an example using a custom step-taking routine.  Imagine you want
+    the first coordinate to take larger steps than the rest of the coordinates.
     This can be implemented like so:
 
     >>> class MyTakeStep(object):
@@ -600,7 +606,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     wrapped_minimizer = MinimizerWrapper(scipy.optimize.minimize, func,
                                          **minimizer_kwargs)
 
-    # set up step taking algorithm
+    # set up step-taking algorithm
     if take_step is not None:
         if not isinstance(take_step, collections.Callable):
             raise TypeError("take_step must be callable")
