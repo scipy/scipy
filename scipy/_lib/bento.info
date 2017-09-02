@@ -10,3 +10,6 @@ Library:
     Extension: _fpumode
         Sources:
              _fpumode.c
+    Extension: messagestream
+        Sources:
+             messagestream.c

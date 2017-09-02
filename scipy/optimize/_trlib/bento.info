@@ -1,0 +1,11 @@
+HookFile: bscript
+
+Library:
+    Extension: _trlib
+        Sources:
+            _trlib.c,
+            trlib_krylov.c,
+            trlib_eigen_inverse.c,
+            trlib_leftmost.c,
+            trlib_quadratic_zero.c,
+            trlib_tri_factor.c
