@@ -4,13 +4,6 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.linalg import clarkson_woodruff_transform
 
-__usage__ = """
-Build linalg:
-  python setup_linalg.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test()'
-"""
-
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_raises, assert_, assert_allclose)
