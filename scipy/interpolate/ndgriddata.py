@@ -132,6 +132,13 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
         incommensurable units and differ by many orders of magnitude.
 
         .. versionadded:: 0.14.0
+        
+    Returns
+    -------
+    
+    ip: ndarray
+        Interpolation points of dimensions xi and based on the method
+        passed to the function.
 
     Notes
     -----
