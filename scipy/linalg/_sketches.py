@@ -69,12 +69,31 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
 
     Notes
     -----
-    This is an implementation of the Clarkson-Woodruff Transform
-    (also known as CountSketch) introduced for first time in
-    Kenneth L. Clarkson and David P. Woodruff. Low rank approximation and
-    regression in input sparsity time. In STOC, 2013.
-    A' can be computed in O(nnz(A)) but we don't take advantage of
-    sparse matrix in this implementation
+    This is an implementation of the Clarkson-Woodruff Transform (CountSketch)
+    A' can be computed in O(nnz(A)) but we don't take advantage of sparse
+    matrices in this implementation
+
+    Examples
+    --------
+    Given a big dense matrix `A`:
+
+    >>> from scipy import linalg
+    >>> n_rows, n_colums, sketch_n_rows = (2000, 100, 100)
+    >>> threshold = 0.1
+    >>> A = make_random_dense_matrix(n_rows, n_columns)
+    >>> sketch = linalg.clarkson_woodruff_transform(A, sketch_n_rows)
+    >>> sketch.shape
+    (100, 100)
+    >>> normA = np.norm(A)
+    >>> normSketch = np.norm(sketch)
+    >>> # with high probability!
+    >>> abs(normA-normSketch) < threshold
+    True
+
+    References
+    ----------
+    .. [1] Kenneth L. Clarkson and David P. Woodruff. Low rank approximation and
+           regression in input sparsity time. In STOC, 2013.
     """
 
     S = cwt_matrix(sketch_size, input_matrix.shape[0])
