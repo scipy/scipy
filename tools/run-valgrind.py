@@ -80,7 +80,8 @@ def run_valgrind(valgrind, opts, payload, suppressions):
     with open(logfilename, 'r') as ff:
         r = ff.read()
 
-    os.unlink(logfilename)
+    #os.unlink(logfilename)
+    print("writing log to", logfilename)
     if 'FATAL' in r:
         print(r)
         raise RuntimeError("Valgrind failed with")
@@ -217,5 +218,79 @@ def parse_log(log):
     # and a suppression file can be created from a set of entries.
     pass
 
+class ValgrindSection(list):
+    def __init__(self):
+        self.supp_rule = []
 
-main()
+    @classmethod
+    def from_list(cls, list, supp_rule):
+        self = ValgrindSection()
+        self.extend(list)
+        self.supp_rule = supp_rule
+        return self
+
+    def is_warn(self):
+        if len(section) == 0: return False
+        return self[0].startswith('Warning:')
+
+    def is_heap_summary(self):
+        if len(section) == 0: return False
+        return section[0].startswith("HEAP SUMMARY:")
+
+    def is_leak_summary(self):
+        if len(section) == 0: return False
+        return section[0].startswith("HEAP SUMMARY:")
+
+    def is_error_summary(self):
+        if len(section) == 0: return False
+        return section[1].startswith("ERROR SUMMARY:")
+
+    def __str__(self):
+        return '\n'.join(self)
+
+    def get_scipy_related(self):
+        r = []
+        for line in self:
+            if 'scipy/' in line:
+                r.append(line)
+        if len(r) is 0: return None
+        return ValgrindSection.from_list(r, self.supp_rule)
+
+    def format_suppression(self):
+        return '\n'.join(self.supp_rule)
+
+class ValgrindLog(list):
+    def __init__(sections, filename):
+        section_start = True
+        section = ValgrindSection()
+        for i, line in enumerate(open(filename).readlines()):
+            if line.startswith('=='):
+                pid, line = line.split(' ', 1)
+            else:
+                pid = None
+
+            if pid is not None:
+                if section_start:
+                    sections.append(section)
+                    section = ValgrindSection()
+                    section_start = False
+
+                if len(line.strip()) == 0:
+                    section_start = True
+                else:
+                    section.append(line.strip())
+
+            if pid is None:
+                section.supp_rule.append(line.rstrip())
+
+    def __str__(self):
+        return '\n'.join([str(i) for i in self])
+
+v = ValgrindLog('log-example')
+for s in v:
+    sc = s.get_scipy_related()
+    if sc:
+        print(s)
+    print(s.format_suppression())
+
+#main()
