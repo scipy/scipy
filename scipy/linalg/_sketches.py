@@ -11,11 +11,11 @@ __all__ = ['clarkson_woodruff_transform']
 
 
 def cwt_matrix(n_rows, n_columns):
-    """
-    Generate a matrix S for the Clarkson-Woodruff sketch.
-    Given the desired size of matrix, the method returns a matrix S of size (n_rows, n_columns)
-    where each column has all the entries set to 0 less one position which has been randomly set to
-    +1 o -1 with equal probability.
+    r""""
+    Generate a matrix S for the Clarkson-Woodruff sketch. Given the desired
+    size of matrix, the method returns a matrix S of size (n_rows, n_columns)
+    where each column has all the entries set to 0 less one position which has
+    been randomly set to +1 o -1 with equal probability.
 
     Parameters
     ----------
@@ -30,7 +30,8 @@ def cwt_matrix(n_rows, n_columns):
 
     Notes
     -----
-    Given a matrix A, with probability at least 9/10, norm(SA) == (1+epsilon)*norm(A)
+    Given a matrix A, with probability at least 9/10,
+    .. math:: ||SA|| == (1 \pm \epsilon)||A||
     Where epsilon is related to the size of S
     """
     S = np.zeros((n_rows, n_columns))
@@ -42,15 +43,15 @@ def cwt_matrix(n_rows, n_columns):
     return S
 
 def clarkson_woodruff_transform(input_matrix, sketch_size):
-    """
-    Given an input_matrix  of size (n, d), compute a matrix A' of size  (sketch_size, d)
-    which holds:
+    r""""
+    Given an input_matrix  of size (n, d), compute a matrix A' of size
+    (sketch_size, d) which holds:
     
-    .. math:: ||Ax|| = (1 \pm \epsilon) ||A'x||
+    .. math:: ||Ax|| = (1 \pm \epsilon)||A'x||
 
     with high probability.
 
-    The error is related to the number of rows of the sketch. It is bounded 
+    The error is related to the number of rows of the sketch and it is bounded
     
     .. math:: poly(r(\epsilon^{-1}))
     
@@ -68,9 +69,12 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
 
     Notes
     -----
-    This is an implementation of the Clarckson-Woodruff Transform (also known as CountSketch) introduced for
-    first time in Kenneth L. Clarkson and David P. Woodruff. Low rank approximation and regression in input sparsity time. In STOC, 2013.
-    A' can be computed in O(nnz(A)) but we don't take advantage of sparse matrix in this implementation
+    This is an implementation of the Clarkson-Woodruff Transform
+    (also known as CountSketch) introduced for first time in
+    Kenneth L. Clarkson and David P. Woodruff. Low rank approximation and
+    regression in input sparsity time. In STOC, 2013.
+    A' can be computed in O(nnz(A)) but we don't take advantage of
+    sparse matrix in this implementation
     """
 
     S = cwt_matrix(sketch_size, input_matrix.shape[0])
