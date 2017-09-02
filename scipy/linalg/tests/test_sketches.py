@@ -51,7 +51,7 @@ class TestClarksonWoodruffTransform(object):
             self.dense_big_matrix,
             self.n_sketch_rows)
 
-        assert(sketch.shape == (
+        assert_(sketch.shape == (
             self.n_sketch_rows,
             self.dense_big_matrix.shape[1]))
 
@@ -69,4 +69,4 @@ class TestClarksonWoodruffTransform(object):
             err = np.linalg.norm(self.dense_big_matrix) - np.linalg.norm(sketch)
             if err > self.threshold:
                 n_errors += 1
-        assert(n_errors <= self.n_max_errors)
+        assert_(n_errors <= self.n_max_errors)
