@@ -24,8 +24,15 @@ New features
 `scipy.cluster` improvements
 ----------------------------
 
-`scipy.cluster.optimal_leaf_ordering`, a function to reorder a linkage matrix
-to minimize distances between adjacent leaves, was added.
+`scipy.cluster.hierarchy.optimal_leaf_ordering`, a function to reorder a
+linkage matrix to minimize distances between adjacent leaves, was added.
+
+
+`scipy.fftpack` improvements
+----------------------------
+
+N-dimensional versions of the discrete sine and cosine transforms and their
+inverses were added as ``dctn``, ``idctn``, ``dstn`` and ``idstn``.
 
 
 `scipy.integrate` improvements
@@ -43,6 +50,9 @@ can also be used directly.
 Wrappers for the LAPACK functions ``*gels``, ``sstev`` and ``dstev`` have been
 added.
 
+The function `scipy.linalg.subspace_angles` has been added to compute the
+subspace angles between two matrices.
+
 
 `scipy.ndimage` improvements
 ----------------------------
@@ -50,7 +60,8 @@ added.
 Support for homogeneous coordinate transforms has been added to
 `scipy.ndimage.affine_transform`.
 
-The ``ndimage`` C code underwent a significant refactoring
+The ``ndimage`` C code underwent a significant refactoring, and is now
+a lot easier to understand and maintain.
 
 
 `scipy.sparse` improvements
@@ -67,15 +78,12 @@ which diagonal to return.
 `scipy.sparse.linalg` improvements
 ----------------------------------
 
-Added a new iterative solver GCROT(m,k), based on [Hicken and Zingg,
-SIAM J. Sci. Comput. 32, 172 (2010)] and [Parks et
-al. SIAM J. Sci. Comput. 28, 1651 (2006)].
+A new iterative solver for large-scale nonsymmetric sparse linear systems,
+`scipy.sparse.linalg.gcrotmk`, was added.  It implements ``GCROT(m,k)``, a
+flexible variant of ``GCROT``.
 
 `scipy.sparse.linalg.lsmr` now accepts an initial guess, yielding potentially
 faster convergence.
-
-The function `scipy.linalg.subspace_angles` has been added to compute the
-subspace angles between two matrices.
 
 SuperLU was updated to version 5.2.1.
 
@@ -83,7 +91,7 @@ SuperLU was updated to version 5.2.1.
 `scipy.optimize` improvements
 -----------------------------
 
-The methods `trust-region-exact` and `trust-krylov` have been added to the
+The methods ``trust-region-exact`` and ``trust-krylov`` have been added to the
 function `scipy.optimize.minimize`. These new trust-region methods solve the
 subproblem with higher accuracy at the cost of more Hessian factorizations
 (compared to dogleg) or more matrix vector products (compared to ncg) but
@@ -98,13 +106,13 @@ superior (both in accuracy and speed) to the older simplex method.
 `scipy.stats` improvements
 --------------------------
 
-The methods `logcdf` and `cdf` were added to `scipy.stats.multivariate_normal`,
-providing the cumulative distribution function of the multivariate normal
-distribution.  The underlying code is the classic one by Alan Genz (see
-`scipy/stats/mvndst.f`).
+The methods ``cdf`` and ``logcdf`` were added to
+`scipy.stats.multivariate_normal`, providing the cumulative distribution
+function of the multivariate normal distribution.
 
-New statistical distance functions were added, namely `wasserstein_distance` for
-the first Wasserstein distance and `energy_distance` for the energy distance.
+New statistical distance functions were added, namely
+`scipy.stats.wasserstein_distance` for the first Wasserstein distance and
+`scipy.stats.energy_distance` for the energy distance.
 
 
 Deprecated features
@@ -114,7 +122,7 @@ Deprecated features
 are deprecated.  This was a never finished set of wrapper functions which is
 not relevant anymore.
 
-The ``fillvalue`` of ``scipy.signal.convolve2d`` will be cast directly to the
+The ``fillvalue`` of `scipy.signal.convolve2d` will be cast directly to the
 dtypes of the input arrays in the future and checked that it is a scalar or
 an array with a single element.
 
@@ -125,16 +133,16 @@ Backwards incompatible changes
 The default value for the ``zero_phase`` keyword of `scipy.signal.decimate`
 has been changed to True.
 
-The `kmeans` and `kmeans` functions in `scipy.cluster.vq` changed the method
-used for random initialization, so using a fixed random seed will
+The ``kmeans`` and ``kmeans2`` functions in `scipy.cluster.vq` changed the
+method used for random initialization, so using a fixed random seed will
 not necessarily produce the same results as in previous versions.
 
 `scipy.special.gammaln` does not accept complex arguments anymore.
 
-The deprecated functions `sph_jn`, `sph_yn`, `sph_jnyn`, `sph_in`,
-`sph_kn`, and `sph_inkn` have been removed. Users should instead use
-the functions `spherical_jn`, `spherical_yn`, `spherical_in`, and
-`spherical_kn`. Be aware that the new functions have different
+The deprecated functions ``sph_jn``, ``sph_yn``, ``sph_jnyn``, ``sph_in``,
+``sph_kn``, and ``sph_inkn`` have been removed. Users should instead use
+the functions ``spherical_jn``, ``spherical_yn``, ``spherical_in``, and
+``spherical_kn``. Be aware that the new functions have different
 signatures.
 
 The cross-class properties of `scipy.signal.lti` systems have been removed.
@@ -147,8 +155,8 @@ Name - (accessing/setting has been removed) - (setting has been removed)
 * ZerosPolesGain (``A``, ``B``, ``C``, ``D``, ``num``, ``den``) - ()
 
 
-The method ``var`` for the Dirichlet distribution of `scipy.stats.multivariate`
-now returns a scalar rather than an ndarray when the length of alpha is 1.
+The method ``var`` of `scipy.stats.dirichlet` now returns a scalar rather than
+an ndarray when the length of alpha is 1.
 
 
 Other changes
@@ -163,9 +171,9 @@ It is now possible to build SciPy on Windows with MSVC + gfortran!  Continuous
 integration has been set up for this build configuration on Appveyor, building
 against OpenBLAS.
 
-The SciPy test suite has been migrated from ``nose`` to ``pytest``.
-
 Continuous integration for OS X has been set up on TravisCI.
+
+The SciPy test suite has been migrated from ``nose`` to ``pytest``.
 
 ``scipy/_distributor_init.py`` was added to allow redistributors of SciPy to
 add custom code that needs to run when importing SciPy (e.g. checks for
@@ -175,8 +183,9 @@ Support for PEP 518 (specifying build system requirements) was added - see
 ``pyproject.toml`` in the root of the SciPy repository.
 
 In order to have consistent function names, the function
-`scipy.linalg.solve_lyapunov` is renamed to `scipy.linalg.solve_continuous_lyapunov`.
-The old name is kept for backwards-compatibility.
+``scipy.linalg.solve_lyapunov`` is renamed to
+`scipy.linalg.solve_continuous_lyapunov`.  The old name is kept for
+backwards-compatibility.
 
 
 Authors
