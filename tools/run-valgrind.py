@@ -34,6 +34,7 @@ from argparse import ArgumentParser
 import os
 from subprocess import call
 from tempfile import mkstemp
+import time
 
 ap = ArgumentParser("run-valgrind")
 ap.add_argument("tests", nargs='+', help='a list of tests to run')
@@ -113,6 +114,7 @@ def rules(ns, update_suppressions):
     ]
 
     for test in ns.tests:
+        t0 = time.time()
 
         ensure_suppression_dir(ns.prefix, test)
 
@@ -198,6 +200,9 @@ def rules(ns, update_suppressions):
             print("Written %d suppression rules to %s" % (len(newdb), local_supp))
             with open(local_supp, 'w') as ff:
                 ff.write(str(newdb))
+
+        t1 = time.time()
+        print("Testing %s used %g seconds" % (test, t1 - t0))
 
 class ValgrindSection(list):
     def __init__(self):
