@@ -560,3 +560,153 @@ def test_sgesdd_lwork_bug_workaround():
     assert_equal(returncode, 0,
                  "Code apparently failed: " + p.stdout.read())
 
+
+class TestSytrd(object):
+    def test_sytrd(self):
+        for dtype in REAL_DTYPES:
+            # Assert that a 0x0 matrix raises an error
+            A = np.zeros((0, 0), dtype=dtype)
+            sytrd, sytrd_lwork = \
+                get_lapack_funcs(('sytrd', 'sytrd_lwork'), (A,))
+            assert_raises(ValueError, sytrd, A)
+
+            # Tests for n = 1 currently fail with
+            # ```
+            # ValueError: failed to create intent(cache|hide)|optional array--
+            # must have defined dimensions but got (0,)
+            # ```
+            # This is a NumPy issue
+            # <https://github.com/numpy/numpy/issues/9617>.
+            # TODO once the issue has been resolved, test for n=1
+
+            # some upper triangular array
+            n = 3
+            A = np.zeros((n, n), dtype=dtype)
+            A[np.triu_indices_from(A)] = \
+                np.arange(1, n*(n+1)//2+1, dtype=dtype)
+
+            # query lwork
+            lwork, info = sytrd_lwork(n)
+            assert_equal(info, 0)
+
+            # check lower=1 behavior (shouldn't do much since the matrix is
+            # upper triangular)
+            data, d, e, tau, info = sytrd(A, lower=1, lwork=lwork)
+            assert_equal(info, 0)
+
+            assert_allclose(data, A, atol=5*np.finfo(dtype).eps, rtol=1.0)
+            assert_allclose(d, np.diag(A))
+            assert_allclose(e, 0.0)
+            assert_allclose(tau, 0.0)
+
+            # and now for the proper test (lower=0 is the default)
+            data, d, e, tau, info = sytrd(A, lwork=lwork)
+            assert_equal(info, 0)
+
+            # assert Q^T*A*Q = tridiag(e, d, e)
+
+            # build tridiagonal matrix
+            T = np.zeros_like(A, dtype=dtype)
+            k = np.arange(A.shape[0])
+            T[k, k] = d
+            k2 = np.arange(A.shape[0]-1)
+            T[k2+1, k2] = e
+            T[k2, k2+1] = e
+
+            # build Q
+            Q = np.eye(n, n, dtype=dtype)
+            for i in range(n-1):
+                v = np.zeros(n, dtype=dtype)
+                v[:i] = data[:i, i+1]
+                v[i] = 1.0
+                H = np.eye(n, n, dtype=dtype) - tau[i] * np.outer(v, v)
+                Q = np.dot(H, Q)
+
+            # Make matrix fully symmetric
+            i_lower = np.tril_indices(n, -1)
+            A[i_lower] = A.T[i_lower]
+
+            QTAQ = np.dot(Q.T, np.dot(A, Q))
+
+            # disable rtol here since some values in QTAQ and T are very close
+            # to 0.
+            assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
+
+
+class TestHetrd(object):
+    def test_hetrd(self):
+        for real_dtype, complex_dtype in zip(REAL_DTYPES, COMPLEX_DTYPES):
+            # Assert that a 0x0 matrix raises an error
+            A = np.zeros((0, 0), dtype=complex_dtype)
+            hetrd, hetrd_lwork = \
+                get_lapack_funcs(('hetrd', 'hetrd_lwork'), (A,))
+            assert_raises(ValueError, hetrd, A)
+
+            # Tests for n = 1 currently fail with
+            # ```
+            # ValueError: failed to create intent(cache|hide)|optional array--
+            # must have defined dimensions but got (0,)
+            # ```
+            # This is a NumPy issue
+            # <https://github.com/numpy/numpy/issues/9617>.
+            # TODO once the issue has been resolved, test for n=1
+
+            # some upper triangular array
+            n = 3
+            A = np.zeros((n, n), dtype=complex_dtype)
+            A[np.triu_indices_from(A)] = (
+                np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
+                + 1j * np.arange(1, n*(n+1)//2+1, dtype=real_dtype)
+                )
+            np.fill_diagonal(A, np.real(np.diag(A)))
+
+            # query lwork
+            lwork, info = hetrd_lwork(n)
+            assert_equal(info, 0)
+
+            # check lower=1 behavior (shouldn't do much since the matrix is
+            # upper triangular)
+            data, d, e, tau, info = hetrd(A, lower=1, lwork=lwork)
+            assert_equal(info, 0)
+
+            assert_allclose(data, A, atol=5*np.finfo(real_dtype).eps, rtol=1.0)
+
+            assert_allclose(d, np.real(np.diag(A)))
+            assert_allclose(e, 0.0)
+            assert_allclose(tau, 0.0)
+
+            # and now for the proper test (lower=0 is the default)
+            data, d, e, tau, info = hetrd(A, lwork=lwork)
+            assert_equal(info, 0)
+
+            # assert Q^T*A*Q = tridiag(e, d, e)
+
+            # build tridiagonal matrix
+            T = np.zeros_like(A, dtype=real_dtype)
+            k = np.arange(A.shape[0], dtype=int)
+            T[k, k] = d
+            k2 = np.arange(A.shape[0]-1, dtype=int)
+            T[k2+1, k2] = e
+            T[k2, k2+1] = e
+
+            # build Q
+            Q = np.eye(n, n, dtype=complex_dtype)
+            for i in range(n-1):
+                v = np.zeros(n, dtype=complex_dtype)
+                v[:i] = data[:i, i+1]
+                v[i] = 1.0
+                H = np.eye(n, n, dtype=complex_dtype) \
+                    - tau[i] * np.outer(v, np.conj(v))
+                Q = np.dot(H, Q)
+
+            # Make matrix fully Hermetian
+            i_lower = np.tril_indices(n, -1)
+            A[i_lower] = np.conj(A.T[i_lower])
+
+            QHAQ = np.dot(np.conj(Q.T), np.dot(A, Q))
+
+            # disable rtol here since some values in QTAQ and T are very close
+            # to 0.
+            assert_allclose(
+                QHAQ, T, atol=10*np.finfo(real_dtype).eps, rtol=1.0
+                )

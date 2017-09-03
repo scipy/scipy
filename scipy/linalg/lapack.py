@@ -180,6 +180,18 @@ All functions
    csysvx_lwork
    zsysvx_lwork
 
+   ssytrd
+   dsytrd
+
+   ssytrd_lwork
+   dsytrd_lwork
+
+   chetrd
+   zhetrd
+
+   chetrd_lwork
+   zhetrd_lwork
+
    chesv
    zhesv
 
