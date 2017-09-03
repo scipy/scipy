@@ -69,8 +69,8 @@ def run_valgrind(valgrind, opts, payload, suppressions):
     with open(logfilename, 'r') as ff:
         r = ff.read()
 
-    #os.unlink(logfilename)
-    print("writing log to", logfilename)
+    os.unlink(logfilename)
+    #print("writing log to", logfilename)
     if 'FATAL' in r:
         print(r)
         raise RuntimeError("Valgrind failed with")
