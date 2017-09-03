@@ -131,6 +131,9 @@ class BasinHoppingRunner(object):
             if testres == 'force accept':
                 accept = True
                 break
+            elif testres is None:
+                raise ValueError("accept_tests must return True, False, or "
+                                 "'force accept'")
             elif not testres:
                 accept = False
 
