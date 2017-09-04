@@ -16,7 +16,7 @@ from __future__ import division, print_function, absolute_import
 
 __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
            'eig_banded', 'eigvals_banded',
-           'eig_tridiagonal', 'eigvals_tridiagonal', 'hessenberg']
+           'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg']
 
 import numpy
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj, cast,
@@ -178,7 +178,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     eigh : Eigenvalues and right eigenvectors for symmetric/Hermitian arrays.
     eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
         band matrices
-    eig_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
@@ -323,7 +323,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     eigvalsh : eigenvalues of symmetric or Hermitian arrays
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
-    eig_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
     """
     a1 = _asarray_validated(a, check_finite=check_finite)
@@ -569,7 +569,7 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
     eig : eigenvalues and right eigenvectors of general arrays.
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
-    eig_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
     """
     if eigvals_only or overwrite_a_band:
@@ -679,7 +679,7 @@ def eigvals(a, b=None, overwrite_a=False, check_finite=True,
     eig : eigenvalues and right eigenvectors of general arrays.
     eigvalsh : eigenvalues of symmetric or Hermitian arrays
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
-    eigvals_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
+    eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
     """
     return eig(a, b=b, left=0, right=0, overwrite_a=overwrite_a,
@@ -755,7 +755,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
     eigvals : eigenvalues of general arrays
     eigvals_banded : eigenvalues for symmetric/Hermitian band matrices
-    eigvals_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
+    eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
     """
     return eigh(a, b=b, lower=lower, eigvals_only=True,
@@ -836,7 +836,7 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
     --------
     eig_banded : eigenvalues and right eigenvectors for symmetric/Hermitian
         band matrices
-    eigvals_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
+    eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
     eigvals : eigenvalues of general arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
@@ -847,10 +847,10 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
                       select_range=select_range, check_finite=check_finite)
 
 
-def eigvals_tridiagonal(d, e, select='a', select_range=None, check_finite=True,
-                        tol=0., lapack_driver='auto'):
+def eigvalsh_tridiagonal(d, e, select='a', select_range=None,
+                         check_finite=True, tol=0., lapack_driver='auto'):
     """
-    Solve tridiagonal eigenvalue problem.
+    Solve eigenvalue problem for a real symmetric tridiagonal matrix.
 
     Find eigenvalues `w` of ``a``::
 
@@ -908,18 +908,18 @@ def eigvals_tridiagonal(d, e, select='a', select_range=None, check_finite=True,
 
     See Also
     --------
-    eig_tridiagonal : eigenvalues and right eiegenvectors for
+    eigh_tridiagonal : eigenvalues and right eiegenvectors for
         symmetric/Hermitian tridiagonal matrices
     """
-    return eig_tridiagonal(
+    return eigh_tridiagonal(
         d, e, eigvals_only=True, select=select, select_range=select_range,
         check_finite=check_finite, tol=tol, lapack_driver=lapack_driver)
 
 
-def eig_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
-                    check_finite=True, tol=0., lapack_driver='auto'):
+def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
+                     check_finite=True, tol=0., lapack_driver='auto'):
     """
-    Solve tridiagonal eigenvalue problem.
+    Solve eigenvalue problem for a real symmetric tridiagonal matrix.
 
     Find eigenvalues `w` and optionally right eigenvectors `v` of ``a``::
 
@@ -983,7 +983,7 @@ def eig_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
 
     See Also
     --------
-    eigvals_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
+    eigvalsh_tridiagonal : eigenvalues of symmetric/Hermitian tridiagonal
         matrices
     eig : eigenvalues and right eigenvectors for non-symmetric arrays
     eigh : eigenvalues and right eigenvectors for symmetric/Hermitian arrays
@@ -1044,7 +1044,7 @@ def eig_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         e_[:-1] = e
         m, w, v, info = func(d, e_, select, vl, vu, il, iu,
                              compute_v=compute_v)
-    _check_info(info, lapack_driver + ' (eig_tridiagonal)')
+    _check_info(info, lapack_driver + ' (eigh_tridiagonal)')
     w = w[:m]
     if eigvals_only:
         return w
@@ -1053,7 +1053,7 @@ def eig_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         if lapack_driver == 'stebz':
             func, = get_lapack_funcs(('stein',), (d, e))
             v, info = func(d, e, w, iblock, isplit)
-            _check_info(info, 'stein (eig_tridiagonal)',
+            _check_info(info, 'stein (eigh_tridiagonal)',
                         positive='%d eigenvectors failed to converge')
             # Convert block-order to matrix-order
             order = argsort(w)
