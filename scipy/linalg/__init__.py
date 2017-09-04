@@ -54,8 +54,8 @@ Eigenvalue Problems
    eigvalsh - Find just the eigenvalues of a Hermitian or symmetric matrix
    eig_banded - Find the eigenvalues and eigenvectors of a banded matrix
    eigvals_banded - Find just the eigenvalues of a banded matrix
-   eig_tridiagonal - Find the eigenvalues and eigenvectors of a tridiagonal matrix
-   eigvals_tridiagonal - Find just the eigenvalues of a tridiagonal matrix
+   eigh_tridiagonal - Find the eigenvalues and eigenvectors of a tridiagonal matrix
+   eigvalsh_tridiagonal - Find just the eigenvalues of a tridiagonal matrix
 
 Decompositions
 ==============

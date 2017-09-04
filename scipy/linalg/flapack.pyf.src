@@ -2796,7 +2796,7 @@ subroutine <prefix2>stebz(d,e,range,vl,vu,il,iu,tol,order,n,work,iwork,m,nsplit,
   callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,<ctype2>*,int*,int*,int*,int*,int*
 
   <ftype2> dimension(n),intent(in) :: d
-  <ftype2> dimension(n-1),intent(in) :: e
+  <ftype2> dimension(n-1),depend(n),intent(in) :: e
   <ftype2> intent(in) :: vl
   <ftype2> intent(in) :: vu
   character intent(in) :: order
@@ -2823,7 +2823,7 @@ subroutine <prefix2>sterf(d,e,n,info)
   callprotoargument int*,<ctype2>*,<ctype2>*,int*
 
   <ftype2> dimension(n),intent(in,out,copy,out=vals) :: d
-  <ftype2> dimension(n-1),intent(in,copy) :: e
+  <ftype2> dimension(n-1),depend(n),intent(in,copy) :: e
   integer depend(d),intent(hide) :: n = shape(d,0)
   integer intent(out) :: info
 end subroutine <prefix2>sterf
@@ -2837,17 +2837,17 @@ subroutine <prefix2>stein(d,e,w,iblock,isplit,m,n,z,ldz,work,iwork,ifail,info)
   callprotoargument int*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,int*,<ctype2>*,int*,<ctype2>*,int*,int*,int*
 
   <ftype2> dimension(n),intent(in) :: d
-  <ftype2> dimension(n-1),intent(in) :: e
+  <ftype2> dimension(n-1),depend(n),intent(in) :: e
   <ftype2> dimension(m),intent(in) :: w
   integer depend(w),intent(hide) :: m = shape(w,0)
   integer depend(d),intent(hide),check(n>0) :: n = shape(d,0)
-  integer dimension(n),intent(in) :: iblock
-  integer dimension(n),intent(in) :: isplit
+  integer dimension(n),depend(n),intent(in) :: iblock
+  integer dimension(n),depend(n),intent(in) :: isplit
   <ftype2> dimension(ldz,m),intent(out) :: z
   integer depend(n),intent(hide) :: ldz = n
   <ftype2> dimension(5*n),intent(hide) :: work
   integer dimension(n),intent(hide) :: iwork
-  integer dimension(n),intent(hide) :: ifail  ! really dimension(m), but not known ahead of time
+  integer dimension(m),depend(m),intent(hide) :: ifail
   integer intent(out) :: info
 end subroutine <prefix2>stein
 
@@ -2871,7 +2871,7 @@ subroutine <prefix2>stemr(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz
   <ftype2> dimension(n),depend(n),intent(out) :: w
   <ftype2> dimension(n,n),depend(n),intent(out) :: z
   integer depend(n),intent(hide) :: ldz = (compute_v?n:1)  ! could be made more efficient for index queries
-  integer depend(n),intent(hide) :: nzc = n
+  integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
   integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
   integer intent(hide) :: tryrac = 1
   integer depend(n),intent(hide) :: lwork = (compute_v?18*n:12*n)
