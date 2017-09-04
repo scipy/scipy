@@ -307,7 +307,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
        Center -- Institute for Flight Mechanics, Koln, Germany.
     .. [13] Conn, A. R., Gould, N. I., and Toint, P. L.
        Trust region methods. 2000. Siam. pp. 169-200.
-       
+
     Examples
     --------
     Let us consider the problem of minimizing the Rosenbrock function. This
