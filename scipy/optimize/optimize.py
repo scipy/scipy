@@ -436,8 +436,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         convergence.
     adaptive : bool, optional
         Adapt algorithm parameters to dimensionality of problem. Useful for
-        high-dimensional minimization. See Ref. [14].
+        high-dimensional minimization [1].
 
+    References
+    ----------
+    .. [1] Gao, F. and Han, L.
+       Implementing the Nelder-Mead simplex algorithm with adaptive
+       parameters. 2012. Computational Optimization and Applications. 
+       51:1, pp. 259-277
+       
     """
     if 'ftol' in unknown_options:
         warnings.warn("ftol is deprecated for Nelder-Mead,"
