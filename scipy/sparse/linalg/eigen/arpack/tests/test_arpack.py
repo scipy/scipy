@@ -24,6 +24,7 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
 from scipy.linalg import svd, hilbert
 
 from scipy._lib._gcutils import assert_deallocated
+from warnings import catch_warnings, simplefilter
 
 
 # precision for tests
@@ -927,16 +928,19 @@ def test_eigs_for_k_greater():
     eig_tuple1 = eig(A, b=M1)
     eig_tuple2 = eig(A, b=M2)
 
-    assert_equal(eigs(A, M=M1, k=3), eig_tuple1)
-    assert_equal(eigs(A, M=M1, k=4), eig_tuple1)
-    assert_equal(eigs(A, M=M1, k=5), eig_tuple1)
-    assert_equal(eigs(A, M=M2, k=5), eig_tuple2)
+    with catch_warnings():
+        simplefilter("ignore")
 
-    assert_raises(TypeError, eigs, A, M=M3, k=3)  # M as LinearOperator
+        assert_equal(eigs(A, M=M1, k=3), eig_tuple1)
+        assert_equal(eigs(A, M=M1, k=4), eig_tuple1)
+        assert_equal(eigs(A, M=M1, k=5), eig_tuple1)
+        assert_equal(eigs(A, M=M2, k=5), eig_tuple2)
 
-    # Test 'A' for different types
-    assert_raises(TypeError, eigs, aslinearoperator(A), k=3)
-    assert_raises(TypeError, eigs, A_sp, k=3)
+        assert_raises(TypeError, eigs, A, M=M3, k=3)  # M as LinearOperator
+
+        # Test 'A' for different types
+        assert_raises(TypeError, eigs, aslinearoperator(A), k=3)
+        assert_raises(TypeError, eigs, A_sp, k=3)
 
 
 def test_eigsh_for_k_greater():
@@ -949,12 +953,15 @@ def test_eigsh_for_k_greater():
     eig_tuple1 = eigh(A, b=M1)
     eig_tuple2 = eigh(A, b=M2)
 
-    assert_equal(eigsh(A, M=M1, k=4), eig_tuple1)
-    assert_equal(eigsh(A, M=M1, k=5), eig_tuple1)
-    assert_equal(eigsh(A, M=M2, k=5), eig_tuple2)
+    with catch_warnings():
+        simplefilter("ignore")
 
-    assert_raises(TypeError, eigsh, A, M=M3, k=4)  # M as LinearOperator
+        assert_equal(eigsh(A, M=M1, k=4), eig_tuple1)
+        assert_equal(eigsh(A, M=M1, k=5), eig_tuple1)
+        assert_equal(eigsh(A, M=M2, k=5), eig_tuple2)
 
-    # Test 'A' for different types
-    assert_raises(TypeError, eigsh, aslinearoperator(A), k=4)
-    assert_raises(TypeError, eigsh, A_sp, M=M1, k=4)
+        assert_raises(TypeError, eigsh, A, M=M3, k=4)  # M as LinearOperator
+
+        # Test 'A' for different types
+        assert_raises(TypeError, eigsh, aslinearoperator(A), k=4)
+        assert_raises(TypeError, eigsh, A_sp, M=M1, k=4)
