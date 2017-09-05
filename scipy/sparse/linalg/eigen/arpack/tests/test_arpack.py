@@ -106,15 +106,20 @@ def generate_matrix(N, complex=False, hermitian=False,
 def generate_matrix_symmetric(N, pos_definite=False, sparse=False):
     M = np.random.random((N, N))
 
-    if sparse:
-        i = np.random.randint(N, size=N * N // 2)
-        j = np.random.randint(N, size=N * N // 2)
-        M[i,j] = 0
-
     M = 0.5 * (M + M.T)  # Make M symmetric
 
     if pos_definite:
-        M = M + N * np.eye(N)
+        Id = N * np.eye(N)
+        if sparse:
+            i = np.random.randint(N, size=N * N // 2)
+            j = np.random.randint(N, size=N * N // 2)
+            M[i, j] = 0
+        M = M + Id
+    else:
+        if sparse:
+            i = np.random.randint(N, size=N * N // 2)
+            j = np.random.randint(N, size=N * N // 2)
+            M[i, j] = 0
 
     return M
 
@@ -914,45 +919,42 @@ def test_regression_arpackng_1315():
 
 def test_eigs_for_k_greater():
     # Test eigs() for k beyond limits.
-    A = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))
+    A_sp = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A = generate_matrix(4, sparse=False)
     M1 = np.random.random((4, 4))
     M2 = generate_matrix(4, sparse=True)
     M3 = aslinearoperator(M1)
-    eig_tuple1 = eig(A.todense(), b=M1)
-    eig_tuple2 = eig(A.todense(), b=M2)
+    eig_tuple1 = eig(A, b=M1)
+    eig_tuple2 = eig(A, b=M2)
 
     assert_equal(eigs(A, M=M1, k=3), eig_tuple1)
     assert_equal(eigs(A, M=M1, k=4), eig_tuple1)
     assert_equal(eigs(A, M=M1, k=5), eig_tuple1)
+    assert_equal(eigs(A, M=M2, k=5), eig_tuple2)
 
-    assert_equal(eigs(A, M=M2, k=3), eig_tuple2)  # M as sparse matrix
-    assert_raises(ValueError, eigs, A, M=M3, k=3)  # M as LinearOperator
+    assert_raises(TypeError, eigs, A, M=M3, k=3)  # M as LinearOperator
 
     # Test 'A' for different types
-    assert_raises(ValueError, eigs, aslinearoperator(A), k=3)
-    assert_equal(eigs(A.todense(), M=M1, k=3), eig_tuple1)
+    assert_raises(TypeError, eigs, aslinearoperator(A), k=3)
+    assert_raises(TypeError, eigs, A_sp, k=3)
 
 
 def test_eigsh_for_k_greater():
     # Test eigsh() for k beyond limits.
-    A = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))
+    A_sp = diags([1, -2, 1], [-1, 0, 1], shape=(4, 4))  # sparse
+    A = generate_matrix(4, sparse=False)
     M1 = generate_matrix_symmetric(4, pos_definite=True)
     M2 = generate_matrix_symmetric(4, pos_definite=True, sparse=True)
     M3 = aslinearoperator(M1)
-    eig_tuple1 = eigh(A.todense(), b=M1)
-    eig_tuple2 = eigh(A.todense(), b=M2)
+    eig_tuple1 = eigh(A, b=M1)
+    eig_tuple2 = eigh(A, b=M2)
 
     assert_equal(eigsh(A, M=M1, k=4), eig_tuple1)
     assert_equal(eigsh(A, M=M1, k=5), eig_tuple1)
+    assert_equal(eigsh(A, M=M2, k=5), eig_tuple2)
 
-    assert_equal(eigsh(A, M=M2, k=4), eig_tuple2)  # M as sparse matrix
-    assert_raises(ValueError, eigsh, A, M=M3, k=4)  # M as LinearOperator
+    assert_raises(TypeError, eigsh, A, M=M3, k=4)  # M as LinearOperator
 
     # Test 'A' for different types
-    assert_raises(ValueError, eigsh, aslinearoperator(A), k=4)
-    assert_equal(eigsh(A.todense(), M=M1, k=4), eig_tuple1)
-
-
-if __name__ == "__main__":
-    run_module_suite()
-
+    assert_raises(TypeError, eigsh, aslinearoperator(A), k=4)
+    assert_raises(TypeError, eigsh, A_sp, M=M1, k=4)

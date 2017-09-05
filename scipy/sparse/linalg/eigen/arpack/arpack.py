@@ -51,7 +51,6 @@ from scipy.sparse.sputils import isdense
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
-from scipy.sparse import SparseEfficiencyWarning
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -1235,26 +1234,28 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     n = A.shape[0]
 
+    if k <= 0:
+        raise ValueError("k=%d must be greater than 0." % (k, n - 1))
+
     if k >= n - 1:
+        if not isdense(A):
+            raise TypeError("Using scipy.linalg.eig instead as k >= N - 1. "
+                            "Hence, 'A' cannot be sparse. "
+                            "Hint: Use A.toarray() before passing to the "
+                            "function.")
+
         import warnings
-        warnings.warn('k greater than/equal to N - 1 for N * N square matrix. '
-                      'Using scipy.linalg.eig instead.',
-                      SparseEfficiencyWarning)
+        warnings.warn("k >= N - 1 for N * N square matrix. "
+                      "Using scipy.linalg.eig instead.")
 
         if isinstance(A, LinearOperator):
-            raise ValueError("'A' cannot be a LinearOperator since"
-                             "scipy.linalg.eig is being used.")
+            raise TypeError("Using scipy.linalg.eig instead as k >= N - 1. "
+                            "Hence, 'A' cannot be a LinearOperator")
         if isinstance(M, LinearOperator):
-            raise ValueError("'M' cannot be a LinearOperator since"
-                             "scipy.linalg.eig is being used.")
-        if not isdense(A):
-            A = A.todense()
+            raise TypeError("Using scipy.linalg.eig instead as k >= N - 1. "
+                            "Hence, 'M' cannot be a LinearOperator")
 
         return eig(A, b=M, right=return_eigenvectors)
-
-    if k <= 0 or k >= n:
-        raise ValueError("k=%d must be between 1 and ndim(A)-1=%d"
-                         % (k, n - 1))
 
     if sigma is None:
         matvec = _aslinearoperator_with_dtype(A).matvec
@@ -1538,26 +1539,28 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     n = A.shape[0]
 
+    if k <= 0:
+        raise ValueError("k must be greater than 0.")
+
     if k >= n:
+        if not isdense(A):
+            raise TypeError("Using scipy.linalg.eigh instead as k >= N. "
+                            "Hence, 'A' cannot be sparse. "
+                            "Hint: Use A.toarray() before passing to the "
+                            "function.")
+
         import warnings
-        warnings.warn('k greater than/equal to N for N * N square matrix. '
-                      'Using scipy.linalg.eig instead.',
-                      SparseEfficiencyWarning)
+        warnings.warn("k >= N for N * N square matrix. "
+                      "Using scipy.linalg.eigh instead.")
 
         if isinstance(A, LinearOperator):
-            raise ValueError("'A' cannot be a LinearOperator since"
-                             "scipy.linalg.eig is being used.")
+            raise TypeError("Using scipy.linalg.eigh instead as k >= N. "
+                            "Hence, 'A' cannot be a LinearOperator")
         if isinstance(M, LinearOperator):
-            raise ValueError("'M' cannot be a LinearOperator since"
-                             "scipy.linalg.eig is being used.")
-        if not isdense(A):
-            A = A.todense()
+            raise TypeError("Using scipy.linalg.eigh instead as k >= N. "
+                            "Hence, 'M' cannot be a LinearOperator")
 
         return eigh(A, b=M, eigvals_only=not return_eigenvectors)
-
-    if k <= 0 or k >= n:
-        raise ValueError("k must be between 1 and the order of the "
-                         "square input matrix.")
 
     if sigma is None:
         A = _aslinearoperator_with_dtype(A)
