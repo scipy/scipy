@@ -790,8 +790,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
 
             kmax = np.max(k)
 
-            query_knn(<ckdtree*>self, <np.float64_t*>_dd.data, <np.intp_t*>_ii.data,
-                <np.float64_t*> _xx.data, stop-start, <np.intp_t*>_k.data, len(k), kmax, eps, p, distance_upper_bound)
+            query_knn(<ckdtree*>self, <np.float64_t*>np.PyArray_DATA(_dd), <np.intp_t*>np.PyArray_DATA(_ii),
+                <np.float64_t*>np.PyArray_DATA( _xx), stop-start, <np.intp_t*>np.PyArray_DATA(_k), len(k), kmax, eps, p, distance_upper_bound)
         
         if (n_jobs == -1): 
             n_jobs = number_of_processors
@@ -929,7 +929,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             if len(x.shape) == 1:
                 vres = new vector[np.intp_t]()
                 xx = np.ascontiguousarray(x, dtype=np.float64)
-                query_ball_point(<ckdtree*> self, <np.float64_t*> xx.data, r, p, eps, 1, &vres)
+                query_ball_point(<ckdtree*> self, <np.float64_t*>np.PyArray_DATA(xx), r, p, eps, 1, &vres)
                 n = <np.intp_t> vres.size()
                 tmp = n * [None]
                 if NPY_LIKELY(n > 0):
@@ -982,7 +982,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                         vvres = (<vector[np.intp_t] **> 
                                   (<void*> (<np.uintp_t> _vvres)))                                    
                         if start < n:
-                            query_ball_point(<ckdtree*>self, <np.float64_t*>vxx.data, 
+                            query_ball_point(<ckdtree*>self, <np.float64_t*>np.PyArray_DATA(vxx), 
                                 r, p, eps, stop-start, vvres+start)
                                 
                     vvres_uintp = <np.uintp_t> (<void*> vvres)
@@ -997,7 +997,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
                                                                 
                 else:
                 
-                    query_ball_point(<ckdtree*>self, <np.float64_t*>vxx.data, r, p, eps, 
+                    query_ball_point(<ckdtree*>self, <np.float64_t*>np.PyArray_DATA(vxx), r, p, eps, 
                         n, vvres)
                 
                 i = 0
@@ -1196,8 +1196,8 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
         if len(proper_weights) != self.n:
             raise ValueError('Number of weights differ from the number of data points')
 
-        build_weights(<ckdtree*> self, <np.float64_t*>node_weights.data,
-                            <np.float64_t*> proper_weights.data)
+        build_weights(<ckdtree*> self, <np.float64_t*>np.PyArray_DATA(node_weights),
+                            <np.float64_t*>np.PyArray_DATA( proper_weights))
 
         return node_weights
 
@@ -1380,7 +1380,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             results = np.zeros(n_queries + 1, dtype=np.intp)
 
             count_neighbors_unweighted(<ckdtree*> self, <ckdtree*> other, n_queries,
-                            <np.float64_t *> real_r.data, <np.intp_t*>results.data, p, cumulative)
+                            <np.float64_t *>np.PyArray_DATA( real_r), <np.intp_t*>np.PyArray_DATA(results), p, cumulative)
 
         else:
             int_result = False
@@ -1388,16 +1388,16 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             if self_weights is not None:
                 w1 = np.ascontiguousarray(self_weights, dtype=np.float64)
                 w1n = self._build_weights(w1)
-                w1p = <np.float64_t*> w1.data
-                w1np = <np.float64_t*> w1n.data
+                w1p = <np.float64_t*>np.PyArray_DATA(w1)
+                w1np = <np.float64_t*>np.PyArray_DATA(w1n)
             else:
                 w1p = NULL
                 w1np = NULL
             if other_weights is not None:
                 w2 = np.ascontiguousarray(other_weights, dtype=np.float64)
                 w2n = other._build_weights(w2)
-                w2p = <np.float64_t*> w2.data
-                w2np = <np.float64_t*> w2n.data
+                w2p = <np.float64_t*>np.PyArray_DATA(w2)
+                w2np = <np.float64_t*>np.PyArray_DATA(w2n)
             else:
                 w2p = NULL
                 w2np = NULL
@@ -1406,7 +1406,7 @@ cdef public class cKDTree [object ckdtree, type ckdtree_type]:
             count_neighbors_weighted(<ckdtree*> self, <ckdtree*> other,
                                     w1p, w2p, w1np, w2np,
                                     n_queries,
-                                    <np.float64_t*>real_r.data, <np.float64_t*>results.data, p, cumulative)
+                                    <np.float64_t*>np.PyArray_DATA(real_r), <np.float64_t*>np.PyArray_DATA(results), p, cumulative)
 
         results2 = np.zeros(inverse.shape, results.dtype)
         if cumulative:
