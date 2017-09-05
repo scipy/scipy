@@ -488,7 +488,7 @@ interface
    end subroutine <prefix2c>unghr
 
    subroutine <prefix2c>unghr_lwork(n,lo,hi,a,tau,work,lwork,info)
-     ! LWORK computation ofr orghr
+     ! LWORK computation for orghr
      fortranname <prefix2c>unghr
      callstatement { hi++; lo++; (*f2py_func)(&n,&lo,&hi,&a,&n,&tau,&work,&lwork,&info); }
      callprotoargument int*,int*,int*,<ctype2c>*,int*,<ctype2c>*,<ctype2c>*,int*,int*
@@ -2874,12 +2874,43 @@ subroutine <prefix2>stemr(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz
   integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
   integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
   integer intent(hide) :: tryrac = 1
-  integer depend(n),intent(hide) :: lwork = (compute_v?18*n:12*n)
+  integer depend(n),optional,intent(in),check(lwork>=(compute_v?18*n:12*n)) :: lwork = (compute_v?18*n:12*n)
   <ftype2> dimension(lwork),depend(lwork),intent(hide) :: work
-  integer intent(hide) :: liwork = (compute_v?10*n:8*n)
+  integer depend(n),optional,intent(in),check(liwork>=(compute_v?10*n:8*n)) :: liwork = (compute_v?10*n:8*n)
   integer dimension(liwork),depend(liwork),intent(hide) :: iwork
   integer intent(out) :: info
 end subroutine <prefix2>stemr
+
+
+subroutine <prefix2>stemr_lwork(d,e,range,vl,vu,il,iu,compute_v,n,m,w,z,ldz,nzc,isuppz,tryrac,work,lwork,iwork,liwork,info)
+  ! LWORK=-1, LIWORK=-1 call for STEMR
+
+  fortranname <prefix2c>stemr
+  callstatement (*f2py_func)((compute_v?"V":"N"),(range>0?(range==1?"V":"I"):"A"),&n,d,e,&vl,&vu,&il,&iu,&m,w,z,&ldz,&nzc,isuppz,&tryrac,&work,&lwork,&iwork,&liwork,&info)
+  callprotoargument char*,char*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*,int*,<ctype2>*,<ctype2>*,int*,int*,int*,int*,<ctype2>*,int*,int*,int*,int*
+
+  <ftype2> dimension(n),intent(in,copy) :: d
+  <ftype2> dimension(n),intent(in,copy) :: e
+  integer intent(in) :: range
+  <ftype2> intent(in) :: vl
+  <ftype2> intent(in) :: vu
+  integer intent(in) :: il
+  integer intent(in) :: iu
+  integer optional,intent(in) :: compute_v = 1
+  integer intent(hide),depend(d),check(n>0) :: n = shape(d,0)
+  integer intent(hide) :: m
+  <ftype2> dimension(n),depend(n),intent(hide) :: w
+  <ftype2> dimension(n,n),depend(n),intent(hide) :: z
+  integer depend(n),intent(hide) :: ldz = (compute_v?n:1)  ! could be made more efficient for index queries
+  integer depend(n),intent(hide) :: nzc = n  ! can also be passed as -1 to do a query
+  integer dimension((compute_v?2*n:1)),depend(n),intent(hide) :: isuppz
+  integer intent(hide) :: tryrac = 1
+  integer depend(n),intent(hide) :: lwork = -1
+  <ftype2> intent(out) :: work
+  integer intent(hide) :: liwork = -1
+  integer intent(out) :: iwork
+  integer intent(out) :: info
+end subroutine <prefix2>stemr_lwork
 
 
 subroutine <prefix2>stev(d,e,compute_v,n,z,ldz,work,info)

@@ -1042,8 +1042,12 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         # ?STEMR annoyingly requires size N instead of N-1
         e_ = empty(e.size+1, e.dtype)
         e_[:-1] = e
+        stemr_lwork, = get_lapack_funcs(('stemr_lwork',), (d, e))
+        lwork, liwork, info = stemr_lwork(d, e_, select, vl, vu, il, iu,
+                                          compute_v=compute_v)
+        _check_info(info, 'stemr_lwork')
         m, w, v, info = func(d, e_, select, vl, vu, il, iu,
-                             compute_v=compute_v)
+                             compute_v=compute_v, lwork=lwork, liwork=liwork)
     _check_info(info, lapack_driver + ' (eigh_tridiagonal)')
     w = w[:m]
     if eigvals_only:
