@@ -318,14 +318,12 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
     1. An integer value is given for `worN`.
     2. `worN` is fast to compute via FFT (i.e.,
        `next_fast_len(worN) <scipy.fftpack.next_fast_len>` equals `worN`).
-    3. `worN` is at least as long as the filter coefficients
-       (``worN >= max(a.shape[axis], b.shape[axis])``).
+    3. The numerator coefficients are a single value (``a.size == 1``).
+    4. `worN` is at least as long as the denominator coefficients
+       (``worN >= b.shape[axis]``).
 
-    In some cases, such as filters with poles very close to the unit circle,
-    the FFT approach can be less numercially stable than the polynomial
-    calculation. In such cases, consider directly passing `w` as an array,
-    e.g., `w = np.linspace(0, np.pi, worN, endpoint=False)`, to use the
-    polynomial calculation.
+    For long FIR filters, the FFT approach can have lower error and be much
+    faster than the equivalent direct polynomial calculation.
 
     Examples
     --------
@@ -380,27 +378,31 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
             raise ValueError('worN must be positive, got %s' % (worN,))
         lastpoint = 2 * pi if whole else pi
         w = np.linspace(0, lastpoint, worN, endpoint=False)
-        min_size = max(a_len, b_len)
-        if worN >= min_size and fftpack.next_fast_len(worN) == worN:
+        min_size = b_len  # would be max(a_len, b_len) in the general `a` case
+        if a_len == 1 and worN >= min_size and \
+                fftpack.next_fast_len(worN) == worN:
             # if worN is fast, 2 * worN will be fast, too,
             # so no need to check that one
             n_fft = worN if whole else worN * 2
-            a_trim = [slice(None)] * a.ndim
-            if a_len > 1:
-                a_trim[axis] = slice(worN)
-            b_trim = [slice(None)] * b.ndim
-            if b_len > 1:
-                b_trim[axis] = slice(worN)
-            # We could get a little more efficient by doing truncations of
-            # a and b before dividing their FFTs, but it's much more
-            # complicated for (probably) little gain.
             if np.isrealobj(b) and np.isrealobj(a):
                 fft_func = np.fft.rfft
             else:
                 fft_func = fftpack.fft
+
+            # set up the trimming to get back to worN from n_fft
+            b_trim = [slice(None)] * b.ndim
+            if b_len > 1:
+                b_trim[axis] = slice(worN)
+            # If we ever go back to allowing b_len > 1, we'll also need this:
+            # a_trim = [slice(None)] * a.ndim
+            # if a_len > 1:
+            #     a_trim[axis] = slice(worN)
+
             b_fft = fft_func(b, n=n_fft, axis=axis)[b_trim] if b_len > 1 else b
-            a_fft = fft_func(a, n=n_fft, axis=axis)[a_trim] if a_len > 1 else a
-            h = (b_fft / a_fft)
+            # If we ever go back to using b_len != 1, we can use:
+            #     a_fft = fft_func(a, n=n_fft, axis=axis)[a_trim]
+            # and divide by a_fft. But because we know b_len == 1, we just do:
+            h = b_fft / a  # don't do inplace to allow broadcasting
             if fft_func is np.fft.rfft and whole:
                 if a_len == 1 and b_len == 1:
                     h = np.repeat(h, worN // 2 + 1, axis=axis)
