@@ -132,7 +132,8 @@ def rules(ns, update_suppressions):
                 suppressions.remove(local_supp)
 
         print("rebuild the binaries to avoid valgrind erros during building.")
-        call(runtests + ['--build'])
+        if 0 != call(runtests + ['--build']):
+            raise RuntimeError("building failed")
 
         print("running valgrind with the tests")
         log = run_valgrind([ns.valgrind], opts, runtests + ['-t', test], suppressions)
