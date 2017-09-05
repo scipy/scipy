@@ -165,7 +165,7 @@ def toeplitz(c, r=None):
     A : (len(c), len(r)) ndarray
         The Toeplitz matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     circulant : circulant matrix
     hankel : Hankel matrix
@@ -217,7 +217,7 @@ def circulant(c):
     A : (N, N) ndarray
         A circulant matrix whose first column is `c`.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     hankel : Hankel matrix
@@ -273,7 +273,7 @@ def hankel(c, r=None):
     A : (len(c), len(r)) ndarray
         The Hankel matrix. Dtype is the same as ``(c[0] + r[0]).dtype``.
 
-    See also
+    See Also
     --------
     toeplitz : Toeplitz matrix
     circulant : circulant matrix
