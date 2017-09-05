@@ -393,15 +393,15 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
             b_trim = [slice(None)] * b.ndim
             if b_len > 1:
                 b_trim[axis] = slice(worN)
-            # If we ever go back to allowing b_len > 1, we'll also need this:
+            # If we ever go back to allowing a_len > 1, we'll also need this:
             # a_trim = [slice(None)] * a.ndim
             # if a_len > 1:
             #     a_trim[axis] = slice(worN)
 
             b_fft = fft_func(b, n=n_fft, axis=axis)[b_trim] if b_len > 1 else b
-            # If we ever go back to using b_len != 1, we can use:
+            # If we ever go back to using a_len != 1, we can use:
             #     a_fft = fft_func(a, n=n_fft, axis=axis)[a_trim]
-            # and divide by a_fft. But because we know b_len == 1, we just do:
+            # and divide by a_fft. But because we know a_len == 1, we just do:
             h = b_fft / a  # don't do inplace to allow broadcasting
             if fft_func is np.fft.rfft and whole:
                 if a_len == 1 and b_len == 1:
@@ -657,8 +657,8 @@ def sosfreqz(sos, worN=None, whole=False):
         If single integer (default 512, same as None), then compute at `worN`
         frequencies equally spaced around the unit circle. Using a number that
         is fast for FFT computations can result in faster computations
-        (see Notes). If an array_like, compute the response at the frequencies
-        given (in radians/sample).
+        (see Notes of `freqz`). If an array_like, compute the response at the
+        frequencies given (in radians/sample).
     whole : bool, optional
         Normally, frequencies are computed from 0 to the Nyquist frequency,
         pi radians/sample (upper-half of unit-circle).  If `whole` is True,
