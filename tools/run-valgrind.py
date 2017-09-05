@@ -119,7 +119,7 @@ def rules(ns, update_suppressions):
         ensure_suppression_dir(ns.prefix, test)
 
         suppressions = ns.suppressions
-        all_test_suppr = find_suppression_files(ns.prefix, test)
+        all_test_suppr = [os.path.join('tools', 'scipy-master.supp')] + find_suppression_files(ns.prefix, test)
         print("all suppression files", all_test_suppr)
 
         suppressions = suppressions + all_test_suppr
