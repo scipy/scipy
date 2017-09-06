@@ -195,8 +195,8 @@ def toeplitz(c, r=None):
         r = c.conjugate()
     else:
         r = np.asarray(r).ravel()
-    # Form a 1D array of values to be used in the matrix, containing a reversed
-    # copy of r[1:], followed by c.
+    # Form a 1D array containing a reversed c followed by r[1:] that could be
+    # strided to give us toeplitz matrix.
     vals = np.concatenate((c[::-1], r[1:]))
     out_shp = len(c), len(r)
     n = vals.strides[0]
