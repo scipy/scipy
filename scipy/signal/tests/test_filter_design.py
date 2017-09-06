@@ -536,6 +536,9 @@ class TestFreqz(object):
         w, h = freqz(b.T, a.T, worN=4, whole=True)  # default axis is 0
         assert_array_almost_equal(w, expected_w)
         assert_array_almost_equal(h, h_whole.T)
+        w, h = freqz(b.T, a.T, worN=w, whole=True)  # default axis is 0
+        assert_array_almost_equal(w, expected_w)
+        assert_array_almost_equal(h, h_whole.T)
         # broadcasting
         b = np.random.rand(1, 4, 3)
         a = np.random.rand(2, 4, 1)

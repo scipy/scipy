@@ -18,7 +18,6 @@ from numpy.polynomial.polynomial import polyval as npp_polyval
 from scipy import special, optimize, fftpack
 from scipy.special import comb, factorial
 from scipy._lib._numpy_compat import polyvalfromroots
-from ._arraytools import axis_reverse
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -404,7 +403,9 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
             # and divide by a_fft. But because we know a_len == 1, we just do:
             h = b_fft / a  # don't do inplace to allow broadcasting
             if fft_func is np.fft.rfft and whole:
-                if a_len == 1 and b_len == 1:
+                # If we allow a_len != 1 in this branch, this conditional
+                # would need to also check if a_len == 1
+                if b_len == 1:
                     h = np.repeat(h, worN // 2 + 1, axis=axis)
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
                 # here because we can build reversal with the truncation)
@@ -420,8 +421,9 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
         if w.size == 0:
             raise ValueError('w must have at least one element, got 0')
         zm1 = exp(-1j * w)
+        # This operates on the zeroth dimension but outputs as new -1 dim
         h = (npp_polyval(zm1, b.swapaxes(axis, 0)) /
-             npp_polyval(zm1, a.swapaxes(axis, 0)))
+             npp_polyval(zm1, a.swapaxes(axis, 0))).swapaxes(axis, -1)
         if h.size == 0:
             h = np.expand_dims(h, axis)
     if plot is not None:
