@@ -3409,34 +3409,37 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         if n is None:
             half_len = 10 * q  # reasonable cutoff for our sinc-like function
             n = 2 * half_len
-        system = dlti(firwin(n+1, 1. / q, window='hamming'), 1.)
+        b, a = firwin(n+1, 1. / q, window='hamming'), 1.
     elif ftype == 'iir':
         if n is None:
             n = 8
         system = dlti(*cheby1(n, 0.05, 0.8 / q))
+        b, a = system.num, system.den
     elif isinstance(ftype, dlti):
         system = ftype._as_tf()  # Avoids copying if already in TF form
-        n = np.max((system.num.size, system.den.size)) - 1
+        b, a = system.num, system.den
     else:
         raise ValueError('invalid ftype')
 
     sl = [slice(None)] * x.ndim
+    a = np.asarray(a)
 
-    if len(system.den) == 1:  # FIR case
+    if a.size == 1:  # FIR case
+        b = b / a
         if zero_phase:
-            y = resample_poly(x, 1, q, axis=axis, window=system.num)
+            y = resample_poly(x, 1, q, axis=axis, window=b)
         else:
             # upfirdn is generally faster than lfilter by a factor equal to the
             # downsampling factor, since it only calculates the needed outputs
             n_out = x.shape[axis] // q + bool(x.shape[axis] % q)
-            y = upfirdn(system.num, x, up=1, down=q, axis=axis)
+            y = upfirdn(b, x, up=1, down=q, axis=axis)
             sl[axis] = slice(None, n_out, None)
 
     else:  # IIR case
         if zero_phase:
-            y = filtfilt(system.num, system.den, x, axis=axis)
+            y = filtfilt(b, a, x, axis=axis)
         else:
-            y = lfilter(system.num, system.den, x, axis=axis)
+            y = lfilter(b, a, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
     return y[sl]
