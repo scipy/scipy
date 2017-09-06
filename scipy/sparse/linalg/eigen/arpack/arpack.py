@@ -1246,7 +1246,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         import warnings
         warnings.warn("k >= N - 1 for N * N square matrix. "
-                      "Using scipy.linalg.eig instead.")
+                      "Using scipy.linalg.eig instead.", UserWarning)
 
         if isinstance(A, LinearOperator):
             raise TypeError("Using scipy.linalg.eig instead as k >= N - 1. "
@@ -1551,7 +1551,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
         import warnings
         warnings.warn("k >= N for N * N square matrix. "
-                      "Using scipy.linalg.eigh instead.")
+                      "Using scipy.linalg.eigh instead.", UserWarning)
 
         if isinstance(A, LinearOperator):
             raise TypeError("Using scipy.linalg.eigh instead as k >= N. "

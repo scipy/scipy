@@ -24,7 +24,8 @@ from scipy.sparse.linalg.eigen.arpack import eigs, eigsh, svds, \
 from scipy.linalg import svd, hilbert
 
 from scipy._lib._gcutils import assert_deallocated
-from warnings import catch_warnings, simplefilter
+#from warnings import catch_warnings, simplefilter
+from scipy._lib._numpy_compat import suppress_warnings
 
 
 # precision for tests
@@ -928,8 +929,8 @@ def test_eigs_for_k_greater():
     eig_tuple1 = eig(A, b=M1)
     eig_tuple2 = eig(A, b=M2)
 
-    with catch_warnings():
-        simplefilter("ignore")
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning)
 
         assert_equal(eigs(A, M=M1, k=3), eig_tuple1)
         assert_equal(eigs(A, M=M1, k=4), eig_tuple1)
@@ -953,8 +954,8 @@ def test_eigsh_for_k_greater():
     eig_tuple1 = eigh(A, b=M1)
     eig_tuple2 = eigh(A, b=M2)
 
-    with catch_warnings():
-        simplefilter("ignore")
+    with suppress_warnings() as sup:
+        sup.filter(UserWarning)
 
         assert_equal(eigsh(A, M=M1, k=4), eig_tuple1)
         assert_equal(eigsh(A, M=M1, k=5), eig_tuple1)
