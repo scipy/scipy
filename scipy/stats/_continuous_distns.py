@@ -2309,7 +2309,7 @@ gompertz = gompertz_gen(a=0.0, name='gompertz')
 class gamma_gompertz_gen(rv_continuous):
     """ A Gamma/Gompertz continuousrandom variable
     
-    %(before_notes)scipy
+    %(before_notes)s
     
     Notes
     -----
@@ -2331,7 +2331,7 @@ class gamma_gompertz_gen(rv_continuous):
     """
         
     def _logsf(self, x, c, beta):
-        return c * (np.log(beta) - np.where(np.isfinite(sc.expm1(x)),  np.log(beta + sc.expm1(x)), x))
+        return c * (np.log(beta) - np.where(np.isfinite(sc.expm1(x)), np.log(beta + sc.expm1(x)), x))
     
     def _sf(self, x, c, beta):
         return np.exp(self._logsf(x, c, beta))
