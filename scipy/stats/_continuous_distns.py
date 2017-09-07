@@ -2331,7 +2331,7 @@ class gamma_gompertz_gen(rv_continuous):
     """
         
     def _logsf(self, x, c, beta):
-        return c * (np.log(beta) - np.logaddexp(x, np.log(beta - 1.)))
+        return c * (np.log(beta) - np.where(np.isfinite(expm1(x)),  np.log(beta + expm1(x)), x))
     
     def _sf(self, x, c, beta):
         return np.exp(self._logsf(x, c, beta))
@@ -2343,7 +2343,7 @@ class gamma_gompertz_gen(rv_continuous):
         return np.exp(self._logpdf(x, c, beta))
     
     def _logpdf(self, x, c, beta):
-        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.logaddexp(x, np.log(beta - 1.))
+        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.where(np.isfinite(np.expm1(x)), np.log(beta + expm1(x)), x)
 gamma_gompertz = gamma_gompertz_gen(a=0.0, name='gamma_gompertz')
 
 
