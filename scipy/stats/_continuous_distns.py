@@ -2323,11 +2323,15 @@ class gamma_gompertz_gen(rv_continuous):
     
     %(after_notes)s
     
+    References
+    ----------
+    https://en.wikipedia.org/wiki/Gamma/Gompertz_distribution    
+    
     %(example)s
     """
         
     def _logsf(self, x, c, beta):
-        return c * (np.log(beta) - np.log(beta + sc.expm1(x)))
+        return c * (np.log(beta) - np.logaddexp(x, np.log(beta - 1.)))
     
     def _sf(self, x, c, beta):
         return np.exp(self._logsf(x, c, beta))
@@ -2339,7 +2343,7 @@ class gamma_gompertz_gen(rv_continuous):
         return np.exp(self._logpdf(x, c, beta))
     
     def _logpdf(self, x, c, beta):
-        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.log(beta + sc.expm1(x))
+        return np.log(c) + x + c * np.log(beta) - (c + 1.) * np.logaddexp(x, np.log(beta - 1.))
 gamma_gompertz = gamma_gompertz_gen(a=0.0, name='gamma_gompertz')
 
 
