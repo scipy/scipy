@@ -11,6 +11,8 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            dec)
 import pytest
 import sys
+import platform
+
 try:
     from sksparse.cholmod import cholesky_AAt
     sksparse_available = True

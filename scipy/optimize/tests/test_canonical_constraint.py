@@ -114,7 +114,7 @@ class TestToCanonical(TestCase):
                             [False, False, False])
 
         x = [1, 2, 3]
-        x = box.evaluate_and_initialize(x)
+        x = box._evaluate_and_initialize(x)
         canonical = to_canonical(box)
         assert_array_equal(canonical.n_eq, 0)
         assert_array_equal(canonical.n_ineq, 5)
@@ -148,7 +148,7 @@ class TestToCanonical(TestCase):
                                   [False, False, False])
 
         x = [1, 2, 3, 4]
-        x = linear.evaluate_and_initialize(x)
+        x = linear._evaluate_and_initialize(x)
         canonical = to_canonical(linear)
         assert_array_equal(canonical.n_eq, 1)
         assert_array_equal(canonical.n_ineq, 3)
@@ -203,7 +203,7 @@ class TestToCanonical(TestCase):
                                         jac, hess,
                                         False)
         x = [1, 2, 3, 4]
-        x = nonlinear.evaluate_and_initialize(x)
+        x = nonlinear._evaluate_and_initialize(x)
         canonical = to_canonical(nonlinear)
         assert_array_equal(canonical.n_eq, 1)
         assert_array_equal(canonical.n_ineq, 3)
@@ -239,7 +239,7 @@ class TestToCanonical(TestCase):
                                         jac, hess,
                                         False)
         x = [1, 2, 3, 4]
-        x = nonlinear.evaluate_and_initialize(x)
+        x = nonlinear._evaluate_and_initialize(x)
         canonical = to_canonical(nonlinear)
         assert_array_equal(canonical.n_eq, 1)
         assert_array_equal(canonical.n_ineq, 4)
@@ -335,7 +335,7 @@ class TestToCanonical(TestCase):
                            deepcopy(nonlinear)]
 
             for i in range(len(list_constr)):
-                x = list_constr[i].evaluate_and_initialize(x, conf[i])
+                x = list_constr[i]._evaluate_and_initialize(x, conf[i])
 
             # Concatenate constraint
             canonical = to_canonical(list_constr)
