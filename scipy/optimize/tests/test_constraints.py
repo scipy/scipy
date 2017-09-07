@@ -11,8 +11,6 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_equal, assert_,
                            run_module_suite, assert_allclose, assert_warns,
                            dec)
-from numpy.linalg import norm
-import warnings
 import pytest
 
 

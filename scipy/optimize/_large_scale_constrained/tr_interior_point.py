@@ -13,7 +13,7 @@ References
 """
 
 from __future__ import division, print_function, absolute_import
-import scipy.sparse as spc
+import scipy.sparse as sps
 import numpy as np
 from .equality_constrained_sqp import equality_constrained_sqp
 from scipy.sparse.linalg import LinearOperator
@@ -142,21 +142,21 @@ class BarrierSubproblem:
         if self.n_ineq == 0:
             return J_eq
         else:
-            if spc.issparse(J_eq) or spc.issparse(J_ineq):
+            if sps.issparse(J_eq) or sps.issparse(J_ineq):
                 # It is expected that J_eq and J_ineq
                 # are already `csr_matrix` because of
                 # the way ``BoxConstraint``, ``NonlinearConstraint``
                 # and ``LinearConstraint`` are defined.
-                J_eq = spc.csr_matrix(J_eq)
-                J_ineq = spc.csr_matrix(J_ineq)
+                J_eq = sps.csr_matrix(J_eq)
+                J_ineq = sps.csr_matrix(J_ineq)
                 return self._assemble_sparse_jacobian(J_eq, J_ineq, s)
             else:
                 S = np.diag(s)
                 zeros = np.zeros((self.n_eq, self.n_ineq))
                 # Convert to matrix
-                if spc.issparse(J_ineq):
+                if sps.issparse(J_ineq):
                     J_ineq = J_ineq.toarray()
-                if spc.issparse(J_eq):
+                if sps.issparse(J_eq):
                     J_eq = J_eq.toarray()
                 # Concatenate matrices
                 return np.asarray(np.bmat([[J_eq, zeros],
@@ -170,13 +170,13 @@ class BarrierSubproblem:
                        [ J_ineq, diag(s) ]
 
         It is equivalent to:
-            spc.bmat([[ J_eq,   None    ],
+            sps.bmat([[ J_eq,   None    ],
                       [ J_ineq, diag(s) ]], "csr")
         but significantly more efficient for this
         given structure.
         """
         n_vars, n_ineq, n_eq = self.n_vars, self.n_ineq, self.n_eq
-        J_aux = spc.vstack([J_eq, J_ineq], "csr")
+        J_aux = sps.vstack([J_eq, J_ineq], "csr")
         indptr, indices, data = J_aux.indptr, J_aux.indices, J_aux.data
         new_indptr = indptr + np.hstack((np.zeros(n_eq, dtype=int),
                                          np.arange(n_ineq+1, dtype=int)))
@@ -189,7 +189,7 @@ class BarrierSubproblem:
         new_indices[~mask] = indices
         new_data[mask] = s
         new_data[~mask] = data
-        J = spc.csr_matrix((new_data, new_indices, new_indptr),
+        J = sps.csr_matrix((new_data, new_indices, new_indptr),
                            (n_eq + n_ineq, n_vars + n_ineq))
         return J
 

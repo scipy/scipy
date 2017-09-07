@@ -1,6 +1,6 @@
 from __future__ import division, print_function, absolute_import
 import numpy as np
-import scipy.sparse as spc
+import scipy.sparse as sps
 from scipy.sparse.linalg import LinearOperator
 from ._numdiff import approx_derivative
 from warnings import warn
@@ -93,23 +93,23 @@ class NonlinearConstraint:
         def fun_wrapped(x):
             return np.atleast_1d(self._fun(x))
 
-        if sparse_jacobian or (sparse_jacobian is None and spc.issparse(J0)):
+        if sparse_jacobian or (sparse_jacobian is None and sps.issparse(J0)):
             def jac_wrapped(x):
-                return spc.csr_matrix(self._jac(x))
+                return sps.csr_matrix(self._jac(x))
             self.sparse_jacobian = True
 
-            self.J0 = spc.csr_matrix(J0)
+            self.J0 = sps.csr_matrix(J0)
 
         else:
             def jac_wrapped(x):
                 J = self._jac(x)
-                if spc.issparse(J):
+                if sps.issparse(J):
                     return J.toarray()
                 else:
                     return np.atleast_2d(J)
             self.sparse_jacobian = False
 
-            if spc.issparse(J0):
+            if sps.issparse(J0):
                 self.J0 = J0.toarray()
             else:
                 self.J0 = np.atleast_2d(J0)
@@ -117,11 +117,11 @@ class NonlinearConstraint:
         if callable(self._hess):
             H0 = self._hess(x0, v0)
 
-            if spc.issparse(H0):
-                H0 = spc.csr_matrix(H0)
-                
+            if sps.issparse(H0):
+                H0 = sps.csr_matrix(H0)
+
                 def hess_wrapped(x, v):
-                    return spc.csr_matrix(self._hess(x, v))
+                    return sps.csr_matrix(self._hess(x, v))
 
             elif isinstance(H0, LinearOperator):
                 def hess_wrapped(x, v):
@@ -214,11 +214,11 @@ class LinearConstraint:
 
     def evaluate_and_initialize(self, x0, sparse_jacobian=None):
         if sparse_jacobian or (sparse_jacobian is None
-                               and spc.issparse(self.A)):
-            self.A = spc.csr_matrix(self.A)
+                               and sps.issparse(self.A)):
+            self.A = sps.csr_matrix(self.A)
             self.sparse_jacobian = True
         else:
-            if spc.issparse(self.A):
+            if sps.issparse(self.A):
                 self.A = self.A.toarray()
             else:
                 self.A = np.atleast_2d(self.A)
@@ -318,7 +318,7 @@ class BoxConstraint:
         self.n = x0.size
         self.m = f0.size
         if sparse_jacobian or sparse_jacobian is None:
-            J0 = spc.eye(self.n).tocsr()
+            J0 = sps.eye(self.n).tocsr()
             self.sparse_jacobian = True
         else:
             J0 = np.eye(self.n)

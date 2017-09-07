@@ -11,7 +11,7 @@ from ._large_scale_constrained import (tr_interior_point,
 from warnings import warn
 from copy import deepcopy
 from scipy.sparse.linalg import LinearOperator
-import scipy.sparse as spc
+import scipy.sparse as sps
 import time
 from .optimize import OptimizeResult
 from ._numdiff import approx_derivative
@@ -395,11 +395,11 @@ def minimize_constrained(fun, x0, grad, hess='2-point', constraints=(),
     if callable(hess):
         H0 = hess(x0)
 
-        if spc.issparse(H0):
-            H0 = spc.csr_matrix(H0)
+        if sps.issparse(H0):
+            H0 = sps.csr_matrix(H0)
 
             def hess_wrapped(x):
-                return spc.csr_matrix(hess(x))
+                return sps.csr_matrix(hess(x))
 
         elif isinstance(H0, LinearOperator):
             def hess_wrapped(x):
