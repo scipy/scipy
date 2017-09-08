@@ -6,10 +6,11 @@
 ! Modified: Fabian Pedregosa, 2011; Eric Moore, 2014
 !
 ! Implemented:
-!   gemv, hemv, symv, trmv, ger, geru, gerc, her, syr, her2, syr2, spmv, hpmv 
+!   gemv, hemv, symv, trmv, ger, geru, gerc, her, syr, hpr, spr, her2, syr2,
+!   spmv, hpmv 
 !
 ! Not implemented:
-!   gbmv, hbmv, sbmv, tbmv, tpmv, trsv, tbsv, tpsv, hpr, hpr2, spr, spr2
+!   gbmv, hbmv, sbmv, tbmv, tpmv, trsv, tbsv, tpsv, hpr2, spr2
 !
 
 
@@ -63,16 +64,15 @@ subroutine <prefix6><s,s,s,s,h,h>pmv(n,alpha,ap,x,incx,offx,beta,y,incy,offy,low
   callprotoargument char*,int*,<ctype6>*,<ctype6>*,<ctype6>*,int*,<ctype6>*,<ctype6>*,int*
   
   integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
-  integer intent(in):: n
+  integer intent(in),check(n>=0) :: n
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
   integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
   integer intent(hide),depend(incy,n,offy) :: ly = (y_capi==Py_None?1+offy+(n-1)*abs(incy):-1)
-  integer intent(in),check(n>=0) :: n
   integer optional, intent(in) :: offx=0
   integer optional, intent(in) :: offy=0
 
   <ftype6> intent(in) :: alpha
-  <ftype6> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+  <ftype6> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2,\2,\2>
 
   <ftype6> dimension(*),depend(n),intent(in),check(len(ap)>=(n*(n+1)/2)) :: ap
    
@@ -82,7 +82,7 @@ subroutine <prefix6><s,s,s,s,h,h>pmv(n,alpha,ap,x,incx,offx,beta,y,incy,offy,low
   depend(offy,n,incy) :: y
 
   <ftype6> dimension(*), intent(in) :: x
-  check(offx>=0 && offx<len(x))
+  check(offx>=0 && offx<len(x)) :: x
   check(len(x)>offx+(n-1)*abs(incx)) :: x
   depend(offx,n,incx) :: x
   
@@ -231,3 +231,30 @@ subroutine <prefix><sy, \0, he, \2>r2(alpha,x,y,lower,incx,offx,incy,offy,n,a)
     depend(incx, offx, x, incy, offy, y, n) :: a
 end subroutine <prefix><sy, \0, he, \2>r2
 
+
+subroutine <prefix6><s,s,s,s,h,h>pr(n,alpha,x,incx,offx,ap,lower)
+  ! Performs the symmetric rank 1 operation
+  !
+  !       A := alpha*x*x**T(H) + A,
+  ! 
+  ! where alpha is a scalar, x is an n element vector and A is an n x n 
+  ! symmetric/hermitian matrix, supplied in packed form.
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,x+offx,&incx,ap)
+    callprotoargument char*,int*,<ctype6creal>*,<ctype6>*,int*,<ctype6>*
+    
+    integer intent(in),check(n>=0) :: n
+    integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
+    integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
+    integer intent(in), optional :: offx = 0
+    <ftype6creal> intent(in) :: alpha
+
+    <ftype6> dimension(*), intent(in) :: x
+    check(offx>=0 && offx<len(x)) :: x
+    check(len(x)>offx+(n-1)*abs(incx)) :: x
+    depend(offx,n,incx) :: x    
+
+    <ftype6> dimension(*),depend(n),intent(in,out,copy,out=apu) :: ap
+    check(len(ap)>=(n*(n+1)/2)) :: ap
+
+end subroutine <prefix6><s,s,s,s,h,h>pr
