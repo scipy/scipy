@@ -6,8 +6,7 @@
 ! $Revision$ $Date$
 !
 ! Additions by Travis Oliphant, Tiziano Zito, Collin RM Stocks, Fabian Pedregosa
-!              Skipper Seabold,
-!              Ilhan Polat - ?gesvx,?sysv,?sysvx,?posvx,?hesvx,?gecon,?pocon
+!              Skipper Seabold, Ilhan Polat
 !
 ! Shorthand Notations:
 ! --------------------

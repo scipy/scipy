@@ -18,6 +18,34 @@
 ! with single precision routines, so they are removed.
 !
 ! Level 1 BLAS
+!
+! Shorthand notation
+!
+! <tchar=s,d,cs,zd>
+! <tchar2c=cs,zd>
+!
+! <prefix2=s,d>
+! <prefix2c=c,z>
+! <prefix3=s,sc>
+! <prefix4=d,dz>
+! <prefix6=s,d,c,z,c,z>
+!
+! <ftype2=real,double precision>
+! <ftype2c=complex,double complex>
+! <ftype3=real,complex>
+! <ftype4=double precision,double complex>
+! <ftypereal3=real,real>
+! <ftypereal4=double precision,double precision>
+! <ftype6=real,double precision,complex,double complex,\2,\3>
+!
+! <ctype2=float,double>
+! <ctype2c=complex_float,complex_double>
+! <ctype3=float,complex_float>
+! <ctype4=double,complex_double>
+! <ctypereal3=float,float>
+! <ctypereal4=double,double>
+! <ctype6=float,double,complex_float,complex_double,\2,\3>
+
 
 subroutine <prefix>rotg(a,b,c,s)
   ! Computes the parameters for a Givens rotation.
@@ -61,7 +89,6 @@ subroutine <prefix>rotg(a,b,c,s)
 
 end subroutine <prefix>rotg
 
-! <prefix2=s,d> <ctype2=float,double> <ftype2=real,double precision>
 subroutine <prefix2>rotmg(d1,d2,x1,y1,param)
   ! Computes the parameters for a modified Givens rotation.
   !
@@ -84,7 +111,7 @@ subroutine <prefix2>rotmg(d1,d2,x1,y1,param)
 end subroutine <prefix2>rotmg
 
 
-subroutine <tchar=s,d,cs,zd>rot(n,x,offx,incx,y,offy,incy,c,s)
+subroutine <tchar>rot(n,x,offx,incx,y,offy,incy,c,s)
   ! Applies a plane rotation with real cosine and complex sine to a
   ! pair of complex vectors and returns the modified vectors.
   !
@@ -113,7 +140,7 @@ subroutine <tchar=s,d,cs,zd>rot(n,x,offx,incx,y,offy,incy,c,s)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-end subroutine <tchar=s,d,cs,zd>rot
+end subroutine <tchar>rot
 
 
 subroutine <prefix2>rotm(n,x,offx,incx,y,offy,incy,param)
@@ -185,7 +212,7 @@ subroutine <prefix>scal(n,a,x,offx,incx)
 end subroutine <prefix>scal
 
 
-subroutine <tchar=cs,zd>scal(n,a,x,offx,incx)
+subroutine <tchar2c>scal(n,a,x,offx,incx)
   ! Computes the product of a vector by a scalar, scales a complex
   ! vector by a real constant
   ! y = a*x
@@ -201,7 +228,7 @@ subroutine <tchar=cs,zd>scal(n,a,x,offx,incx)
   integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
 
-end subroutine <tchar=cs,zd>scal
+end subroutine <tchar2c>scal
 
 
 subroutine <prefix>copy(n,x,offx,incx,y,offy,incy)
@@ -297,7 +324,6 @@ function ddot(n,x,offx,incx,y,offy,incy) result (xy)
 end function ddot
 
 
-! <prefix2c=c,z> <ftype2c=complex,double complex> <ctype2c=complex_float,complex_double>
 function <prefix2c>dotu(n,x,offx,incx,y,offy,incy) result(xy)
 
   <ftype2c> :: <prefix2c>dotu, xy
@@ -350,8 +376,7 @@ function <prefix2c>dotc(n,x,offx,incx,y,offy,incy) result(xy)
 
 end function <prefix2c>dotc
 
-! <prefix3=s,sc> <ctype3=float,complex_float> <ctypereal3=float,float>
-! <ftype3=real,complex> <ftypereal3=real,real>
+
 function <prefix3>nrm2(n,x,offx,incx) result(n2)
 
   fortranname w<prefix3>nrm2
@@ -373,9 +398,6 @@ function <prefix3>nrm2(n,x,offx,incx) result(n2)
 end function <prefix3>nrm2
 
 
-! <prefix4=d,dz> <ctype4=double,complex_double> <ctypereal4=double,double>
-! <ftype4=double precision,double complex>
-! <ftypereal4=double precision,double precision>
 function <prefix4>nrm2(n,x,offx,incx) result(n2)
 
   <ftypereal4> <prefix4>nrm2, n2

@@ -6,11 +6,10 @@
 ! Modified: Fabian Pedregosa, 2011; Eric Moore, 2014
 !
 ! Implemented:
-!   gemv, hemv, symv, trmv, ger, geru, gerc, her, syr, her2, syr2
+!   gemv, hemv, symv, trmv, ger, geru, gerc, her, syr, her2, syr2, spmv, hpmv 
 !
 ! Not implemented:
-!   gbmv, hbmv, hpmv, sbmv, spmv, tbmv, tpmv, trsv, tbsv, tpsv,
-!   hpr, hpr2, spr, spr2
+!   gbmv, hbmv, sbmv, tbmv, tpmv, trsv, tbsv, tpsv, hpr, hpr2, spr, spr2
 !
 
 
@@ -53,6 +52,41 @@ subroutine <prefix>gemv(m,n,alpha,a,x,beta,y,offx,incx,offy,incy,trans,rows,cols
   integer depend(m,n,trans), intent(hide) :: cols = (trans?m:n)
 
 end subroutine <prefix>gemv
+
+
+subroutine <prefix6><s,s,s,s,h,h>pmv(n,alpha,ap,x,incx,offx,beta,y,incy,offy,lower,ly)
+  ! Computes a matrix-vector product for a symmetric matrix
+  !
+  ! Calculate y <- alpha * A * x + beta * y, A is symmmetric in packed form.
+
+  callstatement (*f2py_func)((lower?"L":"U"),&n,&alpha,ap,x+offx,&incx,&beta,y+offy,&incy)
+  callprotoargument char*,int*,<ctype6>*,<ctype6>*,<ctype6>*,int*,<ctype6>*,<ctype6>*,int*
+  
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+  integer intent(in):: n
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer intent(hide),depend(incy,n,offy) :: ly = (y_capi==Py_None?1+offy+(n-1)*abs(incy):-1)
+  integer intent(in),check(n>=0) :: n
+  integer optional, intent(in) :: offx=0
+  integer optional, intent(in) :: offy=0
+
+  <ftype6> intent(in) :: alpha
+  <ftype6> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype6> dimension(*),depend(n),intent(in),check(len(ap)>=(n*(n+1)/2)) :: ap
+   
+  <ftype6> dimension(ly), intent(in,out,copy,out=yout),depend(ly),optional :: y
+  check(offy>=0 && offy<len(y)) :: y
+  check(len(y)>offy+(n-1)*abs(incy)) :: y
+  depend(offy,n,incy) :: y
+
+  <ftype6> dimension(*), intent(in) :: x
+  check(offx>=0 && offx<len(x))
+  check(len(x)>offx+(n-1)*abs(incx)) :: x
+  depend(offx,n,incx) :: x
+  
+end subroutine <prefix6><s,s,s,s,h,h>pmv
 
 
 subroutine <prefix><symv,\0,hemv,\2>(n,alpha,a,x,beta,y,offx,incx,offy,incy,lower,ly)
@@ -119,8 +153,6 @@ subroutine <prefix>trmv(n,a,x,offx,incx,lower,trans,unitdiag)
 end subroutine <prefix>trmv
 
 
-! <ftype6=real,double precision,complex,double complex,\2,\3>
-! <prefix6=s,d,c,z,c,z>
 subroutine <prefix6>ger<,,u,u,c,c>(m,n,alpha,x,incx,y,incy,a,lda)
   ! Performs a rank-1 update of a general matrix.
   !
@@ -143,9 +175,6 @@ subroutine <prefix6>ger<,,u,u,c,c>(m,n,alpha,x,incx,y,incy,a,lda)
 end subroutine <prefix6>ger<,,u,u,c,c>
 
 
-! <ftype6=real,double precision,complex,double complex,\2,\3>
-! <ctype6=float,double,complex_float,complex_double,\2,\3>
-! <prefix6=s,d,c,z,\2,\3>
 subroutine <prefix6><sy,\0,\0,\0, he,\4>r(alpha,x,lower,incx,offx,n,a)
   ! Performs a rank-1 update of a symmetric/hermitian matrix.
   !
