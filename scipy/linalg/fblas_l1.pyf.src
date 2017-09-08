@@ -17,9 +17,7 @@
 ! NOTE: Avoiding wrappers hack does not work under 64-bit Gentoo system
 ! with single precision routines, so they are removed.
 !
-! Level 1 BLAS
-!
-! Shorthand notation
+! Shorthand notations
 !
 ! <tchar=s,d,cs,zd>
 ! <tchar2c=cs,zd>
@@ -47,6 +45,11 @@
 ! <ctypereal4=double,double>
 ! <ctype6=float,double,complex_float,complex_double,\2,\3>
 ! <ctype6creal=float,double,complex_float,complex_double,\0,\1>
+!
+!
+! Level 1 BLAS
+!
+
 
 subroutine <prefix>rotg(a,b,c,s)
   ! Computes the parameters for a Givens rotation.
