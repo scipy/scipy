@@ -61,12 +61,16 @@ def test_api_regression():
 
 # check function for test generator
 def check_distribution(dist, args, alpha):
-    D, pval = stats.kstest(dist, '', args=args, N=1000)
-    if (pval < alpha):
+    with suppress_warnings() as sup:
+        # frechet_l and frechet_r are deprecated, so all their
+        # methods generate DeprecationWarnings.
+        sup.filter(category=DeprecationWarning, message=".*frechet_")
         D, pval = stats.kstest(dist, '', args=args, N=1000)
-        assert_(pval > alpha,
-                msg="D = {}; pval = {}; alpha = {}; args = {}".format(
-                    D, pval, alpha, args))
+        if (pval < alpha):
+            D, pval = stats.kstest(dist, '', args=args, N=1000)
+            assert_(pval > alpha,
+                    msg="D = {}; pval = {}; alpha = {}; args = {}".format(
+                        D, pval, alpha, args))
 
 
 def cases_test_all_distributions():
@@ -1473,19 +1477,16 @@ class TestFitMethod(object):
         if dist in self.skip:
             pytest.skip("%s fit known to fail" % dist)
         distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'):
+        with np.errstate(all='ignore'), suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning, message=".*frechet_")
             res = distfunc.rvs(*args, **{'size': 200})
             vals = distfunc.fit(res)
             vals2 = distfunc.fit(res, optimizer='powell')
         # Only check the length of the return
         # FIXME: should check the actual results to see if we are 'close'
         #   to what was created --- but what is 'close' enough
-        if dist == 'frechet':
-            assert_(len(vals) == len(args))
-            assert_(len(vals2) == len(args))
-        else:
-            assert_(len(vals) == 2+len(args))
-            assert_(len(vals2) == 2+len(args))
+        assert_(len(vals) == 2+len(args))
+        assert_(len(vals2) == 2+len(args))
 
     @pytest.mark.slow
     @pytest.mark.parametrize('dist,args,alpha', cases_test_all_distributions())
@@ -1495,7 +1496,8 @@ class TestFitMethod(object):
         if dist in self.skip + ['frechet']:
             pytest.skip("%s fit known to fail" % dist)
         distfunc = getattr(stats, dist)
-        with np.errstate(all='ignore'):
+        with np.errstate(all='ignore'), suppress_warnings() as sup:
+            sup.filter(category=DeprecationWarning, message=".*frechet_")
             res = distfunc.rvs(*args, **{'size': 200})
             vals = distfunc.fit(res, floc=0)
             vals2 = distfunc.fit(res, fscale=1)

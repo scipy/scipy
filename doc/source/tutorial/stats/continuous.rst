@@ -209,8 +209,6 @@ Continuous Distributions in `scipy.stats`
    continuous_foldcauchy
    continuous_foldnorm
    continuous_f
-   continuous_frechet_r
-   continuous_frechet_l
    continuous_gamma
    continuous_genlogistic
    continuous_genpareto
@@ -268,4 +266,6 @@ Continuous Distributions in `scipy.stats`
    continuous_uniform
    continuous_vonmises
    continuous_wald
+   continuous_weibull_max
+   continuous_weibull_min
    continuous_wrapcauchy
