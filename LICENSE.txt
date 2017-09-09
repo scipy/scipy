@@ -28,3 +28,65 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
+
+
+
+SciPy bundles a number of libraries that are compatibly licensed.  We list
+these here.
+
+Name: ID
+Files: scipy/linalg/src/id_dist/*
+License: 3-clause BSD
+  For details, see scipy/linalg/src/id_dist/doc/doc.tex
+
+Name: SuperLU
+Files: scipy/sparse/linalg/dsolve/SuperLU/*
+License: 3-clause BSD
+  For details, see scipy/sparse/linalg/dsolve/SuperLU/License.txt
+
+Name: ARPACK
+Files: scipy/sparse/linalg/eigen/arpack/ARPACK/*
+License: 3-clause BSD
+  For details, see scipy/sparse/linalg/eigen/arpack/ARPACK/COPYING
+
+Name: L-BFGS-B
+Files: scipy/optimize/lbfgsb/*
+License: BSD license
+  For details, see scipy/optimize/lbfgsb/README
+
+Name: Qhull
+Files: scipy/spatial/qhull/*
+License: Qhull license (BSD-like)
+  For details, see scipy/spatial/qhull/COPYING.txt
+
+Name: Cephes
+Files: scipy/special/cephes/*
+License: 3-clause BSD
+  Distributed under the same license as SciPy with permission from the author,
+  see https://lists.debian.org/debian-legal/2004/12/msg00295.html
+
+Name: Six
+Files: scipy/_lib/six.py
+License: MIT
+  For details, see the header inside scipy/_lib/six.py
+
+Name: Decorator
+Files: scipy/_lib/decorator.py
+License: 2-clause BSD
+  For details, see the header inside scipy/_lib/decorator.py
+
+Name: Faddeeva
+Files: scipy/special/Faddeeva.*
+License: MIT
+  For details, see the headers inside scipy/special/Faddeeva.*
+
+Name: Numpydoc
+Files: doc/sphinxext/numpydoc/*
+License: 2-clause BSD
+  For details, see doc/sphinxext/LICENSE.txt
+
+Name: scipy-sphinx-theme
+Files: doc/scipy-sphinx-theme/*
+License: 3-clause BSD, PSF and Apache 2.0
+  For details, see doc/sphinxext/LICENSE.txt
+
