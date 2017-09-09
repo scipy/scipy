@@ -12,9 +12,9 @@ from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate, \
                   tril_indices, ones, mod, diag, append, eye, triu, tril
 
-from numpy.random import rand, seed, solve
+from numpy.random import rand, seed
 from scipy.linalg import _fblas as fblas
-from scipy.linalg import get_blas_funcs, toeplitz
+from scipy.linalg import get_blas_funcs, toeplitz, solve
 
 from scipy._lib.six import xrange
 
