@@ -7,13 +7,9 @@
 !
 ! Implemented:
 !
-!   rotg, rotmg, rot, rotm
-!   swap, scal, copy, axpy
-!   dot, dotu, dotc
+!   rotg, rotmg, rot, rotm, swap, scal, copy, axpy, dot, dotu, dotc
 !   nrm2, asum, amax, iamax
-!
-! Not Implemented: NONE
-!
+
 ! NOTE: Avoiding wrappers hack does not work under 64-bit Gentoo system
 ! with single precision routines, so they are removed.
 !

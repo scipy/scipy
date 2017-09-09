@@ -10,9 +10,9 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate, \
-                  tril_indices, ones, mod, diag, append
+                  tril_indices, ones, mod, diag, append, eye, triu, tril
 
-from numpy.random import rand, seed
+from numpy.random import rand, seed, solve
 from scipy.linalg import _fblas as fblas
 from scipy.linalg import get_blas_funcs, toeplitz
 
@@ -694,6 +694,32 @@ def test_spr2_hpr2():
         y1f[r, c] = y1
         y1f[[1, 2, 2], [0, 0, 1]] = y1[[1, 3, 4]].conj()
         assert_array_almost_equal(y1f, y2)
+
+
+def test_trsv():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 15
+        A = (rand(n, n)+eye(n)).astype(dtype)
+        x = rand(n).astype(dtype)
+
+        func, = get_blas_funcs(('trsv',), dtype=dtype)
+        y1 = func(a=A, x=x)
+        y2 = solve(triu(A), x)
+        assert_array_almost_equal(y1, y2)
+        y1 = func(a=A, x=x, lower=1)
+        y2 = solve(tril(A), x)
+        assert_array_almost_equal(y1, y2)
+        A[arange(n), arange(n)] = dtype(1)
+        y1 = func(a=A, x=x, diag=1)
+        y2 = solve(triu(A), x)
+        assert_array_almost_equal(y1, y2)
+        y1 = func(a=A, x=x, diag=1, trans=1)
+        y2 = solve(triu(A).T, x)
+        assert_array_almost_equal(y1, y2)
+        y1 = func(a=A, x=x, diag=1, trans=2)
+        y2 = solve(triu(A).conj().T, x)
+        assert_array_almost_equal(y1, y2)
 
 
 """

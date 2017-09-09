@@ -7,10 +7,7 @@
 !
 ! Implemented:
 !   gemv, hemv, symv, trmv, ger, geru, gerc, her, syr, hpr, spr, her2, syr2,
-!   spmv, hpmv, hbmv, sbmv, hpr2, spr2, gbmv
-!
-! Not implemented:
-!   tbmv, tpmv, trsv, tbsv, tpsv
+!   spmv, hpmv, hbmv, sbmv, hpr2, spr2, gbmv, trsv, tbmv, tpmv, tbsv, tpsv
 !
 
 
@@ -374,3 +371,156 @@ subroutine <prefix><s,s,h,h>pr2(n,alpha,x,incx,offx,y,incy,offy,ap,lower)
     check(len(ap)>=(n*(n+1)/2)) :: ap
 
 end subroutine<prefix><s,s,h,h>pr2
+
+subroutine <prefix>tbsv(n,k,a,lda,x,incx,offx,lower,trans,diag)
+  ! Solves one of the systems of equations
+  !
+  !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
+  !
+  ! where xout and x are n element vectors and A is an n by n unit, or
+  ! non-unit, upper or lower triangular matrix.
+  !
+  ! No test for singularity or near-singularity is included in this
+  ! routine. Such tests must be performed before calling this routine.
+
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
+  callprotoargument char*,char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*
+
+  integer intent(hide),check(n>=0),depend(a) :: n = shape(a,1)
+  integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
+  integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
+  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
+  integer intent(hide), depend(a) :: lda = MAX(shape(a,0),1)
+  integer intent(in),depend(lda),check(k>=0&&k<=lda-1) :: k
+  integer intent(in), optional :: offx = 0
+
+  <ftype> intent(in), dimension(lda,n), check(shape(a,0)==shape(a,1)) :: a
+
+  <ftype> dimension(*), intent(in,out,copy,out=xout) :: x
+  check(offx>=0 && offx<len(x)) :: x
+  check(len(x)>offx+(n-1)*abs(incx)) :: x
+  depend(offx,n,incx) :: x
+
+end subroutine <prefix>tbsv
+
+
+subroutine <prefix>tpsv(n,ap,x,incx,offx,lower,trans,diag)
+  ! Solves one of the systems of equations
+  !
+  !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
+  !
+  ! where xout and x are n element vectors and A is an n by n unit, or
+  ! non-unit, upper or lower triangular matrix, supplied in packed form.
+  !
+  ! No test for singularity or near-singularity is included in this
+  ! routine. Such tests must be performed before calling this routine.
+
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,ap,x+offx,&incx)
+  callprotoargument char*,char*,char*,int*,<ctype>*,<ctype>*,int*
+
+  integer intent(in),check(n>=0) :: n
+  integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
+  integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
+  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
+  integer intent(in), optional :: offx = 0
+
+  <ftype> dimension(*),depend(n),intent(in),check(len(ap)>=(n*(n+1)/2)) :: ap
+
+  <ftype> dimension(*), intent(in,out,copy,out=xout) :: x
+  check(offx>=0 && offx<len(x)) :: x
+  check(len(x)>offx+(n-1)*abs(incx)) :: x
+  depend(offx,n,incx) :: x
+
+end subroutine <prefix>tpsv
+
+
+subroutine <prefix>trsv(n,a,lda,x,incx,offx,lower,trans,diag)
+  ! Solves one of the systems of equations
+  !
+  !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
+  !
+  ! where xout and x are n element vectors and A is an n by n unit, or
+  ! non-unit, upper or lower triangular matrix.
+  !
+  ! No test for singularity or near-singularity is included in this
+  ! routine. Such tests must be performed before calling this routine.
+
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,a,&lda,x+offx,&incx)
+  callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*
+
+  integer intent(hide),check(n>=0),depend(a) :: n = shape(a,0)
+  integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
+  integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
+  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
+  integer intent(hide), depend(a) :: lda = MAX(shape(a,0),1)
+  integer intent(in), optional :: offx = 0
+
+  <ftype> intent(in), dimension(n,n), check(shape(a,0)==shape(a,1)) :: a
+
+  <ftype> dimension(*), intent(in,out,copy,out=xout) :: x
+  check(offx>=0 && offx<len(x)) :: x
+  check(len(x)>offx+(n-1)*abs(incx)) :: x
+  depend(offx,n,incx) :: x
+
+end subroutine <prefix>trsv
+
+
+subroutine <prefix>tbmv(n,k,a,lda,x,incx,offx,lower,trans,diag)
+  ! Solves one of the systems of equations
+  !
+  !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
+  !
+  ! where xout and x are an n element vector and  A is an n by n unit, or non-unit,
+  ! upper or lower triangular band matrix, with ( k + 1 ) diagonals.
+
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
+  callprotoargument char*,char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*
+
+  integer intent(hide),check(n>=0),depend(a) :: n = shape(a,1)
+  integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
+  integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
+  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
+  integer intent(hide), depend(a) :: lda = MAX(shape(a,0),1)
+  integer intent(in),depend(lda),check(k>=0&&k<=lda-1) :: k
+  integer intent(in), optional :: offx = 0
+
+  <ftype> intent(in), dimension(lda,n) :: a
+
+  <ftype> dimension(*), intent(in,out,copy,out=xout) :: x
+  check(offx>=0 && offx<len(x)) :: x
+  check(len(x)>offx+(n-1)*abs(incx)) :: x
+  depend(offx,n,incx) :: x
+
+end subroutine <prefix>tbmv
+
+
+subroutine <prefix>tpmv(n,ap,x,incx,offx,lower,trans,diag)
+  ! Solves one of the systems of equations
+  !
+  !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
+  !
+  ! where xout and x are n element vectors and A is an n by n unit, or
+  ! non-unit, upper or lower triangular matrix, supplied in packed form.
+
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,ap,x+offx,&incx)
+  callprotoargument char*,char*,char*,int*,<ctype>*,<ctype>*,int*
+
+  integer intent(in),check(n>=0) :: n
+  integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
+  integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
+  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
+  integer intent(in), optional :: offx = 0
+
+  <ftype> dimension(*),depend(n),intent(in),check(len(ap)>=(n*(n+1)/2)) :: ap
+
+  <ftype> dimension(*), intent(in,out,copy,out=xout) :: x
+  check(offx>=0 && offx<len(x)) :: x
+  check(len(x)>offx+(n-1)*abs(incx)) :: x
+  depend(offx,n,incx) :: x
+
+end subroutine <prefix>tpmv
