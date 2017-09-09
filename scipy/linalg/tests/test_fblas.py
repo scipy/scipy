@@ -10,11 +10,11 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate, \
-                  tril_indices, ones, mod, diag
+                  tril_indices, ones, mod, diag, append
 
 from numpy.random import rand, seed
 from scipy.linalg import _fblas as fblas
-from scipy.linalg import get_blas_funcs
+from scipy.linalg import get_blas_funcs, toeplitz
 
 from scipy._lib.six import xrange
 
@@ -544,6 +544,36 @@ except AttributeError:
 class TestZgemv(BaseGemv):
     blas_func = fblas.zgemv
     dtype = complex128
+
+
+def test_gbmv():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 7
+        m = 5
+        kl = 1
+        ku = 2
+        # fake a banded matrix via toeplitz
+        A = toeplitz(append(rand(kl+1), zeros(m-kl-1)),
+                     append(rand(ku+1), zeros(n-ku-1)))
+        A = A.astype(dtype)
+        Ab = zeros((kl+ku+1, n), dtype=dtype)
+
+        # Form the banded storage
+        Ab[2, :5] = A[0, 0]  # diag
+        Ab[1, 1:6] = A[0, 1]  # sup1
+        Ab[0, 2:7] = A[0, 2]  # sup2
+        Ab[3, :4] = A[1, 0]  # sub1
+
+        x = rand(n).astype(dtype)
+        y = rand(m).astype(dtype)
+        alpha, beta = dtype(3), dtype(-5)
+
+        func, = get_blas_funcs(('gbmv',), dtype=dtype)
+        y1 = func(m=m, n=n, ku=ku, kl=kl, alpha=alpha, a=Ab,
+                  x=x, y=y, beta=beta)
+        y2 = alpha * A.dot(x) + beta * y
+        assert_array_almost_equal(y1, y2)
 
 
 def test_sbmv_hbmv():
