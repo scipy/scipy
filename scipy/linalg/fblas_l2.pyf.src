@@ -54,6 +54,44 @@ subroutine <prefix>gemv(m,n,alpha,a,x,beta,y,offx,incx,offy,incy,trans,rows,cols
 
 end subroutine <prefix>gemv
 
+subroutine <prefix><s,s,h,h>bmv(n,k,alpha,a,lda,x,incx,offx,beta,y,incy,offy,lower,ly)
+  ! Performs the matrix-vector operation
+  !
+  !  y := alpha*A*x + beta*y,
+  !
+  ! where alpha and beta are scalars, x and y are n element vectors and
+  ! A is an n by n symmetric band matrix, with k super-diagonals.
+
+  callstatement (*f2py_func)((lower?"L":"U"),&n,&k,&alpha,a,&lda,x+offx,&incx,&beta,y+offy,&incy)
+  callprotoargument char*,int*,int*,<ctype>*,<ctype>*,int*,<ctype>*,int*,<ctype>*,<ctype>*,int*
+
+  integer optional, intent(in),check(lower==0||lower==1) :: lower = 0
+  integer intent(hide),depend(a),check(n>=0) :: n = shape(a,1)
+  integer intent(hide),depend(a) :: lda = MAX(shape(a,0),1)
+  integer intent(in),depend(lda),check(k>=0&&k<=lda-1) :: k
+  integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
+  integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
+  integer intent(hide),depend(incy,n,offy) :: ly = (y_capi==Py_None?1+offy+(n-1)*abs(incy):-1)
+  integer optional, intent(in) :: offx=0
+  integer optional, intent(in) :: offy=0
+
+  <ftype> intent(in) :: alpha
+  <ftype> intent(in),optional :: beta = <0.0,\0,(0.0\,0.0),\2>
+
+  <ftype> dimension(lda,n),intent(in) :: a
+
+  <ftype> dimension(ly), intent(in,out,copy,out=yout),depend(ly),optional :: y
+  check(offy>=0 && offy<len(y)) :: y
+  check(len(y)>offy+(n-1)*abs(incy)) :: y
+  depend(offy,n,incy) :: y
+
+  <ftype> dimension(*), intent(in) :: x
+  check(offx>=0 && offx<len(x)) :: x
+  check(len(x)>offx+(n-1)*abs(incx)) :: x
+  depend(offx,n,incx) :: x
+
+end subroutine <prefix><s,s,h,h>bmv
+
 
 subroutine <prefix6><s,s,s,s,h,h>pmv(n,alpha,ap,x,incx,offx,beta,y,incy,offy,lower,ly)
   ! Computes a matrix-vector product for a symmetric matrix
