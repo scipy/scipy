@@ -9,6 +9,9 @@
 !   gemv, hemv, symv, trmv, ger, geru, gerc, her, syr, hpr, spr, her2, syr2,
 !   spmv, hpmv, hbmv, sbmv, hpr2, spr2, gbmv, trsv, tbmv, tpmv, tbsv, tpsv
 !
+!
+! Level 2 BLAS
+!
 
 
 subroutine <prefix>gemv(m,n,alpha,a,x,beta,y,offx,incx,offy,incy,trans,rows,cols,ly)
@@ -204,34 +207,6 @@ subroutine <prefix><symv,\0,hemv,\2>(n,alpha,a,x,beta,y,offx,incx,offy,incy,lowe
 end subroutine  <prefix><symv,\0,hemv,\2>
 
 
-subroutine <prefix>trmv(n,a,x,offx,incx,lower,trans,unitdiag)
-  ! Computes a matrix-vector product using a triangular matrix
-  !
-  ! x <- op(A) * x, A is triangular
-  !
-
-  callstatement (*f2py_func)((lower?"L":"U"), (trans?(trans==2?"C":"T"):"N"), &
-       (unitdiag?"U":"N"),&n,a,&n,x+offx,&incx)
-  callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*
-
-  integer optional, intent(in), check(trans>=0 && trans <=2) :: trans = 0
-  integer optional, intent(in), check(lower==0||lower==1) :: lower = 0
-  integer optional, intent(in), check(unitdiag==0||unitdiag==1) :: unitdiag = 0
-  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
-
-  <ftype> dimension(*), intent(in,out,copy) :: x
-  <ftype> dimension(n,n), intent(in),check(shape(a,0)==shape(a,1)) :: a
-  integer depend(a), intent(hide):: n = shape(a,0)
-
-  integer optional, intent(in), depend(x) :: offx=0
-  check(offx>=0 && offx<len(x)) :: offx
-
-  check(len(x)>offx+(n-1)*abs(incx)) :: n
-  depend(x,offx,incx) :: n
-
-end subroutine <prefix>trmv
-
-
 subroutine <prefix6>ger<,,u,u,c,c>(m,n,alpha,x,incx,y,incy,a,lda)
   ! Performs a rank-1 update of a general matrix.
   !
@@ -372,7 +347,7 @@ subroutine <prefix><s,s,h,h>pr2(n,alpha,x,incx,offx,y,incy,offy,ap,lower)
 
 end subroutine<prefix><s,s,h,h>pr2
 
-subroutine <prefix>tbsv(n,k,a,lda,x,incx,offx,lower,trans,diag)
+subroutine <prefix>tbsv(n,k,a,lda,x,incx,offx,lower,trans,unitdiag)
   ! Solves one of the systems of equations
   !
   !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
@@ -383,13 +358,13 @@ subroutine <prefix>tbsv(n,k,a,lda,x,incx,offx,lower,trans,diag)
   ! No test for singularity or near-singularity is included in this
   ! routine. Such tests must be performed before calling this routine.
 
-  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(unitdiag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
   callprotoargument char*,char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*
 
   integer intent(hide),check(n>=0),depend(a) :: n = shape(a,1)
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
   integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
-  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(unitdiag == 0 || unitdiag == 1) :: unitdiag = 0
   integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
   integer intent(hide), depend(a) :: lda = MAX(shape(a,0),1)
   integer intent(in),depend(lda),check(k>=0&&k<=lda-1) :: k
@@ -405,7 +380,7 @@ subroutine <prefix>tbsv(n,k,a,lda,x,incx,offx,lower,trans,diag)
 end subroutine <prefix>tbsv
 
 
-subroutine <prefix>tpsv(n,ap,x,incx,offx,lower,trans,diag)
+subroutine <prefix>tpsv(n,ap,x,incx,offx,lower,trans,unitdiag)
   ! Solves one of the systems of equations
   !
   !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
@@ -416,13 +391,13 @@ subroutine <prefix>tpsv(n,ap,x,incx,offx,lower,trans,diag)
   ! No test for singularity or near-singularity is included in this
   ! routine. Such tests must be performed before calling this routine.
 
-  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,ap,x+offx,&incx)
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(unitdiag?"U":"N"),&n,ap,x+offx,&incx)
   callprotoargument char*,char*,char*,int*,<ctype>*,<ctype>*,int*
 
   integer intent(in),check(n>=0) :: n
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
   integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
-  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(unitdiag == 0 || unitdiag == 1) :: unitdiag = 0
   integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
   integer intent(in), optional :: offx = 0
 
@@ -436,7 +411,35 @@ subroutine <prefix>tpsv(n,ap,x,incx,offx,lower,trans,diag)
 end subroutine <prefix>tpsv
 
 
-subroutine <prefix>trsv(n,a,lda,x,incx,offx,lower,trans,diag)
+subroutine <prefix>trmv(n,a,x,offx,incx,lower,trans,unitdiag)
+  ! Computes a matrix-vector product using a triangular matrix
+  !
+  ! x <- op(A) * x, A is triangular
+  !
+
+  callstatement (*f2py_func)((lower?"L":"U"), (trans?(trans==2?"C":"T"):"N"), &
+       (unitdiag?"U":"N"),&n,a,&n,x+offx,&incx)
+  callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*
+
+  integer optional, intent(in), check(trans>=0 && trans <=2) :: trans = 0
+  integer optional, intent(in), check(lower==0||lower==1) :: lower = 0
+  integer optional, intent(in), check(unitdiag==0||unitdiag==1) :: unitdiag = 0
+  integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
+
+  <ftype> dimension(*), intent(in,out,copy) :: x
+  <ftype> dimension(n,n), intent(in),check(shape(a,0)==shape(a,1)) :: a
+  integer depend(a), intent(hide):: n = shape(a,0)
+
+  integer optional, intent(in), depend(x) :: offx=0
+  check(offx>=0 && offx<len(x)) :: offx
+
+  check(len(x)>offx+(n-1)*abs(incx)) :: n
+  depend(x,offx,incx) :: n
+
+end subroutine <prefix>trmv
+
+
+subroutine <prefix>trsv(n,a,lda,x,incx,offx,lower,trans,unitdiag)
   ! Solves one of the systems of equations
   !
   !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
@@ -447,13 +450,13 @@ subroutine <prefix>trsv(n,a,lda,x,incx,offx,lower,trans,diag)
   ! No test for singularity or near-singularity is included in this
   ! routine. Such tests must be performed before calling this routine.
 
-  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,a,&lda,x+offx,&incx)
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(unitdiag?"U":"N"),&n,a,&lda,x+offx,&incx)
   callprotoargument char*,char*,char*,int*,<ctype>*,int*,<ctype>*,int*
 
   integer intent(hide),check(n>=0),depend(a) :: n = shape(a,0)
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
   integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
-  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(unitdiag == 0 || unitdiag == 1) :: unitdiag = 0
   integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
   integer intent(hide), depend(a) :: lda = MAX(shape(a,0),1)
   integer intent(in), optional :: offx = 0
@@ -468,7 +471,7 @@ subroutine <prefix>trsv(n,a,lda,x,incx,offx,lower,trans,diag)
 end subroutine <prefix>trsv
 
 
-subroutine <prefix>tbmv(n,k,a,lda,x,incx,offx,lower,trans,diag)
+subroutine <prefix>tbmv(n,k,a,lda,x,incx,offx,lower,trans,unitdiag)
   ! Solves one of the systems of equations
   !
   !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
@@ -476,13 +479,13 @@ subroutine <prefix>tbmv(n,k,a,lda,x,incx,offx,lower,trans,diag)
   ! where xout and x are an n element vector and  A is an n by n unit, or non-unit,
   ! upper or lower triangular band matrix, with ( k + 1 ) diagonals.
 
-  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(unitdiag?"U":"N"),&n,&k,a,&lda,x+offx,&incx)
   callprotoargument char*,char*,char*,int*,int*,<ctype>*,int*,<ctype>*,int*
 
   integer intent(hide),check(n>=0),depend(a) :: n = shape(a,1)
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
   integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
-  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(unitdiag == 0 || unitdiag == 1) :: unitdiag = 0
   integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
   integer intent(hide), depend(a) :: lda = MAX(shape(a,0),1)
   integer intent(in),depend(lda),check(k>=0&&k<=lda-1) :: k
@@ -498,21 +501,21 @@ subroutine <prefix>tbmv(n,k,a,lda,x,incx,offx,lower,trans,diag)
 end subroutine <prefix>tbmv
 
 
-subroutine <prefix>tpmv(n,ap,x,incx,offx,lower,trans,diag)
-  ! Solves one of the systems of equations
+subroutine <prefix>tpmv(n,ap,x,incx,offx,lower,trans,unitdiag)
+  ! performs one of the matrix-vector operations
   !
-  !    A*xout = x,   or   A**T*xout = x,   or   A**H*xout = x,
+  !  x := A*x,   or   x := A**T*x,
   !
-  ! where xout and x are n element vectors and A is an n by n unit, or
+  ! where x is n element vectors and A is an n by n unit, or
   ! non-unit, upper or lower triangular matrix, supplied in packed form.
 
-  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(diag?"U":"N"),&n,ap,x+offx,&incx)
+  callstatement (*f2py_func)((lower?"L":"U"),(trans?(trans==2?"C":"T"):"N"),(unitdiag?"U":"N"),&n,ap,x+offx,&incx)
   callprotoargument char*,char*,char*,int*,<ctype>*,<ctype>*,int*
 
   integer intent(in),check(n>=0) :: n
   integer intent(in), optional, check(lower == 0 || lower == 1) :: lower = 0
   integer intent(in), optional, check(trans >= 0 || trans <= 2) :: trans = 0
-  integer intent(in), optional, check(diag == 0 || diag == 1) :: diag = 0
+  integer intent(in), optional, check(unitdiag == 0 || unitdiag == 1) :: unitdiag = 0
   integer intent(in), optional, check(incx>0||incx<0) :: incx = 1
   integer intent(in), optional :: offx = 0
 

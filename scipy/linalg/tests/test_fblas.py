@@ -10,7 +10,8 @@ from __future__ import division, print_function, absolute_import
 
 from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate, \
-                  tril_indices, ones, mod, diag, append, eye, triu, tril
+                  tril_indices, ones, mod, diag, append, eye, triu, tril, \
+                  nonzero
 
 from numpy.random import rand, seed
 from scipy.linalg import _fblas as fblas
@@ -696,28 +697,197 @@ def test_spr2_hpr2():
         assert_array_almost_equal(y1f, y2)
 
 
+def test_tbmv():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 10
+        k = 3
+        x = rand(n).astype(dtype)
+        A = zeros((n, n), dtype=dtype)
+        # Banded upper triangular array
+        for sup in range(k+1):
+            A[arange(n-sup), arange(sup, n)] = rand(n-sup)
+
+        # Add complex parts for c,z
+        if ind > 1:
+            A[nonzero(A)] += 1j * rand((k+1)*n-(k*(k+1)//2)).astype(dtype)
+
+        # Form the banded storage
+        Ab = zeros((k+1, n), dtype=dtype)
+        for row in range(k+1):
+            Ab[-row-1, row:] = diag(A, k=row)
+        func, = get_blas_funcs(('tbmv',), dtype=dtype)
+
+        y1 = func(k=k, a=Ab, x=x)
+        y2 = A.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(k=k, a=Ab, x=x, unitdiag=1)
+        A[arange(n), arange(n)] = dtype(1)
+        y2 = A.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(k=k, a=Ab, x=x, unitdiag=1, trans=1)
+        y2 = A.T.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(k=k, a=Ab, x=x, unitdiag=1, trans=2)
+        y2 = A.conj().T.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+
+def test_tbsv():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 10
+        k = 3
+        x = rand(n).astype(dtype)
+        A = zeros((n, n), dtype=dtype)
+        # Banded upper triangular array
+        for sup in range(k+1):
+            A[arange(n-sup), arange(sup, n)] = rand(n-sup)
+
+        # Add complex parts for c,z
+        if ind > 1:
+            A[nonzero(A)] += 1j * rand((k+1)*n-(k*(k+1)//2)).astype(dtype)
+
+        # Form the banded storage
+        Ab = zeros((k+1, n), dtype=dtype)
+        for row in range(k+1):
+            Ab[-row-1, row:] = diag(A, k=row)
+        func, = get_blas_funcs(('tbsv',), dtype=dtype)
+
+        y1 = func(k=k, a=Ab, x=x)
+        y2 = solve(A, x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(k=k, a=Ab, x=x, unitdiag=1)
+        A[arange(n), arange(n)] = dtype(1)
+        y2 = solve(A, x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(k=k, a=Ab, x=x, unitdiag=1, trans=1)
+        y2 = solve(A.T, x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(k=k, a=Ab, x=x, unitdiag=1, trans=2)
+        y2 = solve(A.conj().T, x)
+        assert_array_almost_equal(y1, y2)
+
+
+def test_tpmv():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 10
+        x = rand(n).astype(dtype)
+        # Upper triangular array
+        A = triu(rand(n, n)) if ind < 2 else triu(rand(n, n)+rand(n, n)*1j)
+        # Form the packed storage
+        c, r = tril_indices(n)
+        Ap = A[r, c]
+        func, = get_blas_funcs(('tpmv',), dtype=dtype)
+
+        y1 = func(n=n, ap=Ap, x=x)
+        y2 = A.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(n=n, ap=Ap, x=x, unitdiag=1)
+        A[arange(n), arange(n)] = dtype(1)
+        y2 = A.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(n=n, ap=Ap, x=x, unitdiag=1, trans=1)
+        y2 = A.T.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(n=n, ap=Ap, x=x, unitdiag=1, trans=2)
+        y2 = A.conj().T.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+
+def test_tpsv():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 10
+        x = rand(n).astype(dtype)
+        # Upper triangular array
+        A = triu(rand(n, n)) if ind < 2 else triu(rand(n, n)+rand(n, n)*1j)
+        A += eye(n)
+        # Form the packed storage
+        c, r = tril_indices(n)
+        Ap = A[r, c]
+        func, = get_blas_funcs(('tpsv',), dtype=dtype)
+
+        y1 = func(n=n, ap=Ap, x=x)
+        y2 = solve(A, x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(n=n, ap=Ap, x=x, unitdiag=1)
+        A[arange(n), arange(n)] = dtype(1)
+        y2 = solve(A, x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(n=n, ap=Ap, x=x, unitdiag=1, trans=1)
+        y2 = solve(A.T, x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(n=n, ap=Ap, x=x, unitdiag=1, trans=2)
+        y2 = solve(A.conj().T, x)
+        assert_array_almost_equal(y1, y2)
+
+
+def test_trmv():
+    seed(1234)
+    for ind, dtype in enumerate(DTYPES):
+        n = 3
+        A = (rand(n, n)+eye(n)).astype(dtype)
+        x = rand(3).astype(dtype)
+        func, = get_blas_funcs(('trmv',), dtype=dtype)
+
+        y1 = func(a=A, x=x)
+        y2 = triu(A).dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(a=A, x=x, unitdiag=1)
+        A[arange(n), arange(n)] = dtype(1)
+        y2 = triu(A).dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(a=A, x=x, unitdiag=1, trans=1)
+        y2 = triu(A).T.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+        y1 = func(a=A, x=x, unitdiag=1, trans=2)
+        y2 = triu(A).conj().T.dot(x)
+        assert_array_almost_equal(y1, y2)
+
+
 def test_trsv():
     seed(1234)
     for ind, dtype in enumerate(DTYPES):
         n = 15
         A = (rand(n, n)+eye(n)).astype(dtype)
         x = rand(n).astype(dtype)
-
         func, = get_blas_funcs(('trsv',), dtype=dtype)
+
         y1 = func(a=A, x=x)
         y2 = solve(triu(A), x)
         assert_array_almost_equal(y1, y2)
+
         y1 = func(a=A, x=x, lower=1)
         y2 = solve(tril(A), x)
         assert_array_almost_equal(y1, y2)
+
+        y1 = func(a=A, x=x, unitdiag=1)
         A[arange(n), arange(n)] = dtype(1)
-        y1 = func(a=A, x=x, diag=1)
         y2 = solve(triu(A), x)
         assert_array_almost_equal(y1, y2)
-        y1 = func(a=A, x=x, diag=1, trans=1)
+
+        y1 = func(a=A, x=x, unitdiag=1, trans=1)
         y2 = solve(triu(A).T, x)
         assert_array_almost_equal(y1, y2)
-        y1 = func(a=A, x=x, diag=1, trans=2)
+
+        y1 = func(a=A, x=x, unitdiag=1, trans=2)
         y2 = solve(triu(A).conj().T, x)
         assert_array_almost_equal(y1, y2)
 
