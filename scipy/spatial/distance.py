@@ -122,37 +122,43 @@ from . import _distance_wrap
 from . import _hausdorff
 from ..linalg import norm
 
+
 def _args_to_kwargs_xdist(args, kwargs, metric, func_name):
-    if func_name == "pdist":
-        old_arg_names = ["p", "w", "V", "VI"]
+    """
+    Convert legacy positional arguments to keyword arguments for pdist/cdist.
+    """
+    if not args:
+        return kwargs
+
+    if (callable(metric) and metric not in [
+            braycurtis, canberra, chebyshev, cityblock, correlation, cosine,
+            dice, euclidean, hamming, jaccard, kulsinski, mahalanobis,
+            matching, minkowski, rogerstanimoto, russellrao, seuclidean,
+            sokalmichener, sokalsneath, sqeuclidean, yule, wminkowski]):
+        raise TypeError('When using a custom metric arguments must be passed'
+                        'as keyword (i.e., ARGNAME=ARGVALUE)')
+
+    if func_name == 'pdist':
+        old_arg_names = ['p', 'w', 'V', 'VI']
     else:
-        old_arg_names = ["p", "V", "VI", "w"]
+        old_arg_names = ['p', 'V', 'VI', 'w']
+
     num_args = len(args)
-    if num_args:
-        if(callable(metric) and
-           metric not in [braycurtis, canberra, chebyshev, cityblock,
-                          correlation, cosine, dice, euclidean,
-                          hamming, jaccard, kulsinski, mahalanobis,
-                          matching, minkowski, rogerstanimoto,
-                          russellrao, seuclidean, sokalmichener,
-                          sokalsneath, sqeuclidean, yule, wminkowski]):
-            raise TypeError('When using a custom metric arguments must be passed'
-                            'as keyword (i.e., ARGNAME=ARGVALUE)')
+    warnings.warn('%d metric parameters have been passed as positional.'
+                  'This will raise an error in a future version.'
+                  'Please pass arguments as keywords(i.e., ARGNAME=ARGVALUE)'
+                  % num_args, DeprecationWarning)
 
-        warnings.warn('%d metric parameters have been passed as positional.'
-                      'This will raise an error in a future version.'
-                      'Please pass arguments as keywords'
-                      '(i.e., ARGNAME=ARGVALUE)' % num_args, DeprecationWarning)
-        if num_args > 4:
-            raise ValueError('Deprecated %s signature accepts only 4'
-                'positional arguments (p, w, V, VI), %d given.'
-                % (func_name, num_args))
+    if num_args > 4:
+        raise ValueError('Deprecated %s signature accepts only 4'
+                         'positional arguments (%s), %d given.'
+                         % (func_name, ', '.join(old_arg_names), num_args))
 
-        for i, arg in enumerate(args):
-            if old_arg_names[i] in kwargs:
-                raise TypeError('%s() got multiple values for argument '
-                    '%s' % (func_name, old_arg_names[i]))
-            kwargs[old_arg_names[i]] = arg
+    for old_arg, arg in zip(old_arg_names, args):
+        if old_arg in kwargs:
+            raise TypeError('%s() got multiple values for argument %s'
+                            % (func_name, old_arg))
+        kwargs[old_arg] = arg
     return kwargs
 
 
