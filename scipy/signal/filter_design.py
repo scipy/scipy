@@ -287,8 +287,8 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
         `w` and `h` are passed to plot. Useful for plotting the frequency
         response inside `freqz`.
     axis : int
-        The axis to treat as coefficients in `a` and `b` (default 0)
-        when broadcasting the arrays together.
+        The axis to treat as coefficients in `a` and `b` (default 0).
+        All other axes must be compatible with broadcasting rules.
 
     Returns
     -------
@@ -297,7 +297,8 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
         radians/sample.
     h : ndarray
         The frequency response, as complex numbers, with shape corresponding
-        to standard broadcasting rules for `a` and `b`.
+        to standard broadcasting rules for `a` and `b` along the non-frequency
+        dimension.
 
     See Also
     --------
@@ -378,8 +379,8 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
         lastpoint = 2 * pi if whole else pi
         w = np.linspace(0, lastpoint, worN, endpoint=False)
         min_size = b_len  # would be max(a_len, b_len) in the general `a` case
-        if a_len == 1 and worN >= min_size and \
-                fftpack.next_fast_len(worN) == worN:
+        if (a_len == 1 and worN >= min_size and
+                fftpack.next_fast_len(worN) == worN):
             # if worN is fast, 2 * worN will be fast, too,
             # so no need to check that one
             n_fft = worN if whole else worN * 2
