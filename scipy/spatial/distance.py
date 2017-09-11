@@ -49,7 +49,7 @@ functions. Use ``pdist`` for this purpose.
    minkowski        -- the Minkowski distance.
    seuclidean       -- the normalized Euclidean distance.
    sqeuclidean      -- the squared Euclidean distance.
-   wminkowski       -- the weighted Minkowski distance.
+   wminkowski       -- (deprecated) alias of `minkowski`.
 
 Distance functions between two boolean vectors (representing sets) ``u`` and
 ``v``.  As in the case of numerical vectors, ``pdist`` is more efficient for
@@ -62,7 +62,6 @@ computing the distances between all pairs.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
    kulsinski        -- the Kulsinski distance.
-   matching         -- the matching dissimilarity.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
    sokalmichener    -- the Sokal-Michener dissimilarity.
@@ -483,9 +482,18 @@ def minkowski(u, v, p=2, w=None):
     return dist
 
 
-wminkowski = np.deprecate(minkowski, "wminkowski",
-                          message="spatial.distance.wminkowski is "
-                          "deprecated; use spatial.distance.minkowski instead.")
+# `minkowski` gained weights in scipy 1.0.  Once we're at say version 1.3,
+# deprecated `wminkowski`.  Not done at once because it would be annoying for
+# downstream libraries that used `wminkowski` and support multiple scipy
+# versions.
+wminkowski = minkowski
+if wminkowski.__doc__ is not None:
+    wminkowski.__doc__ += """Notes
+    -----
+    `wminkowski` is DEPRECATED.  It is simply an alias of `minkowski` in
+    scipy >= 1.0.
+
+    """
 
 
 def euclidean(u, v, w=None):
@@ -570,9 +578,12 @@ def correlation(u, v, w=None, centered=True):
     Computes the correlation distance between two 1-D arrays.
     The correlation distance between `u` and `v`, is
     defined as
+
     .. math::
+
         1 - \\frac{(u - \\bar{u}) \\cdot (v - \\bar{v})}
-                {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+                  {{||(u - \\bar{u})||}_2 {||(v - \\bar{v})||}_2}
+
     where :math:`\\bar{u}` is the mean of the elements of `u`
     and :math:`x \\cdot y` is the dot product of :math:`x` and :math:`y`.
 
@@ -590,6 +601,7 @@ def correlation(u, v, w=None, centered=True):
     -------
     correlation : double
         The correlation distance between 1-D array `u` and `v`.
+
     """
     u = _validate_vector(u)
     v = _validate_vector(v)
@@ -611,9 +623,12 @@ def cosine(u, v, w=None):
     """
     Computes the Cosine distance between 1-D arrays.
     The Cosine distance between `u` and `v`, is defined as
+
     .. math::
+
         1 - \\frac{u \\cdot v}
-                {||u||_2 ||v||_2}.
+                  {||u||_2 ||v||_2}.
+
     where :math:`u \\cdot v` is the dot product of :math:`u` and
     :math:`v`.
 
@@ -1026,7 +1041,7 @@ def yule(u, v, w=None):
     (nff, nft, ntf, ntt) = _nbool_correspond_all(u, v, w=w)
     return float(2.0 * ntf * nft / np.array(ntt * nff + ntf * nft))
 
-@np.deprecate(message="spatial.distance.matching is deprecated in scipy 0.18.0; "
+@np.deprecate(message="spatial.distance.matching is deprecated in scipy 1.0.0; "
                       "use spatial.distance.hamming instead.")
 def matching(u, v, w=None):
     """
