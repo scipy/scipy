@@ -7,10 +7,12 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
+from scipy._lib._util import check_random_state
+
 __all__ = ['clarkson_woodruff_transform']
 
 
-def cwt_matrix(n_rows, n_columns):
+def cwt_matrix(n_rows, n_columns, seed=None):
     r""""
     Generate a matrix S for the Clarkson-Woodruff sketch. Given the desired
     size of matrix, the method returns a matrix S of size (n_rows, n_columns)
@@ -23,6 +25,8 @@ def cwt_matrix(n_rows, n_columns):
         number of rows of S
     n_columns: int
         number of columns of S
+    seed: int
+        Seed the generator
 
     Returns
     -------
@@ -36,13 +40,14 @@ def cwt_matrix(n_rows, n_columns):
     """
     S = np.zeros((n_rows, n_columns))
     nz_positions = np.random.randint(0, n_rows, n_columns)
-    values = np.random.choice([1, -1], n_columns)
+    rng = check_random_state(seed)
+    values = rng.choice([1, -1], n_columns)
     for i in range(n_columns):
         S[nz_positions[i]][i] = values[i]
 
     return S
 
-def clarkson_woodruff_transform(input_matrix, sketch_size):
+def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
     r""""
     Given an input_matrix  of size (n, d), compute a matrix A' of size
     (sketch_size, d) which holds:
@@ -61,6 +66,8 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
         Input matrix
     sketch_size: int
         number of rows for the sketch
+    seed: int
+        Seed the generator
 
     Returns
     -------
@@ -96,5 +103,5 @@ def clarkson_woodruff_transform(input_matrix, sketch_size):
            regression in input sparsity time. In STOC, 2013.
     """
 
-    S = cwt_matrix(sketch_size, input_matrix.shape[0])
+    S = cwt_matrix(sketch_size, input_matrix.shape[0], seed)
     return np.dot(S, input_matrix)

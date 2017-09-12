@@ -29,10 +29,6 @@ class TestClarksonWoodruffTransform(object):
     # Sketch matrix dimensions
     n_sketch_rows = 100
 
-    # Repetitions/max_errors per test
-    repetitions_per_test = 10
-    n_max_errors = 3
-
     # Error threshold
     threshold = 0.1
 
@@ -53,13 +49,18 @@ class TestClarksonWoodruffTransform(object):
         # we run the 'test' multiple times and check that
         # we pass all/almost all the tries
         n_errors = 0
-        for _ in range(self.repetitions_per_test):
+
+        seeds = [1755490010, 934377150, 1391612830, 1752708722, 2008891431,
+                 1302443994, 1521083269, 1501189312, 1126232505, 1533465685]
+
+        for seed_ in seeds:
             sketch = clarkson_woodruff_transform(
                 self.dense_big_matrix,
-                self.n_sketch_rows)
+                self.n_sketch_rows,
+                seed_)
 
             #we could use other norms (like L2)
             err = np.linalg.norm(self.dense_big_matrix) - np.linalg.norm(sketch)
             if err > self.threshold:
                 n_errors += 1
-        assert_(n_errors <= self.n_max_errors)
+        assert_(n_errors == 0)
