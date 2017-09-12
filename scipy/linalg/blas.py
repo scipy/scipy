@@ -150,28 +150,36 @@ BLAS Level 3 functions
 .. autosummary::
    :toctree: generated/
 
-   cgemm
-   chemm
-   cherk
-   cher2k
-   csymm
-   csyrk
-   csyr2k
-   dgemm
-   dsymm
-   dsyrk
-   dsyr2k
    sgemm
    ssymm
-   ssyrk
    ssyr2k
+   ssyrk
+   strmm
+   strsm
+   dgemm
+   dsymm
+   dsyr2k
+   dsyrk
+   dtrmm
+   dtrsm
+   cgemm
+   chemm
+   cher2k
+   cherk
+   csymm
+   csyr2k
+   csyrk
+   ctrmm
+   ctrsm
    zgemm
    zhemm
-   zherk
    zher2k
+   zherk
    zsymm
-   zsyrk
    zsyr2k
+   zsyrk
+   ztrmm
+   ztrsm
 
 """
 #
