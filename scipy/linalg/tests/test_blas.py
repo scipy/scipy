@@ -646,7 +646,7 @@ class TestFBLAS2Simple(object):
     def test_tbsv(self):
         seed(1234)
         for ind, dtype in enumerate(DTYPES):
-            n = 8
+            n = 6
             k = 3
             x = rand(n).astype(dtype)
             A = zeros((n, n), dtype=dtype)
