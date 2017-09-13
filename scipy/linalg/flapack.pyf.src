@@ -18,10 +18,12 @@
 ! <ftype2=real,double precision>
 ! <ftype2c=complex,double complex>
 ! <ftypereal=real,double precision,real,double precision>
+! <ftypecomplex=complex,double complex,\0,\1>
 ! <ctype=float,double,complex_float,complex_double>
 ! <ctype2=float,double>
 ! <ctype2c=complex_float,complex_double>
 ! <ctypereal=float,double,float,double>
+! <ctypecomplex=complex_float,complex_double,\0,\1>
 ! <wrap2=ws,d>
 ! <wrap2c=wc,z>
 !
@@ -755,6 +757,56 @@ interface
      integer intent(out):: info
 
    end subroutine <prefix>sysvx_lwork
+
+
+  subroutine <prefix2>sycon(n,a,lda,ipiv,anorm,rcond,work,iwork,info,lower)
+  !   Estimates the reciprocal of the condition number (in the
+  !   1-norm) of a real symmetric matrix A using the factorization
+  !   A = U*D*U**T or A = L*D*L**T computed by (S/D)SYTRF.
+  !
+  !   An estimate is obtained for norm(inv(A)), and the reciprocal of the
+  !   condition number is computed as RCOND = 1 / (ANORM * norm(inv(A)))
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,&anorm,&rcond,work,iwork,&info)
+    callprotoargument char*,int*,<ctype2>*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
+
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftype2> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in):: a
+    integer intent(hide),depend(a) :: lda = max(shape(a,0),1)
+    integer intent(in),dimension(n),depend(n) :: ipiv
+    <ftype2> intent(in) :: anorm
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(hide),dimension(2*n),depend(n) :: work
+    integer intent(hide),dimension(n),depend(n) :: iwork
+    integer intent(out) :: info
+
+  end subroutine <prefix2>sycon
+
+
+  subroutine <c,z,c,z><sy,\0,he,\2>con(n,a,lda,ipiv,anorm,rcond,work,info,lower)
+  !   Estimates the reciprocal of the condition number (in the
+  !   1-norm) of a complex symmetric matrix A using the factorization
+  !   A = U*D*U**T or A = L*D*L**T computed by (C/Z)SYTRF.
+  !
+  !   An estimate is obtained for norm(inv(A)), and the reciprocal of the
+  !   condition number is computed as RCOND = 1 / (ANORM * norm(inv(A)))
+
+    callstatement (*f2py_func)((lower?"L":"U"),&n,a,&lda,ipiv,&anorm,&rcond,work,&info)
+    callprotoargument char*,int*,<ctypecomplex>*,int*,int*,<ctypereal>*,<ctypereal>*,<ctypecomplex>*,int*
+
+    integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+    integer depend(a),intent(hide):: n = shape(a,0)
+    <ftypecomplex> dimension(n,n),check(shape(a,0)==shape(a,1)),intent(in):: a
+    integer intent(hide),depend(a) :: lda = max(shape(a,0),1)
+    integer intent(in),dimension(n),depend(n) :: ipiv
+    <ftypereal> intent(in) :: anorm
+    <ftypereal> intent(out) :: rcond
+    <ftypecomplex> intent(hide),dimension(2*n),depend(n) :: work
+    integer intent(out) :: info
+
+  end subroutine <c,z,c,z><sy,\0,he,\2>con
+
 
    subroutine <prefix2c>hesv(n,nrhs,a,lda,ipiv,b,ldb,work,lwork,info,lower)
 
