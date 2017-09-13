@@ -349,6 +349,48 @@ All functions
    ctrtrs
    ztrtrs
 
+   ssytf2
+   dsytf2
+   csytf2
+   zsytf2
+
+   ssytf2_rook
+   dsytf2_rook
+   csytf2_rook
+   zsytf2_rook
+
+   ssytrf
+   dsytrf
+   csytrf
+   zsytrf
+
+   ssytrf_rook
+   dsytrf_rook
+   csytrf_rook
+   zsytrf_rook
+
+   ssytrf_lwork
+   dsytrf_lwork
+   csytrf_lwork
+   zsytrf_lwork
+
+   ssytrf_rook_lwork
+   dsytrf_rook_lwork
+   csytrf_rook_lwork
+   zsytrf_rook_lwork
+
+   chetrf
+   zhetrf
+
+   chetrf_rook
+   zhetrf_rook
+
+   chetrf_lwork
+   zhetrf_lwork
+
+   chetrf_rook_lwork
+   zhetrf_rook_lwork
+
    cunghr
    zunghr
 
