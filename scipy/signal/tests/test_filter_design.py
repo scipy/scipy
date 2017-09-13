@@ -524,65 +524,45 @@ class TestFreqz(object):
         t = np.linspace(0, 1, 4, endpoint=False)
         b = np.array([[1., 0, 0, 0], np.sin(2 * np.pi * t)])
         a = np.array([[1., 0, 0, 0], [0.5, 0, 0, 0]])
-        h_whole = np.array([[1., 1., 1., 1.], [0, -4j, 0, 4j]])
-        w, h = freqz(b, a, worN=4, whole=True, axis=-1)
+        h_whole = np.array([[1., 1., 1., 1.], [0, -4j, 0, 4j]]).T
+        w, h = freqz(b.T, a.T, worN=4, whole=True)
         expected_w = np.linspace(0, 2 * np.pi, 4, endpoint=False)
         assert_array_almost_equal(w, expected_w)
         assert_array_almost_equal(h, h_whole)
         # simultaneously check int-like support
-        w, h = freqz(b, a, worN=np.int32(4), whole=True, axis=-1)
+        w, h = freqz(b.T, a.T, worN=np.int32(4), whole=True)
         assert_array_almost_equal(w, expected_w)
         assert_array_almost_equal(h, h_whole)
-        w, h = freqz(b.T, a.T, worN=4, whole=True)  # default axis is 0
+        w, h = freqz(b.T, a.T, worN=w, whole=True)
         assert_array_almost_equal(w, expected_w)
-        assert_array_almost_equal(h, h_whole.T)
-        w, h = freqz(b.T, a.T, worN=w, whole=True)  # default axis is 0
-        assert_array_almost_equal(w, expected_w)
-        assert_array_almost_equal(h, h_whole.T)
+        assert_array_almost_equal(h, h_whole)
         # broadcasting
-        b = np.random.rand(1, 4, 3)
-        a = np.random.rand(2, 4, 1)
-        w, h = freqz(b, a, worN=5, axis=1)
+        b = np.random.rand(4, 1, 3)
+        a = np.random.rand(4, 2, 1)
+        w, h = freqz(b, a, worN=5)
         assert_array_equal(w.shape, (5,))
-        assert_array_equal(h.shape, (2, 5, 3))
+        assert_array_equal(h.shape, (5, 2, 3))
         b = np.random.rand(2, 3)
-        a = np.random.rand(3,)
-        w, h = freqz(b, a, worN=4, axis=-1)
+        a = np.random.rand(10,)
+        w, h = freqz(b, a, worN=4)
         assert_array_equal(w.shape, (4,))
-        assert_array_equal(h.shape, (2, 4))
+        assert_array_equal(h.shape, (4, 3))
         # length-1 cases, with broadcasting and axis arguments
         for factor in (1., 1j):
             b = np.ones((1,) * 4) * factor
             a = np.ones((1,) * 2)
-            assert_raises(ValueError, freqz, b, a, axis=10)
-            assert_raises(ValueError, freqz, b, a, axis=-11)
-            for axis in range(4):
-                w, h = freqz(b, a, worN=5, axis=axis)
-                assert_array_equal(w.shape, (5,))
-                expected = np.repeat(b, 5, axis=axis)
-                assert_allclose(h, expected, atol=1e-12)
-        # axis arguments
-        b = np.random.rand(2, 7)
-        a = np.random.rand(2, 7)
-        w, h = freqz(b, a, worN=12, axis=1)
-        assert_array_equal(w.shape, (12,))
-        assert_array_equal(h.shape, (2, 12))
-        w, h = freqz(b, a, worN=12, axis=0)
-        assert_array_equal(w.shape, (12,))
-        assert_array_equal(h.shape, (12, 7))
-        w, h = freqz(b, worN=6, axis=1)
-        assert_array_equal(w.shape, (6,))
-        assert_array_equal(h.shape, (2, 6))
-        b = np.random.rand(2, 3, 4)
-        for ii in range(3):
-            for axis in (ii, ii - 3):
-                expected_shape = list(b.shape)
-                expected_shape[axis] = 5
-                w, h = freqz(b, worN=5, axis=axis)
-                assert_array_equal(w.shape, (5,))
-                assert_array_equal(h.shape, expected_shape)
+            w, h = freqz(b, a, worN=5)
+            assert_array_equal(w.shape, (5,))
+            expected = np.repeat(b, 5, axis=0)
+            assert_allclose(h, expected, atol=1e-12)
         assert_raises(ValueError, freqz, b, worN=0)
         assert_raises(ValueError, freqz, b, worN=[])
+        b = np.ones((3, 5, 1))
+        a = np.ones((2, 1))
+        w, h = freqz(b, a, worN=512)
+        assert_array_equal(h.shape, (512, 5, 1))
+        w, h = freqz(b, a, worN=w)
+        assert_array_equal(h.shape, (512, 5, 1))
 
     def test_fft_wrapping(self):
         # Some simple real FIR filters

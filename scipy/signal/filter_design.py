@@ -253,7 +253,7 @@ def freqs_zpk(z, p, k, worN=None):
     return w, h
 
 
-def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
+def freqz(b, a=1, worN=None, whole=False, plot=None):
     """
     Compute the frequency response of a digital filter.
 
@@ -286,9 +286,6 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
         A callable that takes two arguments. If given, the return parameters
         `w` and `h` are passed to plot. Useful for plotting the frequency
         response inside `freqz`.
-    axis : int
-        The axis to treat as coefficients in `a` and `b` (default 0).
-        All other axes must be compatible with broadcasting rules.
 
     Returns
     -------
@@ -297,7 +294,7 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
         radians/sample.
     h : ndarray
         The frequency response, as complex numbers, with shape corresponding
-        to standard broadcasting rules for `a` and `b` along the non-frequency
+        to standard broadcasting rules for `a` and `b` along the non-first
         dimension.
 
     See Also
@@ -307,6 +304,9 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
 
     Notes
     -----
+    This function operates along the first dimension  of the `a` and `b`
+    arrays, whose shapes must otherwise be compatible with broadcasting rules.
+
     Using Matplotlib's :func:`matplotlib.pyplot.plot` function as the callable
     for `plot` produces unexpected results, as this plots the real part of the
     complex transfer function, not the magnitude.
@@ -351,19 +351,8 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
     """
     b = atleast_1d(b)
     a = atleast_1d(a)
-    ndim = max(b.ndim, a.ndim)
-    if not -ndim <= axis < ndim:
-        raise ValueError('axis=%s invalid for ndim=%s' % (axis, ndim))
-    if axis >= 0:
-        axis = axis - ndim  # the way it will broadcast
-    try:
-        a_len = a.shape[axis]
-    except IndexError:
-        a_len = 1
-    try:
-        b_len = b.shape[axis]
-    except IndexError:
-        b_len = 1
+    a_len = a.shape[0]
+    b_len = b.shape[0]
 
     if worN is None:
         worN = 512
@@ -390,15 +379,11 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
                 fft_func = fftpack.fft
 
             # set up the trimming to get back to worN from n_fft
-            b_trim = [slice(None)] * b.ndim
-            if b_len > 1:
-                b_trim[axis] = slice(worN)
+            b_trim = slice(worN) if b_len > 1 else slice(None)
             # If we ever go back to allowing a_len > 1, we'll also need this:
-            # a_trim = [slice(None)] * a.ndim
-            # if a_len > 1:
-            #     a_trim[axis] = slice(worN)
+            # a_trim = slice(worN) if a_len > 1 else slice(None)
 
-            b_fft = fft_func(b, n=n_fft, axis=axis)[b_trim] if b_len > 1 else b
+            b_fft = fft_func(b, n=n_fft, axis=0)[b_trim] if b_len > 1 else b
             # If we ever go back to using a_len != 1, we can use:
             #     a_fft = fft_func(a, n=n_fft, axis=axis)[a_trim]
             # and divide by a_fft. But because we know a_len == 1, we just do:
@@ -407,15 +392,14 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
                 # If we allow a_len != 1 in this branch, this conditional
                 # would need to also check if a_len == 1
                 if b_len == 1:
-                    h = np.repeat(h, worN // 2 + 1, axis=axis)
+                    h = np.repeat(h, worN // 2 + 1, axis=0)
                 # exclude DC and maybe Nyquist (no need to use axis_reverse
                 # here because we can build reversal with the truncation)
                 stop = -1 if n_fft % 2 == 1 else -2
-                h_flip = [slice(None)] * ndim
-                h_flip[axis] = slice(stop, 0, -1)
-                h = np.concatenate((h, h[h_flip].conj()), axis=axis)
+                h_flip = slice(stop, 0, -1)
+                h = np.concatenate((h, h[h_flip].conj()), axis=0)
             elif a_len == 1 and b_len == 1:
-                h = np.repeat(h, worN, axis=axis)
+                h = np.repeat(h, worN, axis=0)
     del worN
 
     if h is None:  # still need to compute using freqs w
@@ -423,10 +407,11 @@ def freqz(b, a=1, worN=None, whole=False, plot=None, axis=0):
             raise ValueError('w must have at least one element, got 0')
         zm1 = exp(-1j * w)
         # This operates on the zeroth dimension but outputs as new -1 dim
-        h = (npp_polyval(zm1, b.swapaxes(axis, 0)) /
-             npp_polyval(zm1, a.swapaxes(axis, 0))).swapaxes(axis, -1)
+        b = npp_polyval(zm1, b)
+        a = npp_polyval(zm1, a)
+        h = np.rollaxis(b / a, -1, 0)
         if h.size == 0:
-            h = np.expand_dims(h, axis)
+            h = np.expand_dims(h, 0)
     if plot is not None:
         plot(w, h)
 
