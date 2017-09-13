@@ -1059,7 +1059,7 @@ interface
 
    end subroutine <prefix2>gesdd
 
-   subroutine <prefix2>gesdd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
+   subroutine <prefix2>gesdd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,lwork,iwork,info)
    ! LWORK computation for (S/D)GESDD
 
    fortranname <prefix2>gesdd
@@ -1072,9 +1072,7 @@ interface
    integer intent(in) :: n
    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
-   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
-   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
    <ftype2> intent(hide) :: a
    <ftype2> intent(hide) :: s
    <ftype2> intent(hide) :: u
@@ -1122,7 +1120,7 @@ interface
 
    end subroutine <prefix2c>gesdd
 
-   subroutine <prefix2c>gesdd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
+   subroutine <prefix2c>gesdd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,iwork,info)
    ! (C/Z)GESDD call with LWORK=-1 -- copypaste of above gesdd with dummy arrays
 
    fortranname <prefix2c>gesdd
@@ -1135,9 +1133,7 @@ interface
    integer intent(in),depend(a):: n
    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
-   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
-   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
    <ftype2c> intent(hide) :: a
    <ftype2> intent(hide) :: s
    <ftype2c> intent(hide) :: u
@@ -1183,7 +1179,7 @@ interface
 
    end subroutine <prefix2>gesvd
 
-   subroutine <prefix2>gesvd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,lwork,info)
+   subroutine <prefix2>gesvd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,lwork,info)
    ! LWORK computation for (S/D)GESVD
 
    fortranname <prefix2>gesvd
@@ -1196,9 +1192,7 @@ interface
    integer intent(in) :: n
    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
-   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
-   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
    <ftype2> intent(hide) :: a
    <ftype2> intent(hide) :: s
    <ftype2> intent(hide) :: u
@@ -1243,7 +1237,7 @@ interface
 
    end subroutine <prefix2c>gesvd
 
-   subroutine <prefix2c>gesvd_lwork(m,n,minmn,u0,u1,vt0,vt1,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,info)
+   subroutine <prefix2c>gesvd_lwork(m,n,minmn,u0,vt0,a,compute_uv,full_matrices,u,s,vt,work,rwork,lwork,info)
    ! (C/Z)GESVD call with LWORK=-1 -- copypaste of above gesvd with dummy arrays
 
    fortranname <prefix2c>gesvd
@@ -1256,9 +1250,7 @@ interface
    integer intent(in),depend(a):: n
    integer intent(hide),depend(m,n):: minmn = MIN(m,n)
    integer intent(hide),depend(compute_uv,minmn) :: u0 = (compute_uv?m:1)
-   integer intent(hide),depend(compute_uv,minmn, full_matrices) :: u1 = (compute_uv?(full_matrices?m:minmn):1)
    integer intent(hide),depend(compute_uv,minmn, full_matrices) :: vt0 = (compute_uv?(full_matrices?n:minmn):1)
-   integer intent(hide),depend(compute_uv,minmn) :: vt1 = (compute_uv?n:1)
    integer intent(hide) :: lwork = -1
    <ftype2c> intent(hide) :: a
    <ftype2> intent(hide) :: s
@@ -3513,6 +3505,78 @@ subroutine zhegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol,m,w,z,l
     integer intent(out),dimension(n),depend(n) :: ifail
     integer intent(out) :: info
 end subroutine zhegvx
+
+
+subroutine <prefix>gglse(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
+  ! Solves the linear equality-constrained least squares (LSE)
+  ! problem:
+  !
+  !         minimize || c - A*x ||_2   subject to   B*x = d
+  !
+  ! where A is an M-by-N matrix, B is a P-by-N matrix, c is a given
+  ! M-vector, and d is a given P-vector. It is assumed that
+  ! P <= N <= M+P, and
+  !
+  !          rank(B) = P and  rank( (A) ) = N.
+  !                               ( (B) )
+  !
+  ! These conditions ensure that the LSE problem has a unique solution,
+  ! which is obtained using a generalized RQ factorization of the
+  ! matrices (B, A) given by
+  !
+  !    B = (0 R)*Q,   A = Z*T*Q.
+
+  callstatement (*f2py_func)(&m,&n,&p,a,&lda,b,&ldb,c,d,x,work,&lwork,&info)
+  callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,<ctype>*,<ctype>*,<ctype>*,int*,int*
+
+  integer intent(hide),depend(a),check(m>=0) :: m = shape(a,0)
+  integer intent(hide),depend(a),check(n>=0) :: n = shape(a,1)
+  integer intent(out) :: info
+
+  <ftype> dimension(m,n),intent(in,out,copy,out=t) :: a
+  integer intent(hide),depend(a) :: lda = MAX(shape(a,0),1)
+  <ftype> dimension(p,n),depend(n),intent(in,out,copy,out=r) :: b
+  integer intent(hide),depend(b) :: ldb = MAX(shape(b,0),1)
+  integer intent(hide),depend(b,m,n),check((p>=n-m)&&(p>=0)) :: p = shape(b,0)
+
+  <ftype> dimension(m),depend(m),intent(in,out,copy,out=res) :: c
+  <ftype> dimension(p),depend(p),intent(in,copy) :: d
+  <ftype> dimension(n),depend(n),intent(out) :: x
+
+  integer optional,intent(in),depend(p,m,n),check((lwork==-1)||(lwork>=1)) :: lwork = max(1,m+n+p)
+  <ftype> intent(hide),dimension(lwork),depend(lwork) :: work
+
+end subroutine <prefix>gglse
+
+
+subroutine <prefix>gglse_lwork(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
+  !
+  ! lwork routine for ?gglse
+  !
+
+  fortranname <prefix>gglse
+  callstatement (*f2py_func)(&m,&n,&p,&a,&lda,&b,&ldb,&c,&d,&x,&work,&lwork,&info)
+  callprotoargument int*,int*,int*,<ctype>*,int*,<ctype>*,int*,<ctype>*,<ctype>*,<ctype>*,<ctype>*,int*,int*
+
+  integer intent(in),check(m>=0) :: m
+  integer intent(in),check(n>=0) :: n
+  integer intent(out) :: info
+
+  <ftype> intent(hide) :: a
+  integer intent(hide) :: lda = 1
+  <ftype> intent(hide) :: b
+  integer intent(hide) :: ldb = 1
+  integer intent(in),check((p>=n-m)&&(p>=0)) :: p
+
+  <ftype> intent(hide) :: c
+  <ftype> intent(hide) :: d
+  <ftype> intent(hide) :: x
+
+  integer intent(hide) :: lwork = -1
+  <ftype> intent(out) :: work
+
+end subroutine <prefix>gglse_lwork
+
 
 function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
