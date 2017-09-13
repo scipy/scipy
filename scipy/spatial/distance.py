@@ -486,15 +486,18 @@ def minkowski(u, v, p=2, w=None):
 # deprecated `wminkowski`.  Not done at once because it would be annoying for
 # downstream libraries that used `wminkowski` and support multiple scipy
 # versions.
-wminkowski = minkowski
-if wminkowski.__doc__ is not None:
-    wminkowski.__doc__ += """Notes
+def wminkowski(*args, **kwds):
+    return minkowski(*args, **kwds)
+
+if minkowski.__doc__ is not None:
+    doc = minkowski.__doc__.replace("Minkowski", "Weighted Minkowski")
+    doc += """Notes
     -----
     `wminkowski` is DEPRECATED.  It is simply an alias of `minkowski` in
     scipy >= 1.0.
 
     """
-
+    wminkowski.__doc__ = doc
 
 def euclidean(u, v, w=None):
     """
