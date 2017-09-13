@@ -318,9 +318,9 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     1. An integer value is given for `worN`.
     2. `worN` is fast to compute via FFT (i.e.,
        `next_fast_len(worN) <scipy.fftpack.next_fast_len>` equals `worN`).
-    3. The numerator coefficients are a single value (``a.size == 1``).
+    3. The numerator coefficients are a single value (``a.shape[0] == 1``).
     4. `worN` is at least as long as the denominator coefficients
-       (``worN >= b.shape[axis]``).
+       (``worN >= b.shape[0]``).
 
     For long FIR filters, the FFT approach can have lower error and be much
     faster than the equivalent direct polynomial calculation.
@@ -351,8 +351,8 @@ def freqz(b, a=1, worN=None, whole=False, plot=None):
     """
     b = atleast_1d(b)
     a = atleast_1d(a)
-    a_len = a.shape[0]
     b_len = b.shape[0]
+    a_len = a.shape[0]
 
     if worN is None:
         worN = 512
