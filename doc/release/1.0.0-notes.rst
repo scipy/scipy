@@ -6,7 +6,7 @@ SciPy 1.0.0 Release Notes
 
 .. contents::
 
-SciPy 1.0.0 is the culmination of X months of hard work. It contains
+SciPy 1.0.0 is the culmination of 8 months of hard work. It contains
 many new features, numerous bug-fixes, improved test coverage and
 better documentation.  There have been a number of deprecations and
 API changes in this release, which are documented below.  All users
@@ -15,7 +15,25 @@ of bug-fixes and optimizations.  Moreover, our development attention
 will now shift to bug-fix releases on the 1.0.x branch, and on adding
 new features on the master branch.
 
+Some of the highlights of this release are:
+
+- Major build improvements.  Windows wheels are available on PyPI for the
+  first time, and continuous integration has been set up on Windows and OS X
+  in addition to Linux.
+- A set of new ODE solvers and a unified interface to them
+  (`scipy.integrate.solve_ivp`).
+- Two new trust region optimizers and a new linear programming method, with
+  improved performance compared to what `scipy.optimize` offered previously.
+- Many new BLAS and LAPACK functions were wrapped.  The BLAS wrappers are now
+  complete.
+
 This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
+
+This is also the last release to support LAPACK 3.1.x - 3.3.x.  Moving the
+lowest supported LAPACK version to >3.2.x was long blocked by Apple Accelerate
+providing the LAPACK 3.2.1 API.  We have decided that it's time to either drop
+Accelerate or, if there is enough interest, provide shims for functions added
+in more recent LAPACK versions so it can still be used.
 
 
 New features
@@ -47,11 +65,24 @@ can also be used directly.
 `scipy.linalg` improvements
 ----------------------------
 
-Wrappers for the LAPACK functions ``*gels``, ``sstev`` and ``dstev`` have been
-added.
+The BLAS wrappers in `scipy.linalg.blas` have been completed.  Added functions
+are ``*gbmv``, ``*hbmv``, ``*hpmv``, ``*hpr``, ``*hpr2``, ``*spmv``, ``*spr``,
+``*tbmv``, ``*tbsv``, ``*tpmv``, ``*tpsv``, ``*trsm``, ``*trsv``, ``*sbmv``,
+``*spr2``,
+
+Wrappers for the LAPACK functions ``*gels``, ``*stev``, ``*sytrd``, ``*hetrd``,
+``*sytf2``, ``*hetrf``, ``*sytrf``, ``*sycon``, ``*hecon``, ``*gglse``,
+``*stebz``, ``*stemr``, ``*sterf``, and ``*stein`` have been added.
 
 The function `scipy.linalg.subspace_angles` has been added to compute the
 subspace angles between two matrices.
+
+The function `scipy.linalg.clarkson_woodruff_transform` has been added.
+It finds low-rank matrix approximation via the Clarkson-Woodruff Transform.
+
+The functions `scipy.linalg.eigh_tridiagonal` and
+`scipy.linalg.eigvalsh_tridiagonal`, which find the eigenvalues and
+eigenvectors of tridiagonal hermitian/symmetric matrices, were added.
 
 
 `scipy.ndimage` improvements
@@ -62,6 +93,32 @@ Support for homogeneous coordinate transforms has been added to
 
 The ``ndimage`` C code underwent a significant refactoring, and is now
 a lot easier to understand and maintain.
+
+
+`scipy.optimize` improvements
+-----------------------------
+
+The methods ``trust-region-exact`` and ``trust-krylov`` have been added to the
+function `scipy.optimize.minimize`. These new trust-region methods solve the
+subproblem with higher accuracy at the cost of more Hessian factorizations
+(compared to dogleg) or more matrix vector products (compared to ncg) but
+usually require less nonlinear iterations and are able to deal with indefinite
+Hessians. They seem very competitive against the other Newton methods
+implemented in scipy.
+
+`scipy.optimize.linprog` gained an interior point method.  Its performance is
+superior (both in accuracy and speed) to the older simplex method.
+
+
+`scipy.signal` improvements
+---------------------------
+
+An argument ``fs`` (sampling frequency) was added to the following functions:
+``firwin``, ``firwin2``, ``firls``, and ``remez``.  This makes these functions
+consistent with many other functions in `scipy.signal` in which the sampling
+frequency can be specified.
+
+`scipy.signal.freqz` has been sped up significantly for FIR filters.
 
 
 `scipy.sparse` improvements
@@ -88,19 +145,17 @@ faster convergence.
 SuperLU was updated to version 5.2.1.
 
 
-`scipy.optimize` improvements
------------------------------
+`scipy.spatial` improvements
+----------------------------
 
-The methods ``trust-region-exact`` and ``trust-krylov`` have been added to the
-function `scipy.optimize.minimize`. These new trust-region methods solve the
-subproblem with higher accuracy at the cost of more Hessian factorizations
-(compared to dogleg) or more matrix vector products (compared to ncg) but
-usually require less nonlinear iterations and are able to deal with indefinite
-Hessians. They seem very competitive against the other Newton methods
-implemented in scipy.
+Many distance metrics in `scipy.spatial.distance` gained support for weights.
 
-`scipy.optimize.linprog` gained an interior point method.  Its performance is
-superior (both in accuracy and speed) to the older simplex method.
+The signatures of `scipy.spatial.distance.pdist` and
+`scipy.spatial.distance.cdist` were changed to ``*args, **kwargs`` in order to
+support a wider range of metrics (e.g. string-based metrics that need extra
+keywords).  Also, an optional ``out`` parameter was added to ``pdist`` and
+``cdist`` allowing the user to specify where the resulting distance matrix is
+to be stored
 
 
 `scipy.stats` improvements
@@ -113,12 +168,6 @@ function of the multivariate normal distribution.
 New statistical distance functions were added, namely
 `scipy.stats.wasserstein_distance` for the first Wasserstein distance and
 `scipy.stats.energy_distance` for the energy distance.
-
-`scipy.spatial.distance` improvements
--------------------------------------
-
-Optional `out` parameter was added to pdist and cdist allowing the user to 
-specify where the resulting distance matrix is to be stored
 
 
 Deprecated features
@@ -196,6 +245,8 @@ Name - (accessing/setting has been removed) - (setting has been removed)
 * TransferFunction (``A``, ``B``, ``C``, ``D``, ``gain``) - (``zeros``, ``poles``)
 * ZerosPolesGain (``A``, ``B``, ``C``, ``D``, ``num``, ``den``) - ()
 
+``signal.freqz(b, a)`` with ``b`` or ``a`` >1-D raises a ``ValueError``.  This
+was a corner case for which it was unclear that the behavior was well-defined.
 
 The method ``var`` of `scipy.stats.dirichlet` now returns a scalar rather than
 an ndarray when the length of alpha is 1.
