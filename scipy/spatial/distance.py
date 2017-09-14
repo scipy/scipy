@@ -1398,6 +1398,10 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         The inverse of the covariance matrix for Mahalanobis.
         Default: inv(cov(X.T)).T
 
+        out : ndarray.
+        The output array
+        If not None, condensed distance matrix Y is stored in this array.
+
     Returns
     -------
     Y : ndarray
@@ -1618,7 +1622,16 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         raise ValueError('A 2-dimensional array must be passed.')
 
     m, n = s
-    dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
+    if out is None:
+        dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
+    else:
+        if out.shape != (m * (m - 1) // 2,):
+            raise ValueError("output array has incorrect shape.")
+        if not out.flags.c_contiguous:
+            raise ValueError("Output array must be C-contiguous.")
+        if out.dtype != np.double:
+            raise ValueError("Output array must be double type.")
+        dm = out
 
     # compute blacklist for deprecated kwargs
     if(metric in _METRICS['minkowski'].aka or
@@ -2062,6 +2075,10 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
         The inverse of the covariance matrix for Mahalanobis.
         Default: inv(cov(vstack([XA, XB].T))).T
 
+        out : ndarray.
+            The output array
+            If not None, the distance matrix Y is stored in this array.
+
     Returns
     -------
     Y : ndarray
@@ -2329,7 +2346,16 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     mA = s[0]
     mB = sB[0]
     n = s[1]
-    dm = np.zeros((mA, mB), dtype=np.double)
+    if out is None:
+        dm = np.zeros((mA, mB), dtype=np.double)
+    else:
+        if out.shape != (mA, mB):
+            raise ValueError("Output array has incorrect shape.")
+        if not out.flags.c_contiguous:
+            raise ValueError("Output array must be C-contiguous.")
+        if out.dtype != np.double:
+            raise ValueError("Output array must be double type.")
+        dm = out
 
     # compute blacklist for deprecated kwargs
     if(metric in _METRICS['minkowski'].aka or
