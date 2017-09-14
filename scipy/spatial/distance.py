@@ -1383,24 +1383,26 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
         Some possible arguments:
 
-        p : scalar.
+        p : scalar
         The p-norm to apply for Minkowski, weighted and unweighted.
         Default: 2.
 
-        w : ndarray.
+        w : ndarray
         The weight vector for metrics that support weights (e.g., Minkowski).
 
-        V : ndarray.
+        V : ndarray
         The variance vector for standardized Euclidean.
         Default: var(X, axis=0, ddof=1)
 
-        VI : ndarray.
+        VI : ndarray
         The inverse of the covariance matrix for Mahalanobis.
         Default: inv(cov(X.T)).T
 
         out : ndarray.
         The output array
         If not None, condensed distance matrix Y is stored in this array.
+        Note: metric independent, it will become a regular keyword arg in a
+        future scipy version
 
     Returns
     -------
@@ -1622,8 +1624,9 @@ def pdist(X, metric='euclidean', *args, **kwargs):
         raise ValueError('A 2-dimensional array must be passed.')
 
     m, n = s
+    out = kwargs.pop("out", None)
     if out is None:
-        dm = np.zeros((m * (m - 1)) // 2, dtype=np.double)
+        dm = np.empty((m * (m - 1)) // 2, dtype=np.double)
     else:
         if out.shape != (m * (m - 1) // 2,):
             raise ValueError("output array has incorrect shape.")
@@ -1637,7 +1640,7 @@ def pdist(X, metric='euclidean', *args, **kwargs):
     if(metric in _METRICS['minkowski'].aka or
        metric in _METRICS['wminkowski'].aka or
        metric in ['test_minkowski', 'test_wminkowski'] or
-       metric == minkowski):
+       metric in [minkowski, wminkowski]):
         kwargs_blacklist = ["V", "VI"]
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
@@ -1669,9 +1672,13 @@ def pdist(X, metric='euclidean', *args, **kwargs):
 
         # NOTE: C-version still does not support weights
         if "w" in kwargs and not mstr.startswith("test_"):
-            if mstr in ['seuclidean', 'se', 's', 'mahalanobis']:
+            if(mstr in _METRICS['seuclidean'].aka or
+               mstr in _METRICS['mahalanobis'].aka):
                 raise ValueError("metric %s incompatible with weights" % mstr)
+            if mstr in _METRICS['wminkowski'].aka:
+                mstr = "minkowski"
             # need to use python version for weighting
+            kwargs['out'] = out
             mstr = "test_%s" % mstr
 
         metric_name = _METRIC_ALIAS.get(mstr, None)
@@ -2060,24 +2067,26 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
         Some possible arguments:
 
-        p : scalar.
+        p : scalar
         The p-norm to apply for Minkowski, weighted and unweighted.
         Default: 2.
 
-        w : ndarray.
+        w : ndarray
         The weight vector for metrics that support weights (e.g., Minkowski).
 
-        V : ndarray.
+        V : ndarray
         The variance vector for standardized Euclidean.
         Default: var(vstack([XA, XB]), axis=0, ddof=1)
 
-        VI : ndarray.
+        VI : ndarray
         The inverse of the covariance matrix for Mahalanobis.
         Default: inv(cov(vstack([XA, XB].T))).T
 
-        out : ndarray.
-            The output array
-            If not None, the distance matrix Y is stored in this array.
+        out : ndarray
+        The output array
+        If not None, the distance matrix Y is stored in this array.
+        Note: metric independent, it will become a regular keyword arg in a
+        future scipy version
 
     Returns
     -------
@@ -2346,8 +2355,9 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     mA = s[0]
     mB = sB[0]
     n = s[1]
+    out = kwargs.pop("out", None)
     if out is None:
-        dm = np.zeros((mA, mB), dtype=np.double)
+        dm = np.empty((mA, mB), dtype=np.double)
     else:
         if out.shape != (mA, mB):
             raise ValueError("Output array has incorrect shape.")
@@ -2361,7 +2371,7 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
     if(metric in _METRICS['minkowski'].aka or
        metric in _METRICS['wminkowski'].aka or
        metric in ['test_minkowski', 'test_wminkowski'] or
-       metric == minkowski):
+       metric in [minkowski, wminkowski]):
         kwargs_blacklist = ["V", "VI"]
     elif(metric in _METRICS['seuclidean'].aka or
          metric == 'test_seuclidean' or metric == seuclidean):
@@ -2391,9 +2401,13 @@ def cdist(XA, XB, metric='euclidean', *args, **kwargs):
 
         # NOTE: C-version still does not support weights
         if "w" in kwargs and not mstr.startswith("test_"):
-            if mstr in ['seuclidean', 'se', 's', 'mahalanobis']:
+            if(mstr in _METRICS['seuclidean'].aka or
+               mstr in _METRICS['mahalanobis'].aka):
                 raise ValueError("metric %s incompatible with weights" % mstr)
+            if mstr in _METRICS['wminkowski'].aka:
+                mstr = "minkowski"
             # need to use python version for weighting
+            kwargs['out'] = out
             mstr = "test_%s" % mstr
 
         metric_name = _METRIC_ALIAS.get(mstr, None)

@@ -583,35 +583,31 @@ class TestCdist(object):
         eps = 1e-07
         X1 = eo['cdist-X1']
         X2 = eo['cdist-X2']
+        out_r, out_c = X1.shape[0], X2.shape[0]
         for metric in _METRICS_NAMES:
-            kwargs = {'p': None, 'w': None, 'V': None, 'VI': None, 'out': None}
+            kwargs = dict()
             if metric in ['minkowski', 'wminkowski']:
                 kwargs['p'] = 1.23
             if metric == 'wminkowski':
                 kwargs['w'] = 1.0 / X1.std(axis=0)
-            out1 = np.empty((10, 20), dtype=np.double)
+            out1 = np.empty((out_r, out_c), dtype=np.double)
             Y1 = cdist(X1, X2, metric, **kwargs)
-            kwargs['out'] = out1
-            Y2 = cdist(X1, X2, metric, **kwargs)
-            # test is output is numerically correct
+            Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
+            # test that output is numerically equivalent
             _assert_within_tol(Y1, Y2, eps, verbose > 2)
-            # test is distance matrix Y1 and out1 are the same object
+            # test that Y_test1 and out1 are the same object
             assert_(Y2 is out1)
             # test for incorrect shape
-            out2 = np.empty((9, 19), dtype=np.double)
-            kwargs['out'] = out2
-            assert_raises(ValueError, cdist, X1, X2, metric, **kwargs)
+            out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
+            assert_raises(ValueError, cdist, X1, X2, metric, out=out2, **kwargs)
             # test for C-contiguous order
-            out3 = np.empty((100, 200), dtype=np.double)[::10, ::10]
-            out4 = np.empty((10, 20), dtype=np.double, order='F')
-            kwargs['out'] = out3
-            assert_raises(ValueError, cdist, X1, X2, metric, **kwargs)
-            kwargs['out'] = out4
-            assert_raises(ValueError, cdist, X1, X2, metric, **kwargs)
+            out3 = np.empty((2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
+            out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
+            assert_raises(ValueError, cdist, X1, X2, metric, out=out3, **kwargs)
+            assert_raises(ValueError, cdist, X1, X2, metric, out=out4, **kwargs)
             # test for incorrect dtype
-            out5 = np.empty((10, 20), dtype=np.int64)
-            kwargs['out'] = out5
-            assert_raises(ValueError, cdist, X1, X2, metric, **kwargs)
+            out5 = np.empty((out_r, out_c), dtype=np.int64)
+            assert_raises(ValueError, cdist, X1, X2, metric, out=out5, **kwargs)
 
 
 class TestPdist(object):
@@ -1344,35 +1340,30 @@ class TestPdist(object):
     def test_pdist_out(self):
         # Test that out parameter works properly
         eps = 1e-07
+        X = eo['random-float32-data'][::5, ::2]
+        out_size = int((X.shape[0] * (X.shape[0] - 1)) / 2)
         for metric in _METRICS_NAMES:
-            for rnd_eo_name in self.rnd_eo_names:
-                kwargs = {'p': None, 'w': None, 'V': None, 'VI': None,
-                          'out': None}
-                if metric in ['minkowski', 'wminkowski']:
-                    kwargs['p'] = 1.23
-                X = eo[rnd_eo_name]
-                if metric == 'wminkowski':
-                    kwargs['w'] = 1.0 / X.std(axis=0)
-                out1 = np.empty(4950, dtype=np.double)
-                Y_right = pdist(X, metric, **kwargs)
-                kwargs['out'] = out1
-                Y_test1 = pdist(X, metric, **kwargs)
-                # test that output is numerically equivalent
-                _assert_within_tol(Y_test1, Y_right, eps)
-                # test that Y_test1 and out1 are the same object
-                assert_(Y_test1 is out1)
-                # test incorrect shape
-                out2 = np.empty(495, dtype=np.double)
-                kwargs['out'] = out2
-                assert_raises(ValueError, pdist, X, metric, **kwargs)
-                # test for (C-)contiguous output
-                out3 = np.empty(49500, dtype=np.double)[::10]
-                kwargs['out'] = out3
-                assert_raises(ValueError, pdist, X, metric, **kwargs)
-                # test for incorrect dtype
-                out5 = np.empty(4950, dtype=np.int64)
-                kwargs['out'] = out5
-                assert_raises(ValueError, pdist, X, metric, **kwargs)
+            kwargs = dict()
+            if metric in ['minkowski', 'wminkowski']:
+                kwargs['p'] = 1.23
+            if metric == 'wminkowski':
+                kwargs['w'] = 1.0 / X.std(axis=0)
+            out1 = np.empty(out_size, dtype=np.double)
+            Y_right = pdist(X, metric, **kwargs)
+            Y_test1 = pdist(X, metric, out=out1, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y_test1, Y_right, eps)
+            # test that Y_test1 and out1 are the same object
+            assert_(Y_test1 is out1)
+            # test for incorrect shape
+            out2 = np.empty(out_size + 3, dtype=np.double)
+            assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
+            # test for (C-)contiguous output
+            out3 = np.empty(2 * out_size, dtype=np.double)[::2]
+            assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
+            # test for incorrect dtype
+            out5 = np.empty(out_size, dtype=np.int64)
+            assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
 
 
 class TestSomeDistanceFunctions(object):
@@ -1397,7 +1388,7 @@ class TestSomeDistanceFunctions(object):
                 dist1 = wminkowski(x, y, p=1)
                 assert_almost_equal(dist1, 3.0)
                 dist1p5 = wminkowski(x, y, p=1.5)
-                assert_almost_equal(dist1p5, (1.0 + 2.0 ** 1.5) ** (2. / 3))
+                assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
                 dist2 = wminkowski(x, y, p=2)
 
     def test_euclidean(self):
@@ -1770,7 +1761,7 @@ def test_euclideans():
     y = rs.rand(10)
     d1 = weuclidean(x, y)
     d2 = wsqeuclidean(x, y)
-    assert_almost_equal(d1 ** 2, d2, decimal=14)
+    assert_almost_equal(d1**2, d2, decimal=14)
 
 
 def test_hamming_unequal_length():
@@ -1811,7 +1802,7 @@ def test_sqeuclidean_dtypes():
         d2 = wsqeuclidean(np.asarray([-1], dtype=dtype), [0])
 
         assert_equal(d1, d2)
-        assert_equal(d1, np.float64(np.iinfo(dtype).max) ** 2)
+        assert_equal(d1, np.float64(np.iinfo(dtype).max)**2)
 
     dtypes = [np.float32, np.float64, np.complex64, np.complex128]
     for dtype in ['float16', 'float128']:
