@@ -114,6 +114,12 @@ New statistical distance functions were added, namely
 `scipy.stats.wasserstein_distance` for the first Wasserstein distance and
 `scipy.stats.energy_distance` for the energy distance.
 
+`scipy.spatial.distance` improvements
+-------------------------------------
+
+Optional `out` parameter was added to pdist and cdist allowing the user to 
+specify where the resulting distance matrix is to be stored
+
 
 Deprecated features
 ===================

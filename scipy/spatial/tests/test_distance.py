@@ -118,6 +118,7 @@ def load_testing_files():
     eo['random-int-data'] = np.int_(eo['random-int-data'])
     eo['random-uint-data'] = np.uint(eo['random-uint-data'])
 
+
 load_testing_files()
 
 
@@ -483,7 +484,7 @@ class TestCdist(object):
         x2 = np.array([[0, 2], [1, 0], [0, -2]])
         dist = cdist(x1, x2, metric='mahalanobis')
         rt2 = np.sqrt(2)
-        assert_allclose(dist, [[rt2, rt2, rt2], [2, 2*rt2, 2]])
+        assert_allclose(dist, [[rt2, rt2, rt2], [2, 2 * rt2, 2]])
 
         # Too few observations
         assert_raises(ValueError,
@@ -576,6 +577,37 @@ class TestCdist(object):
                     for new_type in test[1]:
                         y2 = cdist(new_type(X1), new_type(X2), metric=metric)
                         _assert_within_tol(y1, y2, eps, verbose > 2)
+
+    def test_cdist_out(self):
+        # Test that out parameter works properly
+        eps = 1e-07
+        X1 = eo['cdist-X1']
+        X2 = eo['cdist-X2']
+        out_r, out_c = X1.shape[0], X2.shape[0]
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric in ['minkowski', 'wminkowski']:
+                kwargs['p'] = 1.23
+            if metric == 'wminkowski':
+                kwargs['w'] = 1.0 / X1.std(axis=0)
+            out1 = np.empty((out_r, out_c), dtype=np.double)
+            Y1 = cdist(X1, X2, metric, **kwargs)
+            Y2 = cdist(X1, X2, metric, out=out1, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y1, Y2, eps, verbose > 2)
+            # test that Y_test1 and out1 are the same object
+            assert_(Y2 is out1)
+            # test for incorrect shape
+            out2 = np.empty((out_r-1, out_c+1), dtype=np.double)
+            assert_raises(ValueError, cdist, X1, X2, metric, out=out2, **kwargs)
+            # test for C-contiguous order
+            out3 = np.empty((2 * out_r, 2 * out_c), dtype=np.double)[::2, ::2]
+            out4 = np.empty((out_r, out_c), dtype=np.double, order='F')
+            assert_raises(ValueError, cdist, X1, X2, metric, out=out3, **kwargs)
+            assert_raises(ValueError, cdist, X1, X2, metric, out=out4, **kwargs)
+            # test for incorrect dtype
+            out5 = np.empty((out_r, out_c), dtype=np.int64)
+            assert_raises(ValueError, cdist, X1, X2, metric, out=out5, **kwargs)
 
 
 class TestPdist(object):
@@ -936,7 +968,7 @@ class TestPdist(object):
         x = np.array([[0, 0], [-1, 0], [0, 2], [1, 0], [0, -2]])
         dist = pdist(x, metric='mahalanobis')
         rt2 = np.sqrt(2)
-        assert_allclose(dist, [rt2, rt2, rt2, rt2, 2, 2*rt2, 2, 2, 2*rt2, 2])
+        assert_allclose(dist, [rt2, rt2, rt2, rt2, 2, 2 * rt2, 2, 2, 2 * rt2, 2])
 
         # Too few observations
         assert_raises(ValueError,
@@ -1083,8 +1115,8 @@ class TestPdist(object):
                      np.array([1, 1, 0]))
         m2 = wmatching(np.array([1, 0, 1], dtype=bool),
                       np.array([1, 1, 0], dtype=bool))
-        assert_allclose(m, 2/3, rtol=0, atol=1e-10)
-        assert_allclose(m2, 2/3, rtol=0, atol=1e-10)
+        assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
 
     def test_pdist_jaccard_mtica1(self):
         m = wjaccard(np.array([1, 0, 1, 1, 0]),
@@ -1099,8 +1131,8 @@ class TestPdist(object):
                      np.array([1, 1, 0]))
         m2 = wjaccard(np.array([1, 0, 1], dtype=bool),
                       np.array([1, 1, 0], dtype=bool))
-        assert_allclose(m, 2/3, rtol=0, atol=1e-10)
-        assert_allclose(m2, 2/3, rtol=0, atol=1e-10)
+        assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
 
     def test_pdist_yule_mtica1(self):
         m = wyule(np.array([1, 0, 1, 1, 0]),
@@ -1129,8 +1161,8 @@ class TestPdist(object):
                    np.array([1, 1, 0, 1, 1], dtype=bool))
         if verbose > 2:
             print(m)
-        assert_allclose(m, 3/7, rtol=0, atol=1e-10)
-        assert_allclose(m2, 3/7, rtol=0, atol=1e-10)
+        assert_allclose(m, 3 / 7, rtol=0, atol=1e-10)
+        assert_allclose(m2, 3 / 7, rtol=0, atol=1e-10)
 
     def test_pdist_dice_mtica2(self):
         m = wdice(np.array([1, 0, 1]),
@@ -1149,8 +1181,8 @@ class TestPdist(object):
                          np.array([1, 1, 0, 1, 1], dtype=bool))
         if verbose > 2:
             print(m)
-        assert_allclose(m, 3/4, rtol=0, atol=1e-10)
-        assert_allclose(m2, 3/4, rtol=0, atol=1e-10)
+        assert_allclose(m, 3 / 4, rtol=0, atol=1e-10)
+        assert_allclose(m2, 3 / 4, rtol=0, atol=1e-10)
 
     def test_pdist_sokalsneath_mtica2(self):
         m = wsokalsneath(np.array([1, 0, 1]),
@@ -1159,8 +1191,8 @@ class TestPdist(object):
                           np.array([1, 1, 0], dtype=bool))
         if verbose > 2:
             print(m)
-        assert_allclose(m, 4/5, rtol=0, atol=1e-10)
-        assert_allclose(m2, 4/5, rtol=0, atol=1e-10)
+        assert_allclose(m, 4 / 5, rtol=0, atol=1e-10)
+        assert_allclose(m2, 4 / 5, rtol=0, atol=1e-10)
 
     def test_pdist_rogerstanimoto_mtica1(self):
         m = wrogerstanimoto(np.array([1, 0, 1, 1, 0]),
@@ -1169,8 +1201,8 @@ class TestPdist(object):
                              np.array([1, 1, 0, 1, 1], dtype=bool))
         if verbose > 2:
             print(m)
-        assert_allclose(m, 3/4, rtol=0, atol=1e-10)
-        assert_allclose(m2, 3/4, rtol=0, atol=1e-10)
+        assert_allclose(m, 3 / 4, rtol=0, atol=1e-10)
+        assert_allclose(m2, 3 / 4, rtol=0, atol=1e-10)
 
     def test_pdist_rogerstanimoto_mtica2(self):
         m = wrogerstanimoto(np.array([1, 0, 1]),
@@ -1179,8 +1211,8 @@ class TestPdist(object):
                              np.array([1, 1, 0], dtype=bool))
         if verbose > 2:
             print(m)
-        assert_allclose(m, 4/5, rtol=0, atol=1e-10)
-        assert_allclose(m2, 4/5, rtol=0, atol=1e-10)
+        assert_allclose(m, 4 / 5, rtol=0, atol=1e-10)
+        assert_allclose(m2, 4 / 5, rtol=0, atol=1e-10)
 
     def test_pdist_russellrao_mtica1(self):
         m = wrussellrao(np.array([1, 0, 1, 1, 0]),
@@ -1189,8 +1221,8 @@ class TestPdist(object):
                          np.array([1, 1, 0, 1, 1], dtype=bool))
         if verbose > 2:
             print(m)
-        assert_allclose(m, 3/5, rtol=0, atol=1e-10)
-        assert_allclose(m2, 3/5, rtol=0, atol=1e-10)
+        assert_allclose(m, 3 / 5, rtol=0, atol=1e-10)
+        assert_allclose(m2, 3 / 5, rtol=0, atol=1e-10)
 
     def test_pdist_russellrao_mtica2(self):
         m = wrussellrao(np.array([1, 0, 1]),
@@ -1199,8 +1231,8 @@ class TestPdist(object):
                          np.array([1, 1, 0], dtype=bool))
         if verbose > 2:
             print(m)
-        assert_allclose(m, 2/3, rtol=0, atol=1e-10)
-        assert_allclose(m2, 2/3, rtol=0, atol=1e-10)
+        assert_allclose(m, 2 / 3, rtol=0, atol=1e-10)
+        assert_allclose(m2, 2 / 3, rtol=0, atol=1e-10)
 
     def test_pdist_canberra_match(self):
         D = eo['iris']
@@ -1305,6 +1337,34 @@ class TestPdist(object):
                         y2 = pdist(new_type(X1), metric=metric)
                         _assert_within_tol(y1, y2, eps, verbose > 2)
 
+    def test_pdist_out(self):
+        # Test that out parameter works properly
+        eps = 1e-07
+        X = eo['random-float32-data'][::5, ::2]
+        out_size = int((X.shape[0] * (X.shape[0] - 1)) / 2)
+        for metric in _METRICS_NAMES:
+            kwargs = dict()
+            if metric in ['minkowski', 'wminkowski']:
+                kwargs['p'] = 1.23
+            if metric == 'wminkowski':
+                kwargs['w'] = 1.0 / X.std(axis=0)
+            out1 = np.empty(out_size, dtype=np.double)
+            Y_right = pdist(X, metric, **kwargs)
+            Y_test1 = pdist(X, metric, out=out1, **kwargs)
+            # test that output is numerically equivalent
+            _assert_within_tol(Y_test1, Y_right, eps)
+            # test that Y_test1 and out1 are the same object
+            assert_(Y_test1 is out1)
+            # test for incorrect shape
+            out2 = np.empty(out_size + 3, dtype=np.double)
+            assert_raises(ValueError, pdist, X, metric, out=out2, **kwargs)
+            # test for (C-)contiguous output
+            out3 = np.empty(2 * out_size, dtype=np.double)[::2]
+            assert_raises(ValueError, pdist, X, metric, out=out3, **kwargs)
+            # test for incorrect dtype
+            out5 = np.empty(out_size, dtype=np.int64)
+            assert_raises(ValueError, pdist, X, metric, out=out5, **kwargs)
+
 
 class TestSomeDistanceFunctions(object):
 
@@ -1313,13 +1373,13 @@ class TestSomeDistanceFunctions(object):
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([1.0, 1.0, 5.0])
         # 3x1 arrays
-        x31 = x[:,np.newaxis]
-        y31 = y[:,np.newaxis]
+        x31 = x[:, np.newaxis]
+        y31 = y[:, np.newaxis]
         # 1x3 arrays
         x13 = x31.T
         y13 = y31.T
 
-        self.cases = [(x,y), (x31, y31), (x13, y13)]
+        self.cases = [(x, y), (x31, y31), (x13, y13)]
 
     def test_minkowski(self):
         with suppress_warnings() as w:
@@ -1328,7 +1388,7 @@ class TestSomeDistanceFunctions(object):
                 dist1 = wminkowski(x, y, p=1)
                 assert_almost_equal(dist1, 3.0)
                 dist1p5 = wminkowski(x, y, p=1.5)
-                assert_almost_equal(dist1p5, (1.0+2.0**1.5)**(2./3))
+                assert_almost_equal(dist1p5, (1.0 + 2.0**1.5)**(2. / 3))
                 dist2 = wminkowski(x, y, p=2)
 
     def test_euclidean(self):
@@ -1344,19 +1404,19 @@ class TestSomeDistanceFunctions(object):
     def test_cosine(self):
         for x, y in self.cases:
             dist = wcosine(x, y)
-            assert_almost_equal(dist, 1.0 - 18.0/(np.sqrt(14)*np.sqrt(27)))
+            assert_almost_equal(dist, 1.0 - 18.0 / (np.sqrt(14) * np.sqrt(27)))
 
     def test_correlation(self):
         xm = np.array([-1.0, 0, 1.0])
-        ym = np.array([-4.0/3, -4.0/3, 5.0-7.0/3])
+        ym = np.array([-4.0 / 3, -4.0 / 3, 5.0 - 7.0 / 3])
         for x, y in self.cases:
             dist = wcorrelation(x, y)
-            assert_almost_equal(dist, 1.0 - np.dot(xm, ym)/(norm(xm)*norm(ym)))
+            assert_almost_equal(dist, 1.0 - np.dot(xm, ym) / (norm(xm) * norm(ym)))
 
     def test_mahalanobis(self):
         x = np.array([1.0, 2.0, 3.0])
         y = np.array([1.0, 1.0, 5.0])
-        vi = np.array([[2.0, 1.0, 0.0],[1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
+        vi = np.array([[2.0, 1.0, 0.0], [1.0, 2.0, 1.0], [0.0, 1.0, 2.0]])
         for x, y in self.cases:
             dist = mahalanobis(x, y, vi)
             assert_almost_equal(dist, np.sqrt(6.0))
@@ -1374,17 +1434,17 @@ class TestSquareForm(object):
             self.check_squareform_vector(dtype)
 
     def check_squareform_matrix(self, dtype):
-        A = np.zeros((0,0), dtype=dtype)
+        A = np.zeros((0, 0), dtype=dtype)
         rA = squareform(A)
         assert_equal(rA.shape, (0,))
         assert_equal(rA.dtype, dtype)
 
-        A = np.zeros((1,1), dtype=dtype)
+        A = np.zeros((1, 1), dtype=dtype)
         rA = squareform(A)
         assert_equal(rA.shape, (0,))
         assert_equal(rA.dtype, dtype)
 
-        A = np.array([[0,4.2],[4.2,0]], dtype=dtype)
+        A = np.array([[0, 4.2], [4.2, 0]], dtype=dtype)
         rA = squareform(A)
         assert_equal(rA.shape, (1,))
         assert_equal(rA.dtype, dtype)
@@ -1393,15 +1453,15 @@ class TestSquareForm(object):
     def check_squareform_vector(self, dtype):
         v = np.zeros((0,), dtype=dtype)
         rv = squareform(v)
-        assert_equal(rv.shape, (1,1))
+        assert_equal(rv.shape, (1, 1))
         assert_equal(rv.dtype, dtype)
         assert_array_equal(rv, [[0]])
 
         v = np.array([8.3], dtype=dtype)
         rv = squareform(v)
-        assert_equal(rv.shape, (2,2))
+        assert_equal(rv.shape, (2, 2))
         assert_equal(rv.dtype, dtype)
-        assert_array_equal(rv, np.array([[0,8.3],[8.3,0]], dtype=dtype))
+        assert_array_equal(rv, np.array([[0, 8.3], [8.3, 0]], dtype=dtype))
 
     def test_squareform_multi_matrix(self):
         for n in xrange(2, 5):
@@ -1421,7 +1481,7 @@ class TestSquareForm(object):
         assert_equal(len(Yr.shape), 1)
         assert_equal(s[0], s[1])
         for i in xrange(0, s[0]):
-            for j in xrange(i+1, s[1]):
+            for j in xrange(i + 1, s[1]):
                 if i != j:
                     assert_equal(A[i, j], Y[k])
                     k += 1
@@ -1462,7 +1522,7 @@ class TestNumObsY(object):
         # Expecting exception.
         a = set([])
         for n in xrange(2, 16):
-            a.add(n*(n-1)/2)
+            a.add(n * (n - 1) / 2)
         for i in xrange(5, 105):
             if i not in a:
                 assert_raises(ValueError, self.bad_y, i)
@@ -1531,11 +1591,11 @@ class TestIsValidDM(object):
         assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_improper_shape_3D_E(self):
-        D = np.zeros((3,3,3), dtype=np.double)
+        D = np.zeros((3, 3, 3), dtype=np.double)
         assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_improper_shape_3D_F(self):
-        D = np.zeros((3,3,3), dtype=np.double)
+        D = np.zeros((3, 3, 3), dtype=np.double)
         assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_nonzero_diagonal_E(self):
@@ -1555,17 +1615,17 @@ class TestIsValidDM(object):
     def test_is_valid_dm_asymmetric_E(self):
         y = np.random.rand(10)
         D = squareform(y)
-        D[1,3] = D[3,1] + 1
+        D[1, 3] = D[3, 1] + 1
         assert_raises(ValueError, is_valid_dm_throw, (D))
 
     def test_is_valid_dm_asymmetric_F(self):
         y = np.random.rand(10)
         D = squareform(y)
-        D[1,3] = D[3,1] + 1
+        D[1, 3] = D[3, 1] + 1
         assert_equal(is_valid_dm(D), False)
 
     def test_is_valid_dm_correct_1_by_1(self):
-        D = np.zeros((1,1), dtype=np.double)
+        D = np.zeros((1, 1), dtype=np.double)
         assert_equal(is_valid_dm(D), True)
 
     def test_is_valid_dm_correct_2_by_2(self):
@@ -1599,19 +1659,19 @@ class TestIsValidY(object):
     # check.  Otherwise the input is expected to be valid.
 
     def test_is_valid_y_improper_shape_2D_E(self):
-        y = np.zeros((3,3,), dtype=np.double)
+        y = np.zeros((3, 3,), dtype=np.double)
         assert_raises(ValueError, is_valid_y_throw, (y))
 
     def test_is_valid_y_improper_shape_2D_F(self):
-        y = np.zeros((3,3,), dtype=np.double)
+        y = np.zeros((3, 3,), dtype=np.double)
         assert_equal(is_valid_y(y), False)
 
     def test_is_valid_y_improper_shape_3D_E(self):
-        y = np.zeros((3,3,3), dtype=np.double)
+        y = np.zeros((3, 3, 3), dtype=np.double)
         assert_raises(ValueError, is_valid_y_throw, (y))
 
     def test_is_valid_y_improper_shape_3D_F(self):
-        y = np.zeros((3,3,3), dtype=np.double)
+        y = np.zeros((3, 3, 3), dtype=np.double)
         assert_equal(is_valid_y(y), False)
 
     def test_is_valid_y_correct_2_by_2(self):
@@ -1633,7 +1693,7 @@ class TestIsValidY(object):
     def test_is_valid_y_2_100(self):
         a = set([])
         for n in xrange(2, 16):
-            a.add(n*(n-1)/2)
+            a.add(n * (n - 1) / 2)
         for i in xrange(5, 105):
             if i not in a:
                 assert_raises(ValueError, self.bad_y, i)
@@ -1663,14 +1723,14 @@ def test_sokalsneath_all_false():
 
 def test_canberra():
     # Regression test for ticket #1430.
-    assert_equal(wcanberra([1,2,3], [2,4,6]), 1)
-    assert_equal(wcanberra([1,1,0,0], [1,0,1,0]), 2)
+    assert_equal(wcanberra([1, 2, 3], [2, 4, 6]), 1)
+    assert_equal(wcanberra([1, 1, 0, 0], [1, 0, 1, 0]), 2)
 
 
 def test_braycurtis():
     # Regression test for ticket #1430.
-    assert_almost_equal(wbraycurtis([1,2,3], [2,4,6]), 1./3, decimal=15)
-    assert_almost_equal(wbraycurtis([1,1,0,0], [1,0,1,0]), 0.5, decimal=15)
+    assert_almost_equal(wbraycurtis([1, 2, 3], [2, 4, 6]), 1. / 3, decimal=15)
+    assert_almost_equal(wbraycurtis([1, 1, 0, 0], [1, 0, 1, 0]), 0.5, decimal=15)
 
 
 def test_euclideans():
@@ -1742,7 +1802,7 @@ def test_sqeuclidean_dtypes():
         d2 = wsqeuclidean(np.asarray([-1], dtype=dtype), [0])
 
         assert_equal(d1, d2)
-        assert_equal(d1, np.float64(np.iinfo(dtype).max) ** 2)
+        assert_equal(d1, np.float64(np.iinfo(dtype).max)**2)
 
     dtypes = [np.float32, np.float64, np.complex64, np.complex128]
     for dtype in ['float16', 'float128']:
