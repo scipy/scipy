@@ -2126,7 +2126,11 @@ def fligner(*args, **kwds):
 
     References
     ----------
-    .. [1] http://www.stat.psu.edu/~bgl/center/tr/TR993.ps
+    .. [1] Park, C. and Lindsay, B. G. (1999). Robust Scale Estimation and
+           Hypothesis Testing based on Quadratic Inference Function. Technical
+           Report #99-03, Center for Likelihood Studies, Pennsylvania State
+           University.
+           http://cecas.clemson.edu/~cspark/cv/paper/qif/draftqif2.pdf
 
     .. [2] Fligner, M.A. and Killeen, T.J. (1976). Distribution-free two-sample
            tests for scale. 'Journal of the American Statistical Association.'
