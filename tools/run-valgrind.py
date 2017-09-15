@@ -304,16 +304,17 @@ class SuppressionDB(set):
     def fromfile(cls, filename):
         self = cls()
         rule = None
-        for i , line in enumerate(open(filename).readlines()):
-            if len(line.strip()) == 0:
-                continue
-            if line.strip().startswith('{'):
-                rule = []
+        with open(filename) as ff:
+            for i , line in enumerate(ff.readlines()):
+                if len(line.strip()) == 0:
+                    continue
+                if line.strip().startswith('{'):
+                    rule = []
 
-            rule.append(line.rstrip())
+                rule.append(line.rstrip())
 
-            if line.strip().startswith('}'):
-                self.add('\n'.join(rule))
+                if line.strip().startswith('}'):
+                    self.add('\n'.join(rule))
 
         return self
 
