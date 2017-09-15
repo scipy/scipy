@@ -189,7 +189,7 @@ def isintlike(x):
     """Is x appropriate as an index into a sparse matrix? Returns True
     if it can be cast safely to a machine int.
     """
-    if not isscalarlike(x):
+    if np.ndim(x) != 0:
         return False
     try:
         return bool(int(x) == x)
