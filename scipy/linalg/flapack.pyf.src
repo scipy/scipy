@@ -3720,20 +3720,18 @@ subroutine <prefix>gglse_lwork(m,n,p,a,lda,b,ldb,c,d,x,work,lwork,info)
 
   integer intent(in),check(m>=0) :: m
   integer intent(in),check(n>=0) :: n
+  integer intent(in),depend(m,n),check((p>=n-m)&&(p>=0)&&p<=n) :: p
   integer intent(out) :: info
+  <ftype> intent(out) :: work
 
   <ftype> intent(hide) :: a
-  integer intent(hide) :: lda = 1
+  integer intent(hide),depend(m) :: lda = max(1,m)
   <ftype> intent(hide) :: b
-  integer intent(hide) :: ldb = 1
-  integer intent(in),check((p>=n-m)&&(p>=0)) :: p
-
+  integer intent(hide),depend(p) :: ldb = max(1,p)
   <ftype> intent(hide) :: c
   <ftype> intent(hide) :: d
   <ftype> intent(hide) :: x
-
   integer intent(hide) :: lwork = -1
-  <ftype> intent(out) :: work
 
 end subroutine <prefix>gglse_lwork
 
